@@ -1,0 +1,27 @@
+{
+    "typescript.tsdk": "node_modules\\typescript\\lib",
+    "search.exclude": {
+        "**/boneyard": true
+    },
+    "files.exclude": {
+        "**/boneyard/**/*.ts": true
+    },
+    "cSpell.words": [
+        "badp",
+        "dflt",
+        "Eulers",
+        "fixlint",
+        "furst",
+        "luxon",
+        "nums",
+        "oopsy",
+        "papaparse",
+        "prefixp",
+        "TCONV",
+        "TDEST",
+        "TELEM",
+        "TSRC",
+        "TTOELEM",
+        "xyzzy"
+    ]
+}
