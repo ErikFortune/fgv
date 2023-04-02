@@ -428,6 +428,7 @@
     {
       "packageName": "@fgv/ts-utils",
       "projectFolder": "libraries/ts-utils",
+      "shouldPublish": true,
       "tags": ["libraries"]
     }
   ]
