@@ -52,11 +52,11 @@ export type ResultValueType<T> = T extends Result<infer TV> ? TV : never;
  * @public
  */
 export interface IResultLogger {
-    /**
-     * Log an error message.
-     * @param message - The message to be logged.
-     */
-    error(message: string): void;
+  /**
+   * Log an error message.
+   * @param message - The message to be logged.
+   */
+  error(message: string): void;
 }
 
 /**
@@ -67,119 +67,119 @@ export interface IResultLogger {
  * @public
  */
 export interface IResult<T> {
-    /**
-     * Indicates whether the operation was successful.
-     */
-    readonly success: boolean;
+  /**
+   * Indicates whether the operation was successful.
+   */
+  readonly success: boolean;
 
-    /**
-     * Indicates whether this operation was successful.  Functions
-     * as a type guard for {@link Success | Success<T>}.
-     */
-    isSuccess(): this is Success<T>;
+  /**
+   * Indicates whether this operation was successful.  Functions
+   * as a type guard for {@link Success | Success<T>}.
+   */
+  isSuccess(): this is Success<T>;
 
-    /**
-     * Indicates whether this operation failed.  Functions
-     * as a type guard for {@link Failure | Failure<T>}.
-     */
-    isFailure(): this is Failure<T>;
+  /**
+   * Indicates whether this operation failed.  Functions
+   * as a type guard for {@link Failure | Failure<T>}.
+   */
+  isFailure(): this is Failure<T>;
 
-    /**
-     * Gets the value associated with a successful {@link IResult | result},
-     * or throws the error message if the corresponding operation failed.
-     *
-     * Note that `getValueOrThrow` is being superseded by `orThrow` and
-     * will eventually be deprecated.  Please use orDefault instead.
-     *
-    * @param logger - An optional {@link IResultLogger | logger} to which the
-     * error will also be reported.
-     * @returns The return value, if the operation was successful.
-     * @throws The error message if the operation failed.
-     */
-    getValueOrThrow(logger?: IResultLogger): T;
+  /**
+   * Gets the value associated with a successful {@link IResult | result},
+   * or throws the error message if the corresponding operation failed.
+   *
+   * Note that `getValueOrThrow` is being superseded by `orThrow` and
+   * will eventually be deprecated.  Please use orDefault instead.
+   *
+   * @param logger - An optional {@link IResultLogger | logger} to which the
+   * error will also be reported.
+   * @returns The return value, if the operation was successful.
+   * @throws The error message if the operation failed.
+   */
+  getValueOrThrow(logger?: IResultLogger): T;
 
-    /**
-     * Gets the value associated with a successful {@link IResult | result},
-     * or a default value if the corresponding operation failed.
-     * @param dflt - The value to be returned if the operation failed (default is
-     * `undefined`).
-     *
-     * Note that `getValueOrDefault` is being superseded by `orDefault` and
-     * will eventually be deprecated.  Please use orDefault instead.
-     *
-     * @returns The return value, if the operation was successful.  Returns
-     * the supplied default value or `undefined` if no default is supplied.
-     */
-    getValueOrDefault(dflt?: T): T|undefined;
+  /**
+   * Gets the value associated with a successful {@link IResult | result},
+   * or a default value if the corresponding operation failed.
+   * @param dflt - The value to be returned if the operation failed (default is
+   * `undefined`).
+   *
+   * Note that `getValueOrDefault` is being superseded by `orDefault` and
+   * will eventually be deprecated.  Please use orDefault instead.
+   *
+   * @returns The return value, if the operation was successful.  Returns
+   * the supplied default value or `undefined` if no default is supplied.
+   */
+  getValueOrDefault(dflt?: T): T | undefined;
 
-    /**
-     * Gets the value associated with a successful {@link IResult | result},
-     * or throws the error message if the corresponding operation failed.
-     * @param logger - An optional {@link IResultLogger | logger} to which the
-     * error will also be reported.
-     * @returns The return value, if the operation was successful.
-     * @throws The error message if the operation failed.
-     */
-    orThrow(logger?: IResultLogger): T;
+  /**
+   * Gets the value associated with a successful {@link IResult | result},
+   * or throws the error message if the corresponding operation failed.
+   * @param logger - An optional {@link IResultLogger | logger} to which the
+   * error will also be reported.
+   * @returns The return value, if the operation was successful.
+   * @throws The error message if the operation failed.
+   */
+  orThrow(logger?: IResultLogger): T;
 
-    /**
-     * Gets the value associated with a successful {@link IResult | result},
-     * or a default value if the corresponding operation failed.
-     * @param dflt - The value to be returned if the operation failed (default is
-     * `undefined`).
-     * @returns The return value, if the operation was successful.  Returns
-     * the supplied default value or `undefined` if no default is supplied.
-     */
-    orDefault(dflt?: T): T|undefined;
+  /**
+   * Gets the value associated with a successful {@link IResult | result},
+   * or a default value if the corresponding operation failed.
+   * @param dflt - The value to be returned if the operation failed (default is
+   * `undefined`).
+   * @returns The return value, if the operation was successful.  Returns
+   * the supplied default value or `undefined` if no default is supplied.
+   */
+  orDefault(dflt?: T): T | undefined;
 
-    /**
-     * Calls a supplied {@link SuccessContinuation | success continuation} if
-     * the operation was a success.
-     * @remarks
-     * The {@link SuccessContinuation | success continuation} might return a
-     * different result type than {@link IResult} on which it is invoked. This
-     * enables chaining of operations with heterogenous return types.
-     *
-     * @param cb - The {@link SuccessContinuation | success continuation} to
-     * be called in the event of success.
-     * @returns If this operation was successful, returns the value returned
-     * by the {@link SuccessContinuation | success continuation}.  If this result
-     * failed, propagates the error message from this failure.
-     */
-    onSuccess<TN>(cb: SuccessContinuation<T, TN>): Result<TN>;
+  /**
+   * Calls a supplied {@link SuccessContinuation | success continuation} if
+   * the operation was a success.
+   * @remarks
+   * The {@link SuccessContinuation | success continuation} might return a
+   * different result type than {@link IResult} on which it is invoked. This
+   * enables chaining of operations with heterogenous return types.
+   *
+   * @param cb - The {@link SuccessContinuation | success continuation} to
+   * be called in the event of success.
+   * @returns If this operation was successful, returns the value returned
+   * by the {@link SuccessContinuation | success continuation}.  If this result
+   * failed, propagates the error message from this failure.
+   */
+  onSuccess<TN>(cb: SuccessContinuation<T, TN>): Result<TN>;
 
-    /**
-     * Calls a supplied {@link FailureContinuation | failed continuation} if
-     * the operation failed.
-     * @param cb - The {@link FailureContinuation | failure continuation} to
-     * be called in the event of failure.
-     * @returns If this operation failed, returns the value returned by the
-     * {@link FailureContinuation | failure continuation}.  If this result
-     * was successful, propagates the result value from the successful event.
-     */
-    onFailure(cb: FailureContinuation<T>): Result<T>;
+  /**
+   * Calls a supplied {@link FailureContinuation | failed continuation} if
+   * the operation failed.
+   * @param cb - The {@link FailureContinuation | failure continuation} to
+   * be called in the event of failure.
+   * @returns If this operation failed, returns the value returned by the
+   * {@link FailureContinuation | failure continuation}.  If this result
+   * was successful, propagates the result value from the successful event.
+   */
+  onFailure(cb: FailureContinuation<T>): Result<T>;
 
-    /**
-     * Converts a {@link IResult | IResult<T>} to a {@link DetailedResult | DetailedResult<T, TD>},
-     * adding a supplied detail if the operation failed.
-     * @param detail - The detail to be added if this operation failed.
-     * @returns A new {@link DetailedResult | DetailedResult<T, TD>} with either
-     * the success result or the error message from this {@link IResult}, with
-     * the supplied detail (if this event failed) or detail `undefined` (if
-     * this result succeeded).
-     */
-    withFailureDetail<TD>(detail: TD): DetailedResult<T, TD>;
+  /**
+   * Converts a {@link IResult | IResult<T>} to a {@link DetailedResult | DetailedResult<T, TD>},
+   * adding a supplied detail if the operation failed.
+   * @param detail - The detail to be added if this operation failed.
+   * @returns A new {@link DetailedResult | DetailedResult<T, TD>} with either
+   * the success result or the error message from this {@link IResult}, with
+   * the supplied detail (if this event failed) or detail `undefined` (if
+   * this result succeeded).
+   */
+  withFailureDetail<TD>(detail: TD): DetailedResult<T, TD>;
 
-    /**
-     * Converts a {@link IResult | IResult<T>} to a {@link DetailedResult | DetailedResult<T, TD>},
-     * adding supplied details.
-     * @param detail - The default detail to be added to the new {@link DetailedResult}.
-     * @param successDetail - An optional detail to be added if this result was successful.
-     * @returns A new {@link DetailedResult | DetailedResult<T, TD>} with either
-     * the success result or the error message from this {@link IResult} and the
-     * appropriate added detail.
-     */
-    withDetail<TD>(detail: TD, successDetail?: TD): DetailedResult<T, TD>;
+  /**
+   * Converts a {@link IResult | IResult<T>} to a {@link DetailedResult | DetailedResult<T, TD>},
+   * adding supplied details.
+   * @param detail - The default detail to be added to the new {@link DetailedResult}.
+   * @param successDetail - An optional detail to be added if this result was successful.
+   * @returns A new {@link DetailedResult | DetailedResult<T, TD>} with either
+   * the success result or the error message from this {@link IResult} and the
+   * appropriate added detail.
+   */
+  withDetail<TD>(detail: TD, successDetail?: TD): DetailedResult<T, TD>;
 }
 
 /**
@@ -188,99 +188,99 @@ export interface IResult<T> {
  * @public
  */
 export class Success<T> implements IResult<T> {
-    /**
-     * {@inheritdoc IResult.success}
-     */
-    public readonly success = true;
-    /**
-     * @internal
-     */
-    private readonly _value: T;
+  /**
+   * {@inheritdoc IResult.success}
+   */
+  public readonly success = true;
+  /**
+   * @internal
+   */
+  private readonly _value: T;
 
-    /**
-     * Constructs a {@link Success} with the supplied value.
-     * @param value - The value to be returned.
-     */
-    constructor(value: T) {
-        this._value = value;
-    }
+  /**
+   * Constructs a {@link Success} with the supplied value.
+   * @param value - The value to be returned.
+   */
+  constructor(value: T) {
+    this._value = value;
+  }
 
-    /**
-     * The result value returned by the successful operation.
-     */
-    public get value(): T {
-        return this._value;
-    }
+  /**
+   * The result value returned by the successful operation.
+   */
+  public get value(): T {
+    return this._value;
+  }
 
-    /**
-     * {@inheritdoc IResult.isSuccess}
-     */
-    public isSuccess(): this is Success<T> {
-        return true;
-    }
+  /**
+   * {@inheritdoc IResult.isSuccess}
+   */
+  public isSuccess(): this is Success<T> {
+    return true;
+  }
 
-    /**
-     * {@inheritdoc IResult.isFailure}
-     */
-    public isFailure(): this is Failure<T> {
-        return false;
-    }
+  /**
+   * {@inheritdoc IResult.isFailure}
+   */
+  public isFailure(): this is Failure<T> {
+    return false;
+  }
 
-    /**
-     * {@inheritdoc IResult.orThrow}
-     */
-    public orThrow(_logger?: IResultLogger): T {
-        return this._value;
-    }
+  /**
+   * {@inheritdoc IResult.orThrow}
+   */
+  public orThrow(_logger?: IResultLogger): T {
+    return this._value;
+  }
 
-    /**
-     * {@inheritdoc IResult.orDefault}
-     */
-    public orDefault(dflt?: T): T|undefined {
-        return this._value ?? dflt;
-    }
+  /**
+   * {@inheritdoc IResult.orDefault}
+   */
+  public orDefault(dflt?: T): T | undefined {
+    return this._value ?? dflt;
+  }
 
-    /**
-     * {@inheritdoc IResult.getValueOrThrow}
-     */
-    public getValueOrThrow(_logger?: IResultLogger): T {
-        return this._value;
-    }
+  /**
+   * {@inheritdoc IResult.getValueOrThrow}
+   */
+  public getValueOrThrow(_logger?: IResultLogger): T {
+    return this._value;
+  }
 
-    /**
-     * {@inheritdoc IResult.getValueOrDefault}
-     */
-    public getValueOrDefault(dflt?: T): T|undefined {
-        return this._value ?? dflt;
-    }
+  /**
+   * {@inheritdoc IResult.getValueOrDefault}
+   */
+  public getValueOrDefault(dflt?: T): T | undefined {
+    return this._value ?? dflt;
+  }
 
-    /**
-     * {@inheritdoc IResult.onSuccess}
-     */
-    public onSuccess<TN>(cb: SuccessContinuation<T, TN>): Result<TN> {
-        return cb(this.value);
-    }
+  /**
+   * {@inheritdoc IResult.onSuccess}
+   */
+  public onSuccess<TN>(cb: SuccessContinuation<T, TN>): Result<TN> {
+    return cb(this.value);
+  }
 
-    /**
-     * {@inheritdoc IResult.onFailure}
-     */
-    public onFailure(_: FailureContinuation<T>): Result<T> {
-        return this;
-    }
+  /**
+   * {@inheritdoc IResult.onFailure}
+   */
+  public onFailure(_: FailureContinuation<T>): Result<T> {
+    return this;
+  }
 
-    /**
-     * {@inheritdoc IResult.withFailureDetail}
-     */
-    public withFailureDetail<TD>(_detail: TD): DetailedResult<T, TD> {
-        return succeedWithDetail(this.value);
-    }
+  /**
+   * {@inheritdoc IResult.withFailureDetail}
+   */
+  public withFailureDetail<TD>(_detail: TD): DetailedResult<T, TD> {
+    return succeedWithDetail(this.value);
+  }
 
-    /**
-     * {@inheritdoc IResult.withDetail}
-     */
-    public withDetail<TD>(detail: TD, successDetail?: TD): DetailedResult<T, TD> {
-        return succeedWithDetail(this.value, successDetail ?? detail);
-    }
+  /**
+   * {@inheritdoc IResult.withDetail}
+   */
+  public withDetail<TD>(detail: TD, successDetail?: TD): DetailedResult<T, TD> {
+    return succeedWithDetail(this.value, successDetail ?? detail);
+  }
 }
 
 /**
@@ -288,116 +288,116 @@ export class Success<T> implements IResult<T> {
  * @public
  */
 export class Failure<T> implements IResult<T> {
-    /**
-     * {@inheritdoc IResult.success}
-     */
-    public readonly success = false;
+  /**
+   * {@inheritdoc IResult.success}
+   */
+  public readonly success = false;
 
-    /**
-     * @internal
-     */
-    private readonly _message: string;
+  /**
+   * @internal
+   */
+  private readonly _message: string;
 
-    /**
-     * Constructs a {@link Failure} with the supplied message.
-     * @param message - Error message to be reported.
-     */
-    constructor(message: string) {
-        this._message = message;
+  /**
+   * Constructs a {@link Failure} with the supplied message.
+   * @param message - Error message to be reported.
+   */
+  constructor(message: string) {
+    this._message = message;
+  }
+
+  /**
+   * Gets the error message associated with this error.
+   */
+  public get message(): string {
+    return this._message;
+  }
+
+  /**
+   * {@inheritdoc IResult.isSuccess}
+   */
+  public isSuccess(): this is Success<T> {
+    return false;
+  }
+
+  /**
+   * {@inheritdoc IResult.isFailure}
+   */
+  public isFailure(): this is Failure<T> {
+    return true;
+  }
+
+  /**
+   * {@inheritdoc IResult.orThrow}
+   */
+  public orThrow(logger?: IResultLogger): never {
+    if (logger !== undefined) {
+      logger.error(this._message);
     }
+    throw new Error(this._message);
+  }
 
-    /**
-     * Gets the error message associated with this error.
-     */
-    public get message(): string {
-        return this._message;
-    }
+  /**
+   * {@inheritdoc IResult.orDefault}
+   */
+  public orDefault(dflt?: T): T | undefined {
+    return dflt;
+  }
 
-    /**
-     * {@inheritdoc IResult.isSuccess}
-     */
-    public isSuccess(): this is Success<T> {
-        return false;
+  /**
+   * {@inheritdoc IResult.getValueOrThrow}
+   */
+  public getValueOrThrow(logger?: IResultLogger): never {
+    if (logger !== undefined) {
+      logger.error(this._message);
     }
+    throw new Error(this._message);
+  }
 
-    /**
-     * {@inheritdoc IResult.isFailure}
-     */
-    public isFailure(): this is Failure<T> {
-        return true;
-    }
+  /**
+   * {@inheritdoc IResult.getValueOrDefault}
+   */
+  public getValueOrDefault(dflt?: T): T | undefined {
+    return dflt;
+  }
 
-    /**
-     * {@inheritdoc IResult.orThrow}
-     */
-    public orThrow(logger?: IResultLogger): never {
-        if (logger !== undefined) {
-            logger.error(this._message);
-        }
-        throw new Error(this._message);
-    }
+  /**
+   * {@inheritdoc IResult.onSuccess}
+   */
+  public onSuccess<TN>(_: SuccessContinuation<T, TN>): Result<TN> {
+    return new Failure(this.message);
+  }
 
-    /**
-     * {@inheritdoc IResult.orDefault}
-     */
-    public orDefault(dflt?: T): T|undefined {
-        return dflt;
-    }
+  /**
+   * {@inheritdoc IResult.onFailure}
+   */
+  public onFailure(cb: FailureContinuation<T>): Result<T> {
+    return cb(this.message);
+  }
 
-    /**
-     * {@inheritdoc IResult.getValueOrThrow}
-     */
-    public getValueOrThrow(logger?: IResultLogger): never {
-        if (logger !== undefined) {
-            logger.error(this._message);
-        }
-        throw new Error(this._message);
-    }
+  /**
+   * {@inheritdoc IResult.withFailureDetail}
+   */
+  public withFailureDetail<TD>(detail: TD): DetailedResult<T, TD> {
+    return failWithDetail(this.message, detail);
+  }
 
-    /**
-     * {@inheritdoc IResult.getValueOrDefault}
-     */
-    public getValueOrDefault(dflt?: T): T|undefined {
-        return dflt;
-    }
+  /**
+   * {@inheritdoc IResult.withDetail}
+   */
+  public withDetail<TD>(detail: TD, _successDetail?: TD): DetailedResult<T, TD> {
+    return failWithDetail(this.message, detail);
+  }
 
-    /**
-     * {@inheritdoc IResult.onSuccess}
-     */
-    public onSuccess<TN>(_: SuccessContinuation<T, TN>): Result<TN> {
-        return new Failure(this.message);
-    }
-
-    /**
-     * {@inheritdoc IResult.onFailure}
-     */
-    public onFailure(cb: FailureContinuation<T>): Result<T> {
-        return cb(this.message);
-    }
-
-    /**
-     * {@inheritdoc IResult.withFailureDetail}
-     */
-    public withFailureDetail<TD>(detail: TD): DetailedResult<T, TD> {
-        return failWithDetail(this.message, detail);
-    }
-
-    /**
-     * {@inheritdoc IResult.withDetail}
-     */
-    public withDetail<TD>(detail: TD, _successDetail?: TD): DetailedResult<T, TD> {
-        return failWithDetail(this.message, detail);
-    }
-
-    /**
-     * Get a 'friendly' string representation of this object.
-     * @remarks
-     * The string representation of a {@link Failure} value is the error message.
-     * @returns A string representing this object.
-     */
-    public toString(): string {
-        return this.message;
-    }
+  /**
+   * Get a 'friendly' string representation of this object.
+   * @remarks
+   * The string representation of a {@link Failure} value is the error message.
+   * @returns A string representing this object.
+   */
+  public toString(): string {
+    return this.message;
+  }
 }
 
 /**
@@ -406,7 +406,7 @@ export class Failure<T> implements IResult<T> {
  * @public
  */
 export function succeed<T>(value: T): Success<T> {
-    return new Success<T>(value);
+  return new Success<T>(value);
 }
 
 /**
@@ -415,7 +415,7 @@ export function succeed<T>(value: T): Success<T> {
  * @public
  */
 export function fail<T>(message: string): Failure<T> {
-    return new Failure<T>(message);
+  return new Failure<T>(message);
 }
 
 /**
@@ -442,66 +442,66 @@ export type DetailedFailureContinuation<T, TD> = (message: string, detail: TD) =
  * @public
  */
 export class DetailedSuccess<T, TD> extends Success<T> {
-    /**
-     * @internal
-     */
-    protected _detail?: TD;
+  /**
+   * @internal
+   */
+  protected _detail?: TD;
 
-    /**
-     * Constructs a new {@link DetailedSuccess | DetailedSuccess<T, TD>} with the supplied
-     * value and detail.
-     * @param value - The value to be returned.
-     * @param detail - An optional successful detail to be returned.  If omitted, detail
-     * will be `undefined`.
-     */
-    public constructor(value: T, detail?: TD) {
-        super(value);
-        this._detail = detail;
-    }
+  /**
+   * Constructs a new {@link DetailedSuccess | DetailedSuccess<T, TD>} with the supplied
+   * value and detail.
+   * @param value - The value to be returned.
+   * @param detail - An optional successful detail to be returned.  If omitted, detail
+   * will be `undefined`.
+   */
+  public constructor(value: T, detail?: TD) {
+    super(value);
+    this._detail = detail;
+  }
 
-    /**
-     * The success detail associated with this {@link DetailedSuccess}, or `undefined` if
-     * no detail was supplied.
-     */
-    public get detail(): TD|undefined {
-        return this._detail;
-    }
+  /**
+   * The success detail associated with this {@link DetailedSuccess}, or `undefined` if
+   * no detail was supplied.
+   */
+  public get detail(): TD | undefined {
+    return this._detail;
+  }
 
-    /**
-     * Reports that this {@link DetailedSuccess} is a success.
-     * @remarks
-     * Always true for {@link DetailedSuccess} but can be used as type guard
-     * to discriminate {@link DetailedSuccess} from {@link DetailedFailure} in
-     * a {@link DetailedResult}.
-     * @returns `true`
-     */
-    public isSuccess(): this is DetailedSuccess<T, TD> {
-        return true;
-    }
+  /**
+   * Reports that this {@link DetailedSuccess} is a success.
+   * @remarks
+   * Always true for {@link DetailedSuccess} but can be used as type guard
+   * to discriminate {@link DetailedSuccess} from {@link DetailedFailure} in
+   * a {@link DetailedResult}.
+   * @returns `true`
+   */
+  public isSuccess(): this is DetailedSuccess<T, TD> {
+    return true;
+  }
 
-    /**
-     * Invokes the supplied {@link DetailedSuccessContinuation | success callback} and propagates
-     * its returned {@link DetailedResult | DetailedResult<TN, TD>}.
-     * @remarks
-     * The success callback mutates the return type from `<T>` to `<TN>`.
-     * @param cb - The {@link DetailedSuccessContinuation | success callback} to be invoked.
-     * @returns The {@link DetailedResult | DetailedResult<T, TD>} returned by the success callback.
-     */
-    public onSuccess<TN>(cb: DetailedSuccessContinuation<T, TD, TN>): DetailedResult<TN, TD> {
-        return cb(this.value, this._detail);
-    }
+  /**
+   * Invokes the supplied {@link DetailedSuccessContinuation | success callback} and propagates
+   * its returned {@link DetailedResult | DetailedResult<TN, TD>}.
+   * @remarks
+   * The success callback mutates the return type from `<T>` to `<TN>`.
+   * @param cb - The {@link DetailedSuccessContinuation | success callback} to be invoked.
+   * @returns The {@link DetailedResult | DetailedResult<T, TD>} returned by the success callback.
+   */
+  public onSuccess<TN>(cb: DetailedSuccessContinuation<T, TD, TN>): DetailedResult<TN, TD> {
+    return cb(this.value, this._detail);
+  }
 
-    /**
-     * Propagates this {@link DetailedSuccess}.
-     * @remarks
-     * Failure does not mutate return type so we can return this event directly.
-     * @param _cb - {@link DetailedFailureContinuation | Failure callback} to be called
-     * on a {@link DetailedResult} in case of failure (ignored).
-     * @returns `this`
-     */
-    public onFailure(_cb: DetailedFailureContinuation<T, TD>): DetailedResult<T, TD> {
-        return this;
-    }
+  /**
+   * Propagates this {@link DetailedSuccess}.
+   * @remarks
+   * Failure does not mutate return type so we can return this event directly.
+   * @param _cb - {@link DetailedFailureContinuation | Failure callback} to be called
+   * on a {@link DetailedResult} in case of failure (ignored).
+   * @returns `this`
+   */
+  public onFailure(_cb: DetailedFailureContinuation<T, TD>): DetailedResult<T, TD> {
+    return this;
+  }
 }
 
 /**
@@ -510,71 +510,71 @@ export class DetailedSuccess<T, TD> extends Success<T> {
  * @public
  */
 export class DetailedFailure<T, TD> extends Failure<T> {
-    /**
-     * @internal
-     */
-    protected _detail: TD;
+  /**
+   * @internal
+   */
+  protected _detail: TD;
 
-    /**
-     * Constructs a new {@link DetailedFailure | DetailedFailure<T, TD>} with the supplied
-     * message and detail.
-     * @param message - The message to be returned.
-     * @param detail - The error detail to be returned.
-     */
-    public constructor(message: string, detail: TD) {
-        super(message);
-        this._detail = detail;
-    }
+  /**
+   * Constructs a new {@link DetailedFailure | DetailedFailure<T, TD>} with the supplied
+   * message and detail.
+   * @param message - The message to be returned.
+   * @param detail - The error detail to be returned.
+   */
+  public constructor(message: string, detail: TD) {
+    super(message);
+    this._detail = detail;
+  }
 
-    /**
-     * The error detail associated with this {@link DetailedFailure}.
-     */
-    public get detail(): TD {
-        return this._detail;
-    }
+  /**
+   * The error detail associated with this {@link DetailedFailure}.
+   */
+  public get detail(): TD {
+    return this._detail;
+  }
 
-    /**
-     * Reports that this {@link DetailedFailure} is a failure.
-     * @remarks
-     * Always true for {@link DetailedFailure} but can be used as type guard
-     * to discriminate {@link DetailedSuccess} from {@link DetailedFailure} in
-     * a {@link DetailedResult}.
-     * @returns `true`
-     */
-    public isFailure(): this is DetailedFailure<T, TD> {
-        return true;
-    }
+  /**
+   * Reports that this {@link DetailedFailure} is a failure.
+   * @remarks
+   * Always true for {@link DetailedFailure} but can be used as type guard
+   * to discriminate {@link DetailedSuccess} from {@link DetailedFailure} in
+   * a {@link DetailedResult}.
+   * @returns `true`
+   */
+  public isFailure(): this is DetailedFailure<T, TD> {
+    return true;
+  }
 
-    /**
-     * Propagates the error message and detail from this result.
-     * @remarks
-     * Mutates the success type as the success callback would have, but does not
-     * call the success callback.
-     * @param _cb - {@link DetailedSuccessContinuation | Success callback} to be called
-     * on a {@link DetailedResult} in case of success (ignored).
-     * @returns A new {@link DetailedFailure | DetailedFailure<TN, TD>} which contains
-     * the error message and detail from this one.
-     */
-    public onSuccess<TN>(_cb: DetailedSuccessContinuation<T, TD, TN>): DetailedResult<TN, TD> {
-        return new DetailedFailure<TN, TD>(this.message, this._detail);
-    }
+  /**
+   * Propagates the error message and detail from this result.
+   * @remarks
+   * Mutates the success type as the success callback would have, but does not
+   * call the success callback.
+   * @param _cb - {@link DetailedSuccessContinuation | Success callback} to be called
+   * on a {@link DetailedResult} in case of success (ignored).
+   * @returns A new {@link DetailedFailure | DetailedFailure<TN, TD>} which contains
+   * the error message and detail from this one.
+   */
+  public onSuccess<TN>(_cb: DetailedSuccessContinuation<T, TD, TN>): DetailedResult<TN, TD> {
+    return new DetailedFailure<TN, TD>(this.message, this._detail);
+  }
 
-    /**
-     * Invokes the supplied {@link DetailedFailureContinuation | failure callback} and propagates
-     * its returned {@link DetailedResult | DetailedResult<T, TD>}.
-     * @param cb - The {@link DetailedFailureContinuation | failure callback} to be invoked.
-     * @returns The {@link DetailedResult | DetailedResult<T, TD>} returned by the failure callback.
-     */
-    public onFailure(cb: DetailedFailureContinuation<T, TD>): DetailedResult<T, TD> {
-        return cb(this.message, this._detail);
-    }
+  /**
+   * Invokes the supplied {@link DetailedFailureContinuation | failure callback} and propagates
+   * its returned {@link DetailedResult | DetailedResult<T, TD>}.
+   * @param cb - The {@link DetailedFailureContinuation | failure callback} to be invoked.
+   * @returns The {@link DetailedResult | DetailedResult<T, TD>} returned by the failure callback.
+   */
+  public onFailure(cb: DetailedFailureContinuation<T, TD>): DetailedResult<T, TD> {
+    return cb(this.message, this._detail);
+  }
 }
 
 /**
  * Type inference to determine the result type `T` of a {@link DetailedResult | DetailedResult<T, TD>}.
  * @beta
  */
-export type DetailedResult<T, TD> = DetailedSuccess<T, TD>|DetailedFailure<T, TD>;
+export type DetailedResult<T, TD> = DetailedSuccess<T, TD> | DetailedFailure<T, TD>;
 
 /**
  * Type inference to determine the detail type `TD` of a {@link DetailedResult | DetailedResult<T, TD>}.
@@ -592,7 +592,7 @@ export type ResultDetailType<T> = T extends DetailedResult<unknown, infer TD> ? 
  * @public
  */
 export function succeedWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess<T, TD> {
-    return new DetailedSuccess<T, TD>(value, detail);
+  return new DetailedSuccess<T, TD>(value, detail);
 }
 
 /**
@@ -604,7 +604,7 @@ export function succeedWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess
  * @public
  */
 export function failWithDetail<T, TD>(message: string, detail: TD): DetailedFailure<T, TD> {
-    return new DetailedFailure<T, TD>(message, detail);
+  return new DetailedFailure<T, TD>(message, detail);
 }
 
 /**
@@ -618,10 +618,14 @@ export function failWithDetail<T, TD>(message: string, detail: TD): DetailedFail
  * message from the original `result` but with the specified detail added.
  * @public
  */
-export function propagateWithDetail<T, TD>(result: Result<T>, detail: TD, successDetail?: TD): DetailedResult<T, TD> {
-    return result.isSuccess()
-        ? succeedWithDetail(result.value, successDetail ?? detail)
-        : failWithDetail(result.message, detail);
+export function propagateWithDetail<T, TD>(
+  result: Result<T>,
+  detail: TD,
+  successDetail?: TD
+): DetailedResult<T, TD> {
+  return result.isSuccess()
+    ? succeedWithDetail(result.value, successDetail ?? detail)
+    : failWithDetail(result.message, detail);
 }
 
 /**
@@ -634,12 +638,11 @@ export function propagateWithDetail<T, TD>(result: Result<T>, detail: TD, succes
  * @public
  */
 export function captureResult<T>(func: () => T): Result<T> {
-    try {
-        return succeed(func());
-    }
-    catch (err) {
-        return fail((err as Error).message);
-    }
+  try {
+    return succeed(func());
+  } catch (err) {
+    return fail((err as Error).message);
+  }
 }
 
 /**
@@ -651,22 +654,21 @@ export function captureResult<T>(func: () => T): Result<T> {
  * @public
  */
 export function mapResults<T>(results: Iterable<Result<T>>): Result<T[]> {
-    const errors: string[] = [];
-    const elements: T[] = [];
+  const errors: string[] = [];
+  const elements: T[] = [];
 
-    for (const result of results) {
-        if (result.isSuccess()) {
-            elements.push(result.value);
-        }
-        else {
-            errors.push(result.message);
-        }
+  for (const result of results) {
+    if (result.isSuccess()) {
+      elements.push(result.value);
+    } else {
+      errors.push(result.message);
     }
+  }
 
-    if (errors.length > 0) {
-        return fail(errors.join('\n'));
-    }
-    return succeed(elements);
+  if (errors.length > 0) {
+    return fail(errors.join('\n'));
+  }
+  return succeed(elements);
 }
 
 /**
@@ -680,23 +682,25 @@ export function mapResults<T>(results: Iterable<Result<T>>): Result<T[]> {
  * error messages.
  * @public
  */
-export function mapDetailedResults<T, TD>(results: Iterable<DetailedResult<T, TD>>, ignore: TD[]): Result<T[]> {
-    const errors: string[] = [];
-    const elements: T[] = [];
+export function mapDetailedResults<T, TD>(
+  results: Iterable<DetailedResult<T, TD>>,
+  ignore: TD[]
+): Result<T[]> {
+  const errors: string[] = [];
+  const elements: T[] = [];
 
-    for (const result of results) {
-        if (result.isSuccess()) {
-            elements.push(result.value);
-        }
-        else if (!ignore.includes(result.detail)) {
-            errors.push(result.message);
-        }
+  for (const result of results) {
+    if (result.isSuccess()) {
+      elements.push(result.value);
+    } else if (!ignore.includes(result.detail)) {
+      errors.push(result.message);
     }
+  }
 
-    if (errors.length > 0) {
-        return fail(errors.join('\n'));
-    }
-    return succeed(elements);
+  if (errors.length > 0) {
+    return fail(errors.join('\n'));
+  }
+  return succeed(elements);
 }
 
 /**
@@ -709,22 +713,21 @@ export function mapDetailedResults<T, TD>(results: Iterable<DetailedResult<T, TD
  * @public
  */
 export function mapSuccess<T>(results: Iterable<Result<T>>): Result<T[]> {
-    const errors: string[] = [];
-    const elements: T[] = [];
+  const errors: string[] = [];
+  const elements: T[] = [];
 
-    for (const result of results) {
-        if (result.isSuccess()) {
-            elements.push(result.value);
-        }
-        else {
-            errors.push(result.message);
-        }
+  for (const result of results) {
+    if (result.isSuccess()) {
+      elements.push(result.value);
+    } else {
+      errors.push(result.message);
     }
+  }
 
-    if ((elements.length === 0) && (errors.length > 0)) {
-        return fail(errors.join('\n'));
-    }
-    return succeed(elements);
+  if (elements.length === 0 && errors.length > 0) {
+    return fail(errors.join('\n'));
+  }
+  return succeed(elements);
 }
 
 /**
@@ -737,13 +740,13 @@ export function mapSuccess<T>(results: Iterable<Result<T>>): Result<T[]> {
  * @public
  */
 export function mapFailures<T>(results: Iterable<Result<T>>): string[] {
-    const errors: string[] = [];
-    for (const result of results) {
-        if (result.isFailure()) {
-            errors.push(result.message);
-        }
+  const errors: string[] = [];
+  for (const result of results) {
+    if (result.isFailure()) {
+      errors.push(result.message);
     }
-    return errors;
+  }
+  return errors;
 }
 
 /**
@@ -755,50 +758,50 @@ export function mapFailures<T>(results: Iterable<Result<T>>): string[] {
  * @public
  */
 export function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T): Result<T> {
-    const errors: string[] = [];
+  const errors: string[] = [];
 
-    // istanbul ignore else
-    if (results !== undefined) {
-        for (const result of results) {
-            if (result.isFailure()) {
-                errors.push(result.message);
-            }
-        }
+  // istanbul ignore else
+  if (results !== undefined) {
+    for (const result of results) {
+      if (result.isFailure()) {
+        errors.push(result.message);
+      }
     }
+  }
 
-    if (errors.length > 0) {
-        return fail(errors.join('\n'));
-    }
-    return succeed(successValue);
+  if (errors.length > 0) {
+    return fail(errors.join('\n'));
+  }
+  return succeed(successValue);
 }
 
 /**
  * String-keyed record of initialization functions to be passed to {@link populateObject.(:withOptions)}.
  * @public
  */
-export type FieldInitializers<T> = { [ key in keyof T ]: (state: Partial<T>) => Result<T[key]> };
+export type FieldInitializers<T> = { [key in keyof T]: (state: Partial<T>) => Result<T[key]> };
 
 /**
  * Options for the {@link populateObject.(:withOptions)} function.
  * @public
  */
 export interface PopulateObjectOptions<T> {
-    /**
-     * If present, specifies the order in which property values should
-     * be evaluated.  Any keys not listed are evaluated after all listed
-     * keys in indeterminate order.  If 'order' is not present, keys
-     * are evaluated in indeterminate order.
-     */
-    order?: (keyof T)[];
+  /**
+   * If present, specifies the order in which property values should
+   * be evaluated.  Any keys not listed are evaluated after all listed
+   * keys in indeterminate order.  If 'order' is not present, keys
+   * are evaluated in indeterminate order.
+   */
+  order?: (keyof T)[];
 
-    /**
-     * Specify handling of `undefined` values.  By default, successful
-     * `undefined` results are written to the result object.  If this value
-     * is `true` then `undefined` results are suppressed for all properties.
-     * If this value is an array of property keys then `undefined` results
-     * are suppressed for those properties only.
-     */
-    suppressUndefined?: boolean | (keyof T)[];
+  /**
+   * Specify handling of `undefined` values.  By default, successful
+   * `undefined` results are written to the result object.  If this value
+   * is `true` then `undefined` results are suppressed for all properties.
+   * If this value is an array of property keys then `undefined` results
+   * are suppressed for those properties only.
+   */
+  suppressUndefined?: boolean | (keyof T)[];
 }
 
 /**
@@ -812,7 +815,10 @@ export interface PopulateObjectOptions<T> {
  * @public
  * {@label withOptions}
  */
-export function populateObject<T>(initializers: FieldInitializers<T>, options?: PopulateObjectOptions<T>): Result<T>;
+export function populateObject<T>(
+  initializers: FieldInitializers<T>,
+  options?: PopulateObjectOptions<T>
+): Result<T>;
 
 /**
  * Populates an an object based on a prototype full of field initializers that return {@link Result | Result<T[key]>}.
@@ -826,46 +832,51 @@ export function populateObject<T>(initializers: FieldInitializers<T>, options?: 
  * @deprecated Pass {@link PopulateObjectOptions} instead.
  */
 export function populateObject<T>(initializers: FieldInitializers<T>, order: (keyof T)[]): Result<T>;
-export function populateObject<T>(initializers: FieldInitializers<T>, optionsOrOrder?: PopulateObjectOptions<T> | (keyof T)[]): Result<T> {
-    const options: PopulateObjectOptions<T> = optionsOrOrder
-        ? Array.isArray(optionsOrOrder) ? { order: optionsOrOrder } : optionsOrOrder
-        : {};
-    const state = {} as { [key in keyof T]: T[key] };
-    const errors: string[] = [];
-    const keys: (keyof T)[] = Array.from(options.order ?? []);
-    const foundKeys = new Set<keyof T>(options.order);
+export function populateObject<T>(
+  initializers: FieldInitializers<T>,
+  optionsOrOrder?: PopulateObjectOptions<T> | (keyof T)[]
+): Result<T> {
+  const options: PopulateObjectOptions<T> = optionsOrOrder
+    ? Array.isArray(optionsOrOrder)
+      ? { order: optionsOrOrder }
+      : optionsOrOrder
+    : {};
+  const state = {} as { [key in keyof T]: T[key] };
+  const errors: string[] = [];
+  const keys: (keyof T)[] = Array.from(options.order ?? []);
+  const foundKeys = new Set<keyof T>(options.order);
 
-    // start with the supplied order then append anything else we find
-    for (const key in initializers) {
-        if (!foundKeys.has(key)) {
-            keys.push(key);
-            foundKeys.add(key);
-        }
+  // start with the supplied order then append anything else we find
+  for (const key in initializers) {
+    if (!foundKeys.has(key)) {
+      keys.push(key);
+      foundKeys.add(key);
     }
+  }
 
-    for (const key of keys) {
-        if (initializers[key]) {
-            const result = initializers[key](state);
-            if (result.isSuccess()) {
-                if (result.value === undefined) {
-                    if ((options.suppressUndefined === true)
-                        || Array.isArray(options.suppressUndefined) && options.suppressUndefined.includes(key)) {
-                        continue;
-                    }
-                }
-                state[key] = result.value;
-            }
-            else {
-                errors.push(result.message);
-            }
+  for (const key of keys) {
+    if (initializers[key]) {
+      const result = initializers[key](state);
+      if (result.isSuccess()) {
+        if (result.value === undefined) {
+          if (
+            options.suppressUndefined === true ||
+            (Array.isArray(options.suppressUndefined) && options.suppressUndefined.includes(key))
+          ) {
+            continue;
+          }
         }
-        else {
-            errors.push(`populateObject: Key ${String(key)} is present but has no initializer`);
-        }
+        state[key] = result.value;
+      } else {
+        errors.push(result.message);
+      }
+    } else {
+      errors.push(`populateObject: Key ${String(key)} is present but has no initializer`);
     }
+  }
 
-    if (errors.length > 0) {
-        return fail(errors.join('\n'));
-    }
-    return succeed(state as T);
+  if (errors.length > 0) {
+    return fail(errors.join('\n'));
+  }
+  return succeed(state as T);
 }

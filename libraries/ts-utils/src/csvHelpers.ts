@@ -30,7 +30,7 @@ import { parse } from 'papaparse';
  * @beta
  */
 export interface CsvOptions {
-    delimiter?: string;
+  delimiter?: string;
 }
 
 /**
@@ -41,11 +41,17 @@ export interface CsvOptions {
  * @beta
  */
 export function readCsvFileSync(srcPath: string, options?: CsvOptions): Result<unknown> {
-    return captureResult(() => {
-        const fullPath = path.resolve(srcPath);
-        const body = fs.readFileSync(fullPath, 'utf8').toString();
-        options = options ?? {};
-        // eslint-disable-next-line
-        return parse(body, { transform: (s: string) => s.trim(), header: false, dynamicTyping: false, skipEmptyLines: 'greedy', ...options }).data.slice(1);
-    });
+  return captureResult(() => {
+    const fullPath = path.resolve(srcPath);
+    const body = fs.readFileSync(fullPath, 'utf8').toString();
+    options = options ?? {};
+    // eslint-disable-next-line
+    return parse(body, {
+      transform: (s: string) => s.trim(),
+      header: false,
+      dynamicTyping: false,
+      skipEmptyLines: 'greedy',
+      ...options
+    }).data.slice(1);
+  });
 }

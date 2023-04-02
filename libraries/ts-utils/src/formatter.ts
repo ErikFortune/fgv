@@ -29,20 +29,20 @@ Mustache.escape = (s: string) => s;
  * Destination format for some formatted string.
  * @beta
  */
-export type FormatTargets = 'text'|'markdown'|'embed';
+export type FormatTargets = 'text' | 'markdown' | 'embed';
 
 /**
  * Interface for an object that can be formatted.
  * @beta
  */
 export interface Formattable {
-    /**
-     * Formats an object using the supplied mustache template.
-     * @param format - A mustache template used to format the object.
-     * @returns {@link Success} with the resulting string, or {@link Failure}
-     * with an error message if an error occurs.
-     */
-    format(format: string): Result<string>;
+  /**
+   * Formats an object using the supplied mustache template.
+   * @param format - A mustache template used to format the object.
+   * @returns {@link Success} with the resulting string, or {@link Failure}
+   * with an error message if an error occurs.
+   */
+  format(format: string): Result<string>;
 }
 
 /**
@@ -50,26 +50,26 @@ export interface Formattable {
  * @beta
  */
 export class FormattableBase {
-    /**
-     * Helper enables derived classes to add named details to a formatted presentation.
-     * @param details - An array of detail description strings.
-     * @param label - Label to use for the new detail.
-     * @param value - Value to use for the new detail.
-     * @internal
-     */
-    protected static _tryAddDetail(details: string[], label: string, value: string|undefined): void {
-        if (value !== undefined) {
-            const padded = `  ${label}:`.padEnd(20, ' ');
-            details.push(`${padded} ${value}`);
-        }
+  /**
+   * Helper enables derived classes to add named details to a formatted presentation.
+   * @param details - An array of detail description strings.
+   * @param label - Label to use for the new detail.
+   * @param value - Value to use for the new detail.
+   * @internal
+   */
+  protected static _tryAddDetail(details: string[], label: string, value: string | undefined): void {
+    if (value !== undefined) {
+      const padded = `  ${label}:`.padEnd(20, ' ');
+      details.push(`${padded} ${value}`);
     }
+  }
 
-    /**
-     * {@inheritdoc Formattable.format}
-     */
-    public format(template: string): Result<string> {
-        return captureResult(() => Mustache.render(template, this));
-    }
+  /**
+   * {@inheritdoc Formattable.format}
+   */
+  public format(template: string): Result<string> {
+    return captureResult(() => Mustache.render(template, this));
+  }
 }
 
 /**
@@ -102,11 +102,12 @@ export type FormattersByTarget<T> = FormattersByExtendedTarget<FormatTargets, T>
  * @beta
  */
 export function formatList<T>(format: string, items: T[], itemFormatter: Formatter<T>): Result<string> {
-    return mapResults(items.map((item) => {
-        return itemFormatter(format, item);
-    })).onSuccess((results: string[]) => {
-        const filtered = results.filter((s) => (s !== ''));
-        return succeed(filtered.join('\n'));
-    });
+  return mapResults(
+    items.map((item) => {
+      return itemFormatter(format, item);
+    })
+  ).onSuccess((results: string[]) => {
+    const filtered = results.filter((s) => s !== '');
+    return succeed(filtered.join('\n'));
+  });
 }
-

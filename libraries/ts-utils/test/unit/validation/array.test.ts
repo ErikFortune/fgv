@@ -25,59 +25,45 @@ import { ArrayValidator } from '../../../src/validation/array';
 import { Validators } from '../../../src/validation';
 
 describe('ArrayValidator class', () => {
-    describe('constructor', () => {
-        test('uses options supplied via the constructor', () => {
-            const validateElement = Validators.string;
-            const trueContext = new ArrayValidator({ validateElement, options: { defaultContext: true } });
-            const falseContext = new ArrayValidator({ validateElement, options: { defaultContext: false } });
-            expect(trueContext.options.defaultContext).toBe(true);
-            expect(falseContext.options.defaultContext).toBe(false);
-        });
-
-        test('uses options supplied via the helper', () => {
-            const validateElement = Validators.string;
-            const trueContext = Validators.arrayOf(validateElement, { options: { defaultContext: true } });
-            const falseContext = Validators.arrayOf(validateElement, { options: { defaultContext: false } });
-            expect(trueContext.options.defaultContext).toBe(true);
-            expect(falseContext.options.defaultContext).toBe(false);
-        });
-
-        test('uses traits supplied via the constructor', () => {
-            const validateElement = Validators.string;
-            const optional = new ArrayValidator({ validateElement, traits: { isOptional: true } });
-            const notOptional = new ArrayValidator({ validateElement, traits: { isOptional: false } });
-            expect(optional.isOptional).toBe(true);
-            expect(notOptional.isOptional).toBe(false);
-        });
+  describe('constructor', () => {
+    test('uses options supplied via the constructor', () => {
+      const validateElement = Validators.string;
+      const trueContext = new ArrayValidator({ validateElement, options: { defaultContext: true } });
+      const falseContext = new ArrayValidator({ validateElement, options: { defaultContext: false } });
+      expect(trueContext.options.defaultContext).toBe(true);
+      expect(falseContext.options.defaultContext).toBe(false);
     });
 
-    describe('validation', () => {
-        test.each([
-            [
-                'empty array',
-                [],
-            ],
-            [
-                'array of string',
-                ['string', 'string2'],
-            ],
-        ])('succeeds for %p', (_desc, from) => {
-            expect(Validators.arrayOf(Validators.string).validate(from)).toSucceed();
-        });
-
-        test.each([
-            [
-                'non-array',
-                {},
-                /not an array/i,
-            ],
-            [
-                'mistyped array',
-                [1, 2, 3],
-                /not a string/i,
-            ],
-        ])('fails for %p', (_desc, from, expected) => {
-            expect(Validators.arrayOf(Validators.string).validate(from)).toFailWith(expected);
-        });
+    test('uses options supplied via the helper', () => {
+      const validateElement = Validators.string;
+      const trueContext = Validators.arrayOf(validateElement, { options: { defaultContext: true } });
+      const falseContext = Validators.arrayOf(validateElement, { options: { defaultContext: false } });
+      expect(trueContext.options.defaultContext).toBe(true);
+      expect(falseContext.options.defaultContext).toBe(false);
     });
+
+    test('uses traits supplied via the constructor', () => {
+      const validateElement = Validators.string;
+      const optional = new ArrayValidator({ validateElement, traits: { isOptional: true } });
+      const notOptional = new ArrayValidator({ validateElement, traits: { isOptional: false } });
+      expect(optional.isOptional).toBe(true);
+      expect(notOptional.isOptional).toBe(false);
+    });
+  });
+
+  describe('validation', () => {
+    test.each([
+      ['empty array', []],
+      ['array of string', ['string', 'string2']]
+    ])('succeeds for %p', (_desc, from) => {
+      expect(Validators.arrayOf(Validators.string).validate(from)).toSucceed();
+    });
+
+    test.each([
+      ['non-array', {}, /not an array/i],
+      ['mistyped array', [1, 2, 3], /not a string/i]
+    ])('fails for %p', (_desc, from, expected) => {
+      expect(Validators.arrayOf(Validators.string).validate(from)).toFailWith(expected);
+    });
+  });
 });

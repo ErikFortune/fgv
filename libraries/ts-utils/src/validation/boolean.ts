@@ -34,30 +34,30 @@ export type BooleanValidatorConstructorParams<TC = unknown> = GenericValidatorCo
  * @public
  */
 export class BooleanValidator<TC = unknown> extends GenericValidator<boolean, TC> {
-    /**
-     * Constructs a new {@link Validation.Classes.BooleanValidator | BooleanValidator}.
-     * @param params - Optional {@link Validation.Classes.BooleanValidatorConstructorParams | init params} for the
-     * new {@link Validation.Classes.BooleanValidator | BooleanValidator}.
-     */
-    public constructor(params?: BooleanValidatorConstructorParams<TC>) {
-        // istanbul ignore next
-        params = params ?? {};
-        super({
-            validator: BooleanValidator.validateBoolean,
-            ...params,
-        });
-    }
+  /**
+   * Constructs a new {@link Validation.Classes.BooleanValidator | BooleanValidator}.
+   * @param params - Optional {@link Validation.Classes.BooleanValidatorConstructorParams | init params} for the
+   * new {@link Validation.Classes.BooleanValidator | BooleanValidator}.
+   */
+  public constructor(params?: BooleanValidatorConstructorParams<TC>) {
+    // istanbul ignore next
+    params = params ?? {};
+    super({
+      validator: BooleanValidator.validateBoolean,
+      ...params
+    });
+  }
 
-    /**
-     * Static method which validates that a supplied `unknown` value is a `boolean`.
-     * @param from - The `unknown` value to be tested.
-     * @returns Returns `true` if `from` is a `boolean`, or {@link Failure} with an error
-     * message if not.
-     */
-    public static validateBoolean(from: unknown): boolean | Failure<boolean> {
-        if (typeof from === 'boolean') {
-            return true;
-        }
-        return fail(`"${from}": not a boolean`);
+  /**
+   * Static method which validates that a supplied `unknown` value is a `boolean`.
+   * @param from - The `unknown` value to be tested.
+   * @returns Returns `true` if `from` is a `boolean`, or {@link Failure} with an error
+   * message if not.
+   */
+  public static validateBoolean(from: unknown): boolean | Failure<boolean> {
+    if (typeof from === 'boolean') {
+      return true;
     }
+    return fail(`"${from}": not a boolean`);
+  }
 }

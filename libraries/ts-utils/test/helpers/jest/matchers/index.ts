@@ -12,16 +12,16 @@ import ToSucceedWith from './toSucceedWith';
 import toSucceedWithDetail from './toSucceedWithDetail';
 
 export default {
-    ...ToFail,
-    ...ToFailTest,
-    ...ToFailTestAndMatchSnapshot,
-    ...ToFailTestWith,
-    ...ToFailWith,
-    ...ToFailWithDetail,
-    ...ToSucceed,
-    ...ToSucceedAndMatchInlineSnapshot,
-    ...ToSucceedAndMatchSnapshot,
-    ...ToSucceedAndSatisfy,
-    ...ToSucceedWith,
-    ...toSucceedWithDetail,
+  ...ToFail,
+  ...ToFailTest,
+  ...ToFailTestAndMatchSnapshot,
+  ...ToFailTestWith,
+  ...ToFailWith,
+  ...ToFailWithDetail,
+  ...ToSucceed,
+  ...ToSucceedAndMatchInlineSnapshot,
+  ...ToSucceedAndMatchSnapshot,
+  ...ToSucceedAndSatisfy,
+  ...ToSucceedWith,
+  ...toSucceedWithDetail
 };

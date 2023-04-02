@@ -25,47 +25,47 @@ import { TypeGuardValidator } from '../../../src/validation/typeGuard';
 import { Validators } from '../../../src/validation';
 
 describe('type guard validator', () => {
-    describe('constructor', () => {
-        const description = 'string';
-        const guard = (from: unknown): from is string => typeof from === 'string';
-        test('uses options supplied via the constructor', () => {
-            const trueContext = new TypeGuardValidator({ guard, description, options: { defaultContext: true } });
-            const falseContext = new TypeGuardValidator({ guard, description, options: { defaultContext: false } });
-            expect(trueContext.options.defaultContext).toBe(true);
-            expect(falseContext.options.defaultContext).toBe(false);
-        });
-
-        test('uses options supplied via the helper', () => {
-            const trueContext = Validators.isA(description, guard, { options: { defaultContext: true } });
-            const falseContext = Validators.isA(description, guard, { options: { defaultContext: false } });
-            expect(trueContext.options.defaultContext).toBe(true);
-            expect(falseContext.options.defaultContext).toBe(false);
-        });
-
-        test('uses traits supplied via the constructor', () => {
-            const optional = new TypeGuardValidator({ description, guard, traits: { isOptional: true } });
-            const notOptional = new TypeGuardValidator({ description, guard, traits: { isOptional: false } });
-            expect(optional.isOptional).toBe(true);
-            expect(notOptional.isOptional).toBe(false);
-        });
+  describe('constructor', () => {
+    const description = 'string';
+    const guard = (from: unknown): from is string => typeof from === 'string';
+    test('uses options supplied via the constructor', () => {
+      const trueContext = new TypeGuardValidator({ guard, description, options: { defaultContext: true } });
+      const falseContext = new TypeGuardValidator({ guard, description, options: { defaultContext: false } });
+      expect(trueContext.options.defaultContext).toBe(true);
+      expect(falseContext.options.defaultContext).toBe(false);
     });
 
-    describe('validations', () => {
-        test('validates with the supplied type guard and description', () => {
-            const validator = Validators.isA('number', (from): from is number => typeof from === 'number');
-            expect(validator.validate(10)).toSucceedWith(10);
-            expect(validator.validate({})).toFailWith(/invalid number/);
-        });
-
-        test('propagates context', () => {
-            const guard = (from: unknown, context?: number[]): from is number => {
-                return typeof from === 'number' && (context === undefined || context.includes(from));
-            };
-
-            const validator = Validators.isA('selected number', guard);
-            expect(validator.validate(100)).toSucceedWith(100);
-            expect(validator.validate(20, [10, 20, 30])).toSucceedWith(20);
-            expect(validator.validate(25, [10, 20, 30])).toFailWith(/invalid selected number/);
-        });
+    test('uses options supplied via the helper', () => {
+      const trueContext = Validators.isA(description, guard, { options: { defaultContext: true } });
+      const falseContext = Validators.isA(description, guard, { options: { defaultContext: false } });
+      expect(trueContext.options.defaultContext).toBe(true);
+      expect(falseContext.options.defaultContext).toBe(false);
     });
+
+    test('uses traits supplied via the constructor', () => {
+      const optional = new TypeGuardValidator({ description, guard, traits: { isOptional: true } });
+      const notOptional = new TypeGuardValidator({ description, guard, traits: { isOptional: false } });
+      expect(optional.isOptional).toBe(true);
+      expect(notOptional.isOptional).toBe(false);
+    });
+  });
+
+  describe('validations', () => {
+    test('validates with the supplied type guard and description', () => {
+      const validator = Validators.isA('number', (from): from is number => typeof from === 'number');
+      expect(validator.validate(10)).toSucceedWith(10);
+      expect(validator.validate({})).toFailWith(/invalid number/);
+    });
+
+    test('propagates context', () => {
+      const guard = (from: unknown, context?: number[]): from is number => {
+        return typeof from === 'number' && (context === undefined || context.includes(from));
+      };
+
+      const validator = Validators.isA('selected number', guard);
+      expect(validator.validate(100)).toSucceedWith(100);
+      expect(validator.validate(20, [10, 20, 30])).toSucceedWith(20);
+      expect(validator.validate(25, [10, 20, 30])).toFailWith(/invalid selected number/);
+    });
+  });
 });

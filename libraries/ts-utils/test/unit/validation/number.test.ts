@@ -28,72 +28,59 @@ import { ValidatorOptions } from '../../../src/validation';
 import { Validators } from '../../../src/validation';
 
 class TestNumberValidator<T extends number = number, TC = unknown> extends NumberValidator<T, TC> {
-    constructor(params?: NumberValidatorConstructorParams<T, TC>) {
-        super(params);
-    }
+  constructor(params?: NumberValidatorConstructorParams<T, TC>) {
+    super(params);
+  }
 
-    public get options(): ValidatorOptions<TC> {
-        return this._options;
-    }
+  public get options(): ValidatorOptions<TC> {
+    return this._options;
+  }
 
-    public static testValidate<T extends number = number>(from: unknown): boolean | Failure<T> {
-        if (from === 42) {
-            return fail('custom error message goes here');
-        }
-        return NumberValidator.validateNumber(from);
+  public static testValidate<T extends number = number>(from: unknown): boolean | Failure<T> {
+    if (from === 42) {
+      return fail('custom error message goes here');
     }
+    return NumberValidator.validateNumber(from);
+  }
 }
 
 describe('NumberValidator class', () => {
-    describe('constructor', () => {
-        test('constructs a NumberValidator with no params', () => {
-            expect(() => new NumberValidator()).not.toThrow();
-        });
-
-        test('uses options supplied via the constructor', () => {
-            const trueContext = new TestNumberValidator({ options: { defaultContext: true } });
-            const falseContext = new TestNumberValidator({ options: { defaultContext: false } });
-            expect(trueContext.options.defaultContext).toBe(true);
-            expect(falseContext.options.defaultContext).toBe(false);
-        });
-
-        test('uses traits supplied via the constructor', () => {
-            const optional = new NumberValidator({ traits: { isOptional: true } });
-            const notOptional = new NumberValidator({ traits: { isOptional: false } });
-            expect(optional.isOptional).toBe(true);
-            expect(notOptional.isOptional).toBe(false);
-        });
-
-        test('uses validator passed via the constructor', () => {
-            const custom = new NumberValidator({ validator: TestNumberValidator.testValidate });
-            expect(custom.validate(42)).toFailWith('custom error message goes here');
-        });
+  describe('constructor', () => {
+    test('constructs a NumberValidator with no params', () => {
+      expect(() => new NumberValidator()).not.toThrow();
     });
 
-    describe('validation', () => {
-        test('validates valid numbers', () => {
-            [
-                -1,
-                0,
-                1,
-                22 / 7,
-            ].forEach((t) => {
-                expect(Validators.number.validate(t)).toSucceedWith(t);
-            });
-        });
-
-        test('fails for non-numbers', () => {
-            [
-                null,
-                undefined,
-                () => 'hello',
-                '10',
-                { str: 'hello' },
-                new Date(),
-                ['hello'],
-            ].forEach((t) => {
-                expect(Validators.number.validate(t)).toFailWith(/not a number/i);
-            });
-        });
+    test('uses options supplied via the constructor', () => {
+      const trueContext = new TestNumberValidator({ options: { defaultContext: true } });
+      const falseContext = new TestNumberValidator({ options: { defaultContext: false } });
+      expect(trueContext.options.defaultContext).toBe(true);
+      expect(falseContext.options.defaultContext).toBe(false);
     });
+
+    test('uses traits supplied via the constructor', () => {
+      const optional = new NumberValidator({ traits: { isOptional: true } });
+      const notOptional = new NumberValidator({ traits: { isOptional: false } });
+      expect(optional.isOptional).toBe(true);
+      expect(notOptional.isOptional).toBe(false);
+    });
+
+    test('uses validator passed via the constructor', () => {
+      const custom = new NumberValidator({ validator: TestNumberValidator.testValidate });
+      expect(custom.validate(42)).toFailWith('custom error message goes here');
+    });
+  });
+
+  describe('validation', () => {
+    test('validates valid numbers', () => {
+      [-1, 0, 1, 22 / 7].forEach((t) => {
+        expect(Validators.number.validate(t)).toSucceedWith(t);
+      });
+    });
+
+    test('fails for non-numbers', () => {
+      [null, undefined, () => 'hello', '10', { str: 'hello' }, new Date(), ['hello']].forEach((t) => {
+        expect(Validators.number.validate(t)).toFailWith(/not a number/i);
+      });
+    });
+  });
 });

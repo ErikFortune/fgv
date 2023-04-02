@@ -31,10 +31,9 @@ import { Result, fail, succeed } from './result';
  * @public
  */
 // eslint-disable-next-line @typescript-eslint/ban-types
-export function isKeyOf<T extends object>(key: string|number|symbol, item: T): key is keyof T {
-    return item.hasOwnProperty(key);
+export function isKeyOf<T extends object>(key: string | number | symbol, item: T): key is keyof T {
+  return item.hasOwnProperty(key);
 }
-
 
 /**
  * Simple implicit pick function, which picks a set of properties from a supplied
@@ -45,13 +44,13 @@ export function isKeyOf<T extends object>(key: string|number|symbol, item: T): k
  * @public
  */
 export function pick<T extends object, K extends keyof T>(from: T, include: K[]): Pick<T, K> {
-    const rtrn: Partial<Pick<T, K>> = {};
-    for (const key of include) {
-        if (key in from) {
-            rtrn[key] = from[key];
-        }
+  const rtrn: Partial<Pick<T, K>> = {};
+  for (const key of include) {
+    if (key in from) {
+      rtrn[key] = from[key];
     }
-    return rtrn as Pick<T, K>;
+  }
+  return rtrn as Pick<T, K>;
 }
 
 /**
@@ -64,12 +63,12 @@ export function pick<T extends object, K extends keyof T>(from: T, include: K[])
  * @public
  */
 export function omit<T extends object, K extends keyof T>(from: T, exclude: K[]): Omit<T, K> {
-    const rtrn: Partial<Omit<T, K>> = {};
-    for (const entry of Object.entries(from).filter((e) => !exclude.includes(e[0] as keyof T as K))) {
-        rtrn[entry[0] as unknown as keyof Omit<T, K>] = entry[1];
-    }
+  const rtrn: Partial<Omit<T, K>> = {};
+  for (const entry of Object.entries(from).filter((e) => !exclude.includes(e[0] as keyof T as K))) {
+    rtrn[entry[0] as unknown as keyof Omit<T, K>] = entry[1];
+  }
 
-    return rtrn as Omit<T, K>;
+  return rtrn as Omit<T, K>;
 }
 
 /**
@@ -84,11 +83,11 @@ export function omit<T extends object, K extends keyof T>(from: T, exclude: K[])
  * @public
  */
 export function getValueOfPropertyOrDefault<T extends object>(
-    key: string|number|symbol,
-    item: T,
-    defaultValue?: unknown
+  key: string | number | symbol,
+  item: T,
+  defaultValue?: unknown
 ): unknown | undefined {
-    return isKeyOf(key, item) ? item[key] : defaultValue;
+  return isKeyOf(key, item) ? item[key] : defaultValue;
 }
 
 /**
@@ -103,9 +102,20 @@ export function getValueOfPropertyOrDefault<T extends object>(
  * @public
  */
 export function getTypeOfProperty<T extends object>(
-    key: string|number|symbol,
-    item: T): 'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'undefined' | 'undefined' | 'object' | 'function' | undefined {
-    return isKeyOf(key, item) ? typeof item[key] : undefined;
+  key: string | number | symbol,
+  item: T
+):
+  | 'string'
+  | 'number'
+  | 'bigint'
+  | 'boolean'
+  | 'symbol'
+  | 'undefined'
+  | 'undefined'
+  | 'object'
+  | 'function'
+  | undefined {
+  return isKeyOf(key, item) ? typeof item[key] : undefined;
 }
 
 /**
@@ -122,20 +132,22 @@ type KeyedThingFactory<TS, TD, TK extends string = string> = (key: TK, thing: TS
  * message if an error occurs.
  * @public
  */
-export function recordToMap<TS, TD, TK extends string = string>(src: Record<TK, TS>, factory: KeyedThingFactory<TS, TD, TK>): Result<Map<TK, TD>> {
-    const map = new Map<TK, TD>();
-    for (const key in src) {
-        if (src[key] !== undefined) {
-            const itemResult = factory(key, src[key]);
-            if (itemResult.isSuccess()) {
-                map.set(key, itemResult.value);
-            }
-            else {
-                return fail(`${key}: ${itemResult.message}`);
-            }
-        }
+export function recordToMap<TS, TD, TK extends string = string>(
+  src: Record<TK, TS>,
+  factory: KeyedThingFactory<TS, TD, TK>
+): Result<Map<TK, TD>> {
+  const map = new Map<TK, TD>();
+  for (const key in src) {
+    if (src[key] !== undefined) {
+      const itemResult = factory(key, src[key]);
+      if (itemResult.isSuccess()) {
+        map.set(key, itemResult.value);
+      } else {
+        return fail(`${key}: ${itemResult.message}`);
+      }
     }
-    return succeed(map);
+  }
+  return succeed(map);
 }
 
 /**
@@ -146,8 +158,11 @@ export function recordToMap<TS, TD, TK extends string = string>(src: Record<TK, 
  * if `src` is `undefined`. Returns {@link Failure} with a message if an error occurs.
  * @public
  */
-export function optionalRecordToMap<TS, TD, TK extends string = string>(src: Record<TK, TS>|undefined, factory: KeyedThingFactory<TS, TD, TK>): Result<Map<TK, TD>|undefined> {
-    return (src === undefined) ? succeed(undefined) : recordToMap(src, factory);
+export function optionalRecordToMap<TS, TD, TK extends string = string>(
+  src: Record<TK, TS> | undefined,
+  factory: KeyedThingFactory<TS, TD, TK>
+): Result<Map<TK, TD> | undefined> {
+  return src === undefined ? succeed(undefined) : recordToMap(src, factory);
 }
 
 /**
@@ -158,8 +173,11 @@ export function optionalRecordToMap<TS, TD, TK extends string = string>(src: Rec
  * Returns {@link Failure} with a message if an error occurs.
  * @public
  */
-export function optionalRecordToPossiblyEmptyMap<TS, TD, TK extends string = string>(src: Record<TK, TS>|undefined, factory: KeyedThingFactory<TS, TD, TK>): Result<Map<TK, TD>> {
-    return (src === undefined) ? succeed(new Map<TK, TD>()) : recordToMap(src, factory);
+export function optionalRecordToPossiblyEmptyMap<TS, TD, TK extends string = string>(
+  src: Record<TK, TS> | undefined,
+  factory: KeyedThingFactory<TS, TD, TK>
+): Result<Map<TK, TD>> {
+  return src === undefined ? succeed(new Map<TK, TD>()) : recordToMap(src, factory);
 }
 
 /**
@@ -170,20 +188,22 @@ export function optionalRecordToPossiblyEmptyMap<TS, TD, TK extends string = str
  * {@link Failure} with an error message if an error occurs.
  * @public
  */
-export function mapToRecord<TS, TD, TK extends string = string>(src: Map<TK, TS>, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD>> {
-    const record: Record<TK, TD> = {} as Record<TK, TD>;
-    for (const kvp of src) {
-        if (kvp[1] !== undefined) {
-            const itemResult = factory(kvp[0], kvp[1]);
-            if (itemResult.isSuccess()) {
-                record[kvp[0]] = itemResult.value;
-            }
-            else {
-                return fail(`${kvp[0]}: ${itemResult.message}`);
-            }
-        }
+export function mapToRecord<TS, TD, TK extends string = string>(
+  src: Map<TK, TS>,
+  factory: KeyedThingFactory<TS, TD, TK>
+): Result<Record<TK, TD>> {
+  const record: Record<TK, TD> = {} as Record<TK, TD>;
+  for (const kvp of src) {
+    if (kvp[1] !== undefined) {
+      const itemResult = factory(kvp[0], kvp[1]);
+      if (itemResult.isSuccess()) {
+        record[kvp[0]] = itemResult.value;
+      } else {
+        return fail(`${kvp[0]}: ${itemResult.message}`);
+      }
     }
-    return succeed(record);
+  }
+  return succeed(record);
 }
 
 /**
@@ -194,8 +214,11 @@ export function mapToRecord<TS, TD, TK extends string = string>(src: Map<TK, TS>
  * `src` is `undefined`. Returns {@link Failure} with a message if an error occurs.
  * @public
  */
-export function optionalMapToRecord<TS, TD, TK extends string = string>(src: Map<TK, TS>|undefined, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD>|undefined> {
-    return (src === undefined) ? succeed(undefined) : mapToRecord(src, factory);
+export function optionalMapToRecord<TS, TD, TK extends string = string>(
+  src: Map<TK, TS> | undefined,
+  factory: KeyedThingFactory<TS, TD, TK>
+): Result<Record<TK, TD> | undefined> {
+  return src === undefined ? succeed(undefined) : mapToRecord(src, factory);
 }
 
 /**
@@ -206,6 +229,9 @@ export function optionalMapToRecord<TS, TD, TK extends string = string>(src: Map
  * Returns {@link Failure} with a message if an error occurs.
  * @public
  */
-export function optionalMapToPossiblyEmptyRecord<TS, TD, TK extends string = string>(src: Map<TK, TS>|undefined, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD>> {
-    return (src === undefined) ? succeed({} as Record<TK, TD>) : mapToRecord(src, factory);
+export function optionalMapToPossiblyEmptyRecord<TS, TD, TK extends string = string>(
+  src: Map<TK, TS> | undefined,
+  factory: KeyedThingFactory<TS, TD, TK>
+): Result<Record<TK, TD>> {
+  return src === undefined ? succeed({} as Record<TK, TD>) : mapToRecord(src, factory);
 }

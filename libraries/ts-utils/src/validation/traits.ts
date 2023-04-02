@@ -27,7 +27,7 @@
  * @public
  */
 export interface FunctionConstraintTrait {
-    type: 'function';
+  type: 'function';
 }
 
 /**
@@ -41,23 +41,23 @@ export type ConstraintTrait = FunctionConstraintTrait;
  * @public
  */
 export interface ValidatorTraitValues {
-    /**
-     * Indicates whether the validator accepts `undefined` as
-     * a valid value.
-     */
-    readonly isOptional: boolean;
+  /**
+   * Indicates whether the validator accepts `undefined` as
+   * a valid value.
+   */
+  readonly isOptional: boolean;
 
-    /**
-     * If present, indicates that the result will be branded
-     * with the corresponding brand.
-     */
-    readonly brand?: string;
+  /**
+   * If present, indicates that the result will be branded
+   * with the corresponding brand.
+   */
+  readonly brand?: string;
 
-    /**
-     * Zero or more additional {@link Validation.ConstraintTrait | ConstraintTrait}s
-     * describing additional constraints applied by this {@link Validation.Validator | Validator}.
-     */
-    readonly constraints: ConstraintTrait[];
+  /**
+   * Zero or more additional {@link Validation.ConstraintTrait | ConstraintTrait}s
+   * describing additional constraints applied by this {@link Validation.Validator | Validator}.
+   */
+  readonly constraints: ConstraintTrait[];
 }
 
 /**
@@ -65,8 +65,8 @@ export interface ValidatorTraitValues {
  * @public
  */
 export const defaultValidatorTraits: ValidatorTraitValues = {
-    isOptional: false,
-    constraints: [],
+  isOptional: false,
+  constraints: []
 };
 
 /**
@@ -74,39 +74,36 @@ export const defaultValidatorTraits: ValidatorTraitValues = {
  * @public
  */
 export class ValidatorTraits implements ValidatorTraitValues {
-    /**
-     * {@inheritdoc Validation.ValidatorTraitValues.isOptional}
-     */
-    public readonly isOptional: boolean;
+  /**
+   * {@inheritdoc Validation.ValidatorTraitValues.isOptional}
+   */
+  public readonly isOptional: boolean;
 
-    /**
-     * {@inheritdoc Validation.ValidatorTraitValues.brand}
-     */
-    public readonly brand?: string;
+  /**
+   * {@inheritdoc Validation.ValidatorTraitValues.brand}
+   */
+  public readonly brand?: string;
 
-    /**
-     * {@inheritdoc Validation.ValidatorTraitValues.constraints}
-     */
-    public readonly constraints: ConstraintTrait[];
+  /**
+   * {@inheritdoc Validation.ValidatorTraitValues.constraints}
+   */
+  public readonly constraints: ConstraintTrait[];
 
-    /**
-     * Constructs a new {@link Validation.ValidatorTraits | ValidatorTraits} optionally
-     * initialized with the supplied base and initial values.
-     * @remarks
-     * Initial values take priority over base values, which fall back to the global default values.
-     * @param init - Partial initial values to be set in the resulting {@link Validation.Validator | Validator}.
-     * @param base - Base values to be used when no initial values are present.
-     */
-    public constructor(
-        init?: Partial<ValidatorTraitValues>,
-        base?: ValidatorTraitValues,
-    ) {
-        this.isOptional = init?.isOptional ?? base?.isOptional ?? defaultValidatorTraits.isOptional;
-        this.brand = init?.brand ?? base?.brand ?? defaultValidatorTraits.brand;
-        this.constraints = [
-            ...defaultValidatorTraits.constraints,
-            ...(base?.constraints ?? []),
-            ...(init?.constraints ?? []),
-        ];
-    }
+  /**
+   * Constructs a new {@link Validation.ValidatorTraits | ValidatorTraits} optionally
+   * initialized with the supplied base and initial values.
+   * @remarks
+   * Initial values take priority over base values, which fall back to the global default values.
+   * @param init - Partial initial values to be set in the resulting {@link Validation.Validator | Validator}.
+   * @param base - Base values to be used when no initial values are present.
+   */
+  public constructor(init?: Partial<ValidatorTraitValues>, base?: ValidatorTraitValues) {
+    this.isOptional = init?.isOptional ?? base?.isOptional ?? defaultValidatorTraits.isOptional;
+    this.brand = init?.brand ?? base?.brand ?? defaultValidatorTraits.brand;
+    this.constraints = [
+      ...defaultValidatorTraits.constraints,
+      ...(base?.constraints ?? []),
+      ...(init?.constraints ?? [])
+    ];
+  }
 }

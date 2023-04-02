@@ -27,36 +27,38 @@ import { GenericValidator, GenericValidatorConstructorParams } from './genericVa
  * Parameters used to construct a {@link Validation.Classes.NumberValidator | NumberValidator}.
  * @public
  */
-export type NumberValidatorConstructorParams<T extends number = number, TC = unknown> = GenericValidatorConstructorParams<T, TC>;
-
+export type NumberValidatorConstructorParams<
+  T extends number = number,
+  TC = unknown
+> = GenericValidatorConstructorParams<T, TC>;
 
 /**
  * An in-place {@link Validation.Validator | Validator} for `number` values.
  * @public
  */
 export class NumberValidator<T extends number = number, TC = unknown> extends GenericValidator<T, TC> {
-    /**
-     * Constructs a new {@link Validation.Classes.NumberValidator | NumberValidator}.
-     * @param params - Optional {@link Validation.Classes.NumberValidatorConstructorParams | init params} for the
-     * new {@link Validation.Classes.NumberValidator | NumberValidator}.
-     */
-    public constructor(params?: NumberValidatorConstructorParams<T, TC>) {
-        super({
-            validator: NumberValidator.validateNumber,
-            ...(params ?? {}),
-        });
-    }
+  /**
+   * Constructs a new {@link Validation.Classes.NumberValidator | NumberValidator}.
+   * @param params - Optional {@link Validation.Classes.NumberValidatorConstructorParams | init params} for the
+   * new {@link Validation.Classes.NumberValidator | NumberValidator}.
+   */
+  public constructor(params?: NumberValidatorConstructorParams<T, TC>) {
+    super({
+      validator: NumberValidator.validateNumber,
+      ...(params ?? {})
+    });
+  }
 
-    /**
-     * Static method which validates that a supplied `unknown` value is a `number`.
-     * @param from - The `unknown` value to be tested.
-     * @returns Returns `true` if `from` is a `number`, or {@link Failure} with an error
-     * message if not.
-     */
-    public static validateNumber<T extends number>(from: unknown): boolean | Failure<T> {
-        if (typeof from === 'number') {
-            return true;
-        }
-        return fail<T>(`"${from}": not a number`);
+  /**
+   * Static method which validates that a supplied `unknown` value is a `number`.
+   * @param from - The `unknown` value to be tested.
+   * @returns Returns `true` if `from` is a `number`, or {@link Failure} with an error
+   * message if not.
+   */
+  public static validateNumber<T extends number>(from: unknown): boolean | Failure<T> {
+    if (typeof from === 'number') {
+      return true;
     }
+    return fail<T>(`"${from}": not a number`);
+  }
 }

@@ -24,73 +24,75 @@ import '../helpers/jest';
 import { Normalizer } from '../../src';
 
 describe('Normalizer', () => {
-    describe('Normalizer class', () => {
-        const normalizer = new Normalizer();
-        const now = Date.now();
-        test.each([
-            ['strings', 'hello', 'hello'],
-            ['numbers', 123456, 123456],
-            ['booleans', false, false],
-            ['undefined', undefined, undefined],
-            ['null', null, null],
-            ['Date values', new Date(now), new Date(now)],
-            ['RegExp values', /^.*test.*$/i, /^.*test.*$/i],
-            ['arrays', ['this', 'is', 10, true], ['this', 'is', 10, true]],
-            ['objects', { a: 'hello', b: 'goodbye' }, { b: 'goodbye', a: 'hello' }],
-            [
-                'maps',
-                new Map([['a', 'hello'], ['b', 'goodbye']]),
-                new Map([['b', 'goodbye'], ['a', 'hello']]),
-            ],
-            [
-                'sets',
-                new Set(['hello', 10, true]),
-                new Set([true, 'hello', 10]),
-            ],
-        ])('computes the same ha %p', (_desc, v1, v2) => {
-            expect(normalizer.normalize(v1)).toSucceedWith(v2);
-        });
-
-        test('BigInt', () => {
-            // eslint-disable-next-line no-undef
-            const bi = BigInt('0x1ffffffffffffffffffffffffffffff');
-            expect(normalizer.normalize(bi)).toSucceedWith(bi);
-        });
-
-        test('normalizes a deeply nested object', () => {
-            const v1 = {
-                str: 'hello',
-                arr: [1, 'string', true, { a: 'a', b: 'b' }],
-                child: {
-                    p1: 'prop1',
-                    p2: 2,
-                    p3: /^.*$/i,
-                    p4: [1, 2, 3, 4],
-                    p5: 'test',
-                },
-            };
-            const v2 = {
-                arr: [1, 'string', true, { b: 'b', a: 'a' }],
-                child: {
-                    p4: [1, 2, 3, 4],
-                    p2: 2,
-                    p5: 'test',
-                    p1: 'prop1',
-                    p3: /^.*$/i,
-                },
-                str: 'hello',
-            };
-            expect(normalizer.normalize(v1)).toEqual(normalizer.normalize(v2));
-        });
-
-        test('does not normalize array order', () => {
-            expect(normalizer.normalize([2, 3, 1])).toSucceedAndSatisfy((n) => {
-                expect(n).toEqual([2, 3, 1]);
-            });
-        });
-
-        test('fails for a non-normalizable function', () => {
-            expect(normalizer.normalize(() => 'hello')).toFailWith(/unexpected type/i);
-        });
+  describe('Normalizer class', () => {
+    const normalizer = new Normalizer();
+    const now = Date.now();
+    test.each([
+      ['strings', 'hello', 'hello'],
+      ['numbers', 123456, 123456],
+      ['booleans', false, false],
+      ['undefined', undefined, undefined],
+      ['null', null, null],
+      ['Date values', new Date(now), new Date(now)],
+      ['RegExp values', /^.*test.*$/i, /^.*test.*$/i],
+      ['arrays', ['this', 'is', 10, true], ['this', 'is', 10, true]],
+      ['objects', { a: 'hello', b: 'goodbye' }, { b: 'goodbye', a: 'hello' }],
+      [
+        'maps',
+        new Map([
+          ['a', 'hello'],
+          ['b', 'goodbye']
+        ]),
+        new Map([
+          ['b', 'goodbye'],
+          ['a', 'hello']
+        ])
+      ],
+      ['sets', new Set(['hello', 10, true]), new Set([true, 'hello', 10])]
+    ])('computes the same ha %p', (_desc, v1, v2) => {
+      expect(normalizer.normalize(v1)).toSucceedWith(v2);
     });
+
+    test('BigInt', () => {
+      // eslint-disable-next-line no-undef
+      const bi = BigInt('0x1ffffffffffffffffffffffffffffff');
+      expect(normalizer.normalize(bi)).toSucceedWith(bi);
+    });
+
+    test('normalizes a deeply nested object', () => {
+      const v1 = {
+        str: 'hello',
+        arr: [1, 'string', true, { a: 'a', b: 'b' }],
+        child: {
+          p1: 'prop1',
+          p2: 2,
+          p3: /^.*$/i,
+          p4: [1, 2, 3, 4],
+          p5: 'test'
+        }
+      };
+      const v2 = {
+        arr: [1, 'string', true, { b: 'b', a: 'a' }],
+        child: {
+          p4: [1, 2, 3, 4],
+          p2: 2,
+          p5: 'test',
+          p1: 'prop1',
+          p3: /^.*$/i
+        },
+        str: 'hello'
+      };
+      expect(normalizer.normalize(v1)).toEqual(normalizer.normalize(v2));
+    });
+
+    test('does not normalize array order', () => {
+      expect(normalizer.normalize([2, 3, 1])).toSucceedAndSatisfy((n) => {
+        expect(n).toEqual([2, 3, 1]);
+      });
+    });
+
+    test('fails for a non-normalizable function', () => {
+      expect(normalizer.normalize(() => 'hello')).toFailWith(/unexpected type/i);
+    });
+  });
 });

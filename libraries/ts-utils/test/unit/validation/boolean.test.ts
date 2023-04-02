@@ -24,30 +24,27 @@ import '../../helpers/jest';
 import { Validators } from '../../../src/validation';
 
 describe('boolean validator', () => {
-    describe('validation', () => {
-        test('validates valid boolean values', () => {
-            [
-                true,
-                false,
-            ].forEach((t) => {
-                expect(Validators.boolean.validate(t)).toSucceedWith(t);
-            });
-        });
-
-        test('fails for non-boolean', () => {
-            [
-                null,
-                undefined,
-                () => 'hello',
-                '10',
-                'true',
-                'false',
-                { str: 'hello' },
-                new Date(),
-                ['hello'],
-            ].forEach((t) => {
-                expect(Validators.boolean.validate(t)).toFailWith(/not a boolean/i);
-            });
-        });
+  describe('validation', () => {
+    test('validates valid boolean values', () => {
+      [true, false].forEach((t) => {
+        expect(Validators.boolean.validate(t)).toSucceedWith(t);
+      });
     });
+
+    test('fails for non-boolean', () => {
+      [
+        null,
+        undefined,
+        () => 'hello',
+        '10',
+        'true',
+        'false',
+        { str: 'hello' },
+        new Date(),
+        ['hello']
+      ].forEach((t) => {
+        expect(Validators.boolean.validate(t)).toFailWith(/not a boolean/i);
+      });
+    });
+  });
 });

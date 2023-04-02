@@ -1,30 +1,22 @@
 {
-    "compilerOptions": {
-        "declaration": true,
-        "declarationMap": true,
-        "target": "es2018",
-        "module": "commonjs",
-        "outDir": "dist",
-        "inlineSourceMap": true,
-        "inlineSources": true,
-        "allowSyntheticDefaultImports": true,
-        "baseUrl": ".",
-        "strict": true,
-        "strictNullChecks": true,
-        "esModuleInterop": true,
-        "paths": {
-            "*": [
-                "node_modules/",
-            ],
-            "typings/*": [
-                "src/typings/*"
-            ]
-        },
-    },
-    "include": [
-        "src/**/*.ts", "src/validation/valid",
-    ],
-    "exclude": [
-        "src/test/**/*.spec.ts"
-    ]
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "target": "es2018",
+    "module": "commonjs",
+    "outDir": "dist",
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "strict": true,
+    "strictNullChecks": true,
+    "esModuleInterop": true,
+    "paths": {
+      "*": ["node_modules/"],
+      "typings/*": ["src/typings/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/validation/valid"],
+  "exclude": ["src/test/**/*.spec.ts"]
 }

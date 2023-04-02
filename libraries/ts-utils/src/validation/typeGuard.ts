@@ -30,9 +30,10 @@ import { ValidatorOptions } from './validator';
  * Parameters used to construct a {@link Validation.Classes.TypeGuardValidator}.
  * @public
  */
-export interface TypeGuardValidatorConstructorParams<T, TC = unknown> extends ValidatorBaseConstructorParams<T, TC> {
-    guard: TypeGuardWithContext<T, TC>;
-    description: string;
+export interface TypeGuardValidatorConstructorParams<T, TC = unknown>
+  extends ValidatorBaseConstructorParams<T, TC> {
+  guard: TypeGuardWithContext<T, TC>;
+  description: string;
 }
 
 /**
@@ -41,40 +42,40 @@ export interface TypeGuardValidatorConstructorParams<T, TC = unknown> extends Va
  * @public
  */
 export class TypeGuardValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
-    /**
-     * {@link Validation.ValidatorOptions | Options} which apply to this
-     * validator.
-     */
-    public readonly options: ValidatorOptions<TC>;
-    public readonly description: string;
+  /**
+   * {@link Validation.ValidatorOptions | Options} which apply to this
+   * validator.
+   */
+  public readonly options: ValidatorOptions<TC>;
+  public readonly description: string;
 
-    protected readonly _guard: TypeGuardWithContext<T, TC>;
+  protected readonly _guard: TypeGuardWithContext<T, TC>;
 
-    /**
-     * Constructs a new {@link Validation.Classes.TypeGuardValidator | TypeGuardValidator}.
-     * @param params - Optional {@link Validation.Classes.TypeGuardValidatorConstructorParams | init params} for the
-     * new {@link Validation.Classes.TypeGuardValidator | TypeGuardValidator}.
-     */
-    public constructor(params: TypeGuardValidatorConstructorParams<T, TC>) {
-        super(params);
-        this.description = params.description;
-        this._guard = params.guard;
-        this.options = params.options ?? {};
+  /**
+   * Constructs a new {@link Validation.Classes.TypeGuardValidator | TypeGuardValidator}.
+   * @param params - Optional {@link Validation.Classes.TypeGuardValidatorConstructorParams | init params} for the
+   * new {@link Validation.Classes.TypeGuardValidator | TypeGuardValidator}.
+   */
+  public constructor(params: TypeGuardValidatorConstructorParams<T, TC>) {
+    super(params);
+    this.description = params.description;
+    this._guard = params.guard;
+    this.options = params.options ?? {};
+  }
+
+  /**
+   * Static method which validates that a supplied `unknown` value matches the supplied
+   * type guard, returning a `Failure<T>` containing more information about a failure.
+   * @param from - Value to be converted.
+   * @param context - Optional validation context.
+   * @returns `true` if `from` is valid, {@link Failure | Failure<T>}
+   * with an error message if `from` is invalid.
+   * @internal
+   */
+  protected _validate(from: unknown, context?: TC): boolean | Failure<T> {
+    if (this._guard(from, context)) {
+      return true;
     }
-
-    /**
-     * Static method which validates that a supplied `unknown` value matches the supplied
-     * type guard, returning a `Failure<T>` containing more information about a failure.
-     * @param from - Value to be converted.
-     * @param context - Optional validation context.
-     * @returns `true` if `from` is valid, {@link Failure | Failure<T>}
-     * with an error message if `from` is invalid.
-     * @internal
-     */
-    protected _validate(from: unknown, context?: TC): boolean | Failure<T> {
-        if (this._guard(from, context)) {
-            return true;
-        }
-        return fail(`invalid ${this.description} (${JSON.stringify(from)})`);
-    }
+    return fail(`invalid ${this.description} (${JSON.stringify(from)})`);
+  }
 }

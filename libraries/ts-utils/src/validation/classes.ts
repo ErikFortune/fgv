@@ -26,5 +26,10 @@ export { ArrayValidator, ArrayValidatorConstructorParams } from './array';
 export { StringValidator, StringValidatorConstructorParams } from './string';
 export { BooleanValidator, BooleanValidatorConstructorParams } from './boolean';
 export { NumberValidator, NumberValidatorConstructorParams } from './number';
-export { FieldValidators, ObjectValidator, ObjectValidatorConstructorParams, ObjectValidatorOptions } from './object';
+export {
+  FieldValidators,
+  ObjectValidator,
+  ObjectValidatorConstructorParams,
+  ObjectValidatorOptions
+} from './object';
 export { TypeGuardValidator, TypeGuardValidatorConstructorParams } from './typeGuard';

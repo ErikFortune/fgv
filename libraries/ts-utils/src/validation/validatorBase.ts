@@ -27,32 +27,35 @@ import { Failure } from '../result';
 /**
  * @internal
  */
-export type ValidatorBaseConstructorParams<T, TC> = Omit<GenericValidatorConstructorParams<T, TC>, 'validator'>;
+export type ValidatorBaseConstructorParams<T, TC> = Omit<
+  GenericValidatorConstructorParams<T, TC>,
+  'validator'
+>;
 
 /**
  * Abstract base helper class for specific validator implementations
  * @internal
  */
 export abstract class ValidatorBase<T, TC = undefined> extends GenericValidator<T, TC> {
-    /**
-     * Inner constructor
-     * @param params - Initialization params.
-     * @internal
-     */
-    protected constructor(params: Partial<ValidatorBaseConstructorParams<T, TC>>) {
-        super({
-            validator: (from, context) => this._validate(from, context),
-            ...params,
-        });
-    }
+  /**
+   * Inner constructor
+   * @param params - Initialization params.
+   * @internal
+   */
+  protected constructor(params: Partial<ValidatorBaseConstructorParams<T, TC>>) {
+    super({
+      validator: (from, context) => this._validate(from, context),
+      ...params
+    });
+  }
 
-    /**
-     * Abstract validation method to me implemented by derived classes.
-     * @param from - Value to be converted.
-     * @param context - Optional validation context.
-     * @returns `true` if `from` is valid, {@link Failure | Failure<T>}
-     * with an error message if `from` is invalid.
-     * @internal
-     */
-    protected abstract _validate(from: unknown, context?: TC): boolean | Failure<T>;
+  /**
+   * Abstract validation method to me implemented by derived classes.
+   * @param from - Value to be converted.
+   * @param context - Optional validation context.
+   * @returns `true` if `from` is valid, {@link Failure | Failure<T>}
+   * with an error message if `from` is invalid.
+   * @internal
+   */
+  protected abstract _validate(from: unknown, context?: TC): boolean | Failure<T>;
 }

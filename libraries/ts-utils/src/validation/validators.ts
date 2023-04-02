@@ -62,10 +62,10 @@ export const boolean = new BooleanValidator();
  * @public
  */
 export function object<T, TC = unknown>(
-    fields: FieldValidators<T, TC>,
-    params?: Omit<ObjectValidatorConstructorParams<T, TC>, 'fields'>,
+  fields: FieldValidators<T, TC>,
+  params?: Omit<ObjectValidatorConstructorParams<T, TC>, 'fields'>
 ): ObjectValidator<T, TC> {
-    return new ObjectValidator({ fields, ...(params ?? {}) });
+  return new ObjectValidator({ fields, ...(params ?? {}) });
 }
 
 /**
@@ -77,10 +77,10 @@ export function object<T, TC = unknown>(
  * @public
  */
 export function arrayOf<T, TC>(
-    validateElement: Validator<T, TC>,
-    params?: Omit<ArrayValidatorConstructorParams<T, TC>, 'validateElement'>
+  validateElement: Validator<T, TC>,
+  params?: Omit<ArrayValidatorConstructorParams<T, TC>, 'validateElement'>
 ): ArrayValidator<T, TC> {
-    return new ArrayValidator({ validateElement, ...(params ?? {}) });
+  return new ArrayValidator({ validateElement, ...(params ?? {}) });
 }
 
 /**
@@ -89,16 +89,16 @@ export function arrayOf<T, TC>(
  * @public
  */
 export function enumeratedValue<T extends string>(values: T[]): Validator<T, T[]> {
-    return new GenericValidator({
-        validator: (from: unknown, context?: T[]): boolean | Failure<T> => {
-            if (typeof from === 'string') {
-                const v = context ?? values;
-                const index = v.indexOf(from as T);
-                return index >= 0 ? true : fail(`Invalid enumerated value "${from}"  - expected: (${v.join(', ')})`);
-            }
-            return fail(`Not a string: "${JSON.stringify(from, undefined, 2)}`);
-        },
-    });
+  return new GenericValidator({
+    validator: (from: unknown, context?: T[]): boolean | Failure<T> => {
+      if (typeof from === 'string') {
+        const v = context ?? values;
+        const index = v.indexOf(from as T);
+        return index >= 0 ? true : fail(`Invalid enumerated value "${from}"  - expected: (${v.join(', ')})`);
+      }
+      return fail(`Not a string: "${JSON.stringify(from, undefined, 2)}`);
+    }
+  });
 }
 
 /**
@@ -106,12 +106,16 @@ export function enumeratedValue<T extends string>(values: T[]): Validator<T, T[]
  * @param value - the literal value to be validated
  * @public
  */
-export function literal<T extends string | number | boolean | symbol | null | undefined>(value: T): Validator<T> {
-    return new GenericValidator({
-        validator: (from: unknown): boolean | Failure<T> => {
-            return from === value ? true : fail(`Expected literal ${String(value)}, found "${JSON.stringify(from, undefined, 2)}`);
-        },
-    });
+export function literal<T extends string | number | boolean | symbol | null | undefined>(
+  value: T
+): Validator<T> {
+  return new GenericValidator({
+    validator: (from: unknown): boolean | Failure<T> => {
+      return from === value
+        ? true
+        : fail(`Expected literal ${String(value)}, found "${JSON.stringify(from, undefined, 2)}`);
+    }
+  });
 }
 
 /**
@@ -124,9 +128,9 @@ export function literal<T extends string | number | boolean | symbol | null | un
  * @public
  */
 export function isA<T, TC>(
-    description: string,
-    guard: TypeGuardWithContext<T, TC>,
-    params?: Omit<TypeGuardValidatorConstructorParams<T, TC>, 'description' | 'guard'>
+  description: string,
+  guard: TypeGuardWithContext<T, TC>,
+  params?: Omit<TypeGuardValidatorConstructorParams<T, TC>, 'description' | 'guard'>
 ): TypeGuardValidator<T, TC> {
-    return new TypeGuardValidator({ description, guard, ...(params ?? {}) });
+  return new TypeGuardValidator({ description, guard, ...(params ?? {}) });
 }

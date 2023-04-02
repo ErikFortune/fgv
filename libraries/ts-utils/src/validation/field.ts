@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2020 Erik Fortune
  *
@@ -31,7 +30,7 @@ import { isKeyOf } from '../utils';
  * @public
  */
 export interface FieldValidatorOptions<TC> extends ValidatorOptions<TC> {
-    optional?: boolean;
+  optional?: boolean;
 }
 
 /**
@@ -39,62 +38,62 @@ export interface FieldValidatorOptions<TC> extends ValidatorOptions<TC> {
  * an an object.
  * @public
  */
-export class FieldValidator<T, TC=undefined> extends ValidatorBase<T, TC> {
-    /**
-     * The name of the property that this validator should validate.
-     */
-    public readonly fieldName: string;
-    /**
-     * The {@link Validation.Validator | Validator} to be applied against the named property.
-     */
-    public readonly fieldValidator: Validator<T, TC>;
-    /**
-     * @internal
-     */
-    protected readonly _fieldOptions: FieldValidatorOptions<TC>;
+export class FieldValidator<T, TC = undefined> extends ValidatorBase<T, TC> {
+  /**
+   * The name of the property that this validator should validate.
+   */
+  public readonly fieldName: string;
+  /**
+   * The {@link Validation.Validator | Validator} to be applied against the named property.
+   */
+  public readonly fieldValidator: Validator<T, TC>;
+  /**
+   * @internal
+   */
+  protected readonly _fieldOptions: FieldValidatorOptions<TC>;
 
-    /**
-     * Constructs a new {@link Validation.FieldValidator | FieldValidator.}.
-     * @param fieldName - The name of the property that this validator should validate.
-     * @param fieldValidator - The {@link Validation.Validator | Validator} to be applied
-     * against the named property.
-     * @param options - Additional {@link Validation.FieldValidatorOptions | options} to be
-     * applied to this validation.
-     */
-    public constructor(
-        fieldName: string,
-        fieldValidator: Validator<T, TC>,
-        options?: FieldValidatorOptions<TC>,
-    ) {
-        super({ options });
-        this.fieldName = fieldName;
-        this.fieldValidator = fieldValidator;
-        // istanbul ignore next
-        this._fieldOptions = options ?? {};
-    }
+  /**
+   * Constructs a new {@link Validation.FieldValidator | FieldValidator.}.
+   * @param fieldName - The name of the property that this validator should validate.
+   * @param fieldValidator - The {@link Validation.Validator | Validator} to be applied
+   * against the named property.
+   * @param options - Additional {@link Validation.FieldValidatorOptions | options} to be
+   * applied to this validation.
+   */
+  public constructor(
+    fieldName: string,
+    fieldValidator: Validator<T, TC>,
+    options?: FieldValidatorOptions<TC>
+  ) {
+    super({ options });
+    this.fieldName = fieldName;
+    this.fieldValidator = fieldValidator;
+    // istanbul ignore next
+    this._fieldOptions = options ?? {};
+  }
 
-    /**
-     * {@inheritdoc Validation.ValidatorBase._validate}
-     */
-    protected _validate(from: unknown, context?: TC): boolean | Failure<T> {
-        if (typeof from === 'object' && !Array.isArray(from) && from !== null) {
-            const optional = this._fieldOptions.optional === true;
+  /**
+   * {@inheritdoc Validation.ValidatorBase._validate}
+   */
+  protected _validate(from: unknown, context?: TC): boolean | Failure<T> {
+    if (typeof from === 'object' && !Array.isArray(from) && from !== null) {
+      const optional = this._fieldOptions.optional === true;
 
-            if (isKeyOf(this.fieldName, from)) {
-                if ((!optional) || (from[this.fieldName] !== undefined)) {
-                    const result = this.fieldValidator.validate(from[this.fieldName], context).onFailure((message: string) => {
-                        return fail(`${this.fieldName}: ${message}`);
-                    });
+      if (isKeyOf(this.fieldName, from)) {
+        if (!optional || from[this.fieldName] !== undefined) {
+          const result = this.fieldValidator
+            .validate(from[this.fieldName], context)
+            .onFailure((message: string) => {
+              return fail(`${this.fieldName}: ${message}`);
+            });
 
-                    return result.success ? true : result;
-                }
-            }
-
-            return optional
-                ? true
-                : fail(`"${this.fieldName}": Field not found in "${JSON.stringify(from)}`);
+          return result.success ? true : result;
         }
-        // istanbul ignore next -- defense in depth
-        return fail(`Cannot validate field '${this.fieldName}' from non-object "${JSON.stringify(from)}"`);
+      }
+
+      return optional ? true : fail(`"${this.fieldName}": Field not found in "${JSON.stringify(from)}`);
     }
+    // istanbul ignore next -- defense in depth
+    return fail(`Cannot validate field '${this.fieldName}' from non-object "${JSON.stringify(from)}"`);
+  }
 }
