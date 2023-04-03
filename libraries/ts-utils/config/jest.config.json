@@ -9,5 +9,7 @@
       "statements": 100
     }
   },
+  "collectCoverage": true,
+  "collectCoverageFrom": ["src/packlets/**/*.ts", "!src/test/**/*.ts"],
   "coverageReporters": ["text", "lcov", "html"]
 }

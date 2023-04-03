@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Erik Fortune
+ * Copyright (c) 2021 Erik Fortune
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +20,31 @@
  * SOFTWARE.
  */
 
-import * as Converters from './packlets/converters';
-import * as Csv from './packlets/csv';
-import * as Experimental from './packlets/experimental';
-import * as Hash from './packlets/hash';
-import * as RecordJar from './packlets/record-jar';
-import * as Validation from './packlets/validation';
+import { Validators } from '../../../packlets/validation';
+import '../../helpers/jest';
 
-export * from './packlets/base';
-export { Converters, Experimental, Csv, Hash, RecordJar, Validation };
+describe('boolean validator', () => {
+  describe('validation', () => {
+    test('validates valid boolean values', () => {
+      [true, false].forEach((t) => {
+        expect(Validators.boolean.validate(t)).toSucceedWith(t);
+      });
+    });
+
+    test('fails for non-boolean', () => {
+      [
+        null,
+        undefined,
+        () => 'hello',
+        '10',
+        'true',
+        'false',
+        { str: 'hello' },
+        new Date(),
+        ['hello']
+      ].forEach((t) => {
+        expect(Validators.boolean.validate(t)).toFailWith(/not a boolean/i);
+      });
+    });
+  });
+});

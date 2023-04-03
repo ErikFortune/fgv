@@ -1,3 +1,22 @@
 {
-  "cSpell.words": ["aval", "bval", "rushstack", "subdir", "TDEST", "TSRC", "xval", "zval"]
+  "cSpell.words": [
+    "aval",
+    "bval",
+    "lcov",
+    "luxon",
+    "packlets",
+    "papaparse",
+    "RANGEOF",
+    "rtrn",
+    "rushstack",
+    "subdir",
+    "TCONV",
+    "TDEST",
+    "TELEM",
+    "tsdoc",
+    "TSRC",
+    "TTOELEM",
+    "xval",
+    "zval"
+  ]
 }

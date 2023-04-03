@@ -2,12 +2,13 @@
 require('@rushstack/eslint-config/patch/modern-module-resolution');
 
 module.exports = {
-  extends: ['@rushstack/eslint-config/profile/node'],
+  extends: ['@rushstack/eslint-config/profile/node', '@rushstack/eslint-config/mixins/packlets'],
   plugins: ['eslint-plugin-tsdoc'],
   parserOptions: {
     tsconfigRootDir: __dirname
   },
   rules: {
-    'tsdoc/syntax': 'warn'
+    'tsdoc/syntax': 'warn',
+    '@rushstack/packlets/mechanics': 'warn'
   }
 };

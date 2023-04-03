@@ -20,12 +20,39 @@
  * SOFTWARE.
  */
 
-import * as Converters from './packlets/converters';
-import * as Csv from './packlets/csv';
-import * as Experimental from './packlets/experimental';
-import * as Hash from './packlets/hash';
-import * as RecordJar from './packlets/record-jar';
-import * as Validation from './packlets/validation';
+import * as fs from 'fs';
+import { parse } from 'papaparse';
+import * as path from 'path';
+import { Result, captureResult } from '../base';
 
-export * from './packlets/base';
-export { Converters, Experimental, Csv, Hash, RecordJar, Validation };
+/**
+ * Options for {@link Csv.readCsvFileSync}
+ * @beta
+ */
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export interface CsvOptions {
+  delimiter?: string;
+}
+
+/**
+ * Reads a CSV file from a supplied path.
+ * @param srcPath - Source path from which the file is read.
+ * @param options - optional parameters to control the processing
+ * @returns The contents of the file.
+ * @beta
+ */
+export function readCsvFileSync(srcPath: string, options?: CsvOptions): Result<unknown> {
+  return captureResult(() => {
+    const fullPath = path.resolve(srcPath);
+    const body = fs.readFileSync(fullPath, 'utf8').toString();
+    options = options ?? {};
+    // eslint-disable-next-line
+    return parse(body, {
+      transform: (s: string) => s.trim(),
+      header: false,
+      dynamicTyping: false,
+      skipEmptyLines: 'greedy',
+      ...options
+    }).data.slice(1);
+  });
+}
