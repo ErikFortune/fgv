@@ -23,6 +23,7 @@ import { Failure, Success, fail, succeed } from './result';
 
 export type LogLevel = 'detail' | 'info' | 'warning' | 'error' | 'silent';
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface Logger {
   log(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
   detail(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
@@ -94,7 +95,7 @@ export abstract class LoggerBase {
     return joined;
   }
 
-  protected _innerSilent(_message: string): Success<string | undefined> {
+  protected _innerSilent(__message: string): Success<string | undefined> {
     return succeed(undefined);
   }
 

@@ -25,8 +25,8 @@ import { Result, captureResult, fail, succeed } from './result';
 import { TypeGuardWithContext, Validator } from './validation';
 
 import { DateTime } from 'luxon';
-import { ExtendedArray } from './extendedArray';
 import Mustache from 'mustache';
+import { ExtendedArray } from './extendedArray';
 import { isKeyOf } from './utils';
 
 type OnError = 'failOnError' | 'ignoreErrors';
@@ -36,6 +36,7 @@ type OnError = 'failOnError' | 'ignoreErrors';
  * matching method
  * @public
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface StringMatchOptions {
   /**
    * An optional message to be displayed if a non-matching string
@@ -129,10 +130,10 @@ export class StringConverter<T extends string = string, TC = unknown> extends Ba
   public matching(match: RegExp, options?: Partial<StringMatchOptions>): StringConverter<T, TC>;
 
   /**
-   * Concrete implementation of {@link Converters.StringConverter.(matching#string) | StringConverter.matching(string)},
-   * {@link Converters.StringConverter.(matching#array) | StringConverter.matching(string[])},
-   * {@link Converters.StringConverter.(matching#set) | StringConverter.matching(Set<string>)}, and
-   * {@link Converters.StringConverter.(matching#regexp) | StringConverter.matching(RegExp)}.
+   * Concrete implementation of {@link Converters.StringConverter.matching#string | StringConverter.matching(string)},
+   * {@link Converters.StringConverter.matching#array | StringConverter.matching(string[])},
+   * {@link Converters.StringConverter.matching#set | StringConverter.matching(Set<string>)}, and
+   * {@link Converters.StringConverter.matching#regexp | StringConverter.matching(RegExp)}.
    * @internal
    */
   public matching(
@@ -173,7 +174,7 @@ export class StringConverter<T extends string = string, TC = unknown> extends Ba
  * string succeed.  Anything else fails.
  * @public
  */
-export const string = new StringConverter();
+export const string: StringConverter = new StringConverter();
 
 /**
  * Helper function to create a {@link Converters.StringConverter | StringConverter} which converts
@@ -189,7 +190,7 @@ export function templateString(defaultContext?: unknown): StringConverter<string
   return new StringConverter<string, unknown>(
     defaultContext,
     undefined,
-    (from: unknown, _self: Converter<string, unknown>, context?: unknown) => {
+    (from: unknown, __self: Converter<string, unknown>, context?: unknown) => {
       if (typeof from !== 'string') {
         return fail(`Not a string: ${JSON.stringify(from)}`);
       }
@@ -209,7 +210,7 @@ export function templateString(defaultContext?: unknown): StringConverter<string
  * @public
  */
 export function enumeratedValue<T>(values: T[]): Converter<T, T[]> {
-  return new BaseConverter((from: unknown, _self: Converter<T, T[]>, context?: T[]): Result<T> => {
+  return new BaseConverter((from: unknown, __self: Converter<T, T[]>, context?: T[]): Result<T> => {
     const v = context ?? values;
     const index = v.indexOf(from as T);
     return index >= 0 ? succeed(v[index]) : fail(`Invalid enumerated value ${JSON.stringify(from)}`);
@@ -230,7 +231,7 @@ export function enumeratedValue<T>(values: T[]): Converter<T, T[]> {
  * @public
  */
 export function mappedEnumeratedValue<T>(map: [T, unknown[]][], message?: string): Converter<T, undefined> {
-  return new BaseConverter((from: unknown, _self: Converter<T, undefined>, _context?: unknown) => {
+  return new BaseConverter((from: unknown, __self: Converter<T, undefined>, __context?: unknown) => {
     for (const item of map) {
       if (item[1].includes(from)) {
         return succeed(item[0]);
@@ -253,7 +254,7 @@ export function mappedEnumeratedValue<T>(map: [T, unknown[]][], message?: string
  */
 export function literal<T>(value: T): Converter<T, unknown> {
   return new BaseConverter<T, unknown>(
-    (from: unknown, _self: Converter<T, unknown>, _context?: unknown): Result<T> => {
+    (from: unknown, __self: Converter<T, unknown>, __context?: unknown): Result<T> => {
       return from === value
         ? succeed(value)
         : fail(`${JSON.stringify(from)}: does not match ${JSON.stringify(value)}`);
@@ -267,6 +268,7 @@ export function literal<T>(value: T): Converter<T, unknown> {
  * @deprecated Use {@link Converters.literal} instead.
  * @internal
  */
+// eslint-disable-next-line @rushstack/typedef-var
 export const value = literal;
 
 /**
@@ -275,7 +277,7 @@ export const value = literal;
  * Numbers and strings with a numeric format succeed. Anything else fails.
  * @public
  */
-export const number = new BaseConverter<number>((from: unknown) => {
+export const number: Converter<number, undefined> = new BaseConverter<number>((from: unknown) => {
   if (typeof from !== 'number') {
     const num: number = typeof from === 'string' ? Number(from) : NaN;
     return isNaN(num) ? fail(`Not a number: ${JSON.stringify(from)}`) : succeed(num);
@@ -290,7 +292,7 @@ export const number = new BaseConverter<number>((from: unknown) => {
  * Anything else fails.
  * @public
  */
-export const boolean = new BaseConverter<boolean>((from: unknown) => {
+export const boolean: Converter<boolean, undefined> = new BaseConverter<boolean>((from: unknown) => {
   if (typeof from === 'boolean') {
     return succeed(from as boolean);
   } else if (typeof from === 'string') {
@@ -309,7 +311,7 @@ export const boolean = new BaseConverter<boolean>((from: unknown) => {
  * `string` are returned.  Anything else returns {@link Success} with value `undefined`.
  * @public
  */
-export const optionalString = string.optional();
+export const optionalString: Converter<string | undefined, unknown> = string.optional();
 
 /**
  * Helper function to create a {@link Converter} which converts any `string` into an
@@ -325,7 +327,7 @@ export function delimitedString(
   options: 'filtered' | 'all' = 'filtered'
 ): Converter<string[], string> {
   return new BaseConverter<string[], string>(
-    (from: unknown, _self: Converter<string[], string>, context?: string) => {
+    (from: unknown, __self: Converter<string[], string>, context?: string) => {
       const result = string.convert(from);
       if (result.isSuccess()) {
         let strings = result.value.split(context ?? delimiter);
@@ -344,7 +346,7 @@ export function delimitedString(
  * a `Date` object.
  * @public
  */
-export const isoDate = new BaseConverter<Date>((from: unknown) => {
+export const isoDate: Converter<Date, unknown> = new BaseConverter<Date>((from: unknown) => {
   if (typeof from === 'string') {
     const dt = DateTime.fromISO(from);
     if (dt.isValid) {
@@ -366,7 +368,7 @@ export const isoDate = new BaseConverter<Date>((from: unknown) => {
  * @public
  */
 export function validated<T, TC = unknown>(validator: Validator<T, TC>): Converter<T, TC> {
-  return new BaseConverter((from: unknown, _self?: Converter<T, TC>, context?: TC) => {
+  return new BaseConverter((from: unknown, __self?: Converter<T, TC>, context?: TC) => {
     return validator.validate(from, context);
   });
 }
@@ -383,7 +385,7 @@ export function isA<T, TC = unknown>(
   description: string,
   guard: TypeGuardWithContext<T, TC>
 ): Converter<T, TC> {
-  return new BaseConverter((from: unknown, _self?: Converter<T, TC>, context?: TC) => {
+  return new BaseConverter((from: unknown, __self?: Converter<T, TC>, context?: TC) => {
     if (guard(from, context)) {
       return succeed(from);
     }
@@ -398,7 +400,7 @@ export function isA<T, TC = unknown>(
  * Anything else returns {@link Success} with value `undefined`.
  * @public
  */
-export const optionalNumber = number.optional();
+export const optionalNumber: Converter<number | undefined> = number.optional();
 
 /**
  * A {@link Converter} to convert an optional `boolean` value.
@@ -408,7 +410,7 @@ export const optionalNumber = number.optional();
  * with value `undefined`.
  * @public
  */
-export const optionalBoolean = boolean.optional();
+export const optionalBoolean: Converter<boolean | undefined> = boolean.optional();
 
 /**
  * A helper function to create a {@link Converter} for polymorphic values.  Returns a
@@ -430,7 +432,7 @@ export function oneOf<T, TC = unknown>(
   converters: Array<Converter<T, TC>>,
   onError: OnError = 'ignoreErrors'
 ): Converter<T, TC> {
-  return new BaseConverter((from: unknown, _self, context?: TC) => {
+  return new BaseConverter((from: unknown, __self, context?: TC) => {
     const errors: string[] = [];
     for (const converter of converters) {
       const result = converter.convert(from, context);
@@ -463,7 +465,7 @@ export function arrayOf<T, TC = undefined>(
   converter: Converter<T, TC>,
   onError: OnError = 'failOnError'
 ): Converter<T[], TC> {
-  return new BaseConverter((from: unknown, _self: Converter<T[], TC>, context?: TC) => {
+  return new BaseConverter((from: unknown, __self: Converter<T[], TC>, context?: TC) => {
     if (!Array.isArray(from)) {
       return fail(`Not an array: ${JSON.stringify(from)}`);
     }
@@ -509,7 +511,7 @@ export function extendedArrayOf<T, TC = undefined>(
  * of strings, returns {@link Failure} with an error message otherwise.
  * @public
  */
-export const stringArray = arrayOf(string);
+export const stringArray: Converter<string[] | undefined> = arrayOf(string);
 
 /**
  * {@link Converter} to convert an `unknown` to an array of `number`.
@@ -518,13 +520,14 @@ export const stringArray = arrayOf(string);
  * of numbers, returns {@link Failure} with an error message otherwise.
  * @public
  */
-export const numberArray = arrayOf(number);
+export const numberArray: Converter<number[] | undefined> = arrayOf(number);
 
 /**
- * Options for {@link Converters.recordOf.(:withOptions)} and {@link Converters.mapOf.(:withOptions)}
+ * Options for {@link Converters.recordOf#withOptions} and {@link Converters.mapOf#withOptions}
  * helper functions.
  * @public
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface KeyedConverterOptions<T extends string = string, TC = undefined> {
   /**
    * if `onError` is `'fail'` (default), then the entire conversion fails if any key or element
@@ -590,9 +593,9 @@ export function recordOf<T, TC = undefined, TK extends string = string>(
 ): Converter<Record<TK, T>, TC>;
 
 /**
- * Concrete implementation of {@link Converters.(recordOf:default) | Converters.recordOf(Converter<T>)},
- * {@link Converters.(recordOf:withOnError) | Converters.recordOf(Converter<T>, 'fail'|'ignore')}, and
- * {@link Converters.(recordOf:withOptions) | Converters.recordOf(Converter<T>, KeyedConverterOptions)}.
+ * Concrete implementation of {@link Converters.recordOf#default | Converters.recordOf(Converter<T>)},
+ * {@link Converters.recordOf#withOnError | Converters.recordOf(Converter<T>, 'fail' or 'ignore')}, and
+ * {@link Converters.recordOf#withOptions | Converters.recordOf(Converter<T>, KeyedConverterOptions)}.
  * @internal
  */
 export function recordOf<T, TC = undefined, TK extends string = string>(
@@ -601,7 +604,7 @@ export function recordOf<T, TC = undefined, TK extends string = string>(
 ): Converter<Record<TK, T>, TC> {
   const options: KeyedConverterOptions<TK, TC> =
     typeof option === 'string' ? { onError: option } : { onError: 'fail', ...option };
-  return new BaseConverter((from: unknown, _self: Converter<Record<TK, T>, TC>, context?: TC) => {
+  return new BaseConverter((from: unknown, __self: Converter<Record<TK, T>, TC>, context?: TC) => {
     if (typeof from !== 'object' || from === null || Array.isArray(from)) {
       return fail(`Not a string-keyed object: ${JSON.stringify(from)}`);
     }
@@ -681,9 +684,9 @@ export function mapOf<T, TC = undefined, TK extends string = string>(
 ): Converter<Map<TK, T>, TC>;
 
 /**
- * Concrete implementation of {@link Converters.(mapOf:default) | Converters.mapOf(Converter<T>)},
- * {@link Converters.(mapOf:withOnError) | Converters.mapOf(Converter<T>, 'fail'|'ignore')}, and
- * {@link Converters.(mapOf:withOptions) | Converters.mapOf(Converter<T>, KeyedConverterOptions)}.
+ * Concrete implementation of {@link Converters.mapOf#default | Converters.mapOf(Converter<T>)},
+ * {@link Converters.mapOf#withOnError | Converters.mapOf(Converter<T>, 'fail' or 'ignore')}, and
+ * {@link Converters.mapOf#withOptions | Converters.mapOf(Converter<T>, KeyedConverterOptions)}.
  * @internal
  */
 export function mapOf<T, TC = undefined, TK extends string = string>(
@@ -691,7 +694,7 @@ export function mapOf<T, TC = undefined, TK extends string = string>(
   option: 'fail' | 'ignore' | KeyedConverterOptions<TK, TC> = 'fail'
 ): Converter<Map<TK, T>, TC> {
   const options = typeof option === 'string' ? { onError: option } : { onError: 'fail', ...option };
-  return new BaseConverter((from: unknown, _self: Converter<Map<TK, T>, TC>, context?: TC) => {
+  return new BaseConverter((from: unknown, __self: Converter<Map<TK, T>, TC>, context?: TC) => {
     if (typeof from !== 'object' || from === null || Array.isArray(from)) {
       return fail(`Not a string-keyed object: ${JSON.stringify(from)}`);
     }
@@ -737,7 +740,7 @@ export function validateWith<T, TC = undefined>(
   validator: (from: unknown) => from is T,
   description?: string
 ): Converter<T, TC> {
-  return new BaseConverter((from: unknown, _self: Converter<T, TC>, _context?: TC) => {
+  return new BaseConverter((from: unknown, __self: Converter<T, TC>, __context?: TC) => {
     if (validator(from)) {
       return succeed(from);
     }
@@ -756,7 +759,7 @@ export function validateWith<T, TC = undefined>(
  * @public
  */
 export function element<T, TC = undefined>(index: number, converter: Converter<T, TC>): Converter<T, TC> {
-  return new BaseConverter((from: unknown, _self: Converter<T, TC>, context?: TC) => {
+  return new BaseConverter((from: unknown, __self: Converter<T, TC>, context?: TC) => {
     if (index < 0) {
       return fail(`${index}: cannot convert for a negative element index`);
     } else if (!Array.isArray(from)) {
@@ -784,7 +787,7 @@ export function optionalElement<T, TC = undefined>(
   index: number,
   converter: Converter<T, TC>
 ): Converter<T | undefined, TC> {
-  return new BaseConverter((from: unknown, _self: Converter<T | undefined, TC>, context?: TC) => {
+  return new BaseConverter((from: unknown, __self: Converter<T | undefined, TC>, context?: TC) => {
     if (index < 0) {
       return fail(`${index}: cannot convert for a negative element index`);
     } else if (!Array.isArray(from)) {
@@ -808,7 +811,7 @@ export function optionalElement<T, TC = undefined>(
  * @public
  */
 export function field<T, TC = undefined>(name: string, converter: Converter<T, TC>): Converter<T, TC> {
-  return new BaseConverter((from: unknown, _self: Converter<T, TC>, context?: TC) => {
+  return new BaseConverter((from: unknown, __self: Converter<T, TC>, context?: TC) => {
     if (typeof from === 'object' && !Array.isArray(from) && from !== null) {
       if (isKeyOf(name, from)) {
         return converter.convert(from[name], context).onFailure((message) => {
@@ -838,7 +841,7 @@ export function optionalField<T, TC = undefined>(
   converter: Converter<T, TC>
 ): Converter<T | undefined, TC> {
   return new BaseConverter(
-    (from: unknown, _self: Converter<T | undefined, TC>, context?: TC) => {
+    (from: unknown, __self: Converter<T | undefined, TC>, context?: TC) => {
       if (typeof from === 'object' && !Array.isArray(from) && from !== null) {
         if (isKeyOf(name, from)) {
           const result = converter.convert(from[name], context).onFailure((message) => {
@@ -865,6 +868,7 @@ export function optionalField<T, TC = undefined>(
  * Options for an {@link Converters.ObjectConverter | ObjectConverter}.
  * @public
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface ObjectConverterOptions<T> {
   /**
    * If present, lists optional fields. Missing non-optional fields cause an error.
@@ -929,12 +933,11 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
    */
   public constructor(fields: FieldConverters<T, TC>, optional?: (keyof T)[]);
   /**
-   * Concrete implementation of {@link Converters.ObjectConverter.(constructor:withOptions)}
-   * and {@link Converters.ObjectConverter.(constructor:withKeys)}.
+   * Concrete implementation of {@link Converters.(ObjectConverter:constructor)}
    * @internal
    */
   public constructor(fields: FieldConverters<T, TC>, opt?: ObjectConverterOptions<T> | (keyof T)[]) {
-    super((from: unknown, _self, context?: TC) => {
+    super((from: unknown, __self, context?: TC) => {
       // eslint bug thinks key is used before defined
       // eslint-disable-next-line no-use-before-define
       const converted = {} as { [key in keyof T]: T[key] };
@@ -1000,8 +1003,8 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
   public partial(optional?: (keyof T)[]): ObjectConverter<Partial<T>, TC>;
   /**
    * Concrete implementation of
-   * {@link Converters.ObjectConverter.(partial:withOptions) | ObjectConverter.partial(ObjectConverterOptions)} and
-   * {@link Converters.ObjectConverter.(partial:withKeys) | ObjectConverter.partial((keyof T)[]}.
+   * {@link Converters.ObjectConverter.partial#withOptions | ObjectConverter.partial(ObjectConverterOptions)} and
+   * {@link Converters.ObjectConverter.partial#withKeys | ObjectConverter.partial((keyof T))[]}.
    * @internal
    */
   public partial(opt?: ObjectConverterOptions<T> | (keyof T)[]): ObjectConverter<Partial<T>, TC> {
@@ -1068,13 +1071,13 @@ export function object<T>(
  * {@label withKeys}
  * @returns A new {@link Converters.ObjectConverter | ObjectConverter} which applies the specified conversions.
  * @public
- * @deprecated Use {@link Converters.object.(:withOptions) | Converters.object(fields, options)} instead.
+ * @deprecated Use {@link Converters.object#withOptions | Converters.object(fields, options)} instead.
  */
 
 export function object<T>(properties: FieldConverters<T>, optional: (keyof T)[]): ObjectConverter<T>;
 /**
- * Concrete implementation of {@link Converters.(object:withOptions) | Converters.object(fields, options)}
- * and {@link Converters.(object:withKeys) | Converters.objects(fields, optionalKeys)}.
+ * Concrete implementation of {@link Converters.object#withOptions | Converters.object(fields, options)}
+ * and {@link Converters.object#withKeys | Converters.objects(fields, optionalKeys)}.
  * @internal
  */
 export function object<T>(
@@ -1085,7 +1088,7 @@ export function object<T>(
 }
 
 /**
- * Options for the {@link Converters.strictObject.(:withOptions)} helper function.
+ * Options for the {@link Converters.strictObject#withOptions} helper function.
  * @public
  */
 export type StrictObjectConverterOptions<T> = Omit<ObjectConverterOptions<T>, 'strict'>;
@@ -1129,14 +1132,14 @@ export function strictObject<T>(
  * @param optional - An array of `keyof T` containing keys to be considered optional.
  * @returns A new {@link Converters.ObjectConverter | ObjectConverter} which applies the specified conversions.
  * {@label withKeys}
- * @deprecated Use {@link Converters.strictObject(:withOptions) | Converters.strictObject(options)} instead.
+ * @deprecated Use {@link Converters.strictObject#withOptions | Converters.strictObject(options)} instead.
  * @public
  */
 export function strictObject<T>(properties: FieldConverters<T>, optional: (keyof T)[]): ObjectConverter<T>;
 
 /**
- * Concrete implementation for {@link Converters.strictObject(:withOptions) | Converters.strictObject(fields, options)}
- * and {@link Converters.(strictObject:withKeys) | Converters.strictObject(fields, optional)}.
+ * Concrete implementation for {@link Converters.strictObject#withOptions | Converters.strictObject(fields, options)}
+ * and {@link Converters.strictObject | Converters.strictObject(fields, optional)}.
  * @internal
  */
 export function strictObject<T>(
@@ -1215,7 +1218,7 @@ export function discriminatedObject<T, TD extends string = string, TC = unknown>
  * @public
  */
 export function transform<T, TC = unknown>(properties: FieldConverters<T, TC>): Converter<T, TC> {
-  return new BaseConverter((from: unknown, _self, context?: TC) => {
+  return new BaseConverter((from: unknown, __self, context?: TC) => {
     // eslint bug thinks key is used before defined
     // eslint-disable-next-line no-use-before-define
     const converted = {} as { [key in keyof T]: T[key] };
@@ -1263,6 +1266,7 @@ export type FieldTransformers<TSRC, TDEST, TC = unknown> = {
  * Options for a {@link Converters.transformObject} call.
  * @public
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface TransformObjectOptions<TSRC> {
   /**
    * If `strict` is `true` then unused properties in the source object cause
@@ -1306,7 +1310,7 @@ export function transformObject<TSRC, TDEST, TC = unknown>(
   destinationFields: FieldTransformers<TSRC, TDEST, TC>,
   options?: TransformObjectOptions<TSRC>
 ): Converter<TDEST, TC> {
-  return new BaseConverter((from: unknown, _self, context?: TC) => {
+  return new BaseConverter((from: unknown, __self, context?: TC) => {
     // eslint bug thinks key is used before defined
     // eslint-disable-next-line no-use-before-define
     const converted = {} as { [key in keyof TDEST]: TDEST[key] };
@@ -1361,7 +1365,7 @@ export function rangeTypeOf<T, RT extends RangeOf<T>, TC = unknown>(
   converter: Converter<T, TC>,
   constructor: (init: RangeOfProperties<T>) => Result<RT>
 ): Converter<RT, TC> {
-  return new BaseConverter((from: unknown, _self, context?: TC) => {
+  return new BaseConverter((from: unknown, __self, context?: TC) => {
     const result = object(
       {
         min: converter,

@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
-import { ConstraintTrait, ValidatorTraits } from './traits';
 import { Failure, Result } from '../result';
+import { ConstraintTrait, ValidatorTraits } from './traits';
 
 import { Brand } from '../brand';
 
@@ -29,6 +29,7 @@ import { Brand } from '../brand';
  * Options that apply to any {@link Validation.Validator | Validator}.
  * @public
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface ValidatorOptions<TC> {
   defaultContext?: TC;
 }
@@ -47,6 +48,7 @@ export type Constraint<T> = (val: T) => boolean | Failure<T>;
  * required characteristics (type, values, etc).
  * @public
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface Validator<T, TC = undefined> {
   /**
    * {@link Validation.ValidatorTraits | Traits} describing this validation.

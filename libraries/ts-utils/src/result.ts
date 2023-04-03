@@ -191,7 +191,7 @@ export class Success<T> implements IResult<T> {
   /**
    * {@inheritdoc IResult.success}
    */
-  public readonly success = true;
+  public readonly success: true = true;
   /**
    * @internal
    */
@@ -201,7 +201,7 @@ export class Success<T> implements IResult<T> {
    * Constructs a {@link Success} with the supplied value.
    * @param value - The value to be returned.
    */
-  constructor(value: T) {
+  public constructor(value: T) {
     this._value = value;
   }
 
@@ -229,7 +229,7 @@ export class Success<T> implements IResult<T> {
   /**
    * {@inheritdoc IResult.orThrow}
    */
-  public orThrow(_logger?: IResultLogger): T {
+  public orThrow(__logger?: IResultLogger): T {
     return this._value;
   }
 
@@ -243,7 +243,7 @@ export class Success<T> implements IResult<T> {
   /**
    * {@inheritdoc IResult.getValueOrThrow}
    */
-  public getValueOrThrow(_logger?: IResultLogger): T {
+  public getValueOrThrow(__logger?: IResultLogger): T {
     return this._value;
   }
 
@@ -264,14 +264,14 @@ export class Success<T> implements IResult<T> {
   /**
    * {@inheritdoc IResult.onFailure}
    */
-  public onFailure(_: FailureContinuation<T>): Result<T> {
+  public onFailure(__: FailureContinuation<T>): Result<T> {
     return this;
   }
 
   /**
    * {@inheritdoc IResult.withFailureDetail}
    */
-  public withFailureDetail<TD>(_detail: TD): DetailedResult<T, TD> {
+  public withFailureDetail<TD>(__detail: TD): DetailedResult<T, TD> {
     return succeedWithDetail(this.value);
   }
 
@@ -291,7 +291,7 @@ export class Failure<T> implements IResult<T> {
   /**
    * {@inheritdoc IResult.success}
    */
-  public readonly success = false;
+  public readonly success: false = false;
 
   /**
    * @internal
@@ -302,7 +302,7 @@ export class Failure<T> implements IResult<T> {
    * Constructs a {@link Failure} with the supplied message.
    * @param message - Error message to be reported.
    */
-  constructor(message: string) {
+  public constructor(message: string) {
     this._message = message;
   }
 
@@ -364,7 +364,7 @@ export class Failure<T> implements IResult<T> {
   /**
    * {@inheritdoc IResult.onSuccess}
    */
-  public onSuccess<TN>(_: SuccessContinuation<T, TN>): Result<TN> {
+  public onSuccess<TN>(__: SuccessContinuation<T, TN>): Result<TN> {
     return new Failure(this.message);
   }
 
@@ -385,7 +385,7 @@ export class Failure<T> implements IResult<T> {
   /**
    * {@inheritdoc IResult.withDetail}
    */
-  public withDetail<TD>(detail: TD, _successDetail?: TD): DetailedResult<T, TD> {
+  public withDetail<TD>(detail: TD, __successDetail?: TD): DetailedResult<T, TD> {
     return failWithDetail(this.message, detail);
   }
 
@@ -499,7 +499,7 @@ export class DetailedSuccess<T, TD> extends Success<T> {
    * on a {@link DetailedResult} in case of failure (ignored).
    * @returns `this`
    */
-  public onFailure(_cb: DetailedFailureContinuation<T, TD>): DetailedResult<T, TD> {
+  public onFailure(__cb: DetailedFailureContinuation<T, TD>): DetailedResult<T, TD> {
     return this;
   }
 }
@@ -555,7 +555,7 @@ export class DetailedFailure<T, TD> extends Failure<T> {
    * @returns A new {@link DetailedFailure | DetailedFailure<TN, TD>} which contains
    * the error message and detail from this one.
    */
-  public onSuccess<TN>(_cb: DetailedSuccessContinuation<T, TD, TN>): DetailedResult<TN, TD> {
+  public onSuccess<TN>(__cb: DetailedSuccessContinuation<T, TD, TN>): DetailedResult<TN, TD> {
     return new DetailedFailure<TN, TD>(this.message, this._detail);
   }
 
@@ -776,15 +776,16 @@ export function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: 
 }
 
 /**
- * String-keyed record of initialization functions to be passed to {@link populateObject.(:withOptions)}.
+ * String-keyed record of initialization functions to be passed to {@link populateObject}.
  * @public
  */
 export type FieldInitializers<T> = { [key in keyof T]: (state: Partial<T>) => Result<T[key]> };
 
 /**
- * Options for the {@link populateObject.(:withOptions)} function.
+ * Options for the {@link populateObject} function.
  * @public
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface PopulateObjectOptions<T> {
   /**
    * If present, specifies the order in which property values should

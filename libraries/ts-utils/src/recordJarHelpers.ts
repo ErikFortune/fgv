@@ -26,7 +26,7 @@ import * as path from 'path';
 import { Result, captureResult, fail, succeed } from './result';
 import { isKeyOf } from './utils';
 
-interface RecordBody {
+interface IRecordBody {
   body: string;
   isContinuation: boolean;
 }
@@ -46,6 +46,7 @@ export type JarFieldPicker<T extends JarRecord = JarRecord> = (record: T) => (ke
  * Options for a JAR record parser.
  * @public
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface JarRecordParserOptions {
   readonly arrayFields?: string[] | JarFieldPicker;
   readonly fixedContinuationSize?: number;
@@ -57,7 +58,7 @@ class RecordParser {
 
   protected _fields: JarRecord = {};
   protected _name: string | undefined = undefined;
-  protected _body: RecordBody | undefined = undefined;
+  protected _body: IRecordBody | undefined = undefined;
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   private constructor(options?: JarRecordParserOptions) {
@@ -68,7 +69,7 @@ class RecordParser {
     return new RecordParser(options)._parse(lines);
   }
 
-  protected static _parseRecordBody(body: string): Result<RecordBody> {
+  protected static _parseRecordBody(body: string): Result<IRecordBody> {
     const isContinuation = body.endsWith('\\');
     if (isContinuation) {
       body = body.slice(0, body.length - 1);
@@ -188,7 +189,7 @@ class RecordParser {
     });
   }
 
-  protected _parseContinuation(line: string): Result<RecordBody> {
+  protected _parseContinuation(line: string): Result<IRecordBody> {
     let trimmed = line.trim();
     if (!this._body!.isContinuation) {
       // istanbul ignore next

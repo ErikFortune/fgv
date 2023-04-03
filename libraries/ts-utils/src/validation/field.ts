@@ -21,14 +21,15 @@
  */
 
 import { Failure, fail } from '../result';
+import { isKeyOf } from '../utils';
 import { Validator, ValidatorOptions } from './validator';
 import { ValidatorBase } from './validatorBase';
-import { isKeyOf } from '../utils';
 
 /**
  * Parameters used to construct a {@link Validation.FieldValidator | FieldValidator}.
  * @public
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface FieldValidatorOptions<TC> extends ValidatorOptions<TC> {
   optional?: boolean;
 }

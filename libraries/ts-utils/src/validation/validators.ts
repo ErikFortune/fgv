@@ -20,35 +20,35 @@
  * SOFTWARE.
  */
 
-import { ArrayValidator, ArrayValidatorConstructorParams } from './array';
 import { Failure, fail } from '../result';
+import { ArrayValidator, ArrayValidatorConstructorParams } from './array';
 import { FieldValidators, ObjectValidator, ObjectValidatorConstructorParams } from './object';
 import { TypeGuardValidator, TypeGuardValidatorConstructorParams } from './typeGuard';
 
 import { BooleanValidator } from './boolean';
+import { TypeGuardWithContext } from './common';
 import { GenericValidator } from './genericValidator';
 import { NumberValidator } from './number';
 import { StringValidator } from './string';
-import { TypeGuardWithContext } from './common';
 import { Validator } from './validator';
 
 /**
  * A {@link Validation.Classes.StringValidator | StringValidator} which validates a string in place.
  * @public
  */
-export const string = new StringValidator();
+export const string: Validator<string> = new StringValidator();
 
 /**
  * A {@link Validation.Classes.NumberValidator | NumberValidator} which validates a number in place.
  * @public
  */
-export const number = new NumberValidator();
+export const number: Validator<number> = new NumberValidator();
 
 /**
  * A {@link Validation.Classes.BooleanValidator | BooleanValidator} which validates a boolean in place.
  * @public
  */
-export const boolean = new BooleanValidator();
+export const boolean: Validator<boolean> = new BooleanValidator();
 
 /**
  * Helper function to create a {@link Validation.Classes.ObjectValidator | ObjectValidator} which validates

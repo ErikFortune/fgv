@@ -20,13 +20,14 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult } from './result';
 import Mustache from 'mustache';
+import { Result, captureResult } from './result';
 
 /**
  * Represents a generic range of some comparable type `<T>`.
  * @public
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface RangeOfProperties<T> {
   readonly min?: T;
   readonly max?: T;
@@ -38,6 +39,7 @@ export interface RangeOfProperties<T> {
  * {@link RangeOf | RangeOf<T>}.
  * @public
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface RangeOfFormats {
   minOnly: string;
   maxOnly: string;
@@ -49,7 +51,7 @@ export interface RangeOfFormats {
  * open-ended and complete {@link RangeOf | RangeOf<T>}.
  * @public
  */
-export const DEFAULT_RANGEOF_FORMATS = {
+export const DEFAULT_RANGEOF_FORMATS: RangeOfFormats = {
   minOnly: '{{min}}-',
   maxOnly: '-{{max}}',
   minMax: '{{min}}-{{max}}'

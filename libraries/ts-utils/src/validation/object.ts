@@ -36,6 +36,7 @@ export type FieldValidators<T, TC = unknown> = { [key in keyof T]: Validator<T[k
  * Options for an {@link Validation.Classes.ObjectValidator | ObjectValidator}.
  * @public
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface ObjectValidatorOptions<T, TC> extends ValidatorOptions<TC> {
   /**
    * If present, lists optional fields. Missing non-optional fields cause an error.
@@ -52,6 +53,7 @@ export interface ObjectValidatorOptions<T, TC> extends ValidatorOptions<TC> {
  * Options for the {@link Validation.Classes.ObjectValidator | ObjectValidator} constructor.
  * @public
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface ObjectValidatorConstructorParams<T, TC> extends ValidatorBaseConstructorParams<T, TC> {
   /**
    * A {@link Validation.Classes.FieldValidators | FieldValidators} object specifying a

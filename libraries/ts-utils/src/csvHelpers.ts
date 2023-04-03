@@ -21,14 +21,15 @@
  */
 
 import * as fs from 'fs';
+import { parse } from 'papaparse';
 import * as path from 'path';
 import { Result, captureResult } from './result';
-import { parse } from 'papaparse';
 
 /**
  * Options for {@link Csv.readCsvFileSync}
  * @beta
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface CsvOptions {
   delimiter?: string;
 }

@@ -20,9 +20,9 @@
  * SOFTWARE.
  */
 
-import { Constraint, Validator, ValidatorOptions } from './validator';
-import { ConstraintTrait, ValidatorTraits } from './traits';
 import { Failure, Result, fail, succeed } from '../result';
+import { ConstraintTrait, ValidatorTraits } from './traits';
+import { Constraint, Validator, ValidatorOptions } from './validator';
 
 import { Brand } from '../brand';
 
@@ -38,6 +38,7 @@ export type ValidatorFunc<T, TC> = (from: unknown, context?: TC) => boolean | Fa
  * Options used to initialize a {@link Validation.Base.GenericValidator | GenericValidator}.
  * @public
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface GenericValidatorConstructorParams<T, TC> {
   options?: ValidatorOptions<TC>;
   traits?: Partial<ValidatorTraits>;

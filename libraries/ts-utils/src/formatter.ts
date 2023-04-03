@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult, mapResults, succeed } from './result';
 import Mustache from 'mustache';
+import { Result, captureResult, mapResults, succeed } from './result';
 
 Mustache.escape = (s: string) => s;
 
@@ -35,6 +35,7 @@ export type FormatTargets = 'text' | 'markdown' | 'embed';
  * Interface for an object that can be formatted.
  * @beta
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface Formattable {
   /**
    * Formats an object using the supplied mustache template.
