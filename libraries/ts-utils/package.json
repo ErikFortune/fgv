@@ -5,10 +5,10 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "heft test --clean",
+    "clean": "heft clean",
     "test": "heft test",
-    "api-extractor": "$(npm bin)/api-extractor run --local --verbose -c ./config/api-extractor.json",
-    "build-docs": "$(npm bin)/api-documenter markdown --input-folder ./temp --output-folder docs",
-    "build-all": "npm run build; npm run api-extractor; npm run build-docs",
+    "build-docs": "api-documenter markdown --input-folder ./temp --output-folder docs",
+    "build-all": "rushx build; rushx build-docs",
     "test-handles": "jest --runInBand --detectOpenHandles",
     "clean-jest": "jest --clear-cache",
     "coverage": "jest --coverage",

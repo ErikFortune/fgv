@@ -566,6 +566,9 @@ interface JarRecordParserOptions {
     readonly fixedContinuationSize?: number;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 interface KeyedConverterOptions<T extends string = string, TC = undefined> {
     keyConverter?: Converter<T, TC>;
@@ -677,6 +680,7 @@ type NumberValidatorConstructorParams<T extends number = number, TC = unknown> =
 // @public
 function object<T>(properties: FieldConverters<T>, options?: ObjectConverterOptions<T>): ObjectConverter<T>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -944,10 +948,13 @@ function strictObject<T>(properties: FieldConverters<T>, options?: StrictObjectC
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public @deprecated
 function strictObject<T>(properties: FieldConverters<T>, optional: (keyof T)[]): ObjectConverter<T>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 type StrictObjectConverterOptions<T> = Omit<ObjectConverterOptions<T>, 'strict'>;
 

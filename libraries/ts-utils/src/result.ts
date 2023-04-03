@@ -776,13 +776,14 @@ export function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: 
 }
 
 /**
- * String-keyed record of initialization functions to be passed to {@link populateObject}.
+ * String-keyed record of initialization functions to be passed to {@link (populateObject:1)}
+ * or {@link (populateObject:2)}.
  * @public
  */
 export type FieldInitializers<T> = { [key in keyof T]: (state: Partial<T>) => Result<T[key]> };
 
 /**
- * Options for the {@link populateObject} function.
+ * Options for the {@link (populateObject:1)} function.
  * @public
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -813,8 +814,8 @@ export interface PopulateObjectOptions<T> {
  * each property.
  * @param options - An optional {@link PopulateObjectOptions | set of options} which
  * modify the behavior of this call.
+ * {@label WITH_OPTIONS}
  * @public
- * {@label withOptions}
  */
 export function populateObject<T>(
   initializers: FieldInitializers<T>,
@@ -829,7 +830,7 @@ export function populateObject<T>(
  * each property.
  * @param order - Optional order in which keys should be written.
  * @public
- * {@label withOrder}
+ * {@label WITH_ORDER}
  * @deprecated Pass {@link PopulateObjectOptions} instead.
  */
 export function populateObject<T>(initializers: FieldInitializers<T>, order: (keyof T)[]): Result<T>;
