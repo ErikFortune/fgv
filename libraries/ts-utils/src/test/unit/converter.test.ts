@@ -146,7 +146,7 @@ describe('BaseConverter class', () => {
     };
     const mappingConverter = numberConverter.map(mapper);
 
-    test('applies a mapping function to a sucessful conversion', () => {
+    test('applies a mapping function to a successful conversion', () => {
       expect(mappingConverter.convert(3)).toSucceedWith(targetString.substring(0, 3));
     });
 

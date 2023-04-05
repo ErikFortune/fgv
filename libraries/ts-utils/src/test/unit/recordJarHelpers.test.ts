@@ -249,6 +249,7 @@ describe('record-jar helpers', () => {
     });
 
     test('correctly parses an overflow body', () => {
+      // cSpell: disable
       expect(
         RecordJar.parseRecordJarLines([
           'Eulers-Number : 2.718281828459045235360287471',
@@ -263,6 +264,7 @@ describe('record-jar helpers', () => {
           /* eslint-enable @typescript-eslint/naming-convention */
         }
       ]);
+      // cSpell: enable
     });
 
     test('parses overflow body with a continuation character', () => {

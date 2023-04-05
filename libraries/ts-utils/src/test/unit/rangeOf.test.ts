@@ -77,7 +77,7 @@ describe('RangeOf class', () => {
       expect(range.includes(100000000)).toBe(true);
     });
 
-    test('succeeds for an item before the end of an startless range', () => {
+    test('succeeds for an item before the end of an start-less range', () => {
       const min = undefined;
       const max = 1000;
       const range = new RangeOf<number>(min, max);
@@ -103,7 +103,7 @@ describe('RangeOf class', () => {
       expect(range.includes(-1000)).toBe(false);
     });
 
-    test('fails for an item after the end of a startless range', () => {
+    test('fails for an item after the end of a start-less range', () => {
       const min = undefined;
       const max = 1000;
       const range = new RangeOf<number>(min, max);
@@ -135,7 +135,7 @@ describe('RangeOf class', () => {
       expect(range.findTransition(min)).toBe(max);
     });
 
-    test('returns max for a value inside of a startless range exclusive of end', () => {
+    test('returns max for a value inside of a start-less range exclusive of end', () => {
       const min = undefined;
       const max = 1000;
       const range = new RangeOf<number>(min, max);

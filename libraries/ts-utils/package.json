@@ -2,7 +2,8 @@
   "name": "@fgv/ts-utils",
   "version": "1.9.4",
   "description": "Assorted Typescript Utilities",
-  "main": "dist/index.js",
+  "main": "lib/index.js",
+  "types": "dist/ts-utils.d.ts",
   "scripts": {
     "build": "heft test --clean",
     "clean": "heft clean",
@@ -15,9 +16,6 @@
     "lint": "eslint src --ext .ts",
     "fixlint": "eslint src --ext .ts --fix"
   },
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org"
-  },
   "keywords": [
     "typescript",
     "json"
@@ -25,9 +23,9 @@
   "author": "Erik Fortune",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/DidjaRedo/ts-utils/issues"
+    "url": "https://github.com/ErikFortune/fgv/issues"
   },
-  "homepage": "https://github.com/DidjaRedo/ts-utils#readme",
+  "homepage": "https://github.com/ErikFortune/fgv#readme",
   "devDependencies": {
     "@jest/expect-utils": "^29.5.0",
     "@microsoft/api-documenter": "^7.21.6",
