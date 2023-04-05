@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "refactor and cleanup",
+      "type": "major"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

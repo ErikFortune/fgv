@@ -19,18 +19,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-export * from './brand';
-export * from './converter';
-export * from './extendedArray';
-export * from './formatter';
-export * from './rangeOf';
-export * from './result';
-export * from './utils';
-export { Normalizer } from './normalize';
 
-import * as Converters from './converters';
-import * as Csv from './csvHelpers';
-import * as Hash from './hash';
-import * as RecordJar from './recordJarHelpers';
-import * as Validation from './validation';
-export { Converters, Csv, Hash, RecordJar, Validation };
+import * as Converters from './packlets/converters';
+import * as Csv from './packlets/csv';
+import * as Experimental from './packlets/experimental';
+import * as Hash from './packlets/hash';
+import * as RecordJar from './packlets/record-jar';
+import * as Validation from './packlets/validation';
+
+export * from './packlets/base';
+export { Converters, Experimental, Csv, Hash, RecordJar, Validation };
