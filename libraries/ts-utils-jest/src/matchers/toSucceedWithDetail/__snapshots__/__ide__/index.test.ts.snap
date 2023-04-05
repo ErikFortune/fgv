@@ -1,0 +1,41 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`.toSucceedWithDetail reports details when it fails due to a failure result: toFailTestAndMatchSnapshot 1`] = `
+"[2mexpect([22m[31mreceived[39m[2m).[22mtoSucceedWithDetail[2m([22m[32mexpected[39m[2m)[22m
+Expected:
+  Success with [32m"oops"[39m
+  Detail: "[32m"detail"[39m"
+Received:
+  Failure with "oops"
+  Detail: "[31m"detail"[39m""
+`;
+
+exports[`.toSucceedWithDetail reports details when it fails due to a success result with .not: toFailTestAndMatchSnapshot 1`] = `
+"[2mexpect([22m[31mreceived[39m[2m).not.toSucceedWithDetail([22m[32mexpected[39m[2m)[22m
+Expected:
+  Not success with [32m"hello"[39m
+  Detail: "[32m"detail"[39m"
+Received:
+  Success with "[31m"hello"[39m"
+  Detail: "[31m"detail"[39m""
+`;
+
+exports[`.toSucceedWithDetail reports details when it fails due to success with a non-matching detail: toFailTestAndMatchSnapshot 1`] = `
+"[2mexpect([22m[31mreceived[39m[2m).[22mtoSucceedWithDetail[2m([22m[32mexpected[39m[2m)[22m
+Expected:
+  Success with [32m"hello"[39m
+  Detail: "[32m"other detail"[39m"
+Received:
+  Success with "[31m"hello"[39m"
+  Detail: "[31m"detail"[39m""
+`;
+
+exports[`.toSucceedWithDetail reports details when it fails due to success with a non-matching value: toFailTestAndMatchSnapshot 1`] = `
+"[2mexpect([22m[31mreceived[39m[2m).[22mtoSucceedWithDetail[2m([22m[32mexpected[39m[2m)[22m
+Expected:
+  Success with [32m"goodbye"[39m
+  Detail: "[32m"detail"[39m"
+Received:
+  Success with "[31m"hello"[39m"
+  Detail: "[31m"detail"[39m""
+`;
