@@ -5,7 +5,7 @@ exports[`.toSucceed reports details for a failed .not test: toFailTestAndMatchSn
 Expected:
   Not success
 Received:
-  Success with [31m"hello"[39m"
+  Success with [31m\\"hello\\"[39m"
 `;
 
 exports[`.toSucceed reports details for a failed test: toFailTestAndMatchSnapshot 1`] = `
@@ -13,5 +13,5 @@ exports[`.toSucceed reports details for a failed test: toFailTestAndMatchSnapsho
 Expected:
   Success
 Received:
-  Failure with "oops""
+  Failure with \\"oops\\""
 `;

@@ -20,14 +20,14 @@
  * SOFTWARE.
  */
 
-import { MockFileConfig, MockFileSystem } from '..';
 import { readFileSync, writeFileSync } from 'fs';
+import { MockFileConfig, MockFileSystem } from '..';
 
 describe('MockFileSystem class', () => {
   const configs: MockFileConfig[] = [
     {
       path: 'path/to/backedFile.json',
-      backingFile: './test/data/testData.json',
+      backingFile: 'test/data/testData.json',
       writable: false
     },
     {
@@ -41,7 +41,7 @@ describe('MockFileSystem class', () => {
     },
     {
       path: 'path/to/writableBackedFile.json',
-      backingFile: './test/data/testData.json',
+      backingFile: 'test/data/testData.json',
       writable: true
     },
     {
@@ -60,7 +60,8 @@ describe('MockFileSystem class', () => {
   describe('readMockFileSync method', () => {
     test('reads a backed file', () => {
       const mockFs = new MockFileSystem(configs);
-      expect(mockFs.readMockFileSync('path/to/backedFile.json')).toEqual('{ "filename": "testData.json" }');
+      const received = mockFs.readMockFileSync('path/to/backedFile.json');
+      expect(received).toEqual('{\n    "filename": "testData.json",\n    "fromBackingFile": true\n}');
     });
 
     test('reads a payload file', () => {
@@ -87,7 +88,7 @@ describe('MockFileSystem class', () => {
         const mockFs = new MockFileSystem(configs, { mockWriteOnly: true });
         expect(() => {
           expect(mockFs.readMockFileSync('test/data/testData.json')).toEqual(
-            '{ "filename": "testData.json" }'
+            '{\n    "filename": "testData.json",\n    "fromBackingFile": true\n}'
           );
         }).not.toThrow();
       });
@@ -120,7 +121,7 @@ describe('MockFileSystem class', () => {
 
       // file exists before written
       expect(mockFs.readMockFileSync('path/to/writableBackedFile.json')).toEqual(
-        '{ "filename": "testData.json" }'
+        '{\n    "filename": "testData.json",\n    "fromBackingFile": true\n}'
       );
 
       expect(() => {
@@ -205,7 +206,7 @@ describe('MockFileSystem class', () => {
         mockFs.readMockFileSync('path/to/writableFile.json');
       }).toThrowError(/mock file not found/i);
       expect(mockFs.readMockFileSync('path/to/writableBackedFile.json')).toEqual(
-        '{ "filename": "testData.json" }'
+        '{\n    "filename": "testData.json",\n    "fromBackingFile": true\n}'
       );
       expect(mockFs.readMockFileSync('path/to/writablePayloadFile.json')).toEqual(
         '{ "filename": "writableInlineData" }'

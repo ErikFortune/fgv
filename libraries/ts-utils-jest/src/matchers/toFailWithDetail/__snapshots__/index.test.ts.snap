@@ -3,39 +3,39 @@
 exports[`.toFailWithDetail reports details correctly on a failure due to a success result: toFailTestAndMatchSnapshot 1`] = `
 "[2mexpect([22m[31mreceived[39m[2m).[22mtoFailWith[2m([22m[32mexpected[39m[2m)[22m
 Expected:
-  Failure with [32m"hello"[39m
-  Detail: "[32m"detail"[39m"
+  Failure with [32m\\"hello\\"[39m
+  Detail: \\"[32m\\"detail\\"[39m\\"
 Received:
-  Success with "[31m"hello"[39m"
-  Detail: "[31mundefined[39m""
+  Success with \\"[31m\\"hello\\"[39m\\"
+  Detail: \\"[31mundefined[39m\\""
 `;
 
 exports[`.toFailWithDetail reports details correctly on a failure due to non-matching detail value: toFailTestAndMatchSnapshot 1`] = `
 "[2mexpect([22m[31mreceived[39m[2m).[22mtoFailWith[2m([22m[32mexpected[39m[2m)[22m
 Expected:
-  Failure with [32m"error"[39m
-  Detail: "[32m"detail"[39m"
+  Failure with [32m\\"error\\"[39m
+  Detail: \\"[32m\\"detail\\"[39m\\"
 Received:
-  Failure with "error"
-  Detail: "[31m"other detail"[39m""
+  Failure with \\"error\\"
+  Detail: \\"[31m\\"other detail\\"[39m\\""
 `;
 
 exports[`.toFailWithDetail reports details correctly on a failure due to non-matching failure value: toFailTestAndMatchSnapshot 1`] = `
 "[2mexpect([22m[31mreceived[39m[2m).[22mtoFailWith[2m([22m[32mexpected[39m[2m)[22m
 Expected:
-  Failure with [32m"error"[39m
-  Detail: "[32m"detail"[39m"
+  Failure with [32m\\"error\\"[39m
+  Detail: \\"[32m\\"detail\\"[39m\\"
 Received:
-  Failure with "oops"
-  Detail: "[31m"detail"[39m""
+  Failure with \\"oops\\"
+  Detail: \\"[31m\\"detail\\"[39m\\""
 `;
 
 exports[`.toFailWithDetail reports details correctly on a failure with a .not: toFailTestAndMatchSnapshot 1`] = `
 "[2mexpect([22m[31mreceived[39m[2m).not.toFailWith([22m[32mexpected[39m[2m)[22m
 Expected:
-  Not failure with [32m"oops"[39m
-  Detail: "[32m"detail"[39m"
+  Not failure with [32m\\"oops\\"[39m
+  Detail: \\"[32m\\"detail\\"[39m\\"
 Received:
-  Failure with "oops"
-  Detail: "[31m"detail"[39m""
+  Failure with \\"oops\\"
+  Detail: \\"[31m\\"detail\\"[39m\\""
 `;

@@ -5,7 +5,7 @@ exports[`.toSucceedAndMatchSnapshot logs details correctly for a failed result: 
 Expected:
   Callback to succeed with a result that matches the snapshot
 Received:
-  Failure with "oopsy""
+  Failure with \\"oopsy\\""
 `;
 
 exports[`.toSucceedAndMatchSnapshot logs details correctly for a failed result: toFailTestAndMatchSnapshot 2`] = `
@@ -15,9 +15,9 @@ exports[`.toSucceedAndMatchSnapshot logs details correctly for a failed result: 
 `;
 
 exports[`.toSucceedAndMatchSnapshot passes for a success result that matches the snapshot: toSucceedAndMatchSnapshot 1`] = `
-{
-  "nestedObject": {
-    "anArray": [
+Object {
+  "nestedObject": Object {
+    "anArray": Array [
       "element 1",
       "element 2",
     ],

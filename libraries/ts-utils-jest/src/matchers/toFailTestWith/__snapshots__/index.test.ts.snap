@@ -21,14 +21,14 @@ Expected:
 >>>>
 [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
 
-Expected: [32m"goodbye"[39m
-Received: [31m"hello"[39m
+Expected: [32m\\"goodbye\\"[39m
+Received: [31m\\"hello\\"[39m
 <<<<"
 `;
 
 exports[`.toFailTestWith logs failure correctly when callback succeeds: toFailTestAndMatchSnapshot 1`] = `
 "[2mexpect([22m[31mcallback[39m[2m).[22mtoFailTestWith[2m([22m[32mexpectedMessage[39m[2m)[22m
 Expected:
-  Failure with [32m"whatever"[39m
+  Failure with [32m\\"whatever\\"[39m
   Received: Callback succeeded"
 `;

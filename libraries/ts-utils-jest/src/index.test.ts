@@ -55,20 +55,20 @@ describe('verify matchers accessibility', () => {
         }
       })
     ).toSucceedAndMatchInlineSnapshot(`
-            {
-              "child": {
-                "values": [
-                  {
-                    "number": 1,
-                  },
-                  {
-                    "number": 2,
-                  },
-                ],
-              },
-              "field": "field",
-            }
-        `);
+      Object {
+        "child": Object {
+          "values": Array [
+            Object {
+              "number": 1,
+            },
+            Object {
+              "number": 2,
+            },
+          ],
+        },
+        "field": "field",
+      }
+    `);
   });
 
   test('toFailTest exists and works', () => {

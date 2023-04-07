@@ -8,13 +8,13 @@ Received: [31mtrue[39m"
 `;
 
 exports[`verify matchers accessibility toSucceedAndMatchSnapshot exists and works: toSucceedAndMatchSnapshot 1`] = `
-{
-  "child": {
-    "values": [
-      {
+Object {
+  "child": Object {
+    "values": Array [
+      Object {
         "number": 1,
       },
-      {
+      Object {
         "number": 2,
       },
     ],

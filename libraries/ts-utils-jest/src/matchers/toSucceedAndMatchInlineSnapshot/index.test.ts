@@ -17,16 +17,16 @@ describe('.toSucceedAndMatchSnapshot', () => {
         }
       })
     ).toSucceedAndMatchInlineSnapshot(`
-            {
-              "nestedObject": {
-                "anArray": [
-                  "element 1",
-                  "element 2",
-                ],
-              },
-              "someField": "this is a value",
-            }
-        `);
+      Object {
+        "nestedObject": Object {
+          "anArray": Array [
+            "element 1",
+            "element 2",
+          ],
+        },
+        "someField": "this is a value",
+      }
+    `);
   });
 
   test('fails for a failure result', () => {

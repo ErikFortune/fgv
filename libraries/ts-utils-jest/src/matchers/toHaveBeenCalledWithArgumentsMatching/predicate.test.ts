@@ -1,11 +1,15 @@
 import { predicate } from './predicate';
 
 describe('toHaveBeenCalledWithArgumentsMatching', () => {
-  const fn = jest.fn();
-  fn('arg1', 'arg2');
-  fn('call2');
-  fn('call3');
-  fn();
+  let fn: jest.Mock<unknown>;
+
+  beforeEach(() => {
+    fn = jest.fn();
+    fn('arg1', 'arg2');
+    fn('call2');
+    fn('call3');
+    fn();
+  });
 
   test('returns matching args if some call matches', () => {
     expect(predicate(fn, ['arg1', 'arg2'])).toEqual({ index: 0, arguments: ['arg1', 'arg2'] });

@@ -23,6 +23,9 @@
 import fs from 'fs';
 import * as path from 'path';
 
+/**
+ * @public
+ */
 export interface IMockFileConfig {
   path: string;
   backingFile?: string;
@@ -30,6 +33,9 @@ export interface IMockFileConfig {
   writable?: boolean;
 }
 
+/**
+ * @public
+ */
 export class ReadWriteSpies {
   public readonly read: jest.SpyInstance;
   public readonly write: jest.SpyInstance;
@@ -50,17 +56,27 @@ export class ReadWriteSpies {
   }
 }
 
+/**
+ * @public
+ */
 export interface IMockFileSystemOptions {
   mockWriteOnly?: boolean;
   allowUnknownMockWrite?: boolean;
 }
 
+/**
+ * @public
+ */
 // eslint-disable-next-line @rushstack/no-new-null
 type ReadFunc = (
   path: string | number | Buffer | URL,
+  // eslint-disable-next-line @rushstack/no-new-null
   options?: { encoding?: null; flag?: string } | null
 ) => Buffer;
 
+/**
+ * @public
+ */
 export class MockFileSystem {
   protected readonly _options?: IMockFileSystemOptions;
   protected readonly _config: Map<string, IMockFileConfig>;

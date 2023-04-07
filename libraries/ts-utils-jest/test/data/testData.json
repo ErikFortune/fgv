@@ -1,1 +1,4 @@
-{ "filename": "testData.json" }
+{
+  "filename": "testData.json",
+  "fromBackingFile": true
+}
