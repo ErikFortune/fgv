@@ -1,0 +1,37 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`.toSucceedAndSatisfy reports details when callback fails an expectation: toFailTestAndMatchSnapshot 1`] = `
+"[2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32m\\"goodbye\\"[39m
+Received: [31m\\"hello\\"[39m"
+`;
+
+exports[`.toSucceedAndSatisfy reports details when callback returns false: toFailTestAndMatchSnapshot 1`] = `
+"[2mexpect([22m[31mresult[39m[2m).[22mtoSucceedAndSatisfy[2m([22m[32mcallback[39m[2m)[22m
+Expected:
+  Success with [32m\\"successful callback\\"[39m
+Received:
+  Success with [31m\\"hello\\"[39m
+  Callback returned false"
+`;
+
+exports[`.toSucceedAndSatisfy reports details when callback throws an exception: toFailTestAndMatchSnapshot 1`] = `"UH OH AN ERROR"`;
+
+exports[`.toSucceedAndSatisfy reports details when received is a failure result: toFailTestAndMatchSnapshot 1`] = `
+"[2mexpect([22m[31mresult[39m[2m).[22mtoSucceedAndSatisfy[2m([22m[32mcallback[39m[2m)[22m
+Expected:
+  Success with [32m\\"successful callback\\"[39m
+Received:
+  Failure with \\"oops\\"
+  Callback was not invoked"
+`;
+
+exports[`.toSucceedAndSatisfy reports details with success and .not: toFailTestAndMatchSnapshot 1`] = `
+"[2mexpect([22m[31mresult[39m[2m).not.toSucceedAndSatisfy([22m[32mcallback[39m[2m)[22m
+Expected:
+  Not success with [32m\\"successful callback\\"[39m
+Received:
+  Success with [31m\\"hello\\"[39m
+  Callback returned true"
+`;

@@ -407,6 +407,12 @@
       "projectFolder": "libraries/ts-utils",
       "shouldPublish": true,
       "tags": ["libraries"]
+    },
+    {
+      "packageName": "@fgv/ts-utils-jest",
+      "projectFolder": "libraries/ts-utils-jest",
+      "shouldPublish": true,
+      "tags": ["libraries", "test", "jest"]
     }
   ]
 }

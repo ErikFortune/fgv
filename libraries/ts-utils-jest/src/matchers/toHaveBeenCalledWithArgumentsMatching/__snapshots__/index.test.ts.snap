@@ -1,0 +1,82 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`.toHaveBeenCalledWithArgumentsMatching reports a helpful message if a .not test fails with few calls 1`] = `
+"[2mexpect([22m[31mreceived[39m[2m).not.toHaveBeenCalledWithArgumentsMatching([22m[32mexpected[39m[2m)[22m
+Expected no call with arguments matching:
+      [32m[Any<String>][39m
+Received (1 total):
+*000: [31m[\\"arg1\\"][39m"
+`;
+
+exports[`.toHaveBeenCalledWithArgumentsMatching reports a helpful message if a .not test fails with many calls "for a call in the middle" 1`] = `
+"[2mexpect([22m[31mreceived[39m[2m).not.toHaveBeenCalledWithArgumentsMatching([22m[32mexpected[39m[2m)[22m
+Expected no call with arguments matching:
+      [32m[\\"arg3\\"][39m
+Received (7 total):
+ 002: [31m[\\"arg2\\"][39m
+*003: [31m[\\"arg3\\"][39m
+ 004: [31m[\\"arg4\\"][39m"
+`;
+
+exports[`.toHaveBeenCalledWithArgumentsMatching reports a helpful message if a .not test fails with many calls "for the first call" 1`] = `
+"[2mexpect([22m[31mreceived[39m[2m).not.toHaveBeenCalledWithArgumentsMatching([22m[32mexpected[39m[2m)[22m
+Expected no call with arguments matching:
+      [32m[\\"arg0\\"][39m
+Received (7 total):
+*000: [31m[\\"arg0\\"][39m
+ 001: [31m[\\"arg1\\"][39m
+ 002: [31m[\\"arg2\\"][39m"
+`;
+
+exports[`.toHaveBeenCalledWithArgumentsMatching reports a helpful message if a .not test fails with many calls "for the last call" 1`] = `
+"[2mexpect([22m[31mreceived[39m[2m).not.toHaveBeenCalledWithArgumentsMatching([22m[32mexpected[39m[2m)[22m
+Expected no call with arguments matching:
+      [32m[\\"arg6\\"][39m
+Received (7 total):
+ 004: [31m[\\"arg4\\"][39m
+ 005: [31m[\\"arg5\\"][39m
+*006: [31m[\\"arg6\\"][39m"
+`;
+
+exports[`.toHaveBeenCalledWithArgumentsMatching reports a helpful message if a .not test fails with many calls "for the second call" 1`] = `
+"[2mexpect([22m[31mreceived[39m[2m).not.toHaveBeenCalledWithArgumentsMatching([22m[32mexpected[39m[2m)[22m
+Expected no call with arguments matching:
+      [32m[StringMatching /1/][39m
+Received (7 total):
+ 000: [31m[\\"arg0\\"][39m
+*001: [31m[\\"arg1\\"][39m
+ 002: [31m[\\"arg2\\"][39m"
+`;
+
+exports[`.toHaveBeenCalledWithArgumentsMatching reports a helpful message if a .not test fails with many calls "for the second-to-last-call" 1`] = `
+"[2mexpect([22m[31mreceived[39m[2m).not.toHaveBeenCalledWithArgumentsMatching([22m[32mexpected[39m[2m)[22m
+Expected no call with arguments matching:
+      [32m[\\"arg5\\"][39m
+Received (7 total):
+ 004: [31m[\\"arg4\\"][39m
+*005: [31m[\\"arg5\\"][39m
+ 006: [31m[\\"arg6\\"][39m"
+`;
+
+exports[`.toHaveBeenCalledWithArgumentsMatching reports a helpful message if a call is not matched 1`] = `
+"[2mexpect([22m[31mreceived[39m[2m).[22mtoHaveBeenCalledWithArgumentsMatching[2m([22m[32mexpected[39m[2m)[22m
+Expected call with arguments matching:
+      [32m[\\"call7\\"][39m
+Received (6 total):
+ 003: [31m[\\"call4\\"][39m
+ 004: [31m[\\"call5\\"][39m
+ 005: [31m[\\"call6\\"][39m"
+`;
+
+exports[`.toHaveBeenCalledWithArgumentsMatching reports a helpful message if function was not called 1`] = `
+"[2mexpect([22m[31mreceived[39m[2m).[22mtoHaveBeenCalledWithArgumentsMatching[2m([22m[32mexpected[39m[2m)[22m
+Expected call with arguments matching:
+      [32m[\\"call7\\"][39m
+Received (0 total):"
+`;
+
+exports[`.toHaveBeenCalledWithArgumentsMatching throws if argument is "an object" 1`] = `"Test error: toHaveBeenCalledWithArgumentsMatching called with other than jest.Mock"`;
+
+exports[`.toHaveBeenCalledWithArgumentsMatching throws if argument is "not a mock function" 1`] = `"Test error: toHaveBeenCalledWithArgumentsMatching called with other than jest.Mock"`;
+
+exports[`.toHaveBeenCalledWithArgumentsMatching throws if argument is "null" 1`] = `"Test error: toHaveBeenCalledWithArgumentsMatching called with other than jest.Mock"`;
