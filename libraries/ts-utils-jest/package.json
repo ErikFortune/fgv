@@ -35,7 +35,7 @@
     "eslint-plugin-n": "^15.0.0"
   },
   "devDependencies": {
-    "@fgv/ts-utils": "^1.9.4",
+    "@fgv/ts-utils": "workspace:*",
     "@types/jest": "^29.5.0",
     "@types/node": "^18.15.10",
     "@typescript-eslint/eslint-plugin": "^5.56.0",

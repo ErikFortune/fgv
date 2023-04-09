@@ -78,7 +78,7 @@ importers:
 
   ../../libraries/ts-utils-jest:
     specifiers:
-      '@fgv/ts-utils': ^1.9.4
+      '@fgv/ts-utils': workspace:*
       '@jest/expect-utils': ^29.5.0
       '@rushstack/eslint-config': ~3.2.0
       '@rushstack/heft': ~0.50.0
@@ -118,7 +118,7 @@ importers:
       jest-matcher-utils: 29.5.0
       jest-snapshot: 29.5.0
     devDependencies:
-      '@fgv/ts-utils': 1.9.4
+      '@fgv/ts-utils': link:../ts-utils
       '@types/jest': 29.5.0
       '@types/node': 18.15.11
       '@typescript-eslint/eslint-plugin': 5.57.0_bf234099016d3f44c24f2c0643bb9845
@@ -496,14 +496,6 @@ packages:
   /@eslint/js/8.37.0:
     resolution: {integrity: sha512-x5vzdtOOGgFVDCUs81QRB2+liax8rFg3+7hqM+QhBG0/G3F1ZsoYl97UrqgHgQ9KKT7G6c4V+aTUCgu/n22v1A==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
-    dev: true
-
-  /@fgv/ts-utils/1.9.4:
-    resolution: {integrity: sha512-D+eda/co0CUGRddWwwF+67NfBGxePWz6hFuLs7qid1SQmSP285hbJXLQ4EmuVMGz+iS5lOsA00BWje4nyp2uCQ==}
-    dependencies:
-      luxon: 3.3.0
-      mustache: 4.2.0
-      papaparse: 5.4.1
     dev: true
 
   /@humanwhocodes/config-array/0.11.8:
@@ -3531,6 +3523,7 @@ packages:
   /luxon/3.3.0:
     resolution: {integrity: sha512-An0UCfG/rSiqtAIiBPO0Y9/zAnHUZxAMiCpTd5h2smgsj7GGmcenvrvww2cqNA8/4A5ZrD1gJpHN2mIHZQF+Mg==}
     engines: {node: '>=12'}
+    dev: false
 
   /make-dir/3.1.0:
     resolution: {integrity: sha512-g3FeP20LNwhALb/6Cz6Dd4F2ngze0jz7tbzrD2wAV+o9FeNHe4rL+yK2md0J/fiSf1sa1ADhXqi5+oVwOM/eGw==}
@@ -3596,6 +3589,7 @@ packages:
   /mustache/4.2.0:
     resolution: {integrity: sha512-71ippSywq5Yb7/tVYyGbkBggbU8H3u5Rz56fH60jGFgr8uHwxs+aSKeqmluIVzM0m0kB7xQjKS6qPfd0b2ZoqQ==}
     hasBin: true
+    dev: false
 
   /natural-compare-lite/1.4.0:
     resolution: {integrity: sha512-Tj+HTDSJJKaZnfiuw+iaF9skdPpTo2GtEly5JHnWV/hfv2Qj/9RKsGISQtLh2ox3l5EAGw487hnBee0sIJ6v2g==}
@@ -3723,6 +3717,7 @@ packages:
 
   /papaparse/5.4.1:
     resolution: {integrity: sha512-HipMsgJkZu8br23pW15uvo6sib6wne/4woLZPlFf3rpDyMe9ywEXUsuD7+6K9PRkJlVT51j/sCOYDKGGS3ZJrw==}
+    dev: false
 
   /parent-module/1.0.1:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
