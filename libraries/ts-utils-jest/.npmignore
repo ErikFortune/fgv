@@ -1,0 +1,20 @@
+# Exclude build and temp files
+.heft/
+.rush/
+temp/
+*.log
+
+# Exclude source and test
+src/
+test/
+*/**/*.test.{d.ts,d.ts.map,js,js.map}
+
+# Exclude built docs & api docs
+docs/
+etc/
+
+# Exclude configs
+config/
+.eslintrc.js
+tsconfig.json
+.vscode/
