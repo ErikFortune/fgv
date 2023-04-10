@@ -1,0 +1,26 @@
+{
+  "name": "@fgv/ts-utils",
+  "entries": [
+    {
+      "version": "2.0.0",
+      "tag": "@fgv/ts-utils_v2.0.0",
+      "date": "Mon, 10 Apr 2023 03:33:11 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "refactor and cleanup"
+          },
+          {
+            "comment": "reorganization and cleanup"
+          },
+          {
+            "comment": "more refactoring"
+          },
+          {
+            "comment": "refactor"
+          }
+        ]
+      }
+    }
+  ]
+}

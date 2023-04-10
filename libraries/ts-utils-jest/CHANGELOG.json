@@ -1,0 +1,28 @@
+{
+  "name": "@fgv/ts-utils-jest",
+  "entries": [
+    {
+      "version": "2.0.0",
+      "tag": "@fgv/ts-utils-jest_v2.0.0",
+      "date": "Mon, 10 Apr 2023 03:33:11 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "initial checking"
+          },
+          {
+            "comment": "refactor"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@fgv/ts-utils\" to `2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@fgv/ts-utils\" from `^1.9.4` to `^2.0.0`"
+          }
+        ]
+      }
+    }
+  ]
+}
