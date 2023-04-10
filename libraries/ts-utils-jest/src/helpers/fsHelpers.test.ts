@@ -21,10 +21,10 @@
  */
 
 import { readFileSync, writeFileSync } from 'fs';
-import { MockFileConfig, MockFileSystem } from '..';
+import { IMockFileConfig, MockFileSystem } from './fsHelpers';
 
 describe('MockFileSystem class', () => {
-  const configs: MockFileConfig[] = [
+  const configs: IMockFileConfig[] = [
     {
       path: 'path/to/backedFile.json',
       backingFile: 'test/data/testData.json',

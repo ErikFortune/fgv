@@ -3,7 +3,6 @@
   "version": "2.0.0",
   "description": "Custom matchers for ts-utils result class",
   "main": "lib/index.js",
-  "types": "dist/ts-utils-jest.d.ts",
   "scripts": {
     "build": "heft build",
     "clean": "heft clean",
