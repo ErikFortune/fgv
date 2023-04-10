@@ -7,7 +7,7 @@
 > This API is provided as a preview for developers and may change based on feedback that we receive. Do not use this API in a production environment.
 > 
 
-A helper function to create a [Converter](./ts-utils.converter.md) which converts `unknown` to [ExtendedArray&lt;T&gt;](./ts-utils.extendedarray.md)<!-- -->.
+A helper function to create a [Converter](./ts-utils.converter.md) which converts `unknown` to [ExtendedArray&lt;T&gt;](./ts-utils.experimental.extendedarray.md)<!-- -->.
 
 **Signature:**
 
@@ -25,7 +25,7 @@ export declare function extendedArrayOf<T, TC = undefined>(label: string, conver
 
 **Returns:**
 
-[Converter](./ts-utils.converter.md)<!-- -->&lt;[ExtendedArray](./ts-utils.extendedarray.md)<!-- -->&lt;T&gt;, TC&gt;
+[Converter](./ts-utils.converter.md)<!-- -->&lt;[ExtendedArray](./ts-utils.experimental.extendedarray.md)<!-- -->&lt;T&gt;, TC&gt;
 
 ## Remarks
 

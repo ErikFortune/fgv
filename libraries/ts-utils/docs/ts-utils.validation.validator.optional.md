@@ -13,5 +13,5 @@ optional(): Validator<T | undefined, TC>;
 ```
 **Returns:**
 
-[Validator](./ts-utils.validation.validator.md)<!-- -->&lt;T \| undefined, TC&gt;
+[Validator](./ts-utils.validator.md)<!-- -->&lt;T \| undefined, TC&gt;
 

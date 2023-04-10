@@ -8,9 +8,6 @@
 export function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T): Result<T>;
 
 // Warning: (ae-forgotten-export) The symbol "OnError_2" needs to be exported by the entry point index.d.ts
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 //
 // @public
 function arrayOf<T, TC = undefined>(converter: Converter<T, TC>, onError?: OnError_2): Converter<T[], TC>;
@@ -23,7 +20,6 @@ function arrayOf<T, TC = undefined>(converter: Converter<T, TC>, onError?: OnErr
 function arrayOf_2<T, TC>(validateElement: Validator<T, TC>, params?: Omit<ArrayValidatorConstructorParams<T, TC>, 'validateElement'>): ArrayValidator<T, TC>;
 
 // Warning: (ae-forgotten-export) The symbol "ValidatorBase" needs to be exported by the entry point index.d.ts
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Validator"
 //
 // @public
 class ArrayValidator<T, TC = unknown> extends ValidatorBase<T[], TC> {
@@ -55,82 +51,39 @@ declare namespace Base {
     }
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 class BaseConverter<T, TC = undefined> implements Converter<T, TC> {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ConverterTraits"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(converter: (from: unknown, self: Converter<T, TC>, context?: TC) => Result<T>, defaultContext?: TC, traits?: ConverterTraits);
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    //
-    // (undocumented)
     get brand(): string | undefined;
     // @internal (undocumented)
     protected _brand?: string;
     // @internal (undocumented)
     protected _context(supplied?: TC): TC | undefined;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    //
-    // (undocumented)
     convert(from: unknown, context?: TC): Result<T>;
     // Warning: (ae-forgotten-export) The symbol "OnError" needs to be exported by the entry point index.d.ts
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    //
-    // (undocumented)
     convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined>;
     // @internal (undocumented)
     protected readonly _defaultContext?: TC;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    //
-    // (undocumented)
     get isOptional(): boolean;
     // @internal (undocumented)
     protected _isOptional: boolean;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    //
-    // (undocumented)
     map<T2>(mapper: (from: T) => Result<T2>): Converter<T2, TC>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    //
-    // (undocumented)
     mapConvert<T2>(mapConverter: Converter<T2>): Converter<T2, TC>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    //
-    // (undocumented)
     mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    //
-    // (undocumented)
     mapItems<TI>(mapper: (from: unknown) => Result<TI>): Converter<TI[], TC>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    //
-    // (undocumented)
     optional(onError?: OnError): Converter<T | undefined, TC>;
     // @internal (undocumented)
     protected _traits(traits?: Partial<ConverterTraits>): ConverterTraits;
     // @internal (undocumented)
     protected _with(traits: Partial<ConverterTraits>): this;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    //
-    // (undocumented)
     withBrand<B extends string>(brand: B): Converter<Brand<T, B>, TC>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    //
-    // (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     withConstraint(constraint: (val: T) => boolean | Result<T>, options?: ConstraintOptions): Converter<T, TC>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    //
-    // (undocumented)
     withItemTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI[], TC>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    //
-    // (undocumented)
     withTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI, TC>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 const boolean: Converter<boolean, undefined>;
 
@@ -190,8 +143,6 @@ function computeHash(parts: string[]): string;
 // @public
 type Constraint<T> = (val: T) => boolean | Failure<T>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 interface ConstraintOptions {
     readonly description: string;
@@ -200,68 +151,46 @@ interface ConstraintOptions {
 // @public
 type ConstraintTrait = FunctionConstraintTrait;
 
-// @internal @deprecated
-type ConvertedToType<TCONV> = Infer<TCONV>;
-
-// @public
-interface Converter<T, TC = undefined> extends ConverterTraits {
-    readonly brand?: string;
-    convert(from: unknown, context?: TC): Result<T>;
-    convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined>;
-    readonly isOptional: boolean;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    map<T2>(mapper: (from: T) => Result<T2>): Converter<T2, TC>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    mapConvert<T2>(mapConverter: Converter<T2>): Converter<T2, TC>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    mapItems<TI>(mapper: (from: unknown) => Result<TI>): Converter<TI[], TC>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    optional(onError?: OnError): Converter<T | undefined, TC>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    withBrand<B extends string>(brand: B): Converter<Brand<T, B>, TC>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ConstraintOptions"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    withConstraint(constraint: (val: T) => boolean | Result<T>, options?: ConstraintOptions): Converter<T, TC>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    withItemTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI[], TC>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-    withTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI, TC>;
-}
-
-declare namespace Converters {
+declare namespace Conversion {
     export {
-        Converters_2 as Converters,
+        Converters,
         ConverterTraits,
         ConstraintOptions,
         Converter,
         Infer,
         ConvertedToType,
-        BaseConverter
+        BaseConverter,
+        ObjectConverterOptions,
+        FieldConverters,
+        ObjectConverter,
+        StringMatchOptions,
+        StringConverter
     }
 }
-export { Converters }
+export { Conversion }
 
-declare namespace Converters_2 {
+// @internal @deprecated
+type ConvertedToType<TCONV> = Infer<TCONV>;
+
+// @public
+export interface Converter<T, TC = undefined> extends ConverterTraits {
+    readonly brand?: string;
+    convert(from: unknown, context?: TC): Result<T>;
+    convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined>;
+    readonly isOptional: boolean;
+    map<T2>(mapper: (from: T) => Result<T2>): Converter<T2, TC>;
+    mapConvert<T2>(mapConverter: Converter<T2>): Converter<T2, TC>;
+    mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC>;
+    mapItems<TI>(mapper: (from: unknown) => Result<TI>): Converter<TI[], TC>;
+    optional(onError?: OnError): Converter<T | undefined, TC>;
+    withBrand<B extends string>(brand: B): Converter<Brand<T, B>, TC>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    withConstraint(constraint: (val: T) => boolean | Result<T>, options?: ConstraintOptions): Converter<T, TC>;
+    withItemTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI[], TC>;
+    withTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI, TC>;
+}
+
+declare namespace Converters {
     export {
         templateString,
         enumeratedValue,
@@ -287,8 +216,6 @@ declare namespace Converters_2 {
         transformObject,
         rangeTypeOf,
         rangeOf,
-        StringMatchOptions,
-        StringConverter,
         string,
         value,
         number,
@@ -300,15 +227,13 @@ declare namespace Converters_2 {
         stringArray,
         numberArray,
         KeyedConverterOptions,
-        ObjectConverterOptions,
-        FieldConverters,
-        ObjectConverter,
         StrictObjectConverterOptions,
         DiscriminatedObjectConverters,
         FieldTransformers,
         TransformObjectOptions
     }
 }
+export { Converters }
 
 // @public
 interface ConverterTraits {
@@ -334,8 +259,8 @@ interface CsvOptions {
     delimiter?: string;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "RangeOfFormats"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "RangeOf"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const DEFAULT_RANGEOF_FORMATS: RangeOfFormats;
@@ -345,9 +270,6 @@ const DEFAULT_RANGEOF_FORMATS: RangeOfFormats;
 // @public
 const defaultValidatorTraits: ValidatorTraitValues;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 function delimitedString(delimiter: string, options?: 'filtered' | 'all'): Converter<string[], string>;
 
@@ -390,31 +312,18 @@ export class DetailedSuccess<T, TD> extends Success<T> {
 // @public
 export type DetailedSuccessContinuation<T, TD, TN> = (value: T, detail?: TD) => DetailedResult<TN, TD>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 //
 // @public
 function discriminatedObject<T, TD extends string = string, TC = unknown>(discriminatorProp: string, converters: DiscriminatedObjectConverters<T, TD>): Converter<T, TC>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 type DiscriminatedObjectConverters<T, TD extends string = string, TC = unknown> = Record<TD, Converter<T, TC>>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 function element<T, TC = undefined>(index: number, converter: Converter<T, TC>): Converter<T, TC>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 function enumeratedValue<T>(values: T[]): Converter<T, T[]>;
 
@@ -443,25 +352,23 @@ export { Experimental }
 
 // @beta
 class ExtendedArray<T> extends Array<T> {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ExtendedArray"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(itemDescription: string, ...items: T[]);
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ExtendedArray"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     all(): T[];
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ExtendedArray"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     atLeastOne(failMessage?: string): Result<T[]>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ExtendedArray"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     first(failMessage?: string): Result<T>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ExtendedArray"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ExtendedArray"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static isExtendedArray<T>(a?: T[]): a is ExtendedArray<T>;
     // (undocumented)
     readonly itemDescription: string;
     single(predicate?: (item: T) => boolean): Result<T>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ExtendedArray"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @beta
 function extendedArrayOf<T, TC = undefined>(label: string, converter: Converter<T, TC>, onError?: OnError_2): Converter<ExtendedArray<T>, TC>;
@@ -496,10 +403,6 @@ export type FailureContinuation<T> = (message: string) => Result<T>;
 // @public
 export function failWithDetail<T, TD>(message: string, detail: TD): DetailedFailure<T, TD>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 function field<T, TC = undefined>(name: string, converter: Converter<T, TC>): Converter<T, TC>;
 
@@ -533,7 +436,7 @@ type FieldValidators<T, TC = unknown> = {
     [key in keyof T]: Validator<T[key], TC>;
 };
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Formatter"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @beta
 function formatList<T>(format: string, items: T[], itemFormatter: Formatter<T>): Result<string>;
@@ -545,7 +448,7 @@ interface Formattable {
 
 // @beta
 class FormattableBase {
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Formattable"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     format(template: string): Result<string>;
@@ -559,13 +462,13 @@ type FormatTargets = 'text' | 'markdown' | 'embed';
 // @beta
 type Formatter<T> = (format: string, item: T) => Result<string>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Formatter"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @beta
 type FormattersByExtendedTarget<TFT extends FormatTargets, T> = Record<TFT, Formatter<T>>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Formatter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "FormatTargets"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @beta
 type FormattersByTarget<T> = FormattersByExtendedTarget<FormatTargets, T>;
@@ -702,9 +605,7 @@ export interface IResultLogger {
     error(message: string): void;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 //
 // @public
 function isA<T, TC = unknown>(description: string, guard: TypeGuardWithContext<T, TC>): Converter<T, TC>;
@@ -719,8 +620,6 @@ function isA_2<T, TC>(description: string, guard: TypeGuardWithContext<T, TC>, p
 // @public
 export function isKeyOf<T extends object>(key: string | number | symbol, item: T): key is keyof T;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 const isoDate: Converter<Date, unknown>;
 
@@ -747,9 +646,6 @@ interface KeyedConverterOptions<T extends string = string, TC = undefined> {
     onError?: 'fail' | 'ignore';
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 function literal<T>(value: T): Converter<T, unknown>;
 
@@ -821,35 +717,18 @@ export function mapDetailedResults<T, TD>(results: Iterable<DetailedResult<T, TD
 // @public
 export function mapFailures<T>(results: Iterable<Result<T>>): string[];
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 function mapOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC>): Converter<Map<TK, T>, TC>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 function mapOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC>, onError: 'fail' | 'ignore'): Converter<Map<TK, T>, TC>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 //
 // @public
 function mapOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC>, options: KeyedConverterOptions<TK, TC>): Converter<Map<TK, T>, TC>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 function mappedEnumeratedValue<T>(map: [T, unknown[]][], message?: string): Converter<T, undefined>;
 
@@ -896,8 +775,6 @@ class Normalizer_2 {
     protected _normalizeLiteral(from: string | number | bigint | boolean | symbol | undefined | Date | RegExp | null): Result<string>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 const number: Converter<number, undefined>;
 
@@ -906,8 +783,6 @@ const number: Converter<number, undefined>;
 // @public
 const number_2: Validator<number>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 const numberArray: Converter<number[] | undefined>;
 
@@ -931,7 +806,6 @@ type NumberValidatorConstructorParams<T extends number = number, TC = unknown> =
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -942,7 +816,6 @@ function object<T>(properties: FieldConverters<T>, options?: ObjectConverterOpti
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public @deprecated
@@ -957,7 +830,6 @@ function object<T>(properties: FieldConverters<T>, optional: (keyof T)[]): Objec
 // @public
 function object_2<T, TC = unknown>(fields: FieldValidators<T, TC>, params?: Omit<ObjectValidatorConstructorParams<T, TC>, 'fields'>): ObjectValidator<T, TC>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -966,11 +838,9 @@ class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
     constructor(fields: FieldConverters<T, TC>, options?: ObjectConverterOptions<T>);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
     constructor(fields: FieldConverters<T, TC>, optional?: (keyof T)[]);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1062,30 +932,15 @@ interface ObjectValidatorOptions<T, TC> extends ValidatorOptions<TC> {
 // @public
 export function omit<T extends object, K extends keyof T>(from: T, exclude: K[]): Omit<T, K>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 function oneOf<T, TC = unknown>(converters: Array<Converter<T, TC>>, onError?: OnError_2): Converter<T, TC>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 const optionalBoolean: Converter<boolean | undefined>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 function optionalElement<T, TC = undefined>(index: number, converter: Converter<T, TC>): Converter<T | undefined, TC>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 function optionalField<T, TC = undefined>(name: string, converter: Converter<T, TC>): Converter<T | undefined, TC>;
 
@@ -1095,8 +950,6 @@ export function optionalMapToPossiblyEmptyRecord<TS, TD, TK extends string = str
 // @public
 export function optionalMapToRecord<TS, TD, TK extends string = string>(src: Map<TK, TS> | undefined, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD> | undefined>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 const optionalNumber: Converter<number | undefined>;
 
@@ -1106,8 +959,6 @@ export function optionalRecordToMap<TS, TD, TK extends string = string>(src: Rec
 // @public
 export function optionalRecordToPossiblyEmptyMap<TS, TD, TK extends string = string>(src: Record<TK, TS> | undefined, factory: KeyedThingFactory<TS, TD, TK>): Result<Map<TK, TD>>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 const optionalString: Converter<string | undefined, unknown>;
 
@@ -1136,43 +987,41 @@ export function propagateWithDetail<T, TD>(result: Result<T>, detail: TD, succes
 
 // @public
 class RangeOf<T> implements RangeOfProperties<T> {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "RangeOf"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(min?: T, max?: T);
     check(t: T): 'less' | 'included' | 'greater';
     // @internal
     protected _compare(t1: T, t2: T): 'less' | 'equal' | 'greater';
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "RangeOf"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "RangeOfProperties"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "RangeOf"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createRange<T>(init?: RangeOfProperties<T>): Result<RangeOf<T>>;
     // @internal
     protected static _defaultCompare<T>(t1: T, t2: T): 'less' | 'equal' | 'greater';
     findTransition(t: T): T | undefined;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "RangeOfFormats"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "DEFAULT_RANGEOF_FORMATS"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     format(format: (value: T) => string | undefined, formats?: RangeOfFormats): string | undefined;
     includes(t: T): boolean;
     readonly max?: T;
     readonly min?: T;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "RangeOfProperties"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "RangeOfProperties"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "RangeOfFormats"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "DEFAULT_RANGEOF_FORMATS"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static propertiesToString<T>(range: RangeOfProperties<T>, formats?: RangeOfFormats, emptyValue?: T): string | undefined;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "RangeOfProperties"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "RangeOf"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "RangeOf"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     toFormattedProperties(format: (value: T) => string | undefined): RangeOfProperties<string>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "RangeOf"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function rangeOf<T, TC = unknown>(converter: Converter<T, TC>): Converter<RangeOf<T>, TC>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "RangeOf"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 interface RangeOfFormats {
@@ -1192,9 +1041,6 @@ interface RangeOfProperties<T> {
     readonly min?: T;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 function rangeTypeOf<T, RT extends RangeOf<T>, TC = unknown>(converter: Converter<T, TC>, constructor: (init: RangeOfProperties<T>) => Result<RT>): Converter<RT, TC>;
 
@@ -1215,28 +1061,14 @@ declare namespace RecordJar {
 }
 export { RecordJar }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 function recordOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC>): Converter<Record<TK, T>, TC>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 function recordOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC>, onError: 'fail' | 'ignore'): Converter<Record<TK, T>, TC>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 //
 // @public
 function recordOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC>, options: KeyedConverterOptions<TK, TC>): Converter<Record<TK, T>, TC>;
@@ -1283,13 +1115,11 @@ const string: StringConverter;
 // @public
 const string_2: Validator<string>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 const stringArray: Converter<string[] | undefined>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "BaseConverter"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 class StringConverter<T extends string = string, TC = unknown> extends BaseConverter<T, TC> {
@@ -1365,23 +1195,16 @@ export class Success<T> implements IResult<T> {
 export type SuccessContinuation<T, TN> = (value: T) => Result<TN>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 //
 // @public
 function templateString(defaultContext?: unknown): StringConverter<string, unknown>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 //
 // @public
 function transform<T, TC = unknown>(properties: FieldConverters<T, TC>): Converter<T, TC>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 //
 // @public
 function transformObject<TSRC, TDEST, TC = unknown>(destinationFields: FieldTransformers<TSRC, TDEST, TC>, options?: TransformObjectOptions<TSRC>): Converter<TDEST, TC>;
@@ -1426,17 +1249,11 @@ interface TypeGuardValidatorConstructorParams<T, TC = unknown> extends Validator
 // @public
 type TypeGuardWithContext<T, TC = unknown> = (from: unknown, context?: TC) => from is T;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
 //
 // @public
 function validated<T, TC = unknown>(validator: Validator<T, TC>): Converter<T, TC>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Converter"
-//
 // @public
 function validateWith<T, TC = undefined>(validator: (from: unknown) => from is T, description?: string): Converter<T, TC>;
 
@@ -1459,7 +1276,7 @@ declare namespace Validation {
 export { Validation }
 
 // @public
-interface Validator<T, TC = undefined> {
+export interface Validator<T, TC = undefined> {
     readonly brand: string | undefined;
     guard(from: unknown, context?: TC): from is T;
     readonly isOptional: boolean;
@@ -1501,6 +1318,7 @@ declare namespace Validators {
         boolean_2 as boolean
     }
 }
+export { Validators }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

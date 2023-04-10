@@ -20,5 +20,5 @@ withBrand<B extends string>(brand: B): Validator<Brand<T, B>, TC>;
 
 **Returns:**
 
-[Validator](./ts-utils.validation.validator.md)<!-- -->&lt;[Brand](./ts-utils.brand.md)<!-- -->&lt;T, B&gt;, TC&gt;
+[Validator](./ts-utils.validator.md)<!-- -->&lt;[Brand](./ts-utils.brand.md)<!-- -->&lt;T, B&gt;, TC&gt;
 

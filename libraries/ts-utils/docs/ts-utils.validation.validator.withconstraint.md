@@ -21,7 +21,7 @@ withConstraint(constraint: Constraint<T>, trait?: ConstraintTrait): Validator<T,
 
 **Returns:**
 
-[Validator](./ts-utils.validation.validator.md)<!-- -->&lt;T, TC&gt;
+[Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;
 
 A new [Validator](./ts-utils.validation.validator.md)<!-- -->.
 

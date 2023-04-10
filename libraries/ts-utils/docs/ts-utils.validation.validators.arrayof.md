@@ -16,7 +16,7 @@ export declare function arrayOf<T, TC>(validateElement: Validator<T, TC>, params
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  validateElement | [Validator](./ts-utils.validation.validator.md)<!-- -->&lt;T, TC&gt; | A [validator](./ts-utils.validation.validator.md) which validates each element. |
+|  validateElement | [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt; | A [validator](./ts-utils.validation.validator.md) which validates each element. |
 |  params | Omit&lt;[ArrayValidatorConstructorParams](./ts-utils.validation.classes.arrayvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;, 'validateElement'&gt; | _(Optional)_ |
 
 **Returns:**

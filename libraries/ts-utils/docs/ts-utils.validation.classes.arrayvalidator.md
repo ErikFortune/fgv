@@ -4,7 +4,7 @@
 
 ## Validation.Classes.ArrayValidator class
 
-An in-place [Validator](./ts-utils.validation.validator.md) for arrays of validated values or objects.
+An in-place [Validator](./ts-utils.validator.md) for arrays of validated values or objects.
 
 **Signature:**
 
@@ -23,7 +23,7 @@ export declare class ArrayValidator<T, TC = unknown> extends ValidatorBase<T[], 
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [\_validateElement](./ts-utils.validation.classes.arrayvalidator._validateelement.md) | <p><code>protected</code></p><p><code>readonly</code></p> | [Validator](./ts-utils.validation.validator.md)<!-- -->&lt;T, TC&gt; |  |
+|  [\_validateElement](./ts-utils.validation.classes.arrayvalidator._validateelement.md) | <p><code>protected</code></p><p><code>readonly</code></p> | [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt; |  |
 |  [options](./ts-utils.validation.classes.arrayvalidator.options.md) | <code>readonly</code> | [ValidatorOptions](./ts-utils.validation.validatoroptions.md)<!-- -->&lt;TC&gt; | [Options](./ts-utils.validation.validatoroptions.md) which apply to this validator. |
 
 ## Methods

@@ -4,7 +4,7 @@
 
 ## Converters.object() function
 
-Helper function to create a [ObjectConverter&lt;T&gt;](./ts-utils.converters.objectconverter.md) which converts an object without changing shape, given a [FieldConverters&lt;T&gt;](./ts-utils.converters.fieldconverters.md) and an optional [ObjectConverterOptions&lt;T&gt;](./ts-utils.converters.objectconverteroptions.md) to further refine conversion behavior.
+Helper function to create a [ObjectConverter&lt;T&gt;](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, given a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) and an optional [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectconverteroptions.md) to further refine conversion behavior.
 
 **Signature:**
 
@@ -16,14 +16,14 @@ export declare function object<T>(properties: FieldConverters<T>, options?: Obje
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  properties | [FieldConverters](./ts-utils.converters.fieldconverters.md)<!-- -->&lt;T&gt; | An [FieldConverters&lt;T&gt;](./ts-utils.converters.fieldconverters.md) defining the shape of the source object and [converters](./ts-utils.converter.md) to be applied to each properties. |
-|  options | [ObjectConverterOptions](./ts-utils.converters.objectconverteroptions.md)<!-- -->&lt;T&gt; | _(Optional)_ An [ObjectConverterOptions&lt;T&gt;](./ts-utils.converters.objectconverteroptions.md) containing options for the object converter. |
+|  properties | [FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T&gt; | An [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) defining the shape of the source object and [converters](./ts-utils.converter.md) to be applied to each properties. |
+|  options | [ObjectConverterOptions](./ts-utils.conversion.objectconverteroptions.md)<!-- -->&lt;T&gt; | _(Optional)_ An [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectconverteroptions.md) containing options for the object converter. |
 
 **Returns:**
 
-[ObjectConverter](./ts-utils.converters.objectconverter.md)<!-- -->&lt;T&gt;
+[ObjectConverter](./ts-utils.conversion.objectconverter.md)<!-- -->&lt;T&gt;
 
-A new [ObjectConverter](./ts-utils.converters.objectconverter.md) which applies the specified conversions. 
+A new [ObjectConverter](./ts-utils.conversion.objectconverter.md) which applies the specified conversions. 
 
 ## Remarks
 

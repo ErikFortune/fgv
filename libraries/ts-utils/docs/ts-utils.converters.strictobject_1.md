@@ -9,7 +9,7 @@
 > Use [Converters.strictObject(options)](./ts-utils.converters.strictobject.md) instead.
 > 
 
-Helper function to create a [ObjectConverter](./ts-utils.converters.objectconverter.md) which converts an object without changing shape, a [FieldConverters&lt;T&gt;](./ts-utils.converters.fieldconverters.md) and an optional [StrictObjectConverterOptions&lt;T&gt;](./ts-utils.converters.strictobjectconverteroptions.md) to further refine conversion behavior.
+Helper function to create a [ObjectConverter](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) and an optional [StrictObjectConverterOptions&lt;T&gt;](./ts-utils.converters.strictobjectconverteroptions.md) to further refine conversion behavior.
 
 **Signature:**
 
@@ -21,14 +21,14 @@ export declare function strictObject<T>(properties: FieldConverters<T>, optional
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  properties | [FieldConverters](./ts-utils.converters.fieldconverters.md)<!-- -->&lt;T&gt; | An object containing defining the shape and converters to be applied. |
+|  properties | [FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T&gt; | An object containing defining the shape and converters to be applied. |
 |  optional | (keyof T)\[\] | An array of <code>keyof T</code> containing keys to be considered optional. |
 
 **Returns:**
 
-[ObjectConverter](./ts-utils.converters.objectconverter.md)<!-- -->&lt;T&gt;
+[ObjectConverter](./ts-utils.conversion.objectconverter.md)<!-- -->&lt;T&gt;
 
-A new [ObjectConverter](./ts-utils.converters.objectconverter.md) which applies the specified conversions. 
+A new [ObjectConverter](./ts-utils.conversion.objectconverter.md) which applies the specified conversions. 
 
 ## Remarks
 

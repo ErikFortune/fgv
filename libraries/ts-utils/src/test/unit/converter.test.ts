@@ -23,7 +23,7 @@
 import '../helpers/jest';
 
 import { Result, fail, succeed } from '../../packlets/base';
-import { BaseConverter, Converter, Converters } from '../../packlets/converters';
+import { BaseConverter, Converter, Converters } from '../../packlets/conversion';
 
 interface ITestContext {
   value: string;

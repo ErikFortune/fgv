@@ -20,5 +20,5 @@ export declare function literal<T extends string | number | boolean | symbol | n
 
 **Returns:**
 
-[Validator](./ts-utils.validation.validator.md)<!-- -->&lt;T&gt;
+[Validator](./ts-utils.validator.md)<!-- -->&lt;T&gt;
 

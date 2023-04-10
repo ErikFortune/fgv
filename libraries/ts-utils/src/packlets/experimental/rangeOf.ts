@@ -36,7 +36,7 @@ export interface RangeOfProperties<T> {
 /**
  * Format strings (in mustache format) to
  * use for both open-ended and complete
- * {@link RangeOf | RangeOf<T>}.
+ * {@link Experimental.RangeOf | RangeOf<T>}.
  * @public
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -47,8 +47,8 @@ export interface RangeOfFormats {
 }
 
 /**
- * Default {@link RangeOfFormats | formats} to use for both
- * open-ended and complete {@link RangeOf | RangeOf<T>}.
+ * Default {@link Experimental.RangeOfFormats | formats} to use for both
+ * open-ended and complete {@link Experimental.RangeOf | RangeOf<T>}.
  * @public
  */
 export const DEFAULT_RANGEOF_FORMATS: RangeOfFormats = {
@@ -73,7 +73,7 @@ export class RangeOf<T> implements RangeOfProperties<T> {
   public readonly max?: T;
 
   /**
-   * Creates a new {@link RangeOf | RangeOf<T>}.
+   * Creates a new {@link Experimental.RangeOf | RangeOf<T>}.
    * @param min - Optional minimum extent of the range.
    * @param max - Optional maximum extent of the range.
    */
@@ -86,20 +86,20 @@ export class RangeOf<T> implements RangeOfProperties<T> {
   }
 
   /**
-   * Static constructor for a {@link RangeOf | RangeOf<T>}.
-   * @param init - {@link RangeOfProperties | Range initializer}.
-   * @returns A new {@link RangeOf | RangeOf<T>}.
+   * Static constructor for a {@link Experimental.RangeOf | RangeOf<T>}.
+   * @param init - {@link Experimental.RangeOfProperties | Range initializer}.
+   * @returns A new {@link Experimental.RangeOf | RangeOf<T>}.
    */
   public static createRange<T>(init?: RangeOfProperties<T>): Result<RangeOf<T>> {
     return captureResult(() => new RangeOf<T>(init?.min, init?.max));
   }
 
   /**
-   * Gets a formatted description of a {@link RangeOfProperties | RangeOfProperties<T>} given an
+   * Gets a formatted description of a {@link Experimental.RangeOfProperties | RangeOfProperties<T>} given an
    * optional set of formats and 'empty' value to use.
-   * @param range - The {@link RangeOfProperties | RangeOfProperties<T>} to be formatted.
-   * @param formats - Optional {@link RangeOfFormats | formats} to use. Default is
-   * {@link DEFAULT_RANGEOF_FORMATS | DEFAULT_RANGEOF_FORMATS}.
+   * @param range - The {@link Experimental.RangeOfProperties | RangeOfProperties<T>} to be formatted.
+   * @param formats - Optional {@link Experimental.RangeOfFormats | formats} to use. Default is
+   * {@link Experimental.DEFAULT_RANGEOF_FORMATS | DEFAULT_RANGEOF_FORMATS}.
    * @param emptyValue - Value which represents unbounded minimum or maximum for this range. Default is `undefined`.
    * @returns A string representation of the range.
    */
@@ -185,8 +185,9 @@ export class RangeOf<T> implements RangeOfProperties<T> {
   /**
    * Formats the minimum and maximum values of this range.
    * @param format - A format function used to format the values.
-   * @returns A {@link RangeOfProperties | RangeOfProperties<string>} containing the
-   * formatted representation of the {@link RangeOf.min | minimum} and {@link RangeOf.max | maximum}
+   * @returns A {@link Experimental.RangeOfProperties | RangeOfProperties<string>} containing the
+   * formatted representation of the {@link Experimental.RangeOf.min | minimum} and
+   * {@link Experimental.RangeOf.max | maximum}
    * extent of the range, or `undefined` for an extent that is not present.
    */
   public toFormattedProperties(format: (value: T) => string | undefined): RangeOfProperties<string> {
@@ -199,8 +200,8 @@ export class RangeOf<T> implements RangeOfProperties<T> {
   /**
    * Formats this range using the supplied format function.
    * @param format - Format function used to format minimum and maximum extent values.
-   * @param formats - The {@link RangeOfFormats | format strings} used to format the range
-   * (default {@link DEFAULT_RANGEOF_FORMATS}).
+   * @param formats - The {@link Experimental.RangeOfFormats | format strings} used to format the range
+   * (default {@link Experimental.DEFAULT_RANGEOF_FORMATS}).
    * @returns Returns a formatted representation of this range.
    */
   public format(format: (value: T) => string | undefined, formats?: RangeOfFormats): string | undefined {

@@ -8,7 +8,7 @@
 
 |  Class | Description |
 |  --- | --- |
-|  [ArrayValidator](./ts-utils.validation.classes.arrayvalidator.md) | An in-place [Validator](./ts-utils.validation.validator.md) for arrays of validated values or objects. |
+|  [ArrayValidator](./ts-utils.validation.classes.arrayvalidator.md) | An in-place [Validator](./ts-utils.validator.md) for arrays of validated values or objects. |
 |  [BooleanValidator](./ts-utils.validation.classes.booleanvalidator.md) | An in-place [Validator](./ts-utils.validation.validator.md) for <code>boolean</code> values. |
 |  [NumberValidator](./ts-utils.validation.classes.numbervalidator.md) | An in-place [Validator](./ts-utils.validation.validator.md) for <code>number</code> values. |
 |  [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md) | In-place [Validator](./ts-utils.validation.validator.md) for an object of type <code>&lt;T&gt;</code>. |

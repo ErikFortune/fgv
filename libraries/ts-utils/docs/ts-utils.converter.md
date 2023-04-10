@@ -11,7 +11,7 @@ Generic converter to convert unknown to a templated type `<T>`<!-- -->, using in
 ```typescript
 export interface Converter<T, TC = undefined> extends ConverterTraits 
 ```
-**Extends:** [ConverterTraits](./ts-utils.convertertraits.md)
+**Extends:** [ConverterTraits](./ts-utils.conversion.convertertraits.md)
 
 ## Properties
 

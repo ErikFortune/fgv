@@ -16,7 +16,7 @@ export declare function validated<T, TC = unknown>(validator: Validator<T, TC>):
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  validator | [Validator](./ts-utils.validation.validator.md)<!-- -->&lt;T, TC&gt; | the validator to be wrapped |
+|  validator | [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt; | the validator to be wrapped |
 
 **Returns:**
 

@@ -4,7 +4,7 @@
 
 ## Converters.templateString() function
 
-Helper function to create a [StringConverter](./ts-utils.converters.stringconverter.md) which converts `unknown` to `string`<!-- -->, applying template conversions supplied at construction time or at runtime as context.
+Helper function to create a [StringConverter](./ts-utils.conversion.stringconverter.md) which converts `unknown` to `string`<!-- -->, applying template conversions supplied at construction time or at runtime as context.
 
 **Signature:**
 
@@ -20,7 +20,7 @@ export declare function templateString(defaultContext?: unknown): StringConverte
 
 **Returns:**
 
-[StringConverter](./ts-utils.converters.stringconverter.md)<!-- -->&lt;string, unknown&gt;
+[StringConverter](./ts-utils.conversion.stringconverter.md)<!-- -->&lt;string, unknown&gt;
 
 A new [Converter](./ts-utils.converter.md) returning `string`<!-- -->.
 

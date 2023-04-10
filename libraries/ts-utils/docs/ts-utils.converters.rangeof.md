@@ -4,7 +4,7 @@
 
 ## Converters.rangeOf() function
 
-A helper wrapper to construct a [Converter](./ts-utils.converter.md) which converts to [RangeOf&lt;T&gt;](./ts-utils.rangeof.md) where `<T>` is some comparable type.
+A helper wrapper to construct a [Converter](./ts-utils.converter.md) which converts to [RangeOf&lt;T&gt;](./ts-utils.experimental.rangeof.md) where `<T>` is some comparable type.
 
 **Signature:**
 
@@ -20,5 +20,5 @@ export declare function rangeOf<T, TC = unknown>(converter: Converter<T, TC>): C
 
 **Returns:**
 
-[Converter](./ts-utils.converter.md)<!-- -->&lt;[RangeOf](./ts-utils.rangeof.md)<!-- -->&lt;T&gt;, TC&gt;
+[Converter](./ts-utils.converter.md)<!-- -->&lt;[RangeOf](./ts-utils.experimental.rangeof.md)<!-- -->&lt;T&gt;, TC&gt;
 

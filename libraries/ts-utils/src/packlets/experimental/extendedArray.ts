@@ -31,7 +31,7 @@ export class ExtendedArray<T> extends Array<T> {
   public readonly itemDescription: string;
 
   /**
-   * Constructs an {@link ExtendedArray}.
+   * Constructs an {@link Experimental.ExtendedArray}.
    * @param itemDescription - Brief description of the type of each item in this array.
    * @param items - The initial contents of the array.
    */
@@ -42,9 +42,9 @@ export class ExtendedArray<T> extends Array<T> {
 
   /**
    * Type guard to determine if some arbitrary array is an
-   * {@link ExtendedArray}
+   * {@link Experimental.ExtendedArray}
    * @param a - The `Array` to be tested.
-   * @returns Returns `true` if `a` is an {@link ExtendedArray},
+   * @returns Returns `true` if `a` is an {@link Experimental.ExtendedArray},
    * `false` otherwise.
    */
   public static isExtendedArray<T>(a?: T[]): a is ExtendedArray<T> {
@@ -71,7 +71,7 @@ export class ExtendedArray<T> extends Array<T> {
   }
 
   /**
-   * Returns the first element of an {@link ExtendedArray}. Fails with an
+   * Returns the first element of an {@link Experimental.ExtendedArray}. Fails with an
    * error message if the array is empty.
    * @param failMessage - Optional message to be displayed in the event of failure.
    * @returns Returns {@link Success | Success<T>} with the value of the first element
@@ -85,7 +85,7 @@ export class ExtendedArray<T> extends Array<T> {
   }
 
   /**
-   * Returns an array containing all elements of an {@link ExtendedArray}. Fails with
+   * Returns an array containing all elements of an {@link Experimental.ExtendedArray}. Fails with
    * an error message if the array is empty.
    * @param failMessage - Optional message to be displayed in the event of failure.
    * @returns Returns {@link Success | Success<T[]>} with a new (non-extended) `Array`
@@ -101,7 +101,7 @@ export class ExtendedArray<T> extends Array<T> {
 
   /**
    * Gets a new (non-extended) `Array` containing all of the elements from this
-   * {@link ExtendedArray}.
+   * {@link Experimental.ExtendedArray}.
    * @returns A new (non-extended) `Array<T>`.
    */
   public all(): T[] {

@@ -11,5 +11,5 @@ Options for the [Converters.strictObject()](./ts-utils.converters.strictobject.m
 ```typescript
 export type StrictObjectConverterOptions<T> = Omit<ObjectConverterOptions<T>, 'strict'>;
 ```
-**References:** [ObjectConverterOptions](./ts-utils.converters.objectconverteroptions.md)
+**References:** [ObjectConverterOptions](./ts-utils.conversion.objectconverteroptions.md)
 

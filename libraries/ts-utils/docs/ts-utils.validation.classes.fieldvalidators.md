@@ -13,5 +13,5 @@ export type FieldValidators<T, TC = unknown> = {
     [key in keyof T]: Validator<T[key], TC>;
 };
 ```
-**References:** [Validator](./ts-utils.validation.validator.md)
+**References:** [Validator](./ts-utils.validator.md)
 

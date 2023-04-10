@@ -24,7 +24,7 @@ import '../helpers/jest';
 
 import { Validation } from '../../index';
 import { succeed } from '../../packlets/base';
-import { Converters, Infer } from '../../packlets/converters';
+import { Converters, FieldConverters, Infer } from '../../packlets/conversion';
 import { ExtendedArray } from '../../packlets/experimental';
 
 describe('Converters module', () => {
@@ -1157,7 +1157,7 @@ describe('Converters module', () => {
       boolField: true
     };
 
-    const wantConverters: Converters.FieldConverters<IWant> = {
+    const wantConverters: FieldConverters<IWant> = {
       stringField: Converters.string,
       optionalStringField: Converters.string,
       enumField: Converters.enumeratedValue<'enum1' | 'enum2'>(['enum1', 'enum2']),
@@ -1274,7 +1274,7 @@ describe('Converters module', () => {
     });
 
     describe('for unknown properties', () => {
-      const converters: Converters.FieldConverters<IWant> = {
+      const converters: FieldConverters<IWant> = {
         stringField: Converters.string,
         optionalStringField: Converters.optionalString,
         enumField: Converters.enumeratedValue<'enum1' | 'enum2'>(['enum1', 'enum2']),

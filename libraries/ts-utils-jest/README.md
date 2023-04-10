@@ -36,7 +36,7 @@ Also includes a handful of custom matchers to simplify the testing of other cust
 
 With npm:
 ```sh
-npm install --save-dev ts-utils-jest
+npm install --save-dev @fgv/ts-utils-jest
 ```
 
 ## Setup

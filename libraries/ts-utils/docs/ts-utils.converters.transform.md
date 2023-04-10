@@ -16,7 +16,7 @@ export declare function transform<T, TC = unknown>(properties: FieldConverters<T
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  properties | [FieldConverters](./ts-utils.converters.fieldconverters.md)<!-- -->&lt;T, TC&gt; | An object with key names that correspond to the target object and an appropriate [FieldConverter](./ts-utils.converters.fieldconverters.md) which extracts and converts a single filed from the source object. |
+|  properties | [FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T, TC&gt; | An object with key names that correspond to the target object and an appropriate [FieldConverter](./ts-utils.conversion.fieldconverters.md) which extracts and converts a single filed from the source object. |
 
 **Returns:**
 

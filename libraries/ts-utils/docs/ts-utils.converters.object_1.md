@@ -9,7 +9,7 @@
 > Use [Converters.object(fields, options)](./ts-utils.converters.object.md) instead.
 > 
 
-Helper function to create a [ObjectConverter&lt;T&gt;](./ts-utils.converters.objectconverter.md) which converts an object without changing shape, given a [FieldConverters&lt;T&gt;](./ts-utils.converters.fieldconverters.md) and a set of optional properties.
+Helper function to create a [ObjectConverter&lt;T&gt;](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, given a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) and a set of optional properties.
 
 **Signature:**
 
@@ -21,14 +21,14 @@ export declare function object<T>(properties: FieldConverters<T>, optional: (key
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  properties | [FieldConverters](./ts-utils.converters.fieldconverters.md)<!-- -->&lt;T&gt; | An [FieldConverters&lt;T&gt;](./ts-utils.converters.fieldconverters.md) defining the shape of the source object and [converters](./ts-utils.converter.md) to be applied to each properties. |
+|  properties | [FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T&gt; | An [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) defining the shape of the source object and [converters](./ts-utils.converter.md) to be applied to each properties. |
 |  optional | (keyof T)\[\] | An array of <code>(keyof T)</code> listing the keys to be considered optional.  |
 
 **Returns:**
 
-[ObjectConverter](./ts-utils.converters.objectconverter.md)<!-- -->&lt;T&gt;
+[ObjectConverter](./ts-utils.conversion.objectconverter.md)<!-- -->&lt;T&gt;
 
-A new [ObjectConverter](./ts-utils.converters.objectconverter.md) which applies the specified conversions.
+A new [ObjectConverter](./ts-utils.conversion.objectconverter.md) which applies the specified conversions.
 
 ## Remarks
 

@@ -17,5 +17,5 @@ export interface ArrayValidatorConstructorParams<T, TC = unknown> extends Valida
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [validateElement](./ts-utils.validation.classes.arrayvalidatorconstructorparams.validateelement.md) |  | [Validator](./ts-utils.validation.validator.md)<!-- -->&lt;T, TC&gt; |  |
+|  [validateElement](./ts-utils.validation.classes.arrayvalidatorconstructorparams.validateelement.md) |  | [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt; |  |
 

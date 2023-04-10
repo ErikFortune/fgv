@@ -20,5 +20,5 @@ export declare function enumeratedValue<T extends string>(values: T[]): Validato
 
 **Returns:**
 
-[Validator](./ts-utils.validation.validator.md)<!-- -->&lt;T, T\[\]&gt;
+[Validator](./ts-utils.validator.md)<!-- -->&lt;T, T\[\]&gt;
 

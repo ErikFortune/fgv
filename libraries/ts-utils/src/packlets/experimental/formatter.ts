@@ -66,7 +66,7 @@ export class FormattableBase {
   }
 
   /**
-   * {@inheritdoc Formattable.format}
+   * {@inheritdoc Experimental.Formattable.format}
    */
   public format(template: string): Result<string> {
     return captureResult(() => Mustache.render(template, this));
@@ -81,14 +81,14 @@ export class FormattableBase {
 export type Formatter<T> = (format: string, item: T) => Result<string>;
 
 /**
- * A collection of {@link Formatter | formatters} indexed by target name, to enable
+ * A collection of {@link Experimental.Formatter | formatters} indexed by target name, to enable
  * different format methods per output target.
  * @beta
  */
 export type FormattersByExtendedTarget<TFT extends FormatTargets, T> = Record<TFT, Formatter<T>>;
 /**
- * A collection of {@link Formatter | formatters} indexed by the {@link FormatTargets | default supported
- * target formats}.
+ * A collection of {@link Experimental.Formatter | formatters} indexed by the
+ * {@link Experimental.FormatTargets | default supported target formats}.
  * @beta
  */
 export type FormattersByTarget<T> = FormattersByExtendedTarget<FormatTargets, T>;
@@ -98,7 +98,7 @@ export type FormattersByTarget<T> = FormattersByExtendedTarget<FormatTargets, T>
  * per output line.
  * @param format - A mustache template used to format each item.
  * @param items - The items to be formatted.
- * @param itemFormatter - The {@link Formatter | Formatter<T>} used to format each item.
+ * @param itemFormatter - The {@link Experimental.Formatter | Formatter<T>} used to format each item.
  * @returns The resulting string.
  * @beta
  */
