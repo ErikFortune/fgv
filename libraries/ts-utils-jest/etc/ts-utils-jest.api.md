@@ -8,7 +8,7 @@
 /// <reference types="node" />
 
 // @public (undocumented)
-export interface MockFileConfig {
+interface IMockFileConfig {
     // (undocumented)
     backingFile?: string;
     // (undocumented)
@@ -20,18 +20,24 @@ export interface MockFileConfig {
 }
 
 // @public (undocumented)
-export class MockFileSystem {
-    constructor(configs: Iterable<MockFileConfig>, options?: IMockFileSystemOptions);
+interface IMockFileSystemOptions {
     // (undocumented)
-    protected readonly _config: Map<string, MockFileConfig>;
+    allowUnknownMockWrite?: boolean;
+    // (undocumented)
+    mockWriteOnly?: boolean;
+}
+
+// @public (undocumented)
+class MockFileSystem {
+    constructor(configs: Iterable<IMockFileConfig>, options?: IMockFileSystemOptions);
+    // (undocumented)
+    protected readonly _config: Map<string, IMockFileConfig>;
     // (undocumented)
     protected readonly _data: Map<string, string>;
     // (undocumented)
     protected readonly _extraWrites: string[];
     // (undocumented)
     getExtraFilesWritten(): string[];
-    // Warning: (ae-forgotten-export) The symbol "IMockFileSystemOptions" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     protected readonly _options?: IMockFileSystemOptions;
     // (undocumented)
@@ -42,14 +48,35 @@ export class MockFileSystem {
     protected readonly _realReadFileSync: ReadFunc;
     // (undocumented)
     reset(): void;
-    // Warning: (ae-forgotten-export) The symbol "ReadWriteSpies" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     startSpies(): ReadWriteSpies;
     // (undocumented)
     tryGetPayload(want: string): string | undefined;
     // (undocumented)
     writeMockFileSync(wanted: string, body: string): void;
+}
+
+declare namespace MockFs {
+    export {
+        IMockFileConfig,
+        ReadWriteSpies,
+        IMockFileSystemOptions,
+        MockFileSystem
+    }
+}
+export { MockFs }
+
+// @public (undocumented)
+class ReadWriteSpies {
+    constructor(read: jest.SpyInstance, write: jest.SpyInstance);
+    // (undocumented)
+    clear(): void;
+    // (undocumented)
+    readonly read: jest.SpyInstance;
+    // (undocumented)
+    restore(): void;
+    // (undocumented)
+    readonly write: jest.SpyInstance;
 }
 
 // (No @packageDocumentation comment for this package)
