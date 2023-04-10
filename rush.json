@@ -406,12 +406,14 @@
       "packageName": "@fgv/ts-utils",
       "projectFolder": "libraries/ts-utils",
       "shouldPublish": true,
+      "versionPolicyName": "base-utils",
       "tags": ["libraries"]
     },
     {
       "packageName": "@fgv/ts-utils-jest",
       "projectFolder": "libraries/ts-utils-jest",
       "shouldPublish": true,
+      "versionPolicyName": "base-utils",
       "tags": ["libraries", "test", "jest"]
     }
   ]

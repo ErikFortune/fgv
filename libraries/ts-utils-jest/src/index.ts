@@ -1,7 +1,8 @@
 import matchers from './matchers';
 import './types';
 
-export { IMockFileConfig as MockFileConfig, MockFileSystem } from './helpers';
+import * as MockFs from './helpers/fsHelpers';
+export { MockFs };
 
 // eslint-disable-next-line no-undef
 type JestGlobal = typeof global & { expect: jest.Expect };

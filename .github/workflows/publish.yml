@@ -24,7 +24,7 @@ jobs:
       - name: Rush Install
         run: node common/scripts/install-run-rush.js install
       - name: Bump versions
-        run: node common/scripts/install-run-rush.js version --bump --version-policy NONE --bypass-policy --target-branch ${GITHUB_REF_NAME} --ignore-git-hooks
+        run: node common/scripts/install-run-rush.js version --bump --override-prerelease-id alpha
       - name: Rush rebuild
         run: node common/scripts/install-run-rush.js rebuild --verbose
       - name: Rush Publish
