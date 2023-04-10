@@ -5,6 +5,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v3
         with:
@@ -12,8 +14,8 @@ jobs:
       - name: Git config user
         uses: snow-actions/git-config-user@v1.0.0
         with:
-          name: ErikFortune
-          email: ErikFortune@outlook.com
+          name: ${{secrets.GH_USER_NAME}}
+          email: $${secrets.GH_USER_EMAIL}
       - uses: actions/setup-node@v3
         with:
           node-version: 16
