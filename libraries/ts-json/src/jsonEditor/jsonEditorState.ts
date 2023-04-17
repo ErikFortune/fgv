@@ -34,7 +34,13 @@ import {
 import { JsonObject } from '../common';
 import { JsonContextHelper } from '../contextHelpers';
 
+/**
+ * @public
+ */
 export class JsonEditorState {
+  /**
+   * @internal
+   */
   protected static _nextId: number = 0;
 
   public readonly editor: IJsonCloneEditor;
@@ -61,6 +67,13 @@ export class JsonEditorState {
     return this._deferred;
   }
 
+  /**
+   *
+   * @param options -
+   * @param context -
+   * @returns
+   * @internal
+   */
   protected static _getEffectiveOptions(
     options: IJsonEditorOptions,
     context?: IJsonContext

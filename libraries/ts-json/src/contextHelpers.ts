@@ -30,7 +30,13 @@ import {
   defaultExtendVars
 } from './jsonContext';
 
+/**
+ * @public
+ */
 export class JsonContextHelper {
+  /**
+   * @internal
+   */
   protected _context?: IJsonContext;
 
   public constructor(context?: IJsonContext) {

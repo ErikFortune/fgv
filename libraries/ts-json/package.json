@@ -49,7 +49,8 @@
     "@rushstack/heft-node-rig": "~1.12.6",
     "@rushstack/heft": "~0.50.0",
     "heft-jest": "~1.0.2",
-    "@types/heft-jest": "1.0.3"
+    "@types/heft-jest": "1.0.3",
+    "@microsoft/api-documenter": "^7.21.7"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "^1.9.3",

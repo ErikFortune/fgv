@@ -29,7 +29,8 @@ import { JsonEditorState } from '../jsonEditorState';
 import Mustache from 'mustache';
 
 /**
- * Configuration options for the Templated JSON editor rule
+ * Configuration options for the {@link EditorRules.TemplatedJsonEditorRule | Templated JSON editor rule}.
+ * @public
  */
 export interface ITemplatedJsonRuleOptions extends Partial<IJsonEditorOptions> {
   /**
@@ -43,14 +44,18 @@ export interface ITemplatedJsonRuleOptions extends Partial<IJsonEditorOptions> {
 }
 
 /**
- * The Templated JSON editor rule applies mustache rendering as appropriate
- * to any keys or values in the object being edited.
+ * The {@link EditorRules.TemplatedJsonEditorRule | Templated JSON editor rule} applies mustache rendering as
+ * appropriate to any keys or values in the object being edited.
+ * @public
  */
 export class TemplatedJsonEditorRule extends JsonEditorRuleBase {
+  /**
+   * @internal
+   */
   protected _options?: ITemplatedJsonRuleOptions;
 
   /**
-   * Creates a new @see TemplatedJsonEditorRule
+   * Creates a new {@link EditorRules.TemplatedJsonEditorRule | TemplatedJsonEditorRule}.
    * @param options - Optional configuration options for this rule
    */
   public constructor(options?: ITemplatedJsonRuleOptions) {
@@ -59,8 +64,9 @@ export class TemplatedJsonEditorRule extends JsonEditorRuleBase {
   }
 
   /**
-   * Creates a new @see TemplatedJsonEditorRule
-   * @param options - Optional configuration options for this rule
+   * Creates a new {@link EditorRules.TemplatedJsonEditorRule | TemplatedJsonEditorRule}.
+   * @param options - Optional {@link EditorRules.ITemplatedJsonRuleOptions | configuration options}
+   * for this rule.
    */
   public static create(options?: ITemplatedJsonRuleOptions): Result<TemplatedJsonEditorRule> {
     return captureResult(() => new TemplatedJsonEditorRule(options));
@@ -69,12 +75,12 @@ export class TemplatedJsonEditorRule extends JsonEditorRuleBase {
   /**
    * Evaluates a property name for template rendering.
    * @param key - The key of the property to be considered
-   * @param value - The value of the property to be considered
-   * @param state - The editor state for the object being edited
-   * @returns `Success` with detail 'edited' and an object to be flattened and merged
-   * if the key contained a template. Fails with detail 'error' if an error occurred
-   * or with detail 'inapplicable' if the property key does not contain a template
-   * or if name rendering is disabled.
+   * @param value - The {@link JsonValue | value} of the property to be considered.
+   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
+   * @returns {@link @fgv/ts-utils#Success | `Success`} with detail 'edited' and an object to
+   * be flattened and merged if the key contained a template. Fails with detail 'error' if
+   * an error occurred or with detail 'inapplicable' if the property key does not contain
+   * a template or if name rendering is disabled.
    */
   public editProperty(
     key: string,
@@ -106,9 +112,9 @@ export class TemplatedJsonEditorRule extends JsonEditorRuleBase {
 
   /**
    * Evaluates a property, array or literal value for template rendering
-   * @param value - The value to be edited
-   * @param state - The editor state for the object being edited
-   * @returns Succeeds with detail 'edited' if the value contained a template and was edited.
+   * @param value - The {@link JsonValue | value} to be edited.
+   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
+   * @returns Success with detail 'edited' if the value contained a template and was edited.
    * Fails with 'ignore' if the rendered value should be ignored, with 'error' if an error occurs
    * or with 'inapplicable' if the value was not a string with a template.
    */
@@ -131,6 +137,13 @@ export class TemplatedJsonEditorRule extends JsonEditorRuleBase {
     return failWithDetail('inapplicable', 'inapplicable');
   }
 
+  /**
+   *
+   * @param template -
+   * @param state -
+   * @returns
+   * @internal
+   */
   protected _render(template: string, state: JsonEditorState): DetailedResult<string, JsonEditFailureReason> {
     const vars = state.getVars(this._options?.context);
     if (vars && template.includes('{{')) {

@@ -20,8 +20,10 @@
  * SOFTWARE.
  */
 
+import * as Rules from './rules';
+
 export * from './common';
-export * from './jsonEditorRule';
 export * from './jsonEditor';
+export * from './jsonEditorRule';
 export * from './jsonEditorState';
-export * as Rules from './rules';
+export { Rules };

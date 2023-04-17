@@ -20,21 +20,13 @@
  * SOFTWARE.
  */
 
+import * as Converters from './converters';
+import * as File from './file';
+import * as Editor from './jsonEditor';
+
 export * from './common';
 export { CompositeJsonMap } from './compositeJsonMap';
-export * as Converters from './converters';
-export * as File from './file';
-export {
-  IJsonContext as JsonContext,
-  IJsonReferenceMap as JsonReferenceMap,
-  JsonReferenceMapFailureReason,
-  TemplateVars
-} from './jsonContext';
+export { IJsonContext, IJsonReferenceMap, JsonReferenceMapFailureReason, TemplateVars } from './jsonContext';
 export * from './jsonConverter';
-export {
-  IJsonEditorOptions as JsonEditorOptions,
-  IJsonEditorValidationOptions as JsonEditorValidationOptions
-} from './jsonEditor/common';
-export * from './jsonEditor/jsonEditor';
-export * as EditorRules from './jsonEditor/rules';
-export { PrefixedJsonMap, SimpleJsonMap } from './jsonReferenceMap';
+export { ISimpleJsonMapOptions, PrefixedJsonMap, SimpleJsonMap } from './jsonReferenceMap';
+export { Converters, Editor, File };

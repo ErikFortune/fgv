@@ -23,14 +23,27 @@ import { DetailedResult } from '@fgv/ts-utils';
 import { JsonValue } from '../common';
 import { IJsonContext } from '../jsonContext';
 
+/**
+ * @public
+ */
 export type JsonEditFailureReason = 'ignore' | 'inapplicable' | 'edited' | 'error';
+
+/**
+ * @public
+ */
 export type JsonPropertyEditFailureReason = JsonEditFailureReason | 'deferred';
 
+/**
+ * @public
+ */
 export type JsonEditorValidationRules =
   | 'invalidPropertyName'
   | 'invalidPropertyValue'
   | 'undefinedPropertyValue';
 
+/**
+ * @public
+ */
 export interface IJsonEditorValidationOptions {
   /**
    * If onInvalidPropertyName is 'error' (default) then any property name
@@ -57,11 +70,17 @@ export interface IJsonEditorValidationOptions {
   onUndefinedPropertyValue: 'error' | 'ignore';
 }
 
+/**
+ * @public
+ */
 export interface IJsonEditorOptions {
   context?: IJsonContext;
   validation: IJsonEditorValidationOptions;
 }
 
+/**
+ * @public
+ */
 export interface IJsonCloneEditor {
   clone(src: JsonValue, context?: IJsonContext): DetailedResult<JsonValue, JsonEditFailureReason>;
 }

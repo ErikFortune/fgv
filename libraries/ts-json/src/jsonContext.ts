@@ -25,17 +25,20 @@ import { JsonObject, JsonValue } from './common';
 
 /**
  * Collection of variable used for template replacement in a JSON edit or conversion.
+ * @public
  */
 export type TemplateVars = Record<string, unknown>;
 
 /**
  * Describes one value in a TemplateVars collection of variables
+ * @public
  */
 export type VariableValue = [string, unknown];
 
 /**
  * Function used to create a new collection of template vars with one or more
  * new or changed values.
+ * @public
  */
 export type TemplateVarsExtendFunction = (
   base: TemplateVars | undefined,
@@ -47,6 +50,7 @@ export type TemplateVarsExtendFunction = (
  * via inheritance from the supplied collection
  * @param base - The base variables to be extended
  * @param values - The values to be added or overridden in the new variables
+ * @public
  */
 export function defaultExtendVars(
   base: TemplateVars | undefined,
@@ -63,12 +67,14 @@ export function defaultExtendVars(
  * Failure reason for @see JsonReferenceMap lookup, where 'unknown' means
  * that the object is not present in the map and 'error' means
  * that an error occurred while retrieving or converting it.
+ * @public
  */
 export type JsonReferenceMapFailureReason = 'unknown' | 'error';
 
 /**
  * Interface for a simple map that returns named @see JsonValue values with templating, conditional logic,
  * and external reference lookups applied using an optionally supplied context.
+ * @public
  */
 export interface IJsonReferenceMap {
   /**
@@ -115,6 +121,7 @@ export interface IJsonReferenceMap {
 
 /**
  * Context used to convert or edit JSON objects.
+ * @public
  */
 export interface IJsonContext {
   vars?: TemplateVars;

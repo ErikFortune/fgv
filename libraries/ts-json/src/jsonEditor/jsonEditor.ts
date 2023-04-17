@@ -55,24 +55,37 @@ import { JsonEditorState } from './jsonEditorState';
  * The JsonEditor can be used to edit JSON objects in place or to clone any JSON value,
  * applying a default context and optional set of editor rules that were supplied at
  * initialization.
+ * @public
  */
 export class JsonEditor implements IJsonCloneEditor {
-  // eslint-disable-next-line no-use-before-define
+  /**
+   * @internal
+   */
   protected static _default?: JsonEditor;
 
   /**
-   * Full set of @see JsonEditorOptions in effect for this rule.
+   * Full set of {@link IJsonEditorOptions | editor options} in effect for this rule.
    */
   public options: IJsonEditorOptions;
+
+  /**
+   * @internal
+   */
   protected _rules: IJsonEditorRule[];
 
+  /**
+   *
+   * @param options -
+   * @param rules -
+   * @internal
+   */
   protected constructor(options?: Partial<IJsonEditorOptions>, rules?: IJsonEditorRule[]) {
     this.options = JsonEditor._getDefaultOptions(options).orThrow();
     this._rules = rules || JsonEditor.getDefaultRules(this.options).orThrow();
   }
 
   /**
-   * Default singleton @see JsonEditor for simple use. Applies all rules
+   * Default singleton {@link JsonEditor | JsonEditor} for simple use. Applies all rules
    * but with no default context.
    */
   public static get default(): JsonEditor {
@@ -84,7 +97,7 @@ export class JsonEditor implements IJsonCloneEditor {
   }
 
   /**
-   * Constructs a new @see JsonEditor
+   * Constructs a new {@link JsonEditor | JsonEditor}.
    * @param options - Optional configuration an context for this editor
    * @param rules - Optional set of rules used by this editor
    */
@@ -107,6 +120,9 @@ export class JsonEditor implements IJsonCloneEditor {
     ]);
   }
 
+  /**
+   * @internal
+   */
   protected static _getDefaultOptions(options?: Partial<IJsonEditorOptions>): Result<IJsonEditorOptions> {
     const context: IJsonContext | undefined = options?.context;
     let validation: IJsonEditorValidationOptions | undefined = options?.validation;
@@ -203,6 +219,14 @@ export class JsonEditor implements IJsonCloneEditor {
     );
   }
 
+  /**
+   *
+   * @param target -
+   * @param src -
+   * @param state -
+   * @returns
+   * @internal
+   */
   protected _mergeObjectInPlace(
     target: JsonObject,
     src: JsonObject,
@@ -238,6 +262,13 @@ export class JsonEditor implements IJsonCloneEditor {
     return succeed(target);
   }
 
+  /**
+   *
+   * @param src -
+   * @param context -
+   * @returns
+   * @internal
+   */
   protected _cloneArray(
     src: JsonArray,
     context?: IJsonContext
@@ -253,6 +284,15 @@ export class JsonEditor implements IJsonCloneEditor {
       .withFailureDetail('error');
   }
 
+  /**
+   *
+   * @param target -
+   * @param key -
+   * @param newValue -
+   * @param state -
+   * @returns
+   * @internal
+   */
   protected _mergeClonedProperty(
     target: JsonObject,
     key: string,
@@ -285,6 +325,14 @@ export class JsonEditor implements IJsonCloneEditor {
     }
   }
 
+  /**
+   *
+   * @param key -
+   * @param value -
+   * @param state -
+   * @returns
+   * @internal
+   */
   protected _editProperty(
     key: string,
     value: JsonValue,
@@ -299,6 +347,13 @@ export class JsonEditor implements IJsonCloneEditor {
     return failWithDetail('inapplicable', 'inapplicable');
   }
 
+  /**
+   *
+   * @param value -
+   * @param state -
+   * @returns
+   * @internal
+   */
   protected _editValue(
     value: JsonValue,
     state: JsonEditorState
@@ -312,6 +367,13 @@ export class JsonEditor implements IJsonCloneEditor {
     return failWithDetail('inapplicable', 'inapplicable');
   }
 
+  /**
+   *
+   * @param target -
+   * @param state -
+   * @returns
+   * @internal
+   */
   protected _finalizeAndMerge(
     target: JsonObject,
     state: JsonEditorState

@@ -26,6 +26,9 @@ import { JsonEditFailureReason, JsonPropertyEditFailureReason } from './common';
 
 import { JsonEditorState } from './jsonEditorState';
 
+/**
+ * @public
+ */
 export interface IJsonEditorRule {
   /**
    * Called by a JSON editor to possibly edit one of the properties being merged into a target object.
@@ -38,7 +41,6 @@ export interface IJsonEditorRule {
    * fails with detail 'inapplicable'. If an error occurred while processing the error, returns Failure with
    * detail 'error'.
    */
-  // eslint-disable-next-line no-use-before-define
   editProperty(
     key: string,
     value: JsonValue,
@@ -74,8 +76,12 @@ export interface IJsonEditorRule {
 /**
  * Default base implementation of JsonEditor rule returns inapplicable for all operations so that
  * derived classes need only implement the operations they actually support.
+ * @public
  */
 export class JsonEditorRuleBase implements IJsonEditorRule {
+  /**
+   * {@inheritdoc IJsonEditorRule.editProperty}
+   */
   // istanbul ignore next
   public editProperty(
     __key: string,

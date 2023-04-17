@@ -36,16 +36,27 @@ import { JsonObject, JsonValue, isJsonObject } from './common';
 import { IJsonContext, IJsonReferenceMap, JsonReferenceMapFailureReason } from './jsonContext';
 import { JsonEditor } from './jsonEditor/jsonEditor';
 
+/**
+ * @public
+ */
 export interface IReferenceMapKeyPolicyValidateOptions {
   makeValid?: boolean;
 }
 
 /**
  * Policy object responsible for validating or correcting
- * keys in a reference map
+ * keys in a {@link IJsonReferenceMap | reference map}.
+ * @public
  */
 export class ReferenceMapKeyPolicy<T> {
+  /**
+   * @internal
+   */
   protected readonly _defaultOptions?: IReferenceMapKeyPolicyValidateOptions;
+
+  /**
+   * @internal
+   */
   protected readonly _isValid: (key: string, item?: T) => boolean;
 
   public constructor(
@@ -91,6 +102,9 @@ export class ReferenceMapKeyPolicy<T> {
   }
 }
 
+/**
+ * @public
+ */
 export class PrefixKeyPolicy<T> extends ReferenceMapKeyPolicy<T> {
   public readonly prefix: string;
 
@@ -117,16 +131,40 @@ export class PrefixKeyPolicy<T> extends ReferenceMapKeyPolicy<T> {
   }
 }
 
+/**
+ * @public
+ */
 export type MapOrRecord<T> = Map<string, T> | Record<string, T>;
 
 /**
- * A SimpleJsonMap presents a view of a simple map of @see JsonValue
+ * Abstract base class with common functionality for simple
+ * {@link IJsonReferenceMap | reference map} implementations.
+ * {@link JsonValue | json values}.
+ * @public
  */
 export abstract class SimpleJsonMapBase<T> implements IJsonReferenceMap {
+  /**
+   * @internal
+   */
   protected readonly _keyPolicy: ReferenceMapKeyPolicy<T>;
+
+  /**
+   * @internal
+   */
   protected readonly _values: Map<string, T>;
+
+  /**
+   * @internal
+   */
   protected readonly _context?: IJsonContext;
 
+  /**
+   *
+   * @param values -
+   * @param context -
+   * @param keyPolicy -
+   * @internal
+   */
   protected constructor(
     values?: MapOrRecord<T>,
     context?: IJsonContext,
@@ -138,6 +176,12 @@ export abstract class SimpleJsonMapBase<T> implements IJsonReferenceMap {
     this._context = context;
   }
 
+  /**
+   *
+   * @param values -
+   * @returns
+   * @internal
+   */
   protected static _toMap<T>(values?: MapOrRecord<T>): Result<Map<string, T>> {
     if (values === undefined) {
       return captureResult(() => new Map<string, T>());
@@ -167,12 +211,14 @@ export abstract class SimpleJsonMapBase<T> implements IJsonReferenceMap {
   }
 
   /**
-   * Gets a JSON object specified by key.
+   * Gets a {@link JsonObject | JSON object} specified by key.
    * @param key - key of the object to be retrieved
-   * @param context - optional @see IJsonContext used to format the object
-   * @returns `Success` with the formatted object if successful. `Failure` with detail 'unknown'
-   * if no such object exists, or failure with detail 'error' if the object was found but
-   * could not be formatted.
+   * @param context - optional {@link IJsonContext | JSON context} used to format the
+   * returned object.
+   * @returns {@link ts-utils#Success | `Success`} with the formatted object if successful.
+   * {@link ts-utils#Failure | `Failure`} with detail 'unknown' if no such object exists,
+   * or {@link ts-utils#Failure | `Failure`} with detail 'error' if the object was found
+   * but could not be formatted.
    */
   public getJsonObject(
     key: string,
@@ -187,9 +233,9 @@ export abstract class SimpleJsonMapBase<T> implements IJsonReferenceMap {
   }
 
   /**
-   * Gets a JSON value specified by key.
-   * @param key - key of the object to be retrieved
-   * @param context - Optional @see IJsonContext used to format the value
+   * Gets a {@link JsonValue | JSON value} specified by key.
+   * @param key - key of the value to be retrieved
+   * @param context - Optional {@link IJsonContext | JSON context} used to format the value
    * @returns Success with the formatted object if successful. Failure with detail 'unknown'
    * if no such object exists, or failure with detail 'error' if the object was found but
    * could not be formatted.
@@ -202,7 +248,8 @@ export abstract class SimpleJsonMapBase<T> implements IJsonReferenceMap {
 }
 
 /**
- * Initialization options for a @see SimpleJsonMap
+ * Initialization options for a {@link SimpleJsonMap | SimpleJsonMap}.
+ * @public
  */
 export interface ISimpleJsonMapOptions {
   keyPolicy?: ReferenceMapKeyPolicy<JsonValue>;
@@ -210,11 +257,23 @@ export interface ISimpleJsonMapOptions {
 }
 
 /**
- * A SimpleJsonMap presents a view of a simple map of @see JsonValue
+ * A {@link SimpleJsonMap | SimpleJsonMap } presents a view of a simple map
+ * of {@link JsonValue | JSON values}.
+ * @public
  */
 export class SimpleJsonMap extends SimpleJsonMapBase<JsonValue> {
+  /**
+   * @internal
+   */
   protected _editor?: JsonEditor;
 
+  /**
+   *
+   * @param values -
+   * @param context -
+   * @param options -
+   * @internal
+   */
   protected constructor(
     values?: MapOrRecord<JsonValue>,
     context?: IJsonContext,
@@ -225,10 +284,11 @@ export class SimpleJsonMap extends SimpleJsonMapBase<JsonValue> {
   }
 
   /**
-   * Creates a new @see SimpleJsonMap from the supplied objects
-   * @param values - A string-keyed Map or Record of the @see JsonObject to be returned
-   * @param context - Optional @see IJsonContext used to format returned values
-   * @param options - Optional @see ISimpleJsonMapOptions for initialization
+   * Creates a new {@link SimpleJsonMap | SimpleJsonMap} from the supplied objects
+   * @param values - A string-keyed `Map` or `Record` of the {@link JsonValue | JSON values}
+   * to be returned.
+   * @param context - Optional {@link IJsonContext | IJsonContext} used to format returned values.
+   * @param options - Optional {@link ISimpleJsonMapOptions | ISimpleJsonMapOptions} for initialization.
    */
   public static createSimple(
     values?: MapOrRecord<JsonValue>,
@@ -239,14 +299,13 @@ export class SimpleJsonMap extends SimpleJsonMapBase<JsonValue> {
   }
 
   /**
-   * Gets a JSON value specified by key.
-   * @param key - key of the object to be retrieved
-   * @param context - Optional @see IJsonContext used to format the value
-   * @returns `Success` with the formatted object if successful. `Failure` with detail 'unknown'
+   * Gets a {@link JsonValue | JSON value} specified by key.
+   * @param key - key of the value to be retrieved
+   * @param context - Optional {@link IJsonContext | JSON context} used to format the value
+   * @returns Success with the formatted object if successful. Failure with detail 'unknown'
    * if no such object exists, or failure with detail 'error' if the object was found but
    * could not be formatted.
    */
-  // eslint-disable-next-line no-use-before-define
   public getJsonValue(
     key: string,
     context?: IJsonContext
@@ -259,6 +318,9 @@ export class SimpleJsonMap extends SimpleJsonMapBase<JsonValue> {
     return this._clone(value, context);
   }
 
+  /**
+   * @internal
+   */
   protected _clone(
     value: JsonValue,
     context?: IJsonContext
@@ -276,7 +338,8 @@ export class SimpleJsonMap extends SimpleJsonMapBase<JsonValue> {
 }
 
 /**
- * Initialization options for a PrefixedJsonMap
+ * Initialization options for a {@link PrefixedJsonMap | PrefixedJsonMap}
+ * @public
  */
 export interface IKeyPrefixOptions {
   /**
@@ -291,10 +354,18 @@ export interface IKeyPrefixOptions {
 }
 
 /**
- * A PrefixedJsonMap enforces a supplied prefix for all contained values, optionally
- * adding the prefix as necessary (default true).
+ * A {@link PrefixedJsonMap | PrefixedJsonMap} enforces a supplied prefix for all contained values,
+ * optionally adding the prefix as necessary (default `true`).
+ * @public
  */
 export class PrefixedJsonMap extends SimpleJsonMap {
+  /**
+   *
+   * @param values -
+   * @param context -
+   * @param options-
+   * @internal
+   */
   protected constructor(
     values?: MapOrRecord<JsonValue>,
     context?: IJsonContext,
@@ -342,6 +413,12 @@ export class PrefixedJsonMap extends SimpleJsonMap {
     );
   }
 
+  /**
+   *
+   * @param prefixOptions -
+   * @returns
+   * @internal
+   */
   protected static _toPolicy(prefixOptions: string | IKeyPrefixOptions): ReferenceMapKeyPolicy<JsonValue> {
     if (typeof prefixOptions === 'string') {
       return new PrefixKeyPolicy(prefixOptions, { makeValid: true });

@@ -35,9 +35,9 @@ import { JsonEditorRuleBase } from '../jsonEditorRule';
 import { JsonEditorState } from '../jsonEditorState';
 
 /**
- * The Reference JSON editor rule replaces property keys or values that match
- * some known object with a copy of that referenced object, formatted according
- * to the current context.
+ * The {@link EditorRules.ReferenceJsonEditorRule | Reference JSON editor rule} replaces property
+ * keys or values that match some known object with a copy of that referenced object, formatted
+ * according to the current context.
  *
  * A property key is matched if it matches any known referenced value.
  * - If the value of the matched key is 'default', then the entire object is formatted
@@ -53,13 +53,17 @@ import { JsonEditorState } from '../jsonEditorState';
  * Any property, array or literal value is matched if it matches any known
  * value reference. The referenced value is replaced by the referenced
  * value, formatted using the current editor context.
+ * @public
  */
 export class ReferenceJsonEditorRule extends JsonEditorRuleBase {
+  /**
+   * @internal
+   */
   protected _options?: IJsonEditorOptions;
 
   /**
-   * Creates a new @see ReferenceJsonEditorRule.
-   * @param options - Optional configuration options for this rule
+   * Creates a new {@link EditorRules.ReferenceJsonEditorRule | ReferenceJsonEditorRule}.
+   * @param options - Optional {@link IJsonEditorOptinons | configuration options} for this rule.
    */
   public constructor(options?: IJsonEditorOptions) {
     super();
@@ -67,7 +71,7 @@ export class ReferenceJsonEditorRule extends JsonEditorRuleBase {
   }
 
   /**
-   * Creates a new @see ReferenceJsonEditorRule.
+   * Creates a new {@link EditorRules.ReferenceJsonEditorRule | ReferenceJsonEditorRule}.
    * @param options - Optional configuration options for this rule
    */
   public static create(options?: IJsonEditorOptions): Result<ReferenceJsonEditorRule> {
@@ -76,9 +80,9 @@ export class ReferenceJsonEditorRule extends JsonEditorRuleBase {
 
   /**
    * Evaluates a property for reference expansion.
-   * @param key - The key of the property to be considered
-   * @param value - The value of the property to be considered
-   * @param state - The editor state for the object being edited
+   * @param key - The key of the property to be considered.
+   * @param value - The {@link JsonValue | value} of the property to be considered.
+   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
    * @returns If the reference is successful, returns Success with a JsonObject to
    * be flattened and merged into the current object. Fails with detail 'inapplicable'
    * for non-reference keys or with detail 'error' if an error occurs.
@@ -131,8 +135,8 @@ export class ReferenceJsonEditorRule extends JsonEditorRuleBase {
 
   /**
    * Evaluates a property, array or literal value for reference replacement.
-   * @param value - The value to be evaluated
-   * @param state - The editor state for the object being edited
+   * @param value - The {@link JsonValue | value} of the property to be considered.
+   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
    */
   public editValue(
     value: JsonValue,
@@ -159,6 +163,7 @@ export class ReferenceJsonEditorRule extends JsonEditorRuleBase {
    * resource plus the base template context.
    * @param supplied - The string or object supplied in the source json
    * @param baseVars - The context in effect at the point of resolution
+   * @internal
    */
   protected _extendContext(state: JsonEditorState, supplied: JsonValue): Result<IJsonContext | undefined> {
     const add: Record<string, unknown> = {};

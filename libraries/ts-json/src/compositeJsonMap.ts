@@ -27,10 +27,19 @@ import { IJsonContext, IJsonReferenceMap, JsonReferenceMapFailureReason } from '
 /**
  * A CompositeJsonMap presents a composed view of one or more other
  * JsonReferenceMaps.
+ * @public
  */
 export class CompositeJsonMap implements IJsonReferenceMap {
+  /**
+   * @internal
+   */
   protected _maps: IJsonReferenceMap[];
 
+  /**
+   *
+   * @param maps -
+   * @internal
+   */
   protected constructor(maps: IJsonReferenceMap[]) {
     this._maps = maps;
   }

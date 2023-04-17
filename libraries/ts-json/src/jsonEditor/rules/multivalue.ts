@@ -38,6 +38,7 @@ import { JsonEditorState } from '../jsonEditorState';
 
 /**
  * Represents the parts of a multi-value property key.
+ * @public
  */
 export interface IMultiValuePropertyParts {
   /**
@@ -67,17 +68,21 @@ export interface IMultiValuePropertyParts {
 }
 
 /**
- * The Multi-Value JSON editor rule expands matching keys multiple
- * times, projecting the value into the template context for any
- * child objects rendered by the rule.
+ * The {@link EditorRules.MultiValueJsonEditorRule | Multi-Value JSON editor rule}
+ * expands matching keys multiple times, projecting the value into the template
+ * context for any child objects rendered by the rule.
  *
  * The default syntax for a multi-value key is:
  *  "[[var]]=value1,value2,value3"
  * Where "var" is the name of the variable that will be passed to
  * child template resolution, and "value1,value2,value3" is a
  * comma-separated list of values to be expanded.
+ * @public
  */
 export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
+  /**
+   * @internal
+   */
   protected _options?: IJsonEditorOptions;
 
   /**
@@ -90,8 +95,8 @@ export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
   }
 
   /**
-   * Creates a new MultiValueJsonEditorRule.
-   * @param options - Optional configuration options
+   * Creates a new {@link EditorRules.MultiValueJsonEditorRule | MultiValueJsonEditorRule}
+   * @param options - Optional {@link IJsonEditorOptions | configuration options}.
    */
   public static create(options?: IJsonEditorOptions): Result<MultiValueJsonEditorRule> {
     return captureResult(() => new MultiValueJsonEditorRule(options));
@@ -100,8 +105,8 @@ export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
   /**
    * Evaluates a property for multi-value expansion.
    * @param key - The key of the property to be considered
-   * @param value - The value of the property to be considered
-   * @param state - The editor state for the object being edited
+   * @param value - The {@link JsonValue | value} of the property to be considered.
+   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
    * @returns Returns Success with an object containing the fully-resolved child
    * values to be merged for matching multi-value property. Fails with
    * detail 'error' if an error occurs or with detail 'inapplicable' if
@@ -142,6 +147,13 @@ export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
     return result;
   }
 
+  /**
+   *
+   * @param state -
+   * @param values -
+   * @returns
+   * @internal
+   */
   protected _deriveContext(
     state: JsonEditorState,
     ...values: VariableValue[]
@@ -152,11 +164,12 @@ export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
   /**
    * Determines if a given property key is multi-value. Derived classes can override this
    * method to use a different format for multi-value properties.
-   * @param key - The key of the property to consider.
-   * @param state - The editor state of the object being edited.
+   * @param value - The {@link JsonValue | value} of the property to be considered.
+   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
    * @returns Success with detail 'deferred' and a @see IMultiValuePropertyParts describing the
    * match for matching multi-value property.  Fails with detail 'error' if an error occurs
    * or with detail 'inapplicable' if the key does not represent a multi-value property.
+   * @internal
    */
   protected _tryParse(
     token: string,

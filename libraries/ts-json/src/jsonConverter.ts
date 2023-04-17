@@ -43,7 +43,8 @@ import { IJsonEditorOptions } from './jsonEditor/common';
 import { IJsonEditorRule } from './jsonEditor/jsonEditorRule';
 
 /**
- * Conversion options for JsonConverter
+ * Conversion options for {@link JsonConverter | JsonConverter}.
+ * @public
  */
 export interface IJsonConverterOptions {
   /**
@@ -155,6 +156,7 @@ export interface IJsonConverterOptions {
  * and taking all dynamic rules into account (e.g. template usage enabled
  * if variables are supplied and disabled if not)
  * @param partial - An optional partial @see IJsonConverterOptions to be merged
+ * @public
  */
 export function mergeDefaultJsonConverterOptions(
   partial?: Partial<IJsonConverterOptions>
@@ -191,6 +193,7 @@ export function mergeDefaultJsonConverterOptions(
  * Creates a new @see JsonContext using values supplied in an optional partial
  * @see IJsonConverterOptions
  * @param partial - Optional partial @see IJsonConverterOptions used to populate the context
+ * @public
  */
 export function contextFromConverterOptions(
   partial?: Partial<IJsonConverterOptions>
@@ -213,6 +216,7 @@ export function contextFromConverterOptions(
  * Expands supplied options with default values and constructs an editor with
  * matching configuration and defined rules.
  * @param partial - Optional partial @see IJsonConverterOptions used to create the editor
+ * @public
  */
 export function converterOptionsToEditor(partial?: Partial<IJsonConverterOptions>): Result<JsonEditor> {
   const converterOptions = mergeDefaultJsonConverterOptions(partial);
@@ -253,9 +257,10 @@ export function converterOptionsToEditor(partial?: Partial<IJsonConverterOptions
 /**
  * A thin wrapper to allow an arbitrary @see JsonEditor to be used via the
  * ts-utils @see Converter pattern.
+ * @public
  */
 export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, IJsonContext> {
-  public editor: JsonEditor;
+  public readonly editor: JsonEditor;
 
   /**
    * Constructs a new @see JsonEditorConverter which uses the supplied editor
@@ -308,6 +313,7 @@ export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, IJs
 /**
  * A ts-utils @see Converter from unknown to type-safe JSON, optionally rendering
  * any string property names or values using mustache with a supplied view.
+ * @public
  */
 export class JsonConverter extends JsonEditorConverter {
   /**
@@ -330,6 +336,9 @@ export class JsonConverter extends JsonEditorConverter {
   }
 }
 
+/**
+ * @public
+ */
 export type TemplatedJsonConverterOptions = Omit<
   IJsonConverterOptions,
   'useNameTemplates' | 'useValueTemplates' | 'useMultiValueTemplateNames'
@@ -339,6 +348,7 @@ export type TemplatedJsonConverterOptions = Omit<
  * A ts-utils @see Converter from unknown to type-safe JSON with mustache
  * template rendering and multi-value property name rules enabled regardless
  * of initial context.
+ * @public
  */
 export class TemplatedJsonConverter extends JsonEditorConverter {
   public static readonly templateOptions: Partial<IJsonConverterOptions> = {
@@ -370,12 +380,16 @@ export class TemplatedJsonConverter extends JsonEditorConverter {
   }
 }
 
+/**
+ * @public
+ */
 export type ConditionalJsonConverterOptions = Omit<TemplatedJsonConverterOptions, 'useConditionalNames'>;
 
 /**
  * A ts-utils @see Converter from unknown to type-safe JSON with mustache
  * template rendering, multi-value property name and conditional property
  * name rules enabled regardless of initial context.
+ * @public
  */
 export class ConditionalJsonConverter extends JsonEditorConverter {
   public static readonly conditionalOptions: Partial<IJsonConverterOptions> = {
@@ -405,12 +419,16 @@ export class ConditionalJsonConverter extends JsonEditorConverter {
   }
 }
 
+/**
+ * @public
+ */
 export type RichJsonConverterOptions = Omit<ConditionalJsonConverterOptions, 'useReferences'>;
 
 /**
  * A ts-utils @see Converter from unknown to type-safe JSON with mustache
  * template rendering, multi-value property name, conditional property
  * name, and external reference rules enabled regardless of initial context.
+ * @public
  */
 export class RichJsonConverter extends JsonEditorConverter {
   public static readonly richOptions: Partial<IJsonConverterOptions> = {

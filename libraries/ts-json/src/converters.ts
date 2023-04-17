@@ -36,18 +36,21 @@ import {
 /**
  * A simple validating JSON converter. Converts unknown to JSON or fails
  * if the unknown contains any invalid JSON values.
+ * @public
  */
 export const json: JsonConverter = new JsonConverter();
 
 /**
  * A simple validating JSON converter. Converts unknown to a JSON object
  * or fails if the unknown contains invalid JSON or is not an object.
+ * @public
  */
 export const jsonObject: Converter<JsonObject, IJsonContext> = json.object();
 
 /**
  * A simple validating JSON converter. Converts unknown to a JSON array
  * or fails if the unknown contains invalid JSON or is not an array.
+ * @public
  */
 export const jsonArray: Converter<JsonArray, IJsonContext> = json.array();
 
@@ -60,6 +63,7 @@ let richJsonDefault: JsonConverter | undefined;
  * or string values using mustache with the supplied context.  See the
  * mustache documentation for details of mustache syntax and view.
  * @param options - A @see TemplatedJsonConverterOptions with options and context for the conversion
+ * @public
  */
 export function templatedJson(options?: Partial<TemplatedJsonConverterOptions>): JsonConverter {
   if (!options) {
@@ -76,6 +80,7 @@ export function templatedJson(options?: Partial<TemplatedJsonConverterOptions>):
  * names or string values using mustache with the supplied context, then applying
  * multi-value property expansion and conditional flattening based on property names.
  * @param options - A @see ConditionalJsonConverterOptions with options and context for the conversion
+ * @public
  */
 export function conditionalJson(options?: Partial<ConditionalJsonConverterOptions>): JsonConverter {
   if (!options) {
@@ -92,6 +97,7 @@ export function conditionalJson(options?: Partial<ConditionalJsonConverterOption
  * names or string values using mustache with the supplied context, then applying
  * multi-value property expansion and conditional flattening based on property names.
  * @param options - A @see RichJsonConverterOptions with options and context for the conversion
+ * @public
  */
 export function richJson(options?: Partial<RichJsonConverterOptions>): JsonConverter {
   if (!options) {
