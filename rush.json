@@ -403,6 +403,13 @@
     //   "tags": [ "tools" ]
     // },
     {
+      "packageName": "@fgv/ts-json",
+      "projectFolder": "libraries/ts-json",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-utils",
       "projectFolder": "libraries/ts-utils",
       "shouldPublish": true,
