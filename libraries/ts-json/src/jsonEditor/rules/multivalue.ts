@@ -29,9 +29,9 @@ import {
   succeed,
   succeedWithDetail
 } from '@fgv/ts-utils';
-import { JsonContext, VariableValue } from '../../jsonContext';
-import { JsonEditFailureReason, JsonEditorOptions, JsonPropertyEditFailureReason } from '../common';
 import { JsonObject, JsonValue } from '../../common';
+import { IJsonContext, VariableValue } from '../../jsonContext';
+import { IJsonEditorOptions, JsonEditFailureReason, JsonPropertyEditFailureReason } from '../common';
 
 import { JsonEditorRuleBase } from '../jsonEditorRule';
 import { JsonEditorState } from '../jsonEditorState';
@@ -39,7 +39,7 @@ import { JsonEditorState } from '../jsonEditorState';
 /**
  * Represents the parts of a multi-value property key.
  */
-export interface MultiValuePropertyParts {
+export interface IMultiValuePropertyParts {
   /**
    * The original matched token
    */
@@ -78,30 +78,30 @@ export interface MultiValuePropertyParts {
  * comma-separated list of values to be expanded.
  */
 export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
-  protected _options?: JsonEditorOptions;
+  protected _options?: IJsonEditorOptions;
 
   /**
    * Creates a new MultiValueJsonEditorRule.
-   * @param options Optional configuration options
+   * @param options - Optional configuration options
    */
-  public constructor(options?: JsonEditorOptions) {
+  public constructor(options?: IJsonEditorOptions) {
     super();
     this._options = options;
   }
 
   /**
    * Creates a new MultiValueJsonEditorRule.
-   * @param options Optional configuration options
+   * @param options - Optional configuration options
    */
-  public static create(options?: JsonEditorOptions): Result<MultiValueJsonEditorRule> {
+  public static create(options?: IJsonEditorOptions): Result<MultiValueJsonEditorRule> {
     return captureResult(() => new MultiValueJsonEditorRule(options));
   }
 
   /**
    * Evaluates a property for multi-value expansion.
-   * @param key The key of the property to be considered
-   * @param value The value of the property to be considered
-   * @param state The editor state for the object being edited
+   * @param key - The key of the property to be considered
+   * @param value - The value of the property to be considered
+   * @param state - The editor state for the object being edited
    * @returns Returns Success with an object containing the fully-resolved child
    * values to be merged for matching multi-value property. Fails with
    * detail 'error' if an error occurs or with detail 'inapplicable' if
@@ -145,23 +145,23 @@ export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
   protected _deriveContext(
     state: JsonEditorState,
     ...values: VariableValue[]
-  ): Result<JsonContext | undefined> {
+  ): Result<IJsonContext | undefined> {
     return state.extendContext(this._options?.context, { vars: values });
   }
 
   /**
    * Determines if a given property key is multi-value. Derived classes can override this
    * method to use a different format for multi-value properties.
-   * @param key The key of the property to consider.
-   * @param state The editor state of the object being edited.
-   * @returns Success with detail 'deferred' and a @see MultiValuePropertyParts describing the
+   * @param key - The key of the property to consider.
+   * @param state - The editor state of the object being edited.
+   * @returns Success with detail 'deferred' and a @see IMultiValuePropertyParts describing the
    * match for matching multi-value property.  Fails with detail 'error' if an error occurs
    * or with detail 'inapplicable' if the key does not represent a multi-value property.
    */
   protected _tryParse(
     token: string,
     state: JsonEditorState
-  ): DetailedResult<MultiValuePropertyParts, JsonEditFailureReason> {
+  ): DetailedResult<IMultiValuePropertyParts, JsonEditFailureReason> {
     let parts: string[] = [];
     let asArray = false;
 

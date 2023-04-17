@@ -21,8 +21,8 @@
  */
 
 import { DetailedResult, Result, captureResult, failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
-import { JsonEditFailureReason, JsonEditorOptions, JsonPropertyEditFailureReason } from '../common';
 import { JsonObject, JsonValue, isJsonObject } from '../../common';
+import { IJsonEditorOptions, JsonEditFailureReason, JsonPropertyEditFailureReason } from '../common';
 import { JsonEditorRuleBase } from '../jsonEditorRule';
 import { JsonEditorState } from '../jsonEditorState';
 
@@ -31,7 +31,7 @@ import { JsonEditorState } from '../jsonEditorState';
  * to indicate whether a successful match was due to a matching condition
  * or a default value.
  */
-export interface ConditionalJsonKeyResult extends JsonObject {
+export interface IConditionalJsonKeyResult extends JsonObject {
   matchType: 'default' | 'match' | 'unconditional';
 }
 
@@ -40,14 +40,14 @@ export interface ConditionalJsonKeyResult extends JsonObject {
  * ConditionalJsonDeferredObject describing the matching result, to
  * be resolved at finalization time.
  */
-export interface ConditionalJsonDeferredObject extends ConditionalJsonKeyResult {
+export interface IConditionalJsonDeferredObject extends IConditionalJsonKeyResult {
   value: JsonValue;
 }
 
 /**
  * Configuration options for the Conditional JSON editor rule
  */
-export interface ConditionalJsonRuleOptions extends Partial<JsonEditorOptions> {
+export interface IConditionalJsonRuleOptions extends Partial<IJsonEditorOptions> {
   /**
    * If true (default) then properties with unconditional names
    * (which start with !) are flattened.
@@ -66,31 +66,31 @@ export interface ConditionalJsonRuleOptions extends Partial<JsonEditorOptions> {
  *    "?default" - matches only if no other conditional blocks in the same object were matched
  */
 export class ConditionalJsonEditorRule extends JsonEditorRuleBase {
-  protected _options?: ConditionalJsonRuleOptions;
+  protected _options?: IConditionalJsonRuleOptions;
 
   /**
    * Creates a new @see ConditionalJsonEditorRule
-   * @param options Optional configuration options used for this rule
+   * @param options - Optional configuration options used for this rule
    */
-  public constructor(options?: ConditionalJsonRuleOptions) {
+  public constructor(options?: IConditionalJsonRuleOptions) {
     super();
     this._options = options;
   }
 
   /**
    * Creates a new @see ConditionalJsonEditorRule
-   * @param options Optional configuration options used for this rule
+   * @param options - Optional configuration options used for this rule
    */
-  public static create(options?: ConditionalJsonRuleOptions): Result<ConditionalJsonEditorRule> {
+  public static create(options?: IConditionalJsonRuleOptions): Result<ConditionalJsonEditorRule> {
     return captureResult(() => new ConditionalJsonEditorRule(options));
   }
 
   /**
    * Evaluates a property for conditional application.
-   * @param key The key of the property to be considered
-   * @param value The value of the property to be considered
-   * @param state The editor state for the object being edited
-   * @returns Returns Success with detail 'deferred' and a @see ConditionalJsonDeferredObject
+   * @param key - The key of the property to be considered
+   * @param value - The value of the property to be considered
+   * @param state - The editor state for the object being edited
+   * @returns Returns Success with detail 'deferred' and a @see IConditionalJsonDeferredObject
    * for a matching, default or unconditional key. Fails with detail 'ignore' for a
    * non-matching conditional and with detail 'error' if an error occurs. Otherwise
    * fails with detail 'inapplicable'.
@@ -102,7 +102,7 @@ export class ConditionalJsonEditorRule extends JsonEditorRuleBase {
   ): DetailedResult<JsonObject, JsonPropertyEditFailureReason> {
     const result = this._tryParseCondition(key, state).onSuccess((deferred) => {
       if (isJsonObject(value)) {
-        const rtrn: ConditionalJsonDeferredObject = { ...deferred, value };
+        const rtrn: IConditionalJsonDeferredObject = { ...deferred, value };
         return succeedWithDetail(rtrn, 'deferred');
       }
       return failWithDetail<JsonObject, JsonPropertyEditFailureReason>(
@@ -121,12 +121,12 @@ export class ConditionalJsonEditorRule extends JsonEditorRuleBase {
   /**
    * Finalizes any deferred conditional properties. If the only deferred property is
    * default, that property is emitted. Otherwise all matching properties are emitted.
-   * @param finalized The deferred properties to be considered for merge
-   * @param _state The editor state for the object being edited
+   * @param finalized - The deferred properties to be considered for merge
+   * @param __state - The editor state for the object being edited
    */
   public finalizeProperties(
     finalized: JsonObject[],
-    _state: JsonEditorState
+    __state: JsonEditorState
   ): DetailedResult<JsonObject[], JsonEditFailureReason> {
     let toMerge = finalized;
     if (finalized.length > 1) {
@@ -140,9 +140,9 @@ export class ConditionalJsonEditorRule extends JsonEditorRuleBase {
   /**
    * Determines if a given property key is conditional. Derived classes can override this
    * method to use a different format for conditional properties.
-   * @param key The key of the property to consider.
-   * @param state The editor state of the object being edited.
-   * @returns Success with detail 'deferred' and a @see ConditionalJsonKeyResult describing the
+   * @param key - The key of the property to consider.
+   * @param state - The editor state of the object being edited.
+   * @returns Success with detail 'deferred' and a @see IConditionalJsonKeyResult describing the
    * match for a default or matching conditional property.  Fails with detail 'ignore' for
    * a non-matching conditional property. Fails with detail 'error' if an error occurs
    * or with detail 'inapplicable' if the key does not represent a conditional property.
@@ -150,7 +150,7 @@ export class ConditionalJsonEditorRule extends JsonEditorRuleBase {
   protected _tryParseCondition(
     key: string,
     state: JsonEditorState
-  ): DetailedResult<ConditionalJsonKeyResult, JsonPropertyEditFailureReason> {
+  ): DetailedResult<IConditionalJsonKeyResult, JsonPropertyEditFailureReason> {
     if (key.startsWith('?')) {
       // ignore everything after any #
       key = key.split('#')[0].trim();

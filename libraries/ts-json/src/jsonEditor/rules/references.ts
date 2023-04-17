@@ -28,9 +28,9 @@ import {
   failWithDetail,
   succeedWithDetail
 } from '@fgv/ts-utils';
-import { JsonEditFailureReason, JsonEditorOptions, JsonPropertyEditFailureReason } from '../common';
 import { JsonObject, JsonValue, isJsonObject, pickJsonObject } from '../../common';
-import { JsonContext } from '../../jsonContext';
+import { IJsonContext } from '../../jsonContext';
+import { IJsonEditorOptions, JsonEditFailureReason, JsonPropertyEditFailureReason } from '../common';
 import { JsonEditorRuleBase } from '../jsonEditorRule';
 import { JsonEditorState } from '../jsonEditorState';
 
@@ -39,7 +39,7 @@ import { JsonEditorState } from '../jsonEditorState';
  * some known object with a copy of that referenced object, formatted according
  * to the current context.
  *
- * A property key is matched if it matches any known referenceable value.
+ * A property key is matched if it matches any known referenced value.
  * - If the value of the matched key is 'default', then the entire object is formatted
  *   with the current context, flattened and merged into the current object.
  * - If the value of the matched key is some other string, then the entire
@@ -51,34 +51,34 @@ import { JsonEditorState } from '../jsonEditorState';
  * - It is an error if the referenced value is not an object.
  *
  * Any property, array or literal value is matched if it matches any known
- * referenceable value. The referenced value is replaced by the referenced
+ * value reference. The referenced value is replaced by the referenced
  * value, formatted using the current editor context.
  */
 export class ReferenceJsonEditorRule extends JsonEditorRuleBase {
-  protected _options?: JsonEditorOptions;
+  protected _options?: IJsonEditorOptions;
 
   /**
    * Creates a new @see ReferenceJsonEditorRule.
-   * @param options Optional configuration options for this rule
+   * @param options - Optional configuration options for this rule
    */
-  public constructor(options?: JsonEditorOptions) {
+  public constructor(options?: IJsonEditorOptions) {
     super();
     this._options = options;
   }
 
   /**
    * Creates a new @see ReferenceJsonEditorRule.
-   * @param options Optional configuration options for this rule
+   * @param options - Optional configuration options for this rule
    */
-  public static create(options?: JsonEditorOptions): Result<ReferenceJsonEditorRule> {
+  public static create(options?: IJsonEditorOptions): Result<ReferenceJsonEditorRule> {
     return captureResult(() => new ReferenceJsonEditorRule(options));
   }
 
   /**
    * Evaluates a property for reference expansion.
-   * @param key The key of the property to be considered
-   * @param value The value of the property to be considered
-   * @param state The editor state for the object being edited
+   * @param key - The key of the property to be considered
+   * @param value - The value of the property to be considered
+   * @param state - The editor state for the object being edited
    * @returns If the reference is successful, returns Success with a JsonObject to
    * be flattened and merged into the current object. Fails with detail 'inapplicable'
    * for non-reference keys or with detail 'error' if an error occurs.
@@ -131,8 +131,8 @@ export class ReferenceJsonEditorRule extends JsonEditorRuleBase {
 
   /**
    * Evaluates a property, array or literal value for reference replacement.
-   * @param value The value to be evaluated
-   * @param state The editor state for the object being edited
+   * @param value - The value to be evaluated
+   * @param state - The editor state for the object being edited
    */
   public editValue(
     value: JsonValue,
@@ -157,10 +157,10 @@ export class ReferenceJsonEditorRule extends JsonEditorRuleBase {
   /**
    * Gets the template variables to use given the value of some property whose name matched a
    * resource plus the base template context.
-   * @param supplied The string or object supplied in the source json
-   * @param baseVars The context in effect at the point of resolution
+   * @param supplied - The string or object supplied in the source json
+   * @param baseVars - The context in effect at the point of resolution
    */
-  protected _extendContext(state: JsonEditorState, supplied: JsonValue): Result<JsonContext | undefined> {
+  protected _extendContext(state: JsonEditorState, supplied: JsonValue): Result<IJsonContext | undefined> {
     const add: Record<string, unknown> = {};
     if (isJsonObject(supplied)) {
       add.vars = Object.entries(supplied);

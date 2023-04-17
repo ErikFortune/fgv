@@ -17,9 +17,12 @@
     "oopsy",
     "papaparse",
     "prefixp",
+    "rtrn",
+    "rushstack",
     "TCONV",
     "TDEST",
     "TELEM",
+    "templating",
     "TSRC",
     "TTOELEM",
     "xyzzy"

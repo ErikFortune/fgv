@@ -20,23 +20,29 @@
  * SOFTWARE.
  */
 
-import { JsonContext, JsonReferenceMap, TemplateVars, VariableValue, defaultExtendVars } from './jsonContext';
 import { Result, captureResult, succeed } from '@fgv/ts-utils';
 import { CompositeJsonMap } from './compositeJsonMap';
+import {
+  IJsonContext,
+  IJsonReferenceMap,
+  TemplateVars,
+  VariableValue,
+  defaultExtendVars
+} from './jsonContext';
 
 export class JsonContextHelper {
-  protected _context?: JsonContext;
+  protected _context?: IJsonContext;
 
-  public constructor(context?: JsonContext) {
+  public constructor(context?: IJsonContext) {
     this._context = context;
   }
 
-  public static create(context?: JsonContext): Result<JsonContextHelper> {
+  public static create(context?: IJsonContext): Result<JsonContextHelper> {
     return captureResult(() => new JsonContextHelper(context));
   }
 
   public static extendContextVars(
-    baseContext: JsonContext | undefined,
+    baseContext: IJsonContext | undefined,
     vars?: VariableValue[]
   ): Result<TemplateVars | undefined> {
     if (vars && vars.length > 0) {
@@ -47,9 +53,9 @@ export class JsonContextHelper {
   }
 
   public static extendContextRefs(
-    baseContext: JsonContext | undefined,
-    refs?: JsonReferenceMap[]
-  ): Result<JsonReferenceMap | undefined> {
+    baseContext: IJsonContext | undefined,
+    refs?: IJsonReferenceMap[]
+  ): Result<IJsonReferenceMap | undefined> {
     if (refs && refs.length > 0) {
       const full = baseContext?.refs ? [...refs, baseContext.refs] : refs;
       if (full.length > 1) {
@@ -61,15 +67,15 @@ export class JsonContextHelper {
   }
 
   public static extendContext(
-    baseContext?: JsonContext | undefined,
-    add?: { vars?: VariableValue[]; refs?: JsonReferenceMap[] }
-  ): Result<JsonContext | undefined> {
+    baseContext?: IJsonContext | undefined,
+    add?: { vars?: VariableValue[]; refs?: IJsonReferenceMap[] }
+  ): Result<IJsonContext | undefined> {
     return JsonContextHelper.extendContextVars(baseContext, add?.vars || []).onSuccess((vars) => {
       return JsonContextHelper.extendContextRefs(baseContext, add?.refs || []).onSuccess((refs) => {
         if (!vars && !refs && !baseContext?.extendVars) {
           return succeed(undefined);
         }
-        const rtrn: JsonContext = { vars, refs };
+        const rtrn: IJsonContext = { vars, refs };
         if (baseContext?.extendVars) {
           rtrn.extendVars = baseContext.extendVars;
         }
@@ -79,12 +85,12 @@ export class JsonContextHelper {
   }
 
   public static mergeContext(
-    baseContext: JsonContext | undefined,
-    add: JsonContext | undefined
-  ): Result<JsonContext | undefined> {
+    baseContext: IJsonContext | undefined,
+    add: IJsonContext | undefined
+  ): Result<IJsonContext | undefined> {
     if (baseContext) {
       if (add) {
-        const rtrn: JsonContext = {
+        const rtrn: IJsonContext = {
           vars: add.vars ?? baseContext.vars,
           refs: add.refs ?? baseContext.refs
         };
@@ -104,18 +110,18 @@ export class JsonContextHelper {
     return JsonContextHelper.extendContextVars(this._context, vars);
   }
 
-  public extendRefs(refs?: JsonReferenceMap[]): Result<JsonReferenceMap | undefined> {
+  public extendRefs(refs?: IJsonReferenceMap[]): Result<IJsonReferenceMap | undefined> {
     return JsonContextHelper.extendContextRefs(this._context, refs);
   }
 
   public extendContext(add?: {
     vars?: VariableValue[];
-    refs?: JsonReferenceMap[];
-  }): Result<JsonContext | undefined> {
+    refs?: IJsonReferenceMap[];
+  }): Result<IJsonContext | undefined> {
     return JsonContextHelper.extendContext(this._context, add);
   }
 
-  public mergeContext(merge?: JsonContext): Result<JsonContext | undefined> {
+  public mergeContext(merge?: IJsonContext): Result<IJsonContext | undefined> {
     return JsonContextHelper.mergeContext(this._context, merge);
   }
 }

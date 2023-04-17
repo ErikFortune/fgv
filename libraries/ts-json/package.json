@@ -12,8 +12,8 @@
     "test-handles": "jest --runInBand --detectOpenHandles",
     "clean-jest": "jest --clear-cache",
     "coverage": "jest --coverage --no-cache",
-    "lint": "eslint src test/unit --ext .ts",
-    "fixlint": "eslint src test/unit --ext .ts --fix"
+    "lint": "eslint src --ext .ts",
+    "fixlint": "eslint src --ext .ts --fix"
   },
   "repository": {
     "type": "git",

@@ -21,12 +21,20 @@
  */
 
 export * from './common';
-export * from './jsonConverter';
-export * from './jsonEditor/jsonEditor';
-export { JsonEditorOptions, JsonEditorValidationOptions } from './jsonEditor/common';
-export * as EditorRules from './jsonEditor/rules';
 export { CompositeJsonMap } from './compositeJsonMap';
-export { PrefixedJsonMap, SimpleJsonMap } from './jsonReferenceMap';
-export { JsonReferenceMap, JsonReferenceMapFailureReason, TemplateVars, JsonContext } from './jsonContext';
 export * as Converters from './converters';
 export * as File from './file';
+export {
+  IJsonContext as JsonContext,
+  IJsonReferenceMap as JsonReferenceMap,
+  JsonReferenceMapFailureReason,
+  TemplateVars
+} from './jsonContext';
+export * from './jsonConverter';
+export {
+  IJsonEditorOptions as JsonEditorOptions,
+  IJsonEditorValidationOptions as JsonEditorValidationOptions
+} from './jsonEditor/common';
+export * from './jsonEditor/jsonEditor';
+export * as EditorRules from './jsonEditor/rules';
+export { PrefixedJsonMap, SimpleJsonMap } from './jsonReferenceMap';

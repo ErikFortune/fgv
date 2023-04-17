@@ -20,6 +20,9 @@
  * SOFTWARE.
  */
 
+import { Converter } from '@fgv/ts-utils';
+import { JsonArray, JsonObject } from './common';
+import { IJsonContext } from './jsonContext';
 import {
   ConditionalJsonConverter,
   ConditionalJsonConverterOptions,
@@ -34,19 +37,19 @@ import {
  * A simple validating JSON converter. Converts unknown to JSON or fails
  * if the unknown contains any invalid JSON values.
  */
-export const json = new JsonConverter();
+export const json: JsonConverter = new JsonConverter();
 
 /**
  * A simple validating JSON converter. Converts unknown to a JSON object
  * or fails if the unknown contains invalid JSON or is not an object.
  */
-export const jsonObject = json.object();
+export const jsonObject: Converter<JsonObject, IJsonContext> = json.object();
 
 /**
  * A simple validating JSON converter. Converts unknown to a JSON array
  * or fails if the unknown contains invalid JSON or is not an array.
  */
-export const jsonArray = json.array();
+export const jsonArray: Converter<JsonArray, IJsonContext> = json.array();
 
 let templatedJsonDefault: JsonConverter | undefined;
 let conditionalJsonDefault: JsonConverter | undefined;
@@ -56,7 +59,7 @@ let richJsonDefault: JsonConverter | undefined;
  * Converts the supplied unknown to JSON, rendering any property names
  * or string values using mustache with the supplied context.  See the
  * mustache documentation for details of mustache syntax and view.
- * @param options A @see TemplatedJsonConverterOptions with options and context for the conversion
+ * @param options - A @see TemplatedJsonConverterOptions with options and context for the conversion
  */
 export function templatedJson(options?: Partial<TemplatedJsonConverterOptions>): JsonConverter {
   if (!options) {
@@ -72,7 +75,7 @@ export function templatedJson(options?: Partial<TemplatedJsonConverterOptions>):
  * Converts the supplied unknown to strongly-typed JSON, by first rendering any property
  * names or string values using mustache with the supplied context, then applying
  * multi-value property expansion and conditional flattening based on property names.
- * @param options A @see ConditionalJsonConverterOptions with options and context for the conversion
+ * @param options - A @see ConditionalJsonConverterOptions with options and context for the conversion
  */
 export function conditionalJson(options?: Partial<ConditionalJsonConverterOptions>): JsonConverter {
   if (!options) {
@@ -88,7 +91,7 @@ export function conditionalJson(options?: Partial<ConditionalJsonConverterOption
  * Converts the supplied unknown to strongly-typed JSON, by first rendering any property
  * names or string values using mustache with the supplied context, then applying
  * multi-value property expansion and conditional flattening based on property names.
- * @param options A @see RichJsonConverterOptions with options and context for the conversion
+ * @param options - A @see RichJsonConverterOptions with options and context for the conversion
  */
 export function richJson(options?: Partial<RichJsonConverterOptions>): JsonConverter {
   if (!options) {

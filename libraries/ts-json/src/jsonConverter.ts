@@ -30,8 +30,8 @@ import {
 import { Conversion, Converter, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { JsonArray, JsonObject, JsonValue, isJsonObject } from './common';
 import {
-  JsonContext,
-  JsonReferenceMap,
+  IJsonContext,
+  IJsonReferenceMap,
   TemplateVars,
   TemplateVarsExtendFunction,
   defaultExtendVars
@@ -39,13 +39,13 @@ import {
 
 import { JsonEditor } from './jsonEditor/jsonEditor';
 
-import { JsonEditorOptions } from './jsonEditor/common';
-import { JsonEditorRule } from './jsonEditor/jsonEditorRule';
+import { IJsonEditorOptions } from './jsonEditor/common';
+import { IJsonEditorRule } from './jsonEditor/jsonEditorRule';
 
 /**
  * Conversion options for JsonConverter
  */
-export interface JsonConverterOptions {
+export interface IJsonConverterOptions {
   /**
    * If true and if template variables are available,
    * then string property values will be rendered using
@@ -122,7 +122,7 @@ export interface JsonConverterOptions {
    * An optional object map used to insert any references in the
    * converted JSON.
    */
-  refs?: JsonReferenceMap;
+  refs?: IJsonReferenceMap;
 
   /**
    * If onInvalidPropertyName is 'error' (default) then any property name
@@ -154,11 +154,11 @@ export interface JsonConverterOptions {
  * converter options, producing a fully-resolved set of ConverterOptions
  * and taking all dynamic rules into account (e.g. template usage enabled
  * if variables are supplied and disabled if not)
- * @param partial An optional partial @see JsonConverterOptions to be merged
+ * @param partial - An optional partial @see IJsonConverterOptions to be merged
  */
 export function mergeDefaultJsonConverterOptions(
-  partial?: Partial<JsonConverterOptions>
-): JsonConverterOptions {
+  partial?: Partial<IJsonConverterOptions>
+): IJsonConverterOptions {
   const haveVars = partial?.vars !== undefined;
   const haveRefs = partial?.refs !== undefined;
   const extender = partial?.hasOwnProperty('extendVars') ? partial.extendVars : defaultExtendVars;
@@ -166,7 +166,7 @@ export function mergeDefaultJsonConverterOptions(
   const namesDefault = partial?.useNameTemplates ?? haveVars;
   const conditionsDefault = partial?.useConditionalNames ?? namesDefault;
 
-  const options: JsonConverterOptions = {
+  const options: IJsonConverterOptions = {
     useValueTemplates: partial?.useValueTemplates ?? haveVars,
     useNameTemplates: namesDefault,
     useConditionalNames: conditionsDefault,
@@ -189,13 +189,13 @@ export function mergeDefaultJsonConverterOptions(
 
 /**
  * Creates a new @see JsonContext using values supplied in an optional partial
- * @see JsonConverterOptions
- * @param partial Optional partial @see JsonConverterOptions used to populate the context
+ * @see IJsonConverterOptions
+ * @param partial - Optional partial @see IJsonConverterOptions used to populate the context
  */
 export function contextFromConverterOptions(
-  partial?: Partial<JsonConverterOptions>
-): JsonContext | undefined {
-  const context: JsonContext = {};
+  partial?: Partial<IJsonConverterOptions>
+): IJsonContext | undefined {
+  const context: IJsonContext = {};
   if (partial?.vars) {
     context.vars = partial.vars;
   }
@@ -212,9 +212,9 @@ export function contextFromConverterOptions(
  * Creates a new @see JsonEditor from an optionally supplied partial @see JsonConverterOptions.
  * Expands supplied options with default values and constructs an editor with
  * matching configuration and defined rules.
- * @param partial Optional partial @see JsonConverterOptions used to create the editor
+ * @param partial - Optional partial @see IJsonConverterOptions used to create the editor
  */
-export function converterOptionsToEditor(partial?: Partial<JsonConverterOptions>): Result<JsonEditor> {
+export function converterOptionsToEditor(partial?: Partial<IJsonConverterOptions>): Result<JsonEditor> {
   const converterOptions = mergeDefaultJsonConverterOptions(partial);
   const context = contextFromConverterOptions(partial);
   const validation = {
@@ -222,9 +222,9 @@ export function converterOptionsToEditor(partial?: Partial<JsonConverterOptions>
     onInvalidPropertyValue: converterOptions.onInvalidPropertyValue,
     onUndefinedPropertyValue: converterOptions.onUndefinedPropertyValue
   };
-  const editorOptions: JsonEditorOptions = { context, validation };
+  const editorOptions: IJsonEditorOptions = { context, validation };
 
-  const rules: JsonEditorRule[] = [];
+  const rules: IJsonEditorRule[] = [];
   if (converterOptions.useNameTemplates || converterOptions.useValueTemplates) {
     const templateOptions = {
       ...editorOptions,
@@ -254,21 +254,21 @@ export function converterOptionsToEditor(partial?: Partial<JsonConverterOptions>
  * A thin wrapper to allow an arbitrary @see JsonEditor to be used via the
  * ts-utils @see Converter pattern.
  */
-export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, JsonContext> {
+export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, IJsonContext> {
   public editor: JsonEditor;
 
   /**
    * Constructs a new @see JsonEditorConverter which uses the supplied editor
-   * @param editor
+   * @param editor -
    */
   public constructor(editor: JsonEditor) {
-    super((from, _self, context) => this._convert(from, context), editor.options.context);
+    super((from, __self, context) => this._convert(from, context), editor.options.context);
     this.editor = editor;
   }
 
   /**
    * Constructs a new @see JsonEditorConverter which uses the supplied editor
-   * @param editor
+   * @param editor -
    */
   public static createWithEditor(editor: JsonEditor): Result<JsonEditorConverter> {
     return captureResult(() => new JsonEditorConverter(editor));
@@ -278,7 +278,7 @@ export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, Jso
    * Gets a derived converter which fails if the resulting converted
    * @see JsonValue is not a @see JsonObject
    */
-  public object(): Converter<JsonObject, JsonContext> {
+  public object(): Converter<JsonObject, IJsonContext> {
     return this.map((jv) => {
       if (!isJsonObject(jv)) {
         return fail(`Cannot convert "${JSON.stringify(jv)}" to JSON object.`);
@@ -291,7 +291,7 @@ export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, Jso
    * Gets a derived converter which fails if the resulting converted
    * @see JsonValue is not a @see JsonArray
    */
-  public array(): Converter<JsonArray, JsonContext> {
+  public array(): Converter<JsonArray, IJsonContext> {
     return this.map((jv) => {
       if (!Array.isArray(jv) || typeof jv !== 'object') {
         return fail(`Cannot convert "${JSON.stringify(jv)}" to JSON array.`);
@@ -300,7 +300,7 @@ export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, Jso
     });
   }
 
-  protected _convert(from: unknown, context?: JsonContext): Result<JsonValue> {
+  protected _convert(from: unknown, context?: IJsonContext): Result<JsonValue> {
     return this.editor.clone(from as JsonValue, context);
   }
 }
@@ -312,26 +312,26 @@ export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, Jso
 export class JsonConverter extends JsonEditorConverter {
   /**
    * Constructs a new JsonConverter with supplied or default options
-   * @param options Optional options to configure the converter
+   * @param options - Optional options to configure the converter
    */
-  public constructor(options?: Partial<JsonConverterOptions>) {
+  public constructor(options?: Partial<IJsonConverterOptions>) {
     const editor = converterOptionsToEditor(options).orThrow();
     super(editor);
   }
 
   /**
    * Creates a new converter.
-   * @param options Optional options to configure the converter
+   * @param options - Optional options to configure the converter
    * @returns Success with a new JsonConverter on success, or Failure with an
    * informative message if an error occurs.
    */
-  public static create(options?: Partial<JsonConverterOptions>): Result<JsonConverter> {
+  public static create(options?: Partial<IJsonConverterOptions>): Result<JsonConverter> {
     return captureResult(() => new JsonConverter(options));
   }
 }
 
 export type TemplatedJsonConverterOptions = Omit<
-  JsonConverterOptions,
+  IJsonConverterOptions,
   'useNameTemplates' | 'useValueTemplates' | 'useMultiValueTemplateNames'
 >;
 
@@ -341,7 +341,7 @@ export type TemplatedJsonConverterOptions = Omit<
  * of initial context.
  */
 export class TemplatedJsonConverter extends JsonEditorConverter {
-  public static readonly templateOptions: Partial<JsonConverterOptions> = {
+  public static readonly templateOptions: Partial<IJsonConverterOptions> = {
     useNameTemplates: true,
     useValueTemplates: true,
     useMultiValueTemplateNames: true,
@@ -352,7 +352,7 @@ export class TemplatedJsonConverter extends JsonEditorConverter {
   /**
    * Constructs a new @see TemplatedJsonConverter with supplied or
    * default options
-   * @param options Optional configuration or context for the converter
+   * @param options - Optional configuration or context for the converter
    */
   public constructor(options?: Partial<TemplatedJsonConverterOptions>) {
     options = { ...options, ...TemplatedJsonConverter.templateOptions };
@@ -363,7 +363,7 @@ export class TemplatedJsonConverter extends JsonEditorConverter {
   /**
    * Constructs a new @see TemplatedJsonConverter with supplied or
    * default options
-   * @param options Optional configuration or context for the converter
+   * @param options - Optional configuration or context for the converter
    */
   public static create(options?: Partial<TemplatedJsonConverterOptions>): Result<JsonConverter> {
     return captureResult(() => new TemplatedJsonConverter(options));
@@ -378,7 +378,7 @@ export type ConditionalJsonConverterOptions = Omit<TemplatedJsonConverterOptions
  * name rules enabled regardless of initial context.
  */
 export class ConditionalJsonConverter extends JsonEditorConverter {
-  public static readonly conditionalOptions: Partial<JsonConverterOptions> = {
+  public static readonly conditionalOptions: Partial<IJsonConverterOptions> = {
     ...TemplatedJsonConverter.templateOptions,
     useConditionalNames: true,
     flattenUnconditionalValues: true
@@ -387,7 +387,7 @@ export class ConditionalJsonConverter extends JsonEditorConverter {
   /**
    * Constructs a new @see ConditionalJsonConverter with supplied or
    * default options
-   * @param options Optional configuration or context for the converter
+   * @param options - Optional configuration or context for the converter
    */
   public constructor(options?: Partial<ConditionalJsonConverterOptions>) {
     options = { ...options, ...ConditionalJsonConverter.conditionalOptions };
@@ -398,7 +398,7 @@ export class ConditionalJsonConverter extends JsonEditorConverter {
   /**
    * Constructs a new @see ConditionalJsonConverter with supplied or
    * default options
-   * @param options Optional configuration or context for the converter
+   * @param options - Optional configuration or context for the converter
    */
   public static create(options?: Partial<ConditionalJsonConverterOptions>): Result<JsonConverter> {
     return captureResult(() => new ConditionalJsonConverter(options));
@@ -413,7 +413,7 @@ export type RichJsonConverterOptions = Omit<ConditionalJsonConverterOptions, 'us
  * name, and external reference rules enabled regardless of initial context.
  */
 export class RichJsonConverter extends JsonEditorConverter {
-  public static readonly richOptions: Partial<JsonConverterOptions> = {
+  public static readonly richOptions: Partial<IJsonConverterOptions> = {
     ...ConditionalJsonConverter.conditionalOptions,
     useReferences: true
   };
@@ -421,7 +421,7 @@ export class RichJsonConverter extends JsonEditorConverter {
   /**
    * Constructs a new @see RichJsonConverter with supplied or
    * default options
-   * @param options Optional configuration or context for the converter
+   * @param options - Optional configuration or context for the converter
    */
   public constructor(options?: Partial<RichJsonConverterOptions>) {
     options = { ...options, ...RichJsonConverter.richOptions };
@@ -432,7 +432,7 @@ export class RichJsonConverter extends JsonEditorConverter {
   /**
    * Constructs a new @see RichJsonConverter with supplied or
    * default options
-   * @param options Optional configuration or context for the converter
+   * @param options - Optional configuration or context for the converter
    */
   public static create(options?: Partial<RichJsonConverterOptions>): Result<JsonConverter> {
     return captureResult(() => new RichJsonConverter(options));

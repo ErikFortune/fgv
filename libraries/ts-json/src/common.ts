@@ -23,14 +23,17 @@
 import { Result, fail, succeed } from '@fgv/ts-utils';
 
 /* eslint-disable no-use-before-define */
-
+// eslint-disable-next-line @rushstack/no-new-null
 export type JsonPrimitive = boolean | number | string | null;
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface JsonObject {
   [key: string]: JsonValue;
 }
 
 export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface, @typescript-eslint/naming-convention
 export interface JsonArray extends Array<JsonValue> {}
 
 /**
@@ -40,7 +43,7 @@ export type JsonValueType = 'primitive' | 'object' | 'array';
 
 /**
  * Test if an unknown is a JsonValue
- * @param from The unknown to be tested
+ * @param from - The unknown to be tested
  * @returns true if the supplied parameter is a valid JSON primitive,
  * false otherwise.
  */
@@ -50,17 +53,17 @@ export function isJsonPrimitive(from: unknown): from is JsonPrimitive {
 
 /**
  * Test if an unknown is potentially a JsonObject
- * @param from The unknown to be tested
- * @returns true if the supplied parameter is a non-array object,
- * false otherwise.
+ * @param from - The unknown to be tested
+ * @returns `true` if the supplied parameter is a non-array object,
+ * `false` otherwise.
  */
 export function isJsonObject(from: unknown): from is JsonObject {
   return typeof from === 'object' && !Array.isArray(from);
 }
 
 /**
- * Test if an unknown is potentially a JsonArary
- * @param from The unknown to be tested
+ * Test if an unknown is potentially a JsonArray
+ * @param from - The unknown to be tested
  * @returns true if the supplied parameter is an array object,
  * false otherwise
  */
@@ -74,7 +77,7 @@ export function isJsonArray(from: unknown): from is JsonArray {
  * converted to JSON (e.g. a function) _but_ this is a
  * shallow test - it does not test the properties of an
  * object or elements in an array.
- * @param from The unknown value to be tested
+ * @param from - The `unknown` value to be tested
  */
 export function classifyJsonValue(from: unknown): Result<JsonValueType> {
   if (isJsonPrimitive(from)) {
@@ -89,9 +92,9 @@ export function classifyJsonValue(from: unknown): Result<JsonValueType> {
 
 /**
  * Picks a nested field from a supplied JsonObject
- * @param src The object from which the field is to be picked
- * @param path Dot-separated path of the member to be picked
- * @returns Success with the property if the path is valid, Failure
+ * @param src - The object from which the field is to be picked
+ * @param path - Dot-separated path of the member to be picked
+ * @returns `Success` with the property if the path is valid, `Failure`
  * otherwise.
  */
 export function pickJsonValue(src: JsonObject, path: string): Result<JsonValue> {
@@ -111,8 +114,8 @@ export function pickJsonValue(src: JsonObject, path: string): Result<JsonValue> 
 
 /**
  * Picks a nested JsonObject from a supplied JsonObject
- * @param src The object from which the field is to be picked
- * @param path Dot-separated path of the member to be picked
+ * @param src - The object from which the field is to be picked
+ * @param path - Dot-separated path of the member to be picked
  * @returns Success with the property if the path is valid and the value
  * is an object. Returns failure with details if an error occurs.
  */

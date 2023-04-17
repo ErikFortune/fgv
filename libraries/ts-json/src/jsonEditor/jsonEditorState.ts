@@ -21,35 +21,39 @@
  */
 
 import { DetailedFailure, Result, failWithDetail, succeed } from '@fgv/ts-utils';
+import { IJsonContext, IJsonReferenceMap, TemplateVars, VariableValue } from '../jsonContext';
 import {
   IJsonCloneEditor,
+  IJsonEditorOptions,
+  IJsonEditorValidationOptions,
   JsonEditFailureReason,
-  JsonEditorOptions,
-  JsonEditorValidationOptions,
   JsonEditorValidationRules,
   JsonPropertyEditFailureReason
 } from './common';
-import { JsonContext, JsonReferenceMap, TemplateVars, VariableValue } from '../jsonContext';
 
-import { JsonContextHelper } from '../contextHelpers';
 import { JsonObject } from '../common';
+import { JsonContextHelper } from '../contextHelpers';
 
 export class JsonEditorState {
-  protected static _nextId = 0;
+  protected static _nextId: number = 0;
 
   public readonly editor: IJsonCloneEditor;
 
-  public readonly options: JsonEditorOptions;
+  public readonly options: IJsonEditorOptions;
   protected readonly _deferred: JsonObject[] = [];
   protected readonly _id: number;
 
-  public constructor(editor: IJsonCloneEditor, baseOptions: JsonEditorOptions, runtimeContext?: JsonContext) {
+  public constructor(
+    editor: IJsonCloneEditor,
+    baseOptions: IJsonEditorOptions,
+    runtimeContext?: IJsonContext
+  ) {
     this.editor = editor;
     this.options = JsonEditorState._getEffectiveOptions(baseOptions, runtimeContext).orThrow();
     this._id = JsonEditorState._nextId++;
   }
 
-  public get context(): JsonContext | undefined {
+  public get context(): IJsonContext | undefined {
     return this.options.context;
   }
 
@@ -58,9 +62,9 @@ export class JsonEditorState {
   }
 
   protected static _getEffectiveOptions(
-    options: JsonEditorOptions,
-    context?: JsonContext
-  ): Result<JsonEditorOptions> {
+    options: IJsonEditorOptions,
+    context?: IJsonContext
+  ): Result<IJsonEditorOptions> {
     if (!context) {
       return succeed(options);
     }
@@ -73,22 +77,22 @@ export class JsonEditorState {
     this._deferred.push(obj);
   }
 
-  public getVars(defaultContext?: JsonContext): TemplateVars | undefined {
+  public getVars(defaultContext?: IJsonContext): TemplateVars | undefined {
     return this.options.context?.vars ?? defaultContext?.vars;
   }
 
-  public getRefs(defaultContext?: JsonContext): JsonReferenceMap | undefined {
+  public getRefs(defaultContext?: IJsonContext): IJsonReferenceMap | undefined {
     return this.options.context?.refs ?? defaultContext?.refs;
   }
 
-  public getContext(defaultContext?: JsonContext): JsonContext | undefined {
+  public getContext(defaultContext?: IJsonContext): IJsonContext | undefined {
     return JsonContextHelper.mergeContext(defaultContext, this.options.context).orDefault();
   }
 
   public extendContext(
-    baseContext: JsonContext | undefined,
-    add: { vars?: VariableValue[]; refs?: JsonReferenceMap[] }
-  ): Result<JsonContext | undefined> {
+    baseContext: IJsonContext | undefined,
+    add: { vars?: VariableValue[]; refs?: IJsonReferenceMap[] }
+  ): Result<IJsonContext | undefined> {
     const context = this.getContext(baseContext);
     return JsonContextHelper.extendContext(context, add);
   }
@@ -96,7 +100,7 @@ export class JsonEditorState {
   public failValidation<T = JsonObject>(
     rule: JsonEditorValidationRules,
     message?: string,
-    validation?: JsonEditorValidationOptions
+    validation?: IJsonEditorValidationOptions
   ): DetailedFailure<T, JsonEditFailureReason> {
     let detail: JsonPropertyEditFailureReason = 'error';
     const effective = validation ?? this.options.validation;

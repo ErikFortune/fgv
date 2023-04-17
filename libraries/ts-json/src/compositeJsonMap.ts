@@ -21,32 +21,32 @@
  */
 
 import { DetailedResult, Result, captureResult, failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
-import { JsonContext, JsonReferenceMap, JsonReferenceMapFailureReason } from './jsonContext';
 import { JsonObject, JsonValue, isJsonObject } from './common';
+import { IJsonContext, IJsonReferenceMap, JsonReferenceMapFailureReason } from './jsonContext';
 
 /**
  * A CompositeJsonMap presents a composed view of one or more other
  * JsonReferenceMaps.
  */
-export class CompositeJsonMap implements JsonReferenceMap {
-  protected _maps: JsonReferenceMap[];
+export class CompositeJsonMap implements IJsonReferenceMap {
+  protected _maps: IJsonReferenceMap[];
 
-  protected constructor(maps: JsonReferenceMap[]) {
+  protected constructor(maps: IJsonReferenceMap[]) {
     this._maps = maps;
   }
 
   /**
    * Creates a new @see CompositeJsonMap from the supplied maps
-   * @param maps one or more object maps to be composed
+   * @param maps - one or more object maps to be composed
    */
-  public static create(maps: JsonReferenceMap[]): Result<CompositeJsonMap> {
+  public static create(maps: IJsonReferenceMap[]): Result<CompositeJsonMap> {
     return captureResult(() => new CompositeJsonMap(maps));
   }
 
   /**
    * Determine if a key might be valid for this map but does not determine
    * if key actually exists. Allows key range to be constrained.
-   * @param key key to be tested
+   * @param key - key to be tested
    * @returns true if the key is in the valid range, false otherwise.
    */
   public keyIsInRange(key: string): boolean {
@@ -55,7 +55,7 @@ export class CompositeJsonMap implements JsonReferenceMap {
 
   /**
    * Determines if an object with the specified key actually exists in the map.
-   * @param key key to be tested
+   * @param key - key to be tested
    * @returns true if an object with the specified key exists, false otherwise.
    */
   public has(key: string): boolean {
@@ -64,15 +64,15 @@ export class CompositeJsonMap implements JsonReferenceMap {
 
   /**
    * Gets a JSON object specified by key.
-   * @param key key of the object to be retrieved
-   * @param context optional @see JsonContext used to format the object
+   * @param key - key of the object to be retrieved
+   * @param context - optional @see IJsonContext used to format the object
    * @returns Success with the formatted object if successful. Failure with detail 'unknown'
    * if no such object exists, or failure with detail 'error' if the object was found but
    * could not be formatted.
    */
   public getJsonObject(
     key: string,
-    context?: JsonContext
+    context?: IJsonContext
   ): DetailedResult<JsonObject, JsonReferenceMapFailureReason> {
     return this.getJsonValue(key, context).onSuccess((jv) => {
       if (!isJsonObject(jv)) {
@@ -84,8 +84,8 @@ export class CompositeJsonMap implements JsonReferenceMap {
 
   /**
    * Gets a JSON value specified by key.
-   * @param key key of the object to be retrieved
-   * @param context Optional @see JsonContext used to format the value
+   * @param key - key of the object to be retrieved
+   * @param context - Optional @see IJsonContext used to format the value
    * @returns Success with the formatted object if successful. Failure with detail 'unknown'
    * if no such object exists, or failure with detail 'error' if the object was found but
    * could not be formatted.
@@ -93,7 +93,7 @@ export class CompositeJsonMap implements JsonReferenceMap {
   // eslint-disable-next-line no-use-before-define
   public getJsonValue(
     key: string,
-    context?: JsonContext
+    context?: IJsonContext
   ): DetailedResult<JsonValue, JsonReferenceMapFailureReason> {
     for (const map of this._maps) {
       if (map.keyIsInRange(key)) {

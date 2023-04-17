@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 import { DetailedResult } from '@fgv/ts-utils';
-import { JsonContext } from '../jsonContext';
 import { JsonValue } from '../common';
+import { IJsonContext } from '../jsonContext';
 
 export type JsonEditFailureReason = 'ignore' | 'inapplicable' | 'edited' | 'error';
 export type JsonPropertyEditFailureReason = JsonEditFailureReason | 'deferred';
@@ -31,7 +31,7 @@ export type JsonEditorValidationRules =
   | 'invalidPropertyValue'
   | 'undefinedPropertyValue';
 
-export interface JsonEditorValidationOptions {
+export interface IJsonEditorValidationOptions {
   /**
    * If onInvalidPropertyName is 'error' (default) then any property name
    * that is invalid after template rendering causes an error and stops
@@ -57,11 +57,11 @@ export interface JsonEditorValidationOptions {
   onUndefinedPropertyValue: 'error' | 'ignore';
 }
 
-export interface JsonEditorOptions {
-  context?: JsonContext;
-  validation: JsonEditorValidationOptions;
+export interface IJsonEditorOptions {
+  context?: IJsonContext;
+  validation: IJsonEditorValidationOptions;
 }
 
 export interface IJsonCloneEditor {
-  clone(src: JsonValue, context?: JsonContext): DetailedResult<JsonValue, JsonEditFailureReason>;
+  clone(src: JsonValue, context?: IJsonContext): DetailedResult<JsonValue, JsonEditFailureReason>;
 }
