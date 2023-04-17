@@ -21,6 +21,6 @@ The constructor for this class is marked as internal. Third-party code should no
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
-|  [createPrefixed(prefix, values, context, editor)](./ts-json.prefixedjsonmap.createprefixed.md) | <code>static</code> | Creates a new |
-|  [createPrefixed(prefixOptions, values, context, editor)](./ts-json.prefixedjsonmap.createprefixed_1.md) | <code>static</code> | Creates a new |
+|  [createPrefixed(prefix, values, context, editor)](./ts-json.prefixedjsonmap.createprefixed.md) | <code>static</code> | Creates a new [PrefixedJsonMap](./ts-json.prefixedjsonmap.md) from the supplied values |
+|  [createPrefixed(prefixOptions, values, context, editor)](./ts-json.prefixedjsonmap.createprefixed_1.md) | <code>static</code> | Creates a new [PrefixedJsonMap](./ts-json.prefixedjsonmap.md) from the supplied values |
 

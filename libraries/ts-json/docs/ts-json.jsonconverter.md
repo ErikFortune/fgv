@@ -4,7 +4,7 @@
 
 ## JsonConverter class
 
-A ts-utils
+A  from `unknown` to type-safe JSON, optionally rendering any string property names or values using mustache with a supplied view.
 
 **Signature:**
 

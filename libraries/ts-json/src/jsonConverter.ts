@@ -155,7 +155,8 @@ export interface IJsonConverterOptions {
  * converter options, producing a fully-resolved set of ConverterOptions
  * and taking all dynamic rules into account (e.g. template usage enabled
  * if variables are supplied and disabled if not)
- * @param partial - An optional partial @see IJsonConverterOptions to be merged
+ * @param partial - An optional partial {@link IJsonConverterOptions | IJsonConverterOptions}
+ * to be merged.
  * @public
  */
 export function mergeDefaultJsonConverterOptions(
@@ -190,9 +191,10 @@ export function mergeDefaultJsonConverterOptions(
 }
 
 /**
- * Creates a new @see JsonContext using values supplied in an optional partial
- * @see IJsonConverterOptions
- * @param partial - Optional partial @see IJsonConverterOptions used to populate the context
+ * Creates a new {@link IJsonContext | JSON context} using values supplied in an optional partial
+ * {@link IJsonConverterOptions | converter options}.
+ * @param partial - Optional partial {@link IJsonConverterOptions | IJsonConverterOptions} used to
+ * populate the context.
  * @public
  */
 export function contextFromConverterOptions(
@@ -212,10 +214,12 @@ export function contextFromConverterOptions(
 }
 
 /**
- * Creates a new @see JsonEditor from an optionally supplied partial @see JsonConverterOptions.
+ * Creates a new {@link Editor.JsonEditor | JsonEditor} from an optionally supplied partial
+ * {@link IJsonConverterOptions | JSON converter options}.
  * Expands supplied options with default values and constructs an editor with
  * matching configuration and defined rules.
- * @param partial - Optional partial @see IJsonConverterOptions used to create the editor
+ * @param partial - Optional partial {@link IJsonConverterOptions | IJsonConverterOptions}
+ * used to create the editor.
  * @public
  */
 export function converterOptionsToEditor(partial?: Partial<IJsonConverterOptions>): Result<JsonEditor> {
@@ -255,15 +259,15 @@ export function converterOptionsToEditor(partial?: Partial<IJsonConverterOptions
 }
 
 /**
- * A thin wrapper to allow an arbitrary @see JsonEditor to be used via the
- * ts-utils @see Converter pattern.
+ * A thin wrapper to allow an arbitrary {@link Editor.JsonEditor | JsonEditor} to be used via the
+ * {@link @fgv/ts-utils#Converter | Converter pattern}.
  * @public
  */
 export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, IJsonContext> {
   public readonly editor: JsonEditor;
 
   /**
-   * Constructs a new @see JsonEditorConverter which uses the supplied editor
+   * Constructs a new {@link Editor.JsonEditor | JsonEditor}Converter which uses the supplied editor
    * @param editor -
    */
   public constructor(editor: JsonEditor) {
@@ -272,7 +276,7 @@ export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, IJs
   }
 
   /**
-   * Constructs a new @see JsonEditorConverter which uses the supplied editor
+   * Constructs a new {@link Editor.JsonEditor | JsonEditor}Converter which uses the supplied editor
    * @param editor -
    */
   public static createWithEditor(editor: JsonEditor): Result<JsonEditorConverter> {
@@ -281,7 +285,7 @@ export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, IJs
 
   /**
    * Gets a derived converter which fails if the resulting converted
-   * @see JsonValue is not a @see JsonObject
+   * {@link JsonValue | JsonValue} is not a {@link JsonObject | JsonObject}.
    */
   public object(): Converter<JsonObject, IJsonContext> {
     return this.map((jv) => {
@@ -294,7 +298,7 @@ export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, IJs
 
   /**
    * Gets a derived converter which fails if the resulting converted
-   * @see JsonValue is not a @see JsonArray
+   * {@link JsonValue | JsonValue} is not a {@link JsonArray | JsonArray}.
    */
   public array(): Converter<JsonArray, IJsonContext> {
     return this.map((jv) => {
@@ -311,8 +315,8 @@ export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, IJs
 }
 
 /**
- * A ts-utils @see Converter from unknown to type-safe JSON, optionally rendering
- * any string property names or values using mustache with a supplied view.
+ * A {@link @fgv/ts-utils#Converter | Converter} from `unknown` to type-safe JSON, optionally
+ * rendering any string property names or values using mustache with a supplied view.
  * @public
  */
 export class JsonConverter extends JsonEditorConverter {
@@ -345,9 +349,9 @@ export type TemplatedJsonConverterOptions = Omit<
 >;
 
 /**
- * A ts-utils @see Converter from unknown to type-safe JSON with mustache
- * template rendering and multi-value property name rules enabled regardless
- * of initial context.
+ * A {@link @fgv/ts-utils#Converter | Converter} from `unknown` to type-safe JSON
+ * with mustache template rendering and multi-value property name rules enabled
+ * regardless of initial context.
  * @public
  */
 export class TemplatedJsonConverter extends JsonEditorConverter {
@@ -360,8 +364,8 @@ export class TemplatedJsonConverter extends JsonEditorConverter {
   };
 
   /**
-   * Constructs a new @see TemplatedJsonConverter with supplied or
-   * default options
+   * Constructs a new {@link TemplatedJsonConverter | TemplatedJsonConverter} with
+   * supplied or default options
    * @param options - Optional configuration or context for the converter
    */
   public constructor(options?: Partial<TemplatedJsonConverterOptions>) {
@@ -371,8 +375,8 @@ export class TemplatedJsonConverter extends JsonEditorConverter {
   }
 
   /**
-   * Constructs a new @see TemplatedJsonConverter with supplied or
-   * default options
+   * Constructs a new {@link TemplatedJsonConverter | TemplatedJsonConverter} with
+   * supplied or default options
    * @param options - Optional configuration or context for the converter
    */
   public static create(options?: Partial<TemplatedJsonConverterOptions>): Result<JsonConverter> {
@@ -386,7 +390,7 @@ export class TemplatedJsonConverter extends JsonEditorConverter {
 export type ConditionalJsonConverterOptions = Omit<TemplatedJsonConverterOptions, 'useConditionalNames'>;
 
 /**
- * A ts-utils @see Converter from unknown to type-safe JSON with mustache
+ * A {@link @fgv/ts-utils#Converter | Converter} from `unknown` to type-safe JSON with mustache
  * template rendering, multi-value property name and conditional property
  * name rules enabled regardless of initial context.
  * @public
@@ -399,7 +403,7 @@ export class ConditionalJsonConverter extends JsonEditorConverter {
   };
 
   /**
-   * Constructs a new @see ConditionalJsonConverter with supplied or
+   * Constructs a new {@link ConditionalJsonConverter | ConditionalJsonConverter} with supplied or
    * default options
    * @param options - Optional configuration or context for the converter
    */
@@ -410,7 +414,7 @@ export class ConditionalJsonConverter extends JsonEditorConverter {
   }
 
   /**
-   * Constructs a new @see ConditionalJsonConverter with supplied or
+   * Constructs a new {@link ConditionalJsonConverter | ConditionalJsonConverter} with supplied or
    * default options
    * @param options - Optional configuration or context for the converter
    */
@@ -425,7 +429,7 @@ export class ConditionalJsonConverter extends JsonEditorConverter {
 export type RichJsonConverterOptions = Omit<ConditionalJsonConverterOptions, 'useReferences'>;
 
 /**
- * A ts-utils @see Converter from unknown to type-safe JSON with mustache
+ * A {@link @fgv/ts-utils#Converter | Converter} from `unknown` to type-safe JSON with mustache
  * template rendering, multi-value property name, conditional property
  * name, and external reference rules enabled regardless of initial context.
  * @public
@@ -437,7 +441,7 @@ export class RichJsonConverter extends JsonEditorConverter {
   };
 
   /**
-   * Constructs a new @see RichJsonConverter with supplied or
+   * Constructs a new {@link RichJsonConverter | RichJsonConverter} with supplied or
    * default options
    * @param options - Optional configuration or context for the converter
    */
@@ -448,7 +452,7 @@ export class RichJsonConverter extends JsonEditorConverter {
   }
 
   /**
-   * Constructs a new @see RichJsonConverter with supplied or
+   * Constructs a new {@link RichJsonConverter | RichJsonConverter} with supplied or
    * default options
    * @param options - Optional configuration or context for the converter
    */

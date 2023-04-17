@@ -4,6 +4,7 @@
 
 ## TemplatedJsonConverterOptions type
 
+
 **Signature:**
 
 ```typescript

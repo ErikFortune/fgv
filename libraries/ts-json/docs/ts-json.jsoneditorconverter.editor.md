@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-editor: JsonEditor;
+readonly editor: JsonEditor;
 ```

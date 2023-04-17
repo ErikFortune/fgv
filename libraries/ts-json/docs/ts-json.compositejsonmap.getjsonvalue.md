@@ -17,7 +17,7 @@ getJsonValue(key: string, context?: IJsonContext): DetailedResult<JsonValue, Jso
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  key | string | key of the object to be retrieved |
-|  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ Optional |
+|  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ Optional [JSON Context](./ts-json.ijsoncontext.md) used to format the value |
 
 **Returns:**
 

@@ -16,7 +16,7 @@ export declare function templatedJson(options?: Partial<TemplatedJsonConverterOp
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | Partial&lt;[TemplatedJsonConverterOptions](./ts-json.templatedjsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ A |
+|  options | Partial&lt;[TemplatedJsonConverterOptions](./ts-json.templatedjsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ [Options and context](./ts-json.templatedjsonconverteroptions.md) for the conversion. |
 
 **Returns:**
 

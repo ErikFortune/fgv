@@ -4,6 +4,7 @@
 
 ## File\_2.IDirectoryToMapConvertOptions interface
 
+
 **Signature:**
 
 ```typescript

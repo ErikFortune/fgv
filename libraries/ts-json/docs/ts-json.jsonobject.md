@@ -4,6 +4,7 @@
 
 ## JsonObject interface
 
+
 **Signature:**
 
 ```typescript

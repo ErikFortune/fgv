@@ -29,7 +29,7 @@ import { JsonEditorState } from '../jsonEditorState';
 import Mustache from 'mustache';
 
 /**
- * Configuration options for the {@link EditorRules.TemplatedJsonEditorRule | Templated JSON editor rule}.
+ * Configuration options for the {@link Editor.Rules.TemplatedJsonEditorRule | Templated JSON editor rule}.
  * @public
  */
 export interface ITemplatedJsonRuleOptions extends Partial<IJsonEditorOptions> {
@@ -44,7 +44,7 @@ export interface ITemplatedJsonRuleOptions extends Partial<IJsonEditorOptions> {
 }
 
 /**
- * The {@link EditorRules.TemplatedJsonEditorRule | Templated JSON editor rule} applies mustache rendering as
+ * The {@link Editor.Rules.TemplatedJsonEditorRule | Templated JSON editor rule} applies mustache rendering as
  * appropriate to any keys or values in the object being edited.
  * @public
  */
@@ -55,7 +55,7 @@ export class TemplatedJsonEditorRule extends JsonEditorRuleBase {
   protected _options?: ITemplatedJsonRuleOptions;
 
   /**
-   * Creates a new {@link EditorRules.TemplatedJsonEditorRule | TemplatedJsonEditorRule}.
+   * Creates a new {@link Editor.Rules.TemplatedJsonEditorRule | TemplatedJsonEditorRule}.
    * @param options - Optional configuration options for this rule
    */
   public constructor(options?: ITemplatedJsonRuleOptions) {
@@ -64,8 +64,8 @@ export class TemplatedJsonEditorRule extends JsonEditorRuleBase {
   }
 
   /**
-   * Creates a new {@link EditorRules.TemplatedJsonEditorRule | TemplatedJsonEditorRule}.
-   * @param options - Optional {@link EditorRules.ITemplatedJsonRuleOptions | configuration options}
+   * Creates a new {@link Editor.Rules.TemplatedJsonEditorRule | TemplatedJsonEditorRule}.
+   * @param options - Optional {@link Editor.Rules.ITemplatedJsonRuleOptions | configuration options}
    * for this rule.
    */
   public static create(options?: ITemplatedJsonRuleOptions): Result<TemplatedJsonEditorRule> {
@@ -76,7 +76,7 @@ export class TemplatedJsonEditorRule extends JsonEditorRuleBase {
    * Evaluates a property name for template rendering.
    * @param key - The key of the property to be considered
    * @param value - The {@link JsonValue | value} of the property to be considered.
-   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
+   * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
    * @returns {@link @fgv/ts-utils#Success | `Success`} with detail 'edited' and an object to
    * be flattened and merged if the key contained a template. Fails with detail 'error' if
    * an error occurred or with detail 'inapplicable' if the property key does not contain
@@ -113,7 +113,7 @@ export class TemplatedJsonEditorRule extends JsonEditorRuleBase {
   /**
    * Evaluates a property, array or literal value for template rendering
    * @param value - The {@link JsonValue | value} to be edited.
-   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
+   * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
    * @returns Success with detail 'edited' if the value contained a template and was edited.
    * Fails with 'ignore' if the rendered value should be ignored, with 'error' if an error occurs
    * or with 'inapplicable' if the value was not a string with a template.

@@ -80,7 +80,7 @@ export interface IJsonEditorRule {
  */
 export class JsonEditorRuleBase implements IJsonEditorRule {
   /**
-   * {@inheritdoc IJsonEditorRule.editProperty}
+   * {@inheritdoc Editor.IJsonEditorRule.editProperty}
    */
   // istanbul ignore next
   public editProperty(

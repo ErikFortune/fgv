@@ -4,7 +4,7 @@
 
 ## JsonEditorConverter.(constructor)
 
-Constructs a new
+Constructs a new [JsonEditor](./ts-json.editor.jsoneditor.md)<!-- -->Converter which uses the supplied editor
 
 **Signature:**
 
@@ -16,5 +16,5 @@ constructor(editor: JsonEditor);
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  editor | [JsonEditor](./ts-json.jsoneditor.md) |  |
+|  editor | [JsonEditor](./ts-json.editor.jsoneditor.md) |  |
 

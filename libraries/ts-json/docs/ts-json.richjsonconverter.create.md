@@ -4,7 +4,7 @@
 
 ## RichJsonConverter.create() method
 
-Constructs a new
+Constructs a new [RichJsonConverter](./ts-json.richjsonconverter.md) with supplied or default options
 
 **Signature:**
 

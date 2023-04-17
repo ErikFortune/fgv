@@ -4,6 +4,7 @@
 
 ## RichJsonConverterOptions type
 
+
 **Signature:**
 
 ```typescript

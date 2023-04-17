@@ -4,7 +4,7 @@
 
 ## ConditionalJsonConverter.create() method
 
-Constructs a new
+Constructs a new [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md) with supplied or default options
 
 **Signature:**
 

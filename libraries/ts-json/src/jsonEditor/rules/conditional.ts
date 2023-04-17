@@ -28,7 +28,7 @@ import { JsonEditorState } from '../jsonEditorState';
 
 /**
  * Returned by the _tryMatch method of the
- * {@link EditorRules.ConditionalJsonEditorRule | ConditionalJsonEditorRule}
+ * {@link Editor.Rules.ConditionalJsonEditorRule | ConditionalJsonEditorRule}
  * to indicate whether a successful match was due to a matching condition
  * or a default value.
  * @public
@@ -38,8 +38,8 @@ export interface IConditionalJsonKeyResult extends JsonObject {
 }
 
 /**
- * On a successful match, the {@link EditorRules.ConditionalJsonEditorRule | ConditionalJsonEditorRule}
- * stores a {@link IConditionalJsonDeferredObject | IConditionalJsonDeferredObject} describing the
+ * On a successful match, the {@link Editor.Rules.ConditionalJsonEditorRule | ConditionalJsonEditorRule}
+ * stores a {@link Editor.Rules.IConditionalJsonDeferredObject | IConditionalJsonDeferredObject} describing the
  * matching result, to be resolved at finalization time.
  * @public
  */
@@ -48,7 +48,7 @@ export interface IConditionalJsonDeferredObject extends IConditionalJsonKeyResul
 }
 
 /**
- * Configuration options for the {@link EditorRules.ConditionalJsonEditorRule | ConditionalJsonEditorRule}.
+ * Configuration options for the {@link Editor.Rules.ConditionalJsonEditorRule | ConditionalJsonEditorRule}.
  * @public
  */
 export interface IConditionalJsonRuleOptions extends Partial<IJsonEditorOptions> {
@@ -60,7 +60,7 @@ export interface IConditionalJsonRuleOptions extends Partial<IJsonEditorOptions>
 }
 
 /**
- * The {@link EditorRules.ConditionalJsonEditorRule | ConditionalJsonEditorRule} evaluates
+ * The {@link Editor.Rules.ConditionalJsonEditorRule | ConditionalJsonEditorRule} evaluates
  * properties with conditional keys, omitting non-matching keys and merging keys that match,
  * or default keys only if no other keys match.
  *
@@ -77,7 +77,7 @@ export class ConditionalJsonEditorRule extends JsonEditorRuleBase {
   protected _options?: IConditionalJsonRuleOptions;
 
   /**
-   * Creates a new {@link EditorRules.ConditionalJsonEditorRule | ConditionalJsonEditorRule}.
+   * Creates a new {@link Editor.Rules.ConditionalJsonEditorRule | ConditionalJsonEditorRule}.
    * @param options - Optional configuration options used for this rule
    */
   public constructor(options?: IConditionalJsonRuleOptions) {
@@ -86,7 +86,7 @@ export class ConditionalJsonEditorRule extends JsonEditorRuleBase {
   }
 
   /**
-   * Creates a new {@link EditorRules.ConditionalJsonEditorRule | ConditionalJsonEditorRule}.
+   * Creates a new {@link Editor.Rules.ConditionalJsonEditorRule | ConditionalJsonEditorRule}.
    * @param options - Optional configuration options used for this rule
    */
   public static create(options?: IConditionalJsonRuleOptions): Result<ConditionalJsonEditorRule> {
@@ -97,8 +97,9 @@ export class ConditionalJsonEditorRule extends JsonEditorRuleBase {
    * Evaluates a property for conditional application.
    * @param key - The key of the property to be considered
    * @param value - The {@link JsonValue | value} of the property to be considered.
-   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
-   * @returns Returns Success with detail 'deferred' and a @see IConditionalJsonDeferredObject
+   * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
+   * @returns Returns Success with detail 'deferred' and a
+   * {@link Editor.Rules.IConditionalJsonDeferredObject | IConditionalJsonDeferredObject}.
    * for a matching, default or unconditional key. Fails with detail 'ignore' for a
    * non-matching conditional and with detail 'error' if an error occurs. Otherwise
    * fails with detail 'inapplicable'.
@@ -149,9 +150,9 @@ export class ConditionalJsonEditorRule extends JsonEditorRuleBase {
    * Determines if a given property key is conditional. Derived classes can override this
    * method to use a different format for conditional properties.
    * @param value - The {@link JsonValue | value} of the property to be considered.
-   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
+   * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
    * @returns Success with detail 'deferred' and a
-   * {@link EditorRules.IConditionalJsonKeyResult | IConditionalJsonKeyResult} describing the
+   * {@link Editor.Rules.IConditionalJsonKeyResult | IConditionalJsonKeyResult} describing the
    * match for a default or matching conditional property.  Fails with detail 'ignore' for
    * a non-matching conditional property. Fails with detail 'error' if an error occurs
    * or with detail 'inapplicable' if the key does not represent a conditional property.

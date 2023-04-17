@@ -4,7 +4,7 @@
 
 ## JsonEditorConverter.createWithEditor() method
 
-Constructs a new
+Constructs a new [JsonEditor](./ts-json.editor.jsoneditor.md)<!-- -->Converter which uses the supplied editor
 
 **Signature:**
 
@@ -16,7 +16,7 @@ static createWithEditor(editor: JsonEditor): Result<JsonEditorConverter>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  editor | [JsonEditor](./ts-json.jsoneditor.md) |  |
+|  editor | [JsonEditor](./ts-json.editor.jsoneditor.md) |  |
 
 **Returns:**
 

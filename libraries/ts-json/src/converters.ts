@@ -62,7 +62,8 @@ let richJsonDefault: JsonConverter | undefined;
  * Converts the supplied unknown to JSON, rendering any property names
  * or string values using mustache with the supplied context.  See the
  * mustache documentation for details of mustache syntax and view.
- * @param options - A @see TemplatedJsonConverterOptions with options and context for the conversion
+ * @param options - {@link TemplatedJsonConverterOptions | Options and context} for
+ * the conversion.
  * @public
  */
 export function templatedJson(options?: Partial<TemplatedJsonConverterOptions>): JsonConverter {
@@ -79,7 +80,8 @@ export function templatedJson(options?: Partial<TemplatedJsonConverterOptions>):
  * Converts the supplied unknown to strongly-typed JSON, by first rendering any property
  * names or string values using mustache with the supplied context, then applying
  * multi-value property expansion and conditional flattening based on property names.
- * @param options - A @see ConditionalJsonConverterOptions with options and context for the conversion
+ * @param options - {@link ConditionalJsonConverterOptions | Options and context} for
+ * the conversion.
  * @public
  */
 export function conditionalJson(options?: Partial<ConditionalJsonConverterOptions>): JsonConverter {
@@ -96,7 +98,8 @@ export function conditionalJson(options?: Partial<ConditionalJsonConverterOption
  * Converts the supplied unknown to strongly-typed JSON, by first rendering any property
  * names or string values using mustache with the supplied context, then applying
  * multi-value property expansion and conditional flattening based on property names.
- * @param options - A @see RichJsonConverterOptions with options and context for the conversion
+ * @param options - {@link RichJsonConverterOptions | Options and context} for
+ * the conversion.
  * @public
  */
 export function richJson(options?: Partial<RichJsonConverterOptions>): JsonConverter {

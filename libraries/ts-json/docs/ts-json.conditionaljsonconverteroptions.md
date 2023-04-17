@@ -4,6 +4,7 @@
 
 ## ConditionalJsonConverterOptions type
 
+
 **Signature:**
 
 ```typescript

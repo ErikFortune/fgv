@@ -375,11 +375,11 @@ export class PrefixedJsonMap extends SimpleJsonMap {
   }
 
   /**
-   * Creates a new @see PrefixedJsonMap from the supplied values
+   * Creates a new {@link PrefixedJsonMap | PrefixedJsonMap} from the supplied values
    * @param prefix - A string prefix to be enforced for and added to key names as necessary
-   * @param values - A string-keyed Map or Record of the @see JsonValue to be returned
-   * @param context - Optional @see IJsonContext used to format returned values
-   * @param editor - Optional @see JsonEditor used to format returned values
+   * @param values - A string-keyed Map or Record of the {@link JsonValue | JsonValue} to be returned
+   * @param context - Optional {@link IJsonContext | JSON Context} used to format returned values
+   * @param editor - Optional {@link Editor.JsonEditor | JsonEditor} used to format returned values
    */
   public static createPrefixed(
     prefix: string,
@@ -389,12 +389,12 @@ export class PrefixedJsonMap extends SimpleJsonMap {
   ): Result<PrefixedJsonMap>;
 
   /**
-   * Creates a new @see PrefixedJsonMap from the supplied values
+   * Creates a new {@link PrefixedJsonMap | PrefixedJsonMap} from the supplied values
    * @param prefixOptions - A KeyPrefixOptions indicating the prefix to enforce and whether that prefix should
    * be added automatically if necessary (default true)
-   * @param values - A string-keyed Map or record of the @see JsonValue to be returned
-   * @param context - Optional @see IJsonContext used to format returned values
-   * @param editor - Optional @see JsonEditor used to format returned values
+   * @param values - A string-keyed Map or record of the {@link JsonValue | JsonValue} to be returned
+   * @param context - Optional {@link IJsonContext | JSON Context} used to format returned values
+   * @param editor - Optional {@link Editor.JsonEditor | JsonEditor} used to format returned values
    */
   public static createPrefixed(
     prefixOptions: IKeyPrefixOptions,

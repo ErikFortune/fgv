@@ -4,7 +4,7 @@
 
 ## RichJsonConverter class
 
-A ts-utils
+A  from `unknown` to type-safe JSON with mustache template rendering, multi-value property name, conditional property name, and external reference rules enabled regardless of initial context.
 
 **Signature:**
 
@@ -17,7 +17,7 @@ export declare class RichJsonConverter extends JsonEditorConverter
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(options)](./ts-json.richjsonconverter._constructor_.md) |  | Constructs a new |
+|  [(constructor)(options)](./ts-json.richjsonconverter._constructor_.md) |  | Constructs a new [RichJsonConverter](./ts-json.richjsonconverter.md) with supplied or default options |
 
 ## Properties
 
@@ -29,5 +29,5 @@ export declare class RichJsonConverter extends JsonEditorConverter
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
-|  [create(options)](./ts-json.richjsonconverter.create.md) | <code>static</code> | Constructs a new |
+|  [create(options)](./ts-json.richjsonconverter.create.md) | <code>static</code> | Constructs a new [RichJsonConverter](./ts-json.richjsonconverter.md) with supplied or default options |
 

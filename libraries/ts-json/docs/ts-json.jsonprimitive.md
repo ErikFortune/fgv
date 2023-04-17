@@ -4,6 +4,7 @@
 
 ## JsonPrimitive type
 
+
 **Signature:**
 
 ```typescript

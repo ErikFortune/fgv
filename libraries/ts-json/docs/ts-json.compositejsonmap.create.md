@@ -4,7 +4,7 @@
 
 ## CompositeJsonMap.create() method
 
-Creates a new
+Creates a new [CompositeJsonMap](./ts-json.compositejsonmap.md) from supplied [maps](./ts-json.ijsonreferencemap.md)<!-- -->.
 
 **Signature:**
 
@@ -16,7 +16,7 @@ static create(maps: IJsonReferenceMap[]): Result<CompositeJsonMap>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  maps | [IJsonReferenceMap](./ts-json.jsonreferencemap.md)<!-- -->\[\] | one or more object maps to be composed |
+|  maps | [IJsonReferenceMap](./ts-json.ijsonreferencemap.md)<!-- -->\[\] | one or more object maps to be composed |
 
 **Returns:**
 

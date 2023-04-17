@@ -4,7 +4,7 @@
 
 ## JsonEditorConverter.object() method
 
-Gets a derived converter which fails if the resulting converted
+Gets a derived converter which fails if the resulting converted [JsonValue](./ts-json.jsonvalue.md) is not a [JsonObject](./ts-json.jsonobject.md)<!-- -->.
 
 **Signature:**
 

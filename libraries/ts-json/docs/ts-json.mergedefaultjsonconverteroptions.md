@@ -16,7 +16,7 @@ export declare function mergeDefaultJsonConverterOptions(partial?: Partial<IJson
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  partial | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ An optional partial |
+|  partial | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ An optional partial [IJsonConverterOptions](./ts-json.ijsonconverteroptions.md) to be merged. |
 
 **Returns:**
 

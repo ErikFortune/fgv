@@ -17,6 +17,6 @@ export interface IJsonContext
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
 |  [extendVars?](./ts-json.ijsoncontext.extendvars.md) |  | TemplateVarsExtendFunction | _(Optional)_ |
-|  [refs?](./ts-json.ijsoncontext.refs.md) |  | [IJsonReferenceMap](./ts-json.jsonreferencemap.md) | _(Optional)_ |
+|  [refs?](./ts-json.ijsoncontext.refs.md) |  | [IJsonReferenceMap](./ts-json.ijsonreferencemap.md) | _(Optional)_ |
 |  [vars?](./ts-json.ijsoncontext.vars.md) |  | [TemplateVars](./ts-json.templatevars.md) | _(Optional)_ |
 

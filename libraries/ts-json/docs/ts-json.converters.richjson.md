@@ -16,7 +16,7 @@ export declare function richJson(options?: Partial<RichJsonConverterOptions>): J
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | Partial&lt;[RichJsonConverterOptions](./ts-json.richjsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ A |
+|  options | Partial&lt;[RichJsonConverterOptions](./ts-json.richjsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ [Options and context](./ts-json.richjsonconverteroptions.md) for the conversion. |
 
 **Returns:**
 

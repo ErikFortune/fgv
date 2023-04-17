@@ -4,7 +4,7 @@
 
 ## IJsonConverterOptions interface
 
-Conversion options for JsonConverter
+Conversion options for [JsonConverter](./ts-json.jsonconverter.md)<!-- -->.
 
 **Signature:**
 
@@ -21,7 +21,7 @@ export interface IJsonConverterOptions
 |  [onInvalidPropertyName](./ts-json.ijsonconverteroptions.oninvalidpropertyname.md) |  | 'error' \| 'ignore' | If onInvalidPropertyName is 'error' (default) then any property name that is invalid after template rendering causes an error and stops conversion. If onInvalidPropertyName is 'ignore', then names which are invalid after template rendering are passed through unchanged. |
 |  [onInvalidPropertyValue](./ts-json.ijsonconverteroptions.oninvalidpropertyvalue.md) |  | 'error' \| 'ignore' | If onInvalidPropertyValue is 'error' (default) then any illegal property value causes an error and stops conversion. If onInvalidPropertyValue is 'ignore' then any invalid property values are silently ignored. |
 |  [onUndefinedPropertyValue](./ts-json.ijsonconverteroptions.onundefinedpropertyvalue.md) |  | 'error' \| 'ignore' | If onUnknownPropertyValue is error, then any property with value undefined will cause an error and stop conversion. If onUndefinedPropertyValue is 'ignore' (default) then any property with value undefined is silently ignored. |
-|  [refs?](./ts-json.ijsonconverteroptions.refs.md) |  | [IJsonReferenceMap](./ts-json.jsonreferencemap.md) | _(Optional)_ An optional object map used to insert any references in the converted JSON. |
+|  [refs?](./ts-json.ijsonconverteroptions.refs.md) |  | [IJsonReferenceMap](./ts-json.ijsonreferencemap.md) | _(Optional)_ An optional object map used to insert any references in the converted JSON. |
 |  [useConditionalNames](./ts-json.ijsonconverteroptions.useconditionalnames.md) |  | boolean | <p>If true and if template variables are available, then string property names will be considered for conditionals.</p><p>Default is to match useNameTemplates</p> |
 |  [useMultiValueTemplateNames](./ts-json.ijsonconverteroptions.usemultivaluetemplatenames.md) |  | boolean | <p>If true and if both template variables and a context derivation function is available, then properties which match the multi-value name pattern will be expanded. Default matches useNameTemplates.</p><p>Default is true unless extendVars is explicitly set to undefined.</p> |
 |  [useNameTemplates](./ts-json.ijsonconverteroptions.usenametemplates.md) |  | boolean | <p>If true and if template variables are available, then string property names will be rendered using mustache and those variables. Otherwise string properties are copied without modification.</p><p>Defaults to true if vars are supplied with options, false otherwise.</p> |

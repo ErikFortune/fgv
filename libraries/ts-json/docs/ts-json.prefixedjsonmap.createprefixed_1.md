@@ -4,7 +4,7 @@
 
 ## PrefixedJsonMap.createPrefixed() method
 
-Creates a new
+Creates a new [PrefixedJsonMap](./ts-json.prefixedjsonmap.md) from the supplied values
 
 **Signature:**
 
@@ -17,9 +17,9 @@ static createPrefixed(prefixOptions: IKeyPrefixOptions, values?: MapOrRecord<Jso
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  prefixOptions | IKeyPrefixOptions | A KeyPrefixOptions indicating the prefix to enforce and whether that prefix should be added automatically if necessary (default true) |
-|  values | MapOrRecord&lt;[JsonValue](./ts-json.jsonvalue.md)<!-- -->&gt; | _(Optional)_ A string-keyed Map or record of the |
-|  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ Optional |
-|  editor | [JsonEditor](./ts-json.jsoneditor.md) | _(Optional)_ Optional |
+|  values | MapOrRecord&lt;[JsonValue](./ts-json.jsonvalue.md)<!-- -->&gt; | _(Optional)_ A string-keyed Map or record of the [JsonValue](./ts-json.jsonvalue.md) to be returned |
+|  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ Optional [JSON Context](./ts-json.ijsoncontext.md) used to format returned values |
+|  editor | [JsonEditor](./ts-json.editor.jsoneditor.md) | _(Optional)_ Optional [JsonEditor](./ts-json.editor.jsoneditor.md) used to format returned values |
 
 **Returns:**
 

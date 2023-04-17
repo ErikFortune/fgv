@@ -16,6 +16,6 @@ export interface ISimpleJsonMapOptions
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [editor?](./ts-json.isimplejsonmapoptions.editor.md) |  | [JsonEditor](./ts-json.jsoneditor.md) | _(Optional)_ |
+|  [editor?](./ts-json.isimplejsonmapoptions.editor.md) |  | [JsonEditor](./ts-json.editor.jsoneditor.md) | _(Optional)_ |
 |  [keyPolicy?](./ts-json.isimplejsonmapoptions.keypolicy.md) |  | ReferenceMapKeyPolicy&lt;[JsonValue](./ts-json.jsonvalue.md)<!-- -->&gt; | _(Optional)_ |
 

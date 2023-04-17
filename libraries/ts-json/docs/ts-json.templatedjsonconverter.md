@@ -4,7 +4,7 @@
 
 ## TemplatedJsonConverter class
 
-A ts-utils
+A  from `unknown` to type-safe JSON with mustache template rendering and multi-value property name rules enabled regardless of initial context.
 
 **Signature:**
 
@@ -17,7 +17,7 @@ export declare class TemplatedJsonConverter extends JsonEditorConverter
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(options)](./ts-json.templatedjsonconverter._constructor_.md) |  | Constructs a new |
+|  [(constructor)(options)](./ts-json.templatedjsonconverter._constructor_.md) |  | Constructs a new [TemplatedJsonConverter](./ts-json.templatedjsonconverter.md) with supplied or default options |
 
 ## Properties
 
@@ -29,5 +29,5 @@ export declare class TemplatedJsonConverter extends JsonEditorConverter
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
-|  [create(options)](./ts-json.templatedjsonconverter.create.md) | <code>static</code> | Constructs a new |
+|  [create(options)](./ts-json.templatedjsonconverter.create.md) | <code>static</code> | Constructs a new [TemplatedJsonConverter](./ts-json.templatedjsonconverter.md) with supplied or default options |
 

@@ -64,15 +64,15 @@ export function defaultExtendVars(
 }
 
 /**
- * Failure reason for @see JsonReferenceMap lookup, where 'unknown' means
- * that the object is not present in the map and 'error' means
+ * Failure reason for {@link IJsonReferenceMap | IJsonReferenceMap} lookup, where 'unknown'
+ * means that the object is not present in the map and 'error' means
  * that an error occurred while retrieving or converting it.
  * @public
  */
 export type JsonReferenceMapFailureReason = 'unknown' | 'error';
 
 /**
- * Interface for a simple map that returns named @see JsonValue values with templating, conditional logic,
+ * Interface for a simple map that returns named {@link JsonValue | JsonValue} values with templating, conditional logic,
  * and external reference lookups applied using an optionally supplied context.
  * @public
  */
@@ -110,7 +110,7 @@ export interface IJsonReferenceMap {
   /**
    * Gets a JSON value specified by key.
    * @param key - key of the object to be retrieved
-   * @param context - Optional @see IJsonContext used to format the value
+   * @param context - Optional {@link IJsonContext | JSON Context} used to format the value
    * @returns Success with the formatted object if successful. Failure with detail 'unknown'
    * if no such object exists, or failure with detail 'error' if the object was found but
    * could not be formatted.

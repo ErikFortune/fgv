@@ -4,7 +4,7 @@
 
 ## TemplatedJsonConverter.(constructor)
 
-Constructs a new
+Constructs a new [TemplatedJsonConverter](./ts-json.templatedjsonconverter.md) with supplied or default options
 
 **Signature:**
 

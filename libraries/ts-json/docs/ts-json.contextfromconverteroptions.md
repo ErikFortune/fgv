@@ -4,7 +4,7 @@
 
 ## contextFromConverterOptions() function
 
-Creates a new
+Creates a new [JSON context](./ts-json.ijsoncontext.md) using values supplied in an optional partial [converter options](./ts-json.ijsonconverteroptions.md)<!-- -->.
 
 **Signature:**
 
@@ -16,7 +16,7 @@ export declare function contextFromConverterOptions(partial?: Partial<IJsonConve
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  partial | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ Optional partial |
+|  partial | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ Optional partial [IJsonConverterOptions](./ts-json.ijsonconverteroptions.md) used to populate the context. |
 
 **Returns:**
 

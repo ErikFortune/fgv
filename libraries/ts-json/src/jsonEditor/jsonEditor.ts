@@ -64,7 +64,7 @@ export class JsonEditor implements IJsonCloneEditor {
   protected static _default?: JsonEditor;
 
   /**
-   * Full set of {@link IJsonEditorOptions | editor options} in effect for this rule.
+   * Full set of {@link Editor.IJsonEditorOptions | editor options} in effect for this rule.
    */
   public options: IJsonEditorOptions;
 
@@ -85,7 +85,7 @@ export class JsonEditor implements IJsonCloneEditor {
   }
 
   /**
-   * Default singleton {@link JsonEditor | JsonEditor} for simple use. Applies all rules
+   * Default singleton {@link Editor.JsonEditor | JsonEditor} for simple use. Applies all rules
    * but with no default context.
    */
   public static get default(): JsonEditor {
@@ -97,7 +97,7 @@ export class JsonEditor implements IJsonCloneEditor {
   }
 
   /**
-   * Constructs a new {@link JsonEditor | JsonEditor}.
+   * Constructs a new {@link Editor.JsonEditor | JsonEditor}.
    * @param options - Optional configuration an context for this editor
    * @param rules - Optional set of rules used by this editor
    */
@@ -140,7 +140,8 @@ export class JsonEditor implements IJsonCloneEditor {
    * Merges a supplied source object into a supplied target, updating the target object.
    * @param target - The target object to be updated
    * @param src - The source object to be merged
-   * @param runtimeContext - An optional @see IJsonContext supplying variables and references
+   * @param runtimeContext - An optional {@link IJsonContext | IJsonContext} supplying variables
+   * and references.
    */
   public mergeObjectInPlace(
     target: JsonObject,
@@ -166,7 +167,8 @@ export class JsonEditor implements IJsonCloneEditor {
   /**
    * Merges multiple supplied source objects into a supplied target, updating the target
    * object and using an optional context supplied in the call.
-   * @param context - An optional @see IJsonContext supplying variables and references
+   * @param context - An optional {@link IJsonContext | IJsonContext} supplying variables and
+   * references.
    * @param target - The target object to be updated
    * @param srcObjects - Objects to be merged into the target object, in the order supplied.
    */
@@ -187,8 +189,8 @@ export class JsonEditor implements IJsonCloneEditor {
   /**
    * Deep clones a supplied JSON value, applying all editor rules and a default
    * or optionally supplied context
-   * @param src - The @see JsonValue to be cloned
-   * @param context - An optional @see IJsonContext supplying variables and references
+   * @param src - The {@link JsonValue | JsonValue} to be cloned
+   * @param context - An optional {@link IJsonContext} supplying variables and references
    */
   public clone(src: JsonValue, context?: IJsonContext): DetailedResult<JsonValue, JsonEditFailureReason> {
     const state = new JsonEditorState(this, this.options, context);

@@ -4,7 +4,7 @@
 
 ## converterOptionsToEditor() function
 
-Creates a new
+Creates a new [JsonEditor](./ts-json.editor.jsoneditor.md) from an optionally supplied partial [JSON converter options](./ts-json.ijsonconverteroptions.md)<!-- -->. Expands supplied options with default values and constructs an editor with matching configuration and defined rules.
 
 **Signature:**
 
@@ -16,9 +16,9 @@ export declare function converterOptionsToEditor(partial?: Partial<IJsonConverte
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  partial | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ Optional partial |
+|  partial | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ Optional partial [IJsonConverterOptions](./ts-json.ijsonconverteroptions.md) used to create the editor. |
 
 **Returns:**
 
-Result&lt;[JsonEditor](./ts-json.jsoneditor.md)<!-- -->&gt;
+Result&lt;[JsonEditor](./ts-json.editor.jsoneditor.md)<!-- -->&gt;
 

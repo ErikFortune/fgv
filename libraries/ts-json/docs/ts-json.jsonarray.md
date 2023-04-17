@@ -4,6 +4,7 @@
 
 ## JsonArray interface
 
+
 **Signature:**
 
 ```typescript

@@ -4,7 +4,7 @@
 
 ## isJsonPrimitive() function
 
-Test if an unknown is a JsonValue
+Test if an `unknown` is a [JsonValue](./ts-json.jsonvalue.md)<!-- -->.
 
 **Signature:**
 
@@ -16,11 +16,11 @@ export declare function isJsonPrimitive(from: unknown): from is JsonPrimitive;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  from | unknown | The unknown to be tested |
+|  from | unknown | The <code>unknown</code> to be tested |
 
 **Returns:**
 
 from is [JsonPrimitive](./ts-json.jsonprimitive.md)
 
-true if the supplied parameter is a valid JSON primitive, false otherwise.
+`true` if the supplied parameter is a valid JSON primitive, `false` otherwise.
 

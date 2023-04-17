@@ -4,6 +4,7 @@
 
 ## File\_2.ItemNameTransformFunction type
 
+
 **Signature:**
 
 ```typescript

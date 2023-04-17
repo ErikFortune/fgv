@@ -4,7 +4,7 @@
 
 ## isJsonArray() function
 
-Test if an unknown is potentially a JsonArray
+Test if an `unknown` is potentially a [JsonArray](./ts-json.jsonarray.md)
 
 **Signature:**
 
@@ -16,11 +16,11 @@ export declare function isJsonArray(from: unknown): from is JsonArray;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  from | unknown | The unknown to be tested |
+|  from | unknown | The <code>unknown</code> to be tested. |
 
 **Returns:**
 
 from is [JsonArray](./ts-json.jsonarray.md)
 
-true if the supplied parameter is an array object, false otherwise
+`true` if the supplied parameter is an array object, `false` otherwise.
 

@@ -68,7 +68,7 @@ export interface IMultiValuePropertyParts {
 }
 
 /**
- * The {@link EditorRules.MultiValueJsonEditorRule | Multi-Value JSON editor rule}
+ * The {@link Editor.Rules.MultiValueJsonEditorRule | Multi-Value JSON editor rule}
  * expands matching keys multiple times, projecting the value into the template
  * context for any child objects rendered by the rule.
  *
@@ -95,8 +95,8 @@ export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
   }
 
   /**
-   * Creates a new {@link EditorRules.MultiValueJsonEditorRule | MultiValueJsonEditorRule}
-   * @param options - Optional {@link IJsonEditorOptions | configuration options}.
+   * Creates a new {@link Editor.Rules.MultiValueJsonEditorRule | MultiValueJsonEditorRule}
+   * @param options - Optional {@link Editor.IJsonEditorOptions | configuration options}.
    */
   public static create(options?: IJsonEditorOptions): Result<MultiValueJsonEditorRule> {
     return captureResult(() => new MultiValueJsonEditorRule(options));
@@ -106,7 +106,7 @@ export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
    * Evaluates a property for multi-value expansion.
    * @param key - The key of the property to be considered
    * @param value - The {@link JsonValue | value} of the property to be considered.
-   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
+   * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
    * @returns Returns Success with an object containing the fully-resolved child
    * values to be merged for matching multi-value property. Fails with
    * detail 'error' if an error occurs or with detail 'inapplicable' if
@@ -165,9 +165,9 @@ export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
    * Determines if a given property key is multi-value. Derived classes can override this
    * method to use a different format for multi-value properties.
    * @param value - The {@link JsonValue | value} of the property to be considered.
-   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
-   * @returns Success with detail 'deferred' and a @see IMultiValuePropertyParts describing the
-   * match for matching multi-value property.  Fails with detail 'error' if an error occurs
+   * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
+   * @returns Success with detail 'deferred' and a {@link IMultiValuePropertyParts | IMultiValuePropertyParts}
+   * describing the match for matching multi-value property.  Fails with detail 'error' if an error occurs
    * or with detail 'inapplicable' if the key does not represent a multi-value property.
    * @internal
    */

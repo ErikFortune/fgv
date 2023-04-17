@@ -17,7 +17,7 @@ getJsonObject(key: string, context?: IJsonContext): DetailedResult<JsonObject, J
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  key | string | key of the object to be retrieved |
-|  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ optional |
+|  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ optional [JSON Context](./ts-json.ijsoncontext.md) used to format the object |
 
 **Returns:**
 

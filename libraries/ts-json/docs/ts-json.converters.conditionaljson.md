@@ -16,7 +16,7 @@ export declare function conditionalJson(options?: Partial<ConditionalJsonConvert
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | Partial&lt;[ConditionalJsonConverterOptions](./ts-json.conditionaljsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ A |
+|  options | Partial&lt;[ConditionalJsonConverterOptions](./ts-json.conditionaljsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ [Options and context](./ts-json.conditionaljsonconverteroptions.md) for the conversion. |
 
 **Returns:**
 

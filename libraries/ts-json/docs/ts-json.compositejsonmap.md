@@ -11,25 +11,17 @@ A CompositeJsonMap presents a composed view of one or more other JsonReferenceMa
 ```typescript
 export declare class CompositeJsonMap implements IJsonReferenceMap 
 ```
-**Implements:** [IJsonReferenceMap](./ts-json.jsonreferencemap.md)
+**Implements:** [IJsonReferenceMap](./ts-json.ijsonreferencemap.md)
 
-## Constructors
+## Remarks
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(maps)](./ts-json.compositejsonmap._constructor_.md) | <code>protected</code> | Constructs a new instance of the <code>CompositeJsonMap</code> class |
-
-## Properties
-
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [\_maps](./ts-json.compositejsonmap._maps.md) | <code>protected</code> | [IJsonReferenceMap](./ts-json.jsonreferencemap.md)<!-- -->\[\] |  |
+The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `CompositeJsonMap` class.
 
 ## Methods
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
-|  [create(maps)](./ts-json.compositejsonmap.create.md) | <code>static</code> | Creates a new |
+|  [create(maps)](./ts-json.compositejsonmap.create.md) | <code>static</code> | Creates a new [CompositeJsonMap](./ts-json.compositejsonmap.md) from supplied [maps](./ts-json.ijsonreferencemap.md)<!-- -->. |
 |  [getJsonObject(key, context)](./ts-json.compositejsonmap.getjsonobject.md) |  | Gets a JSON object specified by key. |
 |  [getJsonValue(key, context)](./ts-json.compositejsonmap.getjsonvalue.md) |  | Gets a JSON value specified by key. |
 |  [has(key)](./ts-json.compositejsonmap.has.md) |  | Determines if an object with the specified key actually exists in the map. |

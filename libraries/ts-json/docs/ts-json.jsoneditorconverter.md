@@ -4,7 +4,7 @@
 
 ## JsonEditorConverter class
 
-A thin wrapper to allow an arbitrary
+A thin wrapper to allow an arbitrary [JsonEditor](./ts-json.editor.jsoneditor.md) to be used via the .
 
 **Signature:**
 
@@ -17,20 +17,20 @@ export declare class JsonEditorConverter extends Conversion.BaseConverter<JsonVa
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(editor)](./ts-json.jsoneditorconverter._constructor_.md) |  | Constructs a new |
+|  [(constructor)(editor)](./ts-json.jsoneditorconverter._constructor_.md) |  | Constructs a new [JsonEditor](./ts-json.editor.jsoneditor.md)<!-- -->Converter which uses the supplied editor |
 
 ## Properties
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [editor](./ts-json.jsoneditorconverter.editor.md) |  | [JsonEditor](./ts-json.jsoneditor.md) |  |
+|  [editor](./ts-json.jsoneditorconverter.editor.md) | <code>readonly</code> | [JsonEditor](./ts-json.editor.jsoneditor.md) |  |
 
 ## Methods
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
 |  [\_convert(from, context)](./ts-json.jsoneditorconverter._convert.md) | <code>protected</code> |  |
-|  [array()](./ts-json.jsoneditorconverter.array.md) |  | Gets a derived converter which fails if the resulting converted |
-|  [createWithEditor(editor)](./ts-json.jsoneditorconverter.createwitheditor.md) | <code>static</code> | Constructs a new |
-|  [object()](./ts-json.jsoneditorconverter.object.md) |  | Gets a derived converter which fails if the resulting converted |
+|  [array()](./ts-json.jsoneditorconverter.array.md) |  | Gets a derived converter which fails if the resulting converted [JsonValue](./ts-json.jsonvalue.md) is not a [JsonArray](./ts-json.jsonarray.md)<!-- -->. |
+|  [createWithEditor(editor)](./ts-json.jsoneditorconverter.createwitheditor.md) | <code>static</code> | Constructs a new [JsonEditor](./ts-json.editor.jsoneditor.md)<!-- -->Converter which uses the supplied editor |
+|  [object()](./ts-json.jsoneditorconverter.object.md) |  | Gets a derived converter which fails if the resulting converted [JsonValue](./ts-json.jsonvalue.md) is not a [JsonObject](./ts-json.jsonobject.md)<!-- -->. |
 

@@ -4,7 +4,7 @@
 
 ## ConditionalJsonConverter class
 
-A ts-utils
+A  from `unknown` to type-safe JSON with mustache template rendering, multi-value property name and conditional property name rules enabled regardless of initial context.
 
 **Signature:**
 
@@ -17,7 +17,7 @@ export declare class ConditionalJsonConverter extends JsonEditorConverter
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(options)](./ts-json.conditionaljsonconverter._constructor_.md) |  | Constructs a new |
+|  [(constructor)(options)](./ts-json.conditionaljsonconverter._constructor_.md) |  | Constructs a new [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md) with supplied or default options |
 
 ## Properties
 
@@ -29,5 +29,5 @@ export declare class ConditionalJsonConverter extends JsonEditorConverter
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
-|  [create(options)](./ts-json.conditionaljsonconverter.create.md) | <code>static</code> | Constructs a new |
+|  [create(options)](./ts-json.conditionaljsonconverter.create.md) | <code>static</code> | Constructs a new [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md) with supplied or default options |
 

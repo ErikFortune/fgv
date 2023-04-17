@@ -4,7 +4,7 @@
 
 ## isJsonObject() function
 
-Test if an unknown is potentially a JsonObject
+Test if an `unknown` is potentially a [JsonObject](./ts-json.jsonobject.md)<!-- -->.
 
 **Signature:**
 
@@ -16,7 +16,7 @@ export declare function isJsonObject(from: unknown): from is JsonObject;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  from | unknown | The unknown to be tested |
+|  from | unknown | The <code>unknown</code> to be tested. |
 
 **Returns:**
 
