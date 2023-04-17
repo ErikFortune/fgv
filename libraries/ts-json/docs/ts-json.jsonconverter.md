@@ -4,7 +4,7 @@
 
 ## JsonConverter class
 
-A  from `unknown` to type-safe JSON, optionally rendering any string property names or values using mustache with a supplied view.
+An @<!-- -->fgv/ts-utils `Converter` from `unknown` to type-safe JSON, optionally rendering any string property names or values using mustache with a supplied view.
 
 **Signature:**
 

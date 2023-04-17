@@ -9,13 +9,13 @@
 |  Class | Description |
 |  --- | --- |
 |  [CompositeJsonMap](./ts-json.compositejsonmap.md) | A CompositeJsonMap presents a composed view of one or more other JsonReferenceMaps. |
-|  [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md) | A  from <code>unknown</code> to type-safe JSON with mustache template rendering, multi-value property name and conditional property name rules enabled regardless of initial context. |
-|  [JsonConverter](./ts-json.jsonconverter.md) | A  from <code>unknown</code> to type-safe JSON, optionally rendering any string property names or values using mustache with a supplied view. |
-|  [JsonEditorConverter](./ts-json.jsoneditorconverter.md) | A thin wrapper to allow an arbitrary [JsonEditor](./ts-json.editor.jsoneditor.md) to be used via the . |
+|  [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md) | An @<!-- -->fgv/ts-utils <code>Converter</code> from <code>unknown</code> to type-safe JSON with mustache template rendering, multi-value property name and conditional property name rules enabled regardless of initial context. |
+|  [JsonConverter](./ts-json.jsonconverter.md) | An @<!-- -->fgv/ts-utils <code>Converter</code> from <code>unknown</code> to type-safe JSON, optionally rendering any string property names or values using mustache with a supplied view. |
+|  [JsonEditorConverter](./ts-json.jsoneditorconverter.md) | A thin wrapper to allow an arbitrary [JsonEditor](./ts-json.editor.jsoneditor.md) to be used via the @<!-- -->fgv/ts-utils <code>Converter</code> pattern. |
 |  [PrefixedJsonMap](./ts-json.prefixedjsonmap.md) | A [PrefixedJsonMap](./ts-json.prefixedjsonmap.md) enforces a supplied prefix for all contained values, optionally adding the prefix as necessary (default <code>true</code>). |
-|  [RichJsonConverter](./ts-json.richjsonconverter.md) | A  from <code>unknown</code> to type-safe JSON with mustache template rendering, multi-value property name, conditional property name, and external reference rules enabled regardless of initial context. |
+|  [RichJsonConverter](./ts-json.richjsonconverter.md) | A @<!-- -->fgv/ts-utils <code>Converter</code> from <code>unknown</code> to type-safe JSON with mustache template rendering, multi-value property name, conditional property name, and external reference rules enabled regardless of initial context. |
 |  [SimpleJsonMap](./ts-json.simplejsonmap.md) | A [SimpleJsonMap](./ts-json.simplejsonmap.md) presents a view of a simple map of [JSON values](./ts-json.jsonvalue.md)<!-- -->. |
-|  [TemplatedJsonConverter](./ts-json.templatedjsonconverter.md) | A  from <code>unknown</code> to type-safe JSON with mustache template rendering and multi-value property name rules enabled regardless of initial context. |
+|  [TemplatedJsonConverter](./ts-json.templatedjsonconverter.md) | An @<!-- -->fgv/ts-utils <code>Converter</code> from <code>unknown</code> to type-safe JSON with mustache template rendering and multi-value property name rules enabled regardless of initial context. |
 
 ## Functions
 

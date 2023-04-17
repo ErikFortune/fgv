@@ -260,7 +260,7 @@ export function converterOptionsToEditor(partial?: Partial<IJsonConverterOptions
 
 /**
  * A thin wrapper to allow an arbitrary {@link Editor.JsonEditor | JsonEditor} to be used via the
- * {@link @fgv/ts-utils#Converter | Converter pattern}.
+ * \@fgv/ts-utils `Converter` pattern.
  * @public
  */
 export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, IJsonContext> {
@@ -315,7 +315,7 @@ export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, IJs
 }
 
 /**
- * A {@link @fgv/ts-utils#Converter | Converter} from `unknown` to type-safe JSON, optionally
+ * An \@fgv/ts-utils `Converter` from `unknown` to type-safe JSON, optionally
  * rendering any string property names or values using mustache with a supplied view.
  * @public
  */
@@ -349,7 +349,7 @@ export type TemplatedJsonConverterOptions = Omit<
 >;
 
 /**
- * A {@link @fgv/ts-utils#Converter | Converter} from `unknown` to type-safe JSON
+ * An \@fgv/ts-utils `Converter` from `unknown` to type-safe JSON
  * with mustache template rendering and multi-value property name rules enabled
  * regardless of initial context.
  * @public
@@ -390,7 +390,7 @@ export class TemplatedJsonConverter extends JsonEditorConverter {
 export type ConditionalJsonConverterOptions = Omit<TemplatedJsonConverterOptions, 'useConditionalNames'>;
 
 /**
- * A {@link @fgv/ts-utils#Converter | Converter} from `unknown` to type-safe JSON with mustache
+ * An \@fgv/ts-utils `Converter` from `unknown` to type-safe JSON with mustache
  * template rendering, multi-value property name and conditional property
  * name rules enabled regardless of initial context.
  * @public
@@ -429,7 +429,7 @@ export class ConditionalJsonConverter extends JsonEditorConverter {
 export type RichJsonConverterOptions = Omit<ConditionalJsonConverterOptions, 'useReferences'>;
 
 /**
- * A {@link @fgv/ts-utils#Converter | Converter} from `unknown` to type-safe JSON with mustache
+ * A \@fgv/ts-utils `Converter` from `unknown` to type-safe JSON with mustache
  * template rendering, multi-value property name, conditional property
  * name, and external reference rules enabled regardless of initial context.
  * @public

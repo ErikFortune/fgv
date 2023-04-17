@@ -24,5 +24,5 @@ editProperty(key: string, value: JsonValue, state: JsonEditorState): DetailedRes
 
 DetailedResult&lt;[JsonObject](./ts-json.jsonobject.md)<!-- -->, [JsonPropertyEditFailureReason](./ts-json.editor.jsonpropertyeditfailurereason.md)<!-- -->&gt;
 
- with detail 'edited' and an object to be flattened and merged if the key contained a template. Fails with detail 'error' if an error occurred or with detail 'inapplicable' if the property key does not contain a template or if name rendering is disabled.
+`Success` with detail 'edited' and an object to be flattened and merged if the key contained a template. Fails with detail 'error' if an error occurred or with detail 'inapplicable' if the property key does not contain a template or if name rendering is disabled.
 

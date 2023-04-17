@@ -4,7 +4,7 @@
 
 ## JsonEditorConverter class
 
-A thin wrapper to allow an arbitrary [JsonEditor](./ts-json.editor.jsoneditor.md) to be used via the .
+A thin wrapper to allow an arbitrary [JsonEditor](./ts-json.editor.jsoneditor.md) to be used via the @<!-- -->fgv/ts-utils `Converter` pattern.
 
 **Signature:**
 

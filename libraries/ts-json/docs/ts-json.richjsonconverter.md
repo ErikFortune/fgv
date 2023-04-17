@@ -4,7 +4,7 @@
 
 ## RichJsonConverter class
 
-A  from `unknown` to type-safe JSON with mustache template rendering, multi-value property name, conditional property name, and external reference rules enabled regardless of initial context.
+A @<!-- -->fgv/ts-utils `Converter` from `unknown` to type-safe JSON with mustache template rendering, multi-value property name, conditional property name, and external reference rules enabled regardless of initial context.
 
 **Signature:**
 

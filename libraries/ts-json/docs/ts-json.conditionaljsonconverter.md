@@ -4,7 +4,7 @@
 
 ## ConditionalJsonConverter class
 
-A  from `unknown` to type-safe JSON with mustache template rendering, multi-value property name and conditional property name rules enabled regardless of initial context.
+An @<!-- -->fgv/ts-utils `Converter` from `unknown` to type-safe JSON with mustache template rendering, multi-value property name and conditional property name rules enabled regardless of initial context.
 
 **Signature:**
 

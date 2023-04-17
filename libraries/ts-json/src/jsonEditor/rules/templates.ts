@@ -77,7 +77,7 @@ export class TemplatedJsonEditorRule extends JsonEditorRuleBase {
    * @param key - The key of the property to be considered
    * @param value - The {@link JsonValue | value} of the property to be considered.
    * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
-   * @returns {@link @fgv/ts-utils#Success | `Success`} with detail 'edited' and an object to
+   * @returns `Success` with detail 'edited' and an object to
    * be flattened and merged if the key contained a template. Fails with detail 'error' if
    * an error occurred or with detail 'inapplicable' if the property key does not contain
    * a template or if name rendering is disabled.
