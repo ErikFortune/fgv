@@ -9,6 +9,7 @@ importers:
     specifiers:
       '@fgv/ts-utils': workspace:*
       '@fgv/ts-utils-jest': workspace:*
+      '@microsoft/api-documenter': ^7.21.7
       '@rushstack/heft': ~0.50.0
       '@rushstack/heft-node-rig': ~1.12.6
       '@types/heft-jest': 1.0.3
@@ -34,6 +35,7 @@ importers:
     devDependencies:
       '@fgv/ts-utils': link:../ts-utils
       '@fgv/ts-utils-jest': link:../ts-utils-jest
+      '@microsoft/api-documenter': 7.21.7_@types+node@18.15.11
       '@rushstack/heft': 0.50.0_@types+node@18.15.11
       '@rushstack/heft-node-rig': 1.12.6_fea1b4640b70a988dc75491dc317be91
       '@types/heft-jest': 1.0.3
