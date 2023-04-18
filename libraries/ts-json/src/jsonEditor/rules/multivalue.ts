@@ -42,7 +42,7 @@ import { JsonEditorState } from '../jsonEditorState';
  */
 export interface IMultiValuePropertyParts {
   /**
-   * The original matched token
+   * The original matched token.
    */
   readonly token: string;
 
@@ -54,15 +54,14 @@ export interface IMultiValuePropertyParts {
   readonly propertyVariable: string;
 
   /**
-   * The set of property values to be expanded
+   * The set of property values to be expanded.
    */
   readonly propertyValues: string[];
 
   /**
-   * If true, the resolved values are added as an array
-   * with the name of the propertyVariable. If false,
-   * values are added as individual properties with names
-   * that correspond the value.
+   * If `true`, the resolved values are added as an array
+   * with the name of the {@link Editor.Rules.IMultiValuePropertyParts.propertyVariable | propertyVariable}.
+   * If false, values are added as individual properties with names that correspond the value.
    */
   readonly asArray: boolean;
 }
@@ -81,13 +80,15 @@ export interface IMultiValuePropertyParts {
  */
 export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
   /**
-   * @internal
+   * Stored fully-resolved {@link Editor.IJsonEditorOptions | editor options}
+   * for this rule.
+   * @public
    */
   protected _options?: IJsonEditorOptions;
 
   /**
-   * Creates a new MultiValueJsonEditorRule.
-   * @param options - Optional configuration options
+   * Creates a new {@link Editor.Rules.MultiValueJsonEditorRule | MultiValueJsonEditorRule}.
+   * @param options - Optional {@link Editor.IJsonEditorOptions | configuration options}.
    */
   public constructor(options?: IJsonEditorOptions) {
     super();
@@ -95,7 +96,7 @@ export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
   }
 
   /**
-   * Creates a new {@link Editor.Rules.MultiValueJsonEditorRule | MultiValueJsonEditorRule}
+   * Creates a new {@link Editor.Rules.MultiValueJsonEditorRule | MultiValueJsonEditorRule}.
    * @param options - Optional {@link Editor.IJsonEditorOptions | configuration options}.
    */
   public static create(options?: IJsonEditorOptions): Result<MultiValueJsonEditorRule> {
@@ -107,10 +108,9 @@ export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
    * @param key - The key of the property to be considered
    * @param value - The {@link JsonValue | value} of the property to be considered.
    * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
-   * @returns Returns Success with an object containing the fully-resolved child
-   * values to be merged for matching multi-value property. Fails with
-   * detail 'error' if an error occurs or with detail 'inapplicable' if
-   * the property key is not a conditional property.
+   * @returns `Success` with an object containing the fully-resolved child values to be merged for
+   * matching multi-value property. Returns `Failure` with detail `'error'` if an error occurs or
+   * with detail `'inapplicable'` if the property key is not a conditional property.
    */
   public editProperty(
     key: string,
@@ -148,11 +148,12 @@ export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
   }
 
   /**
-   *
-   * @param state -
-   * @param values -
-   * @returns
-   * @internal
+   * Extends the {@link IJsonContext | current context} with a supplied state and values.
+   * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
+   * @param values - An array of {@link VariableValue | VariableValue} to be added to the
+   * context.
+   * @returns The extended {@link IJsonContext | context}.
+   * @public
    */
   protected _deriveContext(
     state: JsonEditorState,
@@ -166,10 +167,11 @@ export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
    * method to use a different format for multi-value properties.
    * @param value - The {@link JsonValue | value} of the property to be considered.
    * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
-   * @returns Success with detail 'deferred' and a {@link IMultiValuePropertyParts | IMultiValuePropertyParts}
-   * describing the match for matching multi-value property.  Fails with detail 'error' if an error occurs
-   * or with detail 'inapplicable' if the key does not represent a multi-value property.
-   * @internal
+   * @returns `Success` with detail `'deferred'` and an
+   * {@link Editor.Rules.IMultiValuePropertyParts | IMultiValuePropertyParts}
+   * describing the match for matching multi-value property.  Returns `Failure` with detail `'error'` if an error occurs
+   * or with detail `'inapplicable'` if the key does not represent a multi-value property.
+   * @public
    */
   protected _tryParse(
     token: string,

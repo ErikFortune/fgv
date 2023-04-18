@@ -4,7 +4,7 @@
 
 ## Editor.Rules.TemplatedJsonEditorRule.editValue() method
 
-Evaluates a property, array or literal value for template rendering
+Evaluates a property, array or literal value for template rendering.
 
 **Signature:**
 
@@ -23,5 +23,5 @@ editValue(value: JsonValue, state: JsonEditorState): DetailedResult<JsonValue, J
 
 DetailedResult&lt;[JsonValue](./ts-json.jsonvalue.md)<!-- -->, [JsonEditFailureReason](./ts-json.editor.jsoneditfailurereason.md)<!-- -->&gt;
 
-Success with detail 'edited' if the value contained a template and was edited. Fails with 'ignore' if the rendered value should be ignored, with 'error' if an error occurs or with 'inapplicable' if the value was not a string with a template.
+`Success` with detail `'edited'` if the value contained a template and was edited. Returns `Failure` with `'ignore'` if the rendered value should be ignored, with `'error'` if an error occurs, or with `'inapplicable'` if the value was not a string with a template.
 

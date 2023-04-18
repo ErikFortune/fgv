@@ -26,7 +26,13 @@ import * as Editor from './jsonEditor';
 
 export * from './common';
 export { CompositeJsonMap } from './compositeJsonMap';
-export { IJsonContext, IJsonReferenceMap, JsonReferenceMapFailureReason, TemplateVars } from './jsonContext';
+export {
+  IJsonContext,
+  IJsonReferenceMap,
+  JsonReferenceMapFailureReason,
+  TemplateVars,
+  VariableValue
+} from './jsonContext';
 export * from './jsonConverter';
 export { ISimpleJsonMapOptions, PrefixedJsonMap, SimpleJsonMap } from './jsonReferenceMap';
 export { Converters, Editor, File };

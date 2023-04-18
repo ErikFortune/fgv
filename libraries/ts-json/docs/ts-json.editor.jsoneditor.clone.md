@@ -4,7 +4,7 @@
 
 ## Editor.JsonEditor.clone() method
 
-Deep clones a supplied JSON value, applying all editor rules and a default or optionally supplied context
+Deep clones a supplied [JSON value](./ts-json.jsonvalue.md)<!-- -->, applying all editor rules and a default or optionally supplied context
 
 **Signature:**
 
@@ -16,8 +16,8 @@ clone(src: JsonValue, context?: IJsonContext): DetailedResult<JsonValue, JsonEdi
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  src | [JsonValue](./ts-json.jsonvalue.md) | The [JsonValue](./ts-json.jsonvalue.md) to be cloned |
-|  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ An optional [IJsonContext](./ts-json.ijsoncontext.md) supplying variables and references |
+|  src | [JsonValue](./ts-json.jsonvalue.md) | The [JsonValue](./ts-json.jsonvalue.md) to be cloned. |
+|  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ An optional [JSON context](./ts-json.ijsoncontext.md) supplying variables and references. |
 
 **Returns:**
 

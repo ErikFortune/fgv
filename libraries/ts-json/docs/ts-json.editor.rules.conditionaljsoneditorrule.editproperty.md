@@ -24,5 +24,5 @@ editProperty(key: string, value: JsonValue, state: JsonEditorState): DetailedRes
 
 DetailedResult&lt;[JsonObject](./ts-json.jsonobject.md)<!-- -->, [JsonPropertyEditFailureReason](./ts-json.editor.jsonpropertyeditfailurereason.md)<!-- -->&gt;
 
-Returns Success with detail 'deferred' and a [IConditionalJsonDeferredObject](./ts-json.editor.rules.iconditionaljsondeferredobject.md)<!-- -->. for a matching, default or unconditional key. Fails with detail 'ignore' for a non-matching conditional and with detail 'error' if an error occurs. Otherwise fails with detail 'inapplicable'.
+Returns `Success` with detail `'deferred'` and a [IConditionalJsonDeferredObject](./ts-json.editor.rules.iconditionaljsondeferredobject.md)<!-- -->. for a matching, default or unconditional key. Returns `Failure` with detail `'ignore'` for a non-matching conditional, or with detail `'error'` if an error occurs. Otherwise fails with detail `'inapplicable'`<!-- -->.
 

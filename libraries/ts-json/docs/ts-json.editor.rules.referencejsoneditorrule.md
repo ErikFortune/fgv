@@ -6,7 +6,7 @@
 
 The [Reference JSON editor rule](./ts-json.editor.rules.referencejsoneditorrule.md) replaces property keys or values that match some known object with a copy of that referenced object, formatted according to the current context.
 
-A property key is matched if it matches any known referenced value. - If the value of the matched key is 'default', then the entire object is formatted with the current context, flattened and merged into the current object. - If the value of the matched key is some other string, then the entire object is formatted with the current context, and the child of the resulting object at the specified path is flattened and merged into the current object. - If the value of the matched key is an object, then the entire object is formatted with the current context extended to include any properties of that object, flattened, and merged into the current object. - It is an error if the referenced value is not an object.
+A property key is matched if it matches any known referenced value. - If the value of the matched key is `'default'`<!-- -->, then the entire object is formatted with the current context, flattened and merged into the current object. - If the value of the matched key is some other string, then the entire object is formatted with the current context, and the child of the resulting object at the specified path is flattened and merged into the current object. - If the value of the matched key is an object, then the entire object is formatted with the current context extended to include any properties of that object, flattened, and merged into the current object. - It is an error if the referenced value is not an object.
 
 Any property, array or literal value is matched if it matches any known value reference. The referenced value is replaced by the referenced value, formatted using the current editor context.
 
@@ -22,6 +22,12 @@ export declare class ReferenceJsonEditorRule extends JsonEditorRuleBase
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
 |  [(constructor)(options)](./ts-json.editor.rules.referencejsoneditorrule._constructor_.md) |  | Creates a new [ReferenceJsonEditorRule](./ts-json.editor.rules.referencejsoneditorrule.md)<!-- -->. |
+
+## Properties
+
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [\_options?](./ts-json.editor.rules.referencejsoneditorrule._options.md) | <code>protected</code> | [IJsonEditorOptions](./ts-json.editor.ijsoneditoroptions.md) | _(Optional)_ Stored fully-resolved [editor options](./ts-json.editor.ijsoneditoroptions.md) for this rule. |
 
 ## Methods
 

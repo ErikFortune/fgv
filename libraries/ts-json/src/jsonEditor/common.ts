@@ -24,16 +24,19 @@ import { JsonValue } from '../common';
 import { IJsonContext } from '../jsonContext';
 
 /**
+ * Possible `DetailedResult` details for various editor operations.
  * @public
  */
 export type JsonEditFailureReason = 'ignore' | 'inapplicable' | 'edited' | 'error';
 
 /**
+ * Possible `DetailedResult` details for property edit operations.
  * @public
  */
 export type JsonPropertyEditFailureReason = JsonEditFailureReason | 'deferred';
 
 /**
+ * Possible validation rules for a {@link Editor.JsonEditor | JsonEditor}.
  * @public
  */
 export type JsonEditorValidationRules =
@@ -42,6 +45,7 @@ export type JsonEditorValidationRules =
   | 'undefinedPropertyValue';
 
 /**
+ * Validation options for a {@link Editor.JsonEditor | JsonEditor}.
  * @public
  */
 export interface IJsonEditorValidationOptions {
@@ -71,6 +75,7 @@ export interface IJsonEditorValidationOptions {
 }
 
 /**
+ * Initialization options for a {@link Editor.JsonEditor | JsonEditor}.
  * @public
  */
 export interface IJsonEditorOptions {
@@ -79,8 +84,15 @@ export interface IJsonEditorOptions {
 }
 
 /**
+ * A specialized JSON editor which does a deep clone of a supplied {@link JsonValue | JsonValue}.
  * @public
  */
 export interface IJsonCloneEditor {
+  /**
+   * Returns a deep clone of a supplied {@link JsonValue | JsonValue}.
+   * @param src - The {@link JsonValue | JsonValue} to be cloned.
+   * @param context - An optional {@link IJsonContext | JSON context} used for clone
+   * conversion operations.
+   */
   clone(src: JsonValue, context?: IJsonContext): DetailedResult<JsonValue, JsonEditFailureReason>;
 }

@@ -40,7 +40,7 @@ import { JsonEditorState } from '../jsonEditorState';
  * according to the current context.
  *
  * A property key is matched if it matches any known referenced value.
- * - If the value of the matched key is 'default', then the entire object is formatted
+ * - If the value of the matched key is `'default'`, then the entire object is formatted
  *   with the current context, flattened and merged into the current object.
  * - If the value of the matched key is some other string, then the entire
  *   object is formatted with the current context, and the child of the resulting
@@ -57,7 +57,8 @@ import { JsonEditorState } from '../jsonEditorState';
  */
 export class ReferenceJsonEditorRule extends JsonEditorRuleBase {
   /**
-   * @internal
+   * Stored fully-resolved {@link Editor.IJsonEditorOptions | editor options} for this rule.
+   * @public
    */
   protected _options?: IJsonEditorOptions;
 
@@ -72,7 +73,7 @@ export class ReferenceJsonEditorRule extends JsonEditorRuleBase {
 
   /**
    * Creates a new {@link Editor.Rules.ReferenceJsonEditorRule | ReferenceJsonEditorRule}.
-   * @param options - Optional configuration options for this rule
+   * @param options - Optional {@link Editor.IJsonEditorOptions | configuration options} for this rule.
    */
   public static create(options?: IJsonEditorOptions): Result<ReferenceJsonEditorRule> {
     return captureResult(() => new ReferenceJsonEditorRule(options));
@@ -83,9 +84,9 @@ export class ReferenceJsonEditorRule extends JsonEditorRuleBase {
    * @param key - The key of the property to be considered.
    * @param value - The {@link JsonValue | value} of the property to be considered.
    * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
-   * @returns If the reference is successful, returns Success with a JsonObject to
-   * be flattened and merged into the current object. Fails with detail 'inapplicable'
-   * for non-reference keys or with detail 'error' if an error occurs.
+   * @returns If the reference is successful, returns `Success` with a {@link JsonObject | JsonObject}
+   * to be flattened and merged into the current object. Returns `Failure` with detail `'inapplicable'`
+   * for non-reference keys or with detail `'error'` if an error occurs.
    */
   public editProperty(
     key: string,
@@ -161,8 +162,8 @@ export class ReferenceJsonEditorRule extends JsonEditorRuleBase {
   /**
    * Gets the template variables to use given the value of some property whose name matched a
    * resource plus the base template context.
-   * @param supplied - The string or object supplied in the source json
-   * @param baseVars - The context in effect at the point of resolution
+   * @param state - The {@link Editor.JsonEditorState | editor state} to be extended.
+   * @param supplied - The string or object supplied in the source json.
    * @internal
    */
   protected _extendContext(state: JsonEditorState, supplied: JsonValue): Result<IJsonContext | undefined> {

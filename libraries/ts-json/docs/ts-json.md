@@ -62,4 +62,5 @@
 |  [RichJsonConverterOptions](./ts-json.richjsonconverteroptions.md) |  |
 |  [TemplatedJsonConverterOptions](./ts-json.templatedjsonconverteroptions.md) |  |
 |  [TemplateVars](./ts-json.templatevars.md) | Collection of variable used for template replacement in a JSON edit or conversion. |
+|  [VariableValue](./ts-json.variablevalue.md) | Describes one value in a TemplateVars collection of variables |
 

@@ -16,9 +16,11 @@ static getDefaultRules(options?: IJsonEditorOptions): Result<IJsonEditorRule[]>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | [IJsonEditorOptions](./ts-json.editor.ijsoneditoroptions.md) | _(Optional)_ The options used to initialize all rules |
+|  options | [IJsonEditorOptions](./ts-json.editor.ijsoneditoroptions.md) | _(Optional)_ Optional partial [editor options](./ts-json.editor.ijsoneditoroptions.md) for all rules. |
 
 **Returns:**
 
 Result&lt;[IJsonEditorRule](./ts-json.editor.ijsoneditorrule.md)<!-- -->\[\]&gt;
+
+Default [editor rules](./ts-json.editor.ijsoneditorrule.md) with any supplied options applied.
 

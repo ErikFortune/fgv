@@ -21,10 +21,17 @@ export declare class ConditionalJsonEditorRule extends JsonEditorRuleBase
 |  --- | --- | --- |
 |  [(constructor)(options)](./ts-json.editor.rules.conditionaljsoneditorrule._constructor_.md) |  | Creates a new [ConditionalJsonEditorRule](./ts-json.editor.rules.conditionaljsoneditorrule.md)<!-- -->. |
 
+## Properties
+
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [\_options?](./ts-json.editor.rules.conditionaljsoneditorrule._options.md) | <code>protected</code> | [IConditionalJsonRuleOptions](./ts-json.editor.rules.iconditionaljsonruleoptions.md) | _(Optional)_ Stored fully-resolved [options](./ts-json.editor.rules.iconditionaljsonruleoptions.md) for this rule. |
+
 ## Methods
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
+|  [\_tryParseCondition(key, state)](./ts-json.editor.rules.conditionaljsoneditorrule._tryparsecondition.md) | <code>protected</code> | Determines if a given property key is conditional. Derived classes can override this method to use a different format for conditional properties. |
 |  [create(options)](./ts-json.editor.rules.conditionaljsoneditorrule.create.md) | <code>static</code> | Creates a new [ConditionalJsonEditorRule](./ts-json.editor.rules.conditionaljsoneditorrule.md)<!-- -->. |
 |  [editProperty(key, value, state)](./ts-json.editor.rules.conditionaljsoneditorrule.editproperty.md) |  | Evaluates a property for conditional application. |
 |  [finalizeProperties(finalized, \_\_state)](./ts-json.editor.rules.conditionaljsoneditorrule.finalizeproperties.md) |  | Finalizes any deferred conditional properties. If the only deferred property is default, that property is emitted. Otherwise all matching properties are emitted. |

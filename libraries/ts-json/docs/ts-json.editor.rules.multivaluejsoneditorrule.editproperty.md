@@ -24,5 +24,5 @@ editProperty(key: string, value: JsonValue, state: JsonEditorState): DetailedRes
 
 DetailedResult&lt;[JsonObject](./ts-json.jsonobject.md)<!-- -->, [JsonPropertyEditFailureReason](./ts-json.editor.jsonpropertyeditfailurereason.md)<!-- -->&gt;
 
-Returns Success with an object containing the fully-resolved child values to be merged for matching multi-value property. Fails with detail 'error' if an error occurs or with detail 'inapplicable' if the property key is not a conditional property.
+`Success` with an object containing the fully-resolved child values to be merged for matching multi-value property. Returns `Failure` with detail `'error'` if an error occurs or with detail `'inapplicable'` if the property key is not a conditional property.
 

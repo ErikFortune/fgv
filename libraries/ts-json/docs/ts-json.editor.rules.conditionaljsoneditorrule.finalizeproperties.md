@@ -16,8 +16,8 @@ finalizeProperties(finalized: JsonObject[], __state: JsonEditorState): DetailedR
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  finalized | [JsonObject](./ts-json.jsonobject.md)<!-- -->\[\] | The deferred properties to be considered for merge |
-|  \_\_state | [JsonEditorState](./ts-json.editor.jsoneditorstate.md) | The editor state for the object being edited |
+|  finalized | [JsonObject](./ts-json.jsonobject.md)<!-- -->\[\] | The deferred properties to be considered for merge. |
+|  \_\_state | [JsonEditorState](./ts-json.editor.jsoneditorstate.md) | The [editor state](./ts-json.editor.jsoneditorstate.md) for the object being edited. |
 
 **Returns:**
 

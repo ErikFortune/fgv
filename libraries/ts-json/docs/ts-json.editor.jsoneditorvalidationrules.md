@@ -4,6 +4,7 @@
 
 ## Editor.JsonEditorValidationRules type
 
+Possible validation rules for a [JsonEditor](./ts-json.editor.jsoneditor.md)<!-- -->.
 
 **Signature:**
 

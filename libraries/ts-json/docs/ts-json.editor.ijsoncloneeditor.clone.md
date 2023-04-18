@@ -4,6 +4,8 @@
 
 ## Editor.IJsonCloneEditor.clone() method
 
+Returns a deep clone of a supplied [JsonValue](./ts-json.jsonvalue.md)<!-- -->.
+
 **Signature:**
 
 ```typescript
@@ -14,8 +16,8 @@ clone(src: JsonValue, context?: IJsonContext): DetailedResult<JsonValue, JsonEdi
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  src | [JsonValue](./ts-json.jsonvalue.md) |  |
-|  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ |
+|  src | [JsonValue](./ts-json.jsonvalue.md) | The [JsonValue](./ts-json.jsonvalue.md) to be cloned. |
+|  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ An optional [JSON context](./ts-json.ijsoncontext.md) used for clone conversion operations. |
 
 **Returns:**
 

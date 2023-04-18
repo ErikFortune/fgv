@@ -17,6 +17,6 @@ export interface ITemplatedJsonRuleOptions extends Partial<IJsonEditorOptions>
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [useNameTemplates?](./ts-json.editor.rules.itemplatedjsonruleoptions.usenametemplates.md) |  | boolean | _(Optional)_ If true (default) then templates in property names are rendered |
-|  [useValueTemplates?](./ts-json.editor.rules.itemplatedjsonruleoptions.usevaluetemplates.md) |  | boolean | _(Optional)_ If true (default) then templates in property values are rendered |
+|  [useNameTemplates?](./ts-json.editor.rules.itemplatedjsonruleoptions.usenametemplates.md) |  | boolean | _(Optional)_ If <code>true</code> (default) then templates in property names are rendered |
+|  [useValueTemplates?](./ts-json.editor.rules.itemplatedjsonruleoptions.usevaluetemplates.md) |  | boolean | _(Optional)_ If <code>true</code> (default) then templates in property values are rendered |
 

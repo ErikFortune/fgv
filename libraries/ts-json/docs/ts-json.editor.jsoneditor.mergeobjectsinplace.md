@@ -16,10 +16,12 @@ mergeObjectsInPlace(target: JsonObject, srcObjects: JsonObject[]): Result<JsonOb
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  target | [JsonObject](./ts-json.jsonobject.md) | The target object to be updated |
-|  srcObjects | [JsonObject](./ts-json.jsonobject.md)<!-- -->\[\] | Objects to be merged into the target object, in the order supplied. |
+|  target | [JsonObject](./ts-json.jsonobject.md) | The target [object](./ts-json.jsonobject.md) to be updated |
+|  srcObjects | [JsonObject](./ts-json.jsonobject.md)<!-- -->\[\] | [Objects](./ts-json.jsonobject.md) to be merged into the target object, in the order supplied. |
 
 **Returns:**
 
 Result&lt;[JsonObject](./ts-json.jsonobject.md)<!-- -->&gt;
+
+`Success` with the original source [object](./ts-json.jsonobject.md) if merge was successful. Returns `Failure` with details if an error occurs.
 

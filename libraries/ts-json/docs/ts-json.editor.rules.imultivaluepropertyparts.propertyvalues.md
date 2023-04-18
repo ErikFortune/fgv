@@ -4,7 +4,7 @@
 
 ## Editor.Rules.IMultiValuePropertyParts.propertyValues property
 
-The set of property values to be expanded
+The set of property values to be expanded.
 
 **Signature:**
 

@@ -4,7 +4,7 @@
 
 ## Editor.Rules.IMultiValuePropertyParts.token property
 
-The original matched token
+The original matched token.
 
 **Signature:**
 

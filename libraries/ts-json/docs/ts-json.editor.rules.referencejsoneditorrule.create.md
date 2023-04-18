@@ -16,7 +16,7 @@ static create(options?: IJsonEditorOptions): Result<ReferenceJsonEditorRule>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | [IJsonEditorOptions](./ts-json.editor.ijsoneditoroptions.md) | _(Optional)_ Optional configuration options for this rule |
+|  options | [IJsonEditorOptions](./ts-json.editor.ijsoneditoroptions.md) | _(Optional)_ Optional [configuration options](./ts-json.editor.ijsoneditoroptions.md) for this rule. |
 
 **Returns:**
 

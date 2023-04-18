@@ -4,6 +4,7 @@
 
 ## Editor.IJsonEditorOptions interface
 
+Initialization options for a [JsonEditor](./ts-json.editor.jsoneditor.md)<!-- -->.
 
 **Signature:**
 

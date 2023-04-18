@@ -4,6 +4,7 @@
 
 ## Editor.JsonPropertyEditFailureReason type
 
+Possible `DetailedResult` details for property edit operations.
 
 **Signature:**
 

@@ -16,7 +16,7 @@ static create(options?: IConditionalJsonRuleOptions): Result<ConditionalJsonEdit
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | [IConditionalJsonRuleOptions](./ts-json.editor.rules.iconditionaljsonruleoptions.md) | _(Optional)_ Optional configuration options used for this rule |
+|  options | [IConditionalJsonRuleOptions](./ts-json.editor.rules.iconditionaljsonruleoptions.md) | _(Optional)_ Optional [configuration options](./ts-json.editor.rules.iconditionaljsonruleoptions.md) used for this rule. |
 
 **Returns:**
 

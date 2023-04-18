@@ -4,7 +4,7 @@
 
 ## Editor.JsonEditor.options property
 
-Full set of [editor options](./ts-json.editor.ijsoneditoroptions.md) in effect for this rule.
+Full set of [editor options](./ts-json.editor.ijsoneditoroptions.md) in effect for this editor.
 
 **Signature:**
 

@@ -4,7 +4,7 @@
 
 ## Editor.JsonEditor.mergeObjectsInPlaceWithContext() method
 
-Merges multiple supplied source objects into a supplied target, updating the target object and using an optional context supplied in the call.
+Merges multiple supplied source objects into a supplied target, updating the target object and using an optional [context](./ts-json.ijsoncontext.md) supplied in the call.
 
 **Signature:**
 
@@ -17,10 +17,12 @@ mergeObjectsInPlaceWithContext(context: IJsonContext | undefined, base: JsonObje
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  context | [IJsonContext](./ts-json.ijsoncontext.md) \| undefined | An optional [IJsonContext](./ts-json.ijsoncontext.md) supplying variables and references. |
-|  base | [JsonObject](./ts-json.jsonobject.md) |  |
+|  base | [JsonObject](./ts-json.jsonobject.md) | The base [object](./ts-json.jsonobject.md) to be updated |
 |  srcObjects | [JsonObject](./ts-json.jsonobject.md)<!-- -->\[\] | Objects to be merged into the target object, in the order supplied. |
 
 **Returns:**
 
 Result&lt;[JsonObject](./ts-json.jsonobject.md)<!-- -->&gt;
+
+`Success` with the original source [object](./ts-json.jsonobject.md) if merge was successful. Returns `Failure` with details if an error occurs.
 

@@ -4,7 +4,7 @@
 
 ## Editor.Rules.IConditionalJsonKeyResult interface
 
-Returned by the \_tryMatch method of the [ConditionalJsonEditorRule](./ts-json.editor.rules.conditionaljsoneditorrule.md) to indicate whether a successful match was due to a matching condition or a default value.
+Returned by [ConditionalJsonEditorRule.\_tryParseCondition](./ts-json.editor.rules.conditionaljsoneditorrule._tryparsecondition.md) to indicate whether a successful match was due to a matching condition or a default value.
 
 **Signature:**
 

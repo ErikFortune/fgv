@@ -18,7 +18,7 @@ extendContext(baseContext: IJsonContext | undefined, add: {
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  baseContext | [IJsonContext](./ts-json.ijsoncontext.md) \| undefined |  |
-|  add | { vars?: VariableValue\[\]; refs?: [IJsonReferenceMap](./ts-json.ijsonreferencemap.md)<!-- -->\[\]; } |  |
+|  add | { vars?: [VariableValue](./ts-json.variablevalue.md)<!-- -->\[\]; refs?: [IJsonReferenceMap](./ts-json.ijsonreferencemap.md)<!-- -->\[\]; } |  |
 
 **Returns:**
 

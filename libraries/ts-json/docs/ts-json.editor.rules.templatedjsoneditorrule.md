@@ -19,11 +19,17 @@ export declare class TemplatedJsonEditorRule extends JsonEditorRuleBase
 |  --- | --- | --- |
 |  [(constructor)(options)](./ts-json.editor.rules.templatedjsoneditorrule._constructor_.md) |  | Creates a new [TemplatedJsonEditorRule](./ts-json.editor.rules.templatedjsoneditorrule.md)<!-- -->. |
 
+## Properties
+
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [\_options?](./ts-json.editor.rules.templatedjsoneditorrule._options.md) | <code>protected</code> | [ITemplatedJsonRuleOptions](./ts-json.editor.rules.itemplatedjsonruleoptions.md) | _(Optional)_ Fully-resolved [configuration options](./ts-json.editor.rules.itemplatedjsonruleoptions.md) for this rule. |
+
 ## Methods
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
 |  [create(options)](./ts-json.editor.rules.templatedjsoneditorrule.create.md) | <code>static</code> | Creates a new [TemplatedJsonEditorRule](./ts-json.editor.rules.templatedjsoneditorrule.md)<!-- -->. |
 |  [editProperty(key, value, state)](./ts-json.editor.rules.templatedjsoneditorrule.editproperty.md) |  | Evaluates a property name for template rendering. |
-|  [editValue(value, state)](./ts-json.editor.rules.templatedjsoneditorrule.editvalue.md) |  | Evaluates a property, array or literal value for template rendering |
+|  [editValue(value, state)](./ts-json.editor.rules.templatedjsoneditorrule.editvalue.md) |  | Evaluates a property, array or literal value for template rendering. |
 

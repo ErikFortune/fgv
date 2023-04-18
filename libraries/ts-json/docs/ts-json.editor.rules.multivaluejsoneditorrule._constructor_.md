@@ -4,7 +4,7 @@
 
 ## Editor.Rules.MultiValueJsonEditorRule.(constructor)
 
-Creates a new MultiValueJsonEditorRule.
+Creates a new [MultiValueJsonEditorRule](./ts-json.editor.rules.multivaluejsoneditorrule.md)<!-- -->.
 
 **Signature:**
 
@@ -16,5 +16,5 @@ constructor(options?: IJsonEditorOptions);
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | [IJsonEditorOptions](./ts-json.editor.ijsoneditoroptions.md) | _(Optional)_ Optional configuration options |
+|  options | [IJsonEditorOptions](./ts-json.editor.ijsoneditoroptions.md) | _(Optional)_ Optional [configuration options](./ts-json.editor.ijsoneditoroptions.md)<!-- -->. |
 

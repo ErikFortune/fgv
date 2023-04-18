@@ -16,8 +16,8 @@ export interface IMultiValuePropertyParts
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [asArray](./ts-json.editor.rules.imultivaluepropertyparts.asarray.md) | <code>readonly</code> | boolean | If true, the resolved values are added as an array with the name of the propertyVariable. If false, values are added as individual properties with names that correspond the value. |
-|  [propertyValues](./ts-json.editor.rules.imultivaluepropertyparts.propertyvalues.md) | <code>readonly</code> | string\[\] | The set of property values to be expanded |
+|  [asArray](./ts-json.editor.rules.imultivaluepropertyparts.asarray.md) | <code>readonly</code> | boolean | If <code>true</code>, the resolved values are added as an array with the name of the [propertyVariable](./ts-json.editor.rules.imultivaluepropertyparts.propertyvariable.md)<!-- -->. If false, values are added as individual properties with names that correspond the value. |
+|  [propertyValues](./ts-json.editor.rules.imultivaluepropertyparts.propertyvalues.md) | <code>readonly</code> | string\[\] | The set of property values to be expanded. |
 |  [propertyVariable](./ts-json.editor.rules.imultivaluepropertyparts.propertyvariable.md) | <code>readonly</code> | string | The name of the variable used to project each possible property value into the child values or objects being resolved. |
-|  [token](./ts-json.editor.rules.imultivaluepropertyparts.token.md) | <code>readonly</code> | string | The original matched token |
+|  [token](./ts-json.editor.rules.imultivaluepropertyparts.token.md) | <code>readonly</code> | string | The original matched token. |
 

@@ -4,6 +4,7 @@
 
 ## Editor.JsonEditFailureReason type
 
+Possible `DetailedResult` details for various editor operations.
 
 **Signature:**
 

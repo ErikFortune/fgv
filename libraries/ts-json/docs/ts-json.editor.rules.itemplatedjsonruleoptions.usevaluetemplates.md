@@ -4,7 +4,7 @@
 
 ## Editor.Rules.ITemplatedJsonRuleOptions.useValueTemplates property
 
-If true (default) then templates in property values are rendered
+If `true` (default) then templates in property values are rendered
 
 **Signature:**
 

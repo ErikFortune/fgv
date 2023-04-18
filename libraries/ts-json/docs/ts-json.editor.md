@@ -8,7 +8,7 @@
 
 |  Class | Description |
 |  --- | --- |
-|  [JsonEditor](./ts-json.editor.jsoneditor.md) | The JsonEditor can be used to edit JSON objects in place or to clone any JSON value, applying a default context and optional set of editor rules that were supplied at initialization. |
+|  [JsonEditor](./ts-json.editor.jsoneditor.md) | A [JsonEditor](./ts-json.editor.jsoneditor.md) can be used to edit JSON objects in place or to clone any JSON value, applying a default context and optional set of editor rules that were supplied at initialization. |
 |  [JsonEditorRuleBase](./ts-json.editor.jsoneditorrulebase.md) | Default base implementation of JsonEditor rule returns inapplicable for all operations so that derived classes need only implement the operations they actually support. |
 |  [JsonEditorState](./ts-json.editor.jsoneditorstate.md) |  |
 
@@ -16,10 +16,10 @@
 
 |  Interface | Description |
 |  --- | --- |
-|  [IJsonCloneEditor](./ts-json.editor.ijsoncloneeditor.md) |  |
-|  [IJsonEditorOptions](./ts-json.editor.ijsoneditoroptions.md) |  |
+|  [IJsonCloneEditor](./ts-json.editor.ijsoncloneeditor.md) | A specialized JSON editor which does a deep clone of a supplied [JsonValue](./ts-json.jsonvalue.md)<!-- -->. |
+|  [IJsonEditorOptions](./ts-json.editor.ijsoneditoroptions.md) | Initialization options for a [JsonEditor](./ts-json.editor.jsoneditor.md)<!-- -->. |
 |  [IJsonEditorRule](./ts-json.editor.ijsoneditorrule.md) |  |
-|  [IJsonEditorValidationOptions](./ts-json.editor.ijsoneditorvalidationoptions.md) |  |
+|  [IJsonEditorValidationOptions](./ts-json.editor.ijsoneditorvalidationoptions.md) | Validation options for a [JsonEditor](./ts-json.editor.jsoneditor.md)<!-- -->. |
 
 ## Namespaces
 
@@ -31,7 +31,7 @@
 
 |  Type Alias | Description |
 |  --- | --- |
-|  [JsonEditFailureReason](./ts-json.editor.jsoneditfailurereason.md) |  |
-|  [JsonEditorValidationRules](./ts-json.editor.jsoneditorvalidationrules.md) |  |
-|  [JsonPropertyEditFailureReason](./ts-json.editor.jsonpropertyeditfailurereason.md) |  |
+|  [JsonEditFailureReason](./ts-json.editor.jsoneditfailurereason.md) | Possible <code>DetailedResult</code> details for various editor operations. |
+|  [JsonEditorValidationRules](./ts-json.editor.jsoneditorvalidationrules.md) | Possible validation rules for a [JsonEditor](./ts-json.editor.jsoneditor.md)<!-- -->. |
+|  [JsonPropertyEditFailureReason](./ts-json.editor.jsonpropertyeditfailurereason.md) | Possible <code>DetailedResult</code> details for property edit operations. |
 

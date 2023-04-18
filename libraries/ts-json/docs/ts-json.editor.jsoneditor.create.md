@@ -16,8 +16,8 @@ static create(options?: Partial<IJsonEditorOptions>, rules?: IJsonEditorRule[]):
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | Partial&lt;[IJsonEditorOptions](./ts-json.editor.ijsoneditoroptions.md)<!-- -->&gt; | _(Optional)_ Optional configuration an context for this editor |
-|  rules | [IJsonEditorRule](./ts-json.editor.ijsoneditorrule.md)<!-- -->\[\] | _(Optional)_ Optional set of rules used by this editor |
+|  options | Partial&lt;[IJsonEditorOptions](./ts-json.editor.ijsoneditoroptions.md)<!-- -->&gt; | _(Optional)_ Optional partial [editor options](./ts-json.editor.ijsoneditoroptions.md) for the constructed editor. |
+|  rules | [IJsonEditorRule](./ts-json.editor.ijsoneditorrule.md)<!-- -->\[\] | _(Optional)_ Optional set of [editor rules](./ts-json.editor.ijsoneditorrule.md) to be applied by the editor. A new [JsonEditor](./ts-json.editor.jsoneditor.md)<!-- -->. |
 
 **Returns:**
 

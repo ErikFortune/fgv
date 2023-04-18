@@ -24,5 +24,5 @@ editProperty(key: string, value: JsonValue, state: JsonEditorState): DetailedRes
 
 DetailedResult&lt;[JsonObject](./ts-json.jsonobject.md)<!-- -->, [JsonPropertyEditFailureReason](./ts-json.editor.jsonpropertyeditfailurereason.md)<!-- -->&gt;
 
-If the reference is successful, returns Success with a JsonObject to be flattened and merged into the current object. Fails with detail 'inapplicable' for non-reference keys or with detail 'error' if an error occurs.
+If the reference is successful, returns `Success` with a [JsonObject](./ts-json.jsonobject.md) to be flattened and merged into the current object. Returns `Failure` with detail `'inapplicable'` for non-reference keys or with detail `'error'` if an error occurs.
 

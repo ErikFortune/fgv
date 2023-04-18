@@ -4,6 +4,7 @@
 
 ## Editor.IJsonEditorValidationOptions interface
 
+Validation options for a [JsonEditor](./ts-json.editor.jsoneditor.md)<!-- -->.
 
 **Signature:**
 

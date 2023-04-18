@@ -16,11 +16,13 @@ mergeObjectInPlace(target: JsonObject, src: JsonObject, runtimeContext?: IJsonCo
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  target | [JsonObject](./ts-json.jsonobject.md) | The target object to be updated |
-|  src | [JsonObject](./ts-json.jsonobject.md) | The source object to be merged |
+|  target | [JsonObject](./ts-json.jsonobject.md) | The target [object](./ts-json.jsonobject.md) to be updated |
+|  src | [JsonObject](./ts-json.jsonobject.md) | The source [object](./ts-json.jsonobject.md) to be merged |
 |  runtimeContext | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ An optional [IJsonContext](./ts-json.ijsoncontext.md) supplying variables and references. |
 
 **Returns:**
 
 Result&lt;[JsonObject](./ts-json.jsonobject.md)<!-- -->&gt;
+
+`Success` with the original source [object](./ts-json.jsonobject.md) if merge was successful. Returns `Failure` with details if an error occurs.
 

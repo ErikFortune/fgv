@@ -4,7 +4,7 @@
 
 ## Editor.Rules.MultiValueJsonEditorRule.create() method
 
-Creates a new [MultiValueJsonEditorRule](./ts-json.editor.rules.multivaluejsoneditorrule.md)
+Creates a new [MultiValueJsonEditorRule](./ts-json.editor.rules.multivaluejsoneditorrule.md)<!-- -->.
 
 **Signature:**
 
