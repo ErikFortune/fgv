@@ -34,22 +34,24 @@ import {
 } from './jsonConverter';
 
 /**
- * A simple validating JSON converter. Converts unknown to JSON or fails
- * if the unknown contains any invalid JSON values.
+ * A simple validating {@link JsonConverter | JSON converter}. Converts unknown to
+ * JSON or fails if the unknown contains any invalid JSON values.
  * @public
  */
 export const json: JsonConverter = new JsonConverter();
 
 /**
- * A simple validating JSON converter. Converts unknown to a JSON object
- * or fails if the unknown contains invalid JSON or is not an object.
+ * A simple validating {@link JsonConverter | JSON converter}. Converts unknown
+ * to a {@link JsonObject | JsonObject}, or fails if the `unknown` contains invalid
+ * JSON or is not an object.
  * @public
  */
 export const jsonObject: Converter<JsonObject, IJsonContext> = json.object();
 
 /**
- * A simple validating JSON converter. Converts unknown to a JSON array
- * or fails if the unknown contains invalid JSON or is not an array.
+ * A simple validating {@link JsonConverter | JSON converter}. Converts `unknown` to a
+ * {@link JsonArray | JsonArray}, or fails if the unknown contains invalid JSON or is
+ * not an array.
  * @public
  */
 export const jsonArray: Converter<JsonArray, IJsonContext> = json.array();
@@ -59,9 +61,9 @@ let conditionalJsonDefault: JsonConverter | undefined;
 let richJsonDefault: JsonConverter | undefined;
 
 /**
- * Converts the supplied unknown to JSON, rendering any property names
- * or string values using mustache with the supplied context.  See the
- * mustache documentation for details of mustache syntax and view.
+ * Helper function which creates a new {@link JsonConverter | JsonConverter} which converts an
+ * `unknown` value to JSON, rendering any property names or string values using mustache with
+ * the supplied context.  See the mustache documentation for details of mustache syntax and view.
  * @param options - {@link TemplatedJsonConverterOptions | Options and context} for
  * the conversion.
  * @public
@@ -77,7 +79,8 @@ export function templatedJson(options?: Partial<TemplatedJsonConverterOptions>):
 }
 
 /**
- * Converts the supplied unknown to strongly-typed JSON, by first rendering any property
+ * Helper function which creates a new {@link JsonConverter | JsonConverter} which converts a
+ * supplied `unknown` to strongly-typed JSON, by first rendering any property
  * names or string values using mustache with the supplied context, then applying
  * multi-value property expansion and conditional flattening based on property names.
  * @param options - {@link ConditionalJsonConverterOptions | Options and context} for
@@ -95,7 +98,8 @@ export function conditionalJson(options?: Partial<ConditionalJsonConverterOption
 }
 
 /**
- * Converts the supplied unknown to strongly-typed JSON, by first rendering any property
+ * Helper function which creates a new {@link JsonConverter | JsonConverter} which converts a
+ * supplied `unknown` to strongly-typed JSON, by first rendering any property
  * names or string values using mustache with the supplied context, then applying
  * multi-value property expansion and conditional flattening based on property names.
  * @param options - {@link RichJsonConverterOptions | Options and context} for

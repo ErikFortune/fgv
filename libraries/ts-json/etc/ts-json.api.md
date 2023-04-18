@@ -32,12 +32,11 @@ function conditionalJson(options?: Partial<ConditionalJsonConverterOptions>): Js
 // @public
 export class ConditionalJsonConverter extends JsonEditorConverter {
     constructor(options?: Partial<ConditionalJsonConverterOptions>);
-    // (undocumented)
     static readonly conditionalOptions: Partial<IJsonConverterOptions>;
     static create(options?: Partial<ConditionalJsonConverterOptions>): Result<JsonConverter>;
 }
 
-// @public (undocumented)
+// @public
 export type ConditionalJsonConverterOptions = Omit<TemplatedJsonConverterOptions, 'useConditionalNames'>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -84,9 +83,13 @@ declare namespace Converters {
 }
 export { Converters }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "IDirectoryConvertOptions"
+//
 // @public
 function convertJsonDirectorySync<T>(srcPath: string, options: IDirectoryConvertOptions<T>): Result<IReadDirectoryItem<T>[]>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "IDirectoryToMapConvertOptions"
+//
 // @public
 function convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options: IDirectoryToMapConvertOptions<T, TC>): Result<Map<string, T>>;
 
@@ -154,7 +157,7 @@ interface IDirectoryConvertOptions<T, TC = unknown> {
     converter: Converter<T, TC>;
 }
 
-// @public (undocumented)
+// @public
 interface IDirectoryToMapConvertOptions<T, TC = unknown> extends IDirectoryConvertOptions<T, TC> {
     // (undocumented)
     transformName?: ItemNameTransformFunction<T>;
@@ -183,6 +186,7 @@ export interface IJsonConverterOptions {
     flattenUnconditionalValues: boolean;
     onInvalidPropertyName: 'error' | 'ignore';
     onInvalidPropertyValue: 'error' | 'ignore';
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "IJSonConverterOptions"
     onUndefinedPropertyValue: 'error' | 'ignore';
     refs?: IJsonReferenceMap;
     useConditionalNames: boolean;
@@ -269,7 +273,7 @@ export function isJsonObject(from: unknown): from is JsonObject;
 // @public
 export function isJsonPrimitive(from: unknown): from is JsonPrimitive;
 
-// @public (undocumented)
+// @public
 type ItemNameTransformFunction<T> = (name: string, item: T) => Result<string>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -492,15 +496,19 @@ export function pickJsonValue(src: JsonObject, path: string): Result<JsonValue>;
 // @public
 export class PrefixedJsonMap extends SimpleJsonMap {
     // Warning: (ae-forgotten-export) The symbol "MapOrRecord" needs to be exported by the entry point index.d.ts
-    //
-    // @internal
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(values?: MapOrRecord<JsonValue>, context?: IJsonContext, options?: ISimpleJsonMapOptions);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createPrefixed(prefix: string, values?: MapOrRecord<JsonValue>, context?: IJsonContext, editor?: JsonEditor): Result<PrefixedJsonMap>;
     // Warning: (ae-forgotten-export) The symbol "IKeyPrefixOptions" needs to be exported by the entry point index.d.ts
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createPrefixed(prefixOptions: IKeyPrefixOptions, values?: MapOrRecord<JsonValue>, context?: IJsonContext, editor?: JsonEditor): Result<PrefixedJsonMap>;
-    // @internal (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "PrefixKeyPolicy"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "IKeyPrefixOptions"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "IKeyPrefixOptions"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "ReferenceMapKeyPolicy"
+    //
+    // @internal
     protected static _toPolicy(prefixOptions: string | IKeyPrefixOptions): ReferenceMapKeyPolicy<JsonValue>;
 }
 
@@ -536,11 +544,10 @@ function richJson(options?: Partial<RichJsonConverterOptions>): JsonConverter;
 export class RichJsonConverter extends JsonEditorConverter {
     constructor(options?: Partial<RichJsonConverterOptions>);
     static create(options?: Partial<RichJsonConverterOptions>): Result<JsonConverter>;
-    // (undocumented)
     static readonly richOptions: Partial<IJsonConverterOptions>;
 }
 
-// @public (undocumented)
+// @public
 export type RichJsonConverterOptions = Omit<ConditionalJsonConverterOptions, 'useReferences'>;
 
 declare namespace Rules {
@@ -561,7 +568,6 @@ declare namespace Rules {
 //
 // @public
 export class SimpleJsonMap extends SimpleJsonMapBase<JsonValue> {
-    // @internal
     protected constructor(values?: MapOrRecord<JsonValue>, context?: IJsonContext, options?: ISimpleJsonMapOptions);
     // @internal (undocumented)
     protected _clone(value: JsonValue, context?: IJsonContext): DetailedResult<JsonValue, JsonReferenceMapFailureReason>;
@@ -578,11 +584,10 @@ function templatedJson(options?: Partial<TemplatedJsonConverterOptions>): JsonCo
 export class TemplatedJsonConverter extends JsonEditorConverter {
     constructor(options?: Partial<TemplatedJsonConverterOptions>);
     static create(options?: Partial<TemplatedJsonConverterOptions>): Result<JsonConverter>;
-    // (undocumented)
     static readonly templateOptions: Partial<IJsonConverterOptions>;
 }
 
-// @public (undocumented)
+// @public
 export type TemplatedJsonConverterOptions = Omit<IJsonConverterOptions, 'useNameTemplates' | 'useValueTemplates' | 'useMultiValueTemplateNames'>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

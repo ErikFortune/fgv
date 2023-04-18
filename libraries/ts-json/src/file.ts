@@ -29,6 +29,8 @@ import { JsonValue } from './common';
 /**
  * Convenience function to read type-safe JSON from a file
  * @param srcPath - Path of the file to read
+ * @returns `Success` with a {@link JsonValue | JsonValue} or `Failure`
+ * with a message if an error occurs.
  * @public
  */
 export function readJsonFileSync(srcPath: string): Result<JsonValue> {
@@ -40,9 +42,11 @@ export function readJsonFileSync(srcPath: string): Result<JsonValue> {
 }
 
 /**
- * Convenience function to read a JSON file and apply a supplied converter
- * @param srcPath - Path of the file to read
- * @param converter - Converter used to convert the file contents
+ * Convenience function to read a JSON file and apply a supplied converter.
+ * @param srcPath - Path of the file to read.
+ * @param converter - `Converter` used to convert the file contents
+ * @returns `Success` with a result of type `<T>`, or `Failure`
+ * with a message if an error occurs.
  * @public
  */
 export function convertJsonFileSync<T>(srcPath: string, converter: Converter<T>): Result<T> {
@@ -52,19 +56,19 @@ export function convertJsonFileSync<T>(srcPath: string, converter: Converter<T>)
 }
 
 /**
- * Options for directory conversion
- * TODO: add filtering, allowed and excluded
+ * Options for directory conversion.
+ * TODO: add filtering, allowed and excluded.
  * @public
  */
 export interface IDirectoryConvertOptions<T, TC = unknown> {
   /**
-   * The converter used to convert incoming JSON objects
+   * The converter used to convert incoming JSON objects.
    */
   converter: Converter<T, TC>;
 }
 
 /**
- * Return value for one item in a directory conversion
+ * Return value for one item in a directory conversion.
  * @public
  */
 export interface IReadDirectoryItem<T> {
@@ -74,15 +78,16 @@ export interface IReadDirectoryItem<T> {
   filename: string;
 
   /**
-   * The payload of the file
+   * The payload of the file.
    */
   item: T;
 }
 
 /**
- * Reads all JSON files from a directory and apply a supplied converter
- * @param srcPath - The path of the folder to be read
- * @param options - Options to control conversion and filtering
+ * Reads all JSON files from a directory and apply a supplied converter.
+ * @param srcPath - The path of the folder to be read.
+ * @param options - {@link IDirectoryConvertOptions | Options} to control
+ * conversion and filtering
  * @public
  */
 export function convertJsonDirectorySync<T>(
@@ -118,11 +123,14 @@ export function convertJsonDirectorySync<T>(
 }
 
 /**
+ * Function to transform the name of a some entity, given an original name
+ * and the contents of the entity.
  * @public
  */
 export type ItemNameTransformFunction<T> = (name: string, item: T) => Result<string>;
 
 /**
+ * Options controlling conversion of a directory.
  * @public
  */
 export interface IDirectoryToMapConvertOptions<T, TC = unknown> extends IDirectoryConvertOptions<T, TC> {
@@ -130,19 +138,21 @@ export interface IDirectoryToMapConvertOptions<T, TC = unknown> extends IDirecto
 }
 
 /**
- *
- * @param n -
- * @returns
+ * Function to transform the name of some entity, given only a previous name. This
+ * default implementation always returns `Success` with the value that was passed in.
+ * @param n - The name to be transformed.
+ * @returns - `Success` with the string that was passed in.
  * @public
  */
 const defaultNameTransformer = (n: string): Result<string> => succeed(n);
 
 /**
- * Reads and converts all JSON files from a directory, returning a map
- * indexed by file base name (i.e. minus the extension) with an optional
- * name transformation applied if present.
- * @param srcPath - The path of the folder to be read
- * @param options - Options to control conversion and filtering
+ * Reads and converts all JSON files from a directory, returning a
+ * `Map<string, T>` indexed by file base name (i.e. minus the extension)
+ * with an optional name transformation applied if present.
+ * @param srcPath - The path of the folder to be read.
+ * @param options - {@link IDirectoryToMapConvertOptions | Options} to control conversion,
+ * filtering and naming.
  * @public
  */
 export function convertJsonDirectoryToMapSync<T, TC = unknown>(
@@ -165,9 +175,9 @@ export function convertJsonDirectoryToMapSync<T, TC = unknown>(
 }
 
 /**
- * Convenience function to write type-safe JSON to a file
- * @param srcPath - Path of the file to write
- * @param value - The JSON object to be written
+ * Convenience function to write type-safe JSON to a file.
+ * @param srcPath - Path of the file to write.
+ * @param value - The {@link JsonValue | JsonValue} to be written.
  * @public
  */
 export function writeJsonFileSync(srcPath: string, value: JsonValue): Result<boolean> {

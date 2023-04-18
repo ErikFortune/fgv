@@ -37,9 +37,14 @@ import { IJsonContext, IJsonReferenceMap, JsonReferenceMapFailureReason } from '
 import { JsonEditor } from './jsonEditor/jsonEditor';
 
 /**
+ * Options for creating a {@link ReferenceMapKeyPolicy | ReferenceMapKeyPolicy} object.
  * @public
  */
 export interface IReferenceMapKeyPolicyValidateOptions {
+  /**
+   * If `true`, the validator coerces keys to some valid value.
+   * If `false`, invalid keys cause an error.
+   */
   makeValid?: boolean;
 }
 
@@ -59,6 +64,12 @@ export class ReferenceMapKeyPolicy<T> {
    */
   protected readonly _isValid: (key: string, item?: T) => boolean;
 
+  /**
+   * Constructs a new {@link ReferenceMapKeyPolicy | ReferenceMapKeyPolicy}.
+   * @param options - Optional {@link IReferenceMapKeyPolicyValidateOptions | options}
+   * used to construct the {@link ReferenceMapKeyPolicy}.
+   * @param isValid - An optional predicate to test a supplied key for validity.
+   */
   public constructor(
     options?: IReferenceMapKeyPolicyValidateOptions,
     isValid?: (key: string, item?: T) => boolean
@@ -67,18 +78,45 @@ export class ReferenceMapKeyPolicy<T> {
     this._isValid = isValid ?? ReferenceMapKeyPolicy.defaultKeyPredicate;
   }
 
+  /**
+   * The static default key name validation predicate rejects keys that contain
+   * mustache templates or which start with the default conditional prefix
+   * `'?'`.
+   * @param key - The key to test.
+   * @returns `true` if the key is valid, `false` otherwise.
+   */
   public static defaultKeyPredicate(key: string): boolean {
     return key.length > 0 && !key.includes('{{') && !key.startsWith('?');
   }
 
+  /**
+   * Determines if a supplied key and item are valid according to the current policy.
+   * @param key - The key to be tested.
+   * @param item - The item to be tested.
+   * @returns `true` if the key and value are valid, `false` otherwise.
+   */
   public isValid(key: string, item?: T): boolean {
     return this._isValid(key, item);
   }
 
+  /**
+   * Determines if a supplied key and item are valid according to the current policy.
+   * @param key - The key to be tested.
+   * @param item - The item to be tested.
+   * @returns `Success` with the key if valid, `Failure` with an error message if invalid.
+   */
   public validate(key: string, item?: T, __options?: IReferenceMapKeyPolicyValidateOptions): Result<string> {
     return this.isValid(key, item) ? succeed(key) : fail(`${key}: invalid key`);
   }
 
+  /**
+   * Validates an array of entries using the validation rules for this policy.
+   * @param items - The array of entries to be validated.
+   * @param options - Optional {@link IReferenceMapKeyPolicyValidateOptions | options} to control
+   * validation.
+   * @returns `Success` with an array of validated entries, or `Failure` with an error message
+   * if validation fails.
+   */
   public validateItems(
     items: [string, T][],
     options?: IReferenceMapKeyPolicyValidateOptions
@@ -92,6 +130,14 @@ export class ReferenceMapKeyPolicy<T> {
     );
   }
 
+  /**
+   * Validates a `Map\<string, T\>` using the validation rules for this policy.
+   * @param items - The `Map\<string, T\>` to be validated.
+   * @param options - Optional {@link IReferenceMapKeyPolicyValidateOptions | options} to control
+   * validation.
+   * @returns `Success` with a new `Map\<string, T\>`, or `Failure` with an error message
+   * if validation fails.
+   */
   public validateMap(
     map: Map<string, T>,
     options?: IReferenceMapKeyPolicyValidateOptions
@@ -103,22 +149,49 @@ export class ReferenceMapKeyPolicy<T> {
 }
 
 /**
+ * A {@link PrefixKeyPolicy | PrefixKeyPolicy} enforces that all keys start with a supplied
+ * prefix, optionally adding the prefix as necessary.
  * @public
  */
 export class PrefixKeyPolicy<T> extends ReferenceMapKeyPolicy<T> {
+  /**
+   * The string prefix to be enforced by this policy.
+   */
   public readonly prefix: string;
 
+  /**
+   * Constructs a new {@link PrefixKeyPolicy | PrefixKeyPolicy}.
+   * @param prefix - The string prefix to be enforced or applied.
+   * @param options - Optional {@link IReferenceMapKeyPolicyValidateOptions | options} to
+   * configure the policy.
+   */
   public constructor(prefix: string, options?: IReferenceMapKeyPolicyValidateOptions) {
     super(options);
     this.prefix = prefix;
   }
 
+  /**
+   * Determines if a key is valid according to policy.
+   * @param key - The key to be tested.
+   * @param __item - The item to be tested.
+   * @returns `true` if the key starts with the expected prefix, `false` otherwise.
+   */
   public isValid(key: string, __item?: T): boolean {
     return (
       key.startsWith(this.prefix) && key !== this.prefix && ReferenceMapKeyPolicy.defaultKeyPredicate(key)
     );
   }
 
+  /**
+   * Determines if a key is valid according to policy, optionally coercing to a valid value by
+   * adding the required prefix.
+   * @param key - The key to be tested.
+   * @param item - The item which corresponds to the key.
+   * @param options - Optional {@link IReferenceMapKeyPolicyValidateOptions | options} to guide
+   * validation.
+   * @returns `Success` with a valid key name if the supplied key is valid or if `makeValid` is set
+   * in the policy options. Returns `Failure` with an error message if an error occurs.
+   */
   public validate(key: string, item?: T, options?: IReferenceMapKeyPolicyValidateOptions): Result<string> {
     // istanbul ignore next
     const makeValid = (options ?? this._defaultOptions)?.makeValid === true;
@@ -132,6 +205,7 @@ export class PrefixKeyPolicy<T> extends ReferenceMapKeyPolicy<T> {
 }
 
 /**
+ * Type representing either a `Map\<string, T\>` or a `Record\<string, T\>`.
  * @public
  */
 export type MapOrRecord<T> = Map<string, T> | Record<string, T>;
@@ -144,25 +218,30 @@ export type MapOrRecord<T> = Map<string, T> | Record<string, T>;
  */
 export abstract class SimpleJsonMapBase<T> implements IJsonReferenceMap {
   /**
+   * The {@link ReferenceMapKeyPolicy | key policy} in effect for this map.
    * @internal
    */
   protected readonly _keyPolicy: ReferenceMapKeyPolicy<T>;
 
   /**
+   * A map containing keys and values already present in this map.
    * @internal
    */
   protected readonly _values: Map<string, T>;
 
   /**
+   * An optional {@link IJsonContext | IJsonContext} used for any conversions
+   * involving items in this map.
    * @internal
    */
   protected readonly _context?: IJsonContext;
 
   /**
-   *
-   * @param values -
-   * @param context -
-   * @param keyPolicy -
+   * Constructs a new {@link SimpleJsonMap | SimpleJsonMap}.
+   * @param values - Initial values for the map.
+   * @param context - An optional {@link IJsonContext | IJsonContext} used for any conversions
+   * involving items in this map.
+   * @param keyPolicy - The {@link ReferenceMapKeyPolicy | key policy} to use for this map.
    * @internal
    */
   protected constructor(
@@ -177,9 +256,10 @@ export abstract class SimpleJsonMapBase<T> implements IJsonReferenceMap {
   }
 
   /**
-   *
-   * @param values -
-   * @returns
+   * Returns a `Map\<string, T\>` derived from a supplied {@link MapOrRecord | MapOrRecord}
+   * @param values - The {@link MapOrRecord | MapOrRecord} to be returned as a map.
+   * @returns `Success` with the corresponding `Map\<string, T\>` or `Failure` with a
+   * message if an error occurs.
    * @internal
    */
   protected static _toMap<T>(values?: MapOrRecord<T>): Result<Map<string, T>> {
@@ -202,7 +282,7 @@ export abstract class SimpleJsonMapBase<T> implements IJsonReferenceMap {
   }
 
   /**
-   * Determines if an object with the specified key actually exists in the map.
+   * Determines if an entry with the specified key actually exists in the map.
    * @param key - key to be tested
    * @returns `true` if an object with the specified key exists, `false` otherwise.
    */
@@ -268,11 +348,12 @@ export class SimpleJsonMap extends SimpleJsonMapBase<JsonValue> {
   protected _editor?: JsonEditor;
 
   /**
-   *
-   * @param values -
-   * @param context -
-   * @param options -
-   * @internal
+   * Constructs a new {@link SimpleJsonMap | SimpleJsonMap} from the supplied objects
+   * @param values - A string-keyed `Map` or `Record` of the {@link JsonValue | JSON values}
+   * to be returned.
+   * @param context - Optional {@link IJsonContext | IJsonContext} used to format returned values.
+   * @param options - Optional {@link ISimpleJsonMapOptions | ISimpleJsonMapOptions} for initialization.
+   * @public
    */
   protected constructor(
     values?: MapOrRecord<JsonValue>,
@@ -289,6 +370,8 @@ export class SimpleJsonMap extends SimpleJsonMapBase<JsonValue> {
    * to be returned.
    * @param context - Optional {@link IJsonContext | IJsonContext} used to format returned values.
    * @param options - Optional {@link ISimpleJsonMapOptions | ISimpleJsonMapOptions} for initialization.
+   * @returns `Success` with a {@link SimpleJsonMap | SimpleJsonMap} or `Failure` with a message if
+   * an error occurs.
    */
   public static createSimple(
     values?: MapOrRecord<JsonValue>,
@@ -360,11 +443,12 @@ export interface IKeyPrefixOptions {
  */
 export class PrefixedJsonMap extends SimpleJsonMap {
   /**
-   *
-   * @param values -
-   * @param context -
-   * @param options-
-   * @internal
+   * Constructs a new {@link PrefixedJsonMap | PrefixedJsonMap} from the supplied values
+   * @param prefix - A string prefix to be enforced for and added to key names as necessary
+   * @param values - A string-keyed Map or Record of the {@link JsonValue | JsonValue} to be returned
+   * @param context - Optional {@link IJsonContext | JSON Context} used to format returned values
+   * @param editor - Optional {@link Editor.JsonEditor | JsonEditor} used to format returned values
+   * @public
    */
   protected constructor(
     values?: MapOrRecord<JsonValue>,
@@ -380,6 +464,8 @@ export class PrefixedJsonMap extends SimpleJsonMap {
    * @param values - A string-keyed Map or Record of the {@link JsonValue | JsonValue} to be returned
    * @param context - Optional {@link IJsonContext | JSON Context} used to format returned values
    * @param editor - Optional {@link Editor.JsonEditor | JsonEditor} used to format returned values
+   * @returns `Success` with a {@link PrefixedJsonMap | PrefixedJsonMap} or `Failure` with a message
+   * if an error occurs.
    */
   public static createPrefixed(
     prefix: string,
@@ -414,9 +500,12 @@ export class PrefixedJsonMap extends SimpleJsonMap {
   }
 
   /**
-   *
-   * @param prefixOptions -
-   * @returns
+   * Constructs a new {@link PrefixKeyPolicy | PrefixKeyPolicy} from a supplied prefix
+   * or set of {@link IKeyPrefixOptions | prefix options}.
+   * @param prefixOptions - The prefix or {@link IKeyPrefixOptions | prefix options} or options
+   * for the new policy.
+   * @returns A new {@link ReferenceMapKeyPolicy | ReferenceMapKeyPolicy} which enforces the
+   * supplied prefix or options.
    * @internal
    */
   protected static _toPolicy(prefixOptions: string | IKeyPrefixOptions): ReferenceMapKeyPolicy<JsonValue> {

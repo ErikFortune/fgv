@@ -24,20 +24,22 @@ import { DetailedResult, Result, succeed } from '@fgv/ts-utils';
 import { JsonObject, JsonValue } from './common';
 
 /**
- * Collection of variable used for template replacement in a JSON edit or conversion.
+ * Collection of variables used for template replacement in a JSON edit or
+ * conversion.
  * @public
  */
 export type TemplateVars = Record<string, unknown>;
 
 /**
- * Describes one value in a TemplateVars collection of variables
+ * Describes one value in a {@link TemplateVars | TemplateVars} collection of
+ * variables.
  * @public
  */
 export type VariableValue = [string, unknown];
 
 /**
- * Function used to create a new collection of template vars with one or more
- * new or changed values.
+ * Function used to create a new collection of {@link TemplateVars | TemplateVars} with
+ * one or more new or changed values.
  * @public
  */
 export type TemplateVarsExtendFunction = (
@@ -46,10 +48,10 @@ export type TemplateVarsExtendFunction = (
 ) => Result<TemplateVars | undefined>;
 
 /**
- * This default implementation of a TemplateVarsExtendFunction creates a new collection
- * via inheritance from the supplied collection
- * @param base - The base variables to be extended
- * @param values - The values to be added or overridden in the new variables
+ * This default implementation of a {@link TemplateVarsExtendFunction | TemplateVarsExtendFunction}
+ * creates a new collection via inheritance from the supplied collection.
+ * @param base - The base {@link TemplateVars | variables} to be extended.
+ * @param values - The {@link VariableValue | values} to be added or overridden in the new variables.
  * @public
  */
 export function defaultExtendVars(
@@ -64,42 +66,42 @@ export function defaultExtendVars(
 }
 
 /**
- * Failure reason for {@link IJsonReferenceMap | IJsonReferenceMap} lookup, where 'unknown'
- * means that the object is not present in the map and 'error' means
+ * Failure reason for {@link IJsonReferenceMap | IJsonReferenceMap} lookup, where `'unknown'`
+ * means that the object is not present in the map and `'error'` means
  * that an error occurred while retrieving or converting it.
  * @public
  */
 export type JsonReferenceMapFailureReason = 'unknown' | 'error';
 
 /**
- * Interface for a simple map that returns named {@link JsonValue | JsonValue} values with templating, conditional logic,
- * and external reference lookups applied using an optionally supplied context.
+ * Interface for a simple map that returns named {@link JsonValue | JsonValue} values with templating,
+ * conditional logic, and external reference lookups applied using an optionally supplied context.
  * @public
  */
 export interface IJsonReferenceMap {
   /**
    * Determine if a key might be valid for this map but does not determine if key actually
    * exists. Allows key range to be constrained.
-   * @param key - key to be tested
-   * @returns true if the key is in the valid range, false otherwise.
+   * @param key - The key to be tested.
+   * @returns `true` if the key is in the valid range, `false` otherwise.
    */
   keyIsInRange(key: string): boolean;
 
   /**
    * Determines if an object with the specified key actually exists in the map.
-   * @param key - key to be tested
-   * @returns true if an object with the specified key exists, false otherwise.
+   * @param key - The key to be tested.
+   * @returns `true` if an object with the specified key exists, `false` otherwise.
    */
   has(key: string): boolean;
 
   /**
-   * Gets a JSON object specified by key.
-   * @param key - key of the object to be retrieved
-   * @param vars - optional variables used to format the object
-   * @param refs - optional object map to resolve external references
-   * @returns Success with the formatted object if successful. Failure with detail 'unknown'
-   * if no such object exists, or failure with detail 'error' if the object was found but
-   * could not be formatted.
+   * Gets a {@link JsonObject | JsonObject} specified by key.
+   * @param key - The key of the object to be retrieved.
+   * @param context - Optional {@link IJsonContext | IJsonContext} used to construct
+   * the object.
+   * @returns `Success` with the formatted {@link JsonObject | object} if successful. `Failure`
+   * with detail `'unknown'`  if no such object exists, or `Failure` with detail `'error'` if
+   * the object was found but could not be formatted.
    */
   // eslint-disable-next-line no-use-before-define
   getJsonObject(
@@ -108,12 +110,12 @@ export interface IJsonReferenceMap {
   ): DetailedResult<JsonObject, JsonReferenceMapFailureReason>;
 
   /**
-   * Gets a JSON value specified by key.
-   * @param key - key of the object to be retrieved
+   * Gets a {@link JsonValue | JsonValue} specified by key.
+   * @param key - The key of the object to be retrieved.
    * @param context - Optional {@link IJsonContext | JSON Context} used to format the value
-   * @returns Success with the formatted object if successful. Failure with detail 'unknown'
-   * if no such object exists, or failure with detail 'error' if the object was found but
-   * could not be formatted.
+   * @returns `Success` with the formatted {@link JsonValue | value} if successful. `Failure`
+   * with detail `'unknown'` if no such object exists, or `Failure` with detail `'error'` if
+   * the object was found but could not be formatted.
    */
   // eslint-disable-next-line no-use-before-define
   getJsonValue(key: string, context?: IJsonContext): DetailedResult<JsonValue, JsonReferenceMapFailureReason>;

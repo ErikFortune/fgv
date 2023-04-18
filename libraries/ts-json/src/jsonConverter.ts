@@ -48,50 +48,50 @@ import { IJsonEditorRule } from './jsonEditor/jsonEditorRule';
  */
 export interface IJsonConverterOptions {
   /**
-   * If true and if template variables are available,
+   * If `true` and if template variables are available,
    * then string property values will be rendered using
-   * mustache and those variables. Otherwise string properties
-   * are copied without modification.
+   * mustache and those variable values. Otherwise string
+   * properties are copied without modification.
    *
-   * Defaults to true if vars are supplied with options,
-   * false otherwise.
+   * Defaults to `true` if vars are supplied with options,
+   * `false` otherwise.
    */
   useValueTemplates: boolean;
 
   /**
-   * If true and if template variables are available,
-   * then string property names will be rendered using
-   * mustache and those variables. Otherwise string properties
-   * are copied without modification.
+   * If `true` and if template variables are available,
+   * then property names will be rendered using
+   * mustache and those variable values. Otherwise
+   * property names are copied without modification.
    *
-   * Defaults to true if vars are supplied with options,
-   * false otherwise.
+   * Defaults to `true` if vars are supplied with options,
+   * `false` otherwise.
    */
   useNameTemplates: boolean;
 
   /**
-   * If true and if template variables are available,
+   * If `true` and if template variables are available,
    * then string property names will be considered for
    * conditionals.
    *
-   * Default is to match useNameTemplates
+   * Default is to match {@link IJsonConverterOptions.useNameTemplates | useNameTemplates}.
    */
   useConditionalNames: boolean;
 
   /**
-   * If true (default) then properties with unconditional names
+   * If `true` (default) then properties with unconditional names
    * (which start with !) are flattened.
    */
   flattenUnconditionalValues: boolean;
 
   /**
-   * If true and if both template variables and a
+   * If `true` and if both template variables and a
    * context derivation function is available, then properties
    * which match the multi-value name pattern will be expanded.
-   * Default matches useNameTemplates.
+   * Default matches {@link IJsonConverterOptions.useNameTemplates | useNameTemplates}.
    *
-   * Default is true unless extendVars is explicitly set to
-   * undefined.
+   * Default is `true` unless {@link IJsonConverterOptions.extendVars | extendVars} is
+   * explicitly set to `undefined`.
    */
   useMultiValueTemplateNames: boolean;
 
@@ -105,56 +105,56 @@ export interface IJsonConverterOptions {
   /**
    * Method used to extend variables for children of an array node during
    * expansion. Default is to use a built-in extension function unless
-   * extendVars is explicitly set to undefined.
+   * {@link IJsonConverterOptions.extendVars | extendVars} is explicitly set to undefined.
    */
   extendVars?: TemplateVarsExtendFunction;
 
   /**
-   * If true and if a references map is supplied, then
-   * references in the source object will be replaced with
-   * the corresponding value from the map.
+   * If `true` and if a {@link IJsonReferenceMap | references map} is supplied
+   * in {@link IJsonConverterOptions.refs | refs}, then references in the source
+   * object will be replaced with the corresponding value from the reference map.
    *
-   * Default is true if refs are present in options, false
-   * otherwise.
+   * Default is `true` if {@link IJsonConverterOptions.refs | refs} are present in options,
+   * `false` otherwise.
    */
   useReferences: boolean;
 
   /**
-   * An optional object map used to insert any references in the
-   * converted JSON.
+   * An optional {@link IJsonReferenceMap | reference map} used to insert any references
+   * in the converted JSON.
    */
   refs?: IJsonReferenceMap;
 
   /**
-   * If onInvalidPropertyName is 'error' (default) then any property name
-   * that is invalid after template rendering causes an error and stops
-   * conversion.  If onInvalidPropertyName is 'ignore', then names which
-   * are invalid after template rendering are passed through unchanged.
+   * If {@link IJsonConverterOptions.onInvalidPropertyName | onInvalidPropertyName} is `'error'`
+   * (default) then any property name that is invalid after template rendering causes an error
+   * and stops conversion.  If {@link IJsonConverterOptions.onInvalidPropertyName | onInvalidPropertyName}
+   * is `'ignore'`, then names which are invalid after template rendering are passed through unchanged.
    */
   onInvalidPropertyName: 'error' | 'ignore';
 
   /**
-   * If onInvalidPropertyValue is 'error' (default) then any illegal
-   * property value causes an error and stops conversion.  If
-   * onInvalidPropertyValue is 'ignore' then any invalid property
-   * values are silently ignored.
+   * If {@link IJsonConverterOptions.onInvalidPropertyValue | onInvalidPropertyValue} is `'error'`
+   * (default) then any illegal property value causes an error and stops conversion.  If
+   * {@link IJsonConverterOptions.onInvalidPropertyValue | onInvalidPropertyValue} is `'ignore'` then
+   * any invalid property values are silently ignored.
    */
   onInvalidPropertyValue: 'error' | 'ignore';
 
   /**
-   * If onUnknownPropertyValue is error, then any property with
-   * value undefined will cause an error and stop conversion.  If
-   * onUndefinedPropertyValue is 'ignore' (default) then any
-   * property with value undefined is silently ignored.
+   * If {@link IJSonConverterOptions.onUnknownPropertyValue | onUnknownPropertyValue} is `'error'`,
+   * then any property with value `undefined` will cause an error and stop conversion.  If
+   * {@link IJsonConverterOptions.onUndefinedPropertyValue | onUnknownPropertyValue} is `'ignore'` (default)
+   * then any property with value `undefined` is silently ignored.
    */
   onUndefinedPropertyValue: 'error' | 'ignore';
 }
 
 /**
- * Merges an optionally supplied partial set of options with the default
- * converter options, producing a fully-resolved set of ConverterOptions
- * and taking all dynamic rules into account (e.g. template usage enabled
- * if variables are supplied and disabled if not)
+ * Merges an optionally supplied partial set of {@link IJsonConverterOptions | options} with
+ * the default converter options and taking all dynamic rules into account (e.g. template usage enabled
+ * if variables are supplied and disabled if not),  producing a fully-resolved set of
+ * {@link IJsonConverterOptions | IJsonConverterOptions}.
  * @param partial - An optional partial {@link IJsonConverterOptions | IJsonConverterOptions}
  * to be merged.
  * @public
@@ -321,8 +321,10 @@ export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, IJs
  */
 export class JsonConverter extends JsonEditorConverter {
   /**
-   * Constructs a new JsonConverter with supplied or default options
-   * @param options - Optional options to configure the converter
+   * Constructs a new {@link JsonConverter | JsonConverter} with
+   * supplied or default options.
+   * @param options - Optional partial {@link IJsonConverterOptions | options}
+   * to configure the converter.
    */
   public constructor(options?: Partial<IJsonConverterOptions>) {
     const editor = converterOptionsToEditor(options).orThrow();
@@ -330,10 +332,11 @@ export class JsonConverter extends JsonEditorConverter {
   }
 
   /**
-   * Creates a new converter.
-   * @param options - Optional options to configure the converter
-   * @returns Success with a new JsonConverter on success, or Failure with an
-   * informative message if an error occurs.
+   * Creates a new {@link JsonConverter | JsonConverter}.
+   * @param options - Optional partial {@link IJsonConverterOptions | options}
+   * to configure the converter.
+   * @returns `Success` with a new {@link JsonConverter | JsonConverter}, or `Failure`
+   * with an informative message if an error occurs.
    */
   public static create(options?: Partial<IJsonConverterOptions>): Result<JsonConverter> {
     return captureResult(() => new JsonConverter(options));
@@ -341,6 +344,7 @@ export class JsonConverter extends JsonEditorConverter {
 }
 
 /**
+ * Initialization options for a {@link TemplatedJsonConverter | TemplatedJsonConverter}.
  * @public
  */
 export type TemplatedJsonConverterOptions = Omit<
@@ -355,6 +359,10 @@ export type TemplatedJsonConverterOptions = Omit<
  * @public
  */
 export class TemplatedJsonConverter extends JsonEditorConverter {
+  /**
+   * Default {@link IJsonConverterOptions | JSON converter options}
+   * to enable templated conversion.
+   */
   public static readonly templateOptions: Partial<IJsonConverterOptions> = {
     useNameTemplates: true,
     useValueTemplates: true,
@@ -365,8 +373,9 @@ export class TemplatedJsonConverter extends JsonEditorConverter {
 
   /**
    * Constructs a new {@link TemplatedJsonConverter | TemplatedJsonConverter} with
-   * supplied or default options
-   * @param options - Optional configuration or context for the converter
+   * supplied or default options.
+   * @param options - Optional partial {@link TemplatedJsonConverterOptions | options}
+   * to configure the converter.
    */
   public constructor(options?: Partial<TemplatedJsonConverterOptions>) {
     options = { ...options, ...TemplatedJsonConverter.templateOptions };
@@ -376,8 +385,9 @@ export class TemplatedJsonConverter extends JsonEditorConverter {
 
   /**
    * Constructs a new {@link TemplatedJsonConverter | TemplatedJsonConverter} with
-   * supplied or default options
-   * @param options - Optional configuration or context for the converter
+   * supplied or default options.
+   * @param options - Optional partial {@link TemplatedJsonConverterOptions | options}
+   * to configure the converter.
    */
   public static create(options?: Partial<TemplatedJsonConverterOptions>): Result<JsonConverter> {
     return captureResult(() => new TemplatedJsonConverter(options));
@@ -385,6 +395,7 @@ export class TemplatedJsonConverter extends JsonEditorConverter {
 }
 
 /**
+ * Options for a {@link ConditionalJsonConverter | ConditionalJsonConverter}.
  * @public
  */
 export type ConditionalJsonConverterOptions = Omit<TemplatedJsonConverterOptions, 'useConditionalNames'>;
@@ -396,6 +407,10 @@ export type ConditionalJsonConverterOptions = Omit<TemplatedJsonConverterOptions
  * @public
  */
 export class ConditionalJsonConverter extends JsonEditorConverter {
+  /**
+   * Default {@link IJsonConverterOptions | JSON converter options}
+   * to enable conditional conversion.
+   */
   public static readonly conditionalOptions: Partial<IJsonConverterOptions> = {
     ...TemplatedJsonConverter.templateOptions,
     useConditionalNames: true,
@@ -404,8 +419,9 @@ export class ConditionalJsonConverter extends JsonEditorConverter {
 
   /**
    * Constructs a new {@link ConditionalJsonConverter | ConditionalJsonConverter} with supplied or
-   * default options
-   * @param options - Optional configuration or context for the converter
+   * default options.
+   * @param options - Optional partial {@link ConditionalJsonConverterOptions | configuration or context}
+   * for the converter.
    */
   public constructor(options?: Partial<ConditionalJsonConverterOptions>) {
     options = { ...options, ...ConditionalJsonConverter.conditionalOptions };
@@ -415,8 +431,9 @@ export class ConditionalJsonConverter extends JsonEditorConverter {
 
   /**
    * Constructs a new {@link ConditionalJsonConverter | ConditionalJsonConverter} with supplied or
-   * default options
-   * @param options - Optional configuration or context for the converter
+   * default options.
+   * @param options - Optional partial {@link ConditionalJsonConverterOptions | configuration or context}
+   * for the converter.
    */
   public static create(options?: Partial<ConditionalJsonConverterOptions>): Result<JsonConverter> {
     return captureResult(() => new ConditionalJsonConverter(options));
@@ -424,6 +441,7 @@ export class ConditionalJsonConverter extends JsonEditorConverter {
 }
 
 /**
+ * Initialization options for a {@link RichJsonConverter | RichJsonConverter}.
  * @public
  */
 export type RichJsonConverterOptions = Omit<ConditionalJsonConverterOptions, 'useReferences'>;
@@ -435,6 +453,10 @@ export type RichJsonConverterOptions = Omit<ConditionalJsonConverterOptions, 'us
  * @public
  */
 export class RichJsonConverter extends JsonEditorConverter {
+  /**
+   * Default {@link IJsonConverterOptions | JSON converter options}
+   * to enable rich conversion.
+   */
   public static readonly richOptions: Partial<IJsonConverterOptions> = {
     ...ConditionalJsonConverter.conditionalOptions,
     useReferences: true
@@ -442,8 +464,9 @@ export class RichJsonConverter extends JsonEditorConverter {
 
   /**
    * Constructs a new {@link RichJsonConverter | RichJsonConverter} with supplied or
-   * default options
-   * @param options - Optional configuration or context for the converter
+   * default options.
+   * @param options - Optional partial {@link RichJsonConverterOptions | configuration or context}
+   * for the converter.
    */
   public constructor(options?: Partial<RichJsonConverterOptions>) {
     options = { ...options, ...RichJsonConverter.richOptions };
@@ -454,7 +477,8 @@ export class RichJsonConverter extends JsonEditorConverter {
   /**
    * Constructs a new {@link RichJsonConverter | RichJsonConverter} with supplied or
    * default options
-   * @param options - Optional configuration or context for the converter
+   * @param options - Optional partial {@link RichJsonConverterOptions | configuration or context}
+   * for the converter.
    */
   public static create(options?: Partial<RichJsonConverterOptions>): Result<JsonConverter> {
     return captureResult(() => new RichJsonConverter(options));
