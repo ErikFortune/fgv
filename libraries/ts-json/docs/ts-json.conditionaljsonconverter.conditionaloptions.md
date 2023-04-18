@@ -4,6 +4,8 @@
 
 ## ConditionalJsonConverter.conditionalOptions property
 
+Default [JSON converter options](./ts-json.ijsonconverteroptions.md) to enable conditional conversion.
+
 **Signature:**
 
 ```typescript

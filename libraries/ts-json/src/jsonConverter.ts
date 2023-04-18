@@ -142,9 +142,9 @@ export interface IJsonConverterOptions {
   onInvalidPropertyValue: 'error' | 'ignore';
 
   /**
-   * If {@link IJSonConverterOptions.onUnknownPropertyValue | onUnknownPropertyValue} is `'error'`,
+   * If {@link IJsonConverterOptions.onUndefinedPropertyValue | onUndefinedPropertyValue} is `'error'`,
    * then any property with value `undefined` will cause an error and stop conversion.  If
-   * {@link IJsonConverterOptions.onUndefinedPropertyValue | onUnknownPropertyValue} is `'ignore'` (default)
+   * {@link IJsonConverterOptions.onUndefinedPropertyValue | onUndefinedPropertyValue} is `'ignore'` (default)
    * then any property with value `undefined` is silently ignored.
    */
   onUndefinedPropertyValue: 'error' | 'ignore';

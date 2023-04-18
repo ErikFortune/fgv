@@ -4,7 +4,7 @@
 
 ## IJsonConverterOptions.flattenUnconditionalValues property
 
-If true (default) then properties with unconditional names (which start with !) are flattened.
+If `true` (default) then properties with unconditional names (which start with !) are flattened.
 
 **Signature:**
 

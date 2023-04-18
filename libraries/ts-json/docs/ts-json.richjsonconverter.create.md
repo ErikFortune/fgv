@@ -16,7 +16,7 @@ static create(options?: Partial<RichJsonConverterOptions>): Result<JsonConverter
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | Partial&lt;[RichJsonConverterOptions](./ts-json.richjsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ Optional configuration or context for the converter |
+|  options | Partial&lt;[RichJsonConverterOptions](./ts-json.richjsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ Optional partial [configuration or context](./ts-json.richjsonconverteroptions.md) for the converter. |
 
 **Returns:**
 

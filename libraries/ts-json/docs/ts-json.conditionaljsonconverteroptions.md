@@ -4,6 +4,7 @@
 
 ## ConditionalJsonConverterOptions type
 
+Options for a [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md)<!-- -->.
 
 **Signature:**
 

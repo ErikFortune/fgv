@@ -4,7 +4,7 @@
 
 ## TemplateVars type
 
-Collection of variable used for template replacement in a JSON edit or conversion.
+Collection of variables used for template replacement in a JSON edit or conversion.
 
 **Signature:**
 

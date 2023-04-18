@@ -4,7 +4,7 @@
 
 ## VariableValue type
 
-Describes one value in a TemplateVars collection of variables
+Describes one value in a [TemplateVars](./ts-json.templatevars.md) collection of variables.
 
 **Signature:**
 

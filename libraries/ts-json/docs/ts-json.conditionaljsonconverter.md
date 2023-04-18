@@ -17,17 +17,17 @@ export declare class ConditionalJsonConverter extends JsonEditorConverter
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(options)](./ts-json.conditionaljsonconverter._constructor_.md) |  | Constructs a new [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md) with supplied or default options |
+|  [(constructor)(options)](./ts-json.conditionaljsonconverter._constructor_.md) |  | Constructs a new [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md) with supplied or default options. |
 
 ## Properties
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [conditionalOptions](./ts-json.conditionaljsonconverter.conditionaloptions.md) | <p><code>static</code></p><p><code>readonly</code></p> | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; |  |
+|  [conditionalOptions](./ts-json.conditionaljsonconverter.conditionaloptions.md) | <p><code>static</code></p><p><code>readonly</code></p> | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; | Default [JSON converter options](./ts-json.ijsonconverteroptions.md) to enable conditional conversion. |
 
 ## Methods
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
-|  [create(options)](./ts-json.conditionaljsonconverter.create.md) | <code>static</code> | Constructs a new [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md) with supplied or default options |
+|  [create(options)](./ts-json.conditionaljsonconverter.create.md) | <code>static</code> | Constructs a new [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md) with supplied or default options. |
 

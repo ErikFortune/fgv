@@ -13,9 +13,11 @@ export declare class SimpleJsonMap extends SimpleJsonMapBase<JsonValue>
 ```
 **Extends:** SimpleJsonMapBase&lt;[JsonValue](./ts-json.jsonvalue.md)<!-- -->&gt;
 
-## Remarks
+## Constructors
 
-The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `SimpleJsonMap` class.
+|  Constructor | Modifiers | Description |
+|  --- | --- | --- |
+|  [(constructor)(values, context, options)](./ts-json.simplejsonmap._constructor_.md) | <code>protected</code> | Constructs a new [SimpleJsonMap](./ts-json.simplejsonmap.md) from the supplied objects |
 
 ## Methods
 

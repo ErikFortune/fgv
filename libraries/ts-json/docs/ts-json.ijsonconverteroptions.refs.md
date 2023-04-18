@@ -4,7 +4,7 @@
 
 ## IJsonConverterOptions.refs property
 
-An optional object map used to insert any references in the converted JSON.
+An optional [reference map](./ts-json.ijsonreferencemap.md) used to insert any references in the converted JSON.
 
 **Signature:**
 

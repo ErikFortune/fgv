@@ -13,9 +13,11 @@ export declare class PrefixedJsonMap extends SimpleJsonMap
 ```
 **Extends:** [SimpleJsonMap](./ts-json.simplejsonmap.md)
 
-## Remarks
+## Constructors
 
-The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `PrefixedJsonMap` class.
+|  Constructor | Modifiers | Description |
+|  --- | --- | --- |
+|  [(constructor)(values, context, options)](./ts-json.prefixedjsonmap._constructor_.md) | <code>protected</code> | Constructs a new [PrefixedJsonMap](./ts-json.prefixedjsonmap.md) from the supplied values |
 
 ## Methods
 

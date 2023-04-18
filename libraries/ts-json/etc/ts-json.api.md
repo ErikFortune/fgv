@@ -83,12 +83,12 @@ declare namespace Converters {
 }
 export { Converters }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "IDirectoryConvertOptions"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function convertJsonDirectorySync<T>(srcPath: string, options: IDirectoryConvertOptions<T>): Result<IReadDirectoryItem<T>[]>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "IDirectoryToMapConvertOptions"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options: IDirectoryToMapConvertOptions<T, TC>): Result<Map<string, T>>;
@@ -113,7 +113,7 @@ declare namespace Editor {
 }
 export { Editor }
 
-declare namespace File_2 {
+declare namespace Files {
     export {
         readJsonFileSync,
         convertJsonFileSync,
@@ -126,7 +126,7 @@ declare namespace File_2 {
         IDirectoryToMapConvertOptions
     }
 }
-export { File_2 as File }
+export { Files }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -186,7 +186,6 @@ export interface IJsonConverterOptions {
     flattenUnconditionalValues: boolean;
     onInvalidPropertyName: 'error' | 'ignore';
     onInvalidPropertyValue: 'error' | 'ignore';
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "IJSonConverterOptions"
     onUndefinedPropertyValue: 'error' | 'ignore';
     refs?: IJsonReferenceMap;
     useConditionalNames: boolean;

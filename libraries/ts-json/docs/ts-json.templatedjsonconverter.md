@@ -17,17 +17,17 @@ export declare class TemplatedJsonConverter extends JsonEditorConverter
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(options)](./ts-json.templatedjsonconverter._constructor_.md) |  | Constructs a new [TemplatedJsonConverter](./ts-json.templatedjsonconverter.md) with supplied or default options |
+|  [(constructor)(options)](./ts-json.templatedjsonconverter._constructor_.md) |  | Constructs a new [TemplatedJsonConverter](./ts-json.templatedjsonconverter.md) with supplied or default options. |
 
 ## Properties
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [templateOptions](./ts-json.templatedjsonconverter.templateoptions.md) | <p><code>static</code></p><p><code>readonly</code></p> | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; |  |
+|  [templateOptions](./ts-json.templatedjsonconverter.templateoptions.md) | <p><code>static</code></p><p><code>readonly</code></p> | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; | Default [JSON converter options](./ts-json.ijsonconverteroptions.md) to enable templated conversion. |
 
 ## Methods
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
-|  [create(options)](./ts-json.templatedjsonconverter.create.md) | <code>static</code> | Constructs a new [TemplatedJsonConverter](./ts-json.templatedjsonconverter.md) with supplied or default options |
+|  [create(options)](./ts-json.templatedjsonconverter.create.md) | <code>static</code> | Constructs a new [TemplatedJsonConverter](./ts-json.templatedjsonconverter.md) with supplied or default options. |
 

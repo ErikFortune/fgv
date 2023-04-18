@@ -4,7 +4,7 @@
 
 ## JsonConverter.create() method
 
-Creates a new converter.
+Creates a new [JsonConverter](./ts-json.jsonconverter.md)<!-- -->.
 
 **Signature:**
 
@@ -16,11 +16,11 @@ static create(options?: Partial<IJsonConverterOptions>): Result<JsonConverter>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ Optional options to configure the converter |
+|  options | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ Optional partial [options](./ts-json.ijsonconverteroptions.md) to configure the converter. |
 
 **Returns:**
 
 Result&lt;[JsonConverter](./ts-json.jsonconverter.md)<!-- -->&gt;
 
-Success with a new JsonConverter on success, or Failure with an informative message if an error occurs.
+`Success` with a new [JsonConverter](./ts-json.jsonconverter.md)<!-- -->, or `Failure` with an informative message if an error occurs.
 

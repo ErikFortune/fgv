@@ -4,7 +4,7 @@
 
 ## Converters.json variable
 
-A simple validating JSON converter. Converts unknown to JSON or fails if the unknown contains any invalid JSON values.
+A simple validating [JSON converter](./ts-json.jsonconverter.md)<!-- -->. Converts unknown to JSON or fails if the unknown contains any invalid JSON values.
 
 **Signature:**
 

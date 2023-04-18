@@ -86,7 +86,7 @@ export interface IReadDirectoryItem<T> {
 /**
  * Reads all JSON files from a directory and apply a supplied converter.
  * @param srcPath - The path of the folder to be read.
- * @param options - {@link IDirectoryConvertOptions | Options} to control
+ * @param options - {@link Files.IDirectoryConvertOptions | Options} to control
  * conversion and filtering
  * @public
  */
@@ -151,7 +151,7 @@ const defaultNameTransformer = (n: string): Result<string> => succeed(n);
  * `Map<string, T>` indexed by file base name (i.e. minus the extension)
  * with an optional name transformation applied if present.
  * @param srcPath - The path of the folder to be read.
- * @param options - {@link IDirectoryToMapConvertOptions | Options} to control conversion,
+ * @param options - {@link Files.IDirectoryToMapConvertOptions | Options} to control conversion,
  * filtering and naming.
  * @public
  */

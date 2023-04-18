@@ -4,6 +4,7 @@
 
 ## TemplatedJsonConverterOptions type
 
+Initialization options for a [TemplatedJsonConverter](./ts-json.templatedjsonconverter.md)<!-- -->.
 
 **Signature:**
 

@@ -4,7 +4,7 @@
 
 ## JsonConverter.(constructor)
 
-Constructs a new JsonConverter with supplied or default options
+Constructs a new [JsonConverter](./ts-json.jsonconverter.md) with supplied or default options.
 
 **Signature:**
 
@@ -16,5 +16,5 @@ constructor(options?: Partial<IJsonConverterOptions>);
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ Optional options to configure the converter |
+|  options | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ Optional partial [options](./ts-json.ijsonconverteroptions.md) to configure the converter. |
 

@@ -4,6 +4,8 @@
 
 ## RichJsonConverter.richOptions property
 
+Default [JSON converter options](./ts-json.ijsonconverteroptions.md) to enable rich conversion.
+
 **Signature:**
 
 ```typescript

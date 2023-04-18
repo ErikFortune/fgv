@@ -27,7 +27,7 @@
 |  [isJsonArray(from)](./ts-json.isjsonarray.md) | Test if an <code>unknown</code> is potentially a [JsonArray](./ts-json.jsonarray.md)<!-- -->. |
 |  [isJsonObject(from)](./ts-json.isjsonobject.md) | Test if an <code>unknown</code> is potentially a [JsonObject](./ts-json.jsonobject.md)<!-- -->. |
 |  [isJsonPrimitive(from)](./ts-json.isjsonprimitive.md) | Test if an <code>unknown</code> is a [JsonValue](./ts-json.jsonvalue.md)<!-- -->. |
-|  [mergeDefaultJsonConverterOptions(partial)](./ts-json.mergedefaultjsonconverteroptions.md) | Merges an optionally supplied partial set of options with the default converter options, producing a fully-resolved set of ConverterOptions and taking all dynamic rules into account (e.g. template usage enabled if variables are supplied and disabled if not) |
+|  [mergeDefaultJsonConverterOptions(partial)](./ts-json.mergedefaultjsonconverteroptions.md) | Merges an optionally supplied partial set of [options](./ts-json.ijsonconverteroptions.md) with the default converter options and taking all dynamic rules into account (e.g. template usage enabled if variables are supplied and disabled if not), producing a fully-resolved set of [IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->. |
 |  [pickJsonObject(src, path)](./ts-json.pickjsonobject.md) | Picks a nested [JsonObject](./ts-json.jsonobject.md) from a supplied [JsonObject](./ts-json.jsonobject.md)<!-- -->. |
 |  [pickJsonValue(src, path)](./ts-json.pickjsonvalue.md) | Picks a nested field from a supplied [JsonObject](./ts-json.jsonobject.md)<!-- -->. |
 
@@ -48,19 +48,19 @@
 |  --- | --- |
 |  [Converters](./ts-json.converters.md) |  |
 |  [Editor](./ts-json.editor.md) |  |
-|  [File\_2](./ts-json.file_2.md) |  |
+|  [Files](./ts-json.files.md) |  |
 
 ## Type Aliases
 
 |  Type Alias | Description |
 |  --- | --- |
-|  [ConditionalJsonConverterOptions](./ts-json.conditionaljsonconverteroptions.md) |  |
+|  [ConditionalJsonConverterOptions](./ts-json.conditionaljsonconverteroptions.md) | Options for a [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md)<!-- -->. |
 |  [JsonPrimitive](./ts-json.jsonprimitive.md) | Primitive (terminal) values allowed in by JSON. |
-|  [JsonReferenceMapFailureReason](./ts-json.jsonreferencemapfailurereason.md) | Failure reason for [IJsonReferenceMap](./ts-json.ijsonreferencemap.md) lookup, where 'unknown' means that the object is not present in the map and 'error' means that an error occurred while retrieving or converting it. |
+|  [JsonReferenceMapFailureReason](./ts-json.jsonreferencemapfailurereason.md) | Failure reason for [IJsonReferenceMap](./ts-json.ijsonreferencemap.md) lookup, where <code>'unknown'</code> means that the object is not present in the map and <code>'error'</code> means that an error occurred while retrieving or converting it. |
 |  [JsonValue](./ts-json.jsonvalue.md) | A [JsonValue](./ts-json.jsonvalue.md) is one of: a [JsonPrimitive](./ts-json.jsonprimitive.md)<!-- -->, a [JsonObject](./ts-json.jsonobject.md) or an [JsonArray](./ts-json.jsonarray.md)<!-- -->. |
 |  [JsonValueType](./ts-json.jsonvaluetype.md) | Classes of [JsonValue](./ts-json.jsonvalue.md)<!-- -->. |
-|  [RichJsonConverterOptions](./ts-json.richjsonconverteroptions.md) |  |
-|  [TemplatedJsonConverterOptions](./ts-json.templatedjsonconverteroptions.md) |  |
-|  [TemplateVars](./ts-json.templatevars.md) | Collection of variable used for template replacement in a JSON edit or conversion. |
-|  [VariableValue](./ts-json.variablevalue.md) | Describes one value in a TemplateVars collection of variables |
+|  [RichJsonConverterOptions](./ts-json.richjsonconverteroptions.md) | Initialization options for a [RichJsonConverter](./ts-json.richjsonconverter.md)<!-- -->. |
+|  [TemplatedJsonConverterOptions](./ts-json.templatedjsonconverteroptions.md) | Initialization options for a [TemplatedJsonConverter](./ts-json.templatedjsonconverter.md)<!-- -->. |
+|  [TemplateVars](./ts-json.templatevars.md) | Collection of variables used for template replacement in a JSON edit or conversion. |
+|  [VariableValue](./ts-json.variablevalue.md) | Describes one value in a [TemplateVars](./ts-json.templatevars.md) collection of variables. |
 

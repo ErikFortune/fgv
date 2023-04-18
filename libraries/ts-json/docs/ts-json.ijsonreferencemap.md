@@ -16,8 +16,8 @@ export interface IJsonReferenceMap
 
 |  Method | Description |
 |  --- | --- |
-|  [getJsonObject(key, context)](./ts-json.ijsonreferencemap.getjsonobject.md) | Gets a JSON object specified by key. |
-|  [getJsonValue(key, context)](./ts-json.ijsonreferencemap.getjsonvalue.md) | Gets a JSON value specified by key. |
+|  [getJsonObject(key, context)](./ts-json.ijsonreferencemap.getjsonobject.md) | Gets a [JsonObject](./ts-json.jsonobject.md) specified by key. |
+|  [getJsonValue(key, context)](./ts-json.ijsonreferencemap.getjsonvalue.md) | Gets a [JsonValue](./ts-json.jsonvalue.md) specified by key. |
 |  [has(key)](./ts-json.ijsonreferencemap.has.md) | Determines if an object with the specified key actually exists in the map. |
 |  [keyIsInRange(key)](./ts-json.ijsonreferencemap.keyisinrange.md) | Determine if a key might be valid for this map but does not determine if key actually exists. Allows key range to be constrained. |
 

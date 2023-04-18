@@ -21,7 +21,7 @@
  */
 
 import * as Converters from './converters';
-import * as File from './file';
+import * as Files from './file';
 import * as Editor from './jsonEditor';
 
 export * from './common';
@@ -35,4 +35,4 @@ export {
 } from './jsonContext';
 export * from './jsonConverter';
 export { ISimpleJsonMapOptions, PrefixedJsonMap, SimpleJsonMap } from './jsonReferenceMap';
-export { Converters, Editor, File };
+export { Converters, Editor, Files };

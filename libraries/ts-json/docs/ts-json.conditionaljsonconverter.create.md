@@ -4,7 +4,7 @@
 
 ## ConditionalJsonConverter.create() method
 
-Constructs a new [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md) with supplied or default options
+Constructs a new [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md) with supplied or default options.
 
 **Signature:**
 
@@ -16,7 +16,7 @@ static create(options?: Partial<ConditionalJsonConverterOptions>): Result<JsonCo
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | Partial&lt;[ConditionalJsonConverterOptions](./ts-json.conditionaljsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ Optional configuration or context for the converter |
+|  options | Partial&lt;[ConditionalJsonConverterOptions](./ts-json.conditionaljsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ Optional partial [configuration or context](./ts-json.conditionaljsonconverteroptions.md) for the converter. |
 
 **Returns:**
 

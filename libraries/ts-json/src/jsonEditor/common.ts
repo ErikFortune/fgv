@@ -50,26 +50,26 @@ export type JsonEditorValidationRules =
  */
 export interface IJsonEditorValidationOptions {
   /**
-   * If onInvalidPropertyName is 'error' (default) then any property name
+   * If `onInvalidPropertyName` is `'error'` (default) then any property name
    * that is invalid after template rendering causes an error and stops
-   * conversion.  If onInvalidPropertyName is 'ignore', then names which
+   * conversion.  If `onInvalidPropertyName` is `'ignore'`, then names which
    * are invalid after template rendering are passed through unchanged.
    */
   onInvalidPropertyName: 'error' | 'ignore';
 
   /**
-   * If onInvalidPropertyValue is 'error' (default) then any illegal
-   * property value other than undefined causes an error and stops
-   * conversion.  If onInvalidPropertyValue is 'ignore' then any
+   * If `onInvalidPropertyValue` is `'error'` (default) then any illegal
+   * property value other than `undefined` causes an error and stops
+   * conversion.  If `onInvalidPropertyValue` is `'ignore'` then any
    * invalid property values are silently ignored.
    */
   onInvalidPropertyValue: 'error' | 'ignore';
 
   /**
-   * If onUnknownPropertyValue is error, then any property with
-   * value undefined will cause an error and stop conversion.  If
-   * onUndefinedPropertyValue is 'ignore' (default) then any
-   * property with value undefined is silently ignored.
+   * If `onUndefinedPropertyValue` is `'error'`, then any property with
+   * value `undefined` will cause an error and stop conversion.  If
+   * `onUndefinedPropertyValue` is `'ignore'` (default) then any
+   * property with value `undefined` is silently ignored.
    */
   onUndefinedPropertyValue: 'error' | 'ignore';
 }

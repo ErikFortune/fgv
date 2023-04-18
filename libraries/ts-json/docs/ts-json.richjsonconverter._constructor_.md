@@ -4,7 +4,7 @@
 
 ## RichJsonConverter.(constructor)
 
-Constructs a new [RichJsonConverter](./ts-json.richjsonconverter.md) with supplied or default options
+Constructs a new [RichJsonConverter](./ts-json.richjsonconverter.md) with supplied or default options.
 
 **Signature:**
 
@@ -16,5 +16,5 @@ constructor(options?: Partial<RichJsonConverterOptions>);
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | Partial&lt;[RichJsonConverterOptions](./ts-json.richjsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ Optional configuration or context for the converter |
+|  options | Partial&lt;[RichJsonConverterOptions](./ts-json.richjsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ Optional partial [configuration or context](./ts-json.richjsonconverteroptions.md) for the converter. |
 

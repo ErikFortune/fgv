@@ -4,9 +4,9 @@
 
 ## IJsonConverterOptions.useMultiValueTemplateNames property
 
-If true and if both template variables and a context derivation function is available, then properties which match the multi-value name pattern will be expanded. Default matches useNameTemplates.
+If `true` and if both template variables and a context derivation function is available, then properties which match the multi-value name pattern will be expanded. Default matches [useNameTemplates](./ts-json.ijsonconverteroptions.usenametemplates.md)<!-- -->.
 
-Default is true unless extendVars is explicitly set to undefined.
+Default is `true` unless [extendVars](./ts-json.ijsonconverteroptions.extendvars.md) is explicitly set to `undefined`<!-- -->.
 
 **Signature:**
 

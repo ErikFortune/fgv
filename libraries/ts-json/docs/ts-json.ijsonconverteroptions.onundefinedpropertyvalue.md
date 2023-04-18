@@ -4,7 +4,7 @@
 
 ## IJsonConverterOptions.onUndefinedPropertyValue property
 
-If onUnknownPropertyValue is error, then any property with value undefined will cause an error and stop conversion. If onUndefinedPropertyValue is 'ignore' (default) then any property with value undefined is silently ignored.
+If [onUndefinedPropertyValue](./ts-json.ijsonconverteroptions.onundefinedpropertyvalue.md) is `'error'`<!-- -->, then any property with value `undefined` will cause an error and stop conversion. If [onUndefinedPropertyValue](./ts-json.ijsonconverteroptions.onundefinedpropertyvalue.md) is `'ignore'` (default) then any property with value `undefined` is silently ignored.
 
 **Signature:**
 

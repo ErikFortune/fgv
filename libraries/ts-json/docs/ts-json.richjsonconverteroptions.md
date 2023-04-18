@@ -4,6 +4,7 @@
 
 ## RichJsonConverterOptions type
 
+Initialization options for a [RichJsonConverter](./ts-json.richjsonconverter.md)<!-- -->.
 
 **Signature:**
 

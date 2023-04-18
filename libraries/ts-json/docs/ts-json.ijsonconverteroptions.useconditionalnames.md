@@ -4,9 +4,9 @@
 
 ## IJsonConverterOptions.useConditionalNames property
 
-If true and if template variables are available, then string property names will be considered for conditionals.
+If `true` and if template variables are available, then string property names will be considered for conditionals.
 
-Default is to match useNameTemplates
+Default is to match [useNameTemplates](./ts-json.ijsonconverteroptions.usenametemplates.md)<!-- -->.
 
 **Signature:**
 

@@ -4,7 +4,7 @@
 
 ## IJsonConverterOptions.onInvalidPropertyValue property
 
-If onInvalidPropertyValue is 'error' (default) then any illegal property value causes an error and stops conversion. If onInvalidPropertyValue is 'ignore' then any invalid property values are silently ignored.
+If [onInvalidPropertyValue](./ts-json.ijsonconverteroptions.oninvalidpropertyvalue.md) is `'error'` (default) then any illegal property value causes an error and stops conversion. If [onInvalidPropertyValue](./ts-json.ijsonconverteroptions.oninvalidpropertyvalue.md) is `'ignore'` then any invalid property values are silently ignored.
 
 **Signature:**
 

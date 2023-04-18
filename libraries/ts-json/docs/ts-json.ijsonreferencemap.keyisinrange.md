@@ -16,11 +16,11 @@ keyIsInRange(key: string): boolean;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  key | string | key to be tested |
+|  key | string | The key to be tested. |
 
 **Returns:**
 
 boolean
 
-true if the key is in the valid range, false otherwise.
+`true` if the key is in the valid range, `false` otherwise.
 

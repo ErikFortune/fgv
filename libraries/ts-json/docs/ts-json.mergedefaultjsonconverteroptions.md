@@ -4,7 +4,7 @@
 
 ## mergeDefaultJsonConverterOptions() function
 
-Merges an optionally supplied partial set of options with the default converter options, producing a fully-resolved set of ConverterOptions and taking all dynamic rules into account (e.g. template usage enabled if variables are supplied and disabled if not)
+Merges an optionally supplied partial set of [options](./ts-json.ijsonconverteroptions.md) with the default converter options and taking all dynamic rules into account (e.g. template usage enabled if variables are supplied and disabled if not), producing a fully-resolved set of [IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->.
 
 **Signature:**
 

@@ -4,7 +4,7 @@
 
 ## TemplatedJsonConverter.(constructor)
 
-Constructs a new [TemplatedJsonConverter](./ts-json.templatedjsonconverter.md) with supplied or default options
+Constructs a new [TemplatedJsonConverter](./ts-json.templatedjsonconverter.md) with supplied or default options.
 
 **Signature:**
 
@@ -16,5 +16,5 @@ constructor(options?: Partial<TemplatedJsonConverterOptions>);
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | Partial&lt;[TemplatedJsonConverterOptions](./ts-json.templatedjsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ Optional configuration or context for the converter |
+|  options | Partial&lt;[TemplatedJsonConverterOptions](./ts-json.templatedjsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ Optional partial [options](./ts-json.templatedjsonconverteroptions.md) to configure the converter. |
 

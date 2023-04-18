@@ -4,7 +4,7 @@
 
 ## JsonReferenceMapFailureReason type
 
-Failure reason for [IJsonReferenceMap](./ts-json.ijsonreferencemap.md) lookup, where 'unknown' means that the object is not present in the map and 'error' means that an error occurred while retrieving or converting it.
+Failure reason for [IJsonReferenceMap](./ts-json.ijsonreferencemap.md) lookup, where `'unknown'` means that the object is not present in the map and `'error'` means that an error occurred while retrieving or converting it.
 
 **Signature:**
 

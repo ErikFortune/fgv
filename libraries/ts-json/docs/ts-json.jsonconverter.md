@@ -17,11 +17,11 @@ export declare class JsonConverter extends JsonEditorConverter
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(options)](./ts-json.jsonconverter._constructor_.md) |  | Constructs a new JsonConverter with supplied or default options |
+|  [(constructor)(options)](./ts-json.jsonconverter._constructor_.md) |  | Constructs a new [JsonConverter](./ts-json.jsonconverter.md) with supplied or default options. |
 
 ## Methods
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
-|  [create(options)](./ts-json.jsonconverter.create.md) | <code>static</code> | Creates a new converter. |
+|  [create(options)](./ts-json.jsonconverter.create.md) | <code>static</code> | Creates a new [JsonConverter](./ts-json.jsonconverter.md)<!-- -->. |
 

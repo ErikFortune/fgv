@@ -17,13 +17,13 @@ export declare class RichJsonConverter extends JsonEditorConverter
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(options)](./ts-json.richjsonconverter._constructor_.md) |  | Constructs a new [RichJsonConverter](./ts-json.richjsonconverter.md) with supplied or default options |
+|  [(constructor)(options)](./ts-json.richjsonconverter._constructor_.md) |  | Constructs a new [RichJsonConverter](./ts-json.richjsonconverter.md) with supplied or default options. |
 
 ## Properties
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [richOptions](./ts-json.richjsonconverter.richoptions.md) | <p><code>static</code></p><p><code>readonly</code></p> | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; |  |
+|  [richOptions](./ts-json.richjsonconverter.richoptions.md) | <p><code>static</code></p><p><code>readonly</code></p> | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; | Default [JSON converter options](./ts-json.ijsonconverteroptions.md) to enable rich conversion. |
 
 ## Methods
 

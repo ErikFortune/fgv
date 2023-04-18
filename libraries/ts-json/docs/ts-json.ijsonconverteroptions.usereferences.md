@@ -4,9 +4,9 @@
 
 ## IJsonConverterOptions.useReferences property
 
-If true and if a references map is supplied, then references in the source object will be replaced with the corresponding value from the map.
+If `true` and if a [references map](./ts-json.ijsonreferencemap.md) is supplied in [refs](./ts-json.ijsonconverteroptions.refs.md)<!-- -->, then references in the source object will be replaced with the corresponding value from the reference map.
 
-Default is true if refs are present in options, false otherwise.
+Default is `true` if [refs](./ts-json.ijsonconverteroptions.refs.md) are present in options, `false` otherwise.
 
 **Signature:**
 

@@ -25,3 +25,5 @@ static createPrefixed(prefix: string, values?: MapOrRecord<JsonValue>, context?:
 
 Result&lt;[PrefixedJsonMap](./ts-json.prefixedjsonmap.md)<!-- -->&gt;
 
+`Success` with a [PrefixedJsonMap](./ts-json.prefixedjsonmap.md) or `Failure` with a message if an error occurs.
+

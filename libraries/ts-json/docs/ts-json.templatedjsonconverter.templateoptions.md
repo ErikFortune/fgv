@@ -4,6 +4,8 @@
 
 ## TemplatedJsonConverter.templateOptions property
 
+Default [JSON converter options](./ts-json.ijsonconverteroptions.md) to enable templated conversion.
+
 **Signature:**
 
 ```typescript
