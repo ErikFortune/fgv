@@ -4,6 +4,8 @@
 
 ## Editor.JsonEditorState.getRefs() method
 
+Gets an [reference map](./ts-json.ijsonreferencemap.md) containing any other values referenced during the operation.
+
 **Signature:**
 
 ```typescript
@@ -14,9 +16,11 @@ getRefs(defaultContext?: IJsonContext): IJsonReferenceMap | undefined;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  defaultContext | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ |
+|  defaultContext | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ An optional default [IJsonContext](./ts-json.ijsoncontext.md) to use as [TemplateVars](./ts-json.templatevars.md) if the current state does not have context. |
 
 **Returns:**
 
 [IJsonReferenceMap](./ts-json.ijsonreferencemap.md) \| undefined
+
+An [IJsonReferenceMap](./ts-json.ijsonreferencemap.md) containing any values referenced during this operation.
 

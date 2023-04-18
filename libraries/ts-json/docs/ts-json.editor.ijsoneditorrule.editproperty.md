@@ -4,7 +4,7 @@
 
 ## Editor.IJsonEditorRule.editProperty() method
 
-Called by a JSON editor to possibly edit one of the properties being merged into a target object.
+Called by a [JsonEditor](./ts-json.editor.jsoneditor.md) to possibly edit one of the properties being merged into a target object.
 
 **Signature:**
 
@@ -16,13 +16,13 @@ editProperty(key: string, value: JsonValue, state: JsonEditorState): DetailedRes
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  key | string | The key of the property to be edited |
-|  value | [JsonValue](./ts-json.jsonvalue.md) | The value of the property to be edited |
-|  state | [JsonEditorState](./ts-json.editor.jsoneditorstate.md) | Editor state which applies to the edit |
+|  key | string | The key of the property to be edited. |
+|  value | [JsonValue](./ts-json.jsonvalue.md) | The [value](./ts-json.jsonvalue.md) of the property to be edited. |
+|  state | [JsonEditorState](./ts-json.editor.jsoneditorstate.md) | [Editor state](./ts-json.editor.jsoneditorstate.md) which applies to the edit. |
 
 **Returns:**
 
 DetailedResult&lt;[JsonObject](./ts-json.jsonobject.md)<!-- -->, [JsonPropertyEditFailureReason](./ts-json.editor.jsonpropertyeditfailurereason.md)<!-- -->&gt;
 
-If the property was edited, returns Success with a JSON object containing the edited results and with detail 'edited'. If this property should be deferred for later consideration or merg, Succeeds with detail 'deferred' and an JsonObject to be finalized. If the rule does not affect this property, fails with detail 'inapplicable'. If an error occurred while processing the error, returns Failure with detail 'error'.
+If the property was edited, returns `Success` with a [JsonObject](./ts-json.jsonobject.md) containing the edited results and with detail `'edited'`<!-- -->. If this property should be deferred for later consideration or merge, `Success` with detail `'deferred'` and a [JsonObject](./ts-json.jsonobject.md) to be finalized. If the rule does not affect this property, returns `Failure` with detail `'inapplicable'`<!-- -->. If an error occurred while processing the error, returns `Failure` with detail `'error'`<!-- -->.
 

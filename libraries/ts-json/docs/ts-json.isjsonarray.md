@@ -4,7 +4,7 @@
 
 ## isJsonArray() function
 
-Test if an `unknown` is potentially a [JsonArray](./ts-json.jsonarray.md)
+Test if an `unknown` is potentially a [JsonArray](./ts-json.jsonarray.md)<!-- -->.
 
 **Signature:**
 

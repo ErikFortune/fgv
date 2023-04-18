@@ -4,7 +4,7 @@
 
 ## Editor.JsonEditorRuleBase class
 
-Default base implementation of JsonEditor rule returns inapplicable for all operations so that derived classes need only implement the operations they actually support.
+Default base implementation of [IJsonEditorRule](./ts-json.editor.ijsoneditorrule.md) returns inapplicable for all operations so that derived classes need only implement the operations they actually support.
 
 **Signature:**
 
@@ -17,7 +17,7 @@ export declare class JsonEditorRuleBase implements IJsonEditorRule
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
-|  [editProperty(\_\_key, \_\_value, \_\_state)](./ts-json.editor.jsoneditorrulebase.editproperty.md) |  | Called by a JSON editor to possibly edit one of the properties being merged into a target object. |
-|  [editValue(\_\_value, \_\_state)](./ts-json.editor.jsoneditorrulebase.editvalue.md) |  |  |
-|  [finalizeProperties(\_\_deferred, \_\_state)](./ts-json.editor.jsoneditorrulebase.finalizeproperties.md) |  |  |
+|  [editProperty(\_\_key, \_\_value, \_\_state)](./ts-json.editor.jsoneditorrulebase.editproperty.md) |  | Called by a [JsonEditor](./ts-json.editor.jsoneditor.md) to possibly edit one of the properties being merged into a target object. |
+|  [editValue(\_\_value, \_\_state)](./ts-json.editor.jsoneditorrulebase.editvalue.md) |  | Called by a [JsonEditor](./ts-json.editor.jsoneditor.md) to possibly edit a property value or array element. |
+|  [finalizeProperties(\_\_deferred, \_\_state)](./ts-json.editor.jsoneditorrulebase.finalizeproperties.md) |  | Called for each rule after all properties have been merged. Any properties that were deferred during the initial edit pass are supplied as input. |
 

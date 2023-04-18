@@ -22,5 +22,5 @@ export declare function isJsonObject(from: unknown): from is JsonObject;
 
 from is [JsonObject](./ts-json.jsonobject.md)
 
-`true` if the supplied parameter is a non-array object, `false` otherwise.
+`true` if the supplied parameter is a non-array, non-special object, `false` otherwise.
 

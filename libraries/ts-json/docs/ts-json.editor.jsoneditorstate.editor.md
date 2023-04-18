@@ -4,6 +4,8 @@
 
 ## Editor.JsonEditorState.editor property
 
+The [editor](./ts-json.editor.ijsoncloneeditor.md) for which this state applies.
+
 **Signature:**
 
 ```typescript

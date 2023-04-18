@@ -22,5 +22,5 @@ export declare function isJsonPrimitive(from: unknown): from is JsonPrimitive;
 
 from is [JsonPrimitive](./ts-json.jsonprimitive.md)
 
-`true` if the supplied parameter is a valid JSON primitive, `false` otherwise.
+`true` if the supplied parameter is a valid [JsonPrimitive](./ts-json.jsonprimitive.md)<!-- -->, `false` otherwise.
 

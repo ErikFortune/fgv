@@ -4,7 +4,7 @@
 
 ## Editor.JsonEditorRuleBase.editProperty() method
 
-Called by a JSON editor to possibly edit one of the properties being merged into a target object.
+Called by a [JsonEditor](./ts-json.editor.jsoneditor.md) to possibly edit one of the properties being merged into a target object.
 
 **Signature:**
 
@@ -24,5 +24,5 @@ editProperty(__key: string, __value: JsonValue, __state: JsonEditorState): Detai
 
 DetailedResult&lt;[JsonObject](./ts-json.jsonobject.md)<!-- -->, [JsonPropertyEditFailureReason](./ts-json.editor.jsonpropertyeditfailurereason.md)<!-- -->&gt;
 
-If the property was edited, returns Success with a JSON object containing the edited results and with detail 'edited'. If this property should be deferred for later consideration or merg, Succeeds with detail 'deferred' and an JsonObject to be finalized. If the rule does not affect this property, fails with detail 'inapplicable'. If an error occurred while processing the error, returns Failure with detail 'error'.
+If the property was edited, returns `Success` with a [JsonObject](./ts-json.jsonobject.md) containing the edited results and with detail `'edited'`<!-- -->. If this property should be deferred for later consideration or merge, `Success` with detail `'deferred'` and a [JsonObject](./ts-json.jsonobject.md) to be finalized. If the rule does not affect this property, returns `Failure` with detail `'inapplicable'`<!-- -->. If an error occurred while processing the error, returns `Failure` with detail `'error'`<!-- -->.
 

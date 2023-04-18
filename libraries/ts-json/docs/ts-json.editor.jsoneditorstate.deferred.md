@@ -4,6 +4,8 @@
 
 ## Editor.JsonEditorState.deferred property
 
+An array of [objects](./ts-json.jsonobject.md) that are deferred for merge during finalization.
+
 **Signature:**
 
 ```typescript

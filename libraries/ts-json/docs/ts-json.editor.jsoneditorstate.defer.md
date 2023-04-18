@@ -4,6 +4,8 @@
 
 ## Editor.JsonEditorState.defer() method
 
+Adds a supplied [object](./ts-json.jsonobject.md) to the deferred list.
+
 **Signature:**
 
 ```typescript
@@ -14,7 +16,7 @@ defer(obj: JsonObject): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  obj | [JsonObject](./ts-json.jsonobject.md) |  |
+|  obj | [JsonObject](./ts-json.jsonobject.md) | The [object](./ts-json.jsonobject.md) to be deferred. |
 
 **Returns:**
 

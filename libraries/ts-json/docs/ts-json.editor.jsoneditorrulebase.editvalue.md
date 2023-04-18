@@ -4,6 +4,8 @@
 
 ## Editor.JsonEditorRuleBase.editValue() method
 
+Called by a [JsonEditor](./ts-json.editor.jsoneditor.md) to possibly edit a property value or array element.
+
 **Signature:**
 
 ```typescript
@@ -20,4 +22,6 @@ editValue(__value: JsonValue, __state: JsonEditorState): DetailedResult<JsonValu
 **Returns:**
 
 DetailedResult&lt;[JsonValue](./ts-json.jsonvalue.md)<!-- -->, [JsonEditFailureReason](./ts-json.editor.jsoneditfailurereason.md)<!-- -->&gt;
+
+Returns `Success` with the [JsonValue](./ts-json.jsonvalue.md) to be inserted, with detail `'edited'` if the value was edited. Returns `Failure` with `'inapplicable'` if the rule does not affect this value. Fails with detail `'ignore'` if the value is to be ignored, or with `'error'` if an error occurs.
 

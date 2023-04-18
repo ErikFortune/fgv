@@ -4,6 +4,8 @@
 
 ## Editor.JsonEditorState.options property
 
+Fully resolved [editor options](./ts-json.editor.ijsoneditoroptions.md) that apply to the operation for which this state applies.
+
 **Signature:**
 
 ```typescript

@@ -22,7 +22,7 @@ export class CompositeJsonMap implements IJsonReferenceMap {
     getJsonValue(key: string, context?: IJsonContext): DetailedResult<JsonValue, JsonReferenceMapFailureReason>;
     has(key: string): boolean;
     keyIsInRange(key: string): boolean;
-    // @internal (undocumented)
+    // @internal
     protected _maps: IJsonReferenceMap[];
 }
 
@@ -203,10 +203,18 @@ interface IJsonEditorOptions {
     validation: IJsonEditorValidationOptions;
 }
 
-// @public (undocumented)
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 interface IJsonEditorRule {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     editProperty(key: string, value: JsonValue, state: JsonEditorState): DetailedResult<JsonObject, JsonPropertyEditFailureReason>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     editValue(value: JsonValue, state: JsonEditorState): DetailedResult<JsonValue, JsonEditFailureReason>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     finalizeProperties(deferred: JsonObject[], state: JsonEditorState): DetailedResult<JsonObject[], JsonEditFailureReason>;
 }
 
@@ -275,7 +283,7 @@ interface ITemplatedJsonRuleOptions extends Partial<IJsonEditorOptions> {
 // @public
 const json: JsonConverter;
 
-// @public (undocumented)
+// @public
 export interface JsonArray extends Array<JsonValue> {
 }
 
@@ -358,51 +366,67 @@ export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, IJs
     object(): Converter<JsonObject, IJsonContext>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 class JsonEditorRuleBase implements IJsonEditorRule {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     editProperty(__key: string, __value: JsonValue, __state: JsonEditorState): DetailedResult<JsonObject, JsonPropertyEditFailureReason>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
     // (undocumented)
     editValue(__value: JsonValue, __state: JsonEditorState): DetailedResult<JsonValue, JsonEditFailureReason>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
     // (undocumented)
     finalizeProperties(__deferred: JsonObject[], __state: JsonEditorState): DetailedResult<JsonObject[], JsonEditFailureReason>;
 }
 
-// @public (undocumented)
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 class JsonEditorState {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(editor: IJsonCloneEditor, baseOptions: IJsonEditorOptions, runtimeContext?: IJsonContext);
-    // (undocumented)
     get context(): IJsonContext | undefined;
-    // (undocumented)
     defer(obj: JsonObject): void;
-    // (undocumented)
     get deferred(): JsonObject[];
-    // (undocumented)
+    // @internal
     protected readonly _deferred: JsonObject[];
-    // (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly editor: IJsonCloneEditor;
-    // (undocumented)
     extendContext(baseContext: IJsonContext | undefined, add: {
         vars?: VariableValue[];
         refs?: IJsonReferenceMap[];
     }): Result<IJsonContext | undefined>;
-    // (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     failValidation<T = JsonObject>(rule: JsonEditorValidationRules, message?: string, validation?: IJsonEditorValidationOptions): DetailedFailure<T, JsonEditFailureReason>;
-    // (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getContext(defaultContext?: IJsonContext): IJsonContext | undefined;
-    // @internal (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
     protected static _getEffectiveOptions(options: IJsonEditorOptions, context?: IJsonContext): Result<IJsonEditorOptions>;
-    // (undocumented)
     getRefs(defaultContext?: IJsonContext): IJsonReferenceMap | undefined;
-    // (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getVars(defaultContext?: IJsonContext): TemplateVars | undefined;
-    // (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
     protected readonly _id: number;
-    // @internal (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
     protected static _nextId: number;
-    // (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly options: IJsonEditorOptions;
 }
 
@@ -411,7 +435,7 @@ class JsonEditorState {
 // @public
 type JsonEditorValidationRules = 'invalidPropertyName' | 'invalidPropertyValue' | 'undefinedPropertyValue';
 
-// @public (undocumented)
+// @public
 export interface JsonObject {
     // (undocumented)
     [key: string]: JsonValue;
@@ -420,7 +444,7 @@ export interface JsonObject {
 // @public
 const jsonObject: Converter<JsonObject, IJsonContext>;
 
-// @public (undocumented)
+// @public
 export type JsonPrimitive = boolean | number | string | null;
 
 // @public
@@ -429,7 +453,7 @@ type JsonPropertyEditFailureReason = JsonEditFailureReason | 'deferred';
 // @public
 export type JsonReferenceMapFailureReason = 'unknown' | 'error';
 
-// @public (undocumented)
+// @public
 export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
 
 // @public

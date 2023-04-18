@@ -27,19 +27,22 @@ import { JsonEditFailureReason, JsonPropertyEditFailureReason } from './common';
 import { JsonEditorState } from './jsonEditorState';
 
 /**
+ * An {@link Editor.IJsonEditorRule | IJsonEditorRule} represents a single configurable
+ * rule to be applied by a {@link Editor.JsonEditor | JsonEditor}.
  * @public
  */
 export interface IJsonEditorRule {
   /**
-   * Called by a JSON editor to possibly edit one of the properties being merged into a target object.
-   * @param key - The key of the property to be edited
-   * @param value - The value of the property to be edited
-   * @param state - Editor state which applies to the edit
-   * @returns If the property was edited, returns Success with a JSON object containing the edited results
-   * and with detail 'edited'. If this property should be deferred for later consideration or merg, Succeeds
-   * with detail 'deferred' and an JsonObject to be finalized.  If the rule does not affect this property,
-   * fails with detail 'inapplicable'. If an error occurred while processing the error, returns Failure with
-   * detail 'error'.
+   * Called by a {@link Editor.JsonEditor | JsonEditor} to possibly edit one of the properties being
+   * merged into a target object.
+   * @param key - The key of the property to be edited.
+   * @param value - The {@link JsonValue | value} of the property to be edited.
+   * @param state - {@link Editor.JsonEditorState | Editor state} which applies to the edit.
+   * @returns If the property was edited, returns `Success` with a {@link JsonObject | JsonObject} containing
+   * the edited results and with detail `'edited'`. If this property should be deferred for later consideration
+   * or merge, `Success` with detail `'deferred'` and a {@link JsonObject | JsonObject} to be finalized.  If
+   * the rule does not affect this property, returns `Failure` with detail `'inapplicable'`. If an error occurred
+   * while processing the error, returns `Failure` with detail `'error'`.
    */
   editProperty(
     key: string,
@@ -48,24 +51,24 @@ export interface IJsonEditorRule {
   ): DetailedResult<JsonObject, JsonPropertyEditFailureReason>;
 
   /**
-   * Called by a JSON editor to possibly edit a property value or array element
-   * @param value - The value to be edited
-   * @param state - Editor state which applies to the edit
-   * @returns Returns success with the JsonValue to be inserted, with detail 'edited' if the value was
-   * edited.  Returns failure with 'inapplicable' if the rule does not affect this value.  Fails with
-   * detail 'ignore' if the value is to be ignored, or with 'error' if an error occurs.
+   * Called by a {@link Editor.JsonEditor | JsonEditor} to possibly edit a property value or array element.
+   * @param value - The {@link JsonValue | value} of the property to be edited.
+   * @param state - {@link Editor.JsonEditorState | Editor state} which applies to the edit.
+   * @returns Returns `Success` with the {@link JsonValue | JsonValue} to be inserted, with detail `'edited'` if
+   * the value was edited.  Returns `Failure` with `'inapplicable'` if the rule does not affect this value.
+   * Fails with detail `'ignore'` if the value is to be ignored, or with `'error'` if an error occurs.
    */
   editValue(value: JsonValue, state: JsonEditorState): DetailedResult<JsonValue, JsonEditFailureReason>;
 
   /**
    * Called for each rule after all properties have been merged.  Any properties that were deferred
    * during the initial edit pass are supplied as input.
-   * @param deferred - Any objects that were deferred during the first edit pass
-   * @param state - Editor state which applies to the edit
-   * @returns On successful return, any returned objects are merged in order and finalization
-   * is stopped. Finalization is also stopped on Failure with detail 'ignore.' On failure
-   * with detail 'inapplicable', finalization continues with the next rule. Fails with an
-   * error detail 'error' and an informative message if an error occurs.
+   * @param deferred - Any {@link JsonObject | objects} that were deferred during the first edit pass.
+   * @param state - {@link Editor.JsonEditorState | Editor state} which applies to the edit.
+   * @returns On `Success` return, any returned objects are merged in order and finalization
+   * is stopped. Finalization is also stopped on `Failure` with detail `'ignore'`. On `Failure`
+   * with detail `'inapplicable'`, finalization continues with the next rule. Fails with an
+   * error detail `'error'` and an informative message if an error occurs.
    */
   finalizeProperties(
     deferred: JsonObject[],
@@ -74,7 +77,7 @@ export interface IJsonEditorRule {
 }
 
 /**
- * Default base implementation of JsonEditor rule returns inapplicable for all operations so that
+ * Default base implementation of {@link Editor.IJsonEditorRule | IJsonEditorRule} returns inapplicable for all operations so that
  * derived classes need only implement the operations they actually support.
  * @public
  */
@@ -92,6 +95,9 @@ export class JsonEditorRuleBase implements IJsonEditorRule {
     return failWithDetail('inapplicable', 'inapplicable');
   }
 
+  /**
+   * {@inheritdoc Editor.IJsonEditorRule.editValue}
+   */
   public editValue(
     __value: JsonValue,
     __state: JsonEditorState
@@ -99,6 +105,9 @@ export class JsonEditorRuleBase implements IJsonEditorRule {
     return failWithDetail('inapplicable', 'inapplicable');
   }
 
+  /**
+   * {@inheritdoc Editor.IJsonEditorRule.finalizeProperties}
+   */
   public finalizeProperties(
     __deferred: JsonObject[],
     __state: JsonEditorState

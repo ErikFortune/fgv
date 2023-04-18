@@ -4,7 +4,7 @@
 
 ## CompositeJsonMap.getJsonObject() method
 
-Gets a JSON object specified by key.
+Gets a [JSON object](./ts-json.jsonobject.md) specified by key.
 
 **Signature:**
 
@@ -16,12 +16,12 @@ getJsonObject(key: string, context?: IJsonContext): DetailedResult<JsonObject, J
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  key | string | key of the object to be retrieved |
-|  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ optional [JSON Context](./ts-json.ijsoncontext.md) used to format the object |
+|  key | string | The key of the object to be retrieved. |
+|  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ An optional [JSON Context](./ts-json.ijsoncontext.md) used to format the object. |
 
 **Returns:**
 
 DetailedResult&lt;[JsonObject](./ts-json.jsonobject.md)<!-- -->, [JsonReferenceMapFailureReason](./ts-json.jsonreferencemapfailurereason.md)<!-- -->&gt;
 
-Success with the formatted object if successful. Failure with detail 'unknown' if no such object exists, or failure with detail 'error' if the object was found but could not be formatted.
+`Success` with the formatted object if successful. `Failure` with detail `'unknown'` if no such object exists, or `Failure` with detail `'error'` if the object was found but could not be formatted.
 

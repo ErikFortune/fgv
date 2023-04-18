@@ -9,8 +9,8 @@
 |  Class | Description |
 |  --- | --- |
 |  [JsonEditor](./ts-json.editor.jsoneditor.md) | A [JsonEditor](./ts-json.editor.jsoneditor.md) can be used to edit JSON objects in place or to clone any JSON value, applying a default context and optional set of editor rules that were supplied at initialization. |
-|  [JsonEditorRuleBase](./ts-json.editor.jsoneditorrulebase.md) | Default base implementation of JsonEditor rule returns inapplicable for all operations so that derived classes need only implement the operations they actually support. |
-|  [JsonEditorState](./ts-json.editor.jsoneditorstate.md) |  |
+|  [JsonEditorRuleBase](./ts-json.editor.jsoneditorrulebase.md) | Default base implementation of [IJsonEditorRule](./ts-json.editor.ijsoneditorrule.md) returns inapplicable for all operations so that derived classes need only implement the operations they actually support. |
+|  [JsonEditorState](./ts-json.editor.jsoneditorstate.md) | Represents the internal state of a [JsonEditor](./ts-json.editor.jsoneditor.md)<!-- -->. |
 
 ## Interfaces
 
@@ -18,7 +18,7 @@
 |  --- | --- |
 |  [IJsonCloneEditor](./ts-json.editor.ijsoncloneeditor.md) | A specialized JSON editor which does a deep clone of a supplied [JsonValue](./ts-json.jsonvalue.md)<!-- -->. |
 |  [IJsonEditorOptions](./ts-json.editor.ijsoneditoroptions.md) | Initialization options for a [JsonEditor](./ts-json.editor.jsoneditor.md)<!-- -->. |
-|  [IJsonEditorRule](./ts-json.editor.ijsoneditorrule.md) |  |
+|  [IJsonEditorRule](./ts-json.editor.ijsoneditorrule.md) | An [IJsonEditorRule](./ts-json.editor.ijsoneditorrule.md) represents a single configurable rule to be applied by a [JsonEditor](./ts-json.editor.jsoneditor.md)<!-- -->. |
 |  [IJsonEditorValidationOptions](./ts-json.editor.ijsoneditorvalidationoptions.md) | Validation options for a [JsonEditor](./ts-json.editor.jsoneditor.md)<!-- -->. |
 
 ## Namespaces

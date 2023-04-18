@@ -4,6 +4,7 @@
 
 ## JsonObject interface
 
+A [JsonObject](./ts-json.jsonobject.md) is a string-keyed object containing only valid [JSON values](./ts-json.jsonvalue.md)<!-- -->.
 
 **Signature:**
 

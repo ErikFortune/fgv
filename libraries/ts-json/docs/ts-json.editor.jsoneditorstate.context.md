@@ -4,6 +4,8 @@
 
 ## Editor.JsonEditorState.context property
 
+The optional [JSON context](./ts-json.ijsoncontext.md) for this state.
+
 **Signature:**
 
 ```typescript

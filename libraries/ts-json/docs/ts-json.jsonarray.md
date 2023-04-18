@@ -4,6 +4,7 @@
 
 ## JsonArray interface
 
+A [JsonArray](./ts-json.jsonarray.md) is an array containing only valid [JsonValues](./ts-json.jsonvalue.md)<!-- -->.
 
 **Signature:**
 

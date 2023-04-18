@@ -4,6 +4,8 @@
 
 ## Editor.JsonEditorRuleBase.finalizeProperties() method
 
+Called for each rule after all properties have been merged. Any properties that were deferred during the initial edit pass are supplied as input.
+
 **Signature:**
 
 ```typescript
@@ -20,4 +22,6 @@ finalizeProperties(__deferred: JsonObject[], __state: JsonEditorState): Detailed
 **Returns:**
 
 DetailedResult&lt;[JsonObject](./ts-json.jsonobject.md)<!-- -->\[\], [JsonEditFailureReason](./ts-json.editor.jsoneditfailurereason.md)<!-- -->&gt;
+
+On `Success` return, any returned objects are merged in order and finalization is stopped. Finalization is also stopped on `Failure` with detail `'ignore'`<!-- -->. On `Failure` with detail `'inapplicable'`<!-- -->, finalization continues with the next rule. Fails with an error detail `'error'` and an informative message if an error occurs.
 

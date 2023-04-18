@@ -4,6 +4,8 @@
 
 ## Editor.JsonEditorState.getVars() method
 
+Gets a [TemplateVars](./ts-json.templatevars.md) from the context of this [JsonEditorState](./ts-json.editor.jsoneditorstate.md)<!-- -->, or from an optional supplied [IJsonContext](./ts-json.ijsoncontext.md) if the current state has no default context.
+
 **Signature:**
 
 ```typescript
@@ -14,9 +16,11 @@ getVars(defaultContext?: IJsonContext): TemplateVars | undefined;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  defaultContext | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ |
+|  defaultContext | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ An optional default [IJsonContext](./ts-json.ijsoncontext.md) to use as <code>TemplateVars</code> if the current state does not have context. |
 
 **Returns:**
 
 [TemplateVars](./ts-json.templatevars.md) \| undefined
+
+A [TemplateVars](./ts-json.templatevars.md) reflecting the appropriate [JSON context](./ts-json.ijsoncontext.md)<!-- -->, or `undefined` if no vars are found.
 

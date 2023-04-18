@@ -16,7 +16,7 @@ static create(maps: IJsonReferenceMap[]): Result<CompositeJsonMap>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  maps | [IJsonReferenceMap](./ts-json.ijsonreferencemap.md)<!-- -->\[\] | one or more object maps to be composed |
+|  maps | [IJsonReferenceMap](./ts-json.ijsonreferencemap.md)<!-- -->\[\] | one or more [object maps](./ts-json.ijsonreferencemap.md) to be composed. |
 
 **Returns:**
 

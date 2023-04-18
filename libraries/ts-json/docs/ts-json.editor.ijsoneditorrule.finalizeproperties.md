@@ -16,12 +16,12 @@ finalizeProperties(deferred: JsonObject[], state: JsonEditorState): DetailedResu
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  deferred | [JsonObject](./ts-json.jsonobject.md)<!-- -->\[\] | Any objects that were deferred during the first edit pass |
-|  state | [JsonEditorState](./ts-json.editor.jsoneditorstate.md) | Editor state which applies to the edit |
+|  deferred | [JsonObject](./ts-json.jsonobject.md)<!-- -->\[\] | Any [objects](./ts-json.jsonobject.md) that were deferred during the first edit pass. |
+|  state | [JsonEditorState](./ts-json.editor.jsoneditorstate.md) | [Editor state](./ts-json.editor.jsoneditorstate.md) which applies to the edit. |
 
 **Returns:**
 
 DetailedResult&lt;[JsonObject](./ts-json.jsonobject.md)<!-- -->\[\], [JsonEditFailureReason](./ts-json.editor.jsoneditfailurereason.md)<!-- -->&gt;
 
-On successful return, any returned objects are merged in order and finalization is stopped. Finalization is also stopped on Failure with detail 'ignore.' On failure with detail 'inapplicable', finalization continues with the next rule. Fails with an error detail 'error' and an informative message if an error occurs.
+On `Success` return, any returned objects are merged in order and finalization is stopped. Finalization is also stopped on `Failure` with detail `'ignore'`<!-- -->. On `Failure` with detail `'inapplicable'`<!-- -->, finalization continues with the next rule. Fails with an error detail `'error'` and an informative message if an error occurs.
 

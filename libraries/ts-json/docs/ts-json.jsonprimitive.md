@@ -4,6 +4,7 @@
 
 ## JsonPrimitive type
 
+Primitive (terminal) values allowed in by JSON.
 
 **Signature:**
 

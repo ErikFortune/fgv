@@ -4,7 +4,7 @@
 
 ## classifyJsonValue() function
 
-Identifies whether some unknown value is a primitive, object or array. Fails for any value that cannot be converted to JSON (e.g. a function) \_but\_ this is a shallow test - it does not test the properties of an object or elements in an array.
+Identifies whether some `unknown` value is a [primitive](./ts-json.jsonprimitive.md)<!-- -->, [object](./ts-json.jsonobject.md) or [array](./ts-json.jsonarray.md)<!-- -->. Fails for any value that cannot be converted to JSON (e.g. a function) \_but\_ this is a shallow test - it does not test the properties of an object or elements in an array.
 
 **Signature:**
 

@@ -16,11 +16,11 @@ has(key: string): boolean;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  key | string | key to be tested |
+|  key | string | The key to be tested. |
 
 **Returns:**
 
 boolean
 
-true if an object with the specified key exists, false otherwise.
+`true` if an object with the specified key exists, `false` otherwise.
 

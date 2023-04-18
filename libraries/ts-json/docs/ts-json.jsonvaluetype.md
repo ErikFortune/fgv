@@ -4,7 +4,7 @@
 
 ## JsonValueType type
 
-Classes of JSON value
+Classes of [JsonValue](./ts-json.jsonvalue.md)<!-- -->.
 
 **Signature:**
 

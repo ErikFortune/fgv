@@ -4,7 +4,7 @@
 
 ## Editor.JsonEditorState.(constructor)
 
-Constructs a new instance of the `JsonEditorState` class
+Constructs a new [JsonEditorState](./ts-json.editor.jsoneditorstate.md)<!-- -->.
 
 **Signature:**
 
@@ -16,7 +16,7 @@ constructor(editor: IJsonCloneEditor, baseOptions: IJsonEditorOptions, runtimeCo
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  editor | [IJsonCloneEditor](./ts-json.editor.ijsoncloneeditor.md) |  |
-|  baseOptions | [IJsonEditorOptions](./ts-json.editor.ijsoneditoroptions.md) |  |
-|  runtimeContext | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ |
+|  editor | [IJsonCloneEditor](./ts-json.editor.ijsoncloneeditor.md) | The [editor](./ts-json.editor.ijsoncloneeditor.md) to which this state applies. |
+|  baseOptions | [IJsonEditorOptions](./ts-json.editor.ijsoneditoroptions.md) | The [editor options](./ts-json.editor.ijsoneditoroptions.md) that apply to this rule. |
+|  runtimeContext | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ An optional [JSON context](./ts-json.ijsoncontext.md) to be used for json value conversion. |
 

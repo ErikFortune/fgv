@@ -4,6 +4,7 @@
 
 ## JsonValue type
 
+A [JsonValue](./ts-json.jsonvalue.md) is one of: a [JsonPrimitive](./ts-json.jsonprimitive.md)<!-- -->, a [JsonObject](./ts-json.jsonobject.md) or an [JsonArray](./ts-json.jsonarray.md)<!-- -->.
 
 **Signature:**
 

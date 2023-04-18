@@ -4,7 +4,7 @@
 
 ## pickJsonValue() function
 
-Picks a nested field from a supplied JsonObject
+Picks a nested field from a supplied [JsonObject](./ts-json.jsonobject.md)<!-- -->.
 
 **Signature:**
 
@@ -16,12 +16,12 @@ export declare function pickJsonValue(src: JsonObject, path: string): Result<Jso
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  src | [JsonObject](./ts-json.jsonobject.md) | The object from which the field is to be picked |
-|  path | string | Dot-separated path of the member to be picked |
+|  src | [JsonObject](./ts-json.jsonobject.md) | The [object](./ts-json.jsonobject.md) from which the field is to be picked. |
+|  path | string | Dot-separated path of the member to be picked. |
 
 **Returns:**
 
 Result&lt;[JsonValue](./ts-json.jsonvalue.md)<!-- -->&gt;
 
-`Success` with the property if the path is valid, `Failure` otherwise.
+`Success` with the property if the path is valid, `Failure` with an error message otherwise.
 

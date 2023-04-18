@@ -4,6 +4,7 @@
 
 ## Editor.IJsonEditorRule interface
 
+An [IJsonEditorRule](./ts-json.editor.ijsoneditorrule.md) represents a single configurable rule to be applied by a [JsonEditor](./ts-json.editor.jsoneditor.md)<!-- -->.
 
 **Signature:**
 
@@ -15,7 +16,7 @@ export interface IJsonEditorRule
 
 |  Method | Description |
 |  --- | --- |
-|  [editProperty(key, value, state)](./ts-json.editor.ijsoneditorrule.editproperty.md) | Called by a JSON editor to possibly edit one of the properties being merged into a target object. |
-|  [editValue(value, state)](./ts-json.editor.ijsoneditorrule.editvalue.md) | Called by a JSON editor to possibly edit a property value or array element |
+|  [editProperty(key, value, state)](./ts-json.editor.ijsoneditorrule.editproperty.md) | Called by a [JsonEditor](./ts-json.editor.jsoneditor.md) to possibly edit one of the properties being merged into a target object. |
+|  [editValue(value, state)](./ts-json.editor.ijsoneditorrule.editvalue.md) | Called by a [JsonEditor](./ts-json.editor.jsoneditor.md) to possibly edit a property value or array element. |
 |  [finalizeProperties(deferred, state)](./ts-json.editor.ijsoneditorrule.finalizeproperties.md) | Called for each rule after all properties have been merged. Any properties that were deferred during the initial edit pass are supplied as input. |
 

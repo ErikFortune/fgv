@@ -25,19 +25,21 @@ import { JsonObject, JsonValue, isJsonObject } from './common';
 import { IJsonContext, IJsonReferenceMap, JsonReferenceMapFailureReason } from './jsonContext';
 
 /**
- * A CompositeJsonMap presents a composed view of one or more other
- * JsonReferenceMaps.
+ * A {@link CompositeJsonMap | CompositeJsonMap} presents a composed view of one or more other
+ * {@link IJsonReferenceMap | JSON reference maps}.
  * @public
  */
 export class CompositeJsonMap implements IJsonReferenceMap {
   /**
+   * The {@link IJsonReferenceMap | reference maps} from which this map is composed.
    * @internal
    */
   protected _maps: IJsonReferenceMap[];
 
   /**
-   *
-   * @param maps -
+   * The {@link IJsonReferenceMap | reference maps} from which this map is to be composed.
+   * @param maps - An array o {@link IJsonReferenceMap | IJsonReferenceMap} containing the maps
+   * from which this map is to be composed.
    * @internal
    */
   protected constructor(maps: IJsonReferenceMap[]) {
@@ -47,7 +49,7 @@ export class CompositeJsonMap implements IJsonReferenceMap {
   /**
    * Creates a new {@link CompositeJsonMap | CompositeJsonMap} from supplied
    * {@link IJsonReferenceMap | maps}.
-   * @param maps - one or more object maps to be composed
+   * @param maps - one or more {@link IJsonReferenceMap | object maps} to be composed.
    */
   public static create(maps: IJsonReferenceMap[]): Result<CompositeJsonMap> {
     return captureResult(() => new CompositeJsonMap(maps));
@@ -56,8 +58,8 @@ export class CompositeJsonMap implements IJsonReferenceMap {
   /**
    * Determine if a key might be valid for this map but does not determine
    * if key actually exists. Allows key range to be constrained.
-   * @param key - key to be tested
-   * @returns true if the key is in the valid range, false otherwise.
+   * @param key - The key to be tested.
+   * @returns `true` if the key is in the valid range, `false` otherwise.
    */
   public keyIsInRange(key: string): boolean {
     return this._maps.find((map) => map.keyIsInRange(key)) !== undefined;
@@ -65,19 +67,19 @@ export class CompositeJsonMap implements IJsonReferenceMap {
 
   /**
    * Determines if an object with the specified key actually exists in the map.
-   * @param key - key to be tested
-   * @returns true if an object with the specified key exists, false otherwise.
+   * @param key - The key to be tested.
+   * @returns `true` if an object with the specified key exists, `false` otherwise.
    */
   public has(key: string): boolean {
     return this._maps.find((map) => map.has(key)) !== undefined;
   }
 
   /**
-   * Gets a JSON object specified by key.
-   * @param key - key of the object to be retrieved
-   * @param context - optional {@link IJsonContext | JSON Context} used to format the object
-   * @returns Success with the formatted object if successful. Failure with detail 'unknown'
-   * if no such object exists, or failure with detail 'error' if the object was found but
+   * Gets a {@link JsonObject | JSON object} specified by key.
+   * @param key - The key of the object to be retrieved.
+   * @param context - An optional {@link IJsonContext | JSON Context} used to format the object.
+   * @returns `Success` with the formatted object if successful. `Failure` with detail `'unknown'`
+   * if no such object exists, or `Failure` with detail `'error'` if the object was found but
    * could not be formatted.
    */
   public getJsonObject(
@@ -93,11 +95,11 @@ export class CompositeJsonMap implements IJsonReferenceMap {
   }
 
   /**
-   * Gets a JSON value specified by key.
-   * @param key - key of the object to be retrieved
-   * @param context - Optional {@link IJsonContext | JSON Context} used to format the value
-   * @returns Success with the formatted object if successful. Failure with detail 'unknown'
-   * if no such object exists, or failure with detail 'error' if the object was found but
+   * Gets a {@link JsonValue | JSON value} specified by key.
+   * @param key - The key of the object to be retrieved.
+   * @param context - An optional {@link IJsonContext | JSON Context} used to format the value.
+   * @returns `Success` with the formatted object if successful. `Failure` with detail `'unknown'`
+   * if no such object exists, or failure with detail `'error'` if the object was found but
    * could not be formatted.
    */
   // eslint-disable-next-line no-use-before-define

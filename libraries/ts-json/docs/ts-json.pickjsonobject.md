@@ -4,7 +4,7 @@
 
 ## pickJsonObject() function
 
-Picks a nested JsonObject from a supplied JsonObject
+Picks a nested [JsonObject](./ts-json.jsonobject.md) from a supplied [JsonObject](./ts-json.jsonobject.md)<!-- -->.
 
 **Signature:**
 
@@ -16,12 +16,12 @@ export declare function pickJsonObject(src: JsonObject, path: string): Result<Js
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  src | [JsonObject](./ts-json.jsonobject.md) | The object from which the field is to be picked |
-|  path | string | Dot-separated path of the member to be picked |
+|  src | [JsonObject](./ts-json.jsonobject.md) | The [object](./ts-json.jsonobject.md) from which the field is to be picked. |
+|  path | string | Dot-separated path of the member to be picked. |
 
 **Returns:**
 
 Result&lt;[JsonObject](./ts-json.jsonobject.md)<!-- -->&gt;
 
-Success with the property if the path is valid and the value is an object. Returns failure with details if an error occurs.
+`Success` with the property if the path is valid and the value is an object. Returns `Failure` with details if an error occurs.
 

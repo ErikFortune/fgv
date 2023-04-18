@@ -4,6 +4,8 @@
 
 ## Editor.JsonEditorState.failValidation() method
 
+Helper method to constructs `DetailedFailure` with appropriate details and messaging for various validation failures.
+
 **Signature:**
 
 ```typescript
@@ -14,11 +16,13 @@ failValidation<T = JsonObject>(rule: JsonEditorValidationRules, message?: string
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  rule | [JsonEditorValidationRules](./ts-json.editor.jsoneditorvalidationrules.md) |  |
-|  message | string | _(Optional)_ |
-|  validation | [IJsonEditorValidationOptions](./ts-json.editor.ijsoneditorvalidationoptions.md) | _(Optional)_ |
+|  rule | [JsonEditorValidationRules](./ts-json.editor.jsoneditorvalidationrules.md) | The [validation rule](./ts-json.editor.jsoneditorvalidationrules.md) that failed. |
+|  message | string | _(Optional)_ A string message describing the failed validation. |
+|  validation | [IJsonEditorValidationOptions](./ts-json.editor.ijsoneditorvalidationoptions.md) | _(Optional)_ The [validation options](./ts-json.editor.ijsoneditorvalidationoptions.md) in effect. |
 
 **Returns:**
 
 DetailedFailure&lt;T, [JsonEditFailureReason](./ts-json.editor.jsoneditfailurereason.md)<!-- -->&gt;
+
+A `DetailedFailure` with appropriate detail and message.
 

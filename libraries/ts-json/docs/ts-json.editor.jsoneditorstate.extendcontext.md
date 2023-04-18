@@ -4,6 +4,8 @@
 
 ## Editor.JsonEditorState.extendContext() method
 
+Constructs a new [IJsonContext](./ts-json.ijsoncontext.md) by merging supplied variables and references into a supplied existing context.
+
 **Signature:**
 
 ```typescript
@@ -17,10 +19,12 @@ extendContext(baseContext: IJsonContext | undefined, add: {
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  baseContext | [IJsonContext](./ts-json.ijsoncontext.md) \| undefined |  |
-|  add | { vars?: [VariableValue](./ts-json.variablevalue.md)<!-- -->\[\]; refs?: [IJsonReferenceMap](./ts-json.ijsonreferencemap.md)<!-- -->\[\]; } |  |
+|  baseContext | [IJsonContext](./ts-json.ijsoncontext.md) \| undefined | The [IJsonContext](./ts-json.ijsoncontext.md) into which variables and references are to be merged, or <code>undefined</code> to start with a default empty context. |
+|  add | { vars?: [VariableValue](./ts-json.variablevalue.md)<!-- -->\[\]; refs?: [IJsonReferenceMap](./ts-json.ijsonreferencemap.md)<!-- -->\[\]; } | The [variable values](./ts-json.variablevalue.md) and/or [JSON entity references](./ts-json.ijsonreferencemap.md) to be merged into the base context. |
 
 **Returns:**
 
 Result&lt;[IJsonContext](./ts-json.ijsoncontext.md) \| undefined&gt;
+
+A new [IJsonContext](./ts-json.ijsoncontext.md) created by merging the supplied values.
 
