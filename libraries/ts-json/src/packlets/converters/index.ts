@@ -20,7 +20,8 @@
  * SOFTWARE.
  */
 
-export * from './packlets/context';
-export * from './packlets/converters';
-export * from './packlets/editor';
-export * from './packlets/json';
+import * as Converters from './converters';
+import * as File from './file';
+
+export * from './jsonConverter';
+export { Converters, File };

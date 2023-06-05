@@ -20,7 +20,21 @@
  * SOFTWARE.
  */
 
-export * from './packlets/context';
-export * from './packlets/converters';
-export * from './packlets/editor';
-export * from './packlets/json';
+import * as EditorRules from './rules';
+
+export {
+  IJsonEditorOptions,
+  IJsonEditorValidationOptions,
+  JsonEditFailureReason,
+  JsonPropertyEditFailureReason
+} from './common';
+export { JsonEditor } from './jsonEditor';
+export { IJsonEditorRule } from './jsonEditorRule';
+export { JsonEditorState } from './jsonEditorState';
+export {
+  IReferenceMapKeyPolicyValidateOptions,
+  PrefixedJsonMap,
+  ReferenceMapKeyPolicy,
+  SimpleJsonMap
+} from './jsonReferenceMap';
+export { EditorRules };

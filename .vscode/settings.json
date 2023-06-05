@@ -1,5 +1,6 @@
 {
   "cSpell.words": [
+    "autoinstallers",
     "aval",
     "bval",
     "dflt",
@@ -22,5 +23,7 @@
     "xval",
     "xyzzy",
     "zval"
-  ]
+  ],
+  "jest.jestCommandLine": "heft test",
+  "jest.rootPath": "./common/temp/pnpm-store/v3/metadata/registry.npmjs.org/@types"
 }

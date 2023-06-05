@@ -20,7 +20,14 @@
  * SOFTWARE.
  */
 
-export * from './packlets/context';
-export * from './packlets/converters';
-export * from './packlets/editor';
-export * from './packlets/json';
+export { CompositeJsonMap } from './compositeJsonMap';
+export { JsonContextHelper } from './contextHelpers';
+export {
+  IJsonContext,
+  IJsonReferenceMap,
+  JsonReferenceMapFailureReason,
+  TemplateVars,
+  TemplateVarsExtendFunction,
+  VariableValue,
+  defaultExtendVars
+} from './jsonContext';

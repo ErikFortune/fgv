@@ -39,34 +39,35 @@ export class ConditionalJsonConverter extends JsonEditorConverter {
 // @public
 export type ConditionalJsonConverterOptions = Omit<TemplatedJsonConverterOptions, 'useConditionalNames'>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-forgotten-export) The symbol "JsonEditorRuleBase" needs to be exported by the entry point index.d.ts
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
 //
 // @public
 class ConditionalJsonEditorRule extends JsonEditorRuleBase {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     constructor(options?: IConditionalJsonRuleOptions);
     // @internal
     protected _compare(left: string, right: string, operator: string): boolean;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     static create(options?: IConditionalJsonRuleOptions): Result<ConditionalJsonEditorRule>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     editProperty(key: string, value: JsonValue, state: JsonEditorState): DetailedResult<JsonObject, JsonPropertyEditFailureReason>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     finalizeProperties(finalized: JsonObject[], __state: JsonEditorState): DetailedResult<JsonObject[], JsonEditFailureReason>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     protected _options?: IConditionalJsonRuleOptions;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     protected _tryParseCondition(key: string, state: JsonEditorState): DetailedResult<IConditionalJsonKeyResult, JsonPropertyEditFailureReason>;
 }
 
 // @public
 export function contextFromConverterOptions(partial?: Partial<IJsonConverterOptions>): IJsonContext | undefined;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
 //
 // @public
 export function converterOptionsToEditor(partial?: Partial<IJsonConverterOptions>): Result<JsonEditor>;
@@ -83,12 +84,12 @@ declare namespace Converters {
 }
 export { Converters }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Files"
 //
 // @public
 function convertJsonDirectorySync<T>(srcPath: string, options: IDirectoryConvertOptions<T>): Result<IReadDirectoryItem<T>[]>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Files"
 //
 // @public
 function convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options: IDirectoryToMapConvertOptions<T, TC>): Result<Map<string, T>>;
@@ -96,24 +97,25 @@ function convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options
 // @public
 function convertJsonFileSync<T>(srcPath: string, converter: Converter<T>): Result<T>;
 
-declare namespace Editor {
+// @public
+export function defaultExtendVars(base: TemplateVars | undefined, values: VariableValue[]): Result<TemplateVars | undefined>;
+
+declare namespace EditorRules {
     export {
-        Rules,
-        JsonEditFailureReason,
-        JsonPropertyEditFailureReason,
-        JsonEditorValidationRules,
-        IJsonEditorValidationOptions,
-        IJsonEditorOptions,
-        IJsonCloneEditor,
-        JsonEditor,
-        IJsonEditorRule,
-        JsonEditorRuleBase,
-        JsonEditorState
+        IConditionalJsonKeyResult,
+        IConditionalJsonDeferredObject,
+        IConditionalJsonRuleOptions,
+        ConditionalJsonEditorRule,
+        IMultiValuePropertyParts,
+        MultiValueJsonEditorRule,
+        ReferenceJsonEditorRule,
+        ITemplatedJsonRuleOptions,
+        TemplatedJsonEditorRule
     }
 }
-export { Editor }
+export { EditorRules }
 
-declare namespace Files {
+declare namespace File_2 {
     export {
         readJsonFileSync,
         convertJsonFileSync,
@@ -126,10 +128,10 @@ declare namespace Files {
         IDirectoryToMapConvertOptions
     }
 }
-export { Files }
+export { File_2 as File }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
 //
 // @public
 interface IConditionalJsonDeferredObject extends IConditionalJsonKeyResult {
@@ -137,7 +139,7 @@ interface IConditionalJsonDeferredObject extends IConditionalJsonKeyResult {
     value: JsonValue;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
 //
 // @public
 interface IConditionalJsonKeyResult extends JsonObject {
@@ -145,7 +147,7 @@ interface IConditionalJsonKeyResult extends JsonObject {
     matchType: 'default' | 'match' | 'unconditional';
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
 //
 // @public
 interface IConditionalJsonRuleOptions extends Partial<IJsonEditorOptions> {
@@ -164,14 +166,7 @@ interface IDirectoryToMapConvertOptions<T, TC = unknown> extends IDirectoryConve
 }
 
 // @public
-interface IJsonCloneEditor {
-    clone(src: JsonValue, context?: IJsonContext): DetailedResult<JsonValue, JsonEditFailureReason>;
-}
-
-// @public
 export interface IJsonContext {
-    // Warning: (ae-forgotten-export) The symbol "TemplateVarsExtendFunction" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     extendVars?: TemplateVarsExtendFunction;
     // (undocumented)
@@ -196,35 +191,35 @@ export interface IJsonConverterOptions {
     vars?: TemplateVars;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
 //
 // @public
-interface IJsonEditorOptions {
+export interface IJsonEditorOptions {
     // (undocumented)
     context?: IJsonContext;
     // (undocumented)
     validation: IJsonEditorValidationOptions;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
 //
 // @public
-interface IJsonEditorRule {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+export interface IJsonEditorRule {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     editProperty(key: string, value: JsonValue, state: JsonEditorState): DetailedResult<JsonObject, JsonPropertyEditFailureReason>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     editValue(value: JsonValue, state: JsonEditorState): DetailedResult<JsonValue, JsonEditFailureReason>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     finalizeProperties(deferred: JsonObject[], state: JsonEditorState): DetailedResult<JsonObject[], JsonEditFailureReason>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
 //
 // @public
-interface IJsonEditorValidationOptions {
+export interface IJsonEditorValidationOptions {
     onInvalidPropertyName: 'error' | 'ignore';
     onInvalidPropertyValue: 'error' | 'ignore';
     onUndefinedPropertyValue: 'error' | 'ignore';
@@ -240,7 +235,7 @@ export interface IJsonReferenceMap {
 
 // @public
 interface IMultiValuePropertyParts {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     readonly asArray: boolean;
     readonly propertyValues: string[];
     readonly propertyVariable: string;
@@ -254,13 +249,8 @@ interface IReadDirectoryItem<T> {
 }
 
 // @public
-export interface ISimpleJsonMapOptions {
-    // (undocumented)
-    editor?: JsonEditor;
-    // Warning: (ae-forgotten-export) The symbol "ReferenceMapKeyPolicy" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    keyPolicy?: ReferenceMapKeyPolicy<JsonValue>;
+export interface IReferenceMapKeyPolicyValidateOptions {
+    makeValid?: boolean;
 }
 
 // @public
@@ -275,7 +265,7 @@ export function isJsonPrimitive(from: unknown): from is JsonPrimitive;
 // @public
 type ItemNameTransformFunction<T> = (name: string, item: T) => Result<string>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
 //
 // @public
 interface ITemplatedJsonRuleOptions extends Partial<IJsonEditorOptions> {
@@ -294,36 +284,60 @@ export interface JsonArray extends Array<JsonValue> {
 const jsonArray: Converter<JsonArray, IJsonContext>;
 
 // @public
+export class JsonContextHelper {
+    constructor(context?: IJsonContext);
+    // @internal
+    protected _context?: IJsonContext;
+    static create(context?: IJsonContext): Result<JsonContextHelper>;
+    static extendContext(baseContext?: IJsonContext | undefined, add?: {
+        vars?: VariableValue[];
+        refs?: IJsonReferenceMap[];
+    }): Result<IJsonContext | undefined>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: Unsupported system selector "static"
+    extendContext(add?: {
+        vars?: VariableValue[];
+        refs?: IJsonReferenceMap[];
+    }): Result<IJsonContext | undefined>;
+    static extendContextRefs(baseContext: IJsonContext | undefined, refs?: IJsonReferenceMap[]): Result<IJsonReferenceMap | undefined>;
+    static extendContextVars(baseContext: IJsonContext | undefined, vars?: VariableValue[]): Result<TemplateVars | undefined>;
+    extendRefs(refs?: IJsonReferenceMap[]): Result<IJsonReferenceMap | undefined>;
+    extendVars(vars?: VariableValue[]): Result<TemplateVars | undefined>;
+    static mergeContext(baseContext: IJsonContext | undefined, add: IJsonContext | undefined): Result<IJsonContext | undefined>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: Unsupported system selector "static"
+    mergeContext(merge?: IJsonContext): Result<IJsonContext | undefined>;
+}
+
+// @public
 export class JsonConverter extends JsonEditorConverter {
     constructor(options?: Partial<IJsonConverterOptions>);
     static create(options?: Partial<IJsonConverterOptions>): Result<JsonConverter>;
 }
 
 // @public
-type JsonEditFailureReason = 'ignore' | 'inapplicable' | 'edited' | 'error';
+export type JsonEditFailureReason = 'ignore' | 'inapplicable' | 'edited' | 'error';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-forgotten-export) The symbol "IJsonCloneEditor" needs to be exported by the entry point index.d.ts
 //
 // @public
-class JsonEditor implements IJsonCloneEditor {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+export class JsonEditor implements IJsonCloneEditor {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     //
     // @internal
     protected constructor(options?: Partial<IJsonEditorOptions>, rules?: IJsonEditorRule[]);
     clone(src: JsonValue, context?: IJsonContext): DetailedResult<JsonValue, JsonEditFailureReason>;
     // @internal (undocumented)
     protected _cloneArray(src: JsonArray, context?: IJsonContext): DetailedResult<JsonArray, JsonEditFailureReason>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     static create(options?: Partial<IJsonEditorOptions>, rules?: IJsonEditorRule[]): Result<JsonEditor>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     static get default(): JsonEditor;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     //
     // @internal
     protected static _default?: JsonEditor;
@@ -335,8 +349,8 @@ class JsonEditor implements IJsonCloneEditor {
     protected _finalizeAndMerge(target: JsonObject, state: JsonEditorState): DetailedResult<JsonObject, JsonEditFailureReason>;
     // @internal (undocumented)
     protected static _getDefaultOptions(options?: Partial<IJsonEditorOptions>): Result<IJsonEditorOptions>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     static getDefaultRules(options?: IJsonEditorOptions): Result<IJsonEditorRule[]>;
     // @internal (undocumented)
     protected _mergeClonedProperty(target: JsonObject, key: string, newValue: JsonValue, state: JsonEditorState): DetailedResult<JsonValue, JsonEditFailureReason>;
@@ -345,98 +359,76 @@ class JsonEditor implements IJsonCloneEditor {
     protected _mergeObjectInPlace(target: JsonObject, src: JsonObject, state: JsonEditorState): Result<JsonObject>;
     mergeObjectsInPlace(target: JsonObject, srcObjects: JsonObject[]): Result<JsonObject>;
     mergeObjectsInPlaceWithContext(context: IJsonContext | undefined, base: JsonObject, srcObjects: JsonObject[]): Result<JsonObject>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     options: IJsonEditorOptions;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     //
     // @internal
     protected _rules: IJsonEditorRule[];
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
 //
 // @public
 export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, IJsonContext> {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     constructor(editor: JsonEditor);
     array(): Converter<JsonArray, IJsonContext>;
     // (undocumented)
     protected _convert(from: unknown, context?: IJsonContext): Result<JsonValue>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     static createWithEditor(editor: JsonEditor): Result<JsonEditorConverter>;
     // (undocumented)
     readonly editor: JsonEditor;
     object(): Converter<JsonObject, IJsonContext>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
 //
 // @public
-class JsonEditorRuleBase implements IJsonEditorRule {
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    editProperty(__key: string, __value: JsonValue, __state: JsonEditorState): DetailedResult<JsonObject, JsonPropertyEditFailureReason>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    editValue(__value: JsonValue, __state: JsonEditorState): DetailedResult<JsonValue, JsonEditFailureReason>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    finalizeProperties(__deferred: JsonObject[], __state: JsonEditorState): DetailedResult<JsonObject[], JsonEditFailureReason>;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-class JsonEditorState {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+export class JsonEditorState {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     constructor(editor: IJsonCloneEditor, baseOptions: IJsonEditorOptions, runtimeContext?: IJsonContext);
     get context(): IJsonContext | undefined;
     defer(obj: JsonObject): void;
     get deferred(): JsonObject[];
     // @internal
     protected readonly _deferred: JsonObject[];
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     readonly editor: IJsonCloneEditor;
     extendContext(baseContext: IJsonContext | undefined, add: {
         vars?: VariableValue[];
         refs?: IJsonReferenceMap[];
     }): Result<IJsonContext | undefined>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-forgotten-export) The symbol "JsonEditorValidationRules" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     failValidation<T = JsonObject>(rule: JsonEditorValidationRules, message?: string, validation?: IJsonEditorValidationOptions): DetailedFailure<T, JsonEditFailureReason>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     getContext(defaultContext?: IJsonContext): IJsonContext | undefined;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     //
     // @internal
     protected static _getEffectiveOptions(options: IJsonEditorOptions, context?: IJsonContext): Result<IJsonEditorOptions>;
     getRefs(defaultContext?: IJsonContext): IJsonReferenceMap | undefined;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     getVars(defaultContext?: IJsonContext): TemplateVars | undefined;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     //
     // @internal
     protected readonly _id: number;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     //
     // @internal
     protected static _nextId: number;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     readonly options: IJsonEditorOptions;
 }
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-type JsonEditorValidationRules = 'invalidPropertyName' | 'invalidPropertyValue' | 'undefinedPropertyValue';
 
 // @public
 export interface JsonObject {
@@ -451,7 +443,7 @@ const jsonObject: Converter<JsonObject, IJsonContext>;
 export type JsonPrimitive = boolean | number | string | null;
 
 // @public
-type JsonPropertyEditFailureReason = JsonEditFailureReason | 'deferred';
+export type JsonPropertyEditFailureReason = JsonEditFailureReason | 'deferred';
 
 // @public
 export type JsonReferenceMapFailureReason = 'unknown' | 'error';
@@ -465,24 +457,24 @@ export type JsonValueType = 'primitive' | 'object' | 'array';
 // @public
 export function mergeDefaultJsonConverterOptions(partial?: Partial<IJsonConverterOptions>): IJsonConverterOptions;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
 //
 // @public
 class MultiValueJsonEditorRule extends JsonEditorRuleBase {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     constructor(options?: IJsonEditorOptions);
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     static create(options?: IJsonEditorOptions): Result<MultiValueJsonEditorRule>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     protected _deriveContext(state: JsonEditorState, ...values: VariableValue[]): Result<IJsonContext | undefined>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     editProperty(key: string, value: JsonValue, state: JsonEditorState): DetailedResult<JsonObject, JsonPropertyEditFailureReason>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     protected _options?: IJsonEditorOptions;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     protected _tryParse(token: string, state: JsonEditorState): DetailedResult<IMultiValuePropertyParts, JsonEditFailureReason>;
 }
 
@@ -495,17 +487,17 @@ export function pickJsonValue(src: JsonObject, path: string): Result<JsonValue>;
 // @public
 export class PrefixedJsonMap extends SimpleJsonMap {
     // Warning: (ae-forgotten-export) The symbol "MapOrRecord" needs to be exported by the entry point index.d.ts
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-forgotten-export) The symbol "ISimpleJsonMapOptions" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     protected constructor(values?: MapOrRecord<JsonValue>, context?: IJsonContext, options?: ISimpleJsonMapOptions);
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     static createPrefixed(prefix: string, values?: MapOrRecord<JsonValue>, context?: IJsonContext, editor?: JsonEditor): Result<PrefixedJsonMap>;
     // Warning: (ae-forgotten-export) The symbol "IKeyPrefixOptions" needs to be exported by the entry point index.d.ts
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     static createPrefixed(prefixOptions: IKeyPrefixOptions, values?: MapOrRecord<JsonValue>, context?: IJsonContext, editor?: JsonEditor): Result<PrefixedJsonMap>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "PrefixKeyPolicy"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "IKeyPrefixOptions"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "IKeyPrefixOptions"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "ReferenceMapKeyPolicy"
     //
     // @internal
     protected static _toPolicy(prefixOptions: string | IKeyPrefixOptions): ReferenceMapKeyPolicy<JsonValue>;
@@ -514,26 +506,40 @@ export class PrefixedJsonMap extends SimpleJsonMap {
 // @public
 function readJsonFileSync(srcPath: string): Result<JsonValue>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
 //
 // @public
 class ReferenceJsonEditorRule extends JsonEditorRuleBase {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     constructor(options?: IJsonEditorOptions);
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     static create(options?: IJsonEditorOptions): Result<ReferenceJsonEditorRule>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     editProperty(key: string, value: JsonValue, state: JsonEditorState): DetailedResult<JsonObject, JsonPropertyEditFailureReason>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     editValue(value: JsonValue, state: JsonEditorState): DetailedResult<JsonValue, JsonEditFailureReason>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     //
     // @internal
     protected _extendContext(state: JsonEditorState, supplied: JsonValue): Result<IJsonContext | undefined>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     protected _options?: IJsonEditorOptions;
+}
+
+// @public
+export class ReferenceMapKeyPolicy<T> {
+    constructor(options?: IReferenceMapKeyPolicyValidateOptions, isValid?: (key: string, item?: T) => boolean);
+    static defaultKeyPredicate(key: string): boolean;
+    // @internal (undocumented)
+    protected readonly _defaultOptions?: IReferenceMapKeyPolicyValidateOptions;
+    isValid(key: string, item?: T): boolean;
+    // @internal (undocumented)
+    protected readonly _isValid: (key: string, item?: T) => boolean;
+    validate(key: string, item?: T, __options?: IReferenceMapKeyPolicyValidateOptions): Result<string>;
+    validateItems(items: [string, T][], options?: IReferenceMapKeyPolicyValidateOptions): Result<[string, T][]>;
+    validateMap(map: Map<string, T>, options?: IReferenceMapKeyPolicyValidateOptions): Result<Map<string, T>>;
 }
 
 // @public
@@ -549,27 +555,15 @@ export class RichJsonConverter extends JsonEditorConverter {
 // @public
 export type RichJsonConverterOptions = Omit<ConditionalJsonConverterOptions, 'useReferences'>;
 
-declare namespace Rules {
-    export {
-        IConditionalJsonKeyResult,
-        IConditionalJsonDeferredObject,
-        IConditionalJsonRuleOptions,
-        ConditionalJsonEditorRule,
-        IMultiValuePropertyParts,
-        MultiValueJsonEditorRule,
-        ReferenceJsonEditorRule,
-        ITemplatedJsonRuleOptions,
-        TemplatedJsonEditorRule
-    }
-}
-
 // Warning: (ae-forgotten-export) The symbol "SimpleJsonMapBase" needs to be exported by the entry point index.d.ts
 //
 // @public
 export class SimpleJsonMap extends SimpleJsonMapBase<JsonValue> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "ISimpleJsonMapOptions"
     protected constructor(values?: MapOrRecord<JsonValue>, context?: IJsonContext, options?: ISimpleJsonMapOptions);
     // @internal (undocumented)
     protected _clone(value: JsonValue, context?: IJsonContext): DetailedResult<JsonValue, JsonReferenceMapFailureReason>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "ISimpleJsonMapOptions"
     static createSimple(values?: MapOrRecord<JsonValue>, context?: IJsonContext, options?: ISimpleJsonMapOptions): Result<SimpleJsonMap>;
     // @internal (undocumented)
     protected _editor?: JsonEditor;
@@ -589,24 +583,24 @@ export class TemplatedJsonConverter extends JsonEditorConverter {
 // @public
 export type TemplatedJsonConverterOptions = Omit<IJsonConverterOptions, 'useNameTemplates' | 'useValueTemplates' | 'useMultiValueTemplateNames'>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
 //
 // @public
 class TemplatedJsonEditorRule extends JsonEditorRuleBase {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     constructor(options?: ITemplatedJsonRuleOptions);
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     static create(options?: ITemplatedJsonRuleOptions): Result<TemplatedJsonEditorRule>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     editProperty(key: string, value: JsonValue, state: JsonEditorState): DetailedResult<JsonObject, JsonPropertyEditFailureReason>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     editValue(value: JsonValue, state: JsonEditorState): DetailedResult<JsonValue, JsonEditFailureReason>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     protected _options?: ITemplatedJsonRuleOptions;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     //
     // @internal
     protected _render(template: string, state: JsonEditorState): DetailedResult<string, JsonEditFailureReason>;
@@ -614,6 +608,9 @@ class TemplatedJsonEditorRule extends JsonEditorRuleBase {
 
 // @public
 export type TemplateVars = Record<string, unknown>;
+
+// @public
+export type TemplateVarsExtendFunction = (base: TemplateVars | undefined, values: VariableValue[]) => Result<TemplateVars | undefined>;
 
 // @public
 export type VariableValue = [string, unknown];
