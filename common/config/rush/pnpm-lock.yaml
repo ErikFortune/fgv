@@ -5,6 +5,60 @@ importers:
   .:
     specifiers: {}
 
+  ../../libraries/ts-json:
+    specifiers:
+      '@fgv/ts-utils': workspace:*
+      '@fgv/ts-utils-jest': workspace:*
+      '@microsoft/api-documenter': ^7.21.7
+      '@rushstack/heft': ~0.50.0
+      '@rushstack/heft-node-rig': ~1.12.6
+      '@types/heft-jest': 1.0.3
+      '@types/jest': ^29.5.0
+      '@types/mustache': ^4.2.2
+      '@types/node': ^18.15.10
+      '@typescript-eslint/eslint-plugin': ^5.58.0
+      '@typescript-eslint/parser': ^5.58.0
+      eslint: ^8.38.0
+      eslint-config-standard: ^17.0.0
+      eslint-plugin-import: ^2.27.5
+      eslint-plugin-n: ^15.0.0
+      eslint-plugin-node: ^11.1.0
+      eslint-plugin-promise: ^6.1.1
+      heft-jest: ~1.0.2
+      jest: ^29.5.0
+      jest-extended: ^3.2.4
+      mustache: ^4.2.0
+      rimraf: ^5.0.0
+      ts-jest: ^29.0.5
+      ts-node: ^10.9.1
+      typescript: ^5.0.4
+    devDependencies:
+      '@fgv/ts-utils': link:../ts-utils
+      '@fgv/ts-utils-jest': link:../ts-utils-jest
+      '@microsoft/api-documenter': 7.21.7_@types+node@18.15.11
+      '@rushstack/heft': 0.50.0_@types+node@18.15.11
+      '@rushstack/heft-node-rig': 1.12.6_fea1b4640b70a988dc75491dc317be91
+      '@types/heft-jest': 1.0.3
+      '@types/jest': 29.5.0
+      '@types/mustache': 4.2.2
+      '@types/node': 18.15.11
+      '@typescript-eslint/eslint-plugin': 5.58.0_325d755b025ed8bfe2ebb6d1477cd868
+      '@typescript-eslint/parser': 5.58.0_eslint@8.38.0+typescript@5.0.4
+      eslint: 8.38.0
+      eslint-config-standard: 17.0.0_eb667d6d72de52b6343d6c4a3998555c
+      eslint-plugin-import: 2.27.5_eslint@8.38.0
+      eslint-plugin-n: 15.7.0_eslint@8.38.0
+      eslint-plugin-node: 11.1.0_eslint@8.38.0
+      eslint-plugin-promise: 6.1.1_eslint@8.38.0
+      heft-jest: 1.0.2
+      jest: 29.5.0_8c568fab37d014ebedd0f0007a6e3549
+      jest-extended: 3.2.4_jest@29.5.0
+      mustache: 4.2.0
+      rimraf: 5.0.0
+      ts-jest: 29.1.0_jest@29.5.0+typescript@5.0.4
+      ts-node: 10.9.1_09c0d3c39cd0f1cdb4581c815323892a
+      typescript: 5.0.4
+
   ../../libraries/ts-utils:
     specifiers:
       '@jest/expect-utils': ^29.5.0
@@ -2551,6 +2605,10 @@ packages:
     dependencies:
       function-bind: 1.1.1
 
+  /heft-jest/1.0.2:
+    resolution: {integrity: sha512-NtA59fxEiPsOx8/1O0VwbehGUUQyzyaL/5T8o4KlYClb03fUlDBHpTpuHJmkX04gN1qNHSYKDo2HeiD81C2dbA==}
+    dev: true
+
   /html-escaper/2.0.2:
     resolution: {integrity: sha512-H2iMtd0I4Mt5eYiapRdIDjp+XzelXQ0tFE4JS7YFwFevXXMmOp9myNrUvCg0D6ws8iqkRPBfKHgbwig1SmlLfg==}
 
@@ -3383,7 +3441,6 @@ packages:
   /mustache/4.2.0:
     resolution: {integrity: sha512-71ippSywq5Yb7/tVYyGbkBggbU8H3u5Rz56fH60jGFgr8uHwxs+aSKeqmluIVzM0m0kB7xQjKS6qPfd0b2ZoqQ==}
     hasBin: true
-    dev: false
 
   /natural-compare-lite/1.4.0:
     resolution: {integrity: sha512-Tj+HTDSJJKaZnfiuw+iaF9skdPpTo2GtEly5JHnWV/hfv2Qj/9RKsGISQtLh2ox3l5EAGw487hnBee0sIJ6v2g==}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json",
+      "comment": "major refactor",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-json"
+}

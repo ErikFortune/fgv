@@ -1,0 +1,43 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"name": "rush-prettier",
+			"path": "common/autoinstallers/rush-prettier"
+		},
+		{
+			"name": "temp",
+			"path": "common/temp"
+		},
+		{
+			"name": "@microsoft+rush@5.96.0",
+			"path": "common/temp/install-run/@microsoft+rush@5.96.0"
+		},
+		{
+			"name": "pnpm-local",
+			"path": "common/temp/pnpm-local"
+		},
+		{
+			"name": "ts-json",
+			"path": "libraries/ts-json"
+		},
+		{
+			"name": "ts-utils",
+			"path": "libraries/ts-utils"
+		},
+		{
+			"name": "ts-utils-jest",
+			"path": "libraries/ts-utils-jest"
+		}
+	],
+	"settings": {
+		"jest.disabledWorkspaceFolders": [
+			"fgv",
+			"rush-prettier",
+			"@microsoft+rush@5.96.0",
+			"pnpm-local"
+		]
+	}
+}
