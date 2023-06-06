@@ -40,7 +40,7 @@ export class BooleanValidator<TC = unknown> extends GenericValidator<boolean, TC
    * new {@link Validation.Classes.BooleanValidator | BooleanValidator}.
    */
   public constructor(params?: BooleanValidatorConstructorParams<TC>) {
-    // istanbul ignore next
+    /* c8 ignore next */
     params = params ?? {};
     super({
       validator: BooleanValidator.validateBoolean,

@@ -85,15 +85,15 @@ export class JsonEditorRuleBase implements IJsonEditorRule {
   /**
    * {@inheritdoc Editor.IJsonEditorRule.editProperty}
    */
-  // istanbul ignore next
+  /* c8 ignore start */
   public editProperty(
     __key: string,
     __value: JsonValue,
     __state: JsonEditorState
   ): DetailedResult<JsonObject, JsonPropertyEditFailureReason> {
-    // istanbul ignore next
     return failWithDetail('inapplicable', 'inapplicable');
   }
+  /* c8 ignore stop */
 
   /**
    * {@inheritdoc Editor.IJsonEditorRule.editValue}

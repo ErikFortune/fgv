@@ -120,7 +120,7 @@ export class MockFileSystem {
 
     const payload = this._data.get(fullPathWanted);
     // not actually reproducible right now
-    // istanbul ignore next
+    /* c8 ignore next 3 */
     if (payload === undefined) {
       throw new Error(`Mock file ${wanted} payload is undefined.`);
     }

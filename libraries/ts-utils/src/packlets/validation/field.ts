@@ -68,7 +68,7 @@ export class FieldValidator<T, TC = undefined> extends ValidatorBase<T, TC> {
     super({ options });
     this.fieldName = fieldName;
     this.fieldValidator = fieldValidator;
-    // istanbul ignore next
+    /* c8 ignore next */
     this._fieldOptions = options ?? {};
   }
 
@@ -93,7 +93,7 @@ export class FieldValidator<T, TC = undefined> extends ValidatorBase<T, TC> {
 
       return optional ? true : fail(`"${this.fieldName}": Field not found in "${JSON.stringify(from)}`);
     }
-    // istanbul ignore next -- defense in depth
+    /* c8 ignore next 2 -- defense in depth */
     return fail(`Cannot validate field '${this.fieldName}' from non-object "${JSON.stringify(from)}"`);
   }
 }

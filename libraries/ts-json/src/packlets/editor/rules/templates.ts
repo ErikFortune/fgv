@@ -89,7 +89,7 @@ export class TemplatedJsonEditorRule extends JsonEditorRuleBase {
     value: JsonValue,
     state: JsonEditorState
   ): DetailedResult<JsonObject, JsonPropertyEditFailureReason> {
-    // istanbul ignore next
+    /* c8 ignore next */
     const validation = this._options?.validation;
 
     if (this._options?.useNameTemplates !== false) {
@@ -131,7 +131,7 @@ export class TemplatedJsonEditorRule extends JsonEditorRuleBase {
 
       if (renderResult.isFailure() && renderResult.detail === 'error') {
         const message = `Cannot render value: ${renderResult.message}`;
-        // istanbul ignore next
+        /* c8 ignore next */
         return state.failValidation('invalidPropertyValue', message, this._options?.validation);
       }
       return renderResult;

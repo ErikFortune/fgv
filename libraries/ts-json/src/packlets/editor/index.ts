@@ -22,12 +22,7 @@
 
 import * as EditorRules from './rules';
 
-export {
-  IJsonEditorOptions,
-  IJsonEditorValidationOptions,
-  JsonEditFailureReason,
-  JsonPropertyEditFailureReason
-} from './common';
+export * from './common';
 export { JsonEditor } from './jsonEditor';
 export { IJsonEditorRule } from './jsonEditorRule';
 export { JsonEditorState } from './jsonEditorState';

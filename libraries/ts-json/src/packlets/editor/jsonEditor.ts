@@ -321,27 +321,32 @@ export class JsonEditor implements IJsonCloneEditor {
 
     // merge is called right after clone so this should never happen
     // since clone itself will have failed
-    // istanbul ignore else
+
     if (isJsonPrimitive(newValue)) {
       target[key] = newValue;
       return succeedWithDetail(newValue, 'edited');
-    } else if (isJsonObject(newValue)) {
+    }
+
+    if (isJsonObject(newValue)) {
       if (isJsonObject(existing)) {
         return this.mergeObjectInPlace(existing, newValue, state.context).withFailureDetail('error');
       }
       target[key] = newValue;
       return succeedWithDetail(newValue, 'edited');
-    } else if (isJsonArray(newValue)) {
+    }
+
+    /* c8 ignore else */
+    if (isJsonArray(newValue)) {
       if (isJsonArray(existing)) {
         target[key] = existing.concat(...newValue);
         return succeedWithDetail(target[key], 'edited');
       }
       target[key] = newValue;
       return succeedWithDetail(newValue, 'edited');
-    } else {
-      return failWithDetail(`Invalid JSON: ${JSON.stringify(newValue)}`, 'error');
     }
-  }
+    /* c8 ignore start */
+    return failWithDetail(`Invalid JSON: ${JSON.stringify(newValue)}`, 'error');
+  } /* c8 ignore stop */
 
   /**
    *

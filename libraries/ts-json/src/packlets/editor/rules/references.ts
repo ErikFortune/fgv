@@ -93,9 +93,8 @@ export class ReferenceJsonEditorRule extends JsonEditorRuleBase {
     value: JsonValue,
     state: JsonEditorState
   ): DetailedResult<JsonObject, JsonPropertyEditFailureReason> {
-    // istanbul ignore next
+    /* c8 ignore next 2 */
     const validation = this._options?.validation;
-    // istanbul ignore next
     const refs = state.getRefs(this._options?.context);
     if (refs?.has(key)) {
       // need to apply any rules to the value before we evaluate it
@@ -111,7 +110,7 @@ export class ReferenceJsonEditorRule extends JsonEditorRuleBase {
       if (contextResult.isSuccess()) {
         const objResult = refs.getJsonObject(key, contextResult.value);
         // guarded by the has above so should never happen
-        // istanbul ignore else
+        /* c8 ignore else */
         if (objResult.isSuccess()) {
           if (typeof value !== 'string' || value === 'default') {
             return succeedWithDetail<JsonObject, JsonEditFailureReason>(objResult.value, 'edited');
@@ -143,11 +142,11 @@ export class ReferenceJsonEditorRule extends JsonEditorRuleBase {
     value: JsonValue,
     state: JsonEditorState
   ): DetailedResult<JsonValue, JsonEditFailureReason> {
-    // istanbul ignore next
+    /* c8 ignore next */
     const refs = state.getRefs(this._options?.context);
 
     if (refs && typeof value === 'string') {
-      // istanbul ignore next
+      /* c8 ignore next */
       const context = state.getContext(this._options?.context);
       const result = refs.getJsonValue(value, context);
       if (result.isSuccess()) {

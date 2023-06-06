@@ -760,7 +760,6 @@ export function mapFailures<T>(results: Iterable<Result<T>>): string[] {
 export function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T): Result<T> {
   const errors: string[] = [];
 
-  // istanbul ignore else
   if (results !== undefined) {
     for (const result of results) {
       if (result.isFailure()) {

@@ -120,8 +120,6 @@ declare namespace Classes {
     export {
         ArrayValidator,
         ArrayValidatorConstructorParams,
-        StringValidator,
-        StringValidatorConstructorParams,
         BooleanValidator,
         BooleanValidatorConstructorParams,
         NumberValidator,
@@ -130,6 +128,8 @@ declare namespace Classes {
         ObjectValidator,
         ObjectValidatorConstructorParams,
         ObjectValidatorOptions,
+        StringValidator,
+        StringValidatorConstructorParams,
         TypeGuardValidator,
         TypeGuardValidatorConstructorParams
     }
