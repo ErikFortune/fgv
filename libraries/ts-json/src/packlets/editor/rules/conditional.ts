@@ -216,7 +216,7 @@ export class ConditionalJsonEditorRule extends JsonEditorRuleBase {
       case '!=':
         return left !== right;
     }
-    // istanbul ignore next: unreachable
+    /* c8 ignore next 2 - unreachable */
     return false;
   }
 }

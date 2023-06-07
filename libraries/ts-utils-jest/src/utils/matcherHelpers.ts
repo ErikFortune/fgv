@@ -1,5 +1,5 @@
-import { DetailedResult, Result } from '../ts-utils';
 import { printExpected, printReceived } from 'jest-matcher-utils';
+import { DetailedResult, Result } from '../ts-utils';
 
 function printExpectedValue<T>(outcome: string, expected?: T): string {
   return expected !== undefined ? `  ${outcome} with ${printExpected(expected)}` : `  ${outcome}`;
@@ -24,7 +24,7 @@ export function printExpectedDetailedResult<T, TD>(
   expectedMessage?: T,
   expectedDetail?: TD
 ): string {
-  // istanbul ignore next
+  /* c8 ignore next */
   return [
     'Expected:',
     isNot

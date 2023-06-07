@@ -12,7 +12,7 @@ function isJestGlobal(g: typeof global): g is JestGlobal {
   return g.hasOwnProperty('expect');
 }
 
-// istanbul ignore else
+/* c8 ignore else */
 if (isJestGlobal(global)) {
   global.expect.extend(matchers);
 } else {

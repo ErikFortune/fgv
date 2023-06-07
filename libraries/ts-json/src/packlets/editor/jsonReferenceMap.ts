@@ -193,7 +193,7 @@ export class PrefixKeyPolicy<T> extends ReferenceMapKeyPolicy<T> {
    * in the policy options. Returns `Failure` with an error message if an error occurs.
    */
   public validate(key: string, item?: T, options?: IReferenceMapKeyPolicyValidateOptions): Result<string> {
-    // istanbul ignore next
+    /* c8 ignore next */
     const makeValid = (options ?? this._defaultOptions)?.makeValid === true;
     if (this.isValid(key, item)) {
       return succeed(key);
@@ -410,7 +410,7 @@ export class SimpleJsonMap extends SimpleJsonMapBase<JsonValue> {
   ): DetailedResult<JsonValue, JsonReferenceMapFailureReason> {
     if (!this._editor) {
       const result = JsonEditor.create();
-      // istanbul ignore next: nearly impossible to reproduce
+      /* c8 ignore next 3 - nearly impossible to reproduce */
       if (result.isFailure()) {
         return failWithDetail(result.message, 'error');
       }

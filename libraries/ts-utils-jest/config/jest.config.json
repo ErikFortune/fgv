@@ -1,6 +1,6 @@
 {
   "extends": "@rushstack/heft-node-rig/profiles/default/config/jest.config.json",
-  "coveragePathIgnorePatterns": ["index.ts"],
+  "coveragePathIgnorePatterns": ["index.js"],
   "coverageThreshold": {
     "global": {
       "branches": 100,
@@ -10,6 +10,5 @@
     }
   },
   "collectCoverage": true,
-  "collectCoverageFrom": ["src/packlets/**/*.ts", "!src/test/**/*.ts"],
   "coverageReporters": ["text", "lcov", "html"]
 }

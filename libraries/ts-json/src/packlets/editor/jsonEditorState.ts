@@ -213,11 +213,11 @@ export class JsonEditorState {
         break;
       case 'undefinedPropertyValue':
         detail = effective.onUndefinedPropertyValue !== 'error' ? 'ignore' : 'error';
-        // istanbul ignore next
+        /* c8 ignore next */
         message = message ?? 'Cannot convert undefined to JSON';
         break;
     }
-    // istanbul ignore next
+    /* c8 ignore next */
     return failWithDetail(message ?? rule, detail);
   }
 }

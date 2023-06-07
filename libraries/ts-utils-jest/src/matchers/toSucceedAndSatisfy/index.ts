@@ -37,7 +37,7 @@ function failMessage<T>(received: Result<T>, cbResult: Result<boolean | void>): 
   const expected = 'successful callback';
   const got = [printReceivedResult(received)];
 
-  // istanbul ignore else
+  /* c8 ignore else */
   if (cbResult.isFailure()) {
     got.push(cbResult.message);
   } else if (cbResult.value === false) {

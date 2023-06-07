@@ -132,7 +132,7 @@ export class ObjectValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
     const resolved: Partial<FieldValidators<T, TC>> = {};
     for (const key in fields) {
       if (fields[key]) {
-        // istanbul ignore next
+        /* c8 ignore next */
         const optional = fields[key].isOptional || options?.optionalFields?.includes(key);
         resolved[key] = new FieldValidator(key, fields[key], { optional });
       }
@@ -150,7 +150,7 @@ export class ObjectValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
    * source properties.
    */
   public partial(options?: ObjectValidatorOptions<T, TC>): ObjectValidator<Partial<T>, TC> {
-    // istanbul ignore next
+    /* c8 ignore next */
     options = options ?? {};
     return new ObjectValidator<Partial<T>, TC>({
       fields: this.fields as FieldValidators<Partial<T>, TC>,

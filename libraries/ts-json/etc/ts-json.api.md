@@ -166,6 +166,11 @@ interface IDirectoryToMapConvertOptions<T, TC = unknown> extends IDirectoryConve
 }
 
 // @public
+export interface IJsonCloneEditor {
+    clone(src: JsonValue, context?: IJsonContext): DetailedResult<JsonValue, JsonEditFailureReason>;
+}
+
+// @public
 export interface IJsonContext {
     // (undocumented)
     extendVars?: TemplateVarsExtendFunction;
@@ -316,8 +321,6 @@ export class JsonConverter extends JsonEditorConverter {
 // @public
 export type JsonEditFailureReason = 'ignore' | 'inapplicable' | 'edited' | 'error';
 
-// Warning: (ae-forgotten-export) The symbol "IJsonCloneEditor" needs to be exported by the entry point index.d.ts
-//
 // @public
 export class JsonEditor implements IJsonCloneEditor {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
@@ -402,7 +405,6 @@ export class JsonEditorState {
         vars?: VariableValue[];
         refs?: IJsonReferenceMap[];
     }): Result<IJsonContext | undefined>;
-    // Warning: (ae-forgotten-export) The symbol "JsonEditorValidationRules" needs to be exported by the entry point index.d.ts
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     failValidation<T = JsonObject>(rule: JsonEditorValidationRules, message?: string, validation?: IJsonEditorValidationOptions): DetailedFailure<T, JsonEditFailureReason>;
@@ -429,6 +431,11 @@ export class JsonEditorState {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
     readonly options: IJsonEditorOptions;
 }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "Editor"
+//
+// @public
+export type JsonEditorValidationRules = 'invalidPropertyName' | 'invalidPropertyValue' | 'undefinedPropertyValue';
 
 // @public
 export interface JsonObject {

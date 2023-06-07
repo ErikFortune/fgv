@@ -20,10 +20,9 @@
  * SOFTWARE.
  */
 
-/* istanbul ignore file */
+/* c8 ignore start */
 
 export { ArrayValidator, ArrayValidatorConstructorParams } from './array';
-export { StringValidator, StringValidatorConstructorParams } from './string';
 export { BooleanValidator, BooleanValidatorConstructorParams } from './boolean';
 export { NumberValidator, NumberValidatorConstructorParams } from './number';
 export {
@@ -32,4 +31,7 @@ export {
   ObjectValidatorConstructorParams,
   ObjectValidatorOptions
 } from './object';
+export { StringValidator, StringValidatorConstructorParams } from './string';
 export { TypeGuardValidator, TypeGuardValidatorConstructorParams } from './typeGuard';
+
+/* c8 ignore stop */

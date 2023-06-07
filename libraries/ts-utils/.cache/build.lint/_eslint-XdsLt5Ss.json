@@ -1,0 +1,233 @@
+{
+  "cacheVersion": "8.42.0_ae554715303ba18cc0ffc930cfc14e87ba8741a5",
+  "fileVersions": [
+    ["packlets/base/result.ts", "19eb96ab6de007a2627ab3208591a23b1ce376a6dbe77c85f177c909ca40ad12"],
+    ["packlets/base/logger.ts", "b3a31b0cce3ecaad9dac492bd9198d1ec2335f4dc4e35de45806291c6ffcf38a"],
+    ["packlets/base/brand.ts", "f1bd58bdb6194821d44da448a469c837cad25ee95af450dd356b2fcb219bd76d"],
+    ["packlets/base/normalize.ts", "37a724373127e747af0ce026d607c6adadf7d32ca21bede36df9496c63ead519"],
+    ["packlets/base/utils.ts", "28b0fdc861f112539b55b4e3ddfcbda955e93edcd3e96e89a2b60a7e4ad03798"],
+    ["packlets/base/index.ts", "c2f72566fa8cef2b90c2cdab2a85735640b6418887ea872af79b1241dfa0625c"],
+    [
+      "packlets/experimental/extendedArray.ts",
+      "946201d469b8b5efa25d1efb761f41c1de0027939bfe00cd5e76e1f187cd0d3a"
+    ],
+    [
+      "packlets/experimental/formatter.ts",
+      "5d66fe3a48254be83dafa3d00e139aa385ff8b81330cbd818aa1bed8783ce532"
+    ],
+    ["packlets/experimental/rangeOf.ts", "e002fe8e77ee2147cd7e195c81b966e44cd83564ff151e0661e462b07c8d9092"],
+    ["packlets/experimental/index.ts", "3adddf52f5de1a48efc06b560d77b50eee3e55c96304c424b70bd5aaff07c6a3"],
+    ["packlets/validation/common.ts", "fd3ec96956d5b42114af9613fc2de4f46d85b72116ec85409cd9adbcb5de199e"],
+    ["packlets/validation/traits.ts", "ac32418ed0fbbb45bfa19606f980bba3ae1e093ba1733de1591766e7f6065f40"],
+    ["packlets/validation/validator.ts", "1d34ea6521c3440bfd00771436d75315f7543ce3bfe52fb27ccd04c60fddc47e"],
+    [
+      "packlets/validation/genericValidator.ts",
+      "ea3de3daa655074d88574f12d97b4a553ee1d5e4c80324736b246f0a727373b0"
+    ],
+    [
+      "packlets/validation/validatorBase.ts",
+      "8e6bd5c8b1da639ac1cc3b28e4ff1bee0cfa9ad0afc7e5d5ad30f93aca74e715"
+    ],
+    ["packlets/validation/array.ts", "f13ba4a8a818f6f9852dd12812f9dcfc038cb86179e99e58321fd0a0580f5ced"],
+    ["packlets/validation/boolean.ts", "e473433b50e92ca653c9c78966dbd0771901726fa28957ea6588724c44c3f8cd"],
+    ["packlets/validation/number.ts", "7429e7fe62c66046e43eb8aa5cc75e10b60a88a3e90095ec406bc60f0f96e7bb"],
+    ["packlets/validation/field.ts", "7038d1af7539eedb6f1ecd95b8c50797c1afec6f75c64d827d8e5dd51005c367"],
+    ["packlets/validation/object.ts", "de599521ed29952f039acebbb98f52edded154b43bd706b81a1401ab3178cac7"],
+    ["packlets/validation/string.ts", "59c8515a3eb16cee36df53e6fd18cfab5b3ee0959393ae0582fe9ae56a188325"],
+    ["packlets/validation/typeGuard.ts", "ab92ec4ab285db39a508eb5d33a85965bbadb4413a6e369b50b8c96ad363afc7"],
+    ["packlets/validation/classes.ts", "ac6e80c3b69e18475e93b512f2f7200fdd69510edf376632c925597113a16aa5"],
+    ["packlets/validation/validators.ts", "87cb6caa83096d144714d3a63661fcd502890dba9400fb6cc4836f11e10595a7"],
+    ["packlets/validation/index.ts", "d2b65e3c659015099ea39a01303862d2781f86dfad029cf6ddd0cd25cf256b0c"],
+    ["packlets/conversion/converter.ts", "f7937da4e9efa372566dd6cd98f58a87a0d5978bfd6805d8f2ff8423bceee74a"],
+    [
+      "packlets/conversion/objectConverter.ts",
+      "2dceed69c896d60d64a7f14e1bede6b3ea03c7c6aef6a8a3d547dc6e6123f5f1"
+    ],
+    [
+      "packlets/conversion/stringConverter.ts",
+      "d06486c7ea94fd2e703e99d4bd3ed1b4ca13742957484b113f15ceaaa837c6c6"
+    ],
+    ["packlets/conversion/converters.ts", "15e412cd731e8960412a79a51d96b4ce3a922917a0125b7582aa50001280e3e8"],
+    ["packlets/conversion/index.ts", "fd44454f353673af165d7d5822097650fc4e7286f2fb60b2a0ed1d34cb5fdb8f"],
+    ["packlets/csv/csvHelpers.ts", "c8afd708e125eebd0b9dfa836241e0cee5553658a24ec4e1944faa9f41d454fe"],
+    ["packlets/csv/index.ts", "75c53d3cbc6548812abcdcdabc51d4fe5500431711c72a72902fb49e99d289c7"],
+    ["packlets/hash/hash.ts", "b64b16bf56f754dc8e0a027f350fafc20341e5674df980f8f9d6ff6e39d90aff"],
+    ["packlets/hash/index.ts", "403b7ea310067027477f144a25f52e1132dc4320d40d7fd2a5c0bbe2ae1f3c29"],
+    [
+      "packlets/record-jar/recordJarHelpers.ts",
+      "a6ef61d5e2bbd00b372b2b14de50e72d37167bff740836b16f1a0c053ae1e0ff"
+    ],
+    ["packlets/record-jar/index.ts", "9df4c40564f323e54a2786baa796bc668d2efa41bcd9c7a133a6bfd2c3de510f"],
+    ["index.ts", "4d6a927ed832a7bd6f2c82e125fbe3e306c1e05a8eab6de6902fe2e0e1972bd3"],
+    ["test/helpers/jest/ts-utils.ts", "cd15bbca5d1a89ffab9ab7a615569cc577c108abcc26d0201aa6ff0cd5945c1d"],
+    [
+      "test/helpers/jest/utils/matcherHelpers.ts",
+      "d297d9d45733a4bb7e65d59a329b7bdb99543f49c1abf680562a56d9449b5066"
+    ],
+    [
+      "test/helpers/jest/matchers/toFail/predicate.ts",
+      "f09ea9c4009e5875dda960b3adb88429c219129fa9abed9d9b9d601c4ed4b8f4"
+    ],
+    [
+      "test/helpers/jest/matchers/toFail/index.ts",
+      "125105c3b36004caba052745d2a75b21b0c6ac7ee1f970a340e69f6dcaf6eed2"
+    ],
+    [
+      "test/helpers/jest/matchers/toFailTest/predicate.ts",
+      "a660831087a6af8fb1ebeb13465bccdf062ee66c28232a45d09476e48506d715"
+    ],
+    [
+      "test/helpers/jest/matchers/toFailTest/index.ts",
+      "d5ec46b377a48ae1b1e8a41f6b567e3998c9c986d4ae43865ef8455805f565e6"
+    ],
+    [
+      "test/helpers/jest/matchers/toFailTestAndMatchSnapshot/predicate.ts",
+      "afe0d38a80c7ba089d14c3139fa24056364d9c233bbb963e7dc90ad850cf80ef"
+    ],
+    [
+      "test/helpers/jest/matchers/toFailTestAndMatchSnapshot/index.ts",
+      "be40402af425fd8afd0265f0b735b9900cb05fdf42bd406ef56c09a6b332f53e"
+    ],
+    [
+      "test/helpers/jest/matchers/toFailTestWith/predicate.ts",
+      "e51e42993b86c29801cf723c772ebfd16958c61ae0f233ba662892e389df939e"
+    ],
+    [
+      "test/helpers/jest/matchers/toFailTestWith/index.ts",
+      "6ad998a0fc38aac762c4dc1b63f83c76f98d56c116fbef8dd96ac2d1db290d80"
+    ],
+    [
+      "test/helpers/jest/matchers/toFailWith/predicate.ts",
+      "27ea659d4218bf0726a5a5b446bb7b6c3019e983b3f4f20b44fe3d5c5ded4b11"
+    ],
+    [
+      "test/helpers/jest/matchers/toFailWith/index.ts",
+      "161289b96a7052312fd4c9970616618f6d70f8305f14cdb35301b7ce13abd463"
+    ],
+    [
+      "test/helpers/jest/matchers/toFailWithDetail/predicate.ts",
+      "5d07e25a84f43b5d8d6bddd0985a50f9b3cdcd2ba4f34917204cb354bc6e7db3"
+    ],
+    [
+      "test/helpers/jest/matchers/toFailWithDetail/index.ts",
+      "524589e4f29d5ab4890bb31983e3b9e46994d0c59bb4d02e2980109647d353bc"
+    ],
+    [
+      "test/helpers/jest/matchers/toSucceed/predicate.ts",
+      "4eb5f8fcb44e67446d13a7a57804b7eb68e3e709125818ce9fff19da600f084b"
+    ],
+    [
+      "test/helpers/jest/matchers/toSucceed/index.ts",
+      "d1b00435a051c2ae65ed1cfa5c8cce69d114c3a9e8e7a5ebdfa2f339bc3f2ef5"
+    ],
+    [
+      "test/helpers/jest/matchers/toSucceedAndMatchInlineSnapshot/index.ts",
+      "0cc9fd9002a89960d3265bf56a5962d144f64d791c1ce0366d951693c6ab607c"
+    ],
+    [
+      "test/helpers/jest/matchers/toSucceedAndMatchSnapshot/index.ts",
+      "34f7c38ac4f1fecf560b34293fb540a0a54d4b258241cac07eeec39f4575be7b"
+    ],
+    [
+      "test/helpers/jest/matchers/toSucceedAndSatisfy/predicate.ts",
+      "54a209897425f8ac9db7174f2d00cf39c63cec26cf3448e46776aef6d4d789dd"
+    ],
+    [
+      "test/helpers/jest/matchers/toSucceedAndSatisfy/index.ts",
+      "2567b9944895e89bde37959c11fd0993a7d7f85c54d82e50a571d32a5c85b9ab"
+    ],
+    [
+      "test/helpers/jest/matchers/toSucceedWith/predicate.ts",
+      "f3ac15572ea0a5355e90f275da9c0b164aca96c5501b684569ab25d864ac4706"
+    ],
+    [
+      "test/helpers/jest/matchers/toSucceedWith/index.ts",
+      "5c246cf2a005b2b4a54a49ff03777453842f2880509a5fd898deb8db076f30b8"
+    ],
+    [
+      "test/helpers/jest/matchers/toSucceedWithDetail/predicate.ts",
+      "01b7e024c3d1f5efce02cbedc3d7cdb632b43004c7a9c7f36180c80147013369"
+    ],
+    [
+      "test/helpers/jest/matchers/toSucceedWithDetail/index.ts",
+      "2e6c6425a2dc3adec3aeb5a7ccd2fd6077783832a3488b2713bcb0804cfc5a0e"
+    ],
+    [
+      "test/helpers/jest/matchers/index.ts",
+      "6b7c541ddfe1d0a956cc90e63662a0b0f9ae593df922787f685033063340d459"
+    ],
+    ["test/helpers/jest/types/index.ts", "c2a69c3acec7fb916099ab50eda290a8eabb116ef7d6d558f85e37316b0223a2"],
+    [
+      "test/helpers/jest/helpers/fsHelpers.ts",
+      "4c07865910cf57d30cb8b2079147daf1a70c801c4896c6239bfbcc995a9ee8a5"
+    ],
+    [
+      "test/helpers/jest/helpers/index.ts",
+      "16d4585e5822fcbbb2fca56d9937052bd3a8fa6e42ab3ce250cbe401c1e5c52b"
+    ],
+    ["test/helpers/jest/index.ts", "1a1232dceebe705a37f5fd54d720d083adaca7ab950351eb0150ada724bacceb"],
+    [
+      "test/helpers/jest/utils/snapshotResolver.ts",
+      "b9a4654c5fd088fe4e1ff17ad76b941d61c929fc005d0497c54f80827c1cf56e"
+    ],
+    [
+      "test/helpers/jest/resolvers/cli.ts",
+      "0e2ecfcbee0f1b7c9ef686900d84b1dd5e1e3afd8359fb497d884e1800616faa"
+    ],
+    [
+      "test/helpers/jest/resolvers/ide.ts",
+      "c66d9f889c919390705f5af4a816f786b9a4b52a56cbafdf8da9c01d7432bbcf"
+    ],
+    ["test/unit/converter.test.ts", "e92d64b5f17a1f75b70b2237eb4e6ea63334bd4ceab3aaabdec3cc960f84b199"],
+    ["test/unit/converters.test.ts", "0de2d10a9985b78a4606925d99a67067e8f44d69fce1026326756958ff48ba0c"],
+    ["test/unit/csvHelpers.test.ts", "d869ac4f06922663288a57a692dfd86ff19a869b73ff5cbc8c17f561acd8b837"],
+    ["test/unit/extendedArray.test.ts", "03dc09f7b7bc6dab690215a5d0f3b493e622d886c059ef7d314dada2bbc5b253"],
+    ["test/unit/formatter.test.ts", "5cce9fff90623239d5349ffbbacda8d80e394867dd6e2e080353001211351803"],
+    ["test/unit/hash.test.ts", "29f1fd161ec70568e9a3359dbed970f07c17fa4e79ec255e3fb3a464d0b7f0fd"],
+    ["test/unit/logger.test.ts", "576168c6a2fbbc98b9bf7bba663798e99e61608602f8a74aadc753cac3e60d50"],
+    ["test/unit/normalize.test.ts", "64b779c16d6db4d999017d49e0c8095c78f78a159aa99e95edc1172b538888d5"],
+    ["test/unit/rangeOf.test.ts", "d5321e10d5b189dedae3f1fa7abd9f15d1329d4adcddb41ebe17e21d3929e238"],
+    [
+      "test/unit/recordJarHelpers.test.ts",
+      "65843419712acf3c258cea3dad48bf5ca6cb3a34e507326f2da783c5b9950c2b"
+    ],
+    ["test/unit/result.test.ts", "e58ac7714ff553a998448992f3297dfb7209fe0b80432f811d83bef1d47307a9"],
+    ["test/unit/utils.test.ts", "536404e63f94973c08dce80f3bab13a27df365838649014ae1665527e377c1df"],
+    [
+      "test/unit/validation/array.test.ts",
+      "fb5a7b986d6356d49b857cc5096f5faf9a01d7c998557e0786c6a4e16a2295ab"
+    ],
+    [
+      "test/unit/validation/boolean.test.ts",
+      "bb004796baa2a1cbb25373077f6ef3dae74393e0ad9906c35054a4b267a3eb25"
+    ],
+    [
+      "test/unit/validation/genericValidator.test.ts",
+      "670af5bf12789daabf31319a00bd0d893ed312901fa88fec5458140333e61fba"
+    ],
+    [
+      "test/unit/validation/number.test.ts",
+      "7317cbb1595b80fcdee24384c2f55ae846f93c89aae37de1399c1c76a55ba7db"
+    ],
+    [
+      "test/unit/validation/object.test.ts",
+      "609aca44b59e0b3cbcc293afa657f92b5d572473277dc0db626948eba47b1ba2"
+    ],
+    [
+      "test/unit/validation/string.test.ts",
+      "03e23dd7614eeb02f425ae2d390fb865d8664395474241410a788f4d015d85a4"
+    ],
+    [
+      "test/unit/validation/traits.test.ts",
+      "1b63769c5153d0b4dcff280bbd6a0b0be35236408c166478e8eb69fa896d3494"
+    ],
+    [
+      "test/unit/validation/typeGuard.test.ts",
+      "e70d63b82a276c6f7942587b705ecbbc57f13b12f73f11fe88655248569bd9a3"
+    ],
+    [
+      "test/unit/validation/validators.test.ts",
+      "0398f8c319e80af821752e1415e4b930aa206654d16d41acadef9f7274876f2f"
+    ]
+  ]
+}

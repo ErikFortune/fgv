@@ -85,12 +85,10 @@ export class Normalizer {
     if (cs1 > cs2) {
       return 1;
     }
-    // istanbul ignore else
     if (cs2 > cs1) {
       return -1;
     }
-
-    // istanbul ignore next
+    /* c8 ignore next 2 */
     return 0;
   }
 
@@ -138,11 +136,10 @@ export class Normalizer {
     if (from instanceof Date) {
       return succeed(from);
     }
-    // istanbul ignore else
     if (from instanceof RegExp) {
       return succeed(from);
     }
-    // istanbul ignore next
+    /* c8 ignore next 2 */
     return fail(`cannot normalize ${JSON.stringify(from)}`);
   }
 }

@@ -40,12 +40,11 @@ function failMessage<T>(received: Result<T>, cbResult: Result<boolean | void>): 
     got.push(cbResult.message);
   } else if (cbResult.value === false) {
     got.push('  Callback returned false');
-  }
-  // istanbul ignore else
-  else if (cbResult.value === undefined) {
+  } else if (cbResult.value === undefined) {
+  /* c8 ignore else */
     got.push('  Callback was not invoked');
   } else {
-    // istanbul ignore next
+    /* c8 ignore next */
     throw new Error('Internal error: toSucceedAndSatisfy.failMessage passed success with true');
   }
 
