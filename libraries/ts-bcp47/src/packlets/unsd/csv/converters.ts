@@ -26,6 +26,9 @@ import { Converters as IanaConverters } from '../../iana';
 import { RegionTier } from '../common';
 import * as Model from './model';
 
+/**
+ * @internal
+ */
 export const regionTier = Converters.enumeratedValue<RegionTier>([
   'global',
   'intermediateRegion',

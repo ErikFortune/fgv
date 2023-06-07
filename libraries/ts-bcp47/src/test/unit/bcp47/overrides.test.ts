@@ -20,11 +20,17 @@
  * SOFTWARE.
  */
 
-import * as Converters from './converters';
-import * as JarConverters from './jarConverters';
-import * as Model from './model';
-import * as Validate from './validate';
+import { Overrides } from '../../../packlets/bcp47';
 
-export * from './common';
-export { LanguageSubtagRegistry } from './subtagRegistry';
-export { Converters, JarConverters, Model, Validate };
+describe('BCP47 overrides registry', () => {
+  const dflt = Overrides.DefaultRegistries.overridesRegistry;
+
+  describe('loadJson static method', () => {
+    test('loads file matching default', () => {
+      expect(() => {
+        const loaded = Overrides.OverridesRegistry.loadJson('src/data/bcp/overrides.json').orThrow();
+        expect(loaded).toEqual(dflt);
+      }).not.toThrow();
+    });
+  });
+});

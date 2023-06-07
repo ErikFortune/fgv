@@ -20,6 +20,9 @@
  * SOFTWARE.
  */
 
+import * as Csv from './csv';
+
 export * from './common';
 export { DefaultRegistries } from './defaultRegistries';
 export { RegionCodes } from './regionCodes';
+export { Csv };

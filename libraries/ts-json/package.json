@@ -2,7 +2,7 @@
   "name": "@fgv/ts-json",
   "version": "2.0.0",
   "description": "Typescript utilities for working with JSON",
-  "main": "dist/index.js",
+  "main": "lib/index.js",
   "types": "dist/ts-json.d.ts",
   "scripts": {
     "build": "heft test --clean",

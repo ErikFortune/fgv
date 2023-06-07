@@ -20,11 +20,17 @@
  * SOFTWARE.
  */
 
-import * as Converters from './converters';
-import * as JarConverters from './jarConverters';
-import * as Model from './model';
-import * as Validate from './validate';
+import '@fgv/ts-utils-jest';
+import * as Unsd from '../../../packlets/unsd';
 
-export * from './common';
-export { LanguageSubtagRegistry } from './subtagRegistry';
-export { Converters, JarConverters, Model, Validate };
+describe('UNSD csv converters', () => {
+  describe('loadM49cnvFileSync function', () => {
+    test('reads downloaded data', () => {
+      expect(Unsd.Csv.Converters.loadM49csvFileSync('src/test/data/unsd/m49.csv')).toSucceedAndSatisfy(
+        (rows: Unsd.Csv.Model.IM49CsvRow[]) => {
+          expect(rows.length).toBe(249);
+        }
+      );
+    });
+  });
+});

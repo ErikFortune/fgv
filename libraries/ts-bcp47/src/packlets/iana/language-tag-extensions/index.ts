@@ -20,10 +20,10 @@
  * SOFTWARE.
  */
 
-export { LanguageTagExtensionRegistry } from './extensionsRegistry';
-
 import * as Converters from './converters';
+import * as JarConverters from './jarConverters';
 import * as Model from './model';
 import * as Validate from './validate';
 
-export { Converters, Model, Validate };
+export { LanguageTagExtensionRegistry } from './extensionsRegistry';
+export { Converters, JarConverters, Model, Validate };

@@ -21,10 +21,6 @@
  */
 // istanbul ignore file
 
-export {
-  LanguageChooser as LanguageFilter,
-  ILanguageChooserOptions as LanguageFilterOptions,
-  IMatchingLanguage as MatchingLanguage
-} from './chooser';
+export { ILanguageChooserOptions, IMatchingLanguage, LanguageChooser } from './chooser';
 export * from './common';
 export { LanguageSimilarityMatcher } from './similarity';

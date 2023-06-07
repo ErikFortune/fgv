@@ -23,15 +23,19 @@ declare namespace Bcp47 {
         ExtensionSubtag,
         IExtensionSubtagValue,
         ISubtags,
+        subtagsToString,
         ILanguageTagInitOptions,
         LanguageTag,
-        ILanguageChooserOptions as LanguageFilterOptions,
+        ILanguageChooserOptions,
+        LanguageSimilarityMatcher,
         TagSimilarity,
         tagSimilarity,
         NormalizeTag,
         TagNormalization,
         TagValidity,
         ValidateTag,
+        Overrides,
+        Subtags,
         tag,
         tags,
         similarity,
@@ -102,6 +106,29 @@ declare namespace Converters_5 {
     }
 }
 
+declare namespace Converters_6 {
+    export {
+        loadM49csvFileSync,
+        regionTier,
+        m49CsvRow,
+        m49CsvFile
+    }
+}
+
+declare namespace Converters_7 {
+    export {
+        extensionSubtag,
+        privateUsePrefix
+    }
+}
+
+declare namespace Csv {
+    export {
+        Converters_6 as Converters,
+        Model_6 as Model
+    }
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -128,6 +155,12 @@ class DefaultRegistries_2 {
     static get regionCodes(): RegionCodes;
     // @internal (undocumented)
     protected static _regionCodes?: RegionCodes;
+}
+
+// @public (undocumented)
+class DefaultRegistries_3 {
+    // (undocumented)
+    static get overridesRegistry(): OverridesRegistry;
 }
 
 // @internal (undocumented)
@@ -164,7 +197,16 @@ type ExtensionSingleton_2 = Brand<string, 'ExtensionSingleton'>;
 const extensionSingleton_2: RegExpValidationHelpers<Model_2.ExtensionSingleton>;
 
 // @public (undocumented)
+const extensionSingleton_3: RegExpValidationHelpers<Iana.LanguageTagExtensions.Model.ExtensionSingleton, unknown>;
+
+// @public (undocumented)
 type ExtensionSubtag = Brand<string, 'ExtensionSubtag'>;
+
+// @internal (undocumented)
+const extensionSubtag: Converter<ExtensionSubtag, unknown>;
+
+// @public (undocumented)
+const extensionSubtag_2: RegExpValidationHelpers<Model_8.ExtensionSubtag, unknown>;
 
 // @internal (undocumented)
 const extlangPrefix: Conversion.Converter<LanguageSubtag, unknown>;
@@ -219,6 +261,7 @@ declare namespace Iana {
         LanguageSubtags_4 as LanguageSubtags,
         LanguageTagExtensions_2 as LanguageTagExtensions,
         Validate_3 as Validate,
+        nowAsYearMonthDay,
         LanguageRegistries
     }
 }
@@ -340,6 +383,40 @@ interface ILanguageTagInitOptions {
     normalization?: TagNormalization;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     validity?: TagValidity;
+}
+
+// @internal (undocumented)
+interface IM49CsvRow {
+    // (undocumented)
+    countryOrArea: string;
+    // (undocumented)
+    globalCode: Iana.Model.UnM49RegionCode;
+    // (undocumented)
+    globalName: string;
+    // (undocumented)
+    intermediateRegionCode?: Iana.Model.UnM49RegionCode;
+    // (undocumented)
+    intermediateRegionName?: string;
+    // (undocumented)
+    isoAlpha2RegionCode?: Iana.Model.IsoAlpha2RegionCode;
+    // (undocumented)
+    isoAlpha3RegionCode?: Iana.Model.IsoAlpha3RegionCode;
+    // (undocumented)
+    landLockedDevelopingCountry: boolean;
+    // (undocumented)
+    leastDevelopedCountry: boolean;
+    // (undocumented)
+    m49Code: Iana.Model.UnM49RegionCode;
+    // (undocumented)
+    regionCode?: Iana.Model.UnM49RegionCode;
+    // (undocumented)
+    regionName?: string;
+    // (undocumented)
+    smallIslandDevelopingState: boolean;
+    // (undocumented)
+    subRegionCode?: Iana.Model.UnM49RegionCode;
+    // (undocumented)
+    subRegionName?: string;
 }
 
 // @public (undocumented)
@@ -638,6 +715,31 @@ declare namespace Jar_3 {
     }
 }
 
+declare namespace JarConverters {
+    export {
+        loadJsonSubtagRegistryFileSync,
+        loadTxtSubtagRegistryFileSync,
+        registeredLanguage_2 as registeredLanguage,
+        registeredExtLang_2 as registeredExtLang,
+        registeredScript_2 as registeredScript,
+        registeredRegion_2 as registeredRegion,
+        registeredVariant_2 as registeredVariant,
+        registeredGrandfatheredTag_2 as registeredGrandfatheredTag,
+        registeredRedundantTag_2 as registeredRedundantTag,
+        registeredItem_2 as registeredItem,
+        registryFile_2 as registryFile
+    }
+}
+
+declare namespace JarConverters_2 {
+    export {
+        loadJsonLanguageTagExtensionsRegistryFileSync,
+        loadTxtLanguageTagExtensionsRegistryFileSync,
+        languageTagExtension_2 as languageTagExtension,
+        languageTagExtensions_2 as languageTagExtensions
+    }
+}
+
 // @public (undocumented)
 class LanguageRegistries {
     // (undocumented)
@@ -648,6 +750,33 @@ class LanguageRegistries {
     static loadDefault(): Result<LanguageRegistries>;
     // (undocumented)
     readonly subtags: LanguageSubtagRegistry;
+}
+
+// @public
+class LanguageSimilarityMatcher {
+    constructor(iana?: Iana.LanguageRegistries);
+    // (undocumented)
+    iana: Iana.LanguageRegistries;
+    // (undocumented)
+    matchExtensions(lt1: LanguageTag, lt2: LanguageTag): number;
+    // (undocumented)
+    matchExtlang(lt1: LanguageTag, lt2: LanguageTag): number;
+    // (undocumented)
+    matchLanguageTags(t1: LanguageTag, t2: LanguageTag): number;
+    // (undocumented)
+    matchPrimaryLanguage(lt1: LanguageTag, lt2: LanguageTag): number;
+    // (undocumented)
+    matchPrivateUseTags(lt1: LanguageTag, lt2: LanguageTag): number;
+    // (undocumented)
+    matchRegion(lt1: LanguageTag, lt2: LanguageTag): number;
+    // (undocumented)
+    matchScript(lt1: LanguageTag, lt2: LanguageTag): number;
+    // (undocumented)
+    matchVariants(lt1: LanguageTag, lt2: LanguageTag): number;
+    // (undocumented)
+    overrides: OverridesRegistry;
+    // (undocumented)
+    unsd: Unsd.RegionCodes;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -751,6 +880,7 @@ declare namespace LanguageSubtags_4 {
     export {
         LanguageSubtagRegistry,
         Converters_4 as Converters,
+        JarConverters,
         Items as Model,
         Validate,
         ExtLangSubtag,
@@ -855,6 +985,9 @@ class LanguageTag {
 // @internal (undocumented)
 const languageTagExtension: Converter<Model_2.ILanguageTagExtension, unknown>;
 
+// @internal (undocumented)
+const languageTagExtension_2: Converter<Model_2.ILanguageTagExtension, unknown>;
+
 // @public (undocumented)
 class LanguageTagExtensionRegistry {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -915,10 +1048,22 @@ declare namespace LanguageTagExtensions_2 {
     export {
         LanguageTagExtensionRegistry,
         Converters_5 as Converters,
+        JarConverters_2 as JarConverters,
         Model_2 as Model,
         Validate_2 as Validate
     }
 }
+
+// @internal (undocumented)
+const languageTagExtensions_2: Converter<IDatedRegistry<Model_2.ILanguageTagExtension>, unknown>;
+
+// @internal
+function loadJsonLanguageTagExtensionsRegistryFileSync(path: string): Result<Model_2.LanguageTagExtensions>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @internal
+function loadJsonSubtagRegistryFileSync(path: string): Result<Items.RegistryFile>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -927,6 +1072,23 @@ function loadLanguageSubtagsJsonFileSync(path: string): Result<Items.RegistryFil
 
 // @internal (undocumented)
 function loadLanguageTagExtensionsJsonFileSync(path: string): Result<Model_2.LanguageTagExtensions>;
+
+// @internal
+function loadM49csvFileSync(csvPath: string): Result<Model_6.IM49CsvRow[]>;
+
+// @internal
+function loadTxtLanguageTagExtensionsRegistryFileSync(path: string): Result<Model_2.LanguageTagExtensions>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @internal
+function loadTxtSubtagRegistryFileSync(path: string): Result<Items.RegistryFile>;
+
+// @internal (undocumented)
+const m49CsvFile: Converter<Model_6.IM49CsvRow[], unknown>;
+
+// @internal (undocumented)
+const m49CsvRow: Converter<Model_6.IM49CsvRow, unknown>;
 
 declare namespace Model {
     export {
@@ -976,6 +1138,21 @@ declare namespace Model_4 {
     }
 }
 
+declare namespace Model_6 {
+    export {
+        IM49CsvRow
+    }
+}
+
+declare namespace Model_8 {
+    export {
+        ExtensionSubtag,
+        PrivateUseSubtag,
+        PrivateUsePrefix,
+        ExtensionSingleton
+    }
+}
+
 // @public
 type Normalizer<T extends string, TC = unknown> = (val: T, context?: TC) => Result<T>;
 
@@ -1003,6 +1180,55 @@ class NormalizeTag {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static toPreferred(subtags: ISubtags): Result<ISubtags>;
 }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function nowAsYearMonthDay(): YearMonthDaySpec_2;
+
+declare namespace Overrides {
+    export {
+        OverridesRegistry,
+        DefaultRegistries_3 as DefaultRegistries
+    }
+}
+
+// @public (undocumented)
+class OverridesRegistry {
+    protected constructor();
+    // (undocumented)
+    static create(overrides: ILanguageOverride[]): Result<OverridesRegistry>;
+    // (undocumented)
+    static createFromJson(from: unknown): Result<OverridesRegistry>;
+    // (undocumented)
+    static loadDefault(): Result<OverridesRegistry>;
+    // (undocumented)
+    static loadJson(path: string): Result<OverridesRegistry>;
+    // Warning: (ae-forgotten-export) The symbol "Model_7" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
+    protected static _overrideFromRecord(record: Model_7.ILanguageOverrideRecord): Result<ILanguageOverride>;
+    // Warning: (ae-forgotten-export) The symbol "ILanguageOverride" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    readonly overrides: Map<Iana.LanguageSubtags.LanguageSubtag, ILanguageOverride>;
+}
+
+// @internal (undocumented)
+type PrivateUsePrefix = Brand<string, 'PrivateUsePrefix'>;
+
+// @internal (undocumented)
+const privateUsePrefix: Converter<PrivateUsePrefix, unknown>;
+
+// @public (undocumented)
+const privateUsePrefix_2: RegExpValidationHelpers<Model_8.PrivateUsePrefix, unknown>;
+
+// @internal (undocumented)
+type PrivateUseSubtag = Brand<string, 'PrivateUseSubtag'>;
 
 // @internal (undocumented)
 function rangeOfTags<TTAG extends string>(tagConverter: Converter<TTAG>): Converter<TTAG[]>;
@@ -1034,8 +1260,6 @@ class RegionCodes {
     //
     // (undocumented)
     readonly areas: Areas;
-    // Warning: (ae-forgotten-export) The symbol "Model_6" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     static create(rows: Model_6.IM49CsvRow[]): Result<RegionCodes>;
     // (undocumented)
@@ -1074,10 +1298,19 @@ type RegionSubtagRegistryEntry = IRegistrySubtagEntry<'region', RegionSubtag>;
 type RegionTier = 'global' | IntermediateRegionTier;
 
 // @internal (undocumented)
+const regionTier: Converter<RegionTier, RegionTier[]>;
+
+// @internal (undocumented)
 const registeredExtLang: Converter<Items.IRegisteredExtLang, unknown>;
 
 // @internal (undocumented)
+const registeredExtLang_2: Converter<Items.IRegisteredExtLang, unknown>;
+
+// @internal (undocumented)
 const registeredGrandfatheredTag: Converter<Items.IRegisteredGrandfatheredTag, unknown>;
+
+// @internal (undocumented)
+const registeredGrandfatheredTag_2: Converter<Items.IRegisteredGrandfatheredTag, unknown>;
 
 // @public (undocumented)
 type RegisteredItem = RegisteredSubtagItem | RegisteredTagItem;
@@ -1086,16 +1319,31 @@ type RegisteredItem = RegisteredSubtagItem | RegisteredTagItem;
 const registeredItem: Converter<Items.RegisteredItem, unknown>;
 
 // @internal (undocumented)
+const registeredItem_2: Converter<Items.RegisteredItem, unknown>;
+
+// @internal (undocumented)
 const registeredLanguage: Converter<Items.IRegisteredLanguage, unknown>;
+
+// @internal (undocumented)
+const registeredLanguage_2: Converter<Items.IRegisteredLanguage, unknown>;
 
 // @internal (undocumented)
 const registeredRedundantTag: Converter<Items.IRegisteredRedundantTag, unknown>;
 
 // @internal (undocumented)
+const registeredRedundantTag_2: Converter<Items.IRegisteredRedundantTag, unknown>;
+
+// @internal (undocumented)
 const registeredRegion: Converter<Items.IRegisteredRegion, unknown>;
 
 // @internal (undocumented)
+const registeredRegion_2: Converter<Items.IRegisteredRegion, unknown>;
+
+// @internal (undocumented)
 const registeredScript: Converter<Items.IRegisteredScript, unknown>;
+
+// @internal (undocumented)
+const registeredScript_2: Converter<Items.IRegisteredScript, unknown>;
 
 // @public (undocumented)
 type RegisteredSubtagItem = IRegisteredLanguage | IRegisteredExtLang | IRegisteredScript | IRegisteredRegion | IRegisteredVariant;
@@ -1108,6 +1356,9 @@ type RegisteredTagOrSubtag<TTYPE extends Model.RegistryEntryType, TTAG extends s
 
 // @internal (undocumented)
 const registeredVariant: Converter<Items.IRegisteredVariant, unknown>;
+
+// @internal (undocumented)
+const registeredVariant_2: Converter<Items.IRegisteredVariant, unknown>;
 
 declare namespace Registry {
     export {
@@ -1138,6 +1389,9 @@ const registryFile: Converter<IDatedRegistry<Items.RegisteredItem>, unknown>;
 type RegistryFile_2 = IDatedRegistry<RegisteredItem>;
 
 // @internal (undocumented)
+const registryFile_2: Converter<IDatedRegistry<Items.RegisteredItem>, unknown>;
+
+// @internal (undocumented)
 const registryScopeType: Converter<Model.RegistryEntryScope, Model.RegistryEntryScope[]>;
 
 // @public
@@ -1161,6 +1415,21 @@ type ScriptSubtagRegistryEntry = IRegistrySubtagEntry<'script', ScriptSubtag>;
 //
 // @public
 function similarity(t1: LanguageSpec, t2: LanguageSpec, options?: ILanguageTagInitOptions): Result<number>;
+
+declare namespace Subtags {
+    export {
+        Converters_7 as Converters,
+        Model_8 as Model,
+        Validate_4 as Validate
+    }
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function subtagsToString(subtags: ISubtags): string;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1263,6 +1532,7 @@ declare namespace Unsd {
     export {
         DefaultRegistries_2 as DefaultRegistries,
         RegionCodes,
+        Csv,
         IntermediateRegionTier,
         RegionTier,
         IGlobalRegion,
@@ -1307,6 +1577,14 @@ declare namespace Validate_3 {
         isoAlpha2RegionCode_2 as isoAlpha2RegionCode,
         isoAlpha3RegionCode_2 as isoAlpha3RegionCode,
         unM49RegionCode_2 as unM49RegionCode
+    }
+}
+
+declare namespace Validate_4 {
+    export {
+        extensionSingleton_3 as extensionSingleton,
+        extensionSubtag_2 as extensionSubtag,
+        privateUsePrefix_2 as privateUsePrefix
     }
 }
 

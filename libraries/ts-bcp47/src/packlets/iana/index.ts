@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+import { nowAsYearMonthDay } from './common/utils';
 import * as Converters from './converters';
 import * as Jar from './jar';
 import * as LanguageSubtags from './language-subtags';
@@ -29,4 +30,4 @@ import * as Validate from './validate';
 
 export { DefaultRegistries } from './defaultRegistries';
 export * from './languageRegistries';
-export { Converters, Jar, Model, LanguageSubtags, LanguageTagExtensions, Validate };
+export { Converters, Jar, Model, LanguageSubtags, LanguageTagExtensions, Validate, nowAsYearMonthDay };

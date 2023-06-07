@@ -20,9 +20,19 @@
  * SOFTWARE.
  */
 // istanbul ignore file
-export { ExtensionSingleton, ExtensionSubtag, IExtensionSubtagValue, ISubtags } from './common';
+import * as Subtags from './bcp47Subtags';
+import * as Overrides from './overrides';
+
+export {
+  ExtensionSingleton,
+  ExtensionSubtag,
+  IExtensionSubtagValue,
+  ISubtags,
+  subtagsToString
+} from './common';
 export * from './helpers';
 export { ILanguageTagInitOptions, LanguageTag } from './languageTag';
-export { LanguageFilterOptions, TagSimilarity, tagSimilarity } from './match';
+export { ILanguageChooserOptions, LanguageSimilarityMatcher, TagSimilarity, tagSimilarity } from './match';
 export { NormalizeTag, TagNormalization } from './normalization';
 export { TagValidity, ValidateTag } from './validation';
+export { Overrides, Subtags };
