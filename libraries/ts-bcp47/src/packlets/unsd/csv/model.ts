@@ -20,10 +20,25 @@
  * SOFTWARE.
  */
 
-import * as Bcp47 from './packlets/bcp47';
-import * as Iana from './packlets/iana';
-import * as Unsd from './packlets/unsd';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import * as Utils from './packlets/utils/public';
+import * as Iana from '../../iana';
 
-export { Bcp47, Iana, Unsd, Utils };
+/**
+ * @internal
+ */
+export interface IM49CsvRow {
+  globalCode: Iana.Model.UnM49RegionCode;
+  globalName: string;
+  regionCode?: Iana.Model.UnM49RegionCode;
+  regionName?: string;
+  subRegionCode?: Iana.Model.UnM49RegionCode;
+  subRegionName?: string;
+  intermediateRegionCode?: Iana.Model.UnM49RegionCode;
+  intermediateRegionName?: string;
+  countryOrArea: string;
+  m49Code: Iana.Model.UnM49RegionCode;
+  isoAlpha2RegionCode?: Iana.Model.IsoAlpha2RegionCode;
+  isoAlpha3RegionCode?: Iana.Model.IsoAlpha3RegionCode;
+  leastDevelopedCountry: boolean;
+  landLockedDevelopingCountry: boolean;
+  smallIslandDevelopingState: boolean;
+}

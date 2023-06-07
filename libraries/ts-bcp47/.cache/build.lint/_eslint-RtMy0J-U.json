@@ -1,0 +1,269 @@
+{
+  "cacheVersion": "8.42.0_1fd0d6f541f31fa581f4c94123df3aa7662c395b",
+  "fileVersions": [
+    ["packlets/utils/jsonHelpers.ts", "6dd3907103b48aba0f1e32fb11d58f405bb12d2bcacf838b4dbc02def0801df6"],
+    [
+      "packlets/utils/validationHelpers.ts",
+      "1fb733ea1ea2c3a5c0fccb5bb02c8bbaf16efcc0c78b383361c8e8af8013a3b0"
+    ],
+    ["packlets/utils/index.ts", "e318c2ed9871f3a0a20da9f3aa2becf41a0e6c2d5d7b8c31e77e5c05d09f40f7"],
+    ["packlets/iana/common/model.ts", "e20cae7814fdc47a90bc655e08af5f7c3a71e3c7ef55f98ab120fefd75467f21"],
+    ["packlets/iana/common/validate.ts", "af9a52e41fd2d63ae808c7b96915eaeb4fd0aac69ffed3c24593f4682c58fb2c"],
+    [
+      "packlets/iana/common/converters.ts",
+      "63a9ad1115ce5712ac137af21ab1dd2bdd747e24a97b979bab8664346e3e0f98"
+    ],
+    ["packlets/iana/jar/jarModel.ts", "f33d38453f2f53c7aeed0ac2473c181a3665753a5929fa448a117ef4decbb5c9"],
+    [
+      "packlets/iana/jar/jarConverters.ts",
+      "30e1e947559b2879ea95b0b8be7f84e537a5d7127a7771ae6efbb202bcf025df"
+    ],
+    ["packlets/iana/converters.ts", "1f5fac642b757614058bf2c578fbc82af09fb9dbb640288b8281b5eed11d78dc"],
+    [
+      "packlets/iana/jar/language-subtags/tags/model.ts",
+      "72b8b9c06fc02d378520cbebfb4bcd8a32967fd7616cf526bb12413d25330170"
+    ],
+    [
+      "packlets/iana/jar/language-subtags/tags/tagValidation.ts",
+      "f1f647f3e2f1e6cbbc1a5b9ea19e1663da6f142f96e238d669ad7b718305e14c"
+    ],
+    [
+      "packlets/iana/jar/language-subtags/tags/validate.ts",
+      "954bb80f119040d72d394ab730d6bc80450ec3f391226461b9a73e8a6263eccd"
+    ],
+    [
+      "packlets/iana/jar/language-subtags/tags/converters.ts",
+      "f09903e72a7ef7be61984a0a9b0b61bdeed987e4bc3b063eb33f86c41891e215"
+    ],
+    ["packlets/iana/jar/converters.ts", "460a4ee8bd397fe5cf81e2b7a1045670f6da5a97b402bcf9a38afb9a04acf280"],
+    [
+      "packlets/iana/jar/language-subtags/registry/model.ts",
+      "f90fff663725ea02b5138193579a543eb74b876cccd6c629943fb43f1447c77d"
+    ],
+    [
+      "packlets/iana/jar/language-subtags/registry/converters.ts",
+      "3c17385628ec83f59e173c316fd41bbdc69f6f69780c5870137d2590f5e6af10"
+    ],
+    [
+      "packlets/iana/jar/language-subtags/converters.ts",
+      "86c32549f90b8e05e39c45f94b707625582fdcbb379a2c1214a055bd168da1fc"
+    ],
+    [
+      "packlets/iana/jar/language-subtags/tags/index.ts",
+      "0217bb89f7b31b3e09103a0c069814ba55f16cba5a68a96d8c3212a599696621"
+    ],
+    [
+      "packlets/iana/jar/language-subtags/model.ts",
+      "2d1ddff186e7ce4ea4e2ec27e61dd3a25194a79857dc0fa3c52fed2a37baee43"
+    ],
+    [
+      "packlets/iana/jar/language-subtags/index.ts",
+      "8415fc840451561cef2dd94023128ef3eb7ba64df5caefe351610b97724b5d5c"
+    ],
+    ["packlets/iana/jar/model.ts", "f2e2b0c8dbc464f992079eb2ec425319498d07e29ac6f0e75e20ed8483734db6"],
+    ["packlets/iana/jar/index.ts", "e124b7ded71cd1dfd671fb37a14102ef0ccf77f58de900e8b4b9aced8f8d9bc1"],
+    [
+      "packlets/iana/language-subtags/common.ts",
+      "17c3f5fb989febd2821e79a5b77c45b779efa24d7f5b15c0d2bc1149688a86e2"
+    ],
+    [
+      "packlets/iana/language-subtags/model.ts",
+      "357bb2b5072b9ef303354300ebe5b8c09f5245b6ae384ca02cc60dc464aae0dc"
+    ],
+    [
+      "packlets/iana/language-subtags/converters.ts",
+      "cce67f1e02b863229cb1e88e14c24763d93092aae7ac4fc6417b25ab2fa18454"
+    ],
+    [
+      "packlets/iana/language-subtags/jarConverters.ts",
+      "9d88c791e7205eef42d2e67d6634708c1948fb6097b3c9bc6ef4c3274c204b6f"
+    ],
+    [
+      "packlets/iana/common/registeredItems.ts",
+      "a684c1b5f9216fe968036704415851c88f0a7d75e6c08aa60e48ee4136b215f6"
+    ],
+    [
+      "packlets/iana/language-subtags/scope.ts",
+      "94ad7f0fdb603cda2a384d7f403ee791a124f86f916f0967e7a27f216c750cfb"
+    ],
+    [
+      "packlets/iana/language-subtags/subtagRegistry.ts",
+      "0bcb51613b9dda86843cdcab9ca348d2372db8807db5b1b6cac523a2cd0a3e0b"
+    ],
+    [
+      "packlets/iana/language-subtags/validate.ts",
+      "75979394eaa586c707e46080352c1207b2c8383c453571a11474a5c907e01f2d"
+    ],
+    [
+      "packlets/iana/language-subtags/index.ts",
+      "748e3ac825415fb3c59b4318d1374f5c8ea7152a57fb24f2fec0975d310bacb3"
+    ],
+    ["packlets/iana/model.ts", "849a133db2beab009f3b1ba797f81aa4ef592c4a2f872a5e553ae191622adba2"],
+    [
+      "packlets/iana/language-tag-extensions/model.ts",
+      "06a9747329d097d9c9ee6dda458e8191240181eb86de64ea8e92abc0c7a28999"
+    ],
+    [
+      "packlets/iana/language-tag-extensions/validate.ts",
+      "b1200916684dc830a8caaba3b3803b8506693efc16c1377be0568b9ac4da4157"
+    ],
+    [
+      "packlets/iana/language-tag-extensions/converters.ts",
+      "5843ac8adeac2708b596d122d2fd7a0b23479e5efa0f23f1fbdf99d9bbe8a22c"
+    ],
+    [
+      "packlets/iana/language-tag-extensions/jarConverters.ts",
+      "ba793936223e3df80a71c6db25eef81c43d84ca7478bbdfe1a3c64ca7c2f417f"
+    ],
+    [
+      "packlets/iana/language-tag-extensions/extensionsScope.ts",
+      "c85c7b6d6d88241e977fd8c461fb918e78a2c2b17dcac3d0d1dc15b584582730"
+    ],
+    [
+      "packlets/iana/language-tag-extensions/extensionsRegistry.ts",
+      "20d2399b35cf4ad1bd1965eb259bed839ca37b4df0beaedd6aaf56cc01277bfe"
+    ],
+    [
+      "packlets/iana/language-tag-extensions/index.ts",
+      "91018305fb265c82a6bbf3c1be1c96805d800bd8db378569fe4138fd4af427cb"
+    ],
+    ["packlets/iana/validate.ts", "57f66b507989dd8d77c4a5cc9c786280da7b64e70167c40ea357c7f07a7bc1ec"],
+    [
+      "packlets/iana/languageRegistries.ts",
+      "34805f5da7757ed0870bea33a25b06f983896c12b4700c0efc254c79513ff082"
+    ],
+    [
+      "packlets/iana/defaultRegistries.ts",
+      "0bb7a6eb89158d30fb914c9fa3339012c7676f23304ec439ee89f67963f3a9c5"
+    ],
+    ["packlets/iana/index.ts", "ee3a40030551bf618869f7662cf90f1138cc35c477cdcffd905e8c32c2505ed6"],
+    [
+      "packlets/bcp47/bcp47Subtags/model.ts",
+      "993ed22b0ccd066b9e2c56b80179f8f3a92ef0802e6b397544c91b7842916a86"
+    ],
+    ["packlets/bcp47/common.ts", "66657009bab476e72ac78a2d3f05b8bbc5f769dd149f072dee6b6256cc6d0de4"],
+    [
+      "packlets/bcp47/normalization/common.ts",
+      "f0b4d9c1433dac8abe864e8a2da2f697093cb069ac70b5ffff7d6388a8d2a015"
+    ],
+    [
+      "packlets/bcp47/validation/common.ts",
+      "ae56fb1fdcb585d6eeb5111b2548db60a3e61e2e77f258539788149b2953af4d"
+    ],
+    [
+      "packlets/bcp47/languageRegistryData.ts",
+      "63513c334dfa1e8a2f9b8c2f7d604f11a39a81ca94cf039b07c7367b50ca7040"
+    ],
+    [
+      "packlets/bcp47/bcp47Subtags/validate.ts",
+      "83f4887855bde5a4f63cf69e13e5e1158ef0ecb57224437dddf05a38ac3d70c0"
+    ],
+    [
+      "packlets/bcp47/bcp47Subtags/converters.ts",
+      "77f16b315f6b65bd2585daa3f03c6e1e1b66639fef95b70a5323256a5696c478"
+    ],
+    [
+      "packlets/bcp47/bcp47Subtags/index.ts",
+      "f4dfb1e740f113091430c16f54fcb3b30ab09754a5a4ca17015e489772fc2621"
+    ],
+    [
+      "packlets/bcp47/languageTagParser.ts",
+      "4a26683338e3f833dba9e15fc90980e4cf3913447477ca03c989ce5aad20524d"
+    ],
+    [
+      "packlets/bcp47/normalization/baseNormalizer.ts",
+      "8b3c292b87b257f7e5a2c983ecc4e387d7c0eb6d6d48f5eaaff77feaae325169"
+    ],
+    [
+      "packlets/bcp47/normalization/canonicalNormalizer.ts",
+      "30aec629123f069feeedc5e58f59201f2835dff2e58803ecbfac0e867c7f68f8"
+    ],
+    [
+      "packlets/bcp47/normalization/preferredTagNormalizer.ts",
+      "5b1954d610bdb1ee23f246fc6daed38ee5d4383ab6a3c9d8253c314259c8548c"
+    ],
+    [
+      "packlets/bcp47/normalization/normalizeTag.ts",
+      "ebf57ef3792a8e2c43429b067625f1f5298f67892ce0f8d1393f1a64e0fc3543"
+    ],
+    [
+      "packlets/bcp47/normalization/index.ts",
+      "37af15fdd7ee790b32f3f25e28f7ea4b7ac9aa8e475c2ca382bb948bd20c6d56"
+    ],
+    [
+      "packlets/bcp47/validation/baseValidator.ts",
+      "54b692593ba4ff0691b3311239b1edd8430133ac7c7b915ead290db87bf9ffb1"
+    ],
+    [
+      "packlets/bcp47/validation/isCanonical.ts",
+      "bd9bdeff63a7570e1add62490a38fd7c8d11fc122a9750754c0fa72e9939c612"
+    ],
+    [
+      "packlets/bcp47/validation/isValid.ts",
+      "2a55ddb7f45b7bec50021420f0a5ea11cb0b05b3af98572fb19882dbe6e5e22a"
+    ],
+    [
+      "packlets/bcp47/validation/isStrictlyValid.ts",
+      "23005d033db33313e85c850381f24e06faac4ecbdf58bb25bf5c23f200009d19"
+    ],
+    [
+      "packlets/bcp47/validation/isWellFormed.ts",
+      "aff51a8cc402266de4321a0da8683b48bf52ebe29471ba4d40f95043a55a115a"
+    ],
+    [
+      "packlets/bcp47/validation/isInPreferredForm.ts",
+      "446c4f942bb6f6a8d3dc5196ee007da9e7ab9c62d41313b107d3b752e3dfd5b2"
+    ],
+    [
+      "packlets/bcp47/validation/validateTag.ts",
+      "18f4a2389e53f45911b524070a667afe8b6323da28a4d3c9ea18b84052cd8315"
+    ],
+    [
+      "packlets/bcp47/validation/index.ts",
+      "243dfdd9b1d78517e47c70d85e8e6908643b1cfeb6eb5d9c8aa62e7af9f0288d"
+    ],
+    ["packlets/bcp47/languageTag.ts", "f7514c0df6457916dbe61dbb5e9a5346e4e8d653ab08d358bed04368a350037a"],
+    ["packlets/unsd/common.ts", "67abb70eaba9fbc1abca2c34b73e518bc0ed40a9df834f7ab9dc82e8ef94e8f3"],
+    ["packlets/unsd/csv/model.ts", "b24526f40fa1599b58a893124835976fbe7bada25769b0d8ac479a9ed1cadc46"],
+    ["packlets/unsd/csv/converters.ts", "e7496abe3763d9e210aa19784275562b11ce40d7a0cb71af81bf48e4b9bab456"],
+    ["packlets/unsd/areas.ts", "bf4a1049b26875f23f7ddcdecc5f46d50a5f9478632326660b27f435dd936280"],
+    ["packlets/unsd/regions.ts", "dfd4980b51372c345f7d2bd0e4302e1ec9dfc3f992a4cf182649847f3019edf3"],
+    ["packlets/unsd/regionCodes.ts", "10da415dfe341c67a998cae5a748d7382ae31897417ccd03745f7f9389d8e764"],
+    [
+      "packlets/unsd/defaultRegistries.ts",
+      "edc578dfa7cd82e39d30e9e34dc780a928df993b5082beedcf6acb3bf61fc919"
+    ],
+    ["packlets/unsd/index.ts", "2f22705908fa0c9c0a3e8072dc648f220dca911af5236712a57b070a00e6686e"],
+    ["packlets/bcp47/overrides/model.ts", "f93ab4c2bb9b2e9671febf182787866878ee3e4a0576223b031d4bb58da0f435"],
+    [
+      "packlets/bcp47/overrides/converters.ts",
+      "24903c0a905c8f093190452c5f0c1d41d67831af64ca9c2409c06dc0f8a4a09a"
+    ],
+    [
+      "packlets/bcp47/overrides/overridesRegistry.ts",
+      "816f02ec89b2e94b9b0a46fa0aef149b1b1c9ccfad3b0807c8ff0ef3d629a385"
+    ],
+    [
+      "packlets/bcp47/overrides/defaultRegistries.ts",
+      "7afd72a3b2a99c27c32f950288982553acdd5782b33db37dcb66ec6024dd8169"
+    ],
+    ["packlets/bcp47/overrides/index.ts", "7d58b11c30959705cc4e83bb4a314762209e4351197c825a1b636adb8b184f23"],
+    ["packlets/bcp47/match/common.ts", "ac773d1e02b6ca7c4dfb8578cb208417ca85cea5d802e9e70369a192d5a07045"],
+    [
+      "packlets/bcp47/match/similarity.ts",
+      "2dec3ea85593125e4231d16147ccec0655e7fd57bcca097ddb809d0f89295da2"
+    ],
+    ["packlets/bcp47/match/chooser.ts", "b6ad80ed0e9dc8685ace2862f963f408d15e801a37e1a0b20f4fe142696cc59f"],
+    ["packlets/bcp47/match/index.ts", "c5602c41e0e2dd034d53dcd621072fbd6b0f8fd7abcc5a084c47029180b82e17"],
+    ["packlets/bcp47/helpers.ts", "c14c0609e3d5cb7b32a90bad1746b54bbf37afafb0298ceba28bb746772840a0"],
+    ["packlets/bcp47/index.ts", "692333dc6079bde3e349151690acd0300799bb616ff4c4f381008ffb099331b5"],
+    ["packlets/utils/public.ts", "6da88e2c32d8e6964a0de764f9dc005508d3d2703592eb08c2d45d8c85431cba"],
+    ["index.ts", "1195dd953fb12cd74ef37c8db4492581a0c992af44fa2cab0ac2028f1679309f"],
+    ["packlets/iana/common/utils.ts", "e129a70c9a39147343b81de8274f0a7fb0be38ab12588febe2393d2bf428befd"],
+    [
+      "packlets/iana/jar/language-subtags/registry/index.ts",
+      "f6cda5fba2fa2c7ca0952f039576d42fffc2f59570b16a61604517f5187328bd"
+    ],
+    ["packlets/unsd/csv/index.ts", "762e38335c509e189e8e67309d48a986485dcc6911d735544945fdd835e492c0"]
+  ]
+}

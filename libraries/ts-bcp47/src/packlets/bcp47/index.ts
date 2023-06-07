@@ -19,11 +19,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-import * as Bcp47 from './packlets/bcp47';
-import * as Iana from './packlets/iana';
-import * as Unsd from './packlets/unsd';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import * as Utils from './packlets/utils/public';
-
-export { Bcp47, Iana, Unsd, Utils };
+// istanbul ignore file
+export { ExtensionSingleton, ExtensionSubtag, IExtensionSubtagValue, ISubtags } from './common';
+export * from './helpers';
+export { ILanguageTagInitOptions, LanguageTag } from './languageTag';
+export { LanguageFilterOptions, TagSimilarity, tagSimilarity } from './match';
+export { NormalizeTag, TagNormalization } from './normalization';
+export { TagValidity, ValidateTag } from './validation';

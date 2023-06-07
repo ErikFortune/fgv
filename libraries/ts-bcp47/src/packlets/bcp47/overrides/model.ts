@@ -20,10 +20,14 @@
  * SOFTWARE.
  */
 
-import * as Bcp47 from './packlets/bcp47';
-import * as Iana from './packlets/iana';
-import * as Unsd from './packlets/unsd';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import * as Utils from './packlets/utils/public';
+import * as Iana from '../../iana';
 
-export { Bcp47, Iana, Unsd, Utils };
+/**
+ * @internal
+ */
+export interface ILanguageOverrideRecord {
+  language: Iana.LanguageSubtags.LanguageSubtag;
+  preferredRegion?: Iana.LanguageSubtags.RegionSubtag;
+  defaultAffinity?: string;
+  affinity?: Record<string, Iana.LanguageSubtags.RegionSubtag[]>;
+}

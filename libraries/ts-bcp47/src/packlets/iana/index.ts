@@ -20,10 +20,13 @@
  * SOFTWARE.
  */
 
-import * as Bcp47 from './packlets/bcp47';
-import * as Iana from './packlets/iana';
-import * as Unsd from './packlets/unsd';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import * as Utils from './packlets/utils/public';
+import * as Converters from './converters';
+import * as Jar from './jar';
+import * as LanguageSubtags from './language-subtags';
+import * as LanguageTagExtensions from './language-tag-extensions';
+import * as Model from './model';
+import * as Validate from './validate';
 
-export { Bcp47, Iana, Unsd, Utils };
+export { DefaultRegistries } from './defaultRegistries';
+export * from './languageRegistries';
+export { Converters, Jar, Model, LanguageSubtags, LanguageTagExtensions, Validate };

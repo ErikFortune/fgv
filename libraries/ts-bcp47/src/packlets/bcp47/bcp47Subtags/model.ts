@@ -20,10 +20,27 @@
  * SOFTWARE.
  */
 
-import * as Bcp47 from './packlets/bcp47';
-import * as Iana from './packlets/iana';
-import * as Unsd from './packlets/unsd';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import * as Utils from './packlets/utils/public';
+import { Brand } from '@fgv/ts-utils';
 
-export { Bcp47, Iana, Unsd, Utils };
+/**
+ * @public
+ */
+export type ExtensionSubtag = Brand<string, 'ExtensionSubtag'>;
+
+/**
+ * @internal
+ */
+export type PrivateUseSubtag = Brand<string, 'PrivateUseSubtag'>;
+
+/**
+ * @internal
+ */
+export type PrivateUsePrefix = Brand<string, 'PrivateUsePrefix'>;
+
+import * as Iana from '../../iana';
+
+/**
+ * @public
+ */
+type ExtensionSingleton = Iana.LanguageTagExtensions.Model.ExtensionSingleton;
+export { ExtensionSingleton };

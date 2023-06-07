@@ -19,11 +19,49 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+/* eslint-disable @typescript-eslint/naming-convention */
 
-import * as Bcp47 from './packlets/bcp47';
-import * as Iana from './packlets/iana';
-import * as Unsd from './packlets/unsd';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import * as Utils from './packlets/utils/public';
+import { Brand } from '@fgv/ts-utils';
+import { IDatedRegistry, YearMonthDaySpec } from '../model';
 
-export { Bcp47, Iana, Unsd, Utils };
+/**
+ * @public
+ */
+export type ExtensionSingleton = Brand<string, 'ExtensionSingleton'>;
+
+/**
+ * @internal
+ */
+export interface LanguageTagExtensionRegistryEntry {
+  /* eslint-disable @typescript-eslint/naming-convention */
+  Identifier: ExtensionSingleton;
+  Description: string[];
+  Comments: string[];
+  Added: YearMonthDaySpec;
+  RFC: string;
+  Authority: string;
+  Contact_Email: string;
+  Mailing_List: string;
+  URL: string;
+  /* eslint-enable @typescript-eslint/naming-convention */
+}
+
+/**
+ * @internal
+ */
+export interface ILanguageTagExtension {
+  identifier: ExtensionSingleton;
+  description: string[];
+  comments: string[];
+  added: YearMonthDaySpec;
+  rfc: string;
+  authority: string;
+  contactEmail: string;
+  mailingList: string;
+  url: string;
+}
+
+/**
+ * @internal
+ */
+export type LanguageTagExtensions = IDatedRegistry<ILanguageTagExtension>;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Erik Fortune
+ * Copyright (c) 2021 Erik Fortune
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,11 +19,37 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+/* eslint-disable @rushstack/typedef-var */
 
-import * as Bcp47 from './packlets/bcp47';
-import * as Iana from './packlets/iana';
-import * as Unsd from './packlets/unsd';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import * as Utils from './packlets/utils/public';
+import * as Iana from '../../iana';
+import * as Subtags from './model';
 
-export { Bcp47, Iana, Unsd, Utils };
+import { RegExpValidationHelpers } from '../../utils';
+
+import { succeed } from '@fgv/ts-utils';
+
+/**
+ * @public
+ */
+export const extensionSingleton = Iana.LanguageTagExtensions.Validate.extensionSingleton;
+
+/**
+ * @public
+ */
+export const extensionSubtag = new RegExpValidationHelpers<Subtags.ExtensionSubtag>({
+  description: 'language tag extension subtag',
+  wellFormed: /^([a-zA-Z0-9]{2,8})(-[a-zA-Z0-9]{2,8})*$/,
+  canonical: /^([a-z0-9]{2,8})(-[a-z0-9]{2,8})*$/,
+  toCanonical: (from: Subtags.ExtensionSubtag) =>
+    Iana.Jar.LanguageSubtags.Tags.Helpers.TagValidationHelpers.toCanonicalTag(from)
+});
+
+/**
+ * @public
+ */
+export const privateUsePrefix = new RegExpValidationHelpers<Subtags.PrivateUsePrefix>({
+  description: 'language tag private-use prefix',
+  wellFormed: /^[xX]$/,
+  canonical: /^x$/,
+  toCanonical: (from: Subtags.PrivateUsePrefix) => succeed(from.toLowerCase() as Subtags.PrivateUsePrefix)
+});
