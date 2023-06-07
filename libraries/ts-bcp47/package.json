@@ -1,8 +1,9 @@
 {
   "name": "@fgv/ts-bcp47",
-  "version": "0.9.6",
+  "version": "2.0.0",
   "description": "BCP-47 Tag Utilities",
-  "main": "dist/index.js",
+  "main": "lib/index.js",
+  "types": "dist/ts-bcp47.d.ts",
   "scripts": {
     "build": "heft test --clean",
     "clean": "heft clean",
