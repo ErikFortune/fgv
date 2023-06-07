@@ -784,7 +784,7 @@ const number: Converter<number, undefined>;
 const number_2: Validator<number>;
 
 // @public
-const numberArray: Converter<number[] | undefined>;
+const numberArray: Converter<number[]>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1116,7 +1116,7 @@ const string: StringConverter;
 const string_2: Validator<string>;
 
 // @public
-const stringArray: Converter<string[] | undefined>;
+const stringArray: Converter<string[]>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

@@ -403,6 +403,13 @@
     //   "tags": [ "tools" ]
     // },
     {
+      "packageName": "@fgv/ts-bcp47",
+      "projectFolder": "libraries/ts-bcp47",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-json",
       "projectFolder": "libraries/ts-json",
       "shouldPublish": true,

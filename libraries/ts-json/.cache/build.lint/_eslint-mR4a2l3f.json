@@ -41,7 +41,7 @@
       "packlets/editor/jsonReferenceMap.ts",
       "87957e572306346c8809ed35cf18196731f02c639cd5616de79a7fab269e556e"
     ],
-    ["packlets/editor/index.ts", "742387db451bc3d1d31cd4e8f718b4e50ecaef8eab301df06748b3b4115e45e8"],
+    ["packlets/editor/index.ts", "3bbe66d489c4725ba71c3d1de178fe4e98183d31616ce4b7508251ef2a0e0b93"],
     [
       "packlets/converters/jsonConverter.ts",
       "4cbf14e6b4a3351dab3e3eb39a119b6e318ed158de68f7bcf3f4191eae3d3a9b"

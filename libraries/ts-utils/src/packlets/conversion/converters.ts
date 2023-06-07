@@ -374,7 +374,7 @@ export function extendedArrayOf<T, TC = undefined>(
  * of strings, returns {@link Failure} with an error message otherwise.
  * @public
  */
-export const stringArray: Converter<string[] | undefined> = arrayOf(string);
+export const stringArray: Converter<string[]> = arrayOf(string);
 
 /**
  * {@link Converter | Converter} to convert an `unknown` to an array of `number`.
@@ -383,7 +383,7 @@ export const stringArray: Converter<string[] | undefined> = arrayOf(string);
  * of numbers, returns {@link Failure | Failure} with an error message otherwise.
  * @public
  */
-export const numberArray: Converter<number[] | undefined> = arrayOf(number);
+export const numberArray: Converter<number[]> = arrayOf(number);
 
 /**
  * Options for {@link Converters.(recordOf:3) | Converters.recordOf} and

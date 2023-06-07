@@ -1,0 +1,20 @@
+[
+  {
+    "language": "en",
+    "defaultAffinity": "GB",
+    "affinity": {
+      "us": ["GU", "PH", "PR", "UM", "US", "VI"]
+    }
+  },
+  {
+    "language": "es",
+    "defaultAffinity": "419",
+    "affinity": {
+      "es": ["ES", "GQ", "IC"]
+    }
+  },
+  {
+    "language": "fr",
+    "preferredRegion": "FR"
+  }
+]
