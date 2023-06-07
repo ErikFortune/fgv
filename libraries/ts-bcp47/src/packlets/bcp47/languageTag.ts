@@ -170,7 +170,7 @@ export class LanguageTag {
    * Determines if this tag represents the special `undetermined` language.
    */
   public get isUndetermined(): boolean {
-    // istanbul ignore next
+    /* c8 ignore next */
     return this.subtags.primaryLanguage?.toLowerCase() === UndeterminedLanguage;
   }
 

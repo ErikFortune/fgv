@@ -62,7 +62,7 @@ export class IsStrictlyValidValidator extends IsValidValidator {
       return mapResults(
         subtags.extlangs.map((extlang) => {
           const def = this.iana.subtags.extlangs.tryGet(extlang);
-          // istanbul ignore next - should never happen due to guards earlier in conversion
+          /* c8 ignore next 3 - should never happen due to guards earlier in conversion */
           if (!def) {
             return fail(`invalid extlang subtag "${extlang}" (not registered).`);
           }
@@ -75,7 +75,7 @@ export class IsStrictlyValidValidator extends IsValidValidator {
         })
       );
     }
-    // istanbul ignore next - should be caught in the caller
+    /* c8 ignore next 2 - should be caught in the caller */
     return succeed(undefined);
   }
 
@@ -86,7 +86,7 @@ export class IsStrictlyValidValidator extends IsValidValidator {
     const { primaryLanguage, extlangs, script, region } = subtags;
     const nonCanonical = { primaryLanguage, extlangs, script, region };
     const canonical = NormalizeTag.normalizeSubtags(nonCanonical, 'canonical');
-    // istanbul ignore next - should be caught in the first pass
+    /* c8 ignore next 3 - should be caught in the first pass */
     if (canonical.isFailure()) {
       return fail(`failed to normalize variant prefix: ${canonical.message}`);
     }
@@ -95,7 +95,7 @@ export class IsStrictlyValidValidator extends IsValidValidator {
     return mapResults(
       variants.map((variant) => {
         const def = this.iana.subtags.variants.tryGet(variant);
-        // istanbul ignore next - should be caught in the first pass
+        /* c8 ignore next 3 - should be caught in the first pass */
         if (!def) {
           return fail(`invalid variant subtag "${variant}" (not registered).`);
         }

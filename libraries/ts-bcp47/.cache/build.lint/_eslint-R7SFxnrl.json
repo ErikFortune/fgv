@@ -6,7 +6,7 @@
     ["packlets/utils/jsonHelpers.ts", "6dd3907103b48aba0f1e32fb11d58f405bb12d2bcacf838b4dbc02def0801df6"],
     [
       "packlets/utils/validationHelpers.ts",
-      "1fb733ea1ea2c3a5c0fccb5bb02c8bbaf16efcc0c78b383361c8e8af8013a3b0"
+      "e5d9f1ff1abd4eda8d0bdcb3a373cb93297c713d980c450cd45636ac9d3b4cbd"
     ],
     ["packlets/utils/index.ts", "e318c2ed9871f3a0a20da9f3aa2becf41a0e6c2d5d7b8c31e77e5c05d09f40f7"],
     ["packlets/iana/common/validate.ts", "af9a52e41fd2d63ae808c7b96915eaeb4fd0aac69ffed3c24593f4682c58fb2c"],
@@ -97,7 +97,7 @@
     ],
     [
       "packlets/iana/language-subtags/index.ts",
-      "c9511498ee2fcc0d351351e6309697fc3682772faf069974dd08dcaf9566e688"
+      "24c6d73034b2a5a021acefb4b7a125a978f01ee0887b08e7d8ea4f0fe8fa3570"
     ],
     ["packlets/iana/model.ts", "849a133db2beab009f3b1ba797f81aa4ef592c4a2f872a5e553ae191622adba2"],
     [
@@ -126,7 +126,7 @@
     ],
     [
       "packlets/iana/language-tag-extensions/index.ts",
-      "1e0283a2b01bd59a7cf5493965ec5102b588b20eaa11da1c395b4bb53b6f94ba"
+      "41538853d16f97a5f4e83f425645cc8ce0ed75d5af0225b2e2b631164815f632"
     ],
     ["packlets/iana/validate.ts", "57f66b507989dd8d77c4a5cc9c786280da7b64e70167c40ea357c7f07a7bc1ec"],
     [
@@ -137,7 +137,7 @@
       "packlets/iana/defaultRegistries.ts",
       "0bb7a6eb89158d30fb914c9fa3339012c7676f23304ec439ee89f67963f3a9c5"
     ],
-    ["packlets/iana/index.ts", "c5ae1dc08d1b2276192a45a25a660bae3335f8de1ca561156a9e236f44b5bc47"],
+    ["packlets/iana/index.ts", "c41663e6009fb0bd08f8bfccc76b0c70b04761f32b822525360579d6aa0116a8"],
     [
       "packlets/bcp47/bcp47Subtags/model.ts",
       "993ed22b0ccd066b9e2c56b80179f8f3a92ef0802e6b397544c91b7842916a86"
@@ -171,7 +171,7 @@
     ["packlets/bcp47/common.ts", "66657009bab476e72ac78a2d3f05b8bbc5f769dd149f072dee6b6256cc6d0de4"],
     [
       "packlets/bcp47/normalization/common.ts",
-      "f0b4d9c1433dac8abe864e8a2da2f697093cb069ac70b5ffff7d6388a8d2a015"
+      "97bd48877f089dce6c7aec472472498cda171f73bc1f072fff906b455d103ddb"
     ],
     [
       "packlets/bcp47/validation/common.ts",
@@ -183,11 +183,11 @@
     ],
     [
       "packlets/bcp47/languageTagParser.ts",
-      "4a26683338e3f833dba9e15fc90980e4cf3913447477ca03c989ce5aad20524d"
+      "d35eed799f8a8aea7f97efdfda578d62ad9e11eabd65448dcf7971e2e248ef32"
     ],
     [
       "packlets/bcp47/normalization/baseNormalizer.ts",
-      "f448b8c1a4146b7633980301b442de08872ba259769227389f0e0c48ab4fa707"
+      "a4635e2e45fabb7de034bf3a9a5fc290c9dd1d491e8d4d92afff7fe76a398108"
     ],
     [
       "packlets/bcp47/normalization/canonicalNormalizer.ts",
@@ -195,7 +195,7 @@
     ],
     [
       "packlets/bcp47/normalization/preferredTagNormalizer.ts",
-      "5b1954d610bdb1ee23f246fc6daed38ee5d4383ab6a3c9d8253c314259c8548c"
+      "d6fa961bed52f18549caed9f9bbe010a4dd0cd26c869260ae670d0ba633d52e5"
     ],
     [
       "packlets/bcp47/normalization/normalizeTag.ts",
@@ -207,7 +207,7 @@
     ],
     [
       "packlets/bcp47/validation/baseValidator.ts",
-      "54b692593ba4ff0691b3311239b1edd8430133ac7c7b915ead290db87bf9ffb1"
+      "332e39accf3e89f4e31cfc8c1f0086fa7b28611b1b93e675ff6b262d4a880d48"
     ],
     [
       "packlets/bcp47/validation/isCanonical.ts",
@@ -219,7 +219,7 @@
     ],
     [
       "packlets/bcp47/validation/isStrictlyValid.ts",
-      "23005d033db33313e85c850381f24e06faac4ecbdf58bb25bf5c23f200009d19"
+      "76177ef9e7fe79fb00ea77c9d032a5c242471596b8dce50065674015893a55b6"
     ],
     [
       "packlets/bcp47/validation/isWellFormed.ts",
@@ -227,7 +227,7 @@
     ],
     [
       "packlets/bcp47/validation/isInPreferredForm.ts",
-      "446c4f942bb6f6a8d3dc5196ee007da9e7ab9c62d41313b107d3b752e3dfd5b2"
+      "76d52e0b9d9a916d1b73f5b90ace29453893f986951690d4e22ea8fcea6c0897"
     ],
     [
       "packlets/bcp47/validation/validateTag.ts",
@@ -237,28 +237,28 @@
       "packlets/bcp47/validation/index.ts",
       "243dfdd9b1d78517e47c70d85e8e6908643b1cfeb6eb5d9c8aa62e7af9f0288d"
     ],
-    ["packlets/bcp47/languageTag.ts", "f7514c0df6457916dbe61dbb5e9a5346e4e8d653ab08d358bed04368a350037a"],
+    ["packlets/bcp47/languageTag.ts", "9edb8971420688ddd3fc6cc19075004d82f79f62edf3d66f1d7196e86436299f"],
     ["packlets/unsd/common.ts", "67abb70eaba9fbc1abca2c34b73e518bc0ed40a9df834f7ab9dc82e8ef94e8f3"],
     ["packlets/unsd/csv/model.ts", "b24526f40fa1599b58a893124835976fbe7bada25769b0d8ac479a9ed1cadc46"],
     ["packlets/unsd/csv/converters.ts", "0ca3d362940a182a38bc6d5187e2b6b5aa541853a5f4e59e228cd3804e84902a"],
     ["packlets/unsd/csv/index.ts", "762e38335c509e189e8e67309d48a986485dcc6911d735544945fdd835e492c0"],
     ["packlets/unsd/areas.ts", "bf4a1049b26875f23f7ddcdecc5f46d50a5f9478632326660b27f435dd936280"],
     ["packlets/unsd/regions.ts", "dfd4980b51372c345f7d2bd0e4302e1ec9dfc3f992a4cf182649847f3019edf3"],
-    ["packlets/unsd/regionCodes.ts", "10da415dfe341c67a998cae5a748d7382ae31897417ccd03745f7f9389d8e764"],
+    ["packlets/unsd/regionCodes.ts", "aef2babd4060a3665642d6ca7a04bc0f153a0c99d2a284700a5965f707f71e38"],
     [
       "packlets/unsd/defaultRegistries.ts",
       "edc578dfa7cd82e39d30e9e34dc780a928df993b5082beedcf6acb3bf61fc919"
     ],
-    ["packlets/unsd/index.ts", "5afb2a503b7f48cf1f727eb4319d0e0b830347d6313e33f727a0abe3e941d6bd"],
+    ["packlets/unsd/index.ts", "11bed1f569c6cd4af0b17a1933071b3dc05c51e11078b4a18f83a82b8dbcec33"],
     ["packlets/bcp47/match/common.ts", "ac773d1e02b6ca7c4dfb8578cb208417ca85cea5d802e9e70369a192d5a07045"],
     [
       "packlets/bcp47/match/similarity.ts",
-      "ddd4a3ad894923f2def45362d25798f46e04c43fddaec66a4bd769f5e6e6be5e"
+      "f44994642400b139cbb7f25f8d50e7ea810d031026e3b8b827a4ad8ca5336574"
     ],
     ["packlets/bcp47/match/chooser.ts", "b6ad80ed0e9dc8685ace2862f963f408d15e801a37e1a0b20f4fe142696cc59f"],
-    ["packlets/bcp47/match/index.ts", "dbe317bc2b5cd8b1343e1fdc3a00002e3f681bdf27a0ff2a02b306db5f3fe407"],
-    ["packlets/bcp47/helpers.ts", "c14c0609e3d5cb7b32a90bad1746b54bbf37afafb0298ceba28bb746772840a0"],
-    ["packlets/bcp47/index.ts", "0462934a3c22f61b341eb2e853a5f518532e604acd1b4031516bb1d5d4684bb2"],
+    ["packlets/bcp47/match/index.ts", "48aa2739114521c4f5351ed452bc411428373c09fb0e18078065e1808821518f"],
+    ["packlets/bcp47/helpers.ts", "7f24943207e5fc663144e7f58f2a342bcd287d306474d7ec159c5a436502094b"],
+    ["packlets/bcp47/index.ts", "9346741fbdb2a81fb56f81c46e67a4fc33c14ed872b91d9422477a59295fed19"],
     ["packlets/utils/public.ts", "6da88e2c32d8e6964a0de764f9dc005508d3d2703592eb08c2d45d8c85431cba"],
     ["index.ts", "1195dd953fb12cd74ef37c8db4492581a0c992af44fa2cab0ac2028f1679309f"],
     [
@@ -277,26 +277,26 @@
     ],
     [
       "test/unit/bcp47/commonTestCases.ts",
-      "9347f401b2f1e1c2139a5e1c315c765e953d84c539ccabfb9fd9b1d4368082e8"
+      "32648d11144aaaffbe43ac8992fa46b1e943a8e54f1a84f04784e41d9ae2f035"
     ],
     ["test/unit/bcp47/helpers.test.ts", "dd8bec28ca237816016d9767eb810a075ea0a5706b2c35a3b367211964afd97f"],
     [
       "test/unit/bcp47/languageRegistryData.test.ts",
-      "afe6ab7d929a2f6dc899beb871e84f8bddccff47867ebda160878c7c522b73a5"
+      "581deff4814dec8970a0a320c70eec6faef0685b7ed71a3d6f3fe2d861910419"
     ],
     [
       "test/unit/bcp47/languageTag.test.ts",
-      "fb915132136f68e84f30ad8ff633e72197fefad39ff174cf3adcaa8713c24940"
+      "59999087bdaf505177dffb8551ec1dfd44ffede29e417b8a770d25534f2e4bf6"
     ],
     [
       "test/unit/bcp47/normalizeTag.test.ts",
-      "13eb1922c04ec756a02f2776176f05c4b4e8929f22cb3cb7c62fd027bd4282f8"
+      "15d481ca433e890a38db93749350e182d2e682113705eaae696bd772c08eaed0"
     ],
     ["test/unit/bcp47/overrides.test.ts", "d5875ae3f3c333c44b71e4b65d4bd001331e33f15c8dd106984eb73baf271925"],
     ["test/unit/bcp47/validTag.test.ts", "31c8b9bf8e8842ce26b403f88bd4d0362e4337a1c62981078e40ac99e0a5717a"],
     [
       "test/unit/bcp47/validateTag.test.ts",
-      "571cc72925674d1a1a4cb9a2c6c5665751766942382bb0f76e8864b4befa7339"
+      "5063eaa6ce15f4d29f938728550cd9724a2ab0cfd275089a3ec1a23c90047ed2"
     ],
     [
       "test/unit/bcp47/wellFormedTag.test.ts",
@@ -312,7 +312,7 @@
     ],
     [
       "test/unit/bcp47/match/similarity.test.ts",
-      "752caf335e8d61c5214fe8e500671aee2373356543f3ca0b91783d9b05579346"
+      "6e4eacede8166623173e039da3fbd4920451d34d2c5cc570f5a4a1a77bc43597"
     ],
     [
       "test/unit/iana/common/datedRegistry.test.ts",
@@ -328,15 +328,15 @@
     ],
     [
       "test/unit/iana/jar/language-subtags/tags/converters.test.ts",
-      "f8843d4b1e1a3b14b8568d405acbe5aecd13760ba130ce004da3aa20d1e5ccc3"
+      "4921eacc530be46e285bdd484a63539f75b2650efc587451b76c45d994e78c1a"
     ],
     [
       "test/unit/iana/jar/language-subtags/tags/validate.test.ts",
-      "ccd81e03ed661b3810a0c6f303fc0e6076972d91f2a75d876702e2300aa62df3"
+      "ea9443c6fdac691db0185757e7c7a84afdddf8e51b2b3882291fe9588f44c189"
     ],
     [
       "test/unit/iana/language-subtags/data.test.ts",
-      "353b0c0c44682fe49853a59079e3775043692d15a85a82f0d35316811d9d9ff7"
+      "6348615d73b10e99927169de21a75afcd86e5f11ae5d0ed2ff6f6e8687db02df"
     ],
     [
       "test/unit/iana/language-subtags/jarConverters.test.ts",
@@ -344,7 +344,7 @@
     ],
     [
       "test/unit/iana/language-subtags/registry.test.ts",
-      "c10d7e3fc37fc1292d5ffa6399bf4078d7ccf2fa9dd2ee8b7195c3bbef785146"
+      "6c4f65d9051e312d3abe87c39dbfda33ae04a2e2f0c1fa56d1d3b528080d2ee3"
     ],
     [
       "test/unit/iana/language-subtags/scope.test.ts",
@@ -352,13 +352,13 @@
     ],
     [
       "test/unit/iana/language-tag-extensions/extensionsRegistry.test.ts",
-      "b5c9775f9a203ed9327a0c0020a8fd1a544007cd311bfcc1ca67ea963127b313"
+      "a5af6318f16ee3905df4c9a11a9078296ec5f1defddca2e460339175060387ac"
     ],
     [
       "test/unit/iana/language-tag-extensions/validate.test.ts",
-      "2d63fb8aad7b3cc524ea020ffe0dcdab35715b4f3310e9d20905150d8951b3cf"
+      "a9313a76e1e622ceb2b35d5f31cd17ff442229299257300ad4cc98dc7744bd48"
     ],
     ["test/unit/unsd/csv.test.ts", "f9da56a186e7ed0827c353d2c50858e05de0660f9a82ab3155f7e4c43d8932d0"],
-    ["test/unit/unsd/regionCodes.test.ts", "2d7cbb116041acef2118e663859b4ed54e8d690647f2a749ba1a9ec78fc3b874"]
+    ["test/unit/unsd/regionCodes.test.ts", "bd02202a0706159835d9b6bc264c5908894e3d5cf7b6c5cb643da839a81260a1"]
   ]
 }

@@ -105,7 +105,7 @@ export class ValidationHelpers<T extends string, TC = unknown> {
       if (this.isCanonical(from, context)) {
         return succeed(from);
       }
-      // istanbul ignore next
+      /* c8 ignore next 2 */
       return fail(`cannot convert "${from}" to canonical ${this.description}`);
     }
     return fail(`invalid ${this.description} ("${JSON.stringify(from)}")`);
@@ -138,7 +138,7 @@ export class ValidationHelpers<T extends string, TC = unknown> {
     if (this.isCanonical(from, context)) {
       return succeed(from);
     }
-    // istanbul ignore next - should never occur and very hard to test
+    /* c8 ignore next 3 - should never occur and very hard to test */
     if (!this.isWellFormed(from, context)) {
       return fail(`malformed ${this.description}`);
     }

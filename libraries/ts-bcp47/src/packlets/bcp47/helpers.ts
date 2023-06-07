@@ -49,7 +49,7 @@ export type LanguageSpec = string | ISubtags | LanguageTag;
  * if an error occurs.
  * @public
  */
-// istanbul ignore next - tests applied for wrapped function
+/* c8 ignore next 3 - tests applied for wrapped function */
 export function tag(from: LanguageSpec, options?: ILanguageTagInitOptions): Result<LanguageTag> {
   return from instanceof LanguageTag ? succeed(from) : LanguageTag.create(from, options);
 }
@@ -83,7 +83,7 @@ export function tags(from: LanguageSpec[], options?: ILanguageTagInitOptions): R
  * @see For a set of common levels of similarity, see {@link Bcp47.tagSimilarity | similarity}.
  * @public
  */
-// istanbul ignore next - tests applied for wrapped function
+/* c8 ignore next - tests applied for wrapped function */
 export function similarity(
   t1: LanguageSpec,
   t2: LanguageSpec,

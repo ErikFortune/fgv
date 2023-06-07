@@ -58,7 +58,7 @@ export class PreferredNormalizer extends TagNormalizerBase {
   protected _processScript(subtags: ISubtags): Result<Iana.LanguageSubtags.ScriptSubtag | undefined> {
     if (subtags.primaryLanguage && subtags.script) {
       const language = this._iana.subtags.languages.tryGet(subtags.primaryLanguage);
-      // istanbul ignore next - internal error difficult to test
+      /* c8 ignore next 3 - internal error difficult to test */
       if (!language) {
         return fail(`invalid primary language subtag "${subtags.primaryLanguage}.`);
       }
@@ -138,7 +138,7 @@ export class PreferredNormalizer extends TagNormalizerBase {
         if (grandfathered.preferredValue) {
           return LanguageTagParser.parse(grandfathered.preferredValue, this._iana)
             .onSuccess((gfSubtags) => {
-              // istanbul ignore next - would require a registry error too hard to test
+              /* c8 ignore next 5 - would require a registry error too hard to test */
               if (gfSubtags.grandfathered !== undefined) {
                 return fail<ISubtags>(
                   `preferred value ${grandfathered.preferredValue} of grandfathered tag ${subtags.grandfathered} is also grandfathered.`
@@ -146,15 +146,12 @@ export class PreferredNormalizer extends TagNormalizerBase {
               }
               return this.processSubtags(gfSubtags);
             })
-            .onFailure(
-              // istanbul ignore next - would require a registry error too hard to test
-              (message) => {
-                // istanbul ignore next - would require a registry error too hard to test
-                return fail(
-                  `grandfathered tag "${subtags.grandfathered}" has invalid preferred value "${grandfathered.preferredValue}":\n${message}`
-                );
-              }
-            );
+            .onFailure((message) => {
+              /* c8 ignore next 4 - would require a registry error too hard to test */
+              return fail(
+                `grandfathered tag "${subtags.grandfathered}" has invalid preferred value "${grandfathered.preferredValue}":\n${message}`
+              );
+            });
         }
         return succeed(subtags);
       });
@@ -181,7 +178,7 @@ export class PreferredNormalizer extends TagNormalizerBase {
         if (registry) {
           if (
             registry.preferredValue &&
-            registry.prefix === /* istanbul ignore next */ subtags.primaryLanguage?.toLowerCase()
+            registry.prefix === /* c8 ignore next */ subtags.primaryLanguage?.toLowerCase()
           ) {
             const preferred = this._iana.subtags.languages.tryGet(registry.preferredValue);
             if (preferred) {

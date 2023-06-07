@@ -40,7 +40,7 @@ export class LanguageSimilarityMatcher {
   public overrides: OverridesRegistry;
 
   public constructor(iana?: Iana.LanguageRegistries) {
-    // istanbul ignore next
+    /* c8 ignore next */
     this.iana = iana ?? Iana.DefaultRegistries.languageRegistries;
     this.unsd = Unsd.DefaultRegistries.regionCodes;
     this.overrides = DefaultRegistries.overridesRegistry;
@@ -67,9 +67,8 @@ export class LanguageSimilarityMatcher {
   }
 
   public matchPrimaryLanguage(lt1: LanguageTag, lt2: LanguageTag): number {
-    // istanbul ignore next
+    /* c8 ignore next 2 */
     const l1 = lt1.subtags.primaryLanguage?.toLowerCase();
-    // istanbul ignore next
     const l2 = lt2.subtags.primaryLanguage?.toLowerCase();
 
     if (l1 === l2) {
@@ -161,20 +160,18 @@ export class LanguageSimilarityMatcher {
       }
     }
 
-    // istanbul ignore next
+    /* c8 ignore next 6 */
     const o1 = this.overrides.overrides.get(
       lt1.subtags.primaryLanguage?.toLowerCase() as Iana.LanguageSubtags.LanguageSubtag
     );
-    // istanbul ignore next
     const o2 = this.overrides.overrides.get(
       lt2.subtags.primaryLanguage?.toLowerCase() as Iana.LanguageSubtags.LanguageSubtag
     );
 
     // orthographic affinity
     if (o1 && o2) {
-      // istanbul ignore next
+      /* c8 ignore next 2 */
       const a1 = o1.affinity?.get(r1) ?? o1.defaultAffinity;
-      // istanbul ignore next
       const a2 = o2.affinity?.get(r2) ?? o2.defaultAffinity;
       if (a1 && a2 && a1 === a2) {
         if (r1 === a1.toUpperCase() || r2 === a2.toUpperCase()) {

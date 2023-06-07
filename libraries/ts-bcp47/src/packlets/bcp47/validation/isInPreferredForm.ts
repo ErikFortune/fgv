@@ -36,7 +36,7 @@ export class IsInPreferredFromValidator implements ITagValidator {
   public readonly validity: TagValidity = 'valid';
 
   public constructor(iana?: Iana.LanguageRegistries) {
-    // istanbul ignore next
+    /* c8 ignore next */
     this.iana = iana ?? Iana.DefaultRegistries.languageRegistries;
   }
 

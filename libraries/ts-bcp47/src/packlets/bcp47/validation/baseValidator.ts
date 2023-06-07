@@ -44,7 +44,7 @@ export abstract class TagValidatorBase implements ITagValidator {
   public abstract readonly validity: TagValidity;
 
   public constructor(iana?: Iana.LanguageRegistries) {
-    // istanbul ignore next
+    /* c8 ignore next */
     this.iana = iana ?? Iana.DefaultRegistries.languageRegistries;
   }
 

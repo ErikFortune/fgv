@@ -43,8 +43,8 @@ interface IParserState {
  * @public
  */
 export class LanguageTagParser {
-  // istanbul ignore next
   // eslint-disable-next-line @typescript-eslint/no-empty-function
+  /* c8 ignore next */
   private constructor() {}
 
   /**
@@ -59,7 +59,7 @@ export class LanguageTagParser {
    * @public
    */
   public static parse(tag: string, iana?: Iana.LanguageRegistries): Result<ISubtags> {
-    // istanbul ignore next
+    /* c8 ignore next */
     iana = iana ?? Iana.DefaultRegistries.languageRegistries;
     const status: IParserState = {
       tag,

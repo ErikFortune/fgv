@@ -69,7 +69,7 @@ export class RegionCodes {
   }
 
   public tryGetRegionOrArea(code: Iana.Model.UnM49RegionCode): Region | ICountryOrArea | undefined {
-    // istanbul ignore next - numeric area not allowed in bcp-47 so right side of ?? shouldn't be hit.
+    /* c8 ignore next - numeric area not allowed in bcp-47 so right side of ?? shouldn't be hit. */
     return this.regions.tryGetRegion(code) ?? this.areas.tryGetArea(code);
   }
 
