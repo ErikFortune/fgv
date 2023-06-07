@@ -183,7 +183,7 @@
     ],
     [
       "packlets/bcp47/languageTagParser.ts",
-      "d35eed799f8a8aea7f97efdfda578d62ad9e11eabd65448dcf7971e2e248ef32"
+      "53dbad02b439dffd1f99d54e143f7eca2348f67969cf40964db4dd8dd978386d"
     ],
     [
       "packlets/bcp47/normalization/baseNormalizer.ts",
@@ -195,7 +195,7 @@
     ],
     [
       "packlets/bcp47/normalization/preferredTagNormalizer.ts",
-      "d6fa961bed52f18549caed9f9bbe010a4dd0cd26c869260ae670d0ba633d52e5"
+      "af56ff0a383805a389b255e041d0339378ca05b71b02e0af68e2847569e9b8ba"
     ],
     [
       "packlets/bcp47/normalization/normalizeTag.ts",
@@ -253,7 +253,7 @@
     ["packlets/bcp47/match/common.ts", "ac773d1e02b6ca7c4dfb8578cb208417ca85cea5d802e9e70369a192d5a07045"],
     [
       "packlets/bcp47/match/similarity.ts",
-      "f44994642400b139cbb7f25f8d50e7ea810d031026e3b8b827a4ad8ca5336574"
+      "81526e1302762d38923a628bfd076a6ccf3325716ad4e4ca5807f3c26a977385"
     ],
     ["packlets/bcp47/match/chooser.ts", "b6ad80ed0e9dc8685ace2862f963f408d15e801a37e1a0b20f4fe142696cc59f"],
     ["packlets/bcp47/match/index.ts", "48aa2739114521c4f5351ed452bc411428373c09fb0e18078065e1808821518f"],
