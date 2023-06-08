@@ -1,0 +1,38 @@
+{
+  "fileDate": "2014-04-02",
+  "entries": [
+    {
+      "identifier": "t",
+      "description": ["Specifying Transformed Content"],
+      "comments": [
+        "Subtags for the identification of content that has been",
+        "transformed, including but not limited to:",
+        "transliteration, transcription, and translation."
+      ],
+      "added": "2011-12-16",
+      "rfc": "[RFC6497]",
+      "authority": "Unicode Consortium",
+      "contactEmail": "cldr-contact&unicode.org",
+      "mailingList": "cldr-users&unicode.org",
+      "url": "http://www.unicode.org/Public/cldr/latest/core.zip"
+    },
+    {
+      "identifier": "u",
+      "description": ["Unicode Locale"],
+      "comments": [
+        "Subtags for the identification of language and cultural",
+        "variations. Used to set behavior in locale APIs. Data is located in",
+        "the \"common/bcp47\" directory inside the referenced URL. Unicode",
+        "Technical Standard #35 (LDML) provides additional reference material",
+        "defining the keys and values. For more details please see",
+        "<http://cldr.unicode.org/index/bcp47-extension>."
+      ],
+      "added": "2010-09-02",
+      "rfc": "[RFC6067]",
+      "authority": "Unicode Consortium",
+      "contactEmail": "cldr-contact&unicode.org",
+      "mailingList": "cldr-users&unicode.org",
+      "url": "http://www.unicode.org/Public/cldr/latest/core.zip"
+    }
+  ]
+}
