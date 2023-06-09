@@ -1,0 +1,61 @@
+{
+  "puzzles": [
+    {
+      "id": "hidden-pair",
+      "description": "hidden pair sample",
+      "type": "sudoku",
+      "level": 1,
+      "rows": 9,
+      "cols": 9,
+      "cells": [
+        ".........",
+        "9.46.7...",
+        ".768.41..",
+        "3.97.1.8.",
+        "7.8...3.1",
+        ".513.87.2",
+        "..75.261.",
+        "..54.32.8",
+        "........."
+      ]
+    },
+    {
+      "id": "almost-done",
+      "description": "nearly complete puzzle missing only 1 in cell A1",
+      "type": "sudoku",
+      "level": 1,
+      "rows": 9,
+      "cols": 9,
+      "cells": ".46728539837549126259316748685297413312684957794153862428965371571832694963471285"
+    },
+    {
+      "id": "sudoku-x-example",
+      "description": "sample x-sudoku puzzle",
+      "type": "sudoku-x",
+      "level": 1,
+      "rows": 9,
+      "cols": 9,
+      "cells": "4.....13....6.1.....7..29...76.....2....3..9.9.1....577...1.6..3...5.7...4......1"
+    },
+    {
+      "id": "killer-insane",
+      "description": "Insane (3208329) example from djape.net",
+      "type": "killer-sudoku",
+      "level": 100,
+      "rows": 9,
+      "cols": 9,
+      "cells": [
+        "ABCCCDDDE",
+        "ABFFGGGDE",
+        "HIJKGGLLL",
+        "HIJKMGLNN",
+        "HOPPMQQNR",
+        "OOSTMUVWR",
+        "SSSTTUVWR",
+        "XYTTTZZab",
+        "XYYYcccab",
+        "|A11,B09,C09,D20,E16,F17,G30,H17,I13,J09,K11,L16,M16,N11,O16,P07,Q11,R10,S14,T39,U08,V17,W16,X06,Y26,Z06,a09,b09,c11"
+      ]
+    }
+  ]
+}
