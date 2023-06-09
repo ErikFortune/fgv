@@ -417,6 +417,13 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-sudoku-lib",
+      "projectFolder": "libraries/ts-sudoku-lib",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-utils",
       "projectFolder": "libraries/ts-utils",
       "shouldPublish": true,
