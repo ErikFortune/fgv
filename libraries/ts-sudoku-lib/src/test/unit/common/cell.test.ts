@@ -23,8 +23,8 @@
  */
 
 import '@fgv/ts-utils-jest';
-import * as Puzzles from '../../../src/puzzles';
-import { CellId, Puzzle, PuzzleState, PuzzleType } from '../../../src/common';
+import { CellId, Puzzle, PuzzleState, PuzzleType } from '../../../packlets/common';
+import * as Puzzles from '../../../packlets/puzzles';
 
 describe('Cell class', () => {
   let puzzle: Puzzle;

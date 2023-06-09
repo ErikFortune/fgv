@@ -23,9 +23,9 @@
  */
 
 import '@fgv/ts-utils-jest';
-import * as Puzzles from '../../../src/puzzles';
-import { CageId, CellId, CellState, Ids, Puzzle, PuzzleState, PuzzleType } from '../../../src/common';
-import { PuzzleCollections } from '../../../src/collections';
+import { PuzzleCollections } from '../../../packlets/collections';
+import { CageId, CellId, ICellState, Ids, Puzzle, PuzzleState, PuzzleType } from '../../../packlets/common';
+import * as Puzzles from '../../../packlets/puzzles';
 
 describe('Puzzle class', () => {
   const tests = [
@@ -263,7 +263,7 @@ describe('Puzzle class', () => {
     });
 
     test('updateContents succeeds for a valid update', () => {
-      const cell: CellState = {
+      const cell: ICellState = {
         id: Ids.cellId('A1').orThrow(),
         value: 1,
         notes: [1, 2, 3]
@@ -276,7 +276,7 @@ describe('Puzzle class', () => {
     });
 
     test('updateContents fails for an invalid cell', () => {
-      const cell: CellState = {
+      const cell: ICellState = {
         id: Ids.cellId('J1').orThrow(),
         value: undefined,
         notes: []

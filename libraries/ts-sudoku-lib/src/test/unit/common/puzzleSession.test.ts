@@ -24,17 +24,18 @@
 
 import '@fgv/ts-utils-jest';
 import {
+  IPuzzleDescription,
   Ids,
   NavigationDirection,
   NavigationWrap,
   PuzzleCollections,
   PuzzleSession,
-  PuzzleType
-} from '../../../src';
-import { PuzzleDescription } from '../../../src/file/model';
+  PuzzleType,
+  Puzzles
+} from '../../..';
 
 describe('PuzzleSession class', () => {
-  const testPuzzle: PuzzleDescription = {
+  const testPuzzle: IPuzzleDescription = {
     id: 'test',
     // cSpell: disable
     description: 'hidden pair sample from sudowiki.org',
@@ -58,7 +59,7 @@ describe('PuzzleSession class', () => {
 
   let puzzle: PuzzleSession;
   beforeEach(() => {
-    puzzle = PuzzleSession.create(testPuzzle).orThrow();
+    puzzle = PuzzleSession.create(Puzzles.Any.create(testPuzzle).orThrow()).orThrow();
   });
 
   describe('basic getters', () => {
@@ -250,14 +251,14 @@ describe('PuzzleSession class', () => {
       ['valid cell', 'A1'],
       ['empty cell', 'A3'],
       ['immutable cell', 'B1']
-    ])('returns true for %p', (_desc, id) => {
+    ])('returns true for %p', (__desc, id) => {
       expect(puzzle.cellIsValid(id)).toBe(true);
     });
 
     test.each([
       ['cell with invalid contents', 'A2'],
       ['invalid cell', 'Z9']
-    ])('returns false for %p', (_desc, id) => {
+    ])('returns false for %p', (__desc, id) => {
       expect(puzzle.cellIsValid(id)).toBe(false);
     });
   });
@@ -272,14 +273,14 @@ describe('PuzzleSession class', () => {
       ['cell with valid contents', 'A1'],
       ['cell with invalid contents', 'A2'],
       ['immutable cell', 'B1']
-    ])('returns true for %p', (_desc, id) => {
+    ])('returns true for %p', (__desc, id) => {
       expect(puzzle.cellHasValue(id)).toBe(true);
     });
 
     test.each([
       ['empty cell', 'A3'],
       ['invalid cell', 'Z9']
-    ])('returns false for %p', (_desc, id) => {
+    ])('returns false for %p', (__desc, id) => {
       expect(puzzle.cellHasValue(id)).toBe(false);
     });
   });
@@ -413,14 +414,14 @@ describe('PuzzleSession class', () => {
   });
 
   describe('getCellNeighbor', () => {
-    interface TestCase {
+    interface ITestCase {
       description: string;
       cell: string;
       direction: NavigationDirection;
       wrap: NavigationWrap;
       expected: string | RegExp;
     }
-    const tests: TestCase[] = [
+    const tests: ITestCase[] = [
       {
         description: 'interior cell',
         cell: 'B5',

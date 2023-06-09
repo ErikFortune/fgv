@@ -23,7 +23,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { CageId, CellId, Ids, PuzzleCollections } from '../../../src';
+import { CageId, CellId, Ids, PuzzleCollections } from '../../..';
 
 describe('Ids class', () => {
   describe('cageId method', () => {

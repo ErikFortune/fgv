@@ -23,10 +23,10 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { CellId, CellState, PuzzleState } from '../../../src/common';
+import { CellId, ICellState, PuzzleState } from '../../../packlets/common';
 
 describe('PuzzleState', () => {
-  const testCells: CellState[] = [
+  const testCells: ICellState[] = [
     {
       id: 'A1' as CellId,
       value: undefined,
@@ -86,7 +86,7 @@ describe('PuzzleState', () => {
 
   describe('update', () => {
     test('succeeds for valid updates', () => {
-      const updates: CellState[] = [
+      const updates: ICellState[] = [
         {
           id: 'A1' as CellId,
           value: 1,
@@ -115,7 +115,7 @@ describe('PuzzleState', () => {
     });
 
     test('fails if an update adds cells', () => {
-      const updates: CellState[] = [
+      const updates: ICellState[] = [
         {
           id: 'B9' as CellId,
           value: 1,
