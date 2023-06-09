@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-// istanbul ignore file
 
 import { AnyPuzzle as Any } from './anyPuzzle';
 import { KillerSudokuPuzzle as Killer } from './killerSudokuPuzzle';

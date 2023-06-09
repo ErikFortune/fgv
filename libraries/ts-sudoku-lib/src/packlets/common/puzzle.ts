@@ -98,7 +98,7 @@ export class Puzzle {
    * is to be initialized.
    */
   protected constructor(puzzle: IPuzzleDescription, extraCages?: [CageId, Cage][]) {
-    // istanbul ignore next
+    /* c8 ignore next - ?? is defense in depth */
     extraCages = extraCages ?? [];
 
     if (puzzle.rows !== 9) {
@@ -138,7 +138,7 @@ export class Puzzle {
         const otherCages = extraCages.filter(([__key, cage]) => cage.containsCell(id));
 
         const init = cellInit.shift();
-        // istanbul ignore next - defense in depth/make type check happy. undefined init should never happen
+        /* c8 ignore next - defense in depth/make type check happy. undefined init should never happen */
         const immutableValue = init === '.' ? undefined : Number.parseInt(init ?? '0');
         if (
           immutableValue !== undefined &&
@@ -195,7 +195,7 @@ export class Puzzle {
     for (let r = 0; r < numRows; r++) {
       const id = Ids.rowCageId(r);
       const cellIds = Ids.cellIds(r, 1, 0, numCols);
-      // istanbul ignore next - defense in depth should never happen
+      /* c8 ignore next 3 - defense in depth should never happen */
       if (cellIds.isFailure()) {
         return fail(cellIds.message);
       }
@@ -204,7 +204,7 @@ export class Puzzle {
         cages.push([id, cage]);
         return succeed(cage);
       });
-      // istanbul ignore next - defense in depth should never happen
+      /* c8 ignore next 3 - defense in depth should never happen */
       if (result.isFailure()) {
         return fail(result.message);
       }
@@ -220,7 +220,7 @@ export class Puzzle {
     for (let c = 0; c < numCols; c++) {
       const id = Ids.columnCageId(c);
       const cellIds = Ids.cellIds(0, numRows, c, 1);
-      // istanbul ignore next - defense in depth should never happen
+      /* c8 ignore next 3 - defense in depth should never happen */
       if (cellIds.isFailure()) {
         return fail(cellIds.message);
       }
@@ -229,7 +229,7 @@ export class Puzzle {
         cages.push([id, cage]);
         return succeed(cage);
       });
-      // istanbul ignore next - defense in depth should never happen
+      /* c8 ignore next 3 - defense in depth should never happen */
       if (result.isFailure()) {
         return fail(result.message);
       }
@@ -246,7 +246,7 @@ export class Puzzle {
       for (let c = 0; c < numCols; c += 3) {
         const id = Ids.sectionCageId(r, c);
         const cellIds = Ids.cellIds(r, 3, c, 3);
-        // istanbul ignore next - defense in depth should never happen
+        /* c8 ignore next 3 - defense in depth should never happen */
         if (cellIds.isFailure()) {
           return fail(cellIds.message);
         }
@@ -255,7 +255,7 @@ export class Puzzle {
           cages.push([id, cage]);
           return succeed(cage);
         });
-        // istanbul ignore next - defense in depth should never happen
+        /* c8 ignore next 3 - defense in depth should never happen */
         if (result.isFailure()) {
           return fail(result.message);
         }

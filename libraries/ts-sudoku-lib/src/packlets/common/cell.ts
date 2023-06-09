@@ -72,7 +72,7 @@ export class Cell implements ICellInit, ICell {
       return true;
     }
     const cell = state.getCellContents(this.id).orDefault();
-    // istanbul ignore next - defense in depth ? should never happen
+    /* c8 ignore next - defense in depth ? should never happen */
     return cell?.value !== undefined;
   }
 

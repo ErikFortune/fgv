@@ -87,7 +87,7 @@ export class Ids {
           return succeed(id);
         });
 
-        // istanbul ignore next - defense in depth should not happen
+        /* c8 ignore next 3 - defense in depth should not happen */
         if (result.isFailure()) {
           return fail(result.message);
         }

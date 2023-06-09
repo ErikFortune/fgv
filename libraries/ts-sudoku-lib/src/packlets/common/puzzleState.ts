@@ -59,7 +59,7 @@ export class PuzzleState {
    * @internal
    */
   protected static _toEntries(states?: ICellState[]): [CellId, ICellContents][] {
-    // istanbul ignore next - defense in depth
+    /* c8 ignore next 3 - defense in depth */
     if (!states) {
       return [];
     }

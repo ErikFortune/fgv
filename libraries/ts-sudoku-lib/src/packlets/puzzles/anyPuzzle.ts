@@ -42,8 +42,8 @@ export class AnyPuzzle {
         return SudokuXPuzzle.create(puzzle);
       case 'killer-sudoku':
         return KillerSudokuPuzzle.create(puzzle);
+      /* c8 ignore next 2 */
       default:
-        /* c8 ignore next */
         return fail(`Puzzle '${puzzle.description}' unsupported type ${puzzle.type}`);
     }
   }

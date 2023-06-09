@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 
-import { CageId, CageType, CellId } from './common';
 import { Result, captureResult } from '@fgv/ts-utils';
+import { CageId, CageType, CellId } from './common';
 import { ICage } from './public';
 import { PuzzleState } from './puzzleState';
 
@@ -65,7 +65,7 @@ export class Cage implements ICage {
   public containsValue(value: number, state: PuzzleState, ignore?: CellId[]): boolean {
     for (const cellId of this._cellIds) {
       if (!ignore?.includes(cellId)) {
-        // istanbul ignore next - defense in depth, ? should never happen
+        /* c8 ignore next - defense in depth, ? should never happen */
         if (state.getCellContents(cellId).orDefault()?.value === value) {
           return true;
         }
@@ -77,7 +77,7 @@ export class Cage implements ICage {
   public containedValues(state: PuzzleState): Set<number> {
     const values = new Set<number>();
     for (const cellId of this._cellIds) {
-      // istanbul ignore next - defense in depth, ? should never happen
+      /* c8 ignore next - defense in depth, ? should never happen */
       const value = state.getCellContents(cellId).orDefault()?.value;
       if (value !== undefined) {
         values.add(value);
@@ -89,7 +89,7 @@ export class Cage implements ICage {
   public toString(state?: PuzzleState): string {
     return this._cellIds
       .map((id) => {
-        // istanbul ignore next - defense in depth, ? should never happen
+        /* c8 ignore next - defense in depth, ? should never happen */
         const value = state?.getCellContents(id).orDefault()?.value;
         return value ? String(value) : '.';
       })

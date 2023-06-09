@@ -34,7 +34,7 @@ export class SudokuXPuzzle extends Puzzle {
   }
 
   public static create(puzzle: IPuzzleDescription): Result<Puzzle> {
-    // istanbul ignore next
+    /* c8 ignore next 3 */
     if (puzzle.type !== 'sudoku-x') {
       return fail(`Puzzle '${puzzle.description}' unsupported type ${puzzle.type}`);
     }

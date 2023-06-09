@@ -36,7 +36,7 @@ export class KillerSudokuPuzzle extends Puzzle {
   }
 
   public static create(desc: IPuzzleDescription): Result<Puzzle> {
-    // istanbul ignore next
+    /* c8 ignore next 3 */
     if (desc.type !== 'killer-sudoku') {
       return fail(`Puzzle '${desc.description}' unsupported type ${desc.type}`);
     }
@@ -111,7 +111,7 @@ export class KillerSudokuPuzzle extends Puzzle {
 
       const total = Number.parseInt(def.slice(1));
       const cells = cageCells.get(cage);
-      // istanbul ignore next - should never happen
+      /* c8 ignore next 3 - should never happen */
       if (!cells) {
         throw new Error(`cage ${cageId} has no cells`);
       }
@@ -136,7 +136,7 @@ export class KillerSudokuPuzzle extends Puzzle {
         const cellId = Ids.cellId({ row, col }).orThrow();
         const cage = givens.find((g) => g.cellIds[0] === cellId);
         if (cage) {
-          // istanbul ignore next - defense in depth should never happen
+          /* c8 ignore next 3 - defense in depth should never happen */
           if (cage.total < 1 || cage.total > 9) {
             throw new Error(`invalid total ${cage.total} for cell ${cellId}`);
           }
