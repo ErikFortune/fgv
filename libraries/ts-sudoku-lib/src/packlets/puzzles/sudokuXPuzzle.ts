@@ -23,8 +23,7 @@
  */
 
 import { Result, captureResult, succeed } from '@fgv/ts-utils';
-import { Cage, CageId, CellId, Ids, Puzzle } from '../common';
-import { IPuzzleDescription } from '../file/model';
+import { Cage, CageId, CellId, IPuzzleDescription, Ids, Puzzle } from '../common';
 
 /**
  * @public

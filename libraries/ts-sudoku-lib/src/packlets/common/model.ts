@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-import { PuzzleType } from '../common';
+import { PuzzleType } from './common';
 
 /**
  * Description of a single puzzle.
@@ -36,12 +36,4 @@ export interface IPuzzleDescription {
   rows: number;
   cols: number;
   cells: string;
-}
-
-/**
- * Parsed file containing a collection of puzzles.
- * @public
- */
-export interface IPuzzlesFile {
-  puzzles: IPuzzleDescription[];
 }

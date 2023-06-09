@@ -22,9 +22,4 @@
  * SOFTWARE.
  */
 
-import * as File from './packlets/file';
-import * as Puzzles from './packlets/puzzles';
-
-export * from './packlets/collections';
-export * from './packlets/common';
-export { File, Puzzles };
+export * from './collections';

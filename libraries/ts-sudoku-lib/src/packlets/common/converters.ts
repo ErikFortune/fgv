@@ -23,10 +23,8 @@
  */
 
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
-import { CageId, CellId, PuzzleType, allPuzzleTypes } from '../common';
-import { IPuzzleDescription, IPuzzlesFile } from './model';
-
-import { File } from '@fgv/ts-json';
+import { CageId, CellId, PuzzleType, allPuzzleTypes } from './common';
+import { IPuzzleDescription } from './model';
 
 const cageIdRegExp: RegExp = /^(R[A-Z]$)|(C[0-9]$)|(S[A-Z][0-9]$)|(X[1-2]$)|(K[A-Za-z]$)/;
 
@@ -82,23 +80,3 @@ export const puzzleDescription: Converter<IPuzzleDescription> = Converters.stric
     optionalFields: ['id']
   }
 );
-
-/**
- * Converts an arbitrary object to a {@link Data.Model.PuzzlesFile | PuzzlesFile}.
- * @public
- */
-export const puzzlesFile: Converter<IPuzzlesFile> = Converters.strictObject<IPuzzlesFile>({
-  puzzles: Converters.arrayOf(puzzleDescription)
-});
-
-/**
- * Loads an arbitrary JSON file and parses it to return a validated
- * {@link Data.Model.PuzzlesFile | PuzzlesFile}.
- * @param path - String path to the file
- * @returns `Success` with the resulting file, or `Failure` with details if an
- * error occurs.
- * @public
- */
-export function loadJsonPuzzlesFileSync(path: string): Result<IPuzzlesFile> {
-  return File.convertJsonFileSync(path, puzzlesFile);
-}

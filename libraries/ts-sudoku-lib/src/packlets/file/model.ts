@@ -22,26 +22,12 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
-import { Puzzle } from '../common';
-import { IPuzzleDescription } from '../file/model';
+import { IPuzzleDescription } from '../common';
 
 /**
+ * Parsed file containing a collection of puzzles.
  * @public
  */
-export class SudokuPuzzle extends Puzzle {
-  private constructor(puzzle: IPuzzleDescription) {
-    super(puzzle);
-  }
-
-  public static create(puzzle: IPuzzleDescription): Result<Puzzle> {
-    // istanbul ignore next
-    if (puzzle.type !== 'sudoku') {
-      return fail(`Puzzle '${puzzle.description}' unsupported type ${puzzle.type}`);
-    }
-
-    return captureResult(() => new SudokuPuzzle(puzzle)).onSuccess((puzzle) => {
-      return succeed(puzzle);
-    });
-  }
+export interface IPuzzlesFile {
+  puzzles: IPuzzleDescription[];
 }

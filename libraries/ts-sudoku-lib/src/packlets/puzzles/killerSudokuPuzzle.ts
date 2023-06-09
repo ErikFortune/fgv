@@ -23,8 +23,7 @@
  */
 
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
-import { Cage, CageId, CellId, Ids, Puzzle, totalsByCageSize } from '../common';
-import { IPuzzleDescription } from '../file/model';
+import { Cage, CageId, CellId, IPuzzleDescription, Ids, Puzzle, totalsByCageSize } from '../common';
 
 const cageDefFormat: RegExp = /^[A-Za-z][0-9][0-9]$/;
 

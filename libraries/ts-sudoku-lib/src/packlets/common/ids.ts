@@ -23,8 +23,8 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import * as Converters from '../file/converters';
 import { CageId, CellId, IRowColumn } from './common';
+import * as Converters from './converters';
 import { ICage, ICell } from './public';
 
 const firstRowIdChar: number = 'A'.charCodeAt(0);

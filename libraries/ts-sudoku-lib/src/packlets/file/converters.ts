@@ -22,9 +22,28 @@
  * SOFTWARE.
  */
 
-import * as File from './packlets/file';
-import * as Puzzles from './packlets/puzzles';
+import { Converter, Converters, Result } from '@fgv/ts-utils';
+import { IPuzzlesFile } from './model';
 
-export * from './packlets/collections';
-export * from './packlets/common';
-export { File, Puzzles };
+import { File } from '@fgv/ts-json';
+import { Converters as CommonConverters } from '../common';
+
+/**
+ * Converts an arbitrary object to a {@link Data.Model.PuzzlesFile | PuzzlesFile}.
+ * @public
+ */
+export const puzzlesFile: Converter<IPuzzlesFile> = Converters.strictObject<IPuzzlesFile>({
+  puzzles: Converters.arrayOf(CommonConverters.puzzleDescription)
+});
+
+/**
+ * Loads an arbitrary JSON file and parses it to return a validated
+ * {@link Data.Model.PuzzlesFile | PuzzlesFile}.
+ * @param path - String path to the file
+ * @returns `Success` with the resulting file, or `Failure` with details if an
+ * error occurs.
+ * @public
+ */
+export function loadJsonPuzzlesFileSync(path: string): Result<IPuzzlesFile> {
+  return File.convertJsonFileSync(path, puzzlesFile);
+}

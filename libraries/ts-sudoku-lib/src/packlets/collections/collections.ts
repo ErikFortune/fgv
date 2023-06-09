@@ -22,11 +22,12 @@
  * SOFTWARE.
  */
 
-import * as Data from './file';
+import * as FileData from '../file';
+import * as Puzzles from '../puzzles';
 
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 
-import { PuzzleSession } from './common';
+import { IPuzzleDescription, PuzzleSession } from '../common';
 import DefaultPuzzles from './data/puzzles.json';
 
 /**
@@ -37,26 +38,26 @@ export class PuzzleCollection {
   /**
    * All puzzles in the collection.
    */
-  public readonly puzzles: readonly Data.Model.IPuzzleDescription[];
+  public readonly puzzles: readonly IPuzzleDescription[];
 
-  private readonly _byId: Map<string, Data.Model.IPuzzleDescription>;
+  private readonly _byId: Map<string, IPuzzleDescription>;
 
-  private constructor(puzzles: Data.Model.IPuzzlesFile) {
+  private constructor(puzzles: FileData.Model.IPuzzlesFile) {
     this.puzzles = puzzles.puzzles;
     this._byId = new Map(
       this.puzzles
-        .map((p): [string | undefined, Data.Model.IPuzzleDescription] => [p.id, p])
-        .filter((p): p is [string, Data.Model.IPuzzleDescription] => p !== undefined)
+        .map((p): [string | undefined, IPuzzleDescription] => [p.id, p])
+        .filter((p): p is [string, IPuzzleDescription] => p !== undefined)
     );
   }
 
   /**
-   * Creates a new puzzle from a loaded {@link Data.Model.IPuzzlesFile | PuzzlesFile}
-   * @param from - The {@link Data.Model.IPuzzlesFile | puzzles file} to be loaded.
+   * Creates a new puzzle from a loaded {@link FileData.Model.IPuzzlesFile | PuzzlesFile}
+   * @param from - The {@link FileData.Model.IPuzzlesFile | puzzles file} to be loaded.
    * @returns `Success` with the resulting {@link PuzzleCollection | PuzzleCollection}
    * or `Failure` with details if an error occurs.
    */
-  public static create(from: Data.Model.IPuzzlesFile): Result<PuzzleCollection> {
+  public static create(from: FileData.Model.IPuzzlesFile): Result<PuzzleCollection> {
     return captureResult(() => new PuzzleCollection(from));
   }
 
@@ -67,7 +68,7 @@ export class PuzzleCollection {
    * or `Failure` with details if an error occurs.
    */
   public static load(path: string): Result<PuzzleCollection> {
-    return Data.Converters.loadJsonPuzzlesFileSync(path).onSuccess(PuzzleCollection.create);
+    return FileData.Converters.loadJsonPuzzlesFileSync(path).onSuccess(PuzzleCollection.create);
   }
 
   /**
@@ -77,7 +78,13 @@ export class PuzzleCollection {
    * `Failure` with details if an error occurs.
    */
   public getPuzzle(id: string): Result<PuzzleSession> {
-    return this.getDescription(id).onSuccess((desc) => PuzzleSession.create(desc));
+    return this.getDescription(id)
+      .onSuccess((desc) => {
+        return Puzzles.Any.create(desc);
+      })
+      .onSuccess((puzzle) => {
+        return PuzzleSession.create(puzzle);
+      });
   }
 
   /**
@@ -86,7 +93,7 @@ export class PuzzleCollection {
    * @returns `Success` with the requested {@link PuzzleSession | puzzle}, or
    * `Failure` with details if an error occurs.
    */
-  public getDescription(id: string): Result<Data.Model.IPuzzleDescription> {
+  public getDescription(id: string): Result<IPuzzleDescription> {
     const desc = this._byId.get(id);
     if (!desc) {
       return fail(`Puzzle "${id}" not found`);
@@ -107,7 +114,7 @@ export class PuzzleCollections {
    */
   public static get default(): PuzzleCollection {
     if (!PuzzleCollections._default) {
-      PuzzleCollections._default = Data.Converters.puzzlesFile
+      PuzzleCollections._default = FileData.Converters.puzzlesFile
         .convert(DefaultPuzzles)
         .onSuccess(PuzzleCollection.create)
         .orThrow();

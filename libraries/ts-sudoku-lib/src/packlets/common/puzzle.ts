@@ -33,10 +33,10 @@ import {
   NavigationWrap
 } from './common';
 
-import { IPuzzleDescription } from '../file/model';
 import { Cage } from './cage';
 import { Cell } from './cell';
 import { Ids } from './ids';
+import { IPuzzleDescription } from './model';
 import { ICell } from './public';
 import { PuzzleState } from './puzzleState';
 

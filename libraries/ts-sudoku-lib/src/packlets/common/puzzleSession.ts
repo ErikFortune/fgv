@@ -23,8 +23,6 @@
  */
 
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
-import { IPuzzleDescription } from '../file/model';
-import * as Puzzles from '../puzzles';
 import { Cage } from './cage';
 import { Cell } from './cell';
 import { ICellContents, ICellState, IRowColumn, NavigationDirection, NavigationWrap } from './common';
@@ -55,8 +53,7 @@ export class PuzzleSession {
   /**
    * @internal
    */
-  protected constructor(description: IPuzzleDescription) {
-    const puzzle = Puzzles.Any.create(description).orThrow();
+  protected constructor(puzzle: Puzzle) {
     this._puzzle = puzzle;
     this.state = puzzle.initialState;
     this._nextStep = 0;
@@ -158,14 +155,14 @@ export class PuzzleSession {
 
   /**
    * Creates a new {@link PuzzleSession | puzzle session} from a supplied
-   * {@link Data.Model.PuzzleDescription | puzzle description}.
-   * @param description - The {@link Data.Model.PuzzleDescription | puzzle description} from
-   * which the session is to be initialized.
+   * {@link Puzzle | puzzle}.
+   * @param puzzle - The {@link Puzzle | puzzle} from which the session is to be
+   * initialized.
    * @returns `Success` with the requested {@link PuzzleSession | puzzle session},
    * or `Failure` with details if an error occurs.
    */
-  public static create(description: IPuzzleDescription): Result<PuzzleSession> {
-    return captureResult(() => new PuzzleSession(description));
+  public static create(puzzle: Puzzle): Result<PuzzleSession> {
+    return captureResult(() => new PuzzleSession(puzzle));
   }
 
   /**

@@ -24,8 +24,7 @@
 
 import { Result, fail } from '@fgv/ts-utils';
 
-import { Puzzle } from '../common';
-import { IPuzzleDescription } from '../file/model';
+import { IPuzzleDescription, Puzzle } from '../common';
 import { KillerSudokuPuzzle } from './killerSudokuPuzzle';
 import { SudokuPuzzle } from './sudokuPuzzle';
 import { SudokuXPuzzle } from './sudokuXPuzzle';
