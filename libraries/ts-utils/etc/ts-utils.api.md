@@ -741,7 +741,7 @@ export function mapSuccess<T>(results: Iterable<Result<T>>): Result<T[]>;
 // Warning: (ae-forgotten-export) The symbol "KeyedThingFactory" needs to be exported by the entry point index.d.ts
 //
 // @public
-export function mapToRecord<TS, TD, TK extends string = string>(src: Map<TK, TS>, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD>>;
+export function mapToRecord<TS, TD, TK extends string = string>(src: ReadonlyMap<TK, TS>, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD>>;
 
 // @public (undocumented)
 class NoOpLogger extends LoggerBase {
@@ -945,10 +945,10 @@ function optionalElement<T, TC = undefined>(index: number, converter: Converter<
 function optionalField<T, TC = undefined>(name: string, converter: Converter<T, TC>): Converter<T | undefined, TC>;
 
 // @public
-export function optionalMapToPossiblyEmptyRecord<TS, TD, TK extends string = string>(src: Map<TK, TS> | undefined, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD>>;
+export function optionalMapToPossiblyEmptyRecord<TS, TD, TK extends string = string>(src: ReadonlyMap<TK, TS> | undefined, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD>>;
 
 // @public
-export function optionalMapToRecord<TS, TD, TK extends string = string>(src: Map<TK, TS> | undefined, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD> | undefined>;
+export function optionalMapToRecord<TS, TD, TK extends string = string>(src: ReadonlyMap<TK, TS> | undefined, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD> | undefined>;
 
 // @public
 const optionalNumber: Converter<number | undefined>;

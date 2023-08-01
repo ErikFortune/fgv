@@ -29,10 +29,10 @@
 |  [mapFailures(results)](./ts-utils.mapfailures.md) | Aggregates error messages from a collection of [Result&lt;T&gt;](./ts-utils.result.md)<!-- -->. |
 |  [mapResults(results)](./ts-utils.mapresults.md) | Aggregates successful result values from a collection of [Result&lt;T&gt;](./ts-utils.result.md)<!-- -->. |
 |  [mapSuccess(results)](./ts-utils.mapsuccess.md) | Aggregates successful results from a a collection of [Result&lt;T&gt;](./ts-utils.result.md)<!-- -->. |
-|  [mapToRecord(src, factory)](./ts-utils.maptorecord.md) | Applies a factory method to convert a <code>Map&lt;TK, TS&gt;</code> into a <code>Record&lt;TK, TD&gt;</code>. |
+|  [mapToRecord(src, factory)](./ts-utils.maptorecord.md) | Applies a factory method to convert a <code>ReadonlyMap&lt;TK, TS&gt;</code> into a <code>Record&lt;TK, TD&gt;</code>. |
 |  [omit(from, exclude)](./ts-utils.omit.md) | Simple implicit omit function, which picks all of the properties from a supplied object except those specified for exclusion. |
-|  [optionalMapToPossiblyEmptyRecord(src, factory)](./ts-utils.optionalmaptopossiblyemptyrecord.md) | Applies a factory method to convert an optional <code>Map&lt;string, TS&gt;</code> into a <code>Record&lt;string, TD&gt;</code> |
-|  [optionalMapToRecord(src, factory)](./ts-utils.optionalmaptorecord.md) | Applies a factory method to convert an optional <code>Map&lt;string, TS&gt;</code> into a <code>Record&lt;string, TD&gt;</code> or <code>undefined</code>. |
+|  [optionalMapToPossiblyEmptyRecord(src, factory)](./ts-utils.optionalmaptopossiblyemptyrecord.md) | Applies a factory method to convert an optional <code>ReadonlyMap&lt;string, TS&gt;</code> into a <code>Record&lt;string, TD&gt;</code> |
+|  [optionalMapToRecord(src, factory)](./ts-utils.optionalmaptorecord.md) | Applies a factory method to convert an optional <code>ReadonlyMap&lt;string, TS&gt;</code> into a <code>Record&lt;string, TD&gt;</code> or <code>undefined</code>. |
 |  [optionalRecordToMap(src, factory)](./ts-utils.optionalrecordtomap.md) | Applies a factory method to convert an optional <code>Record&lt;TK, TS&gt;</code> into a <code>Map&lt;TK, TD&gt;</code>, or <code>undefined</code>. |
 |  [optionalRecordToPossiblyEmptyMap(src, factory)](./ts-utils.optionalrecordtopossiblyemptymap.md) | Applies a factory method to convert an optional <code>Record&lt;TK, TS&gt;</code> into a <code>Map&lt;TK, TD&gt;</code> |
 |  [pick(from, include)](./ts-utils.pick.md) | Simple implicit pick function, which picks a set of properties from a supplied object. Ignores picked properties that do not exist regardless of type signature. |

@@ -4,19 +4,19 @@
 
 ## mapToRecord() function
 
-Applies a factory method to convert a `Map<TK, TS>` into a `Record<TK, TD>`<!-- -->.
+Applies a factory method to convert a `ReadonlyMap<TK, TS>` into a `Record<TK, TD>`<!-- -->.
 
 **Signature:**
 
 ```typescript
-export declare function mapToRecord<TS, TD, TK extends string = string>(src: Map<TK, TS>, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD>>;
+export declare function mapToRecord<TS, TD, TK extends string = string>(src: ReadonlyMap<TK, TS>, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD>>;
 ```
 
 ## Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  src | Map&lt;TK, TS&gt; | The <code>Map</code> object to be converted. |
+|  src | ReadonlyMap&lt;TK, TS&gt; | The <code>Map</code> object to be converted. |
 |  factory | KeyedThingFactory&lt;TS, TD, TK&gt; | The factory method used to convert elements. |
 
 **Returns:**
