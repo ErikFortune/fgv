@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "relax mapToRecord from Map to ReadonlyMap",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

@@ -4,19 +4,19 @@
 
 ## optionalMapToPossiblyEmptyRecord() function
 
-Applies a factory method to convert an optional `Map<string, TS>` into a `Record<string, TD>`
+Applies a factory method to convert an optional `ReadonlyMap<string, TS>` into a `Record<string, TD>`
 
 **Signature:**
 
 ```typescript
-export declare function optionalMapToPossiblyEmptyRecord<TS, TD, TK extends string = string>(src: Map<TK, TS> | undefined, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD>>;
+export declare function optionalMapToPossiblyEmptyRecord<TS, TD, TK extends string = string>(src: ReadonlyMap<TK, TS> | undefined, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD>>;
 ```
 
 ## Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  src | Map&lt;TK, TS&gt; \| undefined | The <code>Map</code> object to be converted, or <code>undefined</code>. |
+|  src | ReadonlyMap&lt;TK, TS&gt; \| undefined | The <code>ReadonlyMap</code> object to be converted, or <code>undefined</code>. |
 |  factory | KeyedThingFactory&lt;TS, TD, TK&gt; | The factory method used to convert elements. |
 
 **Returns:**

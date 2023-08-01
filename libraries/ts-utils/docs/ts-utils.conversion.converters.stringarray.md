@@ -9,7 +9,7 @@
 **Signature:**
 
 ```typescript
-stringArray: Converter<string[] | undefined>
+stringArray: Converter<string[]>
 ```
 
 ## Remarks
