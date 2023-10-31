@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json",
+      "comment": "bump versions",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-json"
+}
