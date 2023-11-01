@@ -1,0 +1,73 @@
+{
+  "name": "@fgv/ts-music-metadata",
+  "version": "0.0.1",
+  "description": "Music metadata ",
+  "main": "lib/index.js",
+  "types": "dist/ts-json.d.ts",
+  "scripts": {
+    "build": "heft test --clean",
+    "clean": "heft clean",
+    "test": "heft test",
+    "build-docs": "api-documenter markdown --input-folder ./temp --output-folder docs",
+    "build-all": "rushx build; rushx build-docs",
+    "test-handles": "jest --runInBand --detectOpenHandles",
+    "clean-jest": "jest --clear-cache",
+    "coverage": "jest --coverage --no-cache",
+    "lint": "eslint src --ext .ts",
+    "fixlint": "eslint src --ext .ts --fix"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ErikFortune/fgv.git"
+  },
+  "keywords": [
+    "typescript",
+    "node"
+  ],
+  "author": "Erik Fortune",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ErikFortune/fgv/issues"
+  },
+  "homepage": "https://github.com/ErikFortune/fgv/libraries/ts-mmeta/#readme",
+  "devDependencies": {
+    "@fgv/ts-json": "workspace:*",
+    "@fgv/ts-utils": "workspace:*",
+    "@fgv/ts-utils-jest": "workspace:*",
+    "@microsoft/api-documenter": "^7.23.10",
+    "@microsoft/api-extractor": "^7.38.1",
+    "@types/jest": "^29.5.7",
+    "@types/node": "^20.8.9",
+    "@typescript-eslint/eslint-plugin": "^6.9.1",
+    "@typescript-eslint/parser": "^6.9.1",
+    "cspell": "^7.3.8",
+    "eslint": "^8.52.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-header": "^3.1.1",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "eslint-plugin-promise": "^6.1.1",
+    "jest": "^29.7.0",
+    "prettier": "^3.0.3",
+    "rimraf": "^5.0.5",
+    "ts-jest": "^29.1.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2",
+    "eslint-plugin-n": "^16.2.0",
+    "@rushstack/heft": "~0.63.0",
+    "@rushstack/heft-node-rig": "~2.3.8",
+    "@types/heft-jest": "1.0.5",
+    "@rushstack/eslint-config": "~3.4.1",
+    "@rushstack/heft-jest-plugin": "~0.10.2",
+    "eslint-plugin-tsdoc": "~0.2.17"
+  },
+  "peerDependencies": {
+    "@fgv/ts-utils": "^2.0.0",
+    "@fgv/ts-json": "^2.0.0"
+  },
+  "dependencies": {
+    "music-metadata": "~8.1.4"
+  }
+}

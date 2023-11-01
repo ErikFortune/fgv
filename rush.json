@@ -417,6 +417,12 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-music-metadata",
+      "projectFolder": "libraries/ts-music-metadata",
+      "shouldPublish": true,
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-sudoku-lib",
       "projectFolder": "libraries/ts-sudoku-lib",
       "shouldPublish": true,
