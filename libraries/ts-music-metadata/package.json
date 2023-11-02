@@ -68,6 +68,7 @@
     "@fgv/ts-json": "^2.0.0"
   },
   "dependencies": {
-    "music-metadata": "~8.1.4"
+    "music-metadata": "~8.1.4",
+    "mongodb": "~6.2.0"
   }
 }

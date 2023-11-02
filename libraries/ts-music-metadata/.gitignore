@@ -63,7 +63,9 @@ dist/
 # next.js build output
 .next
 
+# connection config
+connection.json
+
 # generated artifacts
 temp/
 .cache/
-

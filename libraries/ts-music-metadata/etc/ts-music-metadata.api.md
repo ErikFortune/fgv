@@ -4,12 +4,13 @@
 
 ```ts
 
+import { Converter } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 
 // @public
 type AlbumKeys = Omit<IAlbum, 'id' | 'tracks' | 'normalized'>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-music-metadata" does not have an export "IAlbum"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 class Albums<TA extends Model.IAlbum = Model.IAlbum> {
@@ -23,16 +24,16 @@ class Albums<TA extends Model.IAlbum = Model.IAlbum> {
     // @internal (undocumented)
     protected _byTitle: Map<string, TA[]>;
     get count(): number;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-music-metadata" does not have an export "AlbumKeys"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     find(want: Partial<Model.AlbumKeys>): Result<TA[]>;
     get(id: string): Result<TA>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-music-metadata" does not have an export "AlbumKeys"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static normalizeAlbum<TA extends Model.IAlbum = Model.IAlbum>(album: TA): Model.AlbumKeys;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-music-metadata" does not have an export "AlbumKeys"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-music-metadata" does not have an export "AlbumKeys"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static normalizeKeys(keys: Model.AlbumKeys): Model.AlbumKeys;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-music-metadata" does not have an export "AlbumKeys"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-music-metadata" does not have an export "AlbumKeys"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static normalizeKeys(keys: Partial<Model.AlbumKeys>): Partial<Model.AlbumKeys>;
 }
 
@@ -44,6 +45,18 @@ declare namespace Core {
     }
 }
 export { Core }
+
+declare namespace Database {
+    export {
+        IMusicDbSecretsConfig,
+        musicDbSecretsConfig,
+        IMusicDbPublicConfig,
+        musicDbPublicConfig,
+        IMusicDbConfig,
+        MusicDbConfig
+    }
+}
+export { Database }
 
 // @public
 interface IAlbum {
@@ -65,6 +78,19 @@ declare namespace Ids {
     export {
         normalize
     }
+}
+
+// @public
+type IMusicDbConfig = IMusicDbSecretsConfig & IMusicDbPublicConfig;
+
+// @public
+interface IMusicDbPublicConfig {
+    database: string;
+}
+
+// @public
+interface IMusicDbSecretsConfig {
+    connectionString: string;
 }
 
 // @public
@@ -90,6 +116,34 @@ declare namespace Model {
         ITrack
     }
 }
+
+// @public
+class MusicDbConfig implements IMusicDbConfig {
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get connectionString(): string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(config: string | IMusicDbPublicConfig, connection?: string | IMusicDbSecretsConfig): Result<MusicDbConfig>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get database(): string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const musicDbPublicConfig: Converter<IMusicDbPublicConfig, unknown>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const musicDbSecretsConfig: Converter<IMusicDbSecretsConfig, unknown>;
 
 // @public
 function normalize(from: string): string;

@@ -3,7 +3,7 @@ import { normalize } from './ids';
 import * as Model from './model';
 
 /**
- * Searchable collection of {@link IAlbum}.
+ * Searchable collection of {@link Core.Model.IAlbum | IAlbum}.
  * @public
  */
 export class Albums<TA extends Model.IAlbum = Model.IAlbum> {
@@ -80,7 +80,7 @@ export class Albums<TA extends Model.IAlbum = Model.IAlbum> {
 
   /**
    * Finds albums matching a key.
-   * @param want - A Partial&lt;{@link AlbumKeys | AlbumKeys}&gt; describing the albums to be found.
+   * @param want - A Partial&lt;{@link Core.Model.AlbumKeys | AlbumKeys}&gt; describing the albums to be found.
    * @returns `Success` with an array of matching albums, or `Failure` with a message if no matching
    * albums are found.
    */
@@ -102,14 +102,14 @@ export class Albums<TA extends Model.IAlbum = Model.IAlbum> {
   }
 
   /**
-   * Normalizes a supplied {@link AlbumKeys | AlbumKeys}.
-   * @param keys - The {@link AlbumKeys | AlbumKeys} to be normalized.
+   * Normalizes a supplied {@link Core.Model.AlbumKeys | AlbumKeys}.
+   * @param keys - The {@link Core.Model.AlbumKeys | AlbumKeys} to be normalized.
    */
   public static normalizeKeys(keys: Model.AlbumKeys): Model.AlbumKeys;
 
   /**
-   * Normalizes a supplied Partial&lt;{@link AlbumKeys | AlbumKeys}&gt;.
-   * @param keys - The Partial&lt;{@link AlbumKeys | AlbumKeys}&gt; to be normalized.
+   * Normalizes a supplied Partial&lt;{@link Core.Model.AlbumKeys | AlbumKeys}&gt;.
+   * @param keys - The Partial&lt;{@link Core.Model.AlbumKeys | AlbumKeys}&gt; to be normalized.
    */
   public static normalizeKeys(keys: Partial<Model.AlbumKeys>): Partial<Model.AlbumKeys>;
   public static normalizeKeys(keys: Partial<Model.AlbumKeys>): Partial<Model.AlbumKeys> {
@@ -124,7 +124,7 @@ export class Albums<TA extends Model.IAlbum = Model.IAlbum> {
   }
 
   /**
-   * Returns normalized {@link AlbumKeys | AlbumKeys} for a supplied album, preferring
+   * Returns normalized {@link Core.Model.AlbumKeys | AlbumKeys} for a supplied album, preferring
    * those from the object itself, if present.
    * @param album - The album to be normalized.
    * @returns
