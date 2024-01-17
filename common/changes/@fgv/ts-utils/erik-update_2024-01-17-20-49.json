@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Factor out extras, enable shaking",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Factor extras into their own package",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

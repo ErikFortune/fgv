@@ -23,8 +23,9 @@
 
 import * as Model from './model';
 
+import { RecordJar } from '@fgv/ts-extras';
 import { File } from '@fgv/ts-json';
-import { Converters, RecordJar, Result } from '@fgv/ts-utils';
+import { Converters, Result } from '@fgv/ts-utils';
 import { datedRegistry, yearMonthDaySpec } from '../common/converters';
 import { datedRegistryFromJarRecords } from '../jar/jarConverters';
 import { extensionSingleton } from './validate';

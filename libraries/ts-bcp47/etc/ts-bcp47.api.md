@@ -7,7 +7,7 @@
 import { Brand } from '@fgv/ts-utils';
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
-import { RecordJar } from '@fgv/ts-utils';
+import { RecordJar } from '@fgv/ts-extras';
 import { Result } from '@fgv/ts-utils';
 import { Validation } from '@fgv/ts-utils';
 
