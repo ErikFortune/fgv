@@ -380,14 +380,23 @@ export { fail_2 as fail }
 // @public
 export class Failure<T> implements IResult<T> {
     constructor(message: string);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    //
+    // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
+    // @deprecated
     getValueOrThrow(logger?: IResultLogger): never;
     isFailure(): this is Failure<T>;
     isSuccess(): this is Success<T>;
     get message(): string;
     onFailure(cb: FailureContinuation<T>): Result<T>;
     onSuccess<TN>(__: SuccessContinuation<T, TN>): Result<TN>;
-    orDefault(dflt?: T): T | undefined;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    //
+    // (undocumented)
+    orDefault(dflt: T): T;
+    // (undocumented)
+    orDefault(): T | undefined;
     orThrow(logger?: IResultLogger): never;
     readonly success: false;
     toString(): string;
@@ -585,13 +594,18 @@ class InMemoryLogger extends LoggerBase {
 
 // @public
 export interface IResult<T> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    //
+    // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
+    // @deprecated
     getValueOrThrow(logger?: IResultLogger): T;
     isFailure(): this is Failure<T>;
     isSuccess(): this is Success<T>;
     onFailure(cb: FailureContinuation<T>): Result<T>;
     onSuccess<TN>(cb: SuccessContinuation<T, TN>): Result<TN>;
-    orDefault(dflt?: T): T | undefined;
+    orDefault(dflt: T): T;
+    orDefault(): T | undefined;
     orThrow(logger?: IResultLogger): T;
     readonly success: boolean;
     // Warning: (ae-incompatible-release-tags) The symbol "withDetail" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
@@ -1175,13 +1189,22 @@ export function succeedWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess
 // @public
 export class Success<T> implements IResult<T> {
     constructor(value: T);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    //
+    // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
+    // @deprecated
     getValueOrThrow(__logger?: IResultLogger): T;
     isFailure(): this is Failure<T>;
     isSuccess(): this is Success<T>;
     onFailure(__: FailureContinuation<T>): Result<T>;
     onSuccess<TN>(cb: SuccessContinuation<T, TN>): Result<TN>;
-    orDefault(dflt?: T): T | undefined;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    //
+    // (undocumented)
+    orDefault(dflt: T): T;
+    // (undocumented)
+    orDefault(): T | undefined;
     orThrow(__logger?: IResultLogger): T;
     readonly success: true;
     get value(): T;
