@@ -26,6 +26,7 @@
     "url": "https://github.com/ErikFortune/fgv/issues"
   },
   "homepage": "https://github.com/ErikFortune/fgv#readme",
+  "sideEffects": false,
   "devDependencies": {
     "@jest/expect-utils": "^29.7.0",
     "@microsoft/api-documenter": "^7.23.10",

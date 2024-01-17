@@ -419,7 +419,7 @@
     {
       "packageName": "@fgv/ts-music-metadata",
       "projectFolder": "libraries/ts-music-metadata",
-      "shouldPublish": true,
+      "shouldPublish": false,
       "tags": ["libraries"]
     },
     {
