@@ -25,7 +25,7 @@
 import * as Model from './model';
 import * as Validate from './validate';
 
-import { File } from '@fgv/ts-json';
+import { JsonFile } from '@fgv/ts-json-base';
 import { Converter, Converters, Result } from '@fgv/ts-utils';
 import { datedRegistry, yearMonthDaySpec } from '../common/converters';
 
@@ -67,5 +67,5 @@ export const languageTagExtensions = datedRegistry(languageTagExtension);
  * or `Failure` with details if an error occurs.
  */
 export function loadLanguageTagExtensionsJsonFileSync(path: string): Result<Model.LanguageTagExtensions> {
-  return File.convertJsonFileSync(path, languageTagExtensions);
+  return JsonFile.convertJsonFileSync(path, languageTagExtensions);
 }

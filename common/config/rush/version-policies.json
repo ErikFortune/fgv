@@ -12,7 +12,7 @@
     "definitionName": "lockStepVersion",
     "policyName": "base-utils",
     "version": "2.1.0",
-    "nextBump": "prerelease"
+    "nextBump": "minor"
   }
   // {
   //   /**

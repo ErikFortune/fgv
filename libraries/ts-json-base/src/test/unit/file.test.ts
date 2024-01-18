@@ -25,7 +25,7 @@ import '@fgv/ts-utils-jest';
 import { Converters, succeed } from '@fgv/ts-utils';
 import { IMockFileConfig, MockFileSystem } from '@fgv/ts-utils-jest/lib/helpers/fsHelpers';
 import fs from 'fs';
-import { File } from '../../packlets/converters';
+import { JsonFile } from '../..';
 
 describe('JsonFile module', () => {
   const mockDate = new Date();
@@ -54,7 +54,7 @@ describe('JsonFile module', () => {
     test('returns a requested json file', () => {
       const mockFs = new MockFileSystem(mockFsConfig);
       const spies = mockFs.startSpies();
-      expect(File.readJsonFileSync(mockGoodPath)).toSucceedWith(mockGoodPayload);
+      expect(JsonFile.readJsonFileSync(mockGoodPath)).toSucceedWith(mockGoodPayload);
       expect(spies.read).toHaveBeenCalledTimes(1);
       spies.restore();
     });
@@ -62,7 +62,7 @@ describe('JsonFile module', () => {
     test('fails for malformed json', () => {
       const mockFs = new MockFileSystem(mockFsConfig);
       const spies = mockFs.startSpies();
-      expect(File.readJsonFileSync(mockBadPath)).toFailWith(/unexpected token/i);
+      expect(JsonFile.readJsonFileSync(mockBadPath)).toFailWith(/unexpected token/i);
       expect(spies.read).toHaveBeenCalledTimes(1);
       spies.restore();
     });
@@ -77,7 +77,7 @@ describe('JsonFile module', () => {
         throw new Error('Mock Error!');
       });
 
-      expect(File.readJsonFileSync(path)).toFailWith(/mock error/i);
+      expect(JsonFile.readJsonFileSync(path)).toFailWith(/mock error/i);
     });
   });
 
@@ -96,7 +96,7 @@ describe('JsonFile module', () => {
       const mockFs = new MockFileSystem(mockFsConfig);
       const spies = mockFs.startSpies();
       spies.clear();
-      expect(File.convertJsonFileSync(mockGoodPath, mockConverter)).toSucceedWith(mockConverted);
+      expect(JsonFile.convertJsonFileSync(mockGoodPath, mockConverter)).toSucceedWith(mockConverted);
       expect(spies.read).toHaveBeenCalledTimes(1);
       spies.restore();
     });
@@ -118,18 +118,20 @@ describe('JsonFile module', () => {
 
     test('reads JSON files from a folder, ignoring non-JSON', () => {
       expect(
-        File.convertJsonDirectorySync('src/test/unit/data/file/good', options)
+        JsonFile.convertJsonDirectorySync('src/test/unit/data/file/good', options)
       ).toSucceedAndMatchSnapshot();
     });
 
     test('fails for a non-folder', () => {
-      expect(File.convertJsonDirectorySync('src/test/unit/data/file/good/thing1.json', options)).toFailWith(
-        /not a directory/i
-      );
+      expect(
+        JsonFile.convertJsonDirectorySync('src/test/unit/data/file/good/thing1.json', options)
+      ).toFailWith(/not a directory/i);
     });
 
     test('fails by default if any of the items in the folder fail conversion', () => {
-      expect(File.convertJsonDirectorySync('src/test/unit/data/file/bad', options)).toFailWith(/bad3.json/i);
+      expect(JsonFile.convertJsonDirectorySync('src/test/unit/data/file/bad', options)).toFailWith(
+        /bad3.json/i
+      );
     });
   });
 
@@ -149,29 +151,29 @@ describe('JsonFile module', () => {
 
     test('reads JSON files from a folder, ignoring non-JSON', () => {
       expect(
-        File.convertJsonDirectoryToMapSync('src/test/unit/data/file/good', options)
+        JsonFile.convertJsonDirectoryToMapSync('src/test/unit/data/file/good', options)
       ).toSucceedAndMatchSnapshot();
     });
 
     test('applies a name transformation to the returned map if supplied', () => {
-      const transformName: File.ItemNameTransformFunction<IThing> = (n, t) => {
+      const transformName: JsonFile.ItemNameTransformFunction<IThing> = (n, t) => {
         expect(t).toBeDefined();
         return succeed(`thing:${n}`);
       };
       const myOptions = { ...options, transformName };
       expect(
-        File.convertJsonDirectoryToMapSync('src/test/unit/data/file/good', myOptions)
+        JsonFile.convertJsonDirectoryToMapSync('src/test/unit/data/file/good', myOptions)
       ).toSucceedAndMatchSnapshot();
     });
 
     test('fails for a non-folder', () => {
       expect(
-        File.convertJsonDirectoryToMapSync('src/test/unit/data/file/good/thing1.json', options)
+        JsonFile.convertJsonDirectoryToMapSync('src/test/unit/data/file/good/thing1.json', options)
       ).toFailWith(/not a directory/i);
     });
 
     test('fails by default if any of the items in the folder fail conversion', () => {
-      expect(File.convertJsonDirectoryToMapSync('src/test/unit/data/file/bad', options)).toFailWith(
+      expect(JsonFile.convertJsonDirectoryToMapSync('src/test/unit/data/file/bad', options)).toFailWith(
         /bad3.json/i
       );
     });
@@ -191,7 +193,7 @@ describe('JsonFile module', () => {
           expect(JSON.parse(gotPayload)).toEqual(payload);
         });
 
-      expect(File.writeJsonFileSync(path, payload)).toSucceedWith(true);
+      expect(JsonFile.writeJsonFileSync(path, payload)).toSucceedWith(true);
       spy.mockRestore();
     });
 
@@ -206,7 +208,7 @@ describe('JsonFile module', () => {
         throw new Error('Mock Error!');
       });
 
-      expect(File.writeJsonFileSync(path, payload)).toFailWith(/mock error/i);
+      expect(JsonFile.writeJsonFileSync(path, payload)).toFailWith(/mock error/i);
       spy.mockRestore();
     });
   });

@@ -38,8 +38,15 @@ import {
   TemplatedJsonEditorRule
 } from './rules';
 
+import {
+  JsonArray,
+  JsonObject,
+  JsonValue,
+  isJsonArray,
+  isJsonObject,
+  isJsonPrimitive
+} from '@fgv/ts-json-base';
 import { IJsonContext } from '../context';
-import { JsonArray, JsonObject, JsonValue, isJsonArray, isJsonObject, isJsonPrimitive } from '../json';
 import {
   IJsonCloneEditor,
   IJsonEditorOptions,

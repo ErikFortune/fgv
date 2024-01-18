@@ -20,9 +20,9 @@
  * SOFTWARE.
  */
 
+import { JsonArray, JsonObject } from '@fgv/ts-json-base';
 import { Converter } from '@fgv/ts-utils';
 import { IJsonContext } from '../context';
-import { JsonArray, JsonObject } from '../json';
 import {
   ConditionalJsonConverter,
   ConditionalJsonConverterOptions,

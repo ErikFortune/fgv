@@ -19,9 +19,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+import { JsonValue } from '@fgv/ts-json-base';
 import { DetailedResult } from '@fgv/ts-utils';
 import { IJsonContext } from '../context';
-import { JsonValue } from '../json';
 
 /**
  * Possible `DetailedResult` details for various editor operations.

@@ -708,7 +708,7 @@ function object_2<T, TC = unknown>(fields: FieldValidators<T, TC>, params?: Omit
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
+export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

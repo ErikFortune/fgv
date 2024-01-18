@@ -16,10 +16,6 @@
     "lint": "eslint src --ext .ts",
     "fixlint": "eslint src --ext .ts --fix"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ErikFortune/ts-bcp47.git"
-  },
   "keywords": [
     "bcp-47",
     "internationalization",
@@ -29,13 +25,15 @@
   "author": "Erik Fortune",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ErikFortune/ts-bcp47/issues"
+    "url": "https://github.com/ErikFortune/fgv/issues"
   },
-  "homepage": "https://github.com/ErikFortune/ts-bcp47#readme",
+  "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47#readme",
+  "sideEffects": false,
   "devDependencies": {
-    "@fgv/ts-json": "workspace:*",
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-utils-jest": "workspace:*",
+    "@fgv/ts-extras": "workspace:*",
+    "@fgv/ts-json-base": "workspace:*",
     "@microsoft/api-documenter": "^7.23.17",
     "@microsoft/api-extractor": "^7.39.1",
     "@types/jest": "^29.5.11",
@@ -66,11 +64,11 @@
     "eslint-plugin-tsdoc": "~0.2.17"
   },
   "dependencies": {
-    "luxon": "^3.4.4",
-    "@fgv/ts-extras": "workspace:*"
+    "luxon": "^3.4.4"
   },
   "peerDependencies": {
-    "@fgv/ts-json": "^2.0.0",
-    "@fgv/ts-utils": "^2.0.0"
+    "@fgv/ts-utils": "^2.0.0",
+    "@fgv/ts-extras": "workspace:*",
+    "@fgv/ts-json-base": "workspace:*"
   }
 }

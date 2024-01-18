@@ -22,9 +22,9 @@
 
 import '@fgv/ts-utils-jest';
 
+import { JsonValue } from '@fgv/ts-json-base';
 import { CompositeJsonMap, TemplateVars } from '../../../../packlets/context';
 import { EditorRules, JsonEditor, PrefixedJsonMap } from '../../../../packlets/editor';
-import { JsonValue } from '../../../../packlets/json';
 
 describe('ReferenceJsonEditorRule', () => {
   describe('new tests', () => {

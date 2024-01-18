@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+import { JsonArray, JsonObject, JsonValue, isJsonObject } from '@fgv/ts-json-base';
 import { Conversion, Converter, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import {
   IJsonContext,
@@ -28,7 +29,6 @@ import {
   TemplateVarsExtendFunction,
   defaultExtendVars
 } from '../context';
-import { JsonArray, JsonObject, JsonValue, isJsonObject } from '../json';
 
 import { EditorRules, IJsonEditorOptions, IJsonEditorRule, JsonEditor } from '../editor';
 

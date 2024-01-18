@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+import { JsonValue } from '@fgv/ts-json-base';
 import '@fgv/ts-utils-jest';
 import { TemplateVarsExtendFunction, defaultExtendVars } from '../../packlets/context';
 import {
@@ -34,7 +35,6 @@ import {
   mergeDefaultJsonConverterOptions
 } from '../../packlets/converters';
 import { IJsonEditorOptions, JsonEditor, PrefixedJsonMap, SimpleJsonMap } from '../../packlets/editor';
-import { JsonValue } from '../../packlets/json';
 
 /* test data necessarily has lots of non-conformant names */
 /* eslint-disable @typescript-eslint/naming-convention */

@@ -20,9 +20,9 @@
  * SOFTWARE.
  */
 
+import { JsonObject } from '@fgv/ts-json-base';
 import { DetailedFailure, Result, failWithDetail, succeed } from '@fgv/ts-utils';
 import { IJsonContext, IJsonReferenceMap, JsonContextHelper, TemplateVars, VariableValue } from '../context';
-import { JsonObject } from '../json';
 import {
   IJsonCloneEditor,
   IJsonEditorOptions,

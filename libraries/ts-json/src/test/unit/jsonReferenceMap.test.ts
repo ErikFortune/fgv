@@ -20,11 +20,11 @@
  * SOFTWARE.
  */
 
+import { JsonObject, JsonValue } from '@fgv/ts-json-base';
 import { isKeyOf } from '@fgv/ts-utils';
 import '@fgv/ts-utils-jest';
 import { CompositeJsonMap } from '../../packlets/context';
 import { JsonEditor, PrefixedJsonMap, ReferenceMapKeyPolicy, SimpleJsonMap } from '../../packlets/editor';
-import { JsonObject, JsonValue } from '../../packlets/json';
 
 /* test data necessarily has lots of non-conformant names */
 /* eslint-disable @typescript-eslint/naming-convention */
