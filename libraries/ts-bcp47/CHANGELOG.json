@@ -1,0 +1,35 @@
+{
+  "name": "@fgv/ts-bcp47",
+  "entries": [
+    {
+      "version": "2.2.0",
+      "tag": "@fgv/ts-bcp47_v2.2.0",
+      "date": "Thu, 18 Jan 2024 05:45:04 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "refactor, clean up, port tests"
+          },
+          {
+            "comment": "fix peers"
+          },
+          {
+            "comment": "bump versions"
+          },
+          {
+            "comment": "refactor"
+          },
+          {
+            "comment": "Update for ts-utils refactor, dependencies"
+          },
+          {
+            "comment": "update dependences"
+          },
+          {
+            "comment": "update peer dependencies"
+          }
+        ]
+      }
+    }
+  ]
+}
