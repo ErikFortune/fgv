@@ -24,7 +24,7 @@ jobs:
       - name: Rush Install
         run: node common/scripts/install-run-rush.js install
       - name: Bump versions
-        run: node common/scripts/install-run-rush.js version --bump --override-prerelease-id alpha
+        run: node common/scripts/install-run-rush.js version --bump --override-prerelease-id alpha --override-bump prerelease
       - name: Rush rebuild
         run: node common/scripts/install-run-rush.js rebuild --verbose
       - name: Rush Publish
