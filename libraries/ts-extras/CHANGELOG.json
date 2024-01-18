@@ -1,0 +1,20 @@
+{
+  "name": "@fgv/ts-extras",
+  "entries": [
+    {
+      "version": "2.2.0",
+      "tag": "@fgv/ts-extras_v2.2.0",
+      "date": "Thu, 18 Jan 2024 05:45:04 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "refactor and cleanup"
+          },
+          {
+            "comment": "Factor extras into their own package"
+          }
+        ]
+      }
+    }
+  ]
+}

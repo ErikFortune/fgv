@@ -1,0 +1,44 @@
+{
+  "name": "@fgv/ts-json",
+  "entries": [
+    {
+      "version": "2.2.0",
+      "tag": "@fgv/ts-json_v2.2.0",
+      "date": "Thu, 18 Jan 2024 05:45:04 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "fix export issues"
+          },
+          {
+            "comment": "fix peers"
+          },
+          {
+            "comment": "bump versions"
+          },
+          {
+            "comment": "refactor"
+          },
+          {
+            "comment": "major refactor"
+          },
+          {
+            "comment": "Match ts-utils refactor"
+          },
+          {
+            "comment": "version upgrades"
+          },
+          {
+            "comment": "update dependencies"
+          },
+          {
+            "comment": "update peer dependencies"
+          },
+          {
+            "comment": "bump version"
+          }
+        ]
+      }
+    }
+  ]
+}
