@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { RecordJar } from '@fgv/ts-utils';
+import { RecordJar } from '@fgv/ts-extras';
 import { YearMonthDaySpec } from '../common/model';
 
 /**

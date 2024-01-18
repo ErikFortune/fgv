@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-bcp47",
+      "comment": "Update for ts-utils refactor, dependencies",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-bcp47"
+}

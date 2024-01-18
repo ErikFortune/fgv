@@ -21,7 +21,8 @@
  */
 /* eslint-disable @rushstack/typedef-var */
 
-import { Converters, Csv, Result, succeed } from '@fgv/ts-utils';
+import { Csv } from '@fgv/ts-extras';
+import { Converters, Result, succeed } from '@fgv/ts-utils';
 import { Converters as IanaConverters } from '../../iana';
 import { RegionTier } from '../common';
 import * as Model from './model';

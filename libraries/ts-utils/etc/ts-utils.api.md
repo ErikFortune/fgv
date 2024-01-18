@@ -7,8 +7,6 @@
 // @public
 export function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T): Result<T>;
 
-// Warning: (ae-forgotten-export) The symbol "OnError_2" needs to be exported by the entry point index.d.ts
-//
 // @public
 function arrayOf<T, TC = undefined>(converter: Converter<T, TC>, onError?: OnError_2): Converter<T[], TC>;
 
@@ -135,9 +133,6 @@ declare namespace Classes {
     }
 }
 
-// @public
-function computeHash(parts: string[]): string;
-
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -201,7 +196,6 @@ declare namespace Converters {
         isA,
         oneOf,
         arrayOf,
-        extendedArrayOf,
         recordOf,
         mapOf,
         validateWith,
@@ -214,8 +208,7 @@ declare namespace Converters {
         discriminatedObject,
         transform,
         transformObject,
-        rangeTypeOf,
-        rangeOf,
+        OnError_2 as OnError,
         string,
         value,
         number,
@@ -242,28 +235,6 @@ interface ConverterTraits {
     // (undocumented)
     readonly isOptional: boolean;
 }
-
-declare namespace Csv {
-    export {
-        readCsvFileSync,
-        CsvOptions
-    }
-}
-export { Csv }
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @beta
-interface CsvOptions {
-    // (undocumented)
-    delimiter?: string;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const DEFAULT_RANGEOF_FORMATS: RangeOfFormats;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -332,47 +303,6 @@ function enumeratedValue<T>(values: T[]): Converter<T, T[]>;
 // @public
 function enumeratedValue_2<T extends string>(values: T[]): Validator<T, T[]>;
 
-declare namespace Experimental {
-    export {
-        ExtendedArray,
-        formatList,
-        FormatTargets,
-        Formattable,
-        FormattableBase,
-        Formatter,
-        FormattersByExtendedTarget,
-        FormattersByTarget,
-        RangeOfProperties,
-        RangeOfFormats,
-        DEFAULT_RANGEOF_FORMATS,
-        RangeOf
-    }
-}
-export { Experimental }
-
-// @beta
-class ExtendedArray<T> extends Array<T> {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    constructor(itemDescription: string, ...items: T[]);
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    all(): T[];
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    atLeastOne(failMessage?: string): Result<T[]>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    first(failMessage?: string): Result<T>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static isExtendedArray<T>(a?: T[]): a is ExtendedArray<T>;
-    // (undocumented)
-    readonly itemDescription: string;
-    single(predicate?: (item: T) => boolean): Result<T>;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @beta
-function extendedArrayOf<T, TC = undefined>(label: string, converter: Converter<T, TC>, onError?: OnError_2): Converter<ExtendedArray<T>, TC>;
-
 // @public
 function fail_2<T>(message: string): Failure<T>;
 export { fail_2 as fail }
@@ -380,14 +310,23 @@ export { fail_2 as fail }
 // @public
 export class Failure<T> implements IResult<T> {
     constructor(message: string);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    //
+    // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
+    // @deprecated
     getValueOrThrow(logger?: IResultLogger): never;
     isFailure(): this is Failure<T>;
     isSuccess(): this is Success<T>;
     get message(): string;
     onFailure(cb: FailureContinuation<T>): Result<T>;
     onSuccess<TN>(__: SuccessContinuation<T, TN>): Result<TN>;
-    orDefault(dflt?: T): T | undefined;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    //
+    // (undocumented)
+    orDefault(dflt: T): T;
+    // (undocumented)
+    orDefault(): T | undefined;
     orThrow(logger?: IResultLogger): never;
     readonly success: false;
     toString(): string;
@@ -435,43 +374,6 @@ type FieldTransformers<TSRC, TDEST, TC = unknown> = {
 type FieldValidators<T, TC = unknown> = {
     [key in keyof T]: Validator<T[key], TC>;
 };
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @beta
-function formatList<T>(format: string, items: T[], itemFormatter: Formatter<T>): Result<string>;
-
-// @beta
-interface Formattable {
-    format(format: string): Result<string>;
-}
-
-// @beta
-class FormattableBase {
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    format(template: string): Result<string>;
-    // @internal
-    protected static _tryAddDetail(details: string[], label: string, value: string | undefined): void;
-}
-
-// @beta
-type FormatTargets = 'text' | 'markdown' | 'embed';
-
-// @beta
-type Formatter<T> = (format: string, item: T) => Result<string>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @beta
-type FormattersByExtendedTarget<TFT extends FormatTargets, T> = Record<TFT, Formatter<T>>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @beta
-type FormattersByTarget<T> = FormattersByExtendedTarget<FormatTargets, T>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -551,14 +453,6 @@ export function getTypeOfProperty<T extends object>(key: string | number | symbo
 // @public
 export function getValueOfPropertyOrDefault<T extends object>(key: string | number | symbol, item: T, defaultValue?: unknown): unknown | undefined;
 
-declare namespace Hash {
-    export {
-        computeHash,
-        Normalizer_2 as Normalizer
-    }
-}
-export { Hash }
-
 // Warning: (ae-forgotten-export) The symbol "InnerInferredType" needs to be exported by the entry point index.d.ts
 //
 // @beta
@@ -585,13 +479,18 @@ class InMemoryLogger extends LoggerBase {
 
 // @public
 export interface IResult<T> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    //
+    // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
+    // @deprecated
     getValueOrThrow(logger?: IResultLogger): T;
     isFailure(): this is Failure<T>;
     isSuccess(): this is Success<T>;
     onFailure(cb: FailureContinuation<T>): Result<T>;
     onSuccess<TN>(cb: SuccessContinuation<T, TN>): Result<TN>;
-    orDefault(dflt?: T): T | undefined;
+    orDefault(dflt: T): T;
+    orDefault(): T | undefined;
     orThrow(logger?: IResultLogger): T;
     readonly success: boolean;
     // Warning: (ae-incompatible-release-tags) The symbol "withDetail" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
@@ -622,20 +521,6 @@ export function isKeyOf<T extends object>(key: string | number | symbol, item: T
 
 // @public
 const isoDate: Converter<Date, unknown>;
-
-// @public (undocumented)
-type JarFieldPicker<T extends JarRecord = JarRecord> = (record: T) => (keyof T)[];
-
-// @public
-type JarRecord = Record<string, string | string[]>;
-
-// @public
-interface JarRecordParserOptions {
-    // (undocumented)
-    readonly arrayFields?: string[] | JarFieldPicker;
-    // (undocumented)
-    readonly fixedContinuationSize?: number;
-}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -762,17 +647,6 @@ export class Normalizer {
     protected _normalizeEntries<T = unknown>(entries: Iterable<Entry<T>>): Entry<T>[];
     // @internal
     protected _normalizeLiteral<T>(from: T): Result<T>;
-}
-
-// @public
-class Normalizer_2 {
-    // @internal
-    protected _compareKeys(k1: unknown, k2: unknown): number;
-    computeHash(from: unknown): Result<string>;
-    // @internal
-    protected _normalizeEntries(entries: Iterable<[unknown, unknown]>): [unknown, unknown][];
-    // @internal
-    protected _normalizeLiteral(from: string | number | bigint | boolean | symbol | undefined | Date | RegExp | null): Result<string>;
 }
 
 // @public
@@ -936,6 +810,9 @@ export function omit<T extends object, K extends keyof T>(from: T, exclude: K[])
 function oneOf<T, TC = unknown>(converters: Array<Converter<T, TC>>, onError?: OnError_2): Converter<T, TC>;
 
 // @public
+type OnError_2 = 'failOnError' | 'ignoreErrors';
+
+// @public
 const optionalBoolean: Converter<boolean | undefined>;
 
 // @public
@@ -963,9 +840,6 @@ export function optionalRecordToPossiblyEmptyMap<TS, TD, TK extends string = str
 const optionalString: Converter<string | undefined, unknown>;
 
 // @public
-function parseRecordJarLines(lines: string[], options?: JarRecordParserOptions): Result<JarRecord[]>;
-
-// @public
 export function pick<T extends object, K extends keyof T>(from: T, include: K[]): Pick<T, K>;
 
 // @public
@@ -984,82 +858,6 @@ export interface PopulateObjectOptions<T> {
 //
 // @public
 export function propagateWithDetail<T, TD>(result: Result<T>, detail: TD, successDetail?: TD): DetailedResult<T, TD>;
-
-// @public
-class RangeOf<T> implements RangeOfProperties<T> {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    constructor(min?: T, max?: T);
-    check(t: T): 'less' | 'included' | 'greater';
-    // @internal
-    protected _compare(t1: T, t2: T): 'less' | 'equal' | 'greater';
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static createRange<T>(init?: RangeOfProperties<T>): Result<RangeOf<T>>;
-    // @internal
-    protected static _defaultCompare<T>(t1: T, t2: T): 'less' | 'equal' | 'greater';
-    findTransition(t: T): T | undefined;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    format(format: (value: T) => string | undefined, formats?: RangeOfFormats): string | undefined;
-    includes(t: T): boolean;
-    readonly max?: T;
-    readonly min?: T;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static propertiesToString<T>(range: RangeOfProperties<T>, formats?: RangeOfFormats, emptyValue?: T): string | undefined;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    toFormattedProperties(format: (value: T) => string | undefined): RangeOfProperties<string>;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-function rangeOf<T, TC = unknown>(converter: Converter<T, TC>): Converter<RangeOf<T>, TC>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-interface RangeOfFormats {
-    // (undocumented)
-    maxOnly: string;
-    // (undocumented)
-    minMax: string;
-    // (undocumented)
-    minOnly: string;
-}
-
-// @public
-interface RangeOfProperties<T> {
-    // (undocumented)
-    readonly max?: T;
-    // (undocumented)
-    readonly min?: T;
-}
-
-// @public
-function rangeTypeOf<T, RT extends RangeOf<T>, TC = unknown>(converter: Converter<T, TC>, constructor: (init: RangeOfProperties<T>) => Result<RT>): Converter<RT, TC>;
-
-// @beta
-function readCsvFileSync(srcPath: string, options?: CsvOptions): Result<unknown>;
-
-// @public
-function readRecordJarFileSync(srcPath: string, options?: JarRecordParserOptions): Result<JarRecord[]>;
-
-declare namespace RecordJar {
-    export {
-        parseRecordJarLines,
-        readRecordJarFileSync,
-        JarRecord,
-        JarFieldPicker,
-        JarRecordParserOptions
-    }
-}
-export { RecordJar }
 
 // @public
 function recordOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC>): Converter<Record<TK, T>, TC>;
@@ -1175,13 +973,22 @@ export function succeedWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess
 // @public
 export class Success<T> implements IResult<T> {
     constructor(value: T);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    //
+    // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
+    // @deprecated
     getValueOrThrow(__logger?: IResultLogger): T;
     isFailure(): this is Failure<T>;
     isSuccess(): this is Success<T>;
     onFailure(__: FailureContinuation<T>): Result<T>;
     onSuccess<TN>(cb: SuccessContinuation<T, TN>): Result<TN>;
-    orDefault(dflt?: T): T | undefined;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    //
+    // (undocumented)
+    orDefault(dflt: T): T;
+    // (undocumented)
+    orDefault(): T | undefined;
     orThrow(__logger?: IResultLogger): T;
     readonly success: true;
     get value(): T;

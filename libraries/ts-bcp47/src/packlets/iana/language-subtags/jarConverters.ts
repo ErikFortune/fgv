@@ -26,7 +26,8 @@ import * as JarModel from '../jar/language-subtags/registry/model';
 import * as TagConverters from '../jar/language-subtags/tags/converters';
 import * as Model from './model';
 
-import { Converters, RecordJar, Result } from '@fgv/ts-utils';
+import { RecordJar } from '@fgv/ts-extras';
+import { Converters, Result } from '@fgv/ts-utils';
 import { datedRegistry, yearMonthDaySpec } from '../common/converters';
 
 import { File } from '@fgv/ts-json';
