@@ -16,10 +16,6 @@
     "lint": "eslint src --ext .ts",
     "fixlint": "eslint src --ext .ts --fix"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ErikFortune/fgv.git"
-  },
   "keywords": [
     "typescript",
     "node"
@@ -30,6 +26,7 @@
     "url": "https://github.com/ErikFortune/fgv/issues"
   },
   "homepage": "https://github.com/ErikFortune/fgv/libraries/ts-sudoku-lib#readme",
+  "sideEffects": false,
   "devDependencies": {
     "@fgv/ts-json": "workspace:*",
     "@fgv/ts-utils": "workspace:*",

@@ -21,6 +21,10 @@
   ],
   "author": "Erik Fortune",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ErikFortune/fgv/issues"
+  },
+  "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils-jest#readme",
   "dependencies": {
     "@jest/expect-utils": "^29.7.0",
     "@rushstack/eslint-config": "~3.6.0",

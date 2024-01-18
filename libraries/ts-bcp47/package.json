@@ -16,10 +16,6 @@
     "lint": "eslint src --ext .ts",
     "fixlint": "eslint src --ext .ts --fix"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ErikFortune/ts-bcp47.git"
-  },
   "keywords": [
     "bcp-47",
     "internationalization",
@@ -29,9 +25,10 @@
   "author": "Erik Fortune",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ErikFortune/ts-bcp47/issues"
+    "url": "https://github.com/ErikFortune/fgv/issues"
   },
-  "homepage": "https://github.com/ErikFortune/ts-bcp47#readme",
+  "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47#readme",
+  "sideEffects": false,
   "devDependencies": {
     "@fgv/ts-json": "workspace:*",
     "@fgv/ts-utils": "workspace:*",

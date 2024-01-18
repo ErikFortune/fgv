@@ -16,16 +16,17 @@
     "lint": "eslint src --ext .ts",
     "fixlint": "eslint src --ext .ts --fix"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ErikFortune/fgv.git"
-  },
   "keywords": [
     "typescript",
     "json"
   ],
   "author": "Erik Fortune",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ErikFortune/fgv/issues"
+  },
+  "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json#readme",
+  "sideEffects": false,
   "devDependencies": {
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-utils-jest": "workspace:*",
@@ -51,10 +52,12 @@
     "@rushstack/heft": "~0.64.0",
     "heft-jest": "~1.0.2",
     "@types/heft-jest": "1.0.6",
-    "@microsoft/api-documenter": "^7.23.17"
+    "@microsoft/api-documenter": "^7.23.17",
+    "@fgv/ts-json-base": "workspace:*"
   },
   "peerDependencies": {
-    "@fgv/ts-utils": "^2.0.0",
+    "@fgv/ts-utils": "workspace:*",
+    "@fgv/ts-json-base": "workspace:*",
     "mustache": "^4.2.0"
   }
 }

@@ -424,6 +424,13 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-json-base",
+      "projectFolder": "libraries/ts-json-base",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-sudoku-lib",
       "projectFolder": "libraries/ts-sudoku-lib",
       "shouldPublish": true,

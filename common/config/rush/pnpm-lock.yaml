@@ -153,6 +153,63 @@ importers:
 
   ../../libraries/ts-json:
     specifiers:
+      '@fgv/ts-json-base': workspace:*
+      '@fgv/ts-utils': workspace:*
+      '@fgv/ts-utils-jest': workspace:*
+      '@microsoft/api-documenter': ^7.23.17
+      '@rushstack/heft': ~0.64.0
+      '@rushstack/heft-node-rig': ~2.4.0
+      '@types/heft-jest': 1.0.6
+      '@types/jest': ^29.5.11
+      '@types/mustache': ^4.2.5
+      '@types/node': ^20.11.5
+      '@typescript-eslint/eslint-plugin': ^6.19.0
+      '@typescript-eslint/parser': ^6.19.0
+      eslint: ^8.56.0
+      eslint-config-standard: ^17.1.0
+      eslint-plugin-import: ^2.29.1
+      eslint-plugin-n: ^16.6.2
+      eslint-plugin-node: ^11.1.0
+      eslint-plugin-promise: ^6.1.1
+      heft-jest: ~1.0.2
+      jest: ^29.7.0
+      jest-extended: ^4.0.2
+      mustache: ^4.2.0
+      rimraf: ^5.0.5
+      ts-jest: ^29.1.1
+      ts-node: ^10.9.2
+      typescript: ^5.3.3
+    dependencies:
+      '@fgv/ts-json-base': link:../ts-json-base
+    devDependencies:
+      '@fgv/ts-utils': link:../ts-utils
+      '@fgv/ts-utils-jest': link:../ts-utils-jest
+      '@microsoft/api-documenter': 7.23.17_@types+node@20.11.5
+      '@rushstack/heft': 0.64.0_@types+node@20.11.5
+      '@rushstack/heft-node-rig': 2.4.0_e347abaef3bdfe1be007538ca1d8beab
+      '@types/heft-jest': 1.0.6
+      '@types/jest': 29.5.11
+      '@types/mustache': 4.2.5
+      '@types/node': 20.11.5
+      '@typescript-eslint/eslint-plugin': 6.19.0_76a9d5d5584e52a85a51079be3d34361
+      '@typescript-eslint/parser': 6.19.0_eslint@8.56.0+typescript@5.3.3
+      eslint: 8.56.0
+      eslint-config-standard: 17.1.0_74f8775864056079f8fd97344a35a5ba
+      eslint-plugin-import: 2.29.1_eslint@8.56.0
+      eslint-plugin-n: 16.6.2_eslint@8.56.0
+      eslint-plugin-node: 11.1.0_eslint@8.56.0
+      eslint-plugin-promise: 6.1.1_eslint@8.56.0
+      heft-jest: 1.0.2
+      jest: 29.7.0_d2332dc82b103d3b0570cd4b53229b4d
+      jest-extended: 4.0.2_jest@29.7.0
+      mustache: 4.2.0
+      rimraf: 5.0.5
+      ts-jest: 29.1.1_jest@29.7.0+typescript@5.3.3
+      ts-node: 10.9.2_e46914e20c18bd63f875cc59820cbcd8
+      typescript: 5.3.3
+
+  ../../libraries/ts-json-base:
+    specifiers:
       '@fgv/ts-utils': workspace:*
       '@fgv/ts-utils-jest': workspace:*
       '@microsoft/api-documenter': ^7.23.17
