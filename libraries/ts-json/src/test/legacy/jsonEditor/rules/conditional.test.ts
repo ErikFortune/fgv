@@ -22,8 +22,8 @@
 
 import '@fgv/ts-utils-jest';
 
+import { JsonObject } from '@fgv/ts-json-base';
 import { EditorRules, JsonEditor, PrefixedJsonMap } from '../../../../packlets/editor';
-import { JsonObject } from '../../../../packlets/json';
 
 describe('ConditionalJsonEditorRule', () => {
   const o1 = { name: 'o1', kid: '{{kid}}' };

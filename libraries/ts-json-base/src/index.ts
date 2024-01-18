@@ -20,4 +20,7 @@
  * SOFTWARE.
  */
 
+import * as JsonFile from './packlets/json-file';
+
 export * from './packlets/json';
+export { JsonFile };

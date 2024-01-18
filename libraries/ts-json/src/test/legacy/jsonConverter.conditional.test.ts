@@ -19,10 +19,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+import { JsonObject, JsonValue } from '@fgv/ts-json-base';
 import '@fgv/ts-utils-jest';
 import { TemplateVars } from '../../packlets/context';
 import { ConditionalJsonConverter } from '../../packlets/converters';
-import { JsonObject, JsonValue } from '../../packlets/json';
 
 interface IJsonConverterSuccessTest {
   description: string;

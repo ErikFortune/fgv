@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
+import { JsonObject, JsonValue } from '@fgv/ts-json-base';
 import { DetailedResult, Result, succeed } from '@fgv/ts-utils';
-import { JsonObject, JsonValue } from '../json';
 
 /**
  * Collection of variables used for template replacement in a JSON edit or

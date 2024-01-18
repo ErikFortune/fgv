@@ -3,7 +3,7 @@
   "version": "2.0.1",
   "description": "Typescript types and basic functions for working with json",
   "main": "lib/index.js",
-  "types": "dist/ts-json.d.ts",
+  "types": "dist/ts-json-base.d.ts",
   "scripts": {
     "build": "heft test --clean",
     "clean": "heft clean",

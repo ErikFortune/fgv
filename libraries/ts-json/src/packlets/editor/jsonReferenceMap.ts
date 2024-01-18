@@ -32,8 +32,8 @@ import {
   succeedWithDetail
 } from '@fgv/ts-utils';
 
+import { JsonObject, JsonValue, isJsonObject } from '@fgv/ts-json-base';
 import { IJsonContext, IJsonReferenceMap, JsonReferenceMapFailureReason } from '../context';
-import { JsonObject, JsonValue, isJsonObject } from '../json';
 import { JsonEditor } from './jsonEditor';
 
 /**

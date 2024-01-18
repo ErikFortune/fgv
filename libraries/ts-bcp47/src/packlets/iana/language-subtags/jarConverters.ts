@@ -30,7 +30,7 @@ import { RecordJar } from '@fgv/ts-extras';
 import { Converters, Result } from '@fgv/ts-utils';
 import { datedRegistry, yearMonthDaySpec } from '../common/converters';
 
-import { File } from '@fgv/ts-json';
+import { JsonFile } from '@fgv/ts-json-base';
 import { datedRegistryFromJarRecords } from '../jar/jarConverters';
 import { registryScopeType } from '../jar/language-subtags/registry/converters';
 
@@ -249,7 +249,7 @@ export const registryFile = datedRegistry(registeredItem);
  * @internal
  */
 export function loadJsonSubtagRegistryFileSync(path: string): Result<Model.RegistryFile> {
-  return File.convertJsonFileSync(path, registryFile);
+  return JsonFile.convertJsonFileSync(path, registryFile);
 }
 
 /**

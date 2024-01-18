@@ -25,7 +25,7 @@
 import { Converter, Converters, Result } from '@fgv/ts-utils';
 import { IPuzzlesFile } from './model';
 
-import { File } from '@fgv/ts-json';
+import { JsonFile } from '@fgv/ts-json-base';
 import { Converters as CommonConverters } from '../common';
 
 /**
@@ -45,5 +45,5 @@ export const puzzlesFile: Converter<IPuzzlesFile> = Converters.strictObject<IPuz
  * @public
  */
 export function loadJsonPuzzlesFileSync(path: string): Result<IPuzzlesFile> {
-  return File.convertJsonFileSync(path, puzzlesFile);
+  return JsonFile.convertJsonFileSync(path, puzzlesFile);
 }
