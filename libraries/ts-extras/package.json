@@ -58,12 +58,15 @@
     "@types/heft-jest": "1.0.6",
     "@rushstack/heft-jest-plugin": "~0.11.0",
     "eslint-plugin-tsdoc": "~0.2.17",
-    "@fgv/ts-utils-jest": "workspace:*"
+    "@fgv/ts-utils-jest": "workspace:*",
+    "@fgv/ts-utils": "workspace:*"
   },
   "dependencies": {
     "luxon": "^3.4.4",
     "mustache": "^4.2.0",
-    "papaparse": "^5.4.1",
+    "papaparse": "^5.4.1"
+  },
+  "peerDependencies": {
     "@fgv/ts-utils": "workspace:*"
   }
 }

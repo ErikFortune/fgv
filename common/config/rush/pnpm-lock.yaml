@@ -114,11 +114,11 @@ importers:
       ts-node: ^10.9.2
       typescript: ^5.3.3
     dependencies:
-      '@fgv/ts-utils': link:../ts-utils
       luxon: 3.4.4
       mustache: 4.2.0
       papaparse: 5.4.1
     devDependencies:
+      '@fgv/ts-utils': link:../ts-utils
       '@fgv/ts-utils-jest': link:../ts-utils-jest
       '@jest/expect-utils': 29.7.0
       '@microsoft/api-documenter': 7.23.17_@types+node@20.11.5
