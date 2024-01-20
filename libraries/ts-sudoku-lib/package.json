@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-sudoku-lib",
-  "version": "2.1.1-alpha.0",
+  "version": "2.1.1-alpha.1",
   "description": "Sudoku rules library",
   "main": "lib/index.js",
   "types": "dist/ts-json.d.ts",
@@ -61,6 +61,6 @@
     "@fgv/ts-json-base": "workspace:*"
   },
   "peerDependencies": {
-    "@fgv/ts-utils": "^2.1.1-alpha.0"
+    "@fgv/ts-utils": "^2.1.1-alpha.1"
   }
 }
