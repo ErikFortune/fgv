@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-utils",
-  "version": "2.1.1-alpha.0",
+  "version": "2.1.1-alpha.1",
   "description": "Assorted Typescript Utilities",
   "main": "lib/index.js",
   "types": "dist/ts-utils.d.ts",
