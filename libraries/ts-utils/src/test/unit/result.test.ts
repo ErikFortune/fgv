@@ -110,6 +110,15 @@ describe('Result module', () => {
           expect(gotValue).toEqual(dflt);
         });
       });
+
+      describe('type checks', () => {
+        const dflt = { prop: 'value' };
+        const s: Result<typeof dflt> = fail<typeof dflt>('oops');
+        // '?' is required because return can be undefined
+        expect(s.orDefault()?.prop).toBeUndefined();
+        // No '?' needed because 'undefined' is not possible
+        expect(s.orDefault(dflt).prop).toEqual('value');
+      });
     });
 
     describe('onSuccess method', () => {

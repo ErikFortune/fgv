@@ -20,4 +20,4 @@
  * SOFTWARE.
  */
 
-export * from './hash';
+export * from './md5Normalizer';

@@ -239,6 +239,15 @@ interface ConverterTraits {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+class Crc32Normalizer extends HashingNormalizer {
+    constructor();
+    // (undocumented)
+    static crc32Hash(parts: string[]): string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 const defaultValidatorTraits: ValidatorTraitValues;
 
 // @public
@@ -453,6 +462,27 @@ export function getTypeOfProperty<T extends object>(key: string | number | symbo
 // @public
 export function getValueOfPropertyOrDefault<T extends object>(key: string | number | symbol, item: T, defaultValue?: unknown): unknown | undefined;
 
+declare namespace Hash {
+    export {
+        Crc32Normalizer,
+        HashFunction,
+        HashingNormalizer
+    }
+}
+export { Hash }
+
+// @public
+type HashFunction = (parts: string[]) => string;
+
+// @public
+class HashingNormalizer extends Normalizer {
+    constructor(hash: HashFunction);
+    // (undocumented)
+    computeHash(from: unknown): Result<string>;
+    // @internal
+    protected _normalizeLiteralToString(from: string | number | bigint | boolean | symbol | undefined | Date | RegExp | null): Result<string>;
+}
+
 // Warning: (ae-forgotten-export) The symbol "InnerInferredType" needs to be exported by the entry point index.d.ts
 //
 // @beta
@@ -642,11 +672,8 @@ export class Normalizer {
     // (undocumented)
     protected _normalizeArray(from: unknown[]): Result<unknown[]>;
     // Warning: (ae-forgotten-export) The symbol "Entry" needs to be exported by the entry point index.d.ts
-    //
-    // @internal
-    protected _normalizeEntries<T = unknown>(entries: Iterable<Entry<T>>): Entry<T>[];
-    // @internal
-    protected _normalizeLiteral<T>(from: T): Result<T>;
+    normalizeEntries<T = unknown>(entries: Iterable<Entry<T>>): Entry<T>[];
+    normalizeLiteral<T>(from: T): Result<T>;
 }
 
 // @public

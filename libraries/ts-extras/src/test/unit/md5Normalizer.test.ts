@@ -22,7 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 
-import { Normalizer, computeHash } from '../../packlets/hash';
+import { Md5Normalizer } from '../../packlets/hash';
 
 describe('Hash module', () => {
   describe('computeHash function', () => {
@@ -34,7 +34,7 @@ describe('Hash module', () => {
           ['this', 'is', 'a', 'test']
         ]
       ].forEach((t) => {
-        expect(computeHash(t[0])).toEqual(computeHash(t[1]));
+        expect(Md5Normalizer.md5Hash(t[0])).toEqual(Md5Normalizer.md5Hash(t[1]));
       });
     });
 
@@ -46,13 +46,13 @@ describe('Hash module', () => {
           ['this', 'a', 'is', 'test']
         ]
       ].forEach((t) => {
-        expect(computeHash(t[0])).not.toEqual(computeHash(t[1]));
+        expect(Md5Normalizer.md5Hash(t[0])).not.toEqual(Md5Normalizer.md5Hash(t[1]));
       });
     });
   });
 
   describe('Normalizer class', () => {
-    const normalizer = new Normalizer();
+    const normalizer = new Md5Normalizer();
     const now = Date.now();
     test.each([
       ['like strings', 'hello', 'hello'],

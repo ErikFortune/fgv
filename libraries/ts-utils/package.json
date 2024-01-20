@@ -60,6 +60,7 @@
   },
   "dependencies": {
     "luxon": "^3.4.4",
-    "mustache": "^4.2.0"
+    "mustache": "^4.2.0",
+    "crc": "~4.3.2"
   }
 }
