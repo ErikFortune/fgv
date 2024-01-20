@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Erik Fortune
+ * Copyright (c) 2023 Erik Fortune
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +20,20 @@
  * SOFTWARE.
  */
 
-import * as Conversion from './packlets/conversion';
-import * as Hash from './packlets/hash';
-import * as Validation from './packlets/validation';
+import { crc32 } from 'crc';
+import { HashingNormalizer } from './hashingNormalizer';
 
-import { Converter, Converters, ObjectConverter } from './packlets/conversion';
-import { Validator, Validators } from './packlets/validation';
+/**
+ * A {@link Hash.HashingNormalizer | hashing normalizer} which computes object
+ * hash using the CRC32 algorithm.
+ * @public
+ */
+export class Crc32Normalizer extends HashingNormalizer {
+  public constructor() {
+    super(Crc32Normalizer.crc32Hash);
+  }
 
-export * from './packlets/base';
-export { Conversion, Converter, Converters, Hash, ObjectConverter, Validation, Validator, Validators };
+  public static crc32Hash(parts: string[]): string {
+    return String(crc32(parts.join('|')));
+  }
+}

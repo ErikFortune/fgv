@@ -51,19 +51,19 @@ export class Normalizer {
       case 'number':
       case 'symbol':
       case 'undefined':
-        return this._normalizeLiteral(from);
+        return this.normalizeLiteral(from);
       case 'object':
         if (from === null || from instanceof Date || from instanceof RegExp) {
-          return this._normalizeLiteral(from);
+          return this.normalizeLiteral(from);
         } else if (Array.isArray(from)) {
           return this._normalizeArray(from) as unknown as Result<T>;
         } else if (from instanceof Map) {
-          return succeed(new Map(this._normalizeEntries(from.entries())) as unknown as T);
+          return succeed(new Map(this.normalizeEntries(from.entries())) as unknown as T);
         } else if (from instanceof Set) {
-          return succeed(new Set(this._normalizeEntries(from.entries())) as unknown as T);
+          return succeed(new Set(this.normalizeEntries(from.entries())) as unknown as T);
         }
         const obj: { [key in number | string | symbol]: unknown } = {};
-        for (const e of this._normalizeEntries(Object.entries(from as unknown as object))) {
+        for (const e of this.normalizeEntries(Object.entries(from as unknown as object))) {
           obj[e[0]] = e[1];
         }
         return succeed(obj as T);
@@ -98,9 +98,8 @@ export class Normalizer {
    * Converts property names (entry key) to string and then sorts as string.
    * @param entries - The entries to be normalized.
    * @returns A normalized sorted array of entries.
-   * @internal
    */
-  protected _normalizeEntries<T = unknown>(entries: Iterable<Entry<T>>): Entry<T>[] {
+  public normalizeEntries<T = unknown>(entries: Iterable<Entry<T>>): Entry<T>[] {
     return Array.from(entries)
       .sort((e1, e2) => this._compareKeys(e1[0], e2[0]))
       .map((e) => [e[0], this.normalize(e[1])] as ResultEntry<T>)
@@ -116,9 +115,8 @@ export class Normalizer {
    * Normalizes the supplied literal value
    * @param from - The literal value to be normalized.
    * @returns A normalized value for the literal.
-   * @internal
    */
-  protected _normalizeLiteral<T>(from: T): Result<T> {
+  public normalizeLiteral<T>(from: T): Result<T> {
     // TODO: Apply configurable normalization rules
     switch (typeof from) {
       case 'string':

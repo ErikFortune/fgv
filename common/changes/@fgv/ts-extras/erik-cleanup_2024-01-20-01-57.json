@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "refactor hash implementation",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

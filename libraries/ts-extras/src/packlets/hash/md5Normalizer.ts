@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Erik Fortune
+ * Copyright (c) 2023 Erik Fortune
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +20,19 @@
  * SOFTWARE.
  */
 
-import * as Conversion from './packlets/conversion';
-import * as Hash from './packlets/hash';
-import * as Validation from './packlets/validation';
+import { Hash } from '@fgv/ts-utils';
+import * as crypto from 'crypto';
+/**
+ * A {@link Hash.HashingNormalizer | hashing normalizer} which computes object
+ * hash using the MD5 algorithm.
+ * @public
+ */
+export class Md5Normalizer extends Hash.HashingNormalizer {
+  public constructor() {
+    super(Md5Normalizer.md5Hash);
+  }
 
-import { Converter, Converters, ObjectConverter } from './packlets/conversion';
-import { Validator, Validators } from './packlets/validation';
-
-export * from './packlets/base';
-export { Conversion, Converter, Converters, Hash, ObjectConverter, Validation, Validator, Validators };
+  public static md5Hash(parts: string[]): string {
+    return crypto.createHash('md5').update(parts.join('|'), 'utf8').digest('hex');
+  }
+}

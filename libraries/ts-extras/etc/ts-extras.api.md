@@ -6,10 +6,8 @@
 
 import { Converter } from '@fgv/ts-utils';
 import { Converters as Converters_2 } from '@fgv/ts-utils';
+import { Hash as Hash_2 } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
-
-// @public
-function computeHash(parts: string[]): string;
 
 declare namespace Converters {
     export {
@@ -136,8 +134,7 @@ type FormattersByTarget<T> = FormattersByExtendedTarget<FormatTargets, T>;
 
 declare namespace Hash {
     export {
-        computeHash,
-        Normalizer
+        Md5Normalizer
     }
 }
 export { Hash }
@@ -156,15 +153,13 @@ interface JarRecordParserOptions {
     readonly fixedContinuationSize?: number;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-class Normalizer {
-    // @internal
-    protected _compareKeys(k1: unknown, k2: unknown): number;
-    computeHash(from: unknown): Result<string>;
-    // @internal
-    protected _normalizeEntries(entries: Iterable<[unknown, unknown]>): [unknown, unknown][];
-    // @internal
-    protected _normalizeLiteral(from: string | number | bigint | boolean | symbol | undefined | Date | RegExp | null): Result<string>;
+class Md5Normalizer extends Hash_2.HashingNormalizer {
+    constructor();
+    // (undocumented)
+    static md5Hash(parts: string[]): string;
 }
 
 // @public
