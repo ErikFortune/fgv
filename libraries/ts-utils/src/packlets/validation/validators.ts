@@ -29,6 +29,7 @@ import { BooleanValidator } from './boolean';
 import { TypeGuardWithContext } from './common';
 import { GenericValidator } from './genericValidator';
 import { NumberValidator } from './number';
+import { OneOfValidator } from './oneOf';
 import { StringValidator } from './string';
 import { Validator } from './validator';
 
@@ -116,6 +117,18 @@ export function literal<T extends string | number | boolean | symbol | null | un
         : fail(`Expected literal ${String(value)}, found "${JSON.stringify(from, undefined, 2)}`);
     }
   });
+}
+
+/**
+ * Helper function to create a {@link Validation.Validator | Validator} which validates one
+ * of several possible validated values.
+ * @param validators - the {@link Validation.Validator | validators} to be considered.
+ * @returns A new {@link Validator | Validator} which validates values that match any of
+ * the supplied validators.
+ * @public
+ */
+export function oneOf<T, TC = unknown>(validators: Array<Validator<T, TC>>): Validator<T, TC> {
+  return new OneOfValidator<T, TC>({ validators });
 }
 
 /**

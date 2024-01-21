@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "add oneOf validator",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

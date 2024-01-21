@@ -836,6 +836,12 @@ export function omit<T extends object, K extends keyof T>(from: T, exclude: K[])
 // @public
 function oneOf<T, TC = unknown>(converters: Array<Converter<T, TC>>, onError?: OnError_2): Converter<T, TC>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function oneOf_2<T, TC = unknown>(validators: Array<Validator<T, TC>>): Validator<T, TC>;
+
 // @public
 type OnError_2 = 'failOnError' | 'ignoreErrors';
 
@@ -1146,6 +1152,7 @@ declare namespace Validators {
         arrayOf_2 as arrayOf,
         enumeratedValue_2 as enumeratedValue,
         literal_2 as literal,
+        oneOf_2 as oneOf,
         isA_2 as isA,
         string_2 as string,
         number_2 as number,
