@@ -81,7 +81,11 @@ export function isJsonPrimitive(from: unknown): from is JsonPrimitive {
  */
 export function isJsonObject(from: unknown): from is JsonObject {
   return (
-    typeof from === 'object' && !Array.isArray(from) && !(from instanceof RegExp) && !(from instanceof Date)
+    typeof from === 'object' &&
+    from !== null &&
+    !Array.isArray(from) &&
+    !(from instanceof RegExp) &&
+    !(from instanceof Date)
   );
 }
 

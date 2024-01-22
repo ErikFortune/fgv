@@ -6,6 +6,7 @@
 
 import { Converter } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
+import { Validator } from '@fgv/ts-utils';
 
 // @public
 export function classifyJsonValue(from: unknown): Result<JsonValueType>;
@@ -34,6 +35,14 @@ interface IDirectoryToMapConvertOptions<T, TC = unknown> extends IDirectoryConve
     transformName?: ItemNameTransformFunction<T>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Validator"
+//
+// @public
+interface IJsonValidatorContext {
+    // (undocumented)
+    ignoreUndefinedProperties?: boolean;
+}
+
 // @public
 interface IReadDirectoryItem<T> {
     filename: string;
@@ -56,6 +65,12 @@ type ItemNameTransformFunction<T> = (name: string, item: T) => Result<string>;
 export interface JsonArray extends Array<JsonValue> {
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Validator"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IJsonValidatorContext"
+//
+// @public
+const jsonArray: Validator<JsonArray, IJsonValidatorContext>;
+
 declare namespace JsonFile {
     export {
         readJsonFileSync,
@@ -77,11 +92,28 @@ export interface JsonObject {
     [key: string]: JsonValue;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Validator"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IJsonValidatorContext"
+//
+// @public
+const jsonObject: Validator<JsonObject, IJsonValidatorContext>;
+
 // @public
 export type JsonPrimitive = boolean | number | string | null;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Validator"
+//
+// @public
+const jsonPrimitive: Validator<JsonPrimitive, IJsonValidatorContext>;
+
 // @public
 export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Validator"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IJsonValidatorContext"
+//
+// @public
+const jsonValue: Validator<JsonValue, IJsonValidatorContext>;
 
 // @public
 export type JsonValueType = 'primitive' | 'object' | 'array';
@@ -94,6 +126,17 @@ export function pickJsonValue(src: JsonObject, path: string): Result<JsonValue>;
 
 // @public
 function readJsonFileSync(srcPath: string): Result<JsonValue>;
+
+declare namespace Validators {
+    export {
+        IJsonValidatorContext,
+        jsonPrimitive,
+        jsonObject,
+        jsonArray,
+        jsonValue
+    }
+}
+export { Validators }
 
 // @public
 function writeJsonFileSync(srcPath: string, value: JsonValue): Result<boolean>;
