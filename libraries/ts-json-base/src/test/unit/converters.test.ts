@@ -21,9 +21,9 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Validators } from '../..';
+import { Converters, sanitizeJson } from '../..';
 
-describe('validators', () => {
+describe('converters', () => {
   const validPrimitiveTests = [
     { description: 'boolean (true)', value: true },
     { description: 'boolean (false)', value: false },
@@ -104,12 +104,10 @@ describe('validators', () => {
   ];
 
   describe('jsonPrimitive', () => {
-    const validator = Validators.jsonPrimitive;
+    const converter = Converters.jsonPrimitive;
     test.each(validPrimitiveTests)('succeeds for $description', (tc) => {
-      expect(validator.validate(tc.value)).toSucceedAndSatisfy((v) => {
-        // shouldn't matter for primitives but we want to explicitly test
-        // for identity and not just equality (validation is in-place)
-        expect(v).toBe(tc.value);
+      expect(converter.convert(tc.value)).toSucceedAndSatisfy((v) => {
+        expect(v).toEqual(tc.value);
       });
     });
 
@@ -119,16 +117,17 @@ describe('validators', () => {
       ...invalidJsonTests,
       ...jsonWithUndefinedTests
     ])('fails for $description', (tc) => {
-      expect(validator.validate(tc.value)).toFailWith(tc.expectedError);
+      expect(converter.convert(tc.value)).toFailWith(tc.expectedError);
     });
   });
 
   describe('jsonObject', () => {
-    const validator = Validators.jsonObject;
+    const converter = Converters.jsonObject;
     test.each(validObjectTests)('succeeds for $description', (tc) => {
-      expect(validator.validate(tc.value)).toSucceedAndSatisfy((v) => {
-        // explicitly test for identity and not just equality (validation is in-place)
-        expect(v).toBe(tc.value);
+      expect(converter.convert(tc.value)).toSucceedAndSatisfy((v) => {
+        // explicitly test for equality but not identity (copying converter)
+        expect(v).toEqual(sanitizeJson(tc.value).orThrow());
+        expect(v).not.toBe(tc.value);
       });
     });
 
@@ -143,7 +142,7 @@ describe('validators', () => {
       }),
       { description: 'null', value: null, expectedError: /not a valid json object/i }
     ])('fails for $description', (tc) => {
-      expect(validator.validate(tc.value)).toFailWith(tc.expectedError);
+      expect(converter.convert(tc.value)).toFailWith(tc.expectedError);
     });
 
     test('ignores undefined properties if specified in context', () => {
@@ -152,20 +151,23 @@ describe('validators', () => {
         bad: undefined
       };
 
-      expect(validator.validate(obj)).toFailWith(/undefined.*not.*valid/);
-      expect(validator.validate(obj, { ignoreUndefinedProperties: true })).toSucceedAndSatisfy((v) => {
-        expect(v).toBe(obj);
+      expect(converter.convert(obj)).toFailWith(/undefined.*not.*valid/);
+      expect(converter.convert(obj, { ignoreUndefinedProperties: true })).toSucceedAndSatisfy((v) => {
+        // verify equality but not identity (copying converter)
+        expect(v).toEqual(sanitizeJson(obj).orThrow());
+        expect(v).not.toBe(obj);
       });
     });
   });
 
   describe('jsonArray', () => {
-    const validator = Validators.jsonArray;
+    const converter = Converters.jsonArray;
 
     test.each(validArrayTests)('succeeds for $description', (tc) => {
-      expect(validator.validate(tc.value)).toSucceedAndSatisfy((v) => {
-        // explicitly test for identity and not just equality (validation is in-place)
-        expect(v).toBe(tc.value);
+      expect(converter.convert(tc.value)).toSucceedAndSatisfy((v) => {
+        // explicitly test for equality but not identity (copying converter)
+        expect(v).toEqual(sanitizeJson(tc.value).orThrow());
+        expect(v).not.toBe(tc.value);
       });
     });
 
@@ -181,7 +183,7 @@ describe('validators', () => {
       }),
       ...jsonArrayWithUndefinedTests
     ])('fails for $description', (tc) => {
-      expect(validator.validate(tc.value)).toFailWith(tc.expectedError);
+      expect(converter.convert(tc.value)).toFailWith(tc.expectedError);
     });
 
     test('ignores undefined properties if specified in context', () => {
@@ -193,22 +195,27 @@ describe('validators', () => {
         undefined
       ];
 
-      expect(validator.validate(arr)).toFailWith(/undefined.*not.*valid/);
-      expect(validator.validate(arr, { ignoreUndefinedProperties: true })).toSucceedAndSatisfy((v) => {
-        expect(v).toBe(arr);
+      expect(converter.convert(arr)).toFailWith(/undefined.*not.*valid/);
+      expect(converter.convert(arr, { ignoreUndefinedProperties: true })).toSucceedAndSatisfy((v) => {
+        // explicitly test equality but not identity (copying converter)
+        expect(v).toEqual(sanitizeJson(arr).orThrow());
+        expect(v).not.toBe(arr);
       });
     });
   });
 
   describe('jsonValue', () => {
-    const validator = Validators.jsonValue;
+    const converter = Converters.jsonValue;
 
     test.each([...validPrimitiveTests, ...validObjectTests, ...validArrayTests])(
       'succeeds for $description',
       (tc) => {
-        expect(validator.validate(tc.value)).toSucceedAndSatisfy((v) => {
-          // explicitly test for identity and not just equality (validation is in-place)
-          expect(v).toBe(tc.value);
+        expect(converter.convert(tc.value)).toSucceedAndSatisfy((v) => {
+          // explicitly test for equality but not identity for object and array (copying converter)
+          expect(v).toEqual(tc.value);
+          if (typeof v === 'object' && v !== null) {
+            expect(v).not.toBe(tc.value);
+          }
         });
       }
     );
@@ -216,16 +223,17 @@ describe('validators', () => {
     test.each([...invalidJsonTests, ...jsonWithUndefinedTests, ...jsonWithUndefinedTests])(
       'fails for $description',
       (tc) => {
-        expect(validator.validate(tc.value)).toFailWith(tc.expectedError);
+        expect(converter.convert(tc.value)).toFailWith(tc.expectedError);
       }
     );
 
-    test.each([...jsonWithUndefinedTests, ...jsonObjectWithUndefinedTests])(
+    test.each([...jsonObjectWithUndefinedTests, ...jsonArrayWithUndefinedTests])(
       'succeeds for $description if configured to ignore undefined',
       (tc) => {
-        expect(validator.validate(tc.value, { ignoreUndefinedProperties: true })).toSucceedAndSatisfy((v) => {
-          // explicitly test for identity and not just equality (validation is in-place)
-          expect(v).toBe(tc.value);
+        expect(converter.convert(tc.value, { ignoreUndefinedProperties: true })).toSucceedAndSatisfy((v) => {
+          // explicitly equality but not identity (copying converter)
+          expect(v).toEqual(sanitizeJson(tc.value).orThrow());
+          expect(v).not.toBe(tc.value);
         });
       }
     );

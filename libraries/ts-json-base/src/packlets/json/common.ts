@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 
 /* eslint-disable no-use-before-define */
 
@@ -159,4 +159,17 @@ export function pickJsonObject(src: JsonObject, path: string): Result<JsonObject
     }
     return succeed(v);
   });
+}
+
+/**
+ * "Sanitizes" an `unknown` by stringifying and then parsing it.  Guarantees a
+ * valid {@link JsonValue | JsonValue} but is not idempotent and gives no guarantees
+ * about fidelity. Fails if the supplied value cannot be stringified as Json.
+ * @param from - The `unknown` to be sanitized.
+ * @returns `Success` with a {@link JsonValue | JsonValue} if conversion succeeds,
+ * `Failure` with details if an error occurs.
+ * @public
+ */
+export function sanitizeJson(from: unknown): Result<JsonValue> {
+  return captureResult(() => JSON.parse(JSON.stringify(from)));
 }
