@@ -126,6 +126,8 @@ declare namespace Classes {
         ObjectValidator,
         ObjectValidatorConstructorParams,
         ObjectValidatorOptions,
+        OneOfValidator,
+        OneOfValidatorConstructorParams,
         StringValidator,
         StringValidatorConstructorParams,
         TypeGuardValidator,
@@ -319,8 +321,6 @@ export { fail_2 as fail }
 // @public
 export class Failure<T> implements IResult<T> {
     constructor(message: string);
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
-    //
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
     // @deprecated
@@ -330,11 +330,7 @@ export class Failure<T> implements IResult<T> {
     get message(): string;
     onFailure(cb: FailureContinuation<T>): Result<T>;
     onSuccess<TN>(__: SuccessContinuation<T, TN>): Result<TN>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
-    //
-    // (undocumented)
     orDefault(dflt: T): T;
-    // (undocumented)
     orDefault(): T | undefined;
     orThrow(logger?: IResultLogger): never;
     readonly success: false;
@@ -509,8 +505,6 @@ class InMemoryLogger extends LoggerBase {
 
 // @public
 export interface IResult<T> {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
-    //
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
     // @deprecated
@@ -836,6 +830,34 @@ export function omit<T extends object, K extends keyof T>(from: T, exclude: K[])
 // @public
 function oneOf<T, TC = unknown>(converters: Array<Converter<T, TC>>, onError?: OnError_2): Converter<T, TC>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function oneOf_2<T, TC = unknown>(validators: Array<Validator<T, TC>>, params?: Omit<OneOfValidatorConstructorParams<T, TC>, 'validators'>): OneOfValidator<T, TC>;
+
+// @public
+class OneOfValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(params: OneOfValidatorConstructorParams<T, TC>);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly options: ValidatorOptions<TC>;
+    protected _validate<T>(from: unknown, context?: TC): boolean | Failure<T>;
+    // (undocumented)
+    protected readonly _validators: Validator<T, TC>[];
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface OneOfValidatorConstructorParams<T, TC = unknown> extends ValidatorBaseConstructorParams<T, TC> {
+    // (undocumented)
+    validators: Validator<T, TC>[];
+}
+
 // @public
 type OnError_2 = 'failOnError' | 'ignoreErrors';
 
@@ -1000,8 +1022,6 @@ export function succeedWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess
 // @public
 export class Success<T> implements IResult<T> {
     constructor(value: T);
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
-    //
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
     // @deprecated
@@ -1010,11 +1030,7 @@ export class Success<T> implements IResult<T> {
     isSuccess(): this is Success<T>;
     onFailure(__: FailureContinuation<T>): Result<T>;
     onSuccess<TN>(cb: SuccessContinuation<T, TN>): Result<TN>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
-    //
-    // (undocumented)
     orDefault(dflt: T): T;
-    // (undocumented)
     orDefault(): T | undefined;
     orThrow(__logger?: IResultLogger): T;
     readonly success: true;
@@ -1146,6 +1162,7 @@ declare namespace Validators {
         arrayOf_2 as arrayOf,
         enumeratedValue_2 as enumeratedValue,
         literal_2 as literal,
+        oneOf_2 as oneOf,
         isA_2 as isA,
         string_2 as string,
         number_2 as number,

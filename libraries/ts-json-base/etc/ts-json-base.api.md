@@ -6,16 +6,28 @@
 
 import { Converter } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
+import { Validator } from '@fgv/ts-utils';
 
 // @public
 export function classifyJsonValue(from: unknown): Result<JsonValueType>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Files"
+declare namespace Converters {
+    export {
+        IJsonConverterContext,
+        jsonPrimitive,
+        jsonObject,
+        jsonArray,
+        jsonValue
+    }
+}
+export { Converters }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function convertJsonDirectorySync<T>(srcPath: string, options: IDirectoryConvertOptions<T>): Result<IReadDirectoryItem<T>[]>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Files"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options: IDirectoryToMapConvertOptions<T, TC>): Result<Map<string, T>>;
@@ -32,6 +44,18 @@ interface IDirectoryConvertOptions<T, TC = unknown> {
 interface IDirectoryToMapConvertOptions<T, TC = unknown> extends IDirectoryConvertOptions<T, TC> {
     // (undocumented)
     transformName?: ItemNameTransformFunction<T>;
+}
+
+// @public
+interface IJsonConverterContext {
+    // (undocumented)
+    ignoreUndefinedProperties?: boolean;
+}
+
+// @public
+interface IJsonValidatorContext {
+    // (undocumented)
+    ignoreUndefinedProperties?: boolean;
 }
 
 // @public
@@ -56,6 +80,16 @@ type ItemNameTransformFunction<T> = (name: string, item: T) => Result<string>;
 export interface JsonArray extends Array<JsonValue> {
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const jsonArray: Converter<JsonArray, IJsonConverterContext>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const jsonArray_2: Validator<JsonArray, IJsonValidatorContext>;
+
 declare namespace JsonFile {
     export {
         readJsonFileSync,
@@ -77,11 +111,37 @@ export interface JsonObject {
     [key: string]: JsonValue;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const jsonObject: Converter<JsonObject, IJsonConverterContext>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const jsonObject_2: Validator<JsonObject, IJsonValidatorContext>;
+
 // @public
 export type JsonPrimitive = boolean | number | string | null;
 
 // @public
+const jsonPrimitive: Converter<JsonPrimitive, IJsonConverterContext>;
+
+// @public
+const jsonPrimitive_2: Validator<JsonPrimitive, IJsonValidatorContext>;
+
+// @public
 export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const jsonValue: Converter<JsonValue, IJsonConverterContext>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const jsonValue_2: Validator<JsonValue, IJsonValidatorContext>;
 
 // @public
 export type JsonValueType = 'primitive' | 'object' | 'array';
@@ -94,6 +154,20 @@ export function pickJsonValue(src: JsonObject, path: string): Result<JsonValue>;
 
 // @public
 function readJsonFileSync(srcPath: string): Result<JsonValue>;
+
+// @public
+export function sanitizeJson(from: unknown): Result<JsonValue>;
+
+declare namespace Validators {
+    export {
+        IJsonValidatorContext,
+        jsonPrimitive_2 as jsonPrimitive,
+        jsonObject_2 as jsonObject,
+        jsonArray_2 as jsonArray,
+        jsonValue_2 as jsonValue
+    }
+}
+export { Validators }
 
 // @public
 function writeJsonFileSync(srcPath: string, value: JsonValue): Result<boolean>;

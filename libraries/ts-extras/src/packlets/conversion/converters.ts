@@ -24,11 +24,11 @@ import { Conversion, Converter, Converters, Result, captureResult, fail } from '
 import { ExtendedArray, RangeOf, RangeOfProperties } from '../experimental';
 
 /**
- * A helper function to create a {@link Converter} which converts `unknown` to {@link Experimental.ExtendedArray | ExtendedArray<T>}.
+ * A helper function to create a `Converter` which converts `unknown` to {@link Experimental.ExtendedArray | ExtendedArray<T>}.
  * @remarks
  * If `onError` is `'failOnError'` (default), then the entire conversion fails if any element cannot
  * be converted.  If `onError` is `'ignoreErrors'`, then failing elements are silently ignored.
- * @param converter - {@link Converter} used to convert each item in the array
+ * @param converter - `Converter` used to convert each item in the array
  * @param ignoreErrors - Specifies treatment of unconvertible elements
  * @beta
  */
@@ -43,9 +43,9 @@ export function extendedArrayOf<T, TC = undefined>(
 }
 
 /**
- * A helper wrapper to construct a {@link Converter} which converts to an arbitrary strongly-typed
+ * A helper wrapper to construct a `Converter` which converts to an arbitrary strongly-typed
  * range of some comparable type.
- * @param converter - {@link Converter} used to convert `min` and `max` extent of the range.
+ * @param converter - `Converter` used to convert `min` and `max` extent of the range.
  * @param constructor - Static constructor to instantiate the object.
  * @public
  */
@@ -69,9 +69,9 @@ export function rangeTypeOf<T, RT extends RangeOf<T>, TC = unknown>(
 }
 
 /**
- * A helper wrapper to construct a {@link Converter} which converts to {@link Experimental.RangeOf | RangeOf<T>}
+ * A helper wrapper to construct a `Converter` which converts to {@link Experimental.RangeOf | RangeOf<T>}
  * where `<T>` is some comparable type.
- * @param converter - {@link Converter} used to convert `min` and `max` extent of the range.
+ * @param converter - `Converter` used to convert `min` and `max` extent of the range.
  * @public
  */
 export function rangeOf<T, TC = unknown>(converter: Converter<T, TC>): Converter<RangeOf<T>, TC> {

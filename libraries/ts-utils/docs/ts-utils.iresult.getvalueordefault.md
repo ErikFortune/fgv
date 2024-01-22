@@ -4,6 +4,11 @@
 
 ## IResult.getValueOrDefault() method
 
+> Warning: This API is now obsolete.
+> 
+> Use [orDefault(T)](./ts-utils.iresult.ordefault.md) or [orDefault()](./ts-utils.iresult.ordefault_1.md) instead.
+> 
+
 Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or a default value if the corresponding operation failed.
 
 **Signature:**

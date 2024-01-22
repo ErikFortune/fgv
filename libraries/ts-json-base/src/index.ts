@@ -20,7 +20,9 @@
  * SOFTWARE.
  */
 
+import * as Converters from './packlets/converters';
 import * as JsonFile from './packlets/json-file';
+import * as Validators from './packlets/validators';
 
 export * from './packlets/json';
-export { JsonFile };
+export { Converters, JsonFile, Validators };

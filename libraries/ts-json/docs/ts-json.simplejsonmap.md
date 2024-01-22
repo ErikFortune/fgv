@@ -4,14 +4,14 @@
 
 ## SimpleJsonMap class
 
-A [SimpleJsonMap](./ts-json.simplejsonmap.md) presents a view of a simple map of [JSON values](./ts-json.jsonvalue.md)<!-- -->.
+A [SimpleJsonMap](./ts-json.simplejsonmap.md) presents a view of a simple map of .
 
 **Signature:**
 
 ```typescript
 export declare class SimpleJsonMap extends SimpleJsonMapBase<JsonValue> 
 ```
-**Extends:** SimpleJsonMapBase&lt;[JsonValue](./ts-json.jsonvalue.md)<!-- -->&gt;
+**Extends:** SimpleJsonMapBase&lt;JsonValue&gt;
 
 ## Constructors
 
@@ -24,5 +24,5 @@ export declare class SimpleJsonMap extends SimpleJsonMapBase<JsonValue>
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
 |  [createSimple(values, context, options)](./ts-json.simplejsonmap.createsimple.md) | <code>static</code> | Creates a new [SimpleJsonMap](./ts-json.simplejsonmap.md) from the supplied objects |
-|  [getJsonValue(key, context)](./ts-json.simplejsonmap.getjsonvalue.md) |  | Gets a [JSON value](./ts-json.jsonvalue.md) specified by key. |
+|  [getJsonValue(key, context)](./ts-json.simplejsonmap.getjsonvalue.md) |  | Gets a  specified by key. |
 

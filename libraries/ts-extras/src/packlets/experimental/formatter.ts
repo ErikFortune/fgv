@@ -40,7 +40,7 @@ export interface Formattable {
   /**
    * Formats an object using the supplied mustache template.
    * @param format - A mustache template used to format the object.
-   * @returns {@link Success} with the resulting string, or {@link Failure}
+   * @returns `Success<string>` with the resulting string, or `Failure<string>`
    * with an error message if an error occurs.
    */
   format(format: string): Result<string>;
@@ -75,7 +75,7 @@ export class FormattableBase {
 
 /**
  * Type definition for a formatting function, which takes a `string` and an
- * item and returns {@link Result | Result<string>}.
+ * item and returns `Result<string>`.
  * @beta
  */
 export type Formatter<T> = (format: string, item: T) => Result<string>;

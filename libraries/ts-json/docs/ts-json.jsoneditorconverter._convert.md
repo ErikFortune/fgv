@@ -19,5 +19,5 @@ protected _convert(from: unknown, context?: IJsonContext): Result<JsonValue>;
 
 **Returns:**
 
-Result&lt;[JsonValue](./ts-json.jsonvalue.md)<!-- -->&gt;
+Result&lt;JsonValue&gt;
 

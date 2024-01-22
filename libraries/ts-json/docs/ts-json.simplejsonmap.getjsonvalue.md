@@ -4,7 +4,7 @@
 
 ## SimpleJsonMap.getJsonValue() method
 
-Gets a [JSON value](./ts-json.jsonvalue.md) specified by key.
+Gets a  specified by key.
 
 **Signature:**
 
@@ -21,7 +21,7 @@ getJsonValue(key: string, context?: IJsonContext): DetailedResult<JsonValue, Jso
 
 **Returns:**
 
-DetailedResult&lt;[JsonValue](./ts-json.jsonvalue.md)<!-- -->, [JsonReferenceMapFailureReason](./ts-json.jsonreferencemapfailurereason.md)<!-- -->&gt;
+DetailedResult&lt;JsonValue, [JsonReferenceMapFailureReason](./ts-json.jsonreferencemapfailurereason.md)<!-- -->&gt;
 
 Success with the formatted object if successful. Failure with detail 'unknown' if no such object exists, or failure with detail 'error' if the object was found but could not be formatted.
 

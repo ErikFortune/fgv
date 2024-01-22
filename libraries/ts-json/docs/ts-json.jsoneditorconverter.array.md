@@ -4,7 +4,7 @@
 
 ## JsonEditorConverter.array() method
 
-Gets a derived converter which fails if the resulting converted [JsonValue](./ts-json.jsonvalue.md) is not a [JsonArray](./ts-json.jsonarray.md)<!-- -->.
+Gets a derived converter which fails if the resulting converted  is not a .
 
 **Signature:**
 
@@ -13,5 +13,5 @@ array(): Converter<JsonArray, IJsonContext>;
 ```
 **Returns:**
 
-Converter&lt;[JsonArray](./ts-json.jsonarray.md)<!-- -->, [IJsonContext](./ts-json.ijsoncontext.md)<!-- -->&gt;
+Converter&lt;JsonArray, [IJsonContext](./ts-json.ijsoncontext.md)<!-- -->&gt;
 

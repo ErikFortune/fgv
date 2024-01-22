@@ -4,7 +4,7 @@
 
 ## IJsonReferenceMap.getJsonObject() method
 
-Gets a [JsonObject](./ts-json.jsonobject.md) specified by key.
+Gets a  specified by key.
 
 **Signature:**
 
@@ -21,7 +21,7 @@ getJsonObject(key: string, context?: IJsonContext): DetailedResult<JsonObject, J
 
 **Returns:**
 
-DetailedResult&lt;[JsonObject](./ts-json.jsonobject.md)<!-- -->, [JsonReferenceMapFailureReason](./ts-json.jsonreferencemapfailurereason.md)<!-- -->&gt;
+DetailedResult&lt;JsonObject, [JsonReferenceMapFailureReason](./ts-json.jsonreferencemapfailurereason.md)<!-- -->&gt;
 
-`Success` with the formatted [object](./ts-json.jsonobject.md) if successful. `Failure` with detail `'unknown'` if no such object exists, or `Failure` with detail `'error'` if the object was found but could not be formatted.
+`Success` with the formatted  if successful. `Failure` with detail `'unknown'` if no such object exists, or `Failure` with detail `'error'` if the object was found but could not be formatted.
 

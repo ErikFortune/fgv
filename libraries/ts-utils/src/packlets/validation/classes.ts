@@ -31,6 +31,7 @@ export {
   ObjectValidatorConstructorParams,
   ObjectValidatorOptions
 } from './object';
+export { OneOfValidator, OneOfValidatorConstructorParams } from './oneOf';
 export { StringValidator, StringValidatorConstructorParams } from './string';
 export { TypeGuardValidator, TypeGuardValidatorConstructorParams } from './typeGuard';
 

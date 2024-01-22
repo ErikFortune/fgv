@@ -2,6 +2,48 @@
   "name": "@fgv/ts-utils",
   "entries": [
     {
+      "version": "3.0.0",
+      "tag": "@fgv/ts-utils_v3.0.0",
+      "date": "Mon, 22 Jan 2024 07:00:18 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "gitignore tweaks"
+          },
+          {
+            "comment": "refactor hash implementation"
+          },
+          {
+            "comment": "bump versions"
+          },
+          {
+            "comment": "refactor and cleanup"
+          },
+          {
+            "comment": "build changes"
+          },
+          {
+            "comment": "Factor out extras, enable shaking"
+          },
+          {
+            "comment": "bump dependencies"
+          },
+          {
+            "comment": "version upgrades"
+          },
+          {
+            "comment": "relax mapToRecord from Map to ReadonlyMap"
+          },
+          {
+            "comment": "bump version"
+          },
+          {
+            "comment": "add oneOf validator"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@fgv/ts-utils_v2.0.0",
       "date": "Mon, 10 Apr 2023 03:33:11 GMT",

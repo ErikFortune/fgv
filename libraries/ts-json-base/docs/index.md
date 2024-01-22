@@ -8,5 +8,5 @@
 
 |  Package | Description |
 |  --- | --- |
-|  [@fgv/ts-json](./ts-json.md) |  |
+|  [@fgv/ts-json-base](./ts-json-base.md) |  |
 

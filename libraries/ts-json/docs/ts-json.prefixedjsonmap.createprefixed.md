@@ -17,9 +17,9 @@ static createPrefixed(prefix: string, values?: MapOrRecord<JsonValue>, context?:
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  prefix | string | A string prefix to be enforced for and added to key names as necessary |
-|  values | MapOrRecord&lt;[JsonValue](./ts-json.jsonvalue.md)<!-- -->&gt; | _(Optional)_ A string-keyed Map or Record of the [JsonValue](./ts-json.jsonvalue.md) to be returned |
+|  values | MapOrRecord&lt;JsonValue&gt; | _(Optional)_ A string-keyed Map or Record of the  to be returned |
 |  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ Optional [JSON Context](./ts-json.ijsoncontext.md) used to format returned values |
-|  editor | [JsonEditor](./ts-json.editor.jsoneditor.md) | _(Optional)_ Optional [JsonEditor](./ts-json.editor.jsoneditor.md) used to format returned values |
+|  editor | [JsonEditor](./ts-json.jsoneditor.md) | _(Optional)_ Optional  used to format returned values |
 
 **Returns:**
 

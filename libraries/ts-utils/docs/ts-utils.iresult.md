@@ -33,6 +33,7 @@ This common contract enables commingled discriminated usage of [Success&lt;T&gt;
 |  [onFailure(cb)](./ts-utils.iresult.onfailure.md) | Calls a supplied [failed continuation](./ts-utils.failurecontinuation.md) if the operation failed. |
 |  [onSuccess(cb)](./ts-utils.iresult.onsuccess.md) | Calls a supplied [success continuation](./ts-utils.successcontinuation.md) if the operation was a success. |
 |  [orDefault(dflt)](./ts-utils.iresult.ordefault.md) | Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or a default value if the corresponding operation failed. |
+|  [orDefault()](./ts-utils.iresult.ordefault_1.md) | Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or a default value if the corresponding operation failed. |
 |  [orThrow(logger)](./ts-utils.iresult.orthrow.md) | Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or throws the error message if the corresponding operation failed. |
 |  [withDetail(detail, successDetail)](./ts-utils.iresult.withdetail.md) | Converts a [IResult&lt;T&gt;](./ts-utils.iresult.md) to a [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->, adding supplied details. |
 |  [withFailureDetail(detail)](./ts-utils.iresult.withfailuredetail.md) | Converts a [IResult&lt;T&gt;](./ts-utils.iresult.md) to a [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->, adding a supplied detail if the operation failed. |

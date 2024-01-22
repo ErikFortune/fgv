@@ -8,5 +8,5 @@
 
 |  Package | Description |
 |  --- | --- |
-|  [@fgv/ts-utils](./ts-utils.md) |  |
+|  [@fgv/ts-extras](./ts-extras.md) |  |
 
