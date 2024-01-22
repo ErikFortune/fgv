@@ -26,7 +26,7 @@ export declare function strictObject<T>(properties: FieldConverters<T>, optional
 
 **Returns:**
 
-[ObjectConverter](./ts-utils.conversion.objectconverter.md)<!-- -->&lt;T&gt;
+[ObjectConverter](./ts-utils.objectconverter.md)<!-- -->&lt;T&gt;
 
 A new [ObjectConverter](./ts-utils.conversion.objectconverter.md) which applies the specified conversions. 
 

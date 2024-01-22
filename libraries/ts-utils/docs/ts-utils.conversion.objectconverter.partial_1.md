@@ -20,7 +20,7 @@ partial(optional?: (keyof T)[]): ObjectConverter<Partial<T>, TC>;
 
 **Returns:**
 
-[ObjectConverter](./ts-utils.conversion.objectconverter.md)<!-- -->&lt;Partial&lt;T&gt;, TC&gt;
+[ObjectConverter](./ts-utils.objectconverter.md)<!-- -->&lt;Partial&lt;T&gt;, TC&gt;
 
 A new [ObjectConverter](./ts-utils.conversion.objectconverter.md) with the additional optional source properties. 
 

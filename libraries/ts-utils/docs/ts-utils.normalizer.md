@@ -18,4 +18,6 @@ export declare class Normalizer
 |  --- | --- | --- |
 |  [\_normalizeArray(from)](./ts-utils.normalizer._normalizearray.md) | <code>protected</code> |  |
 |  [normalize(from)](./ts-utils.normalizer.normalize.md) |  | Normalizes the supplied value |
+|  [normalizeEntries(entries)](./ts-utils.normalizer.normalizeentries.md) |  | Normalizes an array of object property entries (e.g. as returned by <code>Object.entries()</code>). |
+|  [normalizeLiteral(from)](./ts-utils.normalizer.normalizeliteral.md) |  | Normalizes the supplied literal value |
 

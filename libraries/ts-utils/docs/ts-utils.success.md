@@ -37,6 +37,7 @@ export declare class Success<T> implements IResult<T>
 |  [onFailure(\_\_)](./ts-utils.success.onfailure.md) |  | Calls a supplied [failed continuation](./ts-utils.failurecontinuation.md) if the operation failed. |
 |  [onSuccess(cb)](./ts-utils.success.onsuccess.md) |  | Calls a supplied [success continuation](./ts-utils.successcontinuation.md) if the operation was a success. |
 |  [orDefault(dflt)](./ts-utils.success.ordefault.md) |  | Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or a default value if the corresponding operation failed. |
+|  [orDefault()](./ts-utils.success.ordefault_1.md) |  | Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or a default value if the corresponding operation failed. |
 |  [orThrow(\_\_logger)](./ts-utils.success.orthrow.md) |  | Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or throws the error message if the corresponding operation failed. |
 |  [withDetail(detail, successDetail)](./ts-utils.success.withdetail.md) |  | Converts a [IResult&lt;T&gt;](./ts-utils.iresult.md) to a [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->, adding supplied details. |
 |  [withFailureDetail(\_\_detail)](./ts-utils.success.withfailuredetail.md) |  | Converts a [IResult&lt;T&gt;](./ts-utils.iresult.md) to a [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->, adding a supplied detail if the operation failed. |

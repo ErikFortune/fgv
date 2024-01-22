@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Validators } from '../../../packlets/validation';
+import { Classes, Validators } from '../../../packlets/validation';
 import '../../helpers/jest';
 
 describe('OneOfValidator class', () => {
@@ -29,6 +29,48 @@ describe('OneOfValidator class', () => {
     Validators.string,
     Validators.number
   ]);
+
+  describe('constructor', () => {
+    test('uses options supplied via the constructor', () => {
+      const validators = [Validators.string, Validators.number];
+      const trueContext = new Classes.OneOfValidator<string | number>({
+        validators,
+        options: { defaultContext: true }
+      });
+      const falseContext = new Classes.OneOfValidator<string | number>({
+        validators,
+        options: { defaultContext: false }
+      });
+      expect(trueContext.options.defaultContext).toBe(true);
+      expect(falseContext.options.defaultContext).toBe(false);
+    });
+
+    test('uses options supplied via the helper', () => {
+      const validators = [Validators.string, Validators.number];
+      const trueContext = Validators.oneOf<string | number>(validators, {
+        options: { defaultContext: true }
+      });
+      const falseContext = Validators.oneOf<string | number>(validators, {
+        options: { defaultContext: false }
+      });
+      expect(trueContext.options.defaultContext).toBe(true);
+      expect(falseContext.options.defaultContext).toBe(false);
+    });
+
+    test('uses traits supplied via the constructor', () => {
+      const validators = [Validators.string, Validators.number];
+      const optional = new Classes.OneOfValidator<string | number>({
+        validators,
+        traits: { isOptional: true }
+      });
+      const notOptional = new Classes.OneOfValidator<string | number>({
+        validators,
+        traits: { isOptional: false }
+      });
+      expect(optional.isOptional).toBe(true);
+      expect(notOptional.isOptional).toBe(false);
+    });
+  });
 
   test('succeeds if any of the supplied validators match', () => {
     expect(validator.validate('this is a string')).toSucceedWith('this is a string');

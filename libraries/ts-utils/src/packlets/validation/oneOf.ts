@@ -56,10 +56,7 @@ export class OneOfValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
   public constructor(params: OneOfValidatorConstructorParams<T, TC>) {
     super(params);
     this._validators = params.validators;
-    this.options =
-      params.options ??
-      // istanbul ignore next - ?? is defense in depth
-      {};
+    this.options = params.options ?? {};
   }
 
   /**

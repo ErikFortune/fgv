@@ -110,7 +110,7 @@ export interface IResult<T> {
    *
    * @returns The return value, if the operation was successful.  Returns
    * the supplied default value or `undefined` if no default is supplied.
-   * @deprecated Use {@link IResult.orDefault | orDefault} instead.
+   * @deprecated Use {@link IResult.(orDefault:1) | orDefault(T)} or {@link IResult.(orDefault:2) | orDefault()} instead.
    */
   getValueOrDefault(dflt?: T): T | undefined;
 
@@ -130,6 +130,7 @@ export interface IResult<T> {
    * @param dflt - The value to be returned if the operation failed.
    * @returns The return value, if the operation was successful.  Returns
    * the supplied default if an error occurred.
+   * {@label SUPPLIED}
    */
   orDefault(dflt: T): T;
 
@@ -138,6 +139,7 @@ export interface IResult<T> {
    * or a default value if the corresponding operation failed.
    * @returns The return value, if the operation was successful, or
    * `undefined` if an error occurs.
+   * {@label MISSING}
    */
   orDefault(): T | undefined;
 
@@ -243,9 +245,12 @@ export class Success<T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.orDefault}
+   * {@inheritdoc IResult.(orDefault:1)}
    */
   public orDefault(dflt: T): T;
+  /**
+   * {@inheritdoc IResult.(orDefault:2)}
+   */
   public orDefault(): T | undefined;
   public orDefault(dflt?: T): T | undefined {
     return this._value ?? dflt;
@@ -261,7 +266,7 @@ export class Success<T> implements IResult<T> {
 
   /**
    * {@inheritdoc IResult.getValueOrDefault}
-   * @deprecated Use {@link Success.orDefault | orDefault} instead.
+   * @deprecated Use {@link Success.(orDefault:1) | orDefault(T)} or {@link Success.(orDefault:2) | orDefault()} instead.
    */
   public getValueOrDefault(dflt?: T): T | undefined {
     return this._value ?? dflt;
@@ -351,9 +356,12 @@ export class Failure<T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.orDefault}
+   * {@inheritdoc IResult.(orDefault:1)}
    */
   public orDefault(dflt: T): T;
+  /**
+   * {@inheritdoc IResult.(orDefault:2)}
+   */
   public orDefault(): T | undefined;
   public orDefault(dflt?: T): T | undefined {
     return dflt;
@@ -372,7 +380,7 @@ export class Failure<T> implements IResult<T> {
 
   /**
    * {@inheritdoc IResult.getValueOrDefault}
-   * @deprecated Use {@link Failure.orDefault | orDefault} instead.
+   * @deprecated Use {@link Failure.(orDefault:1) | orDefault(T)} or {@link Failure.(orDefault:2) | orDefault()} instead.
    */
   public getValueOrDefault(dflt?: T): T | undefined {
     return dflt;
