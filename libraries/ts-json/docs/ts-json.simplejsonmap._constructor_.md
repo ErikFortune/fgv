@@ -16,7 +16,7 @@ protected constructor(values?: MapOrRecord<JsonValue>, context?: IJsonContext, o
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  values | MapOrRecord&lt;[JsonValue](./ts-json.jsonvalue.md)<!-- -->&gt; | _(Optional)_ A string-keyed <code>Map</code> or <code>Record</code> of the [JSON values](./ts-json.jsonvalue.md) to be returned. |
+|  values | MapOrRecord&lt;JsonValue&gt; | _(Optional)_ A string-keyed <code>Map</code> or <code>Record</code> of the  to be returned. |
 |  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ Optional [IJsonContext](./ts-json.ijsoncontext.md) used to format returned values. |
-|  options | [ISimpleJsonMapOptions](./ts-json.isimplejsonmapoptions.md) | _(Optional)_ Optional [ISimpleJsonMapOptions](./ts-json.isimplejsonmapoptions.md) for initialization. |
+|  options | ISimpleJsonMapOptions | _(Optional)_ Optional  for initialization. |
 

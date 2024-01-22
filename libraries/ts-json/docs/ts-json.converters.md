@@ -17,6 +17,6 @@
 |  Variable | Description |
 |  --- | --- |
 |  [json](./ts-json.converters.json.md) | A simple validating [JSON converter](./ts-json.jsonconverter.md)<!-- -->. Converts unknown to JSON or fails if the unknown contains any invalid JSON values. |
-|  [jsonArray](./ts-json.converters.jsonarray.md) | A simple validating [JSON converter](./ts-json.jsonconverter.md)<!-- -->. Converts <code>unknown</code> to a [JsonArray](./ts-json.jsonarray.md)<!-- -->, or fails if the unknown contains invalid JSON or is not an array. |
-|  [jsonObject](./ts-json.converters.jsonobject.md) | A simple validating [JSON converter](./ts-json.jsonconverter.md)<!-- -->. Converts unknown to a [JsonObject](./ts-json.jsonobject.md)<!-- -->, or fails if the <code>unknown</code> contains invalid JSON or is not an object. |
+|  [jsonArray](./ts-json.converters.jsonarray.md) | A simple validating [JSON converter](./ts-json.jsonconverter.md)<!-- -->. Converts <code>unknown</code> to a , or fails if the unknown contains invalid JSON or is not an array. |
+|  [jsonObject](./ts-json.converters.jsonobject.md) | A simple validating [JSON converter](./ts-json.jsonconverter.md)<!-- -->. Converts unknown to a , or fails if the <code>unknown</code> contains invalid JSON or is not an object. |
 

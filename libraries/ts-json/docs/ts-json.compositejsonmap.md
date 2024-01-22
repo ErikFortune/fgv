@@ -22,8 +22,8 @@ The constructor for this class is marked as internal. Third-party code should no
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
 |  [create(maps)](./ts-json.compositejsonmap.create.md) | <code>static</code> | Creates a new [CompositeJsonMap](./ts-json.compositejsonmap.md) from supplied [maps](./ts-json.ijsonreferencemap.md)<!-- -->. |
-|  [getJsonObject(key, context)](./ts-json.compositejsonmap.getjsonobject.md) |  | Gets a [JSON object](./ts-json.jsonobject.md) specified by key. |
-|  [getJsonValue(key, context)](./ts-json.compositejsonmap.getjsonvalue.md) |  | Gets a [JSON value](./ts-json.jsonvalue.md) specified by key. |
+|  [getJsonObject(key, context)](./ts-json.compositejsonmap.getjsonobject.md) |  | Gets a  specified by key. |
+|  [getJsonValue(key, context)](./ts-json.compositejsonmap.getjsonvalue.md) |  | Gets a  specified by key. |
 |  [has(key)](./ts-json.compositejsonmap.has.md) |  | Determines if an object with the specified key actually exists in the map. |
 |  [keyIsInRange(key)](./ts-json.compositejsonmap.keyisinrange.md) |  | Determine if a key might be valid for this map but does not determine if key actually exists. Allows key range to be constrained. |
 
