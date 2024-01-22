@@ -23,7 +23,7 @@
 import { Hash } from '@fgv/ts-utils';
 import * as crypto from 'crypto';
 /**
- * A {@link Hash.HashingNormalizer | hashing normalizer} which computes object
+ * A hashing normalizer which computes object
  * hash using the MD5 algorithm.
  * @public
  */

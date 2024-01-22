@@ -25,5 +25,5 @@ format(format: string): Result<string>;
 
 Result&lt;string&gt;
 
- with the resulting string, or  with an error message if an error occurs.
+`Success<string>` with the resulting string, or `Failure<string>` with an error message if an error occurs.
 

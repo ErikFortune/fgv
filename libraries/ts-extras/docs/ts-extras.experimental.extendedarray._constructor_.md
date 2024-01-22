@@ -7,7 +7,7 @@
 > This API is provided as a beta preview for developers and may change based on feedback that we receive. Do not use this API in a production environment.
 > 
 
-Constructs an [Experimental.ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->.
+Constructs an [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->.
 
 **Signature:**
 

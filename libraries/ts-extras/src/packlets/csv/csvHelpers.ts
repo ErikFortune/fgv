@@ -26,7 +26,7 @@ import { parse } from 'papaparse';
 import * as path from 'path';
 
 /**
- * Options for {@link Csv.readCsvFileSync}
+ * Options for {@link Csv.readCsvFileSync | readCsvFileSync}
  * @beta
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention

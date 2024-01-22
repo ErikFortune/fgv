@@ -8,7 +8,7 @@
 
 |  Function | Description |
 |  --- | --- |
-|  [extendedArrayOf(label, converter, onError)](./ts-extras.converters.extendedarrayof.md) | **_(BETA)_** A helper function to create a  which converts <code>unknown</code> to [ExtendedArray&lt;T&gt;](./ts-extras.experimental.extendedarray.md)<!-- -->. |
-|  [rangeOf(converter)](./ts-extras.converters.rangeof.md) | A helper wrapper to construct a  which converts to [RangeOf&lt;T&gt;](./ts-extras.experimental.rangeof.md) where <code>&lt;T&gt;</code> is some comparable type. |
-|  [rangeTypeOf(converter, constructor)](./ts-extras.converters.rangetypeof.md) | A helper wrapper to construct a  which converts to an arbitrary strongly-typed range of some comparable type. |
+|  [extendedArrayOf(label, converter, onError)](./ts-extras.converters.extendedarrayof.md) | **_(BETA)_** A helper function to create a <code>Converter</code> which converts <code>unknown</code> to [ExtendedArray&lt;T&gt;](./ts-extras.experimental.extendedarray.md)<!-- -->. |
+|  [rangeOf(converter)](./ts-extras.converters.rangeof.md) | A helper wrapper to construct a <code>Converter</code> which converts to [RangeOf&lt;T&gt;](./ts-extras.experimental.rangeof.md) where <code>&lt;T&gt;</code> is some comparable type. |
+|  [rangeTypeOf(converter, constructor)](./ts-extras.converters.rangetypeof.md) | A helper wrapper to construct a <code>Converter</code> which converts to an arbitrary strongly-typed range of some comparable type. |
 

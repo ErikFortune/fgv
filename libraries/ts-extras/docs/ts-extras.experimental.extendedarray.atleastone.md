@@ -7,7 +7,7 @@
 > This API is provided as a beta preview for developers and may change based on feedback that we receive. Do not use this API in a production environment.
 > 
 
-Returns an array containing all elements of an [Experimental.ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->. Fails with an error message if the array is empty.
+Returns an array containing all elements of an [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->. Fails with an error message if the array is empty.
 
 **Signature:**
 
@@ -25,5 +25,5 @@ atLeastOne(failMessage?: string): Result<T[]>;
 
 Result&lt;T\[\]&gt;
 
-Returns  with a new (non-extended) `Array` containing the elements of this array, or  with an error message if the array is empty.
+Returns `Success<T>` with a new (non-extended) `Array` containing the elements of this array, or `Failure<T>` with an error message if the array is empty.
 

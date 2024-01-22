@@ -25,5 +25,5 @@ static isExtendedArray<T>(a?: T[]): a is ExtendedArray<T>;
 
 a is [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->&lt;T&gt;
 
-Returns `true` if `a` is an [Experimental.ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->, `false` otherwise.
+Returns `true` if `a` is an [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->, `false` otherwise.
 

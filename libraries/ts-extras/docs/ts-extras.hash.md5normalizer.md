@@ -4,7 +4,7 @@
 
 ## Hash.Md5Normalizer class
 
-A  which computes object hash using the MD5 algorithm.
+A hashing normalizer which computes object hash using the MD5 algorithm.
 
 **Signature:**
 

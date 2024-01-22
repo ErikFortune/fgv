@@ -8,5 +8,5 @@
 
 |  Class | Description |
 |  --- | --- |
-|  [Md5Normalizer](./ts-extras.hash.md5normalizer.md) | A  which computes object hash using the MD5 algorithm. |
+|  [Md5Normalizer](./ts-extras.hash.md5normalizer.md) | A hashing normalizer which computes object hash using the MD5 algorithm. |
 

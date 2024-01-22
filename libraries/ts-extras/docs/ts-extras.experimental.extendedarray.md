@@ -7,7 +7,7 @@
 > This API is provided as a beta preview for developers and may change based on feedback that we receive. Do not use this API in a production environment.
 > 
 
-An experimental array template which extend built-in `Array` to include a handful of predicates which return .
+An experimental array template which extend built-in `Array` to include a handful of predicates which return `Result<T>`<!-- -->.
 
 **Signature:**
 
@@ -20,7 +20,7 @@ export declare class ExtendedArray<T> extends Array<T>
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(itemDescription, items)](./ts-extras.experimental.extendedarray._constructor_.md) |  | **_(BETA)_** Constructs an [Experimental.ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->. |
+|  [(constructor)(itemDescription, items)](./ts-extras.experimental.extendedarray._constructor_.md) |  | **_(BETA)_** Constructs an [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->. |
 
 ## Properties
 
@@ -32,9 +32,9 @@ export declare class ExtendedArray<T> extends Array<T>
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
-|  [all()](./ts-extras.experimental.extendedarray.all.md) |  | **_(BETA)_** Gets a new (non-extended) <code>Array</code> containing all of the elements from this [Experimental.ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->. |
-|  [atLeastOne(failMessage)](./ts-extras.experimental.extendedarray.atleastone.md) |  | **_(BETA)_** Returns an array containing all elements of an [Experimental.ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->. Fails with an error message if the array is empty. |
-|  [first(failMessage)](./ts-extras.experimental.extendedarray.first.md) |  | **_(BETA)_** Returns the first element of an [Experimental.ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->. Fails with an error message if the array is empty. |
+|  [all()](./ts-extras.experimental.extendedarray.all.md) |  | **_(BETA)_** Gets a new (non-extended) <code>Array</code> containing all of the elements from this [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->. |
+|  [atLeastOne(failMessage)](./ts-extras.experimental.extendedarray.atleastone.md) |  | **_(BETA)_** Returns an array containing all elements of an [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->. Fails with an error message if the array is empty. |
+|  [first(failMessage)](./ts-extras.experimental.extendedarray.first.md) |  | **_(BETA)_** Returns the first element of an [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->. Fails with an error message if the array is empty. |
 |  [isExtendedArray(a)](./ts-extras.experimental.extendedarray.isextendedarray.md) | <code>static</code> | **_(BETA)_** Type guard to determine if some arbitrary array is an [Experimental.ExtendedArray](./ts-extras.experimental.extendedarray.md) |
 |  [single(predicate)](./ts-extras.experimental.extendedarray.single.md) |  | **_(BETA)_** Determines if this array contains exactly one element which matches a supplied predicate. |
 

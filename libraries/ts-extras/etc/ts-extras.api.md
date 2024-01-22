@@ -58,8 +58,6 @@ declare namespace Experimental {
 }
 export { Experimental }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "Result"
-//
 // @beta
 class ExtendedArray<T> extends Array<T> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -67,26 +65,18 @@ class ExtendedArray<T> extends Array<T> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     all(): T[];
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "Success"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "Failure"
     atLeastOne(failMessage?: string): Result<T[]>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "Success"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "Failure"
     first(failMessage?: string): Result<T>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static isExtendedArray<T>(a?: T[]): a is ExtendedArray<T>;
     // (undocumented)
     readonly itemDescription: string;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "Success"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "Failure"
     single(predicate?: (item: T) => boolean): Result<T>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "Converter"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "Converter"
 //
 // @beta
 function extendedArrayOf<T, TC = undefined>(label: string, converter: Converter<T, TC>, onError?: Converters_2.OnError): Converter<ExtendedArray<T>, TC>;
@@ -98,8 +88,6 @@ function formatList<T>(format: string, items: T[], itemFormatter: Formatter<T>):
 
 // @beta
 interface Formattable {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "Success"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "Failure"
     format(format: string): Result<string>;
 }
 
@@ -116,8 +104,6 @@ class FormattableBase {
 // @beta
 type FormatTargets = 'text' | 'markdown' | 'embed';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "Result"
-//
 // @beta
 type Formatter<T> = (format: string, item: T) => Result<string>;
 
@@ -153,8 +139,6 @@ interface JarRecordParserOptions {
     readonly fixedContinuationSize?: number;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
 // @public
 class Md5Normalizer extends Hash_2.HashingNormalizer {
     constructor();
@@ -196,9 +180,7 @@ class RangeOf<T> implements RangeOfProperties<T> {
     toFormattedProperties(format: (value: T) => string | undefined): RangeOfProperties<string>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "Converter"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "Converter"
 //
 // @public
 function rangeOf<T, TC = unknown>(converter: Converter<T, TC>): Converter<RangeOf<T>, TC>;
@@ -223,9 +205,6 @@ interface RangeOfProperties<T> {
     readonly min?: T;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "Converter"
-//
 // @public
 function rangeTypeOf<T, RT extends RangeOf<T>, TC = unknown>(converter: Converter<T, TC>, constructor: (init: RangeOfProperties<T>) => Result<RT>): Converter<RT, TC>;
 

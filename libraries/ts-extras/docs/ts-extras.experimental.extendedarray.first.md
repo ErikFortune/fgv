@@ -7,7 +7,7 @@
 > This API is provided as a beta preview for developers and may change based on feedback that we receive. Do not use this API in a production environment.
 > 
 
-Returns the first element of an [Experimental.ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->. Fails with an error message if the array is empty.
+Returns the first element of an [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->. Fails with an error message if the array is empty.
 
 **Signature:**
 
@@ -25,5 +25,5 @@ first(failMessage?: string): Result<T>;
 
 Result&lt;T&gt;
 
-Returns  with the value of the first element in the array, or  with an error message if the array is empty.
+Returns `Success<T>` with the value of the first element in the array, or `Failure<T>` with an error message if the array is empty.
 

@@ -25,5 +25,5 @@ single(predicate?: (item: T) => boolean): Result<T>;
 
 Result&lt;T&gt;
 
-Returns  with the single matching result if exactly one item matches `predicate`<!-- -->. Returns  with an error message if there are no matches or more than one match.
+Returns `Success<T>` with the single matching result if exactly one item matches `predicate`<!-- -->. Returns `Failure<T>` with an error message if there are no matches or more than one match.
 

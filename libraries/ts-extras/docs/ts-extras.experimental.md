@@ -8,7 +8,7 @@
 
 |  Class | Description |
 |  --- | --- |
-|  [ExtendedArray](./ts-extras.experimental.extendedarray.md) | **_(BETA)_** An experimental array template which extend built-in <code>Array</code> to include a handful of predicates which return . |
+|  [ExtendedArray](./ts-extras.experimental.extendedarray.md) | **_(BETA)_** An experimental array template which extend built-in <code>Array</code> to include a handful of predicates which return <code>Result&lt;T&gt;</code>. |
 |  [FormattableBase](./ts-extras.experimental.formattablebase.md) | **_(BETA)_** Base class which adds common formatting. |
 |  [RangeOf](./ts-extras.experimental.rangeof.md) | Simple implementation of a possibly open-ended range of some comparable type <code>&lt;T&gt;</code> with test and formatting. |
 
@@ -37,7 +37,7 @@
 |  Type Alias | Description |
 |  --- | --- |
 |  [FormatTargets](./ts-extras.experimental.formattargets.md) | **_(BETA)_** Destination format for some formatted string. |
-|  [Formatter](./ts-extras.experimental.formatter.md) | **_(BETA)_** Type definition for a formatting function, which takes a <code>string</code> and an item and returns . |
+|  [Formatter](./ts-extras.experimental.formatter.md) | **_(BETA)_** Type definition for a formatting function, which takes a <code>string</code> and an item and returns <code>Result&lt;string&gt;</code>. |
 |  [FormattersByExtendedTarget](./ts-extras.experimental.formattersbyextendedtarget.md) | **_(BETA)_** A collection of [formatters](./ts-extras.experimental.formatter.md) indexed by target name, to enable different format methods per output target. |
 |  [FormattersByTarget](./ts-extras.experimental.formattersbytarget.md) | **_(BETA)_** A collection of [formatters](./ts-extras.experimental.formatter.md) indexed by the [default supported target formats](./ts-extras.experimental.formattargets.md)<!-- -->. |
 

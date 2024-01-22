@@ -7,7 +7,7 @@
 > This API is provided as a beta preview for developers and may change based on feedback that we receive. Do not use this API in a production environment.
 > 
 
-Gets a new (non-extended) `Array` containing all of the elements from this [Experimental.ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->.
+Gets a new (non-extended) `Array` containing all of the elements from this [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->.
 
 **Signature:**
 

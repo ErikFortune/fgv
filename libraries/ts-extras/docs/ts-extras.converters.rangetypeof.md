@@ -4,7 +4,7 @@
 
 ## Converters.rangeTypeOf() function
 
-A helper wrapper to construct a  which converts to an arbitrary strongly-typed range of some comparable type.
+A helper wrapper to construct a `Converter` which converts to an arbitrary strongly-typed range of some comparable type.
 
 **Signature:**
 
@@ -16,7 +16,7 @@ export declare function rangeTypeOf<T, RT extends RangeOf<T>, TC = unknown>(conv
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  converter | Converter&lt;T, TC&gt; |  used to convert <code>min</code> and <code>max</code> extent of the range. |
+|  converter | Converter&lt;T, TC&gt; | <code>Converter</code> used to convert <code>min</code> and <code>max</code> extent of the range. |
 |  constructor | (init: [RangeOfProperties](./ts-extras.experimental.rangeofproperties.md)<!-- -->&lt;T&gt;) =&gt; Result&lt;RT&gt; | Static constructor to instantiate the object. |
 
 **Returns:**

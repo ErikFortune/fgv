@@ -4,7 +4,7 @@
 
 ## Converters.rangeOf() function
 
-A helper wrapper to construct a  which converts to [RangeOf&lt;T&gt;](./ts-extras.experimental.rangeof.md) where `<T>` is some comparable type.
+A helper wrapper to construct a `Converter` which converts to [RangeOf&lt;T&gt;](./ts-extras.experimental.rangeof.md) where `<T>` is some comparable type.
 
 **Signature:**
 
@@ -16,7 +16,7 @@ export declare function rangeOf<T, TC = unknown>(converter: Converter<T, TC>): C
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  converter | Converter&lt;T, TC&gt; |  used to convert <code>min</code> and <code>max</code> extent of the range. |
+|  converter | Converter&lt;T, TC&gt; | <code>Converter</code> used to convert <code>min</code> and <code>max</code> extent of the range. |
 
 **Returns:**
 
