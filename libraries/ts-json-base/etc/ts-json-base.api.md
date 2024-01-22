@@ -22,12 +22,12 @@ declare namespace Converters {
 }
 export { Converters }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Files"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function convertJsonDirectorySync<T>(srcPath: string, options: IDirectoryConvertOptions<T>): Result<IReadDirectoryItem<T>[]>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Files"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options: IDirectoryToMapConvertOptions<T, TC>): Result<Map<string, T>>;
@@ -46,16 +46,12 @@ interface IDirectoryToMapConvertOptions<T, TC = unknown> extends IDirectoryConve
     transformName?: ItemNameTransformFunction<T>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Converter"
-//
 // @public
 interface IJsonConverterContext {
     // (undocumented)
     ignoreUndefinedProperties?: boolean;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Validator"
-//
 // @public
 interface IJsonValidatorContext {
     // (undocumented)
@@ -84,14 +80,12 @@ type ItemNameTransformFunction<T> = (name: string, item: T) => Result<string>;
 export interface JsonArray extends Array<JsonValue> {
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IJsonConverterContext"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const jsonArray: Converter<JsonArray, IJsonConverterContext>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Validator"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IJsonValidatorContext"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const jsonArray_2: Validator<JsonArray, IJsonValidatorContext>;
@@ -117,14 +111,12 @@ export interface JsonObject {
     [key: string]: JsonValue;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IJsonConverterContext"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const jsonObject: Converter<JsonObject, IJsonConverterContext>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Validator"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IJsonValidatorContext"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const jsonObject_2: Validator<JsonObject, IJsonValidatorContext>;
@@ -132,27 +124,21 @@ const jsonObject_2: Validator<JsonObject, IJsonValidatorContext>;
 // @public
 export type JsonPrimitive = boolean | number | string | null;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Converter"
-//
 // @public
 const jsonPrimitive: Converter<JsonPrimitive, IJsonConverterContext>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Validator"
-//
 // @public
 const jsonPrimitive_2: Validator<JsonPrimitive, IJsonValidatorContext>;
 
 // @public
 export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IJsonConverterContext"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const jsonValue: Converter<JsonValue, IJsonConverterContext>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Validator"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IJsonValidatorContext"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const jsonValue_2: Validator<JsonValue, IJsonValidatorContext>;

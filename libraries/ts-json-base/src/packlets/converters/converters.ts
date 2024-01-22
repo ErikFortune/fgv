@@ -26,7 +26,7 @@ import { JsonArray, JsonObject, JsonPrimitive, JsonValue, isJsonArray, isJsonObj
 /* eslint-disable no-use-before-define, @typescript-eslint/no-use-before-define */
 
 /**
- * Conversion context for JSON {@link Converter | converters}
+ * Conversion context for JSON converters.
  * @public
  */
 export interface IJsonConverterContext {
@@ -34,7 +34,7 @@ export interface IJsonConverterContext {
 }
 
 /**
- * An {@link Converter | converter} which converts a supplied `unknown` value to a valid {@link JsonPrimitive | JsonPrimitive}.
+ * An converter which converts a supplied `unknown` value to a valid {@link JsonPrimitive | JsonPrimitive}.
  * @public
  */
 export const jsonPrimitive: Converter<JsonPrimitive, IJsonConverterContext> = new Conversion.BaseConverter(
@@ -61,10 +61,10 @@ export const jsonPrimitive: Converter<JsonPrimitive, IJsonConverterContext> = ne
 );
 
 /**
- * An {@link Converter | copying converter} which converts a supplied `unknown` value into
+ * An copying converter which converts a supplied `unknown` value into
  * a valid {@link JsonObject | JsonObject}. Fails by default if any properties or array elements
  * are `undefined` - this default behavior can be overridden by supplying an appropriate
- * {@link IJsonConverterContext | context} at runtime.
+ * {@link Converters.IJsonConverterContext | context} at runtime.
  *
  * Guaranteed to return a new object.
  * @public
@@ -104,10 +104,10 @@ export const jsonObject: Converter<JsonObject, IJsonConverterContext> = new Conv
 );
 
 /**
- * An {@link Converter | copying converter} which converts a supplied `unknown` value to
+ * An copying converter which converts a supplied `unknown` value to
  * a valid {@link JsonArray | JsonArray}. Fails by default if any properties or array elements
  * are `undefined` - this default behavior can be overridden by supplying an appropriate
- * {@link IJsonConverterContext | context} at runtime.
+ * {@link Converters.IJsonConverterContext | context} at runtime.
  *
  * Guaranteed to return a new array.
  * @public
@@ -149,10 +149,10 @@ export const jsonArray: Converter<JsonArray, IJsonConverterContext> = new Conver
 );
 
 /**
- * An {@link Converter | copying converter} which converts a supplied `unknown` value to a
+ * An copying converter which converts a supplied `unknown` value to a
  * valid {@link JsonValue | JsonValue}. Fails by default if any properties or array elements
  * are `undefined` - this default behavior can be overridden by supplying an appropriate
- * {@link IJsonConverterContext | context} at runtime.
+ * {@link Converters.IJsonConverterContext | context} at runtime.
  * @public
  */
 export const jsonValue: Converter<JsonValue, IJsonConverterContext> = new Conversion.BaseConverter<

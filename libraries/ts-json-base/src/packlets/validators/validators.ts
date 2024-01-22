@@ -26,7 +26,7 @@ import { JsonArray, JsonObject, JsonPrimitive, JsonValue, isJsonArray, isJsonObj
 /* eslint-disable no-use-before-define, @typescript-eslint/no-use-before-define */
 
 /**
- * Validation context for in-place JSON {@link Validator | validators}
+ * Validation context for in-place JSON validators.
  * @public
  */
 export interface IJsonValidatorContext {
@@ -34,7 +34,7 @@ export interface IJsonValidatorContext {
 }
 
 /**
- * An {@link Validator | in-place validator} which validates that a supplied `unknown` value is
+ * An in-place validator which validates that a supplied `unknown` value is
  * a valid {@link JsonPrimitive | JsonPrimitive}.
  * @public
  */
@@ -62,10 +62,10 @@ export const jsonPrimitive: Validator<JsonPrimitive, IJsonValidatorContext> =
   });
 
 /**
- * An {@link Validator | in-place validator} which validates that a supplied `unknown` value is
+ * An in-place validator which validates that a supplied `unknown` value is
  * a valid {@link JsonObject | JsonObject}. Fails by default if any properties or array elements
  * are `undefined` - this default behavior can be overridden by supplying an appropriate
- * {@link IJsonValidatorContext | context} at runtime.
+ * {@link Validators.IJsonValidatorContext | context} at runtime.
  * @public
  */
 export const jsonObject: Validator<JsonObject, IJsonValidatorContext> = new Validation.Base.GenericValidator({
@@ -88,10 +88,10 @@ export const jsonObject: Validator<JsonObject, IJsonValidatorContext> = new Vali
 });
 
 /**
- * An {@link Validator | in-place validator} which validates that a supplied `unknown` value is
+ * An in-place validator which validates that a supplied `unknown` value is
  * a valid {@link JsonArray | JsonArray}. Fails by default if any properties or array elements
  * are `undefined` - this default behavior can be overridden by supplying an appropriate
- * {@link IJsonValidatorContext | context} at runtime.
+ * {@link Validators.IJsonValidatorContext | context} at runtime.
  * @public
  */
 export const jsonArray: Validator<JsonArray, IJsonValidatorContext> = new Validation.Base.GenericValidator({
@@ -115,10 +115,10 @@ export const jsonArray: Validator<JsonArray, IJsonValidatorContext> = new Valida
 });
 
 /**
- * An {@link Validator | in-place validator} which validates that a supplied `unknown` value is
+ * An in-place validator which validates that a supplied `unknown` value is
  * a valid {@link JsonValue | JsonValue}. Fails by default if any properties or array elements
  * are `undefined` - this default behavior can be overridden by supplying an appropriate
- * {@link IJsonValidatorContext | context} at runtime.
+ * {@link Validators.IJsonValidatorContext | context} at runtime.
  * @public
  */
 export const jsonValue: Validator<JsonValue, IJsonValidatorContext> = new Validation.Base.GenericValidator<
