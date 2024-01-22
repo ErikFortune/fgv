@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-utils-jest",
-  "version": "3.0.0-alpha.0",
+  "version": "3.0.0-alpha.1",
   "description": "Custom matchers for ts-utils result class",
   "main": "lib/index.js",
   "scripts": {
@@ -57,6 +57,6 @@
     "typescript": "^5.3.3"
   },
   "peerDependencies": {
-    "@fgv/ts-utils": "^3.0.0-alpha.0"
+    "@fgv/ts-utils": "^3.0.0-alpha.1"
   }
 }
