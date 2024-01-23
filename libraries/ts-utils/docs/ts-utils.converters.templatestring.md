@@ -20,7 +20,7 @@ export declare function templateString(defaultContext?: unknown): StringConverte
 
 **Returns:**
 
-[StringConverter](./ts-utils.conversion.stringconverter.md)<!-- -->&lt;string, unknown&gt;
+[StringConverter](./ts-utils.stringconverter.md)<!-- -->&lt;string, unknown&gt;
 
 A new [Converter](./ts-utils.converter.md) returning `string`<!-- -->.
 

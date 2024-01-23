@@ -21,7 +21,7 @@ matching(match: Set<T>, options?: Partial<StringMatchOptions>): StringConverter<
 
 **Returns:**
 
-[StringConverter](./ts-utils.conversion.stringconverter.md)<!-- -->&lt;T, TC&gt;
+[StringConverter](./ts-utils.stringconverter.md)<!-- -->&lt;T, TC&gt;
 
 [Success](./ts-utils.success.md) with a matching string or [Failure](./ts-utils.failure.md) with an informative error if the string does not match. 
 
