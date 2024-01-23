@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils-jest",
+      "comment": "merge main",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils-jest"
+}

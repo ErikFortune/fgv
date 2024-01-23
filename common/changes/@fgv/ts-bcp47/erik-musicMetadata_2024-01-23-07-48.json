@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-bcp47",
+      "comment": "merge main",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-bcp47"
+}

@@ -1,4 +1,4 @@
-import { File as JsonFile } from '@fgv/ts-json';
+import { JsonFile } from '@fgv/ts-json-base';
 import { Converter, Converters, Result, captureResult } from '@fgv/ts-utils';
 
 /**
