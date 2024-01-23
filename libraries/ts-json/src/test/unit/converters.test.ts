@@ -24,8 +24,8 @@ import '@fgv/ts-utils-jest';
 
 import { Converters as JsonConverters } from '../../packlets/converters';
 
+import { JsonValue } from '@fgv/ts-json-base';
 import { PrefixedJsonMap } from '../../packlets/editor';
-import { JsonValue } from '../../packlets/json';
 
 /* test data necessarily has lots of non-conformant names */
 /* eslint-disable @typescript-eslint/naming-convention */

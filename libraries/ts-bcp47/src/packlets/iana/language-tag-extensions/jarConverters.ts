@@ -23,8 +23,9 @@
 
 import * as Model from './model';
 
-import { File } from '@fgv/ts-json';
-import { Converters, RecordJar, Result } from '@fgv/ts-utils';
+import { RecordJar } from '@fgv/ts-extras';
+import { JsonFile } from '@fgv/ts-json-base';
+import { Converters, Result } from '@fgv/ts-utils';
 import { datedRegistry, yearMonthDaySpec } from '../common/converters';
 import { datedRegistryFromJarRecords } from '../jar/jarConverters';
 import { extensionSingleton } from './validate';
@@ -68,7 +69,7 @@ export const languageTagExtensions = datedRegistry(languageTagExtension);
 export function loadJsonLanguageTagExtensionsRegistryFileSync(
   path: string
 ): Result<Model.LanguageTagExtensions> {
-  return File.convertJsonFileSync(path, languageTagExtensions);
+  return JsonFile.convertJsonFileSync(path, languageTagExtensions);
 }
 
 /**

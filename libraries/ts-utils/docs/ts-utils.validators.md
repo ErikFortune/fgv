@@ -13,6 +13,7 @@
 |  [isA(description, guard, params)](./ts-utils.validators.isa.md) | Helper function to create a [TypeGuardValidator](./ts-utils.validation.classes.typeguardvalidator.md) which validates a value or object in place. |
 |  [literal(value)](./ts-utils.validators.literal.md) | Helper function to create a [Validation.Validator](./ts-utils.validation.validator.md) which validates a literal value. |
 |  [object(fields, params)](./ts-utils.validators.object.md) | Helper function to create a [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md) which validates an object in place. |
+|  [oneOf(validators, params)](./ts-utils.validators.oneof.md) | Helper function to create a [Validator](./ts-utils.validation.validator.md) which validates one of several possible validated values. |
 
 ## Variables
 

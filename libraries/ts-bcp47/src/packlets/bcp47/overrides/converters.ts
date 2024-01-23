@@ -24,7 +24,7 @@
 import * as Iana from '../../iana';
 import * as Model from './model';
 
-import { File } from '@fgv/ts-json';
+import { JsonFile } from '@fgv/ts-json-base';
 import { Converter, Converters, Result } from '@fgv/ts-utils';
 
 /**
@@ -54,5 +54,5 @@ export const languageOverridesFile = Converters.arrayOf(languageOverrideRecord);
  * error occurs.
  */
 export function loadLanguageOverridesFileSync(path: string): Result<Model.ILanguageOverrideRecord[]> {
-  return File.convertJsonFileSync(path, languageOverridesFile);
+  return JsonFile.convertJsonFileSync(path, languageOverridesFile);
 }

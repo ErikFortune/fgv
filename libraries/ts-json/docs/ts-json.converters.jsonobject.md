@@ -4,7 +4,7 @@
 
 ## Converters.jsonObject variable
 
-A simple validating [JSON converter](./ts-json.jsonconverter.md)<!-- -->. Converts unknown to a [JsonObject](./ts-json.jsonobject.md)<!-- -->, or fails if the `unknown` contains invalid JSON or is not an object.
+A simple validating [JSON converter](./ts-json.jsonconverter.md)<!-- -->. Converts unknown to a , or fails if the `unknown` contains invalid JSON or is not an object.
 
 **Signature:**
 

@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+import { JsonValue } from '@fgv/ts-json-base';
 import '@fgv/ts-utils-jest';
 import {
   CompositeJsonMap,
@@ -30,7 +31,6 @@ import {
   defaultExtendVars
 } from '../../packlets/context';
 import { PrefixedJsonMap, SimpleJsonMap } from '../../packlets/editor';
-import { JsonValue } from '../../packlets/json';
 
 // Testing static helpers via class
 describe('ContextHelpers class', () => {

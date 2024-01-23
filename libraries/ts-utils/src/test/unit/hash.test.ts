@@ -22,10 +22,10 @@
 
 import '../helpers/jest';
 
-import { Normalizer, computeHash } from '../../packlets/hash';
+import { Crc32Normalizer } from '../../packlets/hash';
 
-describe('Hash module', () => {
-  describe('computeHash function', () => {
+describe('HashingNormalizer module', () => {
+  describe('Crc32 hash function', () => {
     test('computes the same hash value for equivalent inputs', () => {
       [
         [['hello'], ['hello']],
@@ -34,7 +34,7 @@ describe('Hash module', () => {
           ['this', 'is', 'a', 'test']
         ]
       ].forEach((t) => {
-        expect(computeHash(t[0])).toEqual(computeHash(t[1]));
+        expect(Crc32Normalizer.crc32Hash(t[0])).toEqual(Crc32Normalizer.crc32Hash(t[1]));
       });
     });
 
@@ -46,13 +46,13 @@ describe('Hash module', () => {
           ['this', 'a', 'is', 'test']
         ]
       ].forEach((t) => {
-        expect(computeHash(t[0])).not.toEqual(computeHash(t[1]));
+        expect(Crc32Normalizer.crc32Hash(t[0])).not.toEqual(Crc32Normalizer.crc32Hash(t[1]));
       });
     });
   });
 
   describe('Normalizer class', () => {
-    const normalizer = new Normalizer();
+    const normalizer = new Crc32Normalizer();
     const now = Date.now();
     test.each([
       ['like strings', 'hello', 'hello'],

@@ -28,7 +28,7 @@ import * as Model from './model';
 import { Converter, Converters, Result } from '@fgv/ts-utils';
 import { datedRegistry, yearMonthDaySpec } from '../common/converters';
 
-import { File } from '@fgv/ts-json';
+import { JsonFile } from '@fgv/ts-json-base';
 import { registryScopeType } from '../jar/language-subtags/registry/converters';
 
 export { TagConverters as Tags };
@@ -222,5 +222,5 @@ export const registryFile = datedRegistry(registeredItem);
  * or `Failure` with details if an error occurs.
  */
 export function loadLanguageSubtagsJsonFileSync(path: string): Result<Model.RegistryFile> {
-  return File.convertJsonFileSync(path, registryFile);
+  return JsonFile.convertJsonFileSync(path, registryFile);
 }

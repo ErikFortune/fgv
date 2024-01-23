@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+import { JsonObject, JsonValue, isJsonObject, isJsonPrimitive } from '@fgv/ts-json-base';
 import { DetailedResult, failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
 import '@fgv/ts-utils-jest';
 import {
@@ -30,7 +31,6 @@ import {
   JsonEditorState,
   JsonPropertyEditFailureReason
 } from '../../../packlets/editor';
-import { JsonObject, JsonValue, isJsonObject, isJsonPrimitive } from '../../../packlets/json';
 
 /* test data necessarily has lots of non-conformant names */
 /* eslint-disable @typescript-eslint/naming-convention */

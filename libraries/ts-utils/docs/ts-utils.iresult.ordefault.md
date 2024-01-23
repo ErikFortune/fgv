@@ -9,18 +9,18 @@ Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- 
 **Signature:**
 
 ```typescript
-orDefault(dflt?: T): T | undefined;
+orDefault(dflt: T): T;
 ```
 
 ## Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  dflt | T | _(Optional)_ The value to be returned if the operation failed (default is <code>undefined</code>). |
+|  dflt | T | The value to be returned if the operation failed. |
 
 **Returns:**
 
-T \| undefined
+T
 
-The return value, if the operation was successful. Returns the supplied default value or `undefined` if no default is supplied.
+The return value, if the operation was successful. Returns the supplied default if an error occurred. 
 

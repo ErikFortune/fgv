@@ -1,0 +1,38 @@
+{
+  "name": "@fgv/ts-extras",
+  "entries": [
+    {
+      "version": "3.0.0",
+      "tag": "@fgv/ts-extras_v3.0.0",
+      "date": "Mon, 22 Jan 2024 07:00:18 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "refactor hash implementation"
+          },
+          {
+            "comment": "refactor and cleanup"
+          },
+          {
+            "comment": "Factor extras into their own package"
+          }
+        ]
+      }
+    },
+    {
+      "version": "2.2.0",
+      "tag": "@fgv/ts-extras_v2.2.0",
+      "date": "Thu, 18 Jan 2024 05:45:04 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "refactor and cleanup"
+          },
+          {
+            "comment": "Factor extras into their own package"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+import { JsonObject, JsonValue, isJsonObject, pickJsonObject } from '@fgv/ts-json-base';
 import {
   DetailedResult,
   Result,
@@ -29,7 +30,6 @@ import {
   succeedWithDetail
 } from '@fgv/ts-utils';
 import { IJsonContext } from '../../context';
-import { JsonObject, JsonValue, isJsonObject, pickJsonObject } from '../../json';
 import { IJsonEditorOptions, JsonEditFailureReason, JsonPropertyEditFailureReason } from '../common';
 import { JsonEditorRuleBase } from '../jsonEditorRule';
 import { JsonEditorState } from '../jsonEditorState';

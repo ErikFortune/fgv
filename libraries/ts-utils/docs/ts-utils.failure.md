@@ -37,6 +37,7 @@ export declare class Failure<T> implements IResult<T>
 |  [onFailure(cb)](./ts-utils.failure.onfailure.md) |  | Calls a supplied [failed continuation](./ts-utils.failurecontinuation.md) if the operation failed. |
 |  [onSuccess(\_\_)](./ts-utils.failure.onsuccess.md) |  | Calls a supplied [success continuation](./ts-utils.successcontinuation.md) if the operation was a success. |
 |  [orDefault(dflt)](./ts-utils.failure.ordefault.md) |  | Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or a default value if the corresponding operation failed. |
+|  [orDefault()](./ts-utils.failure.ordefault_1.md) |  | Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or a default value if the corresponding operation failed. |
 |  [orThrow(logger)](./ts-utils.failure.orthrow.md) |  | Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or throws the error message if the corresponding operation failed. |
 |  [toString()](./ts-utils.failure.tostring.md) |  | Get a 'friendly' string representation of this object. |
 |  [withDetail(detail, \_\_successDetail)](./ts-utils.failure.withdetail.md) |  | Converts a [IResult&lt;T&gt;](./ts-utils.iresult.md) to a [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->, adding supplied details. |

@@ -21,15 +21,21 @@
  */
 
 import * as Conversion from './packlets/conversion';
-import * as Csv from './packlets/csv';
-import * as Experimental from './packlets/experimental';
 import * as Hash from './packlets/hash';
-import * as RecordJar from './packlets/record-jar';
 import * as Validation from './packlets/validation';
 
-import { Converter, Converters } from './packlets/conversion';
+import { Converter, Converters, ObjectConverter, StringConverter } from './packlets/conversion';
 import { Validator, Validators } from './packlets/validation';
 
 export * from './packlets/base';
-export { Converter, Converters, Validator, Validators };
-export { Conversion, Experimental, Csv, Hash, RecordJar, Validation };
+export {
+  Conversion,
+  Converter,
+  Converters,
+  Hash,
+  ObjectConverter,
+  StringConverter,
+  Validation,
+  Validator,
+  Validators
+};

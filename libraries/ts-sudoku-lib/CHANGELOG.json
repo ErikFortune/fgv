@@ -1,0 +1,53 @@
+{
+  "name": "@fgv/ts-sudoku-lib",
+  "entries": [
+    {
+      "version": "3.0.0",
+      "tag": "@fgv/ts-sudoku-lib_v3.0.0",
+      "date": "Mon, 22 Jan 2024 07:00:18 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "bump versions"
+          },
+          {
+            "comment": "refactor"
+          },
+          {
+            "comment": "initial checkin"
+          },
+          {
+            "comment": "Match ts-utils refactor"
+          },
+          {
+            "comment": "update dependencies"
+          }
+        ]
+      }
+    },
+    {
+      "version": "2.2.0",
+      "tag": "@fgv/ts-sudoku-lib_v2.2.0",
+      "date": "Thu, 18 Jan 2024 05:45:04 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "bump versions"
+          },
+          {
+            "comment": "refactor"
+          },
+          {
+            "comment": "initial checkin"
+          },
+          {
+            "comment": "Match ts-utils refactor"
+          },
+          {
+            "comment": "update dependencies"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -8,11 +8,12 @@
 
 |  Class | Description |
 |  --- | --- |
-|  [Normalizer](./ts-utils.hash.normalizer.md) | Computes a normalized hash for an arbitrary javascript value. |
+|  [Crc32Normalizer](./ts-utils.hash.crc32normalizer.md) | A [hashing normalizer](./ts-utils.hash.hashingnormalizer.md) which computes object hash using the CRC32 algorithm. |
+|  [HashingNormalizer](./ts-utils.hash.hashingnormalizer.md) | Normalizes an arbitrary JSON object |
 
-## Functions
+## Type Aliases
 
-|  Function | Description |
+|  Type Alias | Description |
 |  --- | --- |
-|  [computeHash(parts)](./ts-utils.hash.computehash.md) | Computes an md5 hash from an array of strings. Not secure and not intended to be secure. |
+|  [HashFunction](./ts-utils.hash.hashfunction.md) | Function to compute a hash from a pre-normalized array of strings. |
 

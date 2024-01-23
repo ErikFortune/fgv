@@ -20,4 +20,5 @@
  * SOFTWARE.
  */
 
-export * from './hash';
+export * from './crcNormalizer';
+export * from './hashingNormalizer';

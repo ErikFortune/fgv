@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
+import { JsonObject, JsonValue, isJsonObject } from '@fgv/ts-json-base';
 import { DetailedResult, Result, captureResult, failWithDetail, succeedWithDetail } from '@fgv/ts-utils';
-import { JsonObject, JsonValue, isJsonObject } from '../../json';
 import { IJsonEditorOptions, JsonEditFailureReason, JsonPropertyEditFailureReason } from '../common';
 import { JsonEditorRuleBase } from '../jsonEditorRule';
 import { JsonEditorState } from '../jsonEditorState';

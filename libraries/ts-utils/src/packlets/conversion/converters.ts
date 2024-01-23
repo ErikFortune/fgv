@@ -21,7 +21,6 @@
  */
 
 import { Result, captureResult, fail, isKeyOf, succeed } from '../base';
-import { ExtendedArray, RangeOf, RangeOfProperties } from '../experimental';
 import { TypeGuardWithContext, Validator } from '../validation';
 import { BaseConverter, Converter } from './converter';
 import { FieldConverters, ObjectConverter, ObjectConverterOptions } from './objectConverter';
@@ -30,7 +29,11 @@ import { StringConverter } from './stringConverter';
 import { DateTime } from 'luxon';
 import Mustache from 'mustache';
 
-type OnError = 'failOnError' | 'ignoreErrors';
+/**
+ * Action to take on conversion failures.
+ * @public
+ */
+export type OnError = 'failOnError' | 'ignoreErrors';
 
 /**
  * A converter to convert unknown to string. Values of type
@@ -345,25 +348,6 @@ export function arrayOf<T, TC = undefined>(
     }
 
     return errors.length === 0 || onError === 'ignoreErrors' ? succeed(successes) : fail(errors.join('\n'));
-  });
-}
-
-/**
- * A helper function to create a {@link Converter} which converts `unknown` to {@link Experimental.ExtendedArray | ExtendedArray<T>}.
- * @remarks
- * If `onError` is `'failOnError'` (default), then the entire conversion fails if any element cannot
- * be converted.  If `onError` is `'ignoreErrors'`, then failing elements are silently ignored.
- * @param converter - {@link Converter} used to convert each item in the array
- * @param ignoreErrors - Specifies treatment of unconvertible elements
- * @beta
- */
-export function extendedArrayOf<T, TC = undefined>(
-  label: string,
-  converter: Converter<T, TC>,
-  onError: OnError = 'failOnError'
-): Converter<ExtendedArray<T>, TC> {
-  return arrayOf(converter, onError).map((items: T[]) => {
-    return captureResult(() => new ExtendedArray(label, ...items));
   });
 }
 
@@ -1052,40 +1036,4 @@ export function transformObject<TSRC, TDEST, TC = unknown>(
       ? succeed(converted)
       : fail(options?.description ? `${options.description}:\n  ${errors.join('\n  ')}` : errors.join('\n'));
   });
-}
-
-/**
- * A helper wrapper to construct a {@link Converter} which converts to an arbitrary strongly-typed
- * range of some comparable type.
- * @param converter - {@link Converter} used to convert `min` and `max` extent of the range.
- * @param constructor - Static constructor to instantiate the object.
- * @public
- */
-export function rangeTypeOf<T, RT extends RangeOf<T>, TC = unknown>(
-  converter: Converter<T, TC>,
-  constructor: (init: RangeOfProperties<T>) => Result<RT>
-): Converter<RT, TC> {
-  return new BaseConverter((from: unknown, __self, context?: TC) => {
-    const result = object(
-      {
-        min: converter,
-        max: converter
-      },
-      { optionalFields: ['min', 'max'] }
-    ).convert(from, context);
-    if (result.isSuccess()) {
-      return constructor({ min: result.value.min, max: result.value.max });
-    }
-    return fail(result.message);
-  });
-}
-
-/**
- * A helper wrapper to construct a {@link Converter} which converts to {@link Experimental.RangeOf | RangeOf<T>}
- * where `<T>` is some comparable type.
- * @param converter - {@link Converter} used to convert `min` and `max` extent of the range.
- * @public
- */
-export function rangeOf<T, TC = unknown>(converter: Converter<T, TC>): Converter<RangeOf<T>, TC> {
-  return rangeTypeOf<T, RangeOf<T>, TC>(converter, RangeOf.createRange);
 }

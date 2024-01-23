@@ -21,7 +21,6 @@
  */
 
 import * as Converters from './converters';
-import * as File from './file';
 
 export * from './jsonConverter';
-export { Converters, File };
+export { Converters };

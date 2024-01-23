@@ -4,7 +4,7 @@
 
 ## ResultValueType type
 
-> This API is provided as a preview for developers and may change based on feedback that we receive. Do not use this API in a production environment.
+> This API is provided as a beta preview for developers and may change based on feedback that we receive. Do not use this API in a production environment.
 > 
 
 Type inference to determine the result type of an [Result](./ts-utils.result.md)<!-- -->.

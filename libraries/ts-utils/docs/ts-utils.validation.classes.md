@@ -12,6 +12,7 @@
 |  [BooleanValidator](./ts-utils.validation.classes.booleanvalidator.md) | An in-place [Validator](./ts-utils.validation.validator.md) for <code>boolean</code> values. |
 |  [NumberValidator](./ts-utils.validation.classes.numbervalidator.md) | An in-place [Validator](./ts-utils.validation.validator.md) for <code>number</code> values. |
 |  [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md) | In-place [Validator](./ts-utils.validation.validator.md) for an object of type <code>&lt;T&gt;</code>. |
+|  [OneOfValidator](./ts-utils.validation.classes.oneofvalidator.md) | An in-place [Validator](./ts-utils.validator.md) which validates that a supplied value matches one of several other validators. |
 |  [StringValidator](./ts-utils.validation.classes.stringvalidator.md) | An in-place [Validator](./ts-utils.validation.validator.md) for <code>string</code> values. |
 |  [TypeGuardValidator](./ts-utils.validation.classes.typeguardvalidator.md) | An in-place [Validator](./ts-utils.validation.validator.md) that can be instantiated using a type guard function. |
 
@@ -22,6 +23,7 @@
 |  [ArrayValidatorConstructorParams](./ts-utils.validation.classes.arrayvalidatorconstructorparams.md) | Parameters used to construct a [ArrayValidator](./ts-utils.validation.classes.arrayvalidator.md)<!-- -->. |
 |  [ObjectValidatorConstructorParams](./ts-utils.validation.classes.objectvalidatorconstructorparams.md) | Options for the [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md) constructor. |
 |  [ObjectValidatorOptions](./ts-utils.validation.classes.objectvalidatoroptions.md) | Options for an [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md)<!-- -->. |
+|  [OneOfValidatorConstructorParams](./ts-utils.validation.classes.oneofvalidatorconstructorparams.md) | Parameters used to construct a [OneOfValidator](./ts-utils.validation.classes.oneofvalidator.md)<!-- -->. |
 |  [TypeGuardValidatorConstructorParams](./ts-utils.validation.classes.typeguardvalidatorconstructorparams.md) | Parameters used to construct a [Validation.Classes.TypeGuardValidator](./ts-utils.validation.classes.typeguardvalidator.md)<!-- -->. |
 
 ## Type Aliases

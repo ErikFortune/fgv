@@ -2,6 +2,48 @@
   "name": "@fgv/ts-utils-jest",
   "entries": [
     {
+      "version": "3.0.0",
+      "tag": "@fgv/ts-utils-jest_v3.0.0",
+      "date": "Mon, 22 Jan 2024 07:00:18 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "gitignore tweaks"
+          },
+          {
+            "comment": "fix types for ts-utils-jest"
+          },
+          {
+            "comment": "fix peers"
+          },
+          {
+            "comment": "bump versions"
+          },
+          {
+            "comment": "cleanup"
+          },
+          {
+            "comment": "Update dependencies"
+          },
+          {
+            "comment": "bump dependencies, fix tests"
+          },
+          {
+            "comment": "version upgrades"
+          },
+          {
+            "comment": "update dependencies"
+          },
+          {
+            "comment": "update peer dependencies"
+          },
+          {
+            "comment": "bump version"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@fgv/ts-utils-jest_v2.0.0",
       "date": "Mon, 10 Apr 2023 03:33:11 GMT",
