@@ -1,7 +1,7 @@
 name: NPM Publish (Alpha)
 on:
   workflow_dispatch:
-    branches: ['release/V3']
+    branches: ['main']
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,7 +24,7 @@ jobs:
       - name: Rush Install
         run: node common/scripts/install-run-rush.js install
       - name: Bump versions
-        run: node common/scripts/install-run-rush.js version --bump --override-prerelease-id alpha --override-bump prerelease --target-branch ${GITHUB_REF_NAME}
+        run: node common/scripts/install-run-rush.js version --bump --override-prerelease-id alpha --override-bump prerelease
       - name: Rush rebuild
         run: node common/scripts/install-run-rush.js rebuild --verbose
       - name: Rush Publish
