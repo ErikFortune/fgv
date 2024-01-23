@@ -969,7 +969,7 @@ const stringArray: Converter<string[]>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class StringConverter<T extends string = string, TC = unknown> extends BaseConverter<T, TC> {
+export class StringConverter<T extends string = string, TC = unknown> extends BaseConverter<T, TC> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(defaultContext?: TC, traits?: ConverterTraits, converter?: (from: unknown, self: Converter<T, TC>, context?: TC) => Result<T>);
     // @internal (undocumented)

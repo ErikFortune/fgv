@@ -1,7 +1,7 @@
 name: NPM Publish (Major)
 on:
   workflow_dispatch:
-    branches: ['main']
+    branches: ['release/V3']
 jobs:
   build:
     runs-on: ubuntu-latest
