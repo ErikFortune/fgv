@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: 16
       - name: Verify Change Logs
-        run: node common/scripts/install-run-rush.js change --verify
+        run: node common/scripts/install-run-rush.js change --verify --target-branch ${GITHUB_REF_NAME}
       - name: Rush Install
         run: node common/scripts/install-run-rush.js install
       - name: Bump versions
@@ -30,4 +30,4 @@ jobs:
       - name: Rush Publish
         env:
           NPM_TOKEN: ${{secrets.NPM_TOKEN}}
-        run: node common/scripts/install-run-rush.js publish --apply --publish --include-all --target-branch ${GITHUB_REF_NAME} --add-commit-details --ignore-git-hooks
+        run: node common/scripts/install-run-rush.js publish --publish --apply --include-all --add-commit-details --ignore-git-hooks --target-branch ${GITHUB_REF_NAME}

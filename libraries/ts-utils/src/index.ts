@@ -24,8 +24,18 @@ import * as Conversion from './packlets/conversion';
 import * as Hash from './packlets/hash';
 import * as Validation from './packlets/validation';
 
-import { Converter, Converters, ObjectConverter } from './packlets/conversion';
+import { Converter, Converters, ObjectConverter, StringConverter } from './packlets/conversion';
 import { Validator, Validators } from './packlets/validation';
 
 export * from './packlets/base';
-export { Conversion, Converter, Converters, Hash, ObjectConverter, Validation, Validator, Validators };
+export {
+  Conversion,
+  Converter,
+  Converters,
+  Hash,
+  ObjectConverter,
+  StringConverter,
+  Validation,
+  Validator,
+  Validators
+};

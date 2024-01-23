@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-json-base",
-  "version": "3.0.0-alpha.0",
+  "version": "3.0.0",
   "description": "Typescript types and basic functions for working with json",
   "main": "lib/index.js",
   "types": "dist/ts-json-base.d.ts",
@@ -55,7 +55,7 @@
     "@microsoft/api-documenter": "^7.23.17"
   },
   "peerDependencies": {
-    "@fgv/ts-utils": "^3.0.0-alpha.0",
+    "@fgv/ts-utils": "workspace:*",
     "mustache": "^4.2.0"
   }
 }

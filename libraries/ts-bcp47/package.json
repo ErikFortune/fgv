@@ -1,6 +1,7 @@
 {
   "name": "@fgv/ts-bcp47",
-  "version": "3.0.0-alpha.0",
+  "version": "3.0.0",
+  "version": "2.9.9",
   "description": "BCP-47 Tag Utilities",
   "main": "lib/index.js",
   "types": "dist/ts-bcp47.d.ts",
@@ -67,7 +68,7 @@
     "luxon": "^3.4.4"
   },
   "peerDependencies": {
-    "@fgv/ts-utils": "^3.0.0-alpha.0",
+    "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-extras": "workspace:*",
     "@fgv/ts-json-base": "workspace:*"
   }
