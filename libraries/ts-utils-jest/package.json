@@ -57,6 +57,6 @@
     "typescript": "^5.3.3"
   },
   "peerDependencies": {
-    "@fgv/ts-utils": "^3.0.0"
+    "@fgv/ts-utils": "workspace:*"
   }
 }

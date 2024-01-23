@@ -13,6 +13,7 @@
 |  [Failure](./ts-utils.failure.md) | Reports a failed [result](./ts-utils.iresult.md) from some operation, with an error message. |
 |  [Normalizer](./ts-utils.normalizer.md) | Normalizes an arbitrary JSON object |
 |  [ObjectConverter](./ts-utils.objectconverter.md) | A [Converter](./ts-utils.converter.md) which converts an object of type <code>&lt;T&gt;</code> without changing shape, given a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) for the fields in the object. |
+|  [StringConverter](./ts-utils.stringconverter.md) | The [StringConverter](./ts-utils.conversion.stringconverter.md) class extends [BaseConverter](./ts-utils.conversion.baseconverter.md) to provide string-specific helper methods. |
 |  [Success](./ts-utils.success.md) | Reports a successful [result](./ts-utils.iresult.md) from some operation and the corresponding value. |
 
 ## Functions

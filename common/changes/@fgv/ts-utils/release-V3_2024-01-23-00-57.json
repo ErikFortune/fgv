@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "export StringConverter at top level",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

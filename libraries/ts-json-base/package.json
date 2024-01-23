@@ -55,7 +55,7 @@
     "@microsoft/api-documenter": "^7.23.17"
   },
   "peerDependencies": {
-    "@fgv/ts-utils": "^3.0.0",
+    "@fgv/ts-utils": workspace:*",
     "mustache": "^4.2.0"
   }
 }

@@ -61,6 +61,6 @@
     "@fgv/ts-json-base": "workspace:*"
   },
   "peerDependencies": {
-    "@fgv/ts-utils": "^3.0.0"
+    "@fgv/ts-utils": "workspace:*"
   }
 }
