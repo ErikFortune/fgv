@@ -4,7 +4,7 @@
 
 ## Conversion.BaseConverter.convert() method
 
-Converts from `unknown` to `<T>`<!-- -->.
+Converts from `unknown` to `<T>`<!-- -->. For objects and arrays, is guaranteed to return a new entity, with any unrecognized properties removed.
 
 **Signature:**
 

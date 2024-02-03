@@ -15,6 +15,7 @@
 |  Interface | Description |
 |  --- | --- |
 |  [FunctionConstraintTrait](./ts-utils.validation.functionconstrainttrait.md) | A [ConstraintTrait](./ts-utils.validation.constrainttrait.md) indicating that a [Constraint&lt;T&gt;](./ts-utils.validation.constraint.md) function provides an additional constraint implementation. |
+|  [IConvalidator](./ts-utils.validation.iconvalidator.md) | Helper interface to make it easy to use validators and converters interchangeably. |
 |  [Validator](./ts-utils.validation.validator.md) | In-place validation that a supplied unknown matches some required characteristics (type, values, etc). |
 |  [ValidatorOptions](./ts-utils.validation.validatoroptions.md) | Options that apply to any [Validator](./ts-utils.validation.validator.md)<!-- -->. |
 |  [ValidatorTraitValues](./ts-utils.validation.validatortraitvalues.md) | Interface describing the supported validator traits. |

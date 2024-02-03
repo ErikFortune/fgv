@@ -12,12 +12,6 @@
 |  [ObjectConverter](./ts-utils.conversion.objectconverter.md) | A [Converter](./ts-utils.converter.md) which converts an object of type <code>&lt;T&gt;</code> without changing shape, given a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) for the fields in the object. |
 |  [StringConverter](./ts-utils.conversion.stringconverter.md) | The [StringConverter](./ts-utils.conversion.stringconverter.md) class extends [BaseConverter](./ts-utils.conversion.baseconverter.md) to provide string-specific helper methods. |
 
-## Functions
-
-|  Function | Description |
-|  --- | --- |
-|  [convalidate(cv, from, context)](./ts-utils.conversion.convalidate.md) | Convert or validate <code>unknown</code> to <code>Result&lt;T&gt;</code>. |
-
 ## Interfaces
 
 |  Interface | Description |
@@ -40,5 +34,4 @@
 |  --- | --- |
 |  [FieldConverters](./ts-utils.conversion.fieldconverters.md) | Per-property converters for each of the properties in type T. |
 |  [Infer](./ts-utils.conversion.infer.md) | **_(BETA)_** Infers the type that will be returned by an instantiated converter. Works for complex as well as simple types. |
-|  [ValidatorOrConverter](./ts-utils.conversion.validatororconverter.md) | Helper type to make it easy to use validators and converters interchangeably. |
 

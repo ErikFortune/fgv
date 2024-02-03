@@ -4,7 +4,7 @@
 
 ## Validator.validate() method
 
-Tests to see if a supplied `unknown` value matches this validation.
+Tests to see if a supplied `unknown` value matches this validation. All validate calls are guaranteed to return the entity passed in on Success.
 
 **Signature:**
 

@@ -31,9 +31,10 @@ export declare class GenericValidator<T, TC = undefined> implements Validator<T,
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
+|  [convalidate(from, context)](./ts-utils.validation.base.genericvalidator.convalidate.md) |  |  |
 |  [guard(from, context)](./ts-utils.validation.base.genericvalidator.guard.md) |  | Non-throwing type guard |
 |  [optional()](./ts-utils.validation.base.genericvalidator.optional.md) |  | Creates an [in-place validator](./ts-utils.validation.validator.md) which is derived from this one but which also matches <code>undefined</code>. |
-|  [validate(from, context)](./ts-utils.validation.base.genericvalidator.validate.md) |  | Tests to see if a supplied <code>unknown</code> value matches this validation. |
+|  [validate(from, context)](./ts-utils.validation.base.genericvalidator.validate.md) |  | Tests to see if a supplied <code>unknown</code> value matches this validation. All validate calls are guaranteed to return the entity passed in on Success. |
 |  [validateOptional(from, context)](./ts-utils.validation.base.genericvalidator.validateoptional.md) |  | Tests to see if a supplied <code>unknown</code> value matches this validation. Accepts <code>undefined</code>. |
 |  [withBrand(brand)](./ts-utils.validation.base.genericvalidator.withbrand.md) |  | The brand for a branded type. |
 |  [withConstraint(constraint, trait)](./ts-utils.validation.base.genericvalidator.withconstraint.md) |  | Creates an [in-place validator](./ts-utils.validation.validator.md) which is derived from this one but which applies additional constraints. |

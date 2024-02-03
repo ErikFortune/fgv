@@ -92,21 +92,24 @@ describe('GenericValidator class', () => {
     test('uses validator passed via the constructor', () => {
       const custom = new TestGenericValidator({});
       expect(custom.validate('custom')).toFailWith('custom error message goes here');
+      expect(custom.convalidate('custom')).toFailWith('custom error message goes here');
     });
   });
 
-  describe('validate and guard methods', () => {
+  describe('validate, convalidate and guard methods', () => {
     const testString = new TestGenericValidator({ validator: TestGenericValidator.testValidateString });
     const testNumber = new TestGenericValidator({ validator: TestGenericValidator.testValidateNumber });
 
     test('validates valid values', () => {
       ['', 'this is a string'].forEach((t) => {
         expect(testString.validate(t)).toSucceedWith(t);
+        expect(testString.convalidate(t)).toSucceedWith(t);
         expect(testString.guard(t)).toBe(true);
       });
 
       [1, 2, -10, 100.11].forEach((t) => {
         expect(testNumber.validate(t)).toSucceedWith(t);
+        expect(testNumber.convalidate(t)).toSucceedWith(t);
         expect(testNumber.guard(t)).toBe(true);
       });
     });
@@ -116,14 +119,19 @@ describe('GenericValidator class', () => {
         expect(testString.validate(t)).toFailWith(/invalid value/i);
         expect(testNumber.validate(t)).toFailWith(/invalid value/i);
 
+        expect(testString.convalidate(t)).toFailWith(/invalid value/i);
+        expect(testNumber.convalidate(t)).toFailWith(/invalid value/i);
+
         expect(testString.guard(t)).toBe(false);
         expect(testNumber.guard(t)).toBe(false);
       });
 
       expect(testString.validate(10)).toFailWith(/invalid value/i);
+      expect(testString.convalidate(10)).toFailWith(/invalid value/i);
       expect(testString.guard(10)).toBe(false);
 
       expect(testNumber.validate('10')).toFailWith(/invalid value/i);
+      expect(testNumber.convalidate('10')).toFailWith(/invalid value/i);
       expect(testNumber.guard('10')).toBe(false);
     });
 
@@ -165,23 +173,43 @@ describe('GenericValidator class', () => {
         expect(tvctxv).toHaveBeenCalledWith('foo', explicitContext);
       });
 
+      test('convalidate passes undefined context by default', () => {
+        expect(tv.convalidate('foo')).toSucceedWith('foo');
+        expect(tvv).toHaveBeenCalledWith('foo', undefined);
+      });
+
+      test('convalidate passes default context if present', () => {
+        expect(tvctx.convalidate('foo')).toSucceedWith('foo');
+        expect(tvctxv).toHaveBeenCalledWith('foo', defaultContext);
+      });
+
+      test('convalidate passes call site context if supplied', () => {
+        expect(tv.convalidate('foo', explicitContext)).toSucceedWith('foo');
+        expect(tvv).toHaveBeenCalledWith('foo', explicitContext);
+      });
+
+      test('convalidate passes call site context if supplied if default context is present', () => {
+        expect(tvctx.convalidate('foo', explicitContext)).toSucceedWith('foo');
+        expect(tvctxv).toHaveBeenCalledWith('foo', explicitContext);
+      });
+
       test('guard passes undefined context by default', () => {
         expect(tv.guard('foo')).toBe(true);
         expect(tvv).toHaveBeenCalledWith('foo', undefined);
       });
 
-      test('validate passes default context if present', () => {
+      test('guard passes default context if present', () => {
         expect(tvctx.guard('foo')).toBe(true);
         expect(tvctxv).toHaveBeenCalledWith('foo', defaultContext);
       });
 
-      test('validate passes call site context if supplied', () => {
+      test('guard passes call site context if supplied', () => {
         expect(tv.guard('foo', explicitContext)).toBe(true);
         expect(tvv).toHaveBeenCalledWith('foo', explicitContext);
       });
 
-      test('validate passes call site context if supplied if default context is present', () => {
-        expect(tvctx.validate('foo', explicitContext)).toSucceedWith('foo');
+      test('guard passes call site context if supplied if default context is present', () => {
+        expect(tvctx.guard('foo', explicitContext)).toBe(true);
         expect(tvctxv).toHaveBeenCalledWith('foo', explicitContext);
       });
     });

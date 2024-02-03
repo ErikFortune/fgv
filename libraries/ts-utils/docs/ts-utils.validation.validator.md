@@ -9,8 +9,9 @@ In-place validation that a supplied unknown matches some required characteristic
 **Signature:**
 
 ```typescript
-export interface Validator<T, TC = undefined> 
+export interface Validator<T, TC = undefined> extends IConvalidator<T, TC> 
 ```
+**Extends:** [IConvalidator](./ts-utils.validation.iconvalidator.md)<!-- -->&lt;T, TC&gt;
 
 ## Properties
 
@@ -24,9 +25,10 @@ export interface Validator<T, TC = undefined>
 
 |  Method | Description |
 |  --- | --- |
+|  [convalidate(from, context)](./ts-utils.validation.validator.convalidate.md) | Converts or validates from <code>unknown</code> to <code>&lt;T&gt;</code>. For objects and arrays, makes no guarantees wrt in-place validation or unrecognized properties. |
 |  [guard(from, context)](./ts-utils.validation.validator.guard.md) | Non-throwing type guard |
 |  [optional()](./ts-utils.validation.validator.optional.md) | Creates an [in-place validator](./ts-utils.validation.validator.md) which is derived from this one but which also matches <code>undefined</code>. |
-|  [validate(from, context)](./ts-utils.validation.validator.validate.md) | Tests to see if a supplied <code>unknown</code> value matches this validation. |
+|  [validate(from, context)](./ts-utils.validation.validator.validate.md) | Tests to see if a supplied <code>unknown</code> value matches this validation. All validate calls are guaranteed to return the entity passed in on Success. |
 |  [validateOptional(from, context)](./ts-utils.validation.validator.validateoptional.md) | Tests to see if a supplied <code>unknown</code> value matches this validation. Accepts <code>undefined</code>. |
 |  [withBrand(brand)](./ts-utils.validation.validator.withbrand.md) | Creates a new [in-place validator](./ts-utils.validation.validator.md) which is derived from this one but which matches a branded result. |
 |  [withConstraint(constraint, trait)](./ts-utils.validation.validator.withconstraint.md) | Creates an [in-place validator](./ts-utils.validation.validator.md) which is derived from this one but which applies additional constraints. |

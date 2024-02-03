@@ -63,6 +63,20 @@ describe('BaseConverter class', () => {
     });
   });
 
+  describe('convalidate method', () => {
+    test('passes context if supplied', () => {
+      expect(contextConverter.convalidate('{{value}} is expected', { value: 'expected' })).toSucceedWith(
+        'expected is expected'
+      );
+    });
+
+    test('uses default context if no context is supplied', () => {
+      expect(contextConverter.convalidate('{{value}} is expected')).toSucceedWith(
+        'DEFAULT VALUE is expected'
+      );
+    });
+  });
+
   describe('convertOptional method', () => {
     test('ignores errors by default', () => {
       expect(stringConverter.convertOptional(true)).toSucceed();

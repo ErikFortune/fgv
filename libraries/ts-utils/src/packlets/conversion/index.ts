@@ -22,7 +22,6 @@
 
 import * as Converters from './converters';
 
-export * from './convalidate';
 export * from './converter';
 export * from './objectConverter';
 export * from './stringConverter';

@@ -21,30 +21,20 @@
  */
 
 import { Result } from '../base';
-import { Validator } from '../validation';
-import { Converter } from './converter';
 
 /**
- * Helper type to make it easy to use validators and converters interchangeably.
+ * Helper interface to make it easy to use validators and converters interchangeably.
  * @public
  */
-export type ValidatorOrConverter<T, TC = unknown> = Converter<T, TC> | Validator<T, TC>;
-
-/**
- * Convert or validate `unknown` to `Result<T>`.
- * @param cv - Converter or Validator to be applied.
- * @param from - Value to be validated or converted.
- * @param context - optional context
- * @returns `Result<T>`
- * @public
- */
-export function convalidate<T, TC = unknown>(
-  cv: ValidatorOrConverter<T, TC>,
-  from: unknown,
-  context?: TC
-): Result<T> {
-  if ('convert' in cv) {
-    return cv.convert(from, context);
-  }
-  return cv.validate(from, context);
+export interface IConvalidator<T, TC = unknown> {
+  /**
+   * Converts or validates from `unknown` to `<T>`.  For objects and arrays, makes no
+   * guarantees wrt in-place validation or unrecognized properties.
+   * @param from - The `unknown` to be converted or validated.
+   * @param context - An optional conversion context of type `<TC>` to be used in
+   * the operation.
+   * @returns A {@link Result} with a {@link Success} and a value on success or an
+   * {@link Failure} with a a message on failure.
+   */
+  convalidate(from: unknown, context?: TC): Result<T>;
 }

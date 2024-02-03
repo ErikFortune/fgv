@@ -21,10 +21,12 @@
  */
 
 export * from './common';
+export * from './convalidator';
 export * from './traits';
 export * from './validator';
 
-import * as Base from './genericValidator';
 import * as Classes from './classes';
+import * as Base from './genericValidator';
 import * as Validators from './validators';
+
 export { Base, Classes, Validators };

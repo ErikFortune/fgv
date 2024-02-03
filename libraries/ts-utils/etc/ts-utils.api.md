@@ -58,6 +58,8 @@ class BaseConverter<T, TC = undefined> implements Converter<T, TC> {
     protected _brand?: string;
     // @internal (undocumented)
     protected _context(supplied?: TC): TC | undefined;
+    // (undocumented)
+    convalidate(from: unknown, context?: TC): Result<T>;
     convert(from: unknown, context?: TC): Result<T>;
     // Warning: (ae-forgotten-export) The symbol "OnError" needs to be exported by the entry point index.d.ts
     convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined>;
@@ -148,14 +150,9 @@ interface ConstraintOptions {
 // @public
 type ConstraintTrait = FunctionConstraintTrait;
 
-// @public
-function convalidate<T, TC = unknown>(cv: ValidatorOrConverter<T, TC>, from: unknown, context?: TC): Result<T>;
-
 declare namespace Conversion {
     export {
         Converters,
-        convalidate,
-        ValidatorOrConverter,
         ConverterTraits,
         ConstraintOptions,
         Converter,
@@ -175,8 +172,12 @@ export { Conversion }
 type ConvertedToType<TCONV> = Infer<TCONV>;
 
 // @public
-export interface Converter<T, TC = undefined> extends ConverterTraits {
+export interface Converter<T, TC = undefined> extends ConverterTraits, IConvalidator<T, TC> {
     readonly brand?: string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    convalidate(from: unknown, context?: TC): Result<T>;
     convert(from: unknown, context?: TC): Result<T>;
     convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined>;
     readonly isOptional: boolean;
@@ -410,6 +411,10 @@ class GenericValidator<T, TC = undefined> implements Validator<T, TC> {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
+    convalidate(from: unknown, context?: TC): Result<T>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
     guard(from: unknown, context?: TC): from is T;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -482,6 +487,11 @@ class HashingNormalizer extends Normalizer {
     computeHash(from: unknown): Result<string>;
     // @internal
     protected _normalizeLiteralToString(from: string | number | bigint | boolean | symbol | undefined | Date | RegExp | null): Result<string>;
+}
+
+// @public
+interface IConvalidator<T, TC = unknown> {
+    convalidate(from: unknown, context?: TC): Result<T>;
 }
 
 // Warning: (ae-forgotten-export) The symbol "InnerInferredType" needs to be exported by the entry point index.d.ts
@@ -1118,6 +1128,7 @@ declare namespace Validation {
         Classes,
         Validators,
         TypeGuardWithContext,
+        IConvalidator,
         FunctionConstraintTrait,
         ConstraintTrait,
         ValidatorTraitValues,
@@ -1131,8 +1142,12 @@ declare namespace Validation {
 export { Validation }
 
 // @public
-export interface Validator<T, TC = undefined> {
+export interface Validator<T, TC = undefined> extends IConvalidator<T, TC> {
     readonly brand: string | undefined;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    convalidate(from: unknown, context?: TC): Result<T>;
     guard(from: unknown, context?: TC): from is T;
     readonly isOptional: boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1160,9 +1175,6 @@ interface ValidatorOptions<TC> {
     // (undocumented)
     defaultContext?: TC;
 }
-
-// @public
-type ValidatorOrConverter<T, TC = unknown> = Converter<T, TC> | Validator<T, TC>;
 
 declare namespace Validators {
     export {

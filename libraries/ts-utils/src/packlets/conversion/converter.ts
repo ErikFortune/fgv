@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 import { Brand, Result, fail, mapResults, succeed } from '../base';
+import { IConvalidator } from '../validation';
 
 type OnError = 'failOnError' | 'ignoreErrors';
 
@@ -53,7 +54,7 @@ export interface ConstraintOptions {
  * @public
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export interface Converter<T, TC = undefined> extends ConverterTraits {
+export interface Converter<T, TC = undefined> extends ConverterTraits, IConvalidator<T, TC> {
   /**
    * Indicates whether this element is explicitly optional.
    */
@@ -65,7 +66,8 @@ export interface Converter<T, TC = undefined> extends ConverterTraits {
   readonly brand?: string;
 
   /**
-   * Converts from `unknown` to `<T>`.
+   * Converts from `unknown` to `<T>`.  For objects and arrays, is guaranteed
+   * to return a new entity, with any unrecognized properties removed.
    * @param from - The `unknown` to be converted
    * @param context - An optional conversion context of type `<TC>` to be used in
    * the conversion.
@@ -73,6 +75,11 @@ export interface Converter<T, TC = undefined> extends ConverterTraits {
    * {@link Failure} with a a message on failure.
    */
   convert(from: unknown, context?: TC): Result<T>;
+
+  /**
+   * {@inheritdoc Validation.IConvalidator.convalidate}
+   */
+  convalidate(from: unknown, context?: TC): Result<T>;
 
   /**
    * Converts from `unknown` to `<T>` or `undefined`, as appropriate.
@@ -280,6 +287,13 @@ export class BaseConverter<T, TC = undefined> implements Converter<T, TC> {
    * {@inheritdoc Converter.convert}
    */
   public convert(from: unknown, context?: TC): Result<T> {
+    return this._converter(from, this, context ?? this._defaultContext);
+  }
+
+  /**
+   * {@inheritdoc Converter.convalidate}
+   */
+  public convalidate(from: unknown, context?: TC): Result<T> {
     return this._converter(from, this, context ?? this._defaultContext);
   }
 
