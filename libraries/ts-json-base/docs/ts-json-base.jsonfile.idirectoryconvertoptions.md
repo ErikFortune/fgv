@@ -17,4 +17,5 @@ export interface IDirectoryConvertOptions<T, TC = unknown>
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
 |  [converter](./ts-json-base.jsonfile.idirectoryconvertoptions.converter.md) |  | Converter&lt;T, TC&gt; | The converter used to convert incoming JSON objects. |
+|  [validator?](./ts-json-base.jsonfile.idirectoryconvertoptions.validator.md) |  | undefined | _(Optional)_ |
 

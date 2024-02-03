@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Erik Fortune
+ * Copyright (c) 2024 Erik Fortune
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,6 +20,37 @@
  * SOFTWARE.
  */
 
-export * from './file';
-export * from './jsonFsHelper';
-export * from './jsonLike';
+import { JsonValue } from '../json';
+
+/**
+ * @public
+ */
+export type JsonReviver = (key: string, value: JsonValue) => JsonValue;
+
+/**
+ * @public
+ */
+export type JsonReplacerFunction = (key: string, value: JsonValue) => JsonValue;
+
+/**
+ * @public
+ */
+export type JsonReplacerArray = (string | number)[];
+
+/**
+ * @public
+ */
+export type JsonReplacer = JsonReplacerFunction | JsonReplacerArray;
+
+/**
+ * @public
+ */
+export interface IJsonLike {
+  parse(text: string, reviver?: JsonReviver, options?: unknown): JsonValue | undefined;
+  stringify(value: JsonValue, replacer?: JsonReplacer, space?: string | number): string | undefined;
+}
+
+/**
+ * @public
+ */
+export const DefaultJsonLike: IJsonLike = JSON;

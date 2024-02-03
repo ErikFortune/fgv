@@ -6,6 +6,7 @@
 
 import { Converter } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
+import { Validation } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
 
 // @public
@@ -35,9 +36,22 @@ function convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options
 // @public
 function convertJsonFileSync<T>(srcPath: string, converter: Converter<T>): Result<T>;
 
+// @public (undocumented)
+const DefaultJsonFsHelper: JsonFsHelper;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const DefaultJsonFsHelperConfig: IJsonFsHelperConfig;
+
+// @public (undocumented)
+const DefaultJsonLike: IJsonLike;
+
 // @public
 interface IDirectoryConvertOptions<T, TC = unknown> {
     converter: Converter<T, TC>;
+    // (undocumented)
+    validator?: undefined;
 }
 
 // @public
@@ -47,9 +61,40 @@ interface IDirectoryToMapConvertOptions<T, TC = unknown> extends IDirectoryConve
 }
 
 // @public
+interface IDirectoryToMapValidateOptions<T, TC = unknown> extends IDirectoryValidateOptions<T, TC> {
+    // (undocumented)
+    transformName?: ItemNameTransformFunction<T>;
+}
+
+// @public
+interface IDirectoryValidateOptions<T, TC = unknown> {
+    // (undocumented)
+    converter?: undefined;
+    validator: Validator<T, TC>;
+}
+
+// @public
 interface IJsonConverterContext {
     // (undocumented)
     ignoreUndefinedProperties?: boolean;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IJsonFsHelperConfig {
+    // (undocumented)
+    allowUndefinedWrite: boolean;
+    // (undocumented)
+    json: IJsonLike;
+}
+
+// @public (undocumented)
+interface IJsonLike {
+    // (undocumented)
+    parse(text: string, reviver?: JsonReviver, options?: unknown): JsonValue | undefined;
+    // (undocumented)
+    stringify(value: JsonValue, replacer?: JsonReplacer, space?: string | number): string | undefined;
 }
 
 // @public
@@ -98,12 +143,54 @@ declare namespace JsonFile {
         convertJsonDirectoryToMapSync,
         writeJsonFileSync,
         IDirectoryConvertOptions,
+        IDirectoryValidateOptions,
+        JsonFsDirectoryOptions,
         IReadDirectoryItem,
         ItemNameTransformFunction,
-        IDirectoryToMapConvertOptions
+        IDirectoryToMapConvertOptions,
+        IDirectoryToMapValidateOptions,
+        JsonFsDirectoryToMapOptions,
+        IJsonFsHelperConfig,
+        JsonFsHelperInitOptions,
+        DefaultJsonFsHelperConfig,
+        JsonFsHelper,
+        DefaultJsonFsHelper,
+        JsonReviver,
+        JsonReplacerFunction,
+        JsonReplacerArray,
+        JsonReplacer,
+        IJsonLike,
+        DefaultJsonLike
     }
 }
 export { JsonFile }
+
+// @public
+type JsonFsDirectoryOptions<T, TC = unknown> = IDirectoryConvertOptions<T, TC> | IDirectoryValidateOptions<T, TC>;
+
+// @public
+type JsonFsDirectoryToMapOptions<T, TC = unknown> = IDirectoryToMapConvertOptions<T, TC> | IDirectoryToMapValidateOptions<T, TC>;
+
+// @public
+class JsonFsHelper {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(init?: JsonFsHelperInitOptions);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly config: IJsonFsHelperConfig;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    processJsonDirectorySync<T>(srcPath: string, options: JsonFsDirectoryOptions<T>): Result<IReadDirectoryItem<T>[]>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    processJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options: JsonFsDirectoryToMapOptions<T, TC>): Result<Map<string, T>>;
+    processJsonFileSync<T>(srcPath: string, cv: Validation.Convalidator<T>): Result<T>;
+    readJsonFileSync(srcPath: string): Result<JsonValue>;
+    writeJsonFileSync(srcPath: string, value: JsonValue): Result<boolean>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type JsonFsHelperInitOptions = Partial<IJsonFsHelperConfig>;
 
 // @public
 export interface JsonObject {
@@ -130,6 +217,18 @@ const jsonPrimitive: Converter<JsonPrimitive, IJsonConverterContext>;
 // @public
 const jsonPrimitive_2: Validator<JsonPrimitive, IJsonValidatorContext>;
 
+// @public (undocumented)
+type JsonReplacer = JsonReplacerFunction | JsonReplacerArray;
+
+// @public (undocumented)
+type JsonReplacerArray = (string | number)[];
+
+// @public (undocumented)
+type JsonReplacerFunction = (key: string, value: JsonValue) => JsonValue;
+
+// @public (undocumented)
+type JsonReviver = (key: string, value: JsonValue) => JsonValue;
+
 // @public
 export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
 
@@ -152,7 +251,9 @@ export function pickJsonObject(src: JsonObject, path: string): Result<JsonObject
 // @public
 export function pickJsonValue(src: JsonObject, path: string): Result<JsonValue>;
 
-// @public
+// Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public (undocumented)
 function readJsonFileSync(srcPath: string): Result<JsonValue>;
 
 // @public
@@ -169,7 +270,9 @@ declare namespace Validators {
 }
 export { Validators }
 
-// @public
+// Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public (undocumented)
 function writeJsonFileSync(srcPath: string, value: JsonValue): Result<boolean>;
 
 // (No @packageDocumentation comment for this package)

@@ -3,6 +3,7 @@
     "autoinstallers",
     "aval",
     "bval",
+    "convalidate",
     "dflt",
     "hashable",
     "lcov",

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "add convalidate helper",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}
