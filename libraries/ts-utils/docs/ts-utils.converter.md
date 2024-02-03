@@ -9,9 +9,9 @@ Generic converter to convert unknown to a templated type `<T>`<!-- -->, using in
 **Signature:**
 
 ```typescript
-export interface Converter<T, TC = undefined> extends ConverterTraits, IConvalidator<T, TC> 
+export interface Converter<T, TC = undefined> extends ConverterTraits, Convalidator<T, TC> 
 ```
-**Extends:** [ConverterTraits](./ts-utils.conversion.convertertraits.md)<!-- -->, [IConvalidator](./ts-utils.validation.iconvalidator.md)<!-- -->&lt;T, TC&gt;
+**Extends:** [ConverterTraits](./ts-utils.conversion.convertertraits.md)<!-- -->, [Convalidator](./ts-utils.validation.convalidator.md)<!-- -->&lt;T, TC&gt;
 
 ## Properties
 

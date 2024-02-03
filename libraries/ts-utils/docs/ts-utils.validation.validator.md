@@ -9,9 +9,9 @@ In-place validation that a supplied unknown matches some required characteristic
 **Signature:**
 
 ```typescript
-export interface Validator<T, TC = undefined> extends IConvalidator<T, TC> 
+export interface Validator<T, TC = undefined> extends Convalidator<T, TC> 
 ```
-**Extends:** [IConvalidator](./ts-utils.validation.iconvalidator.md)<!-- -->&lt;T, TC&gt;
+**Extends:** [Convalidator](./ts-utils.validation.convalidator.md)<!-- -->&lt;T, TC&gt;
 
 ## Properties
 

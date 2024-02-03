@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 import { Brand, Result, fail, mapResults, succeed } from '../base';
-import { IConvalidator } from '../validation';
+import { Convalidator } from '../validation';
 
 type OnError = 'failOnError' | 'ignoreErrors';
 
@@ -54,7 +54,7 @@ export interface ConstraintOptions {
  * @public
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export interface Converter<T, TC = undefined> extends ConverterTraits, IConvalidator<T, TC> {
+export interface Converter<T, TC = undefined> extends ConverterTraits, Convalidator<T, TC> {
   /**
    * Indicates whether this element is explicitly optional.
    */
@@ -77,7 +77,7 @@ export interface Converter<T, TC = undefined> extends ConverterTraits, IConvalid
   convert(from: unknown, context?: TC): Result<T>;
 
   /**
-   * {@inheritdoc Validation.IConvalidator.convalidate}
+   * {@inheritdoc Validation.Convalidator.convalidate}
    */
   convalidate(from: unknown, context?: TC): Result<T>;
 

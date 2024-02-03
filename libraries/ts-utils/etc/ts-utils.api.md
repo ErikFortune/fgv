@@ -150,6 +150,11 @@ interface ConstraintOptions {
 // @public
 type ConstraintTrait = FunctionConstraintTrait;
 
+// @public
+interface Convalidator<T, TC = unknown> {
+    convalidate(from: unknown, context?: TC): Result<T>;
+}
+
 declare namespace Conversion {
     export {
         Converters,
@@ -172,7 +177,7 @@ export { Conversion }
 type ConvertedToType<TCONV> = Infer<TCONV>;
 
 // @public
-export interface Converter<T, TC = undefined> extends ConverterTraits, IConvalidator<T, TC> {
+export interface Converter<T, TC = undefined> extends ConverterTraits, Convalidator<T, TC> {
     readonly brand?: string;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -487,11 +492,6 @@ class HashingNormalizer extends Normalizer {
     computeHash(from: unknown): Result<string>;
     // @internal
     protected _normalizeLiteralToString(from: string | number | bigint | boolean | symbol | undefined | Date | RegExp | null): Result<string>;
-}
-
-// @public
-interface IConvalidator<T, TC = unknown> {
-    convalidate(from: unknown, context?: TC): Result<T>;
 }
 
 // Warning: (ae-forgotten-export) The symbol "InnerInferredType" needs to be exported by the entry point index.d.ts
@@ -1128,7 +1128,7 @@ declare namespace Validation {
         Classes,
         Validators,
         TypeGuardWithContext,
-        IConvalidator,
+        Convalidator,
         FunctionConstraintTrait,
         ConstraintTrait,
         ValidatorTraitValues,
@@ -1142,7 +1142,7 @@ declare namespace Validation {
 export { Validation }
 
 // @public
-export interface Validator<T, TC = undefined> extends IConvalidator<T, TC> {
+export interface Validator<T, TC = undefined> extends Convalidator<T, TC> {
     readonly brand: string | undefined;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //

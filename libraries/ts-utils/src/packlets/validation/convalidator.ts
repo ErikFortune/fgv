@@ -26,7 +26,8 @@ import { Result } from '../base';
  * Helper interface to make it easy to use validators and converters interchangeably.
  * @public
  */
-export interface IConvalidator<T, TC = unknown> {
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export interface Convalidator<T, TC = unknown> {
   /**
    * Converts or validates from `unknown` to `<T>`.  For objects and arrays, makes no
    * guarantees wrt in-place validation or unrecognized properties.
