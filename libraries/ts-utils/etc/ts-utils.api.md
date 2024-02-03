@@ -148,9 +148,14 @@ interface ConstraintOptions {
 // @public
 type ConstraintTrait = FunctionConstraintTrait;
 
+// @public
+function convalidate<T, TC = unknown>(cv: ValidatorOrConverter<T, TC>, from: unknown, context?: TC): Result<T>;
+
 declare namespace Conversion {
     export {
         Converters,
+        convalidate,
+        ValidatorOrConverter,
         ConverterTraits,
         ConstraintOptions,
         Converter,
@@ -1155,6 +1160,9 @@ interface ValidatorOptions<TC> {
     // (undocumented)
     defaultContext?: TC;
 }
+
+// @public
+type ValidatorOrConverter<T, TC = unknown> = Converter<T, TC> | Validator<T, TC>;
 
 declare namespace Validators {
     export {

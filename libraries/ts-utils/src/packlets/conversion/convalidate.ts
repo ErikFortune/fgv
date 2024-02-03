@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Erik Fortune
+ * Copyright (c) 2020 Erik Fortune
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,10 +20,31 @@
  * SOFTWARE.
  */
 
-import * as Converters from './converters';
+import { Result } from '../base';
+import { Validator } from '../validation';
+import { Converter } from './converter';
 
-export * from './convalidate';
-export * from './converter';
-export * from './objectConverter';
-export * from './stringConverter';
-export { Converters };
+/**
+ * Helper type to make it easy to use validators and converters interchangeably.
+ * @public
+ */
+export type ValidatorOrConverter<T, TC = unknown> = Converter<T, TC> | Validator<T, TC>;
+
+/**
+ * Convert or validate `unknown` to `Result<T>`.
+ * @param cv - Converter or Validator to be applied.
+ * @param from - Value to be validated or converted.
+ * @param context - optional context
+ * @returns `Result<T>`
+ * @public
+ */
+export function convalidate<T, TC = unknown>(
+  cv: ValidatorOrConverter<T, TC>,
+  from: unknown,
+  context?: TC
+): Result<T> {
+  if ('convert' in cv) {
+    return cv.convert(from, context);
+  }
+  return cv.validate(from, context);
+}
