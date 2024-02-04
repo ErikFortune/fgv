@@ -31,6 +31,13 @@ import { DateTime } from 'luxon';
 import Mustache from 'mustache';
 
 /**
+ * Action to take on conversion failures (deprecated - use Conversion.OnError)
+ * @public
+ * @deprecated use Conversion.OnError.
+ */
+export { OnError };
+
+/**
  * A converter to convert unknown to string. Values of type
  * string succeed.  Anything else fails.
  * @public

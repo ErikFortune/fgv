@@ -228,6 +228,7 @@ declare namespace Converters {
         discriminatedObject,
         transform,
         transformObject,
+        OnError,
         string,
         value,
         number,

@@ -4,8 +4,8 @@
 
 ```ts
 
+import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
-import { Converters as Converters_2 } from '@fgv/ts-utils';
 import { Hash as Hash_2 } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 
@@ -79,7 +79,7 @@ class ExtendedArray<T> extends Array<T> {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @beta
-function extendedArrayOf<T, TC = undefined>(label: string, converter: Converter<T, TC>, onError?: Converters_2.OnError): Converter<ExtendedArray<T>, TC>;
+function extendedArrayOf<T, TC = undefined>(label: string, converter: Converter<T, TC>, onError?: Conversion.OnError): Converter<ExtendedArray<T>, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
