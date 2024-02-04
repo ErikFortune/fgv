@@ -4,7 +4,7 @@
 
 ## JsonFile.IDirectoryToMapConvertOptions interface
 
-Options controlling conversion of a directory.
+Options controlling conversion of a directory to a `Map`<!-- -->.
 
 **Signature:**
 

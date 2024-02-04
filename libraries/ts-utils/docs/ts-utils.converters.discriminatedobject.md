@@ -17,7 +17,7 @@ export declare function discriminatedObject<T, TD extends string = string, TC = 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  discriminatorProp | string | Name of the property used to discriminate types. |
-|  converters | [DiscriminatedObjectConverters](./ts-utils.converters.discriminatedobjectconverters.md)<!-- -->&lt;T, TD&gt; | [String-keyed record of converters](./ts-utils.converters.discriminatedobjectconverters.md) to invoke, where each key corresponds to a value of the discriminator property. |
+|  converters | [DiscriminatedObjectConverters](./ts-utils.converters.discriminatedobjectconverters.md)<!-- -->&lt;T, TD&gt; | [String-keyed record of converters and validators](./ts-utils.converters.discriminatedobjectconverters.md) to invoke, where each key corresponds to a value of the discriminator property. |
 
 **Returns:**
 
@@ -27,7 +27,7 @@ A [Converter](./ts-utils.converter.md) which converts the corresponding discrimi
 
 ## Remarks
 
-Takes the name of the discriminator property and a [string-keyed Record of converters](./ts-utils.converters.discriminatedobjectconverters.md)<!-- -->. During conversion, the resulting [Converter](./ts-utils.converter.md) invokes the converter from `converters` that corresponds to the value of the discriminator property in the source object.
+Takes the name of the discriminator property and a [string-keyed Record of converters and validators](./ts-utils.converters.discriminatedobjectconverters.md)<!-- -->. During conversion, the resulting [Converter](./ts-utils.converter.md) invokes the converter from `converters` that corresponds to the value of the discriminator property in the source object.
 
 If the source is not an object, the discriminator property is missing, or the discriminator has a value not present in the converters, conversion fails and returns [Failure](./ts-utils.failure.md) with more information.
 

@@ -8,7 +8,7 @@
 export function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T): Result<T>;
 
 // @public
-function arrayOf<T, TC = undefined>(converter: Converter<T, TC>, onError?: OnError_2): Converter<T[], TC>;
+function arrayOf<T, TC = undefined>(converter: Converter<T, TC> | Validator<T, TC>, onError?: OnError): Converter<T[], TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -58,8 +58,9 @@ class BaseConverter<T, TC = undefined> implements Converter<T, TC> {
     protected _brand?: string;
     // @internal (undocumented)
     protected _context(supplied?: TC): TC | undefined;
+    // (undocumented)
+    convalidate(from: unknown, context?: TC): Result<T>;
     convert(from: unknown, context?: TC): Result<T>;
-    // Warning: (ae-forgotten-export) The symbol "OnError" needs to be exported by the entry point index.d.ts
     convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined>;
     // @internal (undocumented)
     protected readonly _defaultContext?: TC;
@@ -75,9 +76,11 @@ class BaseConverter<T, TC = undefined> implements Converter<T, TC> {
     protected _traits(traits?: Partial<ConverterTraits>): ConverterTraits;
     // @internal (undocumented)
     protected _with(traits: Partial<ConverterTraits>): this;
+    withAction<TI>(action: (result: Result<T>) => Result<TI>): Converter<TI, TC>;
     withBrand<B extends string>(brand: B): Converter<Brand<T, B>, TC>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     withConstraint(constraint: (val: T) => boolean | Result<T>, options?: ConstraintOptions): Converter<T, TC>;
+    withDefault<TD = T>(defaultValue: TD): DefaultingConverter<T, TD, TC>;
     withItemTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI[], TC>;
     withTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI, TC>;
 }
@@ -148,15 +151,24 @@ interface ConstraintOptions {
 // @public
 type ConstraintTrait = FunctionConstraintTrait;
 
+// @public
+interface Convalidator<T, TC = unknown> {
+    convalidate(from: unknown, context?: TC): Result<T>;
+    readonly isOptional: boolean;
+}
+
 declare namespace Conversion {
     export {
         Converters,
-        ConverterTraits,
-        ConstraintOptions,
-        Converter,
         Infer,
         ConvertedToType,
         BaseConverter,
+        OnError,
+        ConverterTraits,
+        ConstraintOptions,
+        Converter,
+        DefaultingConverter,
+        GenericDefaultingConverter,
         ObjectConverterOptions,
         FieldConverters,
         ObjectConverter,
@@ -170,8 +182,12 @@ export { Conversion }
 type ConvertedToType<TCONV> = Infer<TCONV>;
 
 // @public
-export interface Converter<T, TC = undefined> extends ConverterTraits {
+export interface Converter<T, TC = undefined> extends ConverterTraits, Convalidator<T, TC> {
     readonly brand?: string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    convalidate(from: unknown, context?: TC): Result<T>;
     convert(from: unknown, context?: TC): Result<T>;
     convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined>;
     readonly isOptional: boolean;
@@ -180,9 +196,11 @@ export interface Converter<T, TC = undefined> extends ConverterTraits {
     mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC>;
     mapItems<TI>(mapper: (from: unknown) => Result<TI>): Converter<TI[], TC>;
     optional(onError?: OnError): Converter<T | undefined, TC>;
+    withAction<T2>(action: (result: Result<T>) => Result<T2>): Converter<T2, TC>;
     withBrand<B extends string>(brand: B): Converter<Brand<T, B>, TC>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     withConstraint(constraint: (val: T) => boolean | Result<T>, options?: ConstraintOptions): Converter<T, TC>;
+    withDefault<TD = T>(dflt: TD): DefaultingConverter<T, TD, TC>;
     withItemTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI[], TC>;
     withTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI, TC>;
 }
@@ -210,7 +228,7 @@ declare namespace Converters {
         discriminatedObject,
         transform,
         transformObject,
-        OnError_2 as OnError,
+        OnError,
         string,
         value,
         number,
@@ -245,6 +263,14 @@ class Crc32Normalizer extends HashingNormalizer {
     constructor();
     // (undocumented)
     static crc32Hash(parts: string[]): string;
+}
+
+// @public (undocumented)
+interface DefaultingConverter<T, TD = T, TC = undefined> extends Converter<T | TD, TC> {
+    // (undocumented)
+    convalidate(from: unknown, ctx?: TC): Success<T | TD>;
+    convert(from: unknown, ctx?: TC): Success<T | TD>;
+    readonly defaultValue: TD;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -301,10 +327,10 @@ export type DetailedSuccessContinuation<T, TD, TN> = (value: T, detail?: TD) => 
 function discriminatedObject<T, TD extends string = string, TC = unknown>(discriminatorProp: string, converters: DiscriminatedObjectConverters<T, TD>): Converter<T, TC>;
 
 // @public
-type DiscriminatedObjectConverters<T, TD extends string = string, TC = unknown> = Record<TD, Converter<T, TC>>;
+type DiscriminatedObjectConverters<T, TD extends string = string, TC = unknown> = Record<TD, Converter<T, TC> | Validator<T, TC>>;
 
 // @public
-function element<T, TC = undefined>(index: number, converter: Converter<T, TC>): Converter<T, TC>;
+function element<T, TC = undefined>(index: number, converter: Converter<T, TC> | Validator<T, TC>): Converter<T, TC>;
 
 // @public
 function enumeratedValue<T>(values: T[]): Converter<T, T[]>;
@@ -348,13 +374,13 @@ export type FailureContinuation<T> = (message: string) => Result<T>;
 export function failWithDetail<T, TD>(message: string, detail: TD): DetailedFailure<T, TD>;
 
 // @public
-function field<T, TC = undefined>(name: string, converter: Converter<T, TC>): Converter<T, TC>;
+function field<T, TC = undefined>(name: string, converter: Converter<T, TC> | Validator<T, TC>): Converter<T, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 type FieldConverters<T, TC = unknown> = {
-    [key in keyof T]: Converter<T[key], TC>;
+    [key in keyof T]: Converter<T[key], TC> | Validator<T[key], TC>;
 };
 
 // @public
@@ -368,7 +394,7 @@ export type FieldInitializers<T> = {
 type FieldTransformers<TSRC, TDEST, TC = unknown> = {
     [key in keyof TDEST]: {
         from: keyof TSRC;
-        converter: Converter<TDEST[key], TC>;
+        converter: Converter<TDEST[key], TC> | Validator<TDEST[key], TC>;
         optional?: boolean;
     };
 };
@@ -392,6 +418,37 @@ interface FunctionConstraintTrait {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+class GenericDefaultingConverter<T, TD = T, TC = undefined> implements DefaultingConverter<T, TD, TC> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(converter: Converter<T, TC>, defaultValue: TD);
+    get brand(): string | undefined;
+    // (undocumented)
+    convalidate(from: unknown, ctx?: TC | undefined): Success<T | TD>;
+    convert(from: unknown, ctx?: TC | undefined): Success<T | TD>;
+    convertOptional(from: unknown, context?: TC | undefined, onError?: ('failOnError' | 'ignoreErrors') | undefined): Result<T | TD | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    defaultValue: TD;
+    get isOptional(): boolean;
+    map<T2>(mapper: (from: T | TD) => Result<T2>): Converter<T2, TC>;
+    mapConvert<T2>(mapConverter: Converter<T2, unknown>): Converter<T2, TC>;
+    mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC>;
+    mapItems<TI>(mapper: (from: unknown) => Result<TI>): Converter<TI[], TC>;
+    optional(onError?: ('failOnError' | 'ignoreErrors') | undefined): Converter<T | TD | undefined, TC>;
+    withAction<T2>(action: (result: Result<T | TD>) => Result<T2>): Converter<T2, TC>;
+    withBrand<B extends string>(brand: B): Converter<Brand<T | TD, B>, TC>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    withConstraint(constraint: (val: T | TD) => boolean | Result<T | TD>, options?: ConstraintOptions | undefined): Converter<T | TD, TC>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    withDefault<TD2 = T>(dflt: TD2): DefaultingConverter<T, TD2, TC>;
+    withItemTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string | undefined): Converter<TI[], TC>;
+    withTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string | undefined): Converter<TI, TC>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 class GenericValidator<T, TC = undefined> implements Validator<T, TC> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -402,6 +459,10 @@ class GenericValidator<T, TC = undefined> implements Validator<T, TC> {
     get brand(): string | undefined;
     // @internal
     protected _context(explicitContext?: TC): TC | undefined;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    convalidate(from: unknown, context?: TC): Result<T>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -551,7 +612,7 @@ const isoDate: Converter<Date, unknown>;
 //
 // @public
 interface KeyedConverterOptions<T extends string = string, TC = undefined> {
-    keyConverter?: Converter<T, TC>;
+    keyConverter?: Converter<T, TC> | Validator<T, TC>;
     onError?: 'fail' | 'ignore';
 }
 
@@ -627,16 +688,16 @@ export function mapDetailedResults<T, TD>(results: Iterable<DetailedResult<T, TD
 export function mapFailures<T>(results: Iterable<Result<T>>): string[];
 
 // @public
-function mapOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC>): Converter<Map<TK, T>, TC>;
+function mapOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>): Converter<Map<TK, T>, TC>;
 
 // @public
-function mapOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC>, onError: 'fail' | 'ignore'): Converter<Map<TK, T>, TC>;
+function mapOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>, onError: 'fail' | 'ignore'): Converter<Map<TK, T>, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function mapOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC>, options: KeyedConverterOptions<TK, TC>): Converter<Map<TK, T>, TC>;
+function mapOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>, options: KeyedConverterOptions<TK, TC>): Converter<Map<TK, T>, TC>;
 
 // @public
 function mappedEnumeratedValue<T>(map: [T, unknown[]][], message?: string): Converter<T, undefined>;
@@ -828,7 +889,7 @@ interface ObjectValidatorOptions<T, TC> extends ValidatorOptions<TC> {
 export function omit<T extends object, K extends keyof T>(from: T, exclude: K[]): Omit<T, K>;
 
 // @public
-function oneOf<T, TC = unknown>(converters: Array<Converter<T, TC>>, onError?: OnError_2): Converter<T, TC>;
+function oneOf<T, TC = unknown>(converters: Array<Converter<T, TC> | Validator<T, TC>>, onError?: OnError): Converter<T, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -859,16 +920,16 @@ interface OneOfValidatorConstructorParams<T, TC = unknown> extends ValidatorBase
 }
 
 // @public
-type OnError_2 = 'failOnError' | 'ignoreErrors';
+type OnError = 'failOnError' | 'ignoreErrors';
 
 // @public
 const optionalBoolean: Converter<boolean | undefined>;
 
 // @public
-function optionalElement<T, TC = undefined>(index: number, converter: Converter<T, TC>): Converter<T | undefined, TC>;
+function optionalElement<T, TC = undefined>(index: number, converter: Converter<T, TC> | Validator<T, TC>): Converter<T | undefined, TC>;
 
 // @public
-function optionalField<T, TC = undefined>(name: string, converter: Converter<T, TC>): Converter<T | undefined, TC>;
+function optionalField<T, TC = undefined>(name: string, converter: Converter<T, TC> | Validator<T, TC>): Converter<T | undefined, TC>;
 
 // @public
 export function optionalMapToPossiblyEmptyRecord<TS, TD, TK extends string = string>(src: ReadonlyMap<TK, TS> | undefined, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD>>;
@@ -909,16 +970,16 @@ export interface PopulateObjectOptions<T> {
 export function propagateWithDetail<T, TD>(result: Result<T>, detail: TD, successDetail?: TD): DetailedResult<T, TD>;
 
 // @public
-function recordOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC>): Converter<Record<TK, T>, TC>;
+function recordOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>): Converter<Record<TK, T>, TC>;
 
 // @public
-function recordOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC>, onError: 'fail' | 'ignore'): Converter<Record<TK, T>, TC>;
+function recordOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>, onError: 'fail' | 'ignore'): Converter<Record<TK, T>, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function recordOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC>, options: KeyedConverterOptions<TK, TC>): Converter<Record<TK, T>, TC>;
+function recordOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>, options: KeyedConverterOptions<TK, TC>): Converter<Record<TK, T>, TC>;
 
 // @public
 export function recordToMap<TS, TD, TK extends string = string>(src: Record<TK, TS>, factory: KeyedThingFactory<TS, TD, TK>): Result<Map<TK, TD>>;
@@ -1113,6 +1174,7 @@ declare namespace Validation {
         Classes,
         Validators,
         TypeGuardWithContext,
+        Convalidator,
         FunctionConstraintTrait,
         ConstraintTrait,
         ValidatorTraitValues,
@@ -1126,8 +1188,12 @@ declare namespace Validation {
 export { Validation }
 
 // @public
-export interface Validator<T, TC = undefined> {
+export interface Validator<T, TC = undefined> extends Convalidator<T, TC> {
     readonly brand: string | undefined;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    convalidate(from: unknown, context?: TC): Result<T>;
     guard(from: unknown, context?: TC): from is T;
     readonly isOptional: boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

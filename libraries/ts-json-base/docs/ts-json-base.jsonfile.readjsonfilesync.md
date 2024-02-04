@@ -4,7 +4,7 @@
 
 ## JsonFile.readJsonFileSync() function
 
-Convenience function to read type-safe JSON from a file
+Read type-safe JSON from a file.
 
 **Signature:**
 

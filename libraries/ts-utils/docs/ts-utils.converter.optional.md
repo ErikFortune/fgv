@@ -16,7 +16,7 @@ optional(onError?: OnError): Converter<T | undefined, TC>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  onError | OnError | _(Optional)_ Specifies handling of values that cannot be converted (default <code>ignoreErrors</code>). |
+|  onError | [OnError](./ts-utils.converters.onerror.md) | _(Optional)_ Specifies handling of values that cannot be converted (default <code>ignoreErrors</code>). |
 
 **Returns:**
 

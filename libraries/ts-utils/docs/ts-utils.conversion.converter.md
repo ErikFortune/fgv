@@ -9,9 +9,9 @@ Generic converter to convert unknown to a templated type `<T>`<!-- -->, using in
 **Signature:**
 
 ```typescript
-export interface Converter<T, TC = undefined> extends ConverterTraits 
+export interface Converter<T, TC = undefined> extends ConverterTraits, Convalidator<T, TC> 
 ```
-**Extends:** [ConverterTraits](./ts-utils.conversion.convertertraits.md)
+**Extends:** [ConverterTraits](./ts-utils.conversion.convertertraits.md)<!-- -->, [Convalidator](./ts-utils.validation.convalidator.md)<!-- -->&lt;T, TC&gt;
 
 ## Properties
 
@@ -24,15 +24,18 @@ export interface Converter<T, TC = undefined> extends ConverterTraits
 
 |  Method | Description |
 |  --- | --- |
-|  [convert(from, context)](./ts-utils.conversion.converter.convert.md) | Converts from <code>unknown</code> to <code>&lt;T&gt;</code>. |
+|  [convalidate(from, context)](./ts-utils.conversion.converter.convalidate.md) | Converts or validates from <code>unknown</code> to <code>&lt;T&gt;</code>. For objects and arrays, makes no guarantees wrt in-place validation or unrecognized properties. |
+|  [convert(from, context)](./ts-utils.conversion.converter.convert.md) | Converts from <code>unknown</code> to <code>&lt;T&gt;</code>. For objects and arrays, is guaranteed to return a new entity, with any unrecognized properties removed. |
 |  [convertOptional(from, context, onError)](./ts-utils.conversion.converter.convertoptional.md) | Converts from <code>unknown</code> to <code>&lt;T&gt;</code> or <code>undefined</code>, as appropriate. |
 |  [map(mapper)](./ts-utils.conversion.converter.map.md) | Creates a [Converter](./ts-utils.converter.md) which applies a (possibly) mapping conversion to the converted value of this [Converter](./ts-utils.converter.md)<!-- -->. |
 |  [mapConvert(mapConverter)](./ts-utils.conversion.converter.mapconvert.md) | Creates a [Converter](./ts-utils.converter.md) which applies an additional supplied converter to the result of this converter. |
 |  [mapConvertItems(mapConverter)](./ts-utils.conversion.converter.mapconvertitems.md) | Creates a [Converter](./ts-utils.converter.md) which maps the individual items of a collection resulting from this [Converter](./ts-utils.converter.md) using the supplied [Converter](./ts-utils.converter.md)<!-- -->. |
 |  [mapItems(mapper)](./ts-utils.conversion.converter.mapitems.md) | Creates a [Converter](./ts-utils.converter.md) which maps the individual items of a collection resulting from this [Converter](./ts-utils.converter.md) using the supplied map function. |
 |  [optional(onError)](./ts-utils.conversion.converter.optional.md) | Creates a [Converter](./ts-utils.converter.md) for an optional value. |
+|  [withAction(action)](./ts-utils.conversion.converter.withaction.md) | Creates a [Converter](./ts-utils.converter.md) which applies a supplied action after conversion. The supplied action is always called regardless of success or failure of the base conversion and is allowed to mutate the return type. |
 |  [withBrand(brand)](./ts-utils.conversion.converter.withbrand.md) | returns a converter which adds a brand to the type to prevent mismatched usage of simple types. |
 |  [withConstraint(constraint, options)](./ts-utils.conversion.converter.withconstraint.md) | Creates a [Converter](./ts-utils.converter.md) which applies an optional constraint to the result of this conversion. If this [Converter](./ts-utils.converter.md) (the base converter) succeeds, the new converter calls a supplied constraint evaluation function with the conversion, which fails the entire conversion if the constraint function returns either <code>false</code> or [Failure&lt;T&gt;](./ts-utils.failure.md)<!-- -->. |
+|  [withDefault(dflt)](./ts-utils.conversion.converter.withdefault.md) | Returns a Converter which always succeeds with a default value rather than failing. |
 |  [withItemTypeGuard(guard, message)](./ts-utils.conversion.converter.withitemtypeguard.md) | Creates a [Converter](./ts-utils.converter.md) which applies a supplied type guard to each member of the conversion result from this converter. |
 |  [withTypeGuard(guard, message)](./ts-utils.conversion.converter.withtypeguard.md) | Creates a [Converter](./ts-utils.converter.md) which applies a supplied type guard to the conversion result. |
 

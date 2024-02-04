@@ -9,7 +9,7 @@ A helper function to create a [Converter](./ts-utils.converter.md) which extract
 **Signature:**
 
 ```typescript
-export declare function optionalField<T, TC = undefined>(name: string, converter: Converter<T, TC>): Converter<T | undefined, TC>;
+export declare function optionalField<T, TC = undefined>(name: string, converter: Converter<T, TC> | Validator<T, TC>): Converter<T | undefined, TC>;
 ```
 
 ## Parameters
@@ -17,7 +17,7 @@ export declare function optionalField<T, TC = undefined>(name: string, converter
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  name | string | The name of the field to be extracted. |
-|  converter | [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; | [Converter](./ts-utils.converter.md) used to convert the extracted field. |
+|  converter | [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; \| [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt; | [Converter](./ts-utils.converter.md) or [Validator](./ts-utils.validator.md) to use for the extracted field. |
 
 **Returns:**
 
@@ -25,5 +25,5 @@ export declare function optionalField<T, TC = undefined>(name: string, converter
 
 ## Remarks
 
-The resulting [Converter](./ts-utils.converter.md) returns [Success](./ts-utils.success.md) with the converted value of the corresponding object property if the field exists and can be converted. Returns [Success](./ts-utils.success.md) with value `undefined` if the supplied parameter is an object but the named field is not present. Returns [Failure](./ts-utils.failure.md) with an error message otherwise.
+The resulting [Converter](./ts-utils.converter.md) returns [Success](./ts-utils.success.md) with the converted value of the corresponding object property if the field exists and can be converted. Returns [Success](./ts-utils.success.md) with `undefined` if the supplied parameter is an object but the named field is not present. Returns [Failure](./ts-utils.failure.md) with an error message otherwise.
 

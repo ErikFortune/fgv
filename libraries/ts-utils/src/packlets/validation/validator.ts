@@ -21,6 +21,7 @@
  */
 
 import { Brand, Failure, Result } from '../base';
+import { Convalidator } from './convalidator';
 import { ConstraintTrait, ValidatorTraits } from './traits';
 
 /**
@@ -47,7 +48,7 @@ export type Constraint<T> = (val: T) => boolean | Failure<T>;
  * @public
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export interface Validator<T, TC = undefined> {
+export interface Validator<T, TC = undefined> extends Convalidator<T, TC> {
   /**
    * {@link Validation.ValidatorTraits | Traits} describing this validation.
    */
@@ -64,14 +65,19 @@ export interface Validator<T, TC = undefined> {
   readonly brand: string | undefined;
 
   /**
-   * Tests to see if a supplied `unknown` value matches this
-   * validation.
+   * Tests to see if a supplied `unknown` value matches this validation.  All
+   * validate calls are guaranteed to return the entity passed in on Success.
    * @param from - The `unknown` value to be tested.
    * @param context - Optional validation context.
    * @returns {@link Success} with the typed, validated value,
    * or {@link Failure} with an error message if validation fails.
    */
   validate(from: unknown, context?: TC): Result<T>;
+
+  /**
+   * {@inheritdoc Validation.Convalidator.convalidate}
+   */
+  convalidate(from: unknown, context?: TC): Result<T>;
 
   /**
    * Tests to see if a supplied `unknown` value matches this

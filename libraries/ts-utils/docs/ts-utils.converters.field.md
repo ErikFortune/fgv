@@ -9,7 +9,7 @@ A helper function to create a [Converter](./ts-utils.converter.md) which extract
 **Signature:**
 
 ```typescript
-export declare function field<T, TC = undefined>(name: string, converter: Converter<T, TC>): Converter<T, TC>;
+export declare function field<T, TC = undefined>(name: string, converter: Converter<T, TC> | Validator<T, TC>): Converter<T, TC>;
 ```
 
 ## Parameters
@@ -17,7 +17,7 @@ export declare function field<T, TC = undefined>(name: string, converter: Conver
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  name | string | The name of the field to be extracted. |
-|  converter | [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; | [Converter](./ts-utils.converter.md) used to convert the extracted field. |
+|  converter | [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; \| [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt; | [Converter](./ts-utils.converter.md) or [Validator](./ts-utils.validator.md) to use for the extracted field. |
 
 **Returns:**
 

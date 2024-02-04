@@ -4,7 +4,7 @@
 
 ## JsonFile.convertJsonFileSync() function
 
-Convenience function to read a JSON file and apply a supplied converter.
+Read a JSON file and apply a supplied converter.
 
 **Signature:**
 
@@ -23,5 +23,5 @@ export declare function convertJsonFileSync<T>(srcPath: string, converter: Conve
 
 Result&lt;T&gt;
 
-`Success` with a result of type `<T>`<!-- -->, or `Failure` with a message if an error occurs.
+`Success` with a result of type `<T>`<!-- -->, or `Failure`<!-- -->\* with a message if an error occurs.
 

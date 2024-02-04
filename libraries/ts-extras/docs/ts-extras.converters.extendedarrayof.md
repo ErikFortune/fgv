@@ -12,7 +12,7 @@ A helper function to create a `Converter` which converts `unknown` to [ExtendedA
 **Signature:**
 
 ```typescript
-export declare function extendedArrayOf<T, TC = undefined>(label: string, converter: Converter<T, TC>, onError?: Converters.OnError): Converter<ExtendedArray<T>, TC>;
+export declare function extendedArrayOf<T, TC = undefined>(label: string, converter: Converter<T, TC>, onError?: Conversion.OnError): Converter<ExtendedArray<T>, TC>;
 ```
 
 ## Parameters
@@ -21,7 +21,7 @@ export declare function extendedArrayOf<T, TC = undefined>(label: string, conver
 |  --- | --- | --- |
 |  label | string |  |
 |  converter | Converter&lt;T, TC&gt; | <code>Converter</code> used to convert each item in the array |
-|  onError | Converters.OnError | _(Optional)_ |
+|  onError | Conversion.OnError | _(Optional)_ |
 
 **Returns:**
 

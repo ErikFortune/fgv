@@ -21,3 +21,5 @@
  */
 
 export * from './file';
+export * from './jsonFsHelper';
+export * from './jsonLike';

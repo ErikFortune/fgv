@@ -35,7 +35,7 @@ import { ExtendedArray, RangeOf, RangeOfProperties } from '../experimental';
 export function extendedArrayOf<T, TC = undefined>(
   label: string,
   converter: Converter<T, TC>,
-  onError: Converters.OnError = 'failOnError'
+  onError: Conversion.OnError = 'failOnError'
 ): Converter<ExtendedArray<T>, TC> {
   return Converters.arrayOf(converter, onError).map((items: T[]) => {
     return captureResult(() => new ExtendedArray(label, ...items));

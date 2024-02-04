@@ -22,7 +22,9 @@
 
 import * as Converters from './converters';
 
+export * from './baseConverter';
 export * from './converter';
+export * from './defaultingConverter';
 export * from './objectConverter';
 export * from './stringConverter';
 export { Converters };

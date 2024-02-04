@@ -4,20 +4,20 @@
 
 ## Conversion.Converters.oneOf() function
 
-A helper function to create a [Converter](./ts-utils.converter.md) for polymorphic values. Returns a converter which Invokes the wrapped converters in sequence, returning the first successful result. Returns an error if none of the supplied converters can convert the value.
+A helper function to create a [Converter](./ts-utils.converter.md) for polymorphic values. Returns a converter which invokes the wrapped converters in sequence, returning the first successful result. Returns an error if none of the supplied converters can convert the value.
 
 **Signature:**
 
 ```typescript
-export declare function oneOf<T, TC = unknown>(converters: Array<Converter<T, TC>>, onError?: OnError): Converter<T, TC>;
+export declare function oneOf<T, TC = unknown>(converters: Array<Converter<T, TC> | Validator<T, TC>>, onError?: OnError): Converter<T, TC>;
 ```
 
 ## Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  converters | Array&lt;[Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;&gt; | An ordered list of [converters](./ts-utils.converter.md) to be considered. |
-|  onError | OnError | _(Optional)_ Specifies treatment of unconvertible elements. |
+|  converters | Array&lt;[Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; \| [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;&gt; | An ordered list of [converters](./ts-utils.converter.md) or [validators](./ts-utils.validator.md) to be considered. |
+|  onError | [OnError](./ts-utils.converters.onerror.md) | _(Optional)_ Specifies treatment of unconvertible elements. |
 
 **Returns:**
 

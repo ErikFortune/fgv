@@ -4,7 +4,7 @@
 
 ## JsonFile.writeJsonFileSync() function
 
-Convenience function to write type-safe JSON to a file.
+Write type-safe JSON to a file.
 
 **Signature:**
 

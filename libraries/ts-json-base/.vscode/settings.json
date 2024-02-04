@@ -8,6 +8,8 @@
   },
   "cSpell.words": [
     "badp",
+    "convalidate",
+    "Convalidator",
     "dflt",
     "Eulers",
     "fixlint",
@@ -28,5 +30,6 @@
     "TSRC",
     "TTOELEM",
     "xyzzy"
-  ]
+  ],
+  "CodeGPT.apiKey": "CodeGPT Plus Beta"
 }
