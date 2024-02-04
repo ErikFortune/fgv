@@ -21,7 +21,8 @@
  */
 
 import { fail, isKeyOf, succeed } from '../base';
-import { BaseConverter, Converter } from './converter';
+import { BaseConverter } from './baseConverter';
+import { Converter } from './converter';
 import { field, optionalField } from './converters';
 
 /**

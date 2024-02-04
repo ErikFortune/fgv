@@ -4,6 +4,7 @@
     "aval",
     "bval",
     "convalidate",
+    "Convalidator",
     "dflt",
     "hashable",
     "lcov",

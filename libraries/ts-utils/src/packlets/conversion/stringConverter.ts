@@ -21,7 +21,8 @@
  */
 
 import { Result, fail, succeed } from '../base';
-import { BaseConverter, Converter, ConverterTraits } from './converter';
+import { BaseConverter } from './baseConverter';
+import { Converter, ConverterTraits } from './converter';
 
 /**
  * Options for {@link Conversion.StringConverter | StringConverter}

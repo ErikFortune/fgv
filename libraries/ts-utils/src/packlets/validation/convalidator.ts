@@ -29,6 +29,11 @@ import { Result } from '../base';
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export interface Convalidator<T, TC = unknown> {
   /**
+   * Indicates whether the corresponding property can be omitted.
+   */
+  readonly isOptional: boolean;
+
+  /**
    * Converts or validates from `unknown` to `<T>`.  For objects and arrays, makes no
    * guarantees wrt in-place validation or unrecognized properties.
    * @param from - The `unknown` to be converted or validated.

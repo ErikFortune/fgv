@@ -22,18 +22,13 @@
 
 import { Result, captureResult, fail, isKeyOf, succeed } from '../base';
 import { TypeGuardWithContext, Validator } from '../validation';
-import { BaseConverter, Converter } from './converter';
+import { BaseConverter } from './baseConverter';
+import { Converter, OnError } from './converter';
 import { FieldConverters, ObjectConverter, ObjectConverterOptions } from './objectConverter';
 import { StringConverter } from './stringConverter';
 
 import { DateTime } from 'luxon';
 import Mustache from 'mustache';
-
-/**
- * Action to take on conversion failures.
- * @public
- */
-export type OnError = 'failOnError' | 'ignoreErrors';
 
 /**
  * A converter to convert unknown to string. Values of type

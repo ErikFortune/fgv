@@ -12,6 +12,12 @@ Helper interface to make it easy to use validators and converters interchangeabl
 export interface Convalidator<T, TC = unknown> 
 ```
 
+## Properties
+
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [isOptional](./ts-utils.validation.convalidator.isoptional.md) | <code>readonly</code> | boolean | Indicates whether the corresponding property can be omitted. |
+
 ## Methods
 
 |  Method | Description |

@@ -19,10 +19,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { Brand, Result, fail, mapResults, succeed } from '../base';
+import { Brand, Result, Success } from '../base';
 import { Convalidator } from '../validation';
 
-type OnError = 'failOnError' | 'ignoreErrors';
+/**
+ * Action to take on conversion failures.
+ * @public
+ */
+export type OnError = 'failOnError' | 'ignoreErrors';
 
 /**
  * Converter traits.
@@ -162,6 +166,14 @@ export interface Converter<T, TC = undefined> extends ConverterTraits, Convalida
   mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC>;
 
   /**
+   * Creates a {@link Converter | Converter} which applies a supplied action after
+   * conversion.  The supplied action is always called regardless of success or failure
+   * of the base conversion and is allowed to mutate the return type.
+   * @param action - The action to be applied.
+   */
+  withAction<T2>(action: (result: Result<T>) => Result<T2>): Converter<T2, TC>;
+
+  /**
    * Creates a {@link Converter} which applies a supplied type guard to the conversion
    * result.
    * @param guard - The type guard function to apply.
@@ -203,271 +215,33 @@ export interface Converter<T, TC = undefined> extends ConverterTraits, Convalida
    * @returns A {@link Converter} returning `Brand<T, B>`.
    */
   withBrand<B extends string>(brand: B): Converter<Brand<T, B>, TC>;
+
+  /**
+   * Returns a Converter which always succeeds with a default value rather than failing.
+   */
+  withDefault<TD = T>(dflt: TD): DefaultingConverter<T, TD, TC>;
 }
 
 /**
- * internal
- */
-type InnerInferredType<TCONV> = TCONV extends Converter<infer TTO>
-  ? TTO extends Array<infer TTOELEM>
-    ? InnerInferredType<TTOELEM>[]
-    : TTO
-  : TCONV extends Array<infer TELEM>
-  ? InnerInferredType<TELEM>[]
-  : TCONV;
-
-/**
- * Infers the type that will be returned by an instantiated converter.  Works
- * for complex as well as simple types.
- * @example `Infer<typeof Converters.mapOf(Converters.stringArray)>` is `Map<string, string[]>`
- * @beta
- */
-export type Infer<TCONV> = TCONV extends Converter<infer TTO> ? InnerInferredType<TTO> : never;
-
-/**
- * Deprecated name for Infer<T> retained for compatibility
- * @deprecated use @see Infer instead
- * @internal
- */
-export type ConvertedToType<TCONV> = Infer<TCONV>;
-
-/**
- * Base templated wrapper to simplify creation of new {@link Converter}s.
  * @public
  */
-export class BaseConverter<T, TC = undefined> implements Converter<T, TC> {
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export interface DefaultingConverter<T, TD = T, TC = undefined> extends Converter<T | TD, TC> {
   /**
-   * @internal
+   * Default value to use if the conversion fails.
    */
-  protected readonly _defaultContext?: TC;
-  /**
-   * @internal
-   */
-  protected _isOptional: boolean = false;
-  /**
-   * @internal
-   */
-  protected _brand?: string;
-
-  private readonly _converter: (from: unknown, self: Converter<T, TC>, context?: TC) => Result<T>;
+  readonly defaultValue: TD;
 
   /**
-   * Constructs a new {@link Converter} which uses the supplied function to perform the conversion.
-   * @param converter - The conversion function to be applied.
-   * @param defaultContext - Optional conversion context to be used by default.
-   * @param traits - Optional {@link Conversion.ConverterTraits | traits} to be assigned to the resulting
-   * converter.
+   * Convert the supplied `unknown` to `Success<T>` or to the `Success` with the default value
+   * if conversion is not possible.
+   * @param from - the value to be converted.
+   * @param ctx - optional context for the conversion.
    */
-  public constructor(
-    converter: (from: unknown, self: Converter<T, TC>, context?: TC) => Result<T>,
-    defaultContext?: TC,
-    traits?: ConverterTraits
-  ) {
-    this._converter = converter;
-    this._defaultContext = defaultContext;
-    this._isOptional = traits?.isOptional === true;
-    this._brand = traits?.brand;
-  }
-
-  /**
-   * {@inheritdoc Converter.isOptional}
-   */
-  public get isOptional(): boolean {
-    return this._isOptional;
-  }
-
-  /**
-   * {@inheritdoc Converter.brand}
-   */
-  public get brand(): string | undefined {
-    return this._brand;
-  }
-
-  /**
-   * {@inheritdoc Converter.convert}
-   */
-  public convert(from: unknown, context?: TC): Result<T> {
-    return this._converter(from, this, context ?? this._defaultContext);
-  }
+  convert(from: unknown, ctx?: TC): Success<T | TD>;
 
   /**
    * {@inheritdoc Converter.convalidate}
    */
-  public convalidate(from: unknown, context?: TC): Result<T> {
-    return this._converter(from, this, context ?? this._defaultContext);
-  }
-
-  /**
-   * {@inheritdoc Converter.convertOptional}
-   */
-  public convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined> {
-    const result = this._converter(from, this, this._context(context));
-    if (result.isFailure()) {
-      onError = onError ?? 'ignoreErrors';
-      return from === undefined || onError === 'ignoreErrors' ? succeed(undefined) : result;
-    }
-    return result;
-  }
-
-  /**
-   * {@inheritdoc Converter.optional}
-   */
-  public optional(onError?: OnError): Converter<T | undefined, TC> {
-    return new BaseConverter((from: unknown, __self: Converter<T | undefined, TC>, context?: TC) => {
-      onError = onError ?? 'failOnError';
-      return this.convertOptional(from, this._context(context), onError);
-    })._with(this._traits({ isOptional: true }));
-  }
-
-  /**
-   * {@inheritdoc Converter.map}
-   */
-  public map<T2>(mapper: (from: T) => Result<T2>): Converter<T2, TC> {
-    return new BaseConverter<T2, TC>((from: unknown, __self: Converter<T2, TC>, context?: TC) => {
-      const innerResult = this._converter(from, this, this._context(context));
-      if (innerResult.isSuccess()) {
-        return mapper(innerResult.value);
-      }
-      return fail(innerResult.message);
-    })._with(this._traits());
-  }
-
-  /**
-   * {@inheritdoc Converter.mapConvert}
-   */
-  public mapConvert<T2>(mapConverter: Converter<T2>): Converter<T2, TC> {
-    return new BaseConverter<T2, TC>((from: unknown, __self: Converter<T2, TC>, context?: TC) => {
-      const innerResult = this._converter(from, this, this._context(context));
-      if (innerResult.isSuccess()) {
-        return mapConverter.convert(innerResult.value);
-      }
-      return fail(innerResult.message);
-      // eslint-disable-next-line no-return-assign
-    })._with(this._traits());
-  }
-
-  /**
-   * {@inheritdoc Converter.mapItems}
-   */
-  public mapItems<TI>(mapper: (from: unknown) => Result<TI>): Converter<TI[], TC> {
-    return new BaseConverter<TI[], TC>((from: unknown, __self: Converter<TI[], TC>, context?: TC) => {
-      return this._converter(from, this, this._context(context)).onSuccess((items) => {
-        if (Array.isArray(items)) {
-          return mapResults(items.map((i) => mapper(i)));
-        }
-        return fail('Cannot map items - not an array');
-      });
-    });
-  }
-
-  /**
-   * {@inheritdoc Converter.mapConvertItems}
-   */
-  public mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC> {
-    return new BaseConverter<TI[], TC>((from: unknown, __self: Converter<TI[], TC>, context?: TC) => {
-      return this._converter(from, this, this._context(context)).onSuccess((items) => {
-        if (Array.isArray(items)) {
-          return mapResults(items.map((i) => mapConverter.convert(i)));
-        }
-        return fail('Cannot map items - not an array');
-      });
-    });
-  }
-
-  /**
-   * {@inheritdoc Converter.withTypeGuard}
-   */
-  public withTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI, TC> {
-    return new BaseConverter<TI, TC>((from: unknown, __self: Converter<TI, TC>, context?: TC) => {
-      return this._converter(from, this, this._context(context)).onSuccess((inner) => {
-        message = message ?? 'invalid type';
-        return guard(inner) ? succeed(inner) : fail(`${message}: ${JSON.stringify(from)}`);
-      });
-    });
-  }
-
-  /**
-   * {@inheritdoc Converter.withItemTypeGuard}
-   */
-  public withItemTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI[], TC> {
-    return new BaseConverter<TI[], TC>((from: unknown, __self: Converter<TI[], TC>, context?: TC) => {
-      return this._converter(from, this, this._context(context)).onSuccess((items) => {
-        if (Array.isArray(items)) {
-          return mapResults(
-            items.map((i) => {
-              message = message ?? 'invalid type';
-              return guard(i) ? succeed(i) : fail(`${message}: ${JSON.stringify(from)}`);
-            })
-          );
-        }
-        return fail('Cannot guard item type - not an array');
-      });
-    });
-  }
-
-  /**
-   * {@inheritdoc Converter.withConstraint}
-   */
-  public withConstraint(
-    constraint: (val: T) => boolean | Result<T>,
-    options?: ConstraintOptions
-  ): Converter<T, TC> {
-    return new BaseConverter<T, TC>((from: unknown, __self: Converter<T, TC>, context?: TC) => {
-      const result = this._converter(from, this, this._context(context));
-      if (result.isSuccess()) {
-        const constraintResult = constraint(result.value);
-        if (typeof constraintResult === 'boolean') {
-          return constraintResult
-            ? result
-            : fail(
-                `"${JSON.stringify(result.value)}": ${options?.description ?? 'does not meet constraint'}`
-              );
-        }
-        return constraintResult;
-      }
-      return result;
-    })._with(this._traits());
-  }
-
-  /**
-   * {@inheritdoc Converter.withBrand}
-   */
-  public withBrand<B extends string>(brand: B): Converter<Brand<T, B>, TC> {
-    if (this._brand) {
-      throw new Error(`Cannot replace existing brand "${this._brand}" with "${brand}".`);
-    }
-
-    return new BaseConverter<Brand<T, B>, TC>((from: unknown, __self: Converter<T, TC>, context?: TC) => {
-      return this._converter(from, this, this._context(context)).onSuccess((v) => {
-        return succeed(v as Brand<T, B>);
-      });
-    })._with(this._traits({ brand }));
-  }
-
-  /**
-   * @internal
-   */
-  protected _context(supplied?: TC): TC | undefined {
-    return supplied ?? this._defaultContext;
-  }
-
-  /**
-   * @internal
-   */
-  protected _traits(traits?: Partial<ConverterTraits>): ConverterTraits {
-    return {
-      isOptional: this.isOptional,
-      brand: this.brand,
-      ...(traits ?? {})
-    };
-  }
-
-  /**
-   * @internal
-   */
-  protected _with(traits: Partial<ConverterTraits>): this {
-    this._isOptional = traits.isOptional === true;
-    this._brand = traits.brand;
-    return this;
-  }
+  convalidate(from: unknown, ctx?: TC): Success<T | TD>;
 }

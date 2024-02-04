@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "add defaulting converter",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

@@ -8,7 +8,7 @@
 export function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T): Result<T>;
 
 // @public
-function arrayOf<T, TC = undefined>(converter: Converter<T, TC>, onError?: OnError_2): Converter<T[], TC>;
+function arrayOf<T, TC = undefined>(converter: Converter<T, TC>, onError?: OnError): Converter<T[], TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -61,7 +61,6 @@ class BaseConverter<T, TC = undefined> implements Converter<T, TC> {
     // (undocumented)
     convalidate(from: unknown, context?: TC): Result<T>;
     convert(from: unknown, context?: TC): Result<T>;
-    // Warning: (ae-forgotten-export) The symbol "OnError" needs to be exported by the entry point index.d.ts
     convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined>;
     // @internal (undocumented)
     protected readonly _defaultContext?: TC;
@@ -77,9 +76,11 @@ class BaseConverter<T, TC = undefined> implements Converter<T, TC> {
     protected _traits(traits?: Partial<ConverterTraits>): ConverterTraits;
     // @internal (undocumented)
     protected _with(traits: Partial<ConverterTraits>): this;
+    withAction<TI>(action: (result: Result<T>) => Result<TI>): Converter<TI, TC>;
     withBrand<B extends string>(brand: B): Converter<Brand<T, B>, TC>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     withConstraint(constraint: (val: T) => boolean | Result<T>, options?: ConstraintOptions): Converter<T, TC>;
+    withDefault<TD = T>(defaultValue: TD): DefaultingConverter<T, TD, TC>;
     withItemTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI[], TC>;
     withTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI, TC>;
 }
@@ -153,17 +154,21 @@ type ConstraintTrait = FunctionConstraintTrait;
 // @public
 interface Convalidator<T, TC = unknown> {
     convalidate(from: unknown, context?: TC): Result<T>;
+    readonly isOptional: boolean;
 }
 
 declare namespace Conversion {
     export {
         Converters,
-        ConverterTraits,
-        ConstraintOptions,
-        Converter,
         Infer,
         ConvertedToType,
         BaseConverter,
+        OnError,
+        ConverterTraits,
+        ConstraintOptions,
+        Converter,
+        DefaultingConverter,
+        GenericDefaultingConverter,
         ObjectConverterOptions,
         FieldConverters,
         ObjectConverter,
@@ -191,9 +196,11 @@ export interface Converter<T, TC = undefined> extends ConverterTraits, Convalida
     mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC>;
     mapItems<TI>(mapper: (from: unknown) => Result<TI>): Converter<TI[], TC>;
     optional(onError?: OnError): Converter<T | undefined, TC>;
+    withAction<T2>(action: (result: Result<T>) => Result<T2>): Converter<T2, TC>;
     withBrand<B extends string>(brand: B): Converter<Brand<T, B>, TC>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     withConstraint(constraint: (val: T) => boolean | Result<T>, options?: ConstraintOptions): Converter<T, TC>;
+    withDefault<TD = T>(dflt: TD): DefaultingConverter<T, TD, TC>;
     withItemTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI[], TC>;
     withTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI, TC>;
 }
@@ -221,7 +228,6 @@ declare namespace Converters {
         discriminatedObject,
         transform,
         transformObject,
-        OnError_2 as OnError,
         string,
         value,
         number,
@@ -256,6 +262,14 @@ class Crc32Normalizer extends HashingNormalizer {
     constructor();
     // (undocumented)
     static crc32Hash(parts: string[]): string;
+}
+
+// @public (undocumented)
+interface DefaultingConverter<T, TD = T, TC = undefined> extends Converter<T | TD, TC> {
+    // (undocumented)
+    convalidate(from: unknown, ctx?: TC): Success<T | TD>;
+    convert(from: unknown, ctx?: TC): Success<T | TD>;
+    readonly defaultValue: TD;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -398,6 +412,37 @@ type FieldValidators<T, TC = unknown> = {
 interface FunctionConstraintTrait {
     // (undocumented)
     type: 'function';
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class GenericDefaultingConverter<T, TD = T, TC = undefined> implements DefaultingConverter<T, TD, TC> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(converter: Converter<T, TC>, defaultValue: TD);
+    get brand(): string | undefined;
+    // (undocumented)
+    convalidate(from: unknown, ctx?: TC | undefined): Success<T | TD>;
+    convert(from: unknown, ctx?: TC | undefined): Success<T | TD>;
+    convertOptional(from: unknown, context?: TC | undefined, onError?: ('failOnError' | 'ignoreErrors') | undefined): Result<T | TD | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    defaultValue: TD;
+    get isOptional(): boolean;
+    map<T2>(mapper: (from: T | TD) => Result<T2>): Converter<T2, TC>;
+    mapConvert<T2>(mapConverter: Converter<T2, unknown>): Converter<T2, TC>;
+    mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC>;
+    mapItems<TI>(mapper: (from: unknown) => Result<TI>): Converter<TI[], TC>;
+    optional(onError?: ('failOnError' | 'ignoreErrors') | undefined): Converter<T | TD | undefined, TC>;
+    withAction<T2>(action: (result: Result<T | TD>) => Result<T2>): Converter<T2, TC>;
+    withBrand<B extends string>(brand: B): Converter<Brand<T | TD, B>, TC>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    withConstraint(constraint: (val: T | TD) => boolean | Result<T | TD>, options?: ConstraintOptions | undefined): Converter<T | TD, TC>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    withDefault<TD2 = T>(dflt: TD2): DefaultingConverter<T, TD2, TC>;
+    withItemTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string | undefined): Converter<TI[], TC>;
+    withTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string | undefined): Converter<TI, TC>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -843,7 +888,7 @@ interface ObjectValidatorOptions<T, TC> extends ValidatorOptions<TC> {
 export function omit<T extends object, K extends keyof T>(from: T, exclude: K[]): Omit<T, K>;
 
 // @public
-function oneOf<T, TC = unknown>(converters: Array<Converter<T, TC>>, onError?: OnError_2): Converter<T, TC>;
+function oneOf<T, TC = unknown>(converters: Array<Converter<T, TC>>, onError?: OnError): Converter<T, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -874,7 +919,7 @@ interface OneOfValidatorConstructorParams<T, TC = unknown> extends ValidatorBase
 }
 
 // @public
-type OnError_2 = 'failOnError' | 'ignoreErrors';
+type OnError = 'failOnError' | 'ignoreErrors';
 
 // @public
 const optionalBoolean: Converter<boolean | undefined>;

@@ -264,6 +264,20 @@ describe('BaseConverter class', () => {
     });
   });
 
+  describe('with an action', () => {
+    const converter = numberConverter.withAction((r) => {
+      return r.success ? succeed(r.value + 1) : fail('action ate the error');
+    });
+
+    test('passes result of a successful conversion to the action', () => {
+      expect(converter.convert(10)).toSucceedWith(11);
+    });
+
+    test('passes result of failed conversion to the action', () => {
+      expect(converter.convert('not a number')).toFailWith('action ate the error');
+    });
+  });
+
   describe('with type guards', () => {
     type Thing = 'thing1' | 'thing2';
     function isThing(from: unknown): from is Thing {
@@ -421,7 +435,16 @@ describe('BaseConverter class', () => {
     test('rejects a second brand', () => {
       expect(() => {
         Converters.string.withBrand('ONE').withBrand('B');
-      }).toThrowError(/cannot replace existing brand/i);
+      }).toThrow(/cannot replace existing brand/i);
+    });
+  });
+
+  describe('withDefault method', () => {
+    test('returns a defaulting converter with the supplied default', () => {
+      const converter = numberConverter.withDefault(-1);
+
+      expect(converter.convert(1)).toSucceedWith(1);
+      expect(converter.convert('not a number')).toSucceedWith(-1);
     });
   });
 });

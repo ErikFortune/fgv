@@ -63,6 +63,5 @@
 |  --- | --- |
 |  [DiscriminatedObjectConverters](./ts-utils.conversion.converters.discriminatedobjectconverters.md) | A string-keyed <code>Record&lt;string, Converter&gt;</code> which maps specific [converters](./ts-utils.converter.md) to the value of a discriminator property. |
 |  [FieldTransformers](./ts-utils.conversion.converters.fieldtransformers.md) | Per-property converters and configuration for each field in the destination object of a [Converters.transformObject()](./ts-utils.converters.transformobject.md) call. |
-|  [OnError](./ts-utils.conversion.converters.onerror.md) | Action to take on conversion failures. |
 |  [StrictObjectConverterOptions](./ts-utils.conversion.converters.strictobjectconverteroptions.md) | Options for the [Converters.strictObject()](./ts-utils.converters.strictobject.md) helper function. |
 

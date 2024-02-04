@@ -17,7 +17,7 @@ export declare function oneOf<T, TC = unknown>(converters: Array<Converter<T, TC
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  converters | Array&lt;[Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;&gt; | An ordered list of [converters](./ts-utils.converter.md) to be considered. |
-|  onError | OnError | _(Optional)_ Specifies treatment of unconvertible elements. |
+|  onError | [OnError](./ts-utils.conversion.onerror.md) | _(Optional)_ Specifies treatment of unconvertible elements. |
 
 **Returns:**
 
