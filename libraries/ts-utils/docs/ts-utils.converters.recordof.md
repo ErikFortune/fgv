@@ -4,19 +4,19 @@
 
 ## Converters.recordOf() function
 
-A helper function to create a [Converter](./ts-utils.converter.md) which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) to produce a `Record<string, T>`<!-- -->.
+A helper function to create a [Converter](./ts-utils.converter.md) which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Record<string, T>`<!-- -->.
 
 **Signature:**
 
 ```typescript
-export declare function recordOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC>): Converter<Record<TK, T>, TC>;
+export declare function recordOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>): Converter<Record<TK, T>, TC>;
 ```
 
 ## Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  converter | [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; | [Converter](./ts-utils.converter.md) used to convert each item in the source object. |
+|  converter | [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; \| [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt; | [Converter](./ts-utils.converter.md) or [Validator](./ts-utils.validator.md) used for each item in the source object. |
 
 **Returns:**
 

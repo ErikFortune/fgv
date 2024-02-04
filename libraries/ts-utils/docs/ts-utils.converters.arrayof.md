@@ -9,14 +9,14 @@ A helper function to create a [Converter](./ts-utils.converter.md) which convert
 **Signature:**
 
 ```typescript
-export declare function arrayOf<T, TC = undefined>(converter: Converter<T, TC>, onError?: OnError): Converter<T[], TC>;
+export declare function arrayOf<T, TC = undefined>(converter: Converter<T, TC> | Validator<T, TC>, onError?: OnError): Converter<T[], TC>;
 ```
 
 ## Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  converter | [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; | [Converter](./ts-utils.converter.md) used to convert each item in the array. |
+|  converter | [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; \| [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt; | [Converter](./ts-utils.converter.md) or [Validator](./ts-utils.validator.md) used to convert each item in the array. |
 |  onError | [OnError](./ts-utils.conversion.onerror.md) | _(Optional)_ |
 
 **Returns:**

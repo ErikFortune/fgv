@@ -16,6 +16,6 @@ export interface KeyedConverterOptions<T extends string = string, TC = undefined
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [keyConverter?](./ts-utils.conversion.converters.keyedconverteroptions.keyconverter.md) |  | [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; | _(Optional)_ If present, <code>keyConverter</code> is used to convert the source object property names to keys in the resulting map or record. |
+|  [keyConverter?](./ts-utils.conversion.converters.keyedconverteroptions.keyconverter.md) |  | [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; \| [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt; | _(Optional)_ If present, <code>keyConverter</code> is used to convert the source object property names to keys in the resulting map or record. |
 |  [onError?](./ts-utils.conversion.converters.keyedconverteroptions.onerror.md) |  | 'fail' \| 'ignore' | _(Optional)_ if <code>onError</code> is <code>'fail'</code> (default), then the entire conversion fails if any key or element cannot be converted. If <code>onError</code> is <code>'ignore'</code>, failing elements are silently ignored. |
 

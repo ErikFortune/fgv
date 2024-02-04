@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "extend conversion to accept validators",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

@@ -12,10 +12,10 @@ Per-property converters and configuration for each field in the destination obje
 export type FieldTransformers<TSRC, TDEST, TC = unknown> = {
     [key in keyof TDEST]: {
         from: keyof TSRC;
-        converter: Converter<TDEST[key], TC>;
+        converter: Converter<TDEST[key], TC> | Validator<TDEST[key], TC>;
         optional?: boolean;
     };
 };
 ```
-**References:** [Converter](./ts-utils.converter.md)
+**References:** [Converter](./ts-utils.converter.md)<!-- -->, [Validator](./ts-utils.validator.md)
 

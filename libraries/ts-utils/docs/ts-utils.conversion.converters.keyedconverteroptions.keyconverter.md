@@ -9,7 +9,7 @@ If present, `keyConverter` is used to convert the source object property names t
 **Signature:**
 
 ```typescript
-keyConverter?: Converter<T, TC>;
+keyConverter?: Converter<T, TC> | Validator<T, TC>;
 ```
 
 ## Remarks

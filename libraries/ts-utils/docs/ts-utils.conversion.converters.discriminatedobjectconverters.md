@@ -4,12 +4,12 @@
 
 ## Conversion.Converters.DiscriminatedObjectConverters type
 
-A string-keyed `Record<string, Converter>` which maps specific [converters](./ts-utils.converter.md) to the value of a discriminator property.
+A string-keyed `Record<string, Converter>` which maps specific [converters](./ts-utils.converter.md) or [Validators](./ts-utils.validator.md) to the value of a discriminator property.
 
 **Signature:**
 
 ```typescript
-export type DiscriminatedObjectConverters<T, TD extends string = string, TC = unknown> = Record<TD, Converter<T, TC>>;
+export type DiscriminatedObjectConverters<T, TD extends string = string, TC = unknown> = Record<TD, Converter<T, TC> | Validator<T, TC>>;
 ```
-**References:** [Converter](./ts-utils.converter.md)
+**References:** [Converter](./ts-utils.converter.md)<!-- -->, [Validator](./ts-utils.validator.md)
 

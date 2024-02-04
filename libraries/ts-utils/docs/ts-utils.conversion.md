@@ -34,7 +34,7 @@
 
 |  Type Alias | Description |
 |  --- | --- |
-|  [FieldConverters](./ts-utils.conversion.fieldconverters.md) | Per-property converters for each of the properties in type T. |
+|  [FieldConverters](./ts-utils.conversion.fieldconverters.md) | Per-property converters or validators for each of the properties in type T. |
 |  [Infer](./ts-utils.conversion.infer.md) | **_(BETA)_** Infers the type that will be returned by an instantiated converter. Works for complex as well as simple types. |
 |  [OnError](./ts-utils.conversion.onerror.md) | Action to take on conversion failures. |
 

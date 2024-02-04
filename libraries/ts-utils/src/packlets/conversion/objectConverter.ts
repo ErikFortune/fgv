@@ -21,6 +21,7 @@
  */
 
 import { fail, isKeyOf, succeed } from '../base';
+import { Validator } from '../validation';
 import { BaseConverter } from './baseConverter';
 import { Converter } from './converter';
 import { field, optionalField } from './converters';
@@ -47,12 +48,14 @@ export interface ObjectConverterOptions<T> {
 }
 
 /**
- * Per-property converters for each of the properties in type T.
+ * Per-property converters or validators for each of the properties in type T.
  * @remarks
  * Used to construct a {@link Conversion.ObjectConverter | ObjectConverter}
  * @public
  */
-export type FieldConverters<T, TC = unknown> = { [key in keyof T]: Converter<T[key], TC> };
+export type FieldConverters<T, TC = unknown> = {
+  [key in keyof T]: Converter<T[key], TC> | Validator<T[key], TC>;
+};
 
 /**
  * A {@link Converter} which converts an object of type `<T>` without changing shape, given

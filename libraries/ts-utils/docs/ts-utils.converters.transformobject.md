@@ -16,7 +16,7 @@ export declare function transformObject<TSRC, TDEST, TC = unknown>(destinationFi
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  destinationFields | [FieldTransformers](./ts-utils.converters.fieldtransformers.md)<!-- -->&lt;TSRC, TDEST, TC&gt; | An object with key names that correspond to the target object and an appropriate [FieldTransformers](./ts-utils.converters.fieldtransformers.md) which specifies the name of the corresponding property in the source object, the converter used to convert the source property and any configuration to guide the conversion. |
+|  destinationFields | [FieldTransformers](./ts-utils.converters.fieldtransformers.md)<!-- -->&lt;TSRC, TDEST, TC&gt; | An object with key names that correspond to the target object and an appropriate [FieldTransformers](./ts-utils.converters.fieldtransformers.md) which specifies the name of the corresponding property in the source object, the converter or validator used for each source property and any other configuration to guide the conversion. |
 |  options | [TransformObjectOptions](./ts-utils.converters.transformobjectoptions.md)<!-- -->&lt;TSRC&gt; | _(Optional)_ Options which affect the transformation. |
 
 **Returns:**
