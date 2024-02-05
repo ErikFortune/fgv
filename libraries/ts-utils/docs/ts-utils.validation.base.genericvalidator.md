@@ -31,7 +31,7 @@ export declare class GenericValidator<T, TC = undefined> implements Validator<T,
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
-|  [convalidate(from, context)](./ts-utils.validation.base.genericvalidator.convalidate.md) |  |  |
+|  [convert(from, context)](./ts-utils.validation.base.genericvalidator.convert.md) |  | Tests to see if a supplied 'unknown' value matches this validation. In contrast to [validate](./ts-utils.validator.validate.md)<!-- -->, makes no guarantees about the identity of the returned value. |
 |  [guard(from, context)](./ts-utils.validation.base.genericvalidator.guard.md) |  | Non-throwing type guard |
 |  [optional()](./ts-utils.validation.base.genericvalidator.optional.md) |  | Creates an [in-place validator](./ts-utils.validation.validator.md) which is derived from this one but which also matches <code>undefined</code>. |
 |  [validate(from, context)](./ts-utils.validation.base.genericvalidator.validate.md) |  | Tests to see if a supplied <code>unknown</code> value matches this validation. All validate calls are guaranteed to return the entity passed in on Success. |

@@ -47,7 +47,7 @@ export function readJsonFileSync(srcPath: string): Result<JsonValue> {
  * @public
  */
 export function convertJsonFileSync<T>(srcPath: string, converter: Converter<T>): Result<T> {
-  return DefaultJsonFsHelper.processJsonFileSync(srcPath, converter);
+  return DefaultJsonFsHelper.convertJsonFileSync(srcPath, converter);
 }
 
 /**
@@ -61,7 +61,7 @@ export function convertJsonDirectorySync<T>(
   srcPath: string,
   options: IDirectoryConvertOptions<T>
 ): Result<IReadDirectoryItem<T>[]> {
-  return DefaultJsonFsHelper.processJsonDirectorySync(srcPath, options);
+  return DefaultJsonFsHelper.convertJsonDirectorySync(srcPath, options);
 }
 
 /**
@@ -77,7 +77,7 @@ export function convertJsonDirectoryToMapSync<T, TC = unknown>(
   srcPath: string,
   options: IDirectoryToMapConvertOptions<T, TC>
 ): Result<Map<string, T>> {
-  return DefaultJsonFsHelper.processJsonDirectoryToMapSync(srcPath, options);
+  return DefaultJsonFsHelper.convertJsonDirectoryToMapSync(srcPath, options);
 }
 
 const CompatJsonFsHelper: JsonFsHelper = new JsonFsHelper({

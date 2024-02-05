@@ -102,7 +102,7 @@ describe('JsonFsHelper class', () => {
       const mockFs = new MockFileSystem(mockFsConfig);
       const spies = mockFs.startSpies();
       spies.clear();
-      expect(helper.processJsonFileSync(mockGoodPath, mockConverter)).toSucceedWith(mockConverted);
+      expect(helper.convertJsonFileSync(mockGoodPath, mockConverter)).toSucceedWith(mockConverted);
       expect(spies.read).toHaveBeenCalledTimes(1);
       spies.restore();
     });
@@ -121,7 +121,7 @@ describe('JsonFsHelper class', () => {
       const mockFs = new MockFileSystem(mockFsConfig);
       const spies = mockFs.startSpies();
       spies.clear();
-      expect(helper.processJsonFileSync(mockGoodPath, mockValidator)).toSucceedWith(mockValidated);
+      expect(helper.convertJsonFileSync(mockGoodPath, mockValidator)).toSucceedWith(mockValidated);
       expect(spies.read).toHaveBeenCalledTimes(1);
       spies.restore();
     });
@@ -146,18 +146,18 @@ describe('JsonFsHelper class', () => {
 
       test('reads JSON files from a folder, ignoring non-JSON', () => {
         expect(
-          helper.processJsonDirectorySync('src/test/unit/data/file/good', options)
+          helper.convertJsonDirectorySync('src/test/unit/data/file/good', options)
         ).toSucceedAndMatchSnapshot();
       });
 
       test('fails for a non-folder', () => {
         expect(
-          helper.processJsonDirectorySync('src/test/unit/data/file/good/thing1.json', options)
+          helper.convertJsonDirectorySync('src/test/unit/data/file/good/thing1.json', options)
         ).toFailWith(/not a directory/i);
       });
 
       test('fails by default if any of the items in the folder fail conversion', () => {
-        expect(helper.processJsonDirectorySync('src/test/unit/data/file/bad', options)).toFailWith(
+        expect(helper.convertJsonDirectorySync('src/test/unit/data/file/bad', options)).toFailWith(
           /bad3.json/i
         );
       });
@@ -179,7 +179,7 @@ describe('JsonFsHelper class', () => {
 
       test('reads JSON files from a folder, ignoring non-JSON', () => {
         expect(
-          helper.processJsonDirectorySync('src/test/unit/data/file/good', options)
+          helper.convertJsonDirectorySync('src/test/unit/data/file/good', options)
         ).toSucceedAndMatchSnapshot();
       });
     });
@@ -201,7 +201,7 @@ describe('JsonFsHelper class', () => {
 
     test('reads JSON files from a folder, ignoring non-JSON', () => {
       expect(
-        helper.processJsonDirectoryToMapSync('src/test/unit/data/file/good', options)
+        helper.convertJsonDirectoryToMapSync('src/test/unit/data/file/good', options)
       ).toSucceedAndMatchSnapshot();
     });
 
@@ -212,18 +212,18 @@ describe('JsonFsHelper class', () => {
       };
       const myOptions = { ...options, transformName };
       expect(
-        helper.processJsonDirectoryToMapSync('src/test/unit/data/file/good', myOptions)
+        helper.convertJsonDirectoryToMapSync('src/test/unit/data/file/good', myOptions)
       ).toSucceedAndMatchSnapshot();
     });
 
     test('fails for a non-folder', () => {
       expect(
-        helper.processJsonDirectoryToMapSync('src/test/unit/data/file/good/thing1.json', options)
+        helper.convertJsonDirectoryToMapSync('src/test/unit/data/file/good/thing1.json', options)
       ).toFailWith(/not a directory/i);
     });
 
     test('fails by default if any of the items in the folder fail conversion', () => {
-      expect(helper.processJsonDirectoryToMapSync('src/test/unit/data/file/bad', options)).toFailWith(
+      expect(helper.convertJsonDirectoryToMapSync('src/test/unit/data/file/bad', options)).toFailWith(
         /bad3.json/i
       );
     });

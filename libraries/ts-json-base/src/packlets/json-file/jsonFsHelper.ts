@@ -20,16 +20,7 @@
  * SOFTWARE.
  */
 
-import {
-  Converter,
-  Result,
-  Validation,
-  Validator,
-  captureResult,
-  fail,
-  mapResults,
-  succeed
-} from '@fgv/ts-utils';
+import { Converter, Result, Validator, captureResult, fail, mapResults, succeed } from '@fgv/ts-utils';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -193,9 +184,12 @@ export class JsonFsHelper {
    * @returns `Success` with a result of type `<T>`, or `Failure`
    * with a message if an error occurs.
    */
-  public processJsonFileSync<T>(srcPath: string, cv: Validation.Convalidator<T>): Result<T> {
+  public convertJsonFileSync<T, TC = unknown>(
+    srcPath: string,
+    cv: Converter<T, TC> | Validator<T, TC>
+  ): Result<T> {
     return this.readJsonFileSync(srcPath).onSuccess((json) => {
-      return cv.convalidate(json);
+      return cv.convert(json);
     });
   }
 
@@ -205,7 +199,7 @@ export class JsonFsHelper {
    * @param options - {@link JsonFile.JsonFsDirectoryOptions | Options} to control
    * conversion and filtering
    */
-  public processJsonDirectorySync<T>(
+  public convertJsonDirectorySync<T>(
     srcPath: string,
     options: JsonFsDirectoryOptions<T>
   ): Result<IReadDirectoryItem<T>[]> {
@@ -219,7 +213,7 @@ export class JsonFsHelper {
         .map((fi) => {
           if (fi.isFile() && path.extname(fi.name) === '.json') {
             const filePath = path.resolve(fullPath, fi.name);
-            return this.processJsonFileSync(filePath, options.converter ?? options.validator)
+            return this.convertJsonFileSync(filePath, options.converter ?? options.validator)
               .onSuccess((payload) => {
                 return succeed({
                   filename: fi.name,
@@ -245,11 +239,11 @@ export class JsonFsHelper {
    * @param options - {@link JsonFile.JsonFsDirectoryToMapOptions | Options} to control conversion,
    * filtering and naming.
    */
-  public processJsonDirectoryToMapSync<T, TC = unknown>(
+  public convertJsonDirectoryToMapSync<T, TC = unknown>(
     srcPath: string,
     options: JsonFsDirectoryToMapOptions<T, TC>
   ): Result<Map<string, T>> {
-    return this.processJsonDirectorySync(srcPath, options).onSuccess((items) => {
+    return this.convertJsonDirectorySync(srcPath, options).onSuccess((items) => {
       const transformName = options.transformName ?? defaultNameTransformer;
       return mapResults(
         items.map((item) => {

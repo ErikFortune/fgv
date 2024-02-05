@@ -28,9 +28,9 @@ export declare class JsonFsHelper
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
-|  [processJsonDirectorySync(srcPath, options)](./ts-json-base.jsonfile.jsonfshelper.processjsondirectorysync.md) |  | Reads all JSON files from a directory and apply a supplied converter or validator. |
-|  [processJsonDirectoryToMapSync(srcPath, options)](./ts-json-base.jsonfile.jsonfshelper.processjsondirectorytomapsync.md) |  | Reads and converts or validates all JSON files from a directory, returning a <code>Map&lt;string, T&gt;</code> indexed by file base name (i.e. minus the extension) with an optional name transformation applied if present. |
-|  [processJsonFileSync(srcPath, cv)](./ts-json-base.jsonfile.jsonfshelper.processjsonfilesync.md) |  | Read a JSON file and apply a supplied converter or validator. |
+|  [convertJsonDirectorySync(srcPath, options)](./ts-json-base.jsonfile.jsonfshelper.convertjsondirectorysync.md) |  | Reads all JSON files from a directory and apply a supplied converter or validator. |
+|  [convertJsonDirectoryToMapSync(srcPath, options)](./ts-json-base.jsonfile.jsonfshelper.convertjsondirectorytomapsync.md) |  | Reads and converts or validates all JSON files from a directory, returning a <code>Map&lt;string, T&gt;</code> indexed by file base name (i.e. minus the extension) with an optional name transformation applied if present. |
+|  [convertJsonFileSync(srcPath, cv)](./ts-json-base.jsonfile.jsonfshelper.convertjsonfilesync.md) |  | Read a JSON file and apply a supplied converter or validator. |
 |  [readJsonFileSync(srcPath)](./ts-json-base.jsonfile.jsonfshelper.readjsonfilesync.md) |  | Read type-safe JSON from a file. |
 |  [writeJsonFileSync(srcPath, value)](./ts-json-base.jsonfile.jsonfshelper.writejsonfilesync.md) |  | Write type-safe JSON to a file. |
 

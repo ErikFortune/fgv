@@ -9,9 +9,8 @@ In-place validation that a supplied unknown matches some required characteristic
 **Signature:**
 
 ```typescript
-export interface Validator<T, TC = undefined> extends Convalidator<T, TC> 
+export interface Validator<T, TC = undefined> 
 ```
-**Extends:** [Convalidator](./ts-utils.validation.convalidator.md)<!-- -->&lt;T, TC&gt;
 
 ## Properties
 
@@ -25,7 +24,7 @@ export interface Validator<T, TC = undefined> extends Convalidator<T, TC>
 
 |  Method | Description |
 |  --- | --- |
-|  [convalidate(from, context)](./ts-utils.validation.validator.convalidate.md) | Converts or validates from <code>unknown</code> to <code>&lt;T&gt;</code>. For objects and arrays, makes no guarantees wrt in-place validation or unrecognized properties. |
+|  [convert(from, context)](./ts-utils.validation.validator.convert.md) | Tests to see if a supplied 'unknown' value matches this validation. In contrast to [validate](./ts-utils.validator.validate.md)<!-- -->, makes no guarantees about the identity of the returned value. |
 |  [guard(from, context)](./ts-utils.validation.validator.guard.md) | Non-throwing type guard |
 |  [optional()](./ts-utils.validation.validator.optional.md) | Creates an [in-place validator](./ts-utils.validation.validator.md) which is derived from this one but which also matches <code>undefined</code>. |
 |  [validate(from, context)](./ts-utils.validation.validator.validate.md) | Tests to see if a supplied <code>unknown</code> value matches this validation. All validate calls are guaranteed to return the entity passed in on Success. |

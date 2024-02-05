@@ -58,8 +58,6 @@ class BaseConverter<T, TC = undefined> implements Converter<T, TC> {
     protected _brand?: string;
     // @internal (undocumented)
     protected _context(supplied?: TC): TC | undefined;
-    // (undocumented)
-    convalidate(from: unknown, context?: TC): Result<T>;
     convert(from: unknown, context?: TC): Result<T>;
     convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined>;
     // @internal (undocumented)
@@ -151,12 +149,6 @@ interface ConstraintOptions {
 // @public
 type ConstraintTrait = FunctionConstraintTrait;
 
-// @public
-interface Convalidator<T, TC = unknown> {
-    convalidate(from: unknown, context?: TC): Result<T>;
-    readonly isOptional: boolean;
-}
-
 declare namespace Conversion {
     export {
         Converters,
@@ -182,12 +174,8 @@ export { Conversion }
 type ConvertedToType<TCONV> = Infer<TCONV>;
 
 // @public
-export interface Converter<T, TC = undefined> extends ConverterTraits, Convalidator<T, TC> {
+export interface Converter<T, TC = undefined> extends ConverterTraits {
     readonly brand?: string;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    convalidate(from: unknown, context?: TC): Result<T>;
     convert(from: unknown, context?: TC): Result<T>;
     convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined>;
     readonly isOptional: boolean;
@@ -267,8 +255,6 @@ class Crc32Normalizer extends HashingNormalizer {
 
 // @public (undocumented)
 interface DefaultingConverter<T, TD = T, TC = undefined> extends Converter<T | TD, TC> {
-    // (undocumented)
-    convalidate(from: unknown, ctx?: TC): Success<T | TD>;
     convert(from: unknown, ctx?: TC): Success<T | TD>;
     readonly defaultValue: TD;
 }
@@ -422,8 +408,6 @@ class GenericDefaultingConverter<T, TD = T, TC = undefined> implements Defaultin
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(converter: Converter<T, TC>, defaultValue: TD);
     get brand(): string | undefined;
-    // (undocumented)
-    convalidate(from: unknown, ctx?: TC | undefined): Success<T | TD>;
     convert(from: unknown, ctx?: TC | undefined): Success<T | TD>;
     convertOptional(from: unknown, context?: TC | undefined, onError?: ('failOnError' | 'ignoreErrors') | undefined): Result<T | TD | undefined>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -462,7 +446,7 @@ class GenericValidator<T, TC = undefined> implements Validator<T, TC> {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    convalidate(from: unknown, context?: TC): Result<T>;
+    convert(from: unknown, context?: TC): Result<T>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -1174,7 +1158,6 @@ declare namespace Validation {
         Classes,
         Validators,
         TypeGuardWithContext,
-        Convalidator,
         FunctionConstraintTrait,
         ConstraintTrait,
         ValidatorTraitValues,
@@ -1188,12 +1171,9 @@ declare namespace Validation {
 export { Validation }
 
 // @public
-export interface Validator<T, TC = undefined> extends Convalidator<T, TC> {
+export interface Validator<T, TC = undefined> {
     readonly brand: string | undefined;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    convalidate(from: unknown, context?: TC): Result<T>;
+    convert(from: unknown, context?: TC): Result<T>;
     guard(from: unknown, context?: TC): from is T;
     readonly isOptional: boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

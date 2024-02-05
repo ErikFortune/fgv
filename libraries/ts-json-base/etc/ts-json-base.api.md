@@ -6,7 +6,6 @@
 
 import { Converter } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
-import { Validation } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
 
 // @public
@@ -179,10 +178,10 @@ class JsonFsHelper {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly config: IJsonFsHelperConfig;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    processJsonDirectorySync<T>(srcPath: string, options: JsonFsDirectoryOptions<T>): Result<IReadDirectoryItem<T>[]>;
+    convertJsonDirectorySync<T>(srcPath: string, options: JsonFsDirectoryOptions<T>): Result<IReadDirectoryItem<T>[]>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    processJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options: JsonFsDirectoryToMapOptions<T, TC>): Result<Map<string, T>>;
-    processJsonFileSync<T>(srcPath: string, cv: Validation.Convalidator<T>): Result<T>;
+    convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options: JsonFsDirectoryToMapOptions<T, TC>): Result<Map<string, T>>;
+    convertJsonFileSync<T, TC = unknown>(srcPath: string, cv: Converter<T, TC> | Validator<T, TC>): Result<T>;
     readJsonFileSync(srcPath: string): Result<JsonValue>;
     writeJsonFileSync(srcPath: string, value: JsonValue): Result<boolean>;
 }
