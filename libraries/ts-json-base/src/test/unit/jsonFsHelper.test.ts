@@ -175,12 +175,25 @@ describe('JsonFsHelper class', () => {
           }
         }
       );
-      const options = { validator: thing };
+      const options = { converter: thing };
 
-      test('reads JSON files from a folder, ignoring non-JSON', () => {
-        expect(
-          helper.convertJsonDirectorySync('src/test/unit/data/file/good', options)
-        ).toSucceedAndMatchSnapshot();
+      test('reads JSON files from a folder, ignoring non-JSON by default', () => {
+        expect(helper.convertJsonDirectorySync('src/test/unit/data/file/good', options)).toSucceedAndSatisfy(
+          (items) => {
+            expect(items.every((item) => item.filename.endsWith('.json'))).toBe(true);
+            expect(items).toMatchSnapshot();
+          }
+        );
+      });
+
+      test('reads JSON files from a folder, using file filter if supplied', () => {
+        const options2 = { ...options, files: [/.*.txt/] };
+        expect(helper.convertJsonDirectorySync('src/test/unit/data/file/good', options2)).toSucceedAndSatisfy(
+          (items) => {
+            expect(items.every((item) => item.filename.endsWith('.txt'))).toBe(true);
+            expect(items).toMatchSnapshot();
+          }
+        );
       });
     });
   });
@@ -190,16 +203,13 @@ describe('JsonFsHelper class', () => {
       name: string;
       optionalString?: string;
     }
-    const thing = Converters.object<IThing>(
-      {
-        name: Converters.string,
-        optionalString: Converters.string
-      },
-      ['optionalString']
-    );
+    const thing = Converters.object<IThing>({
+      name: Converters.string,
+      optionalString: Converters.string.optional()
+    });
     const options = { converter: thing };
 
-    test('reads JSON files from a folder, ignoring non-JSON', () => {
+    test('reads JSON files from a folder, ignoring non-JSON by default', () => {
       expect(
         helper.convertJsonDirectoryToMapSync('src/test/unit/data/file/good', options)
       ).toSucceedAndMatchSnapshot();

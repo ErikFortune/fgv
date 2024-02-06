@@ -24,8 +24,8 @@ import { Converter, Result } from '@fgv/ts-utils';
 import { JsonValue } from '../json';
 import {
   DefaultJsonFsHelper,
-  IDirectoryConvertOptions,
-  IDirectoryToMapConvertOptions,
+  IJsonFsDirectoryOptions,
+  IJsonFsDirectoryToMapOptions,
   IReadDirectoryItem,
   JsonFsHelper
 } from './jsonFsHelper';
@@ -53,13 +53,13 @@ export function convertJsonFileSync<T>(srcPath: string, converter: Converter<T>)
 /**
  * Reads all JSON files from a directory and apply a supplied converter.
  * @param srcPath - The path of the folder to be read.
- * @param options - {@link JsonFile.IDirectoryConvertOptions | Options} to control
+ * @param options - {@link JsonFile.IJsonFsDirectoryOptions | Options} to control
  * conversion and filtering
  * @public
  */
 export function convertJsonDirectorySync<T>(
   srcPath: string,
-  options: IDirectoryConvertOptions<T>
+  options: IJsonFsDirectoryOptions<T>
 ): Result<IReadDirectoryItem<T>[]> {
   return DefaultJsonFsHelper.convertJsonDirectorySync(srcPath, options);
 }
@@ -69,13 +69,13 @@ export function convertJsonDirectorySync<T>(
  * `Map<string, T>` indexed by file base name (i.e. minus the extension)
  * with an optional name transformation applied if present.
  * @param srcPath - The path of the folder to be read.
- * @param options - {@link JsonFile.IDirectoryToMapConvertOptions | Options} to control conversion,
+ * @param options - {@link JsonFile.IJsonFsDirectoryToMapOptions | Options} to control conversion,
  * filtering and naming.
  * @public
  */
 export function convertJsonDirectoryToMapSync<T, TC = unknown>(
   srcPath: string,
-  options: IDirectoryToMapConvertOptions<T, TC>
+  options: IJsonFsDirectoryToMapOptions<T, TC>
 ): Result<Map<string, T>> {
   return DefaultJsonFsHelper.convertJsonDirectoryToMapSync(srcPath, options);
 }
