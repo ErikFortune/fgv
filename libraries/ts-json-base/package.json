@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-json-base",
-  "version": "3.0.1-alpha.3",
+  "version": "3.0.1-alpha.4",
   "description": "Typescript types and basic functions for working with json",
   "main": "lib/index.js",
   "types": "dist/ts-json-base.d.ts",
