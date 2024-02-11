@@ -30,6 +30,7 @@ export declare class Failure<T> implements IResult<T>
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
+|  [aggregateError(errors)](./ts-utils.failure.aggregateerror.md) |  | Propagates interior result, appending any error message to the supplied errors array. |
 |  [getValueOrDefault(dflt)](./ts-utils.failure.getvalueordefault.md) |  | Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or a default value if the corresponding operation failed. |
 |  [getValueOrThrow(logger)](./ts-utils.failure.getvalueorthrow.md) |  | <p>Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or throws the error message if the corresponding operation failed.</p><p>Note that <code>getValueOrThrow</code> is being superseded by <code>orThrow</code> and will eventually be deprecated. Please use orDefault instead.</p> |
 |  [isFailure()](./ts-utils.failure.isfailure.md) |  | Indicates whether this operation failed. Functions as a type guard for [Failure&lt;T&gt;](./ts-utils.failure.md)<!-- -->. |

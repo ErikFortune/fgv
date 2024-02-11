@@ -163,6 +163,16 @@ describe('Result module', () => {
         expect(succeed('hello').withDetail('fred', 'wilma')).toSucceedWithDetail('hello', 'wilma');
       });
     });
+
+    describe('aggregateError method', () => {
+      test('does not update errors array', () => {
+        const aggregatedErrors = ['earlier error'];
+        const success = succeed('hello');
+        const aggregated = success.aggregateError(aggregatedErrors);
+        expect(aggregated).toBe(success); // explicit test for identity
+        expect(aggregatedErrors).toEqual(['earlier error']);
+      });
+    });
   });
 
   describe('Failure class', () => {
@@ -227,6 +237,17 @@ describe('Result module', () => {
           gotValue = f.orDefault(dflt);
         }).not.toThrow();
         expect(gotValue).toEqual(dflt);
+      });
+
+      describe('aggregateError method', () => {
+        test('appends the error to the supplied aggregated error array', () => {
+          const aggregatedErrors = ['earlier error'];
+          const failure = fail('new error');
+          const aggregated = failure.aggregateError(aggregatedErrors);
+          expect(aggregated).toBe(failure); // explicit test for identity
+          expect(aggregated).toFailWith('new error');
+          expect(aggregatedErrors).toEqual(['earlier error', 'new error']);
+        });
       });
     });
 

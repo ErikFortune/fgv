@@ -191,6 +191,13 @@ export interface IResult<T> {
    * appropriate added detail.
    */
   withDetail<TD>(detail: TD, successDetail?: TD): DetailedResult<T, TD>;
+
+  /**
+   * Propagates interior result, appending any error message to the
+   * supplied errors array.
+   * @param errors - String array to which error messages are aggregated.
+   */
+  aggregateError(errors: string[]): this;
 }
 
 /**
@@ -298,6 +305,13 @@ export class Success<T> implements IResult<T> {
    */
   public withDetail<TD>(detail: TD, successDetail?: TD): DetailedResult<T, TD> {
     return succeedWithDetail(this.value, successDetail ?? detail);
+  }
+
+  /**
+   * {@inheritdoc IResult.aggregateError}
+   */
+  public aggregateError(errors: string[]): this {
+    return this;
   }
 }
 
@@ -412,6 +426,14 @@ export class Failure<T> implements IResult<T> {
    */
   public withDetail<TD>(detail: TD, __successDetail?: TD): DetailedResult<T, TD> {
     return failWithDetail(this.message, detail);
+  }
+
+  /**
+   * {@inheritdoc IResult.aggregateError}
+   */
+  public aggregateError(errors: string[]): this {
+    errors.push(this.message);
+    return this;
   }
 
   /**

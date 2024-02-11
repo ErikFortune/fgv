@@ -333,6 +333,7 @@ export { fail_2 as fail }
 // @public
 export class Failure<T> implements IResult<T> {
     constructor(message: string);
+    aggregateError(errors: string[]): this;
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
     // @deprecated
@@ -550,6 +551,7 @@ class InMemoryLogger extends LoggerBase {
 
 // @public
 export interface IResult<T> {
+    aggregateError(errors: string[]): this;
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
     // @deprecated
@@ -1067,6 +1069,7 @@ export function succeedWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess
 // @public
 export class Success<T> implements IResult<T> {
     constructor(value: T);
+    aggregateError(errors: string[]): this;
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
     // @deprecated
