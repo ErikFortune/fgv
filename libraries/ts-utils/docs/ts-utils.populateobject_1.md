@@ -14,7 +14,7 @@ Populates an an object based on a prototype full of field initializers that retu
 **Signature:**
 
 ```typescript
-export declare function populateObject<T>(initializers: FieldInitializers<T>, order: (keyof T)[]): Result<T>;
+export declare function populateObject<T>(initializers: FieldInitializers<T>, order: (keyof T)[] | undefined, aggregatedErrors?: string[]): Result<T>;
 ```
 
 ## Parameters
@@ -22,7 +22,8 @@ export declare function populateObject<T>(initializers: FieldInitializers<T>, or
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  initializers | [FieldInitializers](./ts-utils.fieldinitializers.md)<!-- -->&lt;T&gt; | An object with the shape of the target but with initializer functions for each property. |
-|  order | (keyof T)\[\] | <p>Optional order in which keys should be written.</p> |
+|  order | (keyof T)\[\] \| undefined | Optional order in which keys should be written. |
+|  aggregatedErrors | string\[\] | <p>_(Optional)_ Optional string array to which any returned error messages will be appended. Each error is appended as an individual string.</p> |
 
 **Returns:**
 

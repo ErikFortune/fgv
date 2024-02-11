@@ -9,7 +9,7 @@ Populates an an object based on a prototype full of field initializers that retu
 **Signature:**
 
 ```typescript
-export declare function populateObject<T>(initializers: FieldInitializers<T>, options?: PopulateObjectOptions<T>): Result<T>;
+export declare function populateObject<T>(initializers: FieldInitializers<T>, options?: PopulateObjectOptions<T>, aggregatedErrors?: string[]): Result<T>;
 ```
 
 ## Parameters
@@ -17,7 +17,8 @@ export declare function populateObject<T>(initializers: FieldInitializers<T>, op
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  initializers | [FieldInitializers](./ts-utils.fieldinitializers.md)<!-- -->&lt;T&gt; | An object with the shape of the target but with initializer functions for each property. |
-|  options | [PopulateObjectOptions](./ts-utils.populateobjectoptions.md)<!-- -->&lt;T&gt; | _(Optional)_ An optional [set of options](./ts-utils.populateobjectoptions.md) which modify the behavior of this call.  |
+|  options | [PopulateObjectOptions](./ts-utils.populateobjectoptions.md)<!-- -->&lt;T&gt; | _(Optional)_ An optional [set of options](./ts-utils.populateobjectoptions.md) which modify the behavior of this call. |
+|  aggregatedErrors | string\[\] | _(Optional)_ Optional string array to which any returned error messages will be appended. Each error is appended as an individual string.  |
 
 **Returns:**
 

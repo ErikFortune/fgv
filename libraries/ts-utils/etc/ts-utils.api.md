@@ -5,7 +5,7 @@
 ```ts
 
 // @public
-export function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T): Result<T>;
+export function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T, aggregatedErrors?: string[]): Result<T>;
 
 // @public
 function arrayOf<T, TC = undefined>(converter: Converter<T, TC> | Validator<T, TC>, onError?: OnError): Converter<T[], TC>;
@@ -666,10 +666,10 @@ type LogLevel = 'detail' | 'info' | 'warning' | 'error' | 'silent';
 // Warning: (ae-incompatible-release-tags) The symbol "mapDetailedResults" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
 //
 // @public
-export function mapDetailedResults<T, TD>(results: Iterable<DetailedResult<T, TD>>, ignore: TD[]): Result<T[]>;
+export function mapDetailedResults<T, TD>(results: Iterable<DetailedResult<T, TD>>, ignore: TD[], aggregatedErrors?: string[]): Result<T[]>;
 
 // @public
-export function mapFailures<T>(results: Iterable<Result<T>>): string[];
+export function mapFailures<T>(results: Iterable<Result<T>>, aggregatedErrors?: string[]): string[];
 
 // @public
 function mapOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>): Converter<Map<TK, T>, TC>;
@@ -687,10 +687,10 @@ function mapOf<T, TC = undefined, TK extends string = string>(converter: Convert
 function mappedEnumeratedValue<T>(map: [T, unknown[]][], message?: string): Converter<T, undefined>;
 
 // @public
-export function mapResults<T>(results: Iterable<Result<T>>): Result<T[]>;
+export function mapResults<T>(results: Iterable<Result<T>>, aggregatedErrors?: string[]): Result<T[]>;
 
 // @public
-export function mapSuccess<T>(results: Iterable<Result<T>>): Result<T[]>;
+export function mapSuccess<T>(results: Iterable<Result<T>>, aggregatedErrors?: string[]): Result<T[]>;
 
 // Warning: (ae-forgotten-export) The symbol "KeyedThingFactory" needs to be exported by the entry point index.d.ts
 //
@@ -937,10 +937,10 @@ const optionalString: Converter<string | undefined, unknown>;
 export function pick<T extends object, K extends keyof T>(from: T, include: K[]): Pick<T, K>;
 
 // @public
-export function populateObject<T>(initializers: FieldInitializers<T>, options?: PopulateObjectOptions<T>): Result<T>;
+export function populateObject<T>(initializers: FieldInitializers<T>, options?: PopulateObjectOptions<T>, aggregatedErrors?: string[]): Result<T>;
 
 // @public @deprecated
-export function populateObject<T>(initializers: FieldInitializers<T>, order: (keyof T)[]): Result<T>;
+export function populateObject<T>(initializers: FieldInitializers<T>, order: (keyof T)[] | undefined, aggregatedErrors?: string[]): Result<T>;
 
 // @public
 export interface PopulateObjectOptions<T> {

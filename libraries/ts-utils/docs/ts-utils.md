@@ -20,17 +20,17 @@
 
 |  Function | Description |
 |  --- | --- |
-|  [allSucceed(results, successValue)](./ts-utils.allsucceed.md) | Determines if an iterable collection of [Result&lt;T&gt;](./ts-utils.result.md) were all successful. |
+|  [allSucceed(results, successValue, aggregatedErrors)](./ts-utils.allsucceed.md) | Determines if an iterable collection of [Result&lt;T&gt;](./ts-utils.result.md) were all successful. |
 |  [captureResult(func)](./ts-utils.captureresult.md) | Wraps a function which might throw to convert exception results to [Failure](./ts-utils.failure.md)<!-- -->. |
 |  [fail\_2(message)](./ts-utils.fail_2.md) | Returns [Failure&lt;T&gt;](./ts-utils.failure.md) with the supplied error message. |
 |  [failWithDetail(message, detail)](./ts-utils.failwithdetail.md) | Returns [DetailedFailure&lt;T, TD&gt;](./ts-utils.detailedfailure.md) with a supplied error message and detail. |
 |  [getTypeOfProperty(key, item)](./ts-utils.gettypeofproperty.md) | Gets the type of a property specified by key from an arbitrary object. |
 |  [getValueOfPropertyOrDefault(key, item, defaultValue)](./ts-utils.getvalueofpropertyordefault.md) | Gets the value of a property specified by key from an arbitrary object, or a default value if the property does not exist. |
 |  [isKeyOf(key, item)](./ts-utils.iskeyof.md) | Helper type-guard function to report whether a specified key is present in a supplied object. |
-|  [mapDetailedResults(results, ignore)](./ts-utils.mapdetailedresults.md) | Aggregates successful results from a collection of [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->, optionally ignoring certain error details. |
-|  [mapFailures(results)](./ts-utils.mapfailures.md) | Aggregates error messages from a collection of [Result&lt;T&gt;](./ts-utils.result.md)<!-- -->. |
-|  [mapResults(results)](./ts-utils.mapresults.md) | Aggregates successful result values from a collection of [Result&lt;T&gt;](./ts-utils.result.md)<!-- -->. |
-|  [mapSuccess(results)](./ts-utils.mapsuccess.md) | Aggregates successful results from a a collection of [Result&lt;T&gt;](./ts-utils.result.md)<!-- -->. |
+|  [mapDetailedResults(results, ignore, aggregatedErrors)](./ts-utils.mapdetailedresults.md) | Aggregates successful results from a collection of [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->, optionally ignoring certain error details. |
+|  [mapFailures(results, aggregatedErrors)](./ts-utils.mapfailures.md) | Aggregates error messages from a collection of [Result&lt;T&gt;](./ts-utils.result.md)<!-- -->. |
+|  [mapResults(results, aggregatedErrors)](./ts-utils.mapresults.md) | Aggregates successful result values from a collection of [Result&lt;T&gt;](./ts-utils.result.md)<!-- -->. |
+|  [mapSuccess(results, aggregatedErrors)](./ts-utils.mapsuccess.md) | Aggregates successful results from a a collection of [Result&lt;T&gt;](./ts-utils.result.md)<!-- -->. |
 |  [mapToRecord(src, factory)](./ts-utils.maptorecord.md) | Applies a factory method to convert a <code>ReadonlyMap&lt;TK, TS&gt;</code> into a <code>Record&lt;TK, TD&gt;</code>. |
 |  [omit(from, exclude)](./ts-utils.omit.md) | Simple implicit omit function, which picks all of the properties from a supplied object except those specified for exclusion. |
 |  [optionalMapToPossiblyEmptyRecord(src, factory)](./ts-utils.optionalmaptopossiblyemptyrecord.md) | Applies a factory method to convert an optional <code>ReadonlyMap&lt;string, TS&gt;</code> into a <code>Record&lt;string, TD&gt;</code> |
@@ -38,8 +38,8 @@
 |  [optionalRecordToMap(src, factory)](./ts-utils.optionalrecordtomap.md) | Applies a factory method to convert an optional <code>Record&lt;TK, TS&gt;</code> into a <code>Map&lt;TK, TD&gt;</code>, or <code>undefined</code>. |
 |  [optionalRecordToPossiblyEmptyMap(src, factory)](./ts-utils.optionalrecordtopossiblyemptymap.md) | Applies a factory method to convert an optional <code>Record&lt;TK, TS&gt;</code> into a <code>Map&lt;TK, TD&gt;</code> |
 |  [pick(from, include)](./ts-utils.pick.md) | Simple implicit pick function, which picks a set of properties from a supplied object. Ignores picked properties that do not exist regardless of type signature. |
-|  [populateObject(initializers, options)](./ts-utils.populateobject.md) | Populates an an object based on a prototype full of field initializers that return [Result&lt;T\[key\]&gt;](./ts-utils.result.md)<!-- -->. Returns [Success](./ts-utils.success.md) with the populated object if all initializers succeed, or [Failure](./ts-utils.failure.md) with a concatenated list of all error messages. |
-|  [populateObject(initializers, order)](./ts-utils.populateobject_1.md) | Populates an an object based on a prototype full of field initializers that return [Result&lt;T\[key\]&gt;](./ts-utils.result.md)<!-- -->. Returns [Success](./ts-utils.success.md) with the populated object if all initializers succeed, or [Failure](./ts-utils.failure.md) with a concatenated list of all error messages. |
+|  [populateObject(initializers, options, aggregatedErrors)](./ts-utils.populateobject.md) | Populates an an object based on a prototype full of field initializers that return [Result&lt;T\[key\]&gt;](./ts-utils.result.md)<!-- -->. Returns [Success](./ts-utils.success.md) with the populated object if all initializers succeed, or [Failure](./ts-utils.failure.md) with a concatenated list of all error messages. |
+|  [populateObject(initializers, order, aggregatedErrors)](./ts-utils.populateobject_1.md) | Populates an an object based on a prototype full of field initializers that return [Result&lt;T\[key\]&gt;](./ts-utils.result.md)<!-- -->. Returns [Success](./ts-utils.success.md) with the populated object if all initializers succeed, or [Failure](./ts-utils.failure.md) with a concatenated list of all error messages. |
 |  [propagateWithDetail(result, detail, successDetail)](./ts-utils.propagatewithdetail.md) | Propagates a [Success](./ts-utils.success.md) or [Failure](./ts-utils.failure.md) [Result](./ts-utils.result.md)<!-- -->, adding supplied event details as appropriate. |
 |  [recordToMap(src, factory)](./ts-utils.recordtomap.md) | Applies a factory method to convert a <code>Record&lt;TK, TS&gt;</code> into a <code>Map&lt;TK, TD&gt;</code>. |
 |  [succeed(value)](./ts-utils.succeed.md) | Returns [Success&lt;T&gt;](./ts-utils.success.md) with the supplied result value. |

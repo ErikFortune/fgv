@@ -23,6 +23,7 @@
 import * as Logging from './logger';
 
 export * from './brand';
+export * from './mapResults';
 export { Normalizer } from './normalize';
 export * from './result';
 export * from './utils';
