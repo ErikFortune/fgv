@@ -4,6 +4,7 @@
 
 ## MessageAggregator.addMessages() method
 
+Adds multiple messages to the aggregator.
 
 **Signature:**
 
@@ -15,7 +16,7 @@ addMessages(messages: string[] | undefined): this;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  messages | string\[\] \| undefined |  |
+|  messages | string\[\] \| undefined | the messages to add. |
 
 **Returns:**
 

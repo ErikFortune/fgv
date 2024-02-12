@@ -711,21 +711,9 @@ export function mapToRecord<TS, TD, TK extends string = string>(src: ReadonlyMap
 // @public
 export class MessageAggregator implements IMessageAggregator {
     constructor(errors?: string[]);
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: No member was found with name "addError"
-    //
-    // (undocumented)
     addMessage(message: string | undefined): this;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: No member was found with name "addErrors"
-    //
-    // (undocumented)
     addMessages(messages: string[] | undefined): this;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: No member was found with name "hasErrors"
-    //
-    // (undocumented)
     get hasMessages(): boolean;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: No member was found with name "errors"
-    //
-    // (undocumented)
     get messages(): string[];
     returnOrReport<T>(result: Result<T>, separator?: string): Result<T>;
     toString(separator?: string): string;

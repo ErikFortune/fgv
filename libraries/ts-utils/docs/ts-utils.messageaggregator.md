@@ -23,15 +23,15 @@ export declare class MessageAggregator implements IMessageAggregator
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [hasMessages](./ts-utils.messageaggregator.hasmessages.md) | <code>readonly</code> | boolean |  |
-|  [messages](./ts-utils.messageaggregator.messages.md) | <code>readonly</code> | string\[\] |  |
+|  [hasMessages](./ts-utils.messageaggregator.hasmessages.md) | <code>readonly</code> | boolean | Indicates whether any messages have been aggregated. |
+|  [messages](./ts-utils.messageaggregator.messages.md) | <code>readonly</code> | string\[\] | The aggregated messages. |
 
 ## Methods
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
-|  [addMessage(message)](./ts-utils.messageaggregator.addmessage.md) |  |  |
-|  [addMessages(messages)](./ts-utils.messageaggregator.addmessages.md) |  |  |
+|  [addMessage(message)](./ts-utils.messageaggregator.addmessage.md) |  | Adds a message to the aggregator, if defined. |
+|  [addMessages(messages)](./ts-utils.messageaggregator.addmessages.md) |  | Adds multiple messages to the aggregator. |
 |  [returnOrReport(result, separator)](./ts-utils.messageaggregator.returnorreport.md) |  | <p>If any error messages have been aggregated, returns [Failure&lt;T&gt;](./ts-utils.failure.md) with the aggregated messages concatenated using the optionally-supplied separator, or newline. If the supplied [Result&lt;T&gt;](./ts-utils.result.md) contains an error message that has not already been aggregated, it will be included in the aggregated messages.</p><p>If no error messages have been aggregated, returns the supplied [Result&lt;T&gt;](./ts-utils.result.md)<!-- -->.</p> |
 |  [toString(separator)](./ts-utils.messageaggregator.tostring.md) |  | Returns all messages as a single string joined using the optionally-supplied <code>separator</code>, or newline if no separator is specified. |
 

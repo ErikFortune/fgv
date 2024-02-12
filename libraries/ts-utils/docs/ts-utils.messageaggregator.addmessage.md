@@ -4,6 +4,7 @@
 
 ## MessageAggregator.addMessage() method
 
+Adds a message to the aggregator, if defined.
 
 **Signature:**
 
@@ -15,7 +16,7 @@ addMessage(message: string | undefined): this;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  message | string \| undefined |  |
+|  message | string \| undefined | The message to add - pass <code>undefined</code> or the empty string to continue without adding a message. |
 
 **Returns:**
 

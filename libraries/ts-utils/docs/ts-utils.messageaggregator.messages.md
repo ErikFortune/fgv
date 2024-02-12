@@ -4,6 +4,7 @@
 
 ## MessageAggregator.messages property
 
+The aggregated messages.
 
 **Signature:**
 

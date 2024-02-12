@@ -41,21 +41,21 @@ export class MessageAggregator implements IMessageAggregator {
   }
 
   /**
-   * {@inheritdoc IMessageAggregator.hasErrors}
+   * {@inheritdoc IMessageAggregator.hasMessages}
    */
   public get hasMessages(): boolean {
     return this._messages.length > 0;
   }
 
   /**
-   * {@inheritdoc IMessageAggregator.errors}
+   * {@inheritdoc IMessageAggregator.messages}
    */
   public get messages(): string[] {
     return this._messages;
   }
 
   /**
-   * {@inheritdoc IMessageAggregator.addError}
+   * {@inheritdoc IMessageAggregator.addMessage}
    */
   public addMessage(message: string | undefined): this {
     if (message) {
@@ -65,7 +65,7 @@ export class MessageAggregator implements IMessageAggregator {
   }
 
   /**
-   * {@inheritdoc IMessageAggregator.addErrors}
+   * {@inheritdoc IMessageAggregator.addMessages}
    */
   public addMessages(messages: string[] | undefined): this {
     if (messages && messages.length > 0) {
