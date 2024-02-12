@@ -9,14 +9,14 @@ Propagates interior result, appending any error message to the supplied errors a
 **Signature:**
 
 ```typescript
-aggregateError(errors: string[]): this;
+aggregateError(errors: IMessageAggregator): this;
 ```
 
 ## Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  errors | string\[\] | String array to which error messages are aggregated. |
+|  errors | [IMessageAggregator](./ts-utils.imessageaggregator.md) | [Error aggregator](./ts-utils.imessageaggregator.md) in which errors will be aggregated. |
 
 **Returns:**
 

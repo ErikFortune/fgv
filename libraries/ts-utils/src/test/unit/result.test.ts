@@ -26,6 +26,7 @@ import {
   DetailedResult,
   Failure,
   Logging,
+  MessageAggregator,
   Result,
   Success,
   captureResult,
@@ -166,11 +167,11 @@ describe('Result module', () => {
 
     describe('aggregateError method', () => {
       test('does not update errors array', () => {
-        const aggregatedErrors = ['earlier error'];
+        const aggregatedErrors = new MessageAggregator(['earlier error']);
         const success = succeed('hello');
         const aggregated = success.aggregateError(aggregatedErrors);
         expect(aggregated).toBe(success); // explicit test for identity
-        expect(aggregatedErrors).toEqual(['earlier error']);
+        expect(aggregatedErrors.messages).toEqual(['earlier error']);
       });
     });
   });
@@ -241,12 +242,12 @@ describe('Result module', () => {
 
       describe('aggregateError method', () => {
         test('appends the error to the supplied aggregated error array', () => {
-          const aggregatedErrors = ['earlier error'];
+          const aggregatedErrors = new MessageAggregator(['earlier error']);
           const failure = fail('new error');
           const aggregated = failure.aggregateError(aggregatedErrors);
           expect(aggregated).toBe(failure); // explicit test for identity
           expect(aggregated).toFailWith('new error');
-          expect(aggregatedErrors).toEqual(['earlier error', 'new error']);
+          expect(aggregatedErrors.messages).toEqual(['earlier error', 'new error']);
         });
       });
     });

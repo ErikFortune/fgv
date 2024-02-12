@@ -5,7 +5,7 @@
 ```ts
 
 // @public
-export function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T, aggregatedErrors?: string[]): Result<T>;
+export function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T, aggregatedErrors?: IMessageAggregator): Result<T>;
 
 // @public
 function arrayOf<T, TC = undefined>(converter: Converter<T, TC> | Validator<T, TC>, onError?: OnError): Converter<T[], TC>;
@@ -333,7 +333,7 @@ export { fail_2 as fail }
 // @public
 export class Failure<T> implements IResult<T> {
     constructor(message: string);
-    aggregateError(errors: string[]): this;
+    aggregateError(errors: IMessageAggregator): this;
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
     // @deprecated
@@ -525,6 +525,15 @@ class HashingNormalizer extends Normalizer {
     protected _normalizeLiteralToString(from: string | number | bigint | boolean | symbol | undefined | Date | RegExp | null): Result<string>;
 }
 
+// @public
+export interface IMessageAggregator {
+    addMessage(message: string | undefined): this;
+    addMessages(messages: string[] | undefined): this;
+    readonly hasMessages: boolean;
+    readonly messages: ReadonlyArray<string>;
+    toString(separator?: string): string;
+}
+
 // Warning: (ae-forgotten-export) The symbol "InnerInferredType" needs to be exported by the entry point index.d.ts
 //
 // @beta
@@ -551,7 +560,7 @@ class InMemoryLogger extends LoggerBase {
 
 // @public
 export interface IResult<T> {
-    aggregateError(errors: string[]): this;
+    aggregateError(errors: IMessageAggregator): this;
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
     // @deprecated
@@ -668,10 +677,10 @@ type LogLevel = 'detail' | 'info' | 'warning' | 'error' | 'silent';
 // Warning: (ae-incompatible-release-tags) The symbol "mapDetailedResults" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
 //
 // @public
-export function mapDetailedResults<T, TD>(results: Iterable<DetailedResult<T, TD>>, ignore: TD[], aggregatedErrors?: string[]): Result<T[]>;
+export function mapDetailedResults<T, TD>(results: Iterable<DetailedResult<T, TD>>, ignore: TD[], aggregatedErrors?: IMessageAggregator): Result<T[]>;
 
 // @public
-export function mapFailures<T>(results: Iterable<Result<T>>, aggregatedErrors?: string[]): string[];
+export function mapFailures<T>(results: Iterable<Result<T>>, aggregatedErrors?: IMessageAggregator): string[];
 
 // @public
 function mapOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>): Converter<Map<TK, T>, TC>;
@@ -689,15 +698,38 @@ function mapOf<T, TC = undefined, TK extends string = string>(converter: Convert
 function mappedEnumeratedValue<T>(map: [T, unknown[]][], message?: string): Converter<T, undefined>;
 
 // @public
-export function mapResults<T>(results: Iterable<Result<T>>, aggregatedErrors?: string[]): Result<T[]>;
+export function mapResults<T>(results: Iterable<Result<T>>, aggregatedErrors?: IMessageAggregator): Result<T[]>;
 
 // @public
-export function mapSuccess<T>(results: Iterable<Result<T>>, aggregatedErrors?: string[]): Result<T[]>;
+export function mapSuccess<T>(results: Iterable<Result<T>>, aggregatedErrors?: IMessageAggregator): Result<T[]>;
 
 // Warning: (ae-forgotten-export) The symbol "KeyedThingFactory" needs to be exported by the entry point index.d.ts
 //
 // @public
 export function mapToRecord<TS, TD, TK extends string = string>(src: ReadonlyMap<TK, TS>, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD>>;
+
+// @public
+export class MessageAggregator implements IMessageAggregator {
+    constructor(errors?: string[]);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: No member was found with name "addError"
+    //
+    // (undocumented)
+    addMessage(message: string | undefined): this;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: No member was found with name "addErrors"
+    //
+    // (undocumented)
+    addMessages(messages: string[] | undefined): this;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: No member was found with name "hasErrors"
+    //
+    // (undocumented)
+    get hasMessages(): boolean;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: No member was found with name "errors"
+    //
+    // (undocumented)
+    get messages(): string[];
+    returnOrReport<T>(result: Result<T>, separator?: string): Result<T>;
+    toString(separator?: string): string;
+}
 
 // @public (undocumented)
 class NoOpLogger extends LoggerBase {
@@ -939,10 +971,10 @@ const optionalString: Converter<string | undefined, unknown>;
 export function pick<T extends object, K extends keyof T>(from: T, include: K[]): Pick<T, K>;
 
 // @public
-export function populateObject<T>(initializers: FieldInitializers<T>, options?: PopulateObjectOptions<T>, aggregatedErrors?: string[]): Result<T>;
+export function populateObject<T>(initializers: FieldInitializers<T>, options?: PopulateObjectOptions<T>, aggregatedErrors?: IMessageAggregator): Result<T>;
 
 // @public @deprecated
-export function populateObject<T>(initializers: FieldInitializers<T>, order: (keyof T)[] | undefined, aggregatedErrors?: string[]): Result<T>;
+export function populateObject<T>(initializers: FieldInitializers<T>, order: (keyof T)[] | undefined, aggregatedErrors?: IMessageAggregator): Result<T>;
 
 // @public
 export interface PopulateObjectOptions<T> {
@@ -1069,7 +1101,7 @@ export function succeedWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess
 // @public
 export class Success<T> implements IResult<T> {
     constructor(value: T);
-    aggregateError(errors: string[]): this;
+    aggregateError(errors: IMessageAggregator): this;
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
     // @deprecated

@@ -9,7 +9,7 @@ Determines if an iterable collection of [Result&lt;T&gt;](./ts-utils.result.md) 
 **Signature:**
 
 ```typescript
-export declare function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T, aggregatedErrors?: string[]): Result<T>;
+export declare function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T, aggregatedErrors?: IMessageAggregator): Result<T>;
 ```
 
 ## Parameters
@@ -18,7 +18,7 @@ export declare function allSucceed<T>(results: Iterable<Result<unknown>>, succes
 |  --- | --- | --- |
 |  results | Iterable&lt;[Result](./ts-utils.result.md)<!-- -->&lt;unknown&gt;&gt; | The collection of [Result&lt;T&gt;](./ts-utils.result.md) to be tested. |
 |  successValue | T | The value to be returned if results are successful. |
-|  aggregatedErrors | string\[\] | _(Optional)_ Optional string array to which any returned error messages will be appended. Each error is appended as an individual string. |
+|  aggregatedErrors | [IMessageAggregator](./ts-utils.imessageaggregator.md) | _(Optional)_ Optional string array to which any returned error messages will be appended. Each error is appended as an individual string. |
 
 **Returns:**
 

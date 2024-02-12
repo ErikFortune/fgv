@@ -11,6 +11,7 @@
 |  [DetailedFailure](./ts-utils.detailedfailure.md) | A [DetailedFailure](./ts-utils.detailedfailure.md) extends [Failure](./ts-utils.failure.md) to report optional failure details in addition to the error message. |
 |  [DetailedSuccess](./ts-utils.detailedsuccess.md) | A [DetailedSuccess](./ts-utils.detailedsuccess.md) extends [Success](./ts-utils.success.md) to report optional success details in addition to the error message. |
 |  [Failure](./ts-utils.failure.md) | Reports a failed [result](./ts-utils.iresult.md) from some operation, with an error message. |
+|  [MessageAggregator](./ts-utils.messageaggregator.md) | A simple error aggregator to simplify collecting and reporting all errors in a flow. |
 |  [Normalizer](./ts-utils.normalizer.md) | Normalizes an arbitrary JSON object |
 |  [ObjectConverter](./ts-utils.objectconverter.md) | A [Converter](./ts-utils.converter.md) which converts an object of type <code>&lt;T&gt;</code> without changing shape, given a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) for the fields in the object. |
 |  [StringConverter](./ts-utils.stringconverter.md) | The [StringConverter](./ts-utils.conversion.stringconverter.md) class extends [BaseConverter](./ts-utils.conversion.baseconverter.md) to provide string-specific helper methods. |
@@ -50,6 +51,7 @@
 |  Interface | Description |
 |  --- | --- |
 |  [Converter](./ts-utils.converter.md) | Generic converter to convert unknown to a templated type <code>&lt;T&gt;</code>, using intrinsic rules or as modified by an optional conversion context of optional templated type <code>&lt;TC&gt;</code> (default <code>undefined</code>). |
+|  [IMessageAggregator](./ts-utils.imessageaggregator.md) | Simple error aggregator to simplify collecting all errors in a flow. |
 |  [IResult](./ts-utils.iresult.md) | Represents the result of some operation of sequence of operations. |
 |  [IResultLogger](./ts-utils.iresultlogger.md) | Simple logger interface used by [IResult.orThrow()](./ts-utils.iresult.orthrow.md)<!-- -->. |
 |  [PopulateObjectOptions](./ts-utils.populateobjectoptions.md) | Options for the [populateObject()](./ts-utils.populateobject.md) function. |

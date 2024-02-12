@@ -60,6 +60,45 @@ export interface IResultLogger {
 }
 
 /**
+ * Simple error aggregator to simplify collecting all errors in
+ * a flow.
+ * @public
+ */
+export interface IMessageAggregator {
+  /**
+   * Indicates whether any messages have been aggregated.
+   */
+  readonly hasMessages: boolean;
+
+  /**
+   * The aggregated messages.
+   */
+  readonly messages: ReadonlyArray<string>;
+
+  /**
+   * Adds a message to the aggregator, if defined.
+   * @param message - The message to add - pass `undefined`
+   * or the empty string to continue without adding a message.
+   */
+  addMessage(message: string | undefined): this;
+
+  /**
+   * Adds multiple messages to the aggregator.
+   * @param messages - the messages to add.
+   */
+  addMessages(messages: string[] | undefined): this;
+
+  /**
+   * Returns all messages as a single string joined
+   * using the optionally-supplied `separator`, or
+   * newline if no separator is specified.
+   * @param separator - The optional separator used
+   * to join strings.
+   */
+  toString(separator?: string): string;
+}
+
+/**
  * Represents the result of some operation of sequence of operations.
  * @remarks
  * This common contract enables commingled discriminated usage of {@link Success | Success<T>}
@@ -195,9 +234,10 @@ export interface IResult<T> {
   /**
    * Propagates interior result, appending any error message to the
    * supplied errors array.
-   * @param errors - String array to which error messages are aggregated.
+   * @param errors - {@link IMessageAggregator | Error aggregator} in which
+   * errors will be aggregated.
    */
-  aggregateError(errors: string[]): this;
+  aggregateError(errors: IMessageAggregator): this;
 }
 
 /**
@@ -310,7 +350,7 @@ export class Success<T> implements IResult<T> {
   /**
    * {@inheritdoc IResult.aggregateError}
    */
-  public aggregateError(errors: string[]): this {
+  public aggregateError(errors: IMessageAggregator): this {
     return this;
   }
 }
@@ -431,8 +471,8 @@ export class Failure<T> implements IResult<T> {
   /**
    * {@inheritdoc IResult.aggregateError}
    */
-  public aggregateError(errors: string[]): this {
-    errors.push(this.message);
+  public aggregateError(errors: IMessageAggregator): this {
+    errors.addMessage(this.message);
     return this;
   }
 

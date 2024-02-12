@@ -23,6 +23,7 @@ import 'jest-extended';
 import '../helpers/jest';
 
 import {
+  MessageAggregator,
   allSucceed,
   fail,
   failWithDetail,
@@ -62,7 +63,7 @@ describe('mapResults module', () => {
     });
 
     test('appends errors to aggregatedErrors if present', () => {
-      const aggregatedErrors: string[] = ['earlier error'];
+      const aggregatedErrors = new MessageAggregator(['earlier error']);
       const errors = ['Biff!', 'Pow!', 'Bam!'];
       const errorResults = errors.map((s) => fail(s));
       const badResults = [...results, ...errorResults];
@@ -73,7 +74,7 @@ describe('mapResults module', () => {
           expect(result.message).toContain(e);
         }
       }
-      expect(aggregatedErrors).toEqual(['earlier error', ...errors]);
+      expect(aggregatedErrors.messages).toEqual(['earlier error', ...errors]);
     });
   });
 
@@ -100,7 +101,7 @@ describe('mapResults module', () => {
     });
 
     test('appends errors to aggregated errors if present', () => {
-      const aggregatedErrors = ['earlier error'];
+      const aggregatedErrors = new MessageAggregator(['earlier error']);
       const errors = ['Biff!', 'Pow!', 'Bam!'];
       const errorResults = errors.map((s) => failWithDetail<string, TestDetail>(s, 'real'));
       const badResults = [...results, ...errorResults];
@@ -111,7 +112,7 @@ describe('mapResults module', () => {
           expect(result.message).toContain(e);
         }
       }
-      expect(aggregatedErrors).toEqual(['earlier error', ...errors]);
+      expect(aggregatedErrors.messages).toEqual(['earlier error', ...errors]);
     });
 
     test('ignores listed errors', () => {
@@ -165,7 +166,7 @@ describe('mapResults module', () => {
     });
 
     test('appends to aggregatedErrors if supplied', () => {
-      const aggregatedErrors = ['earlier error'];
+      const aggregatedErrors = new MessageAggregator(['earlier error']);
       const errors = ['Biff!', 'Pow!', 'Bam!'];
       const errorResults = errors.map((s) => fail(s));
       const badResults = [...errorResults];
@@ -176,7 +177,7 @@ describe('mapResults module', () => {
           expect(result.message).toContain(e);
         }
       }
-      expect(aggregatedErrors).toEqual(['earlier error', ...errors]);
+      expect(aggregatedErrors.messages).toEqual(['earlier error', ...errors]);
     });
   });
 
@@ -188,10 +189,10 @@ describe('mapResults module', () => {
     });
 
     test('appends errors to aggregatedErrors if supplied', () => {
-      const aggregatedErrors = ['earlier errors'];
+      const aggregatedErrors = new MessageAggregator(['earlier errors']);
       const results = [fail('failure 1'), ...strings.map((s) => succeed(s)), fail('failure 2')];
       expect(mapFailures(results, aggregatedErrors)).toEqual(['failure 1', 'failure 2']);
-      expect(aggregatedErrors).toEqual(['earlier errors', 'failure 1', 'failure 2']);
+      expect(aggregatedErrors.messages).toEqual(['earlier errors', 'failure 1', 'failure 2']);
     });
 
     test('returns an empty array if all results succeed', () => {
@@ -225,7 +226,7 @@ describe('mapResults module', () => {
     });
 
     test('appends errors to aggregatedErrors if supplied', () => {
-      const aggregatedErrors = ['earlier errors'];
+      const aggregatedErrors = new MessageAggregator(['earlier errors']);
       const errors = ['Biff!', 'Pow!', 'Bam!'];
       const errorResults = errors.map((s) => fail(s));
       const badResults = [...results, ...errorResults];
@@ -236,7 +237,7 @@ describe('mapResults module', () => {
           expect(result.message).toContain(e);
         }
       }
-      expect(aggregatedErrors).toEqual(['earlier errors', ...errors]);
+      expect(aggregatedErrors.messages).toEqual(['earlier errors', ...errors]);
     });
   });
 
@@ -272,7 +273,7 @@ describe('mapResults module', () => {
     });
 
     test('appends errors to aggregatedErrors if supplied', () => {
-      const aggregatedErrors = ['earlier errors'];
+      const aggregatedErrors = new MessageAggregator(['earlier errors']);
       expect(
         populateObject(
           {
@@ -283,7 +284,7 @@ describe('mapResults module', () => {
           aggregatedErrors
         )
       ).toFailWith('oops 1\noops 2');
-      expect(aggregatedErrors).toEqual(['earlier errors', 'oops 1', 'oops 2']);
+      expect(aggregatedErrors.messages).toEqual(['earlier errors', 'oops 1', 'oops 2']);
     });
 
     test('invokes all initializers even if one fails', () => {

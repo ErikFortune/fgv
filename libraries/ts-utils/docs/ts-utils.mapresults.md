@@ -9,7 +9,7 @@ Aggregates successful result values from a collection of [Result&lt;T&gt;](./ts-
 **Signature:**
 
 ```typescript
-export declare function mapResults<T>(results: Iterable<Result<T>>, aggregatedErrors?: string[]): Result<T[]>;
+export declare function mapResults<T>(results: Iterable<Result<T>>, aggregatedErrors?: IMessageAggregator): Result<T[]>;
 ```
 
 ## Parameters
@@ -17,7 +17,7 @@ export declare function mapResults<T>(results: Iterable<Result<T>>, aggregatedEr
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  results | Iterable&lt;[Result](./ts-utils.result.md)<!-- -->&lt;T&gt;&gt; | The collection of [Result&lt;T&gt;](./ts-utils.result.md) to be mapped. |
-|  aggregatedErrors | string\[\] | _(Optional)_ Optional string array to which any error messages will be appended. Each error is appended as an individual string. |
+|  aggregatedErrors | [IMessageAggregator](./ts-utils.imessageaggregator.md) | _(Optional)_ Optional string array to which any error messages will be appended. Each error is appended as an individual string. |
 
 **Returns:**
 

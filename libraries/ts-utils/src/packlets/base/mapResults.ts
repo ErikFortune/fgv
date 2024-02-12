@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { DetailedResult, Result, fail, succeed } from './result';
+import { DetailedResult, IMessageAggregator, Result, fail, succeed } from './result';
 
 /**
  * Aggregates successful result values from a collection of {@link Result | Result<T>}.
@@ -32,7 +32,10 @@ import { DetailedResult, Result, fail, succeed } from './result';
  * {@link Failure} with a concatenated summary of all error messages.
  * @public
  */
-export function mapResults<T>(results: Iterable<Result<T>>, aggregatedErrors?: string[]): Result<T[]> {
+export function mapResults<T>(
+  results: Iterable<Result<T>>,
+  aggregatedErrors?: IMessageAggregator
+): Result<T[]> {
   const errors: string[] = [];
   const elements: T[] = [];
 
@@ -45,7 +48,7 @@ export function mapResults<T>(results: Iterable<Result<T>>, aggregatedErrors?: s
   }
 
   if (errors.length > 0) {
-    aggregatedErrors?.push(...errors);
+    aggregatedErrors?.addMessages(errors);
     return fail(errors.join('\n'));
   }
   return succeed(elements);
@@ -67,7 +70,7 @@ export function mapResults<T>(results: Iterable<Result<T>>, aggregatedErrors?: s
 export function mapDetailedResults<T, TD>(
   results: Iterable<DetailedResult<T, TD>>,
   ignore: TD[],
-  aggregatedErrors?: string[]
+  aggregatedErrors?: IMessageAggregator
 ): Result<T[]> {
   const errors: string[] = [];
   const elements: T[] = [];
@@ -81,7 +84,7 @@ export function mapDetailedResults<T, TD>(
   }
 
   if (errors.length > 0) {
-    aggregatedErrors?.push(...errors);
+    aggregatedErrors?.addMessages(errors);
     return fail(errors.join('\n'));
   }
   return succeed(elements);
@@ -98,7 +101,10 @@ export function mapDetailedResults<T, TD>(
  * summary of all error messages.
  * @public
  */
-export function mapSuccess<T>(results: Iterable<Result<T>>, aggregatedErrors?: string[]): Result<T[]> {
+export function mapSuccess<T>(
+  results: Iterable<Result<T>>,
+  aggregatedErrors?: IMessageAggregator
+): Result<T[]> {
   const errors: string[] = [];
   const elements: T[] = [];
 
@@ -111,7 +117,7 @@ export function mapSuccess<T>(results: Iterable<Result<T>>, aggregatedErrors?: s
   }
 
   if (elements.length === 0 && errors.length > 0) {
-    aggregatedErrors?.push(...errors);
+    aggregatedErrors?.addMessages(errors);
     return fail(errors.join('\n'));
   }
   return succeed(elements);
@@ -128,12 +134,15 @@ export function mapSuccess<T>(results: Iterable<Result<T>>, aggregatedErrors?: s
  * results and returns an empty array if there were no errors.
  * @public
  */
-export function mapFailures<T>(results: Iterable<Result<T>>, aggregatedErrors?: string[]): string[] {
+export function mapFailures<T>(
+  results: Iterable<Result<T>>,
+  aggregatedErrors?: IMessageAggregator
+): string[] {
   const errors: string[] = [];
   for (const result of results) {
     if (result.isFailure()) {
       errors.push(result.message);
-      aggregatedErrors?.push(result.message);
+      aggregatedErrors?.addMessage(result.message);
     }
   }
   return errors;
@@ -153,7 +162,7 @@ export function mapFailures<T>(results: Iterable<Result<T>>, aggregatedErrors?: 
 export function allSucceed<T>(
   results: Iterable<Result<unknown>>,
   successValue: T,
-  aggregatedErrors?: string[]
+  aggregatedErrors?: IMessageAggregator
 ): Result<T> {
   const errors: string[] = [];
 
@@ -166,7 +175,7 @@ export function allSucceed<T>(
   }
 
   if (errors.length > 0) {
-    aggregatedErrors?.push(...errors);
+    aggregatedErrors?.addMessages(errors);
     return fail(errors.join('\n'));
   }
   return succeed(successValue);
@@ -219,7 +228,7 @@ export interface PopulateObjectOptions<T> {
 export function populateObject<T>(
   initializers: FieldInitializers<T>,
   options?: PopulateObjectOptions<T>,
-  aggregatedErrors?: string[]
+  aggregatedErrors?: IMessageAggregator
 ): Result<T>;
 
 /**
@@ -238,12 +247,13 @@ export function populateObject<T>(
 export function populateObject<T>(
   initializers: FieldInitializers<T>,
   order: (keyof T)[] | undefined,
-  aggregatedErrors?: string[]
+  aggregatedErrors?: IMessageAggregator
 ): Result<T>;
+
 export function populateObject<T>(
   initializers: FieldInitializers<T>,
   optionsOrOrder?: PopulateObjectOptions<T> | (keyof T)[],
-  aggregatedErrors?: string[]
+  aggregatedErrors?: IMessageAggregator
 ): Result<T> {
   const options: PopulateObjectOptions<T> = optionsOrOrder
     ? Array.isArray(optionsOrOrder)
@@ -285,7 +295,7 @@ export function populateObject<T>(
   }
 
   if (errors.length > 0) {
-    aggregatedErrors?.push(...errors);
+    aggregatedErrors?.addMessages(errors);
     return fail(errors.join('\n'));
   }
   return succeed(state as T);
