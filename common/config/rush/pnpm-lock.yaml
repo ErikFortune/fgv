@@ -209,6 +209,7 @@ importers:
 
   ../../libraries/ts-json-base:
     specifiers:
+      '@fgv/ts-extras': workspace:*
       '@fgv/ts-utils': workspace:*
       '@fgv/ts-utils-jest': workspace:*
       '@microsoft/api-documenter': ^7.23.34
@@ -235,6 +236,7 @@ importers:
       ts-node: ^10.9.2
       typescript: ^5.3.3
     devDependencies:
+      '@fgv/ts-extras': link:../ts-extras
       '@fgv/ts-utils': link:../ts-utils
       '@fgv/ts-utils-jest': link:../ts-utils-jest
       '@microsoft/api-documenter': 7.23.34_@types+node@20.11.24

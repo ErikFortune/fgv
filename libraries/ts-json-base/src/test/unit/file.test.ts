@@ -22,6 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 
+import { Converters as ExtraConverters } from '@fgv/ts-extras';
 import { Converters, succeed } from '@fgv/ts-utils';
 import { IMockFileConfig, MockFileSystem } from '@fgv/ts-utils-jest/lib/helpers/fsHelpers';
 import fs from 'fs';
@@ -85,7 +86,7 @@ describe('JsonFile module', () => {
     const mockConverter = Converters.object({
       someProperty: Converters.string,
       prop: Converters.arrayOf(Converters.number),
-      now: Converters.isoDate
+      now: ExtraConverters.isoDate
     });
     const mockConverted = {
       ...mockGoodPayload,
