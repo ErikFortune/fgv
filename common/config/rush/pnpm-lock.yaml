@@ -345,7 +345,6 @@ importers:
       '@types/node': ^20.11.24
       '@typescript-eslint/eslint-plugin': ^7.1.0
       '@typescript-eslint/parser': ^7.1.0
-      crc: ~4.3.2
       eslint: ^8.57.0
       eslint-config-standard: ^17.1.0
       eslint-plugin-import: ^2.29.1
@@ -361,8 +360,6 @@ importers:
       ts-jest: ^29.1.2
       ts-node: ^10.9.2
       typescript: ^5.3.3
-    dependencies:
-      crc: 4.3.2
     devDependencies:
       '@jest/expect-utils': 29.7.0
       '@microsoft/api-documenter': 7.23.34_@types+node@20.11.24
@@ -2868,16 +2865,6 @@ packages:
   /core-util-is/1.0.3:
     resolution: {integrity: sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==}
     dev: true
-
-  /crc/4.3.2:
-    resolution: {integrity: sha512-uGDHf4KLLh2zsHa8D8hIQ1H/HtFQhyHrc0uhHBcoKGol/Xnb+MPYfUMw7cvON6ze/GUESTudKayDcJC5HnJv1A==}
-    engines: {node: '>=12'}
-    peerDependencies:
-      buffer: '>=6.0.3'
-    peerDependenciesMeta:
-      buffer:
-        optional: true
-    dev: false
 
   /create-jest/29.7.0_448194d5e385bda33d3735b0497df49d:
     resolution: {integrity: sha512-Adz2bdH0Vq3F53KEMJOoftQFutWCukm6J24wbPWRO4k1kMY7gS7ds/uoJkNuV8wDCtWWnuwGcJwpWcih+zEW1Q==}
