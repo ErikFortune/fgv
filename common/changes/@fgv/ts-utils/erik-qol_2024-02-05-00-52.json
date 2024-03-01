@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "rework validation/converter compatibility a bit",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

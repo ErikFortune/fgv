@@ -22,6 +22,5 @@ export interface DefaultingConverter<T, TD = T, TC = undefined> extends Converte
 
 |  Method | Description |
 |  --- | --- |
-|  [convalidate(from, ctx)](./ts-utils.conversion.defaultingconverter.convalidate.md) |  |
 |  [convert(from, ctx)](./ts-utils.conversion.defaultingconverter.convert.md) | Convert the supplied <code>unknown</code> to <code>Success&lt;T&gt;</code> or to the <code>Success</code> with the default value if conversion is not possible. |
 

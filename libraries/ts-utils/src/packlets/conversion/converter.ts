@@ -20,7 +20,6 @@
  * SOFTWARE.
  */
 import { Brand, Result, Success } from '../base';
-import { Convalidator } from '../validation';
 
 /**
  * Action to take on conversion failures.
@@ -58,7 +57,7 @@ export interface ConstraintOptions {
  * @public
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export interface Converter<T, TC = undefined> extends ConverterTraits, Convalidator<T, TC> {
+export interface Converter<T, TC = undefined> extends ConverterTraits {
   /**
    * Indicates whether this element is explicitly optional.
    */
@@ -79,11 +78,6 @@ export interface Converter<T, TC = undefined> extends ConverterTraits, Convalida
    * {@link Failure} with a a message on failure.
    */
   convert(from: unknown, context?: TC): Result<T>;
-
-  /**
-   * {@inheritdoc Validation.Convalidator.convalidate}
-   */
-  convalidate(from: unknown, context?: TC): Result<T>;
 
   /**
    * Converts from `unknown` to `<T>` or `undefined`, as appropriate.
@@ -239,9 +233,4 @@ export interface DefaultingConverter<T, TD = T, TC = undefined> extends Converte
    * @param ctx - optional context for the conversion.
    */
   convert(from: unknown, ctx?: TC): Success<T | TD>;
-
-  /**
-   * {@inheritdoc Converter.convalidate}
-   */
-  convalidate(from: unknown, ctx?: TC): Success<T | TD>;
 }

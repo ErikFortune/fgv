@@ -20,8 +20,53 @@
  * SOFTWARE.
  */
 
-import { Conversion, Converter, Converters, Result, captureResult, fail } from '@fgv/ts-utils';
+import { Conversion, Converter, Converters, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import { DateTime } from 'luxon';
+import Mustache from 'mustache';
 import { ExtendedArray, RangeOf, RangeOfProperties } from '../experimental';
+
+/**
+ * Helper function to create a `StringConverter` which converts
+ * `unknown` to `string`, applying template conversions supplied at construction time or at
+ * runtime as context.
+ * @remarks
+ * Template conversions are applied using `mustache` syntax.
+ * @param defaultContext - Optional default context to use for template values.
+ * @returns A new `Converter` returning `string`.
+ * @public
+ */
+export function templateString(defaultContext?: unknown): Conversion.StringConverter<string, unknown> {
+  return new Conversion.StringConverter<string, unknown>(
+    defaultContext,
+    undefined,
+    (from: unknown, __self: Converter<string, unknown>, context?: unknown) => {
+      if (typeof from !== 'string') {
+        return fail(`Not a string: ${JSON.stringify(from)}`);
+      }
+      return captureResult(() => Mustache.render(from, context));
+    }
+  );
+}
+
+/**
+ * A `Converter` which converts an iso formatted string, a number or a `Date` object to
+ * a `Date` object.
+ * @public
+ */
+export const isoDate: Converter<Date, unknown> = new Conversion.BaseConverter<Date>((from: unknown) => {
+  if (typeof from === 'string') {
+    const dt = DateTime.fromISO(from);
+    if (dt.isValid) {
+      return succeed(dt.toJSDate());
+    }
+    return fail(`Invalid date: ${dt.invalidExplanation}`);
+  } else if (typeof from === 'number') {
+    return succeed(new Date(from));
+  } else if (from instanceof Date) {
+    return succeed(from);
+  }
+  return fail(`Cannot convert ${JSON.stringify(from)} to Date`);
+});
 
 /**
  * A helper function to create a `Converter` which converts `unknown` to {@link Experimental.ExtendedArray | ExtendedArray<T>}.

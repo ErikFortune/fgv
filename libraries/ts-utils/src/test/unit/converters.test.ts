@@ -70,32 +70,6 @@ describe('Converters module', () => {
     });
   });
 
-  describe('templateString converter', () => {
-    test('converts valid strings', () => {
-      ['A string', '1', 'true', ''].forEach((s) => {
-        expect(Converters.templateString().convert(s)).toSucceedWith(s);
-      });
-    });
-
-    test('fails for non-string values strings', () => {
-      [1, true, {}, (): string => 'hello', ['true']].forEach((v) => {
-        expect(Converters.templateString().convert(v)).toFailWith(/not a string/i);
-      });
-    });
-
-    test('uses supplied context to populate template values', () => {
-      const converter = Converters.templateString({ value: 'DEFAULT VALUE' });
-      expect(converter.convert('{{value}} is expected', { value: 'expected' })).toSucceedWith(
-        'expected is expected'
-      );
-    });
-
-    test('uses default context to populate template values in none supplied at conversion time', () => {
-      const converter = Converters.templateString({ value: 'DEFAULT VALUE' });
-      expect(converter.convert('{{value}} is expected')).toSucceedWith('DEFAULT VALUE is expected');
-    });
-  });
-
   describe('enumerated values converter', () => {
     const pie = Converters.enumeratedValue<'apple' | 'blueberry' | 'cherry'>([
       'apple',
@@ -231,31 +205,6 @@ describe('Converters module', () => {
       ].forEach((t) => {
         expect(Converters.literal(t.to).convert(t.from)).toFailWith(/does not match/i);
       });
-    });
-  });
-
-  describe('isoDate converter', () => {
-    test('converts an ISO formatted string to a Date object', () => {
-      const date = new Date();
-      expect(Converters.isoDate.convert(date.toISOString())).toSucceedWith(date);
-    });
-
-    test('converts a number to a Date object', () => {
-      const date = new Date();
-      expect(Converters.isoDate.convert(date.getTime())).toSucceedWith(date);
-    });
-
-    test('converts a Date object to a Date', () => {
-      const date = new Date();
-      expect(Converters.isoDate.convert(date)).toSucceedWith(date);
-    });
-
-    test('fails for a malformed date', () => {
-      expect(Converters.isoDate.convert('whatever')).toFailWith(/invalid date/i);
-    });
-
-    test('fails for an unexpected type', () => {
-      expect(Converters.isoDate.convert({ date: new Date() })).toFailWith(/cannot convert/i);
     });
   });
 
@@ -429,12 +378,12 @@ describe('Converters module', () => {
     });
 
     test('passes a supplied context to the base converter', () => {
-      const context = { value: 'expected' };
-      const sourceArray = ['{{value}} is expected', 'hello'];
-      const expected = ['expected is expected', 'hello'];
-      expect(Converters.arrayOf(Converters.templateString()).convert(sourceArray, context)).toSucceedWith(
-        expected
-      );
+      type SomeEnum = 'val1' | 'val2' | 'val3';
+      const enumConverter = Converters.enumeratedValue<SomeEnum>(['val1', 'val2', 'val3']);
+      const context: SomeEnum[] = ['val1', 'val2'];
+      const converter = Converters.arrayOf(enumConverter);
+      expect(converter.convert(['val3'])).toSucceedWith(['val3']);
+      expect(converter.convert(['val3'], context)).toFailWith(/invalid enumerated value/i);
     });
   });
 
@@ -571,17 +520,19 @@ describe('Converters module', () => {
     });
 
     test('passes a supplied context to the base converter', () => {
+      type SomeEnum = 'val1' | 'val2' | 'val3';
+      const enumConverter = Converters.enumeratedValue<SomeEnum>(['val1', 'val2', 'val3']);
+      const context: SomeEnum[] = ['val1', 'val2'];
+
       const source = {
-        s1: '{{value}} is expected',
-        s2: 's2'
+        s1: 'val1',
+        s2: 'val2',
+        s3: 'val3'
       };
-      const context = { value: 'expected' };
-      const expected = {
-        s1: 'expected is expected',
-        s2: 's2'
-      };
-      const converter = Converters.templateString({ value: 'DEFAULT VALUE' });
-      expect(Converters.recordOf(converter).convert(source, context)).toSucceedWith(expected);
+      expect(Converters.recordOf(enumConverter).convert(source)).toSucceedWith(source);
+      expect(Converters.recordOf(enumConverter).convert(source, context)).toFailWith(
+        /invalid enumerated value/i
+      );
     });
 
     test('fails when converting a non-object', () => {
@@ -605,22 +556,21 @@ describe('Converters module', () => {
       });
 
       test('passes a supplied context to the key converter', () => {
+        type SomeEnum = 'val1' | 'val2' | 'val3';
+        const keyConverter = Converters.enumeratedValue<SomeEnum>(['val1', 'val2', 'val3']);
+        const context: SomeEnum[] = ['val1', 'val2'];
         const source = {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          's1{{value}}': '{{value}} is expected',
-          s2: 's2'
+          val1: 'some value 1',
+          val2: 'some value 2',
+          val3: 'some value 3'
         };
-        const context = { value: 'expected' };
-        const expected = {
-          s1expected: '{{value}} is expected',
-          s2: 's2'
-        };
-        const keyConverter = Converters.templateString({ value: 'DEFAULT VALUE' });
+
         [
           Converters.recordOf(Converters.string, { keyConverter }),
           Converters.recordOf(Converters.string, { keyConverter, onError: 'fail' })
         ].forEach((converter) => {
-          expect(converter.convert(source, context)).toSucceedWith(expected);
+          expect(converter.convert(source)).toSucceedWith(source);
+          expect(converter.convert(source, context)).toFailWith(/invalid enumerated value/i);
         });
       });
 
@@ -762,17 +712,19 @@ describe('Converters module', () => {
     });
 
     test('passes a supplied context to the base converter', () => {
+      type SomeEnum = 'val1' | 'val2' | 'val3';
+      const enumConverter = Converters.enumeratedValue<SomeEnum>(['val1', 'val2', 'val3']);
+      const context: SomeEnum[] = ['val1', 'val2'];
       const source = {
-        p1: '{{expected}} is expected',
-        p2: 'p2'
+        p1: 'val1',
+        p2: 'val2',
+        p3: 'val3'
       };
-      const context = { value: 'expected' };
-      const expected = new Map<string, string>([
-        ['p1', 'expected is expected'],
-        ['p2', 'p2']
-      ]);
-      const converter = Converters.templateString({ value: 'DEFAULT VALUE' });
-      expect(Converters.mapOf(converter).convert(source, context)).toSucceedWith(expected);
+
+      expect(Converters.mapOf(enumConverter).convert(source)).toSucceedWith(new Map(Object.entries(source)));
+      expect(Converters.mapOf(enumConverter).convert(source, context)).toFailWith(
+        /invalid enumerated value/i
+      );
     });
 
     test('fails when converting a non-object', () => {
@@ -793,22 +745,21 @@ describe('Converters module', () => {
       });
 
       test('passes a supplied context to the key converter', () => {
+        type SomeEnum = 'val1' | 'val2' | 'val3';
+        const keyConverter = Converters.enumeratedValue<SomeEnum>(['val1', 'val2', 'val3']);
+        const context: SomeEnum[] = ['val1', 'val2'];
         const source = {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          's1{{value}}': '{{value}} is expected',
-          s2: 's2'
+          val1: 'some value 1',
+          val2: 'some value 2',
+          val3: 'some value 3'
         };
-        const context = { value: 'expected' };
-        const expected = new Map<string, string>([
-          ['s1expected', '{{value}} is expected'],
-          ['s2', 's2']
-        ]);
-        const keyConverter = Converters.templateString({ value: 'DEFAULT VALUE' });
+
         [
           Converters.mapOf(Converters.string, { keyConverter }),
           Converters.mapOf(Converters.string, { keyConverter, onError: 'fail' })
         ].forEach((converter) => {
-          expect(converter.convert(source, context)).toSucceedWith(expected);
+          expect(converter.convert(source)).toSucceedWith(new Map(Object.entries(source)));
+          expect(converter.convert(source, context)).toFailWith(/invalid enumerated value/i);
         });
       });
 
@@ -896,10 +847,13 @@ describe('Converters module', () => {
     });
 
     test('passes a supplied context to the base converter', () => {
-      const source = ['{{value}} is expected'];
-      const context = { value: 'expected' };
-      const converter = Converters.element(0, Converters.templateString({ value: 'DEFAULT VALUE' }));
-      expect(converter.convert(source, context)).toSucceedWith('expected is expected');
+      type SomeEnum = 'val1' | 'val2' | 'val3';
+      const enumConverter = Converters.enumeratedValue<SomeEnum>(['val1', 'val2', 'val3']);
+      const context: SomeEnum[] = ['val1', 'val2'];
+      const source = ['val3'];
+      const converter = Converters.element(0, enumConverter);
+      expect(converter.convert(source)).toSucceedWith('val3');
+      expect(converter.convert(source, context)).toFailWith(/invalid enumerated value/i);
     });
   });
 
@@ -942,10 +896,13 @@ describe('Converters module', () => {
     });
 
     test('passes a supplied context to the base converter', () => {
-      const source = ['{{value}} is expected'];
-      const context = { value: 'expected' };
-      const converter = Converters.optionalElement(0, Converters.templateString({ value: 'DEFAULT VALUE' }));
-      expect(converter.convert(source, context)).toSucceedWith('expected is expected');
+      type SomeEnum = 'val1' | 'val2' | 'val3';
+      const enumConverter = Converters.enumeratedValue<SomeEnum>(['val1', 'val2', 'val3']);
+      const context: SomeEnum[] = ['val1', 'val2'];
+
+      const converter = Converters.optionalElement(0, enumConverter);
+      expect(converter.convert(['val3'])).toSucceedWith('val3');
+      expect(converter.convert(['val3'], context)).toFailWith(/invalid enumerated value/i);
     });
   });
 
@@ -974,13 +931,14 @@ describe('Converters module', () => {
     });
 
     test('passes a supplied context to the base converter', () => {
-      const source = { first: '{{value}} is expected' };
-      const context = { value: 'expected' };
-      const getFirstTemplate = Converters.field(
-        'first',
-        Converters.templateString({ value: 'DEFAULT VALUE' })
-      );
-      expect(getFirstTemplate.convert(source, context)).toSucceedWith('expected is expected');
+      type SomeEnum = 'val1' | 'val2' | 'val3';
+      const enumConverter = Converters.enumeratedValue<SomeEnum>(['val1', 'val2', 'val3']);
+      const context: SomeEnum[] = ['val1', 'val2'];
+      const source = { first: 'val3' };
+
+      const getFirstTemplate = Converters.field('first', enumConverter);
+      expect(getFirstTemplate.convert(source)).toSucceedWith('val3');
+      expect(getFirstTemplate.convert(source, context)).toFailWith(/invalid enumerated value/i);
     });
   });
 
@@ -1008,13 +966,13 @@ describe('Converters module', () => {
     });
 
     test('passes a supplied context to the base converter', () => {
-      const source = { first: '{{value}} is expected' };
-      const context = { value: 'expected' };
-      const getFirstTemplate = Converters.optionalField(
-        'first',
-        Converters.templateString({ value: 'DEFAULT VALUE' })
-      );
-      expect(getFirstTemplate.convert(source, context)).toSucceedWith('expected is expected');
+      type SomeEnum = 'val1' | 'val2' | 'val3';
+      const enumConverter = Converters.enumeratedValue<SomeEnum>(['val1', 'val2', 'val3']);
+      const context: SomeEnum[] = ['val1', 'val2'];
+      const source = { first: 'val3' };
+      const getFirstTemplate = Converters.optionalField('first', enumConverter);
+      expect(getFirstTemplate.convert(source)).toSucceedWith('val3');
+      expect(getFirstTemplate.convert(source, context)).toFailWith(/invalid enumerated value/i);
     });
 
     test('fails if the parameter is not an object', () => {

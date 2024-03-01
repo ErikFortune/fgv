@@ -20,7 +20,8 @@
  * SOFTWARE.
  */
 
-import { Result, fail, mapResults, succeed } from './result';
+import { mapResults } from './mapResults';
+import { Result, fail, succeed } from './result';
 
 /**
  * @internal

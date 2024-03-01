@@ -31,7 +31,6 @@ export declare class GenericDefaultingConverter<T, TD = T, TC = undefined> imple
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
-|  [convalidate(from, ctx)](./ts-utils.conversion.genericdefaultingconverter.convalidate.md) |  |  |
 |  [convert(from, ctx)](./ts-utils.conversion.genericdefaultingconverter.convert.md) |  | Converts from <code>unknown</code> to <code>&lt;T&gt;</code>. For objects and arrays, is guaranteed to return a new entity, with any unrecognized properties removed. |
 |  [convertOptional(from, context, onError)](./ts-utils.conversion.genericdefaultingconverter.convertoptional.md) |  | Converts from <code>unknown</code> to <code>&lt;T&gt;</code> or <code>undefined</code>, as appropriate. |
 |  [map(mapper)](./ts-utils.conversion.genericdefaultingconverter.map.md) |  | Creates a [Converter](./ts-utils.converter.md) which applies a (possibly) mapping conversion to the converted value of this [Converter](./ts-utils.converter.md)<!-- -->. |

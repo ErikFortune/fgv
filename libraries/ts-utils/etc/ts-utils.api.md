@@ -5,7 +5,7 @@
 ```ts
 
 // @public
-export function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T): Result<T>;
+export function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T, aggregatedErrors?: IMessageAggregator): Result<T>;
 
 // @public
 function arrayOf<T, TC = undefined>(converter: Converter<T, TC> | Validator<T, TC>, onError?: OnError): Converter<T[], TC>;
@@ -58,8 +58,6 @@ class BaseConverter<T, TC = undefined> implements Converter<T, TC> {
     protected _brand?: string;
     // @internal (undocumented)
     protected _context(supplied?: TC): TC | undefined;
-    // (undocumented)
-    convalidate(from: unknown, context?: TC): Result<T>;
     convert(from: unknown, context?: TC): Result<T>;
     convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined>;
     // @internal (undocumented)
@@ -151,12 +149,6 @@ interface ConstraintOptions {
 // @public
 type ConstraintTrait = FunctionConstraintTrait;
 
-// @public
-interface Convalidator<T, TC = unknown> {
-    convalidate(from: unknown, context?: TC): Result<T>;
-    readonly isOptional: boolean;
-}
-
 declare namespace Conversion {
     export {
         Converters,
@@ -182,12 +174,8 @@ export { Conversion }
 type ConvertedToType<TCONV> = Infer<TCONV>;
 
 // @public
-export interface Converter<T, TC = undefined> extends ConverterTraits, Convalidator<T, TC> {
+export interface Converter<T, TC = undefined> extends ConverterTraits {
     readonly brand?: string;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    convalidate(from: unknown, context?: TC): Result<T>;
     convert(from: unknown, context?: TC): Result<T>;
     convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined>;
     readonly isOptional: boolean;
@@ -207,7 +195,6 @@ export interface Converter<T, TC = undefined> extends ConverterTraits, Convalida
 
 declare namespace Converters {
     export {
-        templateString,
         enumeratedValue,
         mappedEnumeratedValue,
         literal,
@@ -234,7 +221,6 @@ declare namespace Converters {
         number,
         boolean,
         optionalString,
-        isoDate,
         optionalNumber,
         optionalBoolean,
         stringArray,
@@ -267,8 +253,6 @@ class Crc32Normalizer extends HashingNormalizer {
 
 // @public (undocumented)
 interface DefaultingConverter<T, TD = T, TC = undefined> extends Converter<T | TD, TC> {
-    // (undocumented)
-    convalidate(from: unknown, ctx?: TC): Success<T | TD>;
     convert(from: unknown, ctx?: TC): Success<T | TD>;
     readonly defaultValue: TD;
 }
@@ -347,6 +331,7 @@ export { fail_2 as fail }
 // @public
 export class Failure<T> implements IResult<T> {
     constructor(message: string);
+    aggregateError(errors: IMessageAggregator): this;
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
     // @deprecated
@@ -422,8 +407,6 @@ class GenericDefaultingConverter<T, TD = T, TC = undefined> implements Defaultin
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(converter: Converter<T, TC>, defaultValue: TD);
     get brand(): string | undefined;
-    // (undocumented)
-    convalidate(from: unknown, ctx?: TC | undefined): Success<T | TD>;
     convert(from: unknown, ctx?: TC | undefined): Success<T | TD>;
     convertOptional(from: unknown, context?: TC | undefined, onError?: ('failOnError' | 'ignoreErrors') | undefined): Result<T | TD | undefined>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -462,7 +445,7 @@ class GenericValidator<T, TC = undefined> implements Validator<T, TC> {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    convalidate(from: unknown, context?: TC): Result<T>;
+    convert(from: unknown, context?: TC): Result<T>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -540,6 +523,15 @@ class HashingNormalizer extends Normalizer {
     protected _normalizeLiteralToString(from: string | number | bigint | boolean | symbol | undefined | Date | RegExp | null): Result<string>;
 }
 
+// @public
+export interface IMessageAggregator {
+    addMessage(message: string | undefined): this;
+    addMessages(messages: string[] | undefined): this;
+    readonly hasMessages: boolean;
+    readonly messages: ReadonlyArray<string>;
+    toString(separator?: string): string;
+}
+
 // Warning: (ae-forgotten-export) The symbol "InnerInferredType" needs to be exported by the entry point index.d.ts
 //
 // @beta
@@ -566,6 +558,7 @@ class InMemoryLogger extends LoggerBase {
 
 // @public
 export interface IResult<T> {
+    aggregateError(errors: IMessageAggregator): this;
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
     // @deprecated
@@ -603,9 +596,6 @@ function isA_2<T, TC>(description: string, guard: TypeGuardWithContext<T, TC>, p
 
 // @public
 export function isKeyOf<T extends object>(key: string | number | symbol, item: T): key is keyof T;
-
-// @public
-const isoDate: Converter<Date, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -682,10 +672,10 @@ type LogLevel = 'detail' | 'info' | 'warning' | 'error' | 'silent';
 // Warning: (ae-incompatible-release-tags) The symbol "mapDetailedResults" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
 //
 // @public
-export function mapDetailedResults<T, TD>(results: Iterable<DetailedResult<T, TD>>, ignore: TD[]): Result<T[]>;
+export function mapDetailedResults<T, TD>(results: Iterable<DetailedResult<T, TD>>, ignore: TD[], aggregatedErrors?: IMessageAggregator): Result<T[]>;
 
 // @public
-export function mapFailures<T>(results: Iterable<Result<T>>): string[];
+export function mapFailures<T>(results: Iterable<Result<T>>, aggregatedErrors?: IMessageAggregator): string[];
 
 // @public
 function mapOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>): Converter<Map<TK, T>, TC>;
@@ -703,15 +693,26 @@ function mapOf<T, TC = undefined, TK extends string = string>(converter: Convert
 function mappedEnumeratedValue<T>(map: [T, unknown[]][], message?: string): Converter<T, undefined>;
 
 // @public
-export function mapResults<T>(results: Iterable<Result<T>>): Result<T[]>;
+export function mapResults<T>(results: Iterable<Result<T>>, aggregatedErrors?: IMessageAggregator): Result<T[]>;
 
 // @public
-export function mapSuccess<T>(results: Iterable<Result<T>>): Result<T[]>;
+export function mapSuccess<T>(results: Iterable<Result<T>>, aggregatedErrors?: IMessageAggregator): Result<T[]>;
 
 // Warning: (ae-forgotten-export) The symbol "KeyedThingFactory" needs to be exported by the entry point index.d.ts
 //
 // @public
 export function mapToRecord<TS, TD, TK extends string = string>(src: ReadonlyMap<TK, TS>, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD>>;
+
+// @public
+export class MessageAggregator implements IMessageAggregator {
+    constructor(errors?: string[]);
+    addMessage(message: string | undefined): this;
+    addMessages(messages: string[] | undefined): this;
+    get hasMessages(): boolean;
+    get messages(): string[];
+    returnOrReport<T>(result: Result<T>, separator?: string): Result<T>;
+    toString(separator?: string): string;
+}
 
 // @public (undocumented)
 class NoOpLogger extends LoggerBase {
@@ -953,10 +954,10 @@ const optionalString: Converter<string | undefined, unknown>;
 export function pick<T extends object, K extends keyof T>(from: T, include: K[]): Pick<T, K>;
 
 // @public
-export function populateObject<T>(initializers: FieldInitializers<T>, options?: PopulateObjectOptions<T>): Result<T>;
+export function populateObject<T>(initializers: FieldInitializers<T>, options?: PopulateObjectOptions<T>, aggregatedErrors?: IMessageAggregator): Result<T>;
 
 // @public @deprecated
-export function populateObject<T>(initializers: FieldInitializers<T>, order: (keyof T)[]): Result<T>;
+export function populateObject<T>(initializers: FieldInitializers<T>, order: (keyof T)[] | undefined, aggregatedErrors?: IMessageAggregator): Result<T>;
 
 // @public
 export interface PopulateObjectOptions<T> {
@@ -1083,6 +1084,7 @@ export function succeedWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess
 // @public
 export class Success<T> implements IResult<T> {
     constructor(value: T);
+    aggregateError(errors: IMessageAggregator): this;
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
     // @deprecated
@@ -1104,11 +1106,6 @@ export class Success<T> implements IResult<T> {
 
 // @public
 export type SuccessContinuation<T, TN> = (value: T) => Result<TN>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-function templateString(defaultContext?: unknown): StringConverter<string, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1174,7 +1171,6 @@ declare namespace Validation {
         Classes,
         Validators,
         TypeGuardWithContext,
-        Convalidator,
         FunctionConstraintTrait,
         ConstraintTrait,
         ValidatorTraitValues,
@@ -1188,12 +1184,9 @@ declare namespace Validation {
 export { Validation }
 
 // @public
-export interface Validator<T, TC = undefined> extends Convalidator<T, TC> {
+export interface Validator<T, TC = undefined> {
     readonly brand: string | undefined;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    convalidate(from: unknown, context?: TC): Result<T>;
+    convert(from: unknown, context?: TC): Result<T>;
     guard(from: unknown, context?: TC): from is T;
     readonly isOptional: boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

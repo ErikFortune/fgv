@@ -21,7 +21,6 @@
  */
 
 export * from './common';
-export * from './convalidator';
 export * from './traits';
 export * from './validator';
 

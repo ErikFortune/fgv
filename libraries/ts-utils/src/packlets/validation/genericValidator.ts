@@ -102,9 +102,9 @@ export class GenericValidator<T, TC = undefined> implements Validator<T, TC> {
   }
 
   /**
-   * {@inheritdoc Validation.Validator.convalidate}
+   * {@inheritdoc Validation.Validator.convert}
    */
-  public convalidate(from: unknown, context?: TC): Result<T> {
+  public convert(from: unknown, context?: TC): Result<T> {
     const result = this._validator(from, this._context(context));
     if (typeof result === 'boolean') {
       return result ? succeed(from as T) : fail<T>('Invalid value');

@@ -68,13 +68,6 @@ export class GenericDefaultingConverter<T, TD = T, TC = undefined> implements De
   }
 
   /**
-   * {@inheritdoc Converter.convalidate}
-   */
-  public convalidate(from: unknown, ctx?: TC | undefined): Success<T | TD> {
-    return this.convert(from, ctx);
-  }
-
-  /**
    * {@inheritdoc Converter.convertOptional}
    */
   public convertOptional(

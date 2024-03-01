@@ -9,9 +9,9 @@ Generic converter to convert unknown to a templated type `<T>`<!-- -->, using in
 **Signature:**
 
 ```typescript
-export interface Converter<T, TC = undefined> extends ConverterTraits, Convalidator<T, TC> 
+export interface Converter<T, TC = undefined> extends ConverterTraits 
 ```
-**Extends:** [ConverterTraits](./ts-utils.conversion.convertertraits.md)<!-- -->, [Convalidator](./ts-utils.validation.convalidator.md)<!-- -->&lt;T, TC&gt;
+**Extends:** [ConverterTraits](./ts-utils.conversion.convertertraits.md)
 
 ## Properties
 
@@ -24,7 +24,6 @@ export interface Converter<T, TC = undefined> extends ConverterTraits, Convalida
 
 |  Method | Description |
 |  --- | --- |
-|  [convalidate(from, context)](./ts-utils.converter.convalidate.md) | Converts or validates from <code>unknown</code> to <code>&lt;T&gt;</code>. For objects and arrays, makes no guarantees wrt in-place validation or unrecognized properties. |
 |  [convert(from, context)](./ts-utils.converter.convert.md) | Converts from <code>unknown</code> to <code>&lt;T&gt;</code>. For objects and arrays, is guaranteed to return a new entity, with any unrecognized properties removed. |
 |  [convertOptional(from, context, onError)](./ts-utils.converter.convertoptional.md) | Converts from <code>unknown</code> to <code>&lt;T&gt;</code> or <code>undefined</code>, as appropriate. |
 |  [map(mapper)](./ts-utils.converter.map.md) | Creates a [Converter](./ts-utils.converter.md) which applies a (possibly) mapping conversion to the converted value of this [Converter](./ts-utils.converter.md)<!-- -->. |
