@@ -20,15 +20,12 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult, fail, isKeyOf, succeed } from '../base';
+import { Result, fail, isKeyOf, succeed } from '../base';
 import { TypeGuardWithContext, Validator } from '../validation';
 import { BaseConverter } from './baseConverter';
 import { Converter, OnError } from './converter';
 import { FieldConverters, ObjectConverter, ObjectConverterOptions } from './objectConverter';
 import { StringConverter } from './stringConverter';
-
-import { DateTime } from 'luxon';
-import Mustache from 'mustache';
 
 /**
  * Action to take on conversion failures (deprecated - use Conversion.OnError)
@@ -43,29 +40,6 @@ export { OnError };
  * @public
  */
 export const string: StringConverter = new StringConverter();
-
-/**
- * Helper function to create a {@link Conversion.StringConverter | StringConverter} which converts
- * `unknown` to `string`, applying template conversions supplied at construction time or at
- * runtime as context.
- * @remarks
- * Template conversions are applied using `mustache` syntax.
- * @param defaultContext - Optional default context to use for template values.
- * @returns A new {@link Converter | Converter} returning `string`.
- * @public
- */
-export function templateString(defaultContext?: unknown): StringConverter<string, unknown> {
-  return new StringConverter<string, unknown>(
-    defaultContext,
-    undefined,
-    (from: unknown, __self: Converter<string, unknown>, context?: unknown) => {
-      if (typeof from !== 'string') {
-        return fail(`Not a string: ${JSON.stringify(from)}`);
-      }
-      return captureResult(() => Mustache.render(from, context));
-    }
-  );
-}
 
 /**
  * Helper function to create a {@link Converter | Converter} which converts `unknown` to one of a set of supplied
@@ -208,26 +182,6 @@ export function delimitedString(
     }
   );
 }
-
-/**
- * A {@link Converter | Converter} which converts an iso formatted string, a number or a `Date` object to
- * a `Date` object.
- * @public
- */
-export const isoDate: Converter<Date, unknown> = new BaseConverter<Date>((from: unknown) => {
-  if (typeof from === 'string') {
-    const dt = DateTime.fromISO(from);
-    if (dt.isValid) {
-      return succeed(dt.toJSDate());
-    }
-    return fail(`Invalid date: ${dt.invalidExplanation}`);
-  } else if (typeof from === 'number') {
-    return succeed(new Date(from));
-  } else if (from instanceof Date) {
-    return succeed(from);
-  }
-  return fail(`Cannot convert ${JSON.stringify(from)} to Date`);
-});
 
 /**
  * Helper function to create a {@link Converter | Converter} from any {@link Validation.Validator}

@@ -195,7 +195,6 @@ export interface Converter<T, TC = undefined> extends ConverterTraits {
 
 declare namespace Converters {
     export {
-        templateString,
         enumeratedValue,
         mappedEnumeratedValue,
         literal,
@@ -222,7 +221,6 @@ declare namespace Converters {
         number,
         boolean,
         optionalString,
-        isoDate,
         optionalNumber,
         optionalBoolean,
         stringArray,
@@ -598,9 +596,6 @@ function isA_2<T, TC>(description: string, guard: TypeGuardWithContext<T, TC>, p
 
 // @public
 export function isKeyOf<T extends object>(key: string | number | symbol, item: T): key is keyof T;
-
-// @public
-const isoDate: Converter<Date, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1111,11 +1106,6 @@ export class Success<T> implements IResult<T> {
 
 // @public
 export type SuccessContinuation<T, TN> = (value: T) => Result<TN>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-function templateString(defaultContext?: unknown): StringConverter<string, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

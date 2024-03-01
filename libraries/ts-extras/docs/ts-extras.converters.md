@@ -11,4 +11,11 @@
 |  [extendedArrayOf(label, converter, onError)](./ts-extras.converters.extendedarrayof.md) | **_(BETA)_** A helper function to create a <code>Converter</code> which converts <code>unknown</code> to [ExtendedArray&lt;T&gt;](./ts-extras.experimental.extendedarray.md)<!-- -->. |
 |  [rangeOf(converter)](./ts-extras.converters.rangeof.md) | A helper wrapper to construct a <code>Converter</code> which converts to [RangeOf&lt;T&gt;](./ts-extras.experimental.rangeof.md) where <code>&lt;T&gt;</code> is some comparable type. |
 |  [rangeTypeOf(converter, constructor)](./ts-extras.converters.rangetypeof.md) | A helper wrapper to construct a <code>Converter</code> which converts to an arbitrary strongly-typed range of some comparable type. |
+|  [templateString(defaultContext)](./ts-extras.converters.templatestring.md) | Helper function to create a <code>StringConverter</code> which converts <code>unknown</code> to <code>string</code>, applying template conversions supplied at construction time or at runtime as context. |
+
+## Variables
+
+|  Variable | Description |
+|  --- | --- |
+|  [isoDate](./ts-extras.converters.isodate.md) | A <code>Converter</code> which converts an iso formatted string, a number or a <code>Date</code> object to a <code>Date</code> object. |
 

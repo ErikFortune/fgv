@@ -27,6 +27,57 @@ import { Converters as ExtraConverters } from '../..';
 import { ExtendedArray, RangeOf } from '../../packlets/experimental';
 
 describe('Converters module', () => {
+  describe('templateString converter', () => {
+    test('converts valid strings', () => {
+      ['A string', '1', 'true', ''].forEach((s) => {
+        expect(ExtraConverters.templateString().convert(s)).toSucceedWith(s);
+      });
+    });
+
+    test('fails for non-string values strings', () => {
+      [1, true, {}, (): string => 'hello', ['true']].forEach((v) => {
+        expect(ExtraConverters.templateString().convert(v)).toFailWith(/not a string/i);
+      });
+    });
+
+    test('uses supplied context to populate template values', () => {
+      const converter = ExtraConverters.templateString({ value: 'DEFAULT VALUE' });
+      expect(converter.convert('{{value}} is expected', { value: 'expected' })).toSucceedWith(
+        'expected is expected'
+      );
+    });
+
+    test('uses default context to populate template values in none supplied at conversion time', () => {
+      const converter = ExtraConverters.templateString({ value: 'DEFAULT VALUE' });
+      expect(converter.convert('{{value}} is expected')).toSucceedWith('DEFAULT VALUE is expected');
+    });
+  });
+
+  describe('isoDate converter', () => {
+    test('converts an ISO formatted string to a Date object', () => {
+      const date = new Date();
+      expect(ExtraConverters.isoDate.convert(date.toISOString())).toSucceedWith(date);
+    });
+
+    test('converts a number to a Date object', () => {
+      const date = new Date();
+      expect(ExtraConverters.isoDate.convert(date.getTime())).toSucceedWith(date);
+    });
+
+    test('converts a Date object to a Date', () => {
+      const date = new Date();
+      expect(ExtraConverters.isoDate.convert(date)).toSucceedWith(date);
+    });
+
+    test('fails for a malformed date', () => {
+      expect(ExtraConverters.isoDate.convert('whatever')).toFailWith(/invalid date/i);
+    });
+
+    test('fails for an unexpected type', () => {
+      expect(ExtraConverters.isoDate.convert({ date: new Date() })).toFailWith(/cannot convert/i);
+    });
+  });
+
   describe('extendedArrayOf converter', () => {
     test('converts a valid array', () => {
       const srcArray = ['s1', 's2', 's3'];
@@ -81,7 +132,7 @@ describe('Converters module', () => {
       const sourceArray = ['{{value}} is expected', 'hello'];
       const expected = ['expected is expected', 'hello'];
       expect(
-        ExtraConverters.extendedArrayOf('templateStrings', Converters.templateString()).convert(
+        ExtraConverters.extendedArrayOf('templateStrings', ExtraConverters.templateString()).convert(
           sourceArray,
           context
         )
