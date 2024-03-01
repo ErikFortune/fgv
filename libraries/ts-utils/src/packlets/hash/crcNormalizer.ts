@@ -20,8 +20,46 @@
  * SOFTWARE.
  */
 
-import { crc32 } from 'crc';
 import { HashingNormalizer } from './hashingNormalizer';
+
+const POLYNOMIAL: number = 0xedb88320;
+
+const crc32Table: number[] = [];
+
+function crc32(bytes: Uint8Array, crc: number = 0xffffffff): number {
+  if (crc32Table.length === 0) {
+    buildCrc32Table();
+  }
+  for (let i = 0; i < bytes.length; ++i) {
+    // eslint-disable-next-line no-bitwise
+    crc = crc32Table[(crc ^ bytes[i]) & 0xff] ^ (crc >>> 8);
+  }
+  return (crc ^ -1) >>> 0;
+}
+
+const toUInt32 = (n: number): number => {
+  if (n >= 0) {
+    return n;
+  }
+  return 0xffffffff - n * -1 + 1;
+};
+
+function buildCrc32Table(): void {
+  if (crc32Table.length === 0) {
+    for (let n = 0; n < 256; n++) {
+      let r = n;
+      for (let i = 0; i < 8; i++) {
+        // eslint-disable-next-line no-bitwise
+        if (r & 1) {
+          r = (r >>> 1) ^ POLYNOMIAL;
+        } else {
+          r = r >>> 1;
+        }
+      }
+      crc32Table.push(toUInt32(r));
+    }
+  }
+}
 
 /**
  * A {@link Hash.HashingNormalizer | hashing normalizer} which computes object
@@ -34,6 +72,6 @@ export class Crc32Normalizer extends HashingNormalizer {
   }
 
   public static crc32Hash(parts: string[]): string {
-    return String(crc32(parts.join('|')));
+    return String(crc32(new TextEncoder().encode(parts.join('|'))));
   }
 }
