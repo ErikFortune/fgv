@@ -11,12 +11,6 @@ Assorted typescript utilities that I'm tired of copying from project to project.
 * Result\<T\> - Easily combine inline and exception-based error handling
 * Converter\<T\> - Conversion framework especially useful for type-safe processing of JSON
 
-Also includes a few other much less-developed odds-and-ends borrowed from one project or another - much less polished and more likely change or disappear:
-* ExtendedArray\<T\> - adds a few useful operations to the built-in Array
-* Formattable\<T\> - simple helpers to create mustache wrappers for objects and make them easily printable
-* Logger - A very basic logger suitable for hobby projects
-* RangeOf\<T\> - Generic open or closed ranges of orderable items (numbers, dates, etc)
-
 ---
 
 - [Summary](#summary)
@@ -28,11 +22,6 @@ Also includes a few other much less-developed odds-and-ends borrowed from one pr
 - [API](#api)
   - [Result\<T\>](#resultt)
   - [Converter\<T\>](#convertert)
-- [Additional APIs](#additional-apis)
-  - [ExtendedArray\<T\>](#extendedarrayt)
-  - [Formattable\<T\>](#formattablet)
-  - [Logger](#logger)
-  - [RangeOf\<T\>](#rangeoft)
 
 ## Installation
 
@@ -139,15 +128,5 @@ Other helpers and methods enable optional values or fields, chaining of results 
 
 ### Result\<T\>
 
-
 ### Converter\<T\>
 
-## Additional APIs
-
-### ExtendedArray\<T\>
-
-### Formattable\<T\>
-
-### Logger
-
-### RangeOf\<T\>

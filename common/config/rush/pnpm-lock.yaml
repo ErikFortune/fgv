@@ -217,7 +217,6 @@ importers:
       '@rushstack/heft-node-rig': ~2.4.21
       '@types/heft-jest': 1.0.6
       '@types/jest': ^29.5.12
-      '@types/mustache': ^4.2.5
       '@types/node': ^20.11.24
       '@typescript-eslint/eslint-plugin': ^7.1.0
       '@typescript-eslint/parser': ^7.1.0
@@ -230,7 +229,6 @@ importers:
       heft-jest: ~1.0.2
       jest: ^29.7.0
       jest-extended: ^4.0.2
-      mustache: ^4.2.0
       rimraf: ^5.0.5
       ts-jest: ^29.1.2
       ts-node: ^10.9.2
@@ -244,7 +242,6 @@ importers:
       '@rushstack/heft-node-rig': 2.4.21_7b9bfd70e6568afdf7c5889eb8c59f9f
       '@types/heft-jest': 1.0.6
       '@types/jest': 29.5.12
-      '@types/mustache': 4.2.5
       '@types/node': 20.11.24
       '@typescript-eslint/eslint-plugin': 7.1.0_1d45b749ed55b3c9cb007384cadb3577
       '@typescript-eslint/parser': 7.1.0_eslint@8.57.0+typescript@5.3.3
@@ -257,7 +254,6 @@ importers:
       heft-jest: 1.0.2
       jest: 29.7.0_448194d5e385bda33d3735b0497df49d
       jest-extended: 4.0.2_jest@29.7.0
-      mustache: 4.2.0
       rimraf: 5.0.5
       ts-jest: 29.1.2_jest@29.7.0+typescript@5.3.3
       ts-node: 10.9.2_c131d14a033de30b495d527c403a5398
