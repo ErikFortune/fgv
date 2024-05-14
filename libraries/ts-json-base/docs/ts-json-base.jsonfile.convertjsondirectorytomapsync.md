@@ -14,11 +14,55 @@ export declare function convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: 
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  srcPath | string | The path of the folder to be read. |
-|  options | [IJsonFsDirectoryToMapOptions](./ts-json-base.jsonfile.ijsonfsdirectorytomapoptions.md)<!-- -->&lt;T, TC&gt; | [Options](./ts-json-base.jsonfile.ijsonfsdirectorytomapoptions.md) to control conversion, filtering and naming. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+srcPath
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+The path of the folder to be read.
+
+
+</td></tr>
+<tr><td>
+
+options
+
+
+</td><td>
+
+[IJsonFsDirectoryToMapOptions](./ts-json-base.jsonfile.ijsonfsdirectorytomapoptions.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+[Options](./ts-json-base.jsonfile.ijsonfsdirectorytomapoptions.md) to control conversion, filtering and naming.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;Map&lt;string, T&gt;&gt;

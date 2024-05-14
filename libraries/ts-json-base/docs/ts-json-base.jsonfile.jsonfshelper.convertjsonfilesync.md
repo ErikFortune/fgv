@@ -14,11 +14,55 @@ convertJsonFileSync<T, TC = unknown>(srcPath: string, cv: Converter<T, TC> | Val
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  srcPath | string | Path of the file to read. |
-|  cv | Converter&lt;T, TC&gt; \| Validator&lt;T, TC&gt; | Converter or validator used to process the file. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+srcPath
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+Path of the file to read.
+
+
+</td></tr>
+<tr><td>
+
+cv
+
+
+</td><td>
+
+Converter&lt;T, TC&gt; \| Validator&lt;T, TC&gt;
+
+
+</td><td>
+
+Converter or validator used to process the file.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;T&gt;

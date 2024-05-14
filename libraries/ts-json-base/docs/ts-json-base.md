@@ -6,36 +6,219 @@
 
 ## Functions
 
-|  Function | Description |
-|  --- | --- |
-|  [classifyJsonValue(from)](./ts-json-base.classifyjsonvalue.md) | Identifies whether some <code>unknown</code> value is a [primitive](./ts-json-base.jsonprimitive.md)<!-- -->, [object](./ts-json-base.jsonobject.md) or [array](./ts-json-base.jsonarray.md)<!-- -->. Fails for any value that cannot be converted to JSON (e.g. a function) \_but\_ this is a shallow test - it does not test the properties of an object or elements in an array. |
-|  [isJsonArray(from)](./ts-json-base.isjsonarray.md) | Test if an <code>unknown</code> is potentially a [JsonArray](./ts-json-base.jsonarray.md)<!-- -->. |
-|  [isJsonObject(from)](./ts-json-base.isjsonobject.md) | Test if an <code>unknown</code> is potentially a [JsonObject](./ts-json-base.jsonobject.md)<!-- -->. |
-|  [isJsonPrimitive(from)](./ts-json-base.isjsonprimitive.md) | Test if an <code>unknown</code> is a [JsonValue](./ts-json-base.jsonvalue.md)<!-- -->. |
-|  [pickJsonObject(src, path)](./ts-json-base.pickjsonobject.md) | Picks a nested [JsonObject](./ts-json-base.jsonobject.md) from a supplied [JsonObject](./ts-json-base.jsonobject.md)<!-- -->. |
-|  [pickJsonValue(src, path)](./ts-json-base.pickjsonvalue.md) | Picks a nested field from a supplied [JsonObject](./ts-json-base.jsonobject.md)<!-- -->. |
-|  [sanitizeJson(from)](./ts-json-base.sanitizejson.md) | "Sanitizes" an <code>unknown</code> by stringifying and then parsing it. Guarantees a valid [JsonValue](./ts-json-base.jsonvalue.md) but is not idempotent and gives no guarantees about fidelity. Fails if the supplied value cannot be stringified as Json. |
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[classifyJsonValue(from)](./ts-json-base.classifyjsonvalue.md)
+
+
+</td><td>
+
+Identifies whether some `unknown` value is a [primitive](./ts-json-base.jsonprimitive.md)<!-- -->, [object](./ts-json-base.jsonobject.md) or [array](./ts-json-base.jsonarray.md)<!-- -->. Fails for any value that cannot be converted to JSON (e.g. a function) \_but\_ this is a shallow test - it does not test the properties of an object or elements in an array.
+
+
+</td></tr>
+<tr><td>
+
+[isJsonArray(from)](./ts-json-base.isjsonarray.md)
+
+
+</td><td>
+
+Test if an `unknown` is potentially a [JsonArray](./ts-json-base.jsonarray.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[isJsonObject(from)](./ts-json-base.isjsonobject.md)
+
+
+</td><td>
+
+Test if an `unknown` is potentially a [JsonObject](./ts-json-base.jsonobject.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[isJsonPrimitive(from)](./ts-json-base.isjsonprimitive.md)
+
+
+</td><td>
+
+Test if an `unknown` is a [JsonValue](./ts-json-base.jsonvalue.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[pickJsonObject(src, path)](./ts-json-base.pickjsonobject.md)
+
+
+</td><td>
+
+Picks a nested [JsonObject](./ts-json-base.jsonobject.md) from a supplied [JsonObject](./ts-json-base.jsonobject.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[pickJsonValue(src, path)](./ts-json-base.pickjsonvalue.md)
+
+
+</td><td>
+
+Picks a nested field from a supplied [JsonObject](./ts-json-base.jsonobject.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[sanitizeJson(from)](./ts-json-base.sanitizejson.md)
+
+
+</td><td>
+
+"Sanitizes" an `unknown` by stringifying and then parsing it. Guarantees a valid [JsonValue](./ts-json-base.jsonvalue.md) but is not idempotent and gives no guarantees about fidelity. Fails if the supplied value cannot be stringified as Json.
+
+
+</td></tr>
+</tbody></table>
 
 ## Interfaces
 
-|  Interface | Description |
-|  --- | --- |
-|  [JsonArray](./ts-json-base.jsonarray.md) | A [JsonArray](./ts-json-base.jsonarray.md) is an array containing only valid [JsonValues](./ts-json-base.jsonvalue.md)<!-- -->. |
-|  [JsonObject](./ts-json-base.jsonobject.md) | A [JsonObject](./ts-json-base.jsonobject.md) is a string-keyed object containing only valid [JSON values](./ts-json-base.jsonvalue.md)<!-- -->. |
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[JsonArray](./ts-json-base.jsonarray.md)
+
+
+</td><td>
+
+A [JsonArray](./ts-json-base.jsonarray.md) is an array containing only valid [JsonValues](./ts-json-base.jsonvalue.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[JsonObject](./ts-json-base.jsonobject.md)
+
+
+</td><td>
+
+A [JsonObject](./ts-json-base.jsonobject.md) is a string-keyed object containing only valid [JSON values](./ts-json-base.jsonvalue.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Namespaces
 
-|  Namespace | Description |
-|  --- | --- |
-|  [Converters](./ts-json-base.converters.md) |  |
-|  [JsonFile](./ts-json-base.jsonfile.md) |  |
-|  [Validators](./ts-json-base.validators.md) |  |
+<table><thead><tr><th>
+
+Namespace
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Converters](./ts-json-base.converters.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[JsonFile](./ts-json-base.jsonfile.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Validators](./ts-json-base.validators.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
 
 ## Type Aliases
 
-|  Type Alias | Description |
-|  --- | --- |
-|  [JsonPrimitive](./ts-json-base.jsonprimitive.md) | Primitive (terminal) values allowed in by JSON. |
-|  [JsonValue](./ts-json-base.jsonvalue.md) | A [JsonValue](./ts-json-base.jsonvalue.md) is one of: a [JsonPrimitive](./ts-json-base.jsonprimitive.md)<!-- -->, a [JsonObject](./ts-json-base.jsonobject.md) or an [JsonArray](./ts-json-base.jsonarray.md)<!-- -->. |
-|  [JsonValueType](./ts-json-base.jsonvaluetype.md) | Classes of [JsonValue](./ts-json-base.jsonvalue.md)<!-- -->. |
+<table><thead><tr><th>
 
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[JsonPrimitive](./ts-json-base.jsonprimitive.md)
+
+
+</td><td>
+
+Primitive (terminal) values allowed in by JSON.
+
+
+</td></tr>
+<tr><td>
+
+[JsonValue](./ts-json-base.jsonvalue.md)
+
+
+</td><td>
+
+A [JsonValue](./ts-json-base.jsonvalue.md) is one of: a [JsonPrimitive](./ts-json-base.jsonprimitive.md)<!-- -->, a [JsonObject](./ts-json-base.jsonobject.md) or an [JsonArray](./ts-json-base.jsonarray.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[JsonValueType](./ts-json-base.jsonvaluetype.md)
+
+
+</td><td>
+
+Classes of [JsonValue](./ts-json-base.jsonvalue.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>

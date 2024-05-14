@@ -14,24 +14,184 @@ export declare class JsonFsHelper
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(init)](./ts-json-base.jsonfile.jsonfshelper._constructor_.md) |  | Construct a new [JsonFsHelper](./ts-json-base.jsonfile.jsonfshelper.md)<!-- -->. |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(init)](./ts-json-base.jsonfile.jsonfshelper._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Construct a new [JsonFsHelper](./ts-json-base.jsonfile.jsonfshelper.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [config](./ts-json-base.jsonfile.jsonfshelper.config.md) | <code>readonly</code> | [IJsonFsHelperConfig](./ts-json-base.jsonfile.ijsonfshelperconfig.md) | Configuration for this [JsonFsHelper](./ts-json-base.jsonfile.jsonfshelper.md)<!-- -->. |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[config](./ts-json-base.jsonfile.jsonfshelper.config.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IJsonFsHelperConfig](./ts-json-base.jsonfile.ijsonfshelperconfig.md)
+
+
+</td><td>
+
+Configuration for this [JsonFsHelper](./ts-json-base.jsonfile.jsonfshelper.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [\_pathMatchesOptions(options, path)](./ts-json-base.jsonfile.jsonfshelper._pathmatchesoptions.md) | <code>protected</code> |  |
-|  [convertJsonDirectorySync(srcPath, options)](./ts-json-base.jsonfile.jsonfshelper.convertjsondirectorysync.md) |  | Reads all JSON files from a directory and apply a supplied converter or validator. |
-|  [convertJsonDirectoryToMapSync(srcPath, options)](./ts-json-base.jsonfile.jsonfshelper.convertjsondirectorytomapsync.md) |  | Reads and converts or validates all JSON files from a directory, returning a <code>Map&lt;string, T&gt;</code> indexed by file base name (i.e. minus the extension) with an optional name transformation applied if present. |
-|  [convertJsonFileSync(srcPath, cv)](./ts-json-base.jsonfile.jsonfshelper.convertjsonfilesync.md) |  | Read a JSON file and apply a supplied converter or validator. |
-|  [readJsonFileSync(srcPath)](./ts-json-base.jsonfile.jsonfshelper.readjsonfilesync.md) |  | Read type-safe JSON from a file. |
-|  [writeJsonFileSync(srcPath, value)](./ts-json-base.jsonfile.jsonfshelper.writejsonfilesync.md) |  | Write type-safe JSON to a file. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[\_pathMatchesOptions(options, path)](./ts-json-base.jsonfile.jsonfshelper._pathmatchesoptions.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[convertJsonDirectorySync(srcPath, options)](./ts-json-base.jsonfile.jsonfshelper.convertjsondirectorysync.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Reads all JSON files from a directory and apply a supplied converter or validator.
+
+
+</td></tr>
+<tr><td>
+
+[convertJsonDirectoryToMapSync(srcPath, options)](./ts-json-base.jsonfile.jsonfshelper.convertjsondirectorytomapsync.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Reads and converts or validates all JSON files from a directory, returning a `Map<string, T>` indexed by file base name (i.e. minus the extension) with an optional name transformation applied if present.
+
+
+</td></tr>
+<tr><td>
+
+[convertJsonFileSync(srcPath, cv)](./ts-json-base.jsonfile.jsonfshelper.convertjsonfilesync.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Read a JSON file and apply a supplied converter or validator.
+
+
+</td></tr>
+<tr><td>
+
+[readJsonFileSync(srcPath)](./ts-json-base.jsonfile.jsonfshelper.readjsonfilesync.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Read type-safe JSON from a file.
+
+
+</td></tr>
+<tr><td>
+
+[writeJsonFileSync(srcPath, value)](./ts-json-base.jsonfile.jsonfshelper.writejsonfilesync.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Write type-safe JSON to a file.
+
+
+</td></tr>
+</tbody></table>

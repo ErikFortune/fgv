@@ -14,8 +14,63 @@ export interface IReadDirectoryItem<T>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [filename](./ts-json-base.jsonfile.ireaddirectoryitem.filename.md) |  | string | Relative name of the file that was processed |
-|  [item](./ts-json-base.jsonfile.ireaddirectoryitem.item.md) |  | T | The payload of the file. |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[filename](./ts-json-base.jsonfile.ireaddirectoryitem.filename.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+Relative name of the file that was processed
+
+
+</td></tr>
+<tr><td>
+
+[item](./ts-json-base.jsonfile.ireaddirectoryitem.item.md)
+
+
+</td><td>
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+The payload of the file.
+
+
+</td></tr>
+</tbody></table>

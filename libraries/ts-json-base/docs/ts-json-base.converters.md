@@ -6,16 +6,89 @@
 
 ## Interfaces
 
-|  Interface | Description |
-|  --- | --- |
-|  [IJsonConverterContext](./ts-json-base.converters.ijsonconvertercontext.md) | Conversion context for JSON converters. |
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[IJsonConverterContext](./ts-json-base.converters.ijsonconvertercontext.md)
+
+
+</td><td>
+
+Conversion context for JSON converters.
+
+
+</td></tr>
+</tbody></table>
 
 ## Variables
 
-|  Variable | Description |
-|  --- | --- |
-|  [jsonArray](./ts-json-base.converters.jsonarray.md) | <p>An copying converter which converts a supplied <code>unknown</code> value to a valid [JsonArray](./ts-json-base.jsonarray.md)<!-- -->. Fails by default if any properties or array elements are <code>undefined</code> - this default behavior can be overridden by supplying an appropriate [context](./ts-json-base.converters.ijsonconvertercontext.md) at runtime.</p><p>Guaranteed to return a new array.</p> |
-|  [jsonObject](./ts-json-base.converters.jsonobject.md) | <p>An copying converter which converts a supplied <code>unknown</code> value into a valid [JsonObject](./ts-json-base.jsonobject.md)<!-- -->. Fails by default if any properties or array elements are <code>undefined</code> - this default behavior can be overridden by supplying an appropriate [context](./ts-json-base.converters.ijsonconvertercontext.md) at runtime.</p><p>Guaranteed to return a new object.</p> |
-|  [jsonPrimitive](./ts-json-base.converters.jsonprimitive.md) | An converter which converts a supplied <code>unknown</code> value to a valid [JsonPrimitive](./ts-json-base.jsonprimitive.md)<!-- -->. |
-|  [jsonValue](./ts-json-base.converters.jsonvalue.md) | An copying converter which converts a supplied <code>unknown</code> value to a valid [JsonValue](./ts-json-base.jsonvalue.md)<!-- -->. Fails by default if any properties or array elements are <code>undefined</code> - this default behavior can be overridden by supplying an appropriate [context](./ts-json-base.converters.ijsonconvertercontext.md) at runtime. |
+<table><thead><tr><th>
 
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[jsonArray](./ts-json-base.converters.jsonarray.md)
+
+
+</td><td>
+
+An copying converter which converts a supplied `unknown` value to a valid [JsonArray](./ts-json-base.jsonarray.md)<!-- -->. Fails by default if any properties or array elements are `undefined` - this default behavior can be overridden by supplying an appropriate [context](./ts-json-base.converters.ijsonconvertercontext.md) at runtime.
+
+Guaranteed to return a new array.
+
+
+</td></tr>
+<tr><td>
+
+[jsonObject](./ts-json-base.converters.jsonobject.md)
+
+
+</td><td>
+
+An copying converter which converts a supplied `unknown` value into a valid [JsonObject](./ts-json-base.jsonobject.md)<!-- -->. Fails by default if any properties or array elements are `undefined` - this default behavior can be overridden by supplying an appropriate [context](./ts-json-base.converters.ijsonconvertercontext.md) at runtime.
+
+Guaranteed to return a new object.
+
+
+</td></tr>
+<tr><td>
+
+[jsonPrimitive](./ts-json-base.converters.jsonprimitive.md)
+
+
+</td><td>
+
+An converter which converts a supplied `unknown` value to a valid [JsonPrimitive](./ts-json-base.jsonprimitive.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[jsonValue](./ts-json-base.converters.jsonvalue.md)
+
+
+</td><td>
+
+An copying converter which converts a supplied `unknown` value to a valid [JsonValue](./ts-json-base.jsonvalue.md)<!-- -->. Fails by default if any properties or array elements are `undefined` - this default behavior can be overridden by supplying an appropriate [context](./ts-json-base.converters.ijsonconvertercontext.md) at runtime.
+
+
+</td></tr>
+</tbody></table>

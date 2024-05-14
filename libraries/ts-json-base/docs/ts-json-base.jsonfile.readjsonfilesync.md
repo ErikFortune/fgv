@@ -14,10 +14,39 @@ export declare function readJsonFileSync(srcPath: string): Result<JsonValue>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  srcPath | string | Path of the file to read |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+srcPath
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+Path of the file to read
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[JsonValue](./ts-json-base.jsonvalue.md)<!-- -->&gt;

@@ -15,7 +15,44 @@ export interface IJsonFsDirectoryToMapOptions<T, TC = unknown> extends IJsonFsDi
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [transformName?](./ts-json-base.jsonfile.ijsonfsdirectorytomapoptions.transformname.md) |  | [ItemNameTransformFunction](./ts-json-base.jsonfile.itemnametransformfunction.md)<!-- -->&lt;T&gt; | _(Optional)_ |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[transformName?](./ts-json-base.jsonfile.ijsonfsdirectorytomapoptions.transformname.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[ItemNameTransformFunction](./ts-json-base.jsonfile.itemnametransformfunction.md)<!-- -->&lt;T&gt;
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+</tbody></table>

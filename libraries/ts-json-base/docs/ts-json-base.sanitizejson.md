@@ -14,10 +14,39 @@ export declare function sanitizeJson(from: unknown): Result<JsonValue>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  from | unknown | The <code>unknown</code> to be sanitized. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+from
+
+
+</td><td>
+
+unknown
+
+
+</td><td>
+
+The `unknown` to be sanitized.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[JsonValue](./ts-json-base.jsonvalue.md)<!-- -->&gt;

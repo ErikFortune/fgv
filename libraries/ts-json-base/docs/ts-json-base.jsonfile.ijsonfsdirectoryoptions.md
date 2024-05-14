@@ -14,8 +14,63 @@ export interface IJsonFsDirectoryOptions<T, TC = unknown>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [converter](./ts-json-base.jsonfile.ijsonfsdirectoryoptions.converter.md) |  | Converter&lt;T, TC&gt; \| Validator&lt;T, TC&gt; | The converter used to convert incoming JSON objects. |
-|  [files?](./ts-json-base.jsonfile.ijsonfsdirectoryoptions.files.md) |  | RegExp\[\] | _(Optional)_ Filter applied to items in the directory |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[converter](./ts-json-base.jsonfile.ijsonfsdirectoryoptions.converter.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Converter&lt;T, TC&gt; \| Validator&lt;T, TC&gt;
+
+
+</td><td>
+
+The converter used to convert incoming JSON objects.
+
+
+</td></tr>
+<tr><td>
+
+[files?](./ts-json-base.jsonfile.ijsonfsdirectoryoptions.files.md)
+
+
+</td><td>
+
+
+</td><td>
+
+RegExp\[\]
+
+
+</td><td>
+
+_(Optional)_ Filter applied to items in the directory
+
+
+</td></tr>
+</tbody></table>

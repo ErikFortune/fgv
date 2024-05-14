@@ -12,11 +12,51 @@ protected _pathMatchesOptions<T, TC>(options: IJsonFsDirectoryOptions<T, TC>, pa
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  options | [IJsonFsDirectoryOptions](./ts-json-base.jsonfile.ijsonfsdirectoryoptions.md)<!-- -->&lt;T, TC&gt; |  |
-|  path | string |  |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+options
+
+
+</td><td>
+
+[IJsonFsDirectoryOptions](./ts-json-base.jsonfile.ijsonfsdirectoryoptions.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+path
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 boolean

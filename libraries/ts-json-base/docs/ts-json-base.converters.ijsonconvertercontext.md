@@ -14,7 +14,44 @@ export interface IJsonConverterContext
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [ignoreUndefinedProperties?](./ts-json-base.converters.ijsonconvertercontext.ignoreundefinedproperties.md) |  | boolean | _(Optional)_ |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ignoreUndefinedProperties?](./ts-json-base.converters.ijsonconvertercontext.ignoreundefinedproperties.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+</tbody></table>
