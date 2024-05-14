@@ -2,6 +2,24 @@
   "name": "@fgv/ts-json-base",
   "entries": [
     {
+      "version": "4.0.0",
+      "tag": "@fgv/ts-json-base_v4.0.0",
+      "date": "Tue, 14 May 2024 03:09:27 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "clean up and renaming in JSON file helpers"
+          },
+          {
+            "comment": "update generated api docs"
+          },
+          {
+            "comment": "generalize fs helper to enable yaml"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.0.0",
       "tag": "@fgv/ts-json-base_v3.0.0",
       "date": "Mon, 22 Jan 2024 07:00:18 GMT",

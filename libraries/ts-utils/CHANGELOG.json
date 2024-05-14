@@ -2,6 +2,39 @@
   "name": "@fgv/ts-utils",
   "entries": [
     {
+      "version": "4.0.0",
+      "tag": "@fgv/ts-utils_v4.0.0",
+      "date": "Tue, 14 May 2024 03:09:27 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "rework validation/converter compatibility a bit"
+          },
+          {
+            "comment": "QoL improvement to simplify error aggregation"
+          },
+          {
+            "comment": "factor optional converters out to ts-extras package to eliminate large dependencies"
+          },
+          {
+            "comment": "update generated api docs"
+          },
+          {
+            "comment": "add convalidate helper"
+          },
+          {
+            "comment": "add defaulting converter"
+          },
+          {
+            "comment": "extend conversion to accept validators"
+          },
+          {
+            "comment": "export StringConverter at top level"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.0.0",
       "tag": "@fgv/ts-utils_v3.0.0",
       "date": "Mon, 22 Jan 2024 07:00:18 GMT",

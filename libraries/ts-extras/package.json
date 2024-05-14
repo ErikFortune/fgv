@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-extras",
-  "version": "3.0.1-alpha.6",
+  "version": "4.0.0",
   "description": "Assorted Typescript Utilities",
   "main": "lib/index.js",
   "types": "dist/ts-extras.d.ts",
