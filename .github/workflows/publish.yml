@@ -23,8 +23,6 @@ jobs:
         run: node common/scripts/install-run-rush.js change --verify --target-branch ${GITHUB_REF_NAME}
       - name: Rush Install
         run: node common/scripts/install-run-rush.js install
-      - name: Bump versions
-        run: node common/scripts/install-run-rush.js version --bump --target-branch ${GITHUB_REF_NAME}
       - name: Rush rebuild
         run: node common/scripts/install-run-rush.js rebuild --verbose
       - name: Rush Publish
