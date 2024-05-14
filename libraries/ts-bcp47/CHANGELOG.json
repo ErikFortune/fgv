@@ -2,6 +2,24 @@
   "name": "@fgv/ts-bcp47",
   "entries": [
     {
+      "version": "4.0.2",
+      "tag": "@fgv/ts-bcp47_v4.0.2",
+      "date": "Tue, 14 May 2024 14:45:53 GMT",
+      "comments": {}
+    },
+    {
+      "version": "4.0.1",
+      "tag": "@fgv/ts-bcp47_v4.0.1",
+      "date": "Tue, 14 May 2024 05:02:20 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "publish"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.0.0",
       "tag": "@fgv/ts-bcp47_v4.0.0",
       "date": "Tue, 14 May 2024 03:09:27 GMT",

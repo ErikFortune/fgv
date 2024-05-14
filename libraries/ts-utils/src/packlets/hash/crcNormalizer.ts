@@ -22,6 +22,8 @@
 
 import { HashingNormalizer } from './hashingNormalizer';
 
+const textEncoder: TextEncoder = new TextEncoder();
+
 const POLYNOMIAL: number = 0xedb88320;
 
 const crc32Table: number[] = [];
@@ -72,6 +74,6 @@ export class Crc32Normalizer extends HashingNormalizer {
   }
 
   public static crc32Hash(parts: string[]): string {
-    return String(crc32(new TextEncoder().encode(parts.join('|'))));
+    return String(crc32(textEncoder.encode(parts.join('|'))));
   }
 }
