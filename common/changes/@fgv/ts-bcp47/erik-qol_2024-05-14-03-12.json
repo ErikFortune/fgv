@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-bcp47",
+      "comment": "publish",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-bcp47"
+}

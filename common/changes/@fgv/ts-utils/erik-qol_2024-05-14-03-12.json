@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "publish",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}
