@@ -1,6 +1,11 @@
 # Change Log - @fgv/ts-bcp47
 
-This log was last generated on Tue, 14 May 2024 05:02:20 GMT and should not be manually modified.
+This log was last generated on Tue, 14 May 2024 14:45:53 GMT and should not be manually modified.
+
+## 4.0.2
+Tue, 14 May 2024 14:45:53 GMT
+
+_Version update only_
 
 ## 4.0.1
 Tue, 14 May 2024 05:02:20 GMT
