@@ -11,7 +11,7 @@ import { Result } from '@fgv/ts-utils';
 // @public
 export const allPuzzleTypes: PuzzleType[];
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-sudoku-lib" does not have an export "Data"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-sudoku-lib" does not have an export "PuzzleDescription"
 //
 // @internal
 class AnyPuzzle {
@@ -245,7 +245,7 @@ class KillerSudokuPuzzle extends Puzzle {
     static create(desc: IPuzzleDescription): Result<Puzzle>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-sudoku-lib" does not have an export "Data"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function loadJsonPuzzlesFileSync(path: string): Result<IPuzzlesFile>;
@@ -266,7 +266,6 @@ export type NavigationWrap = 'none' | 'wrap-around' | 'wrap-next';
 //
 // @internal (undocumented)
 export class Puzzle {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-sudoku-lib" does not have an export "Data"
     protected constructor(puzzle: IPuzzleDescription, extraCages?: [CageId, Cage][]);
     // (undocumented)
     get cages(): Cage[];
@@ -345,8 +344,8 @@ export class Puzzle {
 
 // @public
 export class PuzzleCollection {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-sudoku-lib" does not have an export "FileData"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-sudoku-lib" does not have an export "FileData"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(from: File_2.Model.IPuzzlesFile): Result<PuzzleCollection>;
     getDescription(id: string): Result<IPuzzleDescription>;
     getPuzzle(id: string): Result<PuzzleSession>;
@@ -359,8 +358,6 @@ export class PuzzleCollections {
     static get default(): PuzzleCollection;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-sudoku-lib" does not have an export "Data"
-//
 // @public
 const puzzleDescription: Converter<IPuzzleDescription>;
 
@@ -428,7 +425,7 @@ export class PuzzleSession {
     updateCellValue(spec: string | IRowColumn | ICell, value: number | undefined): Result<this>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-sudoku-lib" does not have an export "Data"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const puzzlesFile: Converter<IPuzzlesFile>;

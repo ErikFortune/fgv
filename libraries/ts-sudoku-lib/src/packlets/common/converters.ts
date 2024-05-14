@@ -63,7 +63,7 @@ export const puzzleType: Converter<PuzzleType, PuzzleType[]> =
   Converters.enumeratedValue<PuzzleType>(allPuzzleTypes);
 
 /**
- * Converts an arbitrary object to a {@link Data.Model.PuzzleDescription | PuzzleDescription}.
+ * Converts an arbitrary object to a {@link IPuzzleDescription | IPuzzleDescription}.
  * @public
  */
 export const puzzleDescription: Converter<IPuzzleDescription> = Converters.strictObject<IPuzzleDescription>(

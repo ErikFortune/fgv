@@ -30,7 +30,7 @@ import { SudokuPuzzle } from './sudokuPuzzle';
 import { SudokuXPuzzle } from './sudokuXPuzzle';
 
 /**
- * Static class to instantiate any puzzle from a {@link Data.Model.PuzzleDescription | puzzle description}.
+ * Static class to instantiate any puzzle from a {@link PuzzleDescription | puzzle description}.
  * @internal
  */
 export class AnyPuzzle {
