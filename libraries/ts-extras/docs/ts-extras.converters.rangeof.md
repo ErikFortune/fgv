@@ -14,10 +14,39 @@ export declare function rangeOf<T, TC = unknown>(converter: Converter<T, TC>): C
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  converter | Converter&lt;T, TC&gt; | <code>Converter</code> used to convert <code>min</code> and <code>max</code> extent of the range. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+converter
+
+
+</td><td>
+
+Converter&lt;T, TC&gt;
+
+
+</td><td>
+
+`Converter` used to convert `min` and `max` extent of the range.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Converter&lt;[RangeOf](./ts-extras.experimental.rangeof.md)<!-- -->&lt;T&gt;, TC&gt;

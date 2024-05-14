@@ -14,8 +14,67 @@ export interface JarRecordParserOptions
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [arrayFields?](./ts-extras.recordjar.jarrecordparseroptions.arrayfields.md) | <code>readonly</code> | string\[\] \| [JarFieldPicker](./ts-extras.recordjar.jarfieldpicker.md) | _(Optional)_ |
-|  [fixedContinuationSize?](./ts-extras.recordjar.jarrecordparseroptions.fixedcontinuationsize.md) | <code>readonly</code> | number | _(Optional)_ |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[arrayFields?](./ts-extras.recordjar.jarrecordparseroptions.arrayfields.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string\[\] \| [JarFieldPicker](./ts-extras.recordjar.jarfieldpicker.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[fixedContinuationSize?](./ts-extras.recordjar.jarrecordparseroptions.fixedcontinuationsize.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+</tbody></table>

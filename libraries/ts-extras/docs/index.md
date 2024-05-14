@@ -6,7 +6,24 @@
 
 ## Packages
 
-|  Package | Description |
-|  --- | --- |
-|  [@fgv/ts-extras](./ts-extras.md) |  |
+<table><thead><tr><th>
 
+Package
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[@fgv/ts-extras](./ts-extras.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

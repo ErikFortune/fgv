@@ -14,10 +14,39 @@ export declare function templateString(defaultContext?: unknown): Conversion.Str
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  defaultContext | unknown | _(Optional)_ Optional default context to use for template values. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+defaultContext
+
+
+</td><td>
+
+unknown
+
+
+</td><td>
+
+_(Optional)_ Optional default context to use for template values.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Conversion.StringConverter&lt;string, unknown&gt;

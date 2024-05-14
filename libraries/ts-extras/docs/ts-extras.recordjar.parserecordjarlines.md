@@ -14,11 +14,55 @@ export declare function parseRecordJarLines(lines: string[], options?: JarRecord
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  lines | string\[\] | the array of strings to be parsed |
-|  options | [JarRecordParserOptions](./ts-extras.recordjar.jarrecordparseroptions.md) | _(Optional)_ Optional parser configuration |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+lines
+
+
+</td><td>
+
+string\[\]
+
+
+</td><td>
+
+the array of strings to be parsed
+
+
+</td></tr>
+<tr><td>
+
+options
+
+
+</td><td>
+
+[JarRecordParserOptions](./ts-extras.recordjar.jarrecordparseroptions.md)
+
+
+</td><td>
+
+_(Optional)_ Optional parser configuration
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[JarRecord](./ts-extras.recordjar.jarrecord.md)<!-- -->\[\]&gt;

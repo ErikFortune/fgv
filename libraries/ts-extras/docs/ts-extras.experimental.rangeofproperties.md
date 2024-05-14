@@ -14,8 +14,67 @@ export interface RangeOfProperties<T>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [max?](./ts-extras.experimental.rangeofproperties.max.md) | <code>readonly</code> | T | _(Optional)_ |
-|  [min?](./ts-extras.experimental.rangeofproperties.min.md) | <code>readonly</code> | T | _(Optional)_ |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[max?](./ts-extras.experimental.rangeofproperties.max.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[min?](./ts-extras.experimental.rangeofproperties.min.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+</tbody></table>

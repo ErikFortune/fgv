@@ -6,38 +6,207 @@
 
 ## Classes
 
-|  Class | Description |
-|  --- | --- |
-|  [ExtendedArray](./ts-extras.experimental.extendedarray.md) | **_(BETA)_** An experimental array template which extend built-in <code>Array</code> to include a handful of predicates which return <code>Result&lt;T&gt;</code>. |
-|  [FormattableBase](./ts-extras.experimental.formattablebase.md) | **_(BETA)_** Base class which adds common formatting. |
-|  [RangeOf](./ts-extras.experimental.rangeof.md) | Simple implementation of a possibly open-ended range of some comparable type <code>&lt;T&gt;</code> with test and formatting. |
+<table><thead><tr><th>
+
+Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ExtendedArray](./ts-extras.experimental.extendedarray.md)
+
+
+</td><td>
+
+**_(BETA)_** An experimental array template which extend built-in `Array` to include a handful of predicates which return `Result<T>`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[FormattableBase](./ts-extras.experimental.formattablebase.md)
+
+
+</td><td>
+
+**_(BETA)_** Base class which adds common formatting.
+
+
+</td></tr>
+<tr><td>
+
+[RangeOf](./ts-extras.experimental.rangeof.md)
+
+
+</td><td>
+
+Simple implementation of a possibly open-ended range of some comparable type `<T>` with test and formatting.
+
+
+</td></tr>
+</tbody></table>
 
 ## Functions
 
-|  Function | Description |
-|  --- | --- |
-|  [formatList(format, items, itemFormatter)](./ts-extras.experimental.formatlist.md) | **_(BETA)_** Formats a list of items using the supplied template and formatter, one result per output line. |
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[formatList(format, items, itemFormatter)](./ts-extras.experimental.formatlist.md)
+
+
+</td><td>
+
+**_(BETA)_** Formats a list of items using the supplied template and formatter, one result per output line.
+
+
+</td></tr>
+</tbody></table>
 
 ## Interfaces
 
-|  Interface | Description |
-|  --- | --- |
-|  [Formattable](./ts-extras.experimental.formattable.md) | **_(BETA)_** Interface for an object that can be formatted. |
-|  [RangeOfFormats](./ts-extras.experimental.rangeofformats.md) | Format strings (in mustache format) to use for both open-ended and complete [RangeOf&lt;T&gt;](./ts-extras.experimental.rangeof.md)<!-- -->. |
-|  [RangeOfProperties](./ts-extras.experimental.rangeofproperties.md) | Represents a generic range of some comparable type <code>&lt;T&gt;</code>. |
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Formattable](./ts-extras.experimental.formattable.md)
+
+
+</td><td>
+
+**_(BETA)_** Interface for an object that can be formatted.
+
+
+</td></tr>
+<tr><td>
+
+[RangeOfFormats](./ts-extras.experimental.rangeofformats.md)
+
+
+</td><td>
+
+Format strings (in mustache format) to use for both open-ended and complete [RangeOf&lt;T&gt;](./ts-extras.experimental.rangeof.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[RangeOfProperties](./ts-extras.experimental.rangeofproperties.md)
+
+
+</td><td>
+
+Represents a generic range of some comparable type `<T>`<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Variables
 
-|  Variable | Description |
-|  --- | --- |
-|  [DEFAULT\_RANGEOF\_FORMATS](./ts-extras.experimental.default_rangeof_formats.md) | Default [formats](./ts-extras.experimental.rangeofformats.md) to use for both open-ended and complete [RangeOf&lt;T&gt;](./ts-extras.experimental.rangeof.md)<!-- -->. |
+<table><thead><tr><th>
+
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[DEFAULT\_RANGEOF\_FORMATS](./ts-extras.experimental.default_rangeof_formats.md)
+
+
+</td><td>
+
+Default [formats](./ts-extras.experimental.rangeofformats.md) to use for both open-ended and complete [RangeOf&lt;T&gt;](./ts-extras.experimental.rangeof.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Type Aliases
 
-|  Type Alias | Description |
-|  --- | --- |
-|  [FormatTargets](./ts-extras.experimental.formattargets.md) | **_(BETA)_** Destination format for some formatted string. |
-|  [Formatter](./ts-extras.experimental.formatter.md) | **_(BETA)_** Type definition for a formatting function, which takes a <code>string</code> and an item and returns <code>Result&lt;string&gt;</code>. |
-|  [FormattersByExtendedTarget](./ts-extras.experimental.formattersbyextendedtarget.md) | **_(BETA)_** A collection of [formatters](./ts-extras.experimental.formatter.md) indexed by target name, to enable different format methods per output target. |
-|  [FormattersByTarget](./ts-extras.experimental.formattersbytarget.md) | **_(BETA)_** A collection of [formatters](./ts-extras.experimental.formatter.md) indexed by the [default supported target formats](./ts-extras.experimental.formattargets.md)<!-- -->. |
+<table><thead><tr><th>
 
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[FormatTargets](./ts-extras.experimental.formattargets.md)
+
+
+</td><td>
+
+**_(BETA)_** Destination format for some formatted string.
+
+
+</td></tr>
+<tr><td>
+
+[Formatter](./ts-extras.experimental.formatter.md)
+
+
+</td><td>
+
+**_(BETA)_** Type definition for a formatting function, which takes a `string` and an item and returns `Result<string>`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[FormattersByExtendedTarget](./ts-extras.experimental.formattersbyextendedtarget.md)
+
+
+</td><td>
+
+**_(BETA)_** A collection of [formatters](./ts-extras.experimental.formatter.md) indexed by target name, to enable different format methods per output target.
+
+
+</td></tr>
+<tr><td>
+
+[FormattersByTarget](./ts-extras.experimental.formattersbytarget.md)
+
+
+</td><td>
+
+**_(BETA)_** A collection of [formatters](./ts-extras.experimental.formatter.md) indexed by the [default supported target formats](./ts-extras.experimental.formattargets.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>

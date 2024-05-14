@@ -17,10 +17,39 @@ single(predicate?: (item: T) => boolean): Result<T>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  predicate | (item: T) =&gt; boolean | _(Optional)_ The predicate function to be applied. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+predicate
+
+
+</td><td>
+
+(item: T) =&gt; boolean
+
+
+</td><td>
+
+_(Optional)_ The predicate function to be applied.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;T&gt;

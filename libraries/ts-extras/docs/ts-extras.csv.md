@@ -6,13 +6,52 @@
 
 ## Functions
 
-|  Function | Description |
-|  --- | --- |
-|  [readCsvFileSync(srcPath, options)](./ts-extras.csv.readcsvfilesync.md) | **_(BETA)_** Reads a CSV file from a supplied path. |
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[readCsvFileSync(srcPath, options)](./ts-extras.csv.readcsvfilesync.md)
+
+
+</td><td>
+
+**_(BETA)_** Reads a CSV file from a supplied path.
+
+
+</td></tr>
+</tbody></table>
 
 ## Interfaces
 
-|  Interface | Description |
-|  --- | --- |
-|  [CsvOptions](./ts-extras.csv.csvoptions.md) | **_(BETA)_** Options for [readCsvFileSync](./ts-extras.csv.readcsvfilesync.md) |
+<table><thead><tr><th>
 
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[CsvOptions](./ts-extras.csv.csvoptions.md)
+
+
+</td><td>
+
+**_(BETA)_** Options for [readCsvFileSync](./ts-extras.csv.readcsvfilesync.md)
+
+
+</td></tr>
+</tbody></table>

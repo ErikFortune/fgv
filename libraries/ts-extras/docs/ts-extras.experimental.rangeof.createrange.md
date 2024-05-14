@@ -14,10 +14,39 @@ static createRange<T>(init?: RangeOfProperties<T>): Result<RangeOf<T>>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  init | [RangeOfProperties](./ts-extras.experimental.rangeofproperties.md)<!-- -->&lt;T&gt; | _(Optional)_ [Range initializer](./ts-extras.experimental.rangeofproperties.md)<!-- -->. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+init
+
+
+</td><td>
+
+[RangeOfProperties](./ts-extras.experimental.rangeofproperties.md)<!-- -->&lt;T&gt;
+
+
+</td><td>
+
+_(Optional)_ [Range initializer](./ts-extras.experimental.rangeofproperties.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[RangeOf](./ts-extras.experimental.rangeof.md)<!-- -->&lt;T&gt;&gt;

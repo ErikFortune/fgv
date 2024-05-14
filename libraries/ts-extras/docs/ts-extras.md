@@ -6,11 +6,60 @@
 
 ## Namespaces
 
-|  Namespace | Description |
-|  --- | --- |
-|  [Converters](./ts-extras.converters.md) |  |
-|  [Csv](./ts-extras.csv.md) |  |
-|  [Experimental](./ts-extras.experimental.md) |  |
-|  [Hash](./ts-extras.hash.md) |  |
-|  [RecordJar](./ts-extras.recordjar.md) |  |
+<table><thead><tr><th>
 
+Namespace
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Converters](./ts-extras.converters.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Csv](./ts-extras.csv.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Experimental](./ts-extras.experimental.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Hash](./ts-extras.hash.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[RecordJar](./ts-extras.recordjar.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

@@ -6,16 +6,85 @@
 
 ## Functions
 
-|  Function | Description |
-|  --- | --- |
-|  [extendedArrayOf(label, converter, onError)](./ts-extras.converters.extendedarrayof.md) | **_(BETA)_** A helper function to create a <code>Converter</code> which converts <code>unknown</code> to [ExtendedArray&lt;T&gt;](./ts-extras.experimental.extendedarray.md)<!-- -->. |
-|  [rangeOf(converter)](./ts-extras.converters.rangeof.md) | A helper wrapper to construct a <code>Converter</code> which converts to [RangeOf&lt;T&gt;](./ts-extras.experimental.rangeof.md) where <code>&lt;T&gt;</code> is some comparable type. |
-|  [rangeTypeOf(converter, constructor)](./ts-extras.converters.rangetypeof.md) | A helper wrapper to construct a <code>Converter</code> which converts to an arbitrary strongly-typed range of some comparable type. |
-|  [templateString(defaultContext)](./ts-extras.converters.templatestring.md) | Helper function to create a <code>StringConverter</code> which converts <code>unknown</code> to <code>string</code>, applying template conversions supplied at construction time or at runtime as context. |
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[extendedArrayOf(label, converter, onError)](./ts-extras.converters.extendedarrayof.md)
+
+
+</td><td>
+
+**_(BETA)_** A helper function to create a `Converter` which converts `unknown` to [ExtendedArray&lt;T&gt;](./ts-extras.experimental.extendedarray.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[rangeOf(converter)](./ts-extras.converters.rangeof.md)
+
+
+</td><td>
+
+A helper wrapper to construct a `Converter` which converts to [RangeOf&lt;T&gt;](./ts-extras.experimental.rangeof.md) where `<T>` is some comparable type.
+
+
+</td></tr>
+<tr><td>
+
+[rangeTypeOf(converter, constructor)](./ts-extras.converters.rangetypeof.md)
+
+
+</td><td>
+
+A helper wrapper to construct a `Converter` which converts to an arbitrary strongly-typed range of some comparable type.
+
+
+</td></tr>
+<tr><td>
+
+[templateString(defaultContext)](./ts-extras.converters.templatestring.md)
+
+
+</td><td>
+
+Helper function to create a `StringConverter` which converts `unknown` to `string`<!-- -->, applying template conversions supplied at construction time or at runtime as context.
+
+
+</td></tr>
+</tbody></table>
 
 ## Variables
 
-|  Variable | Description |
-|  --- | --- |
-|  [isoDate](./ts-extras.converters.isodate.md) | A <code>Converter</code> which converts an iso formatted string, a number or a <code>Date</code> object to a <code>Date</code> object. |
+<table><thead><tr><th>
 
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[isoDate](./ts-extras.converters.isodate.md)
+
+
+</td><td>
+
+A `Converter` which converts an iso formatted string, a number or a `Date` object to a `Date` object.
+
+
+</td></tr>
+</tbody></table>

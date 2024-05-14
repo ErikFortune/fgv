@@ -15,26 +15,223 @@ export declare class RangeOf<T> implements RangeOfProperties<T>
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(min, max)](./ts-extras.experimental.rangeof._constructor_.md) |  | Creates a new [RangeOf&lt;T&gt;](./ts-extras.experimental.rangeof.md)<!-- -->. |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(min, max)](./ts-extras.experimental.rangeof._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a new [RangeOf&lt;T&gt;](./ts-extras.experimental.rangeof.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [max?](./ts-extras.experimental.rangeof.max.md) | <code>readonly</code> | T | _(Optional)_ Maximum extent of the range. |
-|  [min?](./ts-extras.experimental.rangeof.min.md) | <code>readonly</code> | T | _(Optional)_ Minimum extent of the range. |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[max?](./ts-extras.experimental.rangeof.max.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+_(Optional)_ Maximum extent of the range.
+
+
+</td></tr>
+<tr><td>
+
+[min?](./ts-extras.experimental.rangeof.min.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+_(Optional)_ Minimum extent of the range.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [check(t)](./ts-extras.experimental.rangeof.check.md) |  | Checks if a supplied value is within this range. |
-|  [createRange(init)](./ts-extras.experimental.rangeof.createrange.md) | <code>static</code> | Static constructor for a [RangeOf&lt;T&gt;](./ts-extras.experimental.rangeof.md)<!-- -->. |
-|  [findTransition(t)](./ts-extras.experimental.rangeof.findtransition.md) |  | Finds the transition value that would bring a supplied value <code>t</code> into range. |
-|  [format(format, formats)](./ts-extras.experimental.rangeof.format.md) |  | Formats this range using the supplied format function. |
-|  [includes(t)](./ts-extras.experimental.rangeof.includes.md) |  | Determines if a supplied value is within this range. |
-|  [propertiesToString(range, formats, emptyValue)](./ts-extras.experimental.rangeof.propertiestostring.md) | <code>static</code> | Gets a formatted description of a [RangeOfProperties&lt;T&gt;](./ts-extras.experimental.rangeofproperties.md) given an optional set of formats and 'empty' value to use. |
-|  [toFormattedProperties(format)](./ts-extras.experimental.rangeof.toformattedproperties.md) |  | Formats the minimum and maximum values of this range. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[check(t)](./ts-extras.experimental.rangeof.check.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Checks if a supplied value is within this range.
+
+
+</td></tr>
+<tr><td>
+
+[createRange(init)](./ts-extras.experimental.rangeof.createrange.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Static constructor for a [RangeOf&lt;T&gt;](./ts-extras.experimental.rangeof.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[findTransition(t)](./ts-extras.experimental.rangeof.findtransition.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Finds the transition value that would bring a supplied value `t` into range.
+
+
+</td></tr>
+<tr><td>
+
+[format(format, formats)](./ts-extras.experimental.rangeof.format.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Formats this range using the supplied format function.
+
+
+</td></tr>
+<tr><td>
+
+[includes(t)](./ts-extras.experimental.rangeof.includes.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Determines if a supplied value is within this range.
+
+
+</td></tr>
+<tr><td>
+
+[propertiesToString(range, formats, emptyValue)](./ts-extras.experimental.rangeof.propertiestostring.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Gets a formatted description of a [RangeOfProperties&lt;T&gt;](./ts-extras.experimental.rangeofproperties.md) given an optional set of formats and 'empty' value to use.
+
+
+</td></tr>
+<tr><td>
+
+[toFormattedProperties(format)](./ts-extras.experimental.rangeof.toformattedproperties.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Formats the minimum and maximum values of this range.
+
+
+</td></tr>
+</tbody></table>

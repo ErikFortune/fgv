@@ -14,10 +14,39 @@ check(t: T): 'less' | 'included' | 'greater';
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  t | T | The value to be tested. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+t
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+The value to be tested.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 'less' \| 'included' \| 'greater'

@@ -17,8 +17,52 @@ constructor(itemDescription: string, ...items: T[]);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  itemDescription | string | Brief description of the type of each item in this array. |
-|  items | T\[\] | The initial contents of the array. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+itemDescription
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+Brief description of the type of each item in this array.
+
+
+</td></tr>
+<tr><td>
+
+items
+
+
+</td><td>
+
+T\[\]
+
+
+</td><td>
+
+The initial contents of the array.
+
+
+</td></tr>
+</tbody></table>

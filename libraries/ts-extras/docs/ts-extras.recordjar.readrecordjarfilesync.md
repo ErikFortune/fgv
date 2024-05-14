@@ -14,11 +14,55 @@ export declare function readRecordJarFileSync(srcPath: string, options?: JarReco
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  srcPath | string | Source path from which the file is read. |
-|  options | [JarRecordParserOptions](./ts-extras.recordjar.jarrecordparseroptions.md) | _(Optional)_ Optional parser configuration |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+srcPath
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+Source path from which the file is read.
+
+
+</td></tr>
+<tr><td>
+
+options
+
+
+</td><td>
+
+[JarRecordParserOptions](./ts-extras.recordjar.jarrecordparseroptions.md)
+
+
+</td><td>
+
+_(Optional)_ Optional parser configuration
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[JarRecord](./ts-extras.recordjar.jarrecord.md)<!-- -->\[\]&gt;
