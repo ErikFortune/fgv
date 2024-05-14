@@ -13,12 +13,69 @@ export interface Logger
 
 ## Methods
 
-|  Method | Description |
-|  --- | --- |
-|  [detail(message, parameters)](./ts-utils.logging.logger.detail.md) |  |
-|  [error(message, parameters)](./ts-utils.logging.logger.error.md) |  |
-|  [info(message, parameters)](./ts-utils.logging.logger.info.md) |  |
-|  [log(message, parameters)](./ts-utils.logging.logger.log.md) |  |
-|  [warn(message, parameters)](./ts-utils.logging.logger.warn.md) |  |
-|  [warnAndFail(message, parameters)](./ts-utils.logging.logger.warnandfail.md) |  |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[detail(message, parameters)](./ts-utils.logging.logger.detail.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[error(message, parameters)](./ts-utils.logging.logger.error.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[info(message, parameters)](./ts-utils.logging.logger.info.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[log(message, parameters)](./ts-utils.logging.logger.log.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[warn(message, parameters)](./ts-utils.logging.logger.warn.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[warnAndFail(message, parameters)](./ts-utils.logging.logger.warnandfail.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

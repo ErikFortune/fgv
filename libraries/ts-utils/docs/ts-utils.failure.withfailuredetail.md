@@ -14,10 +14,39 @@ withFailureDetail<TD>(detail: TD): DetailedResult<T, TD>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  detail | TD | The detail to be added if this operation failed. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+detail
+
+
+</td><td>
+
+TD
+
+
+</td><td>
+
+The detail to be added if this operation failed.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;T, TD&gt;

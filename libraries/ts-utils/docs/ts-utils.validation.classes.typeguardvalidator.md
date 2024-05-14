@@ -15,15 +15,120 @@ export declare class TypeGuardValidator<T, TC = unknown> extends ValidatorBase<T
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(params)](./ts-utils.validation.classes.typeguardvalidator._constructor_.md) |  | Constructs a new [TypeGuardValidator](./ts-utils.validation.classes.typeguardvalidator.md)<!-- -->. |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(params)](./ts-utils.validation.classes.typeguardvalidator._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [TypeGuardValidator](./ts-utils.validation.classes.typeguardvalidator.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [\_guard](./ts-utils.validation.classes.typeguardvalidator._guard.md) | <p><code>protected</code></p><p><code>readonly</code></p> | [TypeGuardWithContext](./ts-utils.validation.typeguardwithcontext.md)<!-- -->&lt;T, TC&gt; |  |
-|  [description](./ts-utils.validation.classes.typeguardvalidator.description.md) | <code>readonly</code> | string |  |
-|  [options](./ts-utils.validation.classes.typeguardvalidator.options.md) | <code>readonly</code> | [ValidatorOptions](./ts-utils.validation.validatoroptions.md)<!-- -->&lt;TC&gt; | [Options](./ts-utils.validation.validatoroptions.md) which apply to this validator. |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[\_guard](./ts-utils.validation.classes.typeguardvalidator._guard.md)
+
+
+</td><td>
+
+`protected`
+
+`readonly`
+
+
+</td><td>
+
+[TypeGuardWithContext](./ts-utils.validation.typeguardwithcontext.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[description](./ts-utils.validation.classes.typeguardvalidator.description.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[options](./ts-utils.validation.classes.typeguardvalidator.options.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ValidatorOptions](./ts-utils.validation.validatoroptions.md)<!-- -->&lt;TC&gt;
+
+
+</td><td>
+
+[Options](./ts-utils.validation.validatoroptions.md) which apply to this validator.
+
+
+</td></tr>
+</tbody></table>

@@ -14,10 +14,39 @@ onFailure(cb: DetailedFailureContinuation<T, TD>): DetailedResult<T, TD>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  cb | [DetailedFailureContinuation](./ts-utils.detailedfailurecontinuation.md)<!-- -->&lt;T, TD&gt; | The [failure callback](./ts-utils.detailedfailurecontinuation.md) to be invoked. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+cb
+
+
+</td><td>
+
+[DetailedFailureContinuation](./ts-utils.detailedfailurecontinuation.md)<!-- -->&lt;T, TD&gt;
+
+
+</td><td>
+
+The [failure callback](./ts-utils.detailedfailurecontinuation.md) to be invoked.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;T, TD&gt;

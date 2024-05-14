@@ -15,13 +15,70 @@ export declare class StringValidator<T extends string = string, TC = unknown> ex
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(params)](./ts-utils.validation.classes.stringvalidator._constructor_.md) |  | Constructs a new [StringValidator](./ts-utils.validation.classes.stringvalidator.md)<!-- -->. |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(params)](./ts-utils.validation.classes.stringvalidator._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [StringValidator](./ts-utils.validation.classes.stringvalidator.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [validateString(from)](./ts-utils.validation.classes.stringvalidator.validatestring.md) | <code>static</code> | Static method which validates that a supplied <code>unknown</code> value is a <code>string</code>. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[validateString(from)](./ts-utils.validation.classes.stringvalidator.validatestring.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Static method which validates that a supplied `unknown` value is a `string`<!-- -->.
+
+
+</td></tr>
+</tbody></table>

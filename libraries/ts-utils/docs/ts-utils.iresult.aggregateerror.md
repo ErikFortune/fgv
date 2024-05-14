@@ -14,10 +14,39 @@ aggregateError(errors: IMessageAggregator): this;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  errors | [IMessageAggregator](./ts-utils.imessageaggregator.md) | [Error aggregator](./ts-utils.imessageaggregator.md) in which errors will be aggregated. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+errors
+
+
+</td><td>
+
+[IMessageAggregator](./ts-utils.imessageaggregator.md)
+
+
+</td><td>
+
+[Error aggregator](./ts-utils.imessageaggregator.md) in which errors will be aggregated.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 this

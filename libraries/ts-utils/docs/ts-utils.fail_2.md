@@ -14,10 +14,39 @@ export declare function fail<T>(message: string): Failure<T>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  message | string | Error message to be returned. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+message
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+Error message to be returned.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Failure](./ts-utils.failure.md)<!-- -->&lt;T&gt;

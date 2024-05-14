@@ -14,7 +14,46 @@ export interface ConstraintOptions
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [description](./ts-utils.conversion.constraintoptions.description.md) | <code>readonly</code> | string | Optional description for error messages when constraint function returns false. |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[description](./ts-utils.conversion.constraintoptions.description.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+Optional description for error messages when constraint function returns false.
+
+
+</td></tr>
+</tbody></table>

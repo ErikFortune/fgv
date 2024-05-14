@@ -15,13 +15,70 @@ export declare class NumberValidator<T extends number = number, TC = unknown> ex
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(params)](./ts-utils.validation.classes.numbervalidator._constructor_.md) |  | Constructs a new [NumberValidator](./ts-utils.validation.classes.numbervalidator.md)<!-- -->. |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(params)](./ts-utils.validation.classes.numbervalidator._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [NumberValidator](./ts-utils.validation.classes.numbervalidator.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [validateNumber(from)](./ts-utils.validation.classes.numbervalidator.validatenumber.md) | <code>static</code> | Static method which validates that a supplied <code>unknown</code> value is a <code>number</code>. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[validateNumber(from)](./ts-utils.validation.classes.numbervalidator.validatenumber.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Static method which validates that a supplied `unknown` value is a `number`<!-- -->.
+
+
+</td></tr>
+</tbody></table>

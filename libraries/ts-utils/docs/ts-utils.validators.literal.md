@@ -14,10 +14,39 @@ export declare function literal<T extends string | number | boolean | symbol | n
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  value | T | the literal value to be validated |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+value
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+the literal value to be validated
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Validator](./ts-utils.validator.md)<!-- -->&lt;T&gt;

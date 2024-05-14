@@ -14,11 +14,55 @@ export declare function recordToMap<TS, TD, TK extends string = string>(src: Rec
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  src | Record&lt;TK, TS&gt; | The <code>Record</code> to be converted. |
-|  factory | KeyedThingFactory&lt;TS, TD, TK&gt; | The factory method used to convert elements. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+src
+
+
+</td><td>
+
+Record&lt;TK, TS&gt;
+
+
+</td><td>
+
+The `Record` to be converted.
+
+
+</td></tr>
+<tr><td>
+
+factory
+
+
+</td><td>
+
+KeyedThingFactory&lt;TS, TD, TK&gt;
+
+
+</td><td>
+
+The factory method used to convert elements.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;Map&lt;TK, TD&gt;&gt;

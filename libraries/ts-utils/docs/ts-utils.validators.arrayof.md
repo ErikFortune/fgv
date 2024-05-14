@@ -14,11 +14,55 @@ export declare function arrayOf<T, TC>(validateElement: Validator<T, TC>, params
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  validateElement | [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt; | A [validator](./ts-utils.validation.validator.md) which validates each element. |
-|  params | Omit&lt;[ArrayValidatorConstructorParams](./ts-utils.validation.classes.arrayvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;, 'validateElement'&gt; | _(Optional)_ |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+validateElement
+
+
+</td><td>
+
+[Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+A [validator](./ts-utils.validation.validator.md) which validates each element.
+
+
+</td></tr>
+<tr><td>
+
+params
+
+
+</td><td>
+
+Omit&lt;[ArrayValidatorConstructorParams](./ts-utils.validation.classes.arrayvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;, 'validateElement'&gt;
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [ArrayValidator](./ts-utils.validation.classes.arrayvalidator.md)<!-- -->&lt;T, TC&gt;

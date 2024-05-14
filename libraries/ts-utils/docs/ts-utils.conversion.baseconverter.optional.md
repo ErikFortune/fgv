@@ -14,10 +14,39 @@ optional(onError?: OnError): Converter<T | undefined, TC>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  onError | [OnError](./ts-utils.converters.onerror.md) | _(Optional)_ Specifies handling of values that cannot be converted (default <code>ignoreErrors</code>). |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+onError
+
+
+</td><td>
+
+[OnError](./ts-utils.converters.onerror.md)
+
+
+</td><td>
+
+_(Optional)_ Specifies handling of values that cannot be converted (default `ignoreErrors`<!-- -->).
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T \| undefined, TC&gt;

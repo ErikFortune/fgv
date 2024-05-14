@@ -14,8 +14,52 @@ constructor(fields: FieldConverters<T, TC>, options?: ObjectConverterOptions<T>)
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  fields | [FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T, TC&gt; | A [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) containing a [Converter](./ts-utils.converter.md) for each field |
-|  options | [ObjectConverterOptions](./ts-utils.conversion.objectconverteroptions.md)<!-- -->&lt;T&gt; | _(Optional)_ An optional |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+fields
+
+
+</td><td>
+
+[FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+A [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) containing a [Converter](./ts-utils.converter.md) for each field
+
+
+</td></tr>
+<tr><td>
+
+options
+
+
+</td><td>
+
+[ObjectConverterOptions](./ts-utils.conversion.objectconverteroptions.md)<!-- -->&lt;T&gt;
+
+
+</td><td>
+
+_(Optional)_ An optional
+
+
+</td></tr>
+</tbody></table>

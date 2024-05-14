@@ -14,10 +14,39 @@ addMessages(messages: string[] | undefined): this;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  messages | string\[\] \| undefined | the messages to add. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+messages
+
+
+</td><td>
+
+string\[\] \| undefined
+
+
+</td><td>
+
+the messages to add.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 this

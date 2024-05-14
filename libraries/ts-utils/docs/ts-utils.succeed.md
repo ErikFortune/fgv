@@ -14,10 +14,39 @@ export declare function succeed<T>(value: T): Success<T>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  value | T | The successful result value to be returned |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+value
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+The successful result value to be returned
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Success](./ts-utils.success.md)<!-- -->&lt;T&gt;

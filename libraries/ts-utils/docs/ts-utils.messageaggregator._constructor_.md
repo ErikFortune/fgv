@@ -14,7 +14,36 @@ constructor(errors?: string[]);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  errors | string\[\] | _(Optional)_ optional array of errors to be included in the aggregation. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+errors
+
+
+</td><td>
+
+string\[\]
+
+
+</td><td>
+
+_(Optional)_ optional array of errors to be included in the aggregation.
+
+
+</td></tr>
+</tbody></table>

@@ -14,16 +14,115 @@ export interface IMessageAggregator
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [hasMessages](./ts-utils.imessageaggregator.hasmessages.md) | <code>readonly</code> | boolean | Indicates whether any messages have been aggregated. |
-|  [messages](./ts-utils.imessageaggregator.messages.md) | <code>readonly</code> | ReadonlyArray&lt;string&gt; | The aggregated messages. |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[hasMessages](./ts-utils.imessageaggregator.hasmessages.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+Indicates whether any messages have been aggregated.
+
+
+</td></tr>
+<tr><td>
+
+[messages](./ts-utils.imessageaggregator.messages.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;string&gt;
+
+
+</td><td>
+
+The aggregated messages.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Description |
-|  --- | --- |
-|  [addMessage(message)](./ts-utils.imessageaggregator.addmessage.md) | Adds a message to the aggregator, if defined. |
-|  [addMessages(messages)](./ts-utils.imessageaggregator.addmessages.md) | Adds multiple messages to the aggregator. |
-|  [toString(separator)](./ts-utils.imessageaggregator.tostring.md) | Returns all messages as a single string joined using the optionally-supplied <code>separator</code>, or newline if no separator is specified. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[addMessage(message)](./ts-utils.imessageaggregator.addmessage.md)
+
+
+</td><td>
+
+Adds a message to the aggregator, if defined.
+
+
+</td></tr>
+<tr><td>
+
+[addMessages(messages)](./ts-utils.imessageaggregator.addmessages.md)
+
+
+</td><td>
+
+Adds multiple messages to the aggregator.
+
+
+</td></tr>
+<tr><td>
+
+[toString(separator)](./ts-utils.imessageaggregator.tostring.md)
+
+
+</td><td>
+
+Returns all messages as a single string joined using the optionally-supplied `separator`<!-- -->, or newline if no separator is specified.
+
+
+</td></tr>
+</tbody></table>

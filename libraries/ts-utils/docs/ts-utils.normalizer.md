@@ -14,10 +14,76 @@ export declare class Normalizer
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [\_normalizeArray(from)](./ts-utils.normalizer._normalizearray.md) | <code>protected</code> |  |
-|  [normalize(from)](./ts-utils.normalizer.normalize.md) |  | Normalizes the supplied value |
-|  [normalizeEntries(entries)](./ts-utils.normalizer.normalizeentries.md) |  | Normalizes an array of object property entries (e.g. as returned by <code>Object.entries()</code>). |
-|  [normalizeLiteral(from)](./ts-utils.normalizer.normalizeliteral.md) |  | Normalizes the supplied literal value |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[\_normalizeArray(from)](./ts-utils.normalizer._normalizearray.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[normalize(from)](./ts-utils.normalizer.normalize.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Normalizes the supplied value
+
+
+</td></tr>
+<tr><td>
+
+[normalizeEntries(entries)](./ts-utils.normalizer.normalizeentries.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Normalizes an array of object property entries (e.g. as returned by `Object.entries()`<!-- -->).
+
+
+</td></tr>
+<tr><td>
+
+[normalizeLiteral(from)](./ts-utils.normalizer.normalizeliteral.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Normalizes the supplied literal value
+
+
+</td></tr>
+</tbody></table>

@@ -14,7 +14,36 @@ constructor(logLevel?: LogLevel);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  logLevel | [LogLevel](./ts-utils.logging.loglevel.md) | _(Optional)_ |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+logLevel
+
+
+</td><td>
+
+[LogLevel](./ts-utils.logging.loglevel.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+</tbody></table>

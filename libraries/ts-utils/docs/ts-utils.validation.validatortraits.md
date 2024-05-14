@@ -15,15 +15,122 @@ export declare class ValidatorTraits implements ValidatorTraitValues
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(init, base)](./ts-utils.validation.validatortraits._constructor_.md) |  | Constructs a new [ValidatorTraits](./ts-utils.validation.validatortraits.md) optionally initialized with the supplied base and initial values. |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(init, base)](./ts-utils.validation.validatortraits._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [ValidatorTraits](./ts-utils.validation.validatortraits.md) optionally initialized with the supplied base and initial values.
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [brand?](./ts-utils.validation.validatortraits.brand.md) | <code>readonly</code> | string | _(Optional)_ If present, indicates that the result will be branded with the corresponding brand. |
-|  [constraints](./ts-utils.validation.validatortraits.constraints.md) | <code>readonly</code> | [ConstraintTrait](./ts-utils.validation.constrainttrait.md)<!-- -->\[\] | Zero or more additional [ConstraintTrait](./ts-utils.validation.constrainttrait.md)<!-- -->s describing additional constraints applied by this [Validator](./ts-utils.validation.validator.md)<!-- -->. |
-|  [isOptional](./ts-utils.validation.validatortraits.isoptional.md) | <code>readonly</code> | boolean | Indicates whether the validator accepts <code>undefined</code> as a valid value. |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[brand?](./ts-utils.validation.validatortraits.brand.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ If present, indicates that the result will be branded with the corresponding brand.
+
+
+</td></tr>
+<tr><td>
+
+[constraints](./ts-utils.validation.validatortraits.constraints.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ConstraintTrait](./ts-utils.validation.constrainttrait.md)<!-- -->\[\]
+
+
+</td><td>
+
+Zero or more additional [ConstraintTrait](./ts-utils.validation.constrainttrait.md)<!-- -->s describing additional constraints applied by this [Validator](./ts-utils.validation.validator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[isOptional](./ts-utils.validation.validatortraits.isoptional.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+Indicates whether the validator accepts `undefined` as a valid value.
+
+
+</td></tr>
+</tbody></table>

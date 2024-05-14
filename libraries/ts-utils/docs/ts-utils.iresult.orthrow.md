@@ -14,10 +14,39 @@ orThrow(logger?: IResultLogger): T;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  logger | [IResultLogger](./ts-utils.iresultlogger.md) | _(Optional)_ An optional [logger](./ts-utils.iresultlogger.md) to which the error will also be reported. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+logger
+
+
+</td><td>
+
+[IResultLogger](./ts-utils.iresultlogger.md)
+
+
+</td><td>
+
+_(Optional)_ An optional [logger](./ts-utils.iresultlogger.md) to which the error will also be reported.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 T

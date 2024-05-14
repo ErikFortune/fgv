@@ -6,38 +6,201 @@
 
 ## Classes
 
-|  Class | Description |
-|  --- | --- |
-|  [ValidatorTraits](./ts-utils.validation.validatortraits.md) | Generic implementation of [ValidatorTraitValues](./ts-utils.validation.validatortraitvalues.md)<!-- -->. |
+<table><thead><tr><th>
+
+Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ValidatorTraits](./ts-utils.validation.validatortraits.md)
+
+
+</td><td>
+
+Generic implementation of [ValidatorTraitValues](./ts-utils.validation.validatortraitvalues.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Interfaces
 
-|  Interface | Description |
-|  --- | --- |
-|  [FunctionConstraintTrait](./ts-utils.validation.functionconstrainttrait.md) | A [ConstraintTrait](./ts-utils.validation.constrainttrait.md) indicating that a [Constraint&lt;T&gt;](./ts-utils.validation.constraint.md) function provides an additional constraint implementation. |
-|  [Validator](./ts-utils.validation.validator.md) | In-place validation that a supplied unknown matches some required characteristics (type, values, etc). |
-|  [ValidatorOptions](./ts-utils.validation.validatoroptions.md) | Options that apply to any [Validator](./ts-utils.validation.validator.md)<!-- -->. |
-|  [ValidatorTraitValues](./ts-utils.validation.validatortraitvalues.md) | Interface describing the supported validator traits. |
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[FunctionConstraintTrait](./ts-utils.validation.functionconstrainttrait.md)
+
+
+</td><td>
+
+A [ConstraintTrait](./ts-utils.validation.constrainttrait.md) indicating that a [Constraint&lt;T&gt;](./ts-utils.validation.constraint.md) function provides an additional constraint implementation.
+
+
+</td></tr>
+<tr><td>
+
+[Validator](./ts-utils.validation.validator.md)
+
+
+</td><td>
+
+In-place validation that a supplied unknown matches some required characteristics (type, values, etc).
+
+
+</td></tr>
+<tr><td>
+
+[ValidatorOptions](./ts-utils.validation.validatoroptions.md)
+
+
+</td><td>
+
+Options that apply to any [Validator](./ts-utils.validation.validator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ValidatorTraitValues](./ts-utils.validation.validatortraitvalues.md)
+
+
+</td><td>
+
+Interface describing the supported validator traits.
+
+
+</td></tr>
+</tbody></table>
 
 ## Namespaces
 
-|  Namespace | Description |
-|  --- | --- |
-|  [Base](./ts-utils.validation.base.md) |  |
-|  [Classes](./ts-utils.validation.classes.md) |  |
-|  [Validators](./ts-utils.validation.validators.md) |  |
+<table><thead><tr><th>
+
+Namespace
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Base](./ts-utils.validation.base.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Classes](./ts-utils.validation.classes.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Validators](./ts-utils.validation.validators.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
 
 ## Variables
 
-|  Variable | Description |
-|  --- | --- |
-|  [defaultValidatorTraits](./ts-utils.validation.defaultvalidatortraits.md) | Default [validation traits](./ts-utils.validation.validatortraitvalues.md)<!-- -->. |
+<table><thead><tr><th>
+
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[defaultValidatorTraits](./ts-utils.validation.defaultvalidatortraits.md)
+
+
+</td><td>
+
+Default [validation traits](./ts-utils.validation.validatortraitvalues.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Type Aliases
 
-|  Type Alias | Description |
-|  --- | --- |
-|  [Constraint](./ts-utils.validation.constraint.md) | A [Constraint&lt;T&gt;](./ts-utils.validation.constraint.md) function returns <code>true</code> if the supplied value meets the constraint. Can return [Failure](./ts-utils.failure.md) with an error message or simply return <code>false</code> for a default message. |
-|  [ConstraintTrait](./ts-utils.validation.constrainttrait.md) | Union of all supported constraint traits. |
-|  [TypeGuardWithContext](./ts-utils.validation.typeguardwithcontext.md) | A type guard function which validates a specific type, with an optional context that can be used to shape the validation. |
+<table><thead><tr><th>
 
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Constraint](./ts-utils.validation.constraint.md)
+
+
+</td><td>
+
+A [Constraint&lt;T&gt;](./ts-utils.validation.constraint.md) function returns `true` if the supplied value meets the constraint. Can return [Failure](./ts-utils.failure.md) with an error message or simply return `false` for a default message.
+
+
+</td></tr>
+<tr><td>
+
+[ConstraintTrait](./ts-utils.validation.constrainttrait.md)
+
+
+</td><td>
+
+Union of all supported constraint traits.
+
+
+</td></tr>
+<tr><td>
+
+[TypeGuardWithContext](./ts-utils.validation.typeguardwithcontext.md)
+
+
+</td><td>
+
+A type guard function which validates a specific type, with an optional context that can be used to shape the validation.
+
+
+</td></tr>
+</tbody></table>

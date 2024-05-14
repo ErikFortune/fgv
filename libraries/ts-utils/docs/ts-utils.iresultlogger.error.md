@@ -14,10 +14,39 @@ error(message: string): void;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  message | string | The message to be logged. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+message
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+The message to be logged.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 void

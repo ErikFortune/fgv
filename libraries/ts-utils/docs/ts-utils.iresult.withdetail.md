@@ -14,11 +14,55 @@ withDetail<TD>(detail: TD, successDetail?: TD): DetailedResult<T, TD>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  detail | TD | The default detail to be added to the new [DetailedResult](./ts-utils.detailedresult.md)<!-- -->. |
-|  successDetail | TD | _(Optional)_ An optional detail to be added if this result was successful. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+detail
+
+
+</td><td>
+
+TD
+
+
+</td><td>
+
+The default detail to be added to the new [DetailedResult](./ts-utils.detailedresult.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+successDetail
+
+
+</td><td>
+
+TD
+
+
+</td><td>
+
+_(Optional)_ An optional detail to be added if this result was successful.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;T, TD&gt;

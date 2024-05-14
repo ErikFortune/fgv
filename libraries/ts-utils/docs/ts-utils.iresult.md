@@ -18,24 +18,195 @@ This common contract enables commingled discriminated usage of [Success&lt;T&gt;
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [success](./ts-utils.iresult.success.md) | <code>readonly</code> | boolean | Indicates whether the operation was successful. |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[success](./ts-utils.iresult.success.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+Indicates whether the operation was successful.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Description |
-|  --- | --- |
-|  [aggregateError(errors)](./ts-utils.iresult.aggregateerror.md) | Propagates interior result, appending any error message to the supplied errors array. |
-|  [getValueOrDefault(dflt)](./ts-utils.iresult.getvalueordefault.md) | Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or a default value if the corresponding operation failed. |
-|  [getValueOrThrow(logger)](./ts-utils.iresult.getvalueorthrow.md) | <p>Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or throws the error message if the corresponding operation failed.</p><p>Note that <code>getValueOrThrow</code> is being superseded by <code>orThrow</code> and will eventually be deprecated. Please use orDefault instead.</p> |
-|  [isFailure()](./ts-utils.iresult.isfailure.md) | Indicates whether this operation failed. Functions as a type guard for [Failure&lt;T&gt;](./ts-utils.failure.md)<!-- -->. |
-|  [isSuccess()](./ts-utils.iresult.issuccess.md) | Indicates whether this operation was successful. Functions as a type guard for [Success&lt;T&gt;](./ts-utils.success.md)<!-- -->. |
-|  [onFailure(cb)](./ts-utils.iresult.onfailure.md) | Calls a supplied [failed continuation](./ts-utils.failurecontinuation.md) if the operation failed. |
-|  [onSuccess(cb)](./ts-utils.iresult.onsuccess.md) | Calls a supplied [success continuation](./ts-utils.successcontinuation.md) if the operation was a success. |
-|  [orDefault(dflt)](./ts-utils.iresult.ordefault.md) | Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or a default value if the corresponding operation failed. |
-|  [orDefault()](./ts-utils.iresult.ordefault_1.md) | Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or a default value if the corresponding operation failed. |
-|  [orThrow(logger)](./ts-utils.iresult.orthrow.md) | Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or throws the error message if the corresponding operation failed. |
-|  [withDetail(detail, successDetail)](./ts-utils.iresult.withdetail.md) | Converts a [IResult&lt;T&gt;](./ts-utils.iresult.md) to a [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->, adding supplied details. |
-|  [withFailureDetail(detail)](./ts-utils.iresult.withfailuredetail.md) | Converts a [IResult&lt;T&gt;](./ts-utils.iresult.md) to a [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->, adding a supplied detail if the operation failed. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[aggregateError(errors)](./ts-utils.iresult.aggregateerror.md)
+
+
+</td><td>
+
+Propagates interior result, appending any error message to the supplied errors array.
+
+
+</td></tr>
+<tr><td>
+
+[getValueOrDefault(dflt)](./ts-utils.iresult.getvalueordefault.md)
+
+
+</td><td>
+
+Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or a default value if the corresponding operation failed.
+
+
+</td></tr>
+<tr><td>
+
+[getValueOrThrow(logger)](./ts-utils.iresult.getvalueorthrow.md)
+
+
+</td><td>
+
+Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or throws the error message if the corresponding operation failed.
+
+Note that `getValueOrThrow` is being superseded by `orThrow` and will eventually be deprecated. Please use orDefault instead.
+
+
+</td></tr>
+<tr><td>
+
+[isFailure()](./ts-utils.iresult.isfailure.md)
+
+
+</td><td>
+
+Indicates whether this operation failed. Functions as a type guard for [Failure&lt;T&gt;](./ts-utils.failure.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[isSuccess()](./ts-utils.iresult.issuccess.md)
+
+
+</td><td>
+
+Indicates whether this operation was successful. Functions as a type guard for [Success&lt;T&gt;](./ts-utils.success.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[onFailure(cb)](./ts-utils.iresult.onfailure.md)
+
+
+</td><td>
+
+Calls a supplied [failed continuation](./ts-utils.failurecontinuation.md) if the operation failed.
+
+
+</td></tr>
+<tr><td>
+
+[onSuccess(cb)](./ts-utils.iresult.onsuccess.md)
+
+
+</td><td>
+
+Calls a supplied [success continuation](./ts-utils.successcontinuation.md) if the operation was a success.
+
+
+</td></tr>
+<tr><td>
+
+[orDefault(dflt)](./ts-utils.iresult.ordefault.md)
+
+
+</td><td>
+
+Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or a default value if the corresponding operation failed.
+
+
+</td></tr>
+<tr><td>
+
+[orDefault()](./ts-utils.iresult.ordefault_1.md)
+
+
+</td><td>
+
+Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or a default value if the corresponding operation failed.
+
+
+</td></tr>
+<tr><td>
+
+[orThrow(logger)](./ts-utils.iresult.orthrow.md)
+
+
+</td><td>
+
+Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or throws the error message if the corresponding operation failed.
+
+
+</td></tr>
+<tr><td>
+
+[withDetail(detail, successDetail)](./ts-utils.iresult.withdetail.md)
+
+
+</td><td>
+
+Converts a [IResult&lt;T&gt;](./ts-utils.iresult.md) to a [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->, adding supplied details.
+
+
+</td></tr>
+<tr><td>
+
+[withFailureDetail(detail)](./ts-utils.iresult.withfailuredetail.md)
+
+
+</td><td>
+
+Converts a [IResult&lt;T&gt;](./ts-utils.iresult.md) to a [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->, adding a supplied detail if the operation failed.
+
+
+</td></tr>
+</tbody></table>

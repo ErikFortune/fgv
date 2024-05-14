@@ -14,7 +14,36 @@ constructor(message: string);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  message | string | Error message to be reported. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+message
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+Error message to be reported.
+
+
+</td></tr>
+</tbody></table>

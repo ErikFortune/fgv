@@ -14,10 +14,39 @@ addMessage(message: string | undefined): this;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  message | string \| undefined | The message to add - pass <code>undefined</code> or the empty string to continue without adding a message. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+message
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+The message to add - pass `undefined` or the empty string to continue without adding a message.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 this

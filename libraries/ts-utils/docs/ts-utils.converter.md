@@ -15,26 +15,225 @@ export interface Converter<T, TC = undefined> extends ConverterTraits
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [brand?](./ts-utils.converter.brand.md) | <code>readonly</code> | string | _(Optional)_ Returns the brand for a branded type. |
-|  [isOptional](./ts-utils.converter.isoptional.md) | <code>readonly</code> | boolean | Indicates whether this element is explicitly optional. |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[brand?](./ts-utils.converter.brand.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ Returns the brand for a branded type.
+
+
+</td></tr>
+<tr><td>
+
+[isOptional](./ts-utils.converter.isoptional.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+Indicates whether this element is explicitly optional.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Description |
-|  --- | --- |
-|  [convert(from, context)](./ts-utils.converter.convert.md) | Converts from <code>unknown</code> to <code>&lt;T&gt;</code>. For objects and arrays, is guaranteed to return a new entity, with any unrecognized properties removed. |
-|  [convertOptional(from, context, onError)](./ts-utils.converter.convertoptional.md) | Converts from <code>unknown</code> to <code>&lt;T&gt;</code> or <code>undefined</code>, as appropriate. |
-|  [map(mapper)](./ts-utils.converter.map.md) | Creates a [Converter](./ts-utils.converter.md) which applies a (possibly) mapping conversion to the converted value of this [Converter](./ts-utils.converter.md)<!-- -->. |
-|  [mapConvert(mapConverter)](./ts-utils.converter.mapconvert.md) | Creates a [Converter](./ts-utils.converter.md) which applies an additional supplied converter to the result of this converter. |
-|  [mapConvertItems(mapConverter)](./ts-utils.converter.mapconvertitems.md) | Creates a [Converter](./ts-utils.converter.md) which maps the individual items of a collection resulting from this [Converter](./ts-utils.converter.md) using the supplied [Converter](./ts-utils.converter.md)<!-- -->. |
-|  [mapItems(mapper)](./ts-utils.converter.mapitems.md) | Creates a [Converter](./ts-utils.converter.md) which maps the individual items of a collection resulting from this [Converter](./ts-utils.converter.md) using the supplied map function. |
-|  [optional(onError)](./ts-utils.converter.optional.md) | Creates a [Converter](./ts-utils.converter.md) for an optional value. |
-|  [withAction(action)](./ts-utils.converter.withaction.md) | Creates a [Converter](./ts-utils.converter.md) which applies a supplied action after conversion. The supplied action is always called regardless of success or failure of the base conversion and is allowed to mutate the return type. |
-|  [withBrand(brand)](./ts-utils.converter.withbrand.md) | returns a converter which adds a brand to the type to prevent mismatched usage of simple types. |
-|  [withConstraint(constraint, options)](./ts-utils.converter.withconstraint.md) | Creates a [Converter](./ts-utils.converter.md) which applies an optional constraint to the result of this conversion. If this [Converter](./ts-utils.converter.md) (the base converter) succeeds, the new converter calls a supplied constraint evaluation function with the conversion, which fails the entire conversion if the constraint function returns either <code>false</code> or [Failure&lt;T&gt;](./ts-utils.failure.md)<!-- -->. |
-|  [withDefault(dflt)](./ts-utils.converter.withdefault.md) | Returns a Converter which always succeeds with a default value rather than failing. |
-|  [withItemTypeGuard(guard, message)](./ts-utils.converter.withitemtypeguard.md) | Creates a [Converter](./ts-utils.converter.md) which applies a supplied type guard to each member of the conversion result from this converter. |
-|  [withTypeGuard(guard, message)](./ts-utils.converter.withtypeguard.md) | Creates a [Converter](./ts-utils.converter.md) which applies a supplied type guard to the conversion result. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[convert(from, context)](./ts-utils.converter.convert.md)
+
+
+</td><td>
+
+Converts from `unknown` to `<T>`<!-- -->. For objects and arrays, is guaranteed to return a new entity, with any unrecognized properties removed.
+
+
+</td></tr>
+<tr><td>
+
+[convertOptional(from, context, onError)](./ts-utils.converter.convertoptional.md)
+
+
+</td><td>
+
+Converts from `unknown` to `<T>` or `undefined`<!-- -->, as appropriate.
+
+
+</td></tr>
+<tr><td>
+
+[map(mapper)](./ts-utils.converter.map.md)
+
+
+</td><td>
+
+Creates a [Converter](./ts-utils.converter.md) which applies a (possibly) mapping conversion to the converted value of this [Converter](./ts-utils.converter.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[mapConvert(mapConverter)](./ts-utils.converter.mapconvert.md)
+
+
+</td><td>
+
+Creates a [Converter](./ts-utils.converter.md) which applies an additional supplied converter to the result of this converter.
+
+
+</td></tr>
+<tr><td>
+
+[mapConvertItems(mapConverter)](./ts-utils.converter.mapconvertitems.md)
+
+
+</td><td>
+
+Creates a [Converter](./ts-utils.converter.md) which maps the individual items of a collection resulting from this [Converter](./ts-utils.converter.md) using the supplied [Converter](./ts-utils.converter.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[mapItems(mapper)](./ts-utils.converter.mapitems.md)
+
+
+</td><td>
+
+Creates a [Converter](./ts-utils.converter.md) which maps the individual items of a collection resulting from this [Converter](./ts-utils.converter.md) using the supplied map function.
+
+
+</td></tr>
+<tr><td>
+
+[optional(onError)](./ts-utils.converter.optional.md)
+
+
+</td><td>
+
+Creates a [Converter](./ts-utils.converter.md) for an optional value.
+
+
+</td></tr>
+<tr><td>
+
+[withAction(action)](./ts-utils.converter.withaction.md)
+
+
+</td><td>
+
+Creates a [Converter](./ts-utils.converter.md) which applies a supplied action after conversion. The supplied action is always called regardless of success or failure of the base conversion and is allowed to mutate the return type.
+
+
+</td></tr>
+<tr><td>
+
+[withBrand(brand)](./ts-utils.converter.withbrand.md)
+
+
+</td><td>
+
+returns a converter which adds a brand to the type to prevent mismatched usage of simple types.
+
+
+</td></tr>
+<tr><td>
+
+[withConstraint(constraint, options)](./ts-utils.converter.withconstraint.md)
+
+
+</td><td>
+
+Creates a [Converter](./ts-utils.converter.md) which applies an optional constraint to the result of this conversion. If this [Converter](./ts-utils.converter.md) (the base converter) succeeds, the new converter calls a supplied constraint evaluation function with the conversion, which fails the entire conversion if the constraint function returns either `false` or [Failure&lt;T&gt;](./ts-utils.failure.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[withDefault(dflt)](./ts-utils.converter.withdefault.md)
+
+
+</td><td>
+
+Returns a Converter which always succeeds with a default value rather than failing.
+
+
+</td></tr>
+<tr><td>
+
+[withItemTypeGuard(guard, message)](./ts-utils.converter.withitemtypeguard.md)
+
+
+</td><td>
+
+Creates a [Converter](./ts-utils.converter.md) which applies a supplied type guard to each member of the conversion result from this converter.
+
+
+</td></tr>
+<tr><td>
+
+[withTypeGuard(guard, message)](./ts-utils.converter.withtypeguard.md)
+
+
+</td><td>
+
+Creates a [Converter](./ts-utils.converter.md) which applies a supplied type guard to the conversion result.
+
+
+</td></tr>
+</tbody></table>

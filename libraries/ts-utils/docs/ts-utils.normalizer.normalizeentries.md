@@ -14,10 +14,39 @@ normalizeEntries<T = unknown>(entries: Iterable<Entry<T>>): Entry<T>[];
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  entries | Iterable&lt;Entry&lt;T&gt;&gt; | The entries to be normalized. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+entries
+
+
+</td><td>
+
+Iterable&lt;Entry&lt;T&gt;&gt;
+
+
+</td><td>
+
+The entries to be normalized.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Entry&lt;T&gt;\[\]

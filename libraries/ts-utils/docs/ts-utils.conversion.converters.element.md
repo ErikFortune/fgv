@@ -14,11 +14,55 @@ export declare function element<T, TC = undefined>(index: number, converter: Con
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  index | number | The index of the element to be extracted. |
-|  converter | [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; \| [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt; | A [Converter](./ts-utils.converter.md) or [Validator](./ts-utils.validator.md) for the extracted element. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+index
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+The index of the element to be extracted.
+
+
+</td></tr>
+<tr><td>
+
+converter
+
+
+</td><td>
+
+[Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; \| [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+A [Converter](./ts-utils.converter.md) or [Validator](./ts-utils.validator.md) for the extracted element.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;

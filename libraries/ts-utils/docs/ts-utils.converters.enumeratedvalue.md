@@ -14,10 +14,39 @@ export declare function enumeratedValue<T>(values: T[]): Converter<T, T[]>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  values | T\[\] | Array of allowed values. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+values
+
+
+</td><td>
+
+T\[\]
+
+
+</td><td>
+
+Array of allowed values.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T, T\[\]&gt;

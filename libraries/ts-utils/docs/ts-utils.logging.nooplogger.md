@@ -14,7 +14,34 @@ export declare class NoOpLogger extends LoggerBase
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [\_innerLog(message)](./ts-utils.logging.nooplogger._innerlog.md) | <code>protected</code> |  |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[\_innerLog(message)](./ts-utils.logging.nooplogger._innerlog.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

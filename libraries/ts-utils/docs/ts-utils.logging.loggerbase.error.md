@@ -12,11 +12,53 @@ error<T>(message?: unknown, ...parameters: unknown[]): Failure<T>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  message | unknown | _(Optional)_ |
-|  parameters | unknown\[\] |  |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+message
+
+
+</td><td>
+
+unknown
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+parameters
+
+
+</td><td>
+
+unknown\[\]
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Failure](./ts-utils.failure.md)<!-- -->&lt;T&gt;

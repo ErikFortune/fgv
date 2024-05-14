@@ -14,9 +14,82 @@ export interface ObjectConverterOptions<T>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [description?](./ts-utils.conversion.objectconverteroptions.description.md) |  | string | _(Optional)_ Optional description to be included in error messages. |
-|  [optionalFields?](./ts-utils.conversion.objectconverteroptions.optionalfields.md) |  | (keyof T)\[\] | _(Optional)_ If present, lists optional fields. Missing non-optional fields cause an error. |
-|  [strict?](./ts-utils.conversion.objectconverteroptions.strict.md) |  | boolean | _(Optional)_ If true, unrecognized fields yield an error. If false or undefined (default), unrecognized fields are ignored. |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[description?](./ts-utils.conversion.objectconverteroptions.description.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ Optional description to be included in error messages.
+
+
+</td></tr>
+<tr><td>
+
+[optionalFields?](./ts-utils.conversion.objectconverteroptions.optionalfields.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(keyof T)\[\]
+
+
+</td><td>
+
+_(Optional)_ If present, lists optional fields. Missing non-optional fields cause an error.
+
+
+</td></tr>
+<tr><td>
+
+[strict?](./ts-utils.conversion.objectconverteroptions.strict.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_ If true, unrecognized fields yield an error. If false or undefined (default), unrecognized fields are ignored.
+
+
+</td></tr>
+</tbody></table>

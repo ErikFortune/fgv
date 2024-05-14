@@ -15,13 +15,70 @@ export declare class BooleanValidator<TC = unknown> extends GenericValidator<boo
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(params)](./ts-utils.validation.classes.booleanvalidator._constructor_.md) |  | Constructs a new [BooleanValidator](./ts-utils.validation.classes.booleanvalidator.md)<!-- -->. |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(params)](./ts-utils.validation.classes.booleanvalidator._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [BooleanValidator](./ts-utils.validation.classes.booleanvalidator.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [validateBoolean(from)](./ts-utils.validation.classes.booleanvalidator.validateboolean.md) | <code>static</code> | Static method which validates that a supplied <code>unknown</code> value is a <code>boolean</code>. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[validateBoolean(from)](./ts-utils.validation.classes.booleanvalidator.validateboolean.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Static method which validates that a supplied `unknown` value is a `boolean`<!-- -->.
+
+
+</td></tr>
+</tbody></table>

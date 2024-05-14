@@ -14,10 +14,39 @@ toString(separator?: string): string;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  separator | string | _(Optional)_ The optional separator used to join strings. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+separator
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ The optional separator used to join strings.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 string

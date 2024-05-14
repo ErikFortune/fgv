@@ -14,8 +14,52 @@ constructor(converter: Converter<T, TC>, defaultValue: TD);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  converter | [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; | inner [Converter](./ts-utils.converter.md) used for the base conversion. |
-|  defaultValue | TD | default value to be supplied if the inner conversion fails. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+converter
+
+
+</td><td>
+
+[Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+inner [Converter](./ts-utils.converter.md) used for the base conversion.
+
+
+</td></tr>
+<tr><td>
+
+defaultValue
+
+
+</td><td>
+
+TD
+
+
+</td><td>
+
+default value to be supplied if the inner conversion fails.
+
+
+</td></tr>
+</tbody></table>

@@ -14,11 +14,55 @@ export declare function mapSuccess<T>(results: Iterable<Result<T>>, aggregatedEr
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  results | Iterable&lt;[Result](./ts-utils.result.md)<!-- -->&lt;T&gt;&gt; | An <code>Iterable</code> of [Result&lt;T&gt;](./ts-utils.result.md) from which success results are to be aggregated. |
-|  aggregatedErrors | [IMessageAggregator](./ts-utils.imessageaggregator.md) | _(Optional)_ Optional string array to which any returned error messages will be appended. Each error is appended as an individual string. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+results
+
+
+</td><td>
+
+Iterable&lt;[Result](./ts-utils.result.md)<!-- -->&lt;T&gt;&gt;
+
+
+</td><td>
+
+An `Iterable` of [Result&lt;T&gt;](./ts-utils.result.md) from which success results are to be aggregated.
+
+
+</td></tr>
+<tr><td>
+
+aggregatedErrors
+
+
+</td><td>
+
+[IMessageAggregator](./ts-utils.imessageaggregator.md)
+
+
+</td><td>
+
+_(Optional)_ Optional string array to which any returned error messages will be appended. Each error is appended as an individual string.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;T\[\]&gt;

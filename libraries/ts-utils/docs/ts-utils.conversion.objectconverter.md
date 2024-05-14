@@ -19,23 +19,177 @@ By default, if all of the required fields exist and can be converted, returns a 
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(fields, options)](./ts-utils.conversion.objectconverter._constructor_.md) |  | Constructs a new [ObjectConverter&lt;T&gt;](./ts-utils.conversion.objectconverter.md) using options supplied in a [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectconverteroptions.md)<!-- -->. |
-|  [(constructor)(fields, optional)](./ts-utils.conversion.objectconverter._constructor__1.md) |  | Constructs a new [ObjectConverter&lt;T&gt;](./ts-utils.conversion.objectconverter.md) with optional properties specified as an array of <code>keyof T</code>. |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(fields, options)](./ts-utils.conversion.objectconverter._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [ObjectConverter&lt;T&gt;](./ts-utils.conversion.objectconverter.md) using options supplied in a [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectconverteroptions.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[(constructor)(fields, optional)](./ts-utils.conversion.objectconverter._constructor__1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [ObjectConverter&lt;T&gt;](./ts-utils.conversion.objectconverter.md) with optional properties specified as an array of `keyof T`<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [fields](./ts-utils.conversion.objectconverter.fields.md) | <code>readonly</code> | [FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T&gt; | Fields converted by this [ObjectConverter](./ts-utils.conversion.objectconverter.md)<!-- -->. |
-|  [options](./ts-utils.conversion.objectconverter.options.md) | <code>readonly</code> | [ObjectConverterOptions](./ts-utils.conversion.objectconverteroptions.md)<!-- -->&lt;T&gt; | Options used to initialize this [ObjectConverter](./ts-utils.conversion.objectconverter.md)<!-- -->. |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[fields](./ts-utils.conversion.objectconverter.fields.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T&gt;
+
+
+</td><td>
+
+Fields converted by this [ObjectConverter](./ts-utils.conversion.objectconverter.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[options](./ts-utils.conversion.objectconverter.options.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ObjectConverterOptions](./ts-utils.conversion.objectconverteroptions.md)<!-- -->&lt;T&gt;
+
+
+</td><td>
+
+Options used to initialize this [ObjectConverter](./ts-utils.conversion.objectconverter.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [addPartial(addOptionalProperties)](./ts-utils.conversion.objectconverter.addpartial.md) |  | Creates a new [ObjectConverter](./ts-utils.conversion.objectconverter.md) derived from this one but with new optional properties as specified by a supplied array of <code>keyof T</code>. |
-|  [partial(options)](./ts-utils.conversion.objectconverter.partial.md) |  | Creates a new [ObjectConverter](./ts-utils.conversion.objectconverter.md) derived from this one but with new optional properties as specified by a supplied [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectconverteroptions.md)<!-- -->. |
-|  [partial(optional)](./ts-utils.conversion.objectconverter.partial_1.md) |  | Creates a new [ObjectConverter](./ts-utils.conversion.objectconverter.md) derived from this one but with new optional properties as specified by a supplied array of <code>keyof T</code>. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[addPartial(addOptionalProperties)](./ts-utils.conversion.objectconverter.addpartial.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a new [ObjectConverter](./ts-utils.conversion.objectconverter.md) derived from this one but with new optional properties as specified by a supplied array of `keyof T`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[partial(options)](./ts-utils.conversion.objectconverter.partial.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a new [ObjectConverter](./ts-utils.conversion.objectconverter.md) derived from this one but with new optional properties as specified by a supplied [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectconverteroptions.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[partial(optional)](./ts-utils.conversion.objectconverter.partial_1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a new [ObjectConverter](./ts-utils.conversion.objectconverter.md) derived from this one but with new optional properties as specified by a supplied array of `keyof T`<!-- -->.
+
+
+</td></tr>
+</tbody></table>

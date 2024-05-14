@@ -15,20 +15,137 @@ export declare class OneOfValidator<T, TC = unknown> extends ValidatorBase<T, TC
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(params)](./ts-utils.validation.classes.oneofvalidator._constructor_.md) |  | Constructs a new [OneOfValidator](./ts-utils.validation.classes.oneofvalidator.md)<!-- -->. |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(params)](./ts-utils.validation.classes.oneofvalidator._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [OneOfValidator](./ts-utils.validation.classes.oneofvalidator.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [\_validators](./ts-utils.validation.classes.oneofvalidator._validators.md) | <p><code>protected</code></p><p><code>readonly</code></p> | [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;\[\] |  |
-|  [options](./ts-utils.validation.classes.oneofvalidator.options.md) | <code>readonly</code> | [ValidatorOptions](./ts-utils.validation.validatoroptions.md)<!-- -->&lt;TC&gt; | [Options](./ts-utils.validation.validatoroptions.md) which apply to this validator. |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[\_validators](./ts-utils.validation.classes.oneofvalidator._validators.md)
+
+
+</td><td>
+
+`protected`
+
+`readonly`
+
+
+</td><td>
+
+[Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;\[\]
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[options](./ts-utils.validation.classes.oneofvalidator.options.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ValidatorOptions](./ts-utils.validation.validatoroptions.md)<!-- -->&lt;TC&gt;
+
+
+</td><td>
+
+[Options](./ts-utils.validation.validatoroptions.md) which apply to this validator.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [\_validate(from, context)](./ts-utils.validation.classes.oneofvalidator._validate.md) | <code>protected</code> | Static method which validates that a supplied <code>unknown</code> value matches at least one of the configured validators. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[\_validate(from, context)](./ts-utils.validation.classes.oneofvalidator._validate.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+Static method which validates that a supplied `unknown` value matches at least one of the configured validators.
+
+
+</td></tr>
+</tbody></table>

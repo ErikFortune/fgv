@@ -14,21 +14,180 @@ export interface Validator<T, TC = undefined>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [brand](./ts-utils.validation.validator.brand.md) | <code>readonly</code> | string \| undefined | The brand for a branded type. |
-|  [isOptional](./ts-utils.validation.validator.isoptional.md) | <code>readonly</code> | boolean | Indicates whether this element is explicitly optional. |
-|  [traits](./ts-utils.validation.validator.traits.md) | <code>readonly</code> | [ValidatorTraits](./ts-utils.validation.validatortraits.md) | [Traits](./ts-utils.validation.validatortraits.md) describing this validation. |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[brand](./ts-utils.validation.validator.brand.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+The brand for a branded type.
+
+
+</td></tr>
+<tr><td>
+
+[isOptional](./ts-utils.validation.validator.isoptional.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+Indicates whether this element is explicitly optional.
+
+
+</td></tr>
+<tr><td>
+
+[traits](./ts-utils.validation.validator.traits.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ValidatorTraits](./ts-utils.validation.validatortraits.md)
+
+
+</td><td>
+
+[Traits](./ts-utils.validation.validatortraits.md) describing this validation.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Description |
-|  --- | --- |
-|  [convert(from, context)](./ts-utils.validation.validator.convert.md) | Tests to see if a supplied 'unknown' value matches this validation. In contrast to [validate](./ts-utils.validator.validate.md)<!-- -->, makes no guarantees about the identity of the returned value. |
-|  [guard(from, context)](./ts-utils.validation.validator.guard.md) | Non-throwing type guard |
-|  [optional()](./ts-utils.validation.validator.optional.md) | Creates an [in-place validator](./ts-utils.validation.validator.md) which is derived from this one but which also matches <code>undefined</code>. |
-|  [validate(from, context)](./ts-utils.validation.validator.validate.md) | Tests to see if a supplied <code>unknown</code> value matches this validation. All validate calls are guaranteed to return the entity passed in on Success. |
-|  [validateOptional(from, context)](./ts-utils.validation.validator.validateoptional.md) | Tests to see if a supplied <code>unknown</code> value matches this validation. Accepts <code>undefined</code>. |
-|  [withBrand(brand)](./ts-utils.validation.validator.withbrand.md) | Creates a new [in-place validator](./ts-utils.validation.validator.md) which is derived from this one but which matches a branded result. |
-|  [withConstraint(constraint, trait)](./ts-utils.validation.validator.withconstraint.md) | Creates an [in-place validator](./ts-utils.validation.validator.md) which is derived from this one but which applies additional constraints. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[convert(from, context)](./ts-utils.validation.validator.convert.md)
+
+
+</td><td>
+
+Tests to see if a supplied 'unknown' value matches this validation. In contrast to [validate](./ts-utils.validator.validate.md)<!-- -->, makes no guarantees about the identity of the returned value.
+
+
+</td></tr>
+<tr><td>
+
+[guard(from, context)](./ts-utils.validation.validator.guard.md)
+
+
+</td><td>
+
+Non-throwing type guard
+
+
+</td></tr>
+<tr><td>
+
+[optional()](./ts-utils.validation.validator.optional.md)
+
+
+</td><td>
+
+Creates an [in-place validator](./ts-utils.validation.validator.md) which is derived from this one but which also matches `undefined`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[validate(from, context)](./ts-utils.validation.validator.validate.md)
+
+
+</td><td>
+
+Tests to see if a supplied `unknown` value matches this validation. All validate calls are guaranteed to return the entity passed in on Success.
+
+
+</td></tr>
+<tr><td>
+
+[validateOptional(from, context)](./ts-utils.validation.validator.validateoptional.md)
+
+
+</td><td>
+
+Tests to see if a supplied `unknown` value matches this validation. Accepts `undefined`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[withBrand(brand)](./ts-utils.validation.validator.withbrand.md)
+
+
+</td><td>
+
+Creates a new [in-place validator](./ts-utils.validation.validator.md) which is derived from this one but which matches a branded result.
+
+
+</td></tr>
+<tr><td>
+
+[withConstraint(constraint, trait)](./ts-utils.validation.validator.withconstraint.md)
+
+
+</td><td>
+
+Creates an [in-place validator](./ts-utils.validation.validator.md) which is derived from this one but which applies additional constraints.
+
+
+</td></tr>
+</tbody></table>

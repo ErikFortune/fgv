@@ -14,11 +14,55 @@ export declare function delimitedString(delimiter: string, options?: 'filtered' 
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  delimiter | string | The delimiter at which to split. |
-|  options | 'filtered' \| 'all' | _(Optional)_ |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+delimiter
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+The delimiter at which to split.
+
+
+</td></tr>
+<tr><td>
+
+options
+
+
+</td><td>
+
+'filtered' \| 'all'
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;string\[\], string&gt;

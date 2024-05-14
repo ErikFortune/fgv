@@ -14,13 +14,72 @@ export interface DefaultingConverter<T, TD = T, TC = undefined> extends Converte
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [defaultValue](./ts-utils.conversion.defaultingconverter.defaultvalue.md) | <code>readonly</code> | TD | Default value to use if the conversion fails. |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[defaultValue](./ts-utils.conversion.defaultingconverter.defaultvalue.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+TD
+
+
+</td><td>
+
+Default value to use if the conversion fails.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Description |
-|  --- | --- |
-|  [convert(from, ctx)](./ts-utils.conversion.defaultingconverter.convert.md) | Convert the supplied <code>unknown</code> to <code>Success&lt;T&gt;</code> or to the <code>Success</code> with the default value if conversion is not possible. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[convert(from, ctx)](./ts-utils.conversion.defaultingconverter.convert.md)
+
+
+</td><td>
+
+Convert the supplied `unknown` to `Success<T>` or to the `Success` with the default value if conversion is not possible.
+
+
+</td></tr>
+</tbody></table>

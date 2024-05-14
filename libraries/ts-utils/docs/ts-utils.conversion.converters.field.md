@@ -14,11 +14,55 @@ export declare function field<T, TC = undefined>(name: string, converter: Conver
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  name | string | The name of the field to be extracted. |
-|  converter | [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; \| [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt; | [Converter](./ts-utils.converter.md) or [Validator](./ts-utils.validator.md) to use for the extracted field. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+name
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+The name of the field to be extracted.
+
+
+</td></tr>
+<tr><td>
+
+converter
+
+
+</td><td>
+
+[Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; \| [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+[Converter](./ts-utils.converter.md) or [Validator](./ts-utils.validator.md) to use for the extracted field.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;

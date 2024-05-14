@@ -14,8 +14,52 @@ constructor(value: T, detail?: TD);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  value | T | The value to be returned. |
-|  detail | TD | _(Optional)_ An optional successful detail to be returned. If omitted, detail will be <code>undefined</code>. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+value
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+The value to be returned.
+
+
+</td></tr>
+<tr><td>
+
+detail
+
+
+</td><td>
+
+TD
+
+
+</td><td>
+
+_(Optional)_ An optional successful detail to be returned. If omitted, detail will be `undefined`<!-- -->.
+
+
+</td></tr>
+</tbody></table>

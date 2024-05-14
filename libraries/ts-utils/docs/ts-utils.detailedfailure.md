@@ -15,21 +15,142 @@ export declare class DetailedFailure<T, TD> extends Failure<T>
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(message, detail)](./ts-utils.detailedfailure._constructor_.md) |  | Constructs a new [DetailedFailure&lt;T, TD&gt;](./ts-utils.detailedfailure.md) with the supplied message and detail. |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(message, detail)](./ts-utils.detailedfailure._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [DetailedFailure&lt;T, TD&gt;](./ts-utils.detailedfailure.md) with the supplied message and detail.
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [detail](./ts-utils.detailedfailure.detail.md) | <code>readonly</code> | TD | The error detail associated with this [DetailedFailure](./ts-utils.detailedfailure.md)<!-- -->. |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[detail](./ts-utils.detailedfailure.detail.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+TD
+
+
+</td><td>
+
+The error detail associated with this [DetailedFailure](./ts-utils.detailedfailure.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [isFailure()](./ts-utils.detailedfailure.isfailure.md) |  | Reports that this [DetailedFailure](./ts-utils.detailedfailure.md) is a failure. |
-|  [onFailure(cb)](./ts-utils.detailedfailure.onfailure.md) |  | Invokes the supplied [failure callback](./ts-utils.detailedfailurecontinuation.md) and propagates its returned [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->. |
-|  [onSuccess(\_\_cb)](./ts-utils.detailedfailure.onsuccess.md) |  | Propagates the error message and detail from this result. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[isFailure()](./ts-utils.detailedfailure.isfailure.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Reports that this [DetailedFailure](./ts-utils.detailedfailure.md) is a failure.
+
+
+</td></tr>
+<tr><td>
+
+[onFailure(cb)](./ts-utils.detailedfailure.onfailure.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Invokes the supplied [failure callback](./ts-utils.detailedfailurecontinuation.md) and propagates its returned [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[onSuccess(\_\_cb)](./ts-utils.detailedfailure.onsuccess.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Propagates the error message and detail from this result.
+
+
+</td></tr>
+</tbody></table>

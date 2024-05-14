@@ -15,7 +15,42 @@ export interface OneOfValidatorConstructorParams<T, TC = unknown> extends Valida
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [validators](./ts-utils.validation.classes.oneofvalidatorconstructorparams.validators.md) |  | [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;\[\] |  |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[validators](./ts-utils.validation.classes.oneofvalidatorconstructorparams.validators.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;\[\]
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

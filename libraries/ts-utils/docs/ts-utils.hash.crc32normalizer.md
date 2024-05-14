@@ -15,13 +15,68 @@ export declare class Crc32Normalizer extends HashingNormalizer
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)()](./ts-utils.hash.crc32normalizer._constructor_.md) |  | Constructs a new instance of the <code>Crc32Normalizer</code> class |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)()](./ts-utils.hash.crc32normalizer._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new instance of the `Crc32Normalizer` class
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [crc32Hash(parts)](./ts-utils.hash.crc32normalizer.crc32hash.md) | <code>static</code> |  |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[crc32Hash(parts)](./ts-utils.hash.crc32normalizer.crc32hash.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

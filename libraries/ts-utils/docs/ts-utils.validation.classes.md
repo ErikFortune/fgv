@@ -6,32 +6,221 @@
 
 ## Classes
 
-|  Class | Description |
-|  --- | --- |
-|  [ArrayValidator](./ts-utils.validation.classes.arrayvalidator.md) | An in-place [Validator](./ts-utils.validator.md) for arrays of validated values or objects. |
-|  [BooleanValidator](./ts-utils.validation.classes.booleanvalidator.md) | An in-place [Validator](./ts-utils.validation.validator.md) for <code>boolean</code> values. |
-|  [NumberValidator](./ts-utils.validation.classes.numbervalidator.md) | An in-place [Validator](./ts-utils.validation.validator.md) for <code>number</code> values. |
-|  [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md) | In-place [Validator](./ts-utils.validation.validator.md) for an object of type <code>&lt;T&gt;</code>. |
-|  [OneOfValidator](./ts-utils.validation.classes.oneofvalidator.md) | An in-place [Validator](./ts-utils.validator.md) which validates that a supplied value matches one of several other validators. |
-|  [StringValidator](./ts-utils.validation.classes.stringvalidator.md) | An in-place [Validator](./ts-utils.validation.validator.md) for <code>string</code> values. |
-|  [TypeGuardValidator](./ts-utils.validation.classes.typeguardvalidator.md) | An in-place [Validator](./ts-utils.validation.validator.md) that can be instantiated using a type guard function. |
+<table><thead><tr><th>
+
+Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ArrayValidator](./ts-utils.validation.classes.arrayvalidator.md)
+
+
+</td><td>
+
+An in-place [Validator](./ts-utils.validator.md) for arrays of validated values or objects.
+
+
+</td></tr>
+<tr><td>
+
+[BooleanValidator](./ts-utils.validation.classes.booleanvalidator.md)
+
+
+</td><td>
+
+An in-place [Validator](./ts-utils.validation.validator.md) for `boolean` values.
+
+
+</td></tr>
+<tr><td>
+
+[NumberValidator](./ts-utils.validation.classes.numbervalidator.md)
+
+
+</td><td>
+
+An in-place [Validator](./ts-utils.validation.validator.md) for `number` values.
+
+
+</td></tr>
+<tr><td>
+
+[ObjectValidator](./ts-utils.validation.classes.objectvalidator.md)
+
+
+</td><td>
+
+In-place [Validator](./ts-utils.validation.validator.md) for an object of type `<T>`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[OneOfValidator](./ts-utils.validation.classes.oneofvalidator.md)
+
+
+</td><td>
+
+An in-place [Validator](./ts-utils.validator.md) which validates that a supplied value matches one of several other validators.
+
+
+</td></tr>
+<tr><td>
+
+[StringValidator](./ts-utils.validation.classes.stringvalidator.md)
+
+
+</td><td>
+
+An in-place [Validator](./ts-utils.validation.validator.md) for `string` values.
+
+
+</td></tr>
+<tr><td>
+
+[TypeGuardValidator](./ts-utils.validation.classes.typeguardvalidator.md)
+
+
+</td><td>
+
+An in-place [Validator](./ts-utils.validation.validator.md) that can be instantiated using a type guard function.
+
+
+</td></tr>
+</tbody></table>
 
 ## Interfaces
 
-|  Interface | Description |
-|  --- | --- |
-|  [ArrayValidatorConstructorParams](./ts-utils.validation.classes.arrayvalidatorconstructorparams.md) | Parameters used to construct a [ArrayValidator](./ts-utils.validation.classes.arrayvalidator.md)<!-- -->. |
-|  [ObjectValidatorConstructorParams](./ts-utils.validation.classes.objectvalidatorconstructorparams.md) | Options for the [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md) constructor. |
-|  [ObjectValidatorOptions](./ts-utils.validation.classes.objectvalidatoroptions.md) | Options for an [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md)<!-- -->. |
-|  [OneOfValidatorConstructorParams](./ts-utils.validation.classes.oneofvalidatorconstructorparams.md) | Parameters used to construct a [OneOfValidator](./ts-utils.validation.classes.oneofvalidator.md)<!-- -->. |
-|  [TypeGuardValidatorConstructorParams](./ts-utils.validation.classes.typeguardvalidatorconstructorparams.md) | Parameters used to construct a [Validation.Classes.TypeGuardValidator](./ts-utils.validation.classes.typeguardvalidator.md)<!-- -->. |
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ArrayValidatorConstructorParams](./ts-utils.validation.classes.arrayvalidatorconstructorparams.md)
+
+
+</td><td>
+
+Parameters used to construct a [ArrayValidator](./ts-utils.validation.classes.arrayvalidator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ObjectValidatorConstructorParams](./ts-utils.validation.classes.objectvalidatorconstructorparams.md)
+
+
+</td><td>
+
+Options for the [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md) constructor.
+
+
+</td></tr>
+<tr><td>
+
+[ObjectValidatorOptions](./ts-utils.validation.classes.objectvalidatoroptions.md)
+
+
+</td><td>
+
+Options for an [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[OneOfValidatorConstructorParams](./ts-utils.validation.classes.oneofvalidatorconstructorparams.md)
+
+
+</td><td>
+
+Parameters used to construct a [OneOfValidator](./ts-utils.validation.classes.oneofvalidator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[TypeGuardValidatorConstructorParams](./ts-utils.validation.classes.typeguardvalidatorconstructorparams.md)
+
+
+</td><td>
+
+Parameters used to construct a [Validation.Classes.TypeGuardValidator](./ts-utils.validation.classes.typeguardvalidator.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Type Aliases
 
-|  Type Alias | Description |
-|  --- | --- |
-|  [BooleanValidatorConstructorParams](./ts-utils.validation.classes.booleanvalidatorconstructorparams.md) | Parameters used to construct a [BooleanValidator](./ts-utils.validation.classes.booleanvalidator.md)<!-- -->. |
-|  [FieldValidators](./ts-utils.validation.classes.fieldvalidators.md) | Per-property [validators](./ts-utils.validation.validator.md) for each of the properties in <code>&lt;T&gt;</code>. |
-|  [NumberValidatorConstructorParams](./ts-utils.validation.classes.numbervalidatorconstructorparams.md) | Parameters used to construct a [NumberValidator](./ts-utils.validation.classes.numbervalidator.md)<!-- -->. |
-|  [StringValidatorConstructorParams](./ts-utils.validation.classes.stringvalidatorconstructorparams.md) | Parameters used to construct a [StringValidator](./ts-utils.validation.classes.stringvalidator.md)<!-- -->. |
+<table><thead><tr><th>
 
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[BooleanValidatorConstructorParams](./ts-utils.validation.classes.booleanvalidatorconstructorparams.md)
+
+
+</td><td>
+
+Parameters used to construct a [BooleanValidator](./ts-utils.validation.classes.booleanvalidator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[FieldValidators](./ts-utils.validation.classes.fieldvalidators.md)
+
+
+</td><td>
+
+Per-property [validators](./ts-utils.validation.validator.md) for each of the properties in `<T>`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[NumberValidatorConstructorParams](./ts-utils.validation.classes.numbervalidatorconstructorparams.md)
+
+
+</td><td>
+
+Parameters used to construct a [NumberValidator](./ts-utils.validation.classes.numbervalidator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[StringValidatorConstructorParams](./ts-utils.validation.classes.stringvalidatorconstructorparams.md)
+
+
+</td><td>
+
+Parameters used to construct a [StringValidator](./ts-utils.validation.classes.stringvalidator.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>

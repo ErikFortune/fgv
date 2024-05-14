@@ -6,26 +6,110 @@
 
 ## Classes
 
-|  Class | Description |
-|  --- | --- |
-|  [InMemoryLogger](./ts-utils.logging.inmemorylogger.md) |  |
-|  [NoOpLogger](./ts-utils.logging.nooplogger.md) |  |
+<table><thead><tr><th>
+
+Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[InMemoryLogger](./ts-utils.logging.inmemorylogger.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[NoOpLogger](./ts-utils.logging.nooplogger.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>
 
 ## Abstract Classes
 
-|  Abstract Class | Description |
-|  --- | --- |
-|  [LoggerBase](./ts-utils.logging.loggerbase.md) |  |
+<table><thead><tr><th>
+
+Abstract Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[LoggerBase](./ts-utils.logging.loggerbase.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>
 
 ## Interfaces
 
-|  Interface | Description |
-|  --- | --- |
-|  [Logger](./ts-utils.logging.logger.md) |  |
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Logger](./ts-utils.logging.logger.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>
 
 ## Type Aliases
 
-|  Type Alias | Description |
-|  --- | --- |
-|  [LogLevel](./ts-utils.logging.loglevel.md) |  |
+<table><thead><tr><th>
 
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[LogLevel](./ts-utils.logging.loglevel.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>

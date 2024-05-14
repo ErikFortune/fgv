@@ -14,11 +14,55 @@ guard(from: unknown, context?: TC): from is T;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  from | unknown | The value to be tested. |
-|  context | TC | _(Optional)_ Optional validation context. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+from
+
+
+</td><td>
+
+unknown
+
+
+</td><td>
+
+The value to be tested.
+
+
+</td></tr>
+<tr><td>
+
+context
+
+
+</td><td>
+
+TC
+
+
+</td><td>
+
+_(Optional)_ Optional validation context.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 from is T

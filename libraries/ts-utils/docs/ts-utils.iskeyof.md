@@ -14,11 +14,55 @@ export declare function isKeyOf<T extends object>(key: string | number | symbol,
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  key | string \| number \| symbol | The key to be tested. |
-|  item | T | The object to be tested. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+key
+
+
+</td><td>
+
+string \| number \| symbol
+
+
+</td><td>
+
+The key to be tested.
+
+
+</td></tr>
+<tr><td>
+
+item
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+The object to be tested.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 key is keyof T

@@ -14,11 +14,55 @@ export declare function optionalRecordToPossiblyEmptyMap<TS, TD, TK extends stri
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  src | Record&lt;TK, TS&gt; \| undefined | The <code>Record</code> to be converted, or <code>undefined</code>. |
-|  factory | KeyedThingFactory&lt;TS, TD, TK&gt; | The factory method used to convert elements. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+src
+
+
+</td><td>
+
+Record&lt;TK, TS&gt; \| undefined
+
+
+</td><td>
+
+The `Record` to be converted, or `undefined`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+factory
+
+
+</td><td>
+
+KeyedThingFactory&lt;TS, TD, TK&gt;
+
+
+</td><td>
+
+The factory method used to convert elements.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;Map&lt;TK, TD&gt;&gt;

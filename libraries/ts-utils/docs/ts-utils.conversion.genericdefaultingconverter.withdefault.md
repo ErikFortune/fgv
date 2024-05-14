@@ -16,10 +16,37 @@ withDefault<TD2 = T>(dflt: TD2): DefaultingConverter<T, TD2, TC>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  dflt | TD2 |  |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+dflt
+
+
+</td><td>
+
+TD2
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [DefaultingConverter](./ts-utils.conversion.defaultingconverter.md)<!-- -->&lt;T, TD2, TC&gt;

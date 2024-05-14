@@ -14,10 +14,39 @@ normalize<T>(from: T): Result<T>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  from | T | The value to be normalized |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+from
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+The value to be normalized
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;T&gt;

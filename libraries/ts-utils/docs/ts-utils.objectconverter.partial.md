@@ -14,10 +14,39 @@ partial(options: ObjectConverterOptions<T>): ObjectConverter<Partial<T>, TC>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  options | [ObjectConverterOptions](./ts-utils.conversion.objectconverteroptions.md)<!-- -->&lt;T&gt; | The [options](./ts-utils.conversion.objectconverteroptions.md) to be applied to the new converter. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+options
+
+
+</td><td>
+
+[ObjectConverterOptions](./ts-utils.conversion.objectconverteroptions.md)<!-- -->&lt;T&gt;
+
+
+</td><td>
+
+The [options](./ts-utils.conversion.objectconverteroptions.md) to be applied to the new converter.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [ObjectConverter](./ts-utils.objectconverter.md)<!-- -->&lt;Partial&lt;T&gt;, TC&gt;

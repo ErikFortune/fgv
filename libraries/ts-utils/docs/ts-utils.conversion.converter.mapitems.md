@@ -14,10 +14,39 @@ mapItems<TI>(mapper: (from: unknown) => Result<TI>): Converter<TI[], TC>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  mapper | (from: unknown) =&gt; [Result](./ts-utils.result.md)<!-- -->&lt;TI&gt; | The map function to be applied to each element of the result of this [Converter](./ts-utils.converter.md)<!-- -->. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+mapper
+
+
+</td><td>
+
+(from: unknown) =&gt; [Result](./ts-utils.result.md)<!-- -->&lt;TI&gt;
+
+
+</td><td>
+
+The map function to be applied to each element of the result of this [Converter](./ts-utils.converter.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;TI\[\], TC&gt;

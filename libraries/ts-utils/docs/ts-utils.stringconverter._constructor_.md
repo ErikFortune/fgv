@@ -14,9 +14,68 @@ constructor(defaultContext?: TC, traits?: ConverterTraits, converter?: (from: un
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  defaultContext | TC | _(Optional)_ Optional context used by the conversion. |
-|  traits | [ConverterTraits](./ts-utils.conversion.convertertraits.md) | _(Optional)_ Optional traits to be applied to the conversion. |
-|  converter | (from: unknown, self: [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;, context?: TC) =&gt; [Result](./ts-utils.result.md)<!-- -->&lt;T&gt; | _(Optional)_ Optional conversion function to be used for the conversion. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+defaultContext
+
+
+</td><td>
+
+TC
+
+
+</td><td>
+
+_(Optional)_ Optional context used by the conversion.
+
+
+</td></tr>
+<tr><td>
+
+traits
+
+
+</td><td>
+
+[ConverterTraits](./ts-utils.conversion.convertertraits.md)
+
+
+</td><td>
+
+_(Optional)_ Optional traits to be applied to the conversion.
+
+
+</td></tr>
+<tr><td>
+
+converter
+
+
+</td><td>
+
+(from: unknown, self: [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;, context?: TC) =&gt; [Result](./ts-utils.result.md)<!-- -->&lt;T&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional conversion function to be used for the conversion.
+
+
+</td></tr>
+</tbody></table>

@@ -14,7 +14,36 @@ constructor(params: Partial<GenericValidatorConstructorParams<T, TC>>);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  params | Partial&lt;[GenericValidatorConstructorParams](./ts-utils.validation.base.genericvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;&gt; | The [constructor params](./ts-utils.validation.base.genericvalidatorconstructorparams.md) used to configure validation. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+params
+
+
+</td><td>
+
+Partial&lt;[GenericValidatorConstructorParams](./ts-utils.validation.base.genericvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;&gt;
+
+
+</td><td>
+
+The [constructor params](./ts-utils.validation.base.genericvalidatorconstructorparams.md) used to configure validation.
+
+
+</td></tr>
+</tbody></table>

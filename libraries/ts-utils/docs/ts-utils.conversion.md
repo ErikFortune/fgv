@@ -6,35 +6,211 @@
 
 ## Classes
 
-|  Class | Description |
-|  --- | --- |
-|  [BaseConverter](./ts-utils.conversion.baseconverter.md) | Base templated wrapper to simplify creation of new [Converter](./ts-utils.converter.md)<!-- -->s. |
-|  [GenericDefaultingConverter](./ts-utils.conversion.genericdefaultingconverter.md) | Generic [DefaultingConverter](./ts-utils.conversion.defaultingconverter.md)<!-- -->, which wraps another converter to substitute a supplied default value for any errors returned by the inner converter. |
-|  [ObjectConverter](./ts-utils.conversion.objectconverter.md) | A [Converter](./ts-utils.converter.md) which converts an object of type <code>&lt;T&gt;</code> without changing shape, given a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) for the fields in the object. |
-|  [StringConverter](./ts-utils.conversion.stringconverter.md) | The [StringConverter](./ts-utils.conversion.stringconverter.md) class extends [BaseConverter](./ts-utils.conversion.baseconverter.md) to provide string-specific helper methods. |
+<table><thead><tr><th>
+
+Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[BaseConverter](./ts-utils.conversion.baseconverter.md)
+
+
+</td><td>
+
+Base templated wrapper to simplify creation of new [Converter](./ts-utils.converter.md)<!-- -->s.
+
+
+</td></tr>
+<tr><td>
+
+[GenericDefaultingConverter](./ts-utils.conversion.genericdefaultingconverter.md)
+
+
+</td><td>
+
+Generic [DefaultingConverter](./ts-utils.conversion.defaultingconverter.md)<!-- -->, which wraps another converter to substitute a supplied default value for any errors returned by the inner converter.
+
+
+</td></tr>
+<tr><td>
+
+[ObjectConverter](./ts-utils.conversion.objectconverter.md)
+
+
+</td><td>
+
+A [Converter](./ts-utils.converter.md) which converts an object of type `<T>` without changing shape, given a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) for the fields in the object.
+
+
+</td></tr>
+<tr><td>
+
+[StringConverter](./ts-utils.conversion.stringconverter.md)
+
+
+</td><td>
+
+The [StringConverter](./ts-utils.conversion.stringconverter.md) class extends [BaseConverter](./ts-utils.conversion.baseconverter.md) to provide string-specific helper methods.
+
+
+</td></tr>
+</tbody></table>
 
 ## Interfaces
 
-|  Interface | Description |
-|  --- | --- |
-|  [ConstraintOptions](./ts-utils.conversion.constraintoptions.md) | Options for [Converter.withConstraint()](./ts-utils.converter.withconstraint.md)<!-- -->. |
-|  [Converter](./ts-utils.conversion.converter.md) | Generic converter to convert unknown to a templated type <code>&lt;T&gt;</code>, using intrinsic rules or as modified by an optional conversion context of optional templated type <code>&lt;TC&gt;</code> (default <code>undefined</code>). |
-|  [ConverterTraits](./ts-utils.conversion.convertertraits.md) | Converter traits. |
-|  [DefaultingConverter](./ts-utils.conversion.defaultingconverter.md) |  |
-|  [ObjectConverterOptions](./ts-utils.conversion.objectconverteroptions.md) | Options for an [ObjectConverter](./ts-utils.conversion.objectconverter.md)<!-- -->. |
-|  [StringMatchOptions](./ts-utils.conversion.stringmatchoptions.md) | Options for [StringConverter](./ts-utils.conversion.stringconverter.md) matching method |
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ConstraintOptions](./ts-utils.conversion.constraintoptions.md)
+
+
+</td><td>
+
+Options for [Converter.withConstraint()](./ts-utils.converter.withconstraint.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[Converter](./ts-utils.conversion.converter.md)
+
+
+</td><td>
+
+Generic converter to convert unknown to a templated type `<T>`<!-- -->, using intrinsic rules or as modified by an optional conversion context of optional templated type `<TC>` (default `undefined`<!-- -->).
+
+
+</td></tr>
+<tr><td>
+
+[ConverterTraits](./ts-utils.conversion.convertertraits.md)
+
+
+</td><td>
+
+Converter traits.
+
+
+</td></tr>
+<tr><td>
+
+[DefaultingConverter](./ts-utils.conversion.defaultingconverter.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[ObjectConverterOptions](./ts-utils.conversion.objectconverteroptions.md)
+
+
+</td><td>
+
+Options for an [ObjectConverter](./ts-utils.conversion.objectconverter.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[StringMatchOptions](./ts-utils.conversion.stringmatchoptions.md)
+
+
+</td><td>
+
+Options for [StringConverter](./ts-utils.conversion.stringconverter.md) matching method
+
+
+</td></tr>
+</tbody></table>
 
 ## Namespaces
 
-|  Namespace | Description |
-|  --- | --- |
-|  [Converters](./ts-utils.conversion.converters.md) |  |
+<table><thead><tr><th>
+
+Namespace
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Converters](./ts-utils.conversion.converters.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
 
 ## Type Aliases
 
-|  Type Alias | Description |
-|  --- | --- |
-|  [FieldConverters](./ts-utils.conversion.fieldconverters.md) | Per-property converters or validators for each of the properties in type T. |
-|  [Infer](./ts-utils.conversion.infer.md) | **_(BETA)_** Infers the type that will be returned by an instantiated converter. Works for complex as well as simple types. |
-|  [OnError](./ts-utils.conversion.onerror.md) | Action to take on conversion failures. |
+<table><thead><tr><th>
 
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[FieldConverters](./ts-utils.conversion.fieldconverters.md)
+
+
+</td><td>
+
+Per-property converters or validators for each of the properties in type T.
+
+
+</td></tr>
+<tr><td>
+
+[Infer](./ts-utils.conversion.infer.md)
+
+
+</td><td>
+
+**_(BETA)_** Infers the type that will be returned by an instantiated converter. Works for complex as well as simple types.
+
+
+</td></tr>
+<tr><td>
+
+[OnError](./ts-utils.conversion.onerror.md)
+
+
+</td><td>
+
+Action to take on conversion failures.
+
+
+</td></tr>
+</tbody></table>

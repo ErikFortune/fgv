@@ -6,80 +6,657 @@
 
 ## Classes
 
-|  Class | Description |
-|  --- | --- |
-|  [DetailedFailure](./ts-utils.detailedfailure.md) | A [DetailedFailure](./ts-utils.detailedfailure.md) extends [Failure](./ts-utils.failure.md) to report optional failure details in addition to the error message. |
-|  [DetailedSuccess](./ts-utils.detailedsuccess.md) | A [DetailedSuccess](./ts-utils.detailedsuccess.md) extends [Success](./ts-utils.success.md) to report optional success details in addition to the error message. |
-|  [Failure](./ts-utils.failure.md) | Reports a failed [result](./ts-utils.iresult.md) from some operation, with an error message. |
-|  [MessageAggregator](./ts-utils.messageaggregator.md) | A simple error aggregator to simplify collecting and reporting all errors in a flow. |
-|  [Normalizer](./ts-utils.normalizer.md) | Normalizes an arbitrary JSON object |
-|  [ObjectConverter](./ts-utils.objectconverter.md) | A [Converter](./ts-utils.converter.md) which converts an object of type <code>&lt;T&gt;</code> without changing shape, given a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) for the fields in the object. |
-|  [StringConverter](./ts-utils.stringconverter.md) | The [StringConverter](./ts-utils.conversion.stringconverter.md) class extends [BaseConverter](./ts-utils.conversion.baseconverter.md) to provide string-specific helper methods. |
-|  [Success](./ts-utils.success.md) | Reports a successful [result](./ts-utils.iresult.md) from some operation and the corresponding value. |
+<table><thead><tr><th>
+
+Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[DetailedFailure](./ts-utils.detailedfailure.md)
+
+
+</td><td>
+
+A [DetailedFailure](./ts-utils.detailedfailure.md) extends [Failure](./ts-utils.failure.md) to report optional failure details in addition to the error message.
+
+
+</td></tr>
+<tr><td>
+
+[DetailedSuccess](./ts-utils.detailedsuccess.md)
+
+
+</td><td>
+
+A [DetailedSuccess](./ts-utils.detailedsuccess.md) extends [Success](./ts-utils.success.md) to report optional success details in addition to the error message.
+
+
+</td></tr>
+<tr><td>
+
+[Failure](./ts-utils.failure.md)
+
+
+</td><td>
+
+Reports a failed [result](./ts-utils.iresult.md) from some operation, with an error message.
+
+
+</td></tr>
+<tr><td>
+
+[MessageAggregator](./ts-utils.messageaggregator.md)
+
+
+</td><td>
+
+A simple error aggregator to simplify collecting and reporting all errors in a flow.
+
+
+</td></tr>
+<tr><td>
+
+[Normalizer](./ts-utils.normalizer.md)
+
+
+</td><td>
+
+Normalizes an arbitrary JSON object
+
+
+</td></tr>
+<tr><td>
+
+[ObjectConverter](./ts-utils.objectconverter.md)
+
+
+</td><td>
+
+A [Converter](./ts-utils.converter.md) which converts an object of type `<T>` without changing shape, given a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) for the fields in the object.
+
+
+</td></tr>
+<tr><td>
+
+[StringConverter](./ts-utils.stringconverter.md)
+
+
+</td><td>
+
+The [StringConverter](./ts-utils.conversion.stringconverter.md) class extends [BaseConverter](./ts-utils.conversion.baseconverter.md) to provide string-specific helper methods.
+
+
+</td></tr>
+<tr><td>
+
+[Success](./ts-utils.success.md)
+
+
+</td><td>
+
+Reports a successful [result](./ts-utils.iresult.md) from some operation and the corresponding value.
+
+
+</td></tr>
+</tbody></table>
 
 ## Functions
 
-|  Function | Description |
-|  --- | --- |
-|  [allSucceed(results, successValue, aggregatedErrors)](./ts-utils.allsucceed.md) | Determines if an iterable collection of [Result&lt;T&gt;](./ts-utils.result.md) were all successful. |
-|  [captureResult(func)](./ts-utils.captureresult.md) | Wraps a function which might throw to convert exception results to [Failure](./ts-utils.failure.md)<!-- -->. |
-|  [fail\_2(message)](./ts-utils.fail_2.md) | Returns [Failure&lt;T&gt;](./ts-utils.failure.md) with the supplied error message. |
-|  [failWithDetail(message, detail)](./ts-utils.failwithdetail.md) | Returns [DetailedFailure&lt;T, TD&gt;](./ts-utils.detailedfailure.md) with a supplied error message and detail. |
-|  [getTypeOfProperty(key, item)](./ts-utils.gettypeofproperty.md) | Gets the type of a property specified by key from an arbitrary object. |
-|  [getValueOfPropertyOrDefault(key, item, defaultValue)](./ts-utils.getvalueofpropertyordefault.md) | Gets the value of a property specified by key from an arbitrary object, or a default value if the property does not exist. |
-|  [isKeyOf(key, item)](./ts-utils.iskeyof.md) | Helper type-guard function to report whether a specified key is present in a supplied object. |
-|  [mapDetailedResults(results, ignore, aggregatedErrors)](./ts-utils.mapdetailedresults.md) | Aggregates successful results from a collection of [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->, optionally ignoring certain error details. |
-|  [mapFailures(results, aggregatedErrors)](./ts-utils.mapfailures.md) | Aggregates error messages from a collection of [Result&lt;T&gt;](./ts-utils.result.md)<!-- -->. |
-|  [mapResults(results, aggregatedErrors)](./ts-utils.mapresults.md) | Aggregates successful result values from a collection of [Result&lt;T&gt;](./ts-utils.result.md)<!-- -->. |
-|  [mapSuccess(results, aggregatedErrors)](./ts-utils.mapsuccess.md) | Aggregates successful results from a a collection of [Result&lt;T&gt;](./ts-utils.result.md)<!-- -->. |
-|  [mapToRecord(src, factory)](./ts-utils.maptorecord.md) | Applies a factory method to convert a <code>ReadonlyMap&lt;TK, TS&gt;</code> into a <code>Record&lt;TK, TD&gt;</code>. |
-|  [omit(from, exclude)](./ts-utils.omit.md) | Simple implicit omit function, which picks all of the properties from a supplied object except those specified for exclusion. |
-|  [optionalMapToPossiblyEmptyRecord(src, factory)](./ts-utils.optionalmaptopossiblyemptyrecord.md) | Applies a factory method to convert an optional <code>ReadonlyMap&lt;string, TS&gt;</code> into a <code>Record&lt;string, TD&gt;</code> |
-|  [optionalMapToRecord(src, factory)](./ts-utils.optionalmaptorecord.md) | Applies a factory method to convert an optional <code>ReadonlyMap&lt;string, TS&gt;</code> into a <code>Record&lt;string, TD&gt;</code> or <code>undefined</code>. |
-|  [optionalRecordToMap(src, factory)](./ts-utils.optionalrecordtomap.md) | Applies a factory method to convert an optional <code>Record&lt;TK, TS&gt;</code> into a <code>Map&lt;TK, TD&gt;</code>, or <code>undefined</code>. |
-|  [optionalRecordToPossiblyEmptyMap(src, factory)](./ts-utils.optionalrecordtopossiblyemptymap.md) | Applies a factory method to convert an optional <code>Record&lt;TK, TS&gt;</code> into a <code>Map&lt;TK, TD&gt;</code> |
-|  [pick(from, include)](./ts-utils.pick.md) | Simple implicit pick function, which picks a set of properties from a supplied object. Ignores picked properties that do not exist regardless of type signature. |
-|  [populateObject(initializers, options, aggregatedErrors)](./ts-utils.populateobject.md) | Populates an an object based on a prototype full of field initializers that return [Result&lt;T\[key\]&gt;](./ts-utils.result.md)<!-- -->. Returns [Success](./ts-utils.success.md) with the populated object if all initializers succeed, or [Failure](./ts-utils.failure.md) with a concatenated list of all error messages. |
-|  [populateObject(initializers, order, aggregatedErrors)](./ts-utils.populateobject_1.md) | Populates an an object based on a prototype full of field initializers that return [Result&lt;T\[key\]&gt;](./ts-utils.result.md)<!-- -->. Returns [Success](./ts-utils.success.md) with the populated object if all initializers succeed, or [Failure](./ts-utils.failure.md) with a concatenated list of all error messages. |
-|  [propagateWithDetail(result, detail, successDetail)](./ts-utils.propagatewithdetail.md) | Propagates a [Success](./ts-utils.success.md) or [Failure](./ts-utils.failure.md) [Result](./ts-utils.result.md)<!-- -->, adding supplied event details as appropriate. |
-|  [recordToMap(src, factory)](./ts-utils.recordtomap.md) | Applies a factory method to convert a <code>Record&lt;TK, TS&gt;</code> into a <code>Map&lt;TK, TD&gt;</code>. |
-|  [succeed(value)](./ts-utils.succeed.md) | Returns [Success&lt;T&gt;](./ts-utils.success.md) with the supplied result value. |
-|  [succeedWithDetail(value, detail)](./ts-utils.succeedwithdetail.md) | Returns [DetailedSuccess&lt;T, TD&gt;](./ts-utils.detailedsuccess.md) with a supplied value and optional detail. |
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[allSucceed(results, successValue, aggregatedErrors)](./ts-utils.allsucceed.md)
+
+
+</td><td>
+
+Determines if an iterable collection of [Result&lt;T&gt;](./ts-utils.result.md) were all successful.
+
+
+</td></tr>
+<tr><td>
+
+[captureResult(func)](./ts-utils.captureresult.md)
+
+
+</td><td>
+
+Wraps a function which might throw to convert exception results to [Failure](./ts-utils.failure.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[fail\_2(message)](./ts-utils.fail_2.md)
+
+
+</td><td>
+
+Returns [Failure&lt;T&gt;](./ts-utils.failure.md) with the supplied error message.
+
+
+</td></tr>
+<tr><td>
+
+[failWithDetail(message, detail)](./ts-utils.failwithdetail.md)
+
+
+</td><td>
+
+Returns [DetailedFailure&lt;T, TD&gt;](./ts-utils.detailedfailure.md) with a supplied error message and detail.
+
+
+</td></tr>
+<tr><td>
+
+[getTypeOfProperty(key, item)](./ts-utils.gettypeofproperty.md)
+
+
+</td><td>
+
+Gets the type of a property specified by key from an arbitrary object.
+
+
+</td></tr>
+<tr><td>
+
+[getValueOfPropertyOrDefault(key, item, defaultValue)](./ts-utils.getvalueofpropertyordefault.md)
+
+
+</td><td>
+
+Gets the value of a property specified by key from an arbitrary object, or a default value if the property does not exist.
+
+
+</td></tr>
+<tr><td>
+
+[isKeyOf(key, item)](./ts-utils.iskeyof.md)
+
+
+</td><td>
+
+Helper type-guard function to report whether a specified key is present in a supplied object.
+
+
+</td></tr>
+<tr><td>
+
+[mapDetailedResults(results, ignore, aggregatedErrors)](./ts-utils.mapdetailedresults.md)
+
+
+</td><td>
+
+Aggregates successful results from a collection of [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->, optionally ignoring certain error details.
+
+
+</td></tr>
+<tr><td>
+
+[mapFailures(results, aggregatedErrors)](./ts-utils.mapfailures.md)
+
+
+</td><td>
+
+Aggregates error messages from a collection of [Result&lt;T&gt;](./ts-utils.result.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[mapResults(results, aggregatedErrors)](./ts-utils.mapresults.md)
+
+
+</td><td>
+
+Aggregates successful result values from a collection of [Result&lt;T&gt;](./ts-utils.result.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[mapSuccess(results, aggregatedErrors)](./ts-utils.mapsuccess.md)
+
+
+</td><td>
+
+Aggregates successful results from a a collection of [Result&lt;T&gt;](./ts-utils.result.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[mapToRecord(src, factory)](./ts-utils.maptorecord.md)
+
+
+</td><td>
+
+Applies a factory method to convert a `ReadonlyMap<TK, TS>` into a `Record<TK, TD>`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[omit(from, exclude)](./ts-utils.omit.md)
+
+
+</td><td>
+
+Simple implicit omit function, which picks all of the properties from a supplied object except those specified for exclusion.
+
+
+</td></tr>
+<tr><td>
+
+[optionalMapToPossiblyEmptyRecord(src, factory)](./ts-utils.optionalmaptopossiblyemptyrecord.md)
+
+
+</td><td>
+
+Applies a factory method to convert an optional `ReadonlyMap<string, TS>` into a `Record<string, TD>`
+
+
+</td></tr>
+<tr><td>
+
+[optionalMapToRecord(src, factory)](./ts-utils.optionalmaptorecord.md)
+
+
+</td><td>
+
+Applies a factory method to convert an optional `ReadonlyMap<string, TS>` into a `Record<string, TD>` or `undefined`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[optionalRecordToMap(src, factory)](./ts-utils.optionalrecordtomap.md)
+
+
+</td><td>
+
+Applies a factory method to convert an optional `Record<TK, TS>` into a `Map<TK, TD>`<!-- -->, or `undefined`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[optionalRecordToPossiblyEmptyMap(src, factory)](./ts-utils.optionalrecordtopossiblyemptymap.md)
+
+
+</td><td>
+
+Applies a factory method to convert an optional `Record<TK, TS>` into a `Map<TK, TD>`
+
+
+</td></tr>
+<tr><td>
+
+[pick(from, include)](./ts-utils.pick.md)
+
+
+</td><td>
+
+Simple implicit pick function, which picks a set of properties from a supplied object. Ignores picked properties that do not exist regardless of type signature.
+
+
+</td></tr>
+<tr><td>
+
+[populateObject(initializers, options, aggregatedErrors)](./ts-utils.populateobject.md)
+
+
+</td><td>
+
+Populates an an object based on a prototype full of field initializers that return [Result&lt;T\[key\]&gt;](./ts-utils.result.md)<!-- -->. Returns [Success](./ts-utils.success.md) with the populated object if all initializers succeed, or [Failure](./ts-utils.failure.md) with a concatenated list of all error messages.
+
+
+</td></tr>
+<tr><td>
+
+[populateObject(initializers, order, aggregatedErrors)](./ts-utils.populateobject_1.md)
+
+
+</td><td>
+
+Populates an an object based on a prototype full of field initializers that return [Result&lt;T\[key\]&gt;](./ts-utils.result.md)<!-- -->. Returns [Success](./ts-utils.success.md) with the populated object if all initializers succeed, or [Failure](./ts-utils.failure.md) with a concatenated list of all error messages.
+
+
+</td></tr>
+<tr><td>
+
+[propagateWithDetail(result, detail, successDetail)](./ts-utils.propagatewithdetail.md)
+
+
+</td><td>
+
+Propagates a [Success](./ts-utils.success.md) or [Failure](./ts-utils.failure.md) [Result](./ts-utils.result.md)<!-- -->, adding supplied event details as appropriate.
+
+
+</td></tr>
+<tr><td>
+
+[recordToMap(src, factory)](./ts-utils.recordtomap.md)
+
+
+</td><td>
+
+Applies a factory method to convert a `Record<TK, TS>` into a `Map<TK, TD>`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[succeed(value)](./ts-utils.succeed.md)
+
+
+</td><td>
+
+Returns [Success&lt;T&gt;](./ts-utils.success.md) with the supplied result value.
+
+
+</td></tr>
+<tr><td>
+
+[succeedWithDetail(value, detail)](./ts-utils.succeedwithdetail.md)
+
+
+</td><td>
+
+Returns [DetailedSuccess&lt;T, TD&gt;](./ts-utils.detailedsuccess.md) with a supplied value and optional detail.
+
+
+</td></tr>
+</tbody></table>
 
 ## Interfaces
 
-|  Interface | Description |
-|  --- | --- |
-|  [Converter](./ts-utils.converter.md) | Generic converter to convert unknown to a templated type <code>&lt;T&gt;</code>, using intrinsic rules or as modified by an optional conversion context of optional templated type <code>&lt;TC&gt;</code> (default <code>undefined</code>). |
-|  [IMessageAggregator](./ts-utils.imessageaggregator.md) | Simple error aggregator to simplify collecting all errors in a flow. |
-|  [IResult](./ts-utils.iresult.md) | Represents the result of some operation of sequence of operations. |
-|  [IResultLogger](./ts-utils.iresultlogger.md) | Simple logger interface used by [IResult.orThrow()](./ts-utils.iresult.orthrow.md)<!-- -->. |
-|  [PopulateObjectOptions](./ts-utils.populateobjectoptions.md) | Options for the [populateObject()](./ts-utils.populateobject.md) function. |
-|  [Validator](./ts-utils.validator.md) | In-place validation that a supplied unknown matches some required characteristics (type, values, etc). |
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Converter](./ts-utils.converter.md)
+
+
+</td><td>
+
+Generic converter to convert unknown to a templated type `<T>`<!-- -->, using intrinsic rules or as modified by an optional conversion context of optional templated type `<TC>` (default `undefined`<!-- -->).
+
+
+</td></tr>
+<tr><td>
+
+[IMessageAggregator](./ts-utils.imessageaggregator.md)
+
+
+</td><td>
+
+Simple error aggregator to simplify collecting all errors in a flow.
+
+
+</td></tr>
+<tr><td>
+
+[IResult](./ts-utils.iresult.md)
+
+
+</td><td>
+
+Represents the result of some operation of sequence of operations.
+
+
+</td></tr>
+<tr><td>
+
+[IResultLogger](./ts-utils.iresultlogger.md)
+
+
+</td><td>
+
+Simple logger interface used by [IResult.orThrow()](./ts-utils.iresult.orthrow.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[PopulateObjectOptions](./ts-utils.populateobjectoptions.md)
+
+
+</td><td>
+
+Options for the [populateObject()](./ts-utils.populateobject.md) function.
+
+
+</td></tr>
+<tr><td>
+
+[Validator](./ts-utils.validator.md)
+
+
+</td><td>
+
+In-place validation that a supplied unknown matches some required characteristics (type, values, etc).
+
+
+</td></tr>
+</tbody></table>
 
 ## Namespaces
 
-|  Namespace | Description |
-|  --- | --- |
-|  [Conversion](./ts-utils.conversion.md) |  |
-|  [Converters](./ts-utils.converters.md) |  |
-|  [Hash](./ts-utils.hash.md) |  |
-|  [Logging](./ts-utils.logging.md) |  |
-|  [Validation](./ts-utils.validation.md) |  |
-|  [Validators](./ts-utils.validators.md) |  |
+<table><thead><tr><th>
+
+Namespace
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Conversion](./ts-utils.conversion.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Converters](./ts-utils.converters.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Hash](./ts-utils.hash.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Logging](./ts-utils.logging.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Validation](./ts-utils.validation.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Validators](./ts-utils.validators.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
 
 ## Type Aliases
 
-|  Type Alias | Description |
-|  --- | --- |
-|  [Brand](./ts-utils.brand.md) | Helper type to brand a simple type to prevent inappropriate use |
-|  [DetailedFailureContinuation](./ts-utils.detailedfailurecontinuation.md) | Callback to be called when a [DetailedResult](./ts-utils.detailedresult.md) encounters a failure. |
-|  [DetailedResult](./ts-utils.detailedresult.md) | **_(BETA)_** Type inference to determine the result type <code>T</code> of a [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->. |
-|  [DetailedSuccessContinuation](./ts-utils.detailedsuccesscontinuation.md) | Callback to be called when a [DetailedResult](./ts-utils.detailedresult.md) encounters success. |
-|  [FailureContinuation](./ts-utils.failurecontinuation.md) | Continuation callback to be called in the event that an [Result](./ts-utils.result.md) fails. |
-|  [FieldInitializers](./ts-utils.fieldinitializers.md) | String-keyed record of initialization functions to be passed to [populateObject()](./ts-utils.populateobject.md) or [populateObject()](./ts-utils.populateobject_1.md)<!-- -->. |
-|  [Result](./ts-utils.result.md) | Represents the [result](./ts-utils.iresult.md) of some operation or sequence of operations. |
-|  [ResultDetailType](./ts-utils.resultdetailtype.md) | **_(BETA)_** Type inference to determine the detail type <code>TD</code> of a [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->. |
-|  [ResultValueType](./ts-utils.resultvaluetype.md) | **_(BETA)_** Type inference to determine the result type of an [Result](./ts-utils.result.md)<!-- -->. |
-|  [SuccessContinuation](./ts-utils.successcontinuation.md) | Continuation callback to be called in the event that an [Result](./ts-utils.result.md) is successful. |
+<table><thead><tr><th>
 
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Brand](./ts-utils.brand.md)
+
+
+</td><td>
+
+Helper type to brand a simple type to prevent inappropriate use
+
+
+</td></tr>
+<tr><td>
+
+[DetailedFailureContinuation](./ts-utils.detailedfailurecontinuation.md)
+
+
+</td><td>
+
+Callback to be called when a [DetailedResult](./ts-utils.detailedresult.md) encounters a failure.
+
+
+</td></tr>
+<tr><td>
+
+[DetailedResult](./ts-utils.detailedresult.md)
+
+
+</td><td>
+
+**_(BETA)_** Type inference to determine the result type `T` of a [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[DetailedSuccessContinuation](./ts-utils.detailedsuccesscontinuation.md)
+
+
+</td><td>
+
+Callback to be called when a [DetailedResult](./ts-utils.detailedresult.md) encounters success.
+
+
+</td></tr>
+<tr><td>
+
+[FailureContinuation](./ts-utils.failurecontinuation.md)
+
+
+</td><td>
+
+Continuation callback to be called in the event that an [Result](./ts-utils.result.md) fails.
+
+
+</td></tr>
+<tr><td>
+
+[FieldInitializers](./ts-utils.fieldinitializers.md)
+
+
+</td><td>
+
+String-keyed record of initialization functions to be passed to [populateObject()](./ts-utils.populateobject.md) or [populateObject()](./ts-utils.populateobject_1.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[Result](./ts-utils.result.md)
+
+
+</td><td>
+
+Represents the [result](./ts-utils.iresult.md) of some operation or sequence of operations.
+
+
+</td></tr>
+<tr><td>
+
+[ResultDetailType](./ts-utils.resultdetailtype.md)
+
+
+</td><td>
+
+**_(BETA)_** Type inference to determine the detail type `TD` of a [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ResultValueType](./ts-utils.resultvaluetype.md)
+
+
+</td><td>
+
+**_(BETA)_** Type inference to determine the result type of an [Result](./ts-utils.result.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[SuccessContinuation](./ts-utils.successcontinuation.md)
+
+
+</td><td>
+
+Continuation callback to be called in the event that an [Result](./ts-utils.result.md) is successful.
+
+
+</td></tr>
+</tbody></table>

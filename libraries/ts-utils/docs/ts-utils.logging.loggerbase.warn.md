@@ -12,11 +12,53 @@ warn(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  message | unknown | _(Optional)_ |
-|  parameters | unknown\[\] |  |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+message
+
+
+</td><td>
+
+unknown
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+parameters
+
+
+</td><td>
+
+unknown\[\]
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Success](./ts-utils.success.md)<!-- -->&lt;string \| undefined&gt;

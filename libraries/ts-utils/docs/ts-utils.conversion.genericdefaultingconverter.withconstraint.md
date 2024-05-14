@@ -14,11 +14,55 @@ withConstraint(constraint: (val: T | TD) => boolean | Result<T | TD>, options?: 
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  constraint | (val: T \| TD) =&gt; boolean \| [Result](./ts-utils.result.md)<!-- -->&lt;T \| TD&gt; | Constraint evaluation function. |
-|  options | [ConstraintOptions](./ts-utils.conversion.constraintoptions.md) \| undefined | _(Optional)_ [Options](./ts-utils.conversion.constraintoptions.md) for constraint evaluation. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+constraint
+
+
+</td><td>
+
+(val: T \| TD) =&gt; boolean \| [Result](./ts-utils.result.md)<!-- -->&lt;T \| TD&gt;
+
+
+</td><td>
+
+Constraint evaluation function.
+
+
+</td></tr>
+<tr><td>
+
+options
+
+
+</td><td>
+
+[ConstraintOptions](./ts-utils.conversion.constraintoptions.md) \| undefined
+
+
+</td><td>
+
+_(Optional)_ [Options](./ts-utils.conversion.constraintoptions.md) for constraint evaluation.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T \| TD, TC&gt;

@@ -14,7 +14,44 @@ export interface ValidatorOptions<TC>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [defaultContext?](./ts-utils.validation.validatoroptions.defaultcontext.md) |  | TC | _(Optional)_ |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[defaultContext?](./ts-utils.validation.validatoroptions.defaultcontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+TC
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+</tbody></table>

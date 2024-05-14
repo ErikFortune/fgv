@@ -14,8 +14,52 @@ constructor(fields: FieldConverters<T, TC>, optional?: (keyof T)[]);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  fields | [FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T, TC&gt; | A [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) containing a [Converter](./ts-utils.converter.md) for each field. |
-|  optional | (keyof T)\[\] | _(Optional)_ An array of <code>keyof T</code> listing fields that are not required.  |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+fields
+
+
+</td><td>
+
+[FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+A [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) containing a [Converter](./ts-utils.converter.md) for each field.
+
+
+</td></tr>
+<tr><td>
+
+optional
+
+
+</td><td>
+
+(keyof T)\[\]
+
+
+</td><td>
+
+_(Optional)_ An array of `keyof T` listing fields that are not required. 
+
+
+</td></tr>
+</tbody></table>

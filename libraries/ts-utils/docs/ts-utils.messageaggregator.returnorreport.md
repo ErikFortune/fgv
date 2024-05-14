@@ -16,11 +16,55 @@ returnOrReport<T>(result: Result<T>, separator?: string): Result<T>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  result | [Result](./ts-utils.result.md)<!-- -->&lt;T&gt; | The [Result&lt;T&gt;](./ts-utils.result.md) to be returned if no messages have been aggregated. |
-|  separator | string | _(Optional)_ Optional string separator used to construct the error message. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+result
+
+
+</td><td>
+
+[Result](./ts-utils.result.md)<!-- -->&lt;T&gt;
+
+
+</td><td>
+
+The [Result&lt;T&gt;](./ts-utils.result.md) to be returned if no messages have been aggregated.
+
+
+</td></tr>
+<tr><td>
+
+separator
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ Optional string separator used to construct the error message.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;T&gt;

@@ -14,7 +14,26 @@ export interface IResultLogger
 
 ## Methods
 
-|  Method | Description |
-|  --- | --- |
-|  [error(message)](./ts-utils.iresultlogger.error.md) | Log an error message. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[error(message)](./ts-utils.iresultlogger.error.md)
+
+
+</td><td>
+
+Log an error message.
+
+
+</td></tr>
+</tbody></table>

@@ -14,24 +14,195 @@ export declare class InMemoryLogger extends LoggerBase
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(logLevel)](./ts-utils.logging.inmemorylogger._constructor_.md) |  | Constructs a new instance of the <code>InMemoryLogger</code> class |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(logLevel)](./ts-utils.logging.inmemorylogger._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new instance of the `InMemoryLogger` class
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [\_messages](./ts-utils.logging.inmemorylogger._messages.md) | <code>protected</code> | string\[\] |  |
-|  [\_silent](./ts-utils.logging.inmemorylogger._silent.md) | <code>protected</code> | string\[\] |  |
-|  [messages](./ts-utils.logging.inmemorylogger.messages.md) | <code>readonly</code> | string\[\] |  |
-|  [silent](./ts-utils.logging.inmemorylogger.silent.md) | <code>readonly</code> | string\[\] |  |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[\_messages](./ts-utils.logging.inmemorylogger._messages.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+string\[\]
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[\_silent](./ts-utils.logging.inmemorylogger._silent.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+string\[\]
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[messages](./ts-utils.logging.inmemorylogger.messages.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string\[\]
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[silent](./ts-utils.logging.inmemorylogger.silent.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string\[\]
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [\_innerLog(message)](./ts-utils.logging.inmemorylogger._innerlog.md) | <code>protected</code> |  |
-|  [\_innerSilent(message)](./ts-utils.logging.inmemorylogger._innersilent.md) | <code>protected</code> |  |
-|  [clear()](./ts-utils.logging.inmemorylogger.clear.md) |  |  |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[\_innerLog(message)](./ts-utils.logging.inmemorylogger._innerlog.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[\_innerSilent(message)](./ts-utils.logging.inmemorylogger._innersilent.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[clear()](./ts-utils.logging.inmemorylogger.clear.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

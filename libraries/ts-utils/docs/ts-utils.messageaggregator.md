@@ -15,23 +15,179 @@ export declare class MessageAggregator implements IMessageAggregator
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(errors)](./ts-utils.messageaggregator._constructor_.md) |  | Constructs a new [ErrorAggregator](./ts-utils.messageaggregator.md) with an optionally specified initial set of error messages. |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(errors)](./ts-utils.messageaggregator._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [ErrorAggregator](./ts-utils.messageaggregator.md) with an optionally specified initial set of error messages.
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [hasMessages](./ts-utils.messageaggregator.hasmessages.md) | <code>readonly</code> | boolean | Indicates whether any messages have been aggregated. |
-|  [messages](./ts-utils.messageaggregator.messages.md) | <code>readonly</code> | string\[\] | The aggregated messages. |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[hasMessages](./ts-utils.messageaggregator.hasmessages.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+Indicates whether any messages have been aggregated.
+
+
+</td></tr>
+<tr><td>
+
+[messages](./ts-utils.messageaggregator.messages.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string\[\]
+
+
+</td><td>
+
+The aggregated messages.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [addMessage(message)](./ts-utils.messageaggregator.addmessage.md) |  | Adds a message to the aggregator, if defined. |
-|  [addMessages(messages)](./ts-utils.messageaggregator.addmessages.md) |  | Adds multiple messages to the aggregator. |
-|  [returnOrReport(result, separator)](./ts-utils.messageaggregator.returnorreport.md) |  | <p>If any error messages have been aggregated, returns [Failure&lt;T&gt;](./ts-utils.failure.md) with the aggregated messages concatenated using the optionally-supplied separator, or newline. If the supplied [Result&lt;T&gt;](./ts-utils.result.md) contains an error message that has not already been aggregated, it will be included in the aggregated messages.</p><p>If no error messages have been aggregated, returns the supplied [Result&lt;T&gt;](./ts-utils.result.md)<!-- -->.</p> |
-|  [toString(separator)](./ts-utils.messageaggregator.tostring.md) |  | Returns all messages as a single string joined using the optionally-supplied <code>separator</code>, or newline if no separator is specified. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[addMessage(message)](./ts-utils.messageaggregator.addmessage.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds a message to the aggregator, if defined.
+
+
+</td></tr>
+<tr><td>
+
+[addMessages(messages)](./ts-utils.messageaggregator.addmessages.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds multiple messages to the aggregator.
+
+
+</td></tr>
+<tr><td>
+
+[returnOrReport(result, separator)](./ts-utils.messageaggregator.returnorreport.md)
+
+
+</td><td>
+
+
+</td><td>
+
+If any error messages have been aggregated, returns [Failure&lt;T&gt;](./ts-utils.failure.md) with the aggregated messages concatenated using the optionally-supplied separator, or newline. If the supplied [Result&lt;T&gt;](./ts-utils.result.md) contains an error message that has not already been aggregated, it will be included in the aggregated messages.
+
+If no error messages have been aggregated, returns the supplied [Result&lt;T&gt;](./ts-utils.result.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[toString(separator)](./ts-utils.messageaggregator.tostring.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Returns all messages as a single string joined using the optionally-supplied `separator`<!-- -->, or newline if no separator is specified.
+
+
+</td></tr>
+</tbody></table>

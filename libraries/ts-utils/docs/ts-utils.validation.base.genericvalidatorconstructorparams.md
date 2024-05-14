@@ -14,9 +14,82 @@ export interface GenericValidatorConstructorParams<T, TC>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [options?](./ts-utils.validation.base.genericvalidatorconstructorparams.options.md) |  | [ValidatorOptions](./ts-utils.validation.validatoroptions.md)<!-- -->&lt;TC&gt; | _(Optional)_ |
-|  [traits?](./ts-utils.validation.base.genericvalidatorconstructorparams.traits.md) |  | Partial&lt;[ValidatorTraits](./ts-utils.validation.validatortraits.md)<!-- -->&gt; | _(Optional)_ |
-|  [validator?](./ts-utils.validation.base.genericvalidatorconstructorparams.validator.md) |  | [ValidatorFunc](./ts-utils.validation.base.validatorfunc.md)<!-- -->&lt;T, TC&gt; | _(Optional)_ |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[options?](./ts-utils.validation.base.genericvalidatorconstructorparams.options.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[ValidatorOptions](./ts-utils.validation.validatoroptions.md)<!-- -->&lt;TC&gt;
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[traits?](./ts-utils.validation.base.genericvalidatorconstructorparams.traits.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Partial&lt;[ValidatorTraits](./ts-utils.validation.validatortraits.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[validator?](./ts-utils.validation.base.genericvalidatorconstructorparams.validator.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[ValidatorFunc](./ts-utils.validation.base.validatorfunc.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+</tbody></table>
