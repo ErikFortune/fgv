@@ -4,7 +4,7 @@
 
 ## EditorRules.MultiValueJsonEditorRule.\_options property
 
-Stored fully-resolved  for this rule.
+Stored fully-resolved [editor options](./ts-json.ijsoneditoroptions.md) for this rule.
 
 **Signature:**
 

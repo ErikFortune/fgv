@@ -74,7 +74,7 @@ validation
 
 </td><td>
 
-_(Optional)_ The  in effect.
+_(Optional)_ The [validation options](./ts-json.ijsoneditorvalidationoptions.md) in effect.
 
 
 </td></tr>

@@ -69,12 +69,12 @@ options
 
 </td><td>
 
-ISimpleJsonMapOptions
+[ISimpleJsonMapOptions](./ts-json.isimplejsonmapoptions.md)
 
 
 </td><td>
 
-_(Optional)_ Optional  for initialization.
+_(Optional)_ Optional [ISimpleJsonMapOptions](./ts-json.isimplejsonmapoptions.md) for initialization.
 
 
 </td></tr>

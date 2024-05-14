@@ -60,14 +60,14 @@ export interface IMultiValuePropertyParts {
 
   /**
    * If `true`, the resolved values are added as an array
-   * with the name of the {@link Editor.Rules.IMultiValuePropertyParts.propertyVariable | propertyVariable}.
+   * with the name of the {@link EditorRules.IMultiValuePropertyParts.propertyVariable | propertyVariable}.
    * If false, values are added as individual properties with names that correspond the value.
    */
   readonly asArray: boolean;
 }
 
 /**
- * The {@link Editor.Rules.MultiValueJsonEditorRule | Multi-Value JSON editor rule}
+ * The {@link EditorRules.MultiValueJsonEditorRule | Multi-Value JSON editor rule}
  * expands matching keys multiple times, projecting the value into the template
  * context for any child objects rendered by the rule.
  *
@@ -80,15 +80,15 @@ export interface IMultiValuePropertyParts {
  */
 export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
   /**
-   * Stored fully-resolved {@link Editor.IJsonEditorOptions | editor options}
+   * Stored fully-resolved {@link IJsonEditorOptions | editor options}
    * for this rule.
    * @public
    */
   protected _options?: IJsonEditorOptions;
 
   /**
-   * Creates a new {@link Editor.Rules.MultiValueJsonEditorRule | MultiValueJsonEditorRule}.
-   * @param options - Optional {@link Editor.IJsonEditorOptions | configuration options}.
+   * Creates a new {@link EditorRules.MultiValueJsonEditorRule | MultiValueJsonEditorRule}.
+   * @param options - Optional {@link IJsonEditorOptions | configuration options}.
    */
   public constructor(options?: IJsonEditorOptions) {
     super();
@@ -96,8 +96,8 @@ export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
   }
 
   /**
-   * Creates a new {@link Editor.Rules.MultiValueJsonEditorRule | MultiValueJsonEditorRule}.
-   * @param options - Optional {@link Editor.IJsonEditorOptions | configuration options}.
+   * Creates a new {@link EditorRules.MultiValueJsonEditorRule | MultiValueJsonEditorRule}.
+   * @param options - Optional {@link IJsonEditorOptions | configuration options}.
    */
   public static create(options?: IJsonEditorOptions): Result<MultiValueJsonEditorRule> {
     return captureResult(() => new MultiValueJsonEditorRule(options));
@@ -168,7 +168,7 @@ export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
    * @param value - The `JsonValue` of the property to be considered.
    * @param state - The {@link JsonEditorState | editor state} for the object being edited.
    * @returns `Success` with detail `'deferred'` and an
-   * {@link Editor.Rules.IMultiValuePropertyParts | IMultiValuePropertyParts}
+   * {@link EditorRules.IMultiValuePropertyParts | IMultiValuePropertyParts}
    * describing the match for matching multi-value property.  Returns `Failure` with detail `'error'` if an error occurs
    * or with detail `'inapplicable'` if the key does not represent a multi-value property.
    * @public

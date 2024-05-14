@@ -42,7 +42,7 @@ options
 
 </td><td>
 
-_(Optional)_ Optional partial  for all rules.
+_(Optional)_ Optional partial [editor options](./ts-json.ijsoneditoroptions.md) for all rules.
 
 
 </td></tr>
@@ -51,5 +51,5 @@ _(Optional)_ Optional partial  for all rules.
 
 Result&lt;[IJsonEditorRule](./ts-json.ijsoneditorrule.md)<!-- -->\[\]&gt;
 
-Default  with any supplied options applied.
+Default [editor rules](./ts-json.ijsoneditorrule.md) with any supplied options applied.
 

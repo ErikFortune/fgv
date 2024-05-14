@@ -72,12 +72,12 @@ export class JsonEditor implements IJsonCloneEditor {
   protected static _default?: JsonEditor;
 
   /**
-   * Full set of {@link Editor.IJsonEditorOptions | editor options} in effect for this editor.
+   * Full set of {@link IJsonEditorOptions | editor options} in effect for this editor.
    */
   public options: IJsonEditorOptions;
 
   /**
-   * The set of {@link Editor.IJsonEditorRule | editor rules} applied by this editor.
+   * The set of {@link IJsonEditorRule | editor rules} applied by this editor.
    * @internal
    */
   protected _rules: IJsonEditorRule[];
@@ -85,9 +85,9 @@ export class JsonEditor implements IJsonCloneEditor {
   /**
    * Protected constructor for {@link JsonEditor | JsonEditor} and derived classes.
    * External consumers should instantiate via the {@link JsonEditor.create | create static method}.
-   * @param options - Optional partial {@link Editor.IJsonEditorOptions | editor options} for the
+   * @param options - Optional partial {@link IJsonEditorOptions | editor options} for the
    * constructed editor.
-   * @param rules - Any {@link Editor.IJsonEditorRule | editor rules} to be applied by the editor.
+   * @param rules - Any {@link IJsonEditorRule | editor rules} to be applied by the editor.
    * @internal
    */
   protected constructor(options?: Partial<IJsonEditorOptions>, rules?: IJsonEditorRule[]) {
@@ -109,9 +109,9 @@ export class JsonEditor implements IJsonCloneEditor {
 
   /**
    * Constructs a new {@link JsonEditor | JsonEditor}.
-   * @param options - Optional partial {@link Editor.IJsonEditorOptions | editor options} for the
+   * @param options - Optional partial {@link IJsonEditorOptions | editor options} for the
    * constructed editor.
-   * @param rules - Optional set of {@link Editor.IJsonEditorRule | editor rules} to be applied by the editor.
+   * @param rules - Optional set of {@link IJsonEditorRule | editor rules} to be applied by the editor.
    * @readonly A new {@link JsonEditor | JsonEditor}.
    */
   public static create(options?: Partial<IJsonEditorOptions>, rules?: IJsonEditorRule[]): Result<JsonEditor> {
@@ -122,9 +122,9 @@ export class JsonEditor implements IJsonCloneEditor {
    * Gets the default set of rules to be applied for a given set of options.
    * By default, all available rules (templates, conditionals, multi-value and references)
    * are applied.
-   * @param options - Optional partial {@link Editor.IJsonEditorOptions | editor options} for
+   * @param options - Optional partial {@link IJsonEditorOptions | editor options} for
    * all rules.
-   * @returns Default {@link Editor.IJsonEditorRule | editor rules} with any supplied options
+   * @returns Default {@link IJsonEditorRule | editor rules} with any supplied options
    * applied.
    */
   public static getDefaultRules(options?: IJsonEditorOptions): Result<IJsonEditorRule[]> {

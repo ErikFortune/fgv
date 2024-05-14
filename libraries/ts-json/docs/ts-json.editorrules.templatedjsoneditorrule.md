@@ -4,14 +4,14 @@
 
 ## EditorRules.TemplatedJsonEditorRule class
 
-The  applies mustache rendering as appropriate to any keys or values in the object being edited.
+The [Templated JSON editor rule](./ts-json.editorrules.templatedjsoneditorrule.md) applies mustache rendering as appropriate to any keys or values in the object being edited.
 
 **Signature:**
 
 ```typescript
 export declare class TemplatedJsonEditorRule extends JsonEditorRuleBase 
 ```
-**Extends:** JsonEditorRuleBase
+**Extends:** [JsonEditorRuleBase](./ts-json.jsoneditorrulebase.md)
 
 ## Constructors
 
@@ -41,7 +41,7 @@ Description
 
 </td><td>
 
-Creates a new .
+Creates a new [TemplatedJsonEditorRule](./ts-json.editorrules.templatedjsoneditorrule.md)<!-- -->.
 
 
 </td></tr>
@@ -87,7 +87,7 @@ Description
 
 </td><td>
 
-_(Optional)_ Fully-resolved  for this rule.
+_(Optional)_ Fully-resolved [configuration options](./ts-json.editorrules.itemplatedjsonruleoptions.md) for this rule.
 
 
 </td></tr>
@@ -123,7 +123,7 @@ Description
 
 </td><td>
 
-Creates a new .
+Creates a new [TemplatedJsonEditorRule](./ts-json.editorrules.templatedjsoneditorrule.md)<!-- -->.
 
 
 </td></tr>

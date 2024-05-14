@@ -4,7 +4,7 @@
 
 ## JsonEditorState.editor property
 
-The  for which this state applies.
+The [editor](./ts-json.ijsoncloneeditor.md) for which this state applies.
 
 **Signature:**
 

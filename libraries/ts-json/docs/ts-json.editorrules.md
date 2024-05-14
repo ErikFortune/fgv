@@ -24,7 +24,7 @@ Description
 
 </td><td>
 
-The  evaluates properties with conditional keys, omitting non-matching keys and merging keys that match, or default keys only if no other keys match.
+The [ConditionalJsonEditorRule](./ts-json.editorrules.conditionaljsoneditorrule.md) evaluates properties with conditional keys, omitting non-matching keys and merging keys that match, or default keys only if no other keys match.
 
 The default syntax for a conditional key is: "?value1=value2" - matches if value1 and value2 are the same, is ignored otherwise. "?value" - matches if value is a non-empty, non-whitespace string. Is ignored otherwise. "?default" - matches only if no other conditional blocks in the same object were matched.
 
@@ -37,7 +37,7 @@ The default syntax for a conditional key is: "?value1=value2" - matches if value
 
 </td><td>
 
-The  expands matching keys multiple times, projecting the value into the template context for any child objects rendered by the rule.
+The [Multi-Value JSON editor rule](./ts-json.editorrules.multivaluejsoneditorrule.md) expands matching keys multiple times, projecting the value into the template context for any child objects rendered by the rule.
 
 The default syntax for a multi-value key is: "\[\[var\]\]=value1,value2,value3" Where "var" is the name of the variable that will be passed to child template resolution, and "value1,value2,value3" is a comma-separated list of values to be expanded.
 
@@ -50,7 +50,7 @@ The default syntax for a multi-value key is: "\[\[var\]\]=value1,value2,value3" 
 
 </td><td>
 
-The  replaces property keys or values that match some known object with a copy of that referenced object, formatted according to the current context.
+The [Reference JSON editor rule](./ts-json.editorrules.referencejsoneditorrule.md) replaces property keys or values that match some known object with a copy of that referenced object, formatted according to the current context.
 
 A property key is matched if it matches any known referenced value. - If the value of the matched key is `'default'`<!-- -->, then the entire object is formatted with the current context, flattened and merged into the current object. - If the value of the matched key is some other string, then the entire object is formatted with the current context, and the child of the resulting object at the specified path is flattened and merged into the current object. - If the value of the matched key is an object, then the entire object is formatted with the current context extended to include any properties of that object, flattened, and merged into the current object. - It is an error if the referenced value is not an object.
 
@@ -65,7 +65,7 @@ Any property, array or literal value is matched if it matches any known value re
 
 </td><td>
 
-The  applies mustache rendering as appropriate to any keys or values in the object being edited.
+The [Templated JSON editor rule](./ts-json.editorrules.templatedjsoneditorrule.md) applies mustache rendering as appropriate to any keys or values in the object being edited.
 
 
 </td></tr>
@@ -91,7 +91,7 @@ Description
 
 </td><td>
 
-On a successful match, the  stores a  describing the matching result, to be resolved at finalization time.
+On a successful match, the [ConditionalJsonEditorRule](./ts-json.editorrules.conditionaljsoneditorrule.md) stores a [IConditionalJsonDeferredObject](./ts-json.editorrules.iconditionaljsondeferredobject.md) describing the matching result, to be resolved at finalization time.
 
 
 </td></tr>
@@ -102,7 +102,7 @@ On a successful match, the  stores a  describing the matching result, to be reso
 
 </td><td>
 
-Returned by  to indicate whether a successful match was due to a matching condition or a default value.
+Returned by [ConditionalJsonEditorRule.\_tryParseCondition](./ts-json.editorrules.conditionaljsoneditorrule._tryparsecondition.md) to indicate whether a successful match was due to a matching condition or a default value.
 
 
 </td></tr>
@@ -113,7 +113,7 @@ Returned by  to indicate whether a successful match was due to a matching condit
 
 </td><td>
 
-Configuration options for the .
+Configuration options for the [ConditionalJsonEditorRule](./ts-json.editorrules.conditionaljsoneditorrule.md)<!-- -->.
 
 
 </td></tr>
@@ -135,7 +135,7 @@ Represents the parts of a multi-value property key.
 
 </td><td>
 
-Configuration options for the .
+Configuration options for the [Templated JSON editor rule](./ts-json.editorrules.templatedjsoneditorrule.md)<!-- -->.
 
 
 </td></tr>

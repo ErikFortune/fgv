@@ -85,6 +85,17 @@ A thin wrapper to allow an arbitrary [JsonEditor](./ts-json.jsoneditor.md) to be
 </td></tr>
 <tr><td>
 
+[JsonEditorRuleBase](./ts-json.jsoneditorrulebase.md)
+
+
+</td><td>
+
+Default base implementation of [IJsonEditorRule](./ts-json.ijsoneditorrule.md) returns inapplicable for all operations so that derived classes need only implement the operations they actually support.
+
+
+</td></tr>
+<tr><td>
+
 [JsonEditorState](./ts-json.jsoneditorstate.md)
 
 
@@ -274,7 +285,7 @@ Initialization options for a [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
 
 </td><td>
 
-An  represents a single configurable rule to be applied by a [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
+An [IJsonEditorRule](./ts-json.ijsoneditorrule.md) represents a single configurable rule to be applied by a [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
 
 
 </td></tr>
@@ -308,6 +319,17 @@ Interface for a simple map that returns named `JsonValue` values with templating
 </td><td>
 
 Options for creating a [ReferenceMapKeyPolicy](./ts-json.referencemapkeypolicy.md) object.
+
+
+</td></tr>
+<tr><td>
+
+[ISimpleJsonMapOptions](./ts-json.isimplejsonmapoptions.md)
+
+
+</td><td>
+
+Initialization options for a [SimpleJsonMap](./ts-json.simplejsonmap.md)<!-- -->.
 
 
 </td></tr>

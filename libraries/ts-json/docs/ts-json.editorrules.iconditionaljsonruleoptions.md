@@ -4,7 +4,7 @@
 
 ## EditorRules.IConditionalJsonRuleOptions interface
 
-Configuration options for the .
+Configuration options for the [ConditionalJsonEditorRule](./ts-json.editorrules.conditionaljsoneditorrule.md)<!-- -->.
 
 **Signature:**
 

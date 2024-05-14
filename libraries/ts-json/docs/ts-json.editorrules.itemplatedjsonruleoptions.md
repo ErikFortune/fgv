@@ -4,7 +4,7 @@
 
 ## EditorRules.ITemplatedJsonRuleOptions interface
 
-Configuration options for the .
+Configuration options for the [Templated JSON editor rule](./ts-json.editorrules.templatedjsoneditorrule.md)<!-- -->.
 
 **Signature:**
 

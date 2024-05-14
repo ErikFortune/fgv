@@ -45,12 +45,12 @@ export class JsonEditorState {
   protected static _nextId: number = 0;
 
   /**
-   * The {@link Editor.IJsonCloneEditor | editor} for which this state applies.
+   * The {@link IJsonCloneEditor | editor} for which this state applies.
    */
   public readonly editor: IJsonCloneEditor;
 
   /**
-   * Fully resolved {@link Editor.IJsonEditorOptions | editor options} that apply
+   * Fully resolved {@link IJsonEditorOptions | editor options} that apply
    * to the operation for which this state applies.
    */
   public readonly options: IJsonEditorOptions;
@@ -69,9 +69,9 @@ export class JsonEditorState {
 
   /**
    * Constructs a new {@link JsonEditorState | JsonEditorState}.
-   * @param editor - The {@link Editor.IJsonCloneEditor | editor} to which this state
+   * @param editor - The {@link IJsonCloneEditor | editor} to which this state
    * applies.
-   * @param baseOptions - The {@link Editor.IJsonEditorOptions | editor options} that
+   * @param baseOptions - The {@link IJsonEditorOptions | editor options} that
    * apply to this rule.
    * @param runtimeContext - An optional {@link IJsonContext | JSON context} to be used
    * for json value conversion.
@@ -103,13 +103,13 @@ export class JsonEditorState {
 
   /**
    * Merges an optional {@link IJsonContext | JSON context} into a supplied set
-   * of {@link Editor.IJsonEditorOptions | JSON editor options}.
-   * @param options - The {@link Editor.IJsonEditorOptions | IJsonEditorOptions} into
+   * of {@link IJsonEditorOptions | JSON editor options}.
+   * @param options - The {@link IJsonEditorOptions | IJsonEditorOptions} into
    * which the the new context is to be merged.
    * @param context - The {@link IJsonContext | JSON context} to be merged into the
    * editor options.
-   * @returns `Success` with the supplied {@link Editor.IJsonEditorOptions | options} if
-   * there was nothing to merge, or aa new {@link Editor.IJsonEditorOptions | IJsonEditorOptions}
+   * @returns `Success` with the supplied {@link IJsonEditorOptions | options} if
+   * there was nothing to merge, or aa new {@link IJsonEditorOptions | IJsonEditorOptions}
    * constructed from the base options merged with the supplied context.  Returns `Failure`
    * with more information if an error occurs.
    * @internal
@@ -193,7 +193,7 @@ export class JsonEditorState {
    * for various validation failures.
    * @param rule - The {@link JsonEditorValidationRules | validation rule} that failed.
    * @param message -  A string message describing the failed validation.
-   * @param validation - The {@link Editor.IJsonEditorValidationOptions | validation options}
+   * @param validation - The {@link IJsonEditorValidationOptions | validation options}
    * in effect.
    * @returns A `DetailedFailure` with appropriate detail and message.
    */

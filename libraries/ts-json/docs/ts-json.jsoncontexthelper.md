@@ -90,7 +90,7 @@ Creates a new [context](./ts-json.ijsoncontext.md)<!-- -->.
 
 </td><td>
 
-Applies  to the [IJsonContext](./ts-json.ijsoncontext.md) associated with this helper.
+Applies static `JsonContextHelper.extendContext` to the [IJsonContext](./ts-json.ijsoncontext.md) associated with this helper.
 
 
 </td></tr>
@@ -180,7 +180,7 @@ Applies [extendContextVars](./ts-json.jsoncontexthelper.extendcontextvars.md) to
 
 </td><td>
 
-Applies  to the [IJsonContext](./ts-json.ijsoncontext.md) associated with this helper.
+Applies static `JsonContextHelper.mergeContext` to the [IJsonContext](./ts-json.ijsoncontext.md) associated with this helper.
 
 
 </td></tr>

@@ -42,7 +42,7 @@ editor
 
 </td><td>
 
-The  to which this state applies.
+The [editor](./ts-json.ijsoncloneeditor.md) to which this state applies.
 
 
 </td></tr>
@@ -58,7 +58,7 @@ baseOptions
 
 </td><td>
 
-The  that apply to this rule.
+The [editor options](./ts-json.ijsoneditoroptions.md) that apply to this rule.
 
 
 </td></tr>

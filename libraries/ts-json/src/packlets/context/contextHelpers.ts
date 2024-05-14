@@ -191,7 +191,7 @@ export class JsonContextHelper {
   }
 
   /**
-   * Applies {@link JsonContextHelper.(extendContext:static) | extendContext} to the
+   * Applies static `JsonContextHelper.extendContext` to the
    * {@link IJsonContext | IJsonContext} associated with this helper.
    * @param add - Optional initializer containing {@link VariableValue | variable values} and/or
    * {@link IJsonReferenceMap | reference maps} to be added to the {@link IJsonContext | context}.
@@ -207,7 +207,7 @@ export class JsonContextHelper {
   }
 
   /**
-   * Applies {@link JsonContextHelper.(mergeContext:static) | mergeContext} to the
+   * Applies static `JsonContextHelper.mergeContext` to the
    * {@link IJsonContext | IJsonContext} associated with this helper.
    * @param add - Optional initializer containing {@link VariableValue | variable values} and/or
    * {@link IJsonReferenceMap | reference maps} to be added to the {@link IJsonContext | context}.

@@ -4,7 +4,7 @@
 
 ## IJsonEditorRule interface
 
-An  represents a single configurable rule to be applied by a [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
+An [IJsonEditorRule](./ts-json.ijsoneditorrule.md) represents a single configurable rule to be applied by a [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
 
 **Signature:**
 

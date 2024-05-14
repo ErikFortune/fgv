@@ -29,7 +29,7 @@ import { JsonEditorState } from '../jsonEditorState';
 import Mustache from 'mustache';
 
 /**
- * Configuration options for the {@link Editor.Rules.TemplatedJsonEditorRule | Templated JSON editor rule}.
+ * Configuration options for the {@link EditorRules.TemplatedJsonEditorRule | Templated JSON editor rule}.
  * @public
  */
 export interface ITemplatedJsonRuleOptions extends Partial<IJsonEditorOptions> {
@@ -44,20 +44,20 @@ export interface ITemplatedJsonRuleOptions extends Partial<IJsonEditorOptions> {
 }
 
 /**
- * The {@link Editor.Rules.TemplatedJsonEditorRule | Templated JSON editor rule} applies mustache rendering as
+ * The {@link EditorRules.TemplatedJsonEditorRule | Templated JSON editor rule} applies mustache rendering as
  * appropriate to any keys or values in the object being edited.
  * @public
  */
 export class TemplatedJsonEditorRule extends JsonEditorRuleBase {
   /**
-   * Fully-resolved {@link Editor.Rules.ITemplatedJsonRuleOptions | configuration options} for this rule.
+   * Fully-resolved {@link EditorRules.ITemplatedJsonRuleOptions | configuration options} for this rule.
    * @public
    */
   protected _options?: ITemplatedJsonRuleOptions;
 
   /**
-   * Creates a new {@link Editor.Rules.TemplatedJsonEditorRule | TemplatedJsonEditorRule}.
-   * @param options - Optional {@link Editor.Rules.ITemplatedJsonRuleOptions | configuration options}
+   * Creates a new {@link EditorRules.TemplatedJsonEditorRule | TemplatedJsonEditorRule}.
+   * @param options - Optional {@link EditorRules.ITemplatedJsonRuleOptions | configuration options}
    * for this rule.
    */
   public constructor(options?: ITemplatedJsonRuleOptions) {
@@ -66,8 +66,8 @@ export class TemplatedJsonEditorRule extends JsonEditorRuleBase {
   }
 
   /**
-   * Creates a new {@link Editor.Rules.TemplatedJsonEditorRule | TemplatedJsonEditorRule}.
-   * @param options - Optional {@link Editor.Rules.ITemplatedJsonRuleOptions | configuration options}
+   * Creates a new {@link EditorRules.TemplatedJsonEditorRule | TemplatedJsonEditorRule}.
+   * @param options - Optional {@link EditorRules.ITemplatedJsonRuleOptions | configuration options}
    * for this rule.
    */
   public static create(options?: ITemplatedJsonRuleOptions): Result<TemplatedJsonEditorRule> {

@@ -4,7 +4,7 @@
 
 ## EditorRules.ConditionalJsonEditorRule.create() method
 
-Creates a new .
+Creates a new [ConditionalJsonEditorRule](./ts-json.editorrules.conditionaljsoneditorrule.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ options
 
 </td><td>
 
-_(Optional)_ Optional  used for this rule.
+_(Optional)_ Optional [configuration options](./ts-json.editorrules.iconditionaljsonruleoptions.md) used for this rule.
 
 
 </td></tr>

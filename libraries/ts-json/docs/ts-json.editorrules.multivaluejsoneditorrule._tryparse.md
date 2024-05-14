@@ -65,5 +65,5 @@ The [editor state](./ts-json.jsoneditorstate.md) for the object being edited.
 
 DetailedResult&lt;[IMultiValuePropertyParts](./ts-json.editorrules.imultivaluepropertyparts.md)<!-- -->, [JsonEditFailureReason](./ts-json.jsoneditfailurereason.md)<!-- -->&gt;
 
-`Success` with detail `'deferred'` and an  describing the match for matching multi-value property. Returns `Failure` with detail `'error'` if an error occurs or with detail `'inapplicable'` if the key does not represent a multi-value property.
+`Success` with detail `'deferred'` and an [IMultiValuePropertyParts](./ts-json.editorrules.imultivaluepropertyparts.md) describing the match for matching multi-value property. Returns `Failure` with detail `'error'` if an error occurs or with detail `'inapplicable'` if the key does not represent a multi-value property.
 

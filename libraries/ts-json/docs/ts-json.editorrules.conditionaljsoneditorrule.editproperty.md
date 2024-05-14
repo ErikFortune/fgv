@@ -83,5 +83,5 @@ The [editor state](./ts-json.jsoneditorstate.md) for the object being edited.
 
 DetailedResult&lt;JsonObject, [JsonPropertyEditFailureReason](./ts-json.jsonpropertyeditfailurereason.md)<!-- -->&gt;
 
-Returns `Success` with detail `'deferred'` and a . for a matching, default or unconditional key. Returns `Failure` with detail `'ignore'` for a non-matching conditional, or with detail `'error'` if an error occurs. Otherwise fails with detail `'inapplicable'`<!-- -->.
+Returns `Success` with detail `'deferred'` and a [IConditionalJsonDeferredObject](./ts-json.editorrules.iconditionaljsondeferredobject.md)<!-- -->. for a matching, default or unconditional key. Returns `Failure` with detail `'ignore'` for a non-matching conditional, or with detail `'error'` if an error occurs. Otherwise fails with detail `'inapplicable'`<!-- -->.
 

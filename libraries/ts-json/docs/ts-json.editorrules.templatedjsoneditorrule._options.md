@@ -4,7 +4,7 @@
 
 ## EditorRules.TemplatedJsonEditorRule.\_options property
 
-Fully-resolved  for this rule.
+Fully-resolved [configuration options](./ts-json.editorrules.itemplatedjsonruleoptions.md) for this rule.
 
 **Signature:**
 

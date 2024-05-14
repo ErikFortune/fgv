@@ -42,7 +42,7 @@ Partial&lt;[IJsonEditorOptions](./ts-json.ijsoneditoroptions.md)<!-- -->&gt;
 
 </td><td>
 
-_(Optional)_ Optional partial  for the constructed editor.
+_(Optional)_ Optional partial [editor options](./ts-json.ijsoneditoroptions.md) for the constructed editor.
 
 
 </td></tr>
@@ -58,7 +58,7 @@ rules
 
 </td><td>
 
-_(Optional)_ Optional set of  to be applied by the editor. A new [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
+_(Optional)_ Optional set of [editor rules](./ts-json.ijsoneditorrule.md) to be applied by the editor. A new [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
 
 
 </td></tr>

@@ -69,7 +69,7 @@ options
 
 </td><td>
 
-ISimpleJsonMapOptions
+[ISimpleJsonMapOptions](./ts-json.isimplejsonmapoptions.md)
 
 
 </td><td>

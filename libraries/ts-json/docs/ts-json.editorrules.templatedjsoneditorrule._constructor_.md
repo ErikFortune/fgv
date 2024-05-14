@@ -4,7 +4,7 @@
 
 ## EditorRules.TemplatedJsonEditorRule.(constructor)
 
-Creates a new .
+Creates a new [TemplatedJsonEditorRule](./ts-json.editorrules.templatedjsoneditorrule.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ options
 
 </td><td>
 
-_(Optional)_ Optional  for this rule.
+_(Optional)_ Optional [configuration options](./ts-json.editorrules.itemplatedjsonruleoptions.md) for this rule.
 
 
 </td></tr>

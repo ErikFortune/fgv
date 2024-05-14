@@ -4,7 +4,7 @@
 
 ## EditorRules.ConditionalJsonEditorRule class
 
-The  evaluates properties with conditional keys, omitting non-matching keys and merging keys that match, or default keys only if no other keys match.
+The [ConditionalJsonEditorRule](./ts-json.editorrules.conditionaljsoneditorrule.md) evaluates properties with conditional keys, omitting non-matching keys and merging keys that match, or default keys only if no other keys match.
 
 The default syntax for a conditional key is: "?value1=value2" - matches if value1 and value2 are the same, is ignored otherwise. "?value" - matches if value is a non-empty, non-whitespace string. Is ignored otherwise. "?default" - matches only if no other conditional blocks in the same object were matched.
 
@@ -13,7 +13,7 @@ The default syntax for a conditional key is: "?value1=value2" - matches if value
 ```typescript
 export declare class ConditionalJsonEditorRule extends JsonEditorRuleBase 
 ```
-**Extends:** JsonEditorRuleBase
+**Extends:** [JsonEditorRuleBase](./ts-json.jsoneditorrulebase.md)
 
 ## Constructors
 
@@ -43,7 +43,7 @@ Description
 
 </td><td>
 
-Creates a new .
+Creates a new [ConditionalJsonEditorRule](./ts-json.editorrules.conditionaljsoneditorrule.md)<!-- -->.
 
 
 </td></tr>
@@ -89,7 +89,7 @@ Description
 
 </td><td>
 
-_(Optional)_ Stored fully-resolved  for this rule.
+_(Optional)_ Stored fully-resolved [options](./ts-json.editorrules.iconditionaljsonruleoptions.md) for this rule.
 
 
 </td></tr>
@@ -141,7 +141,7 @@ Determines if a given property key is conditional. Derived classes can override 
 
 </td><td>
 
-Creates a new .
+Creates a new [ConditionalJsonEditorRule](./ts-json.editorrules.conditionaljsoneditorrule.md)<!-- -->.
 
 
 </td></tr>

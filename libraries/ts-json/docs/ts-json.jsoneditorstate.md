@@ -128,7 +128,7 @@ An array of JSON objects that were deferred for merge during finalization.
 
 </td><td>
 
-The  for which this state applies.
+The [editor](./ts-json.ijsoncloneeditor.md) for which this state applies.
 
 
 </td></tr>
@@ -149,7 +149,7 @@ The  for which this state applies.
 
 </td><td>
 
-Fully resolved  that apply to the operation for which this state applies.
+Fully resolved [editor options](./ts-json.ijsoneditoroptions.md) that apply to the operation for which this state applies.
 
 
 </td></tr>

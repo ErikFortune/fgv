@@ -4,7 +4,7 @@
 
 ## EditorRules.IConditionalJsonDeferredObject interface
 
-On a successful match, the  stores a  describing the matching result, to be resolved at finalization time.
+On a successful match, the [ConditionalJsonEditorRule](./ts-json.editorrules.conditionaljsoneditorrule.md) stores a [IConditionalJsonDeferredObject](./ts-json.editorrules.iconditionaljsondeferredobject.md) describing the matching result, to be resolved at finalization time.
 
 **Signature:**
 

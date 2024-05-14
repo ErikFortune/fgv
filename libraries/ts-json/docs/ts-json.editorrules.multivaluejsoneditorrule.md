@@ -4,7 +4,7 @@
 
 ## EditorRules.MultiValueJsonEditorRule class
 
-The  expands matching keys multiple times, projecting the value into the template context for any child objects rendered by the rule.
+The [Multi-Value JSON editor rule](./ts-json.editorrules.multivaluejsoneditorrule.md) expands matching keys multiple times, projecting the value into the template context for any child objects rendered by the rule.
 
 The default syntax for a multi-value key is: "\[\[var\]\]=value1,value2,value3" Where "var" is the name of the variable that will be passed to child template resolution, and "value1,value2,value3" is a comma-separated list of values to be expanded.
 
@@ -13,7 +13,7 @@ The default syntax for a multi-value key is: "\[\[var\]\]=value1,value2,value3" 
 ```typescript
 export declare class MultiValueJsonEditorRule extends JsonEditorRuleBase 
 ```
-**Extends:** JsonEditorRuleBase
+**Extends:** [JsonEditorRuleBase](./ts-json.jsoneditorrulebase.md)
 
 ## Constructors
 
@@ -43,7 +43,7 @@ Description
 
 </td><td>
 
-Creates a new .
+Creates a new [MultiValueJsonEditorRule](./ts-json.editorrules.multivaluejsoneditorrule.md)<!-- -->.
 
 
 </td></tr>
@@ -89,7 +89,7 @@ Description
 
 </td><td>
 
-_(Optional)_ Stored fully-resolved  for this rule.
+_(Optional)_ Stored fully-resolved [editor options](./ts-json.ijsoneditoroptions.md) for this rule.
 
 
 </td></tr>
@@ -157,7 +157,7 @@ Determines if a given property key is multi-value. Derived classes can override 
 
 </td><td>
 
-Creates a new .
+Creates a new [MultiValueJsonEditorRule](./ts-json.editorrules.multivaluejsoneditorrule.md)<!-- -->.
 
 
 </td></tr>

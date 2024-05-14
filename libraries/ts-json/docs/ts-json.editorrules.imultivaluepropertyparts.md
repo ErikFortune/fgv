@@ -52,7 +52,7 @@ boolean
 
 </td><td>
 
-If `true`<!-- -->, the resolved values are added as an array with the name of the . If false, values are added as individual properties with names that correspond the value.
+If `true`<!-- -->, the resolved values are added as an array with the name of the [propertyVariable](./ts-json.editorrules.imultivaluepropertyparts.propertyvariable.md)<!-- -->. If false, values are added as individual properties with names that correspond the value.
 
 
 </td></tr>

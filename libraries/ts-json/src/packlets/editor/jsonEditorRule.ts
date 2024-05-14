@@ -27,7 +27,7 @@ import { JsonEditFailureReason, JsonPropertyEditFailureReason } from './common';
 import { JsonEditorState } from './jsonEditorState';
 
 /**
- * An {@link Editor.IJsonEditorRule | IJsonEditorRule} represents a single configurable
+ * An {@link IJsonEditorRule | IJsonEditorRule} represents a single configurable
  * rule to be applied by a {@link JsonEditor | JsonEditor}.
  * @public
  */
@@ -77,13 +77,13 @@ export interface IJsonEditorRule {
 }
 
 /**
- * Default base implementation of {@link Editor.IJsonEditorRule | IJsonEditorRule} returns inapplicable for all operations so that
+ * Default base implementation of {@link IJsonEditorRule | IJsonEditorRule} returns inapplicable for all operations so that
  * derived classes need only implement the operations they actually support.
  * @public
  */
 export class JsonEditorRuleBase implements IJsonEditorRule {
   /**
-   * {@inheritdoc Editor.IJsonEditorRule.editProperty}
+   * {@inheritdoc IJsonEditorRule.editProperty}
    */
   /* c8 ignore start */
   public editProperty(
@@ -96,7 +96,7 @@ export class JsonEditorRuleBase implements IJsonEditorRule {
   /* c8 ignore stop */
 
   /**
-   * {@inheritdoc Editor.IJsonEditorRule.editValue}
+   * {@inheritdoc IJsonEditorRule.editValue}
    */
   public editValue(
     __value: JsonValue,
@@ -106,7 +106,7 @@ export class JsonEditorRuleBase implements IJsonEditorRule {
   }
 
   /**
-   * {@inheritdoc Editor.IJsonEditorRule.finalizeProperties}
+   * {@inheritdoc IJsonEditorRule.finalizeProperties}
    */
   public finalizeProperties(
     __deferred: JsonObject[],

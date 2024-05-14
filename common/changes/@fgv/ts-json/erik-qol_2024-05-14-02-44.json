@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json",
+      "comment": "update tsdoc comments and generated docs",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-json"
+}

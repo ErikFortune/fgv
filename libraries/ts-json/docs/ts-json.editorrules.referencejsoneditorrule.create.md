@@ -4,7 +4,7 @@
 
 ## EditorRules.ReferenceJsonEditorRule.create() method
 
-Creates a new .
+Creates a new [ReferenceJsonEditorRule](./ts-json.editorrules.referencejsoneditorrule.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ options
 
 </td><td>
 
-_(Optional)_ Optional  for this rule.
+_(Optional)_ Optional [configuration options](./ts-json.ijsoneditoroptions.md) for this rule.
 
 
 </td></tr>

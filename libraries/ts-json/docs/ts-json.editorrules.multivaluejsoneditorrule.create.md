@@ -4,7 +4,7 @@
 
 ## EditorRules.MultiValueJsonEditorRule.create() method
 
-Creates a new .
+Creates a new [MultiValueJsonEditorRule](./ts-json.editorrules.multivaluejsoneditorrule.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ options
 
 </td><td>
 
-_(Optional)_ Optional .
+_(Optional)_ Optional [configuration options](./ts-json.ijsoneditoroptions.md)<!-- -->.
 
 
 </td></tr>

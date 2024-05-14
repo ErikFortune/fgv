@@ -78,7 +78,7 @@ Default singleton [JsonEditor](./ts-json.jsoneditor.md) for simple use. Applies 
 
 </td><td>
 
-Full set of  in effect for this editor.
+Full set of [editor options](./ts-json.ijsoneditoroptions.md) in effect for this editor.
 
 
 </td></tr>

@@ -4,7 +4,7 @@
 
 ## JsonEditorState.options property
 
-Fully resolved  that apply to the operation for which this state applies.
+Fully resolved [editor options](./ts-json.ijsoneditoroptions.md) that apply to the operation for which this state applies.
 
 **Signature:**
 
