@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+import { TextEncoder } from 'util';
 import { HashingNormalizer } from './hashingNormalizer';
 
 const POLYNOMIAL: number = 0xedb88320;
