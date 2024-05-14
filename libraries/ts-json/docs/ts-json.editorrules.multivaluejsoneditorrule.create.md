@@ -14,10 +14,39 @@ static create(options?: IJsonEditorOptions): Result<MultiValueJsonEditorRule>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  options | [IJsonEditorOptions](./ts-json.ijsoneditoroptions.md) | _(Optional)_ Optional . |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+options
+
+
+</td><td>
+
+[IJsonEditorOptions](./ts-json.ijsoneditoroptions.md)
+
+
+</td><td>
+
+_(Optional)_ Optional .
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[MultiValueJsonEditorRule](./ts-json.editorrules.multivaluejsoneditorrule.md)<!-- -->&gt;

@@ -4,7 +4,7 @@
 
 ## JsonEditorConverter.array() method
 
-Gets a derived converter which fails if the resulting converted  is not a .
+Gets a derived converter which fails if the resulting converted `JsonValue` is not a `JsonArray`<!-- -->.
 
 **Signature:**
 

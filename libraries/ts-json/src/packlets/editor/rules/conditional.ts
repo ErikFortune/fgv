@@ -98,8 +98,8 @@ export class ConditionalJsonEditorRule extends JsonEditorRuleBase {
   /**
    * Evaluates a property for conditional application.
    * @param key - The key of the property to be considered
-   * @param value - The {@link JsonValue | value} of the property to be considered.
-   * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
+   * @param value - The `JsonValue` of the property to be considered.
+   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
    * @returns Returns `Success` with detail `'deferred'` and a
    * {@link Editor.Rules.IConditionalJsonDeferredObject | IConditionalJsonDeferredObject}.
    * for a matching, default or unconditional key. Returns `Failure` with detail `'ignore'` for
@@ -133,7 +133,7 @@ export class ConditionalJsonEditorRule extends JsonEditorRuleBase {
    * Finalizes any deferred conditional properties. If the only deferred property is
    * default, that property is emitted. Otherwise all matching properties are emitted.
    * @param finalized - The deferred properties to be considered for merge.
-   * @param __state - The {@link Editor.JsonEditorState | editor state} for the object
+   * @param __state - The {@link JsonEditorState | editor state} for the object
    * being edited.
    */
   public finalizeProperties(
@@ -152,8 +152,8 @@ export class ConditionalJsonEditorRule extends JsonEditorRuleBase {
   /**
    * Determines if a given property key is conditional. Derived classes can override this
    * method to use a different format for conditional properties.
-   * @param value - The {@link JsonValue | value} of the property to be considered.
-   * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
+   * @param value - The `JsonValue` of the property to be considered.
+   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
    * @returns `Success` with detail `'deferred'` and a
    * {@link Editor.Rules.IConditionalJsonKeyResult | IConditionalJsonKeyResult} describing the
    * match for a default or matching conditional property.  Returns `Failure` with detail `'ignore'`

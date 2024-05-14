@@ -14,11 +14,55 @@ validateItems(items: [string, T][], options?: IReferenceMapKeyPolicyValidateOpti
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  items | \[string, T\]\[\] | The array of entries to be validated. |
-|  options | [IReferenceMapKeyPolicyValidateOptions](./ts-json.ireferencemapkeypolicyvalidateoptions.md) | _(Optional)_ Optional [options](./ts-json.ireferencemapkeypolicyvalidateoptions.md) to control validation. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+items
+
+
+</td><td>
+
+\[string, T\]\[\]
+
+
+</td><td>
+
+The array of entries to be validated.
+
+
+</td></tr>
+<tr><td>
+
+options
+
+
+</td><td>
+
+[IReferenceMapKeyPolicyValidateOptions](./ts-json.ireferencemapkeypolicyvalidateoptions.md)
+
+
+</td><td>
+
+_(Optional)_ Optional [options](./ts-json.ireferencemapkeypolicyvalidateoptions.md) to control validation.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;\[string, T\]\[\]&gt;

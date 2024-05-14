@@ -74,7 +74,7 @@ export function defaultExtendVars(
 export type JsonReferenceMapFailureReason = 'unknown' | 'error';
 
 /**
- * Interface for a simple map that returns named {@link JsonValue | JsonValue} values with templating,
+ * Interface for a simple map that returns named `JsonValue` values with templating,
  * conditional logic, and external reference lookups applied using an optionally supplied context.
  * @public
  */
@@ -95,11 +95,11 @@ export interface IJsonReferenceMap {
   has(key: string): boolean;
 
   /**
-   * Gets a {@link JsonObject | JsonObject} specified by key.
+   * Gets a `JsonObject` specified by key.
    * @param key - The key of the object to be retrieved.
    * @param context - Optional {@link IJsonContext | IJsonContext} used to construct
    * the object.
-   * @returns `Success` with the formatted {@link JsonObject | object} if successful. `Failure`
+   * @returns `Success` with the formatted JsonObject if successful. `Failure`
    * with detail `'unknown'`  if no such object exists, or `Failure` with detail `'error'` if
    * the object was found but could not be formatted.
    */
@@ -110,10 +110,10 @@ export interface IJsonReferenceMap {
   ): DetailedResult<JsonObject, JsonReferenceMapFailureReason>;
 
   /**
-   * Gets a {@link JsonValue | JsonValue} specified by key.
+   * Gets a `JsonValue` specified by key.
    * @param key - The key of the object to be retrieved.
    * @param context - Optional {@link IJsonContext | JSON Context} used to format the value
-   * @returns `Success` with the formatted {@link JsonValue | value} if successful. `Failure`
+   * @returns `Success` with the formatted `JsonValue` if successful. `Failure`
    * with detail `'unknown'` if no such object exists, or `Failure` with detail `'error'` if
    * the object was found but could not be formatted.
    */

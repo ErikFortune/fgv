@@ -4,7 +4,7 @@
 
 ## JsonEditor.create() method
 
-Constructs a new .
+Constructs a new [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
 
 **Signature:**
 
@@ -14,11 +14,55 @@ static create(options?: Partial<IJsonEditorOptions>, rules?: IJsonEditorRule[]):
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  options | Partial&lt;[IJsonEditorOptions](./ts-json.ijsoneditoroptions.md)<!-- -->&gt; | _(Optional)_ Optional partial  for the constructed editor. |
-|  rules | [IJsonEditorRule](./ts-json.ijsoneditorrule.md)<!-- -->\[\] | _(Optional)_ Optional set of  to be applied by the editor. A new . |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+options
+
+
+</td><td>
+
+Partial&lt;[IJsonEditorOptions](./ts-json.ijsoneditoroptions.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional partial  for the constructed editor.
+
+
+</td></tr>
+<tr><td>
+
+rules
+
+
+</td><td>
+
+[IJsonEditorRule](./ts-json.ijsoneditorrule.md)<!-- -->\[\]
+
+
+</td><td>
+
+_(Optional)_ Optional set of  to be applied by the editor. A new [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[JsonEditor](./ts-json.jsoneditor.md)<!-- -->&gt;

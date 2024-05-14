@@ -6,62 +6,467 @@
 
 ## Classes
 
-|  Class | Description |
-|  --- | --- |
-|  [CompositeJsonMap](./ts-json.compositejsonmap.md) | A [CompositeJsonMap](./ts-json.compositejsonmap.md) presents a composed view of one or more other [JSON reference maps](./ts-json.ijsonreferencemap.md)<!-- -->. |
-|  [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md) | An @<!-- -->fgv/ts-utils <code>Converter</code> from <code>unknown</code> to type-safe JSON with mustache template rendering, multi-value property name and conditional property name rules enabled regardless of initial context. |
-|  [JsonContextHelper](./ts-json.jsoncontexthelper.md) | Helper class for working with [IJsonContext](./ts-json.ijsoncontext.md) objects. |
-|  [JsonConverter](./ts-json.jsonconverter.md) | An @<!-- -->fgv/ts-utils <code>Converter</code> from <code>unknown</code> to type-safe JSON, optionally rendering any string property names or values using mustache with a supplied view. |
-|  [JsonEditor](./ts-json.jsoneditor.md) | A [JsonEditor](./ts-json.jsoneditor.md) can be used to edit JSON objects in place or to clone any JSON value, applying a default context and optional set of editor rules that were supplied at initialization. |
-|  [JsonEditorConverter](./ts-json.jsoneditorconverter.md) | A thin wrapper to allow an arbitrary  to be used via the @<!-- -->fgv/ts-utils <code>Converter</code> pattern. |
-|  [JsonEditorState](./ts-json.jsoneditorstate.md) | Represents the internal state of a . |
-|  [PrefixedJsonMap](./ts-json.prefixedjsonmap.md) | A [PrefixedJsonMap](./ts-json.prefixedjsonmap.md) enforces a supplied prefix for all contained values, optionally adding the prefix as necessary (default <code>true</code>). |
-|  [ReferenceMapKeyPolicy](./ts-json.referencemapkeypolicy.md) | Policy object responsible for validating or correcting keys in a [reference map](./ts-json.ijsonreferencemap.md)<!-- -->. |
-|  [RichJsonConverter](./ts-json.richjsonconverter.md) | A @<!-- -->fgv/ts-utils <code>Converter</code> from <code>unknown</code> to type-safe JSON with mustache template rendering, multi-value property name, conditional property name, and external reference rules enabled regardless of initial context. |
-|  [SimpleJsonMap](./ts-json.simplejsonmap.md) | A [SimpleJsonMap](./ts-json.simplejsonmap.md) presents a view of a simple map of . |
-|  [TemplatedJsonConverter](./ts-json.templatedjsonconverter.md) | An @<!-- -->fgv/ts-utils <code>Converter</code> from <code>unknown</code> to type-safe JSON with mustache template rendering and multi-value property name rules enabled regardless of initial context. |
+<table><thead><tr><th>
+
+Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[CompositeJsonMap](./ts-json.compositejsonmap.md)
+
+
+</td><td>
+
+A [CompositeJsonMap](./ts-json.compositejsonmap.md) presents a composed view of one or more other [JSON reference maps](./ts-json.ijsonreferencemap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md)
+
+
+</td><td>
+
+An @<!-- -->fgv/ts-utils `Converter` from `unknown` to type-safe JSON with mustache template rendering, multi-value property name and conditional property name rules enabled regardless of initial context.
+
+
+</td></tr>
+<tr><td>
+
+[JsonContextHelper](./ts-json.jsoncontexthelper.md)
+
+
+</td><td>
+
+Helper class for working with [IJsonContext](./ts-json.ijsoncontext.md) objects.
+
+
+</td></tr>
+<tr><td>
+
+[JsonConverter](./ts-json.jsonconverter.md)
+
+
+</td><td>
+
+An @<!-- -->fgv/ts-utils `Converter` from `unknown` to type-safe JSON, optionally rendering any string property names or values using mustache with a supplied view.
+
+
+</td></tr>
+<tr><td>
+
+[JsonEditor](./ts-json.jsoneditor.md)
+
+
+</td><td>
+
+A [JsonEditor](./ts-json.jsoneditor.md) can be used to edit JSON objects in place or to clone any JSON value, applying a default context and optional set of editor rules that were supplied at initialization.
+
+
+</td></tr>
+<tr><td>
+
+[JsonEditorConverter](./ts-json.jsoneditorconverter.md)
+
+
+</td><td>
+
+A thin wrapper to allow an arbitrary [JsonEditor](./ts-json.jsoneditor.md) to be used via the @<!-- -->fgv/ts-utils `Converter` pattern.
+
+
+</td></tr>
+<tr><td>
+
+[JsonEditorState](./ts-json.jsoneditorstate.md)
+
+
+</td><td>
+
+Represents the internal state of a [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[PrefixedJsonMap](./ts-json.prefixedjsonmap.md)
+
+
+</td><td>
+
+A [PrefixedJsonMap](./ts-json.prefixedjsonmap.md) enforces a supplied prefix for all contained values, optionally adding the prefix as necessary (default `true`<!-- -->).
+
+
+</td></tr>
+<tr><td>
+
+[ReferenceMapKeyPolicy](./ts-json.referencemapkeypolicy.md)
+
+
+</td><td>
+
+Policy object responsible for validating or correcting keys in a [reference map](./ts-json.ijsonreferencemap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[RichJsonConverter](./ts-json.richjsonconverter.md)
+
+
+</td><td>
+
+A @<!-- -->fgv/ts-utils `Converter` from `unknown` to type-safe JSON with mustache template rendering, multi-value property name, conditional property name, and external reference rules enabled regardless of initial context.
+
+
+</td></tr>
+<tr><td>
+
+[SimpleJsonMap](./ts-json.simplejsonmap.md)
+
+
+</td><td>
+
+A [SimpleJsonMap](./ts-json.simplejsonmap.md) presents a view of a simple map of JSON values.
+
+
+</td></tr>
+<tr><td>
+
+[TemplatedJsonConverter](./ts-json.templatedjsonconverter.md)
+
+
+</td><td>
+
+An @<!-- -->fgv/ts-utils `Converter` from `unknown` to type-safe JSON with mustache template rendering and multi-value property name rules enabled regardless of initial context.
+
+
+</td></tr>
+</tbody></table>
 
 ## Functions
 
-|  Function | Description |
-|  --- | --- |
-|  [contextFromConverterOptions(partial)](./ts-json.contextfromconverteroptions.md) | Creates a new [JSON context](./ts-json.ijsoncontext.md) using values supplied in an optional partial [converter options](./ts-json.ijsonconverteroptions.md)<!-- -->. |
-|  [converterOptionsToEditor(partial)](./ts-json.converteroptionstoeditor.md) | Creates a new  from an optionally supplied partial [JSON converter options](./ts-json.ijsonconverteroptions.md)<!-- -->. Expands supplied options with default values and constructs an editor with matching configuration and defined rules. |
-|  [defaultExtendVars(base, values)](./ts-json.defaultextendvars.md) | This default implementation of a [TemplateVarsExtendFunction](./ts-json.templatevarsextendfunction.md) creates a new collection via inheritance from the supplied collection. |
-|  [mergeDefaultJsonConverterOptions(partial)](./ts-json.mergedefaultjsonconverteroptions.md) | Merges an optionally supplied partial set of [options](./ts-json.ijsonconverteroptions.md) with the default converter options and taking all dynamic rules into account (e.g. template usage enabled if variables are supplied and disabled if not), producing a fully-resolved set of [IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->. |
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[contextFromConverterOptions(partial)](./ts-json.contextfromconverteroptions.md)
+
+
+</td><td>
+
+Creates a new [JSON context](./ts-json.ijsoncontext.md) using values supplied in an optional partial [converter options](./ts-json.ijsonconverteroptions.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[converterOptionsToEditor(partial)](./ts-json.converteroptionstoeditor.md)
+
+
+</td><td>
+
+Creates a new [JsonEditor](./ts-json.jsoneditor.md) from an optionally supplied partial [JSON converter options](./ts-json.ijsonconverteroptions.md)<!-- -->. Expands supplied options with default values and constructs an editor with matching configuration and defined rules.
+
+
+</td></tr>
+<tr><td>
+
+[defaultExtendVars(base, values)](./ts-json.defaultextendvars.md)
+
+
+</td><td>
+
+This default implementation of a [TemplateVarsExtendFunction](./ts-json.templatevarsextendfunction.md) creates a new collection via inheritance from the supplied collection.
+
+
+</td></tr>
+<tr><td>
+
+[mergeDefaultJsonConverterOptions(partial)](./ts-json.mergedefaultjsonconverteroptions.md)
+
+
+</td><td>
+
+Merges an optionally supplied partial set of [options](./ts-json.ijsonconverteroptions.md) with the default converter options and taking all dynamic rules into account (e.g. template usage enabled if variables are supplied and disabled if not), producing a fully-resolved set of [IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Interfaces
 
-|  Interface | Description |
-|  --- | --- |
-|  [IJsonCloneEditor](./ts-json.ijsoncloneeditor.md) | A specialized JSON editor which does a deep clone of a supplied . |
-|  [IJsonContext](./ts-json.ijsoncontext.md) | Context used to convert or edit JSON objects. |
-|  [IJsonConverterOptions](./ts-json.ijsonconverteroptions.md) | Conversion options for [JsonConverter](./ts-json.jsonconverter.md)<!-- -->. |
-|  [IJsonEditorOptions](./ts-json.ijsoneditoroptions.md) | Initialization options for a . |
-|  [IJsonEditorRule](./ts-json.ijsoneditorrule.md) | An  represents a single configurable rule to be applied by a . |
-|  [IJsonEditorValidationOptions](./ts-json.ijsoneditorvalidationoptions.md) | Validation options for a . |
-|  [IJsonReferenceMap](./ts-json.ijsonreferencemap.md) | Interface for a simple map that returns named  values with templating, conditional logic, and external reference lookups applied using an optionally supplied context. |
-|  [IReferenceMapKeyPolicyValidateOptions](./ts-json.ireferencemapkeypolicyvalidateoptions.md) | Options for creating a [ReferenceMapKeyPolicy](./ts-json.referencemapkeypolicy.md) object. |
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[IJsonCloneEditor](./ts-json.ijsoncloneeditor.md)
+
+
+</td><td>
+
+A specialized JSON editor which does a deep clone of a supplied `JsonValue`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IJsonContext](./ts-json.ijsoncontext.md)
+
+
+</td><td>
+
+Context used to convert or edit JSON objects.
+
+
+</td></tr>
+<tr><td>
+
+[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)
+
+
+</td><td>
+
+Conversion options for [JsonConverter](./ts-json.jsonconverter.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IJsonEditorOptions](./ts-json.ijsoneditoroptions.md)
+
+
+</td><td>
+
+Initialization options for a [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IJsonEditorRule](./ts-json.ijsoneditorrule.md)
+
+
+</td><td>
+
+An  represents a single configurable rule to be applied by a [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IJsonEditorValidationOptions](./ts-json.ijsoneditorvalidationoptions.md)
+
+
+</td><td>
+
+Validation options for a [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IJsonReferenceMap](./ts-json.ijsonreferencemap.md)
+
+
+</td><td>
+
+Interface for a simple map that returns named `JsonValue` values with templating, conditional logic, and external reference lookups applied using an optionally supplied context.
+
+
+</td></tr>
+<tr><td>
+
+[IReferenceMapKeyPolicyValidateOptions](./ts-json.ireferencemapkeypolicyvalidateoptions.md)
+
+
+</td><td>
+
+Options for creating a [ReferenceMapKeyPolicy](./ts-json.referencemapkeypolicy.md) object.
+
+
+</td></tr>
+</tbody></table>
 
 ## Namespaces
 
-|  Namespace | Description |
-|  --- | --- |
-|  [Converters](./ts-json.converters.md) |  |
-|  [EditorRules](./ts-json.editorrules.md) |  |
+<table><thead><tr><th>
+
+Namespace
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Converters](./ts-json.converters.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[EditorRules](./ts-json.editorrules.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
 
 ## Type Aliases
 
-|  Type Alias | Description |
-|  --- | --- |
-|  [ConditionalJsonConverterOptions](./ts-json.conditionaljsonconverteroptions.md) | Options for a [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md)<!-- -->. |
-|  [JsonEditFailureReason](./ts-json.jsoneditfailurereason.md) | Possible <code>DetailedResult</code> details for various editor operations. |
-|  [JsonEditorValidationRules](./ts-json.jsoneditorvalidationrules.md) | Possible validation rules for a . |
-|  [JsonPropertyEditFailureReason](./ts-json.jsonpropertyeditfailurereason.md) | Possible <code>DetailedResult</code> details for property edit operations. |
-|  [JsonReferenceMapFailureReason](./ts-json.jsonreferencemapfailurereason.md) | Failure reason for [IJsonReferenceMap](./ts-json.ijsonreferencemap.md) lookup, where <code>'unknown'</code> means that the object is not present in the map and <code>'error'</code> means that an error occurred while retrieving or converting it. |
-|  [RichJsonConverterOptions](./ts-json.richjsonconverteroptions.md) | Initialization options for a [RichJsonConverter](./ts-json.richjsonconverter.md)<!-- -->. |
-|  [TemplatedJsonConverterOptions](./ts-json.templatedjsonconverteroptions.md) | Initialization options for a [TemplatedJsonConverter](./ts-json.templatedjsonconverter.md)<!-- -->. |
-|  [TemplateVars](./ts-json.templatevars.md) | Collection of variables used for template replacement in a JSON edit or conversion. |
-|  [TemplateVarsExtendFunction](./ts-json.templatevarsextendfunction.md) | Function used to create a new collection of [TemplateVars](./ts-json.templatevars.md) with one or more new or changed values. |
-|  [VariableValue](./ts-json.variablevalue.md) | Describes one value in a [TemplateVars](./ts-json.templatevars.md) collection of variables. |
+<table><thead><tr><th>
 
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ConditionalJsonConverterOptions](./ts-json.conditionaljsonconverteroptions.md)
+
+
+</td><td>
+
+Options for a [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[JsonEditFailureReason](./ts-json.jsoneditfailurereason.md)
+
+
+</td><td>
+
+Possible `DetailedResult` details for various editor operations.
+
+
+</td></tr>
+<tr><td>
+
+[JsonEditorValidationRules](./ts-json.jsoneditorvalidationrules.md)
+
+
+</td><td>
+
+Possible validation rules for a [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[JsonPropertyEditFailureReason](./ts-json.jsonpropertyeditfailurereason.md)
+
+
+</td><td>
+
+Possible `DetailedResult` details for property edit operations.
+
+
+</td></tr>
+<tr><td>
+
+[JsonReferenceMapFailureReason](./ts-json.jsonreferencemapfailurereason.md)
+
+
+</td><td>
+
+Failure reason for [IJsonReferenceMap](./ts-json.ijsonreferencemap.md) lookup, where `'unknown'` means that the object is not present in the map and `'error'` means that an error occurred while retrieving or converting it.
+
+
+</td></tr>
+<tr><td>
+
+[RichJsonConverterOptions](./ts-json.richjsonconverteroptions.md)
+
+
+</td><td>
+
+Initialization options for a [RichJsonConverter](./ts-json.richjsonconverter.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[TemplatedJsonConverterOptions](./ts-json.templatedjsonconverteroptions.md)
+
+
+</td><td>
+
+Initialization options for a [TemplatedJsonConverter](./ts-json.templatedjsonconverter.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[TemplateVars](./ts-json.templatevars.md)
+
+
+</td><td>
+
+Collection of variables used for template replacement in a JSON edit or conversion.
+
+
+</td></tr>
+<tr><td>
+
+[TemplateVarsExtendFunction](./ts-json.templatevarsextendfunction.md)
+
+
+</td><td>
+
+Function used to create a new collection of [TemplateVars](./ts-json.templatevars.md) with one or more new or changed values.
+
+
+</td></tr>
+<tr><td>
+
+[VariableValue](./ts-json.variablevalue.md)
+
+
+</td><td>
+
+Describes one value in a [TemplateVars](./ts-json.templatevars.md) collection of variables.
+
+
+</td></tr>
+</tbody></table>

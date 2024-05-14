@@ -19,21 +19,144 @@ export declare class ReferenceJsonEditorRule extends JsonEditorRuleBase
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(options)](./ts-json.editorrules.referencejsoneditorrule._constructor_.md) |  | Creates a new . |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(options)](./ts-json.editorrules.referencejsoneditorrule._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a new .
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [\_options?](./ts-json.editorrules.referencejsoneditorrule._options.md) | <code>protected</code> | [IJsonEditorOptions](./ts-json.ijsoneditoroptions.md) | _(Optional)_ Stored fully-resolved  for this rule. |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[\_options?](./ts-json.editorrules.referencejsoneditorrule._options.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+[IJsonEditorOptions](./ts-json.ijsoneditoroptions.md)
+
+
+</td><td>
+
+_(Optional)_ Stored fully-resolved  for this rule.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [create(options)](./ts-json.editorrules.referencejsoneditorrule.create.md) | <code>static</code> | Creates a new . |
-|  [editProperty(key, value, state)](./ts-json.editorrules.referencejsoneditorrule.editproperty.md) |  | Evaluates a property for reference expansion. |
-|  [editValue(value, state)](./ts-json.editorrules.referencejsoneditorrule.editvalue.md) |  | Evaluates a property, array or literal value for reference replacement. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[create(options)](./ts-json.editorrules.referencejsoneditorrule.create.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new .
+
+
+</td></tr>
+<tr><td>
+
+[editProperty(key, value, state)](./ts-json.editorrules.referencejsoneditorrule.editproperty.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Evaluates a property for reference expansion.
+
+
+</td></tr>
+<tr><td>
+
+[editValue(value, state)](./ts-json.editorrules.referencejsoneditorrule.editvalue.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Evaluates a property, array or literal value for reference replacement.
+
+
+</td></tr>
+</tbody></table>

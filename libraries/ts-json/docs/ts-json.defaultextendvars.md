@@ -14,11 +14,55 @@ export declare function defaultExtendVars(base: TemplateVars | undefined, values
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  base | [TemplateVars](./ts-json.templatevars.md) \| undefined | The base [variables](./ts-json.templatevars.md) to be extended. |
-|  values | [VariableValue](./ts-json.variablevalue.md)<!-- -->\[\] | The [values](./ts-json.variablevalue.md) to be added or overridden in the new variables. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+base
+
+
+</td><td>
+
+[TemplateVars](./ts-json.templatevars.md) \| undefined
+
+
+</td><td>
+
+The base [variables](./ts-json.templatevars.md) to be extended.
+
+
+</td></tr>
+<tr><td>
+
+values
+
+
+</td><td>
+
+[VariableValue](./ts-json.variablevalue.md)<!-- -->\[\]
+
+
+</td><td>
+
+The [values](./ts-json.variablevalue.md) to be added or overridden in the new variables.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[TemplateVars](./ts-json.templatevars.md) \| undefined&gt;

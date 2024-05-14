@@ -106,8 +106,8 @@ export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
   /**
    * Evaluates a property for multi-value expansion.
    * @param key - The key of the property to be considered
-   * @param value - The {@link JsonValue | value} of the property to be considered.
-   * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
+   * @param value - The `JsonValue` of the property to be considered.
+   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
    * @returns `Success` with an object containing the fully-resolved child values to be merged for
    * matching multi-value property. Returns `Failure` with detail `'error'` if an error occurs or
    * with detail `'inapplicable'` if the property key is not a conditional property.
@@ -149,7 +149,7 @@ export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
 
   /**
    * Extends the {@link IJsonContext | current context} with a supplied state and values.
-   * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
+   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
    * @param values - An array of {@link VariableValue | VariableValue} to be added to the
    * context.
    * @returns The extended {@link IJsonContext | context}.
@@ -165,8 +165,8 @@ export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
   /**
    * Determines if a given property key is multi-value. Derived classes can override this
    * method to use a different format for multi-value properties.
-   * @param value - The {@link JsonValue | value} of the property to be considered.
-   * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
+   * @param value - The `JsonValue` of the property to be considered.
+   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
    * @returns `Success` with detail `'deferred'` and an
    * {@link Editor.Rules.IMultiValuePropertyParts | IMultiValuePropertyParts}
    * describing the match for matching multi-value property.  Returns `Failure` with detail `'error'` if an error occurs

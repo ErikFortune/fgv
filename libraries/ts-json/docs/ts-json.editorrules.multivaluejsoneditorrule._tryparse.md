@@ -14,11 +14,53 @@ protected _tryParse(token: string, state: JsonEditorState): DetailedResult<IMult
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  token | string |  |
-|  state | [JsonEditorState](./ts-json.jsoneditorstate.md) | The  for the object being edited. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+token
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+state
+
+
+</td><td>
+
+[JsonEditorState](./ts-json.jsoneditorstate.md)
+
+
+</td><td>
+
+The [editor state](./ts-json.jsoneditorstate.md) for the object being edited.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 DetailedResult&lt;[IMultiValuePropertyParts](./ts-json.editorrules.imultivaluepropertyparts.md)<!-- -->, [JsonEditFailureReason](./ts-json.jsoneditfailurereason.md)<!-- -->&gt;

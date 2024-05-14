@@ -14,10 +14,39 @@ export declare function templatedJson(options?: Partial<TemplatedJsonConverterOp
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  options | Partial&lt;[TemplatedJsonConverterOptions](./ts-json.templatedjsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ [Options and context](./ts-json.templatedjsonconverteroptions.md) for the conversion. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+options
+
+
+</td><td>
+
+Partial&lt;[TemplatedJsonConverterOptions](./ts-json.templatedjsonconverteroptions.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ [Options and context](./ts-json.templatedjsonconverteroptions.md) for the conversion.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [JsonConverter](./ts-json.jsonconverter.md)

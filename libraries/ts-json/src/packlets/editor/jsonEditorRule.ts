@@ -28,19 +28,19 @@ import { JsonEditorState } from './jsonEditorState';
 
 /**
  * An {@link Editor.IJsonEditorRule | IJsonEditorRule} represents a single configurable
- * rule to be applied by a {@link Editor.JsonEditor | JsonEditor}.
+ * rule to be applied by a {@link JsonEditor | JsonEditor}.
  * @public
  */
 export interface IJsonEditorRule {
   /**
-   * Called by a {@link Editor.JsonEditor | JsonEditor} to possibly edit one of the properties being
+   * Called by a {@link JsonEditor | JsonEditor} to possibly edit one of the properties being
    * merged into a target object.
    * @param key - The key of the property to be edited.
-   * @param value - The {@link JsonValue | value} of the property to be edited.
-   * @param state - {@link Editor.JsonEditorState | Editor state} which applies to the edit.
-   * @returns If the property was edited, returns `Success` with a {@link JsonObject | JsonObject} containing
+   * @param value - The `JsonValue` of the property to be edited.
+   * @param state - {@link JsonEditorState | Editor state} which applies to the edit.
+   * @returns If the property was edited, returns `Success` with a `JsonObject` containing
    * the edited results and with detail `'edited'`. If this property should be deferred for later consideration
-   * or merge, `Success` with detail `'deferred'` and a {@link JsonObject | JsonObject} to be finalized.  If
+   * or merge, `Success` with detail `'deferred'` and a `JsonObject` to be finalized.  If
    * the rule does not affect this property, returns `Failure` with detail `'inapplicable'`. If an error occurred
    * while processing the error, returns `Failure` with detail `'error'`.
    */
@@ -51,10 +51,10 @@ export interface IJsonEditorRule {
   ): DetailedResult<JsonObject, JsonPropertyEditFailureReason>;
 
   /**
-   * Called by a {@link Editor.JsonEditor | JsonEditor} to possibly edit a property value or array element.
-   * @param value - The {@link JsonValue | value} of the property to be edited.
-   * @param state - {@link Editor.JsonEditorState | Editor state} which applies to the edit.
-   * @returns Returns `Success` with the {@link JsonValue | JsonValue} to be inserted, with detail `'edited'` if
+   * Called by a {@link JsonEditor | JsonEditor} to possibly edit a property value or array element.
+   * @param value - The `JsonValue` of the property to be edited.
+   * @param state - {@link JsonEditorState | Editor state} which applies to the edit.
+   * @returns Returns `Success` with the `JsonValue` to be inserted, with detail `'edited'` if
    * the value was edited.  Returns `Failure` with `'inapplicable'` if the rule does not affect this value.
    * Fails with detail `'ignore'` if the value is to be ignored, or with `'error'` if an error occurs.
    */
@@ -63,8 +63,8 @@ export interface IJsonEditorRule {
   /**
    * Called for each rule after all properties have been merged.  Any properties that were deferred
    * during the initial edit pass are supplied as input.
-   * @param deferred - Any {@link JsonObject | objects} that were deferred during the first edit pass.
-   * @param state - {@link Editor.JsonEditorState | Editor state} which applies to the edit.
+   * @param deferred - Any JSON objects that were deferred during the first edit pass.
+   * @param state - {@link JsonEditorState | Editor state} which applies to the edit.
    * @returns On `Success` return, any returned objects are merged in order and finalization
    * is stopped. Finalization is also stopped on `Failure` with detail `'ignore'`. On `Failure`
    * with detail `'inapplicable'`, finalization continues with the next rule. Fails with an

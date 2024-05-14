@@ -14,11 +14,55 @@ static mergeContext(baseContext: IJsonContext | undefined, add: IJsonContext | u
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  baseContext | [IJsonContext](./ts-json.ijsoncontext.md) \| undefined | The [IJsonContext](./ts-json.ijsoncontext.md) into which variables and references are to be merged, or <code>undefined</code> to start from an empty context. |
-|  add | [IJsonContext](./ts-json.ijsoncontext.md) \| undefined | Optional initializer containing [variable values](./ts-json.variablevalue.md) and/or [reference maps](./ts-json.ijsonreferencemap.md) to be added to the [context](./ts-json.ijsoncontext.md)<!-- -->. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+baseContext
+
+
+</td><td>
+
+[IJsonContext](./ts-json.ijsoncontext.md) \| undefined
+
+
+</td><td>
+
+The [IJsonContext](./ts-json.ijsoncontext.md) into which variables and references are to be merged, or `undefined` to start from an empty context.
+
+
+</td></tr>
+<tr><td>
+
+add
+
+
+</td><td>
+
+[IJsonContext](./ts-json.ijsoncontext.md) \| undefined
+
+
+</td><td>
+
+Optional initializer containing [variable values](./ts-json.variablevalue.md) and/or [reference maps](./ts-json.ijsonreferencemap.md) to be added to the [context](./ts-json.ijsoncontext.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[IJsonContext](./ts-json.ijsoncontext.md) \| undefined&gt;

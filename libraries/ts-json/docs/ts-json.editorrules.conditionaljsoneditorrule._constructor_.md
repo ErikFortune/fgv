@@ -14,7 +14,36 @@ constructor(options?: IConditionalJsonRuleOptions);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  options | [IConditionalJsonRuleOptions](./ts-json.editorrules.iconditionaljsonruleoptions.md) | _(Optional)_ Optional  used for this rule. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+options
+
+
+</td><td>
+
+[IConditionalJsonRuleOptions](./ts-json.editorrules.iconditionaljsonruleoptions.md)
+
+
+</td><td>
+
+_(Optional)_ Optional  used for this rule.
+
+
+</td></tr>
+</tbody></table>

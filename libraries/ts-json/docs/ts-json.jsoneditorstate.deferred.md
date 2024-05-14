@@ -4,7 +4,7 @@
 
 ## JsonEditorState.deferred property
 
-An array of  that are deferred for merge during finalization.
+An array of JSON objects that were deferred for merge during finalization.
 
 **Signature:**
 

@@ -77,9 +77,9 @@ export class TemplatedJsonEditorRule extends JsonEditorRuleBase {
   /**
    * Evaluates a property name for template rendering.
    * @param key - The key of the property to be considered.
-   * @param value - The {@link JsonValue | value} of the property to be considered.
-   * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
-   * @returns `Success` with detail `'edited'` and an {@link JsonObject | object} to
+   * @param value - The `JsonValue` of the property to be considered.
+   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
+   * @returns `Success` with detail `'edited'` and an `JsonObject` to
    * be flattened and merged if the key contained a template. Returns `Failure` with detail `'error'`
    * if an error occurred or with detail `'inapplicable'` if the property key does not contain
    * a template or if name rendering is disabled.
@@ -114,8 +114,8 @@ export class TemplatedJsonEditorRule extends JsonEditorRuleBase {
 
   /**
    * Evaluates a property, array or literal value for template rendering.
-   * @param value - The {@link JsonValue | value} to be edited.
-   * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
+   * @param value - The `JsonValue` to be edited.
+   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
    * @returns `Success` with detail `'edited'` if the value contained a template and was edited.
    * Returns `Failure` with `'ignore'` if the rendered value should be ignored, with `'error'` if
    * an error occurs, or with `'inapplicable'` if the value was not a string with a template.
@@ -140,9 +140,9 @@ export class TemplatedJsonEditorRule extends JsonEditorRuleBase {
   }
 
   /**
-   * Renders a single template string for a supplied {@link Editor.JsonEditorState | editor state}.
+   * Renders a single template string for a supplied {@link JsonEditorState | editor state}.
    * @param template - The mustache template to be rendered.
-   * @param state - The {@link Editor.JsonEditorState | editor state} used to render the template.
+   * @param state - The {@link JsonEditorState | editor state} used to render the template.
    * @returns `Success` if the template is rendered.  Returns `Failure` with detail `'error'` if the
    * template could not be rendered (e.g. due to syntax errors) or with detail `'inapplicable'` if the
    * string is not a template.

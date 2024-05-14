@@ -75,7 +75,7 @@ export class CompositeJsonMap implements IJsonReferenceMap {
   }
 
   /**
-   * Gets a {@link JsonObject | JSON object} specified by key.
+   * Gets a JSON object specified by key.
    * @param key - The key of the object to be retrieved.
    * @param context - An optional {@link IJsonContext | JSON Context} used to format the object.
    * @returns `Success` with the formatted object if successful. `Failure` with detail `'unknown'`
@@ -95,7 +95,7 @@ export class CompositeJsonMap implements IJsonReferenceMap {
   }
 
   /**
-   * Gets a {@link JsonValue | JSON value} specified by key.
+   * Gets a JSON value specified by key.
    * @param key - The key of the object to be retrieved.
    * @param context - An optional {@link IJsonContext | JSON Context} used to format the value.
    * @returns `Success` with the formatted object if successful. `Failure` with detail `'unknown'`

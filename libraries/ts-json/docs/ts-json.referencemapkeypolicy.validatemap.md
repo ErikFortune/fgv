@@ -14,11 +14,53 @@ validateMap(map: Map<string, T>, options?: IReferenceMapKeyPolicyValidateOptions
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  map | Map&lt;string, T&gt; |  |
-|  options | [IReferenceMapKeyPolicyValidateOptions](./ts-json.ireferencemapkeypolicyvalidateoptions.md) | _(Optional)_ Optional [options](./ts-json.ireferencemapkeypolicyvalidateoptions.md) to control validation. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+map
+
+
+</td><td>
+
+Map&lt;string, T&gt;
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+options
+
+
+</td><td>
+
+[IReferenceMapKeyPolicyValidateOptions](./ts-json.ireferencemapkeypolicyvalidateoptions.md)
+
+
+</td><td>
+
+_(Optional)_ Optional [options](./ts-json.ireferencemapkeypolicyvalidateoptions.md) to control validation.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;Map&lt;string, T&gt;&gt;

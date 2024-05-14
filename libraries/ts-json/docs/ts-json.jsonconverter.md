@@ -15,13 +15,70 @@ export declare class JsonConverter extends JsonEditorConverter
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(options)](./ts-json.jsonconverter._constructor_.md) |  | Constructs a new [JsonConverter](./ts-json.jsonconverter.md) with supplied or default options. |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(options)](./ts-json.jsonconverter._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [JsonConverter](./ts-json.jsonconverter.md) with supplied or default options.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [create(options)](./ts-json.jsonconverter.create.md) | <code>static</code> | Creates a new [JsonConverter](./ts-json.jsonconverter.md)<!-- -->. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[create(options)](./ts-json.jsonconverter.create.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [JsonConverter](./ts-json.jsonconverter.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>

@@ -82,9 +82,9 @@ export class ReferenceJsonEditorRule extends JsonEditorRuleBase {
   /**
    * Evaluates a property for reference expansion.
    * @param key - The key of the property to be considered.
-   * @param value - The {@link JsonValue | value} of the property to be considered.
-   * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
-   * @returns If the reference is successful, returns `Success` with a {@link JsonObject | JsonObject}
+   * @param value - The `JsonValue` of the property to be considered.
+   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
+   * @returns If the reference is successful, returns `Success` with a `JsonObject`
    * to be flattened and merged into the current object. Returns `Failure` with detail `'inapplicable'`
    * for non-reference keys or with detail `'error'` if an error occurs.
    */
@@ -135,8 +135,8 @@ export class ReferenceJsonEditorRule extends JsonEditorRuleBase {
 
   /**
    * Evaluates a property, array or literal value for reference replacement.
-   * @param value - The {@link JsonValue | value} of the property to be considered.
-   * @param state - The {@link Editor.JsonEditorState | editor state} for the object being edited.
+   * @param value - The `JsonValue` of the property to be considered.
+   * @param state - The {@link JsonEditorState | editor state} for the object being edited.
    */
   public editValue(
     value: JsonValue,
@@ -161,7 +161,7 @@ export class ReferenceJsonEditorRule extends JsonEditorRuleBase {
   /**
    * Gets the template variables to use given the value of some property whose name matched a
    * resource plus the base template context.
-   * @param state - The {@link Editor.JsonEditorState | editor state} to be extended.
+   * @param state - The {@link JsonEditorState | editor state} to be extended.
    * @param supplied - The string or object supplied in the source json.
    * @internal
    */

@@ -14,10 +14,39 @@ static create(options?: Partial<IJsonConverterOptions>): Result<JsonConverter>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  options | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ Optional partial [options](./ts-json.ijsonconverteroptions.md) to configure the converter. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+options
+
+
+</td><td>
+
+Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional partial [options](./ts-json.ijsonconverteroptions.md) to configure the converter.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[JsonConverter](./ts-json.jsonconverter.md)<!-- -->&gt;

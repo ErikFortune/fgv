@@ -14,10 +14,109 @@ export interface IMultiValuePropertyParts
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [asArray](./ts-json.editorrules.imultivaluepropertyparts.asarray.md) | <code>readonly</code> | boolean | If <code>true</code>, the resolved values are added as an array with the name of the . If false, values are added as individual properties with names that correspond the value. |
-|  [propertyValues](./ts-json.editorrules.imultivaluepropertyparts.propertyvalues.md) | <code>readonly</code> | string\[\] | The set of property values to be expanded. |
-|  [propertyVariable](./ts-json.editorrules.imultivaluepropertyparts.propertyvariable.md) | <code>readonly</code> | string | The name of the variable used to project each possible property value into the child values or objects being resolved. |
-|  [token](./ts-json.editorrules.imultivaluepropertyparts.token.md) | <code>readonly</code> | string | The original matched token. |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[asArray](./ts-json.editorrules.imultivaluepropertyparts.asarray.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+If `true`<!-- -->, the resolved values are added as an array with the name of the . If false, values are added as individual properties with names that correspond the value.
+
+
+</td></tr>
+<tr><td>
+
+[propertyValues](./ts-json.editorrules.imultivaluepropertyparts.propertyvalues.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string\[\]
+
+
+</td><td>
+
+The set of property values to be expanded.
+
+
+</td></tr>
+<tr><td>
+
+[propertyVariable](./ts-json.editorrules.imultivaluepropertyparts.propertyvariable.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+The name of the variable used to project each possible property value into the child values or objects being resolved.
+
+
+</td></tr>
+<tr><td>
+
+[token](./ts-json.editorrules.imultivaluepropertyparts.token.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+The original matched token.
+
+
+</td></tr>
+</tbody></table>

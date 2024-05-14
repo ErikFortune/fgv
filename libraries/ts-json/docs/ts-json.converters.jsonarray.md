@@ -4,7 +4,7 @@
 
 ## Converters.jsonArray variable
 
-A simple validating [JSON converter](./ts-json.jsonconverter.md)<!-- -->. Converts `unknown` to a , or fails if the unknown contains invalid JSON or is not an array.
+A simple validating [JSON converter](./ts-json.jsonconverter.md)<!-- -->. Converts `unknown` to a `JsonArray`<!-- -->, or fails if the unknown contains invalid JSON or is not an array.
 
 **Signature:**
 

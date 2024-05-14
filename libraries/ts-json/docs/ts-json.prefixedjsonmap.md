@@ -15,14 +15,88 @@ export declare class PrefixedJsonMap extends SimpleJsonMap
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(values, context, options)](./ts-json.prefixedjsonmap._constructor_.md) | <code>protected</code> | Constructs a new [PrefixedJsonMap](./ts-json.prefixedjsonmap.md) from the supplied values |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(values, context, options)](./ts-json.prefixedjsonmap._constructor_.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+Constructs a new [PrefixedJsonMap](./ts-json.prefixedjsonmap.md) from the supplied values
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [createPrefixed(prefix, values, context, editor)](./ts-json.prefixedjsonmap.createprefixed.md) | <code>static</code> | Creates a new [PrefixedJsonMap](./ts-json.prefixedjsonmap.md) from the supplied values |
-|  [createPrefixed(prefixOptions, values, context, editor)](./ts-json.prefixedjsonmap.createprefixed_1.md) | <code>static</code> | Creates a new [PrefixedJsonMap](./ts-json.prefixedjsonmap.md) from the supplied values |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[createPrefixed(prefix, values, context, editor)](./ts-json.prefixedjsonmap.createprefixed.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [PrefixedJsonMap](./ts-json.prefixedjsonmap.md) from the supplied values
+
+
+</td></tr>
+<tr><td>
+
+[createPrefixed(prefixOptions, values, context, editor)](./ts-json.prefixedjsonmap.createprefixed_1.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [PrefixedJsonMap](./ts-json.prefixedjsonmap.md) from the supplied values
+
+
+</td></tr>
+</tbody></table>

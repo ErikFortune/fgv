@@ -4,7 +4,7 @@
 
 ## IJsonEditorRule interface
 
-An  represents a single configurable rule to be applied by a .
+An  represents a single configurable rule to be applied by a [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
 
 **Signature:**
 
@@ -14,9 +14,48 @@ export interface IJsonEditorRule
 
 ## Methods
 
-|  Method | Description |
-|  --- | --- |
-|  [editProperty(key, value, state)](./ts-json.ijsoneditorrule.editproperty.md) | Called by a  to possibly edit one of the properties being merged into a target object. |
-|  [editValue(value, state)](./ts-json.ijsoneditorrule.editvalue.md) | Called by a  to possibly edit a property value or array element. |
-|  [finalizeProperties(deferred, state)](./ts-json.ijsoneditorrule.finalizeproperties.md) | Called for each rule after all properties have been merged. Any properties that were deferred during the initial edit pass are supplied as input. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[editProperty(key, value, state)](./ts-json.ijsoneditorrule.editproperty.md)
+
+
+</td><td>
+
+Called by a [JsonEditor](./ts-json.jsoneditor.md) to possibly edit one of the properties being merged into a target object.
+
+
+</td></tr>
+<tr><td>
+
+[editValue(value, state)](./ts-json.ijsoneditorrule.editvalue.md)
+
+
+</td><td>
+
+Called by a [JsonEditor](./ts-json.jsoneditor.md) to possibly edit a property value or array element.
+
+
+</td></tr>
+<tr><td>
+
+[finalizeProperties(deferred, state)](./ts-json.ijsoneditorrule.finalizeproperties.md)
+
+
+</td><td>
+
+Called for each rule after all properties have been merged. Any properties that were deferred during the initial edit pass are supplied as input.
+
+
+</td></tr>
+</tbody></table>

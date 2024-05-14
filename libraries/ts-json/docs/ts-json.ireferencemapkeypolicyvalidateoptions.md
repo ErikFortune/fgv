@@ -14,7 +14,44 @@ export interface IReferenceMapKeyPolicyValidateOptions
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [makeValid?](./ts-json.ireferencemapkeypolicyvalidateoptions.makevalid.md) |  | boolean | _(Optional)_ If <code>true</code>, the validator coerces keys to some valid value. If <code>false</code>, invalid keys cause an error. |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[makeValid?](./ts-json.ireferencemapkeypolicyvalidateoptions.makevalid.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_ If `true`<!-- -->, the validator coerces keys to some valid value. If `false`<!-- -->, invalid keys cause an error.
+
+
+</td></tr>
+</tbody></table>

@@ -14,10 +14,39 @@ export declare function contextFromConverterOptions(partial?: Partial<IJsonConve
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  partial | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ Optional partial [IJsonConverterOptions](./ts-json.ijsonconverteroptions.md) used to populate the context. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+partial
+
+
+</td><td>
+
+Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional partial [IJsonConverterOptions](./ts-json.ijsonconverteroptions.md) used to populate the context.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [IJsonContext](./ts-json.ijsoncontext.md) \| undefined

@@ -6,20 +6,137 @@
 
 ## Classes
 
-|  Class | Description |
-|  --- | --- |
-|  [ConditionalJsonEditorRule](./ts-json.editorrules.conditionaljsoneditorrule.md) | <p>The  evaluates properties with conditional keys, omitting non-matching keys and merging keys that match, or default keys only if no other keys match.</p><p>The default syntax for a conditional key is: "?value1=value2" - matches if value1 and value2 are the same, is ignored otherwise. "?value" - matches if value is a non-empty, non-whitespace string. Is ignored otherwise. "?default" - matches only if no other conditional blocks in the same object were matched.</p> |
-|  [MultiValueJsonEditorRule](./ts-json.editorrules.multivaluejsoneditorrule.md) | <p>The  expands matching keys multiple times, projecting the value into the template context for any child objects rendered by the rule.</p><p>The default syntax for a multi-value key is: "\[\[var\]\]=value1,value2,value3" Where "var" is the name of the variable that will be passed to child template resolution, and "value1,value2,value3" is a comma-separated list of values to be expanded.</p> |
-|  [ReferenceJsonEditorRule](./ts-json.editorrules.referencejsoneditorrule.md) | <p>The  replaces property keys or values that match some known object with a copy of that referenced object, formatted according to the current context.</p><p>A property key is matched if it matches any known referenced value. - If the value of the matched key is <code>'default'</code>, then the entire object is formatted with the current context, flattened and merged into the current object. - If the value of the matched key is some other string, then the entire object is formatted with the current context, and the child of the resulting object at the specified path is flattened and merged into the current object. - If the value of the matched key is an object, then the entire object is formatted with the current context extended to include any properties of that object, flattened, and merged into the current object. - It is an error if the referenced value is not an object.</p><p>Any property, array or literal value is matched if it matches any known value reference. The referenced value is replaced by the referenced value, formatted using the current editor context.</p> |
-|  [TemplatedJsonEditorRule](./ts-json.editorrules.templatedjsoneditorrule.md) | The  applies mustache rendering as appropriate to any keys or values in the object being edited. |
+<table><thead><tr><th>
+
+Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ConditionalJsonEditorRule](./ts-json.editorrules.conditionaljsoneditorrule.md)
+
+
+</td><td>
+
+The  evaluates properties with conditional keys, omitting non-matching keys and merging keys that match, or default keys only if no other keys match.
+
+The default syntax for a conditional key is: "?value1=value2" - matches if value1 and value2 are the same, is ignored otherwise. "?value" - matches if value is a non-empty, non-whitespace string. Is ignored otherwise. "?default" - matches only if no other conditional blocks in the same object were matched.
+
+
+</td></tr>
+<tr><td>
+
+[MultiValueJsonEditorRule](./ts-json.editorrules.multivaluejsoneditorrule.md)
+
+
+</td><td>
+
+The  expands matching keys multiple times, projecting the value into the template context for any child objects rendered by the rule.
+
+The default syntax for a multi-value key is: "\[\[var\]\]=value1,value2,value3" Where "var" is the name of the variable that will be passed to child template resolution, and "value1,value2,value3" is a comma-separated list of values to be expanded.
+
+
+</td></tr>
+<tr><td>
+
+[ReferenceJsonEditorRule](./ts-json.editorrules.referencejsoneditorrule.md)
+
+
+</td><td>
+
+The  replaces property keys or values that match some known object with a copy of that referenced object, formatted according to the current context.
+
+A property key is matched if it matches any known referenced value. - If the value of the matched key is `'default'`<!-- -->, then the entire object is formatted with the current context, flattened and merged into the current object. - If the value of the matched key is some other string, then the entire object is formatted with the current context, and the child of the resulting object at the specified path is flattened and merged into the current object. - If the value of the matched key is an object, then the entire object is formatted with the current context extended to include any properties of that object, flattened, and merged into the current object. - It is an error if the referenced value is not an object.
+
+Any property, array or literal value is matched if it matches any known value reference. The referenced value is replaced by the referenced value, formatted using the current editor context.
+
+
+</td></tr>
+<tr><td>
+
+[TemplatedJsonEditorRule](./ts-json.editorrules.templatedjsoneditorrule.md)
+
+
+</td><td>
+
+The  applies mustache rendering as appropriate to any keys or values in the object being edited.
+
+
+</td></tr>
+</tbody></table>
 
 ## Interfaces
 
-|  Interface | Description |
-|  --- | --- |
-|  [IConditionalJsonDeferredObject](./ts-json.editorrules.iconditionaljsondeferredobject.md) | On a successful match, the  stores a  describing the matching result, to be resolved at finalization time. |
-|  [IConditionalJsonKeyResult](./ts-json.editorrules.iconditionaljsonkeyresult.md) | Returned by  to indicate whether a successful match was due to a matching condition or a default value. |
-|  [IConditionalJsonRuleOptions](./ts-json.editorrules.iconditionaljsonruleoptions.md) | Configuration options for the . |
-|  [IMultiValuePropertyParts](./ts-json.editorrules.imultivaluepropertyparts.md) | Represents the parts of a multi-value property key. |
-|  [ITemplatedJsonRuleOptions](./ts-json.editorrules.itemplatedjsonruleoptions.md) | Configuration options for the . |
+<table><thead><tr><th>
 
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[IConditionalJsonDeferredObject](./ts-json.editorrules.iconditionaljsondeferredobject.md)
+
+
+</td><td>
+
+On a successful match, the  stores a  describing the matching result, to be resolved at finalization time.
+
+
+</td></tr>
+<tr><td>
+
+[IConditionalJsonKeyResult](./ts-json.editorrules.iconditionaljsonkeyresult.md)
+
+
+</td><td>
+
+Returned by  to indicate whether a successful match was due to a matching condition or a default value.
+
+
+</td></tr>
+<tr><td>
+
+[IConditionalJsonRuleOptions](./ts-json.editorrules.iconditionaljsonruleoptions.md)
+
+
+</td><td>
+
+Configuration options for the .
+
+
+</td></tr>
+<tr><td>
+
+[IMultiValuePropertyParts](./ts-json.editorrules.imultivaluepropertyparts.md)
+
+
+</td><td>
+
+Represents the parts of a multi-value property key.
+
+
+</td></tr>
+<tr><td>
+
+[ITemplatedJsonRuleOptions](./ts-json.editorrules.itemplatedjsonruleoptions.md)
+
+
+</td><td>
+
+Configuration options for the .
+
+
+</td></tr>
+</tbody></table>

@@ -15,7 +15,42 @@ export interface IConditionalJsonKeyResult extends JsonObject
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [matchType](./ts-json.editorrules.iconditionaljsonkeyresult.matchtype.md) |  | 'default' \| 'match' \| 'unconditional' |  |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[matchType](./ts-json.editorrules.iconditionaljsonkeyresult.matchtype.md)
+
+
+</td><td>
+
+
+</td><td>
+
+'default' \| 'match' \| 'unconditional'
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

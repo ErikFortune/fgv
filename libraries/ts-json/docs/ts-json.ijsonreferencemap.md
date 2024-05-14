@@ -4,7 +4,7 @@
 
 ## IJsonReferenceMap interface
 
-Interface for a simple map that returns named  values with templating, conditional logic, and external reference lookups applied using an optionally supplied context.
+Interface for a simple map that returns named `JsonValue` values with templating, conditional logic, and external reference lookups applied using an optionally supplied context.
 
 **Signature:**
 
@@ -14,10 +14,59 @@ export interface IJsonReferenceMap
 
 ## Methods
 
-|  Method | Description |
-|  --- | --- |
-|  [getJsonObject(key, context)](./ts-json.ijsonreferencemap.getjsonobject.md) | Gets a  specified by key. |
-|  [getJsonValue(key, context)](./ts-json.ijsonreferencemap.getjsonvalue.md) | Gets a  specified by key. |
-|  [has(key)](./ts-json.ijsonreferencemap.has.md) | Determines if an object with the specified key actually exists in the map. |
-|  [keyIsInRange(key)](./ts-json.ijsonreferencemap.keyisinrange.md) | Determine if a key might be valid for this map but does not determine if key actually exists. Allows key range to be constrained. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[getJsonObject(key, context)](./ts-json.ijsonreferencemap.getjsonobject.md)
+
+
+</td><td>
+
+Gets a `JsonObject` specified by key.
+
+
+</td></tr>
+<tr><td>
+
+[getJsonValue(key, context)](./ts-json.ijsonreferencemap.getjsonvalue.md)
+
+
+</td><td>
+
+Gets a `JsonValue` specified by key.
+
+
+</td></tr>
+<tr><td>
+
+[has(key)](./ts-json.ijsonreferencemap.has.md)
+
+
+</td><td>
+
+Determines if an object with the specified key actually exists in the map.
+
+
+</td></tr>
+<tr><td>
+
+[keyIsInRange(key)](./ts-json.ijsonreferencemap.keyisinrange.md)
+
+
+</td><td>
+
+Determine if a key might be valid for this map but does not determine if key actually exists. Allows key range to be constrained.
+
+
+</td></tr>
+</tbody></table>

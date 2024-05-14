@@ -15,7 +15,42 @@ export interface IConditionalJsonDeferredObject extends IConditionalJsonKeyResul
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [value](./ts-json.editorrules.iconditionaljsondeferredobject.value.md) |  | JsonValue |  |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[value](./ts-json.editorrules.iconditionaljsondeferredobject.value.md)
+
+
+</td><td>
+
+
+</td><td>
+
+JsonValue
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

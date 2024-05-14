@@ -14,7 +14,36 @@ constructor(options?: ITemplatedJsonRuleOptions);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  options | [ITemplatedJsonRuleOptions](./ts-json.editorrules.itemplatedjsonruleoptions.md) | _(Optional)_ Optional  for this rule. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+options
+
+
+</td><td>
+
+[ITemplatedJsonRuleOptions](./ts-json.editorrules.itemplatedjsonruleoptions.md)
+
+
+</td><td>
+
+_(Optional)_ Optional  for this rule.
+
+
+</td></tr>
+</tbody></table>

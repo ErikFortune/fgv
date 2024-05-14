@@ -17,22 +17,162 @@ export declare class MultiValueJsonEditorRule extends JsonEditorRuleBase
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(options)](./ts-json.editorrules.multivaluejsoneditorrule._constructor_.md) |  | Creates a new . |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(options)](./ts-json.editorrules.multivaluejsoneditorrule._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a new .
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [\_options?](./ts-json.editorrules.multivaluejsoneditorrule._options.md) | <code>protected</code> | [IJsonEditorOptions](./ts-json.ijsoneditoroptions.md) | _(Optional)_ Stored fully-resolved  for this rule. |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[\_options?](./ts-json.editorrules.multivaluejsoneditorrule._options.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+[IJsonEditorOptions](./ts-json.ijsoneditoroptions.md)
+
+
+</td><td>
+
+_(Optional)_ Stored fully-resolved  for this rule.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [\_deriveContext(state, values)](./ts-json.editorrules.multivaluejsoneditorrule._derivecontext.md) | <code>protected</code> | Extends the [current context](./ts-json.ijsoncontext.md) with a supplied state and values. |
-|  [\_tryParse(token, state)](./ts-json.editorrules.multivaluejsoneditorrule._tryparse.md) | <code>protected</code> | Determines if a given property key is multi-value. Derived classes can override this method to use a different format for multi-value properties. |
-|  [create(options)](./ts-json.editorrules.multivaluejsoneditorrule.create.md) | <code>static</code> | Creates a new . |
-|  [editProperty(key, value, state)](./ts-json.editorrules.multivaluejsoneditorrule.editproperty.md) |  | Evaluates a property for multi-value expansion. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[\_deriveContext(state, values)](./ts-json.editorrules.multivaluejsoneditorrule._derivecontext.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+Extends the [current context](./ts-json.ijsoncontext.md) with a supplied state and values.
+
+
+</td></tr>
+<tr><td>
+
+[\_tryParse(token, state)](./ts-json.editorrules.multivaluejsoneditorrule._tryparse.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+Determines if a given property key is multi-value. Derived classes can override this method to use a different format for multi-value properties.
+
+
+</td></tr>
+<tr><td>
+
+[create(options)](./ts-json.editorrules.multivaluejsoneditorrule.create.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new .
+
+
+</td></tr>
+<tr><td>
+
+[editProperty(key, value, state)](./ts-json.editorrules.multivaluejsoneditorrule.editproperty.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Evaluates a property for multi-value expansion.
+
+
+</td></tr>
+</tbody></table>

@@ -14,13 +14,87 @@ static createPrefixed(prefix: string, values?: MapOrRecord<JsonValue>, context?:
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  prefix | string | A string prefix to be enforced for and added to key names as necessary |
-|  values | MapOrRecord&lt;JsonValue&gt; | _(Optional)_ A string-keyed Map or Record of the  to be returned |
-|  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ Optional [JSON Context](./ts-json.ijsoncontext.md) used to format returned values |
-|  editor | [JsonEditor](./ts-json.jsoneditor.md) | _(Optional)_ Optional  used to format returned values |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+prefix
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+A string prefix to be enforced for and added to key names as necessary
+
+
+</td></tr>
+<tr><td>
+
+values
+
+
+</td><td>
+
+MapOrRecord&lt;JsonValue&gt;
+
+
+</td><td>
+
+_(Optional)_ A string-keyed Map or Record of the `JsonValue` to be returned
+
+
+</td></tr>
+<tr><td>
+
+context
+
+
+</td><td>
+
+[IJsonContext](./ts-json.ijsoncontext.md)
+
+
+</td><td>
+
+_(Optional)_ Optional [JSON Context](./ts-json.ijsoncontext.md) used to format returned values
+
+
+</td></tr>
+<tr><td>
+
+editor
+
+
+</td><td>
+
+[JsonEditor](./ts-json.jsoneditor.md)
+
+
+</td><td>
+
+_(Optional)_ Optional [JsonEditor](./ts-json.jsoneditor.md) used to format returned values
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[PrefixedJsonMap](./ts-json.prefixedjsonmap.md)<!-- -->&gt;

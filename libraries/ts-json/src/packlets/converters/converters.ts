@@ -42,7 +42,7 @@ export const json: JsonConverter = new JsonConverter();
 
 /**
  * A simple validating {@link JsonConverter | JSON converter}. Converts unknown
- * to a {@link JsonObject | JsonObject}, or fails if the `unknown` contains invalid
+ * to a `JsonObject`, or fails if the `unknown` contains invalid
  * JSON or is not an object.
  * @public
  */
@@ -50,7 +50,7 @@ export const jsonObject: Converter<JsonObject, IJsonContext> = json.object();
 
 /**
  * A simple validating {@link JsonConverter | JSON converter}. Converts `unknown` to a
- * {@link JsonArray | JsonArray}, or fails if the unknown contains invalid JSON or is
+ * `JsonArray`, or fails if the unknown contains invalid JSON or is
  * not an array.
  * @public
  */

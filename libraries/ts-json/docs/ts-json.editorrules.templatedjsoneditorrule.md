@@ -15,21 +15,144 @@ export declare class TemplatedJsonEditorRule extends JsonEditorRuleBase
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(options)](./ts-json.editorrules.templatedjsoneditorrule._constructor_.md) |  | Creates a new . |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(options)](./ts-json.editorrules.templatedjsoneditorrule._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a new .
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [\_options?](./ts-json.editorrules.templatedjsoneditorrule._options.md) | <code>protected</code> | [ITemplatedJsonRuleOptions](./ts-json.editorrules.itemplatedjsonruleoptions.md) | _(Optional)_ Fully-resolved  for this rule. |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[\_options?](./ts-json.editorrules.templatedjsoneditorrule._options.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+[ITemplatedJsonRuleOptions](./ts-json.editorrules.itemplatedjsonruleoptions.md)
+
+
+</td><td>
+
+_(Optional)_ Fully-resolved  for this rule.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [create(options)](./ts-json.editorrules.templatedjsoneditorrule.create.md) | <code>static</code> | Creates a new . |
-|  [editProperty(key, value, state)](./ts-json.editorrules.templatedjsoneditorrule.editproperty.md) |  | Evaluates a property name for template rendering. |
-|  [editValue(value, state)](./ts-json.editorrules.templatedjsoneditorrule.editvalue.md) |  | Evaluates a property, array or literal value for template rendering. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[create(options)](./ts-json.editorrules.templatedjsoneditorrule.create.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new .
+
+
+</td></tr>
+<tr><td>
+
+[editProperty(key, value, state)](./ts-json.editorrules.templatedjsoneditorrule.editproperty.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Evaluates a property name for template rendering.
+
+
+</td></tr>
+<tr><td>
+
+[editValue(value, state)](./ts-json.editorrules.templatedjsoneditorrule.editvalue.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Evaluates a property, array or literal value for template rendering.
+
+
+</td></tr>
+</tbody></table>

@@ -14,12 +14,71 @@ editProperty(key: string, value: JsonValue, state: JsonEditorState): DetailedRes
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  key | string | The key of the property to be considered |
-|  value | JsonValue | The  of the property to be considered. |
-|  state | [JsonEditorState](./ts-json.jsoneditorstate.md) | The  for the object being edited. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+key
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+The key of the property to be considered
+
+
+</td></tr>
+<tr><td>
+
+value
+
+
+</td><td>
+
+JsonValue
+
+
+</td><td>
+
+The `JsonValue` of the property to be considered.
+
+
+</td></tr>
+<tr><td>
+
+state
+
+
+</td><td>
+
+[JsonEditorState](./ts-json.jsoneditorstate.md)
+
+
+</td><td>
+
+The [editor state](./ts-json.jsoneditorstate.md) for the object being edited.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 DetailedResult&lt;JsonObject, [JsonPropertyEditFailureReason](./ts-json.jsonpropertyeditfailurereason.md)<!-- -->&gt;

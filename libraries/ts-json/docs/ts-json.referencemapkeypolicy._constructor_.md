@@ -14,8 +14,52 @@ constructor(options?: IReferenceMapKeyPolicyValidateOptions, isValid?: (key: str
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  options | [IReferenceMapKeyPolicyValidateOptions](./ts-json.ireferencemapkeypolicyvalidateoptions.md) | _(Optional)_ Optional [options](./ts-json.ireferencemapkeypolicyvalidateoptions.md) used to construct the [ReferenceMapKeyPolicy](./ts-json.referencemapkeypolicy.md)<!-- -->. |
-|  isValid | (key: string, item?: T) =&gt; boolean | _(Optional)_ An optional predicate to test a supplied key for validity. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+options
+
+
+</td><td>
+
+[IReferenceMapKeyPolicyValidateOptions](./ts-json.ireferencemapkeypolicyvalidateoptions.md)
+
+
+</td><td>
+
+_(Optional)_ Optional [options](./ts-json.ireferencemapkeypolicyvalidateoptions.md) used to construct the [ReferenceMapKeyPolicy](./ts-json.referencemapkeypolicy.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+isValid
+
+
+</td><td>
+
+(key: string, item?: T) =&gt; boolean
+
+
+</td><td>
+
+_(Optional)_ An optional predicate to test a supplied key for validity.
+
+
+</td></tr>
+</tbody></table>
