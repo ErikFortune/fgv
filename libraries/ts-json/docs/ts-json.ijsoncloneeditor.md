@@ -4,7 +4,7 @@
 
 ## IJsonCloneEditor interface
 
-A specialized JSON editor which does a deep clone of a supplied .
+A specialized JSON editor which does a deep clone of a supplied `JsonValue`<!-- -->.
 
 **Signature:**
 
@@ -14,7 +14,26 @@ export interface IJsonCloneEditor
 
 ## Methods
 
-|  Method | Description |
-|  --- | --- |
-|  [clone(src, context)](./ts-json.ijsoncloneeditor.clone.md) | Returns a deep clone of a supplied . |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[clone(src, context)](./ts-json.ijsoncloneeditor.clone.md)
+
+
+</td><td>
+
+Returns a deep clone of a supplied `JsonValue`<!-- -->.
+
+
+</td></tr>
+</tbody></table>

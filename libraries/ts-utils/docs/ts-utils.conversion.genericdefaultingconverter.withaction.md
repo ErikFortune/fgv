@@ -14,10 +14,39 @@ withAction<T2>(action: (result: Result<T | TD>) => Result<T2>): Converter<T2, TC
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  action | (result: [Result](./ts-utils.result.md)<!-- -->&lt;T \| TD&gt;) =&gt; [Result](./ts-utils.result.md)<!-- -->&lt;T2&gt; | The action to be applied. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+action
+
+
+</td><td>
+
+(result: [Result](./ts-utils.result.md)<!-- -->&lt;T \| TD&gt;) =&gt; [Result](./ts-utils.result.md)<!-- -->&lt;T2&gt;
+
+
+</td><td>
+
+The action to be applied.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T2, TC&gt;

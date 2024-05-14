@@ -15,8 +15,59 @@ export interface TypeGuardValidatorConstructorParams<T, TC = unknown> extends Va
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [description](./ts-utils.validation.classes.typeguardvalidatorconstructorparams.description.md) |  | string |  |
-|  [guard](./ts-utils.validation.classes.typeguardvalidatorconstructorparams.guard.md) |  | [TypeGuardWithContext](./ts-utils.validation.typeguardwithcontext.md)<!-- -->&lt;T, TC&gt; |  |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[description](./ts-utils.validation.classes.typeguardvalidatorconstructorparams.description.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[guard](./ts-utils.validation.classes.typeguardvalidatorconstructorparams.guard.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[TypeGuardWithContext](./ts-utils.validation.typeguardwithcontext.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

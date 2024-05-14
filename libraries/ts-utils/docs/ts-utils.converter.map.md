@@ -14,10 +14,39 @@ map<T2>(mapper: (from: T) => Result<T2>): Converter<T2, TC>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  mapper | (from: T) =&gt; [Result](./ts-utils.result.md)<!-- -->&lt;T2&gt; | A function which maps from the the result type <code>&lt;T&gt;</code> of this converter to a new result type <code>&lt;T2&gt;</code>. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+mapper
+
+
+</td><td>
+
+(from: T) =&gt; [Result](./ts-utils.result.md)<!-- -->&lt;T2&gt;
+
+
+</td><td>
+
+A function which maps from the the result type `<T>` of this converter to a new result type `<T2>`<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T2, TC&gt;

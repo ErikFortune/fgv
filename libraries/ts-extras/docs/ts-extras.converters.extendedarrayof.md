@@ -17,12 +17,69 @@ export declare function extendedArrayOf<T, TC = undefined>(label: string, conver
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  label | string |  |
-|  converter | Converter&lt;T, TC&gt; | <code>Converter</code> used to convert each item in the array |
-|  onError | Conversion.OnError | _(Optional)_ |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+label
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+converter
+
+
+</td><td>
+
+Converter&lt;T, TC&gt;
+
+
+</td><td>
+
+`Converter` used to convert each item in the array
+
+
+</td></tr>
+<tr><td>
+
+onError
+
+
+</td><td>
+
+Conversion.OnError
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Converter&lt;[ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->&lt;T&gt;, TC&gt;

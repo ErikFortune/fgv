@@ -14,9 +14,82 @@ export interface IJsonContext
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [extendVars?](./ts-json.ijsoncontext.extendvars.md) |  | [TemplateVarsExtendFunction](./ts-json.templatevarsextendfunction.md) | _(Optional)_ |
-|  [refs?](./ts-json.ijsoncontext.refs.md) |  | [IJsonReferenceMap](./ts-json.ijsonreferencemap.md) | _(Optional)_ |
-|  [vars?](./ts-json.ijsoncontext.vars.md) |  | [TemplateVars](./ts-json.templatevars.md) | _(Optional)_ |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[extendVars?](./ts-json.ijsoncontext.extendvars.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[TemplateVarsExtendFunction](./ts-json.templatevarsextendfunction.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[refs?](./ts-json.ijsoncontext.refs.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[IJsonReferenceMap](./ts-json.ijsonreferencemap.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[vars?](./ts-json.ijsoncontext.vars.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[TemplateVars](./ts-json.templatevars.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+</tbody></table>

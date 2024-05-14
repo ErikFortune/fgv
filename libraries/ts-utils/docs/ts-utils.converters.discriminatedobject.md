@@ -14,11 +14,55 @@ export declare function discriminatedObject<T, TD extends string = string, TC = 
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  discriminatorProp | string | Name of the property used to discriminate types. |
-|  converters | [DiscriminatedObjectConverters](./ts-utils.converters.discriminatedobjectconverters.md)<!-- -->&lt;T, TD&gt; | [String-keyed record of converters and validators](./ts-utils.converters.discriminatedobjectconverters.md) to invoke, where each key corresponds to a value of the discriminator property. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+discriminatorProp
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+Name of the property used to discriminate types.
+
+
+</td></tr>
+<tr><td>
+
+converters
+
+
+</td><td>
+
+[DiscriminatedObjectConverters](./ts-utils.converters.discriminatedobjectconverters.md)<!-- -->&lt;T, TD&gt;
+
+
+</td><td>
+
+[String-keyed record of converters and validators](./ts-utils.converters.discriminatedobjectconverters.md) to invoke, where each key corresponds to a value of the discriminator property.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;

@@ -14,9 +14,76 @@ export interface RangeOfFormats
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [maxOnly](./ts-extras.experimental.rangeofformats.maxonly.md) |  | string |  |
-|  [minMax](./ts-extras.experimental.rangeofformats.minmax.md) |  | string |  |
-|  [minOnly](./ts-extras.experimental.rangeofformats.minonly.md) |  | string |  |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[maxOnly](./ts-extras.experimental.rangeofformats.maxonly.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[minMax](./ts-extras.experimental.rangeofformats.minmax.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[minOnly](./ts-extras.experimental.rangeofformats.minonly.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

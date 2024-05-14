@@ -14,15 +14,74 @@ mergeObjectsInPlaceWithContext(context: IJsonContext | undefined, base: JsonObje
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  context | [IJsonContext](./ts-json.ijsoncontext.md) \| undefined | An optional [IJsonContext](./ts-json.ijsoncontext.md) supplying variables and references. |
-|  base | JsonObject | The base  to be updated |
-|  srcObjects | JsonObject\[\] | Objects to be merged into the target object, in the order supplied. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+context
+
+
+</td><td>
+
+[IJsonContext](./ts-json.ijsoncontext.md) \| undefined
+
+
+</td><td>
+
+An optional [IJsonContext](./ts-json.ijsoncontext.md) supplying variables and references.
+
+
+</td></tr>
+<tr><td>
+
+base
+
+
+</td><td>
+
+JsonObject
+
+
+</td><td>
+
+The base `JsonObject` to be updated
+
+
+</td></tr>
+<tr><td>
+
+srcObjects
+
+
+</td><td>
+
+JsonObject\[\]
+
+
+</td><td>
+
+Objects to be merged into the target object, in the order supplied.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;JsonObject&gt;
 
-`Success` with the original source  if merge was successful. Returns `Failure` with details if an error occurs.
+`Success` with the original source `JsonObject` if merge was successful. Returns `Failure` with details if an error occurs.
 

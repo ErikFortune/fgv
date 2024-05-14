@@ -14,11 +14,55 @@ static extendContextRefs(baseContext: IJsonContext | undefined, refs?: IJsonRefe
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  baseContext | [IJsonContext](./ts-json.ijsoncontext.md) \| undefined | The [IJsonContext](./ts-json.ijsoncontext.md) to be extended, or <code>undefined</code> to start from an empty context. |
-|  refs | [IJsonReferenceMap](./ts-json.ijsonreferencemap.md)<!-- -->\[\] | _(Optional)_ Optional [reference maps](./ts-json.ijsonreferencemap.md) to be added to the [context](./ts-json.ijsoncontext.md)<!-- -->. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+baseContext
+
+
+</td><td>
+
+[IJsonContext](./ts-json.ijsoncontext.md) \| undefined
+
+
+</td><td>
+
+The [IJsonContext](./ts-json.ijsoncontext.md) to be extended, or `undefined` to start from an empty context.
+
+
+</td></tr>
+<tr><td>
+
+refs
+
+
+</td><td>
+
+[IJsonReferenceMap](./ts-json.ijsonreferencemap.md)<!-- -->\[\]
+
+
+</td><td>
+
+_(Optional)_ Optional [reference maps](./ts-json.ijsonreferencemap.md) to be added to the [context](./ts-json.ijsoncontext.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[IJsonReferenceMap](./ts-json.ijsonreferencemap.md) \| undefined&gt;

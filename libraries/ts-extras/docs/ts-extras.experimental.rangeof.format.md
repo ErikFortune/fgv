@@ -14,11 +14,55 @@ format(format: (value: T) => string | undefined, formats?: RangeOfFormats): stri
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  format | (value: T) =&gt; string \| undefined | Format function used to format minimum and maximum extent values. |
-|  formats | [RangeOfFormats](./ts-extras.experimental.rangeofformats.md) | _(Optional)_ The [format strings](./ts-extras.experimental.rangeofformats.md) used to format the range (default [Experimental.DEFAULT\_RANGEOF\_FORMATS](./ts-extras.experimental.default_rangeof_formats.md)<!-- -->). |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+format
+
+
+</td><td>
+
+(value: T) =&gt; string \| undefined
+
+
+</td><td>
+
+Format function used to format minimum and maximum extent values.
+
+
+</td></tr>
+<tr><td>
+
+formats
+
+
+</td><td>
+
+[RangeOfFormats](./ts-extras.experimental.rangeofformats.md)
+
+
+</td><td>
+
+_(Optional)_ The [format strings](./ts-extras.experimental.rangeofformats.md) used to format the range (default [Experimental.DEFAULT\_RANGEOF\_FORMATS](./ts-extras.experimental.default_rangeof_formats.md)<!-- -->).
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 string \| undefined

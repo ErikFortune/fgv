@@ -29,7 +29,7 @@ import { JsonFile } from '@fgv/ts-json-base';
 import { Converters as CommonConverters } from '../common';
 
 /**
- * Converts an arbitrary object to a {@link Data.Model.PuzzlesFile | PuzzlesFile}.
+ * Converts an arbitrary object to a {@link File.Model.IPuzzlesFile | IPuzzlesFile}.
  * @public
  */
 export const puzzlesFile: Converter<IPuzzlesFile> = Converters.strictObject<IPuzzlesFile>({
@@ -38,7 +38,7 @@ export const puzzlesFile: Converter<IPuzzlesFile> = Converters.strictObject<IPuz
 
 /**
  * Loads an arbitrary JSON file and parses it to return a validated
- * {@link Data.Model.PuzzlesFile | PuzzlesFile}.
+ * {@link File.Model.IPuzzlesFile | IPuzzlesFile}.
  * @param path - String path to the file
  * @returns `Success` with the resulting file, or `Failure` with details if an
  * error occurs.

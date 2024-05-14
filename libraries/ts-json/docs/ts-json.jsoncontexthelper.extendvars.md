@@ -14,10 +14,39 @@ extendVars(vars?: VariableValue[]): Result<TemplateVars | undefined>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  vars | [VariableValue](./ts-json.variablevalue.md)<!-- -->\[\] | _(Optional)_ Optional [variable values](./ts-json.variablevalue.md) to be added to the |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+vars
+
+
+</td><td>
+
+[VariableValue](./ts-json.variablevalue.md)<!-- -->\[\]
+
+
+</td><td>
+
+_(Optional)_ Optional [variable values](./ts-json.variablevalue.md) to be added to the
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[TemplateVars](./ts-json.templatevars.md) \| undefined&gt;

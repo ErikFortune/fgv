@@ -14,8 +14,63 @@ export interface PopulateObjectOptions<T>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [order?](./ts-utils.populateobjectoptions.order.md) |  | (keyof T)\[\] | _(Optional)_ If present, specifies the order in which property values should be evaluated. Any keys not listed are evaluated after all listed keys in indeterminate order. If 'order' is not present, keys are evaluated in indeterminate order. |
-|  [suppressUndefined?](./ts-utils.populateobjectoptions.suppressundefined.md) |  | boolean \| (keyof T)\[\] | _(Optional)_ Specify handling of <code>undefined</code> values. By default, successful <code>undefined</code> results are written to the result object. If this value is <code>true</code> then <code>undefined</code> results are suppressed for all properties. If this value is an array of property keys then <code>undefined</code> results are suppressed for those properties only. |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[order?](./ts-utils.populateobjectoptions.order.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(keyof T)\[\]
+
+
+</td><td>
+
+_(Optional)_ If present, specifies the order in which property values should be evaluated. Any keys not listed are evaluated after all listed keys in indeterminate order. If 'order' is not present, keys are evaluated in indeterminate order.
+
+
+</td></tr>
+<tr><td>
+
+[suppressUndefined?](./ts-utils.populateobjectoptions.suppressundefined.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| (keyof T)\[\]
+
+
+</td><td>
+
+_(Optional)_ Specify handling of `undefined` values. By default, successful `undefined` results are written to the result object. If this value is `true` then `undefined` results are suppressed for all properties. If this value is an array of property keys then `undefined` results are suppressed for those properties only.
+
+
+</td></tr>
+</tbody></table>

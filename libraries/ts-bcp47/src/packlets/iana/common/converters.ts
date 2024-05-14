@@ -51,10 +51,10 @@ export const isoAlpha3RegionCode = Validate.isoAlpha3RegionCode.converter;
 export const unM49RegionCode = Validate.unM49RegionCode.converter;
 
 /**
- * Helper function which creates a converter that returns a validated {@Link Iana.Model.DatedRegistry | DatedRegistry}
+ * Helper function which creates a converter that returns a validated {@Link Iana.Model.IDatedRegistry | DatedRegistry}
  * containing entries of supplied template type `T`.
  * @param entryConverter - A `Converter<T>` to validate each entry
- * @returns A new validating `Converter` which yields {@Link Iana.Model.DatedRegistry | DatedRegistry<T>}
+ * @returns A new validating `Converter` which yields {@Link Iana.Model.IDatedRegistry | DatedRegistry<T>}
  * @public
  */
 export function datedRegistry<T, TC = unknown>(

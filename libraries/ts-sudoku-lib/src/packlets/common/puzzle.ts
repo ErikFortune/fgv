@@ -94,7 +94,7 @@ export class Puzzle {
 
   /**
    * Constructs a new puzzle state.
-   * @param puzzle - {@Link Data.Model.PuzzleDescription | Puzzle description} from which this puzzle state
+   * @param puzzle - {@Link IPuzzleDescription | Puzzle description} from which this puzzle state
    * is to be initialized.
    */
   protected constructor(puzzle: IPuzzleDescription, extraCages?: [CageId, Cage][]) {

@@ -14,10 +14,39 @@ export declare function classifyJsonValue(from: unknown): Result<JsonValueType>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  from | unknown | The <code>unknown</code> value to be tested |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+from
+
+
+</td><td>
+
+unknown
+
+
+</td><td>
+
+The `unknown` value to be tested
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[JsonValueType](./ts-json-base.jsonvaluetype.md)<!-- -->&gt;

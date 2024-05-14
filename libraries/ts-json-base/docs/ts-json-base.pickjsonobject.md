@@ -14,11 +14,55 @@ export declare function pickJsonObject(src: JsonObject, path: string): Result<Js
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  src | [JsonObject](./ts-json-base.jsonobject.md) | The [object](./ts-json-base.jsonobject.md) from which the field is to be picked. |
-|  path | string | Dot-separated path of the member to be picked. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+src
+
+
+</td><td>
+
+[JsonObject](./ts-json-base.jsonobject.md)
+
+
+</td><td>
+
+The [object](./ts-json-base.jsonobject.md) from which the field is to be picked.
+
+
+</td></tr>
+<tr><td>
+
+path
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+Dot-separated path of the member to be picked.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[JsonObject](./ts-json-base.jsonobject.md)<!-- -->&gt;

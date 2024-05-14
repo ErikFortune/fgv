@@ -14,11 +14,55 @@ export declare function oneOf<T, TC = unknown>(validators: Array<Validator<T, TC
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  validators | Array&lt;[Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;&gt; | the [validators](./ts-utils.validation.validator.md) to be considered. |
-|  params | Omit&lt;[OneOfValidatorConstructorParams](./ts-utils.validation.classes.oneofvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;, 'validators'&gt; | _(Optional)_ Optional [params](./ts-utils.validation.classes.oneofvalidatorconstructorparams.md) used to construct the validator. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+validators
+
+
+</td><td>
+
+Array&lt;[Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;&gt;
+
+
+</td><td>
+
+the [validators](./ts-utils.validation.validator.md) to be considered.
+
+
+</td></tr>
+<tr><td>
+
+params
+
+
+</td><td>
+
+Omit&lt;[OneOfValidatorConstructorParams](./ts-utils.validation.classes.oneofvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;, 'validators'&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional [params](./ts-utils.validation.classes.oneofvalidatorconstructorparams.md) used to construct the validator.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [OneOfValidator](./ts-utils.validation.classes.oneofvalidator.md)<!-- -->&lt;T, TC&gt;

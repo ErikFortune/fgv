@@ -4,7 +4,7 @@
 
 ## SimpleJsonMap class
 
-A [SimpleJsonMap](./ts-json.simplejsonmap.md) presents a view of a simple map of .
+A [SimpleJsonMap](./ts-json.simplejsonmap.md) presents a view of a simple map of JSON values.
 
 **Signature:**
 
@@ -15,14 +15,86 @@ export declare class SimpleJsonMap extends SimpleJsonMapBase<JsonValue>
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(values, context, options)](./ts-json.simplejsonmap._constructor_.md) | <code>protected</code> | Constructs a new [SimpleJsonMap](./ts-json.simplejsonmap.md) from the supplied objects |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(values, context, options)](./ts-json.simplejsonmap._constructor_.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+Constructs a new [SimpleJsonMap](./ts-json.simplejsonmap.md) from the supplied objects
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [createSimple(values, context, options)](./ts-json.simplejsonmap.createsimple.md) | <code>static</code> | Creates a new [SimpleJsonMap](./ts-json.simplejsonmap.md) from the supplied objects |
-|  [getJsonValue(key, context)](./ts-json.simplejsonmap.getjsonvalue.md) |  | Gets a  specified by key. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[createSimple(values, context, options)](./ts-json.simplejsonmap.createsimple.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [SimpleJsonMap](./ts-json.simplejsonmap.md) from the supplied objects
+
+
+</td></tr>
+<tr><td>
+
+[getJsonValue(key, context)](./ts-json.simplejsonmap.getjsonvalue.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a `JsonValue` specified by key.
+
+
+</td></tr>
+</tbody></table>

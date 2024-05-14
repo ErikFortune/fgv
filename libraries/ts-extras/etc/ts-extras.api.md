@@ -11,9 +11,11 @@ import { Result } from '@fgv/ts-utils';
 
 declare namespace Converters {
     export {
+        templateString,
         extendedArrayOf,
         rangeTypeOf,
-        rangeOf
+        rangeOf,
+        isoDate
     }
 }
 export { Converters }
@@ -125,6 +127,9 @@ declare namespace Hash {
 }
 export { Hash }
 
+// @public
+const isoDate: Converter<Date, unknown>;
+
 // @public (undocumented)
 type JarFieldPicker<T extends JarRecord = JarRecord> = (record: T) => (keyof T)[];
 
@@ -224,6 +229,9 @@ declare namespace RecordJar {
     }
 }
 export { RecordJar }
+
+// @public
+function templateString(defaultContext?: unknown): Conversion.StringConverter<string, unknown>;
 
 // (No @packageDocumentation comment for this package)
 

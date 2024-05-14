@@ -14,8 +14,76 @@ export interface IJsonFsHelperConfig
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [allowUndefinedWrite](./ts-json-base.jsonfile.ijsonfshelperconfig.allowundefinedwrite.md) |  | boolean |  |
-|  [json](./ts-json-base.jsonfile.ijsonfshelperconfig.json.md) |  | [IJsonLike](./ts-json-base.jsonfile.ijsonlike.md) |  |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[allowUndefinedWrite](./ts-json-base.jsonfile.ijsonfshelperconfig.allowundefinedwrite.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[defaultFiles](./ts-json-base.jsonfile.ijsonfshelperconfig.defaultfiles.md)
+
+
+</td><td>
+
+
+</td><td>
+
+RegExp\[\]
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[json](./ts-json-base.jsonfile.ijsonfshelperconfig.json.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[IJsonLike](./ts-json-base.jsonfile.ijsonlike.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

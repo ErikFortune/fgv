@@ -4,7 +4,7 @@
 
 ## JsonEditorConverter.createWithEditor() method
 
-Constructs a new Converter which uses the supplied editor
+Constructs a new [JsonEditor](./ts-json.jsoneditor.md)<!-- -->Converter which uses the supplied editor
 
 **Signature:**
 
@@ -14,10 +14,37 @@ static createWithEditor(editor: JsonEditor): Result<JsonEditorConverter>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  editor | [JsonEditor](./ts-json.jsoneditor.md) |  |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+editor
+
+
+</td><td>
+
+[JsonEditor](./ts-json.jsoneditor.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[JsonEditorConverter](./ts-json.jsoneditorconverter.md)<!-- -->&gt;

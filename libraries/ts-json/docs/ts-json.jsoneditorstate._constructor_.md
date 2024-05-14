@@ -4,7 +4,7 @@
 
 ## JsonEditorState.(constructor)
 
-Constructs a new .
+Constructs a new [JsonEditorState](./ts-json.jsoneditorstate.md)<!-- -->.
 
 **Signature:**
 
@@ -14,9 +14,68 @@ constructor(editor: IJsonCloneEditor, baseOptions: IJsonEditorOptions, runtimeCo
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  editor | [IJsonCloneEditor](./ts-json.ijsoncloneeditor.md) | The  to which this state applies. |
-|  baseOptions | [IJsonEditorOptions](./ts-json.ijsoneditoroptions.md) | The  that apply to this rule. |
-|  runtimeContext | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ An optional [JSON context](./ts-json.ijsoncontext.md) to be used for json value conversion. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+editor
+
+
+</td><td>
+
+[IJsonCloneEditor](./ts-json.ijsoncloneeditor.md)
+
+
+</td><td>
+
+The [editor](./ts-json.ijsoncloneeditor.md) to which this state applies.
+
+
+</td></tr>
+<tr><td>
+
+baseOptions
+
+
+</td><td>
+
+[IJsonEditorOptions](./ts-json.ijsoneditoroptions.md)
+
+
+</td><td>
+
+The [editor options](./ts-json.ijsoneditoroptions.md) that apply to this rule.
+
+
+</td></tr>
+<tr><td>
+
+runtimeContext
+
+
+</td><td>
+
+[IJsonContext](./ts-json.ijsoncontext.md)
+
+
+</td><td>
+
+_(Optional)_ An optional [JSON context](./ts-json.ijsoncontext.md) to be used for json value conversion.
+
+
+</td></tr>
+</tbody></table>

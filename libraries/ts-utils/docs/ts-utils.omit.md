@@ -14,11 +14,55 @@ export declare function omit<T extends object, K extends keyof T>(from: T, exclu
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  from | T | The object from which keys are to be picked. |
-|  exclude | K\[\] | The keys of the properties to be excluded from the returned object. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+from
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+The object from which keys are to be picked.
+
+
+</td></tr>
+<tr><td>
+
+exclude
+
+
+</td><td>
+
+K\[\]
+
+
+</td><td>
+
+The keys of the properties to be excluded from the returned object.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Omit&lt;T, K&gt;

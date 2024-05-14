@@ -17,11 +17,55 @@ export declare function readCsvFileSync(srcPath: string, options?: CsvOptions): 
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  srcPath | string | Source path from which the file is read. |
-|  options | [CsvOptions](./ts-extras.csv.csvoptions.md) | _(Optional)_ optional parameters to control the processing |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+srcPath
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+Source path from which the file is read.
+
+
+</td></tr>
+<tr><td>
+
+options
+
+
+</td><td>
+
+[CsvOptions](./ts-extras.csv.csvoptions.md)
+
+
+</td><td>
+
+_(Optional)_ optional parameters to control the processing
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;unknown&gt;

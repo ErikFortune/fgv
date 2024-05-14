@@ -14,10 +14,39 @@ mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  mapConverter | [Converter](./ts-utils.converter.md)<!-- -->&lt;TI, unknown&gt; | The [Converter](./ts-utils.converter.md) to be applied to each element of the result of this [Converter](./ts-utils.converter.md)<!-- -->. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+mapConverter
+
+
+</td><td>
+
+[Converter](./ts-utils.converter.md)<!-- -->&lt;TI, unknown&gt;
+
+
+</td><td>
+
+The [Converter](./ts-utils.converter.md) to be applied to each element of the result of this [Converter](./ts-utils.converter.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;TI\[\], TC&gt;

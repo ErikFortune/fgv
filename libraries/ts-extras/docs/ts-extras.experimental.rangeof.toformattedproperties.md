@@ -14,10 +14,39 @@ toFormattedProperties(format: (value: T) => string | undefined): RangeOfProperti
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  format | (value: T) =&gt; string \| undefined | A format function used to format the values. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+format
+
+
+</td><td>
+
+(value: T) =&gt; string \| undefined
+
+
+</td><td>
+
+A format function used to format the values.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [RangeOfProperties](./ts-extras.experimental.rangeofproperties.md)<!-- -->&lt;string&gt;

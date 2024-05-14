@@ -1,6 +1,20 @@
 # Change Log - @fgv/ts-utils
 
-This log was last generated on Mon, 22 Jan 2024 07:00:18 GMT and should not be manually modified.
+This log was last generated on Tue, 14 May 2024 03:09:27 GMT and should not be manually modified.
+
+## 4.0.0
+Tue, 14 May 2024 03:09:27 GMT
+
+### Updates
+
+- rework validation/converter compatibility a bit
+- QoL improvement to simplify error aggregation
+- factor optional converters out to ts-extras package to eliminate large dependencies
+- update generated api docs
+- add convalidate helper
+- add defaulting converter
+- extend conversion to accept validators
+- export StringConverter at top level
 
 ## 3.0.0
 Mon, 22 Jan 2024 07:00:18 GMT

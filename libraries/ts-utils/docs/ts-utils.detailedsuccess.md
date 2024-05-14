@@ -15,21 +15,142 @@ export declare class DetailedSuccess<T, TD> extends Success<T>
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(value, detail)](./ts-utils.detailedsuccess._constructor_.md) |  | Constructs a new [DetailedSuccess&lt;T, TD&gt;](./ts-utils.detailedsuccess.md) with the supplied value and detail. |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(value, detail)](./ts-utils.detailedsuccess._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [DetailedSuccess&lt;T, TD&gt;](./ts-utils.detailedsuccess.md) with the supplied value and detail.
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [detail](./ts-utils.detailedsuccess.detail.md) | <code>readonly</code> | TD \| undefined | The success detail associated with this [DetailedSuccess](./ts-utils.detailedsuccess.md)<!-- -->, or <code>undefined</code> if no detail was supplied. |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[detail](./ts-utils.detailedsuccess.detail.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+TD \| undefined
+
+
+</td><td>
+
+The success detail associated with this [DetailedSuccess](./ts-utils.detailedsuccess.md)<!-- -->, or `undefined` if no detail was supplied.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [isSuccess()](./ts-utils.detailedsuccess.issuccess.md) |  | Reports that this [DetailedSuccess](./ts-utils.detailedsuccess.md) is a success. |
-|  [onFailure(\_\_cb)](./ts-utils.detailedsuccess.onfailure.md) |  | Propagates this [DetailedSuccess](./ts-utils.detailedsuccess.md)<!-- -->. |
-|  [onSuccess(cb)](./ts-utils.detailedsuccess.onsuccess.md) |  | Invokes the supplied [success callback](./ts-utils.detailedsuccesscontinuation.md) and propagates its returned [DetailedResult&lt;TN, TD&gt;](./ts-utils.detailedresult.md)<!-- -->. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[isSuccess()](./ts-utils.detailedsuccess.issuccess.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Reports that this [DetailedSuccess](./ts-utils.detailedsuccess.md) is a success.
+
+
+</td></tr>
+<tr><td>
+
+[onFailure(\_\_cb)](./ts-utils.detailedsuccess.onfailure.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Propagates this [DetailedSuccess](./ts-utils.detailedsuccess.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[onSuccess(cb)](./ts-utils.detailedsuccess.onsuccess.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Invokes the supplied [success callback](./ts-utils.detailedsuccesscontinuation.md) and propagates its returned [DetailedResult&lt;TN, TD&gt;](./ts-utils.detailedresult.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>

@@ -9,16 +9,60 @@ Reads and converts all JSON files from a directory, returning a `Map<string, T>`
 **Signature:**
 
 ```typescript
-export declare function convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options: IDirectoryToMapConvertOptions<T, TC>): Result<Map<string, T>>;
+export declare function convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options: IJsonFsDirectoryToMapOptions<T, TC>): Result<Map<string, T>>;
 ```
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  srcPath | string | The path of the folder to be read. |
-|  options | [IDirectoryToMapConvertOptions](./ts-json-base.jsonfile.idirectorytomapconvertoptions.md)<!-- -->&lt;T, TC&gt; | [Options](./ts-json-base.jsonfile.idirectorytomapconvertoptions.md) to control conversion, filtering and naming. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+srcPath
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+The path of the folder to be read.
+
+
+</td></tr>
+<tr><td>
+
+options
+
+
+</td><td>
+
+[IJsonFsDirectoryToMapOptions](./ts-json-base.jsonfile.ijsonfsdirectorytomapoptions.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+[Options](./ts-json-base.jsonfile.ijsonfsdirectorytomapoptions.md) to control conversion, filtering and naming.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;Map&lt;string, T&gt;&gt;

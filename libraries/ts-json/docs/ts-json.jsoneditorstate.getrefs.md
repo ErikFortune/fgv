@@ -14,10 +14,39 @@ getRefs(defaultContext?: IJsonContext): IJsonReferenceMap | undefined;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  defaultContext | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ An optional default [IJsonContext](./ts-json.ijsoncontext.md) to use as [TemplateVars](./ts-json.templatevars.md) if the current state does not have context. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+defaultContext
+
+
+</td><td>
+
+[IJsonContext](./ts-json.ijsoncontext.md)
+
+
+</td><td>
+
+_(Optional)_ An optional default [IJsonContext](./ts-json.ijsoncontext.md) to use as [TemplateVars](./ts-json.templatevars.md) if the current state does not have context.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [IJsonReferenceMap](./ts-json.ijsonreferencemap.md) \| undefined

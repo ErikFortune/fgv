@@ -6,20 +6,129 @@
 
 ## Functions
 
-|  Function | Description |
-|  --- | --- |
-|  [arrayOf(validateElement, params)](./ts-utils.validators.arrayof.md) | Helper function to create a [ArrayValidator](./ts-utils.validation.classes.arrayvalidator.md) which validates an array in place. |
-|  [enumeratedValue(values)](./ts-utils.validators.enumeratedvalue.md) | Helper function to create a [Validation.Validator](./ts-utils.validation.validator.md) which validates an enumerated value in place. |
-|  [isA(description, guard, params)](./ts-utils.validators.isa.md) | Helper function to create a [TypeGuardValidator](./ts-utils.validation.classes.typeguardvalidator.md) which validates a value or object in place. |
-|  [literal(value)](./ts-utils.validators.literal.md) | Helper function to create a [Validation.Validator](./ts-utils.validation.validator.md) which validates a literal value. |
-|  [object(fields, params)](./ts-utils.validators.object.md) | Helper function to create a [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md) which validates an object in place. |
-|  [oneOf(validators, params)](./ts-utils.validators.oneof.md) | Helper function to create a [Validator](./ts-utils.validation.validator.md) which validates one of several possible validated values. |
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[arrayOf(validateElement, params)](./ts-utils.validators.arrayof.md)
+
+
+</td><td>
+
+Helper function to create a [ArrayValidator](./ts-utils.validation.classes.arrayvalidator.md) which validates an array in place.
+
+
+</td></tr>
+<tr><td>
+
+[enumeratedValue(values)](./ts-utils.validators.enumeratedvalue.md)
+
+
+</td><td>
+
+Helper function to create a [Validation.Validator](./ts-utils.validation.validator.md) which validates an enumerated value in place.
+
+
+</td></tr>
+<tr><td>
+
+[isA(description, guard, params)](./ts-utils.validators.isa.md)
+
+
+</td><td>
+
+Helper function to create a [TypeGuardValidator](./ts-utils.validation.classes.typeguardvalidator.md) which validates a value or object in place.
+
+
+</td></tr>
+<tr><td>
+
+[literal(value)](./ts-utils.validators.literal.md)
+
+
+</td><td>
+
+Helper function to create a [Validation.Validator](./ts-utils.validation.validator.md) which validates a literal value.
+
+
+</td></tr>
+<tr><td>
+
+[object(fields, params)](./ts-utils.validators.object.md)
+
+
+</td><td>
+
+Helper function to create a [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md) which validates an object in place.
+
+
+</td></tr>
+<tr><td>
+
+[oneOf(validators, params)](./ts-utils.validators.oneof.md)
+
+
+</td><td>
+
+Helper function to create a [Validator](./ts-utils.validation.validator.md) which validates one of several possible validated values.
+
+
+</td></tr>
+</tbody></table>
 
 ## Variables
 
-|  Variable | Description |
-|  --- | --- |
-|  [boolean](./ts-utils.validators.boolean.md) | A [BooleanValidator](./ts-utils.validation.classes.booleanvalidator.md) which validates a boolean in place. |
-|  [number](./ts-utils.validators.number.md) | A [NumberValidator](./ts-utils.validation.classes.numbervalidator.md) which validates a number in place. |
-|  [string](./ts-utils.validators.string.md) | A [StringValidator](./ts-utils.validation.classes.stringvalidator.md) which validates a string in place. |
+<table><thead><tr><th>
 
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[boolean](./ts-utils.validators.boolean.md)
+
+
+</td><td>
+
+A [BooleanValidator](./ts-utils.validation.classes.booleanvalidator.md) which validates a boolean in place.
+
+
+</td></tr>
+<tr><td>
+
+[number](./ts-utils.validators.number.md)
+
+
+</td><td>
+
+A [NumberValidator](./ts-utils.validation.classes.numbervalidator.md) which validates a number in place.
+
+
+</td></tr>
+<tr><td>
+
+[string](./ts-utils.validators.string.md)
+
+
+</td><td>
+
+A [StringValidator](./ts-utils.validation.classes.stringvalidator.md) which validates a string in place.
+
+
+</td></tr>
+</tbody></table>

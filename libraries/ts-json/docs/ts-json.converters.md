@@ -6,17 +6,96 @@
 
 ## Functions
 
-|  Function | Description |
-|  --- | --- |
-|  [conditionalJson(options)](./ts-json.converters.conditionaljson.md) | Helper function which creates a new [JsonConverter](./ts-json.jsonconverter.md) which converts a supplied <code>unknown</code> to strongly-typed JSON, by first rendering any property names or string values using mustache with the supplied context, then applying multi-value property expansion and conditional flattening based on property names. |
-|  [richJson(options)](./ts-json.converters.richjson.md) | Helper function which creates a new [JsonConverter](./ts-json.jsonconverter.md) which converts a supplied <code>unknown</code> to strongly-typed JSON, by first rendering any property names or string values using mustache with the supplied context, then applying multi-value property expansion and conditional flattening based on property names. |
-|  [templatedJson(options)](./ts-json.converters.templatedjson.md) | Helper function which creates a new [JsonConverter](./ts-json.jsonconverter.md) which converts an <code>unknown</code> value to JSON, rendering any property names or string values using mustache with the supplied context. See the mustache documentation for details of mustache syntax and view. |
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[conditionalJson(options)](./ts-json.converters.conditionaljson.md)
+
+
+</td><td>
+
+Helper function which creates a new [JsonConverter](./ts-json.jsonconverter.md) which converts a supplied `unknown` to strongly-typed JSON, by first rendering any property names or string values using mustache with the supplied context, then applying multi-value property expansion and conditional flattening based on property names.
+
+
+</td></tr>
+<tr><td>
+
+[richJson(options)](./ts-json.converters.richjson.md)
+
+
+</td><td>
+
+Helper function which creates a new [JsonConverter](./ts-json.jsonconverter.md) which converts a supplied `unknown` to strongly-typed JSON, by first rendering any property names or string values using mustache with the supplied context, then applying multi-value property expansion and conditional flattening based on property names.
+
+
+</td></tr>
+<tr><td>
+
+[templatedJson(options)](./ts-json.converters.templatedjson.md)
+
+
+</td><td>
+
+Helper function which creates a new [JsonConverter](./ts-json.jsonconverter.md) which converts an `unknown` value to JSON, rendering any property names or string values using mustache with the supplied context. See the mustache documentation for details of mustache syntax and view.
+
+
+</td></tr>
+</tbody></table>
 
 ## Variables
 
-|  Variable | Description |
-|  --- | --- |
-|  [json](./ts-json.converters.json.md) | A simple validating [JSON converter](./ts-json.jsonconverter.md)<!-- -->. Converts unknown to JSON or fails if the unknown contains any invalid JSON values. |
-|  [jsonArray](./ts-json.converters.jsonarray.md) | A simple validating [JSON converter](./ts-json.jsonconverter.md)<!-- -->. Converts <code>unknown</code> to a , or fails if the unknown contains invalid JSON or is not an array. |
-|  [jsonObject](./ts-json.converters.jsonobject.md) | A simple validating [JSON converter](./ts-json.jsonconverter.md)<!-- -->. Converts unknown to a , or fails if the <code>unknown</code> contains invalid JSON or is not an object. |
+<table><thead><tr><th>
 
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[json](./ts-json.converters.json.md)
+
+
+</td><td>
+
+A simple validating [JSON converter](./ts-json.jsonconverter.md)<!-- -->. Converts unknown to JSON or fails if the unknown contains any invalid JSON values.
+
+
+</td></tr>
+<tr><td>
+
+[jsonArray](./ts-json.converters.jsonarray.md)
+
+
+</td><td>
+
+A simple validating [JSON converter](./ts-json.jsonconverter.md)<!-- -->. Converts `unknown` to a `JsonArray`<!-- -->, or fails if the unknown contains invalid JSON or is not an array.
+
+
+</td></tr>
+<tr><td>
+
+[jsonObject](./ts-json.converters.jsonobject.md)
+
+
+</td><td>
+
+A simple validating [JSON converter](./ts-json.jsonconverter.md)<!-- -->. Converts unknown to a `JsonObject`<!-- -->, or fails if the `unknown` contains invalid JSON or is not an object.
+
+
+</td></tr>
+</tbody></table>

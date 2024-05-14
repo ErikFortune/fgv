@@ -14,11 +14,55 @@ finalizeProperties(finalized: JsonObject[], __state: JsonEditorState): DetailedR
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  finalized | JsonObject\[\] | The deferred properties to be considered for merge. |
-|  \_\_state | [JsonEditorState](./ts-json.jsoneditorstate.md) | The  for the object being edited. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+finalized
+
+
+</td><td>
+
+JsonObject\[\]
+
+
+</td><td>
+
+The deferred properties to be considered for merge.
+
+
+</td></tr>
+<tr><td>
+
+\_\_state
+
+
+</td><td>
+
+[JsonEditorState](./ts-json.jsoneditorstate.md)
+
+
+</td><td>
+
+The [editor state](./ts-json.jsoneditorstate.md) for the object being edited.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 DetailedResult&lt;JsonObject\[\], [JsonEditFailureReason](./ts-json.jsoneditfailurereason.md)<!-- -->&gt;

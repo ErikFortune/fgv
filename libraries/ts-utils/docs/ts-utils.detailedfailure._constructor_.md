@@ -14,8 +14,52 @@ constructor(message: string, detail: TD);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  message | string | The message to be returned. |
-|  detail | TD | The error detail to be returned. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+message
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+The message to be returned.
+
+
+</td></tr>
+<tr><td>
+
+detail
+
+
+</td><td>
+
+TD
+
+
+</td><td>
+
+The error detail to be returned.
+
+
+</td></tr>
+</tbody></table>

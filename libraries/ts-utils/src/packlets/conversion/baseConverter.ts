@@ -109,13 +109,6 @@ export class BaseConverter<T, TC = undefined> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.convalidate}
-   */
-  public convalidate(from: unknown, context?: TC): Result<T> {
-    return this._converter(from, this, context ?? this._defaultContext);
-  }
-
-  /**
    * {@inheritdoc Converter.convertOptional}
    */
   public convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined> {

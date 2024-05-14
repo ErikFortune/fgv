@@ -14,13 +14,42 @@ static getDefaultRules(options?: IJsonEditorOptions): Result<IJsonEditorRule[]>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  options | [IJsonEditorOptions](./ts-json.ijsoneditoroptions.md) | _(Optional)_ Optional partial  for all rules. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+options
+
+
+</td><td>
+
+[IJsonEditorOptions](./ts-json.ijsoneditoroptions.md)
+
+
+</td><td>
+
+_(Optional)_ Optional partial [editor options](./ts-json.ijsoneditoroptions.md) for all rules.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[IJsonEditorRule](./ts-json.ijsoneditorrule.md)<!-- -->\[\]&gt;
 
-Default  with any supplied options applied.
+Default [editor rules](./ts-json.ijsoneditorrule.md) with any supplied options applied.
 

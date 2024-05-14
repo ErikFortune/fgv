@@ -14,7 +14,36 @@ constructor(params: OneOfValidatorConstructorParams<T, TC>);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  params | [OneOfValidatorConstructorParams](./ts-utils.validation.classes.oneofvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt; | Optional [init params](./ts-utils.validation.classes.oneofvalidatorconstructorparams.md) for the new [OneOfValidator](./ts-utils.validation.classes.oneofvalidator.md)<!-- -->. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+params
+
+
+</td><td>
+
+[OneOfValidatorConstructorParams](./ts-utils.validation.classes.oneofvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+Optional [init params](./ts-utils.validation.classes.oneofvalidatorconstructorparams.md) for the new [OneOfValidator](./ts-utils.validation.classes.oneofvalidator.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>

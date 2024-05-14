@@ -14,10 +14,39 @@ partial(optional?: (keyof T)[]): ObjectConverter<Partial<T>, TC>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  optional | (keyof T)\[\] | _(Optional)_ The keys of the source object properties to be made optional. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+optional
+
+
+</td><td>
+
+(keyof T)\[\]
+
+
+</td><td>
+
+_(Optional)_ The keys of the source object properties to be made optional.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [ObjectConverter](./ts-utils.objectconverter.md)<!-- -->&lt;Partial&lt;T&gt;, TC&gt;

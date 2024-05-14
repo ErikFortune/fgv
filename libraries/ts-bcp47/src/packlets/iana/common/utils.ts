@@ -24,7 +24,7 @@ import { DateTime } from 'luxon';
 import { YearMonthDaySpec } from './model';
 
 /**
- * Gets the current date as an {@link Iana.YearMonthDaySpec}.
+ * Gets the current date as an {@link Iana.Model.YearMonthDaySpec | YearMonthDaySpec }.
  * @public
  */
 export function nowAsYearMonthDay(): YearMonthDaySpec {

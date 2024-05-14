@@ -204,7 +204,7 @@ export function contextFromConverterOptions(
 }
 
 /**
- * Creates a new {@link Editor.JsonEditor | JsonEditor} from an optionally supplied partial
+ * Creates a new {@link JsonEditor | JsonEditor} from an optionally supplied partial
  * {@link IJsonConverterOptions | JSON converter options}.
  * Expands supplied options with default values and constructs an editor with
  * matching configuration and defined rules.
@@ -249,7 +249,7 @@ export function converterOptionsToEditor(partial?: Partial<IJsonConverterOptions
 }
 
 /**
- * A thin wrapper to allow an arbitrary {@link Editor.JsonEditor | JsonEditor} to be used via the
+ * A thin wrapper to allow an arbitrary {@link JsonEditor | JsonEditor} to be used via the
  * \@fgv/ts-utils `Converter` pattern.
  * @public
  */
@@ -257,7 +257,7 @@ export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, IJs
   public readonly editor: JsonEditor;
 
   /**
-   * Constructs a new {@link Editor.JsonEditor | JsonEditor}Converter which uses the supplied editor
+   * Constructs a new {@link JsonEditor | JsonEditor}Converter which uses the supplied editor
    * @param editor -
    */
   public constructor(editor: JsonEditor) {
@@ -266,7 +266,7 @@ export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, IJs
   }
 
   /**
-   * Constructs a new {@link Editor.JsonEditor | JsonEditor}Converter which uses the supplied editor
+   * Constructs a new {@link JsonEditor | JsonEditor}Converter which uses the supplied editor
    * @param editor -
    */
   public static createWithEditor(editor: JsonEditor): Result<JsonEditorConverter> {
@@ -275,7 +275,7 @@ export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, IJs
 
   /**
    * Gets a derived converter which fails if the resulting converted
-   * {@link JsonValue | JsonValue} is not a {@link JsonObject | JsonObject}.
+   * `JsonValue` is not a `JsonObject`.
    */
   public object(): Converter<JsonObject, IJsonContext> {
     return this.map((jv) => {
@@ -288,7 +288,7 @@ export class JsonEditorConverter extends Conversion.BaseConverter<JsonValue, IJs
 
   /**
    * Gets a derived converter which fails if the resulting converted
-   * {@link JsonValue | JsonValue} is not a {@link JsonArray | JsonArray}.
+   * `JsonValue` is not a `JsonArray`.
    */
   public array(): Converter<JsonArray, IJsonContext> {
     return this.map((jv) => {

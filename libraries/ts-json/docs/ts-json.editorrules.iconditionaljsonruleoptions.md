@@ -4,7 +4,7 @@
 
 ## EditorRules.IConditionalJsonRuleOptions interface
 
-Configuration options for the .
+Configuration options for the [ConditionalJsonEditorRule](./ts-json.editorrules.conditionaljsoneditorrule.md)<!-- -->.
 
 **Signature:**
 
@@ -15,7 +15,44 @@ export interface IConditionalJsonRuleOptions extends Partial<IJsonEditorOptions>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [flattenUnconditionalValues?](./ts-json.editorrules.iconditionaljsonruleoptions.flattenunconditionalvalues.md) |  | boolean | _(Optional)_ If true (default) then properties with unconditional names (which start with !) are flattened. |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[flattenUnconditionalValues?](./ts-json.editorrules.iconditionaljsonruleoptions.flattenunconditionalvalues.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_ If true (default) then properties with unconditional names (which start with !) are flattened.
+
+
+</td></tr>
+</tbody></table>

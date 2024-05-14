@@ -14,21 +14,190 @@ export declare class JsonContextHelper
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(context)](./ts-json.jsoncontexthelper._constructor_.md) |  | Constructs a new [JsonContextHelper](./ts-json.jsoncontexthelper.md)<!-- -->. |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(context)](./ts-json.jsoncontexthelper._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [JsonContextHelper](./ts-json.jsoncontexthelper.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [create(context)](./ts-json.jsoncontexthelper.create.md) | <code>static</code> | Creates a new [context](./ts-json.ijsoncontext.md)<!-- -->. |
-|  [extendContext(add)](./ts-json.jsoncontexthelper.extendcontext.md) |  | Applies  to the [IJsonContext](./ts-json.ijsoncontext.md) associated with this helper. |
-|  [extendContext(baseContext, add)](./ts-json.jsoncontexthelper.extendcontext.md) | <code>static</code> | Static helper to extend context variables and references for a supplied [IJsonContext](./ts-json.ijsoncontext.md)<!-- -->. |
-|  [extendContextRefs(baseContext, refs)](./ts-json.jsoncontexthelper.extendcontextrefs.md) | <code>static</code> | Static helper to extend context references for a supplied [IJsonContext](./ts-json.ijsoncontext.md)<!-- -->. |
-|  [extendContextVars(baseContext, vars)](./ts-json.jsoncontexthelper.extendcontextvars.md) | <code>static</code> | Static helper to extend context variables for a supplied [IJsonContext](./ts-json.ijsoncontext.md)<!-- -->. |
-|  [extendRefs(refs)](./ts-json.jsoncontexthelper.extendrefs.md) |  | Applies [extendContextRefs](./ts-json.jsoncontexthelper.extendcontextrefs.md) to the [IJsonContext](./ts-json.ijsoncontext.md) associated with this helper. |
-|  [extendVars(vars)](./ts-json.jsoncontexthelper.extendvars.md) |  | Applies [extendContextVars](./ts-json.jsoncontexthelper.extendcontextvars.md) to the [IJsonContext](./ts-json.ijsoncontext.md) associated with this helper. |
-|  [mergeContext(merge)](./ts-json.jsoncontexthelper.mergecontext.md) |  | Applies  to the [IJsonContext](./ts-json.ijsoncontext.md) associated with this helper. |
-|  [mergeContext(baseContext, add)](./ts-json.jsoncontexthelper.mergecontext.md) | <code>static</code> | Static helper to merge context variables and references for a supplied [IJsonContext](./ts-json.ijsoncontext.md)<!-- -->. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[create(context)](./ts-json.jsoncontexthelper.create.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [context](./ts-json.ijsoncontext.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[extendContext(add)](./ts-json.jsoncontexthelper.extendcontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Applies static `JsonContextHelper.extendContext` to the [IJsonContext](./ts-json.ijsoncontext.md) associated with this helper.
+
+
+</td></tr>
+<tr><td>
+
+[extendContext(baseContext, add)](./ts-json.jsoncontexthelper.extendcontext.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Static helper to extend context variables and references for a supplied [IJsonContext](./ts-json.ijsoncontext.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[extendContextRefs(baseContext, refs)](./ts-json.jsoncontexthelper.extendcontextrefs.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Static helper to extend context references for a supplied [IJsonContext](./ts-json.ijsoncontext.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[extendContextVars(baseContext, vars)](./ts-json.jsoncontexthelper.extendcontextvars.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Static helper to extend context variables for a supplied [IJsonContext](./ts-json.ijsoncontext.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[extendRefs(refs)](./ts-json.jsoncontexthelper.extendrefs.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Applies [extendContextRefs](./ts-json.jsoncontexthelper.extendcontextrefs.md) to the [IJsonContext](./ts-json.ijsoncontext.md) associated with this helper.
+
+
+</td></tr>
+<tr><td>
+
+[extendVars(vars)](./ts-json.jsoncontexthelper.extendvars.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Applies [extendContextVars](./ts-json.jsoncontexthelper.extendcontextvars.md) to the [IJsonContext](./ts-json.ijsoncontext.md) associated with this helper.
+
+
+</td></tr>
+<tr><td>
+
+[mergeContext(merge)](./ts-json.jsoncontexthelper.mergecontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Applies static `JsonContextHelper.mergeContext` to the [IJsonContext](./ts-json.ijsoncontext.md) associated with this helper.
+
+
+</td></tr>
+<tr><td>
+
+[mergeContext(baseContext, add)](./ts-json.jsoncontexthelper.mergecontext.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Static helper to merge context variables and references for a supplied [IJsonContext](./ts-json.ijsoncontext.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>

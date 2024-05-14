@@ -14,7 +14,36 @@ constructor(params: TypeGuardValidatorConstructorParams<T, TC>);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  params | [TypeGuardValidatorConstructorParams](./ts-utils.validation.classes.typeguardvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt; | Optional [init params](./ts-utils.validation.classes.typeguardvalidatorconstructorparams.md) for the new [TypeGuardValidator](./ts-utils.validation.classes.typeguardvalidator.md)<!-- -->. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+params
+
+
+</td><td>
+
+[TypeGuardValidatorConstructorParams](./ts-utils.validation.classes.typeguardvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+Optional [init params](./ts-utils.validation.classes.typeguardvalidatorconstructorparams.md) for the new [TypeGuardValidator](./ts-utils.validation.classes.typeguardvalidator.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>

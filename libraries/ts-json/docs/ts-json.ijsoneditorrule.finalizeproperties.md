@@ -14,11 +14,55 @@ finalizeProperties(deferred: JsonObject[], state: JsonEditorState): DetailedResu
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  deferred | JsonObject\[\] | Any  that were deferred during the first edit pass. |
-|  state | [JsonEditorState](./ts-json.jsoneditorstate.md) |  which applies to the edit. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+deferred
+
+
+</td><td>
+
+JsonObject\[\]
+
+
+</td><td>
+
+Any JSON objects that were deferred during the first edit pass.
+
+
+</td></tr>
+<tr><td>
+
+state
+
+
+</td><td>
+
+[JsonEditorState](./ts-json.jsoneditorstate.md)
+
+
+</td><td>
+
+[Editor state](./ts-json.jsoneditorstate.md) which applies to the edit.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 DetailedResult&lt;JsonObject\[\], [JsonEditFailureReason](./ts-json.jsoneditfailurereason.md)<!-- -->&gt;

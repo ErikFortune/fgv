@@ -17,10 +17,39 @@ format(format: string): Result<string>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  format | string | A mustache template used to format the object. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+format
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+A mustache template used to format the object.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;string&gt;

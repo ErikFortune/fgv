@@ -2,6 +2,18 @@
   "name": "@fgv/ts-utils-jest",
   "entries": [
     {
+      "version": "4.0.0",
+      "tag": "@fgv/ts-utils-jest_v4.0.0",
+      "date": "Tue, 14 May 2024 03:09:27 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "update dependencies"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.0.0",
       "tag": "@fgv/ts-utils-jest_v3.0.0",
       "date": "Mon, 22 Jan 2024 07:00:18 GMT",

@@ -6,63 +6,500 @@
 
 ## Functions
 
-|  Function | Description |
-|  --- | --- |
-|  [arrayOf(converter, onError)](./ts-utils.converters.arrayof.md) | A helper function to create a [Converter](./ts-utils.converter.md) which converts <code>unknown</code> to an array of <code>&lt;T&gt;</code>. |
-|  [delimitedString(delimiter, options)](./ts-utils.converters.delimitedstring.md) | Helper function to create a [Converter](./ts-utils.converter.md) which converts any <code>string</code> into an array of <code>string</code>, by separating at a supplied delimiter. |
-|  [discriminatedObject(discriminatorProp, converters)](./ts-utils.converters.discriminatedobject.md) | Helper to create a [Converter](./ts-utils.converter.md) which converts a discriminated object without changing shape. |
-|  [element(index, converter)](./ts-utils.converters.element.md) | A helper function to create a [Converter](./ts-utils.converter.md) which extracts and converts an element from an array. |
-|  [enumeratedValue(values)](./ts-utils.converters.enumeratedvalue.md) | Helper function to create a [Converter](./ts-utils.converter.md) which converts <code>unknown</code> to one of a set of supplied enumerated values. Anything else fails. |
-|  [field(name, converter)](./ts-utils.converters.field.md) | A helper function to create a [Converter](./ts-utils.converter.md) which extracts and convert a property specified by name from an object. |
-|  [isA(description, guard)](./ts-utils.converters.isa.md) | Helper function to create a [Converter](./ts-utils.converter.md) from a supplied type guard function. |
-|  [literal(value)](./ts-utils.converters.literal.md) | Helper function to create a [Converter](./ts-utils.converter.md) which converts <code>unknown</code> to some supplied literal value. Succeeds with the supplied value if an identity comparison succeeds, fails otherwise. |
-|  [mapOf(converter)](./ts-utils.converters.mapof.md) | A helper function to create a [Converter](./ts-utils.converter.md) which converts the <code>string</code>-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a <code>Map&lt;string, T&gt;</code>. |
-|  [mapOf(converter, onError)](./ts-utils.converters.mapof_1.md) | A helper function to create a [Converter](./ts-utils.converter.md) which converts the <code>string</code>-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a <code>Map&lt;string, T&gt;</code> and specified handling of elements that cannot be converted. |
-|  [mapOf(converter, options)](./ts-utils.converters.mapof_2.md) | A helper function to create a [Converter](./ts-utils.converter.md) which converts the <code>string</code>-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a <code>Map&lt;TK,T&gt;</code>. |
-|  [mappedEnumeratedValue(map, message)](./ts-utils.converters.mappedenumeratedvalue.md) | Helper function to create a [Converter](./ts-utils.converter.md) which converts <code>unknown</code> to one of a set of supplied enumerated values, mapping any of multiple supplied values to the enumeration. |
-|  [object(properties, options)](./ts-utils.converters.object.md) | Helper function to create a [ObjectConverter&lt;T&gt;](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, given a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) and an optional [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectconverteroptions.md) to further refine conversion behavior. |
-|  [object(properties, optional)](./ts-utils.converters.object_1.md) | Helper function to create a [ObjectConverter&lt;T&gt;](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, given a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) and a set of optional properties. |
-|  [oneOf(converters, onError)](./ts-utils.converters.oneof.md) | A helper function to create a [Converter](./ts-utils.converter.md) for polymorphic values. Returns a converter which invokes the wrapped converters in sequence, returning the first successful result. Returns an error if none of the supplied converters can convert the value. |
-|  [optionalElement(index, converter)](./ts-utils.converters.optionalelement.md) | A helper function to create a [Converter](./ts-utils.converter.md) which extracts and converts an optional element from an array. |
-|  [optionalField(name, converter)](./ts-utils.converters.optionalfield.md) | A helper function to create a [Converter](./ts-utils.converter.md) which extracts and convert a property specified by name from an object. |
-|  [recordOf(converter)](./ts-utils.converters.recordof.md) | A helper function to create a [Converter](./ts-utils.converter.md) which converts the <code>string</code>-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a <code>Record&lt;string, T&gt;</code>. |
-|  [recordOf(converter, onError)](./ts-utils.converters.recordof_1.md) | A helper function to create a [Converter](./ts-utils.converter.md) which converts the <code>string</code>-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a <code>Record&lt;string, T&gt;</code> and optionally specified handling of elements that cannot be converted. |
-|  [recordOf(converter, options)](./ts-utils.converters.recordof_2.md) | A helper function to create a [Converter](./ts-utils.converter.md) or which converts the <code>string</code>-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a <code>Record&lt;TK, T&gt;</code>. |
-|  [strictObject(properties, options)](./ts-utils.converters.strictobject.md) | Helper function to create a [ObjectConverter](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) and an optional [StrictObjectConverterOptions&lt;T&gt;](./ts-utils.converters.strictobjectconverteroptions.md) to further refine conversion behavior. |
-|  [strictObject(properties, optional)](./ts-utils.converters.strictobject_1.md) | Helper function to create a [ObjectConverter](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) and an optional [StrictObjectConverterOptions&lt;T&gt;](./ts-utils.converters.strictobjectconverteroptions.md) to further refine conversion behavior. |
-|  [templateString(defaultContext)](./ts-utils.converters.templatestring.md) | Helper function to create a [StringConverter](./ts-utils.conversion.stringconverter.md) which converts <code>unknown</code> to <code>string</code>, applying template conversions supplied at construction time or at runtime as context. |
-|  [transform(properties)](./ts-utils.converters.transform.md) | Helper to create a [Converter](./ts-utils.converter.md) which converts a source object to a new object with a different shape. |
-|  [transformObject(destinationFields, options)](./ts-utils.converters.transformobject.md) | Helper to create a strongly-typed [Converter](./ts-utils.converter.md) which converts a source object to a new object with a different shape. |
-|  [validated(validator)](./ts-utils.converters.validated.md) | Helper function to create a [Converter](./ts-utils.converter.md) from any [Validation.Validator](./ts-utils.validation.validator.md) |
-|  [validateWith(validator, description)](./ts-utils.converters.validatewith.md) | Helper function to create a [Converter](./ts-utils.converter.md) which validates that a supplied value is of a type validated by a supplied validator function and returns it. |
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[arrayOf(converter, onError)](./ts-utils.converters.arrayof.md)
+
+
+</td><td>
+
+A helper function to create a [Converter](./ts-utils.converter.md) which converts `unknown` to an array of `<T>`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[delimitedString(delimiter, options)](./ts-utils.converters.delimitedstring.md)
+
+
+</td><td>
+
+Helper function to create a [Converter](./ts-utils.converter.md) which converts any `string` into an array of `string`<!-- -->, by separating at a supplied delimiter.
+
+
+</td></tr>
+<tr><td>
+
+[discriminatedObject(discriminatorProp, converters)](./ts-utils.converters.discriminatedobject.md)
+
+
+</td><td>
+
+Helper to create a [Converter](./ts-utils.converter.md) which converts a discriminated object without changing shape.
+
+
+</td></tr>
+<tr><td>
+
+[element(index, converter)](./ts-utils.converters.element.md)
+
+
+</td><td>
+
+A helper function to create a [Converter](./ts-utils.converter.md) which extracts and converts an element from an array.
+
+
+</td></tr>
+<tr><td>
+
+[enumeratedValue(values)](./ts-utils.converters.enumeratedvalue.md)
+
+
+</td><td>
+
+Helper function to create a [Converter](./ts-utils.converter.md) which converts `unknown` to one of a set of supplied enumerated values. Anything else fails.
+
+
+</td></tr>
+<tr><td>
+
+[field(name, converter)](./ts-utils.converters.field.md)
+
+
+</td><td>
+
+A helper function to create a [Converter](./ts-utils.converter.md) which extracts and convert a property specified by name from an object.
+
+
+</td></tr>
+<tr><td>
+
+[isA(description, guard)](./ts-utils.converters.isa.md)
+
+
+</td><td>
+
+Helper function to create a [Converter](./ts-utils.converter.md) from a supplied type guard function.
+
+
+</td></tr>
+<tr><td>
+
+[literal(value)](./ts-utils.converters.literal.md)
+
+
+</td><td>
+
+Helper function to create a [Converter](./ts-utils.converter.md) which converts `unknown` to some supplied literal value. Succeeds with the supplied value if an identity comparison succeeds, fails otherwise.
+
+
+</td></tr>
+<tr><td>
+
+[mapOf(converter)](./ts-utils.converters.mapof.md)
+
+
+</td><td>
+
+A helper function to create a [Converter](./ts-utils.converter.md) which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Map<string, T>`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[mapOf(converter, onError)](./ts-utils.converters.mapof_1.md)
+
+
+</td><td>
+
+A helper function to create a [Converter](./ts-utils.converter.md) which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Map<string, T>` and specified handling of elements that cannot be converted.
+
+
+</td></tr>
+<tr><td>
+
+[mapOf(converter, options)](./ts-utils.converters.mapof_2.md)
+
+
+</td><td>
+
+A helper function to create a [Converter](./ts-utils.converter.md) which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Map<TK,T>`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[mappedEnumeratedValue(map, message)](./ts-utils.converters.mappedenumeratedvalue.md)
+
+
+</td><td>
+
+Helper function to create a [Converter](./ts-utils.converter.md) which converts `unknown` to one of a set of supplied enumerated values, mapping any of multiple supplied values to the enumeration.
+
+
+</td></tr>
+<tr><td>
+
+[object(properties, options)](./ts-utils.converters.object.md)
+
+
+</td><td>
+
+Helper function to create a [ObjectConverter&lt;T&gt;](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, given a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) and an optional [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectconverteroptions.md) to further refine conversion behavior.
+
+
+</td></tr>
+<tr><td>
+
+[object(properties, optional)](./ts-utils.converters.object_1.md)
+
+
+</td><td>
+
+Helper function to create a [ObjectConverter&lt;T&gt;](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, given a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) and a set of optional properties.
+
+
+</td></tr>
+<tr><td>
+
+[oneOf(converters, onError)](./ts-utils.converters.oneof.md)
+
+
+</td><td>
+
+A helper function to create a [Converter](./ts-utils.converter.md) for polymorphic values. Returns a converter which invokes the wrapped converters in sequence, returning the first successful result. Returns an error if none of the supplied converters can convert the value.
+
+
+</td></tr>
+<tr><td>
+
+[optionalElement(index, converter)](./ts-utils.converters.optionalelement.md)
+
+
+</td><td>
+
+A helper function to create a [Converter](./ts-utils.converter.md) which extracts and converts an optional element from an array.
+
+
+</td></tr>
+<tr><td>
+
+[optionalField(name, converter)](./ts-utils.converters.optionalfield.md)
+
+
+</td><td>
+
+A helper function to create a [Converter](./ts-utils.converter.md) which extracts and convert a property specified by name from an object.
+
+
+</td></tr>
+<tr><td>
+
+[recordOf(converter)](./ts-utils.converters.recordof.md)
+
+
+</td><td>
+
+A helper function to create a [Converter](./ts-utils.converter.md) which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Record<string, T>`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[recordOf(converter, onError)](./ts-utils.converters.recordof_1.md)
+
+
+</td><td>
+
+A helper function to create a [Converter](./ts-utils.converter.md) which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Record<string, T>` and optionally specified handling of elements that cannot be converted.
+
+
+</td></tr>
+<tr><td>
+
+[recordOf(converter, options)](./ts-utils.converters.recordof_2.md)
+
+
+</td><td>
+
+A helper function to create a [Converter](./ts-utils.converter.md) or which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Record<TK, T>`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[strictObject(properties, options)](./ts-utils.converters.strictobject.md)
+
+
+</td><td>
+
+Helper function to create a [ObjectConverter](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) and an optional [StrictObjectConverterOptions&lt;T&gt;](./ts-utils.converters.strictobjectconverteroptions.md) to further refine conversion behavior.
+
+
+</td></tr>
+<tr><td>
+
+[strictObject(properties, optional)](./ts-utils.converters.strictobject_1.md)
+
+
+</td><td>
+
+Helper function to create a [ObjectConverter](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) and an optional [StrictObjectConverterOptions&lt;T&gt;](./ts-utils.converters.strictobjectconverteroptions.md) to further refine conversion behavior.
+
+
+</td></tr>
+<tr><td>
+
+[transform(properties)](./ts-utils.converters.transform.md)
+
+
+</td><td>
+
+Helper to create a [Converter](./ts-utils.converter.md) which converts a source object to a new object with a different shape.
+
+
+</td></tr>
+<tr><td>
+
+[transformObject(destinationFields, options)](./ts-utils.converters.transformobject.md)
+
+
+</td><td>
+
+Helper to create a strongly-typed [Converter](./ts-utils.converter.md) which converts a source object to a new object with a different shape.
+
+
+</td></tr>
+<tr><td>
+
+[validated(validator)](./ts-utils.converters.validated.md)
+
+
+</td><td>
+
+Helper function to create a [Converter](./ts-utils.converter.md) from any [Validation.Validator](./ts-utils.validation.validator.md)
+
+
+</td></tr>
+<tr><td>
+
+[validateWith(validator, description)](./ts-utils.converters.validatewith.md)
+
+
+</td><td>
+
+Helper function to create a [Converter](./ts-utils.converter.md) which validates that a supplied value is of a type validated by a supplied validator function and returns it.
+
+
+</td></tr>
+</tbody></table>
 
 ## Interfaces
 
-|  Interface | Description |
-|  --- | --- |
-|  [KeyedConverterOptions](./ts-utils.converters.keyedconverteroptions.md) | Options for [Converters.recordOf](./ts-utils.converters.recordof_2.md) and [Converters.mapOf](./ts-utils.converters.mapof_2.md) helper functions. |
-|  [TransformObjectOptions](./ts-utils.converters.transformobjectoptions.md) | Options for a [Converters.transformObject()](./ts-utils.converters.transformobject.md) call. |
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[KeyedConverterOptions](./ts-utils.converters.keyedconverteroptions.md)
+
+
+</td><td>
+
+Options for [Converters.recordOf](./ts-utils.converters.recordof_2.md) and [Converters.mapOf](./ts-utils.converters.mapof_2.md) helper functions.
+
+
+</td></tr>
+<tr><td>
+
+[TransformObjectOptions](./ts-utils.converters.transformobjectoptions.md)
+
+
+</td><td>
+
+Options for a [Converters.transformObject()](./ts-utils.converters.transformobject.md) call.
+
+
+</td></tr>
+</tbody></table>
 
 ## Variables
 
-|  Variable | Description |
-|  --- | --- |
-|  [boolean](./ts-utils.converters.boolean.md) | A [Converter](./ts-utils.converter.md) which converts <code>unknown</code> to <code>boolean</code>. |
-|  [isoDate](./ts-utils.converters.isodate.md) | A [Converter](./ts-utils.converter.md) which converts an iso formatted string, a number or a <code>Date</code> object to a <code>Date</code> object. |
-|  [number](./ts-utils.converters.number.md) | A [Converter](./ts-utils.converter.md) which converts <code>unknown</code> to a <code>number</code>. |
-|  [numberArray](./ts-utils.converters.numberarray.md) | [Converter](./ts-utils.converter.md) to convert an <code>unknown</code> to an array of <code>number</code>. |
-|  [optionalBoolean](./ts-utils.converters.optionalboolean.md) | A [Converter](./ts-utils.converter.md) to convert an optional <code>boolean</code> value. |
-|  [optionalNumber](./ts-utils.converters.optionalnumber.md) | A [Converter](./ts-utils.converter.md) which converts an optional <code>number</code> value. |
-|  [optionalString](./ts-utils.converters.optionalstring.md) | A [Converter](./ts-utils.converter.md) which converts an optional <code>string</code> value. Values of type <code>string</code> are returned. Anything else returns [Success](./ts-utils.success.md) with value <code>undefined</code>. |
-|  [string](./ts-utils.converters.string.md) | A converter to convert unknown to string. Values of type string succeed. Anything else fails. |
-|  [stringArray](./ts-utils.converters.stringarray.md) | [Converter](./ts-utils.converter.md) to convert an <code>unknown</code> to an array of <code>string</code>. |
+<table><thead><tr><th>
+
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[boolean](./ts-utils.converters.boolean.md)
+
+
+</td><td>
+
+A [Converter](./ts-utils.converter.md) which converts `unknown` to `boolean`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[number](./ts-utils.converters.number.md)
+
+
+</td><td>
+
+A [Converter](./ts-utils.converter.md) which converts `unknown` to a `number`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[numberArray](./ts-utils.converters.numberarray.md)
+
+
+</td><td>
+
+[Converter](./ts-utils.converter.md) to convert an `unknown` to an array of `number`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[optionalBoolean](./ts-utils.converters.optionalboolean.md)
+
+
+</td><td>
+
+A [Converter](./ts-utils.converter.md) to convert an optional `boolean` value.
+
+
+</td></tr>
+<tr><td>
+
+[optionalNumber](./ts-utils.converters.optionalnumber.md)
+
+
+</td><td>
+
+A [Converter](./ts-utils.converter.md) which converts an optional `number` value.
+
+
+</td></tr>
+<tr><td>
+
+[optionalString](./ts-utils.converters.optionalstring.md)
+
+
+</td><td>
+
+A [Converter](./ts-utils.converter.md) which converts an optional `string` value. Values of type `string` are returned. Anything else returns [Success](./ts-utils.success.md) with value `undefined`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[string](./ts-utils.converters.string.md)
+
+
+</td><td>
+
+A converter to convert unknown to string. Values of type string succeed. Anything else fails.
+
+
+</td></tr>
+<tr><td>
+
+[stringArray](./ts-utils.converters.stringarray.md)
+
+
+</td><td>
+
+[Converter](./ts-utils.converter.md) to convert an `unknown` to an array of `string`<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Type Aliases
 
-|  Type Alias | Description |
-|  --- | --- |
-|  [DiscriminatedObjectConverters](./ts-utils.converters.discriminatedobjectconverters.md) | A string-keyed <code>Record&lt;string, Converter&gt;</code> which maps specific [converters](./ts-utils.converter.md) or [Validators](./ts-utils.validator.md) to the value of a discriminator property. |
-|  [FieldTransformers](./ts-utils.converters.fieldtransformers.md) | Per-property converters and configuration for each field in the destination object of a [Converters.transformObject()](./ts-utils.converters.transformobject.md) call. |
-|  [OnError](./ts-utils.converters.onerror.md) | Action to take on conversion failures. |
-|  [StrictObjectConverterOptions](./ts-utils.converters.strictobjectconverteroptions.md) | Options for the [Converters.strictObject()](./ts-utils.converters.strictobject.md) helper function. |
+<table><thead><tr><th>
 
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[DiscriminatedObjectConverters](./ts-utils.converters.discriminatedobjectconverters.md)
+
+
+</td><td>
+
+A string-keyed `Record<string, Converter>` which maps specific [converters](./ts-utils.converter.md) or [Validators](./ts-utils.validator.md) to the value of a discriminator property.
+
+
+</td></tr>
+<tr><td>
+
+[FieldTransformers](./ts-utils.converters.fieldtransformers.md)
+
+
+</td><td>
+
+Per-property converters and configuration for each field in the destination object of a [Converters.transformObject()](./ts-utils.converters.transformobject.md) call.
+
+
+</td></tr>
+<tr><td>
+
+[OnError](./ts-utils.converters.onerror.md)
+
+
+</td><td>
+
+Action to take on conversion failures.
+
+
+</td></tr>
+<tr><td>
+
+[StrictObjectConverterOptions](./ts-utils.converters.strictobjectconverteroptions.md)
+
+
+</td><td>
+
+Options for the [Converters.strictObject()](./ts-utils.converters.strictobject.md) helper function.
+
+
+</td></tr>
+</tbody></table>

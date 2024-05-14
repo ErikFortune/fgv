@@ -14,10 +14,39 @@ export declare function isJsonArray(from: unknown): from is JsonArray;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  from | unknown | The <code>unknown</code> to be tested. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+from
+
+
+</td><td>
+
+unknown
+
+
+</td><td>
+
+The `unknown` to be tested.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 from is [JsonArray](./ts-json-base.jsonarray.md)

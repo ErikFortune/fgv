@@ -4,7 +4,7 @@
 
 ## JsonEditor.default property
 
-Default singleton  for simple use. Applies all rules but with no default context.
+Default singleton [JsonEditor](./ts-json.jsoneditor.md) for simple use. Applies all rules but with no default context.
 
 **Signature:**
 

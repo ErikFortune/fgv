@@ -43,7 +43,7 @@ export type LanguageSpec = string | ISubtags | LanguageTag;
  *
  * @param from - The {@link Bcp47.LanguageSpec | language specifier} from which the tag is to
  * be created.
- * @param options - (optional) The {@link Bcp47.LanguageTagInitOptions | options} used to construct
+ * @param options - (optional) The {@link Bcp47.ILanguageTagInitOptions | options} used to construct
  * and validate the tag.
  * @returns `Success` with a valid {@link Bcp47.LanguageTag | language tag} or `Failure` with details
  * if an error occurs.
@@ -58,7 +58,7 @@ export function tag(from: LanguageSpec, options?: ILanguageTagInitOptions): Resu
  * Creates an array of {@link Bcp47.LanguageTag | language tags} from an incoming array of
  * {@link Bcp47.LanguageSpec | language specifiers}.
  * @param from - The array of {@link Bcp47.LanguageSpec} to be converted.
- * @param options - (optional) The {@link Bcp47.LanguageTagInitOptions | options} used to construct
+ * @param options - (optional) The {@link Bcp47.ILanguageTagInitOptions | options} used to construct
  * and validate any created tags.
  * @returns `Success` with an array of {@link Bcp47.LanguageTag | language tags}, or `Failure`
  * with details if an error occurs.
@@ -77,7 +77,7 @@ export function tags(from: LanguageSpec[], options?: ILanguageTagInitOptions): R
  * @param t2 - Second tag to match, supplied as one of `string`, individual
  * {@link Bcp47.Subtags | subtags}, or constructed
  * {@link Bcp47.LanguageTag | language tag}.
- * @param options - (optional) A set of {@link Bcp47.LanguageTagInitOptions | language tag options}
+ * @param options - (optional) A set of {@link Bcp47.ILanguageTagInitOptions | language tag options}
  * which control any necessary conversion or parsing.
  * @returns A numeric value in the range 1.0 (exact match) to 0.0 (no match).
  * @see For a set of common levels of similarity, see {@link Bcp47.tagSimilarity | similarity}.

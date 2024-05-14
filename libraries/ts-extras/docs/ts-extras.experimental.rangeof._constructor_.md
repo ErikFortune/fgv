@@ -14,8 +14,52 @@ constructor(min?: T, max?: T);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  min | T | _(Optional)_ Optional minimum extent of the range. |
-|  max | T | _(Optional)_ Optional maximum extent of the range. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+min
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+_(Optional)_ Optional minimum extent of the range.
+
+
+</td></tr>
+<tr><td>
+
+max
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+_(Optional)_ Optional maximum extent of the range.
+
+
+</td></tr>
+</tbody></table>

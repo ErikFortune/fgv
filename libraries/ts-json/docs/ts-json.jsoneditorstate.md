@@ -4,7 +4,7 @@
 
 ## JsonEditorState class
 
-Represents the internal state of a .
+Represents the internal state of a [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
 
 **Signature:**
 
@@ -14,27 +14,247 @@ export declare class JsonEditorState
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(editor, baseOptions, runtimeContext)](./ts-json.jsoneditorstate._constructor_.md) |  | Constructs a new . |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(editor, baseOptions, runtimeContext)](./ts-json.jsoneditorstate._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [JsonEditorState](./ts-json.jsoneditorstate.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [context](./ts-json.jsoneditorstate.context.md) | <code>readonly</code> | [IJsonContext](./ts-json.ijsoncontext.md) \| undefined | The optional [JSON context](./ts-json.ijsoncontext.md) for this state. |
-|  [deferred](./ts-json.jsoneditorstate.deferred.md) | <code>readonly</code> | JsonObject\[\] | An array of  that are deferred for merge during finalization. |
-|  [editor](./ts-json.jsoneditorstate.editor.md) | <code>readonly</code> | [IJsonCloneEditor](./ts-json.ijsoncloneeditor.md) | The  for which this state applies. |
-|  [options](./ts-json.jsoneditorstate.options.md) | <code>readonly</code> | [IJsonEditorOptions](./ts-json.ijsoneditoroptions.md) | Fully resolved  that apply to the operation for which this state applies. |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[context](./ts-json.jsoneditorstate.context.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IJsonContext](./ts-json.ijsoncontext.md) \| undefined
+
+
+</td><td>
+
+The optional [JSON context](./ts-json.ijsoncontext.md) for this state.
+
+
+</td></tr>
+<tr><td>
+
+[deferred](./ts-json.jsoneditorstate.deferred.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+JsonObject\[\]
+
+
+</td><td>
+
+An array of JSON objects that were deferred for merge during finalization.
+
+
+</td></tr>
+<tr><td>
+
+[editor](./ts-json.jsoneditorstate.editor.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IJsonCloneEditor](./ts-json.ijsoncloneeditor.md)
+
+
+</td><td>
+
+The [editor](./ts-json.ijsoncloneeditor.md) for which this state applies.
+
+
+</td></tr>
+<tr><td>
+
+[options](./ts-json.jsoneditorstate.options.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IJsonEditorOptions](./ts-json.ijsoneditoroptions.md)
+
+
+</td><td>
+
+Fully resolved [editor options](./ts-json.ijsoneditoroptions.md) that apply to the operation for which this state applies.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [defer(obj)](./ts-json.jsoneditorstate.defer.md) |  | Adds a supplied  to the deferred list. |
-|  [extendContext(baseContext, add)](./ts-json.jsoneditorstate.extendcontext.md) |  | Constructs a new [IJsonContext](./ts-json.ijsoncontext.md) by merging supplied variables and references into a supplied existing context. |
-|  [failValidation(rule, message, validation)](./ts-json.jsoneditorstate.failvalidation.md) |  | Helper method to constructs <code>DetailedFailure</code> with appropriate details and messaging for various validation failures. |
-|  [getContext(defaultContext)](./ts-json.jsoneditorstate.getcontext.md) |  | Gets the context of this  or an optionally supplied default context if this state has no context. |
-|  [getRefs(defaultContext)](./ts-json.jsoneditorstate.getrefs.md) |  | Gets an [reference map](./ts-json.ijsonreferencemap.md) containing any other values referenced during the operation. |
-|  [getVars(defaultContext)](./ts-json.jsoneditorstate.getvars.md) |  | Gets a [TemplateVars](./ts-json.templatevars.md) from the context of this , or from an optional supplied [IJsonContext](./ts-json.ijsoncontext.md) if the current state has no default context. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[defer(obj)](./ts-json.jsoneditorstate.defer.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds a supplied `JsonObject` to the deferred list.
+
+
+</td></tr>
+<tr><td>
+
+[extendContext(baseContext, add)](./ts-json.jsoneditorstate.extendcontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [IJsonContext](./ts-json.ijsoncontext.md) by merging supplied variables and references into a supplied existing context.
+
+
+</td></tr>
+<tr><td>
+
+[failValidation(rule, message, validation)](./ts-json.jsoneditorstate.failvalidation.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Helper method to constructs `DetailedFailure` with appropriate details and messaging for various validation failures.
+
+
+</td></tr>
+<tr><td>
+
+[getContext(defaultContext)](./ts-json.jsoneditorstate.getcontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the context of this [JsonEditorState](./ts-json.jsoneditorstate.md) or an optionally supplied default context if this state has no context.
+
+
+</td></tr>
+<tr><td>
+
+[getRefs(defaultContext)](./ts-json.jsoneditorstate.getrefs.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets an [reference map](./ts-json.ijsonreferencemap.md) containing any other values referenced during the operation.
+
+
+</td></tr>
+<tr><td>
+
+[getVars(defaultContext)](./ts-json.jsoneditorstate.getvars.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a [TemplateVars](./ts-json.templatevars.md) from the context of this [JsonEditorState](./ts-json.jsoneditorstate.md)<!-- -->, or from an optional supplied [IJsonContext](./ts-json.ijsoncontext.md) if the current state has no default context.
+
+
+</td></tr>
+</tbody></table>

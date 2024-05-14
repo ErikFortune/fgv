@@ -20,16 +20,7 @@
  * SOFTWARE.
  */
 
-import {
-  Converter,
-  Result,
-  Validation,
-  Validator,
-  captureResult,
-  fail,
-  mapResults,
-  succeed
-} from '@fgv/ts-utils';
+import { Converter, Result, Validator, captureResult, fail, mapResults, succeed } from '@fgv/ts-utils';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -41,33 +32,17 @@ import { DefaultJsonLike, IJsonLike } from './jsonLike';
  * TODO: add filtering, allowed and excluded.
  * @public
  */
-export interface IDirectoryConvertOptions<T, TC = unknown> {
+export interface IJsonFsDirectoryOptions<T, TC = unknown> {
   /**
    * The converter used to convert incoming JSON objects.
    */
-  converter: Converter<T, TC>;
-  validator?: undefined;
-}
+  converter: Converter<T, TC> | Validator<T, TC>;
 
-/**
- * Options for directory validation.
- * @public
- */
-export interface IDirectoryValidateOptions<T, TC = unknown> {
-  converter?: undefined;
   /**
-   * The validator used to validate incoming JSON objects
+   * Filter applied to items in the directory
    */
-  validator: Validator<T, TC>;
+  files?: RegExp[];
 }
-
-/**
- * Options for directory conversion or validation.
- * @public
- */
-export type JsonFsDirectoryOptions<T, TC = unknown> =
-  | IDirectoryConvertOptions<T, TC>
-  | IDirectoryValidateOptions<T, TC>;
 
 /**
  * Return value for one item in a directory conversion.
@@ -96,25 +71,9 @@ export type ItemNameTransformFunction<T> = (name: string, item: T) => Result<str
  * Options controlling conversion of a directory to a `Map`.
  * @public
  */
-export interface IDirectoryToMapConvertOptions<T, TC = unknown> extends IDirectoryConvertOptions<T, TC> {
+export interface IJsonFsDirectoryToMapOptions<T, TC = unknown> extends IJsonFsDirectoryOptions<T, TC> {
   transformName?: ItemNameTransformFunction<T>;
 }
-
-/**
- * Options controlling validation of a directory to a `Map`.
- * @public
- */
-export interface IDirectoryToMapValidateOptions<T, TC = unknown> extends IDirectoryValidateOptions<T, TC> {
-  transformName?: ItemNameTransformFunction<T>;
-}
-
-/**
- * Options controlling processing of a directory to a `Map`.
- * @public
- */
-export type JsonFsDirectoryToMapOptions<T, TC = unknown> =
-  | IDirectoryToMapConvertOptions<T, TC>
-  | IDirectoryToMapValidateOptions<T, TC>;
 
 /**
  * Function to transform the name of some entity, given only a previous name. This
@@ -132,6 +91,7 @@ const defaultNameTransformer = (n: string): Result<string> => succeed(n);
 export interface IJsonFsHelperConfig {
   json: IJsonLike;
   allowUndefinedWrite: boolean;
+  defaultFiles: RegExp[];
 }
 
 /**
@@ -146,7 +106,8 @@ export type JsonFsHelperInitOptions = Partial<IJsonFsHelperConfig>;
  */
 export const DefaultJsonFsHelperConfig: IJsonFsHelperConfig = {
   json: DefaultJsonLike,
-  allowUndefinedWrite: false
+  allowUndefinedWrite: false,
+  defaultFiles: [/.*.json/]
 };
 
 /**
@@ -193,21 +154,24 @@ export class JsonFsHelper {
    * @returns `Success` with a result of type `<T>`, or `Failure`
    * with a message if an error occurs.
    */
-  public processJsonFileSync<T>(srcPath: string, cv: Validation.Convalidator<T>): Result<T> {
+  public convertJsonFileSync<T, TC = unknown>(
+    srcPath: string,
+    cv: Converter<T, TC> | Validator<T, TC>
+  ): Result<T> {
     return this.readJsonFileSync(srcPath).onSuccess((json) => {
-      return cv.convalidate(json);
+      return cv.convert(json);
     });
   }
 
   /**
    * Reads all JSON files from a directory and apply a supplied converter or validator.
    * @param srcPath - The path of the folder to be read.
-   * @param options - {@link JsonFile.JsonFsDirectoryOptions | Options} to control
+   * @param options - {@link JsonFile.IJsonFsDirectoryOptions | Options} to control
    * conversion and filtering
    */
-  public processJsonDirectorySync<T>(
+  public convertJsonDirectorySync<T>(
     srcPath: string,
-    options: JsonFsDirectoryOptions<T>
+    options: IJsonFsDirectoryOptions<T>
   ): Result<IReadDirectoryItem<T>[]> {
     return captureResult<IReadDirectoryItem<T>[]>(() => {
       const fullPath = path.resolve(srcPath);
@@ -217,9 +181,9 @@ export class JsonFsHelper {
       const files = fs.readdirSync(fullPath, { withFileTypes: true });
       const results = files
         .map((fi) => {
-          if (fi.isFile() && path.extname(fi.name) === '.json') {
+          if (fi.isFile() && this._pathMatchesOptions(options, fi.name)) {
             const filePath = path.resolve(fullPath, fi.name);
-            return this.processJsonFileSync(filePath, options.converter ?? options.validator)
+            return this.convertJsonFileSync(filePath, options.converter)
               .onSuccess((payload) => {
                 return succeed({
                   filename: fi.name,
@@ -242,14 +206,14 @@ export class JsonFsHelper {
    * `Map<string, T>` indexed by file base name (i.e. minus the extension)
    * with an optional name transformation applied if present.
    * @param srcPath - The path of the folder to be read.
-   * @param options - {@link JsonFile.JsonFsDirectoryToMapOptions | Options} to control conversion,
+   * @param options - {@link JsonFile.IJsonFsDirectoryToMapOptions | Options} to control conversion,
    * filtering and naming.
    */
-  public processJsonDirectoryToMapSync<T, TC = unknown>(
+  public convertJsonDirectoryToMapSync<T, TC = unknown>(
     srcPath: string,
-    options: JsonFsDirectoryToMapOptions<T, TC>
+    options: IJsonFsDirectoryToMapOptions<T, TC>
   ): Result<Map<string, T>> {
-    return this.processJsonDirectorySync(srcPath, options).onSuccess((items) => {
+    return this.convertJsonDirectorySync(srcPath, options).onSuccess((items) => {
       const transformName = options.transformName ?? defaultNameTransformer;
       return mapResults(
         items.map((item) => {
@@ -279,6 +243,11 @@ export class JsonFsHelper {
       fs.writeFileSync(fullPath, stringified!);
       return true;
     });
+  }
+
+  protected _pathMatchesOptions<T, TC>(options: IJsonFsDirectoryOptions<T, TC>, path: string): boolean {
+    const match = options.files ?? this.config.defaultFiles;
+    return match.some((m) => m.exec(path));
   }
 }
 

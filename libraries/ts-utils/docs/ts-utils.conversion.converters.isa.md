@@ -14,11 +14,55 @@ export declare function isA<T, TC = unknown>(description: string, guard: TypeGua
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  description | string | a description of the thing to be validated for use in error messages |
-|  guard | [TypeGuardWithContext](./ts-utils.validation.typeguardwithcontext.md)<!-- -->&lt;T, TC&gt; | a [Validation.TypeGuardWithContext](./ts-utils.validation.typeguardwithcontext.md) which performs the validation. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+description
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+a description of the thing to be validated for use in error messages
+
+
+</td></tr>
+<tr><td>
+
+guard
+
+
+</td><td>
+
+[TypeGuardWithContext](./ts-utils.validation.typeguardwithcontext.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+a [Validation.TypeGuardWithContext](./ts-utils.validation.typeguardwithcontext.md) which performs the validation.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;

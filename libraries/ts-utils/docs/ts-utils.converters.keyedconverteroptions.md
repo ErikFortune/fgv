@@ -14,8 +14,63 @@ export interface KeyedConverterOptions<T extends string = string, TC = undefined
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [keyConverter?](./ts-utils.converters.keyedconverteroptions.keyconverter.md) |  | [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; \| [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt; | _(Optional)_ If present, <code>keyConverter</code> is used to convert the source object property names to keys in the resulting map or record. |
-|  [onError?](./ts-utils.converters.keyedconverteroptions.onerror.md) |  | 'fail' \| 'ignore' | _(Optional)_ if <code>onError</code> is <code>'fail'</code> (default), then the entire conversion fails if any key or element cannot be converted. If <code>onError</code> is <code>'ignore'</code>, failing elements are silently ignored. |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[keyConverter?](./ts-utils.converters.keyedconverteroptions.keyconverter.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; \| [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+_(Optional)_ If present, `keyConverter` is used to convert the source object property names to keys in the resulting map or record.
+
+
+</td></tr>
+<tr><td>
+
+[onError?](./ts-utils.converters.keyedconverteroptions.onerror.md)
+
+
+</td><td>
+
+
+</td><td>
+
+'fail' \| 'ignore'
+
+
+</td><td>
+
+_(Optional)_ if `onError` is `'fail'` (default), then the entire conversion fails if any key or element cannot be converted. If `onError` is `'ignore'`<!-- -->, failing elements are silently ignored.
+
+
+</td></tr>
+</tbody></table>

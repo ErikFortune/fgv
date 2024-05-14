@@ -4,7 +4,7 @@
 
 ## IJsonEditorRule.editValue() method
 
-Called by a  to possibly edit a property value or array element.
+Called by a [JsonEditor](./ts-json.jsoneditor.md) to possibly edit a property value or array element.
 
 **Signature:**
 
@@ -14,14 +14,58 @@ editValue(value: JsonValue, state: JsonEditorState): DetailedResult<JsonValue, J
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  value | JsonValue | The  of the property to be edited. |
-|  state | [JsonEditorState](./ts-json.jsoneditorstate.md) |  which applies to the edit. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+value
+
+
+</td><td>
+
+JsonValue
+
+
+</td><td>
+
+The `JsonValue` of the property to be edited.
+
+
+</td></tr>
+<tr><td>
+
+state
+
+
+</td><td>
+
+[JsonEditorState](./ts-json.jsoneditorstate.md)
+
+
+</td><td>
+
+[Editor state](./ts-json.jsoneditorstate.md) which applies to the edit.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 DetailedResult&lt;JsonValue, [JsonEditFailureReason](./ts-json.jsoneditfailurereason.md)<!-- -->&gt;
 
-Returns `Success` with the  to be inserted, with detail `'edited'` if the value was edited. Returns `Failure` with `'inapplicable'` if the rule does not affect this value. Fails with detail `'ignore'` if the value is to be ignored, or with `'error'` if an error occurs.
+Returns `Success` with the `JsonValue` to be inserted, with detail `'edited'` if the value was edited. Returns `Failure` with `'inapplicable'` if the rule does not affect this value. Fails with detail `'ignore'` if the value is to be ignored, or with `'error'` if an error occurs.
 

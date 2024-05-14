@@ -9,19 +9,79 @@ Determines if an iterable collection of [Result&lt;T&gt;](./ts-utils.result.md) 
 **Signature:**
 
 ```typescript
-export declare function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T): Result<T>;
+export declare function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T, aggregatedErrors?: IMessageAggregator): Result<T>;
 ```
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  results | Iterable&lt;[Result](./ts-utils.result.md)<!-- -->&lt;unknown&gt;&gt; | The collection of [Result&lt;T&gt;](./ts-utils.result.md) to be tested. |
-|  successValue | T |  |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+results
+
+
+</td><td>
+
+Iterable&lt;[Result](./ts-utils.result.md)<!-- -->&lt;unknown&gt;&gt;
+
+
+</td><td>
+
+The collection of [Result&lt;T&gt;](./ts-utils.result.md) to be tested.
+
+
+</td></tr>
+<tr><td>
+
+successValue
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+The value to be returned if results are successful.
+
+
+</td></tr>
+<tr><td>
+
+aggregatedErrors
+
+
+</td><td>
+
+[IMessageAggregator](./ts-utils.imessageaggregator.md)
+
+
+</td><td>
+
+_(Optional)_ Optional string array to which any returned error messages will be appended. Each error is appended as an individual string.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;T&gt;
 
-Returns [Success](./ts-utils.success.md) with `true` if all [results](./ts-utils.result.md) are successful. If any are unsuccessful, returns [Failure](./ts-utils.failure.md) with a concatenated summary the error messages from all failed elements.
+Returns [Success](./ts-utils.success.md) with `successValue` if all [results](./ts-utils.result.md) are successful. If any are unsuccessful, returns [Failure](./ts-utils.failure.md) with a concatenated summary of the error messages from all failed elements.
 

@@ -19,11 +19,55 @@ export declare function strictObject<T>(properties: FieldConverters<T>, optional
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  properties | [FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T&gt; | An object containing defining the shape and converters to be applied. |
-|  optional | (keyof T)\[\] | An array of <code>keyof T</code> containing keys to be considered optional. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+properties
+
+
+</td><td>
+
+[FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T&gt;
+
+
+</td><td>
+
+An object containing defining the shape and converters to be applied.
+
+
+</td></tr>
+<tr><td>
+
+optional
+
+
+</td><td>
+
+(keyof T)\[\]
+
+
+</td><td>
+
+An array of `keyof T` containing keys to be considered optional.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [ObjectConverter](./ts-utils.objectconverter.md)<!-- -->&lt;T&gt;

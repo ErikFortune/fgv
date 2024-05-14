@@ -4,7 +4,7 @@
 
 ## SimpleJsonMap.getJsonValue() method
 
-Gets a  specified by key.
+Gets a `JsonValue` specified by key.
 
 **Signature:**
 
@@ -14,11 +14,55 @@ getJsonValue(key: string, context?: IJsonContext): DetailedResult<JsonValue, Jso
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  key | string | key of the value to be retrieved |
-|  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ Optional [JSON context](./ts-json.ijsoncontext.md) used to format the value |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+key
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+key of the value to be retrieved
+
+
+</td></tr>
+<tr><td>
+
+context
+
+
+</td><td>
+
+[IJsonContext](./ts-json.ijsoncontext.md)
+
+
+</td><td>
+
+_(Optional)_ Optional [JSON context](./ts-json.ijsoncontext.md) used to format the value
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 DetailedResult&lt;JsonValue, [JsonReferenceMapFailureReason](./ts-json.jsonreferencemapfailurereason.md)<!-- -->&gt;

@@ -14,11 +14,53 @@ export declare function mapOf<T, TC = undefined, TK extends string = string>(con
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  converter | [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; \| [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt; | [Converter](./ts-utils.converter.md) or [Validator](./ts-utils.validator.md) used for each item in the source object. |
-|  onError | 'fail' \| 'ignore' |  |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+converter
+
+
+</td><td>
+
+[Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; \| [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+[Converter](./ts-utils.converter.md) or [Validator](./ts-utils.validator.md) used for each item in the source object.
+
+
+</td></tr>
+<tr><td>
+
+onError
+
+
+</td><td>
+
+'fail' \| 'ignore'
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;Map&lt;TK, T&gt;, TC&gt;

@@ -17,10 +17,39 @@ atLeastOne(failMessage?: string): Result<T[]>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  failMessage | string | _(Optional)_ Optional message to be displayed in the event of failure. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+failMessage
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ Optional message to be displayed in the event of failure.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;T\[\]&gt;

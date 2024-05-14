@@ -14,10 +14,39 @@ export declare function transform<T, TC = unknown>(properties: FieldConverters<T
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  properties | [FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T, TC&gt; | An object with key names that correspond to the target object and an appropriate [FieldConverter](./ts-utils.conversion.fieldconverters.md) which extracts and converts a single filed from the source object. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+properties
+
+
+</td><td>
+
+[FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+An object with key names that correspond to the target object and an appropriate [FieldConverter](./ts-utils.conversion.fieldconverters.md) which extracts and converts a single filed from the source object.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;

@@ -9,15 +9,60 @@ Aggregates successful result values from a collection of [Result&lt;T&gt;](./ts-
 **Signature:**
 
 ```typescript
-export declare function mapResults<T>(results: Iterable<Result<T>>): Result<T[]>;
+export declare function mapResults<T>(results: Iterable<Result<T>>, aggregatedErrors?: IMessageAggregator): Result<T[]>;
 ```
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  results | Iterable&lt;[Result](./ts-utils.result.md)<!-- -->&lt;T&gt;&gt; | The collection of [Result&lt;T&gt;](./ts-utils.result.md) to be mapped. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+results
+
+
+</td><td>
+
+Iterable&lt;[Result](./ts-utils.result.md)<!-- -->&lt;T&gt;&gt;
+
+
+</td><td>
+
+The collection of [Result&lt;T&gt;](./ts-utils.result.md) to be mapped.
+
+
+</td></tr>
+<tr><td>
+
+aggregatedErrors
+
+
+</td><td>
+
+[IMessageAggregator](./ts-utils.imessageaggregator.md)
+
+
+</td><td>
+
+_(Optional)_ Optional string array to which any error messages will be appended. Each error is appended as an individual string.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;T\[\]&gt;

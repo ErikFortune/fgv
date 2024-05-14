@@ -14,11 +14,55 @@ export declare function mappedEnumeratedValue<T>(map: [T, unknown[]][], message?
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  map | \[T, unknown\[\]\]\[\] | An array of tuples describing the mapping. The first element of each tuple is the result value, the second is the set of values that map to the result. Tuples are evaluated in the order supplied and are not checked for duplicates. |
-|  message | string | _(Optional)_ An optional error message. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+map
+
+
+</td><td>
+
+\[T, unknown\[\]\]\[\]
+
+
+</td><td>
+
+An array of tuples describing the mapping. The first element of each tuple is the result value, the second is the set of values that map to the result. Tuples are evaluated in the order supplied and are not checked for duplicates.
+
+
+</td></tr>
+<tr><td>
+
+message
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ An optional error message.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T, undefined&gt;

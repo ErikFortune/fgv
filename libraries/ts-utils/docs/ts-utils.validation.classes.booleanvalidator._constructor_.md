@@ -14,7 +14,36 @@ constructor(params?: BooleanValidatorConstructorParams<TC>);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  params | [BooleanValidatorConstructorParams](./ts-utils.validation.classes.booleanvalidatorconstructorparams.md)<!-- -->&lt;TC&gt; | _(Optional)_ Optional [init params](./ts-utils.validation.classes.booleanvalidatorconstructorparams.md) for the new [BooleanValidator](./ts-utils.validation.classes.booleanvalidator.md)<!-- -->. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+params
+
+
+</td><td>
+
+[BooleanValidatorConstructorParams](./ts-utils.validation.classes.booleanvalidatorconstructorparams.md)<!-- -->&lt;TC&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional [init params](./ts-utils.validation.classes.booleanvalidatorconstructorparams.md) for the new [BooleanValidator](./ts-utils.validation.classes.booleanvalidator.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>

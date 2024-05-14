@@ -33,45 +33,45 @@ import {
 } from './common';
 
 /**
- * Represents the internal state of a {@link Editor.JsonEditor | JsonEditor}.
+ * Represents the internal state of a {@link JsonEditor | JsonEditor}.
  * @public
  */
 export class JsonEditorState {
   /**
-   * Static global counter used to assign each {@link Editor.JsonEditorState | JsonEditorState}
+   * Static global counter used to assign each {@link JsonEditorState | JsonEditorState}
    * a unique identifier.
    * @internal
    */
   protected static _nextId: number = 0;
 
   /**
-   * The {@link Editor.IJsonCloneEditor | editor} for which this state applies.
+   * The {@link IJsonCloneEditor | editor} for which this state applies.
    */
   public readonly editor: IJsonCloneEditor;
 
   /**
-   * Fully resolved {@link Editor.IJsonEditorOptions | editor options} that apply
+   * Fully resolved {@link IJsonEditorOptions | editor options} that apply
    * to the operation for which this state applies.
    */
   public readonly options: IJsonEditorOptions;
 
   /**
-   * Any deferred {@link JsonObject | objects} to be merged during finalization.
+   * Any deferred JSON objects to be merged during finalization.
    * @internal
    */
   protected readonly _deferred: JsonObject[] = [];
 
   /**
-   * Unique global identifier for this {@link Editor.JsonEditorState | state object}.
+   * Unique global identifier for this {@link JsonEditorState | state object}.
    * @internal
    */
   protected readonly _id: number;
 
   /**
-   * Constructs a new {@link Editor.JsonEditorState | JsonEditorState}.
-   * @param editor - The {@link Editor.IJsonCloneEditor | editor} to which this state
+   * Constructs a new {@link JsonEditorState | JsonEditorState}.
+   * @param editor - The {@link IJsonCloneEditor | editor} to which this state
    * applies.
-   * @param baseOptions - The {@link Editor.IJsonEditorOptions | editor options} that
+   * @param baseOptions - The {@link IJsonEditorOptions | editor options} that
    * apply to this rule.
    * @param runtimeContext - An optional {@link IJsonContext | JSON context} to be used
    * for json value conversion.
@@ -94,7 +94,7 @@ export class JsonEditorState {
   }
 
   /**
-   * An array of {@link JsonObject | objects} that are deferred for merge during
+   * An array of JSON objects that were deferred for merge during
    * finalization.
    */
   public get deferred(): JsonObject[] {
@@ -103,13 +103,13 @@ export class JsonEditorState {
 
   /**
    * Merges an optional {@link IJsonContext | JSON context} into a supplied set
-   * of {@link Editor.IJsonEditorOptions | JSON editor options}.
-   * @param options - The {@link Editor.IJsonEditorOptions | IJsonEditorOptions} into
+   * of {@link IJsonEditorOptions | JSON editor options}.
+   * @param options - The {@link IJsonEditorOptions | IJsonEditorOptions} into
    * which the the new context is to be merged.
    * @param context - The {@link IJsonContext | JSON context} to be merged into the
    * editor options.
-   * @returns `Success` with the supplied {@link Editor.IJsonEditorOptions | options} if
-   * there was nothing to merge, or aa new {@link Editor.IJsonEditorOptions | IJsonEditorOptions}
+   * @returns `Success` with the supplied {@link IJsonEditorOptions | options} if
+   * there was nothing to merge, or aa new {@link IJsonEditorOptions | IJsonEditorOptions}
    * constructed from the base options merged with the supplied context.  Returns `Failure`
    * with more information if an error occurs.
    * @internal
@@ -127,15 +127,15 @@ export class JsonEditorState {
   }
 
   /**
-   * Adds a supplied {@link JsonObject | object} to the deferred list.
-   * @param obj - The {@link JsonObject | object} to be deferred.
+   * Adds a supplied `JsonObject` to the deferred list.
+   * @param obj - The `JsonObject` to be deferred.
    */
   public defer(obj: JsonObject): void {
     this._deferred.push(obj);
   }
 
   /**
-   * Gets a {@link TemplateVars | TemplateVars} from the context of this {@link Editor.JsonEditorState | JsonEditorState},
+   * Gets a {@link TemplateVars | TemplateVars} from the context of this {@link JsonEditorState | JsonEditorState},
    * or from an optional supplied {@link IJsonContext | IJsonContext} if the current state has no default
    * context.
    * @param defaultContext - An optional default {@link IJsonContext | IJsonContext} to use as `TemplateVars`
@@ -160,7 +160,7 @@ export class JsonEditorState {
   }
 
   /**
-   * Gets the context of this {@link Editor.JsonEditorState | JsonEditorState} or an optionally
+   * Gets the context of this {@link JsonEditorState | JsonEditorState} or an optionally
    * supplied default context if this state has no context.
    * @param defaultContext - The default {@link IJsonContext | JSON context} to use as default
    * if this state has no context.
@@ -191,9 +191,9 @@ export class JsonEditorState {
   /**
    * Helper method to constructs  `DetailedFailure` with appropriate details and messaging
    * for various validation failures.
-   * @param rule - The {@link Editor.JsonEditorValidationRules | validation rule} that failed.
+   * @param rule - The {@link JsonEditorValidationRules | validation rule} that failed.
    * @param message -  A string message describing the failed validation.
-   * @param validation - The {@link Editor.IJsonEditorValidationOptions | validation options}
+   * @param validation - The {@link IJsonEditorValidationOptions | validation options}
    * in effect.
    * @returns A `DetailedFailure` with appropriate detail and message.
    */

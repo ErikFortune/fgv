@@ -52,8 +52,8 @@ export class PuzzleCollection {
   }
 
   /**
-   * Creates a new puzzle from a loaded {@link FileData.Model.IPuzzlesFile | PuzzlesFile}
-   * @param from - The {@link FileData.Model.IPuzzlesFile | puzzles file} to be loaded.
+   * Creates a new puzzle from a loaded {@link File.Model.IPuzzlesFile | PuzzlesFile}
+   * @param from - The {@link File.Model.IPuzzlesFile | puzzles file} to be loaded.
    * @returns `Success` with the resulting {@link PuzzleCollection | PuzzleCollection}
    * or `Failure` with details if an error occurs.
    */

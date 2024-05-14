@@ -213,7 +213,6 @@ export type MapOrRecord<T> = Map<string, T> | Record<string, T>;
 /**
  * Abstract base class with common functionality for simple
  * {@link IJsonReferenceMap | reference map} implementations.
- * {@link JsonValue | json values}.
  * @public
  */
 export abstract class SimpleJsonMapBase<T> implements IJsonReferenceMap {
@@ -291,7 +290,7 @@ export abstract class SimpleJsonMapBase<T> implements IJsonReferenceMap {
   }
 
   /**
-   * Gets a {@link JsonObject | JSON object} specified by key.
+   * Gets a `JsonObject` specified by key.
    * @param key - key of the object to be retrieved
    * @param context - optional {@link IJsonContext | JSON context} used to format the
    * returned object.
@@ -313,7 +312,7 @@ export abstract class SimpleJsonMapBase<T> implements IJsonReferenceMap {
   }
 
   /**
-   * Gets a {@link JsonValue | JSON value} specified by key.
+   * Gets a `JsonValue` specified by key.
    * @param key - key of the value to be retrieved
    * @param context - Optional {@link IJsonContext | JSON context} used to format the value
    * @returns Success with the formatted object if successful. Failure with detail 'unknown'
@@ -338,7 +337,7 @@ export interface ISimpleJsonMapOptions {
 
 /**
  * A {@link SimpleJsonMap | SimpleJsonMap } presents a view of a simple map
- * of {@link JsonValue | JSON values}.
+ * of JSON values.
  * @public
  */
 export class SimpleJsonMap extends SimpleJsonMapBase<JsonValue> {
@@ -349,7 +348,7 @@ export class SimpleJsonMap extends SimpleJsonMapBase<JsonValue> {
 
   /**
    * Constructs a new {@link SimpleJsonMap | SimpleJsonMap} from the supplied objects
-   * @param values - A string-keyed `Map` or `Record` of the {@link JsonValue | JSON values}
+   * @param values - A string-keyed `Map` or `Record` of the `JsonValue`
    * to be returned.
    * @param context - Optional {@link IJsonContext | IJsonContext} used to format returned values.
    * @param options - Optional {@link ISimpleJsonMapOptions | ISimpleJsonMapOptions} for initialization.
@@ -366,7 +365,7 @@ export class SimpleJsonMap extends SimpleJsonMapBase<JsonValue> {
 
   /**
    * Creates a new {@link SimpleJsonMap | SimpleJsonMap} from the supplied objects
-   * @param values - A string-keyed `Map` or `Record` of the {@link JsonValue | JSON values}
+   * @param values - A string-keyed `Map` or `Record` of the `JsonValue`
    * to be returned.
    * @param context - Optional {@link IJsonContext | IJsonContext} used to format returned values.
    * @param options - Optional {@link ISimpleJsonMapOptions | ISimpleJsonMapOptions} for initialization.
@@ -382,7 +381,7 @@ export class SimpleJsonMap extends SimpleJsonMapBase<JsonValue> {
   }
 
   /**
-   * Gets a {@link JsonValue | JSON value} specified by key.
+   * Gets a `JsonValue` specified by key.
    * @param key - key of the value to be retrieved
    * @param context - Optional {@link IJsonContext | JSON context} used to format the value
    * @returns Success with the formatted object if successful. Failure with detail 'unknown'
@@ -445,9 +444,9 @@ export class PrefixedJsonMap extends SimpleJsonMap {
   /**
    * Constructs a new {@link PrefixedJsonMap | PrefixedJsonMap} from the supplied values
    * @param prefix - A string prefix to be enforced for and added to key names as necessary
-   * @param values - A string-keyed Map or Record of the {@link JsonValue | JsonValue} to be returned
+   * @param values - A string-keyed Map or Record of the `JsonValue` to be returned
    * @param context - Optional {@link IJsonContext | JSON Context} used to format returned values
-   * @param editor - Optional {@link Editor.JsonEditor | JsonEditor} used to format returned values
+   * @param editor - Optional {@link JsonEditor | JsonEditor} used to format returned values
    * @public
    */
   protected constructor(
@@ -461,9 +460,9 @@ export class PrefixedJsonMap extends SimpleJsonMap {
   /**
    * Creates a new {@link PrefixedJsonMap | PrefixedJsonMap} from the supplied values
    * @param prefix - A string prefix to be enforced for and added to key names as necessary
-   * @param values - A string-keyed Map or Record of the {@link JsonValue | JsonValue} to be returned
+   * @param values - A string-keyed Map or Record of the `JsonValue` to be returned
    * @param context - Optional {@link IJsonContext | JSON Context} used to format returned values
-   * @param editor - Optional {@link Editor.JsonEditor | JsonEditor} used to format returned values
+   * @param editor - Optional {@link JsonEditor | JsonEditor} used to format returned values
    * @returns `Success` with a {@link PrefixedJsonMap | PrefixedJsonMap} or `Failure` with a message
    * if an error occurs.
    */
@@ -478,9 +477,9 @@ export class PrefixedJsonMap extends SimpleJsonMap {
    * Creates a new {@link PrefixedJsonMap | PrefixedJsonMap} from the supplied values
    * @param prefixOptions - A KeyPrefixOptions indicating the prefix to enforce and whether that prefix should
    * be added automatically if necessary (default true)
-   * @param values - A string-keyed Map or record of the {@link JsonValue | JsonValue} to be returned
+   * @param values - A string-keyed Map or record of the `JsonValue` to be returned
    * @param context - Optional {@link IJsonContext | JSON Context} used to format returned values
-   * @param editor - Optional {@link Editor.JsonEditor | JsonEditor} used to format returned values
+   * @param editor - Optional {@link JsonEditor | JsonEditor} used to format returned values
    */
   public static createPrefixed(
     prefixOptions: IKeyPrefixOptions,

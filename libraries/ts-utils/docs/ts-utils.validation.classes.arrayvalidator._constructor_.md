@@ -14,7 +14,36 @@ constructor(params: ArrayValidatorConstructorParams<T, TC>);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  params | [ArrayValidatorConstructorParams](./ts-utils.validation.classes.arrayvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt; | Optional [init params](./ts-utils.validation.classes.arrayvalidatorconstructorparams.md) for the new [ArrayValidator](./ts-utils.validation.classes.arrayvalidator.md)<!-- -->. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+params
+
+
+</td><td>
+
+[ArrayValidatorConstructorParams](./ts-utils.validation.classes.arrayvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+Optional [init params](./ts-utils.validation.classes.arrayvalidatorconstructorparams.md) for the new [ArrayValidator](./ts-utils.validation.classes.arrayvalidator.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>

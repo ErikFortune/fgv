@@ -6,50 +6,288 @@
 
 ## Classes
 
-|  Class | Description |
-|  --- | --- |
-|  [JsonFsHelper](./ts-json-base.jsonfile.jsonfshelper.md) | Helper class to simplify common filesystem operations involving JSON (or JSON-like) files. |
+<table><thead><tr><th>
+
+Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[JsonFsHelper](./ts-json-base.jsonfile.jsonfshelper.md)
+
+
+</td><td>
+
+Helper class to simplify common filesystem operations involving JSON (or JSON-like) files.
+
+
+</td></tr>
+</tbody></table>
 
 ## Functions
 
-|  Function | Description |
-|  --- | --- |
-|  [convertJsonDirectorySync(srcPath, options)](./ts-json-base.jsonfile.convertjsondirectorysync.md) | Reads all JSON files from a directory and apply a supplied converter. |
-|  [convertJsonDirectoryToMapSync(srcPath, options)](./ts-json-base.jsonfile.convertjsondirectorytomapsync.md) | Reads and converts all JSON files from a directory, returning a <code>Map&lt;string, T&gt;</code> indexed by file base name (i.e. minus the extension) with an optional name transformation applied if present. |
-|  [convertJsonFileSync(srcPath, converter)](./ts-json-base.jsonfile.convertjsonfilesync.md) | Read a JSON file and apply a supplied converter. |
-|  [readJsonFileSync(srcPath)](./ts-json-base.jsonfile.readjsonfilesync.md) | Read type-safe JSON from a file. |
-|  [writeJsonFileSync(srcPath, value)](./ts-json-base.jsonfile.writejsonfilesync.md) | Write type-safe JSON to a file. |
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[convertJsonDirectorySync(srcPath, options)](./ts-json-base.jsonfile.convertjsondirectorysync.md)
+
+
+</td><td>
+
+Reads all JSON files from a directory and apply a supplied converter.
+
+
+</td></tr>
+<tr><td>
+
+[convertJsonDirectoryToMapSync(srcPath, options)](./ts-json-base.jsonfile.convertjsondirectorytomapsync.md)
+
+
+</td><td>
+
+Reads and converts all JSON files from a directory, returning a `Map<string, T>` indexed by file base name (i.e. minus the extension) with an optional name transformation applied if present.
+
+
+</td></tr>
+<tr><td>
+
+[convertJsonFileSync(srcPath, converter)](./ts-json-base.jsonfile.convertjsonfilesync.md)
+
+
+</td><td>
+
+Read a JSON file and apply a supplied converter.
+
+
+</td></tr>
+<tr><td>
+
+[readJsonFileSync(srcPath)](./ts-json-base.jsonfile.readjsonfilesync.md)
+
+
+</td><td>
+
+Read type-safe JSON from a file.
+
+
+</td></tr>
+<tr><td>
+
+[writeJsonFileSync(srcPath, value)](./ts-json-base.jsonfile.writejsonfilesync.md)
+
+
+</td><td>
+
+Write type-safe JSON to a file.
+
+
+</td></tr>
+</tbody></table>
 
 ## Interfaces
 
-|  Interface | Description |
-|  --- | --- |
-|  [IDirectoryConvertOptions](./ts-json-base.jsonfile.idirectoryconvertoptions.md) | Options for directory conversion. TODO: add filtering, allowed and excluded. |
-|  [IDirectoryToMapConvertOptions](./ts-json-base.jsonfile.idirectorytomapconvertoptions.md) | Options controlling conversion of a directory to a <code>Map</code>. |
-|  [IDirectoryToMapValidateOptions](./ts-json-base.jsonfile.idirectorytomapvalidateoptions.md) | Options controlling validation of a directory to a <code>Map</code>. |
-|  [IDirectoryValidateOptions](./ts-json-base.jsonfile.idirectoryvalidateoptions.md) | Options for directory validation. |
-|  [IJsonFsHelperConfig](./ts-json-base.jsonfile.ijsonfshelperconfig.md) | Configuration for [JsonFsHelper](./ts-json-base.jsonfile.jsonfshelper.md)<!-- -->. |
-|  [IJsonLike](./ts-json-base.jsonfile.ijsonlike.md) |  |
-|  [IReadDirectoryItem](./ts-json-base.jsonfile.ireaddirectoryitem.md) | Return value for one item in a directory conversion. |
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[IJsonFsDirectoryOptions](./ts-json-base.jsonfile.ijsonfsdirectoryoptions.md)
+
+
+</td><td>
+
+Options for directory conversion. TODO: add filtering, allowed and excluded.
+
+
+</td></tr>
+<tr><td>
+
+[IJsonFsDirectoryToMapOptions](./ts-json-base.jsonfile.ijsonfsdirectorytomapoptions.md)
+
+
+</td><td>
+
+Options controlling conversion of a directory to a `Map`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IJsonFsHelperConfig](./ts-json-base.jsonfile.ijsonfshelperconfig.md)
+
+
+</td><td>
+
+Configuration for [JsonFsHelper](./ts-json-base.jsonfile.jsonfshelper.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IJsonLike](./ts-json-base.jsonfile.ijsonlike.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[IReadDirectoryItem](./ts-json-base.jsonfile.ireaddirectoryitem.md)
+
+
+</td><td>
+
+Return value for one item in a directory conversion.
+
+
+</td></tr>
+</tbody></table>
 
 ## Variables
 
-|  Variable | Description |
-|  --- | --- |
-|  [DefaultJsonFsHelper](./ts-json-base.jsonfile.defaultjsonfshelper.md) |  |
-|  [DefaultJsonFsHelperConfig](./ts-json-base.jsonfile.defaultjsonfshelperconfig.md) | Default configuration for [JsonFsHelper](./ts-json-base.jsonfile.jsonfshelper.md)<!-- -->. |
-|  [DefaultJsonLike](./ts-json-base.jsonfile.defaultjsonlike.md) |  |
+<table><thead><tr><th>
+
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[DefaultJsonFsHelper](./ts-json-base.jsonfile.defaultjsonfshelper.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[DefaultJsonFsHelperConfig](./ts-json-base.jsonfile.defaultjsonfshelperconfig.md)
+
+
+</td><td>
+
+Default configuration for [JsonFsHelper](./ts-json-base.jsonfile.jsonfshelper.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[DefaultJsonLike](./ts-json-base.jsonfile.defaultjsonlike.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>
 
 ## Type Aliases
 
-|  Type Alias | Description |
-|  --- | --- |
-|  [ItemNameTransformFunction](./ts-json-base.jsonfile.itemnametransformfunction.md) | Function to transform the name of a some entity, given an original name and the contents of the entity. |
-|  [JsonFsDirectoryOptions](./ts-json-base.jsonfile.jsonfsdirectoryoptions.md) | Options for directory conversion or validation. |
-|  [JsonFsDirectoryToMapOptions](./ts-json-base.jsonfile.jsonfsdirectorytomapoptions.md) | Options controlling processing of a directory to a <code>Map</code>. |
-|  [JsonFsHelperInitOptions](./ts-json-base.jsonfile.jsonfshelperinitoptions.md) | Initialization options for [JsonFsHelper](./ts-json-base.jsonfile.jsonfshelper.md)<!-- -->. |
-|  [JsonReplacer](./ts-json-base.jsonfile.jsonreplacer.md) |  |
-|  [JsonReplacerArray](./ts-json-base.jsonfile.jsonreplacerarray.md) |  |
-|  [JsonReplacerFunction](./ts-json-base.jsonfile.jsonreplacerfunction.md) |  |
-|  [JsonReviver](./ts-json-base.jsonfile.jsonreviver.md) |  |
+<table><thead><tr><th>
 
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ItemNameTransformFunction](./ts-json-base.jsonfile.itemnametransformfunction.md)
+
+
+</td><td>
+
+Function to transform the name of a some entity, given an original name and the contents of the entity.
+
+
+</td></tr>
+<tr><td>
+
+[JsonFsHelperInitOptions](./ts-json-base.jsonfile.jsonfshelperinitoptions.md)
+
+
+</td><td>
+
+Initialization options for [JsonFsHelper](./ts-json-base.jsonfile.jsonfshelper.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[JsonReplacer](./ts-json-base.jsonfile.jsonreplacer.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[JsonReplacerArray](./ts-json-base.jsonfile.jsonreplacerarray.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[JsonReplacerFunction](./ts-json-base.jsonfile.jsonreplacerfunction.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[JsonReviver](./ts-json-base.jsonfile.jsonreviver.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>

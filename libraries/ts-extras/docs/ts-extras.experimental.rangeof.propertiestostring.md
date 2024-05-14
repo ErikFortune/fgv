@@ -14,12 +14,71 @@ static propertiesToString<T>(range: RangeOfProperties<T>, formats?: RangeOfForma
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  range | [RangeOfProperties](./ts-extras.experimental.rangeofproperties.md)<!-- -->&lt;T&gt; | The [RangeOfProperties&lt;T&gt;](./ts-extras.experimental.rangeofproperties.md) to be formatted. |
-|  formats | [RangeOfFormats](./ts-extras.experimental.rangeofformats.md) | _(Optional)_ Optional [formats](./ts-extras.experimental.rangeofformats.md) to use. Default is [DEFAULT\_RANGEOF\_FORMATS](./ts-extras.experimental.default_rangeof_formats.md)<!-- -->. |
-|  emptyValue | T | _(Optional)_ Value which represents unbounded minimum or maximum for this range. Default is <code>undefined</code>. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+range
+
+
+</td><td>
+
+[RangeOfProperties](./ts-extras.experimental.rangeofproperties.md)<!-- -->&lt;T&gt;
+
+
+</td><td>
+
+The [RangeOfProperties&lt;T&gt;](./ts-extras.experimental.rangeofproperties.md) to be formatted.
+
+
+</td></tr>
+<tr><td>
+
+formats
+
+
+</td><td>
+
+[RangeOfFormats](./ts-extras.experimental.rangeofformats.md)
+
+
+</td><td>
+
+_(Optional)_ Optional [formats](./ts-extras.experimental.rangeofformats.md) to use. Default is [DEFAULT\_RANGEOF\_FORMATS](./ts-extras.experimental.default_rangeof_formats.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+emptyValue
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+_(Optional)_ Value which represents unbounded minimum or maximum for this range. Default is `undefined`<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 string \| undefined

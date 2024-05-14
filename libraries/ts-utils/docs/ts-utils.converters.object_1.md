@@ -19,11 +19,55 @@ export declare function object<T>(properties: FieldConverters<T>, optional: (key
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  properties | [FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T&gt; | An [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) defining the shape of the source object and [converters](./ts-utils.converter.md) to be applied to each properties. |
-|  optional | (keyof T)\[\] | An array of <code>(keyof T)</code> listing the keys to be considered optional.  |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+properties
+
+
+</td><td>
+
+[FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T&gt;
+
+
+</td><td>
+
+An [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) defining the shape of the source object and [converters](./ts-utils.converter.md) to be applied to each properties.
+
+
+</td></tr>
+<tr><td>
+
+optional
+
+
+</td><td>
+
+(keyof T)\[\]
+
+
+</td><td>
+
+An array of `(keyof T)` listing the keys to be considered optional. 
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [ObjectConverter](./ts-utils.objectconverter.md)<!-- -->&lt;T&gt;

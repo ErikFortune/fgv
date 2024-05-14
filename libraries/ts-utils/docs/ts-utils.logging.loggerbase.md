@@ -13,27 +13,212 @@ export declare abstract class LoggerBase
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(logLevel)](./ts-utils.logging.loggerbase._constructor_.md) |  | Constructs a new instance of the <code>LoggerBase</code> class |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(logLevel)](./ts-utils.logging.loggerbase._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new instance of the `LoggerBase` class
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [logLevel](./ts-utils.logging.loggerbase.loglevel.md) |  | [LogLevel](./ts-utils.logging.loglevel.md) |  |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[logLevel](./ts-utils.logging.loggerbase.loglevel.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[LogLevel](./ts-utils.logging.loglevel.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [\_format(message, parameters)](./ts-utils.logging.loggerbase._format.md) | <code>protected</code> |  |
-|  [\_innerLog(message)](./ts-utils.logging.loggerbase._innerlog.md) | <p><code>protected</code></p><p><code>abstract</code></p> |  |
-|  [\_innerSilent(\_\_message)](./ts-utils.logging.loggerbase._innersilent.md) | <code>protected</code> |  |
-|  [detail(message, parameters)](./ts-utils.logging.loggerbase.detail.md) |  |  |
-|  [error(message, parameters)](./ts-utils.logging.loggerbase.error.md) |  |  |
-|  [info(message, parameters)](./ts-utils.logging.loggerbase.info.md) |  |  |
-|  [log(message, parameters)](./ts-utils.logging.loggerbase.log.md) |  |  |
-|  [warn(message, parameters)](./ts-utils.logging.loggerbase.warn.md) |  |  |
-|  [warnAndFail(message, parameters)](./ts-utils.logging.loggerbase.warnandfail.md) |  |  |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[\_format(message, parameters)](./ts-utils.logging.loggerbase._format.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[\_innerLog(message)](./ts-utils.logging.loggerbase._innerlog.md)
+
+
+</td><td>
+
+`protected`
+
+`abstract`
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[\_innerSilent(\_\_message)](./ts-utils.logging.loggerbase._innersilent.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[detail(message, parameters)](./ts-utils.logging.loggerbase.detail.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[error(message, parameters)](./ts-utils.logging.loggerbase.error.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[info(message, parameters)](./ts-utils.logging.loggerbase.info.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[log(message, parameters)](./ts-utils.logging.loggerbase.log.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[warn(message, parameters)](./ts-utils.logging.loggerbase.warn.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[warnAndFail(message, parameters)](./ts-utils.logging.loggerbase.warnandfail.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

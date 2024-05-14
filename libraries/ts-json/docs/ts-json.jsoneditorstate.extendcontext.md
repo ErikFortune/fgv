@@ -17,11 +17,55 @@ extendContext(baseContext: IJsonContext | undefined, add: {
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  baseContext | [IJsonContext](./ts-json.ijsoncontext.md) \| undefined | The [IJsonContext](./ts-json.ijsoncontext.md) into which variables and references are to be merged, or <code>undefined</code> to start with a default empty context. |
-|  add | { vars?: [VariableValue](./ts-json.variablevalue.md)<!-- -->\[\]; refs?: [IJsonReferenceMap](./ts-json.ijsonreferencemap.md)<!-- -->\[\]; } | The [variable values](./ts-json.variablevalue.md) and/or [JSON entity references](./ts-json.ijsonreferencemap.md) to be merged into the base context. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+baseContext
+
+
+</td><td>
+
+[IJsonContext](./ts-json.ijsoncontext.md) \| undefined
+
+
+</td><td>
+
+The [IJsonContext](./ts-json.ijsoncontext.md) into which variables and references are to be merged, or `undefined` to start with a default empty context.
+
+
+</td></tr>
+<tr><td>
+
+add
+
+
+</td><td>
+
+{ vars?: [VariableValue](./ts-json.variablevalue.md)<!-- -->\[\]; refs?: [IJsonReferenceMap](./ts-json.ijsonreferencemap.md)<!-- -->\[\]; }
+
+
+</td><td>
+
+The [variable values](./ts-json.variablevalue.md) and/or [JSON entity references](./ts-json.ijsonreferencemap.md) to be merged into the base context.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[IJsonContext](./ts-json.ijsoncontext.md) \| undefined&gt;

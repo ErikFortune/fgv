@@ -20,15 +20,12 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult, fail, isKeyOf, succeed } from '../base';
+import { Result, fail, isKeyOf, succeed } from '../base';
 import { TypeGuardWithContext, Validator } from '../validation';
 import { BaseConverter } from './baseConverter';
 import { Converter, OnError } from './converter';
 import { FieldConverters, ObjectConverter, ObjectConverterOptions } from './objectConverter';
 import { StringConverter } from './stringConverter';
-
-import { DateTime } from 'luxon';
-import Mustache from 'mustache';
 
 /**
  * Action to take on conversion failures (deprecated - use Conversion.OnError)
@@ -43,29 +40,6 @@ export { OnError };
  * @public
  */
 export const string: StringConverter = new StringConverter();
-
-/**
- * Helper function to create a {@link Conversion.StringConverter | StringConverter} which converts
- * `unknown` to `string`, applying template conversions supplied at construction time or at
- * runtime as context.
- * @remarks
- * Template conversions are applied using `mustache` syntax.
- * @param defaultContext - Optional default context to use for template values.
- * @returns A new {@link Converter | Converter} returning `string`.
- * @public
- */
-export function templateString(defaultContext?: unknown): StringConverter<string, unknown> {
-  return new StringConverter<string, unknown>(
-    defaultContext,
-    undefined,
-    (from: unknown, __self: Converter<string, unknown>, context?: unknown) => {
-      if (typeof from !== 'string') {
-        return fail(`Not a string: ${JSON.stringify(from)}`);
-      }
-      return captureResult(() => Mustache.render(from, context));
-    }
-  );
-}
 
 /**
  * Helper function to create a {@link Converter | Converter} which converts `unknown` to one of a set of supplied
@@ -210,26 +184,6 @@ export function delimitedString(
 }
 
 /**
- * A {@link Converter | Converter} which converts an iso formatted string, a number or a `Date` object to
- * a `Date` object.
- * @public
- */
-export const isoDate: Converter<Date, unknown> = new BaseConverter<Date>((from: unknown) => {
-  if (typeof from === 'string') {
-    const dt = DateTime.fromISO(from);
-    if (dt.isValid) {
-      return succeed(dt.toJSDate());
-    }
-    return fail(`Invalid date: ${dt.invalidExplanation}`);
-  } else if (typeof from === 'number') {
-    return succeed(new Date(from));
-  } else if (from instanceof Date) {
-    return succeed(from);
-  }
-  return fail(`Cannot convert ${JSON.stringify(from)} to Date`);
-});
-
-/**
  * Helper function to create a {@link Converter | Converter} from any {@link Validation.Validator}
  * @param validator - the validator to be wrapped
  * @returns A {@link Converter | Converter} which uses the supplied validator.
@@ -305,7 +259,7 @@ export function oneOf<T, TC = unknown>(
   return new BaseConverter((from: unknown, __self, context?: TC) => {
     const errors: string[] = [];
     for (const converter of converters) {
-      const result = converter.convalidate(from, context);
+      const result = converter.convert(from, context);
       if (result.isSuccess() && result.value !== undefined) {
         return result;
       }
@@ -344,7 +298,7 @@ export function arrayOf<T, TC = undefined>(
     const successes: T[] = [];
     const errors: string[] = [];
     for (const item of from) {
-      const result = converter.convalidate(item, context);
+      const result = converter.convert(item, context);
       if (result.isSuccess() && result.value !== undefined) {
         successes.push(result.value);
       } else if (result.isFailure()) {
@@ -471,11 +425,11 @@ export function recordOf<T, TC = undefined, TK extends string = string>(
 
     for (const key in from) {
       if (isKeyOf(key, from)) {
-        const writeKeyResult = options.keyConverter?.convalidate(key, context) ?? succeed(key);
+        const writeKeyResult = options.keyConverter?.convert(key, context) ?? succeed(key);
 
         writeKeyResult
           .onSuccess((writeKey) => {
-            return converter.convalidate(from[key] as unknown, context).onSuccess((value) => {
+            return converter.convert(from[key] as unknown, context).onSuccess((value) => {
               record[writeKey] = value;
               return succeed(true);
             });
@@ -566,11 +520,11 @@ export function mapOf<T, TC = undefined, TK extends string = string>(
 
     for (const key in from) {
       if (isKeyOf(key, from)) {
-        const writeKeyResult = options.keyConverter?.convalidate(key, context) ?? succeed(key);
+        const writeKeyResult = options.keyConverter?.convert(key, context) ?? succeed(key);
 
         writeKeyResult
           .onSuccess((writeKey) => {
-            return converter.convalidate(from[key] as unknown, context).onSuccess((value) => {
+            return converter.convert(from[key] as unknown, context).onSuccess((value) => {
               map.set(writeKey, value);
               return succeed(true);
             });
@@ -632,7 +586,7 @@ export function element<T, TC = undefined>(
     } else if (index >= from.length) {
       return fail(`${index}: element converter index out of range (0..${from.length - 1})`);
     }
-    return converter.convalidate(from[index], context);
+    return converter.convert(from[index], context);
   });
 }
 
@@ -660,7 +614,7 @@ export function optionalElement<T, TC = undefined>(
     } else if (index >= from.length) {
       return succeed(undefined);
     }
-    return converter.convalidate(from[index], context);
+    return converter.convert(from[index], context);
   });
 }
 
@@ -683,7 +637,7 @@ export function field<T, TC = undefined>(
   return new BaseConverter((from: unknown, __self: Converter<T, TC>, context?: TC) => {
     if (typeof from === 'object' && !Array.isArray(from) && from !== null) {
       if (isKeyOf(name, from)) {
-        return converter.convalidate(from[name], context).onFailure((message) => {
+        return converter.convert(from[name], context).onFailure((message) => {
           return fail(`Field ${name}: ${message}`);
         });
       }
@@ -713,7 +667,7 @@ export function optionalField<T, TC = undefined>(
     (from: unknown, __self: Converter<T | undefined, TC>, context?: TC) => {
       if (typeof from === 'object' && !Array.isArray(from) && from !== null) {
         if (isKeyOf(name, from)) {
-          const result = converter.convalidate(from[name], context).onFailure((message) => {
+          const result = converter.convert(from[name], context).onFailure((message) => {
             return fail(`${name}: ${message}`);
           });
 
@@ -899,7 +853,7 @@ export function discriminatedObject<T, TD extends string = string, TC = unknown>
     if (converter === undefined) {
       return fail(`No converter for discriminator ${discriminatorProp}="${discriminatorValue}"`);
     }
-    return converter.convalidate(from);
+    return converter.convert(from);
   });
 }
 
@@ -931,7 +885,7 @@ export function transform<T, TC = unknown>(properties: FieldConverters<T, TC>): 
 
     for (const key in properties) {
       if (properties[key]) {
-        const result = properties[key].convalidate(from, context);
+        const result = properties[key].convert(from, context);
         if (result.isSuccess() && result.value !== undefined) {
           converted[key] = result.value;
         } else if (result.isFailure()) {
@@ -1029,7 +983,7 @@ export function transformObject<TSRC, TDEST, TC = unknown>(
           const converter = destinationFields[destinationKey].converter;
 
           if (isKeyOf(srcKey, from)) {
-            const result = converter.convalidate(from[srcKey], context);
+            const result = converter.convert(from[srcKey], context);
             if (result.isSuccess() && result.value !== undefined) {
               converted[destinationKey] = result.value;
             } else if (result.isFailure()) {

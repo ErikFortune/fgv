@@ -14,10 +14,39 @@ export declare function mergeDefaultJsonConverterOptions(partial?: Partial<IJson
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  partial | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ An optional partial [IJsonConverterOptions](./ts-json.ijsonconverteroptions.md) to be merged. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+partial
+
+
+</td><td>
+
+Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ An optional partial [IJsonConverterOptions](./ts-json.ijsonconverteroptions.md) to be merged.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)

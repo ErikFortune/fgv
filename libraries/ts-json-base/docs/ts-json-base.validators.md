@@ -6,16 +6,85 @@
 
 ## Interfaces
 
-|  Interface | Description |
-|  --- | --- |
-|  [IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md) | Validation context for in-place JSON validators. |
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md)
+
+
+</td><td>
+
+Validation context for in-place JSON validators.
+
+
+</td></tr>
+</tbody></table>
 
 ## Variables
 
-|  Variable | Description |
-|  --- | --- |
-|  [jsonArray](./ts-json-base.validators.jsonarray.md) | An in-place validator which validates that a supplied <code>unknown</code> value is a valid [JsonArray](./ts-json-base.jsonarray.md)<!-- -->. Fails by default if any properties or array elements are <code>undefined</code> - this default behavior can be overridden by supplying an appropriate [context](./ts-json-base.validators.ijsonvalidatorcontext.md) at runtime. |
-|  [jsonObject](./ts-json-base.validators.jsonobject.md) | An in-place validator which validates that a supplied <code>unknown</code> value is a valid [JsonObject](./ts-json-base.jsonobject.md)<!-- -->. Fails by default if any properties or array elements are <code>undefined</code> - this default behavior can be overridden by supplying an appropriate [context](./ts-json-base.validators.ijsonvalidatorcontext.md) at runtime. |
-|  [jsonPrimitive](./ts-json-base.validators.jsonprimitive.md) | An in-place validator which validates that a supplied <code>unknown</code> value is a valid [JsonPrimitive](./ts-json-base.jsonprimitive.md)<!-- -->. |
-|  [jsonValue](./ts-json-base.validators.jsonvalue.md) | An in-place validator which validates that a supplied <code>unknown</code> value is a valid [JsonValue](./ts-json-base.jsonvalue.md)<!-- -->. Fails by default if any properties or array elements are <code>undefined</code> - this default behavior can be overridden by supplying an appropriate [context](./ts-json-base.validators.ijsonvalidatorcontext.md) at runtime. |
+<table><thead><tr><th>
 
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[jsonArray](./ts-json-base.validators.jsonarray.md)
+
+
+</td><td>
+
+An in-place validator which validates that a supplied `unknown` value is a valid [JsonArray](./ts-json-base.jsonarray.md)<!-- -->. Fails by default if any properties or array elements are `undefined` - this default behavior can be overridden by supplying an appropriate [context](./ts-json-base.validators.ijsonvalidatorcontext.md) at runtime.
+
+
+</td></tr>
+<tr><td>
+
+[jsonObject](./ts-json-base.validators.jsonobject.md)
+
+
+</td><td>
+
+An in-place validator which validates that a supplied `unknown` value is a valid [JsonObject](./ts-json-base.jsonobject.md)<!-- -->. Fails by default if any properties or array elements are `undefined` - this default behavior can be overridden by supplying an appropriate [context](./ts-json-base.validators.ijsonvalidatorcontext.md) at runtime.
+
+
+</td></tr>
+<tr><td>
+
+[jsonPrimitive](./ts-json-base.validators.jsonprimitive.md)
+
+
+</td><td>
+
+An in-place validator which validates that a supplied `unknown` value is a valid [JsonPrimitive](./ts-json-base.jsonprimitive.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[jsonValue](./ts-json-base.validators.jsonvalue.md)
+
+
+</td><td>
+
+An in-place validator which validates that a supplied `unknown` value is a valid [JsonValue](./ts-json-base.jsonvalue.md)<!-- -->. Fails by default if any properties or array elements are `undefined` - this default behavior can be overridden by supplying an appropriate [context](./ts-json-base.validators.ijsonvalidatorcontext.md) at runtime.
+
+
+</td></tr>
+</tbody></table>

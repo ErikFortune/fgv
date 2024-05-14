@@ -14,11 +14,55 @@ export declare function oneOf<T, TC = unknown>(converters: Array<Converter<T, TC
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  converters | Array&lt;[Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; \| [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;&gt; | An ordered list of [converters](./ts-utils.converter.md) or [validators](./ts-utils.validator.md) to be considered. |
-|  onError | [OnError](./ts-utils.converters.onerror.md) | _(Optional)_ Specifies treatment of unconvertible elements. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+converters
+
+
+</td><td>
+
+Array&lt;[Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; \| [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;&gt;
+
+
+</td><td>
+
+An ordered list of [converters](./ts-utils.converter.md) or [validators](./ts-utils.validator.md) to be considered.
+
+
+</td></tr>
+<tr><td>
+
+onError
+
+
+</td><td>
+
+[OnError](./ts-utils.converters.onerror.md)
+
+
+</td><td>
+
+_(Optional)_ Specifies treatment of unconvertible elements.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;

@@ -14,11 +14,55 @@ protected _validate<T>(from: unknown, context?: TC): boolean | Failure<T>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  from | unknown | The <code>unknown</code> value to be tested. |
-|  context | TC | _(Optional)_ Optional validation context will be propagated to element validator. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+from
+
+
+</td><td>
+
+unknown
+
+
+</td><td>
+
+The `unknown` value to be tested.
+
+
+</td></tr>
+<tr><td>
+
+context
+
+
+</td><td>
+
+TC
+
+
+</td><td>
+
+_(Optional)_ Optional validation context will be propagated to element validator.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 boolean \| [Failure](./ts-utils.failure.md)<!-- -->&lt;T&gt;

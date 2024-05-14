@@ -17,12 +17,71 @@ export declare function formatList<T>(format: string, items: T[], itemFormatter:
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  format | string | A mustache template used to format each item. |
-|  items | T\[\] | The items to be formatted. |
-|  itemFormatter | [Formatter](./ts-extras.experimental.formatter.md)<!-- -->&lt;T&gt; | The [Formatter&lt;T&gt;](./ts-extras.experimental.formatter.md) used to format each item. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+format
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+A mustache template used to format each item.
+
+
+</td></tr>
+<tr><td>
+
+items
+
+
+</td><td>
+
+T\[\]
+
+
+</td><td>
+
+The items to be formatted.
+
+
+</td></tr>
+<tr><td>
+
+itemFormatter
+
+
+</td><td>
+
+[Formatter](./ts-extras.experimental.formatter.md)<!-- -->&lt;T&gt;
+
+
+</td><td>
+
+The [Formatter&lt;T&gt;](./ts-extras.experimental.formatter.md) used to format each item.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;string&gt;

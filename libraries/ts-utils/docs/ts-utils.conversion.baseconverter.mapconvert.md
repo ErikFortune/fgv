@@ -14,10 +14,39 @@ mapConvert<T2>(mapConverter: Converter<T2>): Converter<T2, TC>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  mapConverter | [Converter](./ts-utils.converter.md)<!-- -->&lt;T2&gt; | The [Converter](./ts-utils.converter.md) to be applied to the converted result from this [Converter](./ts-utils.converter.md)<!-- -->. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+mapConverter
+
+
+</td><td>
+
+[Converter](./ts-utils.converter.md)<!-- -->&lt;T2&gt;
+
+
+</td><td>
+
+The [Converter](./ts-utils.converter.md) to be applied to the converted result from this [Converter](./ts-utils.converter.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T2, TC&gt;

@@ -14,8 +14,65 @@ export interface ConverterTraits
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [brand?](./ts-utils.conversion.convertertraits.brand.md) | <code>readonly</code> | string | _(Optional)_ |
-|  [isOptional](./ts-utils.conversion.convertertraits.isoptional.md) | <code>readonly</code> | boolean |  |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[brand?](./ts-utils.conversion.convertertraits.brand.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[isOptional](./ts-utils.conversion.convertertraits.isoptional.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

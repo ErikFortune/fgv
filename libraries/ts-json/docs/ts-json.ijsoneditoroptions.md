@@ -4,7 +4,7 @@
 
 ## IJsonEditorOptions interface
 
-Initialization options for a .
+Initialization options for a [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
 
 **Signature:**
 
@@ -14,8 +14,61 @@ export interface IJsonEditorOptions
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [context?](./ts-json.ijsoneditoroptions.context.md) |  | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ |
-|  [validation](./ts-json.ijsoneditoroptions.validation.md) |  | [IJsonEditorValidationOptions](./ts-json.ijsoneditorvalidationoptions.md) |  |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[context?](./ts-json.ijsoneditoroptions.context.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[IJsonContext](./ts-json.ijsoncontext.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[validation](./ts-json.ijsoneditoroptions.validation.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[IJsonEditorValidationOptions](./ts-json.ijsoneditorvalidationoptions.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

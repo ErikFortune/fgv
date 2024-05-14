@@ -4,7 +4,7 @@
 
 ## IJsonEditorRule.editProperty() method
 
-Called by a  to possibly edit one of the properties being merged into a target object.
+Called by a [JsonEditor](./ts-json.jsoneditor.md) to possibly edit one of the properties being merged into a target object.
 
 **Signature:**
 
@@ -14,15 +14,74 @@ editProperty(key: string, value: JsonValue, state: JsonEditorState): DetailedRes
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  key | string | The key of the property to be edited. |
-|  value | JsonValue | The  of the property to be edited. |
-|  state | [JsonEditorState](./ts-json.jsoneditorstate.md) |  which applies to the edit. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+key
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+The key of the property to be edited.
+
+
+</td></tr>
+<tr><td>
+
+value
+
+
+</td><td>
+
+JsonValue
+
+
+</td><td>
+
+The `JsonValue` of the property to be edited.
+
+
+</td></tr>
+<tr><td>
+
+state
+
+
+</td><td>
+
+[JsonEditorState](./ts-json.jsoneditorstate.md)
+
+
+</td><td>
+
+[Editor state](./ts-json.jsoneditorstate.md) which applies to the edit.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 DetailedResult&lt;JsonObject, [JsonPropertyEditFailureReason](./ts-json.jsonpropertyeditfailurereason.md)<!-- -->&gt;
 
-If the property was edited, returns `Success` with a  containing the edited results and with detail `'edited'`<!-- -->. If this property should be deferred for later consideration or merge, `Success` with detail `'deferred'` and a  to be finalized. If the rule does not affect this property, returns `Failure` with detail `'inapplicable'`<!-- -->. If an error occurred while processing the error, returns `Failure` with detail `'error'`<!-- -->.
+If the property was edited, returns `Success` with a `JsonObject` containing the edited results and with detail `'edited'`<!-- -->. If this property should be deferred for later consideration or merge, `Success` with detail `'deferred'` and a `JsonObject` to be finalized. If the rule does not affect this property, returns `Failure` with detail `'inapplicable'`<!-- -->. If an error occurred while processing the error, returns `Failure` with detail `'error'`<!-- -->.
 

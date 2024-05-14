@@ -6,7 +6,24 @@
 
 ## Packages
 
-|  Package | Description |
-|  --- | --- |
-|  [@fgv/ts-json-base](./ts-json-base.md) |  |
+<table><thead><tr><th>
 
+Package
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[@fgv/ts-json-base](./ts-json-base.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

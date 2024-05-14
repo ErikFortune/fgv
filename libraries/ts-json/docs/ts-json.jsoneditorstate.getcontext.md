@@ -4,7 +4,7 @@
 
 ## JsonEditorState.getContext() method
 
-Gets the context of this  or an optionally supplied default context if this state has no context.
+Gets the context of this [JsonEditorState](./ts-json.jsoneditorstate.md) or an optionally supplied default context if this state has no context.
 
 **Signature:**
 
@@ -14,10 +14,39 @@ getContext(defaultContext?: IJsonContext): IJsonContext | undefined;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  defaultContext | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ The default [JSON context](./ts-json.ijsoncontext.md) to use as default if this state has no context. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+defaultContext
+
+
+</td><td>
+
+[IJsonContext](./ts-json.ijsoncontext.md)
+
+
+</td><td>
+
+_(Optional)_ The default [JSON context](./ts-json.ijsoncontext.md) to use as default if this state has no context.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [IJsonContext](./ts-json.ijsoncontext.md) \| undefined

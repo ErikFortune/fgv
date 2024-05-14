@@ -14,11 +14,55 @@ protected _deriveContext(state: JsonEditorState, ...values: VariableValue[]): Re
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  state | [JsonEditorState](./ts-json.jsoneditorstate.md) | The  for the object being edited. |
-|  values | [VariableValue](./ts-json.variablevalue.md)<!-- -->\[\] | An array of [VariableValue](./ts-json.variablevalue.md) to be added to the context. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+state
+
+
+</td><td>
+
+[JsonEditorState](./ts-json.jsoneditorstate.md)
+
+
+</td><td>
+
+The [editor state](./ts-json.jsoneditorstate.md) for the object being edited.
+
+
+</td></tr>
+<tr><td>
+
+values
+
+
+</td><td>
+
+[VariableValue](./ts-json.variablevalue.md)<!-- -->\[\]
+
+
+</td><td>
+
+An array of [VariableValue](./ts-json.variablevalue.md) to be added to the context.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[IJsonContext](./ts-json.ijsoncontext.md) \| undefined&gt;

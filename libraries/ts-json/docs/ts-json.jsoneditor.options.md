@@ -4,7 +4,7 @@
 
 ## JsonEditor.options property
 
-Full set of  in effect for this editor.
+Full set of [editor options](./ts-json.ijsoneditoroptions.md) in effect for this editor.
 
 **Signature:**
 

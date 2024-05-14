@@ -4,7 +4,7 @@
 
 ## JsonEditor.clone() method
 
-Deep clones a supplied , applying all editor rules and a default or optionally supplied context
+Deep clones a supplied `JsonValue`<!-- -->, applying all editor rules and a default or optionally supplied context
 
 **Signature:**
 
@@ -14,11 +14,55 @@ clone(src: JsonValue, context?: IJsonContext): DetailedResult<JsonValue, JsonEdi
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  src | JsonValue | The  to be cloned. |
-|  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ An optional [JSON context](./ts-json.ijsoncontext.md) supplying variables and references. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+src
+
+
+</td><td>
+
+JsonValue
+
+
+</td><td>
+
+The `JsonValue` to be cloned.
+
+
+</td></tr>
+<tr><td>
+
+context
+
+
+</td><td>
+
+[IJsonContext](./ts-json.ijsoncontext.md)
+
+
+</td><td>
+
+_(Optional)_ An optional [JSON context](./ts-json.ijsoncontext.md) supplying variables and references.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 DetailedResult&lt;JsonValue, [JsonEditFailureReason](./ts-json.jsoneditfailurereason.md)<!-- -->&gt;

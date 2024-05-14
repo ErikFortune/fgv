@@ -14,9 +14,68 @@ protected constructor(values?: MapOrRecord<JsonValue>, context?: IJsonContext, o
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  values | MapOrRecord&lt;JsonValue&gt; | _(Optional)_ A string-keyed <code>Map</code> or <code>Record</code> of the  to be returned. |
-|  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ Optional [IJsonContext](./ts-json.ijsoncontext.md) used to format returned values. |
-|  options | ISimpleJsonMapOptions | _(Optional)_ Optional  for initialization. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+values
+
+
+</td><td>
+
+MapOrRecord&lt;JsonValue&gt;
+
+
+</td><td>
+
+_(Optional)_ A string-keyed `Map` or `Record` of the `JsonValue` to be returned.
+
+
+</td></tr>
+<tr><td>
+
+context
+
+
+</td><td>
+
+[IJsonContext](./ts-json.ijsoncontext.md)
+
+
+</td><td>
+
+_(Optional)_ Optional [IJsonContext](./ts-json.ijsoncontext.md) used to format returned values.
+
+
+</td></tr>
+<tr><td>
+
+options
+
+
+</td><td>
+
+[ISimpleJsonMapOptions](./ts-json.isimplejsonmapoptions.md)
+
+
+</td><td>
+
+_(Optional)_ Optional [ISimpleJsonMapOptions](./ts-json.isimplejsonmapoptions.md) for initialization.
+
+
+</td></tr>
+</tbody></table>

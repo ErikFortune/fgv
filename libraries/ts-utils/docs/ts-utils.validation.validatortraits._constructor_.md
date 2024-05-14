@@ -14,10 +14,55 @@ constructor(init?: Partial<ValidatorTraitValues>, base?: ValidatorTraitValues);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  init | Partial&lt;[ValidatorTraitValues](./ts-utils.validation.validatortraitvalues.md)<!-- -->&gt; | _(Optional)_ Partial initial values to be set in the resulting [Validator](./ts-utils.validation.validator.md)<!-- -->. |
-|  base | [ValidatorTraitValues](./ts-utils.validation.validatortraitvalues.md) | _(Optional)_ Base values to be used when no initial values are present. |
+<table><thead><tr><th>
+
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+init
+
+
+</td><td>
+
+Partial&lt;[ValidatorTraitValues](./ts-utils.validation.validatortraitvalues.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ Partial initial values to be set in the resulting [Validator](./ts-utils.validation.validator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+base
+
+
+</td><td>
+
+[ValidatorTraitValues](./ts-utils.validation.validatortraitvalues.md)
+
+
+</td><td>
+
+_(Optional)_ Base values to be used when no initial values are present.
+
+
+</td></tr>
+</tbody></table>
 
 ## Remarks
 

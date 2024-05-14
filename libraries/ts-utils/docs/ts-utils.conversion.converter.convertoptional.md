@@ -14,12 +14,71 @@ convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | unde
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  from | unknown | The <code>unknown</code> to be converted |
-|  context | TC | _(Optional)_ An optional conversion context of type <code>&lt;TC&gt;</code> to be used in the conversion. |
-|  onError | [OnError](./ts-utils.converters.onerror.md) | _(Optional)_ Specifies handling of values that cannot be converted (default <code>ignoreErrors</code>). |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+from
+
+
+</td><td>
+
+unknown
+
+
+</td><td>
+
+The `unknown` to be converted
+
+
+</td></tr>
+<tr><td>
+
+context
+
+
+</td><td>
+
+TC
+
+
+</td><td>
+
+_(Optional)_ An optional conversion context of type `<TC>` to be used in the conversion.
+
+
+</td></tr>
+<tr><td>
+
+onError
+
+
+</td><td>
+
+[OnError](./ts-utils.converters.onerror.md)
+
+
+</td><td>
+
+_(Optional)_ Specifies handling of values that cannot be converted (default `ignoreErrors`<!-- -->).
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;T \| undefined&gt;

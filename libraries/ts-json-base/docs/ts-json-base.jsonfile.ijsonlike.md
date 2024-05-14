@@ -13,8 +13,33 @@ export interface IJsonLike
 
 ## Methods
 
-|  Method | Description |
-|  --- | --- |
-|  [parse(text, reviver, options)](./ts-json-base.jsonfile.ijsonlike.parse.md) |  |
-|  [stringify(value, replacer, space)](./ts-json-base.jsonfile.ijsonlike.stringify.md) |  |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[parse(text, reviver, options)](./ts-json-base.jsonfile.ijsonlike.parse.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[stringify(value, replacer, space)](./ts-json-base.jsonfile.ijsonlike.stringify.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

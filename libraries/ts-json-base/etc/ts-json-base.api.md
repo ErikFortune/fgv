@@ -6,7 +6,6 @@
 
 import { Converter } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
-import { Validation } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
 
 // @public
@@ -26,12 +25,12 @@ export { Converters }
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function convertJsonDirectorySync<T>(srcPath: string, options: IDirectoryConvertOptions<T>): Result<IReadDirectoryItem<T>[]>;
+function convertJsonDirectorySync<T>(srcPath: string, options: IJsonFsDirectoryOptions<T>): Result<IReadDirectoryItem<T>[]>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options: IDirectoryToMapConvertOptions<T, TC>): Result<Map<string, T>>;
+function convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options: IJsonFsDirectoryToMapOptions<T, TC>): Result<Map<string, T>>;
 
 // @public
 function convertJsonFileSync<T>(srcPath: string, converter: Converter<T>): Result<T>;
@@ -48,35 +47,21 @@ const DefaultJsonFsHelperConfig: IJsonFsHelperConfig;
 const DefaultJsonLike: IJsonLike;
 
 // @public
-interface IDirectoryConvertOptions<T, TC = unknown> {
-    converter: Converter<T, TC>;
-    // (undocumented)
-    validator?: undefined;
-}
-
-// @public
-interface IDirectoryToMapConvertOptions<T, TC = unknown> extends IDirectoryConvertOptions<T, TC> {
-    // (undocumented)
-    transformName?: ItemNameTransformFunction<T>;
-}
-
-// @public
-interface IDirectoryToMapValidateOptions<T, TC = unknown> extends IDirectoryValidateOptions<T, TC> {
-    // (undocumented)
-    transformName?: ItemNameTransformFunction<T>;
-}
-
-// @public
-interface IDirectoryValidateOptions<T, TC = unknown> {
-    // (undocumented)
-    converter?: undefined;
-    validator: Validator<T, TC>;
-}
-
-// @public
 interface IJsonConverterContext {
     // (undocumented)
     ignoreUndefinedProperties?: boolean;
+}
+
+// @public
+interface IJsonFsDirectoryOptions<T, TC = unknown> {
+    converter: Converter<T, TC> | Validator<T, TC>;
+    files?: RegExp[];
+}
+
+// @public
+interface IJsonFsDirectoryToMapOptions<T, TC = unknown> extends IJsonFsDirectoryOptions<T, TC> {
+    // (undocumented)
+    transformName?: ItemNameTransformFunction<T>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -85,6 +70,8 @@ interface IJsonConverterContext {
 interface IJsonFsHelperConfig {
     // (undocumented)
     allowUndefinedWrite: boolean;
+    // (undocumented)
+    defaultFiles: RegExp[];
     // (undocumented)
     json: IJsonLike;
 }
@@ -142,14 +129,10 @@ declare namespace JsonFile {
         convertJsonDirectorySync,
         convertJsonDirectoryToMapSync,
         writeJsonFileSync,
-        IDirectoryConvertOptions,
-        IDirectoryValidateOptions,
-        JsonFsDirectoryOptions,
+        IJsonFsDirectoryOptions,
         IReadDirectoryItem,
         ItemNameTransformFunction,
-        IDirectoryToMapConvertOptions,
-        IDirectoryToMapValidateOptions,
-        JsonFsDirectoryToMapOptions,
+        IJsonFsDirectoryToMapOptions,
         IJsonFsHelperConfig,
         JsonFsHelperInitOptions,
         DefaultJsonFsHelperConfig,
@@ -166,12 +149,6 @@ declare namespace JsonFile {
 export { JsonFile }
 
 // @public
-type JsonFsDirectoryOptions<T, TC = unknown> = IDirectoryConvertOptions<T, TC> | IDirectoryValidateOptions<T, TC>;
-
-// @public
-type JsonFsDirectoryToMapOptions<T, TC = unknown> = IDirectoryToMapConvertOptions<T, TC> | IDirectoryToMapValidateOptions<T, TC>;
-
-// @public
 class JsonFsHelper {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -179,10 +156,12 @@ class JsonFsHelper {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly config: IJsonFsHelperConfig;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    processJsonDirectorySync<T>(srcPath: string, options: JsonFsDirectoryOptions<T>): Result<IReadDirectoryItem<T>[]>;
+    convertJsonDirectorySync<T>(srcPath: string, options: IJsonFsDirectoryOptions<T>): Result<IReadDirectoryItem<T>[]>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    processJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options: JsonFsDirectoryToMapOptions<T, TC>): Result<Map<string, T>>;
-    processJsonFileSync<T>(srcPath: string, cv: Validation.Convalidator<T>): Result<T>;
+    convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options: IJsonFsDirectoryToMapOptions<T, TC>): Result<Map<string, T>>;
+    convertJsonFileSync<T, TC = unknown>(srcPath: string, cv: Converter<T, TC> | Validator<T, TC>): Result<T>;
+    // (undocumented)
+    protected _pathMatchesOptions<T, TC>(options: IJsonFsDirectoryOptions<T, TC>, path: string): boolean;
     readJsonFileSync(srcPath: string): Result<JsonValue>;
     writeJsonFileSync(srcPath: string, value: JsonValue): Result<boolean>;
 }

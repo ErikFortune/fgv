@@ -24,10 +24,11 @@ import * as EditorRules from './rules';
 
 export * from './common';
 export { JsonEditor } from './jsonEditor';
-export { IJsonEditorRule } from './jsonEditorRule';
+export { IJsonEditorRule, JsonEditorRuleBase } from './jsonEditorRule';
 export { JsonEditorState } from './jsonEditorState';
 export {
   IReferenceMapKeyPolicyValidateOptions,
+  ISimpleJsonMapOptions,
   PrefixedJsonMap,
   ReferenceMapKeyPolicy,
   SimpleJsonMap

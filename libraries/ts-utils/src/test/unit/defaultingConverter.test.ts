@@ -43,31 +43,25 @@ describe('GenericDefaultingConverter', () => {
     });
   });
 
-  describe('convert and convalidate', () => {
+  describe('convert', () => {
     const negativeDefault = new GenericDefaultingConverter(Converters.number, -1);
     test('returns success with the result of a successful conversion', () => {
       expect(negativeDefault.convert(100)).toSucceedWith(100);
-      expect(negativeDefault.convalidate(100)).toSucceedWith(100);
       // notice that type validation allows us to access value without a guard
       expect(negativeDefault.convert(-1000).value).toBe(-1000);
-      expect(negativeDefault.convalidate(-1000).value).toBe(-1000);
     });
 
     test('returns success with the default for a failed conversion', () => {
       expect(negativeDefault.convert('not a number')).toSucceedWith(-1);
-      expect(negativeDefault.convalidate('not a number')).toSucceedWith(-1);
 
       // notice that type validation allows us to access value without a guard
       expect(negativeDefault.convert('not a number').value).toBe(-1);
-      expect(negativeDefault.convalidate('not a number')).toSucceedWith(-1);
     });
 
     test('allows default to extend the returned type', () => {
       const undefinedDefault = new GenericDefaultingConverter(Converters.number, undefined);
       expect(undefinedDefault.convert(-1000).value).toBe(-1000);
-      expect(undefinedDefault.convalidate(-1000).value).toBe(-1000);
       expect(undefinedDefault.convert('not a number').value).toBeUndefined();
-      expect(undefinedDefault.convalidate('not a number').value).toBeUndefined();
     });
   });
 

@@ -277,7 +277,7 @@ export class LanguageTag {
    * using optional configuration, if supplied.
    * @param tag - The `string` tag from which the {@link Bcp47.LanguageTag | language tag}
    * is te be constructed.
-   * @param options - (optional) set of {@link Bcp47.LanguageTagInitOptions | init options}
+   * @param options - (optional) set of {@link Bcp47.ILanguageTagInitOptions | init options}
    * to guide the validation and normalization of this tag.
    * @returns `Success` with the new {@link Bcp47.LanguageTag | language tag} or `Failure`
    * with details if an error occurs.
@@ -296,7 +296,7 @@ export class LanguageTag {
    * if supplied.
    * @param tag - The {@link Bcp47.Subtags | subtags} from which the
    * {@link Bcp47.LanguageTag | language tag} is te be constructed.
-   * @param options - (optional) set of {@link Bcp47.LanguageTagInitOptions | init options}
+   * @param options - (optional) set of {@link Bcp47.ILanguageTagInitOptions | init options}
    * to guide the validation and normalization of this tag.
    * @returns `Success` with the new {@link Bcp47.LanguageTag | language tag} or `Failure`
    * with details if an error occurs.
@@ -311,7 +311,7 @@ export class LanguageTag {
    * if supplied.
    * @param from - The `string` tag or {@link Bcp47.Subtags | subtags} from
    * which the {@link Bcp47.LanguageTag | language tag} is te be constructed.
-   * @param options - (optional) set of {@link Bcp47.LanguageTagInitOptions | init options}
+   * @param options - (optional) set of {@link Bcp47.ILanguageTagInitOptions | init options}
    * to guide the validation and normalization of this tag.
    * @returns `Success` with the new {@link Bcp47.LanguageTag | language tag} or `Failure`
    * with details if an error occurs.
@@ -331,7 +331,7 @@ export class LanguageTag {
    * @param fromValidity - The {@link Bcp47.TagValidity | validation level} of the supplied subtags.
    * @param fromNormalization - The {@link Bcp47.TagNormalization | normalization level} fo the
    * supplied subtags.
-   * @param partialOptions - Any {@link Bcp47.LanguageTagInitOptions | initialization options}.
+   * @param partialOptions - Any {@link Bcp47.ILanguageTagInitOptions | initialization options}.
    * @returns `Success` with the corresponding {@link Bcp47.LanguageTag | language tag} or `Failure`
    * with details if an error occurs.
    * @internal
@@ -355,11 +355,11 @@ export class LanguageTag {
   }
 
   /**
-   * Gets a fully-specified {@link Bcp47.LanguageTagInitOptions} from partial or undefined
+   * Gets a fully-specified {@link Bcp47.ILanguageTagInitOptions} from partial or undefined
    * options, substituting defaults as appropriate.
-   * @param options - The {@link Bcp47.LanguageTagInitOptions} to be expanded, or `undefined`
+   * @param options - The {@link Bcp47.ILanguageTagInitOptions} to be expanded, or `undefined`
    * for default options.
-   * @returns Fully-specified {@link Bcp47.LanguageTagInitOptions | init options}.
+   * @returns Fully-specified {@link Bcp47.ILanguageTagInitOptions | init options}.
    * @internal
    */
   protected static _getOptions(options?: ILanguageTagInitOptions): Required<ILanguageTagInitOptions> {

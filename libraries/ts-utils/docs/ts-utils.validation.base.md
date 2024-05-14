@@ -6,19 +6,78 @@
 
 ## Classes
 
-|  Class | Description |
-|  --- | --- |
-|  [GenericValidator](./ts-utils.validation.base.genericvalidator.md) | Generic base implementation for an in-place [Validator](./ts-utils.validation.validator.md)<!-- -->. |
+<table><thead><tr><th>
+
+Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[GenericValidator](./ts-utils.validation.base.genericvalidator.md)
+
+
+</td><td>
+
+Generic base implementation for an in-place [Validator](./ts-utils.validation.validator.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Interfaces
 
-|  Interface | Description |
-|  --- | --- |
-|  [GenericValidatorConstructorParams](./ts-utils.validation.base.genericvalidatorconstructorparams.md) | Options used to initialize a [GenericValidator](./ts-utils.validation.base.genericvalidator.md)<!-- -->. |
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[GenericValidatorConstructorParams](./ts-utils.validation.base.genericvalidatorconstructorparams.md)
+
+
+</td><td>
+
+Options used to initialize a [GenericValidator](./ts-utils.validation.base.genericvalidator.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Type Aliases
 
-|  Type Alias | Description |
-|  --- | --- |
-|  [ValidatorFunc](./ts-utils.validation.base.validatorfunc.md) | Type for a validation function, which validates that a supplied <code>unknown</code> value is a valid value of type <code>&lt;T&gt;</code>, possibly as influenced by an optionally-supplied validation context of type <code>&lt;TC&gt;</code>. |
+<table><thead><tr><th>
 
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ValidatorFunc](./ts-utils.validation.base.validatorfunc.md)
+
+
+</td><td>
+
+Type for a validation function, which validates that a supplied `unknown` value is a valid value of type `<T>`<!-- -->, possibly as influenced by an optionally-supplied validation context of type `<TC>`<!-- -->.
+
+
+</td></tr>
+</tbody></table>

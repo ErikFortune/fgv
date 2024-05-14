@@ -4,7 +4,7 @@
 
 ## EditorRules.ConditionalJsonEditorRule.(constructor)
 
-Creates a new .
+Creates a new [ConditionalJsonEditorRule](./ts-json.editorrules.conditionaljsoneditorrule.md)<!-- -->.
 
 **Signature:**
 
@@ -14,7 +14,36 @@ constructor(options?: IConditionalJsonRuleOptions);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  options | [IConditionalJsonRuleOptions](./ts-json.editorrules.iconditionaljsonruleoptions.md) | _(Optional)_ Optional  used for this rule. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+options
+
+
+</td><td>
+
+[IConditionalJsonRuleOptions](./ts-json.editorrules.iconditionaljsonruleoptions.md)
+
+
+</td><td>
+
+_(Optional)_ Optional [configuration options](./ts-json.editorrules.iconditionaljsonruleoptions.md) used for this rule.
+
+
+</td></tr>
+</tbody></table>

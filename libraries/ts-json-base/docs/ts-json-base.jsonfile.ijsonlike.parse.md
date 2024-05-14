@@ -12,12 +12,69 @@ parse(text: string, reviver?: JsonReviver, options?: unknown): JsonValue | undef
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  text | string |  |
-|  reviver | [JsonReviver](./ts-json-base.jsonfile.jsonreviver.md) | _(Optional)_ |
-|  options | unknown | _(Optional)_ |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+text
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+reviver
+
+
+</td><td>
+
+[JsonReviver](./ts-json-base.jsonfile.jsonreviver.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+options
+
+
+</td><td>
+
+unknown
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [JsonValue](./ts-json-base.jsonvalue.md) \| undefined

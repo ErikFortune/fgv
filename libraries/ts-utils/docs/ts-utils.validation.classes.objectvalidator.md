@@ -19,21 +19,149 @@ By default, succeeds if all of the required fields exist and are validate, and f
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(params)](./ts-utils.validation.classes.objectvalidator._constructor_.md) |  | Constructs a new [ObjectValidator&lt;T&gt;](./ts-utils.validation.classes.objectvalidator.md)<!-- -->. |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(params)](./ts-utils.validation.classes.objectvalidator._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [ObjectValidator&lt;T&gt;](./ts-utils.validation.classes.objectvalidator.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [fields](./ts-utils.validation.classes.objectvalidator.fields.md) | <code>readonly</code> | [FieldValidators](./ts-utils.validation.classes.fieldvalidators.md)<!-- -->&lt;T&gt; | A [FieldValidators](./ts-utils.validation.classes.fieldvalidators.md) object specifying a [Validator](./ts-utils.validation.validator.md) for each of the expected properties |
-|  [options](./ts-utils.validation.classes.objectvalidator.options.md) | <code>readonly</code> | [ObjectValidatorOptions](./ts-utils.validation.classes.objectvalidatoroptions.md)<!-- -->&lt;T, TC&gt; | [Options](./ts-utils.validation.classes.objectvalidatoroptions.md) which apply to this validator. |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[fields](./ts-utils.validation.classes.objectvalidator.fields.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[FieldValidators](./ts-utils.validation.classes.fieldvalidators.md)<!-- -->&lt;T&gt;
+
+
+</td><td>
+
+A [FieldValidators](./ts-utils.validation.classes.fieldvalidators.md) object specifying a [Validator](./ts-utils.validation.validator.md) for each of the expected properties
+
+
+</td></tr>
+<tr><td>
+
+[options](./ts-utils.validation.classes.objectvalidator.options.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ObjectValidatorOptions](./ts-utils.validation.classes.objectvalidatoroptions.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+[Options](./ts-utils.validation.classes.objectvalidatoroptions.md) which apply to this validator.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [addPartial(addOptionalFields)](./ts-utils.validation.classes.objectvalidator.addpartial.md) |  | Creates a new [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md) derived from this one but with new optional properties as specified by a supplied array of <code>keyof T</code>. |
-|  [partial(options)](./ts-utils.validation.classes.objectvalidator.partial.md) |  | Creates a new [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md) derived from this one but with new optional properties as specified by a supplied [ObjectValidatorOptions&lt;T&gt;](./ts-utils.validation.classes.objectvalidatoroptions.md)<!-- -->. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[addPartial(addOptionalFields)](./ts-utils.validation.classes.objectvalidator.addpartial.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a new [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md) derived from this one but with new optional properties as specified by a supplied array of `keyof T`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[partial(options)](./ts-utils.validation.classes.objectvalidator.partial.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a new [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md) derived from this one but with new optional properties as specified by a supplied [ObjectValidatorOptions&lt;T&gt;](./ts-utils.validation.classes.objectvalidatoroptions.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>

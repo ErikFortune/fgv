@@ -14,10 +14,39 @@ withBrand<B extends string>(brand: B): Validator<Brand<T, B>, TC>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  brand | B | The brand to be applied. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+brand
+
+
+</td><td>
+
+B
+
+
+</td><td>
+
+The brand to be applied.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Validator](./ts-utils.validator.md)<!-- -->&lt;[Brand](./ts-utils.brand.md)<!-- -->&lt;T, B&gt;, TC&gt;

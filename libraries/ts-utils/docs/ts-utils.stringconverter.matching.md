@@ -14,11 +14,55 @@ matching(match: string, options?: Partial<StringMatchOptions>): StringConverter<
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  match | string | The string to be matched |
-|  options | Partial&lt;[StringMatchOptions](./ts-utils.conversion.stringmatchoptions.md)<!-- -->&gt; | _(Optional)_ Optional [Conversion.StringMatchOptions](./ts-utils.conversion.stringmatchoptions.md) for this conversion. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+match
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+The string to be matched
+
+
+</td></tr>
+<tr><td>
+
+options
+
+
+</td><td>
+
+Partial&lt;[StringMatchOptions](./ts-utils.conversion.stringmatchoptions.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional [Conversion.StringMatchOptions](./ts-utils.conversion.stringmatchoptions.md) for this conversion.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [StringConverter](./ts-utils.stringconverter.md)<!-- -->&lt;T, TC&gt;

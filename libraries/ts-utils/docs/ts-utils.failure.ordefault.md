@@ -14,10 +14,39 @@ orDefault(dflt: T): T;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  dflt | T | The value to be returned if the operation failed. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+dflt
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+The value to be returned if the operation failed.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 T

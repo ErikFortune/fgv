@@ -14,11 +14,55 @@ export declare function pick<T extends object, K extends keyof T>(from: T, inclu
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  from | T | The object from which keys are to be picked. |
-|  include | K\[\] | The keys of the properties to be picked from <code>from</code>. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+from
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+The object from which keys are to be picked.
+
+
+</td></tr>
+<tr><td>
+
+include
+
+
+</td><td>
+
+K\[\]
+
+
+</td><td>
+
+The keys of the properties to be picked from `from`<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Pick&lt;T, K&gt;

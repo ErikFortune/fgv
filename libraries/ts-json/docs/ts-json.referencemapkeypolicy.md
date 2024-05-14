@@ -14,17 +14,126 @@ export declare class ReferenceMapKeyPolicy<T>
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(options, isValid)](./ts-json.referencemapkeypolicy._constructor_.md) |  | Constructs a new [ReferenceMapKeyPolicy](./ts-json.referencemapkeypolicy.md)<!-- -->. |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(options, isValid)](./ts-json.referencemapkeypolicy._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [ReferenceMapKeyPolicy](./ts-json.referencemapkeypolicy.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [defaultKeyPredicate(key)](./ts-json.referencemapkeypolicy.defaultkeypredicate.md) | <code>static</code> | The static default key name validation predicate rejects keys that contain mustache templates or which start with the default conditional prefix <code>'?'</code>. |
-|  [isValid(key, item)](./ts-json.referencemapkeypolicy.isvalid.md) |  | Determines if a supplied key and item are valid according to the current policy. |
-|  [validate(key, item, \_\_options)](./ts-json.referencemapkeypolicy.validate.md) |  | Determines if a supplied key and item are valid according to the current policy. |
-|  [validateItems(items, options)](./ts-json.referencemapkeypolicy.validateitems.md) |  | Validates an array of entries using the validation rules for this policy. |
-|  [validateMap(map, options)](./ts-json.referencemapkeypolicy.validatemap.md) |  | Validates a <code>Map\&lt;string, T\&gt;</code> using the validation rules for this policy. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[defaultKeyPredicate(key)](./ts-json.referencemapkeypolicy.defaultkeypredicate.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+The static default key name validation predicate rejects keys that contain mustache templates or which start with the default conditional prefix `'?'`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[isValid(key, item)](./ts-json.referencemapkeypolicy.isvalid.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Determines if a supplied key and item are valid according to the current policy.
+
+
+</td></tr>
+<tr><td>
+
+[validate(key, item, \_\_options)](./ts-json.referencemapkeypolicy.validate.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Determines if a supplied key and item are valid according to the current policy.
+
+
+</td></tr>
+<tr><td>
+
+[validateItems(items, options)](./ts-json.referencemapkeypolicy.validateitems.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Validates an array of entries using the validation rules for this policy.
+
+
+</td></tr>
+<tr><td>
+
+[validateMap(map, options)](./ts-json.referencemapkeypolicy.validatemap.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Validates a `Map\<string, T\>` using the validation rules for this policy.
+
+
+</td></tr>
+</tbody></table>

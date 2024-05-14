@@ -66,28 +66,28 @@ import { JsonEditorState } from './jsonEditorState';
  */
 export class JsonEditor implements IJsonCloneEditor {
   /**
-   * Default singleton {@link Editor.JsonEditor | JsonEditor}.
+   * Default singleton {@link JsonEditor | JsonEditor}.
    * @internal
    */
   protected static _default?: JsonEditor;
 
   /**
-   * Full set of {@link Editor.IJsonEditorOptions | editor options} in effect for this editor.
+   * Full set of {@link IJsonEditorOptions | editor options} in effect for this editor.
    */
   public options: IJsonEditorOptions;
 
   /**
-   * The set of {@link Editor.IJsonEditorRule | editor rules} applied by this editor.
+   * The set of {@link IJsonEditorRule | editor rules} applied by this editor.
    * @internal
    */
   protected _rules: IJsonEditorRule[];
 
   /**
-   * Protected constructor for {@link Editor.JsonEditor | JsonEditor} and derived classes.
-   * External consumers should instantiate via the {@link Editor.JsonEditor.create | create static method}.
-   * @param options - Optional partial {@link Editor.IJsonEditorOptions | editor options} for the
+   * Protected constructor for {@link JsonEditor | JsonEditor} and derived classes.
+   * External consumers should instantiate via the {@link JsonEditor.create | create static method}.
+   * @param options - Optional partial {@link IJsonEditorOptions | editor options} for the
    * constructed editor.
-   * @param rules - Any {@link Editor.IJsonEditorRule | editor rules} to be applied by the editor.
+   * @param rules - Any {@link IJsonEditorRule | editor rules} to be applied by the editor.
    * @internal
    */
   protected constructor(options?: Partial<IJsonEditorOptions>, rules?: IJsonEditorRule[]) {
@@ -96,7 +96,7 @@ export class JsonEditor implements IJsonCloneEditor {
   }
 
   /**
-   * Default singleton {@link Editor.JsonEditor | JsonEditor} for simple use. Applies all rules
+   * Default singleton {@link JsonEditor | JsonEditor} for simple use. Applies all rules
    * but with no default context.
    */
   public static get default(): JsonEditor {
@@ -108,11 +108,11 @@ export class JsonEditor implements IJsonCloneEditor {
   }
 
   /**
-   * Constructs a new {@link Editor.JsonEditor | JsonEditor}.
-   * @param options - Optional partial {@link Editor.IJsonEditorOptions | editor options} for the
+   * Constructs a new {@link JsonEditor | JsonEditor}.
+   * @param options - Optional partial {@link IJsonEditorOptions | editor options} for the
    * constructed editor.
-   * @param rules - Optional set of {@link Editor.IJsonEditorRule | editor rules} to be applied by the editor.
-   * @readonly A new {@link Editor.JsonEditor | JsonEditor}.
+   * @param rules - Optional set of {@link IJsonEditorRule | editor rules} to be applied by the editor.
+   * @readonly A new {@link JsonEditor | JsonEditor}.
    */
   public static create(options?: Partial<IJsonEditorOptions>, rules?: IJsonEditorRule[]): Result<JsonEditor> {
     return captureResult(() => new JsonEditor(options, rules));
@@ -122,9 +122,9 @@ export class JsonEditor implements IJsonCloneEditor {
    * Gets the default set of rules to be applied for a given set of options.
    * By default, all available rules (templates, conditionals, multi-value and references)
    * are applied.
-   * @param options - Optional partial {@link Editor.IJsonEditorOptions | editor options} for
+   * @param options - Optional partial {@link IJsonEditorOptions | editor options} for
    * all rules.
-   * @returns Default {@link Editor.IJsonEditorRule | editor rules} with any supplied options
+   * @returns Default {@link IJsonEditorRule | editor rules} with any supplied options
    * applied.
    */
   public static getDefaultRules(options?: IJsonEditorOptions): Result<IJsonEditorRule[]> {
@@ -154,11 +154,11 @@ export class JsonEditor implements IJsonCloneEditor {
 
   /**
    * Merges a supplied source object into a supplied target, updating the target object.
-   * @param target - The target {@link JsonObject | object} to be updated
-   * @param src - The source {@link JsonObject | object} to be merged
+   * @param target - The target `JsonObject` to be updated
+   * @param src - The source `JsonObject` to be merged
    * @param runtimeContext - An optional {@link IJsonContext | IJsonContext} supplying variables
    * and references.
-   * @returns `Success` with the original source {@link JsonObject | object} if merge was successful.
+   * @returns `Success` with the original source `JsonObject` if merge was successful.
    * Returns `Failure` with details if an error occurs.
    */
   public mergeObjectInPlace(
@@ -175,10 +175,10 @@ export class JsonEditor implements IJsonCloneEditor {
   /**
    * Merges multiple supplied source objects into a supplied target, updating the target
    * object and using the default context supplied at creation time.
-   * @param target - The target {@link JsonObject | object} to be updated
-   * @param srcObjects - {@link JsonObject | Objects} to be merged into the target object, in the order
+   * @param target - The target `JsonObject` to be updated
+   * @param srcObjects - `JsonObject`s to be merged into the target object, in the order
    * supplied.
-   * @returns `Success` with the original source {@link JsonObject | object} if merge was successful.
+   * @returns `Success` with the original source `JsonObject` if merge was successful.
    * Returns `Failure` with details if an error occurs.
    */
   public mergeObjectsInPlace(target: JsonObject, srcObjects: JsonObject[]): Result<JsonObject> {
@@ -190,9 +190,9 @@ export class JsonEditor implements IJsonCloneEditor {
    * object and using an optional {@link IJsonContext | context} supplied in the call.
    * @param context - An optional {@link IJsonContext | IJsonContext} supplying variables and
    * references.
-   * @param base - The base {@link JsonObject | object} to be updated
+   * @param base - The base `JsonObject` to be updated
    * @param srcObjects - Objects to be merged into the target object, in the order supplied.
-   * @returns `Success` with the original source {@link JsonObject | object} if merge was successful.
+   * @returns `Success` with the original source `JsonObject` if merge was successful.
    * Returns `Failure` with details if an error occurs.
    */
   public mergeObjectsInPlaceWithContext(
@@ -210,9 +210,9 @@ export class JsonEditor implements IJsonCloneEditor {
   }
 
   /**
-   * Deep clones a supplied {@link JsonValue | JSON value}, applying all editor rules and a default
+   * Deep clones a supplied `JsonValue`, applying all editor rules and a default
    * or optionally supplied context
-   * @param src - The {@link JsonValue | JsonValue} to be cloned.
+   * @param src - The `JsonValue` to be cloned.
    * @param context - An optional {@link IJsonContext | JSON context} supplying variables and references.
    */
   public clone(src: JsonValue, context?: IJsonContext): DetailedResult<JsonValue, JsonEditFailureReason> {

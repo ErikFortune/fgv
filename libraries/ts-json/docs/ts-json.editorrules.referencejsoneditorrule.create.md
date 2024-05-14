@@ -4,7 +4,7 @@
 
 ## EditorRules.ReferenceJsonEditorRule.create() method
 
-Creates a new .
+Creates a new [ReferenceJsonEditorRule](./ts-json.editorrules.referencejsoneditorrule.md)<!-- -->.
 
 **Signature:**
 
@@ -14,10 +14,39 @@ static create(options?: IJsonEditorOptions): Result<ReferenceJsonEditorRule>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  options | [IJsonEditorOptions](./ts-json.ijsoneditoroptions.md) | _(Optional)_ Optional  for this rule. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+options
+
+
+</td><td>
+
+[IJsonEditorOptions](./ts-json.ijsoneditoroptions.md)
+
+
+</td><td>
+
+_(Optional)_ Optional [configuration options](./ts-json.ijsoneditoroptions.md) for this rule.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[ReferenceJsonEditorRule](./ts-json.editorrules.referencejsoneditorrule.md)<!-- -->&gt;

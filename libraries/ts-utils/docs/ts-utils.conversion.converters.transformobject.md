@@ -14,11 +14,55 @@ export declare function transformObject<TSRC, TDEST, TC = unknown>(destinationFi
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  destinationFields | [FieldTransformers](./ts-utils.converters.fieldtransformers.md)<!-- -->&lt;TSRC, TDEST, TC&gt; | An object with key names that correspond to the target object and an appropriate [FieldTransformers](./ts-utils.converters.fieldtransformers.md) which specifies the name of the corresponding property in the source object, the converter or validator used for each source property and any other configuration to guide the conversion. |
-|  options | [TransformObjectOptions](./ts-utils.converters.transformobjectoptions.md)<!-- -->&lt;TSRC&gt; | _(Optional)_ Options which affect the transformation. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+destinationFields
+
+
+</td><td>
+
+[FieldTransformers](./ts-utils.converters.fieldtransformers.md)<!-- -->&lt;TSRC, TDEST, TC&gt;
+
+
+</td><td>
+
+An object with key names that correspond to the target object and an appropriate [FieldTransformers](./ts-utils.converters.fieldtransformers.md) which specifies the name of the corresponding property in the source object, the converter or validator used for each source property and any other configuration to guide the conversion.
+
+
+</td></tr>
+<tr><td>
+
+options
+
+
+</td><td>
+
+[TransformObjectOptions](./ts-utils.converters.transformobjectoptions.md)<!-- -->&lt;TSRC&gt;
+
+
+</td><td>
+
+_(Optional)_ Options which affect the transformation.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;TDEST, TC&gt;

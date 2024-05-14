@@ -4,7 +4,7 @@
 
 ## EditorRules.ReferenceJsonEditorRule class
 
-The  replaces property keys or values that match some known object with a copy of that referenced object, formatted according to the current context.
+The [Reference JSON editor rule](./ts-json.editorrules.referencejsoneditorrule.md) replaces property keys or values that match some known object with a copy of that referenced object, formatted according to the current context.
 
 A property key is matched if it matches any known referenced value. - If the value of the matched key is `'default'`<!-- -->, then the entire object is formatted with the current context, flattened and merged into the current object. - If the value of the matched key is some other string, then the entire object is formatted with the current context, and the child of the resulting object at the specified path is flattened and merged into the current object. - If the value of the matched key is an object, then the entire object is formatted with the current context extended to include any properties of that object, flattened, and merged into the current object. - It is an error if the referenced value is not an object.
 
@@ -15,25 +15,148 @@ Any property, array or literal value is matched if it matches any known value re
 ```typescript
 export declare class ReferenceJsonEditorRule extends JsonEditorRuleBase 
 ```
-**Extends:** JsonEditorRuleBase
+**Extends:** [JsonEditorRuleBase](./ts-json.jsoneditorrulebase.md)
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(options)](./ts-json.editorrules.referencejsoneditorrule._constructor_.md) |  | Creates a new . |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(options)](./ts-json.editorrules.referencejsoneditorrule._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a new [ReferenceJsonEditorRule](./ts-json.editorrules.referencejsoneditorrule.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [\_options?](./ts-json.editorrules.referencejsoneditorrule._options.md) | <code>protected</code> | [IJsonEditorOptions](./ts-json.ijsoneditoroptions.md) | _(Optional)_ Stored fully-resolved  for this rule. |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[\_options?](./ts-json.editorrules.referencejsoneditorrule._options.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+[IJsonEditorOptions](./ts-json.ijsoneditoroptions.md)
+
+
+</td><td>
+
+_(Optional)_ Stored fully-resolved [editor options](./ts-json.ijsoneditoroptions.md) for this rule.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [create(options)](./ts-json.editorrules.referencejsoneditorrule.create.md) | <code>static</code> | Creates a new . |
-|  [editProperty(key, value, state)](./ts-json.editorrules.referencejsoneditorrule.editproperty.md) |  | Evaluates a property for reference expansion. |
-|  [editValue(value, state)](./ts-json.editorrules.referencejsoneditorrule.editvalue.md) |  | Evaluates a property, array or literal value for reference replacement. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[create(options)](./ts-json.editorrules.referencejsoneditorrule.create.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [ReferenceJsonEditorRule](./ts-json.editorrules.referencejsoneditorrule.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[editProperty(key, value, state)](./ts-json.editorrules.referencejsoneditorrule.editproperty.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Evaluates a property for reference expansion.
+
+
+</td></tr>
+<tr><td>
+
+[editValue(value, state)](./ts-json.editorrules.referencejsoneditorrule.editvalue.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Evaluates a property, array or literal value for reference replacement.
+
+
+</td></tr>
+</tbody></table>

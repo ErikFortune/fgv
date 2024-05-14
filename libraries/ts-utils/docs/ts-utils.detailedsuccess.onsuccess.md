@@ -14,10 +14,39 @@ onSuccess<TN>(cb: DetailedSuccessContinuation<T, TD, TN>): DetailedResult<TN, TD
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  cb | [DetailedSuccessContinuation](./ts-utils.detailedsuccesscontinuation.md)<!-- -->&lt;T, TD, TN&gt; | The [success callback](./ts-utils.detailedsuccesscontinuation.md) to be invoked. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+cb
+
+
+</td><td>
+
+[DetailedSuccessContinuation](./ts-utils.detailedsuccesscontinuation.md)<!-- -->&lt;T, TD, TN&gt;
+
+
+</td><td>
+
+The [success callback](./ts-utils.detailedsuccesscontinuation.md) to be invoked.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TN, TD&gt;

@@ -17,7 +17,26 @@ export interface Formattable
 
 ## Methods
 
-|  Method | Description |
-|  --- | --- |
-|  [format(format)](./ts-extras.experimental.formattable.format.md) | **_(BETA)_** Formats an object using the supplied mustache template. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[format(format)](./ts-extras.experimental.formattable.format.md)
+
+
+</td><td>
+
+**_(BETA)_** Formats an object using the supplied mustache template.
+
+
+</td></tr>
+</tbody></table>

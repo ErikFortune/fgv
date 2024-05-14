@@ -15,19 +15,118 @@ export declare class ConditionalJsonConverter extends JsonEditorConverter
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(options)](./ts-json.conditionaljsonconverter._constructor_.md) |  | Constructs a new [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md) with supplied or default options. |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(options)](./ts-json.conditionaljsonconverter._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md) with supplied or default options.
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [conditionalOptions](./ts-json.conditionaljsonconverter.conditionaloptions.md) | <p><code>static</code></p><p><code>readonly</code></p> | Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt; | Default [JSON converter options](./ts-json.ijsonconverteroptions.md) to enable conditional conversion. |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[conditionalOptions](./ts-json.conditionaljsonconverter.conditionaloptions.md)
+
+
+</td><td>
+
+`static`
+
+`readonly`
+
+
+</td><td>
+
+Partial&lt;[IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)<!-- -->&gt;
+
+
+</td><td>
+
+Default [JSON converter options](./ts-json.ijsonconverteroptions.md) to enable conditional conversion.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [create(options)](./ts-json.conditionaljsonconverter.create.md) | <code>static</code> | Constructs a new [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md) with supplied or default options. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[create(options)](./ts-json.conditionaljsonconverter.create.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Constructs a new [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md) with supplied or default options.
+
+
+</td></tr>
+</tbody></table>

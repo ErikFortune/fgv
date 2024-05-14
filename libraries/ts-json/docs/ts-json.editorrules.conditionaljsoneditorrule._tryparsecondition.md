@@ -14,14 +14,56 @@ protected _tryParseCondition(key: string, state: JsonEditorState): DetailedResul
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  key | string |  |
-|  state | [JsonEditorState](./ts-json.jsoneditorstate.md) | The  for the object being edited. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+key
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+state
+
+
+</td><td>
+
+[JsonEditorState](./ts-json.jsoneditorstate.md)
+
+
+</td><td>
+
+The [editor state](./ts-json.jsoneditorstate.md) for the object being edited.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 DetailedResult&lt;[IConditionalJsonKeyResult](./ts-json.editorrules.iconditionaljsonkeyresult.md)<!-- -->, [JsonPropertyEditFailureReason](./ts-json.jsonpropertyeditfailurereason.md)<!-- -->&gt;
 
-`Success` with detail `'deferred'` and a  describing the match for a default or matching conditional property. Returns `Failure` with detail `'ignore'` for a non-matching conditional property. Fails with detail `'error'` if an error occurs or with detail `'inapplicable'` if the key does not represent a conditional property.
+`Success` with detail `'deferred'` and a [IConditionalJsonKeyResult](./ts-json.editorrules.iconditionaljsonkeyresult.md) describing the match for a default or matching conditional property. Returns `Failure` with detail `'ignore'` for a non-matching conditional property. Fails with detail `'error'` if an error occurs or with detail `'inapplicable'` if the key does not represent a conditional property.
 

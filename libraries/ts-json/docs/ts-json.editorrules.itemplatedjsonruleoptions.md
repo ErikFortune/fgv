@@ -4,7 +4,7 @@
 
 ## EditorRules.ITemplatedJsonRuleOptions interface
 
-Configuration options for the .
+Configuration options for the [Templated JSON editor rule](./ts-json.editorrules.templatedjsoneditorrule.md)<!-- -->.
 
 **Signature:**
 
@@ -15,8 +15,63 @@ export interface ITemplatedJsonRuleOptions extends Partial<IJsonEditorOptions>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [useNameTemplates?](./ts-json.editorrules.itemplatedjsonruleoptions.usenametemplates.md) |  | boolean | _(Optional)_ If <code>true</code> (default) then templates in property names are rendered |
-|  [useValueTemplates?](./ts-json.editorrules.itemplatedjsonruleoptions.usevaluetemplates.md) |  | boolean | _(Optional)_ If <code>true</code> (default) then templates in property values are rendered |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[useNameTemplates?](./ts-json.editorrules.itemplatedjsonruleoptions.usenametemplates.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_ If `true` (default) then templates in property names are rendered
+
+
+</td></tr>
+<tr><td>
+
+[useValueTemplates?](./ts-json.editorrules.itemplatedjsonruleoptions.usevaluetemplates.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_ If `true` (default) then templates in property values are rendered
+
+
+</td></tr>
+</tbody></table>

@@ -14,7 +14,36 @@ constructor(options?: Partial<ConditionalJsonConverterOptions>);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  options | Partial&lt;[ConditionalJsonConverterOptions](./ts-json.conditionaljsonconverteroptions.md)<!-- -->&gt; | _(Optional)_ Optional partial [configuration or context](./ts-json.conditionaljsonconverteroptions.md) for the converter. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+options
+
+
+</td><td>
+
+Partial&lt;[ConditionalJsonConverterOptions](./ts-json.conditionaljsonconverteroptions.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional partial [configuration or context](./ts-json.conditionaljsonconverteroptions.md) for the converter.
+
+
+</td></tr>
+</tbody></table>

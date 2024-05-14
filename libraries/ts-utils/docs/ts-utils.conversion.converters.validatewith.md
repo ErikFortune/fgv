@@ -14,11 +14,55 @@ export declare function validateWith<T, TC = undefined>(validator: (from: unknow
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  validator | (from: unknown) =&gt; from is T | A validator function to determine if the converted value is valid. |
-|  description | string | _(Optional)_ A description of the validated type for use in error messages. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+validator
+
+
+</td><td>
+
+(from: unknown) =&gt; from is T
+
+
+</td><td>
+
+A validator function to determine if the converted value is valid.
+
+
+</td></tr>
+<tr><td>
+
+description
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ A description of the validated type for use in error messages.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;

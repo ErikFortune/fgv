@@ -14,7 +14,36 @@ constructor(context?: IJsonContext);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ The base [IJsonContext](./ts-json.ijsoncontext.md) on which to operate. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+context
+
+
+</td><td>
+
+[IJsonContext](./ts-json.ijsoncontext.md)
+
+
+</td><td>
+
+_(Optional)_ The base [IJsonContext](./ts-json.ijsoncontext.md) on which to operate.
+
+
+</td></tr>
+</tbody></table>

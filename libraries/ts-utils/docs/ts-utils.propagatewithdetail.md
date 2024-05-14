@@ -14,12 +14,71 @@ export declare function propagateWithDetail<T, TD>(result: Result<T>, detail: TD
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  result | [Result](./ts-utils.result.md)<!-- -->&lt;T&gt; | The [Result](./ts-utils.result.md) to be propagated. |
-|  detail | TD | The event detail (type <code>&lt;TD&gt;</code>) to be added to the [result](./ts-utils.result.md)<!-- -->. |
-|  successDetail | TD | _(Optional)_ An optional distinct event detail to be added to [Success](./ts-utils.success.md) results. If <code>successDetail</code> is omitted or <code>undefined</code>, then <code>detail</code> will be applied to [Success](./ts-utils.success.md) results. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+result
+
+
+</td><td>
+
+[Result](./ts-utils.result.md)<!-- -->&lt;T&gt;
+
+
+</td><td>
+
+The [Result](./ts-utils.result.md) to be propagated.
+
+
+</td></tr>
+<tr><td>
+
+detail
+
+
+</td><td>
+
+TD
+
+
+</td><td>
+
+The event detail (type `<TD>`<!-- -->) to be added to the [result](./ts-utils.result.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+successDetail
+
+
+</td><td>
+
+TD
+
+
+</td><td>
+
+_(Optional)_ An optional distinct event detail to be added to [Success](./ts-utils.success.md) results. If `successDetail` is omitted or `undefined`<!-- -->, then `detail` will be applied to [Success](./ts-utils.success.md) results.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;T, TD&gt;

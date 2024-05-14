@@ -15,16 +15,110 @@ export declare class StringConverter<T extends string = string, TC = unknown> ex
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(defaultContext, traits, converter)](./ts-utils.stringconverter._constructor_.md) |  | Construct a new [StringConverter](./ts-utils.conversion.stringconverter.md)<!-- -->. |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(defaultContext, traits, converter)](./ts-utils.stringconverter._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Construct a new [StringConverter](./ts-utils.conversion.stringconverter.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [matching(match, options)](./ts-utils.stringconverter.matching.md) |  | Returns a [StringConverter](./ts-utils.conversion.stringconverter.md) which constrains the result to match a supplied string. |
-|  [matching(match, options)](./ts-utils.stringconverter.matching_1.md) |  | Returns a [StringConverter](./ts-utils.conversion.stringconverter.md) which constrains the result to match one of a supplied array of strings. |
-|  [matching(match, options)](./ts-utils.stringconverter.matching_2.md) |  | Returns a [StringConverter](./ts-utils.conversion.stringconverter.md) which constrains the result to match one of a supplied <code>Set</code> of strings. |
-|  [matching(match, options)](./ts-utils.stringconverter.matching_3.md) |  | Returns a [StringConverter](./ts-utils.conversion.stringconverter.md) which constrains the result to match a supplied regular expression. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[matching(match, options)](./ts-utils.stringconverter.matching.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Returns a [StringConverter](./ts-utils.conversion.stringconverter.md) which constrains the result to match a supplied string.
+
+
+</td></tr>
+<tr><td>
+
+[matching(match, options)](./ts-utils.stringconverter.matching_1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Returns a [StringConverter](./ts-utils.conversion.stringconverter.md) which constrains the result to match one of a supplied array of strings.
+
+
+</td></tr>
+<tr><td>
+
+[matching(match, options)](./ts-utils.stringconverter.matching_2.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Returns a [StringConverter](./ts-utils.conversion.stringconverter.md) which constrains the result to match one of a supplied `Set` of strings.
+
+
+</td></tr>
+<tr><td>
+
+[matching(match, options)](./ts-utils.stringconverter.matching_3.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Returns a [StringConverter](./ts-utils.conversion.stringconverter.md) which constrains the result to match a supplied regular expression.
+
+
+</td></tr>
+</tbody></table>

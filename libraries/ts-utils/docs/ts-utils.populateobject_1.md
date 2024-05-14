@@ -14,16 +14,77 @@ Populates an an object based on a prototype full of field initializers that retu
 **Signature:**
 
 ```typescript
-export declare function populateObject<T>(initializers: FieldInitializers<T>, order: (keyof T)[]): Result<T>;
+export declare function populateObject<T>(initializers: FieldInitializers<T>, order: (keyof T)[] | undefined, aggregatedErrors?: IMessageAggregator): Result<T>;
 ```
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  initializers | [FieldInitializers](./ts-utils.fieldinitializers.md)<!-- -->&lt;T&gt; | An object with the shape of the target but with initializer functions for each property. |
-|  order | (keyof T)\[\] | <p>Optional order in which keys should be written.</p> |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+initializers
+
+
+</td><td>
+
+[FieldInitializers](./ts-utils.fieldinitializers.md)<!-- -->&lt;T&gt;
+
+
+</td><td>
+
+An object with the shape of the target but with initializer functions for each property.
+
+
+</td></tr>
+<tr><td>
+
+order
+
+
+</td><td>
+
+(keyof T)\[\] \| undefined
+
+
+</td><td>
+
+Optional order in which keys should be written.
+
+
+</td></tr>
+<tr><td>
+
+aggregatedErrors
+
+
+</td><td>
+
+[IMessageAggregator](./ts-utils.imessageaggregator.md)
+
+
+</td><td>
+
+_(Optional)_ Optional string array to which any returned error messages will be appended. Each error is appended as an individual string.
+
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;T&gt;

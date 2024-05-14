@@ -14,10 +14,39 @@ extendRefs(refs?: IJsonReferenceMap[]): Result<IJsonReferenceMap | undefined>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  refs | [IJsonReferenceMap](./ts-json.ijsonreferencemap.md)<!-- -->\[\] | _(Optional)_ Optional [reference maps](./ts-json.ijsonreferencemap.md) to be added to the |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+refs
+
+
+</td><td>
+
+[IJsonReferenceMap](./ts-json.ijsonreferencemap.md)<!-- -->\[\]
+
+
+</td><td>
+
+_(Optional)_ Optional [reference maps](./ts-json.ijsonreferencemap.md) to be added to the
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[IJsonReferenceMap](./ts-json.ijsonreferencemap.md) \| undefined&gt;

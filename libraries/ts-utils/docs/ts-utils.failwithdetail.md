@@ -14,11 +14,55 @@ export declare function failWithDetail<T, TD>(message: string, detail: TD): Deta
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  message | string | The error message to be returned. |
-|  detail | TD | The event detail to be returned. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+message
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+The error message to be returned.
+
+
+</td></tr>
+<tr><td>
+
+detail
+
+
+</td><td>
+
+TD
+
+
+</td><td>
+
+The event detail to be returned.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [DetailedFailure](./ts-utils.detailedfailure.md)<!-- -->&lt;T, TD&gt;

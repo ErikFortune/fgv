@@ -4,7 +4,7 @@
 
 ## JsonEditorState.defer() method
 
-Adds a supplied  to the deferred list.
+Adds a supplied `JsonObject` to the deferred list.
 
 **Signature:**
 
@@ -14,10 +14,39 @@ defer(obj: JsonObject): void;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  obj | JsonObject | The  to be deferred. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+obj
+
+
+</td><td>
+
+JsonObject
+
+
+</td><td>
+
+The `JsonObject` to be deferred.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 void

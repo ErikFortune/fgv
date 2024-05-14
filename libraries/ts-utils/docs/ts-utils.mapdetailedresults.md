@@ -9,16 +9,76 @@ Aggregates successful results from a collection of [DetailedResult&lt;T, TD&gt;]
 **Signature:**
 
 ```typescript
-export declare function mapDetailedResults<T, TD>(results: Iterable<DetailedResult<T, TD>>, ignore: TD[]): Result<T[]>;
+export declare function mapDetailedResults<T, TD>(results: Iterable<DetailedResult<T, TD>>, ignore: TD[], aggregatedErrors?: IMessageAggregator): Result<T[]>;
 ```
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  results | Iterable&lt;[DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;T, TD&gt;&gt; | The collection of [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md) to be mapped. |
-|  ignore | TD\[\] | An array of error detail values (of type <code>&lt;TD&gt;</code>) that should be ignored. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+results
+
+
+</td><td>
+
+Iterable&lt;[DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;T, TD&gt;&gt;
+
+
+</td><td>
+
+The collection of [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md) to be mapped.
+
+
+</td></tr>
+<tr><td>
+
+ignore
+
+
+</td><td>
+
+TD\[\]
+
+
+</td><td>
+
+An array of error detail values (of type `<TD>`<!-- -->) that should be ignored.
+
+
+</td></tr>
+<tr><td>
+
+aggregatedErrors
+
+
+</td><td>
+
+[IMessageAggregator](./ts-utils.imessageaggregator.md)
+
+
+</td><td>
+
+_(Optional)_ Optional string array to which any non-ignorable error messages will be appended. Each error is appended as an individual string.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;T\[\]&gt;

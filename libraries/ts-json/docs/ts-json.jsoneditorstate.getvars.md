@@ -4,7 +4,7 @@
 
 ## JsonEditorState.getVars() method
 
-Gets a [TemplateVars](./ts-json.templatevars.md) from the context of this , or from an optional supplied [IJsonContext](./ts-json.ijsoncontext.md) if the current state has no default context.
+Gets a [TemplateVars](./ts-json.templatevars.md) from the context of this [JsonEditorState](./ts-json.jsoneditorstate.md)<!-- -->, or from an optional supplied [IJsonContext](./ts-json.ijsoncontext.md) if the current state has no default context.
 
 **Signature:**
 
@@ -14,10 +14,39 @@ getVars(defaultContext?: IJsonContext): TemplateVars | undefined;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  defaultContext | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ An optional default [IJsonContext](./ts-json.ijsoncontext.md) to use as <code>TemplateVars</code> if the current state does not have context. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+defaultContext
+
+
+</td><td>
+
+[IJsonContext](./ts-json.ijsoncontext.md)
+
+
+</td><td>
+
+_(Optional)_ An optional default [IJsonContext](./ts-json.ijsoncontext.md) to use as `TemplateVars` if the current state does not have context.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [TemplateVars](./ts-json.templatevars.md) \| undefined

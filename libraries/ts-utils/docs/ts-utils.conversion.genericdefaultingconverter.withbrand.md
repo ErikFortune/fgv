@@ -14,10 +14,39 @@ withBrand<B extends string>(brand: B): Converter<Brand<T | TD, B>, TC>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  brand | B | The brand to be applied to the result value. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+brand
+
+
+</td><td>
+
+B
+
+
+</td><td>
+
+The brand to be applied to the result value.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;[Brand](./ts-utils.brand.md)<!-- -->&lt;T \| TD, B&gt;, TC&gt;

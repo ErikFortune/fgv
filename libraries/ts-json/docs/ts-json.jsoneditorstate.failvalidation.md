@@ -14,12 +14,71 @@ failValidation<T = JsonObject>(rule: JsonEditorValidationRules, message?: string
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  rule | [JsonEditorValidationRules](./ts-json.jsoneditorvalidationrules.md) | The  that failed. |
-|  message | string | _(Optional)_ A string message describing the failed validation. |
-|  validation | [IJsonEditorValidationOptions](./ts-json.ijsoneditorvalidationoptions.md) | _(Optional)_ The  in effect. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+rule
+
+
+</td><td>
+
+[JsonEditorValidationRules](./ts-json.jsoneditorvalidationrules.md)
+
+
+</td><td>
+
+The [validation rule](./ts-json.jsoneditorvalidationrules.md) that failed.
+
+
+</td></tr>
+<tr><td>
+
+message
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ A string message describing the failed validation.
+
+
+</td></tr>
+<tr><td>
+
+validation
+
+
+</td><td>
+
+[IJsonEditorValidationOptions](./ts-json.ijsoneditorvalidationoptions.md)
+
+
+</td><td>
+
+_(Optional)_ The [validation options](./ts-json.ijsoneditorvalidationoptions.md) in effect.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 DetailedFailure&lt;T, [JsonEditFailureReason](./ts-json.jsoneditfailurereason.md)<!-- -->&gt;

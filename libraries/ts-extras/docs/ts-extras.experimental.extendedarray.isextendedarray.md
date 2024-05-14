@@ -17,10 +17,39 @@ static isExtendedArray<T>(a?: T[]): a is ExtendedArray<T>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  a | T\[\] | _(Optional)_ The <code>Array</code> to be tested. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+a
+
+
+</td><td>
+
+T\[\]
+
+
+</td><td>
+
+_(Optional)_ The `Array` to be tested.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 a is [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->&lt;T&gt;

@@ -14,12 +14,71 @@ export declare function getValueOfPropertyOrDefault<T extends object>(key: strin
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  key | string \| number \| symbol | The key specifying the property to be retrieved. |
-|  item | T | The object from which the property is to be retrieved. |
-|  defaultValue | unknown | _(Optional)_ An optional default value to be returned if the property is not present (default <code>undefined</code>). |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+key
+
+
+</td><td>
+
+string \| number \| symbol
+
+
+</td><td>
+
+The key specifying the property to be retrieved.
+
+
+</td></tr>
+<tr><td>
+
+item
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+The object from which the property is to be retrieved.
+
+
+</td></tr>
+<tr><td>
+
+defaultValue
+
+
+</td><td>
+
+unknown
+
+
+</td><td>
+
+_(Optional)_ An optional default value to be returned if the property is not present (default `undefined`<!-- -->).
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 unknown \| undefined

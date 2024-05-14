@@ -1,23 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`JsonFsHelper class processJsonDirectorySync function reads JSON files from a folder, ignoring non-JSON: toSucceedAndMatchSnapshot 1`] = `
-Array [
-  Object {
-    "filename": "thing1.json",
-    "item": Object {
-      "name": "thing1",
-      "optionalString": "thing 1 optional string",
-    },
-  },
-  Object {
-    "filename": "thing2.json",
-    "item": Object {
-      "name": "thing2",
-    },
-  },
-]
-`;
-
 exports[`JsonFsHelper class processJsonDirectorySync function with a converter reads JSON files from a folder, ignoring non-JSON: toSucceedAndMatchSnapshot 1`] = `
 Array [
   Object {
@@ -36,7 +18,7 @@ Array [
 ]
 `;
 
-exports[`JsonFsHelper class processJsonDirectorySync function with a validator reads JSON files from a folder, ignoring non-JSON: toSucceedAndMatchSnapshot 1`] = `
+exports[`JsonFsHelper class processJsonDirectorySync function with a validator reads JSON files from a folder, ignoring non-JSON by default 1`] = `
 Array [
   Object {
     "filename": "thing1.json",
@@ -47,6 +29,17 @@ Array [
   },
   Object {
     "filename": "thing2.json",
+    "item": Object {
+      "name": "thing2",
+    },
+  },
+]
+`;
+
+exports[`JsonFsHelper class processJsonDirectorySync function with a validator reads JSON files from a folder, using file filter if supplied 1`] = `
+Array [
+  Object {
+    "filename": "thing9.txt",
     "item": Object {
       "name": "thing2",
     },
@@ -66,7 +59,7 @@ Map {
 }
 `;
 
-exports[`JsonFsHelper class processJsonDirectoryToMapSync function reads JSON files from a folder, ignoring non-JSON: toSucceedAndMatchSnapshot 1`] = `
+exports[`JsonFsHelper class processJsonDirectoryToMapSync function reads JSON files from a folder, ignoring non-JSON by default: toSucceedAndMatchSnapshot 1`] = `
 Map {
   "thing1" => Object {
     "name": "thing1",

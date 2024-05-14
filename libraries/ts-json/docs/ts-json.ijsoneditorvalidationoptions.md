@@ -4,7 +4,7 @@
 
 ## IJsonEditorValidationOptions interface
 
-Validation options for a .
+Validation options for a [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
 
 **Signature:**
 
@@ -14,9 +14,82 @@ export interface IJsonEditorValidationOptions
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [onInvalidPropertyName](./ts-json.ijsoneditorvalidationoptions.oninvalidpropertyname.md) |  | 'error' \| 'ignore' | If <code>onInvalidPropertyName</code> is <code>'error'</code> (default) then any property name that is invalid after template rendering causes an error and stops conversion. If <code>onInvalidPropertyName</code> is <code>'ignore'</code>, then names which are invalid after template rendering are passed through unchanged. |
-|  [onInvalidPropertyValue](./ts-json.ijsoneditorvalidationoptions.oninvalidpropertyvalue.md) |  | 'error' \| 'ignore' | If <code>onInvalidPropertyValue</code> is <code>'error'</code> (default) then any illegal property value other than <code>undefined</code> causes an error and stops conversion. If <code>onInvalidPropertyValue</code> is <code>'ignore'</code> then any invalid property values are silently ignored. |
-|  [onUndefinedPropertyValue](./ts-json.ijsoneditorvalidationoptions.onundefinedpropertyvalue.md) |  | 'error' \| 'ignore' | If <code>onUndefinedPropertyValue</code> is <code>'error'</code>, then any property with value <code>undefined</code> will cause an error and stop conversion. If <code>onUndefinedPropertyValue</code> is <code>'ignore'</code> (default) then any property with value <code>undefined</code> is silently ignored. |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[onInvalidPropertyName](./ts-json.ijsoneditorvalidationoptions.oninvalidpropertyname.md)
+
+
+</td><td>
+
+
+</td><td>
+
+'error' \| 'ignore'
+
+
+</td><td>
+
+If `onInvalidPropertyName` is `'error'` (default) then any property name that is invalid after template rendering causes an error and stops conversion. If `onInvalidPropertyName` is `'ignore'`<!-- -->, then names which are invalid after template rendering are passed through unchanged.
+
+
+</td></tr>
+<tr><td>
+
+[onInvalidPropertyValue](./ts-json.ijsoneditorvalidationoptions.oninvalidpropertyvalue.md)
+
+
+</td><td>
+
+
+</td><td>
+
+'error' \| 'ignore'
+
+
+</td><td>
+
+If `onInvalidPropertyValue` is `'error'` (default) then any illegal property value other than `undefined` causes an error and stops conversion. If `onInvalidPropertyValue` is `'ignore'` then any invalid property values are silently ignored.
+
+
+</td></tr>
+<tr><td>
+
+[onUndefinedPropertyValue](./ts-json.ijsoneditorvalidationoptions.onundefinedpropertyvalue.md)
+
+
+</td><td>
+
+
+</td><td>
+
+'error' \| 'ignore'
+
+
+</td><td>
+
+If `onUndefinedPropertyValue` is `'error'`<!-- -->, then any property with value `undefined` will cause an error and stop conversion. If `onUndefinedPropertyValue` is `'ignore'` (default) then any property with value `undefined` is silently ignored.
+
+
+</td></tr>
+</tbody></table>

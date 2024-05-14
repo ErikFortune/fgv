@@ -18,23 +18,172 @@ export declare class ExtendedArray<T> extends Array<T>
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(itemDescription, items)](./ts-extras.experimental.extendedarray._constructor_.md) |  | **_(BETA)_** Constructs an [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->. |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(itemDescription, items)](./ts-extras.experimental.extendedarray._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+**_(BETA)_** Constructs an [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [itemDescription](./ts-extras.experimental.extendedarray.itemdescription.md) | <code>readonly</code> | string | **_(BETA)_** |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[itemDescription](./ts-extras.experimental.extendedarray.itemdescription.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+**_(BETA)_**
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [all()](./ts-extras.experimental.extendedarray.all.md) |  | **_(BETA)_** Gets a new (non-extended) <code>Array</code> containing all of the elements from this [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->. |
-|  [atLeastOne(failMessage)](./ts-extras.experimental.extendedarray.atleastone.md) |  | **_(BETA)_** Returns an array containing all elements of an [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->. Fails with an error message if the array is empty. |
-|  [first(failMessage)](./ts-extras.experimental.extendedarray.first.md) |  | **_(BETA)_** Returns the first element of an [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->. Fails with an error message if the array is empty. |
-|  [isExtendedArray(a)](./ts-extras.experimental.extendedarray.isextendedarray.md) | <code>static</code> | **_(BETA)_** Type guard to determine if some arbitrary array is an [Experimental.ExtendedArray](./ts-extras.experimental.extendedarray.md) |
-|  [single(predicate)](./ts-extras.experimental.extendedarray.single.md) |  | **_(BETA)_** Determines if this array contains exactly one element which matches a supplied predicate. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[all()](./ts-extras.experimental.extendedarray.all.md)
+
+
+</td><td>
+
+
+</td><td>
+
+**_(BETA)_** Gets a new (non-extended) `Array` containing all of the elements from this [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[atLeastOne(failMessage)](./ts-extras.experimental.extendedarray.atleastone.md)
+
+
+</td><td>
+
+
+</td><td>
+
+**_(BETA)_** Returns an array containing all elements of an [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->. Fails with an error message if the array is empty.
+
+
+</td></tr>
+<tr><td>
+
+[first(failMessage)](./ts-extras.experimental.extendedarray.first.md)
+
+
+</td><td>
+
+
+</td><td>
+
+**_(BETA)_** Returns the first element of an [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->. Fails with an error message if the array is empty.
+
+
+</td></tr>
+<tr><td>
+
+[isExtendedArray(a)](./ts-extras.experimental.extendedarray.isextendedarray.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+**_(BETA)_** Type guard to determine if some arbitrary array is an [Experimental.ExtendedArray](./ts-extras.experimental.extendedarray.md)
+
+
+</td></tr>
+<tr><td>
+
+[single(predicate)](./ts-extras.experimental.extendedarray.single.md)
+
+
+</td><td>
+
+
+</td><td>
+
+**_(BETA)_** Determines if this array contains exactly one element which matches a supplied predicate.
+
+
+</td></tr>
+</tbody></table>

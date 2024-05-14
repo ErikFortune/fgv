@@ -14,11 +14,55 @@ static extendContextVars(baseContext: IJsonContext | undefined, vars?: VariableV
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  baseContext | [IJsonContext](./ts-json.ijsoncontext.md) \| undefined | The [IJsonContext](./ts-json.ijsoncontext.md) to be extended, or <code>undefined</code> to start from an empty context. |
-|  vars | [VariableValue](./ts-json.variablevalue.md)<!-- -->\[\] | _(Optional)_ Optional [variable values](./ts-json.variablevalue.md) to be added to the [context](./ts-json.ijsoncontext.md)<!-- -->. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+baseContext
+
+
+</td><td>
+
+[IJsonContext](./ts-json.ijsoncontext.md) \| undefined
+
+
+</td><td>
+
+The [IJsonContext](./ts-json.ijsoncontext.md) to be extended, or `undefined` to start from an empty context.
+
+
+</td></tr>
+<tr><td>
+
+vars
+
+
+</td><td>
+
+[VariableValue](./ts-json.variablevalue.md)<!-- -->\[\]
+
+
+</td><td>
+
+_(Optional)_ Optional [variable values](./ts-json.variablevalue.md) to be added to the [context](./ts-json.ijsoncontext.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[TemplateVars](./ts-json.templatevars.md) \| undefined&gt;

@@ -14,11 +14,55 @@ export declare function convertJsonFileSync<T>(srcPath: string, converter: Conve
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  srcPath | string | Path of the file to read. |
-|  converter | Converter&lt;T&gt; | <code>Converter</code> used to convert the file contents |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+srcPath
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+Path of the file to read.
+
+
+</td></tr>
+<tr><td>
+
+converter
+
+
+</td><td>
+
+Converter&lt;T&gt;
+
+
+</td><td>
+
+`Converter` used to convert the file contents
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;T&gt;

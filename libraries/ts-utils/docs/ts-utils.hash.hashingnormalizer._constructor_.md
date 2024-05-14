@@ -14,7 +14,34 @@ constructor(hash: HashFunction);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  hash | [HashFunction](./ts-utils.hash.hashfunction.md) |  |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+hash
+
+
+</td><td>
+
+[HashFunction](./ts-utils.hash.hashfunction.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

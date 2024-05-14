@@ -14,7 +14,36 @@ constructor(init?: JsonFsHelperInitOptions);
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  init | [JsonFsHelperInitOptions](./ts-json-base.jsonfile.jsonfshelperinitoptions.md) | _(Optional)_ |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+init
+
+
+</td><td>
+
+[JsonFsHelperInitOptions](./ts-json-base.jsonfile.jsonfshelperinitoptions.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+</tbody></table>

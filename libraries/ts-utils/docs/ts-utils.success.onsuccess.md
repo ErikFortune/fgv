@@ -14,10 +14,39 @@ onSuccess<TN>(cb: SuccessContinuation<T, TN>): Result<TN>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  cb | [SuccessContinuation](./ts-utils.successcontinuation.md)<!-- -->&lt;T, TN&gt; | The [success continuation](./ts-utils.successcontinuation.md) to be called in the event of success. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+cb
+
+
+</td><td>
+
+[SuccessContinuation](./ts-utils.successcontinuation.md)<!-- -->&lt;T, TN&gt;
+
+
+</td><td>
+
+The [success continuation](./ts-utils.successcontinuation.md) to be called in the event of success.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;TN&gt;

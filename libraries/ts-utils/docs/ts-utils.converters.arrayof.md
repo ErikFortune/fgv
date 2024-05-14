@@ -14,11 +14,55 @@ export declare function arrayOf<T, TC = undefined>(converter: Converter<T, TC> |
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  converter | [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; \| [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt; | [Converter](./ts-utils.converter.md) or [Validator](./ts-utils.validator.md) used to convert each item in the array. |
-|  onError | [OnError](./ts-utils.converters.onerror.md) | _(Optional)_ |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+converter
+
+
+</td><td>
+
+[Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt; \| [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+[Converter](./ts-utils.converter.md) or [Validator](./ts-utils.validator.md) used to convert each item in the array.
+
+
+</td></tr>
+<tr><td>
+
+onError
+
+
+</td><td>
+
+[OnError](./ts-utils.converters.onerror.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T\[\], TC&gt;

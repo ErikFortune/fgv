@@ -9,16 +9,60 @@ Reads all JSON files from a directory and apply a supplied converter.
 **Signature:**
 
 ```typescript
-export declare function convertJsonDirectorySync<T>(srcPath: string, options: IDirectoryConvertOptions<T>): Result<IReadDirectoryItem<T>[]>;
+export declare function convertJsonDirectorySync<T>(srcPath: string, options: IJsonFsDirectoryOptions<T>): Result<IReadDirectoryItem<T>[]>;
 ```
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  srcPath | string | The path of the folder to be read. |
-|  options | [IDirectoryConvertOptions](./ts-json-base.jsonfile.idirectoryconvertoptions.md)<!-- -->&lt;T&gt; | [Options](./ts-json-base.jsonfile.idirectoryconvertoptions.md) to control conversion and filtering |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+srcPath
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+The path of the folder to be read.
+
+
+</td></tr>
+<tr><td>
+
+options
+
+
+</td><td>
+
+[IJsonFsDirectoryOptions](./ts-json-base.jsonfile.ijsonfsdirectoryoptions.md)<!-- -->&lt;T&gt;
+
+
+</td><td>
+
+[Options](./ts-json-base.jsonfile.ijsonfsdirectoryoptions.md) to control conversion and filtering
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[IReadDirectoryItem](./ts-json-base.jsonfile.ireaddirectoryitem.md)<!-- -->&lt;T&gt;\[\]&gt;

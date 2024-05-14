@@ -17,7 +17,34 @@ export declare class FormattableBase
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [format(template)](./ts-extras.experimental.formattablebase.format.md) |  | **_(BETA)_** Formats an object using the supplied mustache template. |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[format(template)](./ts-extras.experimental.formattablebase.format.md)
+
+
+</td><td>
+
+
+</td><td>
+
+**_(BETA)_** Formats an object using the supplied mustache template.
+
+
+</td></tr>
+</tbody></table>

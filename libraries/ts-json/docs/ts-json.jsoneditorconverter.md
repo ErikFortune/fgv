@@ -4,7 +4,7 @@
 
 ## JsonEditorConverter class
 
-A thin wrapper to allow an arbitrary  to be used via the @<!-- -->fgv/ts-utils `Converter` pattern.
+A thin wrapper to allow an arbitrary [JsonEditor](./ts-json.jsoneditor.md) to be used via the @<!-- -->fgv/ts-utils `Converter` pattern.
 
 **Signature:**
 
@@ -15,22 +15,156 @@ export declare class JsonEditorConverter extends Conversion.BaseConverter<JsonVa
 
 ## Constructors
 
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(editor)](./ts-json.jsoneditorconverter._constructor_.md) |  | Constructs a new Converter which uses the supplied editor |
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(editor)](./ts-json.jsoneditorconverter._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [JsonEditor](./ts-json.jsoneditor.md)<!-- -->Converter which uses the supplied editor
+
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [editor](./ts-json.jsoneditorconverter.editor.md) | <code>readonly</code> | [JsonEditor](./ts-json.jsoneditor.md) |  |
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[editor](./ts-json.jsoneditorconverter.editor.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[JsonEditor](./ts-json.jsoneditor.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [\_convert(from, context)](./ts-json.jsoneditorconverter._convert.md) | <code>protected</code> |  |
-|  [array()](./ts-json.jsoneditorconverter.array.md) |  | Gets a derived converter which fails if the resulting converted  is not a . |
-|  [createWithEditor(editor)](./ts-json.jsoneditorconverter.createwitheditor.md) | <code>static</code> | Constructs a new Converter which uses the supplied editor |
-|  [object()](./ts-json.jsoneditorconverter.object.md) |  | Gets a derived converter which fails if the resulting converted  is not a . |
+<table><thead><tr><th>
 
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[\_convert(from, context)](./ts-json.jsoneditorconverter._convert.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[array()](./ts-json.jsoneditorconverter.array.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a derived converter which fails if the resulting converted `JsonValue` is not a `JsonArray`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[createWithEditor(editor)](./ts-json.jsoneditorconverter.createwitheditor.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Constructs a new [JsonEditor](./ts-json.jsoneditor.md)<!-- -->Converter which uses the supplied editor
+
+
+</td></tr>
+<tr><td>
+
+[object()](./ts-json.jsoneditorconverter.object.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a derived converter which fails if the resulting converted `JsonValue` is not a `JsonObject`<!-- -->.
+
+
+</td></tr>
+</tbody></table>

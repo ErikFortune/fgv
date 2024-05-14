@@ -14,7 +14,44 @@ export interface StringMatchOptions
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [message?](./ts-utils.conversion.stringmatchoptions.message.md) |  | string | _(Optional)_ An optional message to be displayed if a non-matching string is encountered. |
+<table><thead><tr><th>
 
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[message?](./ts-utils.conversion.stringmatchoptions.message.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ An optional message to be displayed if a non-matching string is encountered.
+
+
+</td></tr>
+</tbody></table>

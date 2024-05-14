@@ -9,15 +9,60 @@ Aggregates successful results from a a collection of [Result&lt;T&gt;](./ts-util
 **Signature:**
 
 ```typescript
-export declare function mapSuccess<T>(results: Iterable<Result<T>>): Result<T[]>;
+export declare function mapSuccess<T>(results: Iterable<Result<T>>, aggregatedErrors?: IMessageAggregator): Result<T[]>;
 ```
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  results | Iterable&lt;[Result](./ts-utils.result.md)<!-- -->&lt;T&gt;&gt; | An <code>Iterable</code> of [Result&lt;T&gt;](./ts-utils.result.md) from which success results are to be aggregated. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+results
+
+
+</td><td>
+
+Iterable&lt;[Result](./ts-utils.result.md)<!-- -->&lt;T&gt;&gt;
+
+
+</td><td>
+
+An `Iterable` of [Result&lt;T&gt;](./ts-utils.result.md) from which success results are to be aggregated.
+
+
+</td></tr>
+<tr><td>
+
+aggregatedErrors
+
+
+</td><td>
+
+[IMessageAggregator](./ts-utils.imessageaggregator.md)
+
+
+</td><td>
+
+_(Optional)_ Optional string array to which any returned error messages will be appended. Each error is appended as an individual string.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;T\[\]&gt;

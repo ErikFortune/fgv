@@ -14,11 +14,55 @@ export declare function object<T, TC = unknown>(fields: FieldValidators<T, TC>, 
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  fields | [FieldValidators](./ts-utils.validation.classes.fieldvalidators.md)<!-- -->&lt;T, TC&gt; | A [field validator definition](./ts-utils.validation.classes.fieldvalidators.md) describing the validations to be applied. |
-|  params | Omit&lt;[ObjectValidatorConstructorParams](./ts-utils.validation.classes.objectvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;, 'fields'&gt; | _(Optional)_ Optional [parameters](./ts-utils.validation.classes.objectvalidatorconstructorparams.md) to refine the behavior of the resulting [validator](./ts-utils.validation.validator.md)<!-- -->. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+fields
+
+
+</td><td>
+
+[FieldValidators](./ts-utils.validation.classes.fieldvalidators.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+A [field validator definition](./ts-utils.validation.classes.fieldvalidators.md) describing the validations to be applied.
+
+
+</td></tr>
+<tr><td>
+
+params
+
+
+</td><td>
+
+Omit&lt;[ObjectValidatorConstructorParams](./ts-utils.validation.classes.objectvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;, 'fields'&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional [parameters](./ts-utils.validation.classes.objectvalidatorconstructorparams.md) to refine the behavior of the resulting [validator](./ts-utils.validation.validator.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md)<!-- -->&lt;T, TC&gt;

@@ -19,10 +19,41 @@ getValueOrDefault(dflt?: T): T | undefined;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  dflt | T | <p>_(Optional)_ The value to be returned if the operation failed (default is <code>undefined</code>).</p><p>Note that <code>getValueOrDefault</code> is being superseded by <code>orDefault</code> and will eventually be deprecated. Please use orDefault instead.</p> |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+dflt
+
+
+</td><td>
+
+T
+
+
+</td><td>
+
+_(Optional)_ The value to be returned if the operation failed (default is `undefined`<!-- -->).
+
+Note that `getValueOrDefault` is being superseded by `orDefault` and will eventually be deprecated. Please use orDefault instead.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 T \| undefined

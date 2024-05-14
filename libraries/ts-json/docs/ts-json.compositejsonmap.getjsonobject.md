@@ -4,7 +4,7 @@
 
 ## CompositeJsonMap.getJsonObject() method
 
-Gets a  specified by key.
+Gets a JSON object specified by key.
 
 **Signature:**
 
@@ -14,11 +14,55 @@ getJsonObject(key: string, context?: IJsonContext): DetailedResult<JsonObject, J
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  key | string | The key of the object to be retrieved. |
-|  context | [IJsonContext](./ts-json.ijsoncontext.md) | _(Optional)_ An optional [JSON Context](./ts-json.ijsoncontext.md) used to format the object. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+key
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+The key of the object to be retrieved.
+
+
+</td></tr>
+<tr><td>
+
+context
+
+
+</td><td>
+
+[IJsonContext](./ts-json.ijsoncontext.md)
+
+
+</td><td>
+
+_(Optional)_ An optional [JSON Context](./ts-json.ijsoncontext.md) used to format the object.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 DetailedResult&lt;JsonObject, [JsonReferenceMapFailureReason](./ts-json.jsonreferencemapfailurereason.md)<!-- -->&gt;

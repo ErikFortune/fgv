@@ -14,12 +14,71 @@ export declare function isA<T, TC>(description: string, guard: TypeGuardWithCont
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  description | string | a description of the thing to be validated for use in error messages |
-|  guard | [TypeGuardWithContext](./ts-utils.validation.typeguardwithcontext.md)<!-- -->&lt;T, TC&gt; | a [Validation.TypeGuardWithContext](./ts-utils.validation.typeguardwithcontext.md) which performs the validation. |
-|  params | Omit&lt;[TypeGuardValidatorConstructorParams](./ts-utils.validation.classes.typeguardvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;, 'description' \| 'guard'&gt; | _(Optional)_ |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+description
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+a description of the thing to be validated for use in error messages
+
+
+</td></tr>
+<tr><td>
+
+guard
+
+
+</td><td>
+
+[TypeGuardWithContext](./ts-utils.validation.typeguardwithcontext.md)<!-- -->&lt;T, TC&gt;
+
+
+</td><td>
+
+a [Validation.TypeGuardWithContext](./ts-utils.validation.typeguardwithcontext.md) which performs the validation.
+
+
+</td></tr>
+<tr><td>
+
+params
+
+
+</td><td>
+
+Omit&lt;[TypeGuardValidatorConstructorParams](./ts-utils.validation.classes.typeguardvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;, 'description' \| 'guard'&gt;
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [TypeGuardValidator](./ts-utils.validation.classes.typeguardvalidator.md)<!-- -->&lt;T, TC&gt;

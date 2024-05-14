@@ -14,11 +14,55 @@ convert(from: unknown, ctx?: TC): Success<T | TD>;
 
 ## Parameters
 
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  from | unknown | the value to be converted. |
-|  ctx | TC | _(Optional)_ optional context for the conversion. |
+<table><thead><tr><th>
 
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+from
+
+
+</td><td>
+
+unknown
+
+
+</td><td>
+
+the value to be converted.
+
+
+</td></tr>
+<tr><td>
+
+ctx
+
+
+</td><td>
+
+TC
+
+
+</td><td>
+
+_(Optional)_ optional context for the conversion.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Success](./ts-utils.success.md)<!-- -->&lt;T \| TD&gt;
