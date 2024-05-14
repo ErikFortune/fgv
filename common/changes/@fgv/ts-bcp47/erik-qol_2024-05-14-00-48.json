@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-bcp47",
+      "comment": "update generated api docs",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-bcp47"
+}
