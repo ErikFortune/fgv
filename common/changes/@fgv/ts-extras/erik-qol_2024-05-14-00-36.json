@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "move templateString, rangeOf and isoDate converters from ts-utils",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

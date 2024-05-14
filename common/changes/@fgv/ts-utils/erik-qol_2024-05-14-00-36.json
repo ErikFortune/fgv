@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "factor optional converters out to ts-extras package to eliminate large dependencies",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

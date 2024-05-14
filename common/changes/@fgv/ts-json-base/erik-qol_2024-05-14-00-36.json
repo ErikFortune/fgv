@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "clean up and renaming in JSON file helpers",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}
