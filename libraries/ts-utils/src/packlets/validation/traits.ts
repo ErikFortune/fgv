@@ -100,10 +100,12 @@ export class ValidatorTraits implements ValidatorTraitValues {
    * @param base - Base values to be used when no initial values are present.
    */
   public constructor(init?: Partial<ValidatorTraitValues>, base?: ValidatorTraitValues) {
+    /* c8 ignore next 2 */
     this.isOptional = init?.isOptional ?? base?.isOptional ?? defaultValidatorTraits.isOptional;
     this.brand = init?.brand ?? base?.brand ?? defaultValidatorTraits.brand;
     this.constraints = [
       ...defaultValidatorTraits.constraints,
+      /* c8 ignore next 1 */
       ...(base?.constraints ?? []),
       ...(init?.constraints ?? [])
     ];

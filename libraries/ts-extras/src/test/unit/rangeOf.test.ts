@@ -32,7 +32,7 @@ describe('RangeOf class', () => {
       const max = 1000;
       expect(() => {
         return new RangeOf<number>(max, min);
-      }).toThrowError(/inverted range/i);
+      }).toThrow(/inverted range/i);
     });
   });
 
@@ -48,6 +48,10 @@ describe('RangeOf class', () => {
       if (result?.isFailure()) {
         expect(result?.message).toMatch(/inverted range/i);
       }
+    });
+
+    test('succeeds for a range of size 1', () => {
+      expect(RangeOf.createRange({ min: 10, max: 10 })).toSucceed();
     });
 
     test('succeeds for open-ended ranges', () => {

@@ -4,9 +4,6 @@
 
 ```ts
 
-/// <reference types="jest" />
-/// <reference types="node" />
-
 // @public (undocumented)
 interface IMockFileConfig {
     // (undocumented)

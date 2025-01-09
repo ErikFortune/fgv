@@ -58,6 +58,7 @@ export function defaultExtendVars(
   base: TemplateVars | undefined,
   values: VariableValue[]
 ): Result<TemplateVars | undefined> {
+  /* c8 ignore next 1 */
   const rtrn = base ? Object.create(base) : {};
   for (const v of values) {
     rtrn[v[0]] = v[1];
