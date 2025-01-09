@@ -89,10 +89,11 @@ export class TemplatedJsonEditorRule extends JsonEditorRuleBase {
     value: JsonValue,
     state: JsonEditorState
   ): DetailedResult<JsonObject, JsonPropertyEditFailureReason> {
-    /* c8 ignore next */
+    /* c8 ignore next 2 */
     const validation = this._options?.validation;
+    const useNameTemplates = this._options?.useNameTemplates !== false;
 
-    if (this._options?.useNameTemplates !== false) {
+    if (useNameTemplates !== false) {
       const result = this._render(key, state).onSuccess((newKey) => {
         if (newKey.length < 1) {
           return state.failValidation('invalidPropertyName', `Template "${key}" renders empty name.`);

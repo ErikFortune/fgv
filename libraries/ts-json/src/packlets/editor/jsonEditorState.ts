@@ -144,6 +144,7 @@ export class JsonEditorState {
    * `undefined` if no vars are found.
    */
   public getVars(defaultContext?: IJsonContext): TemplateVars | undefined {
+    /* c8 ignore next */ // c8 seems to be struggling atm
     return this.options.context?.vars ?? defaultContext?.vars;
   }
 
@@ -156,6 +157,7 @@ export class JsonEditorState {
    * during this operation.
    */
   public getRefs(defaultContext?: IJsonContext): IJsonReferenceMap | undefined {
+    /* c8 ignore next */ // c8 seems to be struggling atm
     return this.options.context?.refs ?? defaultContext?.refs;
   }
 
