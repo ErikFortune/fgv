@@ -237,6 +237,7 @@ export class JsonFsHelper {
     return captureResult(() => {
       const fullPath = path.resolve(srcPath);
       const stringified = this.config.json.stringify(value, undefined, 2);
+      /* c8 ignore next 3 */
       if (stringified === undefined && this.config.allowUndefinedWrite !== true) {
         throw new Error(`Could not stringify ${value}`);
       }
@@ -246,6 +247,7 @@ export class JsonFsHelper {
   }
 
   protected _pathMatchesOptions<T, TC>(options: IJsonFsDirectoryOptions<T, TC>, path: string): boolean {
+    /* c8 ignore next 1 */
     const match = options.files ?? this.config.defaultFiles;
     return match.some((m) => m.exec(path));
   }

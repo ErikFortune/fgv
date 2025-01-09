@@ -69,7 +69,7 @@ describe('JsonFsHelper class', () => {
     test('fails for malformed json', () => {
       const mockFs = new MockFileSystem(mockFsConfig);
       const spies = mockFs.startSpies();
-      expect(helper.readJsonFileSync(mockBadPath)).toFailWith(/unexpected token/i);
+      expect(helper.readJsonFileSync(mockBadPath)).toFailWith(/in JSON at position/i);
       expect(spies.read).toHaveBeenCalledTimes(1);
       spies.restore();
     });
