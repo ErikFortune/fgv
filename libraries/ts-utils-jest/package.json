@@ -4,9 +4,9 @@
   "description": "Custom matchers for ts-utils result class",
   "main": "lib/index.js",
   "scripts": {
-    "build": "heft build",
+    "build": "heft test --clean",
     "clean": "heft clean",
-    "test": "heft test",
+    "test": "heft test --clean",
     "test-handles": "jest --runInBand --detectOpenHandles",
     "clean-jest": "jest --clear-cache",
     "update-snapshot": "jest --updateSnapshot",
