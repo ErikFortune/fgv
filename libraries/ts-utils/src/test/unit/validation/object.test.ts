@@ -41,6 +41,28 @@ describe('ObjectValidator class', () => {
     });
   });
 
+  describe('object helper function', () => {
+    test('uses supplied options', () => {
+      const trueContext = Validators.object({}, { options: { defaultContext: true } });
+      const falseContext = Validators.object({}, { options: { defaultContext: false } });
+      expect(trueContext.options.defaultContext).toBe(true);
+      expect(falseContext.options.defaultContext).toBe(false);
+    });
+
+    test('uses supplied traits', () => {
+      const optional = Validators.object({}, { traits: { isOptional: true } });
+      const notOptional = Validators.object({}, { traits: { isOptional: false } });
+      expect(optional.isOptional).toBe(true);
+      expect(notOptional.isOptional).toBe(false);
+    });
+
+    test('initializes with defaults if no parameters are supplied', () => {
+      const dflt = Validators.object({});
+      expect(dflt.options.defaultContext).toBeUndefined();
+      expect(dflt.isOptional).toBe(false);
+    });
+  });
+
   describe('validation', () => {
     const allRequired = Validators.object({
       s: Validators.string,
