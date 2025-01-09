@@ -26,7 +26,6 @@ importers:
       axios: ^1.7.9
       eslint: ^8.57.0
       eslint-config-prettier: ^9.1.0
-      eslint-config-standard: ^17.1.0
       eslint-plugin-import: ^2.31.0
       eslint-plugin-n: ^16.6.2
       eslint-plugin-node: ^11.1.0
@@ -62,7 +61,6 @@ importers:
       axios: 1.7.9
       eslint: 8.57.0
       eslint-config-prettier: 9.1.0_eslint@8.57.0
-      eslint-config-standard: 17.1.0_f7cbcd7e8d86fb7962547d2c1609fadc
       eslint-plugin-import: 2.31.0_eslint@8.57.0
       eslint-plugin-n: 16.6.2_eslint@8.57.0
       eslint-plugin-node: 11.1.0_eslint@8.57.0
@@ -96,7 +94,6 @@ importers:
       '@typescript-eslint/eslint-plugin': ^7.14.1
       '@typescript-eslint/parser': ^7.14.1
       eslint: ^8.57.0
-      eslint-config-standard: ^17.1.0
       eslint-plugin-import: ^2.31.0
       eslint-plugin-n: ^16.6.2
       eslint-plugin-node: ^11.1.0
@@ -136,7 +133,6 @@ importers:
       '@typescript-eslint/eslint-plugin': 7.14.1_b7b8d9606e80ca0751f3a0dd6b8c2577
       '@typescript-eslint/parser': 7.14.1_eslint@8.57.0+typescript@5.7.3
       eslint: 8.57.0
-      eslint-config-standard: 17.1.0_f7cbcd7e8d86fb7962547d2c1609fadc
       eslint-plugin-import: 2.31.0_eslint@8.57.0
       eslint-plugin-n: 16.6.2_eslint@8.57.0
       eslint-plugin-node: 11.1.0_eslint@8.57.0
@@ -166,7 +162,6 @@ importers:
       '@typescript-eslint/eslint-plugin': ^7.14.1
       '@typescript-eslint/parser': ^7.14.1
       eslint: ^8.57.0
-      eslint-config-standard: ^17.1.0
       eslint-plugin-import: ^2.31.0
       eslint-plugin-n: ^16.6.2
       eslint-plugin-node: ^11.1.0
@@ -193,7 +188,6 @@ importers:
       '@typescript-eslint/eslint-plugin': 7.14.1_b7b8d9606e80ca0751f3a0dd6b8c2577
       '@typescript-eslint/parser': 7.14.1_eslint@8.57.0+typescript@5.7.3
       eslint: 8.57.0
-      eslint-config-standard: 17.1.0_f7cbcd7e8d86fb7962547d2c1609fadc
       eslint-plugin-import: 2.31.0_eslint@8.57.0
       eslint-plugin-n: 16.6.2_eslint@8.57.0
       eslint-plugin-node: 11.1.0_eslint@8.57.0
@@ -221,7 +215,6 @@ importers:
       '@typescript-eslint/eslint-plugin': ^7.14.1
       '@typescript-eslint/parser': ^7.14.1
       eslint: ^8.57.0
-      eslint-config-standard: ^17.1.0
       eslint-plugin-import: ^2.31.0
       eslint-plugin-n: ^16.6.2
       eslint-plugin-node: ^11.1.0
@@ -246,7 +239,6 @@ importers:
       '@typescript-eslint/eslint-plugin': 7.14.1_b7b8d9606e80ca0751f3a0dd6b8c2577
       '@typescript-eslint/parser': 7.14.1_eslint@8.57.0+typescript@5.7.3
       eslint: 8.57.0
-      eslint-config-standard: 17.1.0_f7cbcd7e8d86fb7962547d2c1609fadc
       eslint-plugin-import: 2.31.0_eslint@8.57.0
       eslint-plugin-n: 16.6.2_eslint@8.57.0
       eslint-plugin-node: 11.1.0_eslint@8.57.0
@@ -278,7 +270,6 @@ importers:
       cspell: ^8.3.2
       eslint: ^8.57.0
       eslint-config-prettier: ^9.1.0
-      eslint-config-standard: ^17.1.0
       eslint-plugin-header: ^3.1.1
       eslint-plugin-import: ^2.31.0
       eslint-plugin-n: ^16.6.2
@@ -310,7 +301,6 @@ importers:
       cspell: 8.3.2
       eslint: 8.57.0
       eslint-config-prettier: 9.1.0_eslint@8.57.0
-      eslint-config-standard: 17.1.0_f7cbcd7e8d86fb7962547d2c1609fadc
       eslint-plugin-header: 3.1.1_eslint@8.57.0
       eslint-plugin-import: 2.31.0_eslint@8.57.0
       eslint-plugin-n: 16.6.2_eslint@8.57.0
@@ -342,7 +332,6 @@ importers:
       '@typescript-eslint/eslint-plugin': ^7.14.1
       '@typescript-eslint/parser': ^7.14.1
       eslint: ^8.57.0
-      eslint-config-standard: ^17.1.0
       eslint-plugin-import: ^2.31.0
       eslint-plugin-n: ^16.6.2
       eslint-plugin-node: ^11.1.0
@@ -372,7 +361,6 @@ importers:
       '@typescript-eslint/eslint-plugin': 7.14.1_b7b8d9606e80ca0751f3a0dd6b8c2577
       '@typescript-eslint/parser': 7.14.1_eslint@8.57.0+typescript@5.7.3
       eslint: 8.57.0
-      eslint-config-standard: 17.1.0_f7cbcd7e8d86fb7962547d2c1609fadc
       eslint-plugin-import: 2.31.0_eslint@8.57.0
       eslint-plugin-n: 16.6.2_eslint@8.57.0
       eslint-plugin-node: 11.1.0_eslint@8.57.0
@@ -401,7 +389,6 @@ importers:
       '@typescript-eslint/eslint-plugin': ^7.14.1
       '@typescript-eslint/parser': ^7.14.1
       eslint: ^8.57.0
-      eslint-config-standard: ^17.1.0
       eslint-plugin-import: ^2.31.0
       eslint-plugin-n: ^16.6.2
       eslint-plugin-node: ^11.1.0
@@ -433,7 +420,6 @@ importers:
       '@typescript-eslint/eslint-plugin': 7.14.1_b7b8d9606e80ca0751f3a0dd6b8c2577
       '@typescript-eslint/parser': 7.14.1_eslint@8.57.0+typescript@5.7.3
       eslint: 8.57.0
-      eslint-config-standard: 17.1.0_f7cbcd7e8d86fb7962547d2c1609fadc
       eslint-plugin-import: 2.31.0_eslint@8.57.0
       eslint-plugin-n: 16.6.2_eslint@8.57.0
       eslint-plugin-node: 11.1.0_eslint@8.57.0
@@ -3716,21 +3702,6 @@ packages:
       eslint: '>=7.0.0'
     dependencies:
       eslint: 8.57.0
-    dev: true
-
-  /eslint-config-standard/17.1.0_f7cbcd7e8d86fb7962547d2c1609fadc:
-    resolution: {integrity: sha512-IwHwmaBNtDK4zDHQukFDW5u/aTb8+meQWZvNFWkiGmbWjD6bqyuSSBxxXKkCftCUzc1zwCH2m/baCNDLGmuO5Q==}
-    engines: {node: '>=12.0.0'}
-    peerDependencies:
-      eslint: ^8.0.1
-      eslint-plugin-import: ^2.25.2
-      eslint-plugin-n: '^15.0.0 || ^16.0.0 '
-      eslint-plugin-promise: ^6.0.0
-    dependencies:
-      eslint: 8.57.0
-      eslint-plugin-import: 2.31.0_eslint@8.57.0
-      eslint-plugin-n: 16.6.2_eslint@8.57.0
-      eslint-plugin-promise: 6.2.0_eslint@8.57.0
     dev: true
 
   /eslint-import-resolver-node/0.3.9:
