@@ -43,9 +43,11 @@ export class NumberValidator<T extends number = number, TC = unknown> extends Ge
    * new {@link Validation.Classes.NumberValidator | NumberValidator}.
    */
   public constructor(params?: NumberValidatorConstructorParams<T, TC>) {
+    /* c8 ignore next 1 */
+    params = params ?? {};
     super({
       validator: NumberValidator.validateNumber,
-      ...(params ?? {})
+      ...params
     });
   }
 

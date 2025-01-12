@@ -43,9 +43,11 @@ export class StringValidator<T extends string = string, TC = unknown> extends Ge
    * for the new {@link Validation.Classes.StringValidator | StringValidator}.
    */
   public constructor(params?: StringValidatorConstructorParams<T, TC>) {
+    /* c8 ignore next */
+    params = params ?? {};
     super({
       validator: StringValidator.validateString,
-      ...(params ?? {})
+      ...params
     });
   }
 
