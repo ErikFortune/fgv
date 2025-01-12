@@ -44,6 +44,10 @@ export class Decision {
   public readonly index: Common.DecisionIndex;
   public readonly conditionSets: ReadonlyArray<ConditionSet>;
 
+  public get numConditionSets(): number {
+    return this.conditionSets.length;
+  }
+
   protected constructor(index: Common.DecisionIndex, conditionSets: ReadonlyArray<ConditionSet>) {
     this.index = index;
     this.conditionSets = conditionSets;

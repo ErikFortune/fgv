@@ -36,7 +36,7 @@ import {
   allUnconditionalOperators,
   IUnconditionalCondition
 } from '../condition';
-import { qualifierIndex, qualifierName } from './qualifier';
+import { qualifierIndex, qualifierMatchScore, qualifierName } from './qualifier';
 
 /**
  * @public
@@ -89,6 +89,7 @@ export const binaryCondition: Validator<IBinaryCondition> = Validators.object({
   qualifierIndex: qualifierIndex,
   operator: binaryOperator,
   value: Validators.string,
+  scoreAsDefault: qualifierMatchScore.optional(),
   qualifierName: qualifierName.optional()
 });
 
@@ -105,7 +106,8 @@ export const condition: Validator<ICondition> = Validators.oneOf<ICondition>([
  */
 export const conditionSet: Validator<IConditionSet> = Validators.object<IConditionSet>({
   index: conditionSetIndex.optional(),
-  conditionIndices: Validators.arrayOf(conditionIndex)
+  conditionIndices: Validators.arrayOf(conditionIndex),
+  priorityOverlap: Validators.literal(true).optional()
 });
 
 /**

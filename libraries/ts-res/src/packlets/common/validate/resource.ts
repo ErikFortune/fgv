@@ -21,36 +21,68 @@
  */
 
 import { Validators as JsonValidators } from '@fgv/ts-json-base';
-import { Validator, Validators } from '@fgv/ts-utils';
+import { Conversion, Converter, Converters, Result, Validator, Validators } from '@fgv/ts-utils';
 import {
   CandidateIndex,
   ICandidate,
+  InstanceValue,
   IResource,
-  ResourceIndex,
+  IResourceSubtree,
+  IResourceType,
+  isValidResourceName,
+  isValidResourcePath,
   ResourceName,
-  ResourceType
+  ResourcePath,
+  ResourceTypeConfig,
+  ResourceTypeIndex,
+  ResourceTypeName
 } from '../resource';
 import { conditionSetIndex, decisionIndex } from './condition';
 
 /**
  * @public
  */
-export const resourceName: Validator<ResourceName> = Validators.string.withBrand('ResourceName');
+export const resourceName: Validator<ResourceName> = Validators.string
+  .withConstraint(isValidResourceName)
+  .withBrand('ResourceName');
 
 /**
  * @public
  */
-export const resourceIndex: Validator<ResourceIndex> = Validators.number.withBrand('ResourceIndex');
+export const resourceTypeName: Validator<ResourceTypeName> = Validators.string.withBrand('ResourceType');
 
 /**
  * @public
  */
-export const resourceType: Validator<ResourceType> = Validators.string.withBrand('ResourceType');
+export const resourceTypeIndex: Validator<ResourceTypeIndex> =
+  Validators.number.withBrand('ResourceTypeIndex');
+
+/**
+ * @public
+ */
+export const resourceTypeConfig: Validator<ResourceTypeConfig, unknown> =
+  JsonValidators.jsonValue.withBrand('ResourceTypeConfig');
+
+/**
+ * @public
+ */
+export const resourceType: Validator<IResourceType> = Validators.object<IResourceType>({
+  name: resourceTypeName,
+  index: resourceTypeIndex.optional(),
+  config: resourceTypeConfig.optional()
+});
 
 /**
  * @public
  */
 export const candidateIndex: Validator<CandidateIndex> = Validators.number.withBrand('CandidateIndex');
+
+/**
+ * @public
+ */
+export const resourcePath: Validator<ResourcePath> = Validators.string
+  .withConstraint(isValidResourcePath)
+  .withBrand('ResourcePath');
 
 /**
  * @public
@@ -65,10 +97,38 @@ export const candidate: Validator<ICandidate, unknown> = Validators.object<ICand
 /**
  * @public
  */
+export const instanceValue: Validator<InstanceValue, unknown> =
+  JsonValidators.jsonValue.withBrand('InstanceValue');
+
+/**
+ * @public
+ */
 export const resource: Validator<IResource, unknown> = Validators.object<IResource>({
-  index: resourceIndex.optional(),
+  path: resourcePath.optional(),
   name: resourceName,
   decisionIndex: decisionIndex,
-  instanceValues: Validators.arrayOf(JsonValidators.jsonValue),
-  type: resourceType
+  instanceValues: Validators.arrayOf(instanceValue),
+  typeIndex: resourceTypeIndex
 });
+
+/**
+ * @public
+ */
+export const resourceSubtree: Converter<IResourceSubtree, unknown> = new Conversion.BaseConverter<
+  IResourceSubtree,
+  unknown
+>(
+  (
+    from: unknown,
+    self: Converter<IResourceSubtree, unknown>,
+    context?: unknown
+  ): Result<IResourceSubtree> => {
+    // need to do it this way due to recursive conversion of 'children'
+    return Converters.object({
+      name: resourceName,
+      path: resourcePath.optional(),
+      resources: Converters.recordOf(resource, { keyConverter: resourceName }).optional(),
+      children: Converters.recordOf(self, { keyConverter: resourceName }).optional()
+    }).convert(from, context);
+  }
+);

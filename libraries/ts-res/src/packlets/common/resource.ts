@@ -30,19 +30,72 @@ import { Brand } from '@fgv/ts-utils';
 export type ResourceName = Brand<string, 'ResourceName'>;
 
 /**
+ * Validates a string to determine if it is a valid {@link ResourceName | ResourceName}.
+ * @param name - the string to be tested
+ * @returns `true` if the string is a valid {@link ResourceName | ResourceName}, `false` otherwise.
  * @public
  */
-export type ResourceIndex = Brand<number, 'ResourceIndex'>;
+export function isValidResourceName(name: string): name is ResourceName {
+  return /ˆ[-_a-zA-Z0-9]+$/.test(name);
+}
 
 /**
  * @public
  */
-export type ResourceType = Brand<string, 'ResourceType'>;
+export type ResourceTypeName = Brand<string, 'ResourceType'>;
+
+/**
+ * @public
+ */
+export type ResourceTypeIndex = Brand<number, 'ResourceTypeIndex'>;
 
 /**
  * @public
  */
 export type CandidateIndex = Brand<number, 'CandidateIndex'>;
+
+/**
+ * @public
+ */
+export type ResourcePath = Brand<string, 'ResourcePath'>;
+
+/**
+ * Validates a string to determine if it is a valid {@link ResourceName | ResourceName}.
+ * @param name - the string to be tested
+ * @returns `true` if the string is a valid {@link ResourceName | ResourceName}, `false` otherwise.
+ * @public
+ */
+export function isValidResourcePath(name: string): name is ResourceName {
+  return /ˆ\/\/[-_a-zA-Z0-9\/]+$/.test(name);
+}
+
+/**
+ * Appends a resource name to a resource path.
+ * @param path - the path to which the name will be appended.
+ * @param name - the name to append.
+ * @returns The updated path.
+ * @public
+ */
+export function appendResourcePath(path: ResourcePath | '', name: ResourceName): ResourcePath {
+  if (path === '') {
+    return `//${path}` as ResourcePath;
+  }
+  return `${path}/${name}` as ResourcePath;
+}
+
+/**
+ * @public
+ */
+export type ResourceTypeConfig = Brand<JsonValue, 'ResourceTypeConfig'>;
+
+/**
+ * @public
+ */
+export interface IResourceType {
+  index?: ResourceTypeIndex;
+  name: ResourceTypeName;
+  config?: ResourceTypeConfig;
+}
 
 /**
  * @public
@@ -57,10 +110,25 @@ export interface ICandidate {
 /**
  * @public
  */
+export type InstanceValue = Brand<JsonValue, 'InstanceValue'>;
+
+/**
+ * @public
+ */
 export interface IResource {
-  index?: ResourceIndex;
+  path?: ResourcePath;
   name: ResourceName;
   decisionIndex: DecisionIndex;
-  instanceValues: JsonValue[];
-  type: ResourceType;
+  instanceValues: InstanceValue[];
+  typeIndex: ResourceTypeIndex;
+}
+
+/**
+ * @public
+ */
+export interface IResourceSubtree {
+  name: ResourceName;
+  path?: ResourcePath;
+  resources?: Record<ResourceName, IResource>;
+  children?: Record<ResourceName, IResourceSubtree>;
 }

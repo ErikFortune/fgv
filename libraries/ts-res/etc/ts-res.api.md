@@ -17,6 +17,9 @@ const allBinaryOperators: BinaryOperator[];
 const allUnconditionalOperators: UnconditionalOperator[];
 
 // @public
+function appendResourcePath(path: ResourcePath | '', name: ResourceName): ResourcePath;
+
+// @public
 class BinaryCondition implements Common.IBinaryCondition {
     protected constructor(index: Common.ConditionIndex, priority: Common.ConditionPriority, qualifier: Qualifier, operator: Common.BinaryOperator, value: string);
     // (undocumented)
@@ -74,19 +77,30 @@ declare namespace Common {
         ICondition,
         IConditionSet,
         IDecision,
+        isValidQualifierMatchScore,
+        toQualifierMatchScore,
         QualifierName,
         QualifierIndex,
         QualifierTypeName,
         QualifierTypeIndex,
         QualifierTypeConfig,
+        QualifierMatchScore,
         IQualifierType,
         IQualifier,
+        isValidResourceName,
+        isValidResourcePath,
+        appendResourcePath,
         ResourceName,
-        ResourceIndex,
-        ResourceType,
+        ResourceTypeName,
+        ResourceTypeIndex,
         CandidateIndex,
+        ResourcePath,
+        ResourceTypeConfig,
+        IResourceType,
         ICandidate,
-        IResource
+        InstanceValue,
+        IResource,
+        IResourceSubtree
     }
 }
 export { Common }
@@ -161,6 +175,8 @@ interface IBinaryCondition {
     // (undocumented)
     qualifierName?: QualifierName;
     // (undocumented)
+    scoreAsDefault?: QualifierMatchScore;
+    // (undocumented)
     value: string;
 }
 
@@ -200,6 +216,8 @@ interface IConditionSet {
     conditionIndices: ConditionIndex[];
     // (undocumented)
     index?: ConditionSetIndex;
+    // (undocumented)
+    priorityOverlap?: true;
 }
 
 // @public (undocumented)
@@ -209,6 +227,12 @@ interface IDecision {
     // (undocumented)
     index?: DecisionIndex;
 }
+
+// @public (undocumented)
+type InstanceValue = Brand<JsonValue, 'InstanceValue'>;
+
+// @public (undocumented)
+const instanceValue: Validator<InstanceValue, unknown>;
 
 // @public (undocumented)
 interface IQualifier {
@@ -255,17 +279,23 @@ interface IQualifierType_2 {
 }
 
 // @public (undocumented)
+interface IQualifierTypeFactory {
+    // (undocumented)
+    getQualifierType(name: Common.QualifierTypeName, config: Common.QualifierTypeConfig, index: Common.QualifierTypeIndex): Result<IQualifierType_2>;
+}
+
+// @public (undocumented)
 interface IResource {
     // (undocumented)
     decisionIndex: DecisionIndex;
     // (undocumented)
-    index?: ResourceIndex;
-    // (undocumented)
-    instanceValues: JsonValue[];
+    instanceValues: InstanceValue[];
     // (undocumented)
     name: ResourceName;
     // (undocumented)
-    type: ResourceType;
+    path?: ResourcePath;
+    // (undocumented)
+    typeIndex: ResourceTypeIndex;
 }
 
 // @public
@@ -281,7 +311,31 @@ interface IResourceCollection {
     // (undocumented)
     qualifierTypes: Common.IQualifierType[];
     // (undocumented)
-    resources: Record<Common.ResourceName, Common.IResource>;
+    resources: Common.IResourceSubtree;
+    // (undocumented)
+    resourceTypes: Common.IResourceType[];
+}
+
+// @public (undocumented)
+interface IResourceSubtree {
+    // (undocumented)
+    children?: Record<ResourceName, IResourceSubtree>;
+    // (undocumented)
+    name: ResourceName;
+    // (undocumented)
+    path?: ResourcePath;
+    // (undocumented)
+    resources?: Record<ResourceName, IResource>;
+}
+
+// @public (undocumented)
+interface IResourceType {
+    // (undocumented)
+    config?: ResourceTypeConfig;
+    // (undocumented)
+    index?: ResourceTypeIndex;
+    // (undocumented)
+    name: ResourceTypeName;
 }
 
 // @public (undocumented)
@@ -302,11 +356,23 @@ function isUnconditionalCondition(condition: ICondition): condition is IUncondit
 // @public
 function isUnconditionalOperator(operator: ConditionOperator): operator is UnconditionalOperator;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMatch"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMatch"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMatchScore"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMatchScore"
 //
 // @public
-function isValidQualifierMatch(value: number): value is QualifierMatch;
+function isValidQualifierMatchScore(value: number): value is QualifierMatchScore;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+//
+// @public
+function isValidResourceName(name: string): name is ResourceName;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+//
+// @public
+function isValidResourcePath(name: string): name is ResourceName;
 
 // @public (undocumented)
 interface IUnconditionalCondition {
@@ -365,7 +431,10 @@ type QualifierIndex = Brand<number, 'QualifierIndex'>;
 const qualifierIndex: Validator<QualifierIndex>;
 
 // @public
-type QualifierMatch = Brand<number, 'QualifierMatch'>;
+type QualifierMatchScore = Brand<number, 'QualifierMatchScore'>;
+
+// @public (undocumented)
+const qualifierMatchScore: Validator<QualifierMatchScore>;
 
 // @public
 type QualifierName = Brand<string, 'QualifierName'>;
@@ -401,22 +470,40 @@ const resource: Validator<IResource, unknown>;
 const resourceCollection: Converter<IResourceCollection>;
 
 // @public (undocumented)
-type ResourceIndex = Brand<number, 'ResourceIndex'>;
-
-// @public (undocumented)
-const resourceIndex: Validator<ResourceIndex>;
-
-// @public (undocumented)
 type ResourceName = Brand<string, 'ResourceName'>;
 
 // @public (undocumented)
 const resourceName: Validator<ResourceName>;
 
 // @public (undocumented)
-type ResourceType = Brand<string, 'ResourceType'>;
+type ResourcePath = Brand<string, "ResourcePath">;
 
 // @public (undocumented)
-const resourceType: Validator<ResourceType>;
+const resourcePath: Validator<ResourcePath>;
+
+// @public (undocumented)
+const resourceSubtree: Converter<IResourceSubtree, unknown>;
+
+// @public (undocumented)
+const resourceType: Validator<IResourceType>;
+
+// @public (undocumented)
+type ResourceTypeConfig = Brand<JsonValue, 'ResourceTypeConfig'>;
+
+// @public (undocumented)
+const resourceTypeConfig: Validator<ResourceTypeConfig, unknown>;
+
+// @public (undocumented)
+type ResourceTypeIndex = Brand<number, 'ResourceTypeIndex'>;
+
+// @public (undocumented)
+const resourceTypeIndex: Validator<ResourceTypeIndex>;
+
+// @public (undocumented)
+type ResourceTypeName = Brand<string, 'ResourceType'>;
+
+// @public (undocumented)
+const resourceTypeName: Validator<ResourceTypeName>;
 
 declare namespace Runtime {
     export {
@@ -427,21 +514,19 @@ declare namespace Runtime {
         BinaryCondition,
         Condition,
         ConditionBuilder,
-        isValidQualifierMatch,
-        toQualifierMatch,
-        QualifierMatch,
         IQualifierType_2 as IQualifierType,
+        IQualifierTypeFactory,
         IQualifierCreateParams,
         Qualifier
     }
 }
 export { Runtime }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMatch"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMatch"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMatchScore"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMatchScore"
 //
 // @public
-function toQualifierMatch(value: number): Result<QualifierMatch>;
+function toQualifierMatchScore(value: number): Result<QualifierMatchScore>;
 
 // @public
 class UnconditionalCondition implements Common.IUnconditionalCondition {
@@ -481,14 +566,20 @@ declare namespace Validate {
         qualifierTypeName,
         qualifierTypeIndex,
         qualifierTypeConfig,
+        qualifierMatchScore,
         qualifierType,
         qualifier,
         resourceName,
-        resourceIndex,
+        resourceTypeName,
+        resourceTypeIndex,
+        resourceTypeConfig,
         resourceType,
         candidateIndex,
+        resourcePath,
         candidate,
-        resource
+        instanceValue,
+        resource,
+        resourceSubtree
     }
 }
 

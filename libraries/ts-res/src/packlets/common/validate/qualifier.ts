@@ -28,7 +28,9 @@ import {
   IQualifier,
   QualifierTypeIndex,
   QualifierTypeConfig,
-  IQualifierType
+  IQualifierType,
+  QualifierMatchScore,
+  isValidQualifierMatchScore
 } from '../qualifier';
 import { Validators as JsonValidators } from '@fgv/ts-json-base';
 
@@ -59,6 +61,13 @@ export const qualifierTypeIndex: Validator<QualifierTypeIndex> =
  */
 export const qualifierTypeConfig: Validator<QualifierTypeConfig, unknown> =
   JsonValidators.jsonValue.withBrand('QualifierTypeConfig');
+
+/**
+ * @public
+ */
+export const qualifierMatchScore: Validator<QualifierMatchScore> = Validators.number
+  .withConstraint(isValidQualifierMatchScore)
+  .withBrand('QualifierMatchScore');
 
 /**
  * @public

@@ -21,7 +21,7 @@
  */
 
 import { Brand } from '@fgv/ts-utils';
-import { QualifierIndex, QualifierName } from './qualifier';
+import { QualifierIndex, QualifierMatchScore, QualifierName } from './qualifier';
 
 /**
  * @public
@@ -105,6 +105,7 @@ export interface IBinaryCondition {
   qualifierIndex: QualifierIndex;
   operator: BinaryOperator;
   value: string;
+  scoreAsDefault?: QualifierMatchScore;
   qualifierName?: QualifierName;
 }
 
@@ -133,6 +134,7 @@ export function isBinaryCondition(condition: ICondition): condition is IBinaryCo
 export interface IConditionSet {
   index?: ConditionSetIndex;
   conditionIndices: ConditionIndex[];
+  priorityOverlap?: true;
 }
 
 /**

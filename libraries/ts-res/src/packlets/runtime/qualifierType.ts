@@ -20,36 +20,8 @@
  * SOFTWARE.
  */
 
-import { Brand, Result, fail, succeed } from '@fgv/ts-utils';
+import { Result } from '@fgv/ts-utils';
 import * as Common from '../common';
-
-/**
- * A type alias for a number in the range 0.0 to 1.0 that represents a match value for a qualifier.
- *  @public
- */
-export type QualifierMatch = Brand<number, 'QualifierMatch'>;
-
-/**
- * Validates a numeric value as a {@link QualifierMatch | QualifierMatch} in the range
- * 0.0 to 1.0.
- * @param value - The value to validate as a {@link QualifierMatch | QualifierMatch}
- * @returns `true` if the value is valid, `false` otherwise.
- * @public
- */
-export function isValidQualifierMatch(value: number): value is QualifierMatch {
-  return value >= 0.0 && value <= 1.0;
-}
-
-/**
- * Converts a supplied number to a strongly-typed {@link QualifierMatch | QualifierMatch} if
- * valid.
- * @param value - The value to convert to a {@link QualifierMatch | QualifierMatch}
- * @returns `Success` with the corresponding value if the value is valid, `Failure` otherwise.
- * @public
- */
-export function toQualifierMatch(value: number): Result<QualifierMatch> {
-  return isValidQualifierMatch(value) ? succeed(value) : fail(`Invalid qualifier match value ${value}`);
-}
 
 /**
  * @public
@@ -60,4 +32,15 @@ export interface IQualifierType {
   config: Common.QualifierTypeConfig;
 
   compare(contextValue: string, resourceValue: string, operator: Common.BinaryOperator): number;
+}
+
+/**
+ * @public
+ */
+export interface IQualifierTypeFactory {
+  getQualifierType(
+    name: Common.QualifierTypeName,
+    config: Common.QualifierTypeConfig,
+    index: Common.QualifierTypeIndex
+  ): Result<IQualifierType>;
 }

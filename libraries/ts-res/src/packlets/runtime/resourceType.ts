@@ -20,21 +20,16 @@
  * SOFTWARE.
  */
 
-import { Converter, Converters, Validators } from '@fgv/ts-utils';
-import * as Common from '../../common';
-import { IResourceCollection } from './model';
+import { Result } from '@fgv/ts-utils';
+import * as Common from '../common';
 
 /**
- * Validates a resource collection object
  * @public
  */
-export const resourceCollection: Converter<IResourceCollection> =
-  Converters.strictObject<IResourceCollection>({
-    qualifierTypes: Validators.arrayOf(Common.Validate.qualifierType),
-    qualifiers: Validators.arrayOf(Common.Validate.qualifier),
-    conditions: Validators.arrayOf(Common.Validate.condition),
-    conditionSets: Validators.arrayOf(Common.Validate.conditionSet),
-    decisions: Validators.arrayOf(Common.Validate.decision),
-    resourceTypes: Validators.arrayOf(Common.Validate.resourceType),
-    resources: Common.Validate.resourceSubtree
-  });
+export interface IResourceType<TR = unknown> {
+  name: Common.ResourceTypeName;
+  index: Common.ResourceTypeIndex;
+  config: Common.ResourceTypeConfig;
+
+  validate(from: unknown, context?: unknown): Result<TR>;
+}

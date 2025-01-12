@@ -21,7 +21,7 @@
  */
 
 import { JsonValue } from '@fgv/ts-json-base';
-import { Brand } from '@fgv/ts-utils';
+import { Brand, Result, succeed } from '@fgv/ts-utils';
 
 /**
  * String name for a qualifier. Must be unique in any resource collection.
@@ -49,6 +49,34 @@ export type QualifierTypeIndex = Brand<number, 'QualifierTypeIndex'>;
  * @public
  */
 export type QualifierTypeConfig = Brand<JsonValue, 'QualifierTypeConfig'>;
+
+/**
+ * A type alias for a number in the range 0.0 to 1.0 that represents a match value for a qualifier.
+ *  @public
+ */
+export type QualifierMatchScore = Brand<number, 'QualifierMatchScore'>;
+
+/**
+ * Validates a numeric value as a {@link QualifierMatchScore | QualifierMatch} in the range
+ * 0.0 to 1.0.
+ * @param value - The value to validate as a {@link QualifierMatchScore | QualifierMatch}
+ * @returns `true` if the value is valid, `false` otherwise.
+ * @public
+ */
+export function isValidQualifierMatchScore(value: number): value is QualifierMatchScore {
+  return value >= 0.0 && value <= 1.0;
+}
+
+/**
+ * Converts a supplied number to a strongly-typed {@link QualifierMatchScore | QualifierMatch} if
+ * valid.
+ * @param value - The value to convert to a {@link QualifierMatchScore | QualifierMatch}
+ * @returns `Success` with the corresponding value if the value is valid, `Failure` otherwise.
+ * @public
+ */
+export function toQualifierMatchScore(value: number): Result<QualifierMatchScore> {
+  return isValidQualifierMatchScore(value) ? succeed(value) : fail(`Invalid qualifier match value ${value}`);
+}
 
 /**
  * @public
