@@ -31,7 +31,7 @@ import { EntityArray } from '../utils';
  * @public
  */
 export interface IConditionSetCreateParams {
-  index?: Common.ConditionSetIndex;
+  index?: number;
   from: Common.IConditionSet;
   conditions: EntityArray<Condition, Common.ConditionIndex>;
 }
@@ -50,10 +50,12 @@ export class ConditionSet {
   }
 
   public static create(init: IConditionSetCreateParams): Result<ConditionSet> {
-    return verifySuppliedIndex(init.index, init.from.index, 'condition set').onSuccess((index) => {
-      return init.conditions
-        .mapIndices(init.from.conditionIndices, `condition set ${index}`)
-        .onSuccess((conditions) => captureResult(() => new ConditionSet(index, conditions)));
-    });
+    return verifySuppliedIndex(init.index, init.from.index, 'condition set')
+      .onSuccess((index) => Common.Validate.conditionSetIndex.validate(index))
+      .onSuccess((index) => {
+        return init.conditions
+          .mapIndices(init.from.conditionIndices, `condition set ${index}`)
+          .onSuccess((conditions) => captureResult(() => new ConditionSet(index, conditions)));
+      });
   }
 }

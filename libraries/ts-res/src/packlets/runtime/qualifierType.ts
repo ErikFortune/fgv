@@ -39,8 +39,8 @@ export interface IQualifierType {
  */
 export interface IQualifierTypeFactory {
   getQualifierType(
+    index: number,
     name: Common.QualifierTypeName,
-    config: Common.QualifierTypeConfig,
-    index: Common.QualifierTypeIndex
+    config?: Common.QualifierTypeConfig
   ): Result<IQualifierType>;
 }

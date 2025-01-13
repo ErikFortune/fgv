@@ -33,5 +33,5 @@ export interface IResourceCollection {
   conditionSets: Common.IConditionSet[];
   decisions: Common.IDecision[];
   resourceTypes: Common.IResourceType[];
-  resources: Common.IResourceSubtree;
+  resources: Record<Common.ResourcePath, Record<Common.ResourceName, Common.IResource>>;
 }

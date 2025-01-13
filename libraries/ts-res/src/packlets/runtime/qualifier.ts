@@ -32,8 +32,8 @@ import { verifySuppliedIndex } from './utils';
  */
 export interface IQualifierCreateParams {
   from: Common.IQualifier;
-  index?: Common.QualifierIndex;
-  types: EntityArray<IQualifierType, Common.QualifierTypeIndex>;
+  index: number;
+  qualifierTypes: EntityArray<IQualifierType, Common.QualifierTypeIndex>;
 }
 
 /**
@@ -50,13 +50,13 @@ export class Qualifier implements Common.IQualifier {
 
   /**
    * Constructs a new {@link Qualifier | Qualifier}.
-   * @param name - the name of the qualifier to be constructed.
    * @param index - the index of the qualifier to be constructed.
+   * @param name - the name of the qualifier to be constructed.
    * @param type - the {@link IQualifierType | type} of the qualifier to be constructed.
    */
-  protected constructor(name: Common.QualifierName, index: Common.QualifierIndex, type: IQualifierType) {
+  protected constructor(index: number, name: Common.QualifierName, type: IQualifierType) {
     this.name = name;
-    this.index = index;
+    this.index = Common.Validate.qualifierIndex.validate(index).orThrow();
     this.qualifierType = type;
   }
 
@@ -69,9 +69,9 @@ export class Qualifier implements Common.IQualifier {
   public static create(init: IQualifierCreateParams): Result<Qualifier> {
     return verifySuppliedIndex(init.index, init.from.index, `qualifier ${init.from.name}`).onSuccess(
       (index) => {
-        return init.types
+        return init.qualifierTypes
           .get(init.from.qualifierTypeIndex)
-          .onSuccess((type) => captureResult(() => new Qualifier(init.from.name, index, type)));
+          .onSuccess((type) => captureResult(() => new Qualifier(index, init.from.name, type)));
       }
     );
   }

@@ -33,3 +33,14 @@ export interface IResourceType<TR = unknown> {
 
   validate(from: unknown, context?: unknown): Result<TR>;
 }
+
+/**
+ * @public
+ */
+export interface IResourceTypeFactory {
+  getResourceType<TR = unknown>(
+    index: number,
+    name: Common.ResourceTypeName,
+    config?: Common.ResourceTypeConfig
+  ): Result<IResourceType<TR>>;
+}

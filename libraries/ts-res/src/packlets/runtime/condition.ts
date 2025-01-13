@@ -30,10 +30,10 @@ import { EntityArray } from '../utils';
  * Parameters to {@link UnconditionalCondition.create | create} a new {@link UnconditionalCondition}.
  * @public
  */
-export interface IUnconditionalConditionCreateParams {
-  from: Common.IUnconditionalCondition;
-  index?: Common.ConditionIndex;
-  qualifiers?: ReadonlyArray<Qualifier>;
+export interface IConditionCreateParams<T extends Common.ICondition = Common.ICondition> {
+  from: T;
+  index?: number;
+  qualifiers: EntityArray<Qualifier, Common.QualifierIndex>;
 }
 
 /**
@@ -49,24 +49,15 @@ export class UnconditionalCondition implements Common.IUnconditionalCondition {
     this.operator = operator;
   }
 
-  public static create(init: IUnconditionalConditionCreateParams): Result<UnconditionalCondition> {
-    return verifySuppliedIndex(init.index, init.from.index, `${init.from.operator} condition`).onSuccess(
-      (index) =>
-        captureResult(() => {
-          return new UnconditionalCondition(index, init.from.operator);
-        })
-    );
+  public static create(init: IConditionCreateParams<UnconditionalCondition>): Result<UnconditionalCondition> {
+    return verifySuppliedIndex(init.index, init.from.index, `${init.from.operator} condition`)
+      .onSuccess((index) => Common.Validate.conditionIndex.validate(index))
+      .onSuccess((index) => {
+        return Common.Validate.conditionIndex
+          .validate(index)
+          .onSuccess((index) => captureResult(() => new UnconditionalCondition(index, init.from.operator)));
+      });
   }
-}
-
-/**
- * Parameters to {@link BinaryCondition.create | create} a new {@link BinaryCondition}.
- * @public
- */
-export interface IBinaryConditionCreateParams {
-  from: Common.IBinaryCondition;
-  index?: Common.ConditionIndex;
-  qualifiers: EntityArray<Qualifier, Common.QualifierIndex>;
 }
 
 /**
@@ -97,21 +88,19 @@ export class BinaryCondition implements Common.IBinaryCondition {
     this.value = value;
   }
 
-  public static create(init: IBinaryConditionCreateParams): Result<BinaryCondition> {
-    return verifySuppliedIndex(
-      init.index,
-      init.from.index,
-      `binary condition ${init.from.operator}`
-    ).onSuccess((index) => {
-      return init.qualifiers
-        .get(init.from.qualifierIndex, `binary condition ${init.from.operator}`)
-        .onSuccess((qualifier) =>
-          captureResult(
-            () =>
-              new BinaryCondition(index, init.from.priority, qualifier, init.from.operator, init.from.value)
-          )
-        );
-    });
+  public static create(init: IConditionCreateParams<BinaryCondition>): Result<BinaryCondition> {
+    return verifySuppliedIndex(init.index, init.from.index, `binary condition ${init.from.operator}`)
+      .onSuccess((index) => Common.Validate.conditionIndex.validate(index))
+      .onSuccess((index) => {
+        return init.qualifiers
+          .get(init.from.qualifierIndex, `binary condition ${init.from.operator}`)
+          .onSuccess((qualifier) =>
+            captureResult(
+              () =>
+                new BinaryCondition(index, init.from.priority, qualifier, init.from.operator, init.from.value)
+            )
+          );
+      });
   }
 }
 
@@ -122,24 +111,16 @@ export class BinaryCondition implements Common.IBinaryCondition {
 export type Condition = UnconditionalCondition | BinaryCondition;
 
 /**
- * Builder class for {@link Condition | Conditions}.
+ * Factory class for {@link Condition | Conditions}.
  * @public
  */
-export class ConditionBuilder {
+export class ConditionFactory {
   private constructor() {}
 
-  public static build(
-    init: IUnconditionalConditionCreateParams | IBinaryConditionCreateParams
-  ): Result<Condition> {
-    if (ConditionBuilder.isUnconditionalInitializer(init)) {
-      return UnconditionalCondition.create(init);
+  public static create(init: IConditionCreateParams): Result<Condition> {
+    if (Common.isUnconditionalCondition(init.from)) {
+      return UnconditionalCondition.create(init as IConditionCreateParams<UnconditionalCondition>);
     }
-    return BinaryCondition.create(init);
-  }
-
-  public static isUnconditionalInitializer(
-    init: IUnconditionalConditionCreateParams | IBinaryConditionCreateParams
-  ): init is IUnconditionalConditionCreateParams {
-    return Common.isUnconditionalCondition(init.from);
+    return BinaryCondition.create(init as IConditionCreateParams<BinaryCondition>);
   }
 }

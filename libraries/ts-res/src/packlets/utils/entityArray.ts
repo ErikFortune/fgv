@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { mapResults, Result, succeed } from '@fgv/ts-utils';
+import { captureResult, mapResults, Result, succeed } from '@fgv/ts-utils';
 
 /**
  * @public
@@ -32,6 +32,13 @@ export class EntityArray<TE, TI extends number = number> {
   public constructor(entities: ReadonlyArray<TE>, entityName: string) {
     this.entities = [...entities] as ReadonlyArray<TE>;
     this.entityName = entityName;
+  }
+
+  public static create<TE, TI extends number = number>(
+    entities: ReadonlyArray<TE>,
+    entityName: string
+  ): Result<EntityArray<TE>> {
+    return captureResult(() => new EntityArray<TE, TI>(entities, entityName));
   }
 
   public get(index: TI, errorContext?: string): Result<TE> {

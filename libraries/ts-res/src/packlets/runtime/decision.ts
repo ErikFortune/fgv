@@ -31,7 +31,7 @@ import { verifySuppliedIndex } from './utils';
  * @public
  */
 export interface IDecisionCreateParams {
-  index?: Common.DecisionIndex;
+  index?: number;
   from: Common.IDecision;
   conditionSets: EntityArray<ConditionSet, Common.ConditionSetIndex>;
 }
@@ -54,10 +54,12 @@ export class Decision {
   }
 
   public static create(init: IDecisionCreateParams): Result<Decision> {
-    return verifySuppliedIndex(init.index, init.from.index, 'decision').onSuccess((index) => {
-      return init.conditionSets
-        .mapIndices(init.from.conditionSetIndices, `decision ${index}`)
-        .onSuccess((conditionSets) => captureResult(() => new Decision(index, conditionSets)));
-    });
+    return verifySuppliedIndex(init.index, init.from.index, 'decision')
+      .onSuccess((index) => Common.Validate.decisionIndex.validate(index))
+      .onSuccess((index) => {
+        return init.conditionSets
+          .mapIndices(init.from.conditionSetIndices, `decision ${index}`)
+          .onSuccess((conditionSets) => captureResult(() => new Decision(index, conditionSets)));
+      });
   }
 }

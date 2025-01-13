@@ -36,5 +36,8 @@ export const resourceCollection: Converter<IResourceCollection> =
     conditionSets: Validators.arrayOf(Common.Validate.conditionSet),
     decisions: Validators.arrayOf(Common.Validate.decision),
     resourceTypes: Validators.arrayOf(Common.Validate.resourceType),
-    resources: Common.Validate.resourceSubtree
+    resources: Converters.recordOf(
+      Converters.recordOf(Common.Validate.resource, { keyConverter: Common.Validate.resourceName }),
+      { keyConverter: Common.Validate.resourcePath }
+    )
   });

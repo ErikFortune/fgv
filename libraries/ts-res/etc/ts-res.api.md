@@ -23,7 +23,7 @@ function appendResourcePath(path: ResourcePath | '', name: ResourceName): Resour
 class BinaryCondition implements Common.IBinaryCondition {
     protected constructor(index: Common.ConditionIndex, priority: Common.ConditionPriority, qualifier: Qualifier, operator: Common.BinaryOperator, value: string);
     // (undocumented)
-    static create(init: IBinaryConditionCreateParams): Result<BinaryCondition>;
+    static create(init: IConditionCreateParams<BinaryCondition>): Result<BinaryCondition>;
     // (undocumented)
     index: Common.ConditionIndex;
     // (undocumented)
@@ -114,11 +114,9 @@ const condition: Validator<ICondition>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "Condition"
 //
 // @public
-class ConditionBuilder {
+class ConditionFactory {
     // (undocumented)
-    static build(init: IUnconditionalConditionCreateParams | IBinaryConditionCreateParams): Result<Condition>;
-    // (undocumented)
-    static isUnconditionalInitializer(init: IUnconditionalConditionCreateParams | IBinaryConditionCreateParams): init is IUnconditionalConditionCreateParams;
+    static create(init: IConditionCreateParams): Result<Condition>;
 }
 
 // @public (undocumented)
@@ -180,21 +178,6 @@ interface IBinaryCondition {
     value: string;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "BinaryCondition"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "BinaryCondition"
-//
-// @public
-interface IBinaryConditionCreateParams {
-    // (undocumented)
-    from: Common.IBinaryCondition;
-    // (undocumented)
-    index?: Common.ConditionIndex;
-    // Warning: (ae-forgotten-export) The symbol "EntityArray" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    qualifiers: EntityArray<Qualifier, Common.QualifierIndex>;
-}
-
 // @public (undocumented)
 interface ICandidate {
     // (undocumented)
@@ -209,6 +192,21 @@ interface ICandidate {
 
 // @public (undocumented)
 type ICondition = IUnconditionalCondition | IBinaryCondition;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "UnconditionalCondition"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "UnconditionalCondition"
+//
+// @public
+interface IConditionCreateParams<T extends Common.ICondition = Common.ICondition> {
+    // (undocumented)
+    from: T;
+    // (undocumented)
+    index?: number;
+    // Warning: (ae-forgotten-export) The symbol "EntityArray" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    qualifiers: EntityArray<Qualifier, Common.QualifierIndex>;
+}
 
 // @public (undocumented)
 interface IConditionSet {
@@ -251,9 +249,9 @@ interface IQualifierCreateParams {
     // (undocumented)
     from: Common.IQualifier;
     // (undocumented)
-    index?: Common.QualifierIndex;
+    index: number;
     // (undocumented)
-    types: EntityArray<IQualifierType_2, Common.QualifierTypeIndex>;
+    qualifierTypes: EntityArray<IQualifierType_2, Common.QualifierTypeIndex>;
 }
 
 // @public (undocumented)
@@ -281,7 +279,7 @@ interface IQualifierType_2 {
 // @public (undocumented)
 interface IQualifierTypeFactory {
     // (undocumented)
-    getQualifierType(name: Common.QualifierTypeName, config: Common.QualifierTypeConfig, index: Common.QualifierTypeIndex): Result<IQualifierType_2>;
+    getQualifierType(index: number, name: Common.QualifierTypeName, config?: Common.QualifierTypeConfig): Result<IQualifierType_2>;
 }
 
 // @public (undocumented)
@@ -311,7 +309,7 @@ interface IResourceCollection {
     // (undocumented)
     qualifierTypes: Common.IQualifierType[];
     // (undocumented)
-    resources: Common.IResourceSubtree;
+    resources: Record<Common.ResourcePath, Record<Common.ResourceName, Common.IResource>>;
     // (undocumented)
     resourceTypes: Common.IResourceType[];
 }
@@ -382,19 +380,6 @@ interface IUnconditionalCondition {
     operator: UnconditionalOperator;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "UnconditionalCondition"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "UnconditionalCondition"
-//
-// @public
-interface IUnconditionalConditionCreateParams {
-    // (undocumented)
-    from: Common.IUnconditionalCondition;
-    // (undocumented)
-    index?: Common.ConditionIndex;
-    // (undocumented)
-    qualifiers?: ReadonlyArray<Qualifier>;
-}
-
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceCollection"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceCollection"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceCollection"
@@ -406,7 +391,7 @@ function loadResourceCollectionFile(path: string): Result<IResourceCollection>;
 class Qualifier implements Common.IQualifier {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "Qualifier"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierType"
-    protected constructor(name: Common.QualifierName, index: Common.QualifierIndex, type: IQualifierType_2);
+    protected constructor(index: number, name: Common.QualifierName, type: IQualifierType_2);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "Qualifier"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierCreateParams"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "Qualifier"
@@ -476,7 +461,7 @@ type ResourceName = Brand<string, 'ResourceName'>;
 const resourceName: Validator<ResourceName>;
 
 // @public (undocumented)
-type ResourcePath = Brand<string, "ResourcePath">;
+type ResourcePath = Brand<string, 'ResourcePath'>;
 
 // @public (undocumented)
 const resourcePath: Validator<ResourcePath>;
@@ -508,12 +493,11 @@ const resourceTypeName: Validator<ResourceTypeName>;
 declare namespace Runtime {
     export {
         File_2 as File,
-        IUnconditionalConditionCreateParams,
+        IConditionCreateParams,
         UnconditionalCondition,
-        IBinaryConditionCreateParams,
         BinaryCondition,
         Condition,
-        ConditionBuilder,
+        ConditionFactory,
         IQualifierType_2 as IQualifierType,
         IQualifierTypeFactory,
         IQualifierCreateParams,
@@ -532,7 +516,7 @@ function toQualifierMatchScore(value: number): Result<QualifierMatchScore>;
 class UnconditionalCondition implements Common.IUnconditionalCondition {
     protected constructor(index: Common.ConditionIndex, operator: Common.UnconditionalOperator);
     // (undocumented)
-    static create(init: IUnconditionalConditionCreateParams): Result<UnconditionalCondition>;
+    static create(init: IConditionCreateParams<UnconditionalCondition>): Result<UnconditionalCondition>;
     // (undocumented)
     index: Common.ConditionIndex;
     // (undocumented)

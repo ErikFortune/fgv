@@ -21,6 +21,7 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
+import * as Common from '../common';
 
 /**
  * @internal
@@ -38,4 +39,36 @@ export function verifySuppliedIndex<T extends number>(
     return fail(`${context}: Supplied index ${index} does not match the expected index ${expected}`);
   }
   return succeed(index);
+}
+
+/**
+ * Constructs a path from a supplied parent path and resource name, and verifies that it matches an
+ * explicitly supplied path, if present.  If a path is explicitly defined, it must match the resource
+ * name and the path derived from the parent path, if present.  If not path is explicitly defined,
+ * returns the derived path.
+ * @param name - the {@link Common.ResourceName | name} of the resource or subtree.
+ * @param suppliedParent - optional path of the parent subtree of the resource or subtree.
+ * @param expectedPath - optional path supplied in the resource entity itself.
+ * @returns `Success` with the absolute path of the resource or subtree, or `Failure` with error
+ * details if the path is invalid.
+ * @internal
+ */
+export function getVerifiedResourcePath(
+  name: Common.ResourceName,
+  suppliedParent: Common.ResourcePath | undefined,
+  expectedPath: Common.ResourcePath | undefined,
+  errorContext: string
+): Result<Common.ResourcePath> {
+  const suppliedPath = suppliedParent ? Common.appendResourcePath(suppliedParent, name) : undefined;
+  const path = suppliedPath ?? expectedPath;
+  if (path === undefined) {
+    return fail(`${errorContext}}: No path provided.`);
+  }
+  if (path !== expectedPath && expectedPath !== undefined) {
+    return fail(`${errorContext}}: Supplied path ${path} does not match the expected path ${expectedPath}`);
+  }
+  if (!path.endsWith('/name')) {
+    return fail(`${errorContext}: Path ${path} does not end with the resource name.`);
+  }
+  return succeed(path);
 }

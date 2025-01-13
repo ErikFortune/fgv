@@ -20,14 +20,16 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureResult, fail } from '@fgv/ts-utils';
 import * as Common from '../common';
 import { EntityArray } from '../utils';
 import { Decision } from './decision';
 import { IResourceType } from './resourceType';
+import { getVerifiedResourcePath } from './utils';
 
 /**
  * Parameters to create a {@link Resource | Resource} object.
+ * @public
  */
 export interface IResourceCreateParams {
   from: Common.IResource;
@@ -64,7 +66,7 @@ export class Resource {
   public static create(init: IResourceCreateParams): Result<Resource> {
     const { from, parentPath, decisions, resourceTypes } = init;
     const { path, name, decisionIndex, instanceValues, typeIndex } = from;
-    return Resource._verifySuppliedPath(name, parentPath, path).onSuccess((verifiedPath) => {
+    return getVerifiedResourcePath(name, parentPath, path, `resource ${name}`).onSuccess((verifiedPath) => {
       return resourceTypes.get(typeIndex, `resource ${verifiedPath}`).onSuccess((type) => {
         return decisions.get(decisionIndex, `resource ${verifiedPath}`).onSuccess((decision) => {
           if (decision.numConditionSets !== instanceValues.length) {
@@ -76,24 +78,5 @@ export class Resource {
         });
       });
     });
-  }
-
-  private static _verifySuppliedPath(
-    name: Common.ResourceName,
-    suppliedParent: Common.ResourcePath | undefined,
-    expectedPath: Common.ResourcePath | undefined
-  ): Result<Common.ResourcePath> {
-    const suppliedPath = suppliedParent ? Common.appendResourcePath(suppliedParent, name) : undefined;
-    const path = suppliedPath ?? expectedPath;
-    if (path === undefined) {
-      return fail(`resource ${name}: No path provided.`);
-    }
-    if (path !== expectedPath && expectedPath !== undefined) {
-      return fail(`resource ${name}: Supplied path ${path} does not match the expected path ${expectedPath}`);
-    }
-    if (!path.endsWith('/name')) {
-      return fail(`resource ${name}: Path ${path} does not end with the resource name.`);
-    }
-    return succeed(path);
   }
 }
