@@ -59,8 +59,14 @@ export function getVerifiedResourcePath(
   expectedPath: Common.ResourcePath | undefined,
   errorContext: string
 ): Result<Common.ResourcePath> {
-  const suppliedPath = suppliedParent ? Common.appendResourcePath(suppliedParent, name) : undefined;
-  const path = suppliedPath ?? expectedPath;
+  let path = expectedPath;
+  if (suppliedParent !== undefined) {
+    const joined = Common.ResourceNames.join(suppliedParent, name);
+    if (joined.isFailure()) {
+      return fail(`${errorContext}: ${joined.message}`);
+    }
+    path = joined.value;
+  }
   if (path === undefined) {
     return fail(`${errorContext}}: No path provided.`);
   }

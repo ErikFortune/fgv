@@ -23,21 +23,7 @@
 import { JsonValue } from '@fgv/ts-json-base';
 import { ConditionSetIndex, DecisionIndex } from './condition';
 import { Brand } from '@fgv/ts-utils';
-
-/**
- * @public
- */
-export type ResourceName = Brand<string, 'ResourceName'>;
-
-/**
- * Validates a string to determine if it is a valid {@link ResourceName | ResourceName}.
- * @param name - the string to be tested
- * @returns `true` if the string is a valid {@link ResourceName | ResourceName}, `false` otherwise.
- * @public
- */
-export function isValidResourceName(name: string): name is ResourceName {
-  return /ˆ[-_a-zA-Z0-9]+$/.test(name);
-}
+import { ResourcePath, ResourceName } from './resourceNames';
 
 /**
  * @public
@@ -53,35 +39,6 @@ export type ResourceTypeIndex = Brand<number, 'ResourceTypeIndex'>;
  * @public
  */
 export type CandidateIndex = Brand<number, 'CandidateIndex'>;
-
-/**
- * @public
- */
-export type ResourcePath = Brand<string, 'ResourcePath'>;
-
-/**
- * Validates a string to determine if it is a valid {@link ResourceName | ResourceName}.
- * @param name - the string to be tested
- * @returns `true` if the string is a valid {@link ResourceName | ResourceName}, `false` otherwise.
- * @public
- */
-export function isValidResourcePath(name: string): name is ResourceName {
-  return /ˆ\/\/[-_a-zA-Z0-9\/]+$/.test(name);
-}
-
-/**
- * Appends a resource name to a resource path.
- * @param path - the path to which the name will be appended.
- * @param name - the name to append.
- * @returns The updated path.
- * @public
- */
-export function appendResourcePath(path: ResourcePath | '', name: ResourceName): ResourcePath {
-  if (path === '') {
-    return `//${path}` as ResourcePath;
-  }
-  return `${path}/${name}` as ResourcePath;
-}
 
 /**
  * @public

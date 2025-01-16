@@ -17,9 +17,6 @@ const allBinaryOperators: BinaryOperator[];
 const allUnconditionalOperators: UnconditionalOperator[];
 
 // @public
-function appendResourcePath(path: ResourcePath | '', name: ResourceName): ResourcePath;
-
-// @public
 class BinaryCondition implements Common.IBinaryCondition {
     protected constructor(index: Common.ConditionIndex, priority: Common.ConditionPriority, qualifier: Qualifier, operator: Common.BinaryOperator, value: string);
     // (undocumented)
@@ -87,20 +84,18 @@ declare namespace Common {
         QualifierMatchScore,
         IQualifierType,
         IQualifier,
-        isValidResourceName,
-        isValidResourcePath,
-        appendResourcePath,
-        ResourceName,
         ResourceTypeName,
         ResourceTypeIndex,
         CandidateIndex,
-        ResourcePath,
         ResourceTypeConfig,
         IResourceType,
         ICandidate,
         InstanceValue,
         IResource,
-        IResourceSubtree
+        IResourceSubtree,
+        ResourcePath,
+        ResourceName,
+        ResourceNames
     }
 }
 export { Common }
@@ -360,18 +355,6 @@ function isUnconditionalOperator(operator: ConditionOperator): operator is Uncon
 // @public
 function isValidQualifierMatchScore(value: number): value is QualifierMatchScore;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
-//
-// @public
-function isValidResourceName(name: string): name is ResourceName;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
-//
-// @public
-function isValidResourcePath(name: string): name is ResourceName;
-
 // @public (undocumented)
 interface IUnconditionalCondition {
     // (undocumented)
@@ -459,6 +442,35 @@ type ResourceName = Brand<string, 'ResourceName'>;
 
 // @public (undocumented)
 const resourceName: Validator<ResourceName>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourcePath"
+//
+// @public
+class ResourceNames {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourcePath"
+    static basename(path: ResourcePath): Result<ResourceName>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+    static isValidName(name: string): name is ResourceName;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourcePath"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourcePath"
+    static isValidPath(name: string): name is ResourcePath;
+    static join(path: ResourcePath, ...names: ResourceName[]): Result<ResourcePath>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourcePath"
+    static parent(path: ResourcePath): Result<ResourcePath>;
+    static readonly resourceRoot: ResourcePath;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourcePath"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+    static split(path: ResourcePath): Result<ResourceName[]>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+    static validateName(from: unknown): Result<ResourceName>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourcePath"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+    static validatePath(from: unknown): Result<ResourcePath>;
+}
 
 // @public (undocumented)
 type ResourcePath = Brand<string, 'ResourcePath'>;

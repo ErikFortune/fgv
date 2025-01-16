@@ -23,6 +23,7 @@
 export * from './condition';
 export * from './qualifier';
 export * from './resource';
+export * from './resourceNames';
 
 import * as Validate from './validate';
 

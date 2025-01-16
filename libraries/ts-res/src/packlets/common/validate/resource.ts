@@ -29,21 +29,18 @@ import {
   IResource,
   IResourceSubtree,
   IResourceType,
-  isValidResourceName,
-  isValidResourcePath,
-  ResourceName,
-  ResourcePath,
   ResourceTypeConfig,
   ResourceTypeIndex,
   ResourceTypeName
 } from '../resource';
 import { conditionSetIndex, decisionIndex } from './condition';
+import { ResourceName, ResourceNames, ResourcePath } from '../resourceNames';
 
 /**
  * @public
  */
 export const resourceName: Validator<ResourceName> = Validators.string
-  .withConstraint(isValidResourceName)
+  .withConstraint(ResourceNames.isValidName)
   .withBrand('ResourceName');
 
 /**
@@ -81,7 +78,7 @@ export const candidateIndex: Validator<CandidateIndex> = Validators.number.withB
  * @public
  */
 export const resourcePath: Validator<ResourcePath> = Validators.string
-  .withConstraint(isValidResourcePath)
+  .withConstraint(ResourceNames.isValidPath)
   .withBrand('ResourcePath');
 
 /**
