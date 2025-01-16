@@ -276,6 +276,8 @@ export class DetailedFailure<T, TD> extends Failure<T> {
     onFailure(cb: DetailedFailureContinuation<T, TD>): DetailedResult<T, TD>;
     // Warning: (ae-incompatible-release-tags) The symbol "onSuccess" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     onSuccess<TN>(__cb: DetailedSuccessContinuation<T, TD, TN>): DetailedResult<TN, TD>;
+    // Warning: (ae-incompatible-release-tags) The symbol "withErrorFormat" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    withErrorFormat(cb: ErrorFormatter<TD>): DetailedResult<T, TD>;
 }
 
 // Warning: (ae-incompatible-release-tags) The symbol "DetailedFailureContinuation" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
@@ -325,6 +327,9 @@ function enumeratedValue<T>(values: T[]): Converter<T, T[]>;
 function enumeratedValue_2<T extends string>(values: T[]): Validator<T, T[]>;
 
 // @public
+export type ErrorFormatter<TD = unknown> = (message: string, detail?: TD) => string;
+
+// @public
 function fail_2<T>(message: string): Failure<T>;
 export { fail_2 as fail }
 
@@ -348,6 +353,7 @@ export class Failure<T> implements IResult<T> {
     toString(): string;
     // Warning: (ae-incompatible-release-tags) The symbol "withDetail" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withDetail<TD>(detail: TD, __successDetail?: TD): DetailedResult<T, TD>;
+    withErrorFormat(cb: ErrorFormatter): Result<T>;
     // Warning: (ae-incompatible-release-tags) The symbol "withFailureDetail" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withFailureDetail<TD>(detail: TD): DetailedResult<T, TD>;
 }
@@ -573,6 +579,7 @@ export interface IResult<T> {
     readonly success: boolean;
     // Warning: (ae-incompatible-release-tags) The symbol "withDetail" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withDetail<TD>(detail: TD, successDetail?: TD): DetailedResult<T, TD>;
+    withErrorFormat(cb: ErrorFormatter): Result<T>;
     // Warning: (ae-incompatible-release-tags) The symbol "withFailureDetail" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withFailureDetail<TD>(detail: TD): DetailedResult<T, TD>;
 }
@@ -1100,6 +1107,7 @@ export class Success<T> implements IResult<T> {
     get value(): T;
     // Warning: (ae-incompatible-release-tags) The symbol "withDetail" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withDetail<TD>(detail: TD, successDetail?: TD): DetailedResult<T, TD>;
+    withErrorFormat(__cb: ErrorFormatter): Result<T>;
     // Warning: (ae-incompatible-release-tags) The symbol "withFailureDetail" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withFailureDetail<TD>(__detail: TD): DetailedResult<T, TD>;
 }
