@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2025 Erik Fortune
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+import * as Common from '../common';
+import { Conversion, Converter, Converters } from '@fgv/ts-utils';
+import { Converters as JsonConverters } from '@fgv/ts-json-base';
+import { allResourceValueMergeTypes, IResourceCandidateDecl, IResourceCollectionDecl } from './model';
+
+/* eslint-disable @rushstack/typedef-var */
+
+/**
+ * `Converter` for a {@link IResourceCandidateDecl | resource candidate declaration}.
+ * @public
+ */
+export const conditionSetDecl = Converters.recordOf(Converters.string, {
+  keyConverter: Common.Convert.qualifierName
+});
+
+/**
+ * `Converter` for a {@link IResourceCandidateDecl | resource candidate declaration}.
+ * @public
+ */
+export const resourceValueMergeType = Converters.enumeratedValue(allResourceValueMergeTypes);
+
+/**
+ * `Converter` for a {@link IResourceCandidateDecl | resource candidate declaration}.
+ * @public
+ */
+export const resourceCandidateDecl = Converters.object<IResourceCandidateDecl>({
+  id: Common.Convert.resourceId,
+  json: JsonConverters.jsonValue,
+  conditions: conditionSetDecl,
+  merge: resourceValueMergeType.optional(),
+  partial: Converters.boolean.optional(),
+  resourceTypeName: Common.Convert.resourceTypeName.optional()
+});
+
+/**
+ * `Converter` for a {@link IResourceCollectionDecl | resource collection declaration}.
+ * @public
+ */
+export const resourceCollectionDecl = new Conversion.BaseConverter<IResourceCollectionDecl>(
+  (from: unknown, self: Converter<IResourceCollectionDecl, unknown>, context?: unknown) => {
+    return Converters.strictObject<IResourceCollectionDecl>({
+      conditions: conditionSetDecl.optional(),
+      resources: Converters.arrayOf(resourceCandidateDecl).optional(),
+      collections: Converters.arrayOf(self).optional()
+    }).convert(from, context);
+  }
+);

@@ -20,4 +20,17 @@
  * SOFTWARE.
  */
 
-export * from './entityArray';
+/**
+ * @internal
+ */
+export const identifierRegExp: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*$/;
+
+/**
+ * @internal
+ */
+export const segmentedIdentifierRegExp: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(\.[a-zA-Z_][a-zA-Z0-9_\-]*)*$/;
+
+/**
+ * @internal
+ */
+export const identifierListRegExp: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(,[a-zA-Z_][a-zA-Z0-9_\-]*)*$/;

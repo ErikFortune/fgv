@@ -20,27 +20,8 @@
  * SOFTWARE.
  */
 
-import { Result } from '@fgv/ts-utils';
-import * as Common from '../common';
+import * as Convert from './convert';
 
-/**
- * @public
- */
-export interface IResourceType<TR = unknown> {
-  name: Common.ResourceTypeName;
-  index: Common.ResourceTypeIndex;
-  config: Common.ResourceTypeConfig;
+export * from './model';
 
-  validate(from: unknown, context?: unknown): Result<TR>;
-}
-
-/**
- * @public
- */
-export interface IResourceTypeFactory {
-  getResourceType<TR = unknown>(
-    index: number,
-    name: Common.ResourceTypeName,
-    config?: Common.ResourceTypeConfig
-  ): Result<IResourceType<TR>>;
-}
+export { Convert };

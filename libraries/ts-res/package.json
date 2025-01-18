@@ -62,7 +62,8 @@
     "eslint-plugin-tsdoc": "~0.4.0"
   },
   "dependencies": {
-    "luxon": "^3.5.0"
+    "luxon": "^3.5.0",
+    "@fgv/ts-bcp47": "workspace:*"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*",

@@ -20,9 +20,9 @@
  * SOFTWARE.
  */
 
-export * from './file';
-export * from './model';
+import * as Convert from './convert';
 
-import * as Validate from './validate';
+export * from './conditions';
+export * from './resources';
 
-export { Validate };
+export { Convert };

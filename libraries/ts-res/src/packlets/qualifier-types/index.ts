@@ -20,20 +20,7 @@
  * SOFTWARE.
  */
 
-import { Result } from '@fgv/ts-utils';
-import { IResourceCollection } from './model';
-import { JsonFile } from '@fgv/ts-json-base';
-import * as Validate from './validate';
-
-/**
- * Synchronously loads and validates a JSON {@link IResourceCollection | resource collection} from a file.
- * @param path - Path to the file to load.
- * @returns An instantiated {@link IResourceCollection | resource collection} if the collection can
- * be loaded, or `Failure` with an error if an error occurs.
- * *Note:* This method parses and loads an {@link IResourceCollection | resource collection} but it
- * does not verify internal consistency.
- * @public
- */
-export function loadResourceCollectionFile(path: string): Result<IResourceCollection> {
-  return JsonFile.convertJsonFileSync(path, Validate.resourceCollection);
-}
+export * from './qualifierType';
+export * from './languageQualifierType';
+export * from './literalQualifierType';
+export * from './territoryQualifierType';

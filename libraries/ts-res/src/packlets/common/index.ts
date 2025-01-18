@@ -20,11 +20,10 @@
  * SOFTWARE.
  */
 
-export * from './condition';
-export * from './qualifier';
-export * from './resource';
-export * from './resourceNames';
+import * as Convert from './convert';
+import * as Utils from './utils';
 
-import * as Validate from './validate';
+export * from './conditions';
+export * from './resources';
 
-export { Validate };
+export { Convert, Utils };

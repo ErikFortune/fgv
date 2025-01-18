@@ -5,583 +5,488 @@
 ```ts
 
 import { Brand } from '@fgv/ts-utils';
+import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
-import { Validator } from '@fgv/ts-utils';
-
-// @public (undocumented)
-const allBinaryOperators: BinaryOperator[];
-
-// @public (undocumented)
-const allUnconditionalOperators: UnconditionalOperator[];
 
 // @public
-class BinaryCondition implements Common.IBinaryCondition {
-    protected constructor(index: Common.ConditionIndex, priority: Common.ConditionPriority, qualifier: Qualifier, operator: Common.BinaryOperator, value: string);
-    // (undocumented)
-    static create(init: IConditionCreateParams<BinaryCondition>): Result<BinaryCondition>;
-    // (undocumented)
-    index: Common.ConditionIndex;
-    // (undocumented)
-    readonly operator: Common.BinaryOperator;
-    // (undocumented)
-    readonly priority: Common.ConditionPriority;
-    // (undocumented)
-    readonly qualifier: Qualifier;
-    // (undocumented)
-    get qualifierIndex(): Common.QualifierIndex;
-    // (undocumented)
-    readonly value: string;
-}
+const allConditionOperators: ConditionOperator[];
 
-// @public (undocumented)
-const binaryCondition: Validator<IBinaryCondition>;
-
-// @public (undocumented)
-type BinaryOperator = 'matches';
-
-// @public (undocumented)
-const binaryOperator: Validator<BinaryOperator, unknown>;
-
-// @public (undocumented)
-const candidate: Validator<ICandidate, unknown>;
-
-// @public (undocumented)
-type CandidateIndex = Brand<number, 'CandidateIndex'>;
-
-// @public (undocumented)
-const candidateIndex: Validator<CandidateIndex>;
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceValueMergeType"
+//
+// @public
+const allResourceValueMergeTypes: ResourceValueMergeType[];
 
 declare namespace Common {
     export {
-        Validate,
-        isUnconditionalOperator,
-        isBinaryOperator,
-        isUnconditionalCondition,
-        isBinaryCondition,
-        ConditionIndex,
-        BinaryOperator,
-        allBinaryOperators,
-        UnconditionalOperator,
-        allUnconditionalOperators,
-        ConditionOperator,
-        ConditionPriority,
-        ConditionSetIndex,
-        DecisionIndex,
-        IUnconditionalCondition,
-        IBinaryCondition,
-        ICondition,
-        IConditionSet,
-        IDecision,
-        isValidQualifierMatchScore,
-        toQualifierMatchScore,
+        Convert,
+        Utils,
         QualifierName,
         QualifierIndex,
         QualifierTypeName,
         QualifierTypeIndex,
-        QualifierTypeConfig,
-        QualifierMatchScore,
-        IQualifierType,
-        IQualifier,
+        ConditionPriority,
+        ConditionOperator,
+        allConditionOperators,
+        ConditionIndex,
+        ConditionSetIndex,
+        Conditions,
+        ResourceId,
+        ResourceName,
+        ResourceIndex,
         ResourceTypeName,
         ResourceTypeIndex,
-        CandidateIndex,
-        ResourceTypeConfig,
-        IResourceType,
-        ICandidate,
-        InstanceValue,
-        IResource,
-        IResourceSubtree,
-        ResourcePath,
-        ResourceName,
-        ResourceNames
+        Resources
     }
 }
 export { Common }
 
 // @public
-type Condition = UnconditionalCondition | BinaryCondition;
-
-// @public (undocumented)
-const condition: Validator<ICondition>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "Condition"
-//
-// @public
-class ConditionFactory {
-    // (undocumented)
-    static create(init: IConditionCreateParams): Result<Condition>;
-}
-
-// @public (undocumented)
 type ConditionIndex = Brand<number, 'ConditionIndex'>;
 
-// @public (undocumented)
-const conditionIndex: Validator<ConditionIndex>;
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionIndex"
+//
+// @public
+const conditionIndex: Converter<ConditionIndex, undefined>;
 
-// @public (undocumented)
-type ConditionOperator = UnconditionalOperator | BinaryOperator;
+// @public
+type ConditionOperator = 'always' | 'never' | 'matches';
 
-// @public (undocumented)
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionOperator"
+//
+// @public
+const conditionOperator: Converter<ConditionOperator, ConditionOperator[]>;
+
+// @public
 type ConditionPriority = Brand<number, 'ConditionPriority'>;
 
-// @public (undocumented)
-const conditionPriority: Validator<ConditionPriority>;
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionPriority"
+//
+// @public
+const conditionPriority: Converter<ConditionPriority, undefined>;
 
-// @public (undocumented)
-const conditionSet: Validator<IConditionSet>;
+// @public
+class Conditions {
+    static isValidConditionIndex(index: number): index is ConditionIndex;
+    static isValidConditionSetIndex(index: number): index is ConditionSetIndex;
+    static isValidPriority(priority: number): priority is ConditionPriority;
+    static isValidQualifierIndex(index: number): index is QualifierIndex;
+    static isValidQualifierName(name: string): name is QualifierName;
+    static isValidQualifierTypeIndex(index: number): index is QualifierTypeIndex;
+    static isValidQualifierTypeName(name: string): name is QualifierTypeName;
+    static readonly maxPriority: ConditionPriority;
+    static readonly minPriority: ConditionPriority;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionIndex"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionIndex"
+    static toConditionIndex(index: number): Result<ConditionIndex>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionSetIndex"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionSetIndex"
+    static toConditionSetIndex(index: number): Result<ConditionSetIndex>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionPriority"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionPriority"
+    static toPriority(priority: number): Result<ConditionPriority>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierIndex"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierIndex"
+    static toQualifierIndex(index: number): Result<QualifierIndex>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierName"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierName"
+    static toQualifierName(name: string): Result<QualifierName>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierTypeIndex"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierTypeIndex"
+    static toQualifierTypeIndex(index: number): Result<QualifierTypeIndex>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierTypeName"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierTypeName"
+    static toQualifierTypeName(name: string): Result<QualifierTypeName>;
+}
 
-// @public (undocumented)
+// @public
+type ConditionSetDecl = Record<Common.QualifierName, JsonValue>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceCandidateDecl"
+//
+// @public
+const conditionSetDecl: Conversion.Converter<Record<Common.QualifierName, string>, unknown>;
+
+// @public
 type ConditionSetIndex = Brand<number, 'ConditionSetIndex'>;
 
-// @public (undocumented)
-const conditionSetIndex: Validator<ConditionSetIndex>;
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionSetIndex"
+//
+// @public
+const conditionSetIndex: Converter<ConditionSetIndex, undefined>;
 
-// @public (undocumented)
-const decision: Validator<IDecision>;
-
-// @public (undocumented)
-type DecisionIndex = Brand<number, 'DecisionIndex'>;
-
-// @public (undocumented)
-const decisionIndex: Validator<DecisionIndex>;
-
-declare namespace File_2 {
+declare namespace Convert {
     export {
-        Validate_2 as Validate,
-        loadResourceCollectionFile,
-        IResourceCollection
-    }
-}
-
-// @public (undocumented)
-interface IBinaryCondition {
-    // (undocumented)
-    index?: ConditionIndex;
-    // (undocumented)
-    operator: BinaryOperator;
-    // (undocumented)
-    priority: ConditionPriority;
-    // (undocumented)
-    qualifierIndex: QualifierIndex;
-    // (undocumented)
-    qualifierName?: QualifierName;
-    // (undocumented)
-    scoreAsDefault?: QualifierMatchScore;
-    // (undocumented)
-    value: string;
-}
-
-// @public (undocumented)
-interface ICandidate {
-    // (undocumented)
-    candidateIndex?: CandidateIndex;
-    // (undocumented)
-    conditionSetIndex: ConditionSetIndex;
-    // (undocumented)
-    instanceValue: JsonValue;
-    // (undocumented)
-    partial?: boolean;
-}
-
-// @public (undocumented)
-type ICondition = IUnconditionalCondition | IBinaryCondition;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "UnconditionalCondition"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "UnconditionalCondition"
-//
-// @public
-interface IConditionCreateParams<T extends Common.ICondition = Common.ICondition> {
-    // (undocumented)
-    from: T;
-    // (undocumented)
-    index?: number;
-    // Warning: (ae-forgotten-export) The symbol "EntityArray" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    qualifiers: EntityArray<Qualifier, Common.QualifierIndex>;
-}
-
-// @public (undocumented)
-interface IConditionSet {
-    // (undocumented)
-    conditionIndices: ConditionIndex[];
-    // (undocumented)
-    index?: ConditionSetIndex;
-    // (undocumented)
-    priorityOverlap?: true;
-}
-
-// @public (undocumented)
-interface IDecision {
-    // (undocumented)
-    conditionSetIndices: ConditionSetIndex[];
-    // (undocumented)
-    index?: DecisionIndex;
-}
-
-// @public (undocumented)
-type InstanceValue = Brand<JsonValue, 'InstanceValue'>;
-
-// @public (undocumented)
-const instanceValue: Validator<InstanceValue, unknown>;
-
-// @public (undocumented)
-interface IQualifier {
-    // (undocumented)
-    index?: QualifierIndex;
-    // (undocumented)
-    name: QualifierName;
-    // (undocumented)
-    qualifierTypeIndex: QualifierTypeIndex;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "Qualifier"
-//
-// @public
-interface IQualifierCreateParams {
-    // (undocumented)
-    from: Common.IQualifier;
-    // (undocumented)
-    index: number;
-    // (undocumented)
-    qualifierTypes: EntityArray<IQualifierType_2, Common.QualifierTypeIndex>;
-}
-
-// @public (undocumented)
-interface IQualifierType {
-    // (undocumented)
-    config?: QualifierTypeConfig;
-    // (undocumented)
-    index?: QualifierTypeIndex;
-    // (undocumented)
-    name: QualifierTypeName;
-}
-
-// @public (undocumented)
-interface IQualifierType_2 {
-    // (undocumented)
-    compare(contextValue: string, resourceValue: string, operator: Common.BinaryOperator): number;
-    // (undocumented)
-    config: Common.QualifierTypeConfig;
-    // (undocumented)
-    index: Common.QualifierTypeIndex;
-    // (undocumented)
-    name: Common.QualifierTypeName;
-}
-
-// @public (undocumented)
-interface IQualifierTypeFactory {
-    // (undocumented)
-    getQualifierType(index: number, name: Common.QualifierTypeName, config?: Common.QualifierTypeConfig): Result<IQualifierType_2>;
-}
-
-// @public (undocumented)
-interface IResource {
-    // (undocumented)
-    decisionIndex: DecisionIndex;
-    // (undocumented)
-    instanceValues: InstanceValue[];
-    // (undocumented)
-    name: ResourceName;
-    // (undocumented)
-    path?: ResourcePath;
-    // (undocumented)
-    typeIndex: ResourceTypeIndex;
-}
-
-// @public
-interface IResourceCollection {
-    // (undocumented)
-    conditions: Common.ICondition[];
-    // (undocumented)
-    conditionSets: Common.IConditionSet[];
-    // (undocumented)
-    decisions: Common.IDecision[];
-    // (undocumented)
-    qualifiers: Common.IQualifier[];
-    // (undocumented)
-    qualifierTypes: Common.IQualifierType[];
-    // (undocumented)
-    resources: Record<Common.ResourcePath, Record<Common.ResourceName, Common.IResource>>;
-    // (undocumented)
-    resourceTypes: Common.IResourceType[];
-}
-
-// @public (undocumented)
-interface IResourceSubtree {
-    // (undocumented)
-    children?: Record<ResourceName, IResourceSubtree>;
-    // (undocumented)
-    name: ResourceName;
-    // (undocumented)
-    path?: ResourcePath;
-    // (undocumented)
-    resources?: Record<ResourceName, IResource>;
-}
-
-// @public (undocumented)
-interface IResourceType {
-    // (undocumented)
-    config?: ResourceTypeConfig;
-    // (undocumented)
-    index?: ResourceTypeIndex;
-    // (undocumented)
-    name: ResourceTypeName;
-}
-
-// @public (undocumented)
-function isBinaryCondition(condition: ICondition): condition is IBinaryCondition;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "BinaryOperator"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "BinaryOperator"
-//
-// @public
-function isBinaryOperator(operator: ConditionOperator): operator is BinaryOperator;
-
-// @public (undocumented)
-function isUnconditionalCondition(condition: ICondition): condition is IUnconditionalCondition;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "BinaryOperator"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "BinaryOperator"
-//
-// @public
-function isUnconditionalOperator(operator: ConditionOperator): operator is UnconditionalOperator;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMatchScore"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMatchScore"
-//
-// @public
-function isValidQualifierMatchScore(value: number): value is QualifierMatchScore;
-
-// @public (undocumented)
-interface IUnconditionalCondition {
-    // (undocumented)
-    index?: ConditionIndex;
-    // (undocumented)
-    operator: UnconditionalOperator;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceCollection"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceCollection"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceCollection"
-//
-// @public
-function loadResourceCollectionFile(path: string): Result<IResourceCollection>;
-
-// @public
-class Qualifier implements Common.IQualifier {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "Qualifier"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierType"
-    protected constructor(index: number, name: Common.QualifierName, type: IQualifierType_2);
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "Qualifier"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierCreateParams"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "Qualifier"
-    static create(init: IQualifierCreateParams): Result<Qualifier>;
-    // (undocumented)
-    readonly index: Common.QualifierIndex;
-    // (undocumented)
-    readonly name: Common.QualifierName;
-    // (undocumented)
-    readonly qualifierType: IQualifierType_2;
-    // (undocumented)
-    get qualifierTypeIndex(): Common.QualifierTypeIndex;
-}
-
-// @public (undocumented)
-const qualifier: Validator<IQualifier>;
-
-// @public
-type QualifierIndex = Brand<number, 'QualifierIndex'>;
-
-// @public (undocumented)
-const qualifierIndex: Validator<QualifierIndex>;
-
-// @public
-type QualifierMatchScore = Brand<number, 'QualifierMatchScore'>;
-
-// @public (undocumented)
-const qualifierMatchScore: Validator<QualifierMatchScore>;
-
-// @public
-type QualifierName = Brand<string, 'QualifierName'>;
-
-// @public (undocumented)
-const qualifierName: Validator<QualifierName>;
-
-// @public (undocumented)
-const qualifierType: Validator<IQualifierType>;
-
-// @public (undocumented)
-type QualifierTypeConfig = Brand<JsonValue, 'QualifierTypeConfig'>;
-
-// @public (undocumented)
-const qualifierTypeConfig: Validator<QualifierTypeConfig, unknown>;
-
-// @public (undocumented)
-type QualifierTypeIndex = Brand<number, 'QualifierTypeIndex'>;
-
-// @public (undocumented)
-const qualifierTypeIndex: Validator<QualifierTypeIndex>;
-
-// @public (undocumented)
-type QualifierTypeName = Brand<string, 'QualifierTypeName'>;
-
-// @public (undocumented)
-const qualifierTypeName: Validator<QualifierTypeName>;
-
-// @public (undocumented)
-const resource: Validator<IResource, unknown>;
-
-// @public
-const resourceCollection: Converter<IResourceCollection>;
-
-// @public (undocumented)
-type ResourceName = Brand<string, 'ResourceName'>;
-
-// @public (undocumented)
-const resourceName: Validator<ResourceName>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourcePath"
-//
-// @public
-class ResourceNames {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourcePath"
-    static basename(path: ResourcePath): Result<ResourceName>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
-    static isValidName(name: string): name is ResourceName;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourcePath"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourcePath"
-    static isValidPath(name: string): name is ResourcePath;
-    static join(path: ResourcePath, ...names: ResourceName[]): Result<ResourcePath>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourcePath"
-    static parent(path: ResourcePath): Result<ResourcePath>;
-    static readonly resourceRoot: ResourcePath;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourcePath"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
-    static split(path: ResourcePath): Result<ResourceName[]>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
-    static validateName(from: unknown): Result<ResourceName>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourcePath"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
-    static validatePath(from: unknown): Result<ResourcePath>;
-}
-
-// @public (undocumented)
-type ResourcePath = Brand<string, 'ResourcePath'>;
-
-// @public (undocumented)
-const resourcePath: Validator<ResourcePath>;
-
-// @public (undocumented)
-const resourceSubtree: Converter<IResourceSubtree, unknown>;
-
-// @public (undocumented)
-const resourceType: Validator<IResourceType>;
-
-// @public (undocumented)
-type ResourceTypeConfig = Brand<JsonValue, 'ResourceTypeConfig'>;
-
-// @public (undocumented)
-const resourceTypeConfig: Validator<ResourceTypeConfig, unknown>;
-
-// @public (undocumented)
-type ResourceTypeIndex = Brand<number, 'ResourceTypeIndex'>;
-
-// @public (undocumented)
-const resourceTypeIndex: Validator<ResourceTypeIndex>;
-
-// @public (undocumented)
-type ResourceTypeName = Brand<string, 'ResourceType'>;
-
-// @public (undocumented)
-const resourceTypeName: Validator<ResourceTypeName>;
-
-declare namespace Runtime {
-    export {
-        File_2 as File,
-        IConditionCreateParams,
-        UnconditionalCondition,
-        BinaryCondition,
-        Condition,
-        ConditionFactory,
-        IQualifierType_2 as IQualifierType,
-        IQualifierTypeFactory,
-        IQualifierCreateParams,
-        Qualifier
-    }
-}
-export { Runtime }
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMatchScore"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMatchScore"
-//
-// @public
-function toQualifierMatchScore(value: number): Result<QualifierMatchScore>;
-
-// @public
-class UnconditionalCondition implements Common.IUnconditionalCondition {
-    protected constructor(index: Common.ConditionIndex, operator: Common.UnconditionalOperator);
-    // (undocumented)
-    static create(init: IConditionCreateParams<UnconditionalCondition>): Result<UnconditionalCondition>;
-    // (undocumented)
-    index: Common.ConditionIndex;
-    // (undocumented)
-    readonly operator: Common.UnconditionalOperator;
-}
-
-// @public (undocumented)
-const unconditionalCondition: Validator<IUnconditionalCondition>;
-
-// @public (undocumented)
-type UnconditionalOperator = 'always' | 'never';
-
-// @public (undocumented)
-const unconditionalOperator: Validator<UnconditionalOperator, unknown>;
-
-declare namespace Validate {
-    export {
-        conditionIndex,
-        binaryOperator,
-        unconditionalOperator,
-        conditionPriority,
-        conditionSetIndex,
-        decisionIndex,
-        unconditionalCondition,
-        binaryCondition,
-        condition,
-        conditionSet,
-        decision,
         qualifierName,
         qualifierIndex,
         qualifierTypeName,
         qualifierTypeIndex,
-        qualifierTypeConfig,
-        qualifierMatchScore,
-        qualifierType,
-        qualifier,
+        conditionPriority,
+        conditionOperator,
+        conditionIndex,
+        conditionSetIndex,
+        resourceId,
         resourceName,
+        resourceIndex,
         resourceTypeName,
-        resourceTypeIndex,
-        resourceTypeConfig,
-        resourceType,
-        candidateIndex,
-        resourcePath,
-        candidate,
-        instanceValue,
-        resource,
-        resourceSubtree
+        resourceTypeIndex
     }
 }
 
-declare namespace Validate_2 {
+declare namespace Convert_2 {
     export {
-        resourceCollection
+        conditionSetDecl,
+        resourceValueMergeType,
+        resourceCandidateDecl,
+        resourceCollectionDecl
+    }
+}
+
+// @internal (undocumented)
+const identifierListRegExp: RegExp;
+
+// @internal (undocumented)
+const identifierRegExp: RegExp;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "LanguageQualifierType"
+//
+// @public
+interface ILanguageQualifierTypeCreateParams {
+    allowContextList?: boolean;
+    name?: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "LiteralQualifierType"
+//
+// @public
+interface ILiteralQualifierTypeCreateParams extends IQualifierTypeCreateParams {
+    caseSensitive?: boolean;
+    enumeratedValues?: ReadonlyArray<string>;
+    name?: string;
+}
+
+// @public
+interface IQualifierType {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierConditionValue"
+    isValidConditionValue(value: string): value is QualifierConditionValue;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierContextValue"
+    isValidContextValue(value: string): value is QualifierContextValue;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMatchScore"
+    matches(condition: QualifierConditionValue, context: QualifierContextValue, operator: ConditionOperator): QualifierMatchScore;
+    readonly name: QualifierTypeName;
+    validateCondition(value: string, operator?: ConditionOperator): Result<QualifierConditionValue>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierContextValue"
+    validateContextValue(value: string): Result<QualifierContextValue>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierType"
+//
+// @public
+interface IQualifierTypeCreateParams {
+    allowContextList?: boolean;
+    name?: string;
+}
+
+// @public
+interface IResourceCandidateDecl {
+    readonly conditions: ConditionSetDecl;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly id: Common.ResourceId;
+    readonly json: JsonValue;
+    readonly merge?: ResourceValueMergeType;
+    readonly partial?: boolean;
+    readonly resourceTypeName?: Common.ResourceTypeName;
+}
+
+// @public
+interface IResourceCollectionDecl {
+    readonly collections?: IResourceCollectionDecl[];
+    readonly conditions?: ConditionSetDecl;
+    readonly resources?: IResourceCandidateDecl[];
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "TerritoryQualifierType"
+//
+// @public
+interface ITerritoryQualifierTypeCreateParams {
+    // (undocumented)
+    allowedTerritories?: string[];
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierType"
+//
+// @public
+class LanguageQualifierType extends QualifierType {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "LanguageQualifierType"
+    protected constructor({ name, allowContextList }: ILanguageQualifierTypeCreateParams);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "LanguageQualifierType"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ILanguageQualifierTypeCreateParams"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "LanguageQualifierType"
+    static create(params?: ILanguageQualifierTypeCreateParams): Result<LanguageQualifierType>;
+    protected _matchOne(condition: QualifierConditionValue, context: QualifierContextValue, operator: ConditionOperator): QualifierMatchScore;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierType"
+//
+// @public
+class LiteralQualifierType extends QualifierType {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "LiteralQualifierType"
+    protected constructor({ name, caseSensitive, allowContextList, enumeratedValues }: ILiteralQualifierTypeCreateParams);
+    protected readonly _caseSensitive: boolean;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "LiteralQualifierType"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ILiteralQualifierTypeCreateParams"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "LiteralQualifierType"
+    static create(params: ILiteralQualifierTypeCreateParams): Result<LiteralQualifierType>;
+    protected readonly _enumeratedValues?: ReadonlyArray<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "LiteralQualifierType"
+    isValidConditionValue(value: string): value is QualifierConditionValue;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierType"
+    //
+    // (undocumented)
+    protected _matchOne(condition: QualifierConditionValue, context: QualifierContextValue, operator: ConditionOperator): QualifierMatchScore;
+}
+
+// @public
+type QualifierConditionValue = Brand<string, 'QualifierConditionValue'>;
+
+// @public
+type QualifierContextValue = Brand<string, 'QualifierContextValue'>;
+
+// @public
+type QualifierIndex = Brand<number, 'QualifierIndex'>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierIndex"
+//
+// @public
+const qualifierIndex: Converter<QualifierIndex, undefined>;
+
+// @public
+type QualifierMatchScore = Brand<number, 'QualifierMatchScore'>;
+
+// @public
+type QualifierName = Brand<string, 'QualifierName'>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierName"
+//
+// @public
+const qualifierName: Converter<QualifierName, unknown>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierType"
+//
+// @public
+abstract class QualifierType implements IQualifierType {
+    protected constructor({ name, allowContextList }: IQualifierTypeCreateParams);
+    protected readonly _allowContextList: boolean;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierType"
+    //
+    // (undocumented)
+    isValidConditionValue(value: string): value is QualifierConditionValue;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierType"
+    //
+    // (undocumented)
+    isValidContextValue(value: string): value is QualifierContextValue;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMatchScore"
+    static isValidMatchScore(value: number): value is QualifierMatchScore;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierType"
+    //
+    // (undocumented)
+    matches(condition: QualifierConditionValue, context: QualifierContextValue, operator: ConditionOperator): QualifierMatchScore;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierConditionValue"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierContextValue"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionOperator"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMatchScore"
+    protected _matchList(condition: QualifierConditionValue, context: QualifierContextValue[], operator: ConditionOperator): QualifierMatchScore;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierConditionValue"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierContextValue"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionOperator"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMatchScore"
+    protected abstract _matchOne(condition: QualifierConditionValue, context: QualifierContextValue, operator: ConditionOperator): QualifierMatchScore;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierType"
+    //
+    // (undocumented)
+    readonly name: QualifierTypeName;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierType"
+    //
+    // (undocumented)
+    static readonly noMatch: QualifierMatchScore;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierType"
+    //
+    // (undocumented)
+    static readonly perfectMatch: QualifierMatchScore;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierContextValue"
+    protected static _splitContext(value: QualifierContextValue): QualifierContextValue[];
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierType"
+    //
+    // (undocumented)
+    validateCondition(value: string, operator?: ConditionOperator): Result<QualifierConditionValue>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierType"
+    //
+    // (undocumented)
+    validateContextValue(value: string): Result<QualifierContextValue>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMatchScore"
+    static validateMatchScore(value: number): Result<QualifierMatchScore>;
+}
+
+// @public
+type QualifierTypeIndex = Brand<number, 'QualifierTypeIndex'>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierTypeIndex"
+//
+// @public
+const qualifierTypeIndex: Converter<QualifierTypeIndex, undefined>;
+
+// @public
+type QualifierTypeName = Brand<string, 'QualifierTypeName'>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierTypeName"
+//
+// @public
+const qualifierTypeName: Converter<QualifierTypeName, unknown>;
+
+declare namespace QualifierTypes {
+    export {
+        QualifierConditionValue,
+        QualifierContextValue,
+        QualifierMatchScore,
+        IQualifierType,
+        IQualifierTypeCreateParams,
+        QualifierType,
+        ILanguageQualifierTypeCreateParams,
+        LanguageQualifierType,
+        ILiteralQualifierTypeCreateParams,
+        LiteralQualifierType,
+        ITerritoryQualifierTypeCreateParams,
+        TerritoryQualifierType
+    }
+}
+export { QualifierTypes }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceCandidateDecl"
+//
+// @public
+const resourceCandidateDecl: Conversion.ObjectConverter<IResourceCandidateDecl, unknown>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceCollectionDecl"
+//
+// @public
+const resourceCollectionDecl: Conversion.BaseConverter<IResourceCollectionDecl, undefined>;
+
+// @public
+type ResourceId = Brand<string, 'ResourceId'>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceId"
+//
+// @public
+const resourceId: Converter<ResourceId, unknown>;
+
+// @public
+type ResourceIndex = Brand<number, 'ResourceIndex'>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceIndex"
+//
+// @public
+const resourceIndex: Converter<ResourceIndex, undefined>;
+
+declare namespace ResourceJson {
+    export {
+        Convert_2 as Convert,
+        ResourceValueMergeType,
+        allResourceValueMergeTypes,
+        ConditionSetDecl,
+        IResourceCandidateDecl,
+        IResourceCollectionDecl
+    }
+}
+export { ResourceJson }
+
+// @public
+type ResourceName = Brand<string, 'ResourceName'>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+//
+// @public
+const resourceName: Converter<ResourceName, unknown>;
+
+// @public
+class Resources {
+    static isValidResourceId(id: string): id is ResourceId;
+    static isValidResourceIndex(index: number): index is ResourceIndex;
+    static isValidResourceName(name: string): name is ResourceName;
+    static isValidResourceTypeIndex(index: number): index is ResourceTypeIndex;
+    static isValidResourceTypeName(name: string): name is ResourceTypeName;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceId"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceId"
+    static joinId(base: ResourceName | ResourceId, ...names: ResourceName[]): Result<ResourceId>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceId"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+    static splitId(id: ResourceId): Result<ResourceName[]>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceId"
+    static toResourceId(id: string): Result<ResourceId>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceIndex"
+    static toResourceIndex(index: number): Result<ResourceIndex>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+    static toResourceName(name: string): Result<ResourceName>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceTypeIndex"
+    static toResourceTypeIndex(index: number): Result<ResourceTypeIndex>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceTypeName"
+    static toResourceTypeName(name: string): Result<ResourceTypeName>;
+}
+
+// @public
+type ResourceTypeIndex = Brand<number, 'ResourceTypeIndex'>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceTypeIndex"
+//
+// @public
+const resourceTypeIndex: Converter<ResourceTypeIndex, undefined>;
+
+// @public
+type ResourceTypeName = Brand<string, 'ResourceTypeName'>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceTypeName"
+//
+// @public
+const resourceTypeName: Converter<ResourceTypeName, unknown>;
+
+// @public
+type ResourceValueMergeType = 'augment' | 'delete' | 'replace';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceCandidateDecl"
+//
+// @public
+const resourceValueMergeType: Conversion.Converter<ResourceValueMergeType, ResourceValueMergeType[]>;
+
+// @internal (undocumented)
+const segmentedIdentifierRegExp: RegExp;
+
+// @public
+class TerritoryQualifierType extends QualifierType {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "TerritoryQualifierType"
+    protected constructor({ allowedTerritories }: ITerritoryQualifierTypeCreateParams);
+    protected readonly _allowedTerritories?: ReadonlyArray<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "TerritoryQualifierType"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ITerritoryQualifierTypeCreateParams"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "TerritoryQualifierType"
+    static create(params?: ITerritoryQualifierTypeCreateParams): Result<TerritoryQualifierType>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierType"
+    //
+    // (undocumented)
+    isValidConditionValue(value: string): value is QualifierConditionValue;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierType"
+    //
+    // (undocumented)
+    protected _matchOne(condition: QualifierConditionValue, context: QualifierContextValue): QualifierMatchScore;
+    protected readonly _territoryRegExp: RegExp;
+}
+
+declare namespace Utils {
+    export {
+        identifierRegExp,
+        segmentedIdentifierRegExp,
+        identifierListRegExp
     }
 }
 
