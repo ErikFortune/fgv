@@ -23,5 +23,6 @@
 import * as QualifierTypes from './qualifierTypes';
 
 export * from './qualifier';
+export * from './qualifierMap';
 
 export { QualifierTypes };
