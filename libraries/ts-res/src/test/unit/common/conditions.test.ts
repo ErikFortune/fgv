@@ -40,9 +40,9 @@ const invalidIdentifiers: string[] = [
 
 describe('common conditions', () => {
   test.each(validIdentifiers)('%s is valid qualifierName', (identifier) => {
-    expect(TsRes.Common.Conditions.isValidQualifierName(identifier)).toBe(true);
+    expect(TsRes.Common.Validate.isValidQualifierName(identifier)).toBe(true);
   });
   test.each(invalidIdentifiers)('%s is not a valid qualifierName', (identifier) => {
-    expect(TsRes.Common.Conditions.isValidQualifierName(identifier)).toBe(false);
+    expect(TsRes.Common.Validate.isValidQualifierName(identifier)).toBe(false);
   });
 });

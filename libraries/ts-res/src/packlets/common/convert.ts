@@ -21,8 +21,8 @@
  */
 
 import { Converters } from '@fgv/ts-utils';
-import { allConditionOperators, Conditions } from './conditions';
-import { Resources } from './resources';
+import * as Validate from './validate';
+import { allConditionOperators } from './conditions';
 
 /* eslint-disable @rushstack/typedef-var */
 
@@ -30,31 +30,31 @@ import { Resources } from './resources';
  * `Converter` which validates an `unknown` value as a {@link QualifierName | QualifierName}.
  * @public
  */
-export const qualifierName = Converters.string.map(Conditions.toQualifierName);
+export const qualifierName = Converters.string.map(Validate.toQualifierName);
 
 /**
  * `Converter` which validates an `unknown` value as a {@link QualifierIndex | QualifierIndex}.
  * @public
  */
-export const qualifierIndex = Converters.number.map(Conditions.toQualifierIndex);
+export const qualifierIndex = Converters.number.map(Validate.toQualifierIndex);
 
 /**
  * `Converter` which validates an `unknown` value as a {@link QualifierTypeName | QualifierTypeName}.
  * @public
  */
-export const qualifierTypeName = Converters.string.map(Conditions.toQualifierTypeName);
+export const qualifierTypeName = Converters.string.map(Validate.toQualifierTypeName);
 
 /**
  * `Converter` which validates an `unknown` value as a {@link QualifierTypeIndex | QualifierTypeIndex}.
  * @public
  */
-export const qualifierTypeIndex = Converters.number.map(Conditions.toQualifierTypeIndex);
+export const qualifierTypeIndex = Converters.number.map(Validate.toQualifierTypeIndex);
 
 /**
  * `Converter` which validates an `unknown` value as a {@link ConditionPriority | ConditionPriority}.
  * @public
  */
-export const conditionPriority = Converters.number.map(Conditions.toPriority);
+export const conditionPriority = Converters.number.map(Validate.toPriority);
 
 /**
  * `Converter` which validates an `unknown` value as a {@link ConditionOperator | ConditionOperator}.
@@ -66,40 +66,40 @@ export const conditionOperator = Converters.enumeratedValue(allConditionOperator
  * `Converter` which validates an `unknown` value as a {@link ConditionIndex | ConditionIndex}.
  * @public
  */
-export const conditionIndex = Converters.number.map(Conditions.toConditionIndex);
+export const conditionIndex = Converters.number.map(Validate.toConditionIndex);
 
 /**
  * `Converter` which validates an `unknown` value as a {@link ConditionSetIndex | ConditionSetIndex}.
  * @public
  */
-export const conditionSetIndex = Converters.number.map(Conditions.toConditionSetIndex);
+export const conditionSetIndex = Converters.number.map(Validate.toConditionSetIndex);
 
 /**
  * `Converter` which validates an `unknown` value as a {@link ResourceId | ResourceId}.
  * @public
  */
-export const resourceId = Converters.string.map(Resources.toResourceId);
+export const resourceId = Converters.string.map(Validate.toResourceId);
 
 /**
  * `Converter` which validates an `unknown` value as a {@link ResourceName | ResourceName}.
  * @public
  */
-export const resourceName = Converters.string.map(Resources.toResourceName);
+export const resourceName = Converters.string.map(Validate.toResourceName);
 
 /**
  * `Converter` which validates an `unknown` value as a {@link ResourceIndex | ResourceIndex}.
  * @public
  */
-export const resourceIndex = Converters.number.map(Resources.toResourceIndex);
+export const resourceIndex = Converters.number.map(Validate.toResourceIndex);
 
 /**
  * `Converter` which validates an `unknown` value as a {@link ResourceTypeName | ResourceTypeName}.
  * @public
  */
-export const resourceTypeName = Converters.string.map(Resources.toResourceTypeName);
+export const resourceTypeName = Converters.string.map(Validate.toResourceTypeName);
 
 /**
  * `Converter` which validates an `unknown` value as a {@link ResourceTypeIndex | ResourceTypeIndex}.
  * @public
  */
-export const resourceTypeIndex = Converters.number.map(Resources.toResourceTypeIndex);
+export const resourceTypeIndex = Converters.number.map(Validate.toResourceTypeIndex);

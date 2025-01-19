@@ -21,7 +21,7 @@
  */
 
 import { captureResult, Result } from '@fgv/ts-utils';
-import { ConditionOperator, ConditionPriority, Conditions } from '../common';
+import { ConditionOperator, ConditionPriority, Validate } from '../common';
 import { Qualifier, QualifierMap, QualifierTypes } from '../qualifiers';
 
 /**
@@ -91,7 +91,7 @@ export class Condition {
     this.qualifier = qualifier;
     this.operator = operator ?? 'matches';
     this.value = qualifier.type.validateCondition(value, this.operator).orThrow();
-    this.priority = priority ? Conditions.toPriority(priority).orThrow() : qualifier.defaultPriority;
+    this.priority = priority ? Validate.toPriority(priority).orThrow() : qualifier.defaultPriority;
   }
 
   /**
@@ -106,7 +106,7 @@ export class Condition {
       return captureResult(() => new Condition(params));
     }
     const { value, operator, priority } = params;
-    return Conditions.toQualifierName(params.qualifierName)
+    return Validate.toQualifierName(params.qualifierName)
       .onSuccess((name) => params.qualifierMap.get(name))
       .onSuccess((qualifier) => Condition.create({ qualifier, value, operator, priority }));
   }

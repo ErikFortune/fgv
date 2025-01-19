@@ -21,7 +21,7 @@ const allResourceValueMergeTypes: ResourceValueMergeMethod[];
 declare namespace Common {
     export {
         Convert,
-        Utils,
+        Validate,
         QualifierName,
         QualifierIndex,
         QualifierTypeName,
@@ -31,13 +31,11 @@ declare namespace Common {
         allConditionOperators,
         ConditionIndex,
         ConditionSetIndex,
-        Conditions,
         ResourceId,
         ResourceName,
         ResourceIndex,
         ResourceTypeName,
-        ResourceTypeIndex,
-        Resources_2 as Resources
+        ResourceTypeIndex
     }
 }
 export { Common }
@@ -65,40 +63,6 @@ type ConditionPriority = Brand<number, 'ConditionPriority'>;
 //
 // @public
 const conditionPriority: Converter<ConditionPriority, undefined>;
-
-// @public
-class Conditions {
-    static isValidConditionIndex(index: number): index is ConditionIndex;
-    static isValidConditionSetIndex(index: number): index is ConditionSetIndex;
-    static isValidPriority(priority: number): priority is ConditionPriority;
-    static isValidQualifierIndex(index: number): index is QualifierIndex;
-    static isValidQualifierName(name: string): name is QualifierName;
-    static isValidQualifierTypeIndex(index: number): index is QualifierTypeIndex;
-    static isValidQualifierTypeName(name: string): name is QualifierTypeName;
-    static readonly maxPriority: ConditionPriority;
-    static readonly minPriority: ConditionPriority;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionIndex"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionIndex"
-    static toConditionIndex(index: number): Result<ConditionIndex>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionSetIndex"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionSetIndex"
-    static toConditionSetIndex(index: number): Result<ConditionSetIndex>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionPriority"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionPriority"
-    static toPriority(priority: number): Result<ConditionPriority>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierIndex"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierIndex"
-    static toQualifierIndex(index: number): Result<QualifierIndex>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierName"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierName"
-    static toQualifierName(name: string): Result<QualifierName>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierTypeIndex"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierTypeIndex"
-    static toQualifierTypeIndex(index: number): Result<QualifierTypeIndex>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierTypeName"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierTypeName"
-    static toQualifierTypeName(name: string): Result<QualifierTypeName>;
-}
 
 // @public
 type ConditionSetDecl = Record<Common.QualifierName, string>;
@@ -144,10 +108,10 @@ declare namespace Convert_2 {
 }
 
 // @internal (undocumented)
-const identifierListRegExp: RegExp;
+const identifier: RegExp;
 
 // @internal (undocumented)
-const identifierRegExp: RegExp;
+const identifierList: RegExp;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "LanguageQualifierType"
 //
@@ -266,6 +230,42 @@ interface IResourceType<T = unknown> {
     validateDeclaration(json: JsonValue, isPartial: boolean, mergeMethod: ResourceValueMergeMethod): Result<T | Partial<T>>;
 }
 
+// @public
+function isValidConditionIndex(index: number): index is ConditionIndex;
+
+// @public
+function isValidConditionSetIndex(index: number): index is ConditionSetIndex;
+
+// @public
+function isValidPriority(priority: number): priority is ConditionPriority;
+
+// @public
+function isValidQualifierIndex(index: number): index is QualifierIndex;
+
+// @public
+function isValidQualifierName(name: string): name is QualifierName;
+
+// @public
+function isValidQualifierTypeIndex(index: number): index is QualifierTypeIndex;
+
+// @public
+function isValidQualifierTypeName(name: string): name is QualifierTypeName;
+
+// @public
+function isValidResourceId(id: string): id is ResourceId;
+
+// @public
+function isValidResourceIndex(index: number): index is ResourceIndex;
+
+// @public
+function isValidResourceName(name: string): name is ResourceName;
+
+// @public
+function isValidResourceTypeIndex(index: number): index is ResourceTypeIndex;
+
+// @public
+function isValidResourceTypeName(name: string): name is ResourceTypeName;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "TerritoryQualifierType"
 //
 // @public
@@ -278,6 +278,13 @@ interface ITerritoryQualifierTypeCreateParams {
 //
 // @public
 type IValidatedQualifierDecl = IQualifierDecl<QualifierName, QualifierTypeName, ConditionPriority>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceId"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceId"
+//
+// @public
+function joinId(base: ResourceName | ResourceId, ...names: ResourceName[]): Result<ResourceId>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierType"
 //
@@ -311,6 +318,12 @@ class LiteralQualifierType extends QualifierType {
     // (undocumented)
     protected _matchOne(condition: QualifierConditionValue, context: QualifierContextValue, operator: ConditionOperator): QualifierMatchScore;
 }
+
+// @public
+const maxPriority: ConditionPriority;
+
+// @public
+const minPriority: ConditionPriority;
 
 // @public
 class Qualifier {
@@ -481,6 +494,14 @@ declare namespace QualifierTypes {
     }
 }
 
+declare namespace RegularExpressions {
+    export {
+        identifier,
+        segmentedIdentifier,
+        identifierList
+    }
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceCandidate"
 //
 // @public
@@ -563,33 +584,6 @@ declare namespace Resources {
 export { Resources }
 
 // @public
-class Resources_2 {
-    static isValidResourceId(id: string): id is ResourceId;
-    static isValidResourceIndex(index: number): index is ResourceIndex;
-    static isValidResourceName(name: string): name is ResourceName;
-    static isValidResourceTypeIndex(index: number): index is ResourceTypeIndex;
-    static isValidResourceTypeName(name: string): name is ResourceTypeName;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceId"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceId"
-    static joinId(base: ResourceName | ResourceId, ...names: ResourceName[]): Result<ResourceId>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceId"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
-    static splitId(id: ResourceId): Result<ResourceName[]>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceId"
-    static toResourceId(id: string): Result<ResourceId>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceIndex"
-    static toResourceIndex(index: number): Result<ResourceIndex>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
-    static toResourceName(name: string): Result<ResourceName>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceTypeIndex"
-    static toResourceTypeIndex(index: number): Result<ResourceTypeIndex>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceTypeName"
-    static toResourceTypeName(name: string): Result<ResourceTypeName>;
-}
-
-// @public
 type ResourceTypeIndex = Brand<number, 'ResourceTypeIndex'>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceTypeIndex"
@@ -630,7 +624,14 @@ type ResourceValueMergeMethod = 'augment' | 'delete' | 'replace';
 const resourceValueMergeType: Conversion.Converter<ResourceValueMergeMethod, ResourceValueMergeMethod[]>;
 
 // @internal (undocumented)
-const segmentedIdentifierRegExp: RegExp;
+const segmentedIdentifier: RegExp;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceId"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+//
+// @public
+function splitId(id: ResourceId): Result<ResourceName[]>;
 
 // @public
 class TerritoryQualifierType extends QualifierType {
@@ -652,11 +653,104 @@ class TerritoryQualifierType extends QualifierType {
     protected readonly _territoryRegExp: RegExp;
 }
 
-declare namespace Utils {
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionIndex"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionIndex"
+//
+// @public
+function toConditionIndex(index: number): Result<ConditionIndex>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionSetIndex"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionSetIndex"
+//
+// @public
+function toConditionSetIndex(index: number): Result<ConditionSetIndex>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionPriority"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionPriority"
+//
+// @public
+function toPriority(priority: number): Result<ConditionPriority>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierIndex"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierIndex"
+//
+// @public
+function toQualifierIndex(index: number): Result<QualifierIndex>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierName"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierName"
+//
+// @public
+function toQualifierName(name: string): Result<QualifierName>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierTypeIndex"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierTypeIndex"
+//
+// @public
+function toQualifierTypeIndex(index: number): Result<QualifierTypeIndex>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierTypeName"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierTypeName"
+//
+// @public
+function toQualifierTypeName(name: string): Result<QualifierTypeName>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceId"
+//
+// @public
+function toResourceId(id: string): Result<ResourceId>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceIndex"
+//
+// @public
+function toResourceIndex(index: number): Result<ResourceIndex>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceName"
+//
+// @public
+function toResourceName(name: string): Result<ResourceName>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceTypeIndex"
+//
+// @public
+function toResourceTypeIndex(index: number): Result<ResourceTypeIndex>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceTypeName"
+//
+// @public
+function toResourceTypeName(name: string): Result<ResourceTypeName>;
+
+declare namespace Validate {
     export {
-        identifierRegExp,
-        segmentedIdentifierRegExp,
-        identifierListRegExp
+        RegularExpressions,
+        isValidQualifierName,
+        isValidQualifierTypeName,
+        isValidPriority,
+        isValidQualifierIndex,
+        isValidQualifierTypeIndex,
+        isValidConditionIndex,
+        isValidConditionSetIndex,
+        toQualifierName,
+        toQualifierIndex,
+        toQualifierTypeName,
+        toQualifierTypeIndex,
+        toPriority,
+        toConditionIndex,
+        toConditionSetIndex,
+        minPriority,
+        maxPriority,
+        isValidResourceName,
+        isValidResourceId,
+        isValidResourceIndex,
+        isValidResourceTypeName,
+        isValidResourceTypeIndex,
+        toResourceName,
+        toResourceId,
+        toResourceIndex,
+        splitId,
+        joinId,
+        toResourceTypeName,
+        toResourceTypeIndex
     }
 }
 

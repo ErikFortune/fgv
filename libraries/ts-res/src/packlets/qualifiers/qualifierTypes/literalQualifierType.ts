@@ -21,7 +21,7 @@
  */
 
 import { captureResult, Result } from '@fgv/ts-utils';
-import { ConditionOperator, Utils } from '../../common';
+import { ConditionOperator, Validate } from '../../common';
 import {
   IQualifierTypeCreateParams,
   QualifierConditionValue,
@@ -99,7 +99,7 @@ export class LiteralQualifierType extends QualifierType {
       }
       return this._enumeratedValues.some((v) => v.toLowerCase() === value.toLowerCase());
     }
-    return Utils.identifierRegExp.test(value);
+    return Validate.RegularExpressions.identifier.test(value);
   }
 
   /**

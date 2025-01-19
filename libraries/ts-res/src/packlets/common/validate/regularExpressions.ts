@@ -20,10 +20,17 @@
  * SOFTWARE.
  */
 
-import * as Convert from './convert';
-import * as Validate from './validate';
+/**
+ * @internal
+ */
+export const identifier: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*$/;
 
-export * from './conditions';
-export * from './resources';
+/**
+ * @internal
+ */
+export const segmentedIdentifier: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(\.[a-zA-Z_][a-zA-Z0-9_\-]*)*$/;
 
-export { Convert, Validate };
+/**
+ * @internal
+ */
+export const identifierList: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(,[a-zA-Z_][a-zA-Z0-9_\-]*)*$/;

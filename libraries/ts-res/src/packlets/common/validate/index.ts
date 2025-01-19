@@ -20,17 +20,8 @@
  * SOFTWARE.
  */
 
-/**
- * @internal
- */
-export const identifierRegExp: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*$/;
+export * from './conditions';
+export * from './resources';
 
-/**
- * @internal
- */
-export const segmentedIdentifierRegExp: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(\.[a-zA-Z_][a-zA-Z0-9_\-]*)*$/;
-
-/**
- * @internal
- */
-export const identifierListRegExp: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(,[a-zA-Z_][a-zA-Z0-9_\-]*)*$/;
+import * as RegularExpressions from './regularExpressions';
+export { RegularExpressions };
