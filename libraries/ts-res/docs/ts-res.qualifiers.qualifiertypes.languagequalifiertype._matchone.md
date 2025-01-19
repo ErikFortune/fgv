@@ -37,7 +37,7 @@ condition
 
 </td><td>
 
-[QualifierConditionValue](./ts-res.qualifiers.qualifiertypes.qualifierconditionvalue.md)
+[QualifierConditionValue](./ts-res.qualifierconditionvalue.md)
 
 
 </td><td>
@@ -53,7 +53,7 @@ context
 
 </td><td>
 
-[QualifierContextValue](./ts-res.qualifiers.qualifiertypes.qualifiercontextvalue.md)
+[QualifierContextValue](./ts-res.qualifiercontextvalue.md)
 
 
 </td><td>
@@ -81,7 +81,7 @@ The operator to use for the match. Must be 'matches'.
 </tbody></table>
 **Returns:**
 
-[QualifierMatchScore](./ts-res.qualifiers.qualifiertypes.qualifiermatchscore.md)
+[QualifierMatchScore](./ts-res.qualifiermatchscore.md)
 
 - The match score, or `noMatch` if the match fails.
 

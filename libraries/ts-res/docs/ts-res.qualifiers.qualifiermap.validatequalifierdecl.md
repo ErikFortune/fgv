@@ -4,7 +4,7 @@
 
 ## Qualifiers.QualifierMap.validateQualifierDecl() method
 
-Validates the properties of a  for correctness.
+Validates the properties of a [qualifier declaration](./ts-res.qualifiers.iqualifierdecl.md) for correctness.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ decl
 
 </td><td>
 
-The  to validate.
+The [qualifier declaration](./ts-res.qualifiers.iqualifierdecl.md) to validate.
 
 
 </td></tr>
@@ -51,5 +51,5 @@ The  to validate.
 
 Result&lt;[IValidatedQualifierDecl](./ts-res.qualifiers.ivalidatedqualifierdecl.md)<!-- -->&gt;
 
-`Success` with the validated  if successful, `Failure` with an error message otherwise.
+`Success` with the validated [qualifier declaration](./ts-res.qualifiers.ivalidatedqualifierdecl.md) if successful, `Failure` with an error message otherwise.
 

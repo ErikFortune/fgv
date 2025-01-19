@@ -4,7 +4,7 @@
 
 ## Qualifiers.QualifierTypes.LiteralQualifierType.isValidConditionValue() method
 
-Determines whether a value is a valid condition value for a literal qualifier. The  accepts any identifier as a valid condition value.
+Determines whether a value is a valid condition value for a literal qualifier. The [LiteralQualifierType](./ts-res.qualifiers.qualifiertypes.literalqualifiertype.md) accepts any identifier as a valid condition value.
 
 **Signature:**
 
@@ -49,7 +49,7 @@ The value to validate.
 </tbody></table>
 **Returns:**
 
-value is [QualifierConditionValue](./ts-res.qualifiers.qualifiertypes.qualifierconditionvalue.md)
+value is [QualifierConditionValue](./ts-res.qualifierconditionvalue.md)
 
 `true` if the value is a valid condition value, `false` otherwise.
 

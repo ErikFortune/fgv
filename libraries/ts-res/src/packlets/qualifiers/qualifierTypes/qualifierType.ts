@@ -189,8 +189,8 @@ export abstract class QualifierType implements IQualifierType {
 
   /**
    * Matches a single condition value against a single context value.
-   * @param condition - The {@link Qualifiers.QualifierConditionValue | condition value} to match.
-   * @param context - The {@link Qualifiers.QualifierContextValue | context value} to match.
+   * @param condition - The {@link QualifierConditionValue | condition value} to match.
+   * @param context - The {@link QualifierContextValue | context value} to match.
    * @param operator - The {@link ConditionOperator | operator} to use in the match.
    * @returns a {@link QualifierMatchScore | score} indicating the extent to which the condition
    * matches the context value.
@@ -204,8 +204,8 @@ export abstract class QualifierType implements IQualifierType {
 
   /**
    * Matches a single condition value against a list of context values.
-   * @param condition - The {@link Qualifiers.QualifierConditionValue | condition value} to match.
-   * @param context - The comma-separated list of {@link Qualifiers.QualifierContextValue | context values} to match.
+   * @param condition - The {@link QualifierConditionValue | condition value} to match.
+   * @param context - The comma-separated list of {@link QualifierContextValue | context values} to match.
    * @param operator - The {@link ConditionOperator | operator} to use in the match.
    * @returns a {@link QualifierMatchScore | score} indicating the extent to which the condition
    * matches the context value.
@@ -233,7 +233,7 @@ export abstract class QualifierType implements IQualifierType {
   }
 
   /**
-   * Splits a comma-separated {@link Qualifiers.QualifierContextValue | context value} into an array of
+   * Splits a comma-separated {@link QualifierContextValue | context value} into an array of
    * individual values.
    * @param value - The value to split.
    * @returns an array of individual context values.

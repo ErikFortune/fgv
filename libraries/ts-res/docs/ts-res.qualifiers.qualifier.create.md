@@ -4,7 +4,7 @@
 
 ## Qualifiers.Qualifier.create() method
 
-Creates a new instance of a [Qualifier](./ts-res.qualifiers.qualifier.md) from the supplied .
+Creates a new instance of a [Qualifier](./ts-res.qualifiers.qualifier.md) from the supplied [parameters](./ts-res.qualifiers.iqualifiercreateparams.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ params
 
 </td><td>
 
-The  to use when creating the new instance.
+The [parameters](./ts-res.qualifiers.iqualifiercreateparams.md) to use when creating the new instance.
 
 
 </td></tr>

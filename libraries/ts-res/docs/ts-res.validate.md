@@ -41,6 +41,17 @@ Determines whether a number is a valid condition set index.
 </td></tr>
 <tr><td>
 
+[isValidMatchScore(value)](./ts-res.validate.isvalidmatchscore.md)
+
+
+</td><td>
+
+Determines whether a supplied value is a valid [match score](./ts-res.qualifiermatchscore.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [isValidPriority(priority)](./ts-res.validate.isvalidpriority.md)
 
 
@@ -303,6 +314,17 @@ Converts a string to a [resource type name](./ts-res.resourcetypename.md)<!-- --
 
 
 </td></tr>
+<tr><td>
+
+[validateMatchScore(value)](./ts-res.validate.validatematchscore.md)
+
+
+</td><td>
+
+Converts a number to a [match score](./ts-res.qualifiermatchscore.md) if it is a valid score.
+
+
+</td></tr>
 </tbody></table>
 
 ## Namespaces
@@ -361,6 +383,28 @@ Maximum valid priority for a condition.
 </td><td>
 
 Minimum valid priority for a condition.
+
+
+</td></tr>
+<tr><td>
+
+[NoMatch](./ts-res.validate.nomatch.md)
+
+
+</td><td>
+
+[Match score](./ts-res.qualifiermatchscore.md) indicating no match.
+
+
+</td></tr>
+<tr><td>
+
+[PerfectMatch](./ts-res.validate.perfectmatch.md)
+
+
+</td><td>
+
+[Match score](./ts-res.qualifiermatchscore.md) indicating a perfect match.
 
 
 </td></tr>

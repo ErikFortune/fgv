@@ -89,7 +89,7 @@ export class LiteralQualifierType extends QualifierType {
 
   /**
    * Determines whether a value is a valid condition value for a literal qualifier. The
-   * {@link LiteralQualifierType | Qualifiers.QualifierTypes.LiteralQualifierType} accepts
+   * {@link Qualifiers.QualifierTypes.LiteralQualifierType | LiteralQualifierType} accepts
    * any identifier as a valid condition value.
    * @param value - The value to validate.
    * @returns `true` if the value is a valid condition value, `false` otherwise.

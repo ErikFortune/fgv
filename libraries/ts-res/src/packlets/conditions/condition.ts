@@ -22,7 +22,7 @@
 
 import { captureResult, Result } from '@fgv/ts-utils';
 import { ConditionOperator, ConditionPriority, QualifierConditionValue, Validate } from '../common';
-import { Qualifier, QualifierMap, QualifierTypes } from '../qualifiers';
+import { Qualifier, QualifierMap } from '../qualifiers';
 
 /**
  * Parameters used to create a {@link Condition| Condition} object

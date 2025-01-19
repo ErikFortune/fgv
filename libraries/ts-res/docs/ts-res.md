@@ -160,12 +160,45 @@ Branded number representing a validated condition set index.
 </td></tr>
 <tr><td>
 
+[QualifierConditionValue](./ts-res.qualifierconditionvalue.md)
+
+
+</td><td>
+
+Branded type for a validated qualifier condition value - i.e. a value that has been determined to be valid for use in a condition attached to some resource.
+
+
+</td></tr>
+<tr><td>
+
+[QualifierContextValue](./ts-res.qualifiercontextvalue.md)
+
+
+</td><td>
+
+Branded type for a validated qualifier context value - i.e. a value that has been determined to be valid for use in some runtime context.
+
+
+</td></tr>
+<tr><td>
+
 [QualifierIndex](./ts-res.qualifierindex.md)
 
 
 </td><td>
 
 Branded number representing a validated qualifier index.
+
+
+</td></tr>
+<tr><td>
+
+[QualifierMatchScore](./ts-res.qualifiermatchscore.md)
+
+
+</td><td>
+
+Branded number representing a score in the range 0.0 (no match) .. 1.0 (perfect match) which results from evaluating some condition.
 
 
 </td></tr>

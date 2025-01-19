@@ -108,7 +108,7 @@ export const NoMatch: QualifierMatchScore = 0.0 as QualifierMatchScore;
 export const PerfectMatch: QualifierMatchScore = 1.0 as QualifierMatchScore;
 
 /**
- * Determines whether a supplied value is a valid {@link Qualifiers.QualifierMatchScore | match score}.
+ * Determines whether a supplied value is a valid {@link QualifierMatchScore | match score}.
  * @param value - The value to validate.
  * @returns - `true` if the value is a valid match score, `false` otherwise.
  * @public
@@ -118,7 +118,7 @@ export function isValidMatchScore(value: number): value is QualifierMatchScore {
 }
 
 /**
- * Converts a number to a {@link Qualifiers.QualifierMatchScore | match score} if it is a valid score.
+ * Converts a number to a {@link QualifierMatchScore | match score} if it is a valid score.
  * @param value - The number to convert.
  * @returns `Success` with the converted score if successful, or `Failure` with an error message
  * if not.

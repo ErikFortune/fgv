@@ -42,7 +42,7 @@ params
 
 </td><td>
 
-_(Optional)_ Optional  to use when creating the instance.
+_(Optional)_ Optional [parameters](./ts-res.qualifiers.qualifiertypes.iterritoryqualifiertypecreateparams.md) to use when creating the instance.
 
 
 </td></tr>

@@ -109,7 +109,7 @@ export class QualifierMap {
 
   /**
    * Creates a new {@link Qualifiers.QualifierMap | QualifierMap} instance.
-   * @param params - {@link IQualifierMapCreateParams | Parameters} used to
+   * @param params - {@link Qualifiers.IQualifierCreateParams | Parameters} used to
    * create the new {@link Qualifiers.QualifierMap | QualifierMap}.
    * @returns `Success` with the new {@link Qualifiers.QualifierMap | QualifierMap} if
    * successful, `Failure` with an error message otherwise.
@@ -134,10 +134,10 @@ export class QualifierMap {
   }
 
   /**
-   * Validates the properties of a {@link IQualifierDecl | qualifier declaration} for
+   * Validates the properties of a {@link Qualifiers.IQualifierDecl | qualifier declaration} for
    * correctness.
-   * @param decl - The {@link IQualifierDecl | qualifier declaration} to validate.
-   * @returns `Success` with the validated {@link IValidatedQualifierDecl | qualifier declaration}
+   * @param decl - The {@link Qualifiers.IQualifierDecl | qualifier declaration} to validate.
+   * @returns `Success` with the validated {@link Qualifiers.IValidatedQualifierDecl | qualifier declaration}
    * if successful, `Failure` with an error message otherwise.
    * @public
    */

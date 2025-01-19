@@ -49,7 +49,7 @@ The string value to validate.
 </tbody></table>
 **Returns:**
 
-value is [QualifierConditionValue](./ts-res.qualifiers.qualifiertypes.qualifierconditionvalue.md)
+value is [QualifierConditionValue](./ts-res.qualifierconditionvalue.md)
 
-`Success` with the  if the value is valid for use in a condition, `Failure` with error details otherwise.
+`Success` with the [validated value](./ts-res.qualifierconditionvalue.md) if the value is valid for use in a condition, `Failure` with error details otherwise.
 

@@ -82,7 +82,7 @@ export class TerritoryQualifierType extends QualifierType {
 
   /**
    * Creates a new {@link Qualifiers.QualifierTypes.TerritoryQualifierType | TerritoryQualifierType} instance.
-   * @param params - Optional {@link ITerritoryQualifierTypeCreateParams | parameters} to use
+   * @param params - Optional {@link Qualifiers.QualifierTypes.ITerritoryQualifierTypeCreateParams | parameters} to use
    * when creating the instance.
    * @returns `Success` with the new {@link Qualifiers.QualifierTypes.TerritoryQualifierType | TerritoryQualifierType} if successful,
    * `Failure` with an error message otherwise.

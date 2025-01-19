@@ -4,7 +4,7 @@
 
 ## Qualifiers.QualifierTypes.QualifierType class
 
-Abstract base class for qualifier types. Provides default implementations for the  interface.
+Abstract base class for qualifier types. Provides default implementations for the [IQualifierType](./ts-res.qualifiers.qualifiertypes.iqualifiertype.md) interface.
 
 **Signature:**
 
@@ -116,52 +116,6 @@ The name of the qualifier type.
 
 
 </td></tr>
-<tr><td>
-
-[noMatch](./ts-res.qualifiers.qualifiertypes.qualifiertype.nomatch.md)
-
-
-</td><td>
-
-`static`
-
-`readonly`
-
-
-</td><td>
-
-[QualifierMatchScore](./ts-res.qualifiers.qualifiertypes.qualifiermatchscore.md)
-
-
-</td><td>
-
-Validates a condition value for this qualifier type.
-
-
-</td></tr>
-<tr><td>
-
-[perfectMatch](./ts-res.qualifiers.qualifiertypes.qualifiertype.perfectmatch.md)
-
-
-</td><td>
-
-`static`
-
-`readonly`
-
-
-</td><td>
-
-[QualifierMatchScore](./ts-res.qualifiers.qualifiertypes.qualifiermatchscore.md)
-
-
-</td><td>
-
-Validates a condition value for this qualifier type.
-
-
-</td></tr>
 </tbody></table>
 
 ## Methods
@@ -230,7 +184,7 @@ Matches a single condition value against a single context value.
 
 </td><td>
 
-Splits a comma-separated  into an array of individual values.
+Splits a comma-separated [context value](./ts-res.qualifiercontextvalue.md) into an array of individual values.
 
 
 </td></tr>
@@ -259,22 +213,6 @@ Validates a condition value for this qualifier type.
 </td><td>
 
 Validates a context value for this qualifier type.
-
-
-</td></tr>
-<tr><td>
-
-[isValidMatchScore(value)](./ts-res.qualifiers.qualifiertypes.qualifiertype.isvalidmatchscore.md)
-
-
-</td><td>
-
-`static`
-
-
-</td><td>
-
-Determines whether a supplied value is a valid .
 
 
 </td></tr>
@@ -317,22 +255,6 @@ Validates that a value and optional operator are valid for use in a condition fo
 </td><td>
 
 Validates that a value is valid for use in a runtime context for qualifiers of this type.
-
-
-</td></tr>
-<tr><td>
-
-[validateMatchScore(value)](./ts-res.qualifiers.qualifiertypes.qualifiertype.validatematchscore.md)
-
-
-</td><td>
-
-`static`
-
-
-</td><td>
-
-Converts a number to a  if it is a valid score.
 
 
 </td></tr>

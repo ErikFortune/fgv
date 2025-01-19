@@ -4,7 +4,7 @@
 
 ## Qualifiers.QualifierTypes.ILiteralQualifierTypeCreateParams interface
 
-Interface defining the parameters that can be used to create a new .
+Interface defining the parameters that can be used to create a new [LiteralQualifierType](./ts-res.qualifiers.qualifiertypes.literalqualifiertype.md)<!-- -->.
 
 **Signature:**
 

@@ -42,7 +42,7 @@ params
 
 </td><td>
 
- used to create the new [QualifierMap](./ts-res.qualifiers.qualifiermap.md)<!-- -->.
+[Parameters](./ts-res.qualifiers.iqualifiercreateparams.md) used to create the new [QualifierMap](./ts-res.qualifiers.qualifiermap.md)<!-- -->.
 
 
 </td></tr>

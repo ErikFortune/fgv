@@ -180,7 +180,7 @@ Creates a new [LiteralQualifierType](./ts-res.qualifiers.qualifiertypes.literalq
 
 </td><td>
 
-Determines whether a value is a valid condition value for a literal qualifier. The  accepts any identifier as a valid condition value.
+Determines whether a value is a valid condition value for a literal qualifier. The [LiteralQualifierType](./ts-res.qualifiers.qualifiertypes.literalqualifiertype.md) accepts any identifier as a valid condition value.
 
 
 </td></tr>

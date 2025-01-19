@@ -68,7 +68,7 @@ export class Qualifier {
 
   /**
    * Constructs a new instance of a {@link Qualifiers.Qualifier | Qualifier} from the
-   * supplied {@link IQualifierCreateParams | parameters}.
+   * supplied {@link Qualifiers.IQualifierCreateParams | parameters}.
    * @param name - The name of the qualifier.
    * @param type - The {@link Qualifiers.QualifierTypes.QualifierType | type} of the qualifier.
    * @param defaultPriority - The default {@link ConditionPriority | priority} of conditions
@@ -82,8 +82,8 @@ export class Qualifier {
 
   /**
    * Creates a new instance of a {@link Qualifiers.Qualifier | Qualifier} from the
-   * supplied {@link IQualifierCreateParams | parameters}.
-   * @param params - The {@link IQualifierCreateParams | parameters} to use when
+   * supplied {@link Qualifiers.IQualifierCreateParams | parameters}.
+   * @param params - The {@link Qualifiers.IQualifierCreateParams | parameters} to use when
    * creating the new instance.
    * @returns `Success` with the new {@link Qualifiers.Qualifier | Qualifier} if successful,
    * `Failure` with an error message otherwise.

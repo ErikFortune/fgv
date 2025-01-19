@@ -4,7 +4,7 @@
 
 ## Qualifiers.QualifierTypes.QualifierType.\_splitContext() method
 
-Splits a comma-separated  into an array of individual values.
+Splits a comma-separated [context value](./ts-res.qualifiercontextvalue.md) into an array of individual values.
 
 **Signature:**
 
@@ -37,7 +37,7 @@ value
 
 </td><td>
 
-[QualifierContextValue](./ts-res.qualifiers.qualifiertypes.qualifiercontextvalue.md)
+[QualifierContextValue](./ts-res.qualifiercontextvalue.md)
 
 
 </td><td>
@@ -49,7 +49,7 @@ The value to split.
 </tbody></table>
 **Returns:**
 
-[QualifierContextValue](./ts-res.qualifiers.qualifiertypes.qualifiercontextvalue.md)<!-- -->\[\]
+[QualifierContextValue](./ts-res.qualifiercontextvalue.md)<!-- -->\[\]
 
 an array of individual context values.
 

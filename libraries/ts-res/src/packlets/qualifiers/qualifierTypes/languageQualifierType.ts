@@ -50,7 +50,7 @@ export interface ILanguageQualifierTypeCreateParams {
 }
 
 /**
- * {@link Qualifiers.QualifierType.QualifierType | Qualifier type} which matches BCP-47 language tags applying
+ * {@link Qualifiers.QualifierTypes.QualifierType | Qualifier type} which matches BCP-47 language tags applying
  * {@link https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47#tag-matching | similarity matching}.
  * Accepts a list of language tags in the context by default.
  * @public

@@ -4,7 +4,7 @@
 
 ## Qualifiers.QualifierTypes.LanguageQualifierType class
 
- which matches BCP-47 language tags applying [similarity matching](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47#tag-matching)<!-- -->. Accepts a list of language tags in the context by default.
+[Qualifier type](./ts-res.qualifiers.qualifiertypes.qualifiertype.md) which matches BCP-47 language tags applying [similarity matching](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47#tag-matching)<!-- -->. Accepts a list of language tags in the context by default.
 
 **Signature:**
 

@@ -154,7 +154,7 @@ Gets a [qualifier](./ts-res.qualifiers.qualifier.md) from the map by name.
 
 </td><td>
 
-Validates the properties of a  for correctness.
+Validates the properties of a [qualifier declaration](./ts-res.qualifiers.iqualifierdecl.md) for correctness.
 
 
 </td></tr>

@@ -49,7 +49,7 @@ The string value to validate.
 </tbody></table>
 **Returns:**
 
-Result&lt;[QualifierContextValue](./ts-res.qualifiers.qualifiertypes.qualifiercontextvalue.md)<!-- -->&gt;
+Result&lt;[QualifierContextValue](./ts-res.qualifiercontextvalue.md)<!-- -->&gt;
 
-`Success` with the  if the value is valid for use in a runtime context, `Failure` with error details otherwise.
+`Success` with the [validated value](./ts-res.qualifiercontextvalue.md) if the value is valid for use in a runtime context, `Failure` with error details otherwise.
 

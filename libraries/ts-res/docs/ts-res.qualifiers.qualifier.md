@@ -42,7 +42,7 @@ Description
 
 </td><td>
 
-Constructs a new instance of a [Qualifier](./ts-res.qualifiers.qualifier.md) from the supplied .
+Constructs a new instance of a [Qualifier](./ts-res.qualifiers.qualifier.md) from the supplied [parameters](./ts-res.qualifiers.iqualifiercreateparams.md)<!-- -->.
 
 
 </td></tr>
@@ -166,7 +166,7 @@ Description
 
 </td><td>
 
-Creates a new instance of a [Qualifier](./ts-res.qualifiers.qualifier.md) from the supplied .
+Creates a new instance of a [Qualifier](./ts-res.qualifiers.qualifier.md) from the supplied [parameters](./ts-res.qualifiers.iqualifiercreateparams.md)<!-- -->.
 
 
 </td></tr>

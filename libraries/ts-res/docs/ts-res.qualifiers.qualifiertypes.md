@@ -24,7 +24,7 @@ Description
 
 </td><td>
 
- which matches BCP-47 language tags applying [similarity matching](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47#tag-matching)<!-- -->. Accepts a list of language tags in the context by default.
+[Qualifier type](./ts-res.qualifiers.qualifiertypes.qualifiertype.md) which matches BCP-47 language tags applying [similarity matching](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47#tag-matching)<!-- -->. Accepts a list of language tags in the context by default.
 
 
 </td></tr>
@@ -72,7 +72,7 @@ Description
 
 </td><td>
 
-Abstract base class for qualifier types. Provides default implementations for the  interface.
+Abstract base class for qualifier types. Provides default implementations for the [IQualifierType](./ts-res.qualifiers.qualifiertypes.iqualifiertype.md) interface.
 
 
 </td></tr>
@@ -109,7 +109,7 @@ Interface defining the parameters that can be used to create a new [LanguageQual
 
 </td><td>
 
-Interface defining the parameters that can be used to create a new .
+Interface defining the parameters that can be used to create a new [LiteralQualifierType](./ts-res.qualifiers.qualifiertypes.literalqualifiertype.md)<!-- -->.
 
 
 </td></tr>
@@ -143,54 +143,6 @@ Parameters used to create a base [qualifier type](./ts-res.qualifiers.qualifiert
 </td><td>
 
 Parameters used to create a new [TerritoryQualifierType](./ts-res.qualifiers.qualifiertypes.territoryqualifiertype.md) instance.
-
-
-</td></tr>
-</tbody></table>
-
-## Type Aliases
-
-<table><thead><tr><th>
-
-Type Alias
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[QualifierConditionValue](./ts-res.qualifiers.qualifiertypes.qualifierconditionvalue.md)
-
-
-</td><td>
-
-Branded type for a validated qualifier condition value - i.e. a value that has been determined to be valid for use in a condition attached to some resource.
-
-
-</td></tr>
-<tr><td>
-
-[QualifierContextValue](./ts-res.qualifiers.qualifiertypes.qualifiercontextvalue.md)
-
-
-</td><td>
-
-Branded type for a validated qualifier context value - i.e. a value that has been determined to be valid for use in some runtime context.
-
-
-</td></tr>
-<tr><td>
-
-[QualifierMatchScore](./ts-res.qualifiers.qualifiertypes.qualifiermatchscore.md)
-
-
-</td><td>
-
-Branded number representing a score in the range 0.0 (no match) .. 1.0 (perfect match) which results from evaluating some condition.
 
 
 </td></tr>
