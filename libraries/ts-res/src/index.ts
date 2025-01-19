@@ -20,9 +20,9 @@
  * SOFTWARE.
  */
 
-import * as Common from './packlets/common';
 import * as Qualifiers from './packlets/qualifiers';
 import * as ResourceJson from './packlets/resource-json';
 import * as Resources from './packlets/resources';
 
-export { Common, Qualifiers, ResourceJson, Resources };
+export * from './packlets/common';
+export { Qualifiers, ResourceJson, Resources };

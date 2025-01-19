@@ -28,7 +28,8 @@ import {
   QualifierIndex,
   QualifierTypeIndex,
   ConditionIndex,
-  ConditionSetIndex
+  ConditionSetIndex,
+  QualifierMatchScore
 } from '../conditions';
 import { identifier } from './regularExpressions';
 
@@ -92,6 +93,42 @@ export function isValidQualifierIndex(index: number): index is QualifierIndex {
  */
 export function isValidQualifierTypeIndex(index: number): index is QualifierTypeIndex {
   return index >= 0;
+}
+
+/**
+ * {@link QualifierMatchScore | Match score} indicating no match.
+ * @public
+ */
+export const NoMatch: QualifierMatchScore = 0.0 as QualifierMatchScore;
+
+/**
+ * {@link QualifierMatchScore | Match score} indicating a perfect match.
+ * @public
+ */
+export const PerfectMatch: QualifierMatchScore = 1.0 as QualifierMatchScore;
+
+/**
+ * Determines whether a supplied value is a valid {@link Qualifiers.QualifierMatchScore | match score}.
+ * @param value - The value to validate.
+ * @returns - `true` if the value is a valid match score, `false` otherwise.
+ * @public
+ */
+export function isValidMatchScore(value: number): value is QualifierMatchScore {
+  return value >= NoMatch && value <= PerfectMatch;
+}
+
+/**
+ * Converts a number to a {@link Qualifiers.QualifierMatchScore | match score} if it is a valid score.
+ * @param value - The number to convert.
+ * @returns `Success` with the converted score if successful, or `Failure` with an error message
+ * if not.
+ * @public
+ */
+export function validateMatchScore(value: number): Result<QualifierMatchScore> {
+  if (!isValidMatchScore(value)) {
+    return fail(`${value}: not a valid match score`);
+  }
+  return succeed(value as QualifierMatchScore);
 }
 
 /**

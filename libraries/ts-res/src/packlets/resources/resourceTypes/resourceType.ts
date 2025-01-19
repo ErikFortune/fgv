@@ -22,8 +22,7 @@
 
 import { JsonValue } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
-import { ResourceTypeName } from '../../common';
-import { ResourceValueMergeMethod } from '../../resource-json';
+import { ResourceTypeName, ResourceValueMergeMethod } from '../../common';
 
 /**
  * Interface describing a single resource type, which is responsible for
@@ -38,7 +37,7 @@ export interface IResourceType<T = unknown> {
   readonly name: ResourceTypeName;
 
   /**
-   * Validates a {@link ResourceJson.ResourceCandidate | resource candidate declaration} for
+   * Validates a {@link ResourceJson.IResourceCandidateDecl | resource candidate declaration} for
    * a partial resource instance value.
    * @param json - The JSON value to validate.
    * @param isPartial - `true` indicates that the value is expected to be incomplete.
@@ -54,7 +53,7 @@ export interface IResourceType<T = unknown> {
   ): Result<Partial<T>>;
 
   /**
-   * Validates a {@link ResourceJson.ResourceCandidate | resource candidate declaration} for
+   * Validates a {@link ResourceJson.IResourceCandidateDecl | resource candidate declaration} for
    * a complete resource instance value.
    * @param json - The JSON value to validate.
    * @param isPartial - `false` indicates that the value is expected to be complete.
@@ -66,7 +65,7 @@ export interface IResourceType<T = unknown> {
   validateDeclaration(json: JsonValue, isPartial: false, mergeMethod: ResourceValueMergeMethod): Result<T>;
 
   /**
-   * Validates a {@link ResourceJson.ResourceCandidate | resource candidate declaration} for
+   * Validates a {@link ResourceJson.IResourceCandidateDecl | resource candidate declaration} for
    * a resource instance value.
    * @param json - The JSON value to validate.
    * @param isPartial - Indicates whether the value is expected to be incomplete.

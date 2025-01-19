@@ -20,39 +20,16 @@
  * SOFTWARE.
  */
 
-import { Brand, Result, fail, succeed } from '@fgv/ts-utils';
-import { ConditionOperator, Convert, QualifierTypeName } from '../../common';
-
-/**
- * Branded type for a validated qualifier condition value - i.e. a value
- * that has been determined to be valid for use in a condition attached
- * to some resource.
- *
- * @example
- * For a language qualifier type, it is likely that a single language
- * tag can be used for either a condition or a context value. However,
- * a list of languages would likely only be valid as a context value.
- * @public
- */
-export type QualifierConditionValue = Brand<string, 'QualifierConditionValue'>;
-
-/**
- * Branded type for a validated qualifier context value - i.e. a value
- * that has been determined to be valid for use in some runtime context.
- * @example
- * For a language qualifier type, it is likely that a single language
- * tag can be used for either a condition or a context value. However,
- * a list of languages would likely only be valid as a context value.
- * @public
- */
-export type QualifierContextValue = Brand<string, 'QualifierContextValue'>;
-
-/**
- * Branded number representing a score in the range 0.0 (no match) .. 1.0 (perfect match)
- * which results from evaluating some condition.
- * @public
- */
-export type QualifierMatchScore = Brand<number, 'QualifierMatchScore'>;
+import { Result, fail, succeed } from '@fgv/ts-utils';
+import {
+  ConditionOperator,
+  Convert,
+  QualifierConditionValue,
+  QualifierContextValue,
+  QualifierMatchScore,
+  QualifierTypeName,
+  Validate
+} from '../../common';
 
 /**
  * Interface for a qualifier type. A qualifier type implements the build and
@@ -114,7 +91,7 @@ export interface IQualifierType {
 }
 
 /**
- * Parameters used to create a base {@link QualifierType | qualifier type}.
+ * Parameters used to create a base {@link Qualifiers.QualifierTypes.QualifierType | qualifier type}.
  * @public
  */
 export interface IQualifierTypeCreateParams {
@@ -131,12 +108,12 @@ export interface IQualifierTypeCreateParams {
 
 /**
  * Abstract base class for qualifier types. Provides default implementations for
- * the {@link IQualifierType | IQualifierType} interface.
+ * the {@link Qualifiers.QualifierTypes.IQualifierType | IQualifierType} interface.
  * @public
  */
 export abstract class QualifierType implements IQualifierType {
   /**
-   * {@inheritdoc IQualifierType.name}
+   * {@inheritdoc Qualifiers.QualifierTypes.IQualifierType.name}
    */
   public readonly name: QualifierTypeName;
 
@@ -145,16 +122,6 @@ export abstract class QualifierType implements IQualifierType {
    * @public
    */
   protected readonly _allowContextList: boolean;
-
-  /**
-   * {@inheritdoc IQualifierType.isValidConditionValue}
-   */
-  public static readonly noMatch: QualifierMatchScore = 0.0 as QualifierMatchScore;
-
-  /**
-   * {@inheritdoc IQualifierType.isValidConditionValue}
-   */
-  public static readonly perfectMatch: QualifierMatchScore = 1.0 as QualifierMatchScore;
 
   /**
    * Constructor for use by derived classes.
@@ -168,14 +135,14 @@ export abstract class QualifierType implements IQualifierType {
   }
 
   /**
-   * {@inheritdoc IQualifierType.isValidConditionValue}
+   * {@inheritdoc Qualifiers.QualifierTypes.IQualifierType.isValidConditionValue}
    */
   public isValidConditionValue(value: string): value is QualifierConditionValue {
     return true;
   }
 
   /**
-   * {@inheritdoc IQualifierType.isValidContextValue}
+   * {@inheritdoc Qualifiers.QualifierTypes.IQualifierType.isValidContextValue}
    */
   public isValidContextValue(value: string): value is QualifierContextValue {
     if (!this.isValidConditionValue(value) && this._allowContextList) {
@@ -185,7 +152,7 @@ export abstract class QualifierType implements IQualifierType {
   }
 
   /**
-   * {@inheritdoc IQualifierType.validateCondition}
+   * {@inheritdoc Qualifiers.QualifierTypes.IQualifierType.validateCondition}
    */
   public validateCondition(value: string, operator?: ConditionOperator): Result<QualifierConditionValue> {
     if (operator !== 'matches') {
@@ -197,7 +164,7 @@ export abstract class QualifierType implements IQualifierType {
   }
 
   /**
-   * {@inheritdoc IQualifierType.validateContextValue}
+   * {@inheritdoc Qualifiers.QualifierTypes.IQualifierType.validateContextValue}
    */
   public validateContextValue(value: string): Result<QualifierContextValue> {
     if (!this.isValidContextValue(value)) {
@@ -207,7 +174,7 @@ export abstract class QualifierType implements IQualifierType {
   }
 
   /**
-   * {@inheritdoc IQualifierType.matches}
+   * {@inheritdoc Qualifiers.QualifierTypes.IQualifierType.matches}
    */
   public matches(
     condition: QualifierConditionValue,
@@ -222,8 +189,8 @@ export abstract class QualifierType implements IQualifierType {
 
   /**
    * Matches a single condition value against a single context value.
-   * @param condition - The {@link QualifierConditionValue | condition value} to match.
-   * @param context - The {@link QualifierContextValue | context value} to match.
+   * @param condition - The {@link Qualifiers.QualifierConditionValue | condition value} to match.
+   * @param context - The {@link Qualifiers.QualifierContextValue | context value} to match.
    * @param operator - The {@link ConditionOperator | operator} to use in the match.
    * @returns a {@link QualifierMatchScore | score} indicating the extent to which the condition
    * matches the context value.
@@ -237,8 +204,8 @@ export abstract class QualifierType implements IQualifierType {
 
   /**
    * Matches a single condition value against a list of context values.
-   * @param condition - The {@link QualifierConditionValue | condition value} to match.
-   * @param context - The comma-separated list of {@link QualifierContextValue | context values} to match.
+   * @param condition - The {@link Qualifiers.QualifierConditionValue | condition value} to match.
+   * @param context - The comma-separated list of {@link Qualifiers.QualifierContextValue | context values} to match.
    * @param operator - The {@link ConditionOperator | operator} to use in the match.
    * @returns a {@link QualifierMatchScore | score} indicating the extent to which the condition
    * matches the context value.
@@ -251,22 +218,22 @@ export abstract class QualifierType implements IQualifierType {
   ): QualifierMatchScore {
     for (let i = 0; i < context.length; i++) {
       const score = this._matchOne(condition, context[i], operator);
-      if (score > QualifierType.noMatch) {
+      if (score > Validate.NoMatch) {
         if (i === 0) {
           return score;
         }
         const scorePerPosition = 1 / context.length;
         const adjusted = 1.0 - scorePerPosition * i + score;
-        if (QualifierType.isValidMatchScore(adjusted)) {
+        if (Validate.isValidMatchScore(adjusted)) {
           return adjusted;
         }
       }
     }
-    return QualifierType.noMatch;
+    return Validate.NoMatch;
   }
 
   /**
-   * Splits a comma-separated {@link QualifierContextValue | context value} into an array of
+   * Splits a comma-separated {@link Qualifiers.QualifierContextValue | context value} into an array of
    * individual values.
    * @param value - The value to split.
    * @returns an array of individual context values.
@@ -274,27 +241,5 @@ export abstract class QualifierType implements IQualifierType {
    */
   protected static _splitContext(value: QualifierContextValue): QualifierContextValue[] {
     return value.split(',').map((s) => s.trim() as QualifierContextValue);
-  }
-
-  /**
-   * Determines whether a supplied value is a valid {@link QualifierMatchScore | match score}.
-   * @param value - The value to validate.
-   * @returns - `true` if the value is a valid match score, `false` otherwise.
-   */
-  public static isValidMatchScore(value: number): value is QualifierMatchScore {
-    return value >= this.noMatch && value <= this.perfectMatch;
-  }
-
-  /**
-   * Converts a number to a {@link QualifierMatchScore | match score} if it is a valid score.
-   * @param value - The number to convert.
-   * @returns `Success` with the converted score if successful, or `Failure` with an error message
-   * if not.
-   */
-  public static validateMatchScore(value: number): Result<QualifierMatchScore> {
-    if (!this.isValidMatchScore(value)) {
-      return fail(`${value}: not a valid match score`);
-    }
-    return succeed(value as QualifierMatchScore);
   }
 }

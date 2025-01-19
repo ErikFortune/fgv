@@ -21,12 +21,12 @@
  */
 
 import { captureResult, Result } from '@fgv/ts-utils';
-import { ConditionOperator, ConditionPriority, Validate } from '../common';
+import { ConditionOperator, ConditionPriority, QualifierConditionValue, Validate } from '../common';
 import { Qualifier, QualifierMap, QualifierTypes } from '../qualifiers';
 
 /**
  * Parameters used to create a {@link Condition| Condition} object
- * when the instantiated {@link Qualifier | qualifier} is available.
+ * when the instantiated {@link Qualifiers.Qualifier | qualifier} is available.
  * @public
  */
 export interface IConditionCreateWithQualifierParams {
@@ -38,8 +38,8 @@ export interface IConditionCreateWithQualifierParams {
 
 /**
  * Parameters used to create a {@link Condition| Condition} object
- * when given a string name for the {@link Qualifier | qualifier}
- * and a {@link QualifierMap | QualifierMap}.
+ * when given a string name for the {@link Qualifiers.Qualifier | qualifier}
+ * and a {@link Qualifiers.QualifierMap | QualifierMap}.
  * @public
  */
 
@@ -63,13 +63,13 @@ export type IConditionCreateParams = IConditionCreateWithQualifierParams | ICond
  */
 export class Condition {
   /**
-   * The {@link Qualifier | qualifier} used in this condition.
+   * The {@link Qualifiers.Qualifier | qualifier} used in this condition.
    */
   public readonly qualifier: Qualifier;
   /**
    * The value to be matched in this condition.
    */
-  public readonly value: QualifierTypes.QualifierConditionValue;
+  public readonly value: QualifierConditionValue;
   /**
    * The {@link ConditionOperator | operator} used when matching context value to condition value.
    */
@@ -81,7 +81,7 @@ export class Condition {
 
   /**
    * Constructs a new {@link Condition | Condition} object.
-   * @param qualifier - The {@link Qualifier | qualifier} used in this condition.
+   * @param qualifier - The {@link Qualifiers.Qualifier | qualifier} used in this condition.
    * @param value - The value to be matched in this condition.
    * @param operator - The {@link ConditionOperator | operator} used when matching context value to condition value.
    * @param priority - The {@link ConditionPriority | relative priority} of this condition.

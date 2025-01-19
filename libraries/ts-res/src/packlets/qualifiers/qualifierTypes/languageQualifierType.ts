@@ -22,16 +22,18 @@
 
 import { Result, captureResult } from '@fgv/ts-utils';
 import { Bcp47 } from '@fgv/ts-bcp47';
-import { ConditionOperator } from '../../common';
 import {
+  ConditionOperator,
   QualifierConditionValue,
   QualifierContextValue,
   QualifierMatchScore,
-  QualifierType
-} from './qualifierType';
+  Validate
+} from '../../common';
+import { QualifierType } from './qualifierType';
 
 /**
- * Interface defining the parameters that can be used to create a new {@link LanguageQualifierType}.
+ * Interface defining the parameters that can be used to create a new
+ * {@link Qualifiers.QualifierTypes.LanguageQualifierType | LanguageQualifierType}.
  * @public
  */
 export interface ILanguageQualifierTypeCreateParams {
@@ -48,14 +50,14 @@ export interface ILanguageQualifierTypeCreateParams {
 }
 
 /**
- * {@link QualifierType} which matches BCP-47 language tags applying
+ * {@link Qualifiers.QualifierType.QualifierType | Qualifier type} which matches BCP-47 language tags applying
  * {@link https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47#tag-matching | similarity matching}.
  * Accepts a list of language tags in the context by default.
  * @public
  */
 export class LanguageQualifierType extends QualifierType {
   /**
-   * Creates a new instance of a {@link LanguageQualifierType | language qualifier type}.
+   * Creates a new instance of a {@link Qualifiers.QualifierTypes.LanguageQualifierType | language qualifier type}.
    * @param name - Optional name for the qualifier type. Defaults to 'language'.
    * @param allowContextList - Optional flag indicating whether the context can be a list of values. Defaults to `true`.
    * @public
@@ -66,10 +68,10 @@ export class LanguageQualifierType extends QualifierType {
   }
 
   /**
-   * Creates a new instance of a {@link LanguageQualifierType | language qualifier type}.
-   * @param params - Optional {@link ILanguageQualifierTypeCreateParams | parameters} to use when creating
+   * Creates a new instance of a {@link Qualifiers.QualifierTypes.LanguageQualifierType | language qualifier type}.
+   * @param params - Optional {@link Qualifiers.QualifierTypes.ILanguageQualifierTypeCreateParams | parameters} to use when creating
    * the new instance.
-   * @returns `Success` with the new {@link LanguageQualifierType | language qualifier type} if successful, `Failure`
+   * @returns `Success` with the new {@link Qualifiers.QualifierTypes.LanguageQualifierType | language qualifier type} if successful, `Failure`
    * otherwise.
    */
   public static create(params?: ILanguageQualifierTypeCreateParams): Result<LanguageQualifierType> {
@@ -91,10 +93,10 @@ export class LanguageQualifierType extends QualifierType {
   ): QualifierMatchScore {
     if (operator === 'matches') {
       const similarity = Bcp47.similarity(condition, context).orDefault(Bcp47.tagSimilarity.none);
-      if (similarity > 0.0 && QualifierType.isValidMatchScore(similarity)) {
+      if (similarity > 0.0 && Validate.isValidMatchScore(similarity)) {
         return similarity;
       }
     }
-    return QualifierType.noMatch;
+    return Validate.NoMatch;
   }
 }

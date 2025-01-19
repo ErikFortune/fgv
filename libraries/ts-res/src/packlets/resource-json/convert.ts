@@ -20,42 +20,36 @@
  * SOFTWARE.
  */
 
-import * as Common from '../common';
+import { Convert as CommonConvert } from '../common';
 import { Conversion, Converter, Converters } from '@fgv/ts-utils';
 import { Converters as JsonConverters } from '@fgv/ts-json-base';
-import { allResourceValueMergeTypes, IResourceCandidateDecl, IResourceCollectionDecl } from './model';
+import { IResourceCandidateDecl, IResourceCollectionDecl } from './model';
 
 /* eslint-disable @rushstack/typedef-var */
 
 /**
- * `Converter` for a {@link IResourceCandidateDecl | resource candidate declaration}.
+ * `Converter` for a condition set declaration.
  * @public
  */
 export const conditionSetDecl = Converters.recordOf(Converters.string, {
-  keyConverter: Common.Convert.qualifierName
+  keyConverter: CommonConvert.qualifierName
 });
 
 /**
- * `Converter` for a {@link IResourceCandidateDecl | resource candidate declaration}.
- * @public
- */
-export const resourceValueMergeType = Converters.enumeratedValue(allResourceValueMergeTypes);
-
-/**
- * `Converter` for a {@link IResourceCandidateDecl | resource candidate declaration}.
+ * `Converter` for a {@link ResourceJson.IResourceCandidateDecl | resource candidate declaration}.
  * @public
  */
 export const resourceCandidateDecl = Converters.object<IResourceCandidateDecl>({
-  id: Common.Convert.resourceId,
+  id: CommonConvert.resourceId,
   json: JsonConverters.jsonValue,
   conditions: conditionSetDecl,
-  mergeMethod: resourceValueMergeType.optional(),
+  mergeMethod: CommonConvert.resourceValueMergeMethod.optional(),
   isPartial: Converters.boolean.optional(),
-  resourceTypeName: Common.Convert.resourceTypeName.optional()
+  resourceTypeName: CommonConvert.resourceTypeName.optional()
 });
 
 /**
- * `Converter` for a {@link IResourceCollectionDecl | resource collection declaration}.
+ * `Converter` for a {@link ResourceJson.IResourceCollectionDecl | resource collection declaration}.
  * @public
  */
 export const resourceCollectionDecl = new Conversion.BaseConverter<IResourceCollectionDecl>(

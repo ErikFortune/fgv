@@ -35,12 +35,12 @@ export interface IResourceCreateParams {
    */
   id: ResourceId;
   /**
-   * Optional {@link IResourceType | type} of the resource. If not specified, the type will be inferred
+   * Optional {@link Resources.ResourceTypes.IResourceType | type} of the resource. If not specified, the type will be inferred
    * from the candidates.
    */
   type?: IResourceType;
   /**
-   * Array of {@link ResourceCandidate | candidates} for the resource.
+   * Array of {@link Resources.ResourceCandidate | candidates} for the resource.
    */
   candidates: ReadonlyArray<ResourceCandidate>;
 }
@@ -56,11 +56,11 @@ export class Resource {
    */
   public readonly id: ResourceId;
   /**
-   * The {@link IResourceType | type} of the resource.
+   * The {@link Resources.ResourceTypes.IResourceType | type} of the resource.
    */
   public readonly type: IResourceType;
   /**
-   * The array of {@link ResourceCandidate | candidates} for the resource.
+   * The array of {@link Resources.ResourceCandidate | candidates} for the resource.
    */
   public readonly candidates: ReadonlyArray<ResourceCandidate>;
 
@@ -114,7 +114,7 @@ export class Resource {
   }
 
   /**
-   * Validates and normalizes an array of {@link ResourceCandidate | candidates}. Fails if there
+   * Validates and normalizes an array of {@link Resources.ResourceCandidate | candidates}. Fails if there
    * are multiple candidates for the same set of conditions.
    * @param candidates - The array of candidates to validate.
    * @returns `Success` with the validated and sorted array of candidates if successful,

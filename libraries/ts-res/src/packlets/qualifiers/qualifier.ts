@@ -25,7 +25,7 @@ import { ConditionPriority, QualifierName } from '../common';
 import { QualifierType } from './qualifierTypes';
 
 /**
- * Parameters for creating a new {@link Qualifier | Qualifier}.
+ * Parameters for creating a new {@link Qualifiers.Qualifier | Qualifier}.
  * @public
  */
 export interface IQualifierCreateParams {
@@ -35,7 +35,7 @@ export interface IQualifierCreateParams {
   name: QualifierName;
 
   /**
-   * The {@link QualifierType | type} of the qualifier.
+   * The {@link Qualifiers.QualifierTypes.QualifierType | type} of the qualifier.
    */
   type: QualifierType;
 
@@ -57,7 +57,7 @@ export class Qualifier {
    */
   public readonly name: QualifierName;
   /**
-   * The {@link QualifierType | type} of the qualifier.
+   * The {@link Qualifiers.QualifierTypes.QualifierType | type} of the qualifier.
    */
   public readonly type: QualifierType;
   /**
@@ -67,10 +67,10 @@ export class Qualifier {
   public readonly defaultPriority: ConditionPriority;
 
   /**
-   * Constructs a new instance of a {@link Qualifier | Qualifier} from the
+   * Constructs a new instance of a {@link Qualifiers.Qualifier | Qualifier} from the
    * supplied {@link IQualifierCreateParams | parameters}.
    * @param name - The name of the qualifier.
-   * @param type - The {@link QualifierType | type} of the qualifier.
+   * @param type - The {@link Qualifiers.QualifierTypes.QualifierType | type} of the qualifier.
    * @param defaultPriority - The default {@link ConditionPriority | priority} of conditions
    * @public
    */
@@ -81,11 +81,11 @@ export class Qualifier {
   }
 
   /**
-   * Creates a new instance of a {@link Qualifier | Qualifier} from the
+   * Creates a new instance of a {@link Qualifiers.Qualifier | Qualifier} from the
    * supplied {@link IQualifierCreateParams | parameters}.
    * @param params - The {@link IQualifierCreateParams | parameters} to use when
    * creating the new instance.
-   * @returns `Success` with the new {@link Qualifier | Qualifier} if successful,
+   * @returns `Success` with the new {@link Qualifiers.Qualifier | Qualifier} if successful,
    * `Failure` with an error message otherwise.
    * @public
    */

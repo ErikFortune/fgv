@@ -21,7 +21,7 @@
  */
 
 import { JsonValue } from '@fgv/ts-json-base';
-import { ResourceId } from '../common';
+import { ResourceId, ResourceValueMergeMethod } from '../common';
 import { Condition, ConditionSet } from '../conditions';
 import { QualifierMap } from '../qualifiers';
 import * as ResourceJson from '../resource-json';
@@ -29,7 +29,7 @@ import { IResourceType, ResourceTypeMap } from './resourceTypes';
 import { captureResult, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 
 /**
- * Parameters to create a {@link ResourceCandidate | ResourceCandidate}.
+ * Parameters to create a {@link Resources.ResourceCandidate | ResourceCandidate}.
  * @public
  */
 export interface IResourceCandidateCreateParams {
@@ -40,7 +40,7 @@ export interface IResourceCandidateCreateParams {
 }
 
 /**
- * A {@link ResourceCandidate | resource candidate} represents a single possible
+ * A {@link Resources.ResourceCandidate | resource candidate} represents a single possible
  * instance value for some resource, with the conditions under which it applies
  * and instructions on how to merge it with other instances.
  * @public
@@ -70,10 +70,10 @@ export class ResourceCandidate {
   /**
    * The method to use when merging this candidate with other instances.
    */
-  public readonly mergeMethod: ResourceJson.ResourceValueMergeMethod;
+  public readonly mergeMethod: ResourceValueMergeMethod;
 
   /**
-   * The {@link IResourceType | resource type} for the resource to which
+   * The {@link Resources.ResourceTypes.IResourceType | resource type} for the resource to which
    * this candidate belongs.
    */
   public get resourceType(): IResourceType | undefined {
@@ -83,8 +83,8 @@ export class ResourceCandidate {
   private _resourceType: IResourceType | undefined;
 
   /**
-   * Constructor for a {@link ResourceCandidate | ResourceCandidate} object.
-   * @param params - Parameters to create a new {@link ResourceCandidate | ResourceCandidate}.
+   * Constructor for a {@link Resources.ResourceCandidate | ResourceCandidate} object.
+   * @param params - Parameters to create a new {@link Resources.ResourceCandidate | ResourceCandidate}.
    * @public
    */
   protected constructor(params: IResourceCandidateCreateParams) {
@@ -108,9 +108,9 @@ export class ResourceCandidate {
   }
 
   /**
-   * Creates a new {@link ResourceCandidate | ResourceCandidate} object.
-   * @param params - Parameters to create a new {@link ResourceCandidate | ResourceCandidate}.
-   * @returns `Success` with the new {@link ResourceCandidate | ResourceCandidate} object if successful,
+   * Creates a new {@link Resources.ResourceCandidate | ResourceCandidate} object.
+   * @param params - Parameters to create a new {@link Resources.ResourceCandidate | ResourceCandidate}.
+   * @returns `Success` with the new {@link Resources.ResourceCandidate | ResourceCandidate} object if successful,
    * or `Failure` with an error message if not.
    * @public
    */
@@ -119,7 +119,7 @@ export class ResourceCandidate {
   }
 
   /**
-   * Extracts the {@link IResourceType | resource type} from a list of {@link ResourceCandidate | resource candidates},
+   * Extracts the {@link Resources.ResourceTypes.IResourceType | resource type} from a list of {@link Resources.ResourceCandidate | resource candidates},
    * if present.
    * @param candidates - The list of candidates from which to extract the resource type.
    * @returns `Success` with the resource type if successful, `Success` with `undefined` if none of the candidates
@@ -145,7 +145,7 @@ export class ResourceCandidate {
   }
 
   /**
-   * Compares two {@link ResourceCandidate | ResourceCandidates} for sorting purposes.
+   * Compares two {@link Resources.ResourceCandidate | ResourceCandidates} for sorting purposes.
    * @param rc1 - The first candidate to compare.
    * @param rc2 - The second candidate to compare.
    * @returns A negative number if `rc1` should come before `rc2`, a positive number if `rc2` should come before `rc1`,
@@ -158,7 +158,7 @@ export class ResourceCandidate {
 
   /**
    * Validates declared conditions and merges them with parent conditions.
-   * @param qualifiers - The {@link QualifierMap | qualifiers} to use when creating conditions.
+   * @param qualifiers - The {@link Qualifiers.QualifierMap | qualifiers} to use when creating conditions.
    * @param declared - The declared conditions for the candidate.
    * @param parent - The parent conditions to merge with the declared conditions.
    * @returns `Success` with the merged conditions if successful, `Failure` otherwise.

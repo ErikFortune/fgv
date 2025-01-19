@@ -21,28 +21,12 @@
  */
 
 import { JsonValue } from '@fgv/ts-json-base';
-import * as Common from '../common';
-
-/**
- * Type representing the possible ways that a resource value can be merged into an existing resource.
- * - 'augment' means that the new value should be merged into the existing value, with new properties added and existing properties updated.
- * - 'delete' means that the existing values should be deleted.
- * - 'replace' means that the new value should replace the existing value.
- * @public
- */
-export type ResourceValueMergeMethod = 'augment' | 'delete' | 'replace';
-
-/**
- * Array of all possible {@link ResourceValueMergeMethod | resource merge type} values.
- * @public
- */
-export const allResourceValueMergeTypes: ResourceValueMergeMethod[] = ['augment', 'delete', 'replace'];
-
+import { QualifierName, ResourceId, ResourceTypeName, ResourceValueMergeMethod } from '../common';
 /**
  * Type representing a set of conditions that must be met for a resource to be selected.
  * @public
  */
-export type ConditionSetDecl = Record<Common.QualifierName, string>;
+export type ConditionSetDecl = Record<QualifierName, string>;
 
 /**
  * Interface representing a resource candidate declaration.
@@ -50,9 +34,9 @@ export type ConditionSetDecl = Record<Common.QualifierName, string>;
  */
 export interface IResourceCandidateDecl {
   /**
-   * The {@link Common.ResourceId | id} of the resource.
+   * The {@link ResourceId | id} of the resource.
    */
-  readonly id: Common.ResourceId;
+  readonly id: ResourceId;
 
   /**
    * The JSON value of the resource.
@@ -70,7 +54,7 @@ export interface IResourceCandidateDecl {
   readonly isPartial?: boolean;
 
   /**
-   * The type of merge to be used when merging the resource into the existing resource.
+   * The merge method to be used when merging the resource into the existing resource.
    * default is 'augment'.
    */
   readonly mergeMethod?: ResourceValueMergeMethod;
@@ -78,7 +62,7 @@ export interface IResourceCandidateDecl {
   /**
    * The type of resource.
    */
-  readonly resourceTypeName?: Common.ResourceTypeName;
+  readonly resourceTypeName?: ResourceTypeName;
 }
 
 /**

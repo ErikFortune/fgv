@@ -25,7 +25,7 @@ import { ResourceTypeName } from '../../common';
 import { IResourceType } from './resourceType';
 
 /**
- * Map {@link ResourceTypeName | resource type names} to {@link IResourceType | resource types}.
+ * Map {@link ResourceTypeName | resource type names} to {@link Resources.ResourceTypes.IResourceType | resource types}.
  * @public
  */
 export class ResourceTypeMap {

@@ -26,7 +26,7 @@ import { Qualifier } from './qualifier';
 import { QualifierType } from './qualifierTypes';
 
 /**
- * Declares a {@link Qualifier | Qualifier} for use in build or at runtime.
+ * Declares a {@link Qualifiers.Qualifier | Qualifier} for use in build or at runtime.
  * @public
  */
 export interface IQualifierDecl<
@@ -49,14 +49,14 @@ export interface IQualifierDecl<
 }
 
 /**
- * A {@link IQualifierDecl | qualifier declaration} with all properties
+ * A {@link Qualifiers.IQualifierDecl | qualifier declaration} with all properties
  * validated for correctness.
  * @public
  */
 export type IValidatedQualifierDecl = IQualifierDecl<QualifierName, QualifierTypeName, ConditionPriority>;
 
 /**
- * Parameters for creating a new {@link QualifierMap | QualifierMap}.
+ * Parameters for creating a new {@link Qualifiers.QualifierMap | QualifierMap}.
  * @public
  */
 export interface IQualifierMapCreateParams {
@@ -65,7 +65,7 @@ export interface IQualifierMapCreateParams {
 }
 
 /**
- * Represents a collection of named, instantiated {@link Qualifier | Qualifiers}
+ * Represents a collection of named, instantiated {@link Qualifiers.Qualifier | Qualifiers}
  * for use at build or runtime.
  * @public
  */
@@ -80,8 +80,8 @@ export class QualifierMap {
   private _qualifiers: Map<QualifierName, Qualifier>;
 
   /**
-   * Constructs a new {@link QualifierMap | QualifierMap}.
-   * @param params - Parameters for creating a new {@link QualifierMap | QualifierMap}.
+   * Constructs a new {@link Qualifiers.QualifierMap | QualifierMap}.
+   * @param params - Parameters for creating a new {@link Qualifiers.QualifierMap | QualifierMap}.
    * @public
    */
   protected constructor(params: IQualifierMapCreateParams) {
@@ -108,10 +108,10 @@ export class QualifierMap {
   }
 
   /**
-   * Creates a new {@link QualifierMap | QualifierMap} instance.
+   * Creates a new {@link Qualifiers.QualifierMap | QualifierMap} instance.
    * @param params - {@link IQualifierMapCreateParams | Parameters} used to
-   * create the new {@link QualifierMap | QualifierMap}.
-   * @returns `Success` with the new {@link QualifierMap | QualifierMap} if
+   * create the new {@link Qualifiers.QualifierMap | QualifierMap}.
+   * @returns `Success` with the new {@link Qualifiers.QualifierMap | QualifierMap} if
    * successful, `Failure` with an error message otherwise.
    * @public
    */
@@ -120,9 +120,9 @@ export class QualifierMap {
   }
 
   /**
-   * Gets a {@link Qualifier | qualifier} from the map by name.
-   * @param name - The name of the {@link Qualifier | qualifier} to retrieve.
-   * @returns `Success` with the {@link Qualifier | qualifier} if found, `Failure` with an error message otherwise.
+   * Gets a {@link Qualifiers.Qualifier | qualifier} from the map by name.
+   * @param name - The name of the {@link Qualifiers.Qualifier | qualifier} to retrieve.
+   * @returns `Success` with the {@link Qualifiers.Qualifier | qualifier} if found, `Failure` with an error message otherwise.
    * @public
    */
   public get(name: QualifierName): Result<Qualifier> {

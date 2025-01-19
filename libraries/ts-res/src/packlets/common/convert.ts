@@ -23,6 +23,7 @@
 import { Converters } from '@fgv/ts-utils';
 import * as Validate from './validate';
 import { allConditionOperators } from './conditions';
+import { allResourceValueMergeMethods } from './resources';
 
 /* eslint-disable @rushstack/typedef-var */
 
@@ -103,3 +104,9 @@ export const resourceTypeName = Converters.string.map(Validate.toResourceTypeNam
  * @public
  */
 export const resourceTypeIndex = Converters.number.map(Validate.toResourceTypeIndex);
+
+/**
+ * `Converter` for a resource value merge method.
+ * @public
+ */
+export const resourceValueMergeMethod = Converters.enumeratedValue(allResourceValueMergeMethods);

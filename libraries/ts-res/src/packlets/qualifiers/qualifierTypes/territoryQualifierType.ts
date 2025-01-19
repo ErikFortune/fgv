@@ -21,15 +21,11 @@
  */
 
 import { captureResult, Result } from '@fgv/ts-utils';
-import {
-  QualifierConditionValue,
-  QualifierContextValue,
-  QualifierMatchScore,
-  QualifierType
-} from './qualifierType';
+import { QualifierConditionValue, QualifierContextValue, QualifierMatchScore, Validate } from '../../common';
+import { QualifierType } from './qualifierType';
 
 /**
- * Parameters used to create a new {@link TerritoryQualifierType | TerritoryQualifierType} instance.
+ * Parameters used to create a new {@link Qualifiers.QualifierTypes.TerritoryQualifierType | TerritoryQualifierType} instance.
  * @public
  */
 export interface ITerritoryQualifierTypeCreateParams {
@@ -57,7 +53,7 @@ export class TerritoryQualifierType extends QualifierType {
   protected readonly _allowedTerritories?: ReadonlyArray<string>;
 
   /**
-   * Creates a new {@link TerritoryQualifierType | TerritoryQualifierType} instance.
+   * Creates a new {@link Qualifiers.QualifierTypes.TerritoryQualifierType | TerritoryQualifierType} instance.
    * @public
    */
   protected constructor({ allowedTerritories }: ITerritoryQualifierTypeCreateParams) {
@@ -75,7 +71,7 @@ export class TerritoryQualifierType extends QualifierType {
   }
 
   /**
-   * {@inheritdoc QualifierType.isValidConditionValue}
+   * {@inheritdoc Qualifiers.QualifierTypes.QualifierType.isValidConditionValue}
    */
   public isValidConditionValue(value: string): value is QualifierConditionValue {
     if (this._allowedTerritories !== undefined) {
@@ -85,10 +81,10 @@ export class TerritoryQualifierType extends QualifierType {
   }
 
   /**
-   * Creates a new {@link TerritoryQualifierType | TerritoryQualifierType} instance.
+   * Creates a new {@link Qualifiers.QualifierTypes.TerritoryQualifierType | TerritoryQualifierType} instance.
    * @param params - Optional {@link ITerritoryQualifierTypeCreateParams | parameters} to use
    * when creating the instance.
-   * @returns `Success` with the new {@link TerritoryQualifierType | TerritoryQualifierType} if successful,
+   * @returns `Success` with the new {@link Qualifiers.QualifierTypes.TerritoryQualifierType | TerritoryQualifierType} if successful,
    * `Failure` with an error message otherwise.
    * @public
    */
@@ -97,14 +93,12 @@ export class TerritoryQualifierType extends QualifierType {
   }
 
   /**
-   * {@inheritdoc QualifierType._matchOne}
+   * {@inheritdoc Qualifiers.QualifierTypes.QualifierType._matchOne}
    */
   protected _matchOne(
     condition: QualifierConditionValue,
     context: QualifierContextValue
   ): QualifierMatchScore {
-    return condition.toUpperCase() === context.toUpperCase()
-      ? QualifierType.perfectMatch
-      : QualifierType.noMatch;
+    return condition.toUpperCase() === context.toUpperCase() ? Validate.PerfectMatch : Validate.NoMatch;
   }
 }

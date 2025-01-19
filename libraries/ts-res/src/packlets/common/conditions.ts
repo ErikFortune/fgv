@@ -47,6 +47,37 @@ export type QualifierTypeName = Brand<string, 'QualifierTypeName'>;
 export type QualifierTypeIndex = Brand<number, 'QualifierTypeIndex'>;
 
 /**
+ * Branded type for a validated qualifier condition value - i.e. a value
+ * that has been determined to be valid for use in a condition attached
+ * to some resource.
+ *
+ * @example
+ * For a language qualifier type, it is likely that a single language
+ * tag can be used for either a condition or a context value. However,
+ * a list of languages would likely only be valid as a context value.
+ * @public
+ */
+export type QualifierConditionValue = Brand<string, 'QualifierConditionValue'>;
+
+/**
+ * Branded type for a validated qualifier context value - i.e. a value
+ * that has been determined to be valid for use in some runtime context.
+ * @example
+ * For a language qualifier type, it is likely that a single language
+ * tag can be used for either a condition or a context value. However,
+ * a list of languages would likely only be valid as a context value.
+ * @public
+ */
+export type QualifierContextValue = Brand<string, 'QualifierContextValue'>;
+
+/**
+ * Branded number representing a score in the range 0.0 (no match) .. 1.0 (perfect match)
+ * which results from evaluating some condition.
+ * @public
+ */
+export type QualifierMatchScore = Brand<number, 'QualifierMatchScore'>;
+
+/**
  * Branded number representing a validated condition priority.
  * @public
  */

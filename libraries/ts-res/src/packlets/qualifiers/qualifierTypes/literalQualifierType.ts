@@ -21,17 +21,18 @@
  */
 
 import { captureResult, Result } from '@fgv/ts-utils';
-import { ConditionOperator, Validate } from '../../common';
 import {
-  IQualifierTypeCreateParams,
+  ConditionOperator,
   QualifierConditionValue,
   QualifierContextValue,
   QualifierMatchScore,
-  QualifierType
-} from './qualifierType';
+  Validate
+} from '../../common';
+import { IQualifierTypeCreateParams, QualifierType } from './qualifierType';
 
 /**
- * Interface defining the parameters that can be used to create a new {@link LiteralQualifierType | LiteralQualifierType}.
+ * Interface defining the parameters that can be used to create a new
+ * {@link Qualifiers.QualifierTypes.LiteralQualifierType | LiteralQualifierType}.
  * @public
  */
 export interface ILiteralQualifierTypeCreateParams extends IQualifierTypeCreateParams {
@@ -53,7 +54,7 @@ export interface ILiteralQualifierTypeCreateParams extends IQualifierTypeCreateP
 }
 
 /**
- * A {@link QualifierType | qualifier} that matches a literal value., optionally case-sensitive
+ * A {@link Qualifiers.QualifierTypes.QualifierType | qualifier} that matches a literal value., optionally case-sensitive
  * or matching against an ordered list of values at runtime.
  * @public
  */
@@ -69,7 +70,7 @@ export class LiteralQualifierType extends QualifierType {
   protected readonly _enumeratedValues?: ReadonlyArray<string>;
 
   /**
-   * Constructs a new {@link LiteralQualifierType | LiteralQualifierType}.
+   * Constructs a new {@link Qualifiers.QualifierTypes.LiteralQualifierType | LiteralQualifierType}.
    * @param name - Optional name for the qualifier type. Defaults to 'literal'.
    * @param caseSensitive - Optional flag indicating whether the match should be case-sensitive. Defaults to false.
    * @param allowContextList - Optional flag indicating whether the context can be a list of values. Defaults to false.
@@ -88,7 +89,8 @@ export class LiteralQualifierType extends QualifierType {
 
   /**
    * Determines whether a value is a valid condition value for a literal qualifier. The
-   * {@link LiteralQualifierType | LiteralQualifierType} accepts any identifier as a valid condition value.
+   * {@link LiteralQualifierType | Qualifiers.QualifierTypes.LiteralQualifierType} accepts
+   * any identifier as a valid condition value.
    * @param value - The value to validate.
    * @returns `true` if the value is a valid condition value, `false` otherwise.
    */
@@ -103,7 +105,7 @@ export class LiteralQualifierType extends QualifierType {
   }
 
   /**
-   * {@inheritdoc QualifierType._matchOne}
+   * {@inheritdoc Qualifiers.QualifierTypes.QualifierType._matchOne}
    */
   protected _matchOne(
     condition: QualifierConditionValue,
@@ -111,19 +113,18 @@ export class LiteralQualifierType extends QualifierType {
     operator: ConditionOperator
   ): QualifierMatchScore {
     if (this._caseSensitive) {
-      return condition === (context as string) ? QualifierType.perfectMatch : QualifierType.noMatch;
+      return condition === (context as string) ? Validate.PerfectMatch : Validate.NoMatch;
     } else {
-      return condition.toLowerCase() === context.toLowerCase()
-        ? QualifierType.perfectMatch
-        : QualifierType.noMatch;
+      return condition.toLowerCase() === context.toLowerCase() ? Validate.PerfectMatch : Validate.NoMatch;
     }
   }
 
   /**
-   * Creates a new {@link LiteralQualifierType | LiteralQualifierType}.
-   * @param params - Optional {@link ILiteralQualifierTypeCreateParams | parameters} to use when creating the new instance.
-   * @returns `Success` with the new {@link LiteralQualifierType | LiteralQualifierType} if successful, `Failure` with
-   * an error message otherwise.
+   * Creates a new {@link Qualifiers.QualifierTypes.LiteralQualifierType | LiteralQualifierType}.
+   * @param params - Optional {@link Qualifiers.QualifierTypes.ILiteralQualifierTypeCreateParams | parameters}
+   * to use when creating the new instance.
+   * @returns `Success` with the new {@link Qualifiers.QualifierTypes.LiteralQualifierType | LiteralQualifierType}
+   * if successful, `Failure` with an error message otherwise.
    * @public
    */
   public static create(params: ILiteralQualifierTypeCreateParams): Result<LiteralQualifierType> {
