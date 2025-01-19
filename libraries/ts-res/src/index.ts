@@ -21,7 +21,7 @@
  */
 
 import * as Common from './packlets/common';
-import * as QualifierTypes from './packlets/qualifier-types';
+import * as Qualifiers from './packlets/qualifiers';
 import * as ResourceJson from './packlets/resource-json';
 
-export { Common, QualifierTypes, ResourceJson };
+export { Common, Qualifiers, ResourceJson };

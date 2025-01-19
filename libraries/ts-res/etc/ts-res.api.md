@@ -166,6 +166,17 @@ interface ILiteralQualifierTypeCreateParams extends IQualifierTypeCreateParams {
     name?: string;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "Qualifier"
+//
+// @public
+interface IQualifierCreateParams {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionPriority"
+    defaultPriority: ConditionPriority;
+    name: QualifierName;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierType"
+    type: QualifierType;
+}
+
 // @public
 interface IQualifierType {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierConditionValue"
@@ -248,6 +259,25 @@ class LiteralQualifierType extends QualifierType {
 }
 
 // @public
+class Qualifier {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "Qualifier"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierCreateParams"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierType"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionPriority"
+    protected constructor({ name, type, defaultPriority }: IQualifierCreateParams);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "Qualifier"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierCreateParams"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierCreateParams"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "Qualifier"
+    static create(params: IQualifierCreateParams): Result<Qualifier>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionPriority"
+    readonly defaultPriority: ConditionPriority;
+    readonly name: QualifierName;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierType"
+    readonly type: QualifierType;
+}
+
+// @public
 type QualifierConditionValue = Brand<string, 'QualifierConditionValue'>;
 
 // @public
@@ -271,6 +301,15 @@ type QualifierName = Brand<string, 'QualifierName'>;
 //
 // @public
 const qualifierName: Converter<QualifierName, unknown>;
+
+declare namespace Qualifiers {
+    export {
+        QualifierTypes,
+        IQualifierCreateParams,
+        Qualifier
+    }
+}
+export { Qualifiers }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierType"
 //
@@ -360,7 +399,6 @@ declare namespace QualifierTypes {
         TerritoryQualifierType
     }
 }
-export { QualifierTypes }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceCandidateDecl"
 //

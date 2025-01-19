@@ -22,7 +22,7 @@
 
 import { Result, captureResult } from '@fgv/ts-utils';
 import { Bcp47 } from '@fgv/ts-bcp47';
-import { ConditionOperator } from '../common';
+import { ConditionOperator } from '../../common';
 import {
   QualifierConditionValue,
   QualifierContextValue,

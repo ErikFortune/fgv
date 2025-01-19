@@ -20,9 +20,8 @@
  * SOFTWARE.
  */
 
-import * as Convert from './convert';
+import * as QualifierTypes from './qualifierTypes';
 
-export * from './conditions';
-export * from './resources';
+export * from './qualifier';
 
-export { Convert };
+export { QualifierTypes };

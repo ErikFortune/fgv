@@ -21,7 +21,7 @@
  */
 
 import { captureResult, Result } from '@fgv/ts-utils';
-import { ConditionOperator, Utils } from '../common';
+import { ConditionOperator, Utils } from '../../common';
 import {
   IQualifierTypeCreateParams,
   QualifierConditionValue,

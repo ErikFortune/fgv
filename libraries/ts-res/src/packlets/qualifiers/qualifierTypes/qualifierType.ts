@@ -21,7 +21,7 @@
  */
 
 import { Brand, Result, fail, succeed } from '@fgv/ts-utils';
-import { ConditionOperator, Convert, QualifierTypeName } from '../common';
+import { ConditionOperator, Convert, QualifierTypeName } from '../../common';
 
 /**
  * Branded type for a validated qualifier condition value - i.e. a value
