@@ -119,6 +119,44 @@ export class ResourceCandidate {
   }
 
   /**
+   * Extracts the {@link IResourceType | resource type} from a list of {@link ResourceCandidate | resource candidates},
+   * if present.
+   * @param candidates - The list of candidates from which to extract the resource type.
+   * @returns `Success` with the resource type if successful, `Success` with `undefined` if none of the candidates
+   * specify a resource tap, and `Failure` with an error message if clients specify conflicting resource types.
+   * @public
+   */
+  public static validateResourceTypes(
+    candidates: ReadonlyArray<ResourceCandidate>,
+    expectedType?: IResourceType
+  ): Result<IResourceType | undefined> {
+    const errors = new MessageAggregator();
+    let selectedType: IResourceType | undefined = expectedType;
+    for (const candidate of candidates) {
+      if (selectedType === undefined) {
+        selectedType = candidate.resourceType;
+      } else if (candidate.resourceType && selectedType !== candidate.resourceType) {
+        errors.addMessage(
+          `${candidate.id}: resource type mismatch (${selectedType.name} != ${candidate.resourceType?.name})`
+        );
+      }
+    }
+    return errors.returnOrReport(succeed(selectedType));
+  }
+
+  /**
+   * Compares two {@link ResourceCandidate | ResourceCandidates} for sorting purposes.
+   * @param rc1 - The first candidate to compare.
+   * @param rc2 - The second candidate to compare.
+   * @returns A negative number if `rc1` should come before `rc2`, a positive number if `rc2` should come before `rc1`,
+   * or zero if they are equivalent.
+   * @public
+   */
+  public static compare(rc1: ResourceCandidate, rc2: ResourceCandidate): number {
+    return ConditionSet.compare(rc1.conditions, rc2.conditions);
+  }
+
+  /**
    * Validates declared conditions and merges them with parent conditions.
    * @param qualifiers - The {@link QualifierMap | qualifiers} to use when creating conditions.
    * @param declared - The declared conditions for the candidate.
