@@ -177,6 +177,25 @@ interface IQualifierCreateParams {
     type: QualifierType;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "Qualifier"
+//
+// @public
+interface IQualifierDecl<TN extends string = string, TT extends string = string, TP extends number = number> {
+    defaultPriority: TP;
+    name: TN;
+    typeName: TT;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMap"
+//
+// @public
+interface IQualifierMapCreateParams {
+    // (undocumented)
+    qualifiers: ReadonlyMap<QualifierName, IQualifierDecl>;
+    // (undocumented)
+    qualifierTypes: ReadonlyMap<QualifierTypeName, QualifierType>;
+}
+
 // @public
 interface IQualifierType {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierConditionValue"
@@ -224,6 +243,11 @@ interface ITerritoryQualifierTypeCreateParams {
     // (undocumented)
     allowedTerritories?: string[];
 }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierDecl"
+//
+// @public
+type IValidatedQualifierDecl = IQualifierDecl<QualifierName, QualifierTypeName, ConditionPriority>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierType"
 //
@@ -291,6 +315,25 @@ type QualifierIndex = Brand<number, 'QualifierIndex'>;
 // @public
 const qualifierIndex: Converter<QualifierIndex, undefined>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "Qualifier"
+//
+// @public
+class QualifierMap {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMap"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMap"
+    protected constructor(params: IQualifierMapCreateParams);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMap"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierMapCreateParams"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMap"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMap"
+    static create(params: IQualifierMapCreateParams): Result<QualifierMap>;
+    get qualifiers(): ReadonlyMap<QualifierName, Qualifier>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierDecl"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierDecl"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IValidatedQualifierDecl"
+    static validateQualifierDecl(decl: IQualifierDecl): Result<IValidatedQualifierDecl>;
+}
+
 // @public
 type QualifierMatchScore = Brand<number, 'QualifierMatchScore'>;
 
@@ -306,7 +349,11 @@ declare namespace Qualifiers {
     export {
         QualifierTypes,
         IQualifierCreateParams,
-        Qualifier
+        Qualifier,
+        IQualifierDecl,
+        IValidatedQualifierDecl,
+        IQualifierMapCreateParams,
+        QualifierMap
     }
 }
 export { Qualifiers }

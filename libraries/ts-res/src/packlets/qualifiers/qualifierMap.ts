@@ -57,6 +57,7 @@ export type IValidatedQualifierDecl = IQualifierDecl<QualifierName, QualifierTyp
 
 /**
  * Parameters for creating a new {@link QualifierMap | QualifierMap}.
+ * @public
  */
 export interface IQualifierMapCreateParams {
   qualifierTypes: ReadonlyMap<QualifierTypeName, QualifierType>;
