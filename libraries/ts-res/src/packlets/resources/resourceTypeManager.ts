@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2025 Erik Fortune
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+import { Result, fail } from '@fgv/ts-utils';
+import { ResourceTypeName } from '../common';
+import { ResourceValueMergeMethod } from '../resource-json';
+import { JsonValue } from '@fgv/ts-json-base';
+
+export interface IResourceType<T = unknown> {
+  readonly name: ResourceTypeName;
+  validateDeclaration(json: JsonValue, isPartial: true, mergeMethod: ResourceValueMergeMethod): Result<T>;
+  validateDeclaration(
+    json: JsonValue,
+    isPartial: false,
+    mergeMethod: ResourceValueMergeMethod
+  ): Result<Partial<T>>;
+  validateDeclaration(
+    json: JsonValue,
+    isPartial: boolean,
+    mergeMethod: ResourceValueMergeMethod
+  ): Result<T | Partial<T>>;
+
+  validate(json: JsonValue, isPartial: true): Result<T>;
+  validate(json: JsonValue, isPartial: false): Result<Partial<T>>;
+  validate(json: JsonValue, isPartial: boolean): Result<T | Partial<T>>;
+}
+
+export class ResourceTypeManager {
+  public getResourceType(name: ResourceTypeName): Result<IResourceType> {
+    return fail('Not implemented');
+  }
+}

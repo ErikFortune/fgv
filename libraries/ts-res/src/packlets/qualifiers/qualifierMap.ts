@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { captureResult, MessageAggregator, populateObject, Result, succeed } from '@fgv/ts-utils';
+import { captureResult, MessageAggregator, populateObject, Result, fail, succeed } from '@fgv/ts-utils';
 import { QualifierName, QualifierTypeName, Convert, ConditionPriority } from '../common';
 import { Qualifier } from './qualifier';
 import { QualifierType } from './qualifierTypes';
@@ -92,7 +92,7 @@ export class QualifierMap {
         .onSuccess((dv) => {
           const type = params.qualifierTypes.get(dv.typeName);
           if (type === undefined) {
-            return fail(`${name}: unknown qualifier type ${dv.typeName}.`);
+            return fail<Qualifier>(`${name}: unknown qualifier type ${dv.typeName}.`);
           }
           return Qualifier.create({ name, type, defaultPriority: dv.defaultPriority });
         })
@@ -117,6 +117,20 @@ export class QualifierMap {
    */
   public static create(params: IQualifierMapCreateParams): Result<QualifierMap> {
     return captureResult(() => new QualifierMap(params));
+  }
+
+  /**
+   * Gets a {@link Qualifier | qualifier} from the map by name.
+   * @param name - The name of the {@link Qualifier | qualifier} to retrieve.
+   * @returns `Success` with the {@link Qualifier | qualifier} if found, `Failure` with an error message otherwise.
+   * @public
+   */
+  public get(name: QualifierName): Result<Qualifier> {
+    const qualifier = this._qualifiers.get(name);
+    if (qualifier === undefined) {
+      return fail(`Qualifier ${name} not found`);
+    }
+    return succeed(qualifier);
   }
 
   /**

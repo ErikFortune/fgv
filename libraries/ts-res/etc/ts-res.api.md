@@ -13,10 +13,10 @@ import { Result } from '@fgv/ts-utils';
 // @public
 const allConditionOperators: ConditionOperator[];
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceValueMergeType"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceValueMergeMethod"
 //
 // @public
-const allResourceValueMergeTypes: ResourceValueMergeType[];
+const allResourceValueMergeTypes: ResourceValueMergeMethod[];
 
 declare namespace Common {
     export {
@@ -101,7 +101,7 @@ class Conditions {
 }
 
 // @public
-type ConditionSetDecl = Record<Common.QualifierName, JsonValue>;
+type ConditionSetDecl = Record<Common.QualifierName, string>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceCandidateDecl"
 //
@@ -223,9 +223,9 @@ interface IResourceCandidateDecl {
     readonly conditions: ConditionSetDecl;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly id: Common.ResourceId;
+    readonly isPartial?: boolean;
     readonly json: JsonValue;
-    readonly merge?: ResourceValueMergeType;
-    readonly partial?: boolean;
+    readonly mergeMethod?: ResourceValueMergeMethod;
     readonly resourceTypeName?: Common.ResourceTypeName;
 }
 
@@ -327,6 +327,10 @@ class QualifierMap {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMap"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMap"
     static create(params: IQualifierMapCreateParams): Result<QualifierMap>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "Qualifier"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "Qualifier"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "Qualifier"
+    get(name: QualifierName): Result<Qualifier>;
     get qualifiers(): ReadonlyMap<QualifierName, Qualifier>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierDecl"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierDecl"
@@ -476,7 +480,7 @@ const resourceIndex: Converter<ResourceIndex, undefined>;
 declare namespace ResourceJson {
     export {
         Convert_2 as Convert,
-        ResourceValueMergeType,
+        ResourceValueMergeMethod,
         allResourceValueMergeTypes,
         ConditionSetDecl,
         IResourceCandidateDecl,
@@ -537,12 +541,12 @@ type ResourceTypeName = Brand<string, 'ResourceTypeName'>;
 const resourceTypeName: Converter<ResourceTypeName, unknown>;
 
 // @public
-type ResourceValueMergeType = 'augment' | 'delete' | 'replace';
+type ResourceValueMergeMethod = 'augment' | 'delete' | 'replace';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceCandidateDecl"
 //
 // @public
-const resourceValueMergeType: Conversion.Converter<ResourceValueMergeType, ResourceValueMergeType[]>;
+const resourceValueMergeType: Conversion.Converter<ResourceValueMergeMethod, ResourceValueMergeMethod[]>;
 
 // @internal (undocumented)
 const segmentedIdentifierRegExp: RegExp;

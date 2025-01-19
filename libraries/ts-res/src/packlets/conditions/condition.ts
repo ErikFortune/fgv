@@ -22,18 +22,40 @@
 
 import { captureResult, Result } from '@fgv/ts-utils';
 import { ConditionOperator, ConditionPriority, Conditions } from '../common';
-import { Qualifier, QualifierTypes } from '../qualifiers';
+import { Qualifier, QualifierMap, QualifierTypes } from '../qualifiers';
 
 /**
- * Parameters used when creating a {@link Condition| Condition} object.
+ * Parameters used to create a {@link Condition| Condition} object
+ * when the instantiated {@link Qualifier | qualifier} is available.
  * @public
  */
-export interface IConditionCreateParams {
+export interface IConditionCreateWithQualifierParams {
   qualifier: Qualifier;
   value: string;
   operator?: ConditionOperator;
   priority?: number;
 }
+
+/**
+ * Parameters used to create a {@link Condition| Condition} object
+ * when given a string name for the {@link Qualifier | qualifier}
+ * and a {@link QualifierMap | QualifierMap}.
+ * @public
+ */
+
+export interface IConditionCreateWithNameParams {
+  qualifierName: string;
+  value: string;
+  operator?: ConditionOperator;
+  priority?: number;
+  qualifierMap: QualifierMap;
+}
+
+/**
+ * Parameters used to create a {@link Condition| Condition} object.
+ * @public
+ */
+export type IConditionCreateParams = IConditionCreateWithQualifierParams | IConditionCreateWithNameParams;
 
 /**
  * Represents a single condition applied to some resource instance.
@@ -65,7 +87,7 @@ export class Condition {
    * @param priority - The {@link ConditionPriority | relative priority} of this condition.
    * @public
    */
-  protected constructor({ qualifier, value, operator, priority }: IConditionCreateParams) {
+  protected constructor({ qualifier, value, operator, priority }: IConditionCreateWithQualifierParams) {
     this.qualifier = qualifier;
     this.operator = operator ?? 'matches';
     this.value = qualifier.type.validateCondition(value, this.operator).orThrow();
@@ -80,7 +102,13 @@ export class Condition {
    * @public
    */
   public static create(params: IConditionCreateParams): Result<Condition> {
-    return captureResult(() => new Condition(params));
+    if ('qualifier' in params) {
+      return captureResult(() => new Condition(params));
+    }
+    const { value, operator, priority } = params;
+    return Conditions.toQualifierName(params.qualifierName)
+      .onSuccess((name) => params.qualifierMap.get(name))
+      .onSuccess((qualifier) => Condition.create({ qualifier, value, operator, priority }));
   }
 
   /**
@@ -92,8 +120,10 @@ export class Condition {
    * @public
    */
   public static compare(c1: Condition, c2: Condition): number {
-    const diff = c1.priority - c2.priority;
-    return diff === 0 ? c1.toString().localeCompare(c2.toString()) : diff;
+    let diff = c1.priority - c2.priority;
+    diff = diff === 0 ? c1.qualifier.name.localeCompare(c2.qualifier.name) : diff;
+    diff = diff === 0 ? c1.value.localeCompare(c2.value) : diff;
+    return diff;
   }
 
   /**

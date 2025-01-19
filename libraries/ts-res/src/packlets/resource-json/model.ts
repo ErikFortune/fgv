@@ -30,19 +30,19 @@ import * as Common from '../common';
  * - 'replace' means that the new value should replace the existing value.
  * @public
  */
-export type ResourceValueMergeType = 'augment' | 'delete' | 'replace';
+export type ResourceValueMergeMethod = 'augment' | 'delete' | 'replace';
 
 /**
- * Array of all possible {@link ResourceValueMergeType | resource merge type} values.
+ * Array of all possible {@link ResourceValueMergeMethod | resource merge type} values.
  * @public
  */
-export const allResourceValueMergeTypes: ResourceValueMergeType[] = ['augment', 'delete', 'replace'];
+export const allResourceValueMergeTypes: ResourceValueMergeMethod[] = ['augment', 'delete', 'replace'];
 
 /**
  * Type representing a set of conditions that must be met for a resource to be selected.
  * @public
  */
-export type ConditionSetDecl = Record<Common.QualifierName, JsonValue>;
+export type ConditionSetDecl = Record<Common.QualifierName, string>;
 
 /**
  * Interface representing a resource candidate declaration.
@@ -67,13 +67,13 @@ export interface IResourceCandidateDecl {
   /**
    * If true, the resource is only a partial representation of the full resource.
    */
-  readonly partial?: boolean;
+  readonly isPartial?: boolean;
 
   /**
    * The type of merge to be used when merging the resource into the existing resource.
    * default is 'augment'.
    */
-  readonly merge?: ResourceValueMergeType;
+  readonly mergeMethod?: ResourceValueMergeMethod;
 
   /**
    * The type of resource.

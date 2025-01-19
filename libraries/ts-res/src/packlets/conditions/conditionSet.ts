@@ -22,6 +22,7 @@
 
 import { captureResult, Result } from '@fgv/ts-utils';
 import { Condition } from './condition';
+import { QualifierName } from '../common';
 
 /**
  * Parameters for creating a {@link ConditionSet | ConditionSet}.
@@ -49,7 +50,18 @@ export class ConditionSet {
    * @param params - {@link IConditionSetCreateParams | Parameters} used to create the condition set.
    */
   protected constructor(params: IConditionSetCreateParams) {
-    this.conditions = params.conditions;
+    const qualifiers = new Map<QualifierName, Condition>();
+    for (const condition of params.conditions) {
+      if (qualifiers.has(condition.qualifier.name)) {
+        const existing = qualifiers.get(condition.qualifier.name)?.toString() ?? 'unknown';
+        throw new Error(
+          `${
+            condition.qualifier.name
+          }: Duplicate conditions ${existing} and ${condition.toString()} are not supported.`
+        );
+      }
+    }
+    this.conditions = Array.from(params.conditions).sort(Condition.compare);
   }
 
   /**

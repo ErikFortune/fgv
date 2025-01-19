@@ -49,8 +49,8 @@ export const resourceCandidateDecl = Converters.object<IResourceCandidateDecl>({
   id: Common.Convert.resourceId,
   json: JsonConverters.jsonValue,
   conditions: conditionSetDecl,
-  merge: resourceValueMergeType.optional(),
-  partial: Converters.boolean.optional(),
+  mergeMethod: resourceValueMergeType.optional(),
+  isPartial: Converters.boolean.optional(),
   resourceTypeName: Common.Convert.resourceTypeName.optional()
 });
 
