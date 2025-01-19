@@ -253,6 +253,7 @@ importers:
 
   ../../libraries/ts-res:
     specifiers:
+      '@fgv/ts-bcp47': workspace:*
       '@fgv/ts-extras': workspace:*
       '@fgv/ts-json-base': workspace:*
       '@fgv/ts-utils': workspace:*
@@ -285,6 +286,7 @@ importers:
       ts-node: ^10.9.2
       typescript: ^5.7.3
     dependencies:
+      '@fgv/ts-bcp47': link:../ts-bcp47
       luxon: 3.5.0
     devDependencies:
       '@fgv/ts-extras': link:../ts-extras
