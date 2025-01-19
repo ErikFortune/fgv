@@ -23,7 +23,7 @@
 import { MessageAggregator, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { ResourceId } from '../common';
 import { ResourceCandidate } from './resourceCandidate';
-import { IResourceType } from './resourceTypeManager';
+import { IResourceType } from './resourceTypes';
 
 /**
  * Parameters used to create a {@link Resource | Resource} object.

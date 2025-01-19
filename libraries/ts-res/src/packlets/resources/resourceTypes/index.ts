@@ -20,7 +20,5 @@
  * SOFTWARE.
  */
 
-export * from './resourceCandidate';
-
-import * as ResourceTypes from './resourceTypes';
-export { ResourceTypes };
+export * from './resourceType';
+export * from './resourceTypeMap';

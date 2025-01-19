@@ -21,31 +21,15 @@
  */
 
 import { Result, fail } from '@fgv/ts-utils';
-import { ResourceTypeName } from '../common';
-import { ResourceValueMergeMethod } from '../resource-json';
-import { JsonValue } from '@fgv/ts-json-base';
+import { ResourceTypeName } from '../../common';
+import { IResourceType } from './resourceType';
 
-export interface IResourceType<T = unknown> {
-  readonly name: ResourceTypeName;
-  validateDeclaration(json: JsonValue, isPartial: true, mergeMethod: ResourceValueMergeMethod): Result<T>;
-  validateDeclaration(
-    json: JsonValue,
-    isPartial: false,
-    mergeMethod: ResourceValueMergeMethod
-  ): Result<Partial<T>>;
-  validateDeclaration(
-    json: JsonValue,
-    isPartial: boolean,
-    mergeMethod: ResourceValueMergeMethod
-  ): Result<T | Partial<T>>;
-
-  validate(json: JsonValue, isPartial: true): Result<T>;
-  validate(json: JsonValue, isPartial: false): Result<Partial<T>>;
-  validate(json: JsonValue, isPartial: boolean): Result<T | Partial<T>>;
-}
-
-export class ResourceTypeManager {
-  public getResourceType(name: ResourceTypeName): Result<IResourceType> {
+/**
+ * Map {@link ResourceTypeName | resource type names} to {@link IResourceType | resource types}.
+ * @public
+ */
+export class ResourceTypeMap {
+  public get(name: ResourceTypeName): Result<IResourceType> {
     return fail('Not implemented');
   }
 }

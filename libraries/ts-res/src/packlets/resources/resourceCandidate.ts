@@ -25,7 +25,7 @@ import { ResourceId } from '../common';
 import { Condition, ConditionSet } from '../conditions';
 import { QualifierMap } from '../qualifiers';
 import * as ResourceJson from '../resource-json';
-import { IResourceType, ResourceTypeManager } from './resourceTypeManager';
+import { IResourceType, ResourceTypeMap } from './resourceTypes';
 import { captureResult, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 
 /**
@@ -36,7 +36,7 @@ export interface IResourceCandidateCreateParams {
   decl: ResourceJson.IResourceCandidateDecl;
   parentConditions: ReadonlyArray<Condition>;
   qualifiers: QualifierMap;
-  resourceTypes: ResourceTypeManager;
+  resourceTypes: ResourceTypeMap;
 }
 
 /**
@@ -100,7 +100,7 @@ export class ResourceCandidate {
     this.isPartial = params.decl.isPartial ?? false;
     this.mergeMethod = params.decl.mergeMethod ?? 'replace';
     this._resourceType = params.decl.resourceTypeName
-      ? params.resourceTypes.getResourceType(params.decl.resourceTypeName).orThrow()
+      ? params.resourceTypes.get(params.decl.resourceTypeName).orThrow()
       : undefined;
     if (this._resourceType) {
       this._resourceType.validateDeclaration(this.json, this.isPartial, this.mergeMethod).orThrow();

@@ -37,7 +37,7 @@ declare namespace Common {
         ResourceIndex,
         ResourceTypeName,
         ResourceTypeIndex,
-        Resources
+        Resources_2 as Resources
     }
 }
 export { Common }
@@ -218,6 +218,22 @@ interface IQualifierTypeCreateParams {
     name?: string;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceCandidate"
+//
+// @public
+interface IResourceCandidateCreateParams {
+    // (undocumented)
+    decl: ResourceJson.IResourceCandidateDecl;
+    // Warning: (ae-forgotten-export) The symbol "Condition" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    parentConditions: ReadonlyArray<Condition>;
+    // (undocumented)
+    qualifiers: QualifierMap;
+    // (undocumented)
+    resourceTypes: ResourceTypeMap;
+}
+
 // @public
 interface IResourceCandidateDecl {
     readonly conditions: ConditionSetDecl;
@@ -234,6 +250,20 @@ interface IResourceCollectionDecl {
     readonly collections?: IResourceCollectionDecl[];
     readonly conditions?: ConditionSetDecl;
     readonly resources?: IResourceCandidateDecl[];
+}
+
+// @public
+interface IResourceType<T = unknown> {
+    readonly name: ResourceTypeName;
+    validate(json: JsonValue, isPartial: true): Result<T>;
+    validate(json: JsonValue, isPartial: false): Result<Partial<T>>;
+    validate(json: JsonValue, isPartial: boolean): Result<T | Partial<T>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    validateDeclaration(json: JsonValue, isPartial: true, mergeMethod: ResourceValueMergeMethod): Result<Partial<T>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    validateDeclaration(json: JsonValue, isPartial: false, mergeMethod: ResourceValueMergeMethod): Result<T>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    validateDeclaration(json: JsonValue, isPartial: boolean, mergeMethod: ResourceValueMergeMethod): Result<T | Partial<T>>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "TerritoryQualifierType"
@@ -451,6 +481,32 @@ declare namespace QualifierTypes {
     }
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceCandidate"
+//
+// @public
+class ResourceCandidate {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceCandidate"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceCandidate"
+    protected constructor(params: IResourceCandidateCreateParams);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceCandidate"
+    static compare(rc1: ResourceCandidate, rc2: ResourceCandidate): number;
+    // Warning: (ae-forgotten-export) The symbol "ConditionSet" needs to be exported by the entry point index.d.ts
+    readonly conditions: ConditionSet;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceCandidate"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceCandidate"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceCandidate"
+    static create(params: IResourceCandidateCreateParams): Result<ResourceCandidate>;
+    readonly id: ResourceId;
+    readonly isPartial: boolean;
+    readonly json: JsonValue;
+    readonly mergeMethod: ResourceJson.ResourceValueMergeMethod;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceType"
+    get resourceType(): IResourceType | undefined;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceType"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceCandidate"
+    static validateResourceTypes(candidates: ReadonlyArray<ResourceCandidate>, expectedType?: IResourceType): Result<IResourceType | undefined>;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceCandidateDecl"
 //
 // @public
@@ -497,8 +553,17 @@ type ResourceName = Brand<string, 'ResourceName'>;
 // @public
 const resourceName: Converter<ResourceName, unknown>;
 
+declare namespace Resources {
+    export {
+        ResourceTypes,
+        IResourceCandidateCreateParams,
+        ResourceCandidate
+    }
+}
+export { Resources }
+
 // @public
-class Resources {
+class Resources_2 {
     static isValidResourceId(id: string): id is ResourceId;
     static isValidResourceIndex(index: number): index is ResourceIndex;
     static isValidResourceName(name: string): name is ResourceName;
@@ -532,6 +597,15 @@ type ResourceTypeIndex = Brand<number, 'ResourceTypeIndex'>;
 // @public
 const resourceTypeIndex: Converter<ResourceTypeIndex, undefined>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ResourceTypeName"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceType"
+//
+// @public
+class ResourceTypeMap {
+    // (undocumented)
+    get(name: ResourceTypeName): Result<IResourceType>;
+}
+
 // @public
 type ResourceTypeName = Brand<string, 'ResourceTypeName'>;
 
@@ -539,6 +613,13 @@ type ResourceTypeName = Brand<string, 'ResourceTypeName'>;
 //
 // @public
 const resourceTypeName: Converter<ResourceTypeName, unknown>;
+
+declare namespace ResourceTypes {
+    export {
+        IResourceType,
+        ResourceTypeMap
+    }
+}
 
 // @public
 type ResourceValueMergeMethod = 'augment' | 'delete' | 'replace';
@@ -578,6 +659,10 @@ declare namespace Utils {
         identifierListRegExp
     }
 }
+
+// Warnings were encountered during analysis:
+//
+// src/packlets/resources/resourceCandidate.ts:167:3 - (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierMap"
 
 // (No @packageDocumentation comment for this package)
 
