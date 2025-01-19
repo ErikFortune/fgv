@@ -20,8 +20,5 @@
  * SOFTWARE.
  */
 
-export * from './resourceCandidate';
-
-import * as Builders from './builders';
-import * as ResourceTypes from './resourceTypes';
-export { Builders, ResourceTypes };
+export * from './resourceBuilder';
+export * from './resourceManagerBuilder';

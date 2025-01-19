@@ -20,8 +20,33 @@
  * SOFTWARE.
  */
 
-export * from './resourceCandidate';
+import { captureResult, Result } from '@fgv/ts-utils';
+import { ResourceId } from '../common';
+import { QualifierMap } from '../qualifiers';
+import { Resource } from './resource';
+import { ResourceTypeMap } from './resourceTypes';
 
-import * as Builders from './builders';
-import * as ResourceTypes from './resourceTypes';
-export { Builders, ResourceTypes };
+export interface IResourceManagerCreateParams {
+  qualifiers: QualifierMap;
+  resourceTypes: ResourceTypeMap;
+}
+
+export class ResourceManager {
+  public readonly qualifiers: QualifierMap;
+  public readonly resourceTypes: ResourceTypeMap;
+  public get resources(): ReadonlyMap<ResourceId, Resource> {
+    return this._resources;
+  }
+
+  private readonly _resources: Map<ResourceId, Resource>;
+
+  protected constructor(params: IResourceManagerCreateParams) {
+    this.qualifiers = params.qualifiers;
+    this.resourceTypes = params.resourceTypes;
+    this._resources = new Map<ResourceId, Resource>();
+  }
+
+  public static create(params: IResourceManagerCreateParams): Result<ResourceManager> {
+    return captureResult(() => new ResourceManager(params));
+  }
+}

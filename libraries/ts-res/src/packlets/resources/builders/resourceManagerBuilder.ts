@@ -20,8 +20,10 @@
  * SOFTWARE.
  */
 
-export * from './resourceCandidate';
+import { QualifierMap } from '../../qualifiers';
+import { ResourceTypeMap } from '../resourceTypes';
 
-import * as Builders from './builders';
-import * as ResourceTypes from './resourceTypes';
-export { Builders, ResourceTypes };
+export interface IResourceManagerCreateParams {
+  qualifiers: QualifierMap;
+  resourceTypes: ResourceTypeMap;
+}

@@ -20,8 +20,7 @@
  * SOFTWARE.
  */
 
-export * from './resourceCandidate';
-
-import * as Builders from './builders';
-import * as ResourceTypes from './resourceTypes';
-export { Builders, ResourceTypes };
+export interface IResourceBuilderCreateParams {
+  id: string;
+  typeName?: string;
+}
