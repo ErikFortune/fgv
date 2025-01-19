@@ -317,7 +317,7 @@ export function arrayOf<T, TC = undefined>(
  * of strings, returns {@link Failure | Failure} with an error message otherwise.
  * @public
  */
-export const stringArray: Converter<string[]> = arrayOf(string);
+export const stringArray: Converter<string[], unknown> = arrayOf(string);
 
 /**
  * {@link Converter | Converter} to convert an `unknown` to an array of `number`.
@@ -326,7 +326,7 @@ export const stringArray: Converter<string[]> = arrayOf(string);
  * of numbers, returns {@link Failure | Failure} with an error message otherwise.
  * @public
  */
-export const numberArray: Converter<number[]> = arrayOf(number);
+export const numberArray: Converter<number[], unknown> = arrayOf(number);
 
 /**
  * Options for {@link Converters.(recordOf:3) | Converters.recordOf} and

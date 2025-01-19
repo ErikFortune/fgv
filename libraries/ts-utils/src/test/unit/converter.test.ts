@@ -219,7 +219,7 @@ describe('BaseConverter class', () => {
       return Number.isNaN(n) ? fail('not a number') : succeed(n);
     }
 
-    const converter: Converter<number[]> = Converters.stringArray.mapItems(mapNumber);
+    const converter: Converter<number[], unknown> = Converters.stringArray.mapItems(mapNumber);
 
     test('it succeeds for an array with all valid elements', () => {
       expect(converter.convert(['10', '20'])).toSucceedWith([10, 20]);
@@ -235,7 +235,7 @@ describe('BaseConverter class', () => {
   });
 
   describe('mapConvertItems', () => {
-    const converter: Converter<number[]> = Converters.stringArray.mapConvertItems(numberConverter);
+    const converter: Converter<number[], unknown> = Converters.stringArray.mapConvertItems(numberConverter);
 
     test('succeeds for an array with all valid elements', () => {
       expect(converter.convert(['10', '20'])).toSucceedWith([10, 20]);
@@ -294,17 +294,17 @@ describe('BaseConverter class', () => {
 
     describe('withItemTypeGuard method', () => {
       test('succeeds for an array of values that pass the guard', () => {
-        const converter: Converter<Thing[]> = Converters.stringArray.withItemTypeGuard(isThing);
+        const converter: Converter<Thing[], unknown> = Converters.stringArray.withItemTypeGuard(isThing);
         expect(converter.convert(['thing1', 'thing2'])).toSucceedWith(['thing1', 'thing2']);
       });
 
       test('fails for a value that fails the guard', () => {
-        const converter: Converter<Thing[]> = Converters.stringArray.withItemTypeGuard(isThing);
+        const converter: Converter<Thing[], unknown> = Converters.stringArray.withItemTypeGuard(isThing);
         expect(converter.convert(['thing3'])).toFailWith(/invalid type/i);
       });
 
       test('fails with a custom message for a value that fails the guard', () => {
-        const converter: Converter<Thing[]> = Converters.stringArray.withItemTypeGuard(
+        const converter: Converter<Thing[], unknown> = Converters.stringArray.withItemTypeGuard(
           isThing,
           'not a known thing'
         );
@@ -312,7 +312,7 @@ describe('BaseConverter class', () => {
       });
 
       test('fails with the standard message for a value that fails initial conversion', () => {
-        const converter: Converter<Thing[]> = Converters.stringArray.withItemTypeGuard(
+        const converter: Converter<Thing[], unknown> = Converters.stringArray.withItemTypeGuard(
           isThing,
           'not a known thing'
         );
@@ -422,6 +422,35 @@ describe('BaseConverter class', () => {
       expect(() => {
         Converters.string.withBrand('ONE').withBrand('B');
       }).toThrow(/cannot replace existing brand/i);
+    });
+  });
+
+  describe('withFormattedError method', () => {
+    test('uses a custom error formatter', () => {
+      const converter = numberConverter.withFormattedError((from, message) => {
+        return `Error converting "${from}": ${message}`;
+      });
+
+      expect(converter.convert('not a number')).toFailWith(
+        'Error converting "not a number": Not a number: "not a number"'
+      );
+    });
+
+    test('passes a supplied context to the base converter', () => {
+      const outerContext = { value: 'expected' };
+      const formatted = contextConverter.withFormattedError((from, message, context) => {
+        expect(context).toEqual(outerContext);
+        return `${from} ${message} ${context?.value ?? 'unknown'}`;
+      });
+      expect(formatted.convert(10, outerContext)).toFailWith('10 Cannot convert non-string expected');
+    });
+
+    test('does not affect a successful conversion', () => {
+      const converter = numberConverter.withFormattedError((from, message) => {
+        return `Error converting "${from}": ${message}`;
+      });
+
+      expect(converter.convert(10)).toSucceedWith(10);
     });
   });
 

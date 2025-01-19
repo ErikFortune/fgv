@@ -20,7 +20,14 @@
  * SOFTWARE.
  */
 import { Brand, Result, fail, mapResults, succeed } from '../base';
-import { ConstraintOptions, Converter, ConverterTraits, DefaultingConverter, OnError } from './converter';
+import {
+  ConstraintOptions,
+  ConversionErrorFormatter,
+  Converter,
+  ConverterTraits,
+  DefaultingConverter,
+  OnError
+} from './converter';
 import { GenericDefaultingConverter } from './defaultingConverter';
 
 /**
@@ -40,7 +47,7 @@ type InnerInferredType<TCONV> = TCONV extends Converter<infer TTO>
  * @example `Infer<typeof Converters.mapOf(Converters.stringArray)>` is `Map<string, string[]>`
  * @beta
  */
-export type Infer<TCONV> = TCONV extends Converter<infer TTO> ? InnerInferredType<TTO> : never;
+export type Infer<TCONV> = TCONV extends Converter<infer TTO, unknown> ? InnerInferredType<TTO> : never;
 
 /**
  * Deprecated name for Infer<T> retained for compatibility
@@ -276,6 +283,17 @@ export class BaseConverter<T, TC = undefined> implements Converter<T, TC> {
    */
   protected _context(supplied?: TC): TC | undefined {
     return supplied ?? this._defaultContext;
+  }
+
+  /**
+   * {@inheritdoc Converter.withFormattedError}
+   */
+  public withFormattedError(formatter: ConversionErrorFormatter<TC>): Converter<T, TC> {
+    return new BaseConverter<T, TC>((from: unknown, __self: Converter<T, TC>, context?: TC) => {
+      return this._converter(from, this, this._context(context)).onFailure((msg) => {
+        return fail(formatter(from, msg, this._context(context)));
+      });
+    })._with(this._traits());
   }
 
   /**
