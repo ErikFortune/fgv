@@ -136,6 +136,17 @@ declare namespace Classes {
     }
 }
 
+declare namespace Collections {
+    export {
+        ResultMapResultDetail,
+        ResultMapEntry,
+        ResultMapForEachCb,
+        IReadOnlyResultMap,
+        ResultMap
+    }
+}
+export { Collections }
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -554,6 +565,48 @@ class InMemoryLogger extends LoggerBase {
     get silent(): string[];
     // (undocumented)
     protected _silent: string[];
+}
+
+// @public
+interface IReadOnlyResultMap<TK extends string = string, TV = unknown> {
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    [Symbol.iterator](): IterableIterator<ResultMapEntry<TK, TV>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    entries(): MapIterator<ResultMapEntry<TK, TV>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    forEach(cb: ResultMapForEachCb, arg?: unknown): void;
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get(key: TK): DetailedResult<TV, ResultMapResultDetail>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    has(key: TK): boolean;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly inner: ReadonlyMap<TK, TV>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    keys(): MapIterator<TK>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly size: number;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    values(): MapIterator<TV>;
 }
 
 // @public
@@ -990,6 +1043,59 @@ export type Result<T> = Success<T> | Failure<T>;
 
 // @beta
 export type ResultDetailType<T> = T extends DetailedResult<unknown, infer TD> ? TD : never;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ResultMap<TK extends string = string, TV = unknown> implements IReadOnlyResultMap<TK, TV> {
+    [Symbol.iterator](): IterableIterator<ResultMapEntry<TK, TV>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(iterable?: Iterable<ResultMapEntry<TK, TV>>);
+    clear(): void;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create<TK extends string = string, TV = unknown>(iterable?: Iterable<ResultMapEntry<TK, TV>>): Result<ResultMap<TK, TV>>;
+    // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    delete(key: TK): DetailedResult<true, ResultMapResultDetail>;
+    entries(): MapIterator<ResultMapEntry<TK, TV>>;
+    forEach(cb: ResultMapForEachCb<TK, TV>, arg?: unknown): void;
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    get(key: TK): DetailedResult<TV, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    getOrAdd(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+    has(key: TK): boolean;
+    get inner(): ReadonlyMap<TK, TV>;
+    protected readonly _inner: Map<TK, TV>;
+    keys(): MapIterator<TK>;
+    // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    set(key: TK, value: TV): DetailedResult<ResultMap<TK, TV>, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "setNew" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "setNew" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    setNew(key: TK, value: TV): DetailedResult<ResultMap<TK, TV>, ResultMapResultDetail>;
+    get size(): number;
+    // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    update(key: TK, value: TV): DetailedResult<ResultMap<TK, TV>, ResultMapResultDetail>;
+    values(): MapIterator<TV>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type ResultMapEntry<TK extends string = string, TE = unknown> = [TK, TE];
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type ResultMapForEachCb<TK extends string = string, TE = unknown> = (value: TE, key: TK, map: ResultMap<TK, TE>, thisArg?: unknown) => void;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type ResultMapResultDetail = 'added' | 'deleted' | 'exists' | 'not-found' | 'updated';
 
 // @beta
 export type ResultValueType<T> = T extends Result<infer TV> ? TV : never;
