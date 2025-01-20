@@ -30,12 +30,23 @@ A [ResultMap](./ts-utils.collections.resultmap.md) class as a `Map<TK, TV>`<!-- 
 </td></tr>
 <tr><td>
 
+[ResultMapValidator](./ts-utils.collections.resultmapvalidator.md)
+
+
+</td><td>
+
+A [ResultMap](./ts-utils.collections.resultmap.md) wrapper which validates weakly-typed keys before calling the wrapped result map.
+
+
+</td></tr>
+<tr><td>
+
 [ValidatingResultMap](./ts-utils.collections.validatingresultmap.md)
 
 
 </td><td>
 
-A [ResultMap](./ts-utils.collections.resultmap.md) which validates keys and values, which enables it to expose additional methods for working with weakly-typed values.
+A [ResultMap](./ts-utils.collections.resultmap.md) with a [validator](./ts-utils.collections.resultmapvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
 
 
 </td></tr>
@@ -68,6 +79,17 @@ A readonly `ReadonlyMap<TK, TV>`<!-- -->-like object which reports success or fa
 <tr><td>
 
 [IResultMapConstructorParams](./ts-utils.collections.iresultmapconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [ResultMap](./ts-utils.collections.resultmap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IResultMapValidatorCreateParams](./ts-utils.collections.iresultmapvalidatorcreateparams.md)
 
 
 </td><td>

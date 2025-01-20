@@ -20,10 +20,11 @@
  * SOFTWARE.
  */
 
-import { DetailedResult } from '../base';
+import { captureResult, DetailedResult, Result } from '../base';
 import { KeyValueEntry } from './common';
 import { ResultMapResultDetail } from './readonlyResultMap';
 import { ResultMap } from './resultMap';
+import { ResultMapValidator } from './resultMapValidator';
 import { KeyValueValidators } from './utils';
 
 /**
@@ -31,45 +32,50 @@ import { KeyValueValidators } from './utils';
  * @public
  */
 export interface IValidatingResultMapConstructorParams<TK extends string = string, TV = unknown> {
-  entries?: Iterable<KeyValueEntry<TK, TV>>;
+  entries?: Iterable<KeyValueEntry<string, unknown>>;
   validators: KeyValueValidators<TK, TV>;
 }
 
 /**
- * A {@link Collections.ResultMap | ResultMap} which validates keys and values, which
- * enables it to expose additional methods for working with weakly-typed values.
+ * A {@link Collections.ResultMap | ResultMap} with a {@link Collections.ResultMapValidator | validator}
+ * property that enables validated use of the underlying map with weakly-typed keys and values.
  * @public
  */
 export class ValidatingResultMap<TK extends string = string, TV = unknown> extends ResultMap<TK, TV> {
-  protected _validators: KeyValueValidators<TK, TV>;
+  /**
+   * A {@link Collections.ResultMapValidator | ResultMapValidator} which validates keys and values
+   * before inserting them into this collection.
+   */
+  public readonly validate: ResultMapValidator<TK, TV>;
 
   /**
    * Constructs a new {@link Collections.ValidatingResultMap | ValidatingResultMap}.
    * @param params - Required parameters for constructing the map.
    */
   public constructor(params: IValidatingResultMapConstructorParams<TK, TV>) {
-    if (params.entries) {
-      params.validators.validateElements(params.entries).orThrow();
-    }
-    super(params);
-    this._validators = params.validators;
+    const entries = params.validators.validateEntries([...(params.entries ?? [])]).orThrow();
+    super({ entries });
+    this.validate = new ResultMapValidator<TK, TV>({ map: this, validators: params.validators });
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.delete}
+   * Creates a new {@link Collections.ValidatingResultMap | ValidatingResultMap} instance.
+   * @param params - Required parameters for constructing the map.
+   * @returns `Success` with the new map if successful, `Failure` otherwise.
+   * @public
    */
-  public delete(key: string): DetailedResult<TV, ResultMapResultDetail> {
-    return this._validators.validateKey(key).onSuccess((k) => {
-      return super.delete(k);
-    });
+  public static createValidating<TK extends string = string, TV = unknown>(
+    params: IValidatingResultMapConstructorParams<TK, TV>
+  ): Result<ValidatingResultMap<TK, TV>> {
+    return captureResult(() => new ValidatingResultMap(params));
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.get}
+   * {@inheritdoc Collections.ResultMap.add}
    */
-  public get(key: string): DetailedResult<TV, ResultMapResultDetail> {
-    return this._validators.validateKey(key).onSuccess((k) => {
-      return super.get(k);
+  public add(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail> {
+    return this.validate.validators.validateEntry([key, value]).onSuccess((entry) => {
+      return super.add(entry[0], entry[1]);
     });
   }
 
@@ -77,33 +83,17 @@ export class ValidatingResultMap<TK extends string = string, TV = unknown> exten
    * {@inheritdoc Collections.ResultMap.getOrAdd}
    */
   public getOrAdd(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail> {
-    return this._validators.validateEntry([key, value]).onSuccess(([vk, vv]) => {
-      return super.getOrAdd(vk, vv);
+    return this.validate.validators.validateEntry([key, value]).onSuccess((entry) => {
+      return super.getOrAdd(entry[0], entry[1]);
     });
   }
 
-  /**
-   * {@inheritdoc Collections.ResultMap.has}
-   */
-  public has(key: string): boolean {
-    return this._inner.has(key as TK);
-  }
-
-  /**
+  /*
    * {@inheritdoc Collections.ResultMap.set}
    */
-  public set(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail> {
-    return this._validators.validateEntry([key, value]).onSuccess(([vk, vv]) => {
-      return super.set(vk, vv);
-    });
-  }
-
-  /**
-   * {@inheritdoc Collections.ResultMap.setNew}
-   */
-  public setNew(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail> {
-    return this._validators.validateEntry([key, value]).onSuccess(([vk, vv]) => {
-      return super.setNew(vk, vv);
+  public set(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail> {
+    return this.validate.validators.validateEntry([key, value]).onSuccess((entry) => {
+      return super.set(entry[0], entry[1]);
     });
   }
 
@@ -111,8 +101,8 @@ export class ValidatingResultMap<TK extends string = string, TV = unknown> exten
    * {@inheritdoc Collections.ResultMap.update}
    */
   public update(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail> {
-    return this._validators.validateEntry([key, value]).onSuccess(([vk, vv]) => {
-      return super.update(vk, vv);
+    return this.validate.validators.validateEntry([key, value]).onSuccess((entry) => {
+      return super.update(entry[0], entry[1]);
     });
   }
 }

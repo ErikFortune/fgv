@@ -11,7 +11,7 @@ A [ResultMap](./ts-utils.collections.resultmap.md) class as a `Map<TK, TV>`<!-- 
 ```typescript
 export declare class ResultMap<TK extends string = string, TV = unknown> implements IReadOnlyResultMap<TK, TV> 
 ```
-**Implements:** [IReadOnlyResultMap](./ts-utils.collections.ireadonlyresultmap.md)<!-- -->&lt;TK, TV&gt;
+**Implements:** [IReadOnlyResultMap](./ts-utils.ireadonlyresultmap.md)<!-- -->&lt;TK, TV&gt;
 
 ## Constructors
 
@@ -109,29 +109,6 @@ Protected raw access to the inner `Map<TK, TV>` object.
 </td></tr>
 <tr><td>
 
-[\_validators?](./ts-utils.collections.resultmap._validators.md)
-
-
-</td><td>
-
-`protected`
-
-`readonly`
-
-
-</td><td>
-
-[KeyValueValidators](./ts-utils.collections.utils.keyvaluevalidators.md)<!-- -->&lt;TK, TV&gt;
-
-
-</td><td>
-
-_(Optional)_
-
-
-</td></tr>
-<tr><td>
-
 [inner](./ts-utils.collections.resultmap.inner.md)
 
 
@@ -203,6 +180,20 @@ Description
 </td><td>
 
 Gets an iterator over the map entries.
+
+
+</td></tr>
+<tr><td>
+
+[add(key, value)](./ts-utils.collections.resultmap.add.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Sets a key/value pair in the map if the key does not already exist.
 
 
 </td></tr>
@@ -361,20 +352,6 @@ Returns an iterator over the map keys.
 </td><td>
 
 Sets a key/value pair in the map.
-
-
-</td></tr>
-<tr><td>
-
-[setNew(key, value)](./ts-utils.collections.resultmap.setnew.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Sets a key/value pair in the map if the key does not already exist.
 
 
 </td></tr>

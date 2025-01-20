@@ -9,7 +9,7 @@ Deletes a key from the map.
 **Signature:**
 
 ```typescript
-delete(key: TK): DetailedResult<true, ResultMapResultDetail>;
+delete(key: TK): DetailedResult<TV, ResultMapResultDetail>;
 ```
 
 ## Parameters
@@ -49,7 +49,7 @@ The key to delete.
 </tbody></table>
 **Returns:**
 
-[DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;true, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;
+[DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TV, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;
 
-`Success` with detail `deleted`<!-- -->if the key was found and deleted, `Failure` with detail `not-found` if the key was not found.
+`Success` with the previous value and the detail 'deleted' if the key was found and deleted, `Failure` with detail 'not-found' if the key was not found, or with detail 'invalid-key' if the key is invalid.
 

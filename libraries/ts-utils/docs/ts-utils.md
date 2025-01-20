@@ -85,6 +85,17 @@ A [Converter](./ts-utils.converter.md) which converts an object of type `<T>` wi
 </td></tr>
 <tr><td>
 
+[ResultMap](./ts-utils.resultmap.md)
+
+
+</td><td>
+
+A [ResultMap](./ts-utils.collections.resultmap.md) class as a `Map<TK, TV>`<!-- -->-like object which reports success or failure with additional details using the [result pattern](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils#the-result-pattern)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [StringConverter](./ts-utils.stringconverter.md)
 
 
@@ -102,6 +113,17 @@ The [StringConverter](./ts-utils.conversion.stringconverter.md) class extends [B
 </td><td>
 
 Reports a successful [result](./ts-utils.iresult.md) from some operation and the corresponding value.
+
+
+</td></tr>
+<tr><td>
+
+[ValidatingResultMap](./ts-utils.validatingresultmap.md)
+
+
+</td><td>
+
+A [ResultMap](./ts-utils.collections.resultmap.md) with a [validator](./ts-utils.collections.resultmapvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
 
 
 </td></tr>
@@ -418,6 +440,17 @@ Generic converter to convert unknown to a templated type `<T>`<!-- -->, using in
 </td><td>
 
 Simple error aggregator to simplify collecting all errors in a flow.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyResultMap](./ts-utils.ireadonlyresultmap.md)
+
+
+</td><td>
+
+A readonly `ReadonlyMap<TK, TV>`<!-- -->-like object which reports success or failure with additional details using the [result pattern](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils#the-result-pattern)<!-- -->.
 
 
 </td></tr>

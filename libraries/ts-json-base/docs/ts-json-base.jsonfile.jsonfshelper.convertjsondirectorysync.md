@@ -9,7 +9,7 @@ Reads all JSON files from a directory and apply a supplied converter or validato
 **Signature:**
 
 ```typescript
-convertJsonDirectorySync<T>(srcPath: string, options: IJsonFsDirectoryOptions<T>): Result<IReadDirectoryItem<T>[]>;
+convertJsonDirectorySync<T, TC = unknown>(srcPath: string, options: IJsonFsDirectoryOptions<T>, context?: TC): Result<IReadDirectoryItem<T>[]>;
 ```
 
 ## Parameters
@@ -59,6 +59,22 @@ options
 </td><td>
 
 [Options](./ts-json-base.jsonfile.ijsonfsdirectoryoptions.md) to control conversion and filtering
+
+
+</td></tr>
+<tr><td>
+
+context
+
+
+</td><td>
+
+TC
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>

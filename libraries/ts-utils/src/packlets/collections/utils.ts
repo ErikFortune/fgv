@@ -117,15 +117,17 @@ export class KeyValueValidators<TK extends string = string, TV = unknown> {
       return this.entry.convert(entry).withFailureDetail('invalid-value');
     }
     if (Array.isArray(entry) && entry.length === 2) {
-      const key = this.validateKey(entry[0]).orDefault();
-      const value = this.validateValue(entry[1]).orDefault();
+      const errors = new MessageAggregator();
+      const key = this.validateKey(entry[0]).aggregateError(errors).orDefault();
+      const value = this.validateValue(entry[1]).aggregateError(errors).orDefault();
       if (key && value) {
         return succeedWithDetail([key, value], 'success');
-      } else if (value) {
-        return failWithDetail('malformed entry', 'invalid-key');
       }
+      const detail = key ? 'invalid-value' : 'invalid-key';
+      return failWithDetail(`invalid entry: ${errors.toString()}`, detail);
     }
-    return failWithDetail('malformed entry', 'invalid-value');
+    /* c8 ignore next 2 */
+    return failWithDetail(`malformed entry: "${JSON.stringify(entry)}"`, 'invalid-value');
   }
 
   /**
@@ -134,7 +136,7 @@ export class KeyValueValidators<TK extends string = string, TV = unknown> {
    * @returns `Success` with an array of validated key-value pairs if all entries are valid,
    * or `Failure` with an error message if any entry is invalid.
    */
-  public validateElements(entries: Iterable<unknown>): Result<KeyValueEntry<TK, TV>[]> {
+  public validateEntries(entries: Iterable<unknown>): Result<KeyValueEntry<TK, TV>[]> {
     const errors = new MessageAggregator();
     const validated: KeyValueEntry<TK, TV>[] = [];
     for (const element of entries) {

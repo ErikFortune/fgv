@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)(key, value, element)](./ts-utils.collections.utils.keyvaluevalidators._constructor_.md)
+[(constructor)(key, value, entry)](./ts-utils.collections.utils.keyvaluevalidators._constructor_.md)
 
 
 </td><td>
@@ -71,7 +71,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[element?](./ts-utils.collections.utils.keyvaluevalidators.element.md)
+[entry?](./ts-utils.collections.utils.keyvaluevalidators.entry.md)
 
 
 </td><td>
@@ -86,7 +86,7 @@ Description
 
 </td><td>
 
-_(Optional)_ Optional element validator or converter. If no element validator is provided, an element is considered valid if both key and value are valid.
+_(Optional)_ Optional entry validator or converter. If no entry validator is provided, an entry is considered valid if both key and value are valid.
 
 
 </td></tr>
@@ -154,21 +154,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[validateElement(element)](./ts-utils.collections.utils.keyvaluevalidators.validateelement.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Validates a supplied unknown as a valid key-value pair.
-
-
-</td></tr>
-<tr><td>
-
-[validateElements(elements)](./ts-utils.collections.utils.keyvaluevalidators.validateelements.md)
+[validateEntries(entries)](./ts-utils.collections.utils.keyvaluevalidators.validateentries.md)
 
 
 </td><td>
@@ -177,6 +163,20 @@ Validates a supplied unknown as a valid key-value pair.
 </td><td>
 
 Validates a supplied iterable of unknowns as valid key-value pairs.
+
+
+</td></tr>
+<tr><td>
+
+[validateEntry(entry)](./ts-utils.collections.utils.keyvaluevalidators.validateentry.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Validates a supplied unknown as a valid key-value pair.
 
 
 </td></tr>

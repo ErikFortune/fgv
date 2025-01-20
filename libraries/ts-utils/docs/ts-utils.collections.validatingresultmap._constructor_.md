@@ -4,7 +4,7 @@
 
 ## Collections.ValidatingResultMap.(constructor)
 
-Constructs a new .
+Constructs a new [ValidatingResultMap](./ts-utils.collections.validatingresultmap.md)<!-- -->.
 
 **Signature:**
 

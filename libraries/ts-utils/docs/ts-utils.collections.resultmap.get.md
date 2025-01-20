@@ -51,5 +51,5 @@ The key to retrieve.
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TV, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;
 
-`Success` with the value and detail `exists` if the key was found, `Failure` with detail `not-found` if the key was not found.
+`Success` with the value and detail `exists` if the key was found, `Failure` with detail `not-found` if the key was not found or with detail `invalid-key` if the key is invalid.
 

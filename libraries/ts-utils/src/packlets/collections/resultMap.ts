@@ -74,7 +74,7 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
     iterableOrParams?: Iterable<KeyValueEntry<TK, TV>> | IResultMapConstructorParams<TK, TV>
   ) {
     const params = isIterable(iterableOrParams) ? { entries: iterableOrParams } : iterableOrParams ?? {};
-    this._inner = new Map(params?.entries);
+    this._inner = new Map(params.entries);
   }
 
   /**
@@ -111,6 +111,22 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
     elementsOrParams?: Iterable<KeyValueEntry<TK, TV>> | IResultMapConstructorParams<TK, TV>
   ): Result<ResultMap<TK, TV>> {
     return captureResult(() => new ResultMap(elementsOrParams as IResultMapConstructorParams<TK, TV>));
+  }
+
+  /**
+   * Sets a key/value pair in the map if the key does not already exist.
+   * @param key - The key to set.
+   * @param value - The value to set.
+   * @returns `Success` with the value and detail `added` if the key was added,
+   * `Failure` with detail `exists` if the key already exists. Fails with detail
+   * 'invalid-key' or 'invalid-value' and an error message if either is invalid.
+   */
+  public add(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail> {
+    if (this._inner.has(key)) {
+      return failWithDetail(`${key}: already exists.`, 'exists');
+    }
+    this._inner.set(key, value);
+    return succeedWithDetail(value, 'added');
   }
 
   /**
@@ -215,22 +231,6 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
     const detail: ResultMapResultDetail = this._inner.has(key) ? 'updated' : 'added';
     this._inner.set(key, value);
     return succeedWithDetail(value, detail);
-  }
-
-  /**
-   * Sets a key/value pair in the map if the key does not already exist.
-   * @param key - The key to set.
-   * @param value - The value to set.
-   * @returns `Success` with the value and detail `added` if the key was added,
-   * `Failure` with detail `exists` if the key already exists. Fails with detail
-   * 'invalid-key' or 'invalid-value' and an error message if either is invalid.
-   */
-  public setNew(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail> {
-    if (this._inner.has(key)) {
-      return failWithDetail(`${key}: already exists.`, 'exists');
-    }
-    this._inner.set(key, value);
-    return succeedWithDetail(value, 'added');
   }
 
   /**

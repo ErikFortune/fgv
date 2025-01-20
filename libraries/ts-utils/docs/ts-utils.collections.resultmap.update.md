@@ -9,7 +9,7 @@ Updates an existing key in the map - the map is not updated if the key does not 
 **Signature:**
 
 ```typescript
-update(key: TK, value: TV): DetailedResult<ResultMap<TK, TV>, ResultMapResultDetail>;
+update(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
 ```
 
 ## Parameters
@@ -65,7 +65,7 @@ The value to set.
 </tbody></table>
 **Returns:**
 
-[DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;[ResultMap](./ts-utils.collections.resultmap.md)<!-- -->&lt;TK, TV&gt;, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;
+[DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TV, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;
 
-`Success` with detail `exists` if the key was found and updated, `Failure` with detail `not-found` if the key was not found.
+`Success` with the value and detail 'exists' if the key was found and the value updated, `Failure` an error message and with detail `not-found` if the key was not found, or with detail 'invalid-key' or 'invalid-value' if either is invalid.
 

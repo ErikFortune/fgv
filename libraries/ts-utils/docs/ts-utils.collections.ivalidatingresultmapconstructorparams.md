@@ -37,7 +37,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[elements?](./ts-utils.collections.ivalidatingresultmapconstructorparams.elements.md)
+[entries?](./ts-utils.collections.ivalidatingresultmapconstructorparams.entries.md)
 
 
 </td><td>
@@ -45,7 +45,7 @@ Description
 
 </td><td>
 
-Iterable&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TK, TV&gt;&gt;
+Iterable&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;string, unknown&gt;&gt;
 
 
 </td><td>

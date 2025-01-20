@@ -49,7 +49,7 @@ _(Optional)_ An optional set of parameters to configure the map.
 </tbody></table>
 **Returns:**
 
-[Result](./ts-utils.result.md)<!-- -->&lt;[ResultMap](./ts-utils.collections.resultmap.md)<!-- -->&lt;TK, TV&gt;&gt;
+[Result](./ts-utils.result.md)<!-- -->&lt;[ResultMap](./ts-utils.resultmap.md)<!-- -->&lt;TK, TV&gt;&gt;
 
 `Success` with the new map, or `Failure` with error details if an error occurred.
 

@@ -9,7 +9,7 @@ Sets a key/value pair in the map.
 **Signature:**
 
 ```typescript
-set(key: TK, value: TV): DetailedResult<ResultMap<TK, TV>, ResultMapResultDetail>;
+set(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
 ```
 
 ## Parameters
@@ -65,7 +65,7 @@ The value to set.
 </tbody></table>
 **Returns:**
 
-[DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;[ResultMap](./ts-utils.collections.resultmap.md)<!-- -->&lt;TK, TV&gt;, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;
+[DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TV, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;
 
-`Success` with detail `updated` if the key was found and updated, `Success` with detail `added` if the key was not found and added.
+`Success` with the new value and the detail `updated` if the key was found and updated, `Success` with the new value and detail `added` if the key was not found and added. Fails with detail 'invalid-key' or 'invalid-value' and an error message if either is invalid.
 

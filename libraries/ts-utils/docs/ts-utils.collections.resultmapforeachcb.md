@@ -11,5 +11,5 @@ Callback for [ResultMap](./ts-utils.collections.resultmap.md) `forEach` method.
 ```typescript
 export type ResultMapForEachCb<TK extends string = string, TE = unknown> = (value: TE, key: TK, map: IReadOnlyResultMap<TK, TE>, thisArg?: unknown) => void;
 ```
-**References:** [IReadOnlyResultMap](./ts-utils.collections.ireadonlyresultmap.md)
+**References:** [IReadOnlyResultMap](./ts-utils.ireadonlyresultmap.md)
 

@@ -9,7 +9,7 @@ Read a JSON file and apply a supplied converter.
 **Signature:**
 
 ```typescript
-export declare function convertJsonFileSync<T>(srcPath: string, converter: Converter<T>): Result<T>;
+export declare function convertJsonFileSync<T, TC = unknown>(srcPath: string, converter: Converter<T, TC>): Result<T>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ converter
 
 </td><td>
 
-Converter&lt;T&gt;
+Converter&lt;T, TC&gt;
 
 
 </td><td>

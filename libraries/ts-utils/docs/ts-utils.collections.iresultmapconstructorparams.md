@@ -37,7 +37,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[elements?](./ts-utils.collections.iresultmapconstructorparams.elements.md)
+[entries?](./ts-utils.collections.iresultmapconstructorparams.entries.md)
 
 
 </td><td>
@@ -46,25 +46,6 @@ Description
 </td><td>
 
 Iterable&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TK, TV&gt;&gt;
-
-
-</td><td>
-
-_(Optional)_
-
-
-</td></tr>
-<tr><td>
-
-[validators?](./ts-utils.collections.iresultmapconstructorparams.validators.md)
-
-
-</td><td>
-
-
-</td><td>
-
-[KeyValueValidators](./ts-utils.collections.utils.keyvaluevalidators.md)<!-- -->&lt;TK, TV&gt;
 
 
 </td><td>

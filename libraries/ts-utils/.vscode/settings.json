@@ -13,7 +13,9 @@
     "dflt",
     "Eulers",
     "fixlint",
+    "flintstone",
     "furst",
+    "jetson",
     "luxon",
     "nums",
     "oopsy",
@@ -25,6 +27,7 @@
     "TELEM",
     "TSRC",
     "TTOELEM",
+    "Unvalidated",
     "xyzzy"
   ]
 }

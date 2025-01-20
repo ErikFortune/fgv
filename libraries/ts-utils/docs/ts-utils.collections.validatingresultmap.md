@@ -4,14 +4,14 @@
 
 ## Collections.ValidatingResultMap class
 
-A [ResultMap](./ts-utils.collections.resultmap.md) which validates keys and values, which enables it to expose additional methods for working with weakly-typed values.
+A [ResultMap](./ts-utils.collections.resultmap.md) with a [validator](./ts-utils.collections.resultmapvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
 
 **Signature:**
 
 ```typescript
 export declare class ValidatingResultMap<TK extends string = string, TV = unknown> extends ResultMap<TK, TV> 
 ```
-**Extends:** [ResultMap](./ts-utils.collections.resultmap.md)<!-- -->&lt;TK, TV&gt;
+**Extends:** [ResultMap](./ts-utils.resultmap.md)<!-- -->&lt;TK, TV&gt;
 
 ## Constructors
 
@@ -41,7 +41,7 @@ Description
 
 </td><td>
 
-Constructs a new .
+Constructs a new [ValidatingResultMap](./ts-utils.collections.validatingresultmap.md)<!-- -->.
 
 
 </td></tr>
@@ -72,20 +72,22 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_val](./ts-utils.collections.validatingresultmap._val.md)
+[validate](./ts-utils.collections.validatingresultmap.validate.md)
 
 
 </td><td>
 
-`protected`
+`readonly`
 
 
 </td><td>
 
-[KeyValueValidators](./ts-utils.collections.utils.keyvaluevalidators.md)<!-- -->&lt;TK, TV&gt;
+[ResultMapValidator](./ts-utils.collections.resultmapvalidator.md)<!-- -->&lt;TK, TV&gt;
 
 
 </td><td>
+
+A [ResultMapValidator](./ts-utils.collections.resultmapvalidator.md) which validates keys and values before inserting them into this collection.
 
 
 </td></tr>
@@ -111,7 +113,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[get(key)](./ts-utils.collections.validatingresultmap.get.md)
+[add(key, value)](./ts-utils.collections.validatingresultmap.add.md)
 
 
 </td><td>
@@ -119,7 +121,63 @@ Description
 
 </td><td>
 
-Gets a value from the map.
+Sets a key/value pair in the map if the key does not already exist.
+
+
+</td></tr>
+<tr><td>
+
+[createValidating(params)](./ts-utils.collections.validatingresultmap.createvalidating.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [ValidatingResultMap](./ts-utils.collections.validatingresultmap.md) instance.
+
+
+</td></tr>
+<tr><td>
+
+[getOrAdd(key, value)](./ts-utils.collections.validatingresultmap.getoradd.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a value from the map, or adds a supplied value it if it does not exist.
+
+
+</td></tr>
+<tr><td>
+
+[set(key, value)](./ts-utils.collections.validatingresultmap.set.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[update(key, value)](./ts-utils.collections.validatingresultmap.update.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Updates an existing key in the map - the map is not updated if the key does not exist.
 
 
 </td></tr>

@@ -239,7 +239,7 @@ describe('ResultMap', () => {
         ['key1', 1],
         ['key2', 2]
       ]);
-      expect(resultMap.setNew('key3', 3)).toSucceedWithDetail(3, 'added');
+      expect(resultMap.add('key3', 3)).toSucceedWithDetail(3, 'added');
       expect(resultMap.get('key3')).toSucceedWith(3);
     });
 
@@ -248,7 +248,7 @@ describe('ResultMap', () => {
         ['key1', 1],
         ['key2', 2]
       ]);
-      expect(resultMap.setNew('key1', 3)).toFailWithDetail(/already exists/i, 'exists');
+      expect(resultMap.add('key1', 3)).toFailWithDetail(/already exists/i, 'exists');
     });
   });
 

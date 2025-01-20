@@ -67,5 +67,5 @@ The value to add if the key does not exist.
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TV, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;
 
-`Success` with the value and detail `exists` if the key was found, `Success` with the value and detail `added` if the key was not found and added.
+`Success` with the value and detail `exists` if the key was found, `Success` with the value and detail `added` if the key was not found and added. Fails with detail 'invalid-key' or 'invalid-value' and an error message if either is invalid.
 
