@@ -1,6 +1,15 @@
 # Change Log - @fgv/ts-utils
 
-This log was last generated on Thu, 09 Jan 2025 05:33:39 GMT and should not be manually modified.
+This log was last generated on Mon, 20 Jan 2025 09:46:53 GMT and should not be manually modified.
+
+## 4.2.0
+Mon, 20 Jan 2025 09:46:53 GMT
+
+### Updates
+
+- add collections packlet and ResultMap class
+- add withFormattedError on validator and converter
+- clean up type inconsistencies, relax some constraints
 
 ## 4.1.0
 Thu, 09 Jan 2025 05:33:39 GMT
