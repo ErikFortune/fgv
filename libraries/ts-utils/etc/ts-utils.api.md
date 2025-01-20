@@ -140,12 +140,11 @@ declare namespace Classes {
 declare namespace Collections {
     export {
         Utils,
+        KeyValueEntry,
         ResultMapResultDetail,
         ResultMapEntry,
         ResultMapForEachCb,
         IReadOnlyResultMap,
-        KeyValidationFunction,
-        ValueValidationFunction,
         IResultMapConstructorParams,
         ResultMap
     }
@@ -654,9 +653,7 @@ interface IResultMapConstructorParams<TK extends string = string, TV = unknown> 
     // (undocumented)
     elements?: Iterable<ResultMapEntry<TK, TV>>;
     // (undocumented)
-    validateKey?: KeyValidationFunction<TK>;
-    // (undocumented)
-    validateValue?: ValueValidationFunction<TV>;
+    validators?: KeyValueValidators<TK, TV>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -686,10 +683,26 @@ interface KeyedConverterOptions<T extends string = string, TC = unknown> {
     onError?: 'fail' | 'ignore';
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
 // @public
-type KeyValidationFunction<TK extends string> = (key: string) => Result<TK>;
+type KeyValueEntry<TK extends string = string, TV = unknown> = [TK, TV];
+
+// @public
+class KeyValueValidators<TK extends string = string, TV = unknown> {
+    constructor(key: Validator<TK, unknown> | Converter<TK, unknown>, value: Validator<TV, unknown> | Converter<TV, unknown>, element?: Validator<KeyValueEntry<TK, TV>, unknown> | Converter<KeyValueEntry<TK, TV>, unknown>);
+    readonly element?: Validator<KeyValueEntry<TK, TV>, unknown> | Converter<KeyValueEntry<TK, TV>, unknown>;
+    readonly key: Validator<TK, unknown> | Converter<TK, unknown>;
+    // Warning: (ae-incompatible-release-tags) The symbol "validateElement" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "validateElement" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    validateElement(element: unknown): DetailedResult<KeyValueEntry<TK, TV>, ResultMapResultDetail>;
+    validateElements(elements: Iterable<unknown>): Result<KeyValueEntry<TK, TV>[]>;
+    // Warning: (ae-incompatible-release-tags) The symbol "validateKey" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "validateKey" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    validateKey(key: unknown): DetailedResult<TK, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "validateValue" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "validateValue" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    validateValue(key: unknown): DetailedResult<TV, ResultMapResultDetail>;
+    readonly value: Validator<TV, unknown> | Converter<TV, unknown>;
+}
 
 // @public
 function literal<T, TC = unknown>(value: T): Converter<T, TC>;
@@ -1104,10 +1117,7 @@ class ResultMap<TK extends string = string, TV = unknown> implements IReadOnlyRe
     has(key: TK): boolean;
     get inner(): ReadonlyMap<TK, TV>;
     protected readonly _inner: Map<TK, TV>;
-    protected static _isIterable<TI extends Iterable<unknown>, TO>(iterableOrParams?: TI | TO): iterableOrParams is TI;
     keys(): MapIterator<TK>;
-    // (undocumented)
-    protected readonly _keyValidator: KeyValidationFunction<TK> | undefined;
     // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     set(key: TK, value: TV): DetailedResult<ResultMap<TK, TV>, ResultMapResultDetail>;
@@ -1118,28 +1128,9 @@ class ResultMap<TK extends string = string, TV = unknown> implements IReadOnlyRe
     // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     update(key: TK, value: TV): DetailedResult<ResultMap<TK, TV>, ResultMapResultDetail>;
-    static validateElements<TKS extends string = string, TVS = unknown, TKV extends string = TKS, TVV = TVS>(elements: Iterable<ResultMapEntry<TKS, TVS>>, keyValidator?: KeyValidationFunction<TKV>, valueValidator?: ValueValidationFunction<TVV>): Result<ResultMapEntry<TKV, TVV>[]>;
-    // Warning: (ae-incompatible-release-tags) The symbol "_validateKey" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-incompatible-release-tags) The symbol "_validateKey" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    //
     // (undocumented)
-    protected _validateKey(key: string): DetailedResult<TK, ResultMapResultDetail>;
-    // Warning: (ae-incompatible-release-tags) The symbol "_validateKeyAndValue" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-incompatible-release-tags) The symbol "_validateKeyAndValue" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    //
-    // (undocumented)
-    protected _validateKeyAndValue(key: string, value: unknown): DetailedResult<{
-        k: TK;
-        v: TV;
-    }, ResultMapResultDetail>;
-    // Warning: (ae-incompatible-release-tags) The symbol "_validateValue" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-incompatible-release-tags) The symbol "_validateValue" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    //
-    // (undocumented)
-    protected _validateValue(value: unknown): DetailedResult<TV, ResultMapResultDetail>;
+    protected readonly _validators?: KeyValueValidators<TK, TV>;
     values(): MapIterator<TV>;
-    // (undocumented)
-    protected readonly _valueValidator: ValueValidationFunction<TV> | undefined;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1325,7 +1316,8 @@ type TypeGuardWithContext<T, TC = unknown> = (from: unknown, context?: TC) => fr
 
 declare namespace Utils {
     export {
-        isIterable
+        isIterable,
+        KeyValueValidators
     }
 }
 
@@ -1443,11 +1435,6 @@ interface ValidatorTraitValues {
 //
 // @internal @deprecated
 const value: typeof literal;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-type ValueValidationFunction<TV> = (value: unknown) => Result<TV>;
 
 // (No @packageDocumentation comment for this package)
 

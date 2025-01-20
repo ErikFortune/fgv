@@ -45,6 +45,20 @@ Constructs a new [ResultMap](./ts-utils.collections.resultmap.md)<!-- -->.
 
 
 </td></tr>
+<tr><td>
+
+[(constructor)(params)](./ts-utils.collections.resultmap._constructor__1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [ResultMap](./ts-utils.collections.resultmap.md)<!-- -->.
+
+
+</td></tr>
 </tbody></table>
 
 ## Properties
@@ -90,6 +104,29 @@ Map&lt;TK, TV&gt;
 </td><td>
 
 Protected raw access to the inner `Map<TK, TV>` object.
+
+
+</td></tr>
+<tr><td>
+
+[\_validators?](./ts-utils.collections.resultmap._validators.md)
+
+
+</td><td>
+
+`protected`
+
+`readonly`
+
+
+</td><td>
+
+[KeyValueValidators](./ts-utils.collections.utils.keyvaluevalidators.md)<!-- -->&lt;TK, TV&gt;
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>
@@ -185,7 +222,23 @@ Clears the map.
 </td></tr>
 <tr><td>
 
-[create(iterable)](./ts-utils.collections.resultmap.create.md)
+[create(elements)](./ts-utils.collections.resultmap.create.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [ResultMap](./ts-utils.collections.resultmap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[create(params)](./ts-utils.collections.resultmap.create_1.md)
 
 
 </td><td>

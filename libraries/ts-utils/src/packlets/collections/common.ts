@@ -20,9 +20,8 @@
  * SOFTWARE.
  */
 
-import * as Utils from './utils';
-
-export * from './common';
-export * from './readonlyResultMap';
-export * from './resultMap';
-export { Utils };
+/**
+ * Generic key-value entry.
+ * @public
+ */
+export type KeyValueEntry<TK extends string = string, TV = unknown> = [TK, TV];

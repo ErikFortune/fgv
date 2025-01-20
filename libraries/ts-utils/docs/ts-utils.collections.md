@@ -54,6 +54,41 @@ A readonly `ReadonlyMap<TK, TV>`<!-- -->-like object which reports success or fa
 
 
 </td></tr>
+<tr><td>
+
+[IResultMapConstructorParams](./ts-utils.collections.iresultmapconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [ResultMap](./ts-utils.collections.resultmap.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
+
+## Namespaces
+
+<table><thead><tr><th>
+
+Namespace
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Utils](./ts-utils.collections.utils.md)
+
+
+</td><td>
+
+
+</td></tr>
 </tbody></table>
 
 ## Type Aliases
@@ -70,6 +105,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)
+
+
+</td><td>
+
+Generic key-value entry.
+
+
+</td></tr>
+<tr><td>
 
 [ResultMapEntry](./ts-utils.collections.resultmapentry.md)
 

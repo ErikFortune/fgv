@@ -9,7 +9,7 @@ Callback for [ResultMap](./ts-utils.collections.resultmap.md) `forEach` method.
 **Signature:**
 
 ```typescript
-export type ResultMapForEachCb<TK extends string = string, TE = unknown> = (value: TE, key: TK, map: ResultMap<TK, TE>, thisArg?: unknown) => void;
+export type ResultMapForEachCb<TK extends string = string, TE = unknown> = (value: TE, key: TK, map: IReadOnlyResultMap<TK, TE>, thisArg?: unknown) => void;
 ```
-**References:** [ResultMap](./ts-utils.collections.resultmap.md)
+**References:** [IReadOnlyResultMap](./ts-utils.collections.ireadonlyresultmap.md)
 
