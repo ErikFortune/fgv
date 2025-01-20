@@ -9,8 +9,9 @@ A [ResultMap](./ts-utils.collections.resultmap.md) wrapper which validates weakl
 **Signature:**
 
 ```typescript
-export declare class ResultMapValidator<TK extends string = string, TV = unknown> 
+export declare class ResultMapValidator<TK extends string = string, TV = unknown> implements IReadOnlyResultMapValidator<TK, TV> 
 ```
+**Implements:** [IReadOnlyResultMapValidator](./ts-utils.collections.ireadonlyresultmapvalidator.md)<!-- -->&lt;TK, TV&gt;
 
 ## Constructors
 
@@ -71,6 +72,25 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[\_map](./ts-utils.collections.resultmapvalidator._map.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+[ResultMap](./ts-utils.resultmap.md)<!-- -->&lt;TK, TV&gt;
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [map](./ts-utils.collections.resultmapvalidator.map.md)
 
 
@@ -81,7 +101,7 @@ Description
 
 </td><td>
 
-[ResultMap](./ts-utils.resultmap.md)<!-- -->&lt;TK, TV&gt;
+[IReadOnlyResultMap](./ts-utils.ireadonlyresultmap.md)<!-- -->&lt;TK, TV&gt;
 
 
 </td><td>

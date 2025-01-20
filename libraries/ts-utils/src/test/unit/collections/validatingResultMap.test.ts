@@ -130,6 +130,7 @@ describe('ValidatingResultMap', () => {
       expect(map.get('fred')).toFailWithDetail(/not found/i, 'not-found');
       expect(map.validate.set('fred', 'flintstone')).toSucceedWith('flintstone');
       expect(map.get('fred')).toSucceedWith('flintstone');
+      expect(map.validate.map.get('fred')).toSucceedWith('flintstone');
 
       expect(map.validate.delete('fred')).toSucceedWithDetail('flintstone', 'deleted');
       expect(map.get('fred')).toFailWithDetail(/not found/i, 'not-found');
@@ -182,6 +183,23 @@ describe('ValidatingResultMap', () => {
       expect(map.getOrAdd('fred', 'rubble')).toFailWithDetail(/no such family member/i, 'invalid-value');
       expect(map.add('betty', 'flintstone')).toFailWithDetail(/no such family member/i, 'invalid-value');
       expect(map.update('fred', 'rubble')).toFailWithDetail(/no such family member/i, 'invalid-value');
+    });
+  });
+
+  describe('toReadOnly', () => {
+    test('returns a read-only version of the map', () => {
+      const map = new ValidatingResultMap({
+        validators: familyValidators,
+        entries: [['fred', 'flintstone']]
+      });
+      const readOnly = map.toReadOnly();
+      expect(readOnly.get('fred')).toSucceedWith('flintstone');
+      expect(readOnly.validate.get('fred')).toSucceedWith('flintstone');
+      expect(readOnly.validate.get('barney')).toFailWithDetail(/not found/i, 'not-found');
+      expect(readOnly.validate.get('george')).toFailWithDetail(/invalid enumerated value/i, 'invalid-key');
+
+      const roValidators = map.validate.toReadOnly();
+      expect(roValidators.get('fred')).toSucceedWith('flintstone');
     });
   });
 });

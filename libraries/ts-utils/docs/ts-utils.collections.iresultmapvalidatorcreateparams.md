@@ -4,7 +4,7 @@
 
 ## Collections.IResultMapValidatorCreateParams interface
 
-Parameters for constructing a [ResultMap](./ts-utils.collections.resultmap.md)<!-- -->.
+Parameters for constructing a [ResultMapValidator](./ts-utils.collections.resultmapvalidator.md)<!-- -->.
 
 **Signature:**
 

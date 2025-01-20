@@ -299,4 +299,17 @@ describe('ResultMap', () => {
       expect(values).toEqual([1, 2]);
     });
   });
+
+  describe('toReadOnly method', () => {
+    test('should return a read-only version of the map', () => {
+      const resultMap = new ResultMap([
+        ['key1', 1],
+        ['key2', 2]
+      ]);
+      const readOnlyMap = resultMap.toReadOnly();
+      expect(readOnlyMap.size).toBe(2);
+      expect(readOnlyMap.get('key1')).toSucceedWith(1);
+      expect(readOnlyMap.get('key2')).toSucceedWith(2);
+    });
+  });
 });

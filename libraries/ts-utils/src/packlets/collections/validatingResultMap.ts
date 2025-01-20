@@ -22,10 +22,22 @@
 
 import { captureResult, DetailedResult, Result } from '../base';
 import { KeyValueEntry } from './common';
-import { ResultMapResultDetail } from './readonlyResultMap';
+import { IReadOnlyResultMap, ResultMapResultDetail } from './readonlyResultMap';
 import { ResultMap } from './resultMap';
-import { ResultMapValidator } from './resultMapValidator';
+import { IReadOnlyResultMapValidator, ResultMapValidator } from './resultMapValidator';
 import { KeyValueValidators } from './utils';
+
+/**
+ * A read-only interface exposing non-mutating methods of a {@link Collections.ValidatingResultMap | ValidatingResultMap}.
+ * @public
+ */
+export interface IReadOnlyValidatingResultMap<TK extends string = string, TV = unknown>
+  extends IReadOnlyResultMap<TK, TV> {
+  /**
+   * {@inheritdoc Collections.ValidatingResultMap.validate}
+   */
+  readonly validate: IReadOnlyResultMapValidator<TK, TV>;
+}
 
 /**
  * Parameters for constructing a {@link Collections.ResultMap | ResultMap}.
@@ -41,7 +53,10 @@ export interface IValidatingResultMapConstructorParams<TK extends string = strin
  * property that enables validated use of the underlying map with weakly-typed keys and values.
  * @public
  */
-export class ValidatingResultMap<TK extends string = string, TV = unknown> extends ResultMap<TK, TV> {
+export class ValidatingResultMap<TK extends string = string, TV = unknown>
+  extends ResultMap<TK, TV>
+  implements IReadOnlyValidatingResultMap<TK, TV>
+{
   /**
    * A {@link Collections.ResultMapValidator | ResultMapValidator} which validates keys and values
    * before inserting them into this collection.
@@ -104,5 +119,12 @@ export class ValidatingResultMap<TK extends string = string, TV = unknown> exten
     return this.validate.validators.validateEntry([key, value]).onSuccess((entry) => {
       return super.update(entry[0], entry[1]);
     });
+  }
+
+  /**
+   * Gets a read-only version of this map.
+   */
+  public toReadOnly(): IReadOnlyValidatingResultMap<TK, TV> {
+    return this;
   }
 }

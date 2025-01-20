@@ -21,12 +21,38 @@
  */
 
 import { DetailedResult } from '../base';
-import { ResultMapResultDetail } from './readonlyResultMap';
+import { IReadOnlyResultMap, ResultMapResultDetail } from './readonlyResultMap';
 import { ResultMap } from './resultMap';
 import { KeyValueValidators } from './utils';
 
 /**
- * Parameters for constructing a {@link Collections.ResultMap | ResultMap}.
+ * A read-only interface exposing non-mutating methods of a {@link Collections.ResultMapValidator | ResultMapValidator}.
+ * @public
+ */
+export interface IReadOnlyResultMapValidator<TK extends string = string, TV = unknown> {
+  /**
+   * {@inheritdoc Collections.ResultMapValidator.validators}
+   */
+  readonly validators: KeyValueValidators<TK, TV>;
+
+  /**
+   * {@inheritdoc Collections.ResultMapValidator.map}
+   */
+  readonly map: IReadOnlyResultMap<TK, TV>;
+
+  /**
+   * {@inheritdoc Collections.ResultMap.get}
+   */
+  get(key: string): DetailedResult<TV, ResultMapResultDetail>;
+
+  /**
+   * {@inheritdoc Collections.ResultMap.has}
+   */
+  has(key: string): boolean;
+}
+
+/**
+ * Parameters for constructing a {@link Collections.ResultMapValidator | ResultMapValidator}.
  * @public
  */
 export interface IResultMapValidatorCreateParams<TK extends string = string, TV = unknown> {
@@ -39,16 +65,22 @@ export interface IResultMapValidatorCreateParams<TK extends string = string, TV 
  * before calling the wrapped result map.
  * @public
  */
-export class ResultMapValidator<TK extends string = string, TV = unknown> {
-  public readonly map: ResultMap<TK, TV>;
+export class ResultMapValidator<TK extends string = string, TV = unknown>
+  implements IReadOnlyResultMapValidator<TK, TV>
+{
   public readonly validators: KeyValueValidators<TK, TV>;
+  public get map(): IReadOnlyResultMap<TK, TV> {
+    return this._map;
+  }
+
+  protected _map: ResultMap<TK, TV>;
 
   /**
    * Constructs a new {@link Collections.ValidatingResultMap | ValidatingResultMap}.
    * @param params - Required parameters for constructing the map.
    */
   public constructor(params: IResultMapValidatorCreateParams<TK, TV>) {
-    this.map = params.map;
+    this._map = params.map;
     this.validators = params.validators;
   }
 
@@ -57,7 +89,7 @@ export class ResultMapValidator<TK extends string = string, TV = unknown> {
    */
   public add(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail> {
     return this.validators.validateEntry([key, value]).onSuccess(([vk, vv]) => {
-      return this.map.add(vk, vv);
+      return this._map.add(vk, vv);
     });
   }
 
@@ -66,7 +98,7 @@ export class ResultMapValidator<TK extends string = string, TV = unknown> {
    */
   public delete(key: string): DetailedResult<TV, ResultMapResultDetail> {
     return this.validators.validateKey(key).onSuccess((k) => {
-      return this.map.delete(k);
+      return this._map.delete(k);
     });
   }
 
@@ -75,7 +107,7 @@ export class ResultMapValidator<TK extends string = string, TV = unknown> {
    */
   public get(key: string): DetailedResult<TV, ResultMapResultDetail> {
     return this.validators.validateKey(key).onSuccess((k) => {
-      return this.map.get(k);
+      return this._map.get(k);
     });
   }
 
@@ -84,7 +116,7 @@ export class ResultMapValidator<TK extends string = string, TV = unknown> {
    */
   public getOrAdd(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail> {
     return this.validators.validateEntry([key, value]).onSuccess(([vk, vv]) => {
-      return this.map.getOrAdd(vk, vv);
+      return this._map.getOrAdd(vk, vv);
     });
   }
 
@@ -92,7 +124,7 @@ export class ResultMapValidator<TK extends string = string, TV = unknown> {
    * {@inheritdoc Collections.ResultMap.has}
    */
   public has(key: string): boolean {
-    return this.map.has(key as TK);
+    return this._map.has(key as TK);
   }
 
   /**
@@ -100,7 +132,7 @@ export class ResultMapValidator<TK extends string = string, TV = unknown> {
    */
   public set(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail> {
     return this.validators.validateEntry([key, value]).onSuccess(([vk, vv]) => {
-      return this.map.set(vk, vv);
+      return this._map.set(vk, vv);
     });
   }
 
@@ -109,7 +141,14 @@ export class ResultMapValidator<TK extends string = string, TV = unknown> {
    */
   public update(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail> {
     return this.validators.validateEntry([key, value]).onSuccess(([vk, vv]) => {
-      return this.map.update(vk, vv);
+      return this._map.update(vk, vv);
     });
+  }
+
+  /**
+   * Gets a read-only version of this validator.
+   */
+  public toReadOnly(): IReadOnlyResultMapValidator<TK, TV> {
+    return this;
   }
 }

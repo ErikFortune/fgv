@@ -273,4 +273,12 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
   public [Symbol.iterator](): IterableIterator<KeyValueEntry<TK, TV>> {
     return this._inner[Symbol.iterator]();
   }
+
+  /**
+   * Gets a readonly version of this map.
+   * @returns A readonly version of this map.
+   */
+  public toReadOnly(): IReadOnlyResultMap<TK, TV> {
+    return this;
+  }
 }

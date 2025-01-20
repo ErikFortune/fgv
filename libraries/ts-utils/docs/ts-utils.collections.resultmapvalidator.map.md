@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly map: ResultMap<TK, TV>;
+get map(): IReadOnlyResultMap<TK, TV>;
 ```

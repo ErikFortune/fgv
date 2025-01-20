@@ -78,6 +78,28 @@ A readonly `ReadonlyMap<TK, TV>`<!-- -->-like object which reports success or fa
 </td></tr>
 <tr><td>
 
+[IReadOnlyResultMapValidator](./ts-utils.collections.ireadonlyresultmapvalidator.md)
+
+
+</td><td>
+
+A read-only interface exposing non-mutating methods of a [ResultMapValidator](./ts-utils.collections.resultmapvalidator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyValidatingResultMap](./ts-utils.collections.ireadonlyvalidatingresultmap.md)
+
+
+</td><td>
+
+A read-only interface exposing non-mutating methods of a [ValidatingResultMap](./ts-utils.collections.validatingresultmap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [IResultMapConstructorParams](./ts-utils.collections.iresultmapconstructorparams.md)
 
 
@@ -94,7 +116,7 @@ Parameters for constructing a [ResultMap](./ts-utils.collections.resultmap.md)<!
 
 </td><td>
 
-Parameters for constructing a [ResultMap](./ts-utils.collections.resultmap.md)<!-- -->.
+Parameters for constructing a [ResultMapValidator](./ts-utils.collections.resultmapvalidator.md)<!-- -->.
 
 
 </td></tr>

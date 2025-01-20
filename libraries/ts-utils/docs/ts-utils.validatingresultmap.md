@@ -9,9 +9,11 @@ A [ResultMap](./ts-utils.collections.resultmap.md) with a [validator](./ts-utils
 **Signature:**
 
 ```typescript
-export declare class ValidatingResultMap<TK extends string = string, TV = unknown> extends ResultMap<TK, TV> 
+export declare class ValidatingResultMap<TK extends string = string, TV = unknown> extends ResultMap<TK, TV> implements IReadOnlyValidatingResultMap<TK, TV> 
 ```
 **Extends:** [ResultMap](./ts-utils.resultmap.md)<!-- -->&lt;TK, TV&gt;
+
+**Implements:** [IReadOnlyValidatingResultMap](./ts-utils.collections.ireadonlyvalidatingresultmap.md)<!-- -->&lt;TK, TV&gt;
 
 ## Constructors
 
