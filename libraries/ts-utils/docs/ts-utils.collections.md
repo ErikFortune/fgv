@@ -28,6 +28,17 @@ A [ResultMap](./ts-utils.collections.resultmap.md) class as a `Map<TK, TV>`<!-- 
 
 
 </td></tr>
+<tr><td>
+
+[ValidatingResultMap](./ts-utils.collections.validatingresultmap.md)
+
+
+</td><td>
+
+A [ResultMap](./ts-utils.collections.resultmap.md) which validates keys and values, which enables it to expose additional methods for working with weakly-typed values.
+
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -57,6 +68,17 @@ A readonly `ReadonlyMap<TK, TV>`<!-- -->-like object which reports success or fa
 <tr><td>
 
 [IResultMapConstructorParams](./ts-utils.collections.iresultmapconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [ResultMap](./ts-utils.collections.resultmap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IValidatingResultMapConstructorParams](./ts-utils.collections.ivalidatingresultmapconstructorparams.md)
 
 
 </td><td>
@@ -112,17 +134,6 @@ Description
 </td><td>
 
 Generic key-value entry.
-
-
-</td></tr>
-<tr><td>
-
-[ResultMapEntry](./ts-utils.collections.resultmapentry.md)
-
-
-</td><td>
-
-Entry in a [ResultMap](./ts-utils.collections.resultmap.md)<!-- -->.
 
 
 </td></tr>

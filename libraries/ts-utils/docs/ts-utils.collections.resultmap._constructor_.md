@@ -9,7 +9,7 @@ Constructs a new [ResultMap](./ts-utils.collections.resultmap.md)<!-- -->.
 **Signature:**
 
 ```typescript
-constructor(iterable?: Iterable<ResultMapEntry<TK, TV>>);
+constructor(iterable?: Iterable<KeyValueEntry<TK, TV>>);
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ iterable
 
 </td><td>
 
-Iterable&lt;[ResultMapEntry](./ts-utils.collections.resultmapentry.md)<!-- -->&lt;TK, TV&gt;&gt;
+Iterable&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TK, TV&gt;&gt;
 
 
 </td><td>

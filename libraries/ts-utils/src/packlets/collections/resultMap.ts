@@ -21,21 +21,16 @@
  */
 
 import { captureResult, DetailedResult, failWithDetail, Result, succeedWithDetail } from '../base';
-import {
-  IReadOnlyResultMap,
-  ResultMapEntry,
-  ResultMapForEachCb,
-  ResultMapResultDetail
-} from './readonlyResultMap';
-import { isIterable, KeyValueValidators } from './utils';
+import { KeyValueEntry } from './common';
+import { IReadOnlyResultMap, ResultMapForEachCb, ResultMapResultDetail } from './readonlyResultMap';
+import { isIterable } from './utils';
 
 /**
  * Parameters for constructing a {@link Collections.ResultMap | ResultMap}.
  * @public
  */
 export interface IResultMapConstructorParams<TK extends string = string, TV = unknown> {
-  elements?: Iterable<ResultMapEntry<TK, TV>>;
-  validators?: KeyValueValidators<TK, TV>;
+  entries?: Iterable<KeyValueEntry<TK, TV>>;
 }
 
 /**
@@ -57,13 +52,12 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
    * @public
    */
   protected readonly _inner: Map<TK, TV>;
-  protected readonly _validators?: KeyValueValidators<TK, TV>;
 
   /**
    * Constructs a new {@link Collections.ResultMap | ResultMap}.
    * @param iterable - An iterable to initialize the map.
    */
-  public constructor(iterable?: Iterable<ResultMapEntry<TK, TV>>);
+  public constructor(iterable?: Iterable<KeyValueEntry<TK, TV>>);
 
   /**
    * Constructs a new {@link Collections.ResultMap | ResultMap}.
@@ -77,16 +71,10 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
    * to configure the map.
    */
   public constructor(
-    iterableOrParams?: Iterable<ResultMapEntry<TK, TV>> | IResultMapConstructorParams<TK, TV>
+    iterableOrParams?: Iterable<KeyValueEntry<TK, TV>> | IResultMapConstructorParams<TK, TV>
   ) {
-    const params = isIterable(iterableOrParams) ? { elements: iterableOrParams } : iterableOrParams ?? {};
-
-    if (params.elements && params.validators) {
-      params.validators.validateElements(params.elements).orThrow();
-    }
-
-    this._inner = new Map(params?.elements);
-    this._validators = params?.validators;
+    const params = isIterable(iterableOrParams) ? { entries: iterableOrParams } : iterableOrParams ?? {};
+    this._inner = new Map(params?.entries);
   }
 
   /**
@@ -97,7 +85,7 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
    * @public
    */
   public static create<TK extends string = string, TV = unknown>(
-    elements: Iterable<ResultMapEntry<TK, TV>>
+    elements: Iterable<KeyValueEntry<TK, TV>>
   ): Result<ResultMap<TK, TV>>;
 
   /**
@@ -120,7 +108,7 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
    * @public
    */
   public static create<TK extends string = string, TV = unknown>(
-    elementsOrParams?: Iterable<ResultMapEntry<TK, TV>> | IResultMapConstructorParams<TK, TV>
+    elementsOrParams?: Iterable<KeyValueEntry<TK, TV>> | IResultMapConstructorParams<TK, TV>
   ): Result<ResultMap<TK, TV>> {
     return captureResult(() => new ResultMap(elementsOrParams as IResultMapConstructorParams<TK, TV>));
   }
@@ -135,12 +123,14 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
   /**
    * Deletes a key from the map.
    * @param key - The key to delete.
-   * @returns `Success` with detail `deleted`if the key was found and deleted,
-   * `Failure` with detail `not-found` if the key was not found.
+   * @returns `Success` with the previous value and the detail 'deleted'
+   * if the key was found and deleted, `Failure` with detail 'not-found'
+   * if the key was not found, or with detail 'invalid-key' if the key is invalid.
    */
-  public delete(key: TK): DetailedResult<true, ResultMapResultDetail> {
+  public delete(key: TK): DetailedResult<TV, ResultMapResultDetail> {
+    const was = this._inner.get(key);
     if (this._inner.delete(key)) {
-      return succeedWithDetail(true, 'deleted');
+      return succeedWithDetail(was!, 'deleted');
     }
     return failWithDetail(`${key}: not found.`, 'not-found');
   }
@@ -149,7 +139,7 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
    * Returns an iterator over the map entries.
    * @returns An iterator over the map entries.
    */
-  public entries(): MapIterator<ResultMapEntry<TK, TV>> {
+  public entries(): MapIterator<KeyValueEntry<TK, TV>> {
     return this._inner.entries();
   }
 
@@ -168,7 +158,8 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
    * Gets a value from the map.
    * @param key - The key to retrieve.
    * @returns `Success` with the value and detail `exists` if the key was found,
-   * `Failure` with detail `not-found` if the key was not found.
+   * `Failure` with detail `not-found` if the key was not found or with detail
+   * `invalid-key` if the key is invalid.
    */
   public get(key: TK): DetailedResult<TV, ResultMapResultDetail> {
     if (this._inner.has(key)) {
@@ -183,18 +174,13 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
    * @param value - The value to add if the key does not exist.
    * @returns `Success` with the value and detail `exists` if the key was found,
    * `Success` with the value and detail `added` if the key was not found and added.
+   * Fails with detail 'invalid-key' or 'invalid-value' and an error message if either
+   * is invalid.
    */
   public getOrAdd(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail> {
     if (this._inner.has(key)) {
       return succeedWithDetail(this._inner.get(key)!, 'exists');
     }
-    if (this._validators) {
-      return this._validators.validateElement([key, value]).onSuccess(([k, v]) => {
-        this._inner.set(k, v);
-        return succeedWithDetail(v, 'added');
-      });
-    }
-
     this._inner.set(key, value);
     return succeedWithDetail(value, 'added');
   }
@@ -220,28 +206,31 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
    * Sets a key/value pair in the map.
    * @param key - The key to set.
    * @param value - The value to set.
-   * @returns `Success` with detail `updated` if the key was found and updated,
-   * `Success` with detail `added` if the key was not found and added.
+   * @returns `Success` with the new value and the detail `updated` if the
+   * key was found and updated, `Success` with the new value and detail
+   * `added` if the key was not found and added.  Fails with detail
+   * 'invalid-key' or 'invalid-value' and an error message if either is invalid.
    */
-  public set(key: TK, value: TV): DetailedResult<ResultMap<TK, TV>, ResultMapResultDetail> {
+  public set(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail> {
     const detail: ResultMapResultDetail = this._inner.has(key) ? 'updated' : 'added';
     this._inner.set(key, value);
-    return succeedWithDetail(this, detail);
+    return succeedWithDetail(value, detail);
   }
 
   /**
    * Sets a key/value pair in the map if the key does not already exist.
    * @param key - The key to set.
    * @param value - The value to set.
-   * @returns `Success` with detail `added` if the key was added,
-   * `Failure` with detail `exists` if the key already exists.
+   * @returns `Success` with the value and detail `added` if the key was added,
+   * `Failure` with detail `exists` if the key already exists. Fails with detail
+   * 'invalid-key' or 'invalid-value' and an error message if either is invalid.
    */
-  public setNew(key: TK, value: TV): DetailedResult<ResultMap<TK, TV>, ResultMapResultDetail> {
+  public setNew(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail> {
     if (this._inner.has(key)) {
       return failWithDetail(`${key}: already exists.`, 'exists');
     }
     this._inner.set(key, value);
-    return succeedWithDetail(this, 'added');
+    return succeedWithDetail(value, 'added');
   }
 
   /**
@@ -256,13 +245,15 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
    * not exist.
    * @param key - The key to update.
    * @param value - The value to set.
-   * @returns `Success` with detail `exists` if the key was found and updated,
-   * `Failure` with detail `not-found` if the key was not found.
+   * @returns `Success` with the value and detail 'exists' if the key was found
+   * and the value updated, `Failure` an error message and with detail `not-found`
+   * if the key was not found, or with detail 'invalid-key' or 'invalid-value'
+   * if either is invalid.
    */
-  public update(key: TK, value: TV): DetailedResult<ResultMap<TK, TV>, ResultMapResultDetail> {
+  public update(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail> {
     if (this._inner.has(key)) {
       this._inner.set(key, value);
-      return succeedWithDetail(this, 'updated');
+      return succeedWithDetail(value, 'updated');
     }
     return failWithDetail(`${key}: not found.`, 'not-found');
   }
@@ -279,7 +270,7 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
    * Gets an iterator over the map entries.
    * @returns An iterator over the map entries.
    */
-  public [Symbol.iterator](): IterableIterator<ResultMapEntry<TK, TV>> {
+  public [Symbol.iterator](): IterableIterator<KeyValueEntry<TK, TV>> {
     return this._inner[Symbol.iterator]();
   }
 }

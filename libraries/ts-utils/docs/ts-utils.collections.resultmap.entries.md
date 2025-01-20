@@ -9,11 +9,11 @@ Returns an iterator over the map entries.
 **Signature:**
 
 ```typescript
-entries(): MapIterator<ResultMapEntry<TK, TV>>;
+entries(): MapIterator<KeyValueEntry<TK, TV>>;
 ```
 **Returns:**
 
-MapIterator&lt;[ResultMapEntry](./ts-utils.collections.resultmapentry.md)<!-- -->&lt;TK, TV&gt;&gt;
+MapIterator&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TK, TV&gt;&gt;
 
 An iterator over the map entries.
 

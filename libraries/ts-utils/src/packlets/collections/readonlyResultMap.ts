@@ -21,6 +21,7 @@
  */
 
 import { DetailedResult } from '../base';
+import { KeyValueEntry } from './common';
 
 /**
  * Additional success or failure details for {@link Collections.ResultMap | ResultMap} calls.
@@ -35,12 +36,6 @@ export type ResultMapResultDetail =
   | 'not-found'
   | 'success'
   | 'updated';
-
-/**
- * Entry in a {@link Collections.ResultMap | ResultMap}.
- * @public
- */
-export type ResultMapEntry<TK extends string = string, TE = unknown> = [TK, TE];
 
 /**
  * Callback for {@link Collections.ResultMap | ResultMap} `forEach` method.
@@ -73,7 +68,7 @@ export interface IReadOnlyResultMap<TK extends string = string, TV = unknown> {
   /**
    * {@inheritdoc Collections.ResultMap.entries}
    */
-  entries(): MapIterator<ResultMapEntry<TK, TV>>;
+  entries(): MapIterator<KeyValueEntry<TK, TV>>;
 
   /**
    * {@inheritdoc Collections.ResultMap.forEach}
@@ -104,5 +99,5 @@ export interface IReadOnlyResultMap<TK extends string = string, TV = unknown> {
    * Gets an iterator over the map entries.
    * @returns An iterator over the map entries.
    */
-  [Symbol.iterator](): IterableIterator<ResultMapEntry<TK, TV>>;
+  [Symbol.iterator](): IterableIterator<KeyValueEntry<TK, TV>>;
 }

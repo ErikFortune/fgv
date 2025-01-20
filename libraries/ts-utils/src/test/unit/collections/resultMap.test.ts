@@ -41,6 +41,19 @@ describe('ResultMap', () => {
       expect(resultMap.get('key1')).toSucceedWith(1);
       expect(resultMap.get('key2')).toSucceedWith(2);
     });
+
+    test('should construct a ResultMap from supplied initializer', () => {
+      const resultMap = new ResultMap({
+        entries: [
+          ['key1', 1],
+          ['key2', 2]
+        ]
+      });
+      expect(resultMap.size).toBe(2);
+      expect(resultMap.inner.size).toBe(2);
+      expect(resultMap.get('key1')).toSucceedWith(1);
+      expect(resultMap.get('key2')).toSucceedWith(2);
+    });
   });
 
   describe('create static method', () => {
@@ -85,7 +98,7 @@ describe('ResultMap', () => {
         ['key2', 2]
       ]);
       expect(resultMap.size).toBe(2);
-      expect(resultMap.delete('key1')).toSucceedWithDetail(true, 'deleted');
+      expect(resultMap.delete('key1')).toSucceedWithDetail(1, 'deleted');
       expect(resultMap.size).toBe(1);
       expect(resultMap.delete('key1')).toFailWithDetail(/not found/i, 'not-found');
       expect(resultMap.size).toBe(1);
@@ -206,7 +219,7 @@ describe('ResultMap', () => {
         ['key1', 1],
         ['key2', 2]
       ]);
-      expect(resultMap.set('key1', 3)).toSucceedWithDetail(resultMap, 'updated');
+      expect(resultMap.set('key1', 3)).toSucceedWithDetail(3, 'updated');
       expect(resultMap.get('key1')).toSucceedWith(3);
     });
 
@@ -215,7 +228,7 @@ describe('ResultMap', () => {
         ['key1', 1],
         ['key2', 2]
       ]);
-      expect(resultMap.set('key3', 3)).toSucceedWithDetail(resultMap, 'added');
+      expect(resultMap.set('key3', 3)).toSucceedWithDetail(3, 'added');
       expect(resultMap.get('key3')).toSucceedWith(3);
     });
   });
@@ -226,7 +239,7 @@ describe('ResultMap', () => {
         ['key1', 1],
         ['key2', 2]
       ]);
-      expect(resultMap.setNew('key3', 3)).toSucceedWithDetail(resultMap, 'added');
+      expect(resultMap.setNew('key3', 3)).toSucceedWithDetail(3, 'added');
       expect(resultMap.get('key3')).toSucceedWith(3);
     });
 
@@ -245,7 +258,7 @@ describe('ResultMap', () => {
         ['key1', 1],
         ['key2', 2]
       ]);
-      expect(resultMap.update('key1', 2)).toSucceedWithDetail(resultMap, 'updated');
+      expect(resultMap.update('key1', 2)).toSucceedWithDetail(2, 'updated');
       expect(resultMap.get('key1')).toSucceedWith(2);
     });
 

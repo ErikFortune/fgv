@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-elements?: Iterable<ResultMapEntry<TK, TV>>;
+elements?: Iterable<KeyValueEntry<TK, TV>>;
 ```

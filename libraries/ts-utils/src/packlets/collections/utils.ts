@@ -61,10 +61,10 @@ export class KeyValueValidators<TK extends string = string, TV = unknown> {
   public readonly value: Validator<TV, unknown> | Converter<TV, unknown>;
 
   /**
-   * Optional element validator or converter.  If no element validator is provided,
-   * an element is considered valid if both key and value are valid.
+   * Optional entry validator or converter.  If no entry validator is provided,
+   * an entry is considered valid if both key and value are valid.
    */
-  public readonly element?:
+  public readonly entry?:
     | Validator<KeyValueEntry<TK, TV>, unknown>
     | Converter<KeyValueEntry<TK, TV>, unknown>;
 
@@ -72,17 +72,17 @@ export class KeyValueValidators<TK extends string = string, TV = unknown> {
    * Constructs a new key-value validator.
    * @param key - Required key validator or converter.
    * @param value - Required value validator or converter.
-   * @param element - Optional element validator or converter.  If no element validator is provided,
-   * an element is considered valid if both key and value are valid.
+   * @param entry - Optional entry validator or converter.  If no entry validator is provided,
+   * an entry is considered valid if both key and value are valid.
    */
   public constructor(
     key: Validator<TK, unknown> | Converter<TK, unknown>,
     value: Validator<TV, unknown> | Converter<TV, unknown>,
-    element?: Validator<KeyValueEntry<TK, TV>, unknown> | Converter<KeyValueEntry<TK, TV>, unknown>
+    entry?: Validator<KeyValueEntry<TK, TV>, unknown> | Converter<KeyValueEntry<TK, TV>, unknown>
   ) {
     this.key = key;
     this.value = value;
-    this.element = element;
+    this.entry = entry;
   }
 
   /**
@@ -107,38 +107,38 @@ export class KeyValueValidators<TK extends string = string, TV = unknown> {
 
   /**
    * Validates a supplied unknown as a valid key-value pair.
-   * @param element - The unknown to be validated.
-   * @returns `Success` with the validated key-value pair and 'success' detail if the element is valid,
-   * or `Failure` with an error message and 'invalid-key' or 'invalid-value' detail if
-   * the element is invalid
+   * @param entry - The unknown to be validated.
+   * @returns `Success` with the validated key-value pair and 'success' detail if the entry
+   * is valid, or `Failure` with an error message and 'invalid-key' or 'invalid-value' detail if
+   * the entry is invalid
    */
-  public validateElement(element: unknown): DetailedResult<KeyValueEntry<TK, TV>, ResultMapResultDetail> {
-    if (this.element) {
-      return this.element.convert(element).withFailureDetail('invalid-value');
+  public validateEntry(entry: unknown): DetailedResult<KeyValueEntry<TK, TV>, ResultMapResultDetail> {
+    if (this.entry) {
+      return this.entry.convert(entry).withFailureDetail('invalid-value');
     }
-    if (Array.isArray(element) && element.length === 2) {
-      const key = this.validateKey(element[0]).orDefault();
-      const value = this.validateValue(element[1]).orDefault();
+    if (Array.isArray(entry) && entry.length === 2) {
+      const key = this.validateKey(entry[0]).orDefault();
+      const value = this.validateValue(entry[1]).orDefault();
       if (key && value) {
         return succeedWithDetail([key, value], 'success');
       } else if (value) {
-        return failWithDetail('malformed-element', 'invalid-key');
+        return failWithDetail('malformed entry', 'invalid-key');
       }
     }
-    return failWithDetail('malformed element', 'invalid-value');
+    return failWithDetail('malformed entry', 'invalid-value');
   }
 
   /**
    * Validates a supplied iterable of unknowns as valid key-value pairs.
-   * @param elements - The iterable of unknowns to be validated.
-   * @returns `Success` with an array of validated key-value pairs if all elements are valid,
-   * or `Failure` with an error message if any element is invalid.
+   * @param entries - The iterable of unknowns to be validated.
+   * @returns `Success` with an array of validated key-value pairs if all entries are valid,
+   * or `Failure` with an error message if any entry is invalid.
    */
-  public validateElements(elements: Iterable<unknown>): Result<KeyValueEntry<TK, TV>[]> {
+  public validateElements(entries: Iterable<unknown>): Result<KeyValueEntry<TK, TV>[]> {
     const errors = new MessageAggregator();
     const validated: KeyValueEntry<TK, TV>[] = [];
-    for (const element of elements) {
-      this.validateElement(element)
+    for (const element of entries) {
+      this.validateEntry(element)
         .onSuccess((e) => {
           validated.push(e);
           return succeedWithDetail(e, 'success');
