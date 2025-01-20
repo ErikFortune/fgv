@@ -2,6 +2,24 @@
   "name": "@fgv/ts-utils",
   "entries": [
     {
+      "version": "4.2.0",
+      "tag": "@fgv/ts-utils_v4.2.0",
+      "date": "Mon, 20 Jan 2025 09:46:53 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "add collections packlet and ResultMap class"
+          },
+          {
+            "comment": "add withFormattedError on validator and converter"
+          },
+          {
+            "comment": "clean up type inconsistencies, relax some constraints"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.1.0",
       "tag": "@fgv/ts-utils_v4.1.0",
       "date": "Thu, 09 Jan 2025 05:33:39 GMT",

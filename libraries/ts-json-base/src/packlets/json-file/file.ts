@@ -46,7 +46,10 @@ export function readJsonFileSync(srcPath: string): Result<JsonValue> {
  * @returns `Success` with a result of type `<T>`, or `Failure`* with a message if an error occurs.
  * @public
  */
-export function convertJsonFileSync<T>(srcPath: string, converter: Converter<T>): Result<T> {
+export function convertJsonFileSync<T, TC = unknown>(
+  srcPath: string,
+  converter: Converter<T, TC>
+): Result<T> {
   return DefaultJsonFsHelper.convertJsonFileSync(srcPath, converter);
 }
 
@@ -57,9 +60,9 @@ export function convertJsonFileSync<T>(srcPath: string, converter: Converter<T>)
  * conversion and filtering
  * @public
  */
-export function convertJsonDirectorySync<T>(
+export function convertJsonDirectorySync<T, TC = unknown>(
   srcPath: string,
-  options: IJsonFsDirectoryOptions<T>
+  options: IJsonFsDirectoryOptions<T, TC>
 ): Result<IReadDirectoryItem<T>[]> {
   return DefaultJsonFsHelper.convertJsonDirectorySync(srcPath, options);
 }

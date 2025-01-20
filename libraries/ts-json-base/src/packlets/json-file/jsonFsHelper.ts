@@ -156,10 +156,11 @@ export class JsonFsHelper {
    */
   public convertJsonFileSync<T, TC = unknown>(
     srcPath: string,
-    cv: Converter<T, TC> | Validator<T, TC>
+    cv: Converter<T, TC> | Validator<T, TC>,
+    context?: TC
   ): Result<T> {
     return this.readJsonFileSync(srcPath).onSuccess((json) => {
-      return cv.convert(json);
+      return cv.convert(json, context);
     });
   }
 
@@ -169,9 +170,10 @@ export class JsonFsHelper {
    * @param options - {@link JsonFile.IJsonFsDirectoryOptions | Options} to control
    * conversion and filtering
    */
-  public convertJsonDirectorySync<T>(
+  public convertJsonDirectorySync<T, TC = unknown>(
     srcPath: string,
-    options: IJsonFsDirectoryOptions<T>
+    options: IJsonFsDirectoryOptions<T>,
+    context?: TC
   ): Result<IReadDirectoryItem<T>[]> {
     return captureResult<IReadDirectoryItem<T>[]>(() => {
       const fullPath = path.resolve(srcPath);
@@ -183,7 +185,7 @@ export class JsonFsHelper {
         .map((fi) => {
           if (fi.isFile() && this._pathMatchesOptions(options, fi.name)) {
             const filePath = path.resolve(fullPath, fi.name);
-            return this.convertJsonFileSync(filePath, options.converter)
+            return this.convertJsonFileSync(filePath, options.converter, context)
               .onSuccess((payload) => {
                 return succeed({
                   filename: fi.name,
@@ -211,9 +213,10 @@ export class JsonFsHelper {
    */
   public convertJsonDirectoryToMapSync<T, TC = unknown>(
     srcPath: string,
-    options: IJsonFsDirectoryToMapOptions<T, TC>
+    options: IJsonFsDirectoryToMapOptions<T, TC>,
+    context?: unknown
   ): Result<Map<string, T>> {
-    return this.convertJsonDirectorySync(srcPath, options).onSuccess((items) => {
+    return this.convertJsonDirectorySync(srcPath, options, context).onSuccess((items) => {
       const transformName = options.transformName ?? defaultNameTransformer;
       return mapResults(
         items.map((item) => {

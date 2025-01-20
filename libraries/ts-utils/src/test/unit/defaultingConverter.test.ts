@@ -387,4 +387,19 @@ describe('GenericDefaultingConverter', () => {
       expect(converter.convert(10)).toSucceedWith(otherDefault);
     });
   });
+
+  describe('withFormattedError', () => {
+    const genericDefault = 'generic default';
+    const converter = new GenericDefaultingConverter(Converters.string, genericDefault).withFormattedError(
+      (from, message) => `formatted error: ${message ?? 'no message'}`
+    );
+
+    test('propagates result on inner success', () => {
+      expect(converter.convert('some string')).toSucceedWith('some string');
+    });
+
+    test('resulting converter maps generic default on inner error', () => {
+      expect(converter.convert(10)).toSucceedWith(genericDefault);
+    });
+  });
 });

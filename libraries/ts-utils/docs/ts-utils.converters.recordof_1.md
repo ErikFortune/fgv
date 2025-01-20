@@ -4,12 +4,12 @@
 
 ## Converters.recordOf() function
 
-A helper function to create a [Converter](./ts-utils.converter.md) which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Record<string, T>` and optionally specified handling of elements that cannot be converted.
+A helper function to create a [Converter](./ts-utils.converter.md) which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T, TC&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Record<string, T>` and optionally specified handling of elements that cannot be converted.
 
 **Signature:**
 
 ```typescript
-export declare function recordOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>, onError: 'fail' | 'ignore'): Converter<Record<TK, T>, TC>;
+export declare function recordOf<T, TC = unknown, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>, onError: 'fail' | 'ignore'): Converter<Record<TK, T>, TC>;
 ```
 
 ## Parameters

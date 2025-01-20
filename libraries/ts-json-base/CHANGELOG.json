@@ -2,6 +2,18 @@
   "name": "@fgv/ts-json-base",
   "entries": [
     {
+      "version": "4.2.0",
+      "tag": "@fgv/ts-json-base_v4.2.0",
+      "date": "Mon, 20 Jan 2025 09:46:53 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "plumb conversion context through"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.1.0",
       "tag": "@fgv/ts-json-base_v4.1.0",
       "date": "Thu, 09 Jan 2025 05:33:39 GMT",

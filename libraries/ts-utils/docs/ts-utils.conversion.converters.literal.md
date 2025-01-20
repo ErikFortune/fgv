@@ -9,7 +9,7 @@ Helper function to create a [Converter](./ts-utils.converter.md) which converts 
 **Signature:**
 
 ```typescript
-export declare function literal<T>(value: T): Converter<T, unknown>;
+export declare function literal<T, TC = unknown>(value: T): Converter<T, TC>;
 ```
 
 ## Parameters
@@ -49,7 +49,7 @@ The value to be compared.
 </tbody></table>
 **Returns:**
 
-[Converter](./ts-utils.converter.md)<!-- -->&lt;T, unknown&gt;
+[Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;
 
 A [Converter](./ts-utils.converter.md) which returns the supplied value on success.
 

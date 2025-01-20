@@ -126,7 +126,7 @@ Description
 </td></tr>
 <tr><td>
 
-[convertJsonDirectorySync(srcPath, options)](./ts-json-base.jsonfile.jsonfshelper.convertjsondirectorysync.md)
+[convertJsonDirectorySync(srcPath, options, context)](./ts-json-base.jsonfile.jsonfshelper.convertjsondirectorysync.md)
 
 
 </td><td>
@@ -140,7 +140,7 @@ Reads all JSON files from a directory and apply a supplied converter or validato
 </td></tr>
 <tr><td>
 
-[convertJsonDirectoryToMapSync(srcPath, options)](./ts-json-base.jsonfile.jsonfshelper.convertjsondirectorytomapsync.md)
+[convertJsonDirectoryToMapSync(srcPath, options, context)](./ts-json-base.jsonfile.jsonfshelper.convertjsondirectorytomapsync.md)
 
 
 </td><td>
@@ -154,7 +154,7 @@ Reads and converts or validates all JSON files from a directory, returning a `Ma
 </td></tr>
 <tr><td>
 
-[convertJsonFileSync(srcPath, cv)](./ts-json-base.jsonfile.jsonfshelper.convertjsonfilesync.md)
+[convertJsonFileSync(srcPath, cv, context)](./ts-json-base.jsonfile.jsonfshelper.convertjsonfilesync.md)
 
 
 </td><td>

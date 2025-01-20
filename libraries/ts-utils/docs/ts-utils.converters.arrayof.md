@@ -9,7 +9,7 @@ A helper function to create a [Converter](./ts-utils.converter.md) which convert
 **Signature:**
 
 ```typescript
-export declare function arrayOf<T, TC = undefined>(converter: Converter<T, TC> | Validator<T, TC>, onError?: OnError): Converter<T[], TC>;
+export declare function arrayOf<T, TC = unknown>(converter: Converter<T, TC> | Validator<T, TC>, onError?: OnError): Converter<T[], TC>;
 ```
 
 ## Parameters

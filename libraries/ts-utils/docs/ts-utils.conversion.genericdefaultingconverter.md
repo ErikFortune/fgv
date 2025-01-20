@@ -9,7 +9,7 @@ Generic [DefaultingConverter](./ts-utils.conversion.defaultingconverter.md)<!-- 
 **Signature:**
 
 ```typescript
-export declare class GenericDefaultingConverter<T, TD = T, TC = undefined> implements DefaultingConverter<T, TD, TC> 
+export declare class GenericDefaultingConverter<T, TD = T, TC = unknown> implements DefaultingConverter<T, TD, TC> 
 ```
 **Implements:** [DefaultingConverter](./ts-utils.conversion.defaultingconverter.md)<!-- -->&lt;T, TD, TC&gt;
 
@@ -304,6 +304,20 @@ Creates a [Converter](./ts-utils.converter.md) which applies an optional constra
 Returns a Converter which always succeeds with the supplied default value rather than failing.
 
 Note that the supplied default value \*overrides\* the default value of this [DefaultingConverter](./ts-utils.conversion.defaultingconverter.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[withFormattedError(formatter)](./ts-utils.conversion.genericdefaultingconverter.withformattederror.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a new [Converter](./ts-utils.converter.md) which is derived from this one but which returns an error message formatted by the supplied formatter if the conversion fails.
 
 
 </td></tr>

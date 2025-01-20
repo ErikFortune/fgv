@@ -203,4 +203,15 @@ A type guard function which validates a specific type, with an optional context 
 
 
 </td></tr>
+<tr><td>
+
+[ValidationErrorFormatter](./ts-utils.validation.validationerrorformatter.md)
+
+
+</td><td>
+
+Formats an incoming error message and value that failed validation.
+
+
+</td></tr>
 </tbody></table>

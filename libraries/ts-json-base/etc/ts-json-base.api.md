@@ -25,7 +25,7 @@ export { Converters }
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function convertJsonDirectorySync<T>(srcPath: string, options: IJsonFsDirectoryOptions<T>): Result<IReadDirectoryItem<T>[]>;
+function convertJsonDirectorySync<T, TC = unknown>(srcPath: string, options: IJsonFsDirectoryOptions<T, TC>): Result<IReadDirectoryItem<T>[]>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -33,7 +33,7 @@ function convertJsonDirectorySync<T>(srcPath: string, options: IJsonFsDirectoryO
 function convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options: IJsonFsDirectoryToMapOptions<T, TC>): Result<Map<string, T>>;
 
 // @public
-function convertJsonFileSync<T>(srcPath: string, converter: Converter<T>): Result<T>;
+function convertJsonFileSync<T, TC = unknown>(srcPath: string, converter: Converter<T, TC>): Result<T>;
 
 // @public (undocumented)
 const DefaultJsonFsHelper: JsonFsHelper;
@@ -156,10 +156,10 @@ class JsonFsHelper {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly config: IJsonFsHelperConfig;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    convertJsonDirectorySync<T>(srcPath: string, options: IJsonFsDirectoryOptions<T>): Result<IReadDirectoryItem<T>[]>;
+    convertJsonDirectorySync<T, TC = unknown>(srcPath: string, options: IJsonFsDirectoryOptions<T>, context?: TC): Result<IReadDirectoryItem<T>[]>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options: IJsonFsDirectoryToMapOptions<T, TC>): Result<Map<string, T>>;
-    convertJsonFileSync<T, TC = unknown>(srcPath: string, cv: Converter<T, TC> | Validator<T, TC>): Result<T>;
+    convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options: IJsonFsDirectoryToMapOptions<T, TC>, context?: unknown): Result<Map<string, T>>;
+    convertJsonFileSync<T, TC = unknown>(srcPath: string, cv: Converter<T, TC> | Validator<T, TC>, context?: TC): Result<T>;
     // (undocumented)
     protected _pathMatchesOptions<T, TC>(options: IJsonFsDirectoryOptions<T, TC>, path: string): boolean;
     readJsonFileSync(srcPath: string): Result<JsonValue>;

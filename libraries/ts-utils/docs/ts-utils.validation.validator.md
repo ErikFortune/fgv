@@ -9,7 +9,7 @@ In-place validation that a supplied unknown matches some required characteristic
 **Signature:**
 
 ```typescript
-export interface Validator<T, TC = undefined> 
+export interface Validator<T, TC = unknown> 
 ```
 
 ## Properties
@@ -187,6 +187,17 @@ Creates a new [in-place validator](./ts-utils.validation.validator.md) which is 
 </td><td>
 
 Creates an [in-place validator](./ts-utils.validation.validator.md) which is derived from this one but which applies additional constraints.
+
+
+</td></tr>
+<tr><td>
+
+[withFormattedError(formatter)](./ts-utils.validation.validator.withformattederror.md)
+
+
+</td><td>
+
+Creates a new [in-place validator](./ts-utils.validation.validator.md) which is derived from this one but which returns an error message supplied by the provided formatter if an error occurs.
 
 
 </td></tr>

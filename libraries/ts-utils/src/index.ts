@@ -20,21 +20,27 @@
  * SOFTWARE.
  */
 
+import * as Collections from './packlets/collections';
 import * as Conversion from './packlets/conversion';
 import * as Hash from './packlets/hash';
 import * as Validation from './packlets/validation';
 
+import { IReadOnlyResultMap, ResultMap, ValidatingResultMap } from './packlets/collections';
 import { Converter, Converters, ObjectConverter, StringConverter } from './packlets/conversion';
 import { Validator, Validators } from './packlets/validation';
 
 export * from './packlets/base';
 export {
+  Collections,
   Conversion,
   Converter,
   Converters,
   Hash,
+  IReadOnlyResultMap,
   ObjectConverter,
+  ResultMap,
   StringConverter,
+  ValidatingResultMap,
   Validation,
   Validator,
   Validators

@@ -9,7 +9,7 @@ Options for [Converters.recordOf](./ts-utils.converters.recordof_2.md) and [Conv
 **Signature:**
 
 ```typescript
-export interface KeyedConverterOptions<T extends string = string, TC = undefined> 
+export interface KeyedConverterOptions<T extends string = string, TC = unknown> 
 ```
 
 ## Properties

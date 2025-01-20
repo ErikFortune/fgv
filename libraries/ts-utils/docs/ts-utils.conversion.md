@@ -182,6 +182,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ConversionErrorFormatter](./ts-utils.conversion.conversionerrorformatter.md)
+
+
+</td><td>
+
+Formats an incoming error message and value that failed validation.
+
+
+</td></tr>
+<tr><td>
+
 [FieldConverters](./ts-utils.conversion.fieldconverters.md)
 
 

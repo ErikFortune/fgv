@@ -9,7 +9,7 @@ A [Converter](./ts-utils.converter.md) which converts `unknown` to `boolean`<!--
 **Signature:**
 
 ```typescript
-boolean: Converter<boolean, undefined>
+boolean: Converter<boolean, unknown>
 ```
 
 ## Remarks

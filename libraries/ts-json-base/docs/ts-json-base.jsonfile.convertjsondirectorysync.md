@@ -9,7 +9,7 @@ Reads all JSON files from a directory and apply a supplied converter.
 **Signature:**
 
 ```typescript
-export declare function convertJsonDirectorySync<T>(srcPath: string, options: IJsonFsDirectoryOptions<T>): Result<IReadDirectoryItem<T>[]>;
+export declare function convertJsonDirectorySync<T, TC = unknown>(srcPath: string, options: IJsonFsDirectoryOptions<T, TC>): Result<IReadDirectoryItem<T>[]>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ options
 
 </td><td>
 
-[IJsonFsDirectoryOptions](./ts-json-base.jsonfile.ijsonfsdirectoryoptions.md)<!-- -->&lt;T&gt;
+[IJsonFsDirectoryOptions](./ts-json-base.jsonfile.ijsonfsdirectoryoptions.md)<!-- -->&lt;T, TC&gt;
 
 
 </td><td>

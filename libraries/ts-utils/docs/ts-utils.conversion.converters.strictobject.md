@@ -4,12 +4,12 @@
 
 ## Conversion.Converters.strictObject() function
 
-Helper function to create a [ObjectConverter](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) and an optional [StrictObjectConverterOptions&lt;T&gt;](./ts-utils.converters.strictobjectconverteroptions.md) to further refine conversion behavior.
+Helper function to create a [ObjectConverter](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, a [FieldConverters&lt;T, TC&gt;](./ts-utils.conversion.fieldconverters.md) and an optional [StrictObjectConverterOptions&lt;T&gt;](./ts-utils.converters.strictobjectconverteroptions.md) to further refine conversion behavior.
 
 **Signature:**
 
 ```typescript
-export declare function strictObject<T>(properties: FieldConverters<T>, options?: StrictObjectConverterOptions<T>): ObjectConverter<T>;
+export declare function strictObject<T, TC = unknown>(properties: FieldConverters<T, TC>, options?: StrictObjectConverterOptions<T>): ObjectConverter<T, TC>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ properties
 
 </td><td>
 
-[FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T&gt;
+[FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T, TC&gt;
 
 
 </td><td>
@@ -65,7 +65,7 @@ _(Optional)_ An optional
 </tbody></table>
 **Returns:**
 
-[ObjectConverter](./ts-utils.objectconverter.md)<!-- -->&lt;T&gt;
+[ObjectConverter](./ts-utils.objectconverter.md)<!-- -->&lt;T, TC&gt;
 
 A new [ObjectConverter](./ts-utils.conversion.objectconverter.md) which applies the specified conversions. 
 

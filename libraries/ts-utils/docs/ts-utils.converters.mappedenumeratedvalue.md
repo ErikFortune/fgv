@@ -9,7 +9,7 @@ Helper function to create a [Converter](./ts-utils.converter.md) which converts 
 **Signature:**
 
 ```typescript
-export declare function mappedEnumeratedValue<T>(map: [T, unknown[]][], message?: string): Converter<T, undefined>;
+export declare function mappedEnumeratedValue<T, TC = unknown>(map: [T, unknown[]][], message?: string): Converter<T, TC>;
 ```
 
 ## Parameters
@@ -65,7 +65,7 @@ _(Optional)_ An optional error message.
 </tbody></table>
 **Returns:**
 
-[Converter](./ts-utils.converter.md)<!-- -->&lt;T, undefined&gt;
+[Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;
 
 A [Converter](./ts-utils.converter.md) which applies the mapping and yields `<T>` on success.
 

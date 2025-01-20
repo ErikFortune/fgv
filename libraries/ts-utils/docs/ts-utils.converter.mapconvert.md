@@ -9,7 +9,7 @@ Creates a [Converter](./ts-utils.converter.md) which applies an additional suppl
 **Signature:**
 
 ```typescript
-mapConvert<T2>(mapConverter: Converter<T2>): Converter<T2, TC>;
+mapConvert<T2>(mapConverter: Converter<T2, unknown>): Converter<T2, TC>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ mapConverter
 
 </td><td>
 
-[Converter](./ts-utils.converter.md)<!-- -->&lt;T2&gt;
+[Converter](./ts-utils.converter.md)<!-- -->&lt;T2, unknown&gt;
 
 
 </td><td>

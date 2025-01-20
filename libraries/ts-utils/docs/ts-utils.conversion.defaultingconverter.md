@@ -8,7 +8,7 @@
 **Signature:**
 
 ```typescript
-export interface DefaultingConverter<T, TD = T, TC = undefined> extends Converter<T | TD, TC> 
+export interface DefaultingConverter<T, TD = T, TC = unknown> extends Converter<T | TD, TC> 
 ```
 **Extends:** [Converter](./ts-utils.converter.md)<!-- -->&lt;T \| TD, TC&gt;
 

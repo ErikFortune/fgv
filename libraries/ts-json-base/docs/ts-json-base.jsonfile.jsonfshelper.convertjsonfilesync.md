@@ -9,7 +9,7 @@ Read a JSON file and apply a supplied converter or validator.
 **Signature:**
 
 ```typescript
-convertJsonFileSync<T, TC = unknown>(srcPath: string, cv: Converter<T, TC> | Validator<T, TC>): Result<T>;
+convertJsonFileSync<T, TC = unknown>(srcPath: string, cv: Converter<T, TC> | Validator<T, TC>, context?: TC): Result<T>;
 ```
 
 ## Parameters
@@ -59,6 +59,22 @@ Converter&lt;T, TC&gt; \| Validator&lt;T, TC&gt;
 </td><td>
 
 Converter or validator used to process the file.
+
+
+</td></tr>
+<tr><td>
+
+context
+
+
+</td><td>
+
+TC
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>

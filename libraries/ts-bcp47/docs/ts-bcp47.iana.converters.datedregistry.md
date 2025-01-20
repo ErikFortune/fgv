@@ -9,7 +9,7 @@ Helper function which creates a converter that returns a validated [DatedRegistr
 **Signature:**
 
 ```typescript
-export declare function datedRegistry<T, TC = unknown>(entryConverter: Converter<T, TC>): Converter<IDatedRegistry<T>, TC>;
+export declare function datedRegistry<T, TC = unknown>(entryConverter: Converter<T, TC>): Converter<IDatedRegistry<T>, unknown>;
 ```
 
 ## Parameters
@@ -49,7 +49,7 @@ A `Converter<T>` to validate each entry
 </tbody></table>
 **Returns:**
 
-Converter&lt;IDatedRegistry&lt;T&gt;, TC&gt;
+Converter&lt;IDatedRegistry&lt;T&gt;, unknown&gt;
 
 A new validating `Converter` which yields [DatedRegistry&lt;T&gt;](./ts-bcp47.iana.model.idatedregistry.md)
 

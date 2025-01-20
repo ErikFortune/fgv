@@ -45,7 +45,7 @@ Description
 
 </td><td>
 
-Constructs a new [ObjectConverter&lt;T&gt;](./ts-utils.conversion.objectconverter.md) using options supplied in a [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectconverteroptions.md)<!-- -->.
+Constructs a new [ObjectConverter&lt;T, TC&gt;](./ts-utils.conversion.objectconverter.md) using options supplied in a [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectconverteroptions.md)<!-- -->.
 
 
 </td></tr>
@@ -59,7 +59,7 @@ Constructs a new [ObjectConverter&lt;T&gt;](./ts-utils.conversion.objectconverte
 
 </td><td>
 
-Constructs a new [ObjectConverter&lt;T&gt;](./ts-utils.conversion.objectconverter.md) with optional properties specified as an array of `keyof T`<!-- -->.
+Constructs a new [ObjectConverter&lt;T, TC&gt;](./ts-utils.conversion.objectconverter.md) with optional properties specified as an array of `keyof T`<!-- -->.
 
 
 </td></tr>
@@ -100,7 +100,7 @@ Description
 
 </td><td>
 
-[FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T&gt;
+[FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T, TC&gt;
 
 
 </td><td>

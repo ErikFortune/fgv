@@ -9,5 +9,5 @@ Fields converted by this [ObjectConverter](./ts-utils.conversion.objectconverter
 **Signature:**
 
 ```typescript
-readonly fields: FieldConverters<T>;
+readonly fields: FieldConverters<T, TC>;
 ```

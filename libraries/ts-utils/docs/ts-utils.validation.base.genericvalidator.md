@@ -9,7 +9,7 @@ Generic base implementation for an in-place [Validator](./ts-utils.validation.va
 **Signature:**
 
 ```typescript
-export declare class GenericValidator<T, TC = undefined> implements Validator<T, TC> 
+export declare class GenericValidator<T, TC = unknown> implements Validator<T, TC> 
 ```
 **Implements:** [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;
 
@@ -248,6 +248,20 @@ The brand for a branded type.
 </td><td>
 
 Creates an [in-place validator](./ts-utils.validation.validator.md) which is derived from this one but which applies additional constraints.
+
+
+</td></tr>
+<tr><td>
+
+[withFormattedError(formatter)](./ts-utils.validation.base.genericvalidator.withformattederror.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a new [in-place validator](./ts-utils.validation.validator.md) which is derived from this one but which returns an error message supplied by the provided formatter if an error occurs.
 
 
 </td></tr>

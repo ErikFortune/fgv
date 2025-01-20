@@ -9,7 +9,7 @@ A helper function to create a [Converter](./ts-utils.converter.md) which extract
 **Signature:**
 
 ```typescript
-export declare function field<T, TC = undefined>(name: string, converter: Converter<T, TC> | Validator<T, TC>): Converter<T, TC>;
+export declare function field<T, TC = unknown>(name: string, converter: Converter<T, TC> | Validator<T, TC>): Converter<T, TC>;
 ```
 
 ## Parameters

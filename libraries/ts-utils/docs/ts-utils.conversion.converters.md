@@ -112,7 +112,7 @@ Helper function to create a [Converter](./ts-utils.converter.md) which converts 
 
 </td><td>
 
-A helper function to create a [Converter](./ts-utils.converter.md) which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Map<string, T>`<!-- -->.
+A helper function to create a [Converter](./ts-utils.converter.md) which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T, TC&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Map<string, T>`<!-- -->.
 
 
 </td></tr>
@@ -123,7 +123,7 @@ A helper function to create a [Converter](./ts-utils.converter.md) which convert
 
 </td><td>
 
-A helper function to create a [Converter](./ts-utils.converter.md) which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Map<string, T>` and specified handling of elements that cannot be converted.
+A helper function to create a [Converter](./ts-utils.converter.md) which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T, TC&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Map<string, T>` and specified handling of elements that cannot be converted.
 
 
 </td></tr>
@@ -134,7 +134,7 @@ A helper function to create a [Converter](./ts-utils.converter.md) which convert
 
 </td><td>
 
-A helper function to create a [Converter](./ts-utils.converter.md) which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Map<TK,T>`<!-- -->.
+A helper function to create a [Converter](./ts-utils.converter.md) which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T, TC&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Map<TK,T>`<!-- -->.
 
 
 </td></tr>
@@ -156,7 +156,7 @@ Helper function to create a [Converter](./ts-utils.converter.md) which converts 
 
 </td><td>
 
-Helper function to create a [ObjectConverter&lt;T&gt;](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, given a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) and an optional [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectconverteroptions.md) to further refine conversion behavior.
+Helper function to create a [ObjectConverter&lt;T, TC&gt;](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, given a [FieldConverters&lt;T, TC&gt;](./ts-utils.conversion.fieldconverters.md) and an optional [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectconverteroptions.md) to further refine conversion behavior.
 
 
 </td></tr>
@@ -167,7 +167,7 @@ Helper function to create a [ObjectConverter&lt;T&gt;](./ts-utils.conversion.obj
 
 </td><td>
 
-Helper function to create a [ObjectConverter&lt;T&gt;](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, given a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) and a set of optional properties.
+Helper function to create a [ObjectConverter&lt;T, TC&gt;](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, given a [FieldConverters&lt;T, TC&gt;](./ts-utils.conversion.fieldconverters.md) and a set of optional properties.
 
 
 </td></tr>
@@ -211,7 +211,7 @@ A helper function to create a [Converter](./ts-utils.converter.md) which extract
 
 </td><td>
 
-A helper function to create a [Converter](./ts-utils.converter.md) which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Record<string, T>`<!-- -->.
+A helper function to create a [Converter](./ts-utils.converter.md) which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T, TC&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Record<string, T>`<!-- -->.
 
 
 </td></tr>
@@ -222,7 +222,7 @@ A helper function to create a [Converter](./ts-utils.converter.md) which convert
 
 </td><td>
 
-A helper function to create a [Converter](./ts-utils.converter.md) which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Record<string, T>` and optionally specified handling of elements that cannot be converted.
+A helper function to create a [Converter](./ts-utils.converter.md) which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T, TC&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Record<string, T>` and optionally specified handling of elements that cannot be converted.
 
 
 </td></tr>
@@ -233,7 +233,7 @@ A helper function to create a [Converter](./ts-utils.converter.md) which convert
 
 </td><td>
 
-A helper function to create a [Converter](./ts-utils.converter.md) or which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Record<TK, T>`<!-- -->.
+A helper function to create a [Converter](./ts-utils.converter.md) or which converts the `string`<!-- -->-keyed properties using a supplied [Converter&lt;T, TC&gt;](./ts-utils.converter.md) or [Validator&lt;T&gt;](./ts-utils.validator.md) to produce a `Record<TK, T>`<!-- -->.
 
 
 </td></tr>
@@ -244,7 +244,7 @@ A helper function to create a [Converter](./ts-utils.converter.md) or which conv
 
 </td><td>
 
-Helper function to create a [ObjectConverter](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) and an optional [StrictObjectConverterOptions&lt;T&gt;](./ts-utils.converters.strictobjectconverteroptions.md) to further refine conversion behavior.
+Helper function to create a [ObjectConverter](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, a [FieldConverters&lt;T, TC&gt;](./ts-utils.conversion.fieldconverters.md) and an optional [StrictObjectConverterOptions&lt;T&gt;](./ts-utils.converters.strictobjectconverteroptions.md) to further refine conversion behavior.
 
 
 </td></tr>
@@ -255,7 +255,7 @@ Helper function to create a [ObjectConverter](./ts-utils.conversion.objectconver
 
 </td><td>
 
-Helper function to create a [ObjectConverter](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) and an optional [StrictObjectConverterOptions&lt;T&gt;](./ts-utils.converters.strictobjectconverteroptions.md) to further refine conversion behavior.
+Helper function to create a [ObjectConverter](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, a [FieldConverters&lt;T, TC&gt;](./ts-utils.conversion.fieldconverters.md) and an optional [StrictObjectConverterOptions&lt;T&gt;](./ts-utils.converters.strictobjectconverteroptions.md) to further refine conversion behavior.
 
 
 </td></tr>

@@ -312,4 +312,31 @@ describe('GenericValidator class', () => {
       expect(str1).toEqual(str2);
     });
   });
+
+  describe('withFormattedError method', () => {
+    const tv = new TestGenericValidator({});
+    const fe = tv.withFormattedError((from, message) => `Formatted error: ${message}`);
+
+    test('produces formatted error messages', () => {
+      expect(tv.validate('custom')).toFailWith('custom error message goes here');
+      expect(fe.validate('custom')).toFailWith('Formatted error: custom error message goes here');
+    });
+
+    test('does not affect successful validation', () => {
+      expect(tv.validate('test')).toSucceedWith('test');
+      expect(fe.validate('test')).toSucceedWith('test');
+    });
+
+    test('passes context to the formatter', () => {
+      const outerContext = { value: 'test' };
+      const fe = tv.withFormattedError((from, message, context) => {
+        expect(context).toEqual(outerContext);
+        return `Formatted error: ${message} (${JSON.stringify(context)})`;
+      });
+
+      expect(fe.validate('custom', outerContext)).toFailWith(
+        'Formatted error: custom error message goes here ({"value":"test"})'
+      );
+    });
+  });
 });

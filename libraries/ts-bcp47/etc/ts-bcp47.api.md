@@ -133,7 +133,7 @@ declare namespace Csv {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function datedRegistry<T, TC = unknown>(entryConverter: Converter<T, TC>): Converter<IDatedRegistry<T>, TC>;
+function datedRegistry<T, TC = unknown>(entryConverter: Converter<T, TC>): Converter<IDatedRegistry<T>, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

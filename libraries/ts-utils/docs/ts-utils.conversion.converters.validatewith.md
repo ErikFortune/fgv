@@ -9,7 +9,7 @@ Helper function to create a [Converter](./ts-utils.converter.md) which validates
 **Signature:**
 
 ```typescript
-export declare function validateWith<T, TC = undefined>(validator: (from: unknown) => from is T, description?: string): Converter<T, TC>;
+export declare function validateWith<T, TC = unknown>(validator: (from: unknown) => from is T, description?: string): Converter<T, TC>;
 ```
 
 ## Parameters
@@ -67,7 +67,7 @@ _(Optional)_ A description of the validated type for use in error messages.
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;
 
-A new [Converter&lt;T&gt;](./ts-utils.converter.md) which applies the supplied validation.
+A new [Converter&lt;T, TC&gt;](./ts-utils.converter.md) which applies the supplied validation.
 
 ## Remarks
 
