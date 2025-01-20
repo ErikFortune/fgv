@@ -9,7 +9,7 @@ Generic converter to convert unknown to a templated type `<T>`<!-- -->, using in
 **Signature:**
 
 ```typescript
-export interface Converter<T, TC = undefined> extends ConverterTraits 
+export interface Converter<T, TC = unknown> extends ConverterTraits 
 ```
 **Extends:** [ConverterTraits](./ts-utils.conversion.convertertraits.md)
 
@@ -211,6 +211,17 @@ Creates a [Converter](./ts-utils.converter.md) which applies an optional constra
 </td><td>
 
 Returns a Converter which always succeeds with a default value rather than failing.
+
+
+</td></tr>
+<tr><td>
+
+[withFormattedError(formatter)](./ts-utils.converter.withformattederror.md)
+
+
+</td><td>
+
+Creates a new [Converter](./ts-utils.converter.md) which is derived from this one but which returns an error message formatted by the supplied formatter if the conversion fails.
 
 
 </td></tr>

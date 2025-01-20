@@ -9,7 +9,7 @@ A [Converter](./ts-utils.converter.md) to convert an optional `boolean` value.
 **Signature:**
 
 ```typescript
-optionalBoolean: Converter<boolean | undefined>
+optionalBoolean: Converter<boolean | undefined, unknown>
 ```
 
 ## Remarks

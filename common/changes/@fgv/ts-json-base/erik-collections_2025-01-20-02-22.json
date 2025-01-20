@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "plumb conversion context through",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}

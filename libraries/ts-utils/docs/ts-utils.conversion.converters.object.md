@@ -4,12 +4,12 @@
 
 ## Conversion.Converters.object() function
 
-Helper function to create a [ObjectConverter&lt;T&gt;](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, given a [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) and an optional [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectconverteroptions.md) to further refine conversion behavior.
+Helper function to create a [ObjectConverter&lt;T, TC&gt;](./ts-utils.conversion.objectconverter.md) which converts an object without changing shape, given a [FieldConverters&lt;T, TC&gt;](./ts-utils.conversion.fieldconverters.md) and an optional [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectconverteroptions.md) to further refine conversion behavior.
 
 **Signature:**
 
 ```typescript
-export declare function object<T>(properties: FieldConverters<T>, options?: ObjectConverterOptions<T>): ObjectConverter<T>;
+export declare function object<T, TC = unknown>(properties: FieldConverters<T, TC>, options?: ObjectConverterOptions<T>): ObjectConverter<T, TC>;
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ properties
 
 </td><td>
 
-[FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T&gt;
+[FieldConverters](./ts-utils.conversion.fieldconverters.md)<!-- -->&lt;T, TC&gt;
 
 
 </td><td>
 
-An [FieldConverters&lt;T&gt;](./ts-utils.conversion.fieldconverters.md) defining the shape of the source object and [converters](./ts-utils.converter.md) to be applied to each properties.
+An [FieldConverters&lt;T, TC&gt;](./ts-utils.conversion.fieldconverters.md) defining the shape of the source object and [converters](./ts-utils.converter.md) to be applied to each properties.
 
 
 </td></tr>
@@ -65,7 +65,7 @@ _(Optional)_ An [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectco
 </tbody></table>
 **Returns:**
 
-[ObjectConverter](./ts-utils.objectconverter.md)<!-- -->&lt;T&gt;
+[ObjectConverter](./ts-utils.objectconverter.md)<!-- -->&lt;T, TC&gt;
 
 A new [ObjectConverter](./ts-utils.conversion.objectconverter.md) which applies the specified conversions. 
 

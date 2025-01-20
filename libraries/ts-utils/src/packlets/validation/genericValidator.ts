@@ -47,7 +47,7 @@ export interface GenericValidatorConstructorParams<T, TC> {
  * Generic base implementation for an in-place {@link Validation.Validator | Validator}.
  * @public
  */
-export class GenericValidator<T, TC = undefined> implements Validator<T, TC> {
+export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
   /**
    * {@inheritdoc Validation.Validator.traits}
    */

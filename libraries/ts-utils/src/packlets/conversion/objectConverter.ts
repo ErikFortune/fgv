@@ -71,14 +71,14 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
   /**
    * Fields converted by this {@link Conversion.ObjectConverter | ObjectConverter}.
    */
-  public readonly fields: FieldConverters<T>;
+  public readonly fields: FieldConverters<T, TC>;
   /**
    * Options used to initialize this {@link Conversion.ObjectConverter | ObjectConverter}.
    */
   public readonly options: ObjectConverterOptions<T>;
 
   /**
-   * Constructs a new {@link Conversion.ObjectConverter | ObjectConverter<T>} using options
+   * Constructs a new {@link Conversion.ObjectConverter | ObjectConverter<T, TC>} using options
    * supplied in a {@link Conversion.ObjectConverterOptions | ObjectConverterOptions<T>}.
    * @param fields - A {@link Conversion.FieldConverters | FieldConverters<T>} containing
    * a {@link Converter} for each field
@@ -88,7 +88,7 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
   public constructor(fields: FieldConverters<T, TC>, options?: ObjectConverterOptions<T>);
 
   /**
-   * Constructs a new {@link Conversion.ObjectConverter | ObjectConverter<T>} with optional
+   * Constructs a new {@link Conversion.ObjectConverter | ObjectConverter<T, TC>} with optional
    * properties specified as an array of `keyof T`.
    * @param fields - A {@link Conversion.FieldConverters | FieldConverters<T>} containing
    * a {@link Converter} for each field.

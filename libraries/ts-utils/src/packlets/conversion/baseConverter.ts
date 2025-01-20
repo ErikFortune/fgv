@@ -60,7 +60,7 @@ export type ConvertedToType<TCONV> = Infer<TCONV>;
  * Base templated wrapper to simplify creation of new {@link Converter}s.
  * @public
  */
-export class BaseConverter<T, TC = undefined> implements Converter<T, TC> {
+export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   /**
    * @internal
    */

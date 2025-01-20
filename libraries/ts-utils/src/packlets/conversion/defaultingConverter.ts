@@ -28,7 +28,7 @@ import { ConstraintOptions, ConversionErrorFormatter, Converter, DefaultingConve
  * to substitute a supplied default value for any errors returned by the inner converter.
  * @public
  */
-export class GenericDefaultingConverter<T, TD = T, TC = undefined> implements DefaultingConverter<T, TD, TC> {
+export class GenericDefaultingConverter<T, TD = T, TC = unknown> implements DefaultingConverter<T, TD, TC> {
   private _converter: Converter<T, TC>;
 
   /**

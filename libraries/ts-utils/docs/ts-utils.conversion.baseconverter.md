@@ -9,7 +9,7 @@ Base templated wrapper to simplify creation of new [Converter](./ts-utils.conver
 **Signature:**
 
 ```typescript
-export declare class BaseConverter<T, TC = undefined> implements Converter<T, TC> 
+export declare class BaseConverter<T, TC = unknown> implements Converter<T, TC> 
 ```
 **Implements:** [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;
 
@@ -283,6 +283,20 @@ Creates a [Converter](./ts-utils.converter.md) which applies an optional constra
 </td><td>
 
 Returns a Converter which always succeeds with a default value rather than failing.
+
+
+</td></tr>
+<tr><td>
+
+[withFormattedError(formatter)](./ts-utils.conversion.baseconverter.withformattederror.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a new [Converter](./ts-utils.converter.md) which is derived from this one but which returns an error message formatted by the supplied formatter if the conversion fails.
 
 
 </td></tr>

@@ -57,7 +57,7 @@ export type ValidationErrorFormatter<TC = unknown> = (val: unknown, message?: st
  * @public
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export interface Validator<T, TC = undefined> {
+export interface Validator<T, TC = unknown> {
   /**
    * {@link Validation.ValidatorTraits | Traits} describing this validation.
    */

@@ -4,7 +4,7 @@
 
 ## Conversion.ObjectConverter.(constructor)
 
-Constructs a new [ObjectConverter&lt;T&gt;](./ts-utils.conversion.objectconverter.md) with optional properties specified as an array of `keyof T`<!-- -->.
+Constructs a new [ObjectConverter&lt;T, TC&gt;](./ts-utils.conversion.objectconverter.md) with optional properties specified as an array of `keyof T`<!-- -->.
 
 **Signature:**
 

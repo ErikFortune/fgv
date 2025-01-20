@@ -93,7 +93,8 @@ export interface IReadOnlyResultMap<TK extends string = string, TV = unknown> {
   values(): MapIterator<TV>;
 
   /**
-   * {@inheritdoc Collections.ResultMap.[Symbol.iterator]}
+   * Gets an iterator over the map entries.
+   * @returns An iterator over the map entries.
    */
   [Symbol.iterator](): IterableIterator<ResultMapEntry<TK, TV>>;
 }

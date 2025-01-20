@@ -67,7 +67,7 @@ export interface ConstraintOptions {
  * @public
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export interface Converter<T, TC = undefined> extends ConverterTraits {
+export interface Converter<T, TC = unknown> extends ConverterTraits {
   /**
    * Indicates whether this element is explicitly optional.
    */
@@ -238,7 +238,7 @@ export interface Converter<T, TC = undefined> extends ConverterTraits {
  * @public
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export interface DefaultingConverter<T, TD = T, TC = undefined> extends Converter<T | TD, TC> {
+export interface DefaultingConverter<T, TD = T, TC = unknown> extends Converter<T | TD, TC> {
   /**
    * Default value to use if the conversion fails.
    */

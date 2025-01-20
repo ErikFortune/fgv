@@ -36,7 +36,7 @@ export type ValidatorBaseConstructorParams<T, TC> = Omit<
  * Abstract base helper class for specific validator implementations
  * @internal
  */
-export abstract class ValidatorBase<T, TC = undefined> extends GenericValidator<T, TC> {
+export abstract class ValidatorBase<T, TC = unknown> extends GenericValidator<T, TC> {
   /**
    * Inner constructor
    * @param params - Initialization params.

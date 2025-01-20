@@ -482,6 +482,15 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[Collections](./ts-utils.collections.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Conversion](./ts-utils.conversion.md)
 
 

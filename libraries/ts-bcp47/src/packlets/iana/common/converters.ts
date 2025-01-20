@@ -59,8 +59,8 @@ export const unM49RegionCode = Validate.unM49RegionCode.converter;
  */
 export function datedRegistry<T, TC = unknown>(
   entryConverter: Converter<T, TC>
-): Converter<IDatedRegistry<T>, TC> {
-  return Converters.strictObject<IDatedRegistry<T>>({
+): Converter<IDatedRegistry<T>, unknown> {
+  return Converters.strictObject<IDatedRegistry<T>, unknown>({
     fileDate: yearMonthDaySpec,
     entries: Converters.arrayOf(entryConverter)
   });
