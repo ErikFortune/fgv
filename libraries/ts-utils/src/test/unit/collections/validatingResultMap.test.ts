@@ -184,6 +184,48 @@ describe('ValidatingResultMap', () => {
       expect(map.add('betty', 'flintstone')).toFailWithDetail(/no such family member/i, 'invalid-value');
       expect(map.update('fred', 'rubble')).toFailWithDetail(/no such family member/i, 'invalid-value');
     });
+
+    describe('getOrAdd with factory', () => {
+      test('adds a new entry if the key is not found', () => {
+        const map = new ValidatingResultMap({
+          validators: familyValidators,
+          entries: [['fred', 'flintstone']]
+        });
+        expect(map.getOrAdd('wilma', () => succeed<CavemanLastName>('flintstone'))).toSucceedWith(
+          'flintstone'
+        );
+        expect(map.get('wilma')).toSucceedWith('flintstone');
+      });
+
+      test('does not add a new entry if the key is found', () => {
+        const map = new ValidatingResultMap({
+          validators: familyValidators,
+          entries: [['fred', 'flintstone']]
+        });
+        expect(map.getOrAdd('fred', () => succeed<CavemanLastName>('rubble'))).toSucceedWith('flintstone');
+        expect(map.get('fred')).toSucceedWith('flintstone');
+      });
+
+      test('fails with detail invalid-value if the factory fails', () => {
+        const map = new ValidatingResultMap({
+          validators: familyValidators,
+          entries: [['fred', 'flintstone']]
+        });
+        expect(map.getOrAdd('wilma', () => fail<CavemanLastName>('nope'))).toFailWithDetail(
+          /nope/i,
+          'invalid-value'
+        );
+        expect(map.get('wilma')).toFailWithDetail(/not found/i, 'not-found');
+      });
+
+      test('does not invoke the factory if the key is found', () => {
+        const map = new ValidatingResultMap({
+          validators: familyValidators,
+          entries: [['fred', 'flintstone']]
+        });
+        expect(map.getOrAdd('fred', () => fail<CavemanLastName>('nope'))).toSucceedWith('flintstone');
+      });
+    });
   });
 
   describe('toReadOnly', () => {

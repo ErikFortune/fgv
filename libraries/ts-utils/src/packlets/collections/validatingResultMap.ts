@@ -20,10 +20,10 @@
  * SOFTWARE.
  */
 
-import { captureResult, DetailedResult, Result } from '../base';
+import { captureResult, DetailedResult, failWithDetail, Result, succeed } from '../base';
 import { KeyValueEntry } from './common';
 import { IReadOnlyResultMap, ResultMapResultDetail } from './readonlyResultMap';
-import { ResultMap } from './resultMap';
+import { ResultMap, ResultMapValueFactory } from './resultMap';
 import { IReadOnlyResultMapValidator, ResultMapValidator } from './resultMapValidator';
 import { KeyValueValidators } from './utils';
 
@@ -95,12 +95,31 @@ export class ValidatingResultMap<TK extends string = string, TV = unknown>
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.getOrAdd}
+   * {@inheritdoc Collections.ResultMap.(getOrAdd:1)}
    */
-  public getOrAdd(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail> {
-    return this.validate.validators.validateEntry([key, value]).onSuccess((entry) => {
-      return super.getOrAdd(entry[0], entry[1]);
-    });
+  public getOrAdd(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+  /**
+   * {@inheritdoc Collections.ResultMap.(getOrAdd:2)}
+   */
+  public getOrAdd(key: TK, factory: ResultMapValueFactory<TK, TV>): DetailedResult<TV, ResultMapResultDetail>;
+  public getOrAdd(
+    key: TK,
+    valueOrFactory: TV | ResultMapValueFactory<TK, TV>
+  ): DetailedResult<TV, ResultMapResultDetail> {
+    if (!this._isResultMapValueFactory(valueOrFactory)) {
+      return this.validate.validators.validateEntry([key, valueOrFactory]).onSuccess((entry) => {
+        return super.getOrAdd(entry[0], entry[1]);
+      });
+    } else {
+      return super.get(key).onFailure(() => {
+        const value = valueOrFactory(key)
+          .onSuccess((value) => this.validate.validators.validateEntry([key, value]))
+          .onSuccess(([key, value]) => succeed(value));
+        return value.success
+          ? super.add(key, value.value)
+          : failWithDetail<TV, ResultMapResultDetail>(value.message, 'invalid-value');
+      });
+    }
   }
 
   /*

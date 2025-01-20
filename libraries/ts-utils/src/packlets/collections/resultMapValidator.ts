@@ -112,7 +112,7 @@ export class ResultMapValidator<TK extends string = string, TV = unknown>
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.getOrAdd}
+   * {@inheritdoc Collections.ResultMap.(getOrAdd:1)}
    */
   public getOrAdd(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail> {
     return this.validators.validateEntry([key, value]).onSuccess(([vk, vv]) => {

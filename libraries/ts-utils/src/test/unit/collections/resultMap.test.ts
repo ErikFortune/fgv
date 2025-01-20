@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+import { fail, succeed } from '../../../packlets/base';
 import { ResultMap } from '../../../packlets/collections';
 import '../../helpers/jest';
 
@@ -180,6 +181,46 @@ describe('ResultMap', () => {
       ]);
       expect(resultMap.getOrAdd('key3', 3)).toSucceedWithDetail(3, 'added');
       expect(resultMap.get('key3')).toSucceedWith(3);
+    });
+
+    describe('with factory function', () => {
+      test('should return Success with the existing value and detail "exists" for an existing key', () => {
+        const resultMap = new ResultMap([
+          ['key1', 1],
+          ['key2', 2]
+        ]);
+        expect(resultMap.getOrAdd('key1', () => succeed(3))).toSucceedWithDetail(1, 'exists');
+      });
+
+      test('should add a new key-value pair and return Success with the value and detail "added" for a non-existent key', () => {
+        const resultMap = new ResultMap<string, number>([
+          ['key1', 1],
+          ['key2', 2]
+        ]);
+        expect(resultMap.getOrAdd('key3', () => succeed(3))).toSucceedWithDetail(3, 'added');
+        expect(resultMap.get('key3')).toSucceedWith(3);
+      });
+
+      test('should return Failure with detail "invalid-value" for a factory function that returns a Failure', () => {
+        const resultMap = new ResultMap<string, number>([
+          ['key1', 1],
+          ['key2', 2]
+        ]);
+        expect(resultMap.getOrAdd('key3', () => fail<number>('error'))).toFailWithDetail(
+          /error/i,
+          'invalid-value'
+        );
+      });
+
+      test('should not invoke the factory function if the key already exists', () => {
+        const resultMap = new ResultMap([
+          ['key1', 1],
+          ['key2', 2]
+        ]);
+        const factory = jest.fn(() => succeed(3));
+        expect(resultMap.getOrAdd('key1', factory)).toSucceedWithDetail(1, 'exists');
+        expect(factory).not.toHaveBeenCalled();
+      });
     });
   });
 

@@ -233,6 +233,20 @@ Sets a key/value pair in the map.
 </td></tr>
 <tr><td>
 
+[toReadOnly()](./ts-utils.collections.resultmapvalidator.toreadonly.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a read-only version of this validator.
+
+
+</td></tr>
+<tr><td>
+
 [update(key, value)](./ts-utils.collections.resultmapvalidator.update.md)
 
 
