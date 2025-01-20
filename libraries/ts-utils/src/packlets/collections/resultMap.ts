@@ -20,13 +20,30 @@
  * SOFTWARE.
  */
 
-import { captureResult, DetailedResult, failWithDetail, Result, succeedWithDetail } from '../base';
+import {
+  captureResult,
+  DetailedResult,
+  failWithDetail,
+  MessageAggregator,
+  Result,
+  succeed,
+  succeedWithDetail
+} from '../base';
+import { isIterable } from './common';
 
 /**
  * Additional success or failure details for {@link Collections.ResultMap | ResultMap} calls.
  * @public
  */
-export type ResultMapResultDetail = 'added' | 'deleted' | 'exists' | 'not-found' | 'updated';
+export type ResultMapResultDetail =
+  | 'added'
+  | 'deleted'
+  | 'exists'
+  | 'invalid-key'
+  | 'invalid-value'
+  | 'not-found'
+  | 'success'
+  | 'updated';
 
 /**
  * Entry in a {@link Collections.ResultMap | ResultMap}.
@@ -44,6 +61,18 @@ export type ResultMapForEachCb<TK extends string = string, TE = unknown> = (
   map: ResultMap<TK, TE>,
   thisArg?: unknown
 ) => void;
+
+/**
+ * Validate a key in a {@link Collections.ResultMap | ResultMap}.
+ * @public
+ */
+export type KeyValidationFunction<TK extends string> = (key: string) => Result<TK>;
+
+/**
+ * Validate a value in a {@link Collections.ResultMap | ResultMap}.
+ * @public
+ */
+export type ValueValidationFunction<TV> = (value: unknown) => Result<TV>;
 
 /**
  * A readonly `ReadonlyMap<TK, TV>`-like object which reports success or failure
@@ -100,6 +129,16 @@ export interface IReadOnlyResultMap<TK extends string = string, TV = unknown> {
 }
 
 /**
+ * Parameters for constructing a {@link Collections.ResultMap | ResultMap}.
+ * @public
+ */
+export interface IResultMapConstructorParams<TK extends string = string, TV = unknown> {
+  elements?: Iterable<ResultMapEntry<TK, TV>>;
+  validateKey?: KeyValidationFunction<TK>;
+  validateValue?: ValueValidationFunction<TV>;
+}
+
+/**
  * A {@link Collections.ResultMap | ResultMap} class as a `Map<TK, TV>`-like object which
  * reports success or failure with additional details using the
  * {@link https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils#the-result-pattern | result pattern}.
@@ -118,25 +157,70 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
    * @public
    */
   protected readonly _inner: Map<TK, TV>;
+  protected readonly _keyValidator: KeyValidationFunction<TK> | undefined;
+  protected readonly _valueValidator: ValueValidationFunction<TV> | undefined;
 
   /**
    * Constructs a new {@link Collections.ResultMap | ResultMap}.
-   * @param iterable - An optional iterable to initialize the map.
+   * @param iterable - An iterable to initialize the map.
    */
-  public constructor(iterable?: Iterable<ResultMapEntry<TK, TV>>) {
-    this._inner = new Map(iterable);
+  public constructor(iterable?: Iterable<ResultMapEntry<TK, TV>>);
+
+  /**
+   * Constructs a new {@link Collections.ResultMap | ResultMap}.
+   * @param params - An optional set of parameters to configure the map.
+   */
+  public constructor(params: IResultMapConstructorParams);
+
+  /**
+   * Constructs a new {@link Collections.ResultMap | ResultMap}.
+   * @param iterableOrParams - An iterable to initialize the map, or a set of parameters
+   * to configure the map.
+   */
+  public constructor(
+    iterableOrParams?: Iterable<ResultMapEntry<TK, TV>> | IResultMapConstructorParams<TK, TV>
+  ) {
+    const params = isIterable(iterableOrParams) ? { elements: iterableOrParams } : iterableOrParams ?? {};
+    this._inner = new Map(params?.elements);
+    this._keyValidator = params?.validateKey;
+    this._valueValidator = params?.validateValue;
+    ResultMap.validateElements(this._inner.entries(), params?.validateKey, params?.validateValue).orThrow();
   }
 
   /**
    * Creates a new {@link Collections.ResultMap | ResultMap}.
-   * @param iterable - An optional iterable to initialize the map.
+   * @param elements - An optional iterable to initialize the map.
    * @returns `Success` with the new map, or `Failure` with error details
    * if an error occurred.
+   * @public
    */
   public static create<TK extends string = string, TV = unknown>(
-    iterable?: Iterable<ResultMapEntry<TK, TV>>
+    elements: Iterable<ResultMapEntry<TK, TV>>
+  ): Result<ResultMap<TK, TV>>;
+
+  /**
+   * Creates a new {@link Collections.ResultMap | ResultMap}.
+   * @param params - An optional set of parameters to configure the map.
+   * @returns `Success` with the new map, or `Failure` with error details
+   * if an error occurred.
+   * @public
+   */
+  public static create<TK extends string = string, TV = unknown>(
+    params?: IResultMapConstructorParams<TK, TV>
+  ): Result<ResultMap<TK, TV>>;
+
+  /**
+   * Creates a new {@link Collections.ResultMap | ResultMap}.
+   * @param elementsOrParams - An optional iterable to initialize the map, or a set of parameters
+   * to configure the map.
+   * @returns `Success` with the new map, or `Failure` with error details
+   * if an error occurred.
+   * @public
+   */
+  public static create<TK extends string = string, TV = unknown>(
+    elementsOrParams?: Iterable<ResultMapEntry<TK, TV>> | IResultMapConstructorParams<TK, TV>
   ): Result<ResultMap<TK, TV>> {
-    return captureResult(() => new ResultMap(iterable));
+    return captureResult(() => new ResultMap(elementsOrParams as IResultMapConstructorParams<TK, TV>));
   }
 
   /**
@@ -202,8 +286,10 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
     if (this._inner.has(key)) {
       return succeedWithDetail(this._inner.get(key)!, 'exists');
     }
-    this._inner.set(key, value);
-    return succeedWithDetail(value, 'added');
+    return this._validateKeyAndValue(key, value).onSuccess(({ k, v }) => {
+      this._inner.set(k, v);
+      return succeedWithDetail(v, 'added');
+    });
   }
 
   /**
@@ -288,5 +374,70 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
    */
   public [Symbol.iterator](): IterableIterator<ResultMapEntry<TK, TV>> {
     return this._inner[Symbol.iterator]();
+  }
+
+  /**
+   * Validates supplied keys and values for inclusion in the map using the supplied
+   * validators.
+   *
+   * @returns `Success` if all keys and values are valid, `Failure` with error details
+   * if any keys or values are invalid.
+   */
+  public static validateElements<
+    TKS extends string = string,
+    TVS = unknown,
+    TKV extends string = TKS,
+    TVV = TVS
+  >(
+    elements: Iterable<ResultMapEntry<TKS, TVS>>,
+    keyValidator?: KeyValidationFunction<TKV>,
+    valueValidator?: ValueValidationFunction<TVV>
+  ): Result<ResultMapEntry<TKV, TVV>[]> {
+    const validated: ResultMapEntry<TKV, TVV>[] = [];
+    if (keyValidator !== undefined || valueValidator !== undefined) {
+      const errors = new MessageAggregator();
+      for (const [key, value] of elements) {
+        const vk = keyValidator?.(key).aggregateError(errors).orDefault() ?? (key as unknown as TKV);
+        const vv = valueValidator?.(value).aggregateError(errors).orDefault() ?? (value as unknown as TVV);
+        validated.push([vk, vv]);
+      }
+      return errors.returnOrReport(succeed(validated));
+    }
+    return succeed(validated);
+  }
+
+  /**
+   * Helper method to determine if a supplied parameter is an iterable.
+   * @param iterableOrParams -
+   * @returns
+   */
+  protected static _isIterable<TI extends Iterable<unknown>, TO>(
+    iterableOrParams?: TI | TO
+  ): iterableOrParams is TI {
+    return (
+      (iterableOrParams && typeof iterableOrParams === 'object' && Symbol.iterator in iterableOrParams) ===
+      true
+    );
+  }
+
+  protected _validateKey(key: string): DetailedResult<TK, ResultMapResultDetail> {
+    return this._keyValidator !== undefined
+      ? this._keyValidator(key).withFailureDetail('invalid-key')
+      : succeedWithDetail(key as TK, 'success');
+  }
+
+  protected _validateValue(value: unknown): DetailedResult<TV, ResultMapResultDetail> {
+    return this._valueValidator !== undefined
+      ? this._valueValidator(value).withFailureDetail('invalid-value')
+      : succeedWithDetail(value as TV, 'success');
+  }
+
+  protected _validateKeyAndValue(
+    key: string,
+    value: unknown
+  ): DetailedResult<{ k: TK; v: TV }, ResultMapResultDetail> {
+    return this._validateKey(key).onSuccess((k) => {
+      return this._validateValue(value).onSuccess((v) => succeedWithDetail({ k, v }, 'success'));
+    });
   }
 }

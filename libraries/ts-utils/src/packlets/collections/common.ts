@@ -20,5 +20,14 @@
  * SOFTWARE.
  */
 
-export * from './common';
-export * from './resultMap';
+/**
+ * Determines if a supplied value is an iterable object or some other type.
+ * @param value - The value to be tested.
+ * @returns `true` if the value is an iterable object, `false` otherwise.
+ * @public
+ */
+export function isIterable<TE = unknown, TI extends Iterable<TE> = Iterable<TE>, TO = unknown>(
+  value: TI | TO
+): value is TI {
+  return (value && typeof value === 'object' && Symbol.iterator in value) === true;
+}
