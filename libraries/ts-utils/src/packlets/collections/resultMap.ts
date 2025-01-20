@@ -29,38 +29,13 @@ import {
   succeed,
   succeedWithDetail
 } from '../base';
-import { isIterable } from './common';
-
-/**
- * Additional success or failure details for {@link Collections.ResultMap | ResultMap} calls.
- * @public
- */
-export type ResultMapResultDetail =
-  | 'added'
-  | 'deleted'
-  | 'exists'
-  | 'invalid-key'
-  | 'invalid-value'
-  | 'not-found'
-  | 'success'
-  | 'updated';
-
-/**
- * Entry in a {@link Collections.ResultMap | ResultMap}.
- * @public
- */
-export type ResultMapEntry<TK extends string = string, TE = unknown> = [TK, TE];
-
-/**
- * Callback for {@link Collections.ResultMap | ResultMap} `forEach` method.
- * @public
- */
-export type ResultMapForEachCb<TK extends string = string, TE = unknown> = (
-  value: TE,
-  key: TK,
-  map: ResultMap<TK, TE>,
-  thisArg?: unknown
-) => void;
+import {
+  IReadOnlyResultMap,
+  ResultMapEntry,
+  ResultMapForEachCb,
+  ResultMapResultDetail
+} from './readonlyResultMap';
+import { isIterable } from './utils';
 
 /**
  * Validate a key in a {@link Collections.ResultMap | ResultMap}.
@@ -73,60 +48,6 @@ export type KeyValidationFunction<TK extends string> = (key: string) => Result<T
  * @public
  */
 export type ValueValidationFunction<TV> = (value: unknown) => Result<TV>;
-
-/**
- * A readonly `ReadonlyMap<TK, TV>`-like object which reports success or failure
- * with additional details using the
- * {@link https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils#the-result-pattern | result pattern}.
- * @public
- */
-export interface IReadOnlyResultMap<TK extends string = string, TV = unknown> {
-  /**
-   * {@inheritdoc Collections.ResultMap.inner}
-   */
-  readonly inner: ReadonlyMap<TK, TV>;
-
-  /**
-   * {@inheritdoc Collections.ResultMap.size}
-   */
-  readonly size: number;
-
-  /**
-   * {@inheritdoc Collections.ResultMap.entries}
-   */
-  entries(): MapIterator<ResultMapEntry<TK, TV>>;
-
-  /**
-   * {@inheritdoc Collections.ResultMap.forEach}
-   */
-  forEach(cb: ResultMapForEachCb, arg?: unknown): void;
-
-  /**
-   * {@inheritdoc Collections.ResultMap.get}
-   */
-  get(key: TK): DetailedResult<TV, ResultMapResultDetail>;
-
-  /**
-   * {@inheritdoc Collections.ResultMap.has}
-   */
-  has(key: TK): boolean;
-
-  /**
-   * {@inheritdoc Collections.ResultMap.keys}
-   */
-  keys(): MapIterator<TK>;
-
-  /**
-   * {@inheritdoc Collections.ResultMap.values}
-   */
-  values(): MapIterator<TV>;
-
-  /**
-   * Gets an iterator over the map entries.
-   * @returns An iterator over the map entries.
-   */
-  [Symbol.iterator](): IterableIterator<ResultMapEntry<TK, TV>>;
-}
 
 /**
  * Parameters for constructing a {@link Collections.ResultMap | ResultMap}.

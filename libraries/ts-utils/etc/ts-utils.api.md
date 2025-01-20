@@ -139,13 +139,13 @@ declare namespace Classes {
 
 declare namespace Collections {
     export {
-        isIterable,
+        Utils,
         ResultMapResultDetail,
         ResultMapEntry,
         ResultMapForEachCb,
+        IReadOnlyResultMap,
         KeyValidationFunction,
         ValueValidationFunction,
-        IReadOnlyResultMap,
         IResultMapConstructorParams,
         ResultMap
     }
@@ -1150,7 +1150,7 @@ type ResultMapEntry<TK extends string = string, TE = unknown> = [TK, TE];
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ResultMapForEachCb<TK extends string = string, TE = unknown> = (value: TE, key: TK, map: ResultMap<TK, TE>, thisArg?: unknown) => void;
+type ResultMapForEachCb<TK extends string = string, TE = unknown> = (value: TE, key: TK, map: IReadOnlyResultMap<TK, TE>, thisArg?: unknown) => void;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1322,6 +1322,12 @@ interface TypeGuardValidatorConstructorParams<T, TC = unknown> extends Validator
 
 // @public
 type TypeGuardWithContext<T, TC = unknown> = (from: unknown, context?: TC) => from is T;
+
+declare namespace Utils {
+    export {
+        isIterable
+    }
+}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

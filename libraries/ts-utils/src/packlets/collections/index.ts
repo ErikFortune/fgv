@@ -20,5 +20,8 @@
  * SOFTWARE.
  */
 
-export * from './common';
+import * as Utils from './utils';
+
+export * from './readonlyResultMap';
 export * from './resultMap';
+export { Utils };
