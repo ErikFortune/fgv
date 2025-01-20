@@ -251,6 +251,22 @@ Creates a new [ResourceCandidate](./ts-res.resources.resourcecandidate.md) objec
 </td></tr>
 <tr><td>
 
+[equal(rc1, rc2)](./ts-res.resources.resourcecandidate.equal.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Compares two [ResourceCandidates](./ts-res.resources.resourcecandidate.md) for equality.
+
+
+</td></tr>
+<tr><td>
+
 [validateResourceTypes(candidates, expectedType)](./ts-res.resources.resourcecandidate.validateresourcetypes.md)
 
 

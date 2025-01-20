@@ -26,7 +26,7 @@ import { ResourceCandidate } from './resourceCandidate';
 import { IResourceType } from './resourceTypes';
 
 /**
- * Parameters used to create a {@link Resource | Resource} object.
+ * Parameters used to create a {@link Resources.Resource | Resource} object.
  * @public
  */
 export interface IResourceCreateParams {
@@ -65,8 +65,8 @@ export class Resource {
   public readonly candidates: ReadonlyArray<ResourceCandidate>;
 
   /**
-   * Constructor for a {@link Resource | Resource} object.
-   * @param params - {@link IResourceCreateParams | Parameters} used to create the resource.
+   * Constructor for a {@link Resources.Resource | Resource} object.
+   * @param params - {@link Resources.IResourceCreateParams | Parameters} used to create the resource.
    * @public
    */
   protected constructor(params: IResourceCreateParams) {
@@ -84,9 +84,9 @@ export class Resource {
   }
 
   /**
-   * Creates a new {@link Resource | Resource} object.
-   * @param params - {@link IResourceCreateParams | Parameters} used to create the resource.
-   * @returns `Success` with the new {@link Resource | Resource} object if successful,
+   * Creates a new {@link Resources.Resource | Resource} object.
+   * @param params - {@link Resources.IResourceCreateParams | Parameters} used to create the resource.
+   * @returns `Success` with the new {@link Resources.Resource | Resource} object if successful,
    * or `Failure` with an error message if not.
    * @public
    */

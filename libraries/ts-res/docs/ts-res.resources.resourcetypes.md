@@ -4,32 +4,6 @@
 
 ## Resources.ResourceTypes namespace
 
-## Classes
-
-<table><thead><tr><th>
-
-Class
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[ResourceTypeMap](./ts-res.resources.resourcetypes.resourcetypemap.md)
-
-
-</td><td>
-
-Map [resource type names](./ts-res.resourcetypename.md) to [resource types](./ts-res.resources.resourcetypes.iresourcetype.md)<!-- -->.
-
-
-</td></tr>
-</tbody></table>
-
 ## Interfaces
 
 <table><thead><tr><th>
@@ -51,6 +25,32 @@ Description
 </td><td>
 
 Interface describing a single resource type, which is responsible for validating and converting JSON values into the appropriate strongly-typed resource value.
+
+
+</td></tr>
+</tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ResourceTypeMap](./ts-res.resources.resourcetypes.resourcetypemap.md)
+
+
+</td><td>
+
+Map [resource type names](./ts-res.resourcetypename.md) to [resource types](./ts-res.resources.resourcetypes.iresourcetype.md)<!-- -->.
 
 
 </td></tr>

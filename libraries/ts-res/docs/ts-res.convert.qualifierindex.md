@@ -9,5 +9,5 @@
 **Signature:**
 
 ```typescript
-qualifierIndex: import("@fgv/ts-utils").Converter<import("./conditions").QualifierIndex, undefined>
+qualifierIndex: import("@fgv/ts-utils").Converter<import("./conditions").QualifierIndex, unknown>
 ```

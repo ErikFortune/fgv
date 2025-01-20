@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[Resource](./ts-res.resources.resource.md)
+
+
+</td><td>
+
+Represents a single logical resource, with a unique id and a set of possible candidate instances.
+
+
+</td></tr>
+<tr><td>
+
 [ResourceCandidate](./ts-res.resources.resourcecandidate.md)
 
 
@@ -54,6 +65,17 @@ Parameters to create a [ResourceCandidate](./ts-res.resources.resourcecandidate.
 
 
 </td></tr>
+<tr><td>
+
+[IResourceCreateParams](./ts-res.resources.iresourcecreateparams.md)
+
+
+</td><td>
+
+Parameters used to create a [Resource](./ts-res.resources.resource.md) object.
+
+
+</td></tr>
 </tbody></table>
 
 ## Namespaces
@@ -70,6 +92,15 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[Builders](./ts-res.resources.builders.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
 
 [ResourceTypes](./ts-res.resources.resourcetypes.md)
 

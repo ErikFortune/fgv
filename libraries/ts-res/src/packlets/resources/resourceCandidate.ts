@@ -26,7 +26,7 @@ import { Condition, ConditionSet } from '../conditions';
 import { QualifierMap } from '../qualifiers';
 import * as ResourceJson from '../resource-json';
 import { IResourceType, ResourceTypeMap } from './resourceTypes';
-import { captureResult, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
+import { captureResult, MessageAggregator, Normalizer, Result, succeed } from '@fgv/ts-utils';
 
 /**
  * Parameters to create a {@link Resources.ResourceCandidate | ResourceCandidate}.
@@ -154,6 +154,28 @@ export class ResourceCandidate {
    */
   public static compare(rc1: ResourceCandidate, rc2: ResourceCandidate): number {
     return ConditionSet.compare(rc1.conditions, rc2.conditions);
+  }
+
+  /**
+   * Compares two {@link Resources.ResourceCandidate | ResourceCandidates} for equality.
+   * @param rc1 - The first candidate to compare.
+   * @param rc2 - The second candidate to compare.
+   * @returns `true` if the candidates are equal, `false` otherwise.
+   * @public
+   */
+  public static equal(rc1: ResourceCandidate, rc2: ResourceCandidate): boolean {
+    let equal =
+      rc1.id === rc2.id &&
+      rc1.isPartial === rc2.isPartial &&
+      rc1.mergeMethod === rc2.mergeMethod &&
+      ConditionSet.compare(rc1.conditions, rc2.conditions) === 0;
+    if (equal) {
+      const normalizer = new Normalizer();
+      const n1 = normalizer.normalize(rc1.json).orDefault('(n1 normalization failed)');
+      const n2 = normalizer.normalize(rc2.json).orDefault('(n2 normalization failed)');
+      equal = n1 === n2;
+    }
+    return equal;
   }
 
   /**

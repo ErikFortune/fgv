@@ -9,5 +9,5 @@
 **Signature:**
 
 ```typescript
-resourceCollectionDecl: Conversion.BaseConverter<IResourceCollectionDecl, undefined>
+resourceCollectionDecl: Conversion.BaseConverter<IResourceCollectionDecl, unknown>
 ```

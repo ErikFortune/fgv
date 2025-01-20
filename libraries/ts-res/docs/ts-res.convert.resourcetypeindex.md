@@ -9,5 +9,5 @@
 **Signature:**
 
 ```typescript
-resourceTypeIndex: import("@fgv/ts-utils").Converter<import("./resources").ResourceTypeIndex, undefined>
+resourceTypeIndex: import("@fgv/ts-utils").Converter<import("./resources").ResourceTypeIndex, unknown>
 ```

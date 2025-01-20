@@ -9,5 +9,5 @@
 **Signature:**
 
 ```typescript
-conditionPriority: import("@fgv/ts-utils").Converter<import("./conditions").ConditionPriority, undefined>
+conditionPriority: import("@fgv/ts-utils").Converter<import("./conditions").ConditionPriority, unknown>
 ```

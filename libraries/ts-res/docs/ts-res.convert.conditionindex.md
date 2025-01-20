@@ -9,5 +9,5 @@
 **Signature:**
 
 ```typescript
-conditionIndex: import("@fgv/ts-utils").Converter<import("./conditions").ConditionIndex, undefined>
+conditionIndex: import("@fgv/ts-utils").Converter<import("./conditions").ConditionIndex, unknown>
 ```

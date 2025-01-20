@@ -2,44 +2,14 @@
 
 [Home](./index.md) &gt; [@fgv/ts-res](./ts-res.md) &gt; [Resources](./ts-res.resources.md) &gt; [ResourceTypes](./ts-res.resources.resourcetypes.md) &gt; [ResourceTypeMap](./ts-res.resources.resourcetypes.resourcetypemap.md)
 
-## Resources.ResourceTypes.ResourceTypeMap class
+## Resources.ResourceTypes.ResourceTypeMap type
 
 Map [resource type names](./ts-res.resourcetypename.md) to [resource types](./ts-res.resources.resourcetypes.iresourcetype.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-export declare class ResourceTypeMap 
+export type ResourceTypeMap = ValidatingResultMap<ResourceTypeName, IResourceType>;
 ```
+**References:** [ResourceTypeName](./ts-res.resourcetypename.md)<!-- -->, [IResourceType](./ts-res.resources.resourcetypes.iresourcetype.md)
 
-## Methods
-
-<table><thead><tr><th>
-
-Method
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[get(name)](./ts-res.resources.resourcetypes.resourcetypemap.get.md)
-
-
-</td><td>
-
-
-</td><td>
-
-
-</td></tr>
-</tbody></table>

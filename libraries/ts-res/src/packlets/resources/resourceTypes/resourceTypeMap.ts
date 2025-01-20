@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Result, fail } from '@fgv/ts-utils';
+import { ValidatingResultMap } from '@fgv/ts-utils';
 import { ResourceTypeName } from '../../common';
 import { IResourceType } from './resourceType';
 
@@ -28,8 +28,4 @@ import { IResourceType } from './resourceType';
  * Map {@link ResourceTypeName | resource type names} to {@link Resources.ResourceTypes.IResourceType | resource types}.
  * @public
  */
-export class ResourceTypeMap {
-  public get(name: ResourceTypeName): Result<IResourceType> {
-    return fail('Not implemented');
-  }
-}
+export type ResourceTypeMap = ValidatingResultMap<ResourceTypeName, IResourceType>;

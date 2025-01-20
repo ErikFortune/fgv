@@ -5,10 +5,14 @@
 ```ts
 
 import { Brand } from '@fgv/ts-utils';
+import { Collections } from '@fgv/ts-utils';
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
+import { DetailedResult } from '@fgv/ts-utils';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
+import { ResultMap } from '@fgv/ts-utils';
+import { ValidatingResultMap } from '@fgv/ts-utils';
 
 // @public
 export const allConditionOperators: ConditionOperator[];
@@ -16,11 +20,20 @@ export const allConditionOperators: ConditionOperator[];
 // @public
 export const allResourceValueMergeMethods: ResourceValueMergeMethod[];
 
+declare namespace Builders {
+    export {
+        IResourceBuilderCreateParams,
+        ResourceBuilderResultDetail,
+        ResourceBuilder,
+        IResourceManagerCreateParams
+    }
+}
+
 // @public
 export type ConditionIndex = Brand<number, 'ConditionIndex'>;
 
 // @public
-const conditionIndex: Converter<ConditionIndex, undefined>;
+const conditionIndex: Converter<ConditionIndex, unknown>;
 
 // @public
 export type ConditionOperator = 'always' | 'never' | 'matches';
@@ -32,7 +45,7 @@ const conditionOperator: Converter<ConditionOperator, ConditionOperator[]>;
 export type ConditionPriority = Brand<number, 'ConditionPriority'>;
 
 // @public
-const conditionPriority: Converter<ConditionPriority, undefined>;
+const conditionPriority: Converter<ConditionPriority, unknown>;
 
 // @public
 type ConditionSetDecl = Record<QualifierName, string>;
@@ -44,7 +57,7 @@ const conditionSetDecl: Conversion.Converter<Record<QualifierName, string>, unkn
 export type ConditionSetIndex = Brand<number, 'ConditionSetIndex'>;
 
 // @public
-const conditionSetIndex: Converter<ConditionSetIndex, undefined>;
+const conditionSetIndex: Converter<ConditionSetIndex, unknown>;
 
 declare namespace Convert {
     export {
@@ -147,6 +160,18 @@ interface IQualifierTypeCreateParams {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+interface IResourceBuilderCreateParams {
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    resourceTypes: ResourceTypeMap;
+    // (undocumented)
+    typeName?: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 interface IResourceCandidateCreateParams {
     // (undocumented)
     decl: ResourceJson.IResourceCandidateDecl;
@@ -175,6 +200,25 @@ interface IResourceCollectionDecl {
     readonly collections?: IResourceCollectionDecl[];
     readonly conditions?: ConditionSetDecl;
     readonly resources?: IResourceCandidateDecl[];
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IResourceCreateParams {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    candidates: ReadonlyArray<ResourceCandidate>;
+    id: ResourceId;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    type?: IResourceType;
+}
+
+// @public (undocumented)
+interface IResourceManagerCreateParams {
+    // (undocumented)
+    qualifiers: QualifierMap;
+    // (undocumented)
+    resourceTypes: ResourceTypeMap;
 }
 
 // @public
@@ -318,7 +362,7 @@ export type QualifierContextValue = Brand<string, 'QualifierContextValue'>;
 export type QualifierIndex = Brand<number, 'QualifierIndex'>;
 
 // @public
-const qualifierIndex: Converter<QualifierIndex, undefined>;
+const qualifierIndex: Converter<QualifierIndex, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -404,7 +448,7 @@ abstract class QualifierType implements IQualifierType {
 export type QualifierTypeIndex = Brand<number, 'QualifierTypeIndex'>;
 
 // @public
-const qualifierTypeIndex: Converter<QualifierTypeIndex, undefined>;
+const qualifierTypeIndex: Converter<QualifierTypeIndex, unknown>;
 
 // @public
 export type QualifierTypeName = Brand<string, 'QualifierTypeName'>;
@@ -434,6 +478,59 @@ declare namespace RegularExpressions {
     }
 }
 
+// @public
+class Resource {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(params: IResourceCreateParams);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly candidates: ReadonlyArray<ResourceCandidate>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params: IResourceCreateParams): Result<Resource>;
+    readonly id: ResourceId;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly type: IResourceType;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ResourceBuilder {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(params: IResourceBuilderCreateParams);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    addCandidate(candidate: ResourceCandidate): DetailedResult<ResourceCandidate, ResourceBuilderResultDetail>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    build(): Result<Resource>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get candidates(): ResourceCandidate[];
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected _candidates: ResultMap<string, ResourceCandidate>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params: IResourceBuilderCreateParams): Result<ResourceBuilder>;
+    readonly id: ResourceId;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get resourceType(): IResourceType | undefined;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected _resourceType: IResourceType | undefined;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected _resourceTypes: ResourceTypeMap;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type ResourceBuilderResultDetail = Collections.ResultMapResultDetail | 'type-mismatch';
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -449,6 +546,8 @@ class ResourceCandidate {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params: IResourceCandidateCreateParams): Result<ResourceCandidate>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static equal(rc1: ResourceCandidate, rc2: ResourceCandidate): boolean;
     readonly id: ResourceId;
     readonly isPartial: boolean;
     readonly json: JsonValue;
@@ -468,7 +567,7 @@ const resourceCandidateDecl: Conversion.ObjectConverter<IResourceCandidateDecl, 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const resourceCollectionDecl: Conversion.BaseConverter<IResourceCollectionDecl, undefined>;
+const resourceCollectionDecl: Conversion.BaseConverter<IResourceCollectionDecl, unknown>;
 
 // @public
 export type ResourceId = Brand<string, 'ResourceId'>;
@@ -480,7 +579,7 @@ const resourceId: Converter<ResourceId, unknown>;
 export type ResourceIndex = Brand<number, 'ResourceIndex'>;
 
 // @public
-const resourceIndex: Converter<ResourceIndex, undefined>;
+const resourceIndex: Converter<ResourceIndex, unknown>;
 
 declare namespace ResourceJson {
     export {
@@ -500,9 +599,12 @@ const resourceName: Converter<ResourceName, unknown>;
 
 declare namespace Resources {
     export {
+        Builders,
         ResourceTypes,
         IResourceCandidateCreateParams,
-        ResourceCandidate
+        ResourceCandidate,
+        IResourceCreateParams,
+        Resource
     }
 }
 export { Resources }
@@ -511,15 +613,12 @@ export { Resources }
 export type ResourceTypeIndex = Brand<number, 'ResourceTypeIndex'>;
 
 // @public
-const resourceTypeIndex: Converter<ResourceTypeIndex, undefined>;
+const resourceTypeIndex: Converter<ResourceTypeIndex, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class ResourceTypeMap {
-    // (undocumented)
-    get(name: ResourceTypeName): Result<IResourceType>;
-}
+type ResourceTypeMap = ValidatingResultMap<ResourceTypeName, IResourceType>;
 
 // @public
 export type ResourceTypeName = Brand<string, 'ResourceTypeName'>;
@@ -646,7 +745,8 @@ function validateMatchScore(value: number): Result<QualifierMatchScore>;
 
 // Warnings were encountered during analysis:
 //
-// src/packlets/resources/resourceCandidate.ts:167:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resource.ts:124:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resourceCandidate.ts:188:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 

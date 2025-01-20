@@ -21,6 +21,7 @@
  */
 
 export * from './resourceCandidate';
+export * from './resource';
 
 import * as Builders from './builders';
 import * as ResourceTypes from './resourceTypes';
