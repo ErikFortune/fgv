@@ -42,12 +42,22 @@ export interface ValidatorOptions<TC> {
 export type Constraint<T> = (val: T) => boolean | Failure<T>;
 
 /**
+ * Formats an incoming error message and value that failed validation.
+ * @param val - The value that failed validation.
+ * @param message - The default error message, if any.
+ * @param context - Optional validation context.
+ * @returns The formatted error message.
+ * @public
+ */
+export type ValidationErrorFormatter<TC = unknown> = (val: unknown, message?: string, context?: TC) => string;
+
+/**
  * In-place validation that a supplied unknown matches some
  * required characteristics (type, values, etc).
  * @public
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export interface Validator<T, TC = undefined> {
+export interface Validator<T, TC = unknown> {
   /**
    * {@link Validation.ValidatorTraits | Traits} describing this validation.
    */
@@ -123,4 +133,13 @@ export interface Validator<T, TC = undefined> {
    * @param brand - The brand to be applied.
    */
   withBrand<B extends string>(brand: B): Validator<Brand<T, B>, TC>;
+
+  /**
+   * Creates a new {@link Validation.Validator | in-place validator} which
+   * is derived from this one but which returns an error message supplied
+   * by the provided formatter if an error occurs.
+   * @param formatter - The error message formatter to be applied.
+   * @returns A new {@link Validation.Validator | Validator}.
+   */
+  withFormattedError(formatter: ValidationErrorFormatter<TC>): Validator<T, TC>;
 }

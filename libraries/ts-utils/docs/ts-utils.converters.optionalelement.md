@@ -9,7 +9,7 @@ A helper function to create a [Converter](./ts-utils.converter.md) which extract
 **Signature:**
 
 ```typescript
-export declare function optionalElement<T, TC = undefined>(index: number, converter: Converter<T, TC> | Validator<T, TC>): Converter<T | undefined, TC>;
+export declare function optionalElement<T, TC = unknown>(index: number, converter: Converter<T, TC> | Validator<T, TC>): Converter<T | undefined, TC>;
 ```
 
 ## Parameters
@@ -67,7 +67,7 @@ A [Converter](./ts-utils.converter.md) or [Validator](./ts-utils.validator.md) u
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T \| undefined, TC&gt;
 
-A [Converter&lt;T&gt;](./ts-utils.converter.md) which extracts the specified element from an array.
+A [Converter&lt;T, TC&gt;](./ts-utils.converter.md) which extracts the specified element from an array.
 
 ## Remarks
 

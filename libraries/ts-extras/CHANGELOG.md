@@ -1,6 +1,11 @@
 # Change Log - @fgv/ts-extras
 
-This log was last generated on Thu, 09 Jan 2025 05:33:39 GMT and should not be manually modified.
+This log was last generated on Mon, 20 Jan 2025 09:46:53 GMT and should not be manually modified.
+
+## 4.2.0
+Mon, 20 Jan 2025 09:46:53 GMT
+
+_Version update only_
 
 ## 4.1.0
 Thu, 09 Jan 2025 05:33:39 GMT

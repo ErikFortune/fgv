@@ -13,10 +13,13 @@
     "dflt",
     "Eulers",
     "fixlint",
+    "flintstone",
     "furst",
+    "jetson",
     "luxon",
     "nums",
     "oopsy",
+    "packlets",
     "papaparse",
     "prefixp",
     "TCONV",
@@ -24,6 +27,7 @@
     "TELEM",
     "TSRC",
     "TTOELEM",
+    "Unvalidated",
     "xyzzy"
   ]
 }

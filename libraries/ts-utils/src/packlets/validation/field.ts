@@ -38,7 +38,7 @@ export interface FieldValidatorOptions<TC> extends ValidatorOptions<TC> {
  * an an object.
  * @public
  */
-export class FieldValidator<T, TC = undefined> extends ValidatorBase<T, TC> {
+export class FieldValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
   /**
    * The name of the property that this validator should validate.
    */

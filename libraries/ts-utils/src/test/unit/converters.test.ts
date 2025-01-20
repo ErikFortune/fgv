@@ -404,7 +404,7 @@ describe('Converters module', () => {
       str: Converters.string,
       numbers: Converters.arrayOf(Converters.number),
       enum: Converters.enumeratedValue<TestEnum>(['tv1', 'tv2', 'tv3']),
-      child: Converters.object({
+      child: Converters.object<{ bool?: boolean; map: Map<string, string[]> }, unknown>({
         bool: Converters.optionalBoolean,
         map: Converters.mapOf(Converters.arrayOf(Converters.string))
       })

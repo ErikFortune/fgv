@@ -21,14 +21,14 @@
  */
 
 import { Brand, Result, Success, succeed } from '../base';
-import { ConstraintOptions, Converter, DefaultingConverter } from './converter';
+import { ConstraintOptions, ConversionErrorFormatter, Converter, DefaultingConverter } from './converter';
 
 /**
  * Generic {@link Conversion.DefaultingConverter | DefaultingConverter}, which wraps another converter
  * to substitute a supplied default value for any errors returned by the inner converter.
  * @public
  */
-export class GenericDefaultingConverter<T, TD = T, TC = undefined> implements DefaultingConverter<T, TD, TC> {
+export class GenericDefaultingConverter<T, TD = T, TC = unknown> implements DefaultingConverter<T, TD, TC> {
   private _converter: Converter<T, TC>;
 
   /**
@@ -161,6 +161,14 @@ export class GenericDefaultingConverter<T, TD = T, TC = undefined> implements De
    */
   public withBrand<B extends string>(brand: B): Converter<Brand<T | TD, B>, TC> {
     return this._converter.withAction((result) => this._applyDefault(result)).withBrand(brand);
+  }
+
+  /**
+   * {@inheritdoc Converter.withFormattedError}
+   */
+  public withFormattedError(formatter: ConversionErrorFormatter<TC>): Converter<T | TD, TC> {
+    // formatter should never actually be invoked for a defaulting converter
+    return this._converter.withAction((result) => this._applyDefault(result)).withFormattedError(formatter);
   }
 
   /**

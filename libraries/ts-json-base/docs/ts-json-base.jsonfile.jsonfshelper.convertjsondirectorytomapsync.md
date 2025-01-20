@@ -9,7 +9,7 @@ Reads and converts or validates all JSON files from a directory, returning a `Ma
 **Signature:**
 
 ```typescript
-convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options: IJsonFsDirectoryToMapOptions<T, TC>): Result<Map<string, T>>;
+convertJsonDirectoryToMapSync<T, TC = unknown>(srcPath: string, options: IJsonFsDirectoryToMapOptions<T, TC>, context?: unknown): Result<Map<string, T>>;
 ```
 
 ## Parameters
@@ -59,6 +59,22 @@ options
 </td><td>
 
 [Options](./ts-json-base.jsonfile.ijsonfsdirectorytomapoptions.md) to control conversion, filtering and naming.
+
+
+</td></tr>
+<tr><td>
+
+context
+
+
+</td><td>
+
+unknown
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>

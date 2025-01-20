@@ -38,6 +38,16 @@ export interface ConverterTraits {
 }
 
 /**
+ * Formats an incoming error message and value that failed validation.
+ * @param val - The value that failed validation.
+ * @param message - The default error message, if any.
+ * @param context - Optional validation context.
+ * @returns The formatted error message.
+ * @public
+ */
+export type ConversionErrorFormatter<TC = unknown> = (val: unknown, message?: string, context?: TC) => string;
+
+/**
  * Options for {@link Converter.withConstraint}.
  * @public
  */
@@ -57,7 +67,7 @@ export interface ConstraintOptions {
  * @public
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export interface Converter<T, TC = undefined> extends ConverterTraits {
+export interface Converter<T, TC = unknown> extends ConverterTraits {
   /**
    * Indicates whether this element is explicitly optional.
    */
@@ -131,7 +141,7 @@ export interface Converter<T, TC = undefined> extends ConverterTraits {
    * converted result from this {@link Converter}.
    * @returns A new {@link Converter} returning `<T2>`.
    */
-  mapConvert<T2>(mapConverter: Converter<T2>): Converter<T2, TC>;
+  mapConvert<T2>(mapConverter: Converter<T2, unknown>): Converter<T2, TC>;
 
   /**
    * Creates a {@link Converter} which maps the individual items of a collection
@@ -203,6 +213,14 @@ export interface Converter<T, TC = undefined> extends ConverterTraits {
   withConstraint(constraint: (val: T) => boolean | Result<T>, options?: ConstraintOptions): Converter<T, TC>;
 
   /**
+   * Creates a new {@link Converter} which is derived from this one but which returns an
+   * error message formatted by the supplied formatter if the conversion fails.
+   * @param formatter - The formatter to be applied.
+   * @returns A new {@link Converter} returning `<T>`.
+   */
+  withFormattedError(formatter: ConversionErrorFormatter<TC>): Converter<T, TC>;
+
+  /**
    * returns a converter which adds a brand to the type to prevent mismatched usage
    * of simple types.
    * @param brand - The brand to be applied to the result value.
@@ -220,7 +238,7 @@ export interface Converter<T, TC = undefined> extends ConverterTraits {
  * @public
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export interface DefaultingConverter<T, TD = T, TC = undefined> extends Converter<T | TD, TC> {
+export interface DefaultingConverter<T, TD = T, TC = unknown> extends Converter<T | TD, TC> {
   /**
    * Default value to use if the conversion fails.
    */

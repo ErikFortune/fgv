@@ -4,7 +4,7 @@
 
 ## ObjectConverter.(constructor)
 
-Constructs a new [ObjectConverter&lt;T&gt;](./ts-utils.conversion.objectconverter.md) using options supplied in a [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectconverteroptions.md)<!-- -->.
+Constructs a new [ObjectConverter&lt;T, TC&gt;](./ts-utils.conversion.objectconverter.md) using options supplied in a [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectconverteroptions.md)<!-- -->.
 
 **Signature:**
 

@@ -9,7 +9,7 @@ A [Converter](./ts-utils.converter.md) which converts an optional `number` value
 **Signature:**
 
 ```typescript
-optionalNumber: Converter<number | undefined>
+optionalNumber: Converter<number | undefined, unknown>
 ```
 
 ## Remarks

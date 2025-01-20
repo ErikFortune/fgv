@@ -8,7 +8,7 @@
 export function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T, aggregatedErrors?: IMessageAggregator): Result<T>;
 
 // @public
-function arrayOf<T, TC = undefined>(converter: Converter<T, TC> | Validator<T, TC>, onError?: OnError): Converter<T[], TC>;
+function arrayOf<T, TC = unknown>(converter: Converter<T, TC> | Validator<T, TC>, onError?: OnError): Converter<T[], TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -50,7 +50,7 @@ declare namespace Base {
 }
 
 // @public
-class BaseConverter<T, TC = undefined> implements Converter<T, TC> {
+class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(converter: (from: unknown, self: Converter<T, TC>, context?: TC) => Result<T>, defaultContext?: TC, traits?: ConverterTraits);
     get brand(): string | undefined;
@@ -79,12 +79,13 @@ class BaseConverter<T, TC = undefined> implements Converter<T, TC> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     withConstraint(constraint: (val: T) => boolean | Result<T>, options?: ConstraintOptions): Converter<T, TC>;
     withDefault<TD = T>(defaultValue: TD): DefaultingConverter<T, TD, TC>;
+    withFormattedError(formatter: ConversionErrorFormatter<TC>): Converter<T, TC>;
     withItemTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI[], TC>;
     withTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI, TC>;
 }
 
 // @public
-const boolean: Converter<boolean, undefined>;
+const boolean: Converter<boolean, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -136,6 +137,25 @@ declare namespace Classes {
     }
 }
 
+declare namespace Collections {
+    export {
+        Utils,
+        KeyValueEntry,
+        ResultMapResultDetail,
+        ResultMapForEachCb,
+        IReadOnlyResultMap,
+        IResultMapConstructorParams,
+        ResultMap,
+        IReadOnlyResultMapValidator,
+        IResultMapValidatorCreateParams,
+        ResultMapValidator,
+        IReadOnlyValidatingResultMap,
+        IValidatingResultMapConstructorParams,
+        ValidatingResultMap
+    }
+}
+export { Collections }
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -157,6 +177,7 @@ declare namespace Conversion {
         BaseConverter,
         OnError,
         ConverterTraits,
+        ConversionErrorFormatter,
         ConstraintOptions,
         Converter,
         DefaultingConverter,
@@ -170,17 +191,20 @@ declare namespace Conversion {
 }
 export { Conversion }
 
+// @public
+type ConversionErrorFormatter<TC = unknown> = (val: unknown, message?: string, context?: TC) => string;
+
 // @internal @deprecated
 type ConvertedToType<TCONV> = Infer<TCONV>;
 
 // @public
-export interface Converter<T, TC = undefined> extends ConverterTraits {
+export interface Converter<T, TC = unknown> extends ConverterTraits {
     readonly brand?: string;
     convert(from: unknown, context?: TC): Result<T>;
     convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined>;
     readonly isOptional: boolean;
     map<T2>(mapper: (from: T) => Result<T2>): Converter<T2, TC>;
-    mapConvert<T2>(mapConverter: Converter<T2>): Converter<T2, TC>;
+    mapConvert<T2>(mapConverter: Converter<T2, unknown>): Converter<T2, TC>;
     mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC>;
     mapItems<TI>(mapper: (from: unknown) => Result<TI>): Converter<TI[], TC>;
     optional(onError?: OnError): Converter<T | undefined, TC>;
@@ -189,6 +213,7 @@ export interface Converter<T, TC = undefined> extends ConverterTraits {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     withConstraint(constraint: (val: T) => boolean | Result<T>, options?: ConstraintOptions): Converter<T, TC>;
     withDefault<TD = T>(dflt: TD): DefaultingConverter<T, TD, TC>;
+    withFormattedError(formatter: ConversionErrorFormatter<TC>): Converter<T, TC>;
     withItemTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI[], TC>;
     withTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI, TC>;
 }
@@ -252,7 +277,7 @@ class Crc32Normalizer extends HashingNormalizer {
 }
 
 // @public (undocumented)
-interface DefaultingConverter<T, TD = T, TC = undefined> extends Converter<T | TD, TC> {
+interface DefaultingConverter<T, TD = T, TC = unknown> extends Converter<T | TD, TC> {
     convert(from: unknown, ctx?: TC): Success<T | TD>;
     readonly defaultValue: TD;
 }
@@ -314,7 +339,7 @@ function discriminatedObject<T, TD extends string = string, TC = unknown>(discri
 type DiscriminatedObjectConverters<T, TD extends string = string, TC = unknown> = Record<TD, Converter<T, TC> | Validator<T, TC>>;
 
 // @public
-function element<T, TC = undefined>(index: number, converter: Converter<T, TC> | Validator<T, TC>): Converter<T, TC>;
+function element<T, TC = unknown>(index: number, converter: Converter<T, TC> | Validator<T, TC>): Converter<T, TC>;
 
 // @public
 function enumeratedValue<T>(values: T[]): Converter<T, T[]>;
@@ -359,7 +384,7 @@ export type FailureContinuation<T> = (message: string) => Result<T>;
 export function failWithDetail<T, TD>(message: string, detail: TD): DetailedFailure<T, TD>;
 
 // @public
-function field<T, TC = undefined>(name: string, converter: Converter<T, TC> | Validator<T, TC>): Converter<T, TC>;
+function field<T, TC = unknown>(name: string, converter: Converter<T, TC> | Validator<T, TC>): Converter<T, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -403,7 +428,7 @@ interface FunctionConstraintTrait {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class GenericDefaultingConverter<T, TD = T, TC = undefined> implements DefaultingConverter<T, TD, TC> {
+class GenericDefaultingConverter<T, TD = T, TC = unknown> implements DefaultingConverter<T, TD, TC> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(converter: Converter<T, TC>, defaultValue: TD);
     get brand(): string | undefined;
@@ -425,6 +450,7 @@ class GenericDefaultingConverter<T, TD = T, TC = undefined> implements Defaultin
     withConstraint(constraint: (val: T | TD) => boolean | Result<T | TD>, options?: ConstraintOptions | undefined): Converter<T | TD, TC>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     withDefault<TD2 = T>(dflt: TD2): DefaultingConverter<T, TD2, TC>;
+    withFormattedError(formatter: ConversionErrorFormatter<TC>): Converter<T | TD, TC>;
     withItemTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string | undefined): Converter<TI[], TC>;
     withTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string | undefined): Converter<TI, TC>;
 }
@@ -432,7 +458,7 @@ class GenericDefaultingConverter<T, TD = T, TC = undefined> implements Defaultin
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class GenericValidator<T, TC = undefined> implements Validator<T, TC> {
+class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(params: Partial<GenericValidatorConstructorParams<T, TC>>);
@@ -482,6 +508,10 @@ class GenericValidator<T, TC = undefined> implements Validator<T, TC> {
     //
     // (undocumented)
     withConstraint(constraint: Constraint<T>, trait?: ConstraintTrait): Validator<T, TC>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    withFormattedError(formatter: ValidationErrorFormatter<TC>): Validator<T, TC>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -535,7 +565,7 @@ export interface IMessageAggregator {
 // Warning: (ae-forgotten-export) The symbol "InnerInferredType" needs to be exported by the entry point index.d.ts
 //
 // @beta
-type Infer<TCONV> = TCONV extends Converter<infer TTO> ? InnerInferredType<TTO> : never;
+type Infer<TCONV> = TCONV extends Converter<infer TTO, unknown> ? InnerInferredType<TTO> : never;
 
 // @public (undocumented)
 class InMemoryLogger extends LoggerBase {
@@ -554,6 +584,79 @@ class InMemoryLogger extends LoggerBase {
     get silent(): string[];
     // (undocumented)
     protected _silent: string[];
+}
+
+// @public
+export interface IReadOnlyResultMap<TK extends string = string, TV = unknown> {
+    [Symbol.iterator](): IterableIterator<KeyValueEntry<TK, TV>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    entries(): MapIterator<KeyValueEntry<TK, TV>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    forEach(cb: ResultMapForEachCb, arg?: unknown): void;
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get(key: TK): DetailedResult<TV, ResultMapResultDetail>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    has(key: TK): boolean;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly inner: ReadonlyMap<TK, TV>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    keys(): MapIterator<TK>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly size: number;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    values(): MapIterator<TV>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IReadOnlyResultMapValidator<TK extends string = string, TV = unknown> {
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get(key: string): DetailedResult<TV, ResultMapResultDetail>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    has(key: string): boolean;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly map: IReadOnlyResultMap<TK, TV>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly validators: KeyValueValidators<TK, TV>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IReadOnlyValidatingResultMap<TK extends string = string, TV = unknown> extends IReadOnlyResultMap<TK, TV> {
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly validate: IReadOnlyResultMapValidator<TK, TV>;
 }
 
 // @public
@@ -585,6 +688,24 @@ export interface IResultLogger {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+interface IResultMapConstructorParams<TK extends string = string, TV = unknown> {
+    // (undocumented)
+    entries?: Iterable<KeyValueEntry<TK, TV>>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IResultMapValidatorCreateParams<TK extends string = string, TV = unknown> {
+    // (undocumented)
+    map: ResultMap<TK, TV>;
+    // (undocumented)
+    validators: KeyValueValidators<TK, TV>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 function isA<T, TC = unknown>(description: string, guard: TypeGuardWithContext<T, TC>): Converter<T, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -595,19 +716,53 @@ function isA<T, TC = unknown>(description: string, guard: TypeGuardWithContext<T
 function isA_2<T, TC>(description: string, guard: TypeGuardWithContext<T, TC>, params?: Omit<TypeGuardValidatorConstructorParams<T, TC>, 'description' | 'guard'>): TypeGuardValidator<T, TC>;
 
 // @public
+function isIterable<TE = unknown, TI extends Iterable<TE> = Iterable<TE>, TO = unknown>(value: TI | TO): value is TI;
+
+// @public
 export function isKeyOf<T extends object>(key: string | number | symbol, item: T): key is keyof T;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IValidatingResultMapConstructorParams<TK extends string = string, TV = unknown> {
+    // (undocumented)
+    entries?: Iterable<KeyValueEntry<string, unknown>>;
+    // (undocumented)
+    validators: KeyValueValidators<TK, TV>;
+}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface KeyedConverterOptions<T extends string = string, TC = undefined> {
+interface KeyedConverterOptions<T extends string = string, TC = unknown> {
     keyConverter?: Converter<T, TC> | Validator<T, TC>;
     onError?: 'fail' | 'ignore';
 }
 
 // @public
-function literal<T>(value: T): Converter<T, unknown>;
+type KeyValueEntry<TK extends string = string, TV = unknown> = [TK, TV];
+
+// @public
+class KeyValueValidators<TK extends string = string, TV = unknown> {
+    constructor(key: Validator<TK, unknown> | Converter<TK, unknown>, value: Validator<TV, unknown> | Converter<TV, unknown>, entry?: Validator<KeyValueEntry<TK, TV>, unknown> | Converter<KeyValueEntry<TK, TV>, unknown>);
+    readonly entry?: Validator<KeyValueEntry<TK, TV>, unknown> | Converter<KeyValueEntry<TK, TV>, unknown>;
+    readonly key: Validator<TK, unknown> | Converter<TK, unknown>;
+    validateEntries(entries: Iterable<unknown>): Result<KeyValueEntry<TK, TV>[]>;
+    // Warning: (ae-incompatible-release-tags) The symbol "validateEntry" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "validateEntry" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    validateEntry(entry: unknown): DetailedResult<KeyValueEntry<TK, TV>, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "validateKey" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "validateKey" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    validateKey(key: unknown): DetailedResult<TK, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "validateValue" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "validateValue" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    validateValue(key: unknown): DetailedResult<TV, ResultMapResultDetail>;
+    readonly value: Validator<TV, unknown> | Converter<TV, unknown>;
+}
+
+// @public
+function literal<T, TC = unknown>(value: T): Converter<T, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -678,19 +833,19 @@ export function mapDetailedResults<T, TD>(results: Iterable<DetailedResult<T, TD
 export function mapFailures<T>(results: Iterable<Result<T>>, aggregatedErrors?: IMessageAggregator): string[];
 
 // @public
-function mapOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>): Converter<Map<TK, T>, TC>;
+function mapOf<T, TC = unknown, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>): Converter<Map<TK, T>, TC>;
 
 // @public
-function mapOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>, onError: 'fail' | 'ignore'): Converter<Map<TK, T>, TC>;
+function mapOf<T, TC = unknown, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>, onError: 'fail' | 'ignore'): Converter<Map<TK, T>, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function mapOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>, options: KeyedConverterOptions<TK, TC>): Converter<Map<TK, T>, TC>;
+function mapOf<T, TC = unknown, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>, options: KeyedConverterOptions<TK, TC>): Converter<Map<TK, T>, TC>;
 
 // @public
-function mappedEnumeratedValue<T>(map: [T, unknown[]][], message?: string): Converter<T, undefined>;
+function mappedEnumeratedValue<T, TC = unknown>(map: [T, unknown[]][], message?: string): Converter<T, TC>;
 
 // @public
 export function mapResults<T>(results: Iterable<Result<T>>, aggregatedErrors?: IMessageAggregator): Result<T[]>;
@@ -733,7 +888,7 @@ export class Normalizer {
 }
 
 // @public
-const number: Converter<number, undefined>;
+const number: Converter<number, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -741,7 +896,7 @@ const number: Converter<number, undefined>;
 const number_2: Validator<number>;
 
 // @public
-const numberArray: Converter<number[]>;
+const numberArray: Converter<number[], unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -767,7 +922,7 @@ type NumberValidatorConstructorParams<T extends number = number, TC = unknown> =
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function object<T>(properties: FieldConverters<T>, options?: ObjectConverterOptions<T>): ObjectConverter<T>;
+function object<T, TC = unknown>(properties: FieldConverters<T, TC>, options?: ObjectConverterOptions<T>): ObjectConverter<T, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -776,7 +931,7 @@ function object<T>(properties: FieldConverters<T>, options?: ObjectConverterOpti
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public @deprecated
-function object<T>(properties: FieldConverters<T>, optional: (keyof T)[]): ObjectConverter<T>;
+function object<T, TC = unknown>(properties: FieldConverters<T, TC>, optional: (keyof T)[]): ObjectConverter<T, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -803,7 +958,7 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     addPartial(addOptionalProperties: (keyof T)[]): ObjectConverter<Partial<T>, TC>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    readonly fields: FieldConverters<T>;
+    readonly fields: FieldConverters<T, TC>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly options: ObjectConverterOptions<T>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -924,13 +1079,13 @@ interface OneOfValidatorConstructorParams<T, TC = unknown> extends ValidatorBase
 type OnError = 'failOnError' | 'ignoreErrors';
 
 // @public
-const optionalBoolean: Converter<boolean | undefined>;
+const optionalBoolean: Converter<boolean | undefined, unknown>;
 
 // @public
-function optionalElement<T, TC = undefined>(index: number, converter: Converter<T, TC> | Validator<T, TC>): Converter<T | undefined, TC>;
+function optionalElement<T, TC = unknown>(index: number, converter: Converter<T, TC> | Validator<T, TC>): Converter<T | undefined, TC>;
 
 // @public
-function optionalField<T, TC = undefined>(name: string, converter: Converter<T, TC> | Validator<T, TC>): Converter<T | undefined, TC>;
+function optionalField<T, TC = unknown>(name: string, converter: Converter<T, TC> | Validator<T, TC>): Converter<T | undefined, TC>;
 
 // @public
 export function optionalMapToPossiblyEmptyRecord<TS, TD, TK extends string = string>(src: ReadonlyMap<TK, TS> | undefined, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD>>;
@@ -939,7 +1094,7 @@ export function optionalMapToPossiblyEmptyRecord<TS, TD, TK extends string = str
 export function optionalMapToRecord<TS, TD, TK extends string = string>(src: ReadonlyMap<TK, TS> | undefined, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD> | undefined>;
 
 // @public
-const optionalNumber: Converter<number | undefined>;
+const optionalNumber: Converter<number | undefined, unknown>;
 
 // @public
 export function optionalRecordToMap<TS, TD, TK extends string = string>(src: Record<TK, TS> | undefined, factory: KeyedThingFactory<TS, TD, TK>): Result<Map<TK, TD> | undefined>;
@@ -971,16 +1126,16 @@ export interface PopulateObjectOptions<T> {
 export function propagateWithDetail<T, TD>(result: Result<T>, detail: TD, successDetail?: TD): DetailedResult<T, TD>;
 
 // @public
-function recordOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>): Converter<Record<TK, T>, TC>;
+function recordOf<T, TC = unknown, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>): Converter<Record<TK, T>, TC>;
 
 // @public
-function recordOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>, onError: 'fail' | 'ignore'): Converter<Record<TK, T>, TC>;
+function recordOf<T, TC = unknown, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>, onError: 'fail' | 'ignore'): Converter<Record<TK, T>, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function recordOf<T, TC = undefined, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>, options: KeyedConverterOptions<TK, TC>): Converter<Record<TK, T>, TC>;
+function recordOf<T, TC = unknown, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>, options: KeyedConverterOptions<TK, TC>): Converter<Record<TK, T>, TC>;
 
 // @public
 export function recordToMap<TS, TD, TK extends string = string>(src: Record<TK, TS>, factory: KeyedThingFactory<TS, TD, TK>): Result<Map<TK, TD>>;
@@ -991,6 +1146,114 @@ export type Result<T> = Success<T> | Failure<T>;
 // @beta
 export type ResultDetailType<T> = T extends DetailedResult<unknown, infer TD> ? TD : never;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+export class ResultMap<TK extends string = string, TV = unknown> implements IReadOnlyResultMap<TK, TV> {
+    [Symbol.iterator](): IterableIterator<KeyValueEntry<TK, TV>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(iterable?: Iterable<KeyValueEntry<TK, TV>>);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(params: IResultMapConstructorParams);
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    add(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+    clear(): void;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create<TK extends string = string, TV = unknown>(elements: Iterable<KeyValueEntry<TK, TV>>): Result<ResultMap<TK, TV>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create<TK extends string = string, TV = unknown>(params?: IResultMapConstructorParams<TK, TV>): Result<ResultMap<TK, TV>>;
+    // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    delete(key: TK): DetailedResult<TV, ResultMapResultDetail>;
+    entries(): MapIterator<KeyValueEntry<TK, TV>>;
+    forEach(cb: ResultMapForEachCb<TK, TV>, arg?: unknown): void;
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    get(key: TK): DetailedResult<TV, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    getOrAdd(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+    has(key: TK): boolean;
+    get inner(): ReadonlyMap<TK, TV>;
+    protected readonly _inner: Map<TK, TV>;
+    keys(): MapIterator<TK>;
+    // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    set(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+    get size(): number;
+    toReadOnly(): IReadOnlyResultMap<TK, TV>;
+    // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    update(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+    values(): MapIterator<TV>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type ResultMapForEachCb<TK extends string = string, TE = unknown> = (value: TE, key: TK, map: IReadOnlyResultMap<TK, TE>, thisArg?: unknown) => void;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type ResultMapResultDetail = 'added' | 'deleted' | 'exists' | 'invalid-key' | 'invalid-value' | 'not-found' | 'success' | 'updated';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ResultMapValidator<TK extends string = string, TV = unknown> implements IReadOnlyResultMapValidator<TK, TV> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(params: IResultMapValidatorCreateParams<TK, TV>);
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    add(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    delete(key: string): DetailedResult<TV, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get(key: string): DetailedResult<TV, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getOrAdd(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    has(key: string): boolean;
+    // (undocumented)
+    get map(): IReadOnlyResultMap<TK, TV>;
+    // (undocumented)
+    protected _map: ResultMap<TK, TV>;
+    // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    set(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail>;
+    toReadOnly(): IReadOnlyResultMapValidator<TK, TV>;
+    // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    update(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail>;
+    // (undocumented)
+    readonly validators: KeyValueValidators<TK, TV>;
+}
+
 // @beta
 export type ResultValueType<T> = T extends Result<infer TV> ? TV : never;
 
@@ -1000,7 +1263,7 @@ export type ResultValueType<T> = T extends Result<infer TV> ? TV : never;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function strictObject<T>(properties: FieldConverters<T>, options?: StrictObjectConverterOptions<T>): ObjectConverter<T>;
+function strictObject<T, TC = unknown>(properties: FieldConverters<T, TC>, options?: StrictObjectConverterOptions<T>): ObjectConverter<T, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1009,7 +1272,7 @@ function strictObject<T>(properties: FieldConverters<T>, options?: StrictObjectC
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public @deprecated
-function strictObject<T>(properties: FieldConverters<T>, optional: (keyof T)[]): ObjectConverter<T>;
+function strictObject<T, TC = unknown>(properties: FieldConverters<T, TC>, optional: (keyof T)[]): ObjectConverter<T, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1025,7 +1288,7 @@ const string: StringConverter;
 const string_2: Validator<string>;
 
 // @public
-const stringArray: Converter<string[]>;
+const stringArray: Converter<string[], unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1157,13 +1420,57 @@ interface TypeGuardValidatorConstructorParams<T, TC = unknown> extends Validator
 // @public
 type TypeGuardWithContext<T, TC = unknown> = (from: unknown, context?: TC) => from is T;
 
+declare namespace Utils {
+    export {
+        isIterable,
+        KeyValueValidators
+    }
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function validated<T, TC = unknown>(validator: Validator<T, TC>): Converter<T, TC>;
 
 // @public
-function validateWith<T, TC = undefined>(validator: (from: unknown) => from is T, description?: string): Converter<T, TC>;
+function validateWith<T, TC = unknown>(validator: (from: unknown) => from is T, description?: string): Converter<T, TC>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+export class ValidatingResultMap<TK extends string = string, TV = unknown> extends ResultMap<TK, TV> implements IReadOnlyValidatingResultMap<TK, TV> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(params: IValidatingResultMapConstructorParams<TK, TV>);
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    add(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static createValidating<TK extends string = string, TV = unknown>(params: IValidatingResultMapConstructorParams<TK, TV>): Result<ValidatingResultMap<TK, TV>>;
+    // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getOrAdd(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    //
+    // (undocumented)
+    set(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+    toReadOnly(): IReadOnlyValidatingResultMap<TK, TV>;
+    // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    update(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly validate: ResultMapValidator<TK, TV>;
+}
 
 declare namespace Validation {
     export {
@@ -1178,13 +1485,17 @@ declare namespace Validation {
         ValidatorTraits,
         ValidatorOptions,
         Constraint,
+        ValidationErrorFormatter,
         Validator
     }
 }
 export { Validation }
 
 // @public
-export interface Validator<T, TC = undefined> {
+type ValidationErrorFormatter<TC = unknown> = (val: unknown, message?: string, context?: TC) => string;
+
+// @public
+export interface Validator<T, TC = unknown> {
     readonly brand: string | undefined;
     convert(from: unknown, context?: TC): Result<T>;
     guard(from: unknown, context?: TC): from is T;
@@ -1202,6 +1513,9 @@ export interface Validator<T, TC = undefined> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     withConstraint(constraint: Constraint<T>, trait?: ConstraintTrait): Validator<T, TC>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    withFormattedError(formatter: ValidationErrorFormatter<TC>): Validator<T, TC>;
 }
 
 // @public

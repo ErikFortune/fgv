@@ -9,7 +9,7 @@ A [Converter](./ts-utils.converter.md) which converts `unknown` to a `number`<!-
 **Signature:**
 
 ```typescript
-number: Converter<number, undefined>
+number: Converter<number, unknown>
 ```
 
 ## Remarks
