@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "allow factories in getOrAdd",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

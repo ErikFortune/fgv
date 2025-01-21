@@ -122,7 +122,7 @@ export class ValidatingResultMap<TK extends string = string, TV = unknown>
     }
   }
 
-  /*
+  /**
    * {@inheritdoc Collections.ResultMap.set}
    */
   public set(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail> {

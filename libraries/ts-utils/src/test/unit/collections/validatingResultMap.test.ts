@@ -168,6 +168,41 @@ describe('ValidatingResultMap', () => {
       expect(map.validate.set('fred', 'flintstone')).toSucceedWith('flintstone');
       expect(map.get('fred')).toSucceedWith('flintstone');
     });
+
+    describe('getOrAdd with factory', () => {
+      test('adds a new entry if the key is not found', () => {
+        const map = new ValidatingResultMap({ validators: familyValidators });
+        const factory = jest.fn(() => succeed<CavemanLastName>('flintstone'));
+        expect(map.validate.getOrAdd('wilma', factory)).toSucceedWith('flintstone');
+        expect(map.get('wilma')).toSucceedWith('flintstone');
+      });
+
+      test('does not add a new entry if the key is found', () => {
+        const map = new ValidatingResultMap({
+          validators: familyValidators,
+          entries: [['fred', 'flintstone']]
+        });
+        const factory = jest.fn(() => succeed<CavemanLastName>('rubble'));
+        expect(map.validate.getOrAdd('fred', factory)).toSucceedWith('flintstone');
+        expect(map.get('fred')).toSucceedWith('flintstone');
+      });
+
+      test('fails with detail invalid-value if the factory fails', () => {
+        const map = new ValidatingResultMap({ validators: familyValidators });
+        const factory = jest.fn(() => fail<CavemanLastName>('nope'));
+        expect(map.validate.getOrAdd('wilma', factory)).toFailWithDetail('nope', 'invalid-value');
+        expect(map.get('wilma')).toFailWithDetail(/not found/i, 'not-found');
+      });
+
+      test('does not invoke the factory if the key is found', () => {
+        const map = new ValidatingResultMap({
+          validators: familyValidators,
+          entries: [['fred', 'flintstone']]
+        });
+        const factory = jest.fn(() => fail<CavemanLastName>('nope'));
+        expect(map.validate.getOrAdd('fred', factory)).toSucceedWith('flintstone');
+      });
+    });
   });
 
   describe('ResultMap members', () => {

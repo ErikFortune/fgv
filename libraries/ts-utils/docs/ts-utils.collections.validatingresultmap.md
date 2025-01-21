@@ -181,6 +181,8 @@ Gets a value from the map, or adds a value created by a factory function if it d
 
 </td><td>
 
+Sets a key/value pair in the map.
+
 
 </td></tr>
 <tr><td>
