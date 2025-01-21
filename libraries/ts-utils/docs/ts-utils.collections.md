@@ -203,4 +203,15 @@ Additional success or failure details for [ResultMap](./ts-utils.collections.res
 
 
 </td></tr>
+<tr><td>
+
+[ResultMapValueFactory](./ts-utils.collections.resultmapvaluefactory.md)
+
+
+</td><td>
+
+Deferred constructor for the [getOrAdd](./ts-utils.collections.resultmap.getoradd_1.md) method.
+
+
+</td></tr>
 </tbody></table>

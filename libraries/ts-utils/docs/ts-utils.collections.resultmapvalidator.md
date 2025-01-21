@@ -149,6 +149,22 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[\_isResultMapValueFactory(value)](./ts-utils.collections.resultmapvalidator._isresultmapvaluefactory.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+Determines if a value is a [ResultMapValueFactory](./ts-utils.collections.resultmapvaluefactory.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [add(key, value)](./ts-utils.collections.resultmapvalidator.add.md)
 
 
@@ -205,6 +221,20 @@ Gets a value from the map, or adds a supplied value it if it does not exist.
 </td></tr>
 <tr><td>
 
+[getOrAdd(key, factory)](./ts-utils.collections.resultmapvalidator.getoradd_1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a value from the map, or adds a value created by a factory function if it does not exist.
+
+
+</td></tr>
+<tr><td>
+
 [has(key)](./ts-utils.collections.resultmapvalidator.has.md)
 
 
@@ -228,6 +258,20 @@ Returns `true` if the map contains a key.
 </td><td>
 
 Sets a key/value pair in the map.
+
+
+</td></tr>
+<tr><td>
+
+[toReadOnly()](./ts-utils.collections.resultmapvalidator.toreadonly.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a read-only version of this validator.
 
 
 </td></tr>

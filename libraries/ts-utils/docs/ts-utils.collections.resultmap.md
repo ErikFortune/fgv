@@ -171,6 +171,22 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[\_isResultMapValueFactory(value)](./ts-utils.collections.resultmap._isresultmapvaluefactory.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+Determines if a value is a [ResultMapValueFactory](./ts-utils.collections.resultmapvaluefactory.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [\[Symbol.iterator\]()](./ts-utils.collections.resultmap._symbol.iterator_.md)
 
 
@@ -315,6 +331,20 @@ Gets a value from the map, or adds a supplied value it if it does not exist.
 </td></tr>
 <tr><td>
 
+[getOrAdd(key, factory)](./ts-utils.collections.resultmap.getoradd_1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a value from the map, or adds a value created by a factory function if it does not exist.
+
+
+</td></tr>
+<tr><td>
+
 [has(key)](./ts-utils.collections.resultmap.has.md)
 
 
@@ -352,6 +382,20 @@ Returns an iterator over the map keys.
 </td><td>
 
 Sets a key/value pair in the map.
+
+
+</td></tr>
+<tr><td>
+
+[toReadOnly()](./ts-utils.collections.resultmap.toreadonly.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a readonly version of this map.
 
 
 </td></tr>

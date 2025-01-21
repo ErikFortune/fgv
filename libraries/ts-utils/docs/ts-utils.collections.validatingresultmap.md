@@ -159,6 +159,20 @@ Gets a value from the map, or adds a supplied value it if it does not exist.
 </td></tr>
 <tr><td>
 
+[getOrAdd(key, factory)](./ts-utils.collections.validatingresultmap.getoradd_1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a value from the map, or adds a value created by a factory function if it does not exist.
+
+
+</td></tr>
+<tr><td>
+
 [set(key, value)](./ts-utils.collections.validatingresultmap.set.md)
 
 
@@ -166,6 +180,22 @@ Gets a value from the map, or adds a supplied value it if it does not exist.
 
 
 </td><td>
+
+Sets a key/value pair in the map.
+
+
+</td></tr>
+<tr><td>
+
+[toReadOnly()](./ts-utils.collections.validatingresultmap.toreadonly.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a read-only version of this map.
 
 
 </td></tr>
