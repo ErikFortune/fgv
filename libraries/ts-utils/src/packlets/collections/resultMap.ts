@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { captureResult, DetailedResult, failWithDetail, Result, succeedWithDetail } from '../base';
+import { captureResult, DetailedResult, failWithDetail, Result, succeed, succeedWithDetail } from '../base';
 import { KeyValueEntry } from './common';
 import { IReadOnlyResultMap, ResultMapForEachCb, ResultMapResultDetail } from './readonlyResultMap';
 import { isIterable } from './utils';
@@ -32,6 +32,12 @@ import { isIterable } from './utils';
 export interface IResultMapConstructorParams<TK extends string = string, TV = unknown> {
   entries?: Iterable<KeyValueEntry<TK, TV>>;
 }
+
+/**
+ * Deferred constructor for the {@link Collections.ResultMap.(getOrAdd:2) | getOrAdd} method.
+ * @public
+ */
+export type ResultMapValueFactory<TK extends string = string, TV = unknown> = (key: TK) => Result<TV>;
 
 /**
  * A {@link Collections.ResultMap | ResultMap} class as a `Map<TK, TV>`-like object which
@@ -186,19 +192,45 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
 
   /**
    * Gets a value from the map, or adds a supplied value it if it does not exist.
-   * @param key - The key to retrieve.
+   * @param key - The key to be retrieved or created.
    * @param value - The value to add if the key does not exist.
    * @returns `Success` with the value and detail `exists` if the key was found,
    * `Success` with the value and detail `added` if the key was not found and added.
    * Fails with detail 'invalid-key' or 'invalid-value' and an error message if either
    * is invalid.
+   * {@label WITH_VALUE}
    */
-  public getOrAdd(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail> {
+  public getOrAdd(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+
+  /**
+   * Gets a value from the map, or adds a value created by a factory function if it does not exist.
+   * @param key - The key of the element to be retrieved or created.
+   * @param factory - A {@link Collections.ResultMapValueFactory | factory function} to create the value if
+   * the key does not exist.
+   * @returns `Success` with the value and detail `exists` if the key was found, `Success` with
+   * the value and detail `added` if the key was not found and added. Fails with detail 'invalid-key'
+   * or 'invalid-value' and an error message if either is invalid.
+   * {@label WITH_FACTORY}
+   */
+  public getOrAdd(key: TK, factory: ResultMapValueFactory<TK, TV>): DetailedResult<TV, ResultMapResultDetail>;
+  public getOrAdd(
+    key: TK,
+    valueOrFactory: TV | ResultMapValueFactory<TK, TV>
+  ): DetailedResult<TV, ResultMapResultDetail> {
     if (this._inner.has(key)) {
       return succeedWithDetail(this._inner.get(key)!, 'exists');
     }
-    this._inner.set(key, value);
-    return succeedWithDetail(value, 'added');
+
+    const factory: ResultMapValueFactory<TK, TV> = this._isResultMapValueFactory(valueOrFactory)
+      ? valueOrFactory
+      : () => succeed(valueOrFactory);
+
+    return factory(key)
+      .onSuccess((val) => {
+        this._inner.set(key, val);
+        return succeedWithDetail(val, 'added');
+      })
+      .withDetail('invalid-value', 'added');
   }
 
   /**
@@ -280,5 +312,18 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
    */
   public toReadOnly(): IReadOnlyResultMap<TK, TV> {
     return this;
+  }
+
+  /**
+   * Determines if a value is a {@link Collections.ResultMapValueFactory | ResultMapValueFactory}.
+   * @param value - The value to check.
+   * @returns `true` if the value is a {@link Collections.ResultMapValueFactory | ResultMapValueFactory},
+   * `false` otherwise.
+   * @public
+   */
+  protected _isResultMapValueFactory<TK extends string, TV>(
+    value: TV | ResultMapValueFactory<TK, TV>
+  ): value is ResultMapValueFactory<TK, TV> {
+    return typeof value === 'function';
   }
 }

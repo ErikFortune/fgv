@@ -20,9 +20,9 @@
  * SOFTWARE.
  */
 
-import { DetailedResult } from '../base';
+import { DetailedResult, failWithDetail, succeedWithDetail } from '../base';
 import { IReadOnlyResultMap, ResultMapResultDetail } from './readonlyResultMap';
-import { ResultMap } from './resultMap';
+import { ResultMap, ResultMapValueFactory } from './resultMap';
 import { KeyValueValidators } from './utils';
 
 /**
@@ -112,12 +112,38 @@ export class ResultMapValidator<TK extends string = string, TV = unknown>
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.getOrAdd}
+   * {@inheritdoc Collections.ResultMap.(getOrAdd:1)}
    */
-  public getOrAdd(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail> {
-    return this.validators.validateEntry([key, value]).onSuccess(([vk, vv]) => {
-      return this._map.getOrAdd(vk, vv);
-    });
+  public getOrAdd(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail>;
+
+  /**
+   * {@inheritdoc Collections.ResultMap.(getOrAdd:2)}
+   */
+  public getOrAdd(
+    key: string,
+    factory: ResultMapValueFactory<TK, TV>
+  ): DetailedResult<TV, ResultMapResultDetail>;
+  public getOrAdd(
+    key: string,
+    valueOrFactory: unknown | ResultMapValueFactory<TK, TV>
+  ): DetailedResult<TV, ResultMapResultDetail> {
+    if (!this._isResultMapValueFactory(valueOrFactory)) {
+      return this.validators.validateEntry([key, valueOrFactory]).onSuccess(([vk, vv]) => {
+        return this._map.getOrAdd(vk, vv);
+      });
+    } else {
+      return this.validators.validateKey(key).onSuccess((k) => {
+        return this._map.get(k).onFailure(() => {
+          const value = valueOrFactory(k)
+            .onSuccess((value) => this.validators.validateEntry([k, value]))
+            .onSuccess(([__key, value]) => succeedWithDetail(value, 'added'));
+
+          return value.success
+            ? this._map.add(k, value.value)
+            : failWithDetail<TV, ResultMapResultDetail>(value.message, 'invalid-value');
+        });
+      });
+    }
   }
 
   /**
@@ -150,5 +176,18 @@ export class ResultMapValidator<TK extends string = string, TV = unknown>
    */
   public toReadOnly(): IReadOnlyResultMapValidator<TK, TV> {
     return this;
+  }
+
+  /**
+   * Determines if a value is a {@link Collections.ResultMapValueFactory | ResultMapValueFactory}.
+   * @param value - The value to check.
+   * @returns `true` if the value is a {@link Collections.ResultMapValueFactory | ResultMapValueFactory},
+   * `false` otherwise.
+   * @public
+   */
+  protected _isResultMapValueFactory<TK extends string, TV>(
+    value: TV | ResultMapValueFactory<TK, TV>
+  ): value is ResultMapValueFactory<TK, TV> {
+    return typeof value === 'function';
   }
 }

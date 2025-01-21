@@ -1,6 +1,13 @@
 # Change Log - @fgv/ts-utils
 
-This log was last generated on Mon, 20 Jan 2025 09:46:53 GMT and should not be manually modified.
+This log was last generated on Tue, 21 Jan 2025 04:19:21 GMT and should not be manually modified.
+
+## 4.2.1
+Tue, 21 Jan 2025 04:19:21 GMT
+
+### Updates
+
+- allow factories in getOrAdd
 
 ## 4.2.0
 Mon, 20 Jan 2025 09:46:53 GMT
