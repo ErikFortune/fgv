@@ -71,6 +71,11 @@ export interface IMessageAggregator {
   readonly hasMessages: boolean;
 
   /**
+   * The number of messages aggregated.
+   */
+  readonly numMessages: number;
+
+  /**
    * The aggregated messages.
    */
   readonly messages: ReadonlyArray<string>;
@@ -110,6 +115,18 @@ export interface IResult<T> {
    * Indicates whether the operation was successful.
    */
   readonly success: boolean;
+
+  /**
+   * Value returned by a successful operation, undefined
+   * for a failed operation.
+   */
+  readonly value: T | undefined;
+
+  /**
+   * Error message returned by a failed operation, undefined
+   * for a successful operation.
+   */
+  readonly message: string | undefined;
 
   /**
    * Indicates whether this operation was successful.  Functions
@@ -250,6 +267,12 @@ export class Success<T> implements IResult<T> {
    * {@inheritdoc IResult.success}
    */
   public readonly success: true = true;
+
+  /**
+   * For a successful operation, the error message is always `undefined`.
+   */
+  public readonly message: undefined = undefined;
+
   /**
    * @internal
    */
@@ -364,6 +387,10 @@ export class Failure<T> implements IResult<T> {
    * {@inheritdoc IResult.success}
    */
   public readonly success: false = false;
+  /**
+   * Failed operation always returns undefined for value.
+   */
+  public readonly value: undefined = undefined;
 
   /**
    * @internal

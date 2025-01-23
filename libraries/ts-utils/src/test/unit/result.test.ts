@@ -38,7 +38,80 @@ import {
 } from '../../packlets/base';
 
 describe('Result module', () => {
+  describe('Result type', () => {
+    describe('properties', () => {
+      function testResult(ok: boolean): Result<boolean> {
+        return ok ? succeed(true) : fail('oops');
+      }
+
+      test('isSuccess and isFailure return correctly for success', () => {
+        expect(testResult(true).isSuccess()).toBe(true);
+        expect(testResult(true).isFailure()).toBe(false);
+      });
+
+      test('isSuccess and isFailure return correctly for failure', () => {
+        expect(testResult(false).isSuccess()).toBe(false);
+        expect(testResult(false).isFailure()).toBe(true);
+      });
+
+      test('value and message return correctly for success', () => {
+        expect(testResult(true).value).toBe(true);
+        expect(testResult(true).message).toBeUndefined();
+      });
+
+      test('value and message return correctly for failure', () => {
+        expect(testResult(false).value).toBeUndefined();
+        expect(testResult(false).message).toBe('oops');
+      });
+
+      test('can destructure into value and message for success with inference', () => {
+        const { value, message } = testResult(true);
+        expect(value).toBe(true);
+        expect(message).toBeUndefined();
+        if (value === undefined) {
+          // note that compiler inferred that message is defined, so no '!' or '?' needed.
+          expect(message[0]).toBe('o');
+        }
+      });
+
+      test('can destructure into value and message for failure with inference', () => {
+        const { value, message } = testResult(false);
+        expect(value).toBeUndefined();
+        expect(message).toBe('oops');
+        if (value === undefined) {
+          // note that compiler inferred that message is defined, so no '!' or '?' needed.
+          // cast testResult to IResult<boolean> and inference is no longer possible
+          expect(message[0]).toBe('o');
+        }
+      });
+    });
+  });
+
   describe('Success class', () => {
+    describe('properties', () => {
+      test('isSuccess is true', () => {
+        expect(succeed('hello').isSuccess()).toBe(true);
+      });
+
+      test('isFailure is false', () => {
+        expect(succeed('hello').isFailure()).toBe(false);
+      });
+
+      test('value is the value', () => {
+        expect(succeed('hello').value).toBe('hello');
+      });
+
+      test('message is undefined', () => {
+        expect(succeed('hello').message).toBeUndefined();
+      });
+
+      test('can destructure into value and message', () => {
+        const { value, message } = succeed('hello');
+        expect(value).toBe('hello');
+        expect(message).toBeUndefined();
+      });
+    });
+
     describe('orThrow method', () => {
       test('returns the value and not throw', () => {
         const value = 'hello';
@@ -177,6 +250,30 @@ describe('Result module', () => {
   });
 
   describe('Failure class', () => {
+    describe('properties', () => {
+      test('isSuccess is false', () => {
+        expect(fail('oops').isSuccess()).toBe(false);
+      });
+
+      test('isFailure is true', () => {
+        expect(fail('oops').isFailure()).toBe(true);
+      });
+
+      test('message is the message', () => {
+        expect(fail('oops').message).toBe('oops');
+      });
+
+      test('value is undefined', () => {
+        expect(fail('oops').value).toBeUndefined();
+      });
+
+      test('can destructure into value and message', () => {
+        const { value, message } = fail('oops');
+        expect(value).toBeUndefined();
+        expect(message).toBe('oops');
+      });
+    });
+
     describe('orThrow method', () => {
       test('throws the message', () => {
         const errorMessage = 'this is an error message';
