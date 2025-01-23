@@ -377,6 +377,7 @@ export class Failure<T> implements IResult<T> {
     orThrow(logger?: IResultLogger): never;
     readonly success: false;
     toString(): string;
+    readonly value: undefined;
     // Warning: (ae-incompatible-release-tags) The symbol "withDetail" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withDetail<TD>(detail: TD, __successDetail?: TD): DetailedResult<T, TD>;
     withErrorFormat(cb: ErrorFormatter): Result<T>;
@@ -566,6 +567,7 @@ export interface IMessageAggregator {
     addMessages(messages: string[] | undefined): this;
     readonly hasMessages: boolean;
     readonly messages: ReadonlyArray<string>;
+    readonly numMessages: number;
     toString(separator?: string): string;
 }
 
@@ -675,12 +677,14 @@ export interface IResult<T> {
     getValueOrThrow(logger?: IResultLogger): T;
     isFailure(): this is Failure<T>;
     isSuccess(): this is Success<T>;
+    readonly message: string | undefined;
     onFailure(cb: FailureContinuation<T>): Result<T>;
     onSuccess<TN>(cb: SuccessContinuation<T, TN>): Result<TN>;
     orDefault(dflt: T): T;
     orDefault(): T | undefined;
     orThrow(logger?: IResultLogger): T;
     readonly success: boolean;
+    readonly value: T | undefined;
     // Warning: (ae-incompatible-release-tags) The symbol "withDetail" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withDetail<TD>(detail: TD, successDetail?: TD): DetailedResult<T, TD>;
     withErrorFormat(cb: ErrorFormatter): Result<T>;
@@ -873,6 +877,7 @@ export class MessageAggregator implements IMessageAggregator {
     addMessages(messages: string[] | undefined): this;
     get hasMessages(): boolean;
     get messages(): string[];
+    get numMessages(): number;
     returnOrReport<T>(result: Result<T>, separator?: string): Result<T>;
     toString(separator?: string): string;
 }
@@ -1383,6 +1388,7 @@ export class Success<T> implements IResult<T> {
     getValueOrThrow(__logger?: IResultLogger): T;
     isFailure(): this is Failure<T>;
     isSuccess(): this is Success<T>;
+    readonly message: undefined;
     onFailure(__: FailureContinuation<T>): Result<T>;
     onSuccess<TN>(cb: SuccessContinuation<T, TN>): Result<TN>;
     orDefault(dflt: T): T;

@@ -2,6 +2,12 @@
   "name": "@fgv/ts-json-base",
   "entries": [
     {
+      "version": "4.2.2",
+      "tag": "@fgv/ts-json-base_v4.2.2",
+      "date": "Thu, 23 Jan 2025 06:19:32 GMT",
+      "comments": {}
+    },
+    {
       "version": "4.2.1",
       "tag": "@fgv/ts-json-base_v4.2.1",
       "date": "Tue, 21 Jan 2025 04:19:21 GMT",

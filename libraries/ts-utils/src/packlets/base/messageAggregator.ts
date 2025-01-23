@@ -48,6 +48,13 @@ export class MessageAggregator implements IMessageAggregator {
   }
 
   /**
+   * {@inheritdoc IMessageAggregator.numMessages}
+   */
+  public get numMessages(): number {
+    return this._messages.length;
+  }
+
+  /**
    * {@inheritdoc IMessageAggregator.messages}
    */
   public get messages(): string[] {

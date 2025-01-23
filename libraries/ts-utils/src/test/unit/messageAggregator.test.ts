@@ -29,6 +29,7 @@ describe('MessageAggregator', () => {
     test('initializes empty by default', () => {
       const aggregator = new MessageAggregator();
       expect(aggregator.hasMessages).toBe(false);
+      expect(aggregator.numMessages).toBe(0);
       expect(aggregator.messages).toEqual([]);
       expect(aggregator.toString()).toBe('');
     });
@@ -37,6 +38,7 @@ describe('MessageAggregator', () => {
       const messages = ['prior', 'messages'];
       const aggregator = new MessageAggregator(messages);
       expect(aggregator.hasMessages).toBe(true);
+      expect(aggregator.numMessages).toBe(messages.length);
       expect(aggregator.messages).toEqual(messages);
       expect(aggregator.messages).not.toBe(messages); // MUST not reuse incoming array
       expect(aggregator.toString()).toBe(messages.join('\n'));
