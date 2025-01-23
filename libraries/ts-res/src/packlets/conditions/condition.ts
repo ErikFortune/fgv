@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { captureResult, Result } from '@fgv/ts-utils';
+import { captureResult, Result, succeed } from '@fgv/ts-utils';
 import { ConditionOperator, ConditionPriority, QualifierConditionValue, Validate } from '../common';
 import { Qualifier, QualifierMap } from '../qualifiers';
 
@@ -56,6 +56,20 @@ export interface IConditionCreateWithNameParams {
  * @public
  */
 export type IConditionCreateParams = IConditionCreateWithQualifierParams | IConditionCreateWithNameParams;
+
+export class ConditionCreateParams {
+  private constructor() {}
+
+  public static toDefaults(params: IConditionCreateParams): Result<IConditionCreateWithQualifierParams> {
+    return (
+      'qualifier' in params
+        ? succeed(params.qualifier)
+        : params.qualifierMap.validate.get(params.qualifierName)
+    ).onSuccess((qualifier) => {
+      return succeed<IConditionCreateWithQualifierParams>({}).withDetail('success');
+    });
+  }
+}
 
 /**
  * Represents a single condition applied to some resource instance.
