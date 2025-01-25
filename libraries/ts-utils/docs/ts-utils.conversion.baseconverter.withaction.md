@@ -9,7 +9,7 @@ Creates a [Converter](./ts-utils.converter.md) which applies a supplied action a
 **Signature:**
 
 ```typescript
-withAction<TI>(action: (result: Result<T>) => Result<TI>): Converter<TI, TC>;
+withAction<TI>(action: (result: Result<T>, context?: TC) => Result<TI>): Converter<TI, TC>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ action
 
 </td><td>
 
-(result: [Result](./ts-utils.result.md)<!-- -->&lt;T&gt;) =&gt; [Result](./ts-utils.result.md)<!-- -->&lt;TI&gt;
+(result: [Result](./ts-utils.result.md)<!-- -->&lt;T&gt;, context?: TC) =&gt; [Result](./ts-utils.result.md)<!-- -->&lt;TI&gt;
 
 
 </td><td>

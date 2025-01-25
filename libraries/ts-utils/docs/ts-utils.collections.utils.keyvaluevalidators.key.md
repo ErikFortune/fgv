@@ -4,7 +4,7 @@
 
 ## Collections.Utils.KeyValueValidators.key property
 
-Required key validator or converter.
+Required key [validator](./ts-utils.validator.md) or [converter](./ts-utils.converter.md)<!-- -->.
 
 **Signature:**
 

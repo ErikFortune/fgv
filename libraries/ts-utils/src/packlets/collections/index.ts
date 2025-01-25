@@ -21,10 +21,11 @@
  */
 
 import * as Utils from './utils';
+import { KeyValueValidators } from './utils';
 
 export * from './common';
 export * from './readonlyResultMap';
 export * from './resultMap';
 export * from './resultMapValidator';
 export * from './validatingResultMap';
-export { Utils };
+export { KeyValueValidators, Utils };

@@ -72,6 +72,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[message](./ts-utils.success.message.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+undefined
+
+
+</td><td>
+
+For a successful operation, the error message is always `undefined`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [success](./ts-utils.success.success.md)
 
 
@@ -285,6 +306,20 @@ Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- 
 </td><td>
 
 Converts a [IResult&lt;T&gt;](./ts-utils.iresult.md) to a [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->, adding supplied details.
+
+
+</td></tr>
+<tr><td>
+
+[withErrorFormat(\_\_cb)](./ts-utils.success.witherrorformat.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Calls a supplied [error formatter](./ts-utils.errorformatter.md) if the operation failed.
 
 
 </td></tr>

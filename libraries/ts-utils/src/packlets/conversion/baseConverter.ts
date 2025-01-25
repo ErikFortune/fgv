@@ -140,11 +140,11 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   /**
    * {@inheritdoc Converter.map}
    */
-  public map<T2>(mapper: (from: T) => Result<T2>): Converter<T2, TC> {
+  public map<T2>(mapper: (from: T, context?: TC) => Result<T2>): Converter<T2, TC> {
     return new BaseConverter<T2, TC>((from: unknown, __self: Converter<T2, TC>, context?: TC) => {
       const innerResult = this._converter(from, this, this._context(context));
       if (innerResult.isSuccess()) {
-        return mapper(innerResult.value);
+        return mapper(innerResult.value, this._context(context));
       }
       return fail(innerResult.message);
     })._with(this._traits());
@@ -157,7 +157,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
     return new BaseConverter<T2, TC>((from: unknown, __self: Converter<T2, TC>, context?: TC) => {
       const innerResult = this._converter(from, this, this._context(context));
       if (innerResult.isSuccess()) {
-        return mapConverter.convert(innerResult.value);
+        return mapConverter.convert(innerResult.value, this._context(context));
       }
       return fail(innerResult.message);
       // eslint-disable-next-line no-return-assign
@@ -167,11 +167,11 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   /**
    * {@inheritdoc Converter.mapItems}
    */
-  public mapItems<TI>(mapper: (from: unknown) => Result<TI>): Converter<TI[], TC> {
+  public mapItems<TI>(mapper: (from: unknown, context?: TC) => Result<TI>): Converter<TI[], TC> {
     return new BaseConverter<TI[], TC>((from: unknown, __self: Converter<TI[], TC>, context?: TC) => {
       return this._converter(from, this, this._context(context)).onSuccess((items) => {
         if (Array.isArray(items)) {
-          return mapResults(items.map((i) => mapper(i)));
+          return mapResults(items.map((i) => mapper(i, this._context(context))));
         }
         return fail('Cannot map items - not an array');
       });
@@ -185,7 +185,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
     return new BaseConverter<TI[], TC>((from: unknown, __self: Converter<TI[], TC>, context?: TC) => {
       return this._converter(from, this, this._context(context)).onSuccess((items) => {
         if (Array.isArray(items)) {
-          return mapResults(items.map((i) => mapConverter.convert(i)));
+          return mapResults(items.map((i) => mapConverter.convert(i, this._context(context))));
         }
         return fail('Cannot map items - not an array');
       });
@@ -195,20 +195,25 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   /**
    * {@inheritdoc Converter.withAction}
    */
-  public withAction<TI>(action: (result: Result<T>) => Result<TI>): Converter<TI, TC> {
+  public withAction<TI>(action: (result: Result<T>, context?: TC) => Result<TI>): Converter<TI, TC> {
     return new BaseConverter<TI, TC>((from: unknown, __self: Converter<TI, TC>, context?: TC) => {
-      return action(this._converter(from, this, this._context(context)));
+      return action(this._converter(from, this, this._context(context)), this._context(context));
     })._with(this._traits());
   }
 
   /**
    * {@inheritdoc Converter.withTypeGuard}
    */
-  public withTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI, TC> {
+  public withTypeGuard<TI>(
+    guard: (from: unknown, context?: TC) => from is TI,
+    message?: string
+  ): Converter<TI, TC> {
     return new BaseConverter<TI, TC>((from: unknown, __self: Converter<TI, TC>, context?: TC) => {
       return this._converter(from, this, this._context(context)).onSuccess((inner) => {
         message = message ?? 'invalid type';
-        return guard(inner) ? succeed(inner) : fail(`${message}: ${JSON.stringify(from)}`);
+        return guard(inner, this._context(context))
+          ? succeed(inner)
+          : fail(`${message}: ${JSON.stringify(from)}`);
       });
     })._with(this._traits());
   }
@@ -216,14 +221,19 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   /**
    * {@inheritdoc Converter.withItemTypeGuard}
    */
-  public withItemTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI[], TC> {
+  public withItemTypeGuard<TI>(
+    guard: (from: unknown, context?: TC) => from is TI,
+    message?: string
+  ): Converter<TI[], TC> {
     return new BaseConverter<TI[], TC>((from: unknown, __self: Converter<TI[], TC>, context?: TC) => {
       return this._converter(from, this, this._context(context)).onSuccess((items) => {
         if (Array.isArray(items)) {
           return mapResults(
             items.map((i) => {
               message = message ?? 'invalid type';
-              return guard(i) ? succeed(i) : fail(`${message}: ${JSON.stringify(from)}`);
+              return guard(i, this._context(context))
+                ? succeed(i)
+                : fail(`${message}: ${JSON.stringify(from)}`);
             })
           );
         }
@@ -236,13 +246,13 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
    * {@inheritdoc Converter.withConstraint}
    */
   public withConstraint(
-    constraint: (val: T) => boolean | Result<T>,
+    constraint: (val: T, context?: TC) => boolean | Result<T>,
     options?: ConstraintOptions
   ): Converter<T, TC> {
     return new BaseConverter<T, TC>((from: unknown, __self: Converter<T, TC>, context?: TC) => {
       const result = this._converter(from, this, this._context(context));
       if (result.isSuccess()) {
-        const constraintResult = constraint(result.value);
+        const constraintResult = constraint(result.value, this._context(context));
         if (typeof constraintResult === 'boolean') {
           return constraintResult
             ? result

@@ -9,7 +9,7 @@ Constructs a new key-value validator.
 **Signature:**
 
 ```typescript
-constructor(key: Validator<TK, unknown> | Converter<TK, unknown>, value: Validator<TV, unknown> | Converter<TV, unknown>, entry?: Validator<KeyValueEntry<TK, TV>, unknown> | Converter<KeyValueEntry<TK, TV>, unknown>);
+constructor(key: Validator<TK, unknown> | Converter<TK, unknown> | ValidatorFunc<TK, unknown>, value: Validator<TV, unknown> | Converter<TV, unknown> | ValidatorFunc<TV, unknown>, entry?: Validator<KeyValueEntry<TK, TV>, unknown> | Converter<KeyValueEntry<TK, TV>, unknown> | ValidatorFunc<KeyValueEntry<TK, TV>, unknown>);
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ key
 
 </td><td>
 
-[Validator](./ts-utils.validator.md)<!-- -->&lt;TK, unknown&gt; \| [Converter](./ts-utils.converter.md)<!-- -->&lt;TK, unknown&gt;
+[Validator](./ts-utils.validator.md)<!-- -->&lt;TK, unknown&gt; \| [Converter](./ts-utils.converter.md)<!-- -->&lt;TK, unknown&gt; \| [ValidatorFunc](./ts-utils.validation.base.validatorfunc.md)<!-- -->&lt;TK, unknown&gt;
 
 
 </td><td>
 
-Required key validator or converter.
+Required key [validator](./ts-utils.validator.md)<!-- -->, [converter](./ts-utils.converter.md)<!-- -->, or [validator function](./ts-utils.validation.validatorfunc.md)<!-- -->.
 
 
 </td></tr>
@@ -53,12 +53,12 @@ value
 
 </td><td>
 
-[Validator](./ts-utils.validator.md)<!-- -->&lt;TV, unknown&gt; \| [Converter](./ts-utils.converter.md)<!-- -->&lt;TV, unknown&gt;
+[Validator](./ts-utils.validator.md)<!-- -->&lt;TV, unknown&gt; \| [Converter](./ts-utils.converter.md)<!-- -->&lt;TV, unknown&gt; \| [ValidatorFunc](./ts-utils.validation.base.validatorfunc.md)<!-- -->&lt;TV, unknown&gt;
 
 
 </td><td>
 
-Required value validator or converter.
+Required value [validator](./ts-utils.validator.md)<!-- -->, [converter](./ts-utils.converter.md)<!-- -->, or [validator function](./ts-utils.validation.validatorfunc.md)<!-- -->.
 
 
 </td></tr>
@@ -69,12 +69,12 @@ entry
 
 </td><td>
 
-[Validator](./ts-utils.validator.md)<!-- -->&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TK, TV&gt;, unknown&gt; \| [Converter](./ts-utils.converter.md)<!-- -->&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TK, TV&gt;, unknown&gt;
+[Validator](./ts-utils.validator.md)<!-- -->&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TK, TV&gt;, unknown&gt; \| [Converter](./ts-utils.converter.md)<!-- -->&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TK, TV&gt;, unknown&gt; \| [ValidatorFunc](./ts-utils.validation.base.validatorfunc.md)<!-- -->&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TK, TV&gt;, unknown&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional entry validator or converter. If no entry validator is provided, an entry is considered valid if both key and value are valid.
+_(Optional)_ Optional entry [validator](./ts-utils.validator.md)<!-- -->, [converter](./ts-utils.converter.md)<!-- -->, or [validator function](./ts-utils.validation.validatorfunc.md)<!-- -->. If no entry validator is provided, an entry is considered valid if both key and value are valid.
 
 
 </td></tr>

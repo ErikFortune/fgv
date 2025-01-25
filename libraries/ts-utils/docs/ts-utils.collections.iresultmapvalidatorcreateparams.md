@@ -62,7 +62,7 @@ Description
 
 </td><td>
 
-[KeyValueValidators](./ts-utils.collections.utils.keyvaluevalidators.md)<!-- -->&lt;TK, TV&gt;
+[KeyValueValidators](./ts-utils.collections.keyvaluevalidators.md)<!-- -->&lt;TK, TV&gt;
 
 
 </td><td>

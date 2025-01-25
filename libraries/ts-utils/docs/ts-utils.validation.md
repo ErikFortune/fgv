@@ -214,4 +214,15 @@ Formats an incoming error message and value that failed validation.
 
 
 </td></tr>
+<tr><td>
+
+[ValidatorFunc](./ts-utils.validation.validatorfunc.md)
+
+
+</td><td>
+
+Type for a validation function, which validates that a supplied `unknown` value is a valid value of type `<T>`<!-- -->, possibly as influenced by an optionally-supplied validation context of type `<TC>`<!-- -->.
+
+
+</td></tr>
 </tbody></table>

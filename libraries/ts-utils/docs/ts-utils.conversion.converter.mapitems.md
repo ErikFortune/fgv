@@ -9,7 +9,7 @@ Creates a [Converter](./ts-utils.converter.md) which maps the individual items o
 **Signature:**
 
 ```typescript
-mapItems<TI>(mapper: (from: unknown) => Result<TI>): Converter<TI[], TC>;
+mapItems<TI>(mapper: (from: unknown, context?: TC) => Result<TI>): Converter<TI[], TC>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ mapper
 
 </td><td>
 
-(from: unknown) =&gt; [Result](./ts-utils.result.md)<!-- -->&lt;TI&gt;
+(from: unknown, context?: TC) =&gt; [Result](./ts-utils.result.md)<!-- -->&lt;TI&gt;
 
 
 </td><td>

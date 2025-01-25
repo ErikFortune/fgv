@@ -637,6 +637,17 @@ Callback to be called when a [DetailedResult](./ts-utils.detailedresult.md) enco
 </td></tr>
 <tr><td>
 
+[ErrorFormatter](./ts-utils.errorformatter.md)
+
+
+</td><td>
+
+Formats an error message.
+
+
+</td></tr>
+<tr><td>
+
 [FailureContinuation](./ts-utils.failurecontinuation.md)
 
 

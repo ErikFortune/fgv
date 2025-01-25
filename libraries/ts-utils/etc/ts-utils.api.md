@@ -65,23 +65,23 @@ class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
     get isOptional(): boolean;
     // @internal (undocumented)
     protected _isOptional: boolean;
-    map<T2>(mapper: (from: T) => Result<T2>): Converter<T2, TC>;
+    map<T2>(mapper: (from: T, context?: TC) => Result<T2>): Converter<T2, TC>;
     mapConvert<T2>(mapConverter: Converter<T2>): Converter<T2, TC>;
     mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC>;
-    mapItems<TI>(mapper: (from: unknown) => Result<TI>): Converter<TI[], TC>;
+    mapItems<TI>(mapper: (from: unknown, context?: TC) => Result<TI>): Converter<TI[], TC>;
     optional(onError?: OnError): Converter<T | undefined, TC>;
     // @internal (undocumented)
     protected _traits(traits?: Partial<ConverterTraits>): ConverterTraits;
     // @internal (undocumented)
     protected _with(traits: Partial<ConverterTraits>): this;
-    withAction<TI>(action: (result: Result<T>) => Result<TI>): Converter<TI, TC>;
+    withAction<TI>(action: (result: Result<T>, context?: TC) => Result<TI>): Converter<TI, TC>;
     withBrand<B extends string>(brand: B): Converter<Brand<T, B>, TC>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    withConstraint(constraint: (val: T) => boolean | Result<T>, options?: ConstraintOptions): Converter<T, TC>;
+    withConstraint(constraint: (val: T, context?: TC) => boolean | Result<T>, options?: ConstraintOptions): Converter<T, TC>;
     withDefault<TD = T>(defaultValue: TD): DefaultingConverter<T, TD, TC>;
     withFormattedError(formatter: ConversionErrorFormatter<TC>): Converter<T, TC>;
-    withItemTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI[], TC>;
-    withTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI, TC>;
+    withItemTypeGuard<TI>(guard: (from: unknown, context?: TC) => from is TI, message?: string): Converter<TI[], TC>;
+    withTypeGuard<TI>(guard: (from: unknown, context?: TC) => from is TI, message?: string): Converter<TI, TC>;
 }
 
 // @public
@@ -139,6 +139,7 @@ declare namespace Classes {
 
 declare namespace Collections {
     export {
+        KeyValueValidators,
         Utils,
         KeyValueEntry,
         ResultMapResultDetail,
@@ -204,19 +205,19 @@ export interface Converter<T, TC = unknown> extends ConverterTraits {
     convert(from: unknown, context?: TC): Result<T>;
     convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined>;
     readonly isOptional: boolean;
-    map<T2>(mapper: (from: T) => Result<T2>): Converter<T2, TC>;
+    map<T2>(mapper: (from: T, context?: TC) => Result<T2>): Converter<T2, TC>;
     mapConvert<T2>(mapConverter: Converter<T2, unknown>): Converter<T2, TC>;
     mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC>;
-    mapItems<TI>(mapper: (from: unknown) => Result<TI>): Converter<TI[], TC>;
+    mapItems<TI>(mapper: (from: unknown, context?: TC) => Result<TI>): Converter<TI[], TC>;
     optional(onError?: OnError): Converter<T | undefined, TC>;
-    withAction<T2>(action: (result: Result<T>) => Result<T2>): Converter<T2, TC>;
+    withAction<T2>(action: (result: Result<T>, context?: TC) => Result<T2>): Converter<T2, TC>;
     withBrand<B extends string>(brand: B): Converter<Brand<T, B>, TC>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    withConstraint(constraint: (val: T) => boolean | Result<T>, options?: ConstraintOptions): Converter<T, TC>;
+    withConstraint(constraint: (val: T, context?: TC) => boolean | Result<T>, options?: ConstraintOptions): Converter<T, TC>;
     withDefault<TD = T>(dflt: TD): DefaultingConverter<T, TD, TC>;
     withFormattedError(formatter: ConversionErrorFormatter<TC>): Converter<T, TC>;
-    withItemTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI[], TC>;
-    withTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI, TC>;
+    withItemTypeGuard<TI>(guard: (from: unknown, context?: TC) => from is TI, message?: string): Converter<TI[], TC>;
+    withTypeGuard<TI>(guard: (from: unknown, context?: TC) => from is TI, message?: string): Converter<TI, TC>;
 }
 
 declare namespace Converters {
@@ -765,19 +766,22 @@ type KeyValueEntry<TK extends string = string, TV = unknown> = [TK, TV];
 
 // @public
 class KeyValueValidators<TK extends string = string, TV = unknown> {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ValidatorFunc"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ValidatorFunc"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ValidatorFunc"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(key: Validator<TK, unknown> | Converter<TK, unknown> | ValidatorFunc<TK, unknown>, value: Validator<TV, unknown> | Converter<TV, unknown> | ValidatorFunc<TV, unknown>, entry?: Validator<KeyValueEntry<TK, TV>, unknown> | Converter<KeyValueEntry<TK, TV>, unknown> | ValidatorFunc<KeyValueEntry<TK, TV>, unknown>);
     readonly entry?: Validator<KeyValueEntry<TK, TV>, unknown> | Converter<KeyValueEntry<TK, TV>, unknown>;
     readonly key: Validator<TK, unknown> | Converter<TK, unknown>;
     validateEntries(entries: Iterable<unknown>): Result<KeyValueEntry<TK, TV>[]>;
     // Warning: (ae-incompatible-release-tags) The symbol "validateEntry" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "validateEntry" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "validateEntry" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     validateEntry(entry: unknown): DetailedResult<KeyValueEntry<TK, TV>, ResultMapResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "validateKey" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "validateKey" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "validateKey" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     validateKey(key: unknown): DetailedResult<TK, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "validateValue" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "validateValue" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "validateValue" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     validateValue(key: unknown): DetailedResult<TV, ResultMapResultDetail>;

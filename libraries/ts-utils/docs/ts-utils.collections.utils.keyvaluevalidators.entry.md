@@ -4,7 +4,7 @@
 
 ## Collections.Utils.KeyValueValidators.entry property
 
-Optional entry validator or converter. If no entry validator is provided, an entry is considered valid if both key and value are valid.
+Optional entry [validator](./ts-utils.validator.md) or [converter](./ts-utils.converter.md)<!-- -->. If no entry validator is provided, an entry is considered valid if both key and value are valid.
 
 **Signature:**
 

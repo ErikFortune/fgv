@@ -71,11 +71,11 @@ export class KeyValueValidators<TK extends string = string, TV = unknown> {
   /**
    * Constructs a new key-value validator.
    * @param key - Required key {@link Validator | validator}, {@link Converter | converter},
-   * or {@link ValidatorFunc | validator function}.
+   * or {@link Validation.ValidatorFunc | validator function}.
    * @param value - Required value {@link Validator | validator}, {@link Converter | converter},
-   * or {@link ValidatorFunc | validator function}.
+   * or {@link Validation.ValidatorFunc | validator function}.
    * @param entry - Optional entry {@link Validator | validator}, {@link Converter | converter},
-   * or {@link ValidatorFunc | validator function}.  If no entry validator is provided,
+   * or {@link Validation.ValidatorFunc | validator function}.  If no entry validator is provided,
    * an entry is considered valid if both key and value are valid.
    */
   public constructor(

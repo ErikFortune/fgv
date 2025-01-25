@@ -21,7 +21,6 @@
  */
 
 import { Collections, fail, Failure, succeed, ValidatingResultMap, Validation, Validators } from '../../..';
-import { KeyValueValidators } from '../../../packlets/collections/utils';
 import '../../helpers/jest';
 
 describe('ValidatingResultMap', () => {
@@ -74,7 +73,7 @@ describe('ValidatingResultMap', () => {
 
     test('constructs a new instance using the supplied validator functions', () => {
       const map = new ValidatingResultMap({
-        validators: new KeyValueValidators(
+        validators: new Collections.KeyValueValidators(
           (from: unknown): boolean | Failure<CavemanFirstName> => (from === 'fred' ? true : fail('not fred')),
           (from: unknown): from is CavemanLastName => from === 'flintstone',
           (from: unknown): from is [CavemanFirstName, CavemanLastName] => {

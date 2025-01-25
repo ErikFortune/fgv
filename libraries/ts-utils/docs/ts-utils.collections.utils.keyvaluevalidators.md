@@ -86,7 +86,7 @@ Description
 
 </td><td>
 
-_(Optional)_ Optional entry validator or converter. If no entry validator is provided, an entry is considered valid if both key and value are valid.
+_(Optional)_ Optional entry [validator](./ts-utils.validator.md) or [converter](./ts-utils.converter.md)<!-- -->. If no entry validator is provided, an entry is considered valid if both key and value are valid.
 
 
 </td></tr>
@@ -107,7 +107,7 @@ _(Optional)_ Optional entry validator or converter. If no entry validator is pro
 
 </td><td>
 
-Required key validator or converter.
+Required key [validator](./ts-utils.validator.md) or [converter](./ts-utils.converter.md)<!-- -->.
 
 
 </td></tr>
@@ -128,7 +128,7 @@ Required key validator or converter.
 
 </td><td>
 
-Required value validator or converter.
+Required value [validator](./ts-utils.validator.md) or [converter](./ts-utils.converter.md)<!-- -->.
 
 
 </td></tr>

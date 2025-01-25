@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[KeyValueValidators](./ts-utils.collections.keyvaluevalidators.md)
+
+
+</td><td>
+
+Helper class for validating key-value pairs.
+
+
+</td></tr>
+<tr><td>
+
 [ResultMap](./ts-utils.collections.resultmap.md)
 
 

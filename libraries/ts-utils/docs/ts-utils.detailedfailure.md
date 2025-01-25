@@ -153,4 +153,18 @@ Propagates the error message and detail from this result.
 
 
 </td></tr>
+<tr><td>
+
+[withErrorFormat(cb)](./ts-utils.detailedfailure.witherrorformat.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Calls a supplied [error formatter](./ts-utils.errorformatter.md) if the operation failed.
+
+
+</td></tr>
 </tbody></table>
