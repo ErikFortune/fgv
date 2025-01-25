@@ -20,10 +20,22 @@
  * SOFTWARE.
  */
 
-import { captureResult, MessageAggregator, populateObject, Result, fail, succeed } from '@fgv/ts-utils';
-import { QualifierName, QualifierTypeName, Convert, ConditionPriority } from '../common';
+import {
+  captureResult,
+  populateObject,
+  Result,
+  fail,
+  succeed,
+  ConvertingResultMap,
+  Converters,
+  Converter,
+  mapResults,
+  Collections,
+  DetailedResult
+} from '@fgv/ts-utils';
+import { QualifierName, QualifierTypeName, Convert, ConditionPriority, Validate } from '../common';
 import { Qualifier } from './qualifier';
-import { QualifierType } from './qualifierTypes';
+import { QualifierTypeMap } from './qualifierTypes/qualifierTypeMap';
 
 /**
  * Declares a {@link Qualifiers.Qualifier | Qualifier} for use in build or at runtime.
@@ -55,13 +67,41 @@ export interface IQualifierDecl<
  */
 export type IValidatedQualifierDecl = IQualifierDecl<QualifierName, QualifierTypeName, ConditionPriority>;
 
+interface IQualifierConvertContext {
+  types: QualifierTypeMap;
+  index?: number;
+}
+
+const validatedQualifierDecl: Converter<IValidatedQualifierDecl, IQualifierConvertContext> =
+  Converters.object<IValidatedQualifierDecl, IQualifierConvertContext>({
+    name: Convert.qualifierName,
+    typeName: Convert.qualifierTypeName,
+    defaultPriority: Convert.conditionPriority
+  });
+
+const qualifier: Converter<Qualifier, IQualifierConvertContext> = validatedQualifierDecl.map(
+  (decl, context) => {
+    if (!context?.types) {
+      return fail('No qualifier types for conversion.');
+    }
+    const index = context.index ? Validate.toQualifierIndex(context.index).orDefault() : undefined;
+    return context.types
+      .get(decl.typeName)
+      .onSuccess((type) =>
+        Qualifier.create({ name: decl.name, type, defaultPriority: decl.defaultPriority, index }).withDetail(
+          'success'
+        )
+      );
+  }
+);
+
 /**
  * Parameters for creating a new {@link Qualifiers.QualifierMap | QualifierMap}.
  * @public
  */
 export interface IQualifierMapCreateParams {
-  qualifierTypes: ReadonlyMap<QualifierTypeName, QualifierType>;
-  qualifiers: ReadonlyMap<QualifierName, IQualifierDecl>;
+  qualifierTypes: QualifierTypeMap;
+  qualifiers?: IQualifierDecl[];
 }
 
 /**
@@ -69,15 +109,15 @@ export interface IQualifierMapCreateParams {
  * for use at build or runtime.
  * @public
  */
-export class QualifierMap {
+export class QualifierMap extends ConvertingResultMap<QualifierName, Qualifier> {
   /**
    * Gets the qualifiers in the map.
    */
   public get qualifiers(): ReadonlyMap<QualifierName, Qualifier> {
-    return this._qualifiers;
+    return this._inner;
   }
 
-  private _qualifiers: Map<QualifierName, Qualifier>;
+  protected _qualifierTypes: QualifierTypeMap;
 
   /**
    * Constructs a new {@link Qualifiers.QualifierMap | QualifierMap}.
@@ -85,26 +125,22 @@ export class QualifierMap {
    * @public
    */
   protected constructor(params: IQualifierMapCreateParams) {
-    const errors = new MessageAggregator();
-    this._qualifiers = new Map<QualifierName, Qualifier>();
-    for (const [name, decl] of params.qualifiers) {
-      QualifierMap.validateQualifierDecl(decl)
-        .onSuccess((dv) => {
-          const type = params.qualifierTypes.get(dv.typeName);
-          if (type === undefined) {
-            return fail<Qualifier>(`${name}: unknown qualifier type ${dv.typeName}.`);
-          }
-          return Qualifier.create({ name, type, defaultPriority: dv.defaultPriority });
-        })
-        .onSuccess((q) => {
-          this._qualifiers.set(q.name, q);
-          return succeed(q);
-        })
-        .aggregateError(errors);
-    }
-    if (errors.hasMessages) {
-      throw new Error(errors.toString());
-    }
+    const entries: [QualifierName, Qualifier][] = mapResults(
+      (params.qualifiers ?? []).map((decl, index) => {
+        return QualifierMap.validateQualifierDecl(decl)
+          .onSuccess((validated) => qualifier.convert(validated, { types: params.qualifierTypes, index }))
+          .onSuccess((q) => succeed<[QualifierName, Qualifier]>([q.name, q]));
+      })
+    ).orThrow();
+
+    super({
+      entries,
+      converters: new Collections.KeyValueConverters<QualifierName, Qualifier>(
+        Convert.qualifierName,
+        (value: unknown) => this._convertNext(value)
+      )
+    });
+    this._qualifierTypes = params.qualifierTypes;
   }
 
   /**
@@ -115,22 +151,8 @@ export class QualifierMap {
    * successful, `Failure` with an error message otherwise.
    * @public
    */
-  public static create(params: IQualifierMapCreateParams): Result<QualifierMap> {
+  public static createQualifierMap(params: IQualifierMapCreateParams): Result<QualifierMap> {
     return captureResult(() => new QualifierMap(params));
-  }
-
-  /**
-   * Gets a {@link Qualifiers.Qualifier | qualifier} from the map by name.
-   * @param name - The name of the {@link Qualifiers.Qualifier | qualifier} to retrieve.
-   * @returns `Success` with the {@link Qualifiers.Qualifier | qualifier} if found, `Failure` with an error message otherwise.
-   * @public
-   */
-  public get(name: QualifierName): Result<Qualifier> {
-    const qualifier = this._qualifiers.get(name);
-    if (qualifier === undefined) {
-      return fail(`Qualifier ${name} not found`);
-    }
-    return succeed(qualifier);
   }
 
   /**
@@ -147,5 +169,9 @@ export class QualifierMap {
       typeName: () => Convert.qualifierTypeName.convert(decl.typeName),
       defaultPriority: () => Convert.conditionPriority.convert(decl.defaultPriority)
     });
+  }
+
+  protected _convertNext(value: unknown): Result<Qualifier> {
+    return qualifier.convert(value, { types: this._qualifierTypes, index: this.size });
   }
 }

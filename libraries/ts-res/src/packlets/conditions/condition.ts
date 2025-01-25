@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { captureResult, Result, succeed } from '@fgv/ts-utils';
+import { captureResult, Collections, Result, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import { ConditionOperator, ConditionPriority, QualifierConditionValue, Validate } from '../common';
 import { Qualifier, QualifierMap } from '../qualifiers';
 
@@ -64,9 +64,14 @@ export class ConditionCreateParams {
     return (
       'qualifier' in params
         ? succeed(params.qualifier)
-        : params.qualifierMap.validate.get(params.qualifierName)
+        : params.qualifierMap.converting.get(params.qualifierName)
     ).onSuccess((qualifier) => {
-      return succeed<IConditionCreateWithQualifierParams>({}).withDetail('success');
+      return succeedWithDetail<IConditionCreateWithQualifierParams, Collections.ResultMapResultDetail>({
+        qualifier,
+        value: params.value,
+        operator: params.operator,
+        priority: params.priority
+      });
     });
   }
 }

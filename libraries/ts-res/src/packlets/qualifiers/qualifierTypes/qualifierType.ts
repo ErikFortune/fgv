@@ -27,6 +27,7 @@ import {
   QualifierConditionValue,
   QualifierContextValue,
   QualifierMatchScore,
+  QualifierTypeIndex,
   QualifierTypeName,
   Validate
 } from '../../common';
@@ -42,6 +43,11 @@ export interface IQualifierType {
    * The name of the qualifier type.
    */
   readonly name: QualifierTypeName;
+
+  /**
+   * Optional global index for this qualifier type.
+   */
+  readonly index?: QualifierTypeIndex;
 
   /**
    * Validates a condition value for this qualifier type.
@@ -99,6 +105,12 @@ export interface IQualifierTypeCreateParams {
    * The name of the qualifier type. No default value.
    */
   name?: string;
+
+  /**
+   * Optional global index for this qualifier type.
+   */
+  index?: number;
+
   /**
    * Flag indicating whether this qualifier type allows a list of values in a context.
    * Defaults to `false`.
@@ -118,6 +130,11 @@ export abstract class QualifierType implements IQualifierType {
   public readonly name: QualifierTypeName;
 
   /**
+   * {@inheritdoc Qualifiers.QualifierTypes.IQualifierType.index}
+   */
+  public readonly index?: QualifierTypeIndex;
+
+  /**
    * Flag indicating whether this qualifier type allows a list of values in a context.
    * @public
    */
@@ -129,8 +146,9 @@ export abstract class QualifierType implements IQualifierType {
    * @param allowContextList - Flag indicating whether this qualifier type allows a
    * comma-separated list of runtime values in the context. Defaults to `false`.
    */
-  protected constructor({ name, allowContextList }: IQualifierTypeCreateParams) {
+  protected constructor({ name, index, allowContextList }: IQualifierTypeCreateParams) {
     this.name = Convert.qualifierTypeName.convert(name).orThrow();
+    this.index = index ? Convert.qualifierTypeIndex.convert(index).orThrow() : undefined;
     this._allowContextList = allowContextList === true;
   }
 
@@ -185,6 +203,20 @@ export abstract class QualifierType implements IQualifierType {
       return this._matchList(condition, QualifierType._splitContext(context), operator);
     }
     return this._matchOne(condition, context, operator);
+  }
+
+  /**
+   * {@inheritdoc Validate.isValidQualifierTypeName}
+   */
+  public static isValidName(name: string): name is QualifierTypeName {
+    return Validate.isValidQualifierTypeName(name);
+  }
+
+  /**
+   * {@inheritdoc Validate.isValidQualifierTypeIndex}
+   */
+  public static isValidIndex(index: number): index is QualifierTypeIndex {
+    return Validate.isValidQualifierTypeIndex(index);
   }
 
   /**

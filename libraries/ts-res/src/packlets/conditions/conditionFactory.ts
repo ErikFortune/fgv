@@ -26,7 +26,6 @@ import {
   failWithDetail,
   Result,
   ResultMap,
-  succeed,
   succeedWithDetail
 } from '@fgv/ts-utils';
 import { QualifierMap } from '../qualifiers';

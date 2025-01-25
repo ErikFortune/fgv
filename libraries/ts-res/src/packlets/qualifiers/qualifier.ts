@@ -21,7 +21,7 @@
  */
 
 import { captureResult, Result } from '@fgv/ts-utils';
-import { ConditionPriority, QualifierName } from '../common';
+import { ConditionPriority, QualifierIndex, QualifierName } from '../common';
 import { QualifierType } from './qualifierTypes';
 
 /**
@@ -44,6 +44,11 @@ export interface IQualifierCreateParams {
    * that depend on this qualifier.
    */
   defaultPriority: ConditionPriority;
+
+  /**
+   * Optional index for the qualifier.
+   */
+  index?: QualifierIndex;
 }
 
 /**
@@ -60,6 +65,12 @@ export class Qualifier {
    * The {@link Qualifiers.QualifierTypes.QualifierType | type} of the qualifier.
    */
   public readonly type: QualifierType;
+
+  /**
+   * Optional index for the qualifier.
+   */
+  public readonly index?: QualifierIndex;
+
   /**
    * The default {@link ConditionPriority | priority} of conditions
    * that depend on this qualifier.
