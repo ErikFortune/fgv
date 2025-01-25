@@ -24,13 +24,12 @@ import { Brand, Failure, Result, fail, succeed } from '../base';
 import { ConstraintTrait, ValidatorTraits } from './traits';
 import { Constraint, ValidationErrorFormatter, Validator, ValidatorOptions } from './validator';
 
+import { ValidatorFunc } from './common';
+
 /**
- * Type for a validation function, which validates that a supplied `unknown`
- * value is a valid value of type `<T>`, possibly as influenced by
- * an optionally-supplied validation context of type `<TC>`.
- * @public
+ * @deprecated Use {@link Validation.Common.ValidatorFunc | Validation.Common.ValidatorFunc} instead.
  */
-export type ValidatorFunc<T, TC> = (from: unknown, context?: TC) => boolean | Failure<T>;
+export { ValidatorFunc };
 
 /**
  * Options used to initialize a {@link Validation.Base.GenericValidator | GenericValidator}.

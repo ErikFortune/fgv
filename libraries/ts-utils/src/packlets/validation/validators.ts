@@ -26,7 +26,7 @@ import { FieldValidators, ObjectValidator, ObjectValidatorConstructorParams } fr
 import { TypeGuardValidator, TypeGuardValidatorConstructorParams } from './typeGuard';
 
 import { BooleanValidator } from './boolean';
-import { TypeGuardWithContext } from './common';
+import { TypeGuardWithContext, ValidatorFunc } from './common';
 import { GenericValidator } from './genericValidator';
 import { NumberValidator } from './number';
 import { OneOfValidator, OneOfValidatorConstructorParams } from './oneOf';
@@ -144,10 +144,23 @@ export function oneOf<T, TC = unknown>(
  * the values using the supplied type guard.
  * @public
  */
-export function isA<T, TC>(
+export function isA<T, TC = unknown>(
   description: string,
   guard: TypeGuardWithContext<T, TC>,
   params?: Omit<TypeGuardValidatorConstructorParams<T, TC>, 'description' | 'guard'>
 ): TypeGuardValidator<T, TC> {
   return new TypeGuardValidator({ description, guard, ...(params ?? {}) });
+}
+
+/**
+ * Helper function to create a {@link Validation.Validator | Validator} using a
+ * supplied {@link Validation.ValidatorFunc | validator function}.
+ * @param validator - A {@link Validation.ValidatorFunc | validator function} that a
+ * supplied unknown value matches some condition.
+ * @returns A new {@link Validation.Validator | Validator} which validates the desired
+ * value using the supplied function.
+ * @public
+ */
+export function generic<T, TC = unknown>(validator: ValidatorFunc<T, TC>): Validator<T, TC> {
+  return new GenericValidator({ validator });
 }

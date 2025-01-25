@@ -21,6 +21,7 @@
  */
 
 import { Collections, fail, Failure, succeed, ValidatingResultMap, Validation, Validators } from '../../..';
+import { KeyValueValidators } from '../../../packlets/collections/utils';
 import '../../helpers/jest';
 
 describe('ValidatingResultMap', () => {
@@ -69,6 +70,27 @@ describe('ValidatingResultMap', () => {
     test('constructs a new instance with the supplied validators', () => {
       const map = new ValidatingResultMap({ validators: nameValidators });
       expect(map.validate.validators).toEqual(nameValidators);
+    });
+
+    test('constructs a new instance using the supplied validator functions', () => {
+      const map = new ValidatingResultMap({
+        validators: new KeyValueValidators(
+          (from: unknown): boolean | Failure<CavemanFirstName> => (from === 'fred' ? true : fail('not fred')),
+          (from: unknown): from is CavemanLastName => from === 'flintstone',
+          (from: unknown): from is [CavemanFirstName, CavemanLastName] => {
+            return Array.isArray(from) && from.length === 2 && from[0] === 'barney' && from[1] === 'rubble';
+          }
+        )
+      });
+      expect(map.validate.validators.key.convert('fred')).toSucceedWith('fred');
+      expect(map.validate.validators.key.convert('barney')).toFailWith('not fred');
+      expect(map.validate.validators.value.convert('flintstone')).toSucceedWith('flintstone');
+      expect(map.validate.validators.value.convert('rubble')).toFailWith(/invalid value/i);
+      expect(map.validate.validators.entry!.convert(['barney', 'rubble'])).toSucceedWith([
+        'barney',
+        'rubble'
+      ]);
+      expect(map.validate.validators.entry!.convert(['fred', 'flintstone'])).toFailWith(/invalid value/i);
     });
 
     test('constructs a new instance with the supplied validators and valid entries', () => {

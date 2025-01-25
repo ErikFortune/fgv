@@ -434,6 +434,14 @@ interface FunctionConstraintTrait {
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function generic<T, TC = unknown>(validator: ValidatorFunc<T, TC>): Validator<T, TC>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 class GenericDefaultingConverter<T, TD = T, TC = unknown> implements DefaultingConverter<T, TD, TC> {
@@ -725,7 +733,7 @@ function isA<T, TC = unknown>(description: string, guard: TypeGuardWithContext<T
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function isA_2<T, TC>(description: string, guard: TypeGuardWithContext<T, TC>, params?: Omit<TypeGuardValidatorConstructorParams<T, TC>, 'description' | 'guard'>): TypeGuardValidator<T, TC>;
+function isA_2<T, TC = unknown>(description: string, guard: TypeGuardWithContext<T, TC>, params?: Omit<TypeGuardValidatorConstructorParams<T, TC>, 'description' | 'guard'>): TypeGuardValidator<T, TC>;
 
 // @public
 function isIterable<TE = unknown, TI extends Iterable<TE> = Iterable<TE>, TO = unknown>(value: TI | TO): value is TI;
@@ -757,7 +765,10 @@ type KeyValueEntry<TK extends string = string, TV = unknown> = [TK, TV];
 
 // @public
 class KeyValueValidators<TK extends string = string, TV = unknown> {
-    constructor(key: Validator<TK, unknown> | Converter<TK, unknown>, value: Validator<TV, unknown> | Converter<TV, unknown>, entry?: Validator<KeyValueEntry<TK, TV>, unknown> | Converter<KeyValueEntry<TK, TV>, unknown>);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ValidatorFunc"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ValidatorFunc"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ValidatorFunc"
+    constructor(key: Validator<TK, unknown> | Converter<TK, unknown> | ValidatorFunc<TK, unknown>, value: Validator<TV, unknown> | Converter<TV, unknown> | ValidatorFunc<TV, unknown>, entry?: Validator<KeyValueEntry<TK, TV>, unknown> | Converter<KeyValueEntry<TK, TV>, unknown> | ValidatorFunc<KeyValueEntry<TK, TV>, unknown>);
     readonly entry?: Validator<KeyValueEntry<TK, TV>, unknown> | Converter<KeyValueEntry<TK, TV>, unknown>;
     readonly key: Validator<TK, unknown> | Converter<TK, unknown>;
     validateEntries(entries: Iterable<unknown>): Result<KeyValueEntry<TK, TV>[]>;
@@ -1521,6 +1532,7 @@ declare namespace Validation {
         Classes,
         Validators,
         TypeGuardWithContext,
+        ValidatorFunc,
         FunctionConstraintTrait,
         ConstraintTrait,
         ValidatorTraitValues,
@@ -1580,6 +1592,7 @@ declare namespace Validators {
         literal_2 as literal,
         oneOf_2 as oneOf,
         isA_2 as isA,
+        generic,
         string_2 as string,
         number_2 as number,
         boolean_2 as boolean

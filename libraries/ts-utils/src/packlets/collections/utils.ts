@@ -29,7 +29,7 @@ import {
   succeedWithDetail
 } from '../base';
 import { Converter } from '../conversion';
-import { Validator } from '../validation';
+import { Validator, Validators, ValidatorFunc } from '../validation';
 import { KeyValueEntry } from './common';
 import { ResultMapResultDetail } from './readonlyResultMap';
 
@@ -51,18 +51,18 @@ export function isIterable<TE = unknown, TI extends Iterable<TE> = Iterable<TE>,
  */
 export class KeyValueValidators<TK extends string = string, TV = unknown> {
   /**
-   * Required key validator or converter.
+   * Required key {@link Validator | validator} or {@link Converter | converter}.
    */
   public readonly key: Validator<TK, unknown> | Converter<TK, unknown>;
-
   /**
-   * Required value validator or converter.
+   * Required value {@link Validator | validator} or {@link Converter | converter}.
    */
   public readonly value: Validator<TV, unknown> | Converter<TV, unknown>;
 
   /**
-   * Optional entry validator or converter.  If no entry validator is provided,
-   * an entry is considered valid if both key and value are valid.
+   * Optional entry {@link Validator | validator} or {@link Converter | converter}.
+   * If no entry validator is provided, an entry is considered valid if both key and
+   * value are valid.
    */
   public readonly entry?:
     | Validator<KeyValueEntry<TK, TV>, unknown>
@@ -70,19 +70,25 @@ export class KeyValueValidators<TK extends string = string, TV = unknown> {
 
   /**
    * Constructs a new key-value validator.
-   * @param key - Required key validator or converter.
-   * @param value - Required value validator or converter.
-   * @param entry - Optional entry validator or converter.  If no entry validator is provided,
+   * @param key - Required key {@link Validator | validator}, {@link Converter | converter},
+   * or {@link ValidatorFunc | validator function}.
+   * @param value - Required value {@link Validator | validator}, {@link Converter | converter},
+   * or {@link ValidatorFunc | validator function}.
+   * @param entry - Optional entry {@link Validator | validator}, {@link Converter | converter},
+   * or {@link ValidatorFunc | validator function}.  If no entry validator is provided,
    * an entry is considered valid if both key and value are valid.
    */
   public constructor(
-    key: Validator<TK, unknown> | Converter<TK, unknown>,
-    value: Validator<TV, unknown> | Converter<TV, unknown>,
-    entry?: Validator<KeyValueEntry<TK, TV>, unknown> | Converter<KeyValueEntry<TK, TV>, unknown>
+    key: Validator<TK, unknown> | Converter<TK, unknown> | ValidatorFunc<TK, unknown>,
+    value: Validator<TV, unknown> | Converter<TV, unknown> | ValidatorFunc<TV, unknown>,
+    entry?:
+      | Validator<KeyValueEntry<TK, TV>, unknown>
+      | Converter<KeyValueEntry<TK, TV>, unknown>
+      | ValidatorFunc<KeyValueEntry<TK, TV>, unknown>
   ) {
-    this.key = key;
-    this.value = value;
-    this.entry = entry;
+    this.key = typeof key === 'function' ? Validators.generic(key) : key;
+    this.value = typeof value === 'function' ? Validators.generic(value) : value;
+    this.entry = entry ? (typeof entry === 'function' ? Validators.generic(entry) : entry) : undefined;
   }
 
   /**
