@@ -19,12 +19,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[KeyValueValidators](./ts-utils.collections.keyvaluevalidators.md)
+[ConvertingResultMap](./ts-utils.collections.convertingresultmap.md)
 
 
 </td><td>
 
-Helper class for validating key-value pairs.
+A [ResultMap](./ts-utils.collections.resultmap.md) with a [validator](./ts-utils.collections.resultmapconverter.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+
+
+</td></tr>
+<tr><td>
+
+[KeyValueConverters](./ts-utils.collections.keyvalueconverters.md)
+
+
+</td><td>
+
+Helper class for converting strongly-typed keys, values, or entries from unknown values.
 
 
 </td></tr>
@@ -41,23 +52,12 @@ A [ResultMap](./ts-utils.collections.resultmap.md) class as a `Map<TK, TV>`<!-- 
 </td></tr>
 <tr><td>
 
-[ResultMapValidator](./ts-utils.collections.resultmapvalidator.md)
+[ResultMapConverter](./ts-utils.collections.resultmapconverter.md)
 
 
 </td><td>
 
 A [ResultMap](./ts-utils.collections.resultmap.md) wrapper which validates weakly-typed keys before calling the wrapped result map.
-
-
-</td></tr>
-<tr><td>
-
-[ValidatingResultMap](./ts-utils.collections.validatingresultmap.md)
-
-
-</td><td>
-
-A [ResultMap](./ts-utils.collections.resultmap.md) with a [validator](./ts-utils.collections.resultmapvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
 
 
 </td></tr>
@@ -78,6 +78,28 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[IConvertingResultMapConstructorParams](./ts-utils.collections.iconvertingresultmapconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [ResultMap](./ts-utils.collections.resultmap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyConvertingResultMap](./ts-utils.collections.ireadonlyconvertingresultmap.md)
+
+
+</td><td>
+
+A read-only interface exposing non-mutating methods of a [ConvertingResultMap](./ts-utils.collections.convertingresultmap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [IReadOnlyResultMap](./ts-utils.collections.ireadonlyresultmap.md)
 
 
@@ -89,23 +111,12 @@ A readonly `ReadonlyMap<TK, TV>`<!-- -->-like object which reports success or fa
 </td></tr>
 <tr><td>
 
-[IReadOnlyResultMapValidator](./ts-utils.collections.ireadonlyresultmapvalidator.md)
+[IReadOnlyResultMapConverter](./ts-utils.collections.ireadonlyresultmapconverter.md)
 
 
 </td><td>
 
-A read-only interface exposing non-mutating methods of a [ResultMapValidator](./ts-utils.collections.resultmapvalidator.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyValidatingResultMap](./ts-utils.collections.ireadonlyvalidatingresultmap.md)
-
-
-</td><td>
-
-A read-only interface exposing non-mutating methods of a [ValidatingResultMap](./ts-utils.collections.validatingresultmap.md)<!-- -->.
+A read-only interface exposing non-mutating methods of a [ResultMapConverter](./ts-utils.collections.resultmapconverter.md)<!-- -->.
 
 
 </td></tr>
@@ -122,23 +133,12 @@ Parameters for constructing a [ResultMap](./ts-utils.collections.resultmap.md)<!
 </td></tr>
 <tr><td>
 
-[IResultMapValidatorCreateParams](./ts-utils.collections.iresultmapvalidatorcreateparams.md)
+[IResultMapConverterCreateParams](./ts-utils.collections.iresultmapconvertercreateparams.md)
 
 
 </td><td>
 
-Parameters for constructing a [ResultMapValidator](./ts-utils.collections.resultmapvalidator.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[IValidatingResultMapConstructorParams](./ts-utils.collections.ivalidatingresultmapconstructorparams.md)
-
-
-</td><td>
-
-Parameters for constructing a [ResultMap](./ts-utils.collections.resultmap.md)<!-- -->.
+Parameters for constructing a [ResultMapConverter](./ts-utils.collections.resultmapconverter.md)<!-- -->.
 
 
 </td></tr>

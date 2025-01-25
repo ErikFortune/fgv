@@ -4,32 +4,6 @@
 
 ## Collections.Utils namespace
 
-## Classes
-
-<table><thead><tr><th>
-
-Class
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[KeyValueValidators](./ts-utils.collections.utils.keyvaluevalidators.md)
-
-
-</td><td>
-
-Helper class for validating key-value pairs.
-
-
-</td></tr>
-</tbody></table>
-
 ## Functions
 
 <table><thead><tr><th>

@@ -54,7 +54,7 @@ export interface ObjectConverterOptions<T> {
  * @public
  */
 export type FieldConverters<T, TC = unknown> = {
-  [key in keyof T]: Converter<T[key], TC> | Validator<T[key], TC>;
+  [key in keyof T]: Converter<T[key], TC | unknown> | Validator<T[key], TC>;
 };
 
 /**

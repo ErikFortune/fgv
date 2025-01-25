@@ -10,7 +10,7 @@ Per-property converters or validators for each of the properties in type T.
 
 ```typescript
 export type FieldConverters<T, TC = unknown> = {
-    [key in keyof T]: Converter<T[key], TC> | Validator<T[key], TC>;
+    [key in keyof T]: Converter<T[key], TC | unknown> | Validator<T[key], TC>;
 };
 ```
 **References:** [Converter](./ts-utils.converter.md)<!-- -->, [Validator](./ts-utils.validator.md)

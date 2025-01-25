@@ -9,7 +9,7 @@ Constructs a new [Converter](./ts-utils.converter.md) which uses the supplied fu
 **Signature:**
 
 ```typescript
-constructor(converter: (from: unknown, self: Converter<T, TC>, context?: TC) => Result<T>, defaultContext?: TC, traits?: ConverterTraits);
+constructor(converter: ConverterFunc<T, TC>, defaultContext?: TC, traits?: ConverterTraits);
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ converter
 
 </td><td>
 
-(from: unknown, self: [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;, context?: TC) =&gt; [Result](./ts-utils.result.md)<!-- -->&lt;T&gt;
+[ConverterFunc](./ts-utils.conversion.converterfunc.md)<!-- -->&lt;T, TC&gt;
 
 
 </td><td>

@@ -23,7 +23,7 @@
 import '../helpers/jest';
 
 import { Validation } from '../../index';
-import { succeed } from '../../packlets/base';
+import { Result, succeed } from '../../packlets/base';
 import { Converters, FieldConverters, Infer } from '../../packlets/conversion';
 
 describe('Converters module', () => {
@@ -204,6 +204,16 @@ describe('Converters module', () => {
         { from: [1, 2, 3], to: [1, 2, 3] }
       ].forEach((t) => {
         expect(Converters.literal(t.to).convert(t.from)).toFailWith(/does not match/i);
+      });
+    });
+  });
+
+  describe('generic converter', () => {
+    test('converts any value', () => {
+      const converter = (from: unknown): Result<string> => succeed('hello');
+
+      ['this', 10, true, [1, 2, 3]].forEach((t) => {
+        expect(Converters.generic(converter).convert(t)).toSucceedWith('hello');
       });
     });
   });

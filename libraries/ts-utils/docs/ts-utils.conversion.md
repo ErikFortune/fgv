@@ -193,6 +193,17 @@ Formats an incoming error message and value that failed validation.
 </td></tr>
 <tr><td>
 
+[ConverterFunc](./ts-utils.conversion.converterfunc.md)
+
+
+</td><td>
+
+Function signature for a converter function.
+
+
+</td></tr>
+<tr><td>
+
 [FieldConverters](./ts-utils.conversion.fieldconverters.md)
 
 

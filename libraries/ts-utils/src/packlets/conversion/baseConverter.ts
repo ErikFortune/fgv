@@ -57,6 +57,12 @@ export type Infer<TCONV> = TCONV extends Converter<infer TTO, unknown> ? InnerIn
 export type ConvertedToType<TCONV> = Infer<TCONV>;
 
 /**
+ * Function signature for a converter function.
+ * @public
+ */
+export type ConverterFunc<T, TC> = (from: unknown, self: Converter<T, TC>, context?: TC) => Result<T>;
+
+/**
  * Base templated wrapper to simplify creation of new {@link Converter}s.
  * @public
  */
@@ -83,11 +89,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
    * @param traits - Optional {@link Conversion.ConverterTraits | traits} to be assigned to the resulting
    * converter.
    */
-  public constructor(
-    converter: (from: unknown, self: Converter<T, TC>, context?: TC) => Result<T>,
-    defaultContext?: TC,
-    traits?: ConverterTraits
-  ) {
+  public constructor(converter: ConverterFunc<T, TC>, defaultContext?: TC, traits?: ConverterTraits) {
     this._converter = converter;
     this._defaultContext = defaultContext;
     this._isOptional = traits?.isOptional === true;
