@@ -24,19 +24,20 @@ import { Result, captureResult } from '@fgv/ts-utils';
 import { Bcp47 } from '@fgv/ts-bcp47';
 import {
   ConditionOperator,
+  Convert,
   QualifierConditionValue,
   QualifierContextValue,
   QualifierMatchScore,
   Validate
 } from '../../common';
-import { QualifierType } from './qualifierType';
+import { IQualifierTypeCreateParams, QualifierType } from './qualifierType';
 
 /**
  * Interface defining the parameters that can be used to create a new
  * {@link Qualifiers.QualifierTypes.LanguageQualifierType | LanguageQualifierType}.
  * @public
  */
-export interface ILanguageQualifierTypeCreateParams {
+export interface ILanguageQualifierTypeCreateParams extends Partial<IQualifierTypeCreateParams> {
   /**
    * Optional name for the qualifier type. Defaults to 'language'.
    */
@@ -62,9 +63,13 @@ export class LanguageQualifierType extends QualifierType {
    * @param allowContextList - Optional flag indicating whether the context can be a list of values. Defaults to `true`.
    * @public
    */
-  protected constructor({ name, allowContextList }: ILanguageQualifierTypeCreateParams) {
+  protected constructor({ name, allowContextList, index }: ILanguageQualifierTypeCreateParams) {
     allowContextList = allowContextList !== false;
-    super({ name: name ?? 'language', allowContextList });
+    super({
+      name: name ?? 'language',
+      allowContextList,
+      index: Convert.qualifierTypeIndex.convert(index).orThrow()
+    });
   }
 
   /**

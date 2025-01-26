@@ -29,9 +29,10 @@ import {
   QualifierTypeIndex,
   ConditionIndex,
   ConditionSetIndex,
-  QualifierMatchScore
+  QualifierMatchScore,
+  ConditionKey
 } from '../conditions';
-import { identifier } from './regularExpressions';
+import { conditionKey, identifier } from './regularExpressions';
 
 /**
  * Minimum valid priority for a condition.
@@ -142,6 +143,19 @@ export function isValidConditionIndex(index: number): index is ConditionIndex {
 }
 
 /**
+ * Determines whether a string is a valid condition key.  A condition key has
+ * the format:
+ * `<qualifierName>(-<operator>)?-[<value>]@<priority>`
+ * where operator is omitted for the default 'matches' operator.
+ * @param key - the string to validate
+ * @returns `true` if the string is a valid condition key, `false` otherwise.
+ * @public
+ */
+export function isValidConditionKey(key: string): key is ConditionKey {
+  return conditionKey.test(key);
+}
+
+/**
  * Determines whether a number is a valid condition set index.
  * @param index - the number to validate
  * @returns true if the number is a valid condition set index, false otherwise.
@@ -233,6 +247,20 @@ export function toConditionIndex(index: number): Result<ConditionIndex> {
     return fail(`${index}: not a valid condition index`);
   }
   return succeed(index);
+}
+
+/**
+ * Converts a string to a {@link ConditionKey} if it is a valid condition key.
+ * @param key - the string to convert
+ * @returns `Success` with the converted {@link ConditionKey} if successful, or `Failure` with an
+ * error message if not.
+ * @public
+ */
+export function toConditionKey(key: string): Result<ConditionKey> {
+  if (!isValidConditionKey(key)) {
+    return fail(`${key}: not a valid condition key`);
+  }
+  return succeed(key);
 }
 
 /**

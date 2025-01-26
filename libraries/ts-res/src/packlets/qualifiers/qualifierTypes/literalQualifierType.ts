@@ -23,23 +23,30 @@
 import { captureResult, Result } from '@fgv/ts-utils';
 import {
   ConditionOperator,
+  Convert,
   QualifierConditionValue,
   QualifierContextValue,
   QualifierMatchScore,
   Validate
 } from '../../common';
-import { IQualifierTypeCreateParams, QualifierType } from './qualifierType';
+import { QualifierType } from './qualifierType';
 
 /**
  * Interface defining the parameters that can be used to create a new
  * {@link Qualifiers.QualifierTypes.LiteralQualifierType | LiteralQualifierType}.
  * @public
  */
-export interface ILiteralQualifierTypeCreateParams extends IQualifierTypeCreateParams {
+export interface ILiteralQualifierTypeCreateParams {
   /**
    * Optional name for the qualifier type. Defaults to 'literal'.
    */
   name?: string;
+
+  /**
+   * Optional flag indicating whether the context can be a list of values.
+   * Defaults to `true`.
+   */
+  allowContextList?: boolean;
 
   /**
    * Optional flag indicating whether the match should be case-sensitive. Defaults to false.
@@ -51,6 +58,11 @@ export interface ILiteralQualifierTypeCreateParams extends IQualifierTypeCreateP
    * constraint.
    */
   enumeratedValues?: ReadonlyArray<string>;
+
+  /**
+   * Global index for this qualifier type.
+   */
+  index: number;
 }
 
 /**
@@ -80,9 +92,14 @@ export class LiteralQualifierType extends QualifierType {
     name,
     caseSensitive,
     allowContextList,
-    enumeratedValues
+    enumeratedValues,
+    index
   }: ILiteralQualifierTypeCreateParams) {
-    super({ name: name ?? 'literal', allowContextList });
+    super({
+      name: name ?? 'literal',
+      allowContextList,
+      index: Convert.qualifierTypeIndex.convert(index).orThrow()
+    });
     this._caseSensitive = caseSensitive === true;
     this._enumeratedValues = enumeratedValues ? Array.from(enumeratedValues) : undefined;
   }

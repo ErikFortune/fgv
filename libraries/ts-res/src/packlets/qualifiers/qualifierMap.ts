@@ -32,7 +32,7 @@ import {
 import { QualifierName, Convert } from '../common';
 import { Qualifier } from './qualifier';
 import { QualifierTypeMap } from './qualifierTypes/qualifierTypeMap';
-import { IQualifierDeclConvertContext, validatedQualifierDecl } from './convert';
+import { IQualifierDeclConvertContext, validatedQualifierDecl } from './convert/decls';
 import { IQualifierDecl } from './qualifierDecl';
 
 const qualifierFromDecl: Converter<Qualifier, IQualifierDeclConvertContext> = validatedQualifierDecl.map(
@@ -72,13 +72,8 @@ export class QualifierMap extends ConvertingResultMap<QualifierName, Qualifier> 
     const entries: [QualifierName, Qualifier][] = mapResults(
       (params.qualifiers ?? []).map((decl, index) => {
         return validatedQualifierDecl
-          .convert(decl)
-          .onSuccess((validated) =>
-            qualifierFromDecl.convert(validated, {
-              qualifierTypes: params.qualifierTypes,
-              qualifierIndex: index
-            })
-          )
+          .convert(decl, { qualifierTypes: params.qualifierTypes, qualifierIndex: index })
+          .onSuccess(Qualifier.create)
           .onSuccess((q) => succeed<[QualifierName, Qualifier]>([q.name, q]));
       })
     ).orThrow();
@@ -103,6 +98,23 @@ export class QualifierMap extends ConvertingResultMap<QualifierName, Qualifier> 
    */
   public static createQualifierMap(params: IQualifierMapCreateParams): Result<QualifierMap> {
     return captureResult(() => new QualifierMap(params));
+  }
+
+  /**
+   * Gets the {@link Qualifiers.Qualifier | Qualifier} at the specified index.
+   * @param index - The index of the {@link Qualifiers.Qualifier | Qualifier} to retrieve.
+   * @returns `Success` with the {@link Qualifiers.Qualifier | Qualifier} if successful,
+   * `Failure` with an error message otherwise.
+   */
+  public getAt(index: number): Result<Qualifier> {
+    if (index < 0 || index >= this.size) {
+      return fail(`${index}: qualifier index out of range`);
+    }
+    const q = Array.from(this.values())[index];
+    if (q.index !== index) {
+      return fail(`${q.name}: expected index ${index}, got ${q.index}`);
+    }
+    return succeed(q);
   }
 
   protected _convertNext(value: unknown): Result<Qualifier> {

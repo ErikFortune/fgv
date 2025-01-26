@@ -21,7 +21,13 @@
  */
 
 import { captureResult, Result } from '@fgv/ts-utils';
-import { QualifierConditionValue, QualifierContextValue, QualifierMatchScore, Validate } from '../../common';
+import {
+  Convert,
+  QualifierConditionValue,
+  QualifierContextValue,
+  QualifierMatchScore,
+  Validate
+} from '../../common';
 import { QualifierType } from './qualifierType';
 
 /**
@@ -30,6 +36,8 @@ import { QualifierType } from './qualifierType';
  */
 export interface ITerritoryQualifierTypeCreateParams {
   allowedTerritories?: string[];
+
+  index: number;
 }
 
 /**
@@ -56,8 +64,12 @@ export class TerritoryQualifierType extends QualifierType {
    * Creates a new {@link Qualifiers.QualifierTypes.TerritoryQualifierType | TerritoryQualifierType} instance.
    * @public
    */
-  protected constructor({ allowedTerritories }: ITerritoryQualifierTypeCreateParams) {
-    super({ name: 'territory', allowContextList: false });
+  protected constructor({ allowedTerritories, index }: ITerritoryQualifierTypeCreateParams) {
+    super({
+      name: 'territory',
+      allowContextList: false,
+      index: Convert.qualifierTypeIndex.convert(index).orThrow()
+    });
     if (allowedTerritories !== undefined) {
       allowedTerritories.forEach((v) => {
         if (!this._territoryRegExp.test(v)) {
@@ -88,8 +100,8 @@ export class TerritoryQualifierType extends QualifierType {
    * `Failure` with an error message otherwise.
    * @public
    */
-  public static create(params?: ITerritoryQualifierTypeCreateParams): Result<TerritoryQualifierType> {
-    return captureResult(() => new TerritoryQualifierType(params || {}));
+  public static create(params: ITerritoryQualifierTypeCreateParams): Result<TerritoryQualifierType> {
+    return captureResult(() => new TerritoryQualifierType(params));
   }
 
   /**

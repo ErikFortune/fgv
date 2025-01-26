@@ -20,67 +20,23 @@
  * SOFTWARE.
  */
 
-import { captureResult, Collections, Result, succeed, succeedWithDetail } from '@fgv/ts-utils';
-import { ConditionOperator, ConditionPriority, QualifierConditionValue, Validate } from '../common';
-import { Qualifier, QualifierMap } from '../qualifiers';
-
-/**
- * Parameters used to create a {@link Condition| Condition} object
- * when the instantiated {@link Qualifiers.Qualifier | qualifier} is available.
- * @public
- */
-export interface IConditionCreateWithQualifierParams {
-  qualifier: Qualifier;
-  value: string;
-  operator?: ConditionOperator;
-  priority?: number;
-}
-
-/**
- * Parameters used to create a {@link Condition| Condition} object
- * when given a string name for the {@link Qualifiers.Qualifier | qualifier}
- * and a {@link Qualifiers.QualifierMap | QualifierMap}.
- * @public
- */
-
-export interface IConditionCreateWithNameParams {
-  qualifierName: string;
-  value: string;
-  operator?: ConditionOperator;
-  priority?: number;
-  qualifierMap: QualifierMap;
-}
-
-/**
- * Parameters used to create a {@link Condition| Condition} object.
- * @public
- */
-export type IConditionCreateParams = IConditionCreateWithQualifierParams | IConditionCreateWithNameParams;
-
-export class ConditionCreateParams {
-  private constructor() {}
-
-  public static toDefaults(params: IConditionCreateParams): Result<IConditionCreateWithQualifierParams> {
-    return (
-      'qualifier' in params
-        ? succeed(params.qualifier)
-        : params.qualifierMap.converting.get(params.qualifierName)
-    ).onSuccess((qualifier) => {
-      return succeedWithDetail<IConditionCreateWithQualifierParams, Collections.ResultMapResultDetail>({
-        qualifier,
-        value: params.value,
-        operator: params.operator,
-        priority: params.priority
-      });
-    });
-  }
-}
+import { captureResult, Result } from '@fgv/ts-utils';
+import {
+  ConditionIndex,
+  ConditionKey,
+  ConditionOperator,
+  ConditionPriority,
+  QualifierConditionValue,
+  Validate
+} from '../common';
+import { Qualifier } from '../qualifiers';
+import { IValidatedConditionDecl } from './conditionDecl';
 
 /**
  * Represents a single condition applied to some resource instance.
  * @public
  */
-export class Condition {
+export class Condition implements IValidatedConditionDecl {
   /**
    * The {@link Qualifiers.Qualifier | qualifier} used in this condition.
    */
@@ -99,6 +55,11 @@ export class Condition {
   public readonly priority: ConditionPriority;
 
   /**
+   * Optional global index for the condition.
+   */
+  public readonly index: ConditionIndex;
+
+  /**
    * Constructs a new {@link Condition | Condition} object.
    * @param qualifier - The {@link Qualifiers.Qualifier | qualifier} used in this condition.
    * @param value - The value to be matched in this condition.
@@ -106,28 +67,23 @@ export class Condition {
    * @param priority - The {@link ConditionPriority | relative priority} of this condition.
    * @public
    */
-  protected constructor({ qualifier, value, operator, priority }: IConditionCreateWithQualifierParams) {
+  protected constructor({ qualifier, value, operator, priority, index }: IValidatedConditionDecl) {
     this.qualifier = qualifier;
-    this.operator = operator ?? 'matches';
-    this.value = qualifier.type.validateCondition(value, this.operator).orThrow();
-    this.priority = priority ? Validate.toPriority(priority).orThrow() : qualifier.defaultPriority;
+    this.operator = operator;
+    this.value = value;
+    this.priority = priority;
+    this.index = index;
   }
 
   /**
    * Creates a new {@link Condition | Condition} object from the supplied
    * {@link IConditionCreateParams | parameters}.
-   * @param params - The {@link IConditionCreateParams | parameters} to use when creating the new instance.
+   * @param decl - The {@link IConditionCreateParams | parameters} to use when creating the new instance.
    * @returns `Success` with the new {@link Condition | Condition} if successful, `Failure` otherwise.
    * @public
    */
-  public static create(params: IConditionCreateParams): Result<Condition> {
-    if ('qualifier' in params) {
-      return captureResult(() => new Condition(params));
-    }
-    const { value, operator, priority } = params;
-    return Validate.toQualifierName(params.qualifierName)
-      .onSuccess((name) => params.qualifierMap.get(name))
-      .onSuccess((qualifier) => Condition.create({ qualifier, value, operator, priority }));
+  public static create(decl: IValidatedConditionDecl): Result<Condition> {
+    return captureResult(() => new Condition(decl));
   }
 
   /**
@@ -146,14 +102,33 @@ export class Condition {
   }
 
   /**
+   * Gets the {@link ConditionKey | key} for this condition.
+   * @returns -
+   */
+  public toKey(): ConditionKey {
+    return Condition.getKeyForDecl(this).orThrow();
+  }
+
+  /**
    * Get a human-readable string representation of the condition.
    * @returns A string representation of the condition.
    * @public
    */
   public toString(): string {
-    if (this.operator === 'matches') {
-      return `${this.qualifier.name}-${this.value}`;
-    }
-    return `${this.qualifier.name}-${this.operator}-${this.value}`;
+    return this.toKey();
+  }
+
+  /**
+   * Gets the {@link ConditionKey | condition key} for a supplied {@link IValidatedConditionDecl | condition declaration}.
+   * @param decl - The {@link IValidatedConditionDecl | condition declaration} for which to get the key.
+   * @returns `Success` with the condition key if successful, `Failure` otherwise.
+   * @public
+   */
+  public static getKeyForDecl(decl: IValidatedConditionDecl): Result<ConditionKey> {
+    const key =
+      decl.operator === 'matches'
+        ? `${decl.qualifier.name}-[${decl.value}]@${decl.priority}`
+        : `${decl.qualifier.name}-${decl.operator}-[${decl.value}]@${decl.priority}`;
+    return Validate.toConditionKey(key);
   }
 }

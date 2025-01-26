@@ -20,12 +20,20 @@
  * SOFTWARE.
  */
 
-import { ConvertingResultMap } from '@fgv/ts-utils';
-import { ResourceTypeName } from '../../common';
-import { IResourceType } from './resourceType';
+import { ConditionIndex, ConditionOperator, ConditionPriority, QualifierConditionValue } from '../common';
+import { Qualifier } from '../qualifiers';
 
-/**
- * Map {@link ResourceTypeName | resource type names} to {@link Resources.ResourceTypes.IResourceType | resource types}.
- * @public
- */
-export type ResourceTypeMap = ConvertingResultMap<ResourceTypeName, IResourceType>;
+export interface IConditionDecl {
+  name: string;
+  value: string;
+  operator?: ConditionOperator;
+  priority?: number;
+}
+
+export interface IValidatedConditionDecl {
+  qualifier: Qualifier;
+  value: QualifierConditionValue;
+  operator: ConditionOperator;
+  priority: ConditionPriority;
+  index: ConditionIndex;
+}

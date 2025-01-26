@@ -26,11 +26,19 @@ import { QualifierMap } from '../qualifiers';
 import { Resource } from './resource';
 import { ResourceTypeMap } from './resourceTypes';
 
+/**
+ * Parameters for creating a {@link ResourceManager | ResourceManager}.
+ * @public
+ */
 export interface IResourceManagerCreateParams {
   qualifiers: QualifierMap;
   resourceTypes: ResourceTypeMap;
 }
 
+/**
+ * Class representing a map of resources.
+ * @public
+ */
 export class ResourceManager {
   public readonly qualifiers: QualifierMap;
   public readonly resourceTypes: ResourceTypeMap;

@@ -20,12 +20,36 @@
  * SOFTWARE.
  */
 
-import { ConvertingResultMap } from '@fgv/ts-utils';
-import { ResourceTypeName } from '../../common';
-import { IResourceType } from './resourceType';
+import { Converters, Result } from '@fgv/ts-utils';
+import { QualifierMap } from '../qualifierMap';
+import { Qualifier } from '../qualifier';
+
+/* eslint-disable @rushstack/typedef-var */
 
 /**
- * Map {@link ResourceTypeName | resource type names} to {@link Resources.ResourceTypes.IResourceType | resource types}.
+ * Context necessary to convert a string or number to a
+ * {@link Qualifiers.Qualifier | Qualifier} object.
  * @public
  */
-export type ResourceTypeMap = ConvertingResultMap<ResourceTypeName, IResourceType>;
+export interface IQualifierConvertContext {
+  qualifiers: QualifierMap;
+}
+
+/**
+ * Converter which choose a qualifier by name or number from a
+ * supplied {@link IQualifierConvertContext | conversion context}.
+ * @public
+ */
+export const qualifier = Converters.generic<Qualifier, IQualifierConvertContext>(
+  (from: unknown, __self, context?: IQualifierConvertContext): Result<Qualifier> => {
+    if (context === undefined) {
+      return fail('qualifier converter requires a context');
+    }
+    if (typeof from === 'string') {
+      return context.qualifiers.converting.get(from);
+    } else if (typeof from === 'number') {
+      return context.qualifiers.getAt(from);
+    }
+    return fail('qualifier converter requires a string or number');
+  }
+);

@@ -23,6 +23,10 @@
 import { QualifierMap } from '../../qualifiers';
 import { ResourceTypeMap } from '../resourceTypes';
 
+/**
+ * Interface for parameters to the ResourceManagerBuilder constructor
+ * @public
+ */
 export interface IResourceManagerCreateParams {
   qualifiers: QualifierMap;
   resourceTypes: ResourceTypeMap;

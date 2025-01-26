@@ -21,9 +21,9 @@
  */
 
 import { Converters, populateObject, Result, succeed } from '@fgv/ts-utils';
-import { IQualifierDecl, IValidatedQualifierDecl } from './qualifierDecl';
-import { QualifierTypeMap } from './qualifierTypes';
-import { Validate } from '../common';
+import { IQualifierDecl, IValidatedQualifierDecl } from '../qualifierDecl';
+import { QualifierTypeMap } from '../qualifierTypes';
+import { Validate } from '../../common';
 
 /* eslint-disable @rushstack/typedef-var */
 

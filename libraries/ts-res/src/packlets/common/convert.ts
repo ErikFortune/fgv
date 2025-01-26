@@ -70,6 +70,12 @@ export const conditionOperator = Converters.enumeratedValue(allConditionOperator
 export const conditionIndex = Converters.number.map(Validate.toConditionIndex);
 
 /**
+ * `Converter` which validates an `unknown` value as a {@link ConditionKey | ConditionKey}.
+ * @public
+ */
+export const conditionKey = Converters.string.map(Validate.toConditionKey);
+
+/**
  * `Converter` which validates an `unknown` value as a {@link ConditionSetIndex | ConditionSetIndex}.
  * @public
  */

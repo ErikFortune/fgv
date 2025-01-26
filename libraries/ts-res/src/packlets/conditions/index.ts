@@ -20,5 +20,9 @@
  * SOFTWARE.
  */
 
+import * as Convert from './convert';
+
 export * from './condition';
 export * from './conditionSet';
+
+export { Convert };

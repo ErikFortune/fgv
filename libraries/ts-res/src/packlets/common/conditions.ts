@@ -102,6 +102,15 @@ export const allConditionOperators: ConditionOperator[] = ['always', 'never', 'm
 export type ConditionIndex = Brand<number, 'ConditionIndex'>;
 
 /**
+ * A branded string representing a validated condition key.  A condition key is a
+ * string value which fully describes the condition apart from index.  The condition
+ * key can be used to quickly determine if two conditions are identical apart from
+ * index, or for inspection.
+ * @public
+ */
+export type ConditionKey = Brand<string, 'ConditionKey'>;
+
+/**
  * Branded number representing a validated condition set index.
  * @public
  */

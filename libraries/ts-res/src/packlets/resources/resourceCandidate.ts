@@ -22,7 +22,7 @@
 
 import { JsonValue } from '@fgv/ts-json-base';
 import { ResourceId, ResourceValueMergeMethod } from '../common';
-import { Condition, ConditionSet } from '../conditions';
+import { Condition, ConditionSet, Convert as ConditionsConvert } from '../conditions';
 import { QualifierMap } from '../qualifiers';
 import * as ResourceJson from '../resource-json';
 import { IResourceType, ResourceTypeMap } from './resourceTypes';
@@ -194,12 +194,10 @@ export class ResourceCandidate {
     const errors = new MessageAggregator();
     const conditions = Array.from(parent ?? []);
 
-    for (const [qualifierName, value] of Object.entries(declared ?? {})) {
-      Condition.create({
-        qualifierName,
-        value: value as string,
-        qualifierMap: qualifiers
-      })
+    for (const [qualifier, value] of Object.entries(declared ?? {})) {
+      ConditionsConvert.validatedConditionDecl
+        .convert({ qualifier, value }, { qualifiers, index: conditions.length })
+        .onSuccess(Condition.create)
         .aggregateError(errors)
         .onSuccess((condition) => {
           conditions.push(condition);
