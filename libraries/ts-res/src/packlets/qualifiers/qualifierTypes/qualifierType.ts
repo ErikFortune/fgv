@@ -47,7 +47,7 @@ export interface IQualifierType {
   /**
    * Optional global index for this qualifier type.
    */
-  readonly index?: QualifierTypeIndex;
+  readonly index: QualifierTypeIndex;
 
   /**
    * Validates a condition value for this qualifier type.
@@ -104,12 +104,12 @@ export interface IQualifierTypeCreateParams {
   /**
    * The name of the qualifier type. No default value.
    */
-  name?: string;
+  name: string;
 
   /**
-   * Optional global index for this qualifier type.
+   * Global index for this qualifier type.
    */
-  index?: number;
+  index: number;
 
   /**
    * Flag indicating whether this qualifier type allows a list of values in a context.
@@ -132,7 +132,7 @@ export abstract class QualifierType implements IQualifierType {
   /**
    * {@inheritdoc Qualifiers.QualifierTypes.IQualifierType.index}
    */
-  public readonly index?: QualifierTypeIndex;
+  public readonly index: QualifierTypeIndex;
 
   /**
    * Flag indicating whether this qualifier type allows a list of values in a context.
@@ -148,7 +148,7 @@ export abstract class QualifierType implements IQualifierType {
    */
   protected constructor({ name, index, allowContextList }: IQualifierTypeCreateParams) {
     this.name = Convert.qualifierTypeName.convert(name).orThrow();
-    this.index = index ? Convert.qualifierTypeIndex.convert(index).orThrow() : undefined;
+    this.index = Convert.qualifierTypeIndex.convert(index).orThrow();
     this._allowContextList = allowContextList === true;
   }
 
@@ -217,6 +217,16 @@ export abstract class QualifierType implements IQualifierType {
    */
   public static isValidIndex(index: number): index is QualifierTypeIndex {
     return Validate.isValidQualifierTypeIndex(index);
+  }
+
+  /**
+   * Compares two qualifier types by index.
+   * @param t1 - The first qualifier type to compare.
+   * @param t2 - The second qualifier type to compare.
+   * @returns a number indicating the relative order of the two qualifier types.
+   */
+  public static compare(t1: QualifierType, t2: QualifierType): number {
+    return t1.index - t2.index;
   }
 
   /**

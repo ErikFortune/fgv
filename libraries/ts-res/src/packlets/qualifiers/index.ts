@@ -20,9 +20,12 @@
  * SOFTWARE.
  */
 
+import * as Convert from './convert';
 import * as QualifierTypes from './qualifierTypes';
+import { QualifierType } from './qualifierTypes';
 
 export * from './qualifier';
+export * from './qualifierDecl';
 export * from './qualifierMap';
 
-export { QualifierTypes };
+export { Convert, QualifierType, QualifierTypes };

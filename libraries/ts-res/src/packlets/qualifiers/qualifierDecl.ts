@@ -20,12 +20,42 @@
  * SOFTWARE.
  */
 
-import * as Convert from './convert';
+import { ConditionPriority, QualifierIndex, QualifierName } from '../common';
+import { QualifierType } from './qualifierTypes';
 
-export * from './qualifierType';
-export * from './languageQualifierType';
-export * from './literalQualifierType';
-export * from './territoryQualifierType';
-export * from './qualifierTypeMap';
+/**
+ * Simple declaration for a {@link Qualifiers.Qualifier | Qualifier}.
+ * @public
+ */
+export interface IQualifierDecl {
+  name: string;
+  typeName: string;
+  defaultPriority: number;
+}
 
-export { Convert };
+/**
+ * Validated declaration for a {@link Qualifiers.Qualifier | Qualifier}.
+ * @public
+ */
+export interface IValidatedQualifierDecl {
+  /**
+   * The name of the qualifier.
+   */
+  name: QualifierName;
+
+  /**
+   * The {@link Qualifiers.QualifierTypes.QualifierType | type} of the qualifier.
+   */
+  type: QualifierType;
+
+  /**
+   * The default {@link ConditionPriority | priority} of conditions
+   * that depend on this qualifier.
+   */
+  defaultPriority: ConditionPriority;
+
+  /**
+   * Index of the qualifier.
+   */
+  index: QualifierIndex;
+}

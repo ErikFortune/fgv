@@ -22,77 +22,21 @@
 
 import {
   captureResult,
-  populateObject,
   Result,
-  fail,
   succeed,
   ConvertingResultMap,
-  Converters,
   Converter,
   mapResults,
-  Collections,
-  DetailedResult
+  Collections
 } from '@fgv/ts-utils';
-import { QualifierName, QualifierTypeName, Convert, ConditionPriority, Validate } from '../common';
+import { QualifierName, Convert } from '../common';
 import { Qualifier } from './qualifier';
 import { QualifierTypeMap } from './qualifierTypes/qualifierTypeMap';
+import { IQualifierDeclConvertContext, validatedQualifierDecl } from './convert';
+import { IQualifierDecl } from './qualifierDecl';
 
-/**
- * Declares a {@link Qualifiers.Qualifier | Qualifier} for use in build or at runtime.
- * @public
- */
-export interface IQualifierDecl<
-  TN extends string = string,
-  TT extends string = string,
-  TP extends number = number
-> {
-  /**
-   * The name of the qualifier.
-   */
-  name: TN;
-  /**
-   * The name of the type of the qualifier.
-   */
-  typeName: TT;
-  /**
-   * The default priority of conditions that depend on this qualifier.
-   */
-  defaultPriority: TP;
-}
-
-/**
- * A {@link Qualifiers.IQualifierDecl | qualifier declaration} with all properties
- * validated for correctness.
- * @public
- */
-export type IValidatedQualifierDecl = IQualifierDecl<QualifierName, QualifierTypeName, ConditionPriority>;
-
-interface IQualifierConvertContext {
-  types: QualifierTypeMap;
-  index?: number;
-}
-
-const validatedQualifierDecl: Converter<IValidatedQualifierDecl, IQualifierConvertContext> =
-  Converters.object<IValidatedQualifierDecl, IQualifierConvertContext>({
-    name: Convert.qualifierName,
-    typeName: Convert.qualifierTypeName,
-    defaultPriority: Convert.conditionPriority
-  });
-
-const qualifier: Converter<Qualifier, IQualifierConvertContext> = validatedQualifierDecl.map(
-  (decl, context) => {
-    if (!context?.types) {
-      return fail('No qualifier types for conversion.');
-    }
-    const index = context.index ? Validate.toQualifierIndex(context.index).orDefault() : undefined;
-    return context.types
-      .get(decl.typeName)
-      .onSuccess((type) =>
-        Qualifier.create({ name: decl.name, type, defaultPriority: decl.defaultPriority, index }).withDetail(
-          'success'
-        )
-      );
-  }
+const qualifierFromDecl: Converter<Qualifier, IQualifierDeclConvertContext> = validatedQualifierDecl.map(
+  Qualifier.create
 );
 
 /**
@@ -127,18 +71,24 @@ export class QualifierMap extends ConvertingResultMap<QualifierName, Qualifier> 
   protected constructor(params: IQualifierMapCreateParams) {
     const entries: [QualifierName, Qualifier][] = mapResults(
       (params.qualifiers ?? []).map((decl, index) => {
-        return QualifierMap.validateQualifierDecl(decl)
-          .onSuccess((validated) => qualifier.convert(validated, { types: params.qualifierTypes, index }))
+        return validatedQualifierDecl
+          .convert(decl)
+          .onSuccess((validated) =>
+            qualifierFromDecl.convert(validated, {
+              qualifierTypes: params.qualifierTypes,
+              qualifierIndex: index
+            })
+          )
           .onSuccess((q) => succeed<[QualifierName, Qualifier]>([q.name, q]));
       })
     ).orThrow();
 
     super({
       entries,
-      converters: new Collections.KeyValueConverters<QualifierName, Qualifier>(
-        Convert.qualifierName,
-        (value: unknown) => this._convertNext(value)
-      )
+      converters: new Collections.KeyValueConverters<QualifierName, Qualifier>({
+        key: Convert.qualifierName,
+        value: (value: unknown) => this._convertNext(value)
+      })
     });
     this._qualifierTypes = params.qualifierTypes;
   }
@@ -155,23 +105,10 @@ export class QualifierMap extends ConvertingResultMap<QualifierName, Qualifier> 
     return captureResult(() => new QualifierMap(params));
   }
 
-  /**
-   * Validates the properties of a {@link Qualifiers.IQualifierDecl | qualifier declaration} for
-   * correctness.
-   * @param decl - The {@link Qualifiers.IQualifierDecl | qualifier declaration} to validate.
-   * @returns `Success` with the validated {@link Qualifiers.IValidatedQualifierDecl | qualifier declaration}
-   * if successful, `Failure` with an error message otherwise.
-   * @public
-   */
-  public static validateQualifierDecl(decl: IQualifierDecl): Result<IValidatedQualifierDecl> {
-    return populateObject<IValidatedQualifierDecl>({
-      name: () => Convert.qualifierName.convert(decl.name),
-      typeName: () => Convert.qualifierTypeName.convert(decl.typeName),
-      defaultPriority: () => Convert.conditionPriority.convert(decl.defaultPriority)
-    });
-  }
-
   protected _convertNext(value: unknown): Result<Qualifier> {
-    return qualifier.convert(value, { types: this._qualifierTypes, index: this.size });
+    return qualifierFromDecl.convert(value, {
+      qualifierTypes: this._qualifierTypes,
+      qualifierIndex: this.size
+    });
   }
 }

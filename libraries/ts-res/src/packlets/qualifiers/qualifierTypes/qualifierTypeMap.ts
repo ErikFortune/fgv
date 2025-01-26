@@ -20,7 +20,15 @@
  * SOFTWARE.
  */
 
-import { captureResult, Collections, ConvertingResultMap, Result, Validators } from '@fgv/ts-utils';
+import {
+  captureResult,
+  Collections,
+  ConvertingResultMap,
+  Result,
+  fail,
+  succeed,
+  Validators
+} from '@fgv/ts-utils';
 import { QualifierType } from './qualifierType';
 import { Convert, QualifierTypeName } from '../../common';
 
@@ -57,16 +65,18 @@ export type IQualifierTypeMapCreateParams =
   | IQualifierTypeMapCreateWithObjectParams;
 
 const converters: Collections.KeyValueConverters<QualifierTypeName, QualifierType> =
-  new Collections.KeyValueConverters<QualifierTypeName, QualifierType>(
-    Convert.qualifierTypeName,
-    Validators.isA('QualifierType', (value: unknown) => value instanceof QualifierType)
-  );
+  new Collections.KeyValueConverters<QualifierTypeName, QualifierType>({
+    key: Convert.qualifierTypeName,
+    value: Validators.isA('QualifierType', (value: unknown) => value instanceof QualifierType)
+  });
 
 /**
  * A map of {@link QualifierType | QualifierType} objects.
  * @public
  */
 export class QualifierTypeMap extends ConvertingResultMap<QualifierTypeName, QualifierType> {
+  protected _typesByIndex: QualifierType[] = [];
+
   /**
    * Creates a new QualifierTypeMap object.
    * @param params - The parameters used to create the map.
@@ -75,12 +85,30 @@ export class QualifierTypeMap extends ConvertingResultMap<QualifierTypeName, Qua
     params = params ?? { qualifierTypes: [] };
     const types =
       'qualifierTypes' in params
-        ? params.qualifierTypes
+        ? Array.from(params.qualifierTypes).sort(QualifierType.compare)
         : params.factories.map((factory, index) => {
             return factory(index).orThrow();
           });
     const entries: [QualifierTypeName, QualifierType][] = types.map((qt) => [qt.name, qt]);
     super({ converters, entries });
+    this._typesByIndex = types;
+    this._typesByIndex.forEach((qt, index) => {
+      if (qt.index !== index) {
+        throw new Error(`qualifier type ${qt.name}: expected index ${index}, got ${qt.index}`);
+      }
+    });
+  }
+
+  /**
+   * Gets the {@link QualifierType | QualifierType} object at the specified index.
+   * @param index - The index of the {@link Qualifiers.QualifierType | QualifierType} to retrieve.
+   * @returns
+   */
+  public getAt(index: number): Result<QualifierType> {
+    if (index < 0 || index >= this._typesByIndex.length) {
+      return fail(`${index}: qualifier type index out of range`);
+    }
+    return succeed(this._typesByIndex[index]);
   }
 
   /**

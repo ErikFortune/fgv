@@ -23,40 +23,14 @@
 import { captureResult, Result } from '@fgv/ts-utils';
 import { ConditionPriority, QualifierIndex, QualifierName } from '../common';
 import { QualifierType } from './qualifierTypes';
-
-/**
- * Parameters for creating a new {@link Qualifiers.Qualifier | Qualifier}.
- * @public
- */
-export interface IQualifierCreateParams {
-  /**
-   * The name of the qualifier.
-   */
-  name: QualifierName;
-
-  /**
-   * The {@link Qualifiers.QualifierTypes.QualifierType | type} of the qualifier.
-   */
-  type: QualifierType;
-
-  /**
-   * The default {@link ConditionPriority | priority} of conditions
-   * that depend on this qualifier.
-   */
-  defaultPriority: ConditionPriority;
-
-  /**
-   * Optional index for the qualifier.
-   */
-  index?: QualifierIndex;
-}
+import { IValidatedQualifierDecl } from './qualifierDecl';
 
 /**
  * Represents a qualifier that can be used to identify the context in
  * which a resource is used.
  * @public
  */
-export class Qualifier {
+export class Qualifier implements IValidatedQualifierDecl {
   /**
    * The name of the qualifier.
    */
@@ -69,7 +43,7 @@ export class Qualifier {
   /**
    * Optional index for the qualifier.
    */
-  public readonly index?: QualifierIndex;
+  public readonly index: QualifierIndex;
 
   /**
    * The default {@link ConditionPriority | priority} of conditions
@@ -79,28 +53,29 @@ export class Qualifier {
 
   /**
    * Constructs a new instance of a {@link Qualifiers.Qualifier | Qualifier} from the
-   * supplied {@link Qualifiers.IQualifierCreateParams | parameters}.
+   * supplied {@link Qualifiers.IValidatedQualifierDecl | validated declaration}.
    * @param name - The name of the qualifier.
    * @param type - The {@link Qualifiers.QualifierTypes.QualifierType | type} of the qualifier.
    * @param defaultPriority - The default {@link ConditionPriority | priority} of conditions
    * @public
    */
-  protected constructor({ name, type, defaultPriority }: IQualifierCreateParams) {
+  protected constructor({ name, type, defaultPriority, index }: IValidatedQualifierDecl) {
     this.name = name;
     this.type = type;
     this.defaultPriority = defaultPriority;
+    this.index = index;
   }
 
   /**
    * Creates a new instance of a {@link Qualifiers.Qualifier | Qualifier} from the
    * supplied {@link Qualifiers.IQualifierCreateParams | parameters}.
-   * @param params - The {@link Qualifiers.IQualifierCreateParams | parameters} to use when
-   * creating the new instance.
+   * @param decl - The {@link Qualifiers.IValidatedQualifierDecl | validated declaration}
+   * for the new instance.
    * @returns `Success` with the new {@link Qualifiers.Qualifier | Qualifier} if successful,
    * `Failure` with an error message otherwise.
    * @public
    */
-  public static create(params: IQualifierCreateParams): Result<Qualifier> {
-    return captureResult(() => new Qualifier(params));
+  public static create(decl: IValidatedQualifierDecl): Result<Qualifier> {
+    return captureResult(() => new Qualifier(decl));
   }
 }
