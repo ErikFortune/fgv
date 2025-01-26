@@ -9,7 +9,7 @@ Constructs a new key-value validator.
 **Signature:**
 
 ```typescript
-constructor(key: Validator<TK, unknown> | Converter<TK, unknown> | ConverterFunc<TK, unknown>, value: Validator<TV, unknown> | Converter<TV, unknown> | ConverterFunc<TV, unknown>, entry?: Validator<KeyValueEntry<TK, TV>, unknown> | Converter<KeyValueEntry<TK, TV>, unknown> | ConverterFunc<KeyValueEntry<TK, TV>, unknown>);
+constructor({ key, value, entry }: IKeyValueConverterConstructorParams<TK, TV>);
 ```
 
 ## Parameters
@@ -32,49 +32,15 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-key
+{ key, value, entry }
 
 
 </td><td>
 
-[Validator](./ts-utils.validator.md)<!-- -->&lt;TK, unknown&gt; \| [Converter](./ts-utils.converter.md)<!-- -->&lt;TK, unknown&gt; \| [ConverterFunc](./ts-utils.conversion.converterfunc.md)<!-- -->&lt;TK, unknown&gt;
+[IKeyValueConverterConstructorParams](./ts-utils.collections.ikeyvalueconverterconstructorparams.md)<!-- -->&lt;TK, TV&gt;
 
 
 </td><td>
-
-Required key [validator](./ts-utils.validator.md)<!-- -->, [converter](./ts-utils.converter.md)<!-- -->, or [converter function](./ts-utils.conversion.converterfunc.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-value
-
-
-</td><td>
-
-[Validator](./ts-utils.validator.md)<!-- -->&lt;TV, unknown&gt; \| [Converter](./ts-utils.converter.md)<!-- -->&lt;TV, unknown&gt; \| [ConverterFunc](./ts-utils.conversion.converterfunc.md)<!-- -->&lt;TV, unknown&gt;
-
-
-</td><td>
-
-Required value [validator](./ts-utils.validator.md)<!-- -->, [converter](./ts-utils.converter.md)<!-- -->, or [converter function](./ts-utils.conversion.converterfunc.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-entry
-
-
-</td><td>
-
-[Validator](./ts-utils.validator.md)<!-- -->&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TK, TV&gt;, unknown&gt; \| [Converter](./ts-utils.converter.md)<!-- -->&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TK, TV&gt;, unknown&gt; \| [ConverterFunc](./ts-utils.conversion.converterfunc.md)<!-- -->&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TK, TV&gt;, unknown&gt;
-
-
-</td><td>
-
-_(Optional)_ Optional entry [validator](./ts-utils.validator.md)<!-- -->, [converter](./ts-utils.converter.md)<!-- -->, or [converter function](./ts-utils.conversion.converterfunc.md)<!-- -->.. If no entry validator is provided, an entry is considered valid if both key and value are valid.
 
 
 </td></tr>

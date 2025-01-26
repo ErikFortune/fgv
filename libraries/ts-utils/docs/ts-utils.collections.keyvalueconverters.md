@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)(key, value, entry)](./ts-utils.collections.keyvalueconverters._constructor_.md)
+[(constructor)({ key, value, entry })](./ts-utils.collections.keyvalueconverters._constructor_.md)
 
 
 </td><td>

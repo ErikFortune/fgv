@@ -141,6 +141,7 @@ declare namespace Collections {
     export {
         Utils,
         KeyValueEntry,
+        IKeyValueConverterConstructorParams,
         KeyValueConverters,
         ResultMapResultDetail,
         ResultMapForEachCb,
@@ -634,6 +635,18 @@ interface IConvertingResultMapConstructorParams<TK extends string = string, TV =
     entries?: Iterable<KeyValueEntry<string, unknown>>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IKeyValueConverterConstructorParams<TK extends string = string, TV = unknown> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    entry?: Validator<KeyValueEntry<TK, TV>, unknown> | Converter<KeyValueEntry<TK, TV>, unknown> | ConverterFunc<KeyValueEntry<TK, TV>, unknown>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    key: Validator<TK, unknown> | Converter<TK, unknown> | ConverterFunc<TK, unknown>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    value: Validator<TV, unknown> | Converter<TV, unknown> | ConverterFunc<TV, unknown>;
+}
+
 // @public
 export interface IMessageAggregator {
     addMessage(message: string | undefined): this;
@@ -820,7 +833,7 @@ class KeyValueConverters<TK extends string = string, TV = unknown> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    constructor(key: Validator<TK, unknown> | Converter<TK, unknown> | ConverterFunc<TK, unknown>, value: Validator<TV, unknown> | Converter<TV, unknown> | ConverterFunc<TV, unknown>, entry?: Validator<KeyValueEntry<TK, TV>, unknown> | Converter<KeyValueEntry<TK, TV>, unknown> | ConverterFunc<KeyValueEntry<TK, TV>, unknown>);
+    constructor({ key, value, entry }: IKeyValueConverterConstructorParams<TK, TV>);
     convertEntries(entries: Iterable<unknown>): Result<KeyValueEntry<TK, TV>[]>;
     // Warning: (ae-incompatible-release-tags) The symbol "convertEntry" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "convertEntry" is marked as @public, but its signature references "DetailedResult" which is marked as @beta

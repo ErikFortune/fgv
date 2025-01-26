@@ -34,6 +34,35 @@ import { KeyValueEntry } from './common';
 import { ResultMapResultDetail } from './readonlyResultMap';
 
 /**
+ * Parameters for constructing a {@link Collections.KeyValueConverters | KeyValueConverters} instance.
+ * @public
+ */
+export interface IKeyValueConverterConstructorParams<TK extends string = string, TV = unknown> {
+  /**
+   * Required key {@link Validator | validator}, {@link Converter | converter},
+   * or {@link Conversion.ConverterFunc | converter function}.
+   */
+  key: Validator<TK, unknown> | Converter<TK, unknown> | ConverterFunc<TK, unknown>;
+
+  /**
+   * Required value {@link Validator | validator}, {@link Converter | converter},
+   * or {@link Conversion.ConverterFunc | converter function}.
+   */
+  value: Validator<TV, unknown> | Converter<TV, unknown> | ConverterFunc<TV, unknown>;
+
+  /**
+   * Optional entry {@link Validator | validator}, {@link Converter | converter},
+   * or {@link Conversion.ConverterFunc | converter function}.
+   * If no entry validator is provided, an entry is considered valid if both key and
+   * value are valid.
+   */
+  entry?:
+    | Validator<KeyValueEntry<TK, TV>, unknown>
+    | Converter<KeyValueEntry<TK, TV>, unknown>
+    | ConverterFunc<KeyValueEntry<TK, TV>, unknown>;
+}
+
+/**
  * Helper class for converting strongly-typed keys, values, or entries
  * from unknown values.
  * @public
@@ -67,14 +96,7 @@ export class KeyValueConverters<TK extends string = string, TV = unknown> {
    * or {@link Conversion.ConverterFunc | converter function}..  If no entry validator is provided,
    * an entry is considered valid if both key and value are valid.
    */
-  public constructor(
-    key: Validator<TK, unknown> | Converter<TK, unknown> | ConverterFunc<TK, unknown>,
-    value: Validator<TV, unknown> | Converter<TV, unknown> | ConverterFunc<TV, unknown>,
-    entry?:
-      | Validator<KeyValueEntry<TK, TV>, unknown>
-      | Converter<KeyValueEntry<TK, TV>, unknown>
-      | ConverterFunc<KeyValueEntry<TK, TV>, unknown>
-  ) {
+  public constructor({ key, value, entry }: IKeyValueConverterConstructorParams<TK, TV>) {
     this.key = typeof key === 'function' ? Converters.generic(key) : key;
     this.value = typeof value === 'function' ? Converters.generic(value) : value;
     this.entry = entry ? (typeof entry === 'function' ? Converters.generic(entry) : entry) : undefined;

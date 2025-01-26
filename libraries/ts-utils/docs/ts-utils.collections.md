@@ -89,6 +89,17 @@ Parameters for constructing a [ResultMap](./ts-utils.collections.resultmap.md)<!
 </td></tr>
 <tr><td>
 
+[IKeyValueConverterConstructorParams](./ts-utils.collections.ikeyvalueconverterconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [KeyValueConverters](./ts-utils.collections.keyvalueconverters.md) instance.
+
+
+</td></tr>
+<tr><td>
+
 [IReadOnlyConvertingResultMap](./ts-utils.collections.ireadonlyconvertingresultmap.md)
 
 

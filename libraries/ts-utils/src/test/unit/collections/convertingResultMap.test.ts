@@ -67,12 +67,15 @@ describe('ConvertingResultMap', () => {
       return fail(isValid.message);
     }
   });
-  const nameConverters = new Collections.KeyValueConverters(firstNameConverter, lastNameConverter);
-  const familyConverters = new Collections.KeyValueConverters(
-    firstNameConverter,
-    lastNameConverter,
-    familyMemberConverter
-  );
+  const nameConverters = new Collections.KeyValueConverters({
+    key: firstNameConverter,
+    value: lastNameConverter
+  });
+  const familyConverters = new Collections.KeyValueConverters({
+    key: firstNameConverter,
+    value: lastNameConverter,
+    entry: familyMemberConverter
+  });
 
   describe('constructor', () => {
     test('constructs a new instance with the supplied converters', () => {
@@ -82,16 +85,17 @@ describe('ConvertingResultMap', () => {
 
     test('constructs a new instance using the supplied converter functions', () => {
       const map = new ConvertingResultMap({
-        converters: new Collections.KeyValueConverters(
-          (from: unknown): Result<CavemanFirstName> => (from === 'fred' ? succeed('fred') : fail('not fred')),
-          (from: unknown): Result<CavemanLastName> =>
+        converters: new Collections.KeyValueConverters({
+          key: (from: unknown): Result<CavemanFirstName> =>
+            from === 'fred' ? succeed('fred') : fail('not fred'),
+          value: (from: unknown): Result<CavemanLastName> =>
             from === 'flintstone' ? succeed('flintstone') : fail('invalid value'),
-          (from: unknown): Result<[CavemanFirstName, CavemanLastName]> => {
+          entry: (from: unknown): Result<[CavemanFirstName, CavemanLastName]> => {
             return Array.isArray(from) && from.length === 2 && from[0] === 'barney' && from[1] === 'rubble'
               ? succeed(['barney', 'rubble'])
               : fail('invalid value');
           }
-        )
+        })
       });
       expect(map.converting.converters.key.convert('fred')).toSucceedWith('fred');
       expect(map.converting.converters.key.convert('barney')).toFailWith('not fred');
