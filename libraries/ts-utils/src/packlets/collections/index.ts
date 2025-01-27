@@ -22,6 +22,8 @@
 
 import * as Utils from './utils';
 
+export * from './collector';
+export * from './collectors';
 export * from './common';
 export * from './keyValueConverters';
 export * from './readonlyResultMap';

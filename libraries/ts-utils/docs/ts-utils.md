@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[Collector](./ts-utils.collector.md)
+
+
+</td><td>
+
+A [Collector](./ts-utils.icollector.md) that collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in a collector are created by key and are assigned an index at the time of addition. Items are immutable once added. Keys and indexes might be branded types, and source items might be transformed on addition.
+
+
+</td></tr>
+<tr><td>
+
 [ConvertingResultMap](./ts-utils.convertingresultmap.md)
 
 
@@ -102,6 +113,17 @@ A [Converter](./ts-utils.converter.md) which converts an object of type `<T>` wi
 </td><td>
 
 A [ResultMap](./ts-utils.collections.resultmap.md) class as a `Map<TK, TV>`<!-- -->-like object which reports success or failure with additional details using the [result pattern](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils#the-result-pattern)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[SimpleCollector](./ts-utils.simplecollector.md)
+
+
+</td><td>
+
+A simple [collector](./ts-utils.collector.md) that collects [ICollectible items](./ts-utils.collections.icollectible.md) with non-branded `string` key and `number` index, and with no transformation other than index assignment on addition.
 
 
 </td></tr>
@@ -429,6 +451,17 @@ Description
 </td><td>
 
 Generic converter to convert unknown to a templated type `<T>`<!-- -->, using intrinsic rules or as modified by an optional conversion context of optional templated type `<TC>` (default `undefined`<!-- -->).
+
+
+</td></tr>
+<tr><td>
+
+[ICollector](./ts-utils.icollector.md)
+
+
+</td><td>
+
+Collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in a collector are created by key and are assigned an index at the time of addition. Items are immutable once added.
 
 
 </td></tr>

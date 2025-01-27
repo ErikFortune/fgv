@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[Collector](./ts-utils.collections.collector.md)
+
+
+</td><td>
+
+A [Collector](./ts-utils.icollector.md) that collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in a collector are created by key and are assigned an index at the time of addition. Items are immutable once added. Keys and indexes might be branded types, and source items might be transformed on addition.
+
+
+</td></tr>
+<tr><td>
+
 [ConvertingResultMap](./ts-utils.collections.convertingresultmap.md)
 
 
@@ -61,6 +72,17 @@ A [ResultMap](./ts-utils.collections.resultmap.md) wrapper which validates weakl
 
 
 </td></tr>
+<tr><td>
+
+[SimpleCollector](./ts-utils.collections.simplecollector.md)
+
+
+</td><td>
+
+A simple [collector](./ts-utils.collector.md) that collects [ICollectible items](./ts-utils.collections.icollectible.md) with non-branded `string` key and `number` index, and with no transformation other than index assignment on addition.
+
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -77,6 +99,39 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[ICollectible](./ts-utils.collections.icollectible.md)
+
+
+</td><td>
+
+An item that can be collected by some [Collector](./ts-utils.collector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ICollector](./ts-utils.collections.icollector.md)
+
+
+</td><td>
+
+Collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in a collector are created by key and are assigned an index at the time of addition. Items are immutable once added.
+
+
+</td></tr>
+<tr><td>
+
+[ICollectorConstructorParams](./ts-utils.collections.icollectorconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [Collector](./ts-utils.icollector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
 
 [IConvertingResultMapConstructorParams](./ts-utils.collections.iconvertingresultmapconstructorparams.md)
 
@@ -153,6 +208,17 @@ Parameters for constructing a [ResultMapConverter](./ts-utils.collections.result
 
 
 </td></tr>
+<tr><td>
+
+[ISimpleCollectorCreateParams](./ts-utils.collections.isimplecollectorcreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a [simple collector](./ts-utils.simplecollector.md)<!-- -->.
+
+
+</td></tr>
 </tbody></table>
 
 ## Namespaces
@@ -193,6 +259,50 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[CollectibleFactory](./ts-utils.collections.collectiblefactory.md)
+
+
+</td><td>
+
+Factory function for creating a new [ICollectible](./ts-utils.collections.icollectible.md) instance given a key, an index and a source representation of the item to be added.
+
+
+</td></tr>
+<tr><td>
+
+[CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)
+
+
+</td><td>
+
+Factory function for creating a new [ICollectible](./ts-utils.collections.icollectible.md) instance given a key and an index.
+
+
+</td></tr>
+<tr><td>
+
+[IConvertingCollector](./ts-utils.collections.iconvertingcollector.md)
+
+
+</td><td>
+
+A [Collector](./ts-utils.icollector.md) with non-branded `string` key and `number` index, and transformation of source items.
+
+
+</td></tr>
+<tr><td>
+
+[ISimpleCollector](./ts-utils.collections.isimplecollector.md)
+
+
+</td><td>
+
+A simple [ICollector](./ts-utils.icollector.md) with non-branded `string` key and `number` index, and no transformation of source items.
+
+
+</td></tr>
+<tr><td>
 
 [KeyValueEntry](./ts-utils.collections.keyvalueentry.md)
 

@@ -137,9 +137,29 @@ declare namespace Classes {
     }
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type CollectibleFactory<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> = (key: TKEY, index: number, item: TSRC) => Result<TITEM>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type CollectibleFactoryCallback<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>> = (key: TKEY, index: number) => Result<TITEM>;
+
 declare namespace Collections {
     export {
         Utils,
+        ICollectible,
+        CollectibleFactory,
+        CollectibleFactoryCallback,
+        ICollector,
+        ISimpleCollector,
+        IConvertingCollector,
+        ICollectorConstructorParams,
+        Collector,
+        ISimpleCollectorCreateParams,
+        SimpleCollector,
         KeyValueEntry,
         IKeyValueConverterConstructorParams,
         KeyValueConverters,
@@ -158,6 +178,39 @@ declare namespace Collections {
     }
 }
 export { Collections }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+export class Collector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> implements ICollector<TKEY, TINDEX, TITEM, TSRC> {
+    [Symbol.iterator](): IterableIterator<KeyValueEntry<TKEY, TITEM>>;
+    protected constructor(params: ICollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>);
+    // (undocumented)
+    entries(): IterableIterator<[TKEY, TITEM]>;
+    // (undocumented)
+    forEach(callback: ResultMapForEachCb<TKEY, TITEM>, arg?: unknown): void;
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    //
+    // (undocumented)
+    get(key: TKEY): DetailedResult<TITEM, ResultMapResultDetail>;
+    getAt(index: TINDEX): Result<TITEM>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getOrAdd(key: TKEY, item: TSRC): Result<TITEM>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getOrAdd(key: TKEY, cb: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>): Result<TITEM>;
+    // (undocumented)
+    has(key: TKEY): boolean;
+    // (undocumented)
+    get inner(): ReadonlyMap<TKEY, TITEM>;
+    // (undocumented)
+    keys(): IterableIterator<TKEY>;
+    // (undocumented)
+    get size(): number;
+    toReadOnly(): IReadOnlyResultMap<TKEY, TITEM>;
+    // (undocumented)
+    values(): IterableIterator<TITEM>;
+}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -625,6 +678,38 @@ class HashingNormalizer extends Normalizer {
     protected _normalizeLiteralToString(from: string | number | bigint | boolean | symbol | undefined | Date | RegExp | null): Result<string>;
 }
 
+// @public
+interface ICollectible<TKEY extends string = string, TINDEX extends number = number> {
+    // (undocumented)
+    readonly index: TINDEX;
+    // (undocumented)
+    readonly key: TKEY;
+    // (undocumented)
+    setIndex(index: TINDEX): Result<TINDEX>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+export interface ICollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> extends IReadOnlyResultMap<TKEY, TITEM> {
+    getAt(index: TINDEX): Result<TITEM>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getOrAdd(key: TKEY, item: TSRC): Result<TITEM>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getOrAdd(key: TKEY, callback: CollectibleFactoryCallback<TKEY, TINDEX>): Result<TITEM>;
+    toReadOnly(): IReadOnlyResultMap<TKEY, TITEM>;
+}
+
+// @public
+interface ICollectorConstructorParams<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> {
+    entries?: KeyValueEntry<TKEY, TSRC>[];
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    factory: CollectibleFactory<TKEY, TINDEX, TITEM, TSRC>;
+}
+
+// @public
+type IConvertingCollector<TITEM extends ICollectible<string, number>, TSRC> = ICollector<string, number, TITEM, TSRC>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -812,6 +897,15 @@ function isA<T, TC = unknown>(description: string, guard: TypeGuardWithContext<T
 //
 // @public
 function isA_2<T, TC = unknown>(description: string, guard: TypeGuardWithContext<T, TC>, params?: Omit<TypeGuardValidatorConstructorParams<T, TC>, 'description' | 'guard'>): TypeGuardValidator<T, TC>;
+
+// @public
+type ISimpleCollector<TITEM extends ICollectible<string, number>> = ICollector<string, number, TITEM, TITEM>;
+
+// @public
+interface ISimpleCollectorCreateParams<TITEM extends ICollectible<string, number>> {
+    // (undocumented)
+    items?: TITEM[];
+}
 
 // @public
 function isIterable<TE = unknown, TI extends Iterable<TE> = Iterable<TE>, TO = unknown>(value: TI | TO): value is TI;
@@ -1369,6 +1463,16 @@ type ResultMapValueFactory<TK extends string = string, TV = unknown> = (key: TK)
 
 // @beta
 export type ResultValueType<T> = T extends Result<infer TV> ? TV : never;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+export class SimpleCollector<TITEM extends ICollectible<string, number>> extends Collector<string, number, TITEM, TITEM> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(params?: ISimpleCollectorCreateParams<TITEM>);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static createSimpleCollector<TITEM extends ICollectible<string, number>>(params?: ISimpleCollectorCreateParams<TITEM>): Result<SimpleCollector<TITEM>>;
+}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
