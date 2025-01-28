@@ -21,7 +21,7 @@
  */
 
 import '../../helpers/jest';
-import { Collectible, SimpleCollector } from '../../../packlets/collections';
+import { Collectible, SimpleCollector, CollectibleFactoryCallback } from '../../../packlets/collections';
 import { Result, succeed } from '../../../packlets/base';
 
 interface ITestThing {
@@ -80,13 +80,27 @@ describe('Collectors', () => {
       test('can be constructed with initial items', () => {
         const collector = new SimpleCollector<CollectibleTestThing>({ items: collectibles });
         expect(collector.size).toBe(5);
-        for (const c of collectibles) {
+        expect(collector.inner.size).toBe(5);
+        collectibles.forEach((c) => {
           // index should have been set when it was added
           expect(c.index).toBeDefined();
           expect(collector.has(c.key)).toBe(true);
           expect(collector.get(c.key)).toSucceedWith(c);
           expect(collector.getAt(c.index!)).toSucceedWith(c);
+        });
+        expect(Array.from(collector.keys())).toEqual(collectibles.map((c) => c.key));
+        expect(Array.from(collector.values())).toEqual(collectibles);
+        expect(Array.from(collector.entries())).toEqual(collectibles.map((c) => [c.key, c]));
+
+        for (const [key, value] of collector) {
+          expect(collectibles.map((c) => c.key)).toContain(key);
+          expect(collectibles).toContain(value);
         }
+
+        collector.forEach((value, key) => {
+          expect(collectibles.map((c) => c.key)).toContain(key);
+          expect(collectibles).toContain(value);
+        });
       });
 
       test('can be constructed with no items', () => {
@@ -112,6 +126,32 @@ describe('Collectors', () => {
       });
     });
 
+    describe('get', () => {
+      test('returns an item by key', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>({ items: collectibles });
+        const thing = collectibles[0];
+        expect(collector.get(thing.key)).toSucceedWith(thing);
+      });
+
+      test('fails if the item is not in the collector', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>({ items: collectibles });
+        expect(collector.get('notThere')).toFailWith(/not found/);
+      });
+    });
+
+    describe('getAt', () => {
+      test('returns an item by index', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>({ items: collectibles });
+        const thing = collectibles[0];
+        expect(collector.getAt(thing.index!)).toSucceedWith(thing);
+      });
+
+      test('fails if the index is out of range', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>({ items: collectibles });
+        expect(collector.getAt(100)).toFailWith(/out of range/);
+      });
+    });
+
     describe('getOrAdd', () => {
       test('adds a new item to the collector', () => {
         const collector = new SimpleCollector<CollectibleTestThing>();
@@ -127,6 +167,18 @@ describe('Collectors', () => {
         expect(collector.getOrAdd(thing.key, thing)).toSucceedWith(thing);
         expect(collector.size).toBe(5);
         expect(collector.get(thing.key)).toSucceedWith(thing);
+      });
+
+      test('uses a factory function to create a new item if it is not already in the collector', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>();
+        const thing: ITestThing = { str: 'new', num: 6, bool: false };
+        const factory: CollectibleFactoryCallback<string, number, CollectibleTestThing> = jest.fn(
+          (key, index) => succeed(new CollectibleTestThing(thing, key, index))
+        );
+        expect(collector.getOrAdd('newThing', factory)).toSucceedWith(expect.objectContaining(thing));
+        expect(factory).toHaveBeenCalledWith('newThing', 0);
+        expect(collector.size).toBe(1);
+        expect(collector.get('newThing')).toSucceedWith(expect.objectContaining(thing));
       });
 
       test('fails if the object to be added has a mismatched key', () => {
