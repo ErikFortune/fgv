@@ -21,40 +21,9 @@
  */
 
 import { DetailedResult, Result, fail, failWithDetail, succeed, succeedWithDetail } from '../base';
+import { ICollectible, CollectibleFactoryCallback, CollectibleFactory } from './collectible';
 import { KeyValueEntry } from './common';
 import { IReadOnlyResultMap, ResultMapForEachCb, ResultMapResultDetail } from './readonlyResultMap';
-
-/**
- * An item that can be collected by some {@link Collector | Collector}.
- * @public
- */
-export interface ICollectible<TKEY extends string = string, TINDEX extends number = number> {
-  readonly key: TKEY;
-  readonly index: TINDEX;
-  setIndex(index: TINDEX): Result<TINDEX>;
-}
-
-/**
- * Factory function for creating a new {@link Collections.ICollectible | ICollectible} instance given a key, an index and a source representation
- * of the item to be added.
- * @public
- */
-export type CollectibleFactory<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
-  TSRC = TITEM
-> = (key: TKEY, index: number, item: TSRC) => Result<TITEM>;
-
-/**
- * Factory function for creating a new {@link Collections.ICollectible | ICollectible} instance given a key and an index.
- * @public
- */
-export type CollectibleFactoryCallback<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
-> = (key: TKEY, index: number) => Result<TITEM>;
 
 /**
  * Collects {@link Collections.ICollectible | ICollectible} items. Items in a collector are created by key and are assigned an index at the
@@ -78,7 +47,8 @@ export interface ICollector<
    * Gets an item by key if it exists, or creates a new item and adds it using the default {@link Collections.CollectibleFactory | factory} if not.
    * @param key - The key of the item to retrieve.
    * @param item - The source representation of the item to be added if it does not exist.
-   * @returns Returns {@link Success | Success} with the item if it exists, or {@link Failure | Failure} with an error if the item is not found.
+   * @returns Returns {@link Success | Success} with the item if it exists or could be created, or {@link Failure | Failure} with an error if the
+   * item cannot be created and indexed.
    */
   getOrAdd(key: TKEY, item: TSRC): Result<TITEM>;
 
@@ -255,7 +225,7 @@ export class Collector<
         return fail(`$[key}: key mismatch in created item - ${newItem.key} !== ${key}`);
       }
       if (newItem.index !== this._byIndex.length) {
-        return fail(`$[key}: item mismatch in created item - ${newItem.index} !== ${this._byIndex.length}`);
+        return fail(`$[key}: index mismatch in created item - ${newItem.index} !== ${this._byIndex.length}`);
       }
       this._byKey.set(key, newItem);
       this._byIndex.push(newItem);

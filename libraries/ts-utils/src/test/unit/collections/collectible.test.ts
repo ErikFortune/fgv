@@ -20,16 +20,37 @@
  * SOFTWARE.
  */
 
-import * as Utils from './utils';
+import '../../helpers/jest';
+import { Collectible } from '../../../packlets/collections';
 
-export * from './collectible';
-export * from './collector';
-export * from './collectors';
-export * from './common';
-export * from './keyValueConverters';
-export * from './readonlyResultMap';
-export * from './resultMap';
-export * from './resultMapConverter';
-export * from './convertingResultMap';
+describe('Collectible', () => {
+  test('can be constructed with key and index', () => {
+    const item = new Collectible('key', 1);
+    expect(item.key).toBe('key');
+    expect(item.index).toBe(1);
+  });
 
-export { Utils };
+  test('can be constructed with key only', () => {
+    const item = new Collectible('key');
+    expect(item.key).toBe('key');
+    expect(item.index).toBeUndefined();
+  });
+
+  test('allows undefined index to be set', () => {
+    const item = new Collectible('key');
+    expect(item.setIndex(10)).toSucceedWith(10);
+    expect(item.index).toBe(10);
+  });
+
+  test('does not allow index to be changed once set', () => {
+    const item = new Collectible<string, number>('key', 1);
+    expect(item.setIndex(10)).toFailWith(/cannot be changed/);
+    expect(item.index).toBe(1);
+  });
+
+  test('quietly succeeds if setIndex is called with current value', () => {
+    const item = new Collectible('key', 1);
+    expect(item.setIndex(1)).toSucceedWith(1);
+    expect(item.index).toBe(1);
+  });
+});

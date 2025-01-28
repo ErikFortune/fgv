@@ -140,6 +140,28 @@ declare namespace Classes {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+class Collectible<TKEY extends string = string, TINDEX extends number = number> implements ICollectible<TKEY, TINDEX> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Collectible"
+    constructor(key: TKEY, index?: TINDEX);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ICollectible"
+    //
+    // (undocumented)
+    get index(): TINDEX | undefined;
+    // (undocumented)
+    protected _index: TINDEX | undefined;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ICollectible"
+    //
+    // (undocumented)
+    readonly key: TKEY;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "ICollectible"
+    //
+    // (undocumented)
+    setIndex(index: TINDEX): Result<TINDEX>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 type CollectibleFactory<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> = (key: TKEY, index: number, item: TSRC) => Result<TITEM>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -153,6 +175,7 @@ declare namespace Collections {
         ICollectible,
         CollectibleFactory,
         CollectibleFactoryCallback,
+        Collectible,
         ICollector,
         ISimpleCollector,
         IConvertingCollector,
@@ -160,6 +183,7 @@ declare namespace Collections {
         Collector,
         ISimpleCollectorCreateParams,
         SimpleCollector,
+        ConvertingCollector,
         KeyValueEntry,
         IKeyValueConverterConstructorParams,
         KeyValueConverters,
@@ -327,6 +351,11 @@ interface ConverterTraits {
     // (undocumented)
     readonly isOptional: boolean;
 }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type ConvertingCollector<TITEM extends ICollectible<string, number>, TSRC> = Collector<string, number, TITEM, TSRC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -681,7 +710,7 @@ class HashingNormalizer extends Normalizer {
 // @public
 interface ICollectible<TKEY extends string = string, TINDEX extends number = number> {
     // (undocumented)
-    readonly index: TINDEX;
+    readonly index: TINDEX | undefined;
     // (undocumented)
     readonly key: TKEY;
     // (undocumented)
