@@ -31,6 +31,7 @@ export type ResultMapResultDetail =
   | 'added'
   | 'deleted'
   | 'exists'
+  | 'failure'
   | 'invalid-key'
   | 'invalid-value'
   | 'not-found'

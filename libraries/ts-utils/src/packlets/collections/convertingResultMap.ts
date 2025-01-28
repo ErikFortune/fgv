@@ -114,7 +114,7 @@ export class ConvertingResultMap<TK extends string = string, TV = unknown>
       return super.get(key).onFailure(() => {
         const value = valueOrFactory(key)
           .onSuccess((value) => this.converting.converters.convertEntry([key, value]))
-          .onSuccess(([key, value]) => succeed(value));
+          .onSuccess(([__key, value]) => succeed(value));
         return value.success
           ? super.add(key, value.value)
           : failWithDetail<TV, ResultMapResultDetail>(value.message, 'invalid-value');

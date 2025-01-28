@@ -19,12 +19,34 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[Collectible](./ts-utils.collections.collectible.md)
+
+
+</td><td>
+
+Simple implementation of [ICollectible](./ts-utils.collections.icollectible.md) which does not allow the index to be changed once set.
+
+
+</td></tr>
+<tr><td>
+
 [Collector](./ts-utils.collections.collector.md)
 
 
 </td><td>
 
 A [Collector](./ts-utils.icollector.md) that collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in a collector are created by key and are assigned an index at the time of addition. Items are immutable once added. Keys and indexes might be branded types, and source items might be transformed on addition.
+
+
+</td></tr>
+<tr><td>
+
+[CollectorConverter](./ts-utils.collections.collectorconverter.md)
+
+
+</td><td>
+
+A [Collector](./ts-utils.collections.collector.md) wrapper which validates weakly-typed keys and values before calling the wrapped collector.
 
 
 </td></tr>
@@ -128,6 +150,17 @@ Collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in 
 </td><td>
 
 Parameters for constructing a [Collector](./ts-utils.icollector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ICollectorConverterCreateParams](./ts-utils.collections.icollectorconvertercreateparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [CollectorConverter](./ts-utils.collections.collectorconverter.md)<!-- -->.
 
 
 </td></tr>
@@ -277,6 +310,17 @@ Factory function for creating a new [ICollectible](./ts-utils.collections.icolle
 </td><td>
 
 Factory function for creating a new [ICollectible](./ts-utils.collections.icollectible.md) instance given a key and an index.
+
+
+</td></tr>
+<tr><td>
+
+[ConvertingCollector](./ts-utils.collections.convertingcollector.md)
+
+
+</td><td>
+
+A [collector](./ts-utils.collector.md) that converts items from a source representation to [ICollectible](./ts-utils.collections.icollectible.md) items with non-branded `string` key and `number` index.
 
 
 </td></tr>

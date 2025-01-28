@@ -63,12 +63,12 @@ export class Collectible<TKEY extends string = string, TINDEX extends number = n
   implements ICollectible<TKEY, TINDEX>
 {
   /**
-   * {@inheritdoc ICollectible.key}
+   * {@link Collections.ICollectible.key}
    */
   public readonly key: TKEY;
 
   /**
-   * {@inheritdoc ICollectible.index}
+   * {@link Collections.ICollectible.index}
    */
   public get index(): TINDEX | undefined {
     return this._index;
@@ -77,7 +77,7 @@ export class Collectible<TKEY extends string = string, TINDEX extends number = n
   protected _index: TINDEX | undefined;
 
   /**
-   * Constructs a new {@link Collectible | Collectible} instance.
+   * Constructs a new {@link Collections.Collectible | Collectible} instance.
    * @param key - The key of the item to be collected.
    * @param index - Optional index of the item to be collected.
    */
@@ -87,7 +87,7 @@ export class Collectible<TKEY extends string = string, TINDEX extends number = n
   }
 
   /**
-   * {@inheritdoc ICollectible.setIndex}
+   * {@link Collections.ICollectible.setIndex}
    */
   public setIndex(index: TINDEX): Result<TINDEX> {
     if (this._index !== undefined && index !== this.index) {

@@ -50,7 +50,7 @@ export interface ICollector<
    * @returns Returns {@link Success | Success} with the item if it exists or could be created, or {@link Failure | Failure} with an error if the
    * item cannot be created and indexed.
    */
-  getOrAdd(key: TKEY, item: TSRC): Result<TITEM>;
+  getOrAdd(key: TKEY, item: TSRC): DetailedResult<TITEM, ResultMapResultDetail>;
 
   /**
    * Gets an item by key if it exists, or creates a new item and adds it using the specified {@link Collections.CollectibleFactoryCallback | factory callback} if not.
@@ -58,7 +58,10 @@ export interface ICollector<
    * @param callback - The factory callback to create the item if it does not exist.
    * @returns Returns {@link Success | Success} with the item if it exists, or {@link Failure | Failure} with an error if the item is not found.
    */
-  getOrAdd(key: TKEY, callback: CollectibleFactoryCallback<TKEY, TINDEX>): Result<TITEM>;
+  getOrAdd(
+    key: TKEY,
+    callback: CollectibleFactoryCallback<TKEY, TINDEX>
+  ): DetailedResult<TITEM, ResultMapResultDetail>;
 
   /**
    * Gets a {@link IReadOnlyResultMap | read-only map} which can access the items in the collector.
@@ -205,32 +208,44 @@ export class Collector<
   /**
    * {@inheritdoc ICollector.(getOrAdd:1)}
    */
-  public getOrAdd(key: TKEY, item: TSRC): Result<TITEM>;
+  public getOrAdd(key: TKEY, item: TSRC): DetailedResult<TITEM, ResultMapResultDetail>;
   /**
    * {@inheritdoc ICollector.(getOrAdd:2)}
    */
-  public getOrAdd(key: TKEY, cb: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>): Result<TITEM>;
+  public getOrAdd(
+    key: TKEY,
+    cb: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+  ): DetailedResult<TITEM, ResultMapResultDetail>;
   public getOrAdd(
     key: TKEY,
     itemOrCb: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
-  ): Result<TITEM> {
+  ): DetailedResult<TITEM, ResultMapResultDetail> {
     if (this._byKey.has(key)) {
-      return succeed(this._byKey.get(key)!);
+      return succeedWithDetail(this._byKey.get(key)!, 'exists');
     }
     const build = this._isFactoryCB(itemOrCb)
       ? itemOrCb(key, this._byIndex.length)
       : this._factory(key, this._byIndex.length, itemOrCb);
-    return build.onSuccess((newItem) => {
-      if (newItem.key !== key) {
-        return fail(`$[key}: key mismatch in created item - ${newItem.key} !== ${key}`);
-      }
-      if (newItem.index !== this._byIndex.length) {
-        return fail(`$[key}: index mismatch in created item - ${newItem.index} !== ${this._byIndex.length}`);
-      }
-      this._byKey.set(key, newItem);
-      this._byIndex.push(newItem);
-      return succeed(newItem);
-    });
+    if (build.isFailure()) {
+      return failWithDetail<TITEM, ResultMapResultDetail>(build.message, 'failure');
+    }
+    const newItem = build.value;
+
+    if (newItem.key !== key) {
+      return failWithDetail(
+        `$[key}: key mismatch in created item - ${newItem.key} !== ${key}`,
+        'invalid-key'
+      );
+    }
+    if (newItem.index !== this._byIndex.length) {
+      return failWithDetail(
+        `$[key}: index mismatch in created item - ${newItem.index} !== ${this._byIndex.length}`,
+        'invalid-value'
+      );
+    }
+    this._byKey.set(key, newItem);
+    this._byIndex.push(newItem);
+    return succeedWithDetail(newItem, 'added');
   }
 
   /**
@@ -255,7 +270,7 @@ export class Collector<
     return this._byKey[Symbol.iterator]();
   }
 
-  private _isFactoryCB(
+  protected _isFactoryCB(
     item: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
   ): item is CollectibleFactoryCallback<TKEY, TINDEX, TITEM> {
     return typeof item === 'function';

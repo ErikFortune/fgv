@@ -37,26 +37,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[converters](./ts-utils.collections.ireadonlyresultmapconverter.converters.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[KeyValueConverters](./ts-utils.collections.keyvalueconverters.md)<!-- -->&lt;TK, TV&gt;
-
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
 [map](./ts-utils.collections.ireadonlyresultmapconverter.map.md)
 
 

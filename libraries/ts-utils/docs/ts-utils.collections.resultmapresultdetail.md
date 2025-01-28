@@ -9,5 +9,5 @@ Additional success or failure details for [ResultMap](./ts-utils.collections.res
 **Signature:**
 
 ```typescript
-export type ResultMapResultDetail = 'added' | 'deleted' | 'exists' | 'invalid-key' | 'invalid-value' | 'not-found' | 'success' | 'updated';
+export type ResultMapResultDetail = 'added' | 'deleted' | 'exists' | 'failure' | 'invalid-key' | 'invalid-value' | 'not-found' | 'success' | 'updated';
 ```

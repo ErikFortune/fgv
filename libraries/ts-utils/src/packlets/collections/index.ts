@@ -24,6 +24,7 @@ import * as Utils from './utils';
 
 export * from './collectible';
 export * from './collector';
+export * from './collectorConverter';
 export * from './collectors';
 export * from './common';
 export * from './keyValueConverters';

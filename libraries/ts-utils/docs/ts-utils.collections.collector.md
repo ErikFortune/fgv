@@ -132,6 +132,20 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[\_isFactoryCB(item)](./ts-utils.collections.collector._isfactorycb.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [\[Symbol.iterator\]()](./ts-utils.collections.collector._symbol.iterator_.md)
 
 

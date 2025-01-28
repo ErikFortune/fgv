@@ -31,11 +31,6 @@ import { KeyValueConverters } from './keyValueConverters';
  */
 export interface IReadOnlyResultMapConverter<TK extends string = string, TV = unknown> {
   /**
-   * {@inheritdoc Collections.ResultMapConverter.converters}
-   */
-  readonly converters: KeyValueConverters<TK, TV>;
-
-  /**
    * {@inheritdoc Collections.ResultMapConverter.map}
    */
   readonly map: IReadOnlyResultMap<TK, TV>;

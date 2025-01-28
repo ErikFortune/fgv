@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly index: TINDEX;
+readonly index: TINDEX | undefined;
 ```
