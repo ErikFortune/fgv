@@ -21,7 +21,13 @@
  */
 
 import '../../helpers/jest';
-import { Collectible, SimpleCollector, CollectibleFactoryCallback } from '../../../packlets/collections';
+import {
+  Collectible,
+  SimpleCollector,
+  CollectibleFactoryCallback,
+  Collector,
+  ICollectorConstructorParams
+} from '../../../packlets/collections';
 import { Result, succeed } from '../../../packlets/base';
 
 interface ITestThing {
@@ -57,6 +63,37 @@ class BrokenCollectibleTestThing<
   public setIndex(index: TINDEX): Result<TINDEX> {
     this._index = (index + 1) as TINDEX;
     return succeed(this.index!);
+  }
+}
+
+class TestCollector<TKEY extends string = string, TINDEX extends number = number> extends Collector<
+  TKEY,
+  TINDEX,
+  CollectibleTestThing<TKEY, TINDEX>,
+  ITestThing
+> {
+  public constructor(things?: ITestThing[]) {
+    const entries = things
+      ? { entries: things.map((thing, index): [TKEY, ITestThing] => [`thing${index}` as TKEY, thing]) }
+      : {};
+    const params: ICollectorConstructorParams<
+      TKEY,
+      TINDEX,
+      CollectibleTestThing<TKEY, TINDEX>,
+      ITestThing
+    > = {
+      factory: TestCollector._factory,
+      ...entries
+    };
+    super(params);
+  }
+
+  protected static _factory<TKEY extends string, TINDEX extends number>(
+    key: TKEY,
+    index: number,
+    item: ITestThing
+  ): Result<CollectibleTestThing<TKEY, TINDEX>> {
+    return succeed(new CollectibleTestThing(item, key, index as TINDEX));
   }
 }
 
@@ -208,6 +245,30 @@ describe('Collectors', () => {
           expect(map.has(c.key)).toBe(true);
           expect(map.get(c.key)).toSucceedWith(c);
         }
+      });
+    });
+  });
+
+  describe('ConvertingCollector', () => {
+    describe('constructor', () => {
+      test('can be constructed with initial items', () => {
+        const collector = new TestCollector(things);
+        expect(collector.size).toBe(5);
+        for (const c of collectibles) {
+          // index should have been set when it was added
+          expect(c.index).toBeDefined();
+          expect(collector.has(c.key)).toBe(true);
+          expect(collector.get(c.key)).toSucceedAndSatisfy((item) => {
+            expect(item).toEqual(c);
+            expect(item).not.toBe(c);
+            expect(collector.getAt(c.index!)).toSucceedWith(item);
+          });
+        }
+      });
+
+      test('can be constructed with no items', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>();
+        expect(collector.size).toBe(0);
       });
     });
   });
