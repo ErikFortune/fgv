@@ -218,6 +218,18 @@ describe('Collectors', () => {
         expect(collector.get('newThing')).toSucceedWith(expect.objectContaining(thing));
       });
 
+      test('does not call the factory if an item is already in the collector', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>({ items: collectibles });
+        const thing = collectibles[0];
+        const factory: CollectibleFactoryCallback<string, number, CollectibleTestThing> = jest.fn(
+          (key, index) => succeed(new CollectibleTestThing({ str: 'new', num: 6, bool: false }, key, index))
+        );
+        expect(collector.getOrAdd(thing.key, factory)).toSucceedWith(thing);
+        expect(factory).not.toHaveBeenCalled();
+        expect(collector.size).toBe(5);
+        expect(collector.get(thing.key)).toSucceedWith(thing);
+      });
+
       test('fails if the object to be added has a mismatched key', () => {
         const collector = new SimpleCollector<CollectibleTestThing>();
         const thing = new CollectibleTestThing({ str: 'new', num: 6, bool: false }, 'thing');
