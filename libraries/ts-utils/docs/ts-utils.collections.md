@@ -52,6 +52,17 @@ A [Collector](./ts-utils.collections.collector.md) wrapper which validates weakl
 </td></tr>
 <tr><td>
 
+[ConvertingCollector](./ts-utils.collections.convertingcollector.md)
+
+
+</td><td>
+
+A [Collector](./ts-utils.collections.collector.md) with a [CollectorConverter](./ts-utils.collections.collectorconverter.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+
+
+</td></tr>
+<tr><td>
+
 [ConvertingResultMap](./ts-utils.collections.convertingresultmap.md)
 
 
@@ -161,6 +172,17 @@ Parameters for constructing a [Collector](./ts-utils.icollector.md)<!-- -->.
 </td><td>
 
 Parameters for constructing a [CollectorConverter](./ts-utils.collections.collectorconverter.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IConvertingCollectorConstructorParams](./ts-utils.collections.iconvertingcollectorconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [ConvertingCollector](./ts-utils.collections.convertingcollector.md)<!-- -->.
 
 
 </td></tr>
@@ -310,17 +332,6 @@ Factory function for creating a new [ICollectible](./ts-utils.collections.icolle
 </td><td>
 
 Factory function for creating a new [ICollectible](./ts-utils.collections.icollectible.md) instance given a key and an index.
-
-
-</td></tr>
-<tr><td>
-
-[ConvertingCollector](./ts-utils.collections.convertingcollector.md)
-
-
-</td><td>
-
-A [collector](./ts-utils.collector.md) that converts items from a source representation to [ICollectible](./ts-utils.collections.icollectible.md) items with non-branded `string` key and `number` index.
 
 
 </td></tr>

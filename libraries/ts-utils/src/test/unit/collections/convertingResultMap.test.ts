@@ -39,7 +39,6 @@ describe('ConvertingResultMap', () => {
     flintstone: ['fred', 'wilma', 'pebbles'],
     rubble: ['barney', 'betty']
   };
-  type CavemanMap = ConvertingResultMap<CavemanFirstName, CavemanLastName>;
   const firstNameConverter = Validators.enumeratedValue<CavemanFirstName>([
     'fred',
     'barney',

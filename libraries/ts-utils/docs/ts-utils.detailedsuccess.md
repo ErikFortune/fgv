@@ -153,4 +153,18 @@ Invokes the supplied [success callback](./ts-utils.detailedsuccesscontinuation.m
 
 
 </td></tr>
+<tr><td>
+
+[withErrorFormat(cb)](./ts-utils.detailedsuccess.witherrorformat.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Calls a supplied [error formatter](./ts-utils.errorformatter.md) if the operation failed.
+
+
+</td></tr>
 </tbody></table>

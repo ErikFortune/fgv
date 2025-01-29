@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Brand, Result, succeed } from '../../../packlets/base';
+import { Brand, Result, fail, succeed } from '../../../packlets/base';
 import {
   Collectible,
   ConvertingCollector,
@@ -86,40 +86,32 @@ class BrokenCollectibleTestThing extends CollectibleTestThing {
   }
 }
 
-class TestCollector extends ConvertingCollector<TestKey, TestIndex, CollectibleTestThing, ITestThing> {
-  public constructor(things?: ITestThing[]) {
-    const entries = things
-      ? {
-          entries: things.map((thing, index): [TestKey, ITestThing] => [
-            `thing${index + 1}` as TestKey,
-            thing
-          ])
-        }
-      : {};
-    const params: IConvertingCollectorConstructorParams<
-      TestKey,
-      TestIndex,
-      CollectibleTestThing,
-      ITestThing
-    > = {
-      factory: TestCollector._factory,
-      converters: new KeyValueConverters<TestKey, ITestThing>({
-        key: testKey,
-        value: testThing,
-        entry: testEntry
-      }),
-      ...entries
-    };
-    super(params);
-  }
-
-  protected static _factory(key: TestKey, index: number, item: ITestThing): Result<CollectibleTestThing> {
-    return succeed(new CollectibleTestThing(item, key, index as TestIndex));
-  }
+function _collectibleTestThingFactory(
+  key: TestKey,
+  index: number,
+  item: ITestThing
+): Result<CollectibleTestThing> {
+  return succeed(new CollectibleTestThing(item, key, index as TestIndex));
 }
 
+export const testCollectorParams: IConvertingCollectorConstructorParams<
+  TestKey,
+  TestIndex,
+  CollectibleTestThing,
+  ITestThing
+> = {
+  factory: _collectibleTestThingFactory,
+  converters: new KeyValueConverters<TestKey, ITestThing>({
+    key: testKey,
+    value: testThing,
+    entry: testEntry
+  })
+};
+
 describe('ConvertingCollector', () => {
+  let entries: [TestKey, ITestThing][];
   let things: ITestThing[];
+  let collectibles: CollectibleTestThing[];
 
   beforeEach(() => {
     things = [
@@ -129,16 +121,85 @@ describe('ConvertingCollector', () => {
       { str: 'four', num: 4, bool: false },
       { str: 'five', num: 5, bool: true }
     ];
+    collectibles = things.map(
+      (thing, index) => new CollectibleTestThing(thing, `thing${index + 1}` as TestKey, index as TestIndex)
+    );
+    entries = things.map((thing, index) => [`thing${index + 1}` as TestKey, thing]);
   });
 
-  test('can be constructed with initial items', () => {
-    const collector = new TestCollector(things);
-    expect(collector.size).toEqual(5);
-    expect(collector.inner.size).toEqual(5);
-    things.forEach((thing, i) => {
-      expect(collector.converting.get(`thing${i + 1}`)).toSucceedAndSatisfy((collectible) => {
-        expect(collectible.key).toEqual(`thing${i + 1}` as TestKey);
+  describe('constructor', () => {
+    test('can be constructed with initial items', () => {
+      const collector = new ConvertingCollector({ ...testCollectorParams, entries });
+      expect(collector.size).toEqual(5);
+      expect(collector.inner.size).toEqual(5);
+      things.forEach((thing, i) => {
+        expect(collector.converting.get(`thing${i + 1}`)).toSucceedAndSatisfy((collectible) => {
+          expect(collectible.key).toEqual(`thing${i + 1}` as TestKey);
+          expect(collectible.index).toEqual(1);
+          expect(collectible.bool).toEqual(things[i].bool);
+          expect(collectible.num).toEqual(things[i].num);
+          expect(collectible.str).toEqual(things[i].str);
+        });
       });
+      expect(Array.from(collector.keys())).toEqual(['thing1', 'thing2', 'thing3', 'thing4', 'thing5']);
+      expect(Array.from(collector.values())).toEqual(collectibles);
+      expect(Array.from(collector.entries())).toEqual(
+        things.map((thing, i): [TestKey, ITestThing] => [`thing${i + 1}` as TestKey, thing])
+      );
+      for (const [key, thing] of collector) {
+        expect(thing).toEqual(collectibles.find((c) => c.key === key));
+      }
+    });
+
+    test('can be constructed with no initial items', () => {
+      const collector = new ConvertingCollector(testCollectorParams);
+      expect(collector.size).toEqual(0);
+      expect(collector.inner.size).toEqual(0);
+      expect(Array.from(collector.keys())).toEqual([]);
+      expect(Array.from(collector.values())).toEqual([]);
+      expect(Array.from(collector.entries())).toEqual([]);
+    });
+  });
+
+  describe('createConvertingCollector static method', () => {
+    test('can create a new ConvertingCollector', () => {
+      const collector = ConvertingCollector.createConvertingCollector(testCollectorParams);
+      expect(collector).toSucceedAndSatisfy((c) => {
+        expect(c.size).toEqual(0);
+      });
+    });
+
+    test('can create a new ConvertingCollector with initial items', () => {
+      const collector = ConvertingCollector.createConvertingCollector({ ...testCollectorParams, entries });
+      expect(collector).toSucceedAndSatisfy((c) => {
+        expect(c.size).toEqual(5);
+        expect(c.inner.size).toEqual(5);
+        things.forEach((thing, i) => {
+          expect(c.converting.get(`thing${i + 1}`)).toSucceedAndSatisfy((collectible) => {
+            expect(collectible.key).toEqual(`thing${i + 1}` as TestKey);
+            expect(collectible.index).toEqual(1);
+            expect(collectible.bool).toEqual(things[i].bool);
+            expect(collectible.num).toEqual(things[i].num);
+            expect(collectible.str).toEqual(things[i].str);
+          });
+        });
+        expect(Array.from(c.keys())).toEqual(['thing1', 'thing2', 'thing3', 'thing4', 'thing5']);
+        expect(Array.from(c.values())).toEqual(collectibles);
+        expect(Array.from(c.entries())).toEqual(
+          things.map((thing, i): [TestKey, ITestThing] => [`thing${i + 1}` as TestKey, thing])
+        );
+        for (const [key, thing] of c) {
+          expect(thing).toEqual(collectibles.find((c) => c.key === key));
+        }
+      });
+    });
+
+    test('fails if the factory fails', () => {
+      const collector = ConvertingCollector.createConvertingCollector({
+        factory: (key, index, item) => fail<CollectibleTestThing>('factory failed'),
+        converters: testCollectorParams.converters
+      });
+      expect(collector).toFailWith('factory failed');
     });
   });
 });
