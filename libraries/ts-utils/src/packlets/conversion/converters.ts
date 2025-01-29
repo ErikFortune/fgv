@@ -824,6 +824,7 @@ export function strictObject<T, TC = unknown>(
   properties: FieldConverters<T, TC>,
   opt?: (keyof T)[] | StrictObjectConverterOptions<T>
 ): ObjectConverter<T, TC> {
+  /* c8 ignore next 2 */
   const options: ObjectConverterOptions<T> =
     opt && Array.isArray(opt) ? { strict: true, optionalFields: opt } : { ...(opt ?? {}), strict: true };
   return new ObjectConverter<T, TC>(properties, options);

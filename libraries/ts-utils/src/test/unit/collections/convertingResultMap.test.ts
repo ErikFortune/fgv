@@ -128,7 +128,7 @@ describe('ConvertingResultMap', () => {
     test('succeeds and creates a new instance with the supplied converters', () => {
       expect(
         ConvertingResultMap.createConvertingResultMap({ converters: nameConverters })
-      ).toSucceedAndSatisfy<CavemanMap>((map) => {
+      ).toSucceedAndSatisfy((map) => {
         expect(map.converting.converters).toEqual(nameConverters);
       });
     });
@@ -139,7 +139,7 @@ describe('ConvertingResultMap', () => {
           converters: nameConverters,
           entries: [['fred', 'flintstone']]
         })
-      ).toSucceedAndSatisfy<CavemanMap>((map) => {
+      ).toSucceedAndSatisfy((map) => {
         expect(map.converting.converters).toEqual(nameConverters);
         expect(map.get('fred')).toSucceedWith('flintstone');
         expect(map.converting.has('fred')).toBe(true);

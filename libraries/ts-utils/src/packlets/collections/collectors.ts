@@ -73,16 +73,3 @@ export class SimpleCollector<TITEM extends ICollectible<string, number>> extends
     return item.setIndex(index).onSuccess(() => succeed(item));
   }
 }
-
-/**
- * A {@link Collector | collector} that converts items from a source representation to
- * {@link Collections.ICollectible | ICollectible} items with non-branded `string` key
- * and `number` index.
- * @public
- */
-export type ConvertingCollector<TITEM extends ICollectible<string, number>, TSRC> = Collector<
-  string,
-  number,
-  TITEM,
-  TSRC
->;

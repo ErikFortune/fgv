@@ -345,7 +345,7 @@ describe('BaseConverter class', () => {
       test('passes context to the type guard', () => {
         const converter: Converter<Thing> = stringConverter.withTypeGuard(isThing, 'not a known thing');
         expect(converter.convert('thing11')).toFailWith(/not a known thing/i);
-        expect(converter.convert('thing11', 'thing11')).toSucceedWith('thing11');
+        expect(converter.convert('thing11', 'thing11')).toSucceedWith('thing11' as Thing);
       });
 
       test('fails with the standard message for a value that fails initial conversion', () => {
@@ -379,7 +379,7 @@ describe('BaseConverter class', () => {
           'not a known thing'
         );
         expect(converter.convert(['thing11'])).toFailWith(/not a known thing/i);
-        expect(converter.convert(['thing11'], 'thing11')).toSucceedWith(['thing11']);
+        expect(converter.convert(['thing11'], 'thing11')).toSucceedWith(['thing11' as Thing]);
       });
 
       test('fails with the standard message for a value that fails initial conversion', () => {

@@ -148,18 +148,18 @@ describe('Collectors', () => {
 
     describe('createSimpleCollector', () => {
       test('succeeds with initial items', () => {
-        expect(SimpleCollector.createSimpleCollector({ items: collectibles })).toSucceedAndSatisfy<
-          SimpleCollector<CollectibleTestThing>
-        >((collector) => {
-          expect(collector.size).toBe(5);
-          for (const c of collectibles) {
-            // index should have been set when it was added
-            expect(c.index).toBeDefined();
-            expect(collector.has(c.key)).toBe(true);
-            expect(collector.get(c.key)).toSucceedWith(c);
-            expect(collector.getAt(c.index!)).toSucceedWith(c);
+        expect(SimpleCollector.createSimpleCollector({ items: collectibles })).toSucceedAndSatisfy(
+          (collector) => {
+            expect(collector.size).toBe(5);
+            for (const c of collectibles) {
+              // index should have been set when it was added
+              expect(c.index).toBeDefined();
+              expect(collector.has(c.key)).toBe(true);
+              expect(collector.get(c.key)).toSucceedWith(c);
+              expect(collector.getAt(c.index!)).toSucceedWith(c);
+            }
           }
-        });
+        );
       });
     });
 

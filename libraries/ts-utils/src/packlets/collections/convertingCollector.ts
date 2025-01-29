@@ -72,14 +72,20 @@ export class ConvertingCollector<
    */
   public readonly converting: CollectorConverter<TKEY, TINDEX, TITEM, TSRC>;
 
+  protected readonly _converters: KeyValueConverters<TKEY, TSRC>;
+
   /**
    * Constructs a new {@link Collections.ConvertingCollector | ConvertingCollector}
    * from the supplied {@link Collections.IConvertingCollectorConstructorParams | parameters}.
    * @param params - Required parameters for constructing the collector.
    */
   public constructor(params: IConvertingCollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>) {
-    super({ factory: params.factory, entries: params.entries });
+    super({ factory: params.factory });
+    this._converters = params.converters;
     this.converting = new CollectorConverter({ collector: this, converters: params.converters });
+    for (const entry of params.entries ?? []) {
+      this.getOrAdd(entry[0], entry[1]).orThrow();
+    }
   }
 
   /**

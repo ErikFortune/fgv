@@ -651,6 +651,13 @@ export class DetailedSuccess<T, TD> extends Success<T> {
   public onFailure(__cb: DetailedFailureContinuation<T, TD>): DetailedResult<T, TD> {
     return this;
   }
+
+  /**
+   * {@inheritdoc Success.withErrorFormat}
+   */
+  public withErrorFormat(cb: ErrorFormatter): DetailedResult<T, TD> {
+    return this;
+  }
 }
 
 /**

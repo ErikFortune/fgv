@@ -26,6 +26,7 @@ export * from './collectible';
 export * from './collector';
 export * from './collectorConverter';
 export * from './collectors';
+export * from './convertingCollector';
 export * from './common';
 export * from './keyValueConverters';
 export * from './readonlyResultMap';
