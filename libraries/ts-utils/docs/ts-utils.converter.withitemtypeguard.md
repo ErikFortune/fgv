@@ -9,7 +9,7 @@ Creates a [Converter](./ts-utils.converter.md) which applies a supplied type gua
 **Signature:**
 
 ```typescript
-withItemTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI[], TC>;
+withItemTypeGuard<TI>(guard: (from: unknown, context?: TC) => from is TI, message?: string): Converter<TI[], TC>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ guard
 
 </td><td>
 
-(from: unknown) =&gt; from is TI
+(from: unknown, context?: TC) =&gt; from is TI
 
 
 </td><td>

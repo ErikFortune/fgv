@@ -222,6 +222,15 @@ describe('Result module', () => {
       });
     });
 
+    describe('withErrorFormat method', () => {
+      test('propagates an incoming success result', () => {
+        expect(succeed('yaay!').withErrorFormat((msg) => `failed with ${msg}`)).toSucceedWith('yaay!');
+      });
+
+      test('formats an incoming error', () => {
+        expect(fail('oops').withErrorFormat((msg) => `failed with ${msg}`)).toFailWith('failed with oops');
+      });
+    });
     describe('withFailureDetail method', () => {
       test('reports success with no detail', () => {
         expect(succeed('hello').withFailureDetail('fred')).toSucceedWithDetail('hello', undefined);
@@ -458,6 +467,14 @@ describe('Result module', () => {
       ).toSucceedWith('pass through');
     });
 
+    describe('withErrorFormat method', () => {
+      test('propagates incoming success', () => {
+        expect(
+          succeedWithDetail('yaay!', 'blarg').withErrorFormat((msg) => `failed with ${msg}`)
+        ).toSucceedWithDetail('yaay!', 'blarg');
+      });
+    });
+
     describe('withFailureDetail method', () => {
       test('reports success with detail undefined', () => {
         expect(succeedWithDetail('hello', 10).withFailureDetail('fred')).toSucceedWithDetail(
@@ -514,6 +531,15 @@ describe('Result module', () => {
           return succeedWithDetail('it worked');
         })
       ).toSucceedWith('it worked');
+    });
+
+    describe('withErrorFormat', () => {
+      test('propagates incoming failure', () => {
+        expect(failWithDetail('oops', 10).withErrorFormat((msg) => `failed with ${msg}`)).toFailWithDetail(
+          'failed with oops',
+          10
+        );
+      });
     });
 
     describe('withFailureDetail method', () => {

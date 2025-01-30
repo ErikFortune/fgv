@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Conversion, Result, fail, succeed } from '../..';
+import { Brand, Conversion, Result, fail, succeed } from '../..';
 import { BaseConverter, Converters, GenericDefaultingConverter } from '../../packlets/conversion';
 import '../helpers/jest';
 
@@ -361,11 +361,11 @@ describe('GenericDefaultingConverter', () => {
     });
 
     test('returns a branded value on inner converter success', () => {
-      expect(converter.convert('some string')).toSucceedWith('some string');
+      expect(converter.convert('some string')).toSucceedWith('some string' as Brand<string, 'Brand1'>);
     });
 
     test('returns a branded generic default on inner converter failure', () => {
-      expect(converter.convert(10)).toSucceedWith(genericDefault);
+      expect(converter.convert(10)).toSucceedWith(genericDefault as Brand<string, 'Brand1'>);
     });
 
     test('rejects a second brand', () => {

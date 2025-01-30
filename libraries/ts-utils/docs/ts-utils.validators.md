@@ -41,6 +41,17 @@ Helper function to create a [Validation.Validator](./ts-utils.validation.validat
 </td></tr>
 <tr><td>
 
+[generic(validator)](./ts-utils.validators.generic.md)
+
+
+</td><td>
+
+Helper function to create a [Validator](./ts-utils.validation.validator.md) using a supplied [validator function](./ts-utils.validation.validatorfunc.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [isA(description, guard, params)](./ts-utils.validators.isa.md)
 
 

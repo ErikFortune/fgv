@@ -112,6 +112,27 @@ The aggregated messages.
 
 
 </td></tr>
+<tr><td>
+
+[numMessages](./ts-utils.messageaggregator.nummessages.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+The number of messages aggregated.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods

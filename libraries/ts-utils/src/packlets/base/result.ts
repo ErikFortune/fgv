@@ -35,17 +35,27 @@ export type Result<T> = Success<T> | Failure<T>;
  * @public
  */
 export type SuccessContinuation<T, TN> = (value: T) => Result<TN>;
+
 /**
  * Continuation callback to be called in the event that an
  * {@link Result} fails.
  * @public
  */
 export type FailureContinuation<T> = (message: string) => Result<T>;
+
 /**
  * Type inference to determine the result type of an {@link Result}.
  * @beta
  */
 export type ResultValueType<T> = T extends Result<infer TV> ? TV : never;
+
+/**
+ * Formats an error message.
+ * @param message - The error message to be formatted.
+ * @param detail - An optional detail to be included in the formatted message.
+ * @public
+ */
+export type ErrorFormatter<TD = unknown> = (message: string, detail?: TD) => string;
 
 /**
  * Simple logger interface used by {@link IResult.orThrow}.
@@ -227,6 +237,17 @@ export interface IResult<T> {
   onFailure(cb: FailureContinuation<T>): Result<T>;
 
   /**
+   * Calls a supplied {@link ErrorFormatter | error formatter} if
+   * the operation failed.
+   * @param cb - The {@link ErrorFormatter | error formatter} to
+   * be called in the event of failure.
+   * @returns If this operation failed, returns the returns {@link Failure | Failure}
+   * with the message returned by the formatter.  If this result
+   * was successful, propagates the result value from the successful event.
+   */
+  withErrorFormat(cb: ErrorFormatter): Result<T>;
+
+  /**
    * Converts a {@link IResult | IResult<T>} to a {@link DetailedResult | DetailedResult<T, TD>},
    * adding a supplied detail if the operation failed.
    * @param detail - The detail to be added if this operation failed.
@@ -357,6 +378,13 @@ export class Success<T> implements IResult<T> {
   }
 
   /**
+   * {@inheritdoc IResult.withErrorFormat}
+   */
+  public withErrorFormat(__cb: ErrorFormatter): Result<T> {
+    return this;
+  }
+
+  /**
    * {@inheritdoc IResult.withFailureDetail}
    */
   public withFailureDetail<TD>(__detail: TD): DetailedResult<T, TD> {
@@ -479,6 +507,13 @@ export class Failure<T> implements IResult<T> {
    */
   public onFailure(cb: FailureContinuation<T>): Result<T> {
     return cb(this.message);
+  }
+
+  /**
+   * {@inheritdoc IResult.withErrorFormat}
+   */
+  public withErrorFormat(cb: ErrorFormatter): Result<T> {
+    return fail(cb(this.message));
   }
 
   /**
@@ -616,6 +651,13 @@ export class DetailedSuccess<T, TD> extends Success<T> {
   public onFailure(__cb: DetailedFailureContinuation<T, TD>): DetailedResult<T, TD> {
     return this;
   }
+
+  /**
+   * {@inheritdoc Success.withErrorFormat}
+   */
+  public withErrorFormat(cb: ErrorFormatter): DetailedResult<T, TD> {
+    return this;
+  }
 }
 
 /**
@@ -681,6 +723,13 @@ export class DetailedFailure<T, TD> extends Failure<T> {
    */
   public onFailure(cb: DetailedFailureContinuation<T, TD>): DetailedResult<T, TD> {
     return cb(this.message, this._detail);
+  }
+
+  /**
+   * {@inheritdoc IResult.withErrorFormat}
+   */
+  public withErrorFormat(cb: ErrorFormatter<TD>): DetailedResult<T, TD> {
+    return failWithDetail(cb(this.message, this._detail), this._detail);
   }
 }
 

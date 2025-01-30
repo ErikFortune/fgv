@@ -131,7 +131,7 @@ export interface Converter<T, TC = unknown> extends ConverterTraits {
    * converter to a new result type `<T2>`.
    * @returns A new {@link Converter} returning `<T2>`.
    */
-  map<T2>(mapper: (from: T) => Result<T2>): Converter<T2, TC>;
+  map<T2>(mapper: (from: T, context?: TC) => Result<T2>): Converter<T2, TC>;
 
   /**
    * Creates a {@link Converter} which applies an additional supplied
@@ -154,7 +154,7 @@ export interface Converter<T, TC = unknown> extends ConverterTraits {
    * result of this {@link Converter}.
    * @returns A new {@link Converter} returning `<TI[]>`.
    */
-  mapItems<TI>(mapper: (from: unknown) => Result<TI>): Converter<TI[], TC>;
+  mapItems<TI>(mapper: (from: unknown, context?: TC) => Result<TI>): Converter<TI[], TC>;
 
   /**
    * Creates a {@link Converter} which maps the individual items of a collection
@@ -175,7 +175,7 @@ export interface Converter<T, TC = unknown> extends ConverterTraits {
    * of the base conversion and is allowed to mutate the return type.
    * @param action - The action to be applied.
    */
-  withAction<T2>(action: (result: Result<T>) => Result<T2>): Converter<T2, TC>;
+  withAction<T2>(action: (result: Result<T>, context?: TC) => Result<T2>): Converter<T2, TC>;
 
   /**
    * Creates a {@link Converter} which applies a supplied type guard to the conversion
@@ -184,7 +184,7 @@ export interface Converter<T, TC = unknown> extends ConverterTraits {
    * @param message - Optional message to be reported if the type guard fails.
    * @returns A new {@link Converter} returning `<TI>`.
    */
-  withTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI, TC>;
+  withTypeGuard<TI>(guard: (from: unknown, context?: TC) => from is TI, message?: string): Converter<TI, TC>;
 
   /**
    * Creates a {@link Converter} which applies a supplied type guard to each member of
@@ -197,7 +197,10 @@ export interface Converter<T, TC = unknown> extends ConverterTraits {
    * @param message - Optional message to be reported if the type guard fails.
    * @returns A new {@link Converter} returning `<TI>`.
    */
-  withItemTypeGuard<TI>(guard: (from: unknown) => from is TI, message?: string): Converter<TI[], TC>;
+  withItemTypeGuard<TI>(
+    guard: (from: unknown, context?: TC) => from is TI,
+    message?: string
+  ): Converter<TI[], TC>;
 
   /**
    * Creates a {@link Converter} which applies an optional constraint to the result
@@ -210,7 +213,10 @@ export interface Converter<T, TC = unknown> extends ConverterTraits {
    * @param options - {@link Conversion.ConstraintOptions | Options} for constraint evaluation.
    * @returns A new {@link Converter} returning `<T>`.
    */
-  withConstraint(constraint: (val: T) => boolean | Result<T>, options?: ConstraintOptions): Converter<T, TC>;
+  withConstraint(
+    constraint: (val: T, context?: TC) => boolean | Result<T>,
+    options?: ConstraintOptions
+  ): Converter<T, TC>;
 
   /**
    * Creates a new {@link Converter} which is derived from this one but which returns an

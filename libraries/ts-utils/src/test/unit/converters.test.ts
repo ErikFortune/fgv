@@ -23,7 +23,7 @@
 import '../helpers/jest';
 
 import { Validation } from '../../index';
-import { succeed } from '../../packlets/base';
+import { Result, succeed } from '../../packlets/base';
 import { Converters, FieldConverters, Infer } from '../../packlets/conversion';
 
 describe('Converters module', () => {
@@ -71,14 +71,11 @@ describe('Converters module', () => {
   });
 
   describe('enumerated values converter', () => {
-    const pie = Converters.enumeratedValue<'apple' | 'blueberry' | 'cherry'>([
-      'apple',
-      'blueberry',
-      'cherry'
-    ]);
+    type Pie = 'apple' | 'blueberry' | 'cherry';
+    const pie = Converters.enumeratedValue<Pie>(['apple', 'blueberry', 'cherry']);
     test('converts valid enumerated values', () => {
       ['apple', 'blueberry', 'cherry'].forEach((test) => {
-        expect(pie.convert(test)).toSucceedWith(test);
+        expect(pie.convert(test)).toSucceedWith(test as Pie);
       });
     });
 
@@ -204,6 +201,16 @@ describe('Converters module', () => {
         { from: [1, 2, 3], to: [1, 2, 3] }
       ].forEach((t) => {
         expect(Converters.literal(t.to).convert(t.from)).toFailWith(/does not match/i);
+      });
+    });
+  });
+
+  describe('generic converter', () => {
+    test('converts any value', () => {
+      const converter = (from: unknown): Result<string> => succeed('hello');
+
+      ['this', 10, true, [1, 2, 3]].forEach((t) => {
+        expect(Converters.generic(converter).convert(t)).toSucceedWith('hello');
       });
     });
   });
@@ -529,7 +536,11 @@ describe('Converters module', () => {
         s2: 'val2',
         s3: 'val3'
       };
-      expect(Converters.recordOf(enumConverter).convert(source)).toSucceedWith(source);
+      type EnumRecord = {
+        [key in keyof typeof source]: SomeEnum;
+      };
+
+      expect(Converters.recordOf(enumConverter).convert(source)).toSucceedWith(source as EnumRecord);
       expect(Converters.recordOf(enumConverter).convert(source, context)).toFailWith(
         /invalid enumerated value/i
       );
@@ -720,8 +731,9 @@ describe('Converters module', () => {
         p2: 'val2',
         p3: 'val3'
       };
+      const expected = new Map(Object.entries(source)) as unknown as Map<string, SomeEnum>;
 
-      expect(Converters.mapOf(enumConverter).convert(source)).toSucceedWith(new Map(Object.entries(source)));
+      expect(Converters.mapOf(enumConverter).convert(source)).toSucceedWith(expected);
       expect(Converters.mapOf(enumConverter).convert(source, context)).toFailWith(
         /invalid enumerated value/i
       );
@@ -758,7 +770,8 @@ describe('Converters module', () => {
           Converters.mapOf(Converters.string, { keyConverter }),
           Converters.mapOf(Converters.string, { keyConverter, onError: 'fail' })
         ].forEach((converter) => {
-          expect(converter.convert(source)).toSucceedWith(new Map(Object.entries(source)));
+          const expected = new Map(Object.entries(source)) as Map<SomeEnum, string>;
+          expect(converter.convert(source)).toSucceedWith(expected);
           expect(converter.convert(source, context)).toFailWith(/invalid enumerated value/i);
         });
       });
@@ -1112,7 +1125,9 @@ describe('Converters module', () => {
               boolField: true
             };
 
-            expect(converter.addPartial(['stringField']).convert(src)).toSucceedWith(src);
+            expect(converter.addPartial(['stringField']).convert(src)).toSucceedWith(
+              expect.objectContaining(src)
+            );
           });
         });
       });
@@ -1240,23 +1255,27 @@ describe('Converters module', () => {
     });
 
     test('succeeds if missing properties are optional', () => {
-      let converter = Converters.strictObject(fields, ['prop2']);
+      let converter = Converters.strictObject(fields, { optionalFields: ['prop2'] });
       expect(
         converter.convert({
           prop1: 'hello'
         })
-      ).toSucceedWith({
-        prop1: 'hello'
-      });
+      ).toSucceedWith(
+        expect.objectContaining({
+          prop1: 'hello'
+        })
+      );
 
       converter = Converters.strictObject(fields, { optionalFields: ['prop2'] });
       expect(
         converter.convert({
           prop1: 'hello'
         })
-      ).toSucceedWith({
-        prop1: 'hello'
-      });
+      ).toSucceedWith(
+        expect.objectContaining({
+          prop1: 'hello'
+        })
+      );
     });
   });
 

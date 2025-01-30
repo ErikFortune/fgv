@@ -2,21 +2,21 @@ import { printExpectedDetailedResult, printReceivedDetailedResult } from '../../
 import { matcherName, predicate } from './predicate';
 
 import { matcherHint } from 'jest-matcher-utils';
-import { DetailedResult } from '../../ts-utils';
+import { DetailedResult, ResultDetailType } from '../../ts-utils';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-unused-vars
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-unused-vars, @typescript-eslint/naming-convention
-    interface Matchers<R> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars, @typescript-eslint/ban-types, @typescript-eslint/naming-convention
+    interface Matchers<R, T> {
       /**
        * Use .toFailWithDetail to verify that a DetailedResult<T> is
        * a failure that matches both a supplied expected failure message
        * (string, RegExp or undefined) and a supplied failure detail.
        * @param message -
        */
-      toFailWithDetail<TD>(message: string | RegExp | undefined, detail: TD): R;
+      toFailWithDetail(message: string | RegExp | undefined, detail: ResultDetailType<T>): R;
     }
   }
 }
@@ -48,10 +48,10 @@ function failMessage<T, TD>(
 }
 
 export default {
-  toFailWithDetail: function <T, TD>(
-    received: DetailedResult<T, TD>,
+  toFailWithDetail: function <T extends DetailedResult<unknown, unknown>>(
+    received: T,
     expectedMessage: string | RegExp | undefined,
-    expectedDetail: TD
+    expectedDetail: ResultDetailType<T>
   ): jest.CustomMatcherResult {
     const pass = predicate(received, expectedMessage, expectedDetail);
     if (pass) {

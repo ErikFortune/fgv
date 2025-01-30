@@ -9,7 +9,7 @@ Helper function to create a [TypeGuardValidator](./ts-utils.validation.classes.t
 **Signature:**
 
 ```typescript
-export declare function isA<T, TC>(description: string, guard: TypeGuardWithContext<T, TC>, params?: Omit<TypeGuardValidatorConstructorParams<T, TC>, 'description' | 'guard'>): TypeGuardValidator<T, TC>;
+export declare function isA<T, TC = unknown>(description: string, guard: TypeGuardWithContext<T, TC>, params?: Omit<TypeGuardValidatorConstructorParams<T, TC>, 'description' | 'guard'>): TypeGuardValidator<T, TC>;
 ```
 
 ## Parameters

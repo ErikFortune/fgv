@@ -19,6 +19,28 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[Collector](./ts-utils.collector.md)
+
+
+</td><td>
+
+A [Collector](./ts-utils.icollector.md) that collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in a collector are created by key and are assigned an index at the time of addition. Items are immutable once added. Keys and indexes might be branded types, and source items might be transformed on addition.
+
+
+</td></tr>
+<tr><td>
+
+[ConvertingResultMap](./ts-utils.convertingresultmap.md)
+
+
+</td><td>
+
+A [ResultMap](./ts-utils.collections.resultmap.md) with a [validator](./ts-utils.collections.resultmapconverter.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+
+
+</td></tr>
+<tr><td>
+
 [DetailedFailure](./ts-utils.detailedfailure.md)
 
 
@@ -96,6 +118,17 @@ A [ResultMap](./ts-utils.collections.resultmap.md) class as a `Map<TK, TV>`<!-- 
 </td></tr>
 <tr><td>
 
+[SimpleCollector](./ts-utils.simplecollector.md)
+
+
+</td><td>
+
+A simple [collector](./ts-utils.collector.md) that collects [ICollectible items](./ts-utils.collections.icollectible.md) with non-branded `string` key and `number` index, and with no transformation other than index assignment on addition.
+
+
+</td></tr>
+<tr><td>
+
 [StringConverter](./ts-utils.stringconverter.md)
 
 
@@ -113,17 +146,6 @@ The [StringConverter](./ts-utils.conversion.stringconverter.md) class extends [B
 </td><td>
 
 Reports a successful [result](./ts-utils.iresult.md) from some operation and the corresponding value.
-
-
-</td></tr>
-<tr><td>
-
-[ValidatingResultMap](./ts-utils.validatingresultmap.md)
-
-
-</td><td>
-
-A [ResultMap](./ts-utils.collections.resultmap.md) with a [validator](./ts-utils.collections.resultmapvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
 
 
 </td></tr>
@@ -434,6 +456,17 @@ Generic converter to convert unknown to a templated type `<T>`<!-- -->, using in
 </td></tr>
 <tr><td>
 
+[ICollector](./ts-utils.icollector.md)
+
+
+</td><td>
+
+Collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in a collector are created by key and are assigned an index at the time of addition. Items are immutable once added.
+
+
+</td></tr>
+<tr><td>
+
 [IMessageAggregator](./ts-utils.imessageaggregator.md)
 
 
@@ -632,6 +665,17 @@ Callback to be called when a [DetailedResult](./ts-utils.detailedresult.md) enco
 </td><td>
 
 Callback to be called when a [DetailedResult](./ts-utils.detailedresult.md) encounters success.
+
+
+</td></tr>
+<tr><td>
+
+[ErrorFormatter](./ts-utils.errorformatter.md)
+
+
+</td><td>
+
+Formats an error message.
 
 
 </td></tr>
