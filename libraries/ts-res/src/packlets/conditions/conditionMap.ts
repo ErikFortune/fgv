@@ -24,7 +24,7 @@ import { Collections, Converter, ConvertingResultMap, mapResults, Result, succee
 import { QualifierMap } from '../qualifiers';
 import { IConditionDeclConvertContext, validatedConditionDecl } from './convert';
 import { Condition } from './condition';
-import { IConditionDecl } from './conditionDecl';
+import { IConditionDecl } from './conditionDecls';
 import { ConditionKey, Convert } from '../common';
 
 const conditionFromDecl: Converter<Condition, IConditionDeclConvertContext> = validatedConditionDecl.map(

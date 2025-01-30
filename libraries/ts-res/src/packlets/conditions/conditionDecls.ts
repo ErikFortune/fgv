@@ -23,6 +23,10 @@
 import { ConditionIndex, ConditionOperator, ConditionPriority, QualifierConditionValue } from '../common';
 import { Qualifier } from '../qualifiers';
 
+/**
+ * Non-validated declaration of a {@link Condition | condition}.
+ * @public
+ */
 export interface IConditionDecl {
   name: string;
   value: string;
@@ -30,6 +34,10 @@ export interface IConditionDecl {
   priority?: number;
 }
 
+/**
+ * Validated declaration of a {@link Condition | condition} with all defaults applied.
+ * @public
+ */
 export interface IValidatedConditionDecl {
   qualifier: Qualifier;
   value: QualifierConditionValue;

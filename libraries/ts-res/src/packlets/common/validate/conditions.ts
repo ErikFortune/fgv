@@ -30,7 +30,8 @@ import {
   ConditionIndex,
   ConditionSetIndex,
   QualifierMatchScore,
-  ConditionKey
+  ConditionKey,
+  ConditionSetKey
 } from '../conditions';
 import { conditionKey, identifier } from './regularExpressions';
 
@@ -166,6 +167,16 @@ export function isValidConditionSetIndex(index: number): index is ConditionSetIn
 }
 
 /**
+ * Determines whether a string is a valid condition set key.
+ * @param key - the string to validate.
+ * @returns `true` if the string is a valid condition set key, `false` otherwise.
+ */
+export function isValidConditionSetKey(key: string): key is ConditionSetKey {
+  // a condition set key is a `+` separated list of condition keys
+  return key.split('+').every(isValidConditionKey);
+}
+
+/**
  * Converts a string to a {@link QualifierName} if it is a valid qualifier name.
  * @param name - the string to convert
  * @returns `Success` with the converted {@link QualifierName} if successful, or `Failure` with an
@@ -275,4 +286,18 @@ export function toConditionSetIndex(index: number): Result<ConditionSetIndex> {
     return fail(`${index}: not a valid condition set index`);
   }
   return succeed(index);
+}
+
+/**
+ * Converts a string to a {@link ConditionSetKey} if it is a valid condition set key.
+ * @param key - the string to convert
+ * @returns `Success` with the converted {@link ConditionSetKey} if successful, or `Failure` with an
+ * error message if not.
+ * @public
+ */
+export function toConditionSetKey(key: string): Result<ConditionSetKey> {
+  if (!isValidConditionSetKey(key)) {
+    return fail(`${key}: not a valid condition set key`);
+  }
+  return succeed(key);
 }

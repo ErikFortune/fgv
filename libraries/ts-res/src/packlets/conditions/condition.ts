@@ -30,7 +30,7 @@ import {
   Validate
 } from '../common';
 import { Qualifier } from '../qualifiers';
-import { IValidatedConditionDecl } from './conditionDecl';
+import { IValidatedConditionDecl } from './conditionDecls';
 
 /**
  * Represents a single condition applied to some resource instance.

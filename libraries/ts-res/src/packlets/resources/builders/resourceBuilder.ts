@@ -105,9 +105,7 @@ export class ResourceBuilder {
     this._resourceTypes = params.resourceTypes;
     this._candidates = new ResultMap<string, ResourceCandidate>();
     if (params.typeName) {
-      this._resourceType = Validate.toResourceTypeName(params.typeName)
-        .onSuccess((typeName) => this._resourceTypes.get(typeName))
-        .orThrow();
+      this._resourceType = this._resourceTypes.converting.get(params.typeName).orThrow();
     }
   }
 

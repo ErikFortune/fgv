@@ -22,7 +22,8 @@
 
 import { captureResult, Result } from '@fgv/ts-utils';
 import { Condition } from './condition';
-import { QualifierName } from '../common';
+import { ConditionSetKey, QualifierName, Validate } from '../common';
+import { IValidatedConditionSetDecl } from './conditionSetDecls';
 
 /**
  * Parameters for creating a {@link ConditionSet | ConditionSet}.
@@ -37,7 +38,7 @@ export interface IConditionSetCreateParams {
  * context for a resource instance to be valid.
  * @public
  */
-export class ConditionSet {
+export class ConditionSet implements IValidatedConditionSetDecl {
   /**
    * The {@link Condition | conditions} that make up this condition
    * set.
@@ -95,10 +96,28 @@ export class ConditionSet {
   }
 
   /**
+   * Gets the {@link ConditionSetKey | key} for a supplied {@link IValidatedConditionSetDecl | condition set declaration}.
+   * @param decl - The {@link IValidatedConditionSetDecl | condition set declaration} for which to get the key.
+   * @returns `Success` with the condition set key if successful, `Failure` otherwise.
+   * @public
+   */
+  public static getKeyForDecl(decl: IValidatedConditionSetDecl): Result<ConditionSetKey> {
+    return Validate.toConditionSetKey(decl.conditions.map((c) => c.toKey()).join('+'));
+  }
+
+  /**
+   * Gets the {@link ConditionSetKey | key} for this condition set.
+   * @returns The key for this condition set.
+   */
+  public toKey(): ConditionSetKey {
+    return ConditionSet.getKeyForDecl(this).orThrow();
+  }
+
+  /**
    * Gets a human-readable string representation of this condition set.
    * @returns A string representation of this condition set.
    */
   public toString(): string {
-    return this.conditions.map((c) => c.toString()).join('_');
+    return this.toKey();
   }
 }

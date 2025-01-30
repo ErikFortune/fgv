@@ -22,7 +22,7 @@
 
 import * as Common from '../../common';
 import { Converters, populateObject, Result, succeed } from '@fgv/ts-utils';
-import { IConditionDecl, IValidatedConditionDecl } from '../conditionDecl';
+import { IConditionDecl, IValidatedConditionDecl } from '../conditionDecls';
 import { QualifierMap } from '../../qualifiers';
 
 /* eslint-disable @rushstack/typedef-var */
