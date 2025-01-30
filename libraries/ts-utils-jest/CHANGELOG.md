@@ -1,6 +1,11 @@
 # Change Log - @fgv/ts-utils-jest
 
-This log was last generated on Thu, 23 Jan 2025 06:19:32 GMT and should not be manually modified.
+This log was last generated on Thu, 30 Jan 2025 00:35:17 GMT and should not be manually modified.
+
+## 4.3.0
+Thu, 30 Jan 2025 00:35:17 GMT
+
+_Version update only_
 
 ## 4.2.2
 Thu, 23 Jan 2025 06:19:32 GMT
