@@ -37,7 +37,7 @@ export interface IQualifierConvertContext {
 
 /**
  * Converter which choose a qualifier by name or number from a
- * supplied {@link IQualifierConvertContext | conversion context}.
+ * supplied {@link Qualifiers.Convert.IQualifierConvertContext | conversion context}.
  * @public
  */
 export const qualifier = Converters.generic<Qualifier, IQualifierConvertContext>(

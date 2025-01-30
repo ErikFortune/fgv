@@ -9,8 +9,9 @@ Interface for a qualifier type. A qualifier type implements the build and runtim
 **Signature:**
 
 ```typescript
-export interface IQualifierType 
+export interface IQualifierType extends ICollectible<QualifierTypeName, QualifierTypeIndex> 
 ```
+**Extends:** ICollectible&lt;[QualifierTypeName](./ts-res.qualifiertypename.md)<!-- -->, [QualifierTypeIndex](./ts-res.qualifiertypeindex.md)<!-- -->&gt;
 
 ## Properties
 
@@ -36,6 +37,48 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[index](./ts-res.qualifiers.qualifiertypes.iqualifiertype.index.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[QualifierTypeIndex](./ts-res.qualifiertypeindex.md) \| undefined
+
+
+</td><td>
+
+Global index for this qualifier type. Immutable once set, either at construction or using [setIndex](./ts-res.qualifiers.qualifiertypes.iqualifiertype.setindex.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[key](./ts-res.qualifiers.qualifiertypes.iqualifiertype.key.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[QualifierTypeName](./ts-res.qualifiertypename.md)
+
+
+</td><td>
+
+Unique key for this qualifier.
+
+
+</td></tr>
+<tr><td>
 
 [name](./ts-res.qualifiers.qualifiertypes.iqualifiertype.name.md)
 
@@ -101,6 +144,17 @@ Validates a context value for this qualifier type.
 </td><td>
 
 Determines the extent to which a condition matches a context value for this qualifier type.
+
+
+</td></tr>
+<tr><td>
+
+[setIndex(index)](./ts-res.qualifiers.qualifiertypes.iqualifiertype.setindex.md)
+
+
+</td><td>
+
+Sets the index for this qualifier type. Once set, index is immutable.
 
 
 </td></tr>

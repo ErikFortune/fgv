@@ -26,8 +26,10 @@ import * as Hash from './packlets/hash';
 import * as Validation from './packlets/validation';
 
 import {
+  ICollectible,
   ICollector,
   Collector,
+  ConvertingCollector,
   IReadOnlyResultMap,
   ResultMap,
   SimpleCollector,
@@ -43,7 +45,9 @@ export {
   Conversion,
   Converter,
   Converters,
+  ConvertingCollector,
   Hash,
+  ICollectible,
   ICollector,
   IReadOnlyResultMap,
   ObjectConverter,

@@ -8,8 +8,10 @@ import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
+import { ConvertingCollector } from '@fgv/ts-utils';
 import { ConvertingResultMap } from '@fgv/ts-utils';
 import { DetailedResult } from '@fgv/ts-utils';
+import { ICollectible } from '@fgv/ts-utils';
 import { JsonValue } from '@fgv/ts-json-base';
 import { ObjectConverter } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
@@ -68,6 +70,9 @@ export type ConditionSetIndex = Brand<number, 'ConditionSetIndex'>;
 
 // @public
 const conditionSetIndex: Converter<ConditionSetIndex, unknown>;
+
+// @public
+export type ConditionSetKey = Brand<string, 'ConditionSetKey'>;
 
 declare namespace Convert {
     export {
@@ -167,7 +172,7 @@ interface IQualifierDeclConvertContext {
     // (undocumented)
     qualifierIndex: number;
     // (undocumented)
-    readonly qualifierTypes: QualifierTypeMap;
+    readonly qualifierTypes: QualifierTypeCollector;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -177,16 +182,19 @@ interface IQualifierMapCreateParams {
     // (undocumented)
     qualifiers?: IQualifierDecl[];
     // (undocumented)
-    qualifierTypes: QualifierTypeMap;
+    qualifierTypes: QualifierTypeCollector;
 }
 
 // @public
-interface IQualifierType {
-    readonly index: QualifierTypeIndex;
+interface IQualifierType extends ICollectible<QualifierTypeName, QualifierTypeIndex> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly index: QualifierTypeIndex | undefined;
     isValidConditionValue(value: string): value is QualifierConditionValue;
     isValidContextValue(value: string): value is QualifierContextValue;
+    readonly key: QualifierTypeName;
     matches(condition: QualifierConditionValue, context: QualifierContextValue, operator: ConditionOperator): QualifierMatchScore;
     readonly name: QualifierTypeName;
+    setIndex(index: QualifierTypeIndex): Result<QualifierTypeIndex>;
     validateCondition(value: string, operator?: ConditionOperator): Result<QualifierConditionValue>;
     validateContextValue(value: string): Result<QualifierContextValue>;
 }
@@ -194,9 +202,17 @@ interface IQualifierType {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+interface IQualifierTypeCollectorCreateParams {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    qualifierTypes?: QualifierType[];
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 interface IQualifierTypeConvertContext {
     // (undocumented)
-    qualifierTypes: QualifierTypeMap;
+    qualifierTypes: QualifierTypeCollector;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -204,31 +220,8 @@ interface IQualifierTypeConvertContext {
 // @public
 interface IQualifierTypeCreateParams {
     allowContextList?: boolean;
-    index: number;
+    index?: number;
     name: string;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierTypeMap"
-//
-// @public
-type IQualifierTypeMapCreateParams = IQualifierTypeMapCreateWithFactoryParams | IQualifierTypeMapCreateWithObjectParams;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierTypeMap"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierTypeFactory"
-//
-// @public
-interface IQualifierTypeMapCreateWithFactoryParams {
-    // (undocumented)
-    factories: QualifierTypeFactory[];
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierTypeMap"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierType"
-//
-// @public
-interface IQualifierTypeMapCreateWithObjectParams {
-    // (undocumented)
-    qualifierTypes: QualifierType[];
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -317,6 +310,9 @@ function isValidConditionKey(key: string): key is ConditionKey;
 
 // @public
 function isValidConditionSetIndex(index: number): index is ConditionSetIndex;
+
+// @public
+function isValidConditionSetKey(key: string): key is ConditionSetKey;
 
 // @public
 function isValidMatchScore(value: number): value is QualifierMatchScore;
@@ -438,7 +434,7 @@ class Qualifier implements IValidatedQualifierDecl {
     readonly type: QualifierType;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierConvertContext"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const qualifier: Converter<Qualifier, IQualifierConvertContext>;
@@ -480,7 +476,7 @@ class QualifierMap extends ConvertingResultMap<QualifierName, Qualifier> {
     getAt(index: number): Result<Qualifier>;
     get qualifiers(): ReadonlyMap<QualifierName, Qualifier>;
     // (undocumented)
-    protected _qualifierTypes: QualifierTypeMap;
+    protected _qualifierTypes: QualifierTypeCollector;
 }
 
 // @public
@@ -512,11 +508,13 @@ export { Qualifiers }
 abstract class QualifierType implements IQualifierType {
     protected constructor({ name, index, allowContextList }: IQualifierTypeCreateParams);
     protected readonly _allowContextList: boolean;
+    // (undocumented)
+    protected readonly _collectible: Collections.Collectible<QualifierTypeName, QualifierTypeIndex>;
     static compare(t1: QualifierType, t2: QualifierType): number;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    readonly index: QualifierTypeIndex;
+    get index(): QualifierTypeIndex | undefined;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -536,6 +534,10 @@ abstract class QualifierType implements IQualifierType {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
+    get key(): QualifierTypeName;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
     matches(condition: QualifierConditionValue, context: QualifierContextValue, operator: ConditionOperator): QualifierMatchScore;
     protected _matchList(condition: QualifierConditionValue, context: QualifierContextValue[], operator: ConditionOperator): QualifierMatchScore;
     protected abstract _matchOne(condition: QualifierConditionValue, context: QualifierContextValue, operator: ConditionOperator): QualifierMatchScore;
@@ -543,6 +545,10 @@ abstract class QualifierType implements IQualifierType {
     //
     // (undocumented)
     readonly name: QualifierTypeName;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    setIndex(index: QualifierTypeIndex): Result<QualifierTypeIndex>;
     protected static _splitContext(value: QualifierContextValue): QualifierContextValue[];
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -556,34 +562,32 @@ abstract class QualifierType implements IQualifierType {
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierTypeConvertContext"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const qualifierType: Converter<QualifierType, IQualifierTypeConvertContext>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierType"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type QualifierTypeFactory = (index: number) => Result<QualifierType>;
+class QualifierTypeCollector extends ConvertingCollector<QualifierTypeName, QualifierTypeIndex, QualifierType, QualifierType> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(params?: IQualifierTypeCollectorCreateParams);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params?: IQualifierTypeCollectorCreateParams): Result<QualifierTypeCollector>;
+    // (undocumented)
+    protected static _qualifierTypeFactory(key: QualifierTypeName, index: number, value: QualifierType): Result<QualifierType>;
+    // (undocumented)
+    protected static _toQualifierType(from: unknown): Result<QualifierType>;
+}
 
 // @public
 export type QualifierTypeIndex = Brand<number, 'QualifierTypeIndex'>;
 
 // @public
 const qualifierTypeIndex: Converter<QualifierTypeIndex, unknown>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierType"
-//
-// @public
-class QualifierTypeMap extends ConvertingResultMap<QualifierTypeName, QualifierType> {
-    constructor(params?: IQualifierTypeMapCreateParams);
-    static createQualifierTypeMap(params: IQualifierTypeMapCreateParams): Result<QualifierTypeMap>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "QualifierType"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getAt(index: number): Result<QualifierType>;
-    // (undocumented)
-    protected _typesByIndex: QualifierType[];
-}
 
 // @public
 export type QualifierTypeName = Brand<string, 'QualifierTypeName'>;
@@ -603,11 +607,8 @@ declare namespace QualifierTypes {
         LiteralQualifierType,
         ITerritoryQualifierTypeCreateParams,
         TerritoryQualifierType,
-        QualifierTypeFactory,
-        IQualifierTypeMapCreateWithFactoryParams,
-        IQualifierTypeMapCreateWithObjectParams,
-        IQualifierTypeMapCreateParams,
-        QualifierTypeMap
+        IQualifierTypeCollectorCreateParams,
+        QualifierTypeCollector
     }
 }
 
@@ -817,6 +818,9 @@ function toConditionKey(key: string): Result<ConditionKey>;
 function toConditionSetIndex(index: number): Result<ConditionSetIndex>;
 
 // @public
+function toConditionSetKey(key: string): Result<ConditionSetKey>;
+
+// @public
 function toPriority(priority: number): Result<ConditionPriority>;
 
 // @public
@@ -859,6 +863,7 @@ declare namespace Validate {
         isValidConditionIndex,
         isValidConditionKey,
         isValidConditionSetIndex,
+        isValidConditionSetKey,
         toQualifierName,
         toQualifierIndex,
         toQualifierTypeName,
@@ -867,6 +872,7 @@ declare namespace Validate {
         toConditionIndex,
         toConditionKey,
         toConditionSetIndex,
+        toConditionSetKey,
         minPriority,
         maxPriority,
         NoMatch,
@@ -889,7 +895,7 @@ export { Validate }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IQualifierDeclConvertContext"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const validatedQualifierDecl: Converter<IValidatedQualifierDecl, IQualifierDeclConvertContext>;

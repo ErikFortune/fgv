@@ -11,7 +11,7 @@ A [qualifier](./ts-res.qualifiers.qualifiertypes.qualifiertype.md) that matches 
 ```typescript
 export declare class LiteralQualifierType extends QualifierType 
 ```
-**Extends:** [QualifierType](./ts-res.qualifiers.qualifiertypes.qualifiertype.md)
+**Extends:** [QualifierType](./ts-res.qualifiers.qualifiertype.md)
 
 ## Constructors
 
@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)({ name, caseSensitive, allowContextList, enumeratedValues })](./ts-res.qualifiers.qualifiertypes.literalqualifiertype._constructor_.md)
+[(constructor)({ name, caseSensitive, allowContextList, enumeratedValues, index })](./ts-res.qualifiers.qualifiertypes.literalqualifiertype._constructor_.md)
 
 
 </td><td>

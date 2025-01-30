@@ -21,8 +21,8 @@
  */
 
 import { Converter, Converters, Result, fail } from '@fgv/ts-utils';
-import { QualifierTypeMap } from './qualifierTypeMap';
 import { QualifierType } from './qualifierType';
+import { QualifierTypeCollector } from './qualifierTypeCollector';
 
 /**
  * Context necessary to convert a qualifier name or number to an
@@ -30,13 +30,13 @@ import { QualifierType } from './qualifierType';
  * @public
  */
 export interface IQualifierTypeConvertContext {
-  qualifierTypes: QualifierTypeMap;
+  qualifierTypes: QualifierTypeCollector;
 }
 
 /**
  * Converter for {@link Qualifiers.QualifierType | QualifierType} objects,
  * retrieves a {@link Qualifiers.QualifierType | QualifierType} by name or
- * index from a supplied {@link IQualifierTypeConvertContext | conversion context}.
+ * index from a supplied {@link Qualifiers.QualifierTypes.Convert.IQualifierTypeConvertContext | conversion context}.
  * @public
  */
 // eslint-disable-next-line @rushstack/typedef-var

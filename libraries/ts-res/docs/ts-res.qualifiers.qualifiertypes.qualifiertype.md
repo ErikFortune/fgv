@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)({ name, allowContextList })](./ts-res.qualifiers.qualifiertypes.qualifiertype._constructor_.md)
+[(constructor)({ name, index, allowContextList })](./ts-res.qualifiers.qualifiertypes.qualifiertype._constructor_.md)
 
 
 </td><td>
@@ -92,6 +92,69 @@ boolean
 </td><td>
 
 Flag indicating whether this qualifier type allows a list of values in a context.
+
+
+</td></tr>
+<tr><td>
+
+[\_collectible](./ts-res.qualifiers.qualifiertypes.qualifiertype._collectible.md)
+
+
+</td><td>
+
+`protected`
+
+`readonly`
+
+
+</td><td>
+
+Collections.Collectible&lt;[QualifierTypeName](./ts-res.qualifiertypename.md)<!-- -->, [QualifierTypeIndex](./ts-res.qualifiertypeindex.md)<!-- -->&gt;
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[index](./ts-res.qualifiers.qualifiertypes.qualifiertype.index.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[QualifierTypeIndex](./ts-res.qualifiertypeindex.md) \| undefined
+
+
+</td><td>
+
+Global index for this qualifier type. Immutable once set, either at construction or using [setIndex](./ts-res.qualifiers.qualifiertypes.iqualifiertype.setindex.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[key](./ts-res.qualifiers.qualifiertypes.qualifiertype.key.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[QualifierTypeName](./ts-res.qualifiertypename.md)
+
+
+</td><td>
+
+Unique key for this qualifier.
 
 
 </td></tr>
@@ -190,6 +253,22 @@ Splits a comma-separated [context value](./ts-res.qualifiercontextvalue.md) into
 </td></tr>
 <tr><td>
 
+[compare(t1, t2)](./ts-res.qualifiers.qualifiertypes.qualifiertype.compare.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Compares two qualifier types by index.
+
+
+</td></tr>
+<tr><td>
+
 [isValidConditionValue(value)](./ts-res.qualifiers.qualifiertypes.qualifiertype.isvalidconditionvalue.md)
 
 
@@ -218,6 +297,38 @@ Validates a context value for this qualifier type.
 </td></tr>
 <tr><td>
 
+[isValidIndex(index)](./ts-res.qualifiers.qualifiertypes.qualifiertype.isvalidindex.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Determines whether a number is a valid qualifier type index.
+
+
+</td></tr>
+<tr><td>
+
+[isValidName(name)](./ts-res.qualifiers.qualifiertypes.qualifiertype.isvalidname.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+\* Determines whether a string is a valid qualifier type name.
+
+
+</td></tr>
+<tr><td>
+
 [matches(condition, context, operator)](./ts-res.qualifiers.qualifiertypes.qualifiertype.matches.md)
 
 
@@ -227,6 +338,20 @@ Validates a context value for this qualifier type.
 </td><td>
 
 Determines the extent to which a condition matches a context value for this qualifier type.
+
+
+</td></tr>
+<tr><td>
+
+[setIndex(index)](./ts-res.qualifiers.qualifiertypes.qualifiertype.setindex.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Sets the index for this qualifier type. Once set, index is immutable.
 
 
 </td></tr>

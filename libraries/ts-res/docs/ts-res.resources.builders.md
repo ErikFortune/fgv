@@ -61,6 +61,8 @@ Parameters for creating a [Resources.Builders.ResourceBuilder](./ts-res.resource
 
 </td><td>
 
+Interface for parameters to the ResourceManagerBuilder constructor
+
 
 </td></tr>
 </tbody></table>

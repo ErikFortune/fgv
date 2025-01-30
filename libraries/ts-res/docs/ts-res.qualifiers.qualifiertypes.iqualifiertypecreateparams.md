@@ -56,7 +56,26 @@ _(Optional)_ Flag indicating whether this qualifier type allows a list of values
 </td></tr>
 <tr><td>
 
-[name?](./ts-res.qualifiers.qualifiertypes.iqualifiertypecreateparams.name.md)
+[index?](./ts-res.qualifiers.qualifiertypes.iqualifiertypecreateparams.index.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+_(Optional)_ Global index for this qualifier type.
+
+
+</td></tr>
+<tr><td>
+
+[name](./ts-res.qualifiers.qualifiertypes.iqualifiertypecreateparams.name.md)
 
 
 </td><td>
@@ -69,7 +88,7 @@ string
 
 </td><td>
 
-_(Optional)_ The name of the qualifier type. No default value.
+The name of the qualifier type. No default value.
 
 
 </td></tr>

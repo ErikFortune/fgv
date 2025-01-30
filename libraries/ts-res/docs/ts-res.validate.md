@@ -30,12 +30,34 @@ Determines whether a number is a valid condition index.
 </td></tr>
 <tr><td>
 
+[isValidConditionKey(key)](./ts-res.validate.isvalidconditionkey.md)
+
+
+</td><td>
+
+Determines whether a string is a valid condition key. A condition key has the format: `<qualifierName>(-<operator>)?-[<value>]@<priority>` where operator is omitted for the default 'matches' operator.
+
+
+</td></tr>
+<tr><td>
+
 [isValidConditionSetIndex(index)](./ts-res.validate.isvalidconditionsetindex.md)
 
 
 </td><td>
 
 Determines whether a number is a valid condition set index.
+
+
+</td></tr>
+<tr><td>
+
+[isValidConditionSetKey(key)](./ts-res.validate.isvalidconditionsetkey.md)
+
+
+</td><td>
+
+Determines whether a string is a valid condition set key.
 
 
 </td></tr>
@@ -195,12 +217,34 @@ Converts a number to a [ConditionIndex](./ts-res.conditionindex.md) if it is a v
 </td></tr>
 <tr><td>
 
+[toConditionKey(key)](./ts-res.validate.toconditionkey.md)
+
+
+</td><td>
+
+Converts a string to a [ConditionKey](./ts-res.conditionkey.md) if it is a valid condition key.
+
+
+</td></tr>
+<tr><td>
+
 [toConditionSetIndex(index)](./ts-res.validate.toconditionsetindex.md)
 
 
 </td><td>
 
 Converts a number to a [ConditionSetIndex](./ts-res.conditionsetindex.md) if it is a valid condition set index.
+
+
+</td></tr>
+<tr><td>
+
+[toConditionSetKey(key)](./ts-res.validate.toconditionsetkey.md)
+
+
+</td><td>
+
+Converts a string to a [ConditionSetKey](./ts-res.conditionsetkey.md) if it is a valid condition set key.
 
 
 </td></tr>

@@ -4,12 +4,12 @@
 
 ## Qualifiers.IQualifierDecl interface
 
-Declares a [Qualifier](./ts-res.qualifiers.qualifier.md) for use in build or at runtime.
+Simple declaration for a [Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-export interface IQualifierDecl<TN extends string = string, TT extends string = string, TP extends number = number> 
+export interface IQualifierDecl 
 ```
 
 ## Properties
@@ -45,12 +45,10 @@ Description
 
 </td><td>
 
-TP
+number
 
 
 </td><td>
-
-The default priority of conditions that depend on this qualifier.
 
 
 </td></tr>
@@ -64,12 +62,10 @@ The default priority of conditions that depend on this qualifier.
 
 </td><td>
 
-TN
+string
 
 
 </td><td>
-
-The name of the qualifier.
 
 
 </td></tr>
@@ -83,12 +79,10 @@ The name of the qualifier.
 
 </td><td>
 
-TT
+string
 
 
 </td><td>
-
-The name of the type of the qualifier.
 
 
 </td></tr>

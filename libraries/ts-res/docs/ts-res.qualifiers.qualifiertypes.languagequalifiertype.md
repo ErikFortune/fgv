@@ -11,7 +11,7 @@
 ```typescript
 export declare class LanguageQualifierType extends QualifierType 
 ```
-**Extends:** [QualifierType](./ts-res.qualifiers.qualifiertypes.qualifiertype.md)
+**Extends:** [QualifierType](./ts-res.qualifiers.qualifiertype.md)
 
 ## Constructors
 
@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)({ name, allowContextList })](./ts-res.qualifiers.qualifiertypes.languagequalifiertype._constructor_.md)
+[(constructor)({ name, allowContextList, index })](./ts-res.qualifiers.qualifiertypes.languagequalifiertype._constructor_.md)
 
 
 </td><td>

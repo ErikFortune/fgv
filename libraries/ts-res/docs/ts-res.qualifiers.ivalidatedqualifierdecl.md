@@ -2,14 +2,113 @@
 
 [Home](./index.md) &gt; [@fgv/ts-res](./ts-res.md) &gt; [Qualifiers](./ts-res.qualifiers.md) &gt; [IValidatedQualifierDecl](./ts-res.qualifiers.ivalidatedqualifierdecl.md)
 
-## Qualifiers.IValidatedQualifierDecl type
+## Qualifiers.IValidatedQualifierDecl interface
 
-A [qualifier declaration](./ts-res.qualifiers.iqualifierdecl.md) with all properties validated for correctness.
+Validated declaration for a [Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-export type IValidatedQualifierDecl = IQualifierDecl<QualifierName, QualifierTypeName, ConditionPriority>;
+export interface IValidatedQualifierDecl 
 ```
-**References:** [IQualifierDecl](./ts-res.qualifiers.iqualifierdecl.md)<!-- -->, [QualifierName](./ts-res.qualifiername.md)<!-- -->, [QualifierTypeName](./ts-res.qualifiertypename.md)<!-- -->, [ConditionPriority](./ts-res.conditionpriority.md)
 
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[defaultPriority](./ts-res.qualifiers.ivalidatedqualifierdecl.defaultpriority.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[ConditionPriority](./ts-res.conditionpriority.md)
+
+
+</td><td>
+
+The default [priority](./ts-res.conditionpriority.md) of conditions that depend on this qualifier.
+
+
+</td></tr>
+<tr><td>
+
+[index](./ts-res.qualifiers.ivalidatedqualifierdecl.index.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[QualifierIndex](./ts-res.qualifierindex.md)
+
+
+</td><td>
+
+Index of the qualifier.
+
+
+</td></tr>
+<tr><td>
+
+[name](./ts-res.qualifiers.ivalidatedqualifierdecl.name.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[QualifierName](./ts-res.qualifiername.md)
+
+
+</td><td>
+
+The name of the qualifier.
+
+
+</td></tr>
+<tr><td>
+
+[type](./ts-res.qualifiers.ivalidatedqualifierdecl.type.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[QualifierType](./ts-res.qualifiers.qualifiertype.md)
+
+
+</td><td>
+
+The [type](./ts-res.qualifiers.qualifiertypes.qualifiertype.md) of the qualifier.
+
+
+</td></tr>
+</tbody></table>

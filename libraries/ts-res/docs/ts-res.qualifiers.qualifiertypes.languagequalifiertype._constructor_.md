@@ -9,7 +9,7 @@ Creates a new instance of a [language qualifier type](./ts-res.qualifiers.qualif
 **Signature:**
 
 ```typescript
-protected constructor({ name, allowContextList }: ILanguageQualifierTypeCreateParams);
+protected constructor({ name, allowContextList, index }: ILanguageQualifierTypeCreateParams);
 ```
 
 ## Parameters
@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-{ name, allowContextList }
+{ name, allowContextList, index }
 
 
 </td><td>

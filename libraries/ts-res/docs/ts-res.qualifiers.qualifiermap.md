@@ -9,8 +9,9 @@ Represents a collection of named, instantiated [Qualifiers](./ts-res.qualifiers.
 **Signature:**
 
 ```typescript
-export declare class QualifierMap 
+export declare class QualifierMap extends ConvertingResultMap<QualifierName, Qualifier> 
 ```
+**Extends:** ConvertingResultMap&lt;[QualifierName](./ts-res.qualifiername.md)<!-- -->, [Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->&gt;
 
 ## Constructors
 
@@ -73,6 +74,25 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[\_qualifierTypes](./ts-res.qualifiers.qualifiermap._qualifiertypes.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+[QualifierTypeCollector](./ts-res.qualifiers.qualifiertypes.qualifiertypecollector.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [qualifiers](./ts-res.qualifiers.qualifiermap.qualifiers.md)
 
 
@@ -114,7 +134,21 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[create(params)](./ts-res.qualifiers.qualifiermap.create.md)
+[\_convertNext(value)](./ts-res.qualifiers.qualifiermap._convertnext.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[createQualifierMap(params)](./ts-res.qualifiers.qualifiermap.createqualifiermap.md)
 
 
 </td><td>
@@ -130,7 +164,7 @@ Creates a new [QualifierMap](./ts-res.qualifiers.qualifiermap.md) instance.
 </td></tr>
 <tr><td>
 
-[get(name)](./ts-res.qualifiers.qualifiermap.get.md)
+[getAt(index)](./ts-res.qualifiers.qualifiermap.getat.md)
 
 
 </td><td>
@@ -138,23 +172,7 @@ Creates a new [QualifierMap](./ts-res.qualifiers.qualifiermap.md) instance.
 
 </td><td>
 
-Gets a [qualifier](./ts-res.qualifiers.qualifier.md) from the map by name.
-
-
-</td></tr>
-<tr><td>
-
-[validateQualifierDecl(decl)](./ts-res.qualifiers.qualifiermap.validatequalifierdecl.md)
-
-
-</td><td>
-
-`static`
-
-
-</td><td>
-
-Validates the properties of a [qualifier declaration](./ts-res.qualifiers.iqualifierdecl.md) for correctness.
+Gets the [Qualifier](./ts-res.qualifiers.qualifier.md) at the specified index.
 
 
 </td></tr>

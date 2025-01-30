@@ -4,10 +4,8 @@
 
 ## Qualifiers.IQualifierDecl.typeName property
 
-The name of the type of the qualifier.
-
 **Signature:**
 
 ```typescript
-typeName: TT;
+typeName: string;
 ```

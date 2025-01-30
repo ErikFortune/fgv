@@ -127,6 +127,17 @@ Branded number representing a validated condition index.
 </td></tr>
 <tr><td>
 
+[ConditionKey](./ts-res.conditionkey.md)
+
+
+</td><td>
+
+A branded string representing a validated condition key. A condition key is a string value which fully describes the condition apart from index. The condition key can be used to quickly determine if two conditions are identical apart from index, or for inspection.
+
+
+</td></tr>
+<tr><td>
+
 [ConditionOperator](./ts-res.conditionoperator.md)
 
 
@@ -155,6 +166,17 @@ Branded number representing a validated condition priority.
 </td><td>
 
 Branded number representing a validated condition set index.
+
+
+</td></tr>
+<tr><td>
+
+[ConditionSetKey](./ts-res.conditionsetkey.md)
+
+
+</td><td>
+
+Branded string representing a validated condition set key. A condition set key is a string value which fully describes the condition set apart from index. The condition set key can be used to quickly determine if two condition sets are identical apart from index, or for inspection.
 
 
 </td></tr>

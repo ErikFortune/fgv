@@ -54,4 +54,21 @@ _(Optional)_
 
 
 </td></tr>
+<tr><td>
+
+[index](./ts-res.qualifiers.qualifiertypes.iterritoryqualifiertypecreateparams.index.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+
+</td></tr>
 </tbody></table>

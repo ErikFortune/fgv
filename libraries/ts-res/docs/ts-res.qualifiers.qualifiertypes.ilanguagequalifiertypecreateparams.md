@@ -9,8 +9,9 @@ Interface defining the parameters that can be used to create a new [LanguageQual
 **Signature:**
 
 ```typescript
-export interface ILanguageQualifierTypeCreateParams 
+export interface ILanguageQualifierTypeCreateParams extends Partial<IQualifierTypeCreateParams> 
 ```
+**Extends:** Partial&lt;[IQualifierTypeCreateParams](./ts-res.qualifiers.qualifiertypes.iqualifiertypecreateparams.md)<!-- -->&gt;
 
 ## Properties
 

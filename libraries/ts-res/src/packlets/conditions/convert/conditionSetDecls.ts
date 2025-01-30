@@ -20,14 +20,11 @@
  * SOFTWARE.
  */
 
-import * as Common from '../../common';
-import { Converter, Converters, mapResults, populateObject, Result, fail, succeed } from '@fgv/ts-utils';
-import { IValidatedConditionDecl } from '../conditionDecls';
+import { Converters, Result, fail } from '@fgv/ts-utils';
 import { QualifierMap } from '../../qualifiers';
 import { IConditionSetDecl, IValidatedConditionSetDecl } from '../conditionSetDecls';
-import { conditionDecl, IConditionDeclConvertContext, validatedConditionDecl } from './decls';
+import { conditionDecl } from './decls';
 import { ConditionMap } from '../conditionMap';
-import { Condition } from '../condition';
 
 /* eslint-disable @rushstack/typedef-var */
 
@@ -53,12 +50,12 @@ export const validatedConditionSetDecl = Converters.generic<
   IValidatedConditionSetDecl,
   IConditionSetDeclConvertContext
 >((from: unknown, __self, context?: IConditionSetDeclConvertContext): Result<IValidatedConditionSetDecl> => {
-  return fail('not implemented');
-  /*if (!context) {
+  if (!context) {
     return fail('validatedConditionSetDecl converter requires a context');
   }
-  return Converters.arrayOf(validatedConditionDecl)
-    .convert(from)
+  return fail('not implemented');
+  /*
+  return Converters.arrayOf(validatedConditionDecl).convert(from)
     .onSuccess((decls) => {
         return mapResults(decls.map((decl) => {
             return Condition.getKeyForDecl(decl)

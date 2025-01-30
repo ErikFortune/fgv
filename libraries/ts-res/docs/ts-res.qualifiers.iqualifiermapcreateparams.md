@@ -37,7 +37,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[qualifiers](./ts-res.qualifiers.iqualifiermapcreateparams.qualifiers.md)
+[qualifiers?](./ts-res.qualifiers.iqualifiermapcreateparams.qualifiers.md)
 
 
 </td><td>
@@ -45,10 +45,12 @@ Description
 
 </td><td>
 
-ReadonlyMap&lt;[QualifierName](./ts-res.qualifiername.md)<!-- -->, [IQualifierDecl](./ts-res.qualifiers.iqualifierdecl.md)<!-- -->&gt;
+[IQualifierDecl](./ts-res.qualifiers.iqualifierdecl.md)<!-- -->\[\]
 
 
 </td><td>
+
+_(Optional)_
 
 
 </td></tr>
@@ -62,7 +64,7 @@ ReadonlyMap&lt;[QualifierName](./ts-res.qualifiername.md)<!-- -->, [IQualifierDe
 
 </td><td>
 
-ReadonlyMap&lt;[QualifierTypeName](./ts-res.qualifiertypename.md)<!-- -->, [QualifierType](./ts-res.qualifiers.qualifiertypes.qualifiertype.md)<!-- -->&gt;
+[QualifierTypeCollector](./ts-res.qualifiers.qualifiertypes.qualifiertypecollector.md)
 
 
 </td><td>

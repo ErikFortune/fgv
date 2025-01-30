@@ -11,7 +11,7 @@ Simple implementation of [ICollectible](./ts-utils.collections.icollectible.md) 
 ```typescript
 export declare class Collectible<TKEY extends string = string, TINDEX extends number = number> implements ICollectible<TKEY, TINDEX> 
 ```
-**Implements:** [ICollectible](./ts-utils.collections.icollectible.md)<!-- -->&lt;TKEY, TINDEX&gt;
+**Implements:** [ICollectible](./ts-utils.icollectible.md)<!-- -->&lt;TKEY, TINDEX&gt;
 
 ## Constructors
 

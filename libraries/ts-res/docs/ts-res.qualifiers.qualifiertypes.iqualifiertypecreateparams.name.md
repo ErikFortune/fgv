@@ -9,5 +9,5 @@ The name of the qualifier type. No default value.
 **Signature:**
 
 ```typescript
-name?: string;
+name: string;
 ```

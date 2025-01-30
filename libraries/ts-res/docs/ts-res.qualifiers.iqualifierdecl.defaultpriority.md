@@ -4,10 +4,8 @@
 
 ## Qualifiers.IQualifierDecl.defaultPriority property
 
-The default priority of conditions that depend on this qualifier.
-
 **Signature:**
 
 ```typescript
-defaultPriority: TP;
+defaultPriority: number;
 ```

@@ -4,12 +4,12 @@
 
 ## Qualifiers.Qualifier.create() method
 
-Creates a new instance of a [Qualifier](./ts-res.qualifiers.qualifier.md) from the supplied [parameters](./ts-res.qualifiers.iqualifiercreateparams.md)<!-- -->.
+Creates a new instance of a [Qualifier](./ts-res.qualifiers.qualifier.md) from the supplied [validated declaration](./ts-res.qualifiers.ivalidatedqualifierdecl.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-static create(params: IQualifierCreateParams): Result<Qualifier>;
+static create(decl: IValidatedQualifierDecl): Result<Qualifier>;
 ```
 
 ## Parameters
@@ -32,17 +32,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-params
+decl
 
 
 </td><td>
 
-[IQualifierCreateParams](./ts-res.qualifiers.iqualifiercreateparams.md)
+[IValidatedQualifierDecl](./ts-res.qualifiers.ivalidatedqualifierdecl.md)
 
 
 </td><td>
 
-The [parameters](./ts-res.qualifiers.iqualifiercreateparams.md) to use when creating the new instance.
+The [validated declaration](./ts-res.qualifiers.ivalidatedqualifierdecl.md) for the new instance.
 
 
 </td></tr>

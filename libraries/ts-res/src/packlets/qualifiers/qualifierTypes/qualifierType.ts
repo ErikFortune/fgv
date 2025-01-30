@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { Collections, ICollectible, Result, fail, succeed } from '@fgv/ts-utils';
 import {
   ConditionOperator,
   Convert,
@@ -38,16 +38,22 @@ import {
  * territories, etc).
  * @public
  */
-export interface IQualifierType {
+export interface IQualifierType extends ICollectible<QualifierTypeName, QualifierTypeIndex> {
   /**
    * The name of the qualifier type.
    */
   readonly name: QualifierTypeName;
 
   /**
-   * Optional global index for this qualifier type.
+   * Unique key for this qualifier.
    */
-  readonly index: QualifierTypeIndex;
+  readonly key: QualifierTypeName;
+
+  /**
+   * Global index for this qualifier type. Immutable once set, either at
+   * construction or using {@link Qualifiers.QualifierTypes.IQualifierType.setIndex | setIndex}.
+   */
+  readonly index: QualifierTypeIndex | undefined;
 
   /**
    * Validates a condition value for this qualifier type.
@@ -94,6 +100,12 @@ export interface IQualifierType {
     context: QualifierContextValue,
     operator: ConditionOperator
   ): QualifierMatchScore;
+
+  /**
+   * Sets the index for this qualifier type.  Once set, index is
+   * immutable.
+   */
+  setIndex(index: QualifierTypeIndex): Result<QualifierTypeIndex>;
 }
 
 /**
@@ -109,7 +121,7 @@ export interface IQualifierTypeCreateParams {
   /**
    * Global index for this qualifier type.
    */
-  index: number;
+  index?: number;
 
   /**
    * Flag indicating whether this qualifier type allows a list of values in a context.
@@ -130,9 +142,20 @@ export abstract class QualifierType implements IQualifierType {
   public readonly name: QualifierTypeName;
 
   /**
+   * {@inheritdoc Qualifiers.QualifierTypes.IQualifierType.key}
+   */
+  public get key(): QualifierTypeName {
+    return this._collectible.key;
+  }
+
+  /**
    * {@inheritdoc Qualifiers.QualifierTypes.IQualifierType.index}
    */
-  public readonly index: QualifierTypeIndex;
+  public get index(): QualifierTypeIndex | undefined {
+    return this._collectible.index;
+  }
+
+  protected readonly _collectible: Collections.Collectible<QualifierTypeName, QualifierTypeIndex>;
 
   /**
    * Flag indicating whether this qualifier type allows a list of values in a context.
@@ -148,8 +171,11 @@ export abstract class QualifierType implements IQualifierType {
    */
   protected constructor({ name, index, allowContextList }: IQualifierTypeCreateParams) {
     this.name = Convert.qualifierTypeName.convert(name).orThrow();
-    this.index = Convert.qualifierTypeIndex.convert(index).orThrow();
     this._allowContextList = allowContextList === true;
+    this._collectible = new Collections.Collectible(
+      this.name,
+      Convert.qualifierTypeIndex.convert(index).orDefault()
+    );
   }
 
   /**
@@ -206,6 +232,13 @@ export abstract class QualifierType implements IQualifierType {
   }
 
   /**
+   * {@inheritdoc Qualifiers.QualifierTypes.IQualifierType.setIndex}
+   */
+  public setIndex(index: QualifierTypeIndex): Result<QualifierTypeIndex> {
+    return this._collectible.setIndex(index);
+  }
+
+  /**
    * {@inheritdoc Validate.isValidQualifierTypeName}
    */
   public static isValidName(name: string): name is QualifierTypeName {
@@ -226,7 +259,15 @@ export abstract class QualifierType implements IQualifierType {
    * @returns a number indicating the relative order of the two qualifier types.
    */
   public static compare(t1: QualifierType, t2: QualifierType): number {
-    return t1.index - t2.index;
+    const i1 = t1._collectible.index ?? -1;
+    const i2 = t2._collectible.index ?? -1;
+    let diff = i1 - i2;
+
+    if (diff === 0) {
+      diff = t1.name.localeCompare(t2.name);
+    }
+
+    return diff;
   }
 
   /**

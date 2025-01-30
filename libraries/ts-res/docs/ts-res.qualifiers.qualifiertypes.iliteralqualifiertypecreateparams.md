@@ -9,9 +9,8 @@ Interface defining the parameters that can be used to create a new [LiteralQuali
 **Signature:**
 
 ```typescript
-export interface ILiteralQualifierTypeCreateParams extends IQualifierTypeCreateParams 
+export interface ILiteralQualifierTypeCreateParams 
 ```
-**Extends:** [IQualifierTypeCreateParams](./ts-res.qualifiers.qualifiertypes.iqualifiertypecreateparams.md)
 
 ## Properties
 
@@ -37,6 +36,25 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[allowContextList?](./ts-res.qualifiers.qualifiertypes.iliteralqualifiertypecreateparams.allowcontextlist.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_ Optional flag indicating whether the context can be a list of values. Defaults to `true`<!-- -->.
+
+
+</td></tr>
+<tr><td>
 
 [caseSensitive?](./ts-res.qualifiers.qualifiertypes.iliteralqualifiertypecreateparams.casesensitive.md)
 
@@ -71,6 +89,25 @@ ReadonlyArray&lt;string&gt;
 </td><td>
 
 _(Optional)_ Optional array of enumerated values to further constrain the type. Defaults to no constraint.
+
+
+</td></tr>
+<tr><td>
+
+[index](./ts-res.qualifiers.qualifiertypes.iliteralqualifiertypecreateparams.index.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+Global index for this qualifier type.
 
 
 </td></tr>

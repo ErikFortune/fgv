@@ -4,12 +4,12 @@
 
 ## Qualifiers.Qualifier.(constructor)
 
-Constructs a new instance of a [Qualifier](./ts-res.qualifiers.qualifier.md) from the supplied [parameters](./ts-res.qualifiers.iqualifiercreateparams.md)<!-- -->.
+Constructs a new instance of a [Qualifier](./ts-res.qualifiers.qualifier.md) from the supplied [validated declaration](./ts-res.qualifiers.ivalidatedqualifierdecl.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-protected constructor({ name, type, defaultPriority }: IQualifierCreateParams);
+protected constructor({ name, type, defaultPriority, index }: IValidatedQualifierDecl);
 ```
 
 ## Parameters
@@ -32,12 +32,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-{ name, type, defaultPriority }
+{ name, type, defaultPriority, index }
 
 
 </td><td>
 
-[IQualifierCreateParams](./ts-res.qualifiers.iqualifiercreateparams.md)
+[IValidatedQualifierDecl](./ts-res.qualifiers.ivalidatedqualifierdecl.md)
 
 
 </td><td>

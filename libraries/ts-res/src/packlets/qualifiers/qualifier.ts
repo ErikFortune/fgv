@@ -68,7 +68,7 @@ export class Qualifier implements IValidatedQualifierDecl {
 
   /**
    * Creates a new instance of a {@link Qualifiers.Qualifier | Qualifier} from the
-   * supplied {@link Qualifiers.IQualifierCreateParams | parameters}.
+   * supplied {@link Qualifiers.IValidatedQualifierDecl | validated declaration}.
    * @param decl - The {@link Qualifiers.IValidatedQualifierDecl | validated declaration}
    * for the new instance.
    * @returns `Success` with the new {@link Qualifiers.Qualifier | Qualifier} if successful,

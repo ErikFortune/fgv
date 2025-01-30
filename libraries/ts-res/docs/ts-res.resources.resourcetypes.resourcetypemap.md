@@ -9,7 +9,7 @@ Map [resource type names](./ts-res.resourcetypename.md) to [resource types](./ts
 **Signature:**
 
 ```typescript
-export type ResourceTypeMap = ValidatingResultMap<ResourceTypeName, IResourceType>;
+export type ResourceTypeMap = ConvertingResultMap<ResourceTypeName, IResourceType>;
 ```
 **References:** [ResourceTypeName](./ts-res.resourcetypename.md)<!-- -->, [IResourceType](./ts-res.resources.resourcetypes.iresourcetype.md)
 

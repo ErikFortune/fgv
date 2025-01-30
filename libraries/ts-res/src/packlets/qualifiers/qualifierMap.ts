@@ -31,9 +31,9 @@ import {
 } from '@fgv/ts-utils';
 import { QualifierName, Convert } from '../common';
 import { Qualifier } from './qualifier';
-import { QualifierTypeMap } from './qualifierTypes/qualifierTypeMap';
 import { IQualifierDeclConvertContext, validatedQualifierDecl } from './convert/decls';
 import { IQualifierDecl } from './qualifierDecl';
+import { QualifierTypeCollector } from './qualifierTypes';
 
 const qualifierFromDecl: Converter<Qualifier, IQualifierDeclConvertContext> = validatedQualifierDecl.map(
   Qualifier.create
@@ -44,7 +44,7 @@ const qualifierFromDecl: Converter<Qualifier, IQualifierDeclConvertContext> = va
  * @public
  */
 export interface IQualifierMapCreateParams {
-  qualifierTypes: QualifierTypeMap;
+  qualifierTypes: QualifierTypeCollector;
   qualifiers?: IQualifierDecl[];
 }
 
@@ -61,7 +61,7 @@ export class QualifierMap extends ConvertingResultMap<QualifierName, Qualifier> 
     return this._inner;
   }
 
-  protected _qualifierTypes: QualifierTypeMap;
+  protected _qualifierTypes: QualifierTypeCollector;
 
   /**
    * Constructs a new {@link Qualifiers.QualifierMap | QualifierMap}.
@@ -90,7 +90,7 @@ export class QualifierMap extends ConvertingResultMap<QualifierName, Qualifier> 
 
   /**
    * Creates a new {@link Qualifiers.QualifierMap | QualifierMap} instance.
-   * @param params - {@link Qualifiers.IQualifierCreateParams | Parameters} used to
+   * @param params - {@link Qualifiers.IQualifierMapCreateParams | Parameters} used to
    * create the new {@link Qualifiers.QualifierMap | QualifierMap}.
    * @returns `Success` with the new {@link Qualifiers.QualifierMap | QualifierMap} if
    * successful, `Failure` with an error message otherwise.

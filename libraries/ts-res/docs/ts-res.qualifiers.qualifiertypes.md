@@ -41,6 +41,17 @@ A [qualifier](./ts-res.qualifiers.qualifiertypes.qualifiertype.md) that matches 
 </td></tr>
 <tr><td>
 
+[QualifierTypeCollector](./ts-res.qualifiers.qualifiertypes.qualifiertypecollector.md)
+
+
+</td><td>
+
+Collector for [QualifierType](./ts-res.qualifiers.qualifiertype.md) objects.
+
+
+</td></tr>
+<tr><td>
+
 [TerritoryQualifierType](./ts-res.qualifiers.qualifiertypes.territoryqualifiertype.md)
 
 
@@ -126,6 +137,17 @@ Interface for a qualifier type. A qualifier type implements the build and runtim
 </td></tr>
 <tr><td>
 
+[IQualifierTypeCollectorCreateParams](./ts-res.qualifiers.qualifiertypes.iqualifiertypecollectorcreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a new [QualifierTypeCollector](./ts-res.qualifiers.qualifiertypes.qualifiertypecollector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [IQualifierTypeCreateParams](./ts-res.qualifiers.qualifiertypes.iqualifiertypecreateparams.md)
 
 
@@ -143,6 +165,30 @@ Parameters used to create a base [qualifier type](./ts-res.qualifiers.qualifiert
 </td><td>
 
 Parameters used to create a new [TerritoryQualifierType](./ts-res.qualifiers.qualifiertypes.territoryqualifiertype.md) instance.
+
+
+</td></tr>
+</tbody></table>
+
+## Namespaces
+
+<table><thead><tr><th>
+
+Namespace
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Convert](./ts-res.qualifiers.qualifiertypes.convert.md)
+
+
+</td><td>
 
 
 </td></tr>

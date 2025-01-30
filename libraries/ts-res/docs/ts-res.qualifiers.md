@@ -41,6 +41,32 @@ Represents a collection of named, instantiated [Qualifiers](./ts-res.qualifiers.
 </td></tr>
 </tbody></table>
 
+## Abstract Classes
+
+<table><thead><tr><th>
+
+Abstract Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[QualifierType](./ts-res.qualifiers.qualifiertype.md)
+
+
+</td><td>
+
+Abstract base class for qualifier types. Provides default implementations for the [IQualifierType](./ts-res.qualifiers.qualifiertypes.iqualifiertype.md) interface.
+
+
+</td></tr>
+</tbody></table>
+
 ## Interfaces
 
 <table><thead><tr><th>
@@ -56,23 +82,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IQualifierCreateParams](./ts-res.qualifiers.iqualifiercreateparams.md)
-
-
-</td><td>
-
-Parameters for creating a new [Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [IQualifierDecl](./ts-res.qualifiers.iqualifierdecl.md)
 
 
 </td><td>
 
-Declares a [Qualifier](./ts-res.qualifiers.qualifier.md) for use in build or at runtime.
+Simple declaration for a [Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->.
 
 
 </td></tr>
@@ -84,6 +99,17 @@ Declares a [Qualifier](./ts-res.qualifiers.qualifier.md) for use in build or at 
 </td><td>
 
 Parameters for creating a new [QualifierMap](./ts-res.qualifiers.qualifiermap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IValidatedQualifierDecl](./ts-res.qualifiers.ivalidatedqualifierdecl.md)
+
+
+</td><td>
+
+Validated declaration for a [Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->.
 
 
 </td></tr>
@@ -104,36 +130,19 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[QualifierTypes](./ts-res.qualifiers.qualifiertypes.md)
+[Convert](./ts-res.qualifiers.convert.md)
 
 
 </td><td>
 
 
 </td></tr>
-</tbody></table>
+<tr><td>
 
-## Type Aliases
-
-<table><thead><tr><th>
-
-Type Alias
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[IValidatedQualifierDecl](./ts-res.qualifiers.ivalidatedqualifierdecl.md)
+[QualifierTypes](./ts-res.qualifiers.qualifiertypes.md)
 
 
 </td><td>
-
-A [qualifier declaration](./ts-res.qualifiers.iqualifierdecl.md) with all properties validated for correctness.
 
 
 </td></tr>

@@ -4,6 +4,8 @@
 
 ## Resources.Builders.IResourceManagerCreateParams interface
 
+Interface for parameters to the ResourceManagerBuilder constructor
+
 **Signature:**
 
 ```typescript

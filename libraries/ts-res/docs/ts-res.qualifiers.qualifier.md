@@ -9,8 +9,9 @@ Represents a qualifier that can be used to identify the context in which a resou
 **Signature:**
 
 ```typescript
-export declare class Qualifier 
+export declare class Qualifier implements IValidatedQualifierDecl 
 ```
+**Implements:** [IValidatedQualifierDecl](./ts-res.qualifiers.ivalidatedqualifierdecl.md)
 
 ## Constructors
 
@@ -32,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)({ name, type, defaultPriority })](./ts-res.qualifiers.qualifier._constructor_.md)
+[(constructor)({ name, type, defaultPriority, index })](./ts-res.qualifiers.qualifier._constructor_.md)
 
 
 </td><td>
@@ -42,7 +43,7 @@ Description
 
 </td><td>
 
-Constructs a new instance of a [Qualifier](./ts-res.qualifiers.qualifier.md) from the supplied [parameters](./ts-res.qualifiers.iqualifiercreateparams.md)<!-- -->.
+Constructs a new instance of a [Qualifier](./ts-res.qualifiers.qualifier.md) from the supplied [validated declaration](./ts-res.qualifiers.ivalidatedqualifierdecl.md)<!-- -->.
 
 
 </td></tr>
@@ -94,6 +95,27 @@ The default [priority](./ts-res.conditionpriority.md) of conditions that depend 
 </td></tr>
 <tr><td>
 
+[index](./ts-res.qualifiers.qualifier.index.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[QualifierIndex](./ts-res.qualifierindex.md)
+
+
+</td><td>
+
+Optional index for the qualifier.
+
+
+</td></tr>
+<tr><td>
+
 [name](./ts-res.qualifiers.qualifier.name.md)
 
 
@@ -125,7 +147,7 @@ The name of the qualifier.
 
 </td><td>
 
-[QualifierType](./ts-res.qualifiers.qualifiertypes.qualifiertype.md)
+[QualifierType](./ts-res.qualifiers.qualifiertype.md)
 
 
 </td><td>
@@ -156,7 +178,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[create(params)](./ts-res.qualifiers.qualifier.create.md)
+[create(decl)](./ts-res.qualifiers.qualifier.create.md)
 
 
 </td><td>
@@ -166,7 +188,7 @@ Description
 
 </td><td>
 
-Creates a new instance of a [Qualifier](./ts-res.qualifiers.qualifier.md) from the supplied [parameters](./ts-res.qualifiers.iqualifiercreateparams.md)<!-- -->.
+Creates a new instance of a [Qualifier](./ts-res.qualifiers.qualifier.md) from the supplied [validated declaration](./ts-res.qualifiers.ivalidatedqualifierdecl.md)<!-- -->.
 
 
 </td></tr>

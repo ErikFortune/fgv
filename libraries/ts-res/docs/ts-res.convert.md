@@ -30,6 +30,17 @@ Description
 </td></tr>
 <tr><td>
 
+[conditionKey](./ts-res.convert.conditionkey.md)
+
+
+</td><td>
+
+`Converter` which validates an `unknown` value as a [ConditionKey](./ts-res.conditionkey.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [conditionOperator](./ts-res.convert.conditionoperator.md)
 
 

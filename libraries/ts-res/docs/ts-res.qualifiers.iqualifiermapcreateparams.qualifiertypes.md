@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-qualifierTypes: ReadonlyMap<QualifierTypeName, QualifierType>;
+qualifierTypes: QualifierTypeCollector;
 ```

@@ -170,6 +170,7 @@ export function isValidConditionSetIndex(index: number): index is ConditionSetIn
  * Determines whether a string is a valid condition set key.
  * @param key - the string to validate.
  * @returns `true` if the string is a valid condition set key, `false` otherwise.
+ * @public
  */
 export function isValidConditionSetKey(key: string): key is ConditionSetKey {
   // a condition set key is a `+` separated list of condition keys

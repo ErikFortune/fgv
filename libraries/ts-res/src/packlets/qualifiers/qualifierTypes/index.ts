@@ -26,6 +26,6 @@ export * from './qualifierType';
 export * from './languageQualifierType';
 export * from './literalQualifierType';
 export * from './territoryQualifierType';
-export * from './qualifierTypeMap';
+export * from './qualifierTypeCollector';
 
 export { Convert };

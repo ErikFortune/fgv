@@ -39,9 +39,9 @@ export interface ICollector<
   /**
    * Gets the item at a specified index.
    * @param index - The index of the item to retrieve.
-   * @returns Returs {@link Success | Success} with the item if it exists, or {@link Failure | Failure} with an error if the index is out of range.
+   * @returns Returns {@link Success | Success} with the item if it exists, or {@link Failure | Failure} with an error if the index is out of range.
    */
-  getAt(index: TINDEX): Result<TITEM>;
+  getAt(index: number): Result<TITEM>;
 
   /**
    * Gets an item by key if it exists, or creates a new item and adds it using the default {@link Collections.CollectibleFactory | factory} if not.
@@ -198,7 +198,7 @@ export class Collector<
   /**
    * {@inheritdoc ICollector.getAt}
    */
-  public getAt(index: TINDEX): Result<TITEM> {
+  public getAt(index: number): Result<TITEM> {
     if (index < 0 || index >= this._byIndex.length) {
       return fail(`${index}: out of range.`);
     }

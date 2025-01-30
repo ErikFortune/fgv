@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-qualifiers: ReadonlyMap<QualifierName, IQualifierDecl>;
+qualifiers?: IQualifierDecl[];
 ```

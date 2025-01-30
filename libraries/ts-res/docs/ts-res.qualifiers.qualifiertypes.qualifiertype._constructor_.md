@@ -9,7 +9,7 @@ Constructor for use by derived classes.
 **Signature:**
 
 ```typescript
-protected constructor({ name, allowContextList }: IQualifierTypeCreateParams);
+protected constructor({ name, index, allowContextList }: IQualifierTypeCreateParams);
 ```
 
 ## Parameters
@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-{ name, allowContextList }
+{ name, index, allowContextList }
 
 
 </td><td>

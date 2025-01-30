@@ -22,8 +22,8 @@
 
 import { Converters, populateObject, Result, succeed } from '@fgv/ts-utils';
 import { IQualifierDecl, IValidatedQualifierDecl } from '../qualifierDecl';
-import { QualifierTypeMap } from '../qualifierTypes';
 import { Validate } from '../../common';
+import { QualifierTypeCollector } from '../qualifierTypes/qualifierTypeCollector';
 
 /* eslint-disable @rushstack/typedef-var */
 
@@ -42,14 +42,14 @@ export const qualifierDecl = Converters.strictObject<IQualifierDecl>({
  * @public
  */
 export interface IQualifierDeclConvertContext {
-  readonly qualifierTypes: QualifierTypeMap;
+  readonly qualifierTypes: QualifierTypeCollector;
   qualifierIndex: number;
 }
 
 /**
  * Converter which constructs a {@link Qualifiers.IValidatedQualifierDecl | validated qualifier declaration}
  * from a {@link Qualifiers.IQualifierDecl | qualifier declaration}, instantiating qualifier types by name
- * from a supplied {@link IQualifierDeclConvertContext | conversion context}.
+ * from a supplied {@link Qualifiers.Convert.IQualifierDeclConvertContext | conversion context}.
  * @public
  */
 export const validatedQualifierDecl = Converters.generic<
