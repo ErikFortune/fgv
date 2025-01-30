@@ -52,14 +52,16 @@ export class QualifierTypeCollector extends ConvertingCollector<
    * @param params - Optional {@link Qualifiers.QualifierTypes.IQualifierTypeCollectorCreateParams | parameters} used to construct the collector.
    */
   protected constructor(params?: IQualifierTypeCollectorCreateParams) {
-    const entries = params?.qualifierTypes?.map((qt): [QualifierTypeName, QualifierType] => [qt.name, qt]);
     super({
       converters: new Collections.KeyValueConverters({
         key: Common.Convert.qualifierTypeName,
         value: QualifierTypeCollector._toQualifierType
       }),
-      factory: QualifierTypeCollector._qualifierTypeFactory,
-      ...(entries ? { entries } : {})
+      factory: QualifierTypeCollector._qualifierTypeFactory
+    });
+
+    params?.qualifierTypes?.forEach((qt) => {
+      this.getOrAdd(qt.name, qt);
     });
   }
 

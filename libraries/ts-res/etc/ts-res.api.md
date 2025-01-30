@@ -362,7 +362,7 @@ interface ITerritoryQualifierTypeCreateParams {
 // @public
 interface IValidatedQualifierDecl {
     defaultPriority: ConditionPriority;
-    index: QualifierIndex;
+    index: QualifierIndex | undefined;
     name: QualifierName;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     type: QualifierType;
@@ -417,19 +417,23 @@ const NoMatch: QualifierMatchScore;
 const PerfectMatch: QualifierMatchScore;
 
 // @public
-class Qualifier implements IValidatedQualifierDecl {
+class Qualifier implements IValidatedQualifierDecl, ICollectible<QualifierName, QualifierIndex> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor({ name, type, defaultPriority, index }: IValidatedQualifierDecl);
+    // (undocumented)
+    protected readonly _collectible: Collections.Collectible<QualifierName, QualifierIndex>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(decl: IValidatedQualifierDecl): Result<Qualifier>;
     readonly defaultPriority: ConditionPriority;
-    readonly index: QualifierIndex;
+    get index(): QualifierIndex | undefined;
+    get key(): QualifierName;
     readonly name: QualifierName;
+    setIndex(index: QualifierIndex): Result<QualifierIndex>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly type: QualifierType;
 }

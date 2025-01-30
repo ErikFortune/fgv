@@ -57,5 +57,5 @@ export interface IValidatedQualifierDecl {
   /**
    * Index of the qualifier.
    */
-  index: QualifierIndex;
+  index: QualifierIndex | undefined;
 }

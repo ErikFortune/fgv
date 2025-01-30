@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { captureResult, Result } from '@fgv/ts-utils';
+import { captureResult, Collections, ICollectible, Result } from '@fgv/ts-utils';
 import { ConditionPriority, QualifierIndex, QualifierName } from '../common';
 import { QualifierType } from './qualifierTypes';
 import { IValidatedQualifierDecl } from './qualifierDecl';
@@ -30,26 +30,38 @@ import { IValidatedQualifierDecl } from './qualifierDecl';
  * which a resource is used.
  * @public
  */
-export class Qualifier implements IValidatedQualifierDecl {
+export class Qualifier implements IValidatedQualifierDecl, ICollectible<QualifierName, QualifierIndex> {
   /**
    * The name of the qualifier.
    */
   public readonly name: QualifierName;
+
   /**
    * The {@link Qualifiers.QualifierTypes.QualifierType | type} of the qualifier.
    */
   public readonly type: QualifierType;
 
   /**
-   * Optional index for the qualifier.
+   * The index of the qualifier.
    */
-  public readonly index: QualifierIndex;
+  public get index(): QualifierIndex | undefined {
+    return this._collectible.index;
+  }
+
+  /**
+   * The collector key for this qualifier.
+   */
+  public get key(): QualifierName {
+    return this._collectible.key;
+  }
 
   /**
    * The default {@link ConditionPriority | priority} of conditions
    * that depend on this qualifier.
    */
   public readonly defaultPriority: ConditionPriority;
+
+  protected readonly _collectible: Collections.Collectible<QualifierName, QualifierIndex>;
 
   /**
    * Constructs a new instance of a {@link Qualifiers.Qualifier | Qualifier} from the
@@ -63,7 +75,7 @@ export class Qualifier implements IValidatedQualifierDecl {
     this.name = name;
     this.type = type;
     this.defaultPriority = defaultPriority;
-    this.index = index;
+    this._collectible = new Collections.Collectible(name, index);
   }
 
   /**
@@ -77,5 +89,14 @@ export class Qualifier implements IValidatedQualifierDecl {
    */
   public static create(decl: IValidatedQualifierDecl): Result<Qualifier> {
     return captureResult(() => new Qualifier(decl));
+  }
+
+  /**
+   * Sets the index of this qualifier.  Once set, the index cannot be changed.
+   * @param index - The index to set.
+   * @returns `Success` with the index if successful, `Failure` with an error message otherwise.
+   */
+  public setIndex(index: QualifierIndex): Result<QualifierIndex> {
+    return this._collectible.setIndex(index);
   }
 }
