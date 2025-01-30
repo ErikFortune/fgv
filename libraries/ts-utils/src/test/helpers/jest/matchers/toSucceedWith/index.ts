@@ -2,24 +2,27 @@ import { printExpectedResult, printReceivedResult } from '../../utils/matcherHel
 import { matcherName, predicate } from './predicate';
 
 import { matcherHint } from 'jest-matcher-utils';
-import { Result } from '../../../../../index';
+import { Result, ResultValueType } from '../../../../../index';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    interface Matchers<R> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars, @typescript-eslint/ban-types, @typescript-eslint/naming-convention
+    interface Matchers<R, T> {
       /**
-       * Use .toSucceedWith to verify that a Result<T> is a success
+       * Use .toSucceedWith to verify that a Result\<T\> is a success
        * and that the result value matches the supplied value
        * @param expected -
        */
-      toSucceedWith(expected: unknown): R;
+      toSucceedWith(expected: ResultValueType<T> | RegExp): R;
     }
   }
 }
 
-function passMessage<T>(received: Result<T>, expected: T): () => string {
+function passMessage<T extends Result<unknown>>(
+  received: T,
+  expected: ResultValueType<T> | RegExp
+): () => string {
   return () =>
     [
       matcherHint(`.not.${matcherName}`),
@@ -28,7 +31,10 @@ function passMessage<T>(received: Result<T>, expected: T): () => string {
     ].join('\n');
 }
 
-function failMessage<T>(received: Result<T>, expected: T): () => string {
+function failMessage<T extends Result<unknown>>(
+  received: T,
+  expected: ResultValueType<T> | RegExp
+): () => string {
   return () =>
     [
       matcherHint(`${matcherName}`),
@@ -38,7 +44,10 @@ function failMessage<T>(received: Result<T>, expected: T): () => string {
 }
 
 export default {
-  toSucceedWith: function <T>(received: Result<T>, expected: unknown): jest.CustomMatcherResult {
+  toSucceedWith: function <T extends Result<unknown>>(
+    received: T,
+    expected: ResultValueType<T> | RegExp
+  ): jest.CustomMatcherResult {
     const pass = predicate(received, expected);
     if (pass) {
       return { pass: true, message: passMessage(received, expected) };

@@ -25,22 +25,32 @@ import * as Conversion from './packlets/conversion';
 import * as Hash from './packlets/hash';
 import * as Validation from './packlets/validation';
 
-import { IReadOnlyResultMap, ResultMap, ValidatingResultMap } from './packlets/collections';
+import {
+  ICollector,
+  Collector,
+  IReadOnlyResultMap,
+  ResultMap,
+  SimpleCollector,
+  ConvertingResultMap
+} from './packlets/collections';
 import { Converter, Converters, ObjectConverter, StringConverter } from './packlets/conversion';
 import { Validator, Validators } from './packlets/validation';
 
 export * from './packlets/base';
 export {
   Collections,
+  Collector,
   Conversion,
   Converter,
   Converters,
   Hash,
+  ICollector,
   IReadOnlyResultMap,
   ObjectConverter,
   ResultMap,
+  SimpleCollector,
   StringConverter,
-  ValidatingResultMap,
+  ConvertingResultMap,
   Validation,
   Validator,
   Validators

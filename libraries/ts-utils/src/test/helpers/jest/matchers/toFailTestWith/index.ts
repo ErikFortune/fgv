@@ -8,8 +8,8 @@ import { printExpectedResult } from '../../utils/matcherHelpers';
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    interface Matchers<R> {
+    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars, @typescript-eslint/ban-types, @typescript-eslint/naming-convention
+    interface Matchers<R, T> {
       /**
        * Use .toFailTestWith to test a custom matcher by
        * verifying that a test case fails as expected and

@@ -22,9 +22,16 @@
 
 import * as Utils from './utils';
 
+export * from './collectible';
+export * from './collector';
+export * from './collectorConverter';
+export * from './collectors';
+export * from './convertingCollector';
 export * from './common';
+export * from './keyValueConverters';
 export * from './readonlyResultMap';
 export * from './resultMap';
-export * from './resultMapValidator';
-export * from './validatingResultMap';
+export * from './resultMapConverter';
+export * from './convertingResultMap';
+
 export { Utils };

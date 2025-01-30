@@ -112,6 +112,27 @@ Indicates whether the operation was successful.
 
 
 </td></tr>
+<tr><td>
+
+[value](./ts-utils.failure.value.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+undefined
+
+
+</td><td>
+
+Failed operation always returns undefined for value.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods
@@ -299,6 +320,20 @@ Get a 'friendly' string representation of this object.
 </td><td>
 
 Converts a [IResult&lt;T&gt;](./ts-utils.iresult.md) to a [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->, adding supplied details.
+
+
+</td></tr>
+<tr><td>
+
+[withErrorFormat(cb)](./ts-utils.failure.witherrorformat.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Calls a supplied [error formatter](./ts-utils.errorformatter.md) if the operation failed.
 
 
 </td></tr>

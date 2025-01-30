@@ -2,28 +2,28 @@ import { printExpectedDetailedResult, printReceivedDetailedResult } from '../../
 import { matcherName, predicate } from './predicate';
 
 import { matcherHint } from 'jest-matcher-utils';
-import { DetailedResult } from '../../ts-utils';
+import { DetailedResult, ResultDetailType, ResultValueType } from '../../ts-utils';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars, @typescript-eslint/naming-convention
-    interface Matchers<R> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars, @typescript-eslint/ban-types, @typescript-eslint/naming-convention
+    interface Matchers<R, T> {
       /**
        * Use .toSucceedWithDetail to verify that a DetailedResult\<T, TD\> is
        * a success and that the result value and detail matches the supplied
        * values
        */
-      toSucceedWithDetail<TD>(expected: unknown, detail: TD | undefined): R;
+      toSucceedWithDetail(expected: ResultValueType<T> | RegExp, detail: ResultDetailType<T> | undefined): R;
     }
   }
 }
 
-function passMessage<T, TD>(
-  received: DetailedResult<T, TD>,
-  expected: T,
-  expectedDetail: TD | undefined
+function passMessage<T extends DetailedResult<unknown, unknown>>(
+  received: T,
+  expected: ResultValueType<T> | RegExp,
+  expectedDetail: ResultDetailType<T> | undefined
 ): () => string {
   return () =>
     [
@@ -33,10 +33,10 @@ function passMessage<T, TD>(
     ].join('\n');
 }
 
-function failMessage<T, TD>(
-  received: DetailedResult<T, TD>,
-  expected: T,
-  expectedDetail: TD | undefined
+function failMessage<T extends DetailedResult<unknown, unknown>>(
+  received: T,
+  expected: ResultValueType<T> | RegExp,
+  expectedDetail: ResultDetailType<T> | undefined
 ): () => string {
   return () =>
     [
@@ -47,10 +47,10 @@ function failMessage<T, TD>(
 }
 
 export default {
-  toSucceedWithDetail: function <T, TD>(
-    received: DetailedResult<T, TD>,
-    expected: unknown,
-    detail: TD | undefined
+  toSucceedWithDetail: function <T extends DetailedResult<unknown, unknown>>(
+    received: T,
+    expected: ResultValueType<T> | RegExp,
+    detail: ResultDetailType<T> | undefined
   ): jest.CustomMatcherResult {
     const pass = predicate(received, expected, detail);
     if (pass) {

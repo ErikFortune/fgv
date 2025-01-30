@@ -41,6 +41,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[message](./ts-utils.iresult.message.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+Error message returned by a failed operation, undefined for a successful operation.
+
+
+</td></tr>
+<tr><td>
+
 [success](./ts-utils.iresult.success.md)
 
 
@@ -57,6 +78,27 @@ boolean
 </td><td>
 
 Indicates whether the operation was successful.
+
+
+</td></tr>
+<tr><td>
+
+[value](./ts-utils.iresult.value.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+T \| undefined
+
+
+</td><td>
+
+Value returned by a successful operation, undefined for a failed operation.
 
 
 </td></tr>
@@ -195,6 +237,17 @@ Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- 
 </td><td>
 
 Converts a [IResult&lt;T&gt;](./ts-utils.iresult.md) to a [DetailedResult&lt;T, TD&gt;](./ts-utils.detailedresult.md)<!-- -->, adding supplied details.
+
+
+</td></tr>
+<tr><td>
+
+[withErrorFormat(cb)](./ts-utils.iresult.witherrorformat.md)
+
+
+</td><td>
+
+Calls a supplied [error formatter](./ts-utils.errorformatter.md) if the operation failed.
 
 
 </td></tr>

@@ -23,6 +23,7 @@
 import '../../helpers/jest';
 
 import { Validators } from '../../../packlets/validation';
+import { fail } from '../../../packlets/base';
 
 describe('validators', () => {
   describe('enumeratedValue validator', () => {
@@ -69,6 +70,16 @@ describe('validators', () => {
 
     test('fails for non-literal', () => {
       expect(Validators.literal(10).validate({})).toFailWith(/expected literal/i);
+    });
+  });
+
+  describe('generic validator', () => {
+    test('uses supplied validation function', () => {
+      const validator = Validators.generic((v: unknown) =>
+        typeof v === 'string' ? true : fail('not a string')
+      );
+      expect(validator.validate('hello')).toSucceedWith('hello');
+      expect(validator.validate(10)).toFailWith(/not a string/i);
     });
   });
 });

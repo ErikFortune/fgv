@@ -9,7 +9,7 @@ Creates a [Converter](./ts-utils.converter.md) which applies a (possibly) mappin
 **Signature:**
 
 ```typescript
-map<T2>(mapper: (from: T) => Result<T2>): Converter<T2, TC>;
+map<T2>(mapper: (from: T, context?: TC) => Result<T2>): Converter<T2, TC>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ mapper
 
 </td><td>
 
-(from: T) =&gt; [Result](./ts-utils.result.md)<!-- -->&lt;T2&gt;
+(from: T, context?: TC) =&gt; [Result](./ts-utils.result.md)<!-- -->&lt;T2&gt;
 
 
 </td><td>

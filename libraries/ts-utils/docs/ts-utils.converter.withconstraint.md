@@ -9,7 +9,7 @@ Creates a [Converter](./ts-utils.converter.md) which applies an optional constra
 **Signature:**
 
 ```typescript
-withConstraint(constraint: (val: T) => boolean | Result<T>, options?: ConstraintOptions): Converter<T, TC>;
+withConstraint(constraint: (val: T, context?: TC) => boolean | Result<T>, options?: ConstraintOptions): Converter<T, TC>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ constraint
 
 </td><td>
 
-(val: T) =&gt; boolean \| [Result](./ts-utils.result.md)<!-- -->&lt;T&gt;
+(val: T, context?: TC) =&gt; boolean \| [Result](./ts-utils.result.md)<!-- -->&lt;T&gt;
 
 
 </td><td>

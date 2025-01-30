@@ -22,7 +22,7 @@
 
 import { Result, fail, isKeyOf, succeed } from '../base';
 import { TypeGuardWithContext, Validator } from '../validation';
-import { BaseConverter } from './baseConverter';
+import { BaseConverter, ConverterFunc } from './baseConverter';
 import { Converter, OnError } from './converter';
 import { FieldConverters, ObjectConverter, ObjectConverterOptions } from './objectConverter';
 import { StringConverter } from './stringConverter';
@@ -196,6 +196,16 @@ export function validated<T, TC = unknown>(validator: Validator<T, TC>): Convert
   return new BaseConverter((from: unknown, __self?: Converter<T, TC>, context?: TC) => {
     return validator.validate(from, context);
   });
+}
+
+/**
+ * Helper function to create a {@link Converter | Converter} from a supplied {@link Conversion.ConverterFunc | ConverterFunc}.
+ * @param convert - the function to be wrapped
+ * @returns A {@link Converter | Converter} which uses the supplied function.
+ * @public
+ */
+export function generic<T, TC = unknown>(convert: ConverterFunc<T, TC>): Converter<T, TC> {
+  return new BaseConverter(convert);
 }
 
 /**
@@ -814,6 +824,7 @@ export function strictObject<T, TC = unknown>(
   properties: FieldConverters<T, TC>,
   opt?: (keyof T)[] | StrictObjectConverterOptions<T>
 ): ObjectConverter<T, TC> {
+  /* c8 ignore next 2 */
   const options: ObjectConverterOptions<T> =
     opt && Array.isArray(opt) ? { strict: true, optionalFields: opt } : { ...(opt ?? {}), strict: true };
   return new ObjectConverter<T, TC>(properties, options);

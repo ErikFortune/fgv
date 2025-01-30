@@ -24,6 +24,7 @@ import '../helpers/jest';
 
 import { Result, fail, succeed } from '../../packlets/base';
 import { BaseConverter, Converter, Converters } from '../../packlets/conversion';
+import { Conversion } from '../..';
 
 interface ITestContext {
   value: string;
@@ -175,6 +176,17 @@ describe('BaseConverter class', () => {
         got: 'DEFAULT VALUE is expected'
       });
     });
+
+    test('passes context to the map function', () => {
+      const testMap = contextConverter.map(
+        (from: string, context?: ITestContext): Result<{ got: string }> => {
+          return succeed({ got: `${from} with context ${context?.value ?? 'undefined'}` });
+        }
+      );
+      expect(testMap.convert('{{value}} is expected', { value: 'expected' })).toSucceedWith({
+        got: 'expected is expected with context expected'
+      });
+    });
   });
 
   describe('mapConvert method', () => {
@@ -211,15 +223,32 @@ describe('BaseConverter class', () => {
         got: 'DEFAULT VALUE is expected'
       });
     });
+
+    test('passes context to the chained converter', () => {
+      const tc = new BaseConverter<{ got: string }, ITestContext>(
+        (from: unknown, __self: Converter<{ got: string }, ITestContext>, context?: ITestContext) => {
+          return succeed({ got: `${from as string} with context ${context?.value ?? 'undefined'}` });
+        }
+      );
+      const cc = contextConverter.mapConvert(tc);
+      expect(cc.convert('{{value}} is expected', { value: 'expected' })).toSucceedWith({
+        got: 'expected is expected with context expected'
+      });
+    });
   });
 
   describe('mapItems', () => {
-    function mapNumber(from: unknown): Result<number> {
+    function mapNumber(from: unknown, context?: number): Result<number> {
       const n = Number(from);
+      if (context && n === context) {
+        return fail(`${n} matches context`);
+      }
       return Number.isNaN(n) ? fail('not a number') : succeed(n);
     }
 
-    const converter: Converter<number[], unknown> = Converters.stringArray.mapItems(mapNumber);
+    const converter: Converter<number[], number> = Converters.arrayOf<string, number>(
+      new Conversion.StringConverter<string, number>()
+    ).mapItems(mapNumber);
 
     test('it succeeds for an array with all valid elements', () => {
       expect(converter.convert(['10', '20'])).toSucceedWith([10, 20]);
@@ -230,12 +259,28 @@ describe('BaseConverter class', () => {
     });
 
     test('it fails for a non-array', () => {
-      expect(stringConverter.mapItems(mapNumber).convert('10')).toFailWith(/not an array/i);
+      expect(converter.mapItems(mapNumber).convert('10')).toFailWith(/not an array/i);
+    });
+
+    test('passes context to the inner map function', () => {
+      expect(converter.convert(['10', '20'], 20)).toFailWith('20 matches context');
     });
   });
 
   describe('mapConvertItems', () => {
-    const converter: Converter<number[], unknown> = Converters.stringArray.mapConvertItems(numberConverter);
+    const testStringArray = Converters.arrayOf<string, number>(
+      new Conversion.StringConverter<string, number>()
+    );
+    const itemConverter = new BaseConverter<number, number>(
+      (from: unknown, __self: unknown, context?: number): Result<number> => {
+        const n = Number(from);
+        if (context && n === context) {
+          return fail(`${n} matches context`);
+        }
+        return Number.isNaN(n) ? fail('not a number') : succeed(n);
+      }
+    );
+    const converter: Converter<number[], number> = testStringArray.mapConvertItems(itemConverter);
 
     test('succeeds for an array with all valid elements', () => {
       expect(converter.convert(['10', '20'])).toSucceedWith([10, 20]);
@@ -248,10 +293,17 @@ describe('BaseConverter class', () => {
     test('fails for a non-array', () => {
       expect(stringConverter.mapConvertItems(numberConverter).convert('10')).toFailWith(/not an array/i);
     });
+
+    test('passes context to the inner converter', () => {
+      expect(converter.convert(['10', '20'], 20)).toFailWith('20 matches context');
+    });
   });
 
   describe('with an action', () => {
-    const converter = numberConverter.withAction((r) => {
+    const converter = numberConverter.withAction((r, context?: unknown) => {
+      if (context && typeof context === 'number' && r.success && r.value === context) {
+        return fail(`${r.value} matches context`);
+      }
       return r.success ? succeed(r.value + 1) : fail('action ate the error');
     });
 
@@ -262,12 +314,16 @@ describe('BaseConverter class', () => {
     test('passes result of failed conversion to the action', () => {
       expect(converter.convert('not a number')).toFailWith('action ate the error');
     });
+
+    test('passes context to the action', () => {
+      expect(converter.convert(10, 10)).toFailWith('10 matches context');
+    });
   });
 
   describe('with type guards', () => {
     type Thing = 'thing1' | 'thing2';
-    function isThing(from: unknown): from is Thing {
-      return from === 'thing1' || from === 'thing2';
+    function isThing(from: unknown, context?: unknown): from is Thing {
+      return from === 'thing1' || from === 'thing2' || from === context;
     }
 
     describe('withTypeGuard method', () => {
@@ -284,6 +340,12 @@ describe('BaseConverter class', () => {
       test('fails with a custom message for a value that fails the guard', () => {
         const converter: Converter<Thing> = stringConverter.withTypeGuard(isThing, 'not a known thing');
         expect(converter.convert('thing3')).toFailWith(/not a known thing/i);
+      });
+
+      test('passes context to the type guard', () => {
+        const converter: Converter<Thing> = stringConverter.withTypeGuard(isThing, 'not a known thing');
+        expect(converter.convert('thing11')).toFailWith(/not a known thing/i);
+        expect(converter.convert('thing11', 'thing11')).toSucceedWith('thing11' as Thing);
       });
 
       test('fails with the standard message for a value that fails initial conversion', () => {
@@ -311,6 +373,15 @@ describe('BaseConverter class', () => {
         expect(converter.convert(['thing3'])).toFailWith(/not a known thing/i);
       });
 
+      test('passes context to the type guard', () => {
+        const converter: Converter<Thing[], unknown> = Converters.stringArray.withItemTypeGuard(
+          isThing,
+          'not a known thing'
+        );
+        expect(converter.convert(['thing11'])).toFailWith(/not a known thing/i);
+        expect(converter.convert(['thing11'], 'thing11')).toSucceedWith(['thing11' as Thing]);
+      });
+
       test('fails with the standard message for a value that fails initial conversion', () => {
         const converter: Converter<Thing[], unknown> = Converters.stringArray.withItemTypeGuard(
           isThing,
@@ -328,7 +399,9 @@ describe('BaseConverter class', () => {
 
   describe('withConstraint method', () => {
     describe('with a boolean constraint', () => {
-      const constrained = numberConverter.withConstraint((n) => n >= 0 && n <= 100);
+      const constrained = numberConverter.withConstraint(
+        (n, context?: unknown) => (n >= 0 && n <= 100) || n === context
+      );
       test('converts a valid value as expected', () => {
         [0, 100, '50'].forEach((v) => {
           expect(constrained.convert(v)).toSucceedWith(Number(v));
@@ -339,6 +412,11 @@ describe('BaseConverter class', () => {
         [-1, 200, '101'].forEach((v) => {
           expect(constrained.convert(v)).toFailWith(/constraint/i);
         });
+      });
+
+      test('passes context to the constraint function', () => {
+        expect(constrained.convert(1000)).toFailWith(/constraint/i);
+        expect(constrained.convert(1000, 1000)).toSucceedWith(1000);
       });
 
       test('propagates the error for an invalid value', () => {

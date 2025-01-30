@@ -19,6 +19,72 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[Collectible](./ts-utils.collections.collectible.md)
+
+
+</td><td>
+
+Simple implementation of [ICollectible](./ts-utils.collections.icollectible.md) which does not allow the index to be changed once set.
+
+
+</td></tr>
+<tr><td>
+
+[Collector](./ts-utils.collections.collector.md)
+
+
+</td><td>
+
+A [Collector](./ts-utils.icollector.md) that collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in a collector are created by key and are assigned an index at the time of addition. Items are immutable once added. Keys and indexes might be branded types, and source items might be transformed on addition.
+
+
+</td></tr>
+<tr><td>
+
+[CollectorConverter](./ts-utils.collections.collectorconverter.md)
+
+
+</td><td>
+
+A [Collector](./ts-utils.collections.collector.md) wrapper which validates weakly-typed keys and values before calling the wrapped collector.
+
+
+</td></tr>
+<tr><td>
+
+[ConvertingCollector](./ts-utils.collections.convertingcollector.md)
+
+
+</td><td>
+
+A [Collector](./ts-utils.collections.collector.md) with a [CollectorConverter](./ts-utils.collections.collectorconverter.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+
+
+</td></tr>
+<tr><td>
+
+[ConvertingResultMap](./ts-utils.collections.convertingresultmap.md)
+
+
+</td><td>
+
+A [ResultMap](./ts-utils.collections.resultmap.md) with a [validator](./ts-utils.collections.resultmapconverter.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+
+
+</td></tr>
+<tr><td>
+
+[KeyValueConverters](./ts-utils.collections.keyvalueconverters.md)
+
+
+</td><td>
+
+Helper class for converting strongly-typed keys, values, or entries from unknown values.
+
+
+</td></tr>
+<tr><td>
+
 [ResultMap](./ts-utils.collections.resultmap.md)
 
 
@@ -30,7 +96,7 @@ A [ResultMap](./ts-utils.collections.resultmap.md) class as a `Map<TK, TV>`<!-- 
 </td></tr>
 <tr><td>
 
-[ResultMapValidator](./ts-utils.collections.resultmapvalidator.md)
+[ResultMapConverter](./ts-utils.collections.resultmapconverter.md)
 
 
 </td><td>
@@ -41,12 +107,12 @@ A [ResultMap](./ts-utils.collections.resultmap.md) wrapper which validates weakl
 </td></tr>
 <tr><td>
 
-[ValidatingResultMap](./ts-utils.collections.validatingresultmap.md)
+[SimpleCollector](./ts-utils.collections.simplecollector.md)
 
 
 </td><td>
 
-A [ResultMap](./ts-utils.collections.resultmap.md) with a [validator](./ts-utils.collections.resultmapvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+A simple [collector](./ts-utils.collector.md) that collects [ICollectible items](./ts-utils.collections.icollectible.md) with non-branded `string` key and `number` index, and with no transformation other than index assignment on addition.
 
 
 </td></tr>
@@ -67,6 +133,94 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ICollectible](./ts-utils.collections.icollectible.md)
+
+
+</td><td>
+
+An item that can be collected by some [Collector](./ts-utils.collector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ICollector](./ts-utils.collections.icollector.md)
+
+
+</td><td>
+
+Collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in a collector are created by key and are assigned an index at the time of addition. Items are immutable once added.
+
+
+</td></tr>
+<tr><td>
+
+[ICollectorConstructorParams](./ts-utils.collections.icollectorconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [Collector](./ts-utils.icollector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ICollectorConverterCreateParams](./ts-utils.collections.icollectorconvertercreateparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [CollectorConverter](./ts-utils.collections.collectorconverter.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IConvertingCollectorConstructorParams](./ts-utils.collections.iconvertingcollectorconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [ConvertingCollector](./ts-utils.collections.convertingcollector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IConvertingResultMapConstructorParams](./ts-utils.collections.iconvertingresultmapconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [ResultMap](./ts-utils.collections.resultmap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IKeyValueConverterConstructorParams](./ts-utils.collections.ikeyvalueconverterconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [KeyValueConverters](./ts-utils.collections.keyvalueconverters.md) instance.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyConvertingResultMap](./ts-utils.collections.ireadonlyconvertingresultmap.md)
+
+
+</td><td>
+
+A read-only interface exposing non-mutating methods of a [ConvertingResultMap](./ts-utils.collections.convertingresultmap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [IReadOnlyResultMap](./ts-utils.collections.ireadonlyresultmap.md)
 
 
@@ -78,23 +232,12 @@ A readonly `ReadonlyMap<TK, TV>`<!-- -->-like object which reports success or fa
 </td></tr>
 <tr><td>
 
-[IReadOnlyResultMapValidator](./ts-utils.collections.ireadonlyresultmapvalidator.md)
+[IReadOnlyResultMapConverter](./ts-utils.collections.ireadonlyresultmapconverter.md)
 
 
 </td><td>
 
-A read-only interface exposing non-mutating methods of a [ResultMapValidator](./ts-utils.collections.resultmapvalidator.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyValidatingResultMap](./ts-utils.collections.ireadonlyvalidatingresultmap.md)
-
-
-</td><td>
-
-A read-only interface exposing non-mutating methods of a [ValidatingResultMap](./ts-utils.collections.validatingresultmap.md)<!-- -->.
+A read-only interface exposing non-mutating methods of a [ResultMapConverter](./ts-utils.collections.resultmapconverter.md)<!-- -->.
 
 
 </td></tr>
@@ -111,23 +254,23 @@ Parameters for constructing a [ResultMap](./ts-utils.collections.resultmap.md)<!
 </td></tr>
 <tr><td>
 
-[IResultMapValidatorCreateParams](./ts-utils.collections.iresultmapvalidatorcreateparams.md)
+[IResultMapConverterCreateParams](./ts-utils.collections.iresultmapconvertercreateparams.md)
 
 
 </td><td>
 
-Parameters for constructing a [ResultMapValidator](./ts-utils.collections.resultmapvalidator.md)<!-- -->.
+Parameters for constructing a [ResultMapConverter](./ts-utils.collections.resultmapconverter.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[IValidatingResultMapConstructorParams](./ts-utils.collections.ivalidatingresultmapconstructorparams.md)
+[ISimpleCollectorCreateParams](./ts-utils.collections.isimplecollectorcreateparams.md)
 
 
 </td><td>
 
-Parameters for constructing a [ResultMap](./ts-utils.collections.resultmap.md)<!-- -->.
+Parameters for creating a [simple collector](./ts-utils.simplecollector.md)<!-- -->.
 
 
 </td></tr>
@@ -171,6 +314,50 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[CollectibleFactory](./ts-utils.collections.collectiblefactory.md)
+
+
+</td><td>
+
+Factory function for creating a new [ICollectible](./ts-utils.collections.icollectible.md) instance given a key, an index and a source representation of the item to be added.
+
+
+</td></tr>
+<tr><td>
+
+[CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)
+
+
+</td><td>
+
+Factory function for creating a new [ICollectible](./ts-utils.collections.icollectible.md) instance given a key and an index.
+
+
+</td></tr>
+<tr><td>
+
+[IConvertingCollector](./ts-utils.collections.iconvertingcollector.md)
+
+
+</td><td>
+
+A [Collector](./ts-utils.icollector.md) with non-branded `string` key and `number` index, and transformation of source items.
+
+
+</td></tr>
+<tr><td>
+
+[ISimpleCollector](./ts-utils.collections.isimplecollector.md)
+
+
+</td><td>
+
+A simple [ICollector](./ts-utils.icollector.md) with non-branded `string` key and `number` index, and no transformation of source items.
+
+
+</td></tr>
+<tr><td>
 
 [KeyValueEntry](./ts-utils.collections.keyvalueentry.md)
 

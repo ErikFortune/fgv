@@ -1,90 +1,89 @@
 /// <reference types="jest"/>
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-unused-vars
-import { Result } from '../ts-utils';
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const ignore: Result<string> | undefined = undefined;
+import { Result, ResultDetailType, ResultValueType } from '../ts-utils';
 
 /* eslint-disable @typescript-eslint/no-unused-vars, no-unused-vars */
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    interface Matchers<R> {
+    // eslint-disable-next-line @typescript-eslint/ban-types,@typescript-eslint/naming-convention
+    interface Matchers<R, T> {
       /**
-       * Use .toSucceed to verify that a Result<T> is a success
+       * Use .toSucceed to verify that a Result\<T\> is a success
        */
-      toSucceed<T>(): R;
+      toSucceed(): R;
 
       /**
-       * Use .toSucceedWith to verify that a Result<T> is a success
+       * Use .toSucceedWith to verify that a Result\<T\> is a success
        * and that the result value matches the supplied value
        * @param expected -
        */
-      toSucceedWith(expected: unknown): R;
+      toSucceedWith(expected: ResultValueType<T> | RegExp): R;
 
       /**
        * Use .toSucceedWithDetail to verify that a DetailedResult\<T, TD\> is
        * a success and that the result value and detail matches the supplied
        * values
        * @param expected -
+       * @param detail -
        */
-      toSucceedWithDetail<TD>(expected: unknown, detail: TD | undefined): R;
+      toSucceedWithDetail(expected: ResultValueType<T>, detail: ResultDetailType<T> | undefined): R;
 
       /**
-       * Use .toSucceedAndSatisfy to verify that a Result<T> is a success
+       * Use .toSucceedAndSatisfy to verify that a Result\<T\> is a success
        * and that the supplied test function returns true (or void)
        * for the resulting value
        * @param test -
        */
-      toSucceedAndSatisfy<T>(test: (value: T) => boolean | void): R;
+      toSucceedAndSatisfy(test: (value: ResultValueType<T>) => boolean | void): R;
 
       /**
-       * Use .toSucceedAndMatchInlineSnapshot to verify that a Result<T> is a success
+       * Use .toSucceedAndMatchInlineSnapshot to verify that a Result\<T\> is a success
        * and that the result value matches an inline snapshot
        */
       // eslint-disable-next-line @typescript-eslint/ban-types
-      toSucceedAndMatchInlineSnapshot<T>(snapshot: string | undefined): R;
+      toSucceedAndMatchInlineSnapshot(snapshot: string | undefined): R;
 
       /**
-       * Use .toSucceedAndMatchSnapshot to verify that a Result<T> is a success
+       * Use .toSucceedAndMatchSnapshot to verify that a Result\<T\> is a success
        * and that the result value matches a stored snapshot
        */
-      toSucceedAndMatchSnapshot<T>(): R;
+      toSucceedAndMatchSnapshot(): R;
 
       /**
-       * Use .toFail to verify that a Result<T> is a failure
+       * Use .toFail to verify that a Result\<T\> is a failure
        */
-      toFail<T>(): R;
+      toFail(): R;
 
       /**
-       * Use .toFailWith to verify that a Result<T> is a failure
+       * Use .toFailWith to verify that a Result\<T\> is a failure
        * that matches a supplied string, RegExp or undefined value
        * @param message -
        */
-      toFailWith<T>(expected: string | RegExp | undefined): R;
+      toFailWith(expected: string | RegExp | undefined): R;
 
       /**
-       * Use .toFailWithDetail to verify that a DetailedResult<T> is
+       * Use .toFailWithDetail to verify that a DetailedResult\<T\> is
        * a failure that matches both a supplied expected failure value
        * (string, RegExp or undefined) and a supplied failure detail.
        * @param message -
+       * @param detail -
        */
-      toFailWithDetail<TD>(message: string | RegExp | undefined, detail: TD): R;
+      toFailWithDetail(message: string | RegExp | undefined, detail: ResultDetailType<T>): R;
 
       /**
        * Use .toFailTest to test a custom matcher by
        * verifying that a test case fails.
        */
-      toFailTest<T>(): R;
+      toFailTest(): R;
 
       /**
        * Use .toFailTestWith to test a custom matcher by
        * verifying that a test case fails as expected and
        * reports an error matching a stored snapshot.
        */
-      toFailTestAndMatchSnapshot<T>(): R;
+      toFailTestAndMatchSnapshot(): R;
 
       /**
        * Use .toFailTestWith to test a custom matcher by
@@ -92,7 +91,7 @@ declare global {
        * reports an error matching a supplied value.
        * @param expected -
        */
-      toFailTestWith<T>(expected: string | string[] | RegExp): R;
+      toFailTestWith(expected: string | string[] | RegExp): R;
     }
   }
 }

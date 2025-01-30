@@ -85,6 +85,17 @@ A helper function to create a [Converter](./ts-utils.converter.md) which extract
 </td></tr>
 <tr><td>
 
+[generic(convert)](./ts-utils.converters.generic.md)
+
+
+</td><td>
+
+Helper function to create a [Converter](./ts-utils.converter.md) from a supplied [ConverterFunc](./ts-utils.conversion.converterfunc.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [isA(description, guard)](./ts-utils.converters.isa.md)
 
 

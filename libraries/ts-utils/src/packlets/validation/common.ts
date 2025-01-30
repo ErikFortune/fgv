@@ -20,9 +20,19 @@
  * SOFTWARE.
  */
 
+import { Failure } from '../base';
+
 /**
  * A type guard function which validates a specific type, with an optional context
  * that can be used to shape the validation.
  * @public
  */
 export type TypeGuardWithContext<T, TC = unknown> = (from: unknown, context?: TC) => from is T;
+
+/**
+ * Type for a validation function, which validates that a supplied `unknown`
+ * value is a valid value of type `<T>`, possibly as influenced by
+ * an optionally-supplied validation context of type `<TC>`.
+ * @public
+ */
+export type ValidatorFunc<T, TC> = (from: unknown, context?: TC) => boolean | Failure<T>;

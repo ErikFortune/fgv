@@ -7,15 +7,15 @@ import { matcherHint } from 'jest-matcher-utils';
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    interface Matchers<R> {
+    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars, @typescript-eslint/ban-types, @typescript-eslint/naming-convention
+    interface Matchers<R, T> {
       /**
        * Use .toSucceedAndSatisfy to verify that a Result<T> is a success
        * and that the supplied test function returns true (or void)
        * for the resulting value
        * @param test -
        */
-      toSucceedAndSatisfy<T>(test: (value: ResultValueType<T>) => boolean | void): R;
+      toSucceedAndSatisfy(test: (value: ResultValueType<T>) => boolean | void): R;
     }
   }
 }
@@ -36,12 +36,14 @@ function passMessage<T>(received: Result<T>): () => string {
 function failMessage<T>(received: Result<T>, cbResult: Result<boolean | void>): () => string {
   const expected = 'successful callback';
   const got = [printReceivedResult(received)];
+
+  /* c8 ignore else */
   if (cbResult.isFailure()) {
     got.push(cbResult.message);
   } else if (cbResult.value === false) {
     got.push('  Callback returned false');
   } else if (cbResult.value === undefined) {
-  /* c8 ignore else */
+    /* c8 ignore else */
     got.push('  Callback was not invoked');
   } else {
     /* c8 ignore next */
