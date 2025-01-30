@@ -40,7 +40,10 @@ interface ITestThing {
 type TestKey = Brand<string, 'TestKey'>;
 type TestIndex = Brand<number, 'TestIndex'>;
 
-const testKey = Converters.string.withConstraint((s) => s.startsWith('thing')).withBrand('TestKey');
+const testKey = Converters.string
+  .withConstraint((s) => /^thing[0-9]+$/.test(s))
+  .withFormattedError((val: unknown) => `${val} is not a valid test thing key`)
+  .withBrand('TestKey');
 const testIndex = Converters.number.withBrand('TestIndex');
 const testThing = Converters.strictObject<ITestThing>({
   str: Converters.string.optional(),
@@ -210,57 +213,110 @@ describe('ConvertingCollector', () => {
       });
     });
 
-    test('fails if the factory fails', () => {
+    test('fails if the supplied entries are invalid', () => {
       const collector = ConvertingCollector.createConvertingCollector({
-        factory: (key, index, item) => fail<CollectibleTestThing>('factory failed'),
-        converters: testCollectorParams.converters,
-        entries
+        ...entryValidatingTestCollectorParams,
+        entries: [
+          // bogus entryValidatingTestCollector rejects an entry if the
+          // key matches the `str` property
+          ['thing1' as TestKey, { str: 'thing1', num: 1, bool: true }]
+        ]
       });
-      expect(collector).toFailWith('factory failed');
+      expect(collector).toFailWith(/key cannot be same as string property/);
     });
   });
 
-  describe('converting getOrAdd method', () => {
-    test('adds a new item to the collector', () => {
-      const collector = new ConvertingCollector(testCollectorParams);
-      const thing: ITestThing = { str: 'six', num: 6, bool: false };
-      const collectible = new CollectibleTestThing(thing, 'thing6' as TestKey, 0 as TestIndex);
-      expect(collector.converting.get('thing6')).toFailWith(/not found/);
-      expect(collector.converting.getOrAdd('thing6', thing)).toSucceedWith(collectible);
+  describe('converting', () => {
+    test('retrieves from the underlying collector', () => {
+      const collector = new ConvertingCollector({ ...testCollectorParams, entries });
+      const thing = collector.converting.get('thing3');
+      expect(thing).toSucceedWith(collectibles[2]);
     });
 
-    test('returns an existing item from the collector', () => {
-      const collector = new ConvertingCollector({ ...testCollectorParams, entries });
-      const thing: ITestThing = { str: 'three', num: 300, bool: true };
-      const existing = collector.converting.get('thing3').orThrow();
-      expect(existing).toEqual(collectibles[2]);
-      expect(collector.converting.getOrAdd('thing3', thing)).toSucceedAndSatisfy((got) => {
-        expect(got).toBe(existing);
+    describe('getOrAdd', () => {
+      test('adds a new item to the underlying collector', () => {
+        const collector = new ConvertingCollector(testCollectorParams);
+        const thing: ITestThing = { str: 'six', num: 6, bool: false };
+        const collectible = new CollectibleTestThing(thing, 'thing6' as TestKey, 0 as TestIndex);
+        expect(collector.get(collectible.key)).toFailWith(/not found/);
+        expect(collector.converting.get('thing6')).toFailWith(/not found/);
+        expect(collector.converting.getOrAdd('thing6', thing)).toSucceedWith(collectible);
+        expect(collector.get(collectible.key)).toSucceedWith(collectible);
+      });
+
+      test('returns an existing item from the collector', () => {
+        const collector = new ConvertingCollector({ ...testCollectorParams, entries });
+        const thing: ITestThing = { str: 'three', num: 300, bool: true };
+        const existing = collector.converting.get('thing3').orThrow();
+        expect(existing).toEqual(collectibles[2]);
+        expect(collector.converting.getOrAdd('thing3', thing)).toSucceedAndSatisfy((got) => {
+          expect(got).toBe(existing);
+        });
+      });
+
+      test('uses a factory to create a new item if not already in the collector', () => {
+        const collector = new ConvertingCollector(testCollectorParams);
+        const thing: ITestThing = { str: 'six', num: 6, bool: false };
+        const factory: CollectibleFactoryCallback<TestKey, TestIndex, CollectibleTestThing> = jest.fn(
+          (key, index) => succeed(new CollectibleTestThing(thing, key, index as TestIndex))
+        );
+        const collectible = new CollectibleTestThing(thing, 'thing6' as TestKey, 0 as TestIndex);
+        expect(collector.converting.get('thing6')).toFailWith(/not found/);
+        expect(collector.converting.getOrAdd('thing6', factory)).toSucceedWith(collectible);
+        expect(factory).toHaveBeenCalled();
+      });
+
+      test('does not call the factory if the item is already in the collector', () => {
+        const collector = new ConvertingCollector({ ...testCollectorParams, entries });
+        const thing: ITestThing = { str: 'three', num: 300, bool: true };
+        const existing = collector.converting.get('thing3').orThrow();
+        expect(existing).toEqual(collectibles[2]);
+        const factory: CollectibleFactoryCallback<TestKey, TestIndex, CollectibleTestThing> = jest.fn(
+          (key, index) => succeed(new CollectibleTestThing(thing, key, index as TestIndex))
+        );
+        expect(collector.converting.getOrAdd('thing3', factory)).toSucceedWith(existing);
+        expect(factory).not.toHaveBeenCalled();
+      });
+
+      test('applies entry validation if supplied', () => {
+        const collector = new ConvertingCollector(entryValidatingTestCollectorParams);
+        const thing: ITestThing = { str: 'thing1', num: 1, bool: true };
+        expect(collector.converting.getOrAdd('thing1', thing)).toFailWith(
+          /key cannot be same as string property/i
+        );
+      });
+
+      test('fails with detail invalid-value if the factory fails', () => {
+        const collector = new ConvertingCollector(testCollectorParams);
+        const factory: CollectibleFactoryCallback<TestKey, TestIndex, CollectibleTestThing> = jest.fn(
+          (key, index) => fail('factory failed')
+        );
+        expect(collector.converting.getOrAdd('thing6', factory)).toFailWithDetail(
+          'factory failed',
+          'invalid-value'
+        );
       });
     });
 
-    test('uses a factory to create a new item if not already in the collector', () => {
-      const collector = new ConvertingCollector(testCollectorParams);
-      const thing: ITestThing = { str: 'six', num: 6, bool: false };
-      const factory: CollectibleFactoryCallback<TestKey, TestIndex, CollectibleTestThing> = jest.fn(
-        (key, index) => succeed(new CollectibleTestThing(thing, key, index as TestIndex))
+    test('validates on all calls that return Result', () => {
+      const collector = new ConvertingCollector(entryValidatingTestCollectorParams);
+      expect(collector.converting.get('thingamajig1')).toFailWith(/not a valid test thing key/i);
+      expect(collector.converting.has('thingamajig1')).toBe(false);
+      expect(collector.converting.getOrAdd('thingamajig1', things[0])).toFailWith(
+        /not a valid test thing key/i
       );
-      const collectible = new CollectibleTestThing(thing, 'thing6' as TestKey, 0 as TestIndex);
-      expect(collector.converting.get('thing6')).toFailWith(/not found/);
-      expect(collector.converting.getOrAdd('thing6', factory)).toSucceedWith(collectible);
-      expect(factory).toHaveBeenCalled();
     });
+  });
 
-    test('does not call the factory if the item is already in the collector', () => {
-      const collector = new ConvertingCollector({ ...testCollectorParams, entries });
-      const thing: ITestThing = { str: 'three', num: 300, bool: true };
-      const existing = collector.converting.get('thing3').orThrow();
-      expect(existing).toEqual(collectibles[2]);
-      const factory: CollectibleFactoryCallback<TestKey, TestIndex, CollectibleTestThing> = jest.fn(
-        (key, index) => succeed(new CollectibleTestThing(thing, key, index as TestIndex))
+  describe('base collector', () => {
+    test('applies entry validation if entry converter is supplied', () => {
+      const collector = new ConvertingCollector(entryValidatingTestCollectorParams);
+      const collectible = new CollectibleTestThing({ str: 'thing7' }, 'thing7' as TestKey, 0 as TestIndex);
+      expect(collector.has(collectible.key)).toBe(false);
+      expect(collector.getOrAdd(collectible.key, { str: 'thing7' })).toFailWith(
+        /key cannot be same as string property/i
       );
-      expect(collector.converting.getOrAdd('thing3', factory)).toSucceedWith(existing);
-      expect(factory).not.toHaveBeenCalled();
+      expect(collector.has(collectible.key)).toBe(false);
     });
   });
 

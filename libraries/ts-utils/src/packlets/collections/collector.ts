@@ -227,7 +227,7 @@ export class Collector<
       ? itemOrCb(key, this._byIndex.length)
       : this._factory(key, this._byIndex.length, itemOrCb);
     if (build.isFailure()) {
-      return failWithDetail<TITEM, ResultMapResultDetail>(build.message, 'failure');
+      return failWithDetail<TITEM, ResultMapResultDetail>(build.message, 'invalid-value');
     }
     const newItem = build.value;
 
