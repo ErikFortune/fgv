@@ -280,6 +280,23 @@ export class Collector<
     return this._byKey[Symbol.iterator]();
   }
 
+  /**
+   * A simple factory method for derived classes which directly store the supplied
+   * object.
+   * @param key - The key of the item to create.
+   * @param index - The index of the item to create.
+   * @param item - The source item to create.
+   * @returns `Success` with the created item and a detail of 'success', or
+   * `Failure` with an error message and appropriate detail.
+   */
+  protected static _simpleFactory<
+    TKEY extends string = string,
+    TINDEX extends number = number,
+    TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
+  >(key: TKEY, index: number, item: TITEM): Result<TITEM> {
+    return item.setIndex(index).onSuccess(() => succeed(item));
+  }
+
   protected _isFactoryCB(
     item: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
   ): item is CollectibleFactoryCallback<TKEY, TINDEX, TITEM> {

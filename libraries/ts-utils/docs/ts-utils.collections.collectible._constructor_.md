@@ -9,7 +9,7 @@ Constructs a new [Collectible](./ts-utils.collections.collectible.md) instance.
 **Signature:**
 
 ```typescript
-constructor(key: TKEY, index?: TINDEX);
+constructor(params: ICollectibleConstructorParams<TKEY, TINDEX>);
 ```
 
 ## Parameters
@@ -32,33 +32,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-key
+params
 
 
 </td><td>
 
-TKEY
+[ICollectibleConstructorParams](./ts-utils.collections.icollectibleconstructorparams.md)<!-- -->&lt;TKEY, TINDEX&gt;
 
 
 </td><td>
 
-The key of the item to be collected.
-
-
-</td></tr>
-<tr><td>
-
-index
-
-
-</td><td>
-
-TINDEX
-
-
-</td><td>
-
-_(Optional)_ Optional index of the item to be collected.
+Required parameters for constructing the collectible.
 
 
 </td></tr>

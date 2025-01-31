@@ -44,6 +44,8 @@ const testKey = Converters.string
   .withConstraint((s) => /^thing[0-9]+$/.test(s))
   .withFormattedError((val: unknown) => `${val} is not a valid test thing key`)
   .withBrand('TestKey');
+const testIndex = Converters.number.withConstraint((n) => n !== 13).withBrand('TestIndex');
+
 const testThing = Converters.strictObject<ITestThing>({
   str: Converters.string.optional(),
   num: Converters.number.optional(),
@@ -71,7 +73,7 @@ class CollectibleTestThing extends Collectible<TestKey, TestIndex> implements IT
   public bool?: boolean;
 
   public constructor(thing: ITestThing, key: TestKey, index?: TestIndex) {
-    super(key, index);
+    super({ key, index, indexConverter: testIndex });
     this.str = thing.str;
     this.num = thing.num;
     this.bool = thing.bool;

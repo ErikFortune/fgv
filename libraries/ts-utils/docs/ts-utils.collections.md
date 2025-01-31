@@ -144,6 +144,28 @@ An item that can be collected by some [Collector](./ts-utils.collector.md)<!-- -
 </td></tr>
 <tr><td>
 
+[ICollectibleConstructorParamsWithConverter](./ts-utils.collections.icollectibleconstructorparamswithconverter.md)
+
+
+</td><td>
+
+Parameters for constructing a new [ICollectible](./ts-utils.collections.icollectible.md) instance with an index converter.
+
+
+</td></tr>
+<tr><td>
+
+[ICollectibleConstructorParamsWithIndex](./ts-utils.collections.icollectibleconstructorparamswithindex.md)
+
+
+</td><td>
+
+Parameters for constructing a new [ICollectible](./ts-utils.collections.icollectible.md) instance with a defined, strongly-typed index.
+
+
+</td></tr>
+<tr><td>
+
 [ICollector](./ts-utils.collections.icollector.md)
 
 
@@ -365,6 +387,17 @@ Factory function for creating a new [ICollectible](./ts-utils.collections.icolle
 </td><td>
 
 Factory function for creating a new [ICollectible](./ts-utils.collections.icollectible.md) instance given a key and an index.
+
+
+</td></tr>
+<tr><td>
+
+[ICollectibleConstructorParams](./ts-utils.collections.icollectibleconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a new [ICollectible](./ts-utils.collections.icollectible.md) instance.
 
 
 </td></tr>

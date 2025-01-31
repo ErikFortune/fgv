@@ -142,13 +142,17 @@ declare namespace Classes {
 // @public
 class Collectible<TKEY extends string = string, TINDEX extends number = number> implements ICollectible<TKEY, TINDEX> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    constructor(key: TKEY, index?: TINDEX);
+    constructor(params: ICollectibleConstructorParams<TKEY, TINDEX>);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static createCollectible<TKEY extends string = string, TINDEX extends number = number>(params: ICollectibleConstructorParams<TKEY, TINDEX>): Result<Collectible<TKEY, TINDEX>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     get index(): TINDEX | undefined;
     // (undocumented)
     protected _index: TINDEX | undefined;
+    // (undocumented)
+    protected readonly _indexConverter?: Validator<TINDEX, unknown> | Converter<TINDEX, unknown>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -156,7 +160,7 @@ class Collectible<TKEY extends string = string, TINDEX extends number = number> 
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    setIndex(index: TINDEX): Result<TINDEX>;
+    setIndex(index: number): Result<TINDEX>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -175,6 +179,9 @@ declare namespace Collections {
         ICollectible,
         CollectibleFactory,
         CollectibleFactoryCallback,
+        ICollectibleConstructorParamsWithIndex,
+        ICollectibleConstructorParamsWithConverter,
+        ICollectibleConstructorParams,
         Collectible,
         IReadOnlyCollector,
         ICollector,
@@ -244,6 +251,7 @@ export class Collector<TKEY extends string = string, TINDEX extends number = num
     protected _isFactoryCB(item: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>): item is CollectibleFactoryCallback<TKEY, TINDEX, TITEM>;
     // (undocumented)
     keys(): IterableIterator<TKEY>;
+    protected static _simpleFactory<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>>(key: TKEY, index: number, item: TITEM): Result<TITEM>;
     // (undocumented)
     get size(): number;
     toReadOnly(): IReadOnlyCollector<TKEY, TINDEX, TITEM>;
@@ -800,7 +808,34 @@ export interface ICollectible<TKEY extends string = string, TINDEX extends numbe
     // (undocumented)
     readonly key: TKEY;
     // (undocumented)
-    setIndex(index: TINDEX): Result<TINDEX>;
+    setIndex(index: number): Result<TINDEX>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type ICollectibleConstructorParams<TKEY extends string = string, TINDEX extends number = number> = ICollectibleConstructorParamsWithIndex<TKEY, TINDEX> | ICollectibleConstructorParamsWithConverter<TKEY, TINDEX>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface ICollectibleConstructorParamsWithConverter<TKEY extends string = string, TINDEX extends number = number> {
+    // (undocumented)
+    index?: number;
+    // (undocumented)
+    indexConverter: Validator<TINDEX, unknown> | Converter<TINDEX, unknown> | ConverterFunc<TINDEX, undefined>;
+    // (undocumented)
+    key: TKEY;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface ICollectibleConstructorParamsWithIndex<TKEY extends string = string, TINDEX extends number = number> {
+    // (undocumented)
+    index: TINDEX;
+    // (undocumented)
+    key: TKEY;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

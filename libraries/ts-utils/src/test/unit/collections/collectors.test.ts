@@ -29,6 +29,7 @@ import {
   ICollectorConstructorParams
 } from '../../../packlets/collections';
 import { Result, succeed } from '../../../packlets/base';
+import { Converters } from '../../../packlets/conversion';
 
 interface ITestThing {
   str?: string;
@@ -36,64 +37,44 @@ interface ITestThing {
   bool?: boolean;
 }
 
-class CollectibleTestThing<TKEY extends string = string, TINDEX extends number = number>
-  extends Collectible<TKEY, TINDEX>
-  implements ITestThing
-{
+class CollectibleTestThing extends Collectible<string, number> implements ITestThing {
   public str?: string;
   public num?: number;
   public bool?: boolean;
 
-  public constructor(thing: ITestThing, key: TKEY, index?: TINDEX) {
-    super(key, index);
+  public constructor(thing: ITestThing, key: string, index?: number) {
+    super({ key, index, indexConverter: Converters.number });
     this.str = thing.str;
     this.num = thing.num;
     this.bool = thing.bool;
   }
 }
 
-class BrokenCollectibleTestThing<
-  TKEY extends string = string,
-  TINDEX extends number = number
-> extends CollectibleTestThing<TKEY, TINDEX> {
-  public constructor(thing: ITestThing, key: TKEY, index?: TINDEX) {
-    super(thing, key, index ? ((index + 1) as TINDEX) : undefined);
+class BrokenCollectibleTestThing extends CollectibleTestThing {
+  public constructor(thing: ITestThing, key: string, index?: number) {
+    super(thing, key, index ? ((index + 1) as number) : undefined);
   }
 
-  public setIndex(index: TINDEX): Result<TINDEX> {
-    this._index = (index + 1) as TINDEX;
+  public setIndex(index: number): Result<number> {
+    this._index = index + 1;
     return succeed(this.index!);
   }
 }
 
-class TestCollector<TKEY extends string = string, TINDEX extends number = number> extends Collector<
-  TKEY,
-  TINDEX,
-  CollectibleTestThing<TKEY, TINDEX>,
-  ITestThing
-> {
+class TestCollector extends Collector<string, number, CollectibleTestThing, ITestThing> {
   public constructor(things?: ITestThing[]) {
     const entries = things
-      ? { entries: things.map((thing, index): [TKEY, ITestThing] => [`thing${index}` as TKEY, thing]) }
+      ? { entries: things.map((thing, index): [string, ITestThing] => [`thing${index}`, thing]) }
       : {};
-    const params: ICollectorConstructorParams<
-      TKEY,
-      TINDEX,
-      CollectibleTestThing<TKEY, TINDEX>,
-      ITestThing
-    > = {
+    const params: ICollectorConstructorParams<string, number, CollectibleTestThing, ITestThing> = {
       factory: TestCollector._factory,
       ...entries
     };
     super(params);
   }
 
-  protected static _factory<TKEY extends string, TINDEX extends number>(
-    key: TKEY,
-    index: number,
-    item: ITestThing
-  ): Result<CollectibleTestThing<TKEY, TINDEX>> {
-    return succeed(new CollectibleTestThing(item, key, index as TINDEX));
+  protected static _factory(key: string, index: number, item: ITestThing): Result<CollectibleTestThing> {
+    return succeed(new CollectibleTestThing(item, key, index));
   }
 }
 

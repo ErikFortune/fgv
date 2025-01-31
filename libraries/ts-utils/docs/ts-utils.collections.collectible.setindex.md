@@ -9,7 +9,7 @@
 **Signature:**
 
 ```typescript
-setIndex(index: TINDEX): Result<TINDEX>;
+setIndex(index: number): Result<TINDEX>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ index
 
 </td><td>
 
-TINDEX
+number
 
 
 </td><td>

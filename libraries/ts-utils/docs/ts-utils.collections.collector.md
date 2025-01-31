@@ -146,6 +146,24 @@ Description
 </td></tr>
 <tr><td>
 
+[\_simpleFactory(key, index, item)](./ts-utils.collections.collector._simplefactory.md)
+
+
+</td><td>
+
+`protected`
+
+`static`
+
+
+</td><td>
+
+A simple factory method for derived classes which directly store the supplied object.
+
+
+</td></tr>
+<tr><td>
+
 [\[Symbol.iterator\]()](./ts-utils.collections.collector._symbol.iterator_.md)
 
 
