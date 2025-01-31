@@ -21,7 +21,7 @@
  */
 
 import { Converters, Result, fail } from '@fgv/ts-utils';
-import { QualifierMap } from '../../qualifiers';
+import { ReadOnlyQualifierCollector } from '../../qualifiers';
 import { IConditionSetDecl, IValidatedConditionSetDecl } from '../conditionSetDecls';
 import { conditionDecl } from './decls';
 import { ConditionMap } from '../conditionMap';
@@ -41,7 +41,7 @@ export const conditionSetDecl = Converters.strictObject<IConditionSetDecl>({
  * into an instantiated {@link Conditions.ConditionSet | condition set} object.
  */
 export interface IConditionSetDeclConvertContext {
-  readonly qualifiers: QualifierMap;
+  readonly qualifiers: ReadOnlyQualifierCollector;
   readonly conditions: ConditionMap;
   index: number;
 }

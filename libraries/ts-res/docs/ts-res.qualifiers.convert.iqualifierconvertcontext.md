@@ -45,7 +45,7 @@ Description
 
 </td><td>
 
-[QualifierMap](./ts-res.qualifiers.qualifiermap.md)
+[ReadOnlyQualifierCollector](./ts-res.qualifiers.readonlyqualifiercollector.md)
 
 
 </td><td>

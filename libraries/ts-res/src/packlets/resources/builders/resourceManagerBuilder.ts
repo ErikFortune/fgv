@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { QualifierMap } from '../../qualifiers';
+import { ReadOnlyQualifierCollector } from '../../qualifiers';
 import { ResourceTypeMap } from '../resourceTypes';
 
 /**
@@ -28,6 +28,6 @@ import { ResourceTypeMap } from '../resourceTypes';
  * @public
  */
 export interface IResourceManagerCreateParams {
-  qualifiers: QualifierMap;
+  qualifiers: ReadOnlyQualifierCollector;
   resourceTypes: ResourceTypeMap;
 }

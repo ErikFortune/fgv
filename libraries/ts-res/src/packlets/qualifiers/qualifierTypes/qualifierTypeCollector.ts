@@ -87,3 +87,13 @@ export class QualifierTypeCollector extends ConvertingCollector<
     return from instanceof QualifierType ? succeed(from) : fail('not a QualifierType');
   }
 }
+
+/**
+ * Interface exposing non-mutating members of a {@link Qualifiers.QualifierTypes.QualifierTypeCollector | QualifierTypeCollector}.
+ * @public
+ */
+export type ReadOnlyQualifierTypeCollector = Collections.IReadOnlyConvertingCollector<
+  QualifierTypeName,
+  QualifierTypeIndex,
+  QualifierType
+>;

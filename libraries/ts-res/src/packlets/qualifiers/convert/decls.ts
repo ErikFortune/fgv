@@ -23,7 +23,7 @@
 import { Converters, populateObject, Result, succeed } from '@fgv/ts-utils';
 import { IQualifierDecl, IValidatedQualifierDecl } from '../qualifierDecl';
 import { Validate } from '../../common';
-import { QualifierTypeCollector } from '../qualifierTypes/qualifierTypeCollector';
+import { ReadOnlyQualifierTypeCollector } from '../qualifierTypes/qualifierTypeCollector';
 
 /* eslint-disable @rushstack/typedef-var */
 
@@ -42,7 +42,7 @@ export const qualifierDecl = Converters.strictObject<IQualifierDecl>({
  * @public
  */
 export interface IQualifierDeclConvertContext {
-  readonly qualifierTypes: QualifierTypeCollector;
+  readonly qualifierTypes: ReadOnlyQualifierTypeCollector;
   qualifierIndex: number;
 }
 

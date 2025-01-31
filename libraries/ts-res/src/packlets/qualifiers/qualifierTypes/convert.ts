@@ -22,7 +22,7 @@
 
 import { Converter, Converters, Result, fail } from '@fgv/ts-utils';
 import { QualifierType } from './qualifierType';
-import { QualifierTypeCollector } from './qualifierTypeCollector';
+import { ReadOnlyQualifierTypeCollector } from './qualifierTypeCollector';
 
 /**
  * Context necessary to convert a qualifier name or number to an
@@ -30,7 +30,7 @@ import { QualifierTypeCollector } from './qualifierTypeCollector';
  * @public
  */
 export interface IQualifierTypeConvertContext {
-  qualifierTypes: QualifierTypeCollector;
+  qualifierTypes: ReadOnlyQualifierTypeCollector;
 }
 
 /**

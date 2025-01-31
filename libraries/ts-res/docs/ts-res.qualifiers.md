@@ -30,12 +30,12 @@ Represents a qualifier that can be used to identify the context in which a resou
 </td></tr>
 <tr><td>
 
-[QualifierMap](./ts-res.qualifiers.qualifiermap.md)
+[QualifierCollector](./ts-res.qualifiers.qualifiercollector.md)
 
 
 </td><td>
 
-Represents a collection of named, instantiated [Qualifiers](./ts-res.qualifiers.qualifier.md) for use at build or runtime.
+Collects [Qualifiers](./ts-res.qualifiers.qualifier.md) from [declarations](./ts-res.qualifiers.iqualifierdecl.md)<!-- -->, with strongly-typed ([QualifierName](./ts-res.qualifiername.md) and [QualifierIndex](./ts-res.qualifierindex.md)<!-- -->) key and index.
 
 
 </td></tr>
@@ -82,23 +82,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[IQualifierCollectorCreateParams](./ts-res.qualifiers.iqualifiercollectorcreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a new [Qualifiers.QualifierCollector](./ts-res.qualifiers.qualifiercollector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [IQualifierDecl](./ts-res.qualifiers.iqualifierdecl.md)
 
 
 </td><td>
 
 Simple declaration for a [Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[IQualifierMapCreateParams](./ts-res.qualifiers.iqualifiermapcreateparams.md)
-
-
-</td><td>
-
-Parameters for creating a new [QualifierMap](./ts-res.qualifiers.qualifiermap.md)<!-- -->.
 
 
 </td></tr>
@@ -143,6 +143,32 @@ Description
 
 
 </td><td>
+
+
+</td></tr>
+</tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ReadOnlyQualifierCollector](./ts-res.qualifiers.readonlyqualifiercollector.md)
+
+
+</td><td>
+
+Readonly version of [QualifierCollector](./ts-res.qualifiers.qualifiercollector.md)<!-- -->.
 
 
 </td></tr>

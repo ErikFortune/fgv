@@ -9,9 +9,9 @@ Represents a qualifier that can be used to identify the context in which a resou
 **Signature:**
 
 ```typescript
-export declare class Qualifier implements IValidatedQualifierDecl 
+export declare class Qualifier implements IValidatedQualifierDecl, ICollectible<QualifierName, QualifierIndex> 
 ```
-**Implements:** [IValidatedQualifierDecl](./ts-res.qualifiers.ivalidatedqualifierdecl.md)
+**Implements:** [IValidatedQualifierDecl](./ts-res.qualifiers.ivalidatedqualifierdecl.md)<!-- -->, ICollectible&lt;[QualifierName](./ts-res.qualifiername.md)<!-- -->, [QualifierIndex](./ts-res.qualifierindex.md)<!-- -->&gt;
 
 ## Constructors
 
@@ -74,6 +74,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[\_collectible](./ts-res.qualifiers.qualifier._collectible.md)
+
+
+</td><td>
+
+`protected`
+
+`readonly`
+
+
+</td><td>
+
+Collections.Collectible&lt;[QualifierName](./ts-res.qualifiername.md)<!-- -->, [QualifierIndex](./ts-res.qualifierindex.md)<!-- -->&gt;
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [defaultPriority](./ts-res.qualifiers.qualifier.defaultpriority.md)
 
 
@@ -105,12 +126,33 @@ The default [priority](./ts-res.conditionpriority.md) of conditions that depend 
 
 </td><td>
 
-[QualifierIndex](./ts-res.qualifierindex.md)
+[QualifierIndex](./ts-res.qualifierindex.md) \| undefined
 
 
 </td><td>
 
-Optional index for the qualifier.
+The index of the qualifier.
+
+
+</td></tr>
+<tr><td>
+
+[key](./ts-res.qualifiers.qualifier.key.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[QualifierName](./ts-res.qualifiername.md)
+
+
+</td><td>
+
+The collector key for this qualifier.
 
 
 </td></tr>
@@ -189,6 +231,20 @@ Description
 </td><td>
 
 Creates a new instance of a [Qualifier](./ts-res.qualifiers.qualifier.md) from the supplied [validated declaration](./ts-res.qualifiers.ivalidatedqualifierdecl.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[setIndex(index)](./ts-res.qualifiers.qualifier.setindex.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Sets the index of this qualifier. Once set, the index cannot be changed.
 
 
 </td></tr>

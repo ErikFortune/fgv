@@ -26,6 +26,6 @@ import { QualifierType } from './qualifierTypes';
 
 export * from './qualifier';
 export * from './qualifierDecl';
-export * from './qualifierMap';
+export * from './qualifierCollector';
 
 export { Convert, QualifierType, QualifierTypes };

@@ -22,7 +22,7 @@
 
 import { captureResult, Result } from '@fgv/ts-utils';
 import { ResourceId } from '../common';
-import { QualifierMap } from '../qualifiers';
+import { ReadOnlyQualifierCollector } from '../qualifiers';
 import { Resource } from './resource';
 import { ResourceTypeMap } from './resourceTypes';
 
@@ -31,7 +31,7 @@ import { ResourceTypeMap } from './resourceTypes';
  * @public
  */
 export interface IResourceManagerCreateParams {
-  qualifiers: QualifierMap;
+  qualifiers: ReadOnlyQualifierCollector;
   resourceTypes: ResourceTypeMap;
 }
 
@@ -40,7 +40,7 @@ export interface IResourceManagerCreateParams {
  * @public
  */
 export class ResourceManager {
-  public readonly qualifiers: QualifierMap;
+  public readonly qualifiers: ReadOnlyQualifierCollector;
   public readonly resourceTypes: ResourceTypeMap;
   public get resources(): ReadonlyMap<ResourceId, Resource> {
     return this._resources;

@@ -21,7 +21,7 @@
  */
 
 import { Collections, Converter, ConvertingResultMap, mapResults, Result, succeed } from '@fgv/ts-utils';
-import { QualifierMap } from '../qualifiers';
+import { ReadOnlyQualifierCollector } from '../qualifiers';
 import { IConditionDeclConvertContext, validatedConditionDecl } from './convert';
 import { Condition } from './condition';
 import { IConditionDecl } from './conditionDecls';
@@ -32,7 +32,7 @@ const conditionFromDecl: Converter<Condition, IConditionDeclConvertContext> = va
 );
 
 export interface IConditionMapCreateParams {
-  qualifiers: QualifierMap;
+  qualifiers: ReadOnlyQualifierCollector;
   conditions?: IConditionDecl[];
 }
 
@@ -41,7 +41,7 @@ export class ConditionMap extends ConvertingResultMap<ConditionKey, Condition> {
     return Array.from(this.values());
   }
 
-  protected _qualifiers: QualifierMap;
+  protected _qualifiers: ReadOnlyQualifierCollector;
 
   public constructor(params: IConditionMapCreateParams) {
     const entries: [ConditionKey, Condition][] = mapResults(

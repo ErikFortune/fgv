@@ -23,7 +23,7 @@
 import { JsonValue } from '@fgv/ts-json-base';
 import { ResourceId, ResourceValueMergeMethod } from '../common';
 import { Condition, ConditionSet, Convert as ConditionsConvert } from '../conditions';
-import { QualifierMap } from '../qualifiers';
+import { ReadOnlyQualifierCollector } from '../qualifiers';
 import * as ResourceJson from '../resource-json';
 import { IResourceType, ResourceTypeMap } from './resourceTypes';
 import { captureResult, MessageAggregator, Normalizer, Result, succeed } from '@fgv/ts-utils';
@@ -35,7 +35,7 @@ import { captureResult, MessageAggregator, Normalizer, Result, succeed } from '@
 export interface IResourceCandidateCreateParams {
   decl: ResourceJson.IResourceCandidateDecl;
   parentConditions: ReadonlyArray<Condition>;
-  qualifiers: QualifierMap;
+  qualifiers: ReadOnlyQualifierCollector;
   resourceTypes: ResourceTypeMap;
 }
 
@@ -187,7 +187,7 @@ export class ResourceCandidate {
    * @internal
    */
   private static _mergeConditions(
-    qualifiers: QualifierMap,
+    qualifiers: ReadOnlyQualifierCollector,
     declared: ResourceJson.ConditionSetDecl | undefined,
     parent: ReadonlyArray<Condition> | undefined
   ): Result<Condition[]> {

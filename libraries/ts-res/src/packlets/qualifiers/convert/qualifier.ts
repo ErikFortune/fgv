@@ -21,7 +21,7 @@
  */
 
 import { Converters, Result } from '@fgv/ts-utils';
-import { QualifierMap } from '../qualifierMap';
+import { ReadOnlyQualifierCollector } from '../qualifierCollector';
 import { Qualifier } from '../qualifier';
 
 /* eslint-disable @rushstack/typedef-var */
@@ -32,7 +32,7 @@ import { Qualifier } from '../qualifier';
  * @public
  */
 export interface IQualifierConvertContext {
-  qualifiers: QualifierMap;
+  qualifiers: ReadOnlyQualifierCollector;
 }
 
 /**

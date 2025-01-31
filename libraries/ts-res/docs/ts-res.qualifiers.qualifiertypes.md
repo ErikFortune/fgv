@@ -193,3 +193,29 @@ Description
 
 </td></tr>
 </tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ReadOnlyQualifierTypeCollector](./ts-res.qualifiers.qualifiertypes.readonlyqualifiertypecollector.md)
+
+
+</td><td>
+
+Interface exposing non-mutating members of a [QualifierTypeCollector](./ts-res.qualifiers.qualifiertypes.qualifiertypecollector.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>

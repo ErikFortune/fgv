@@ -64,7 +64,7 @@ The default [priority](./ts-res.conditionpriority.md) of conditions that depend 
 
 </td><td>
 
-[QualifierIndex](./ts-res.qualifierindex.md)
+[QualifierIndex](./ts-res.qualifierindex.md) \| undefined
 
 
 </td><td>

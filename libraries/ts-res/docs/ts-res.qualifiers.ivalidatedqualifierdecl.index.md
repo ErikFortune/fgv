@@ -9,5 +9,5 @@ Index of the qualifier.
 **Signature:**
 
 ```typescript
-index: QualifierIndex;
+index: QualifierIndex | undefined;
 ```

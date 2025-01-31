@@ -26,7 +26,7 @@ import { IQualifierDecl } from './qualifierDecl';
 import { QualifierIndex, QualifierName } from '../common';
 import { Qualifier } from './qualifier';
 import { IQualifierDeclConvertContext, qualifierDecl, validatedQualifierDecl } from './convert';
-import { QualifierTypeCollector } from './qualifierTypes';
+import { ReadOnlyQualifierTypeCollector } from './qualifierTypes';
 
 /**
  * Parameters for creating a new {@link Qualifiers.QualifierCollector}.
@@ -37,7 +37,7 @@ export interface IQualifierCollectorCreateParams {
    * The {@link Qualifiers.QualifierTypes.QualifierTypeCollector | qualifier types} used to
    * create {@link Qualifiers.Qualifier | qualifiers} from {@link Qualifiers.IQualifierDecl | declarations}.
    */
-  qualifierTypes: QualifierTypeCollector;
+  qualifierTypes: ReadOnlyQualifierTypeCollector;
 
   /**
    * Optional list of {@link Qualifiers.IQualifierDecl | declarations} for the qualifiers to add to the collection
@@ -61,7 +61,7 @@ export class QualifierCollector extends ConvertingCollector<
   /**
    * The {@link Qualifiers.QualifierTypes.QualifierTypeCollector | qualifier types} that this collector uses.
    */
-  protected _qualifierTypes: QualifierTypeCollector;
+  protected _qualifierTypes: ReadOnlyQualifierTypeCollector;
 
   /**
    * Constructor for a {@link Qualifiers.QualifierCollector | QualifierCollector} object.
@@ -105,3 +105,9 @@ export class QualifierCollector extends ConvertingCollector<
     return validatedQualifierDecl.convert(decl, convertContext).onSuccess(Qualifier.create);
   }
 }
+
+/**
+ * Readonly version of {@link Qualifiers.QualifierCollector | QualifierCollector}.
+ * @public
+ */
+export type ReadOnlyQualifierCollector = Readonly<QualifierCollector>;

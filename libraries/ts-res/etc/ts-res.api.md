@@ -148,9 +148,21 @@ interface ILiteralQualifierTypeCreateParams {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+interface IQualifierCollectorCreateParams {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    qualifiers?: IQualifierDecl[];
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    qualifierTypes: ReadOnlyQualifierTypeCollector;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 interface IQualifierConvertContext {
     // (undocumented)
-    qualifiers: QualifierMap;
+    qualifiers: ReadOnlyQualifierCollector;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -172,17 +184,7 @@ interface IQualifierDeclConvertContext {
     // (undocumented)
     qualifierIndex: number;
     // (undocumented)
-    readonly qualifierTypes: QualifierTypeCollector;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-interface IQualifierMapCreateParams {
-    // (undocumented)
-    qualifiers?: IQualifierDecl[];
-    // (undocumented)
-    qualifierTypes: QualifierTypeCollector;
+    readonly qualifierTypes: ReadOnlyQualifierTypeCollector;
 }
 
 // @public
@@ -212,7 +214,7 @@ interface IQualifierTypeCollectorCreateParams {
 // @public
 interface IQualifierTypeConvertContext {
     // (undocumented)
-    qualifierTypes: QualifierTypeCollector;
+    qualifierTypes: ReadOnlyQualifierTypeCollector;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -247,7 +249,7 @@ interface IResourceCandidateCreateParams {
     // (undocumented)
     parentConditions: ReadonlyArray<Condition>;
     // (undocumented)
-    qualifiers: QualifierMap;
+    qualifiers: ReadOnlyQualifierCollector;
     // (undocumented)
     resourceTypes: ResourceTypeMap;
 }
@@ -283,7 +285,7 @@ interface IResourceCreateParams {
 // @public
 interface IResourceManagerCreateParams {
     // (undocumented)
-    qualifiers: QualifierMap;
+    qualifiers: ReadOnlyQualifierCollector;
     // (undocumented)
     resourceTypes: ResourceTypeMap;
 }
@@ -443,6 +445,26 @@ class Qualifier implements IValidatedQualifierDecl, ICollectible<QualifierName, 
 // @public
 const qualifier: Converter<Qualifier, IQualifierConvertContext>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class QualifierCollector extends ConvertingCollector<QualifierName, QualifierIndex, Qualifier, IQualifierDecl> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(params: IQualifierCollectorCreateParams);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params: IQualifierCollectorCreateParams): Result<QualifierCollector>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected _qualifierFactory(__key: QualifierName, index: number, decl: IQualifierDecl): Result<Qualifier>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected _qualifierTypes: ReadOnlyQualifierTypeCollector;
+}
+
 // @public
 export type QualifierConditionValue = Brand<string, 'QualifierConditionValue'>;
 
@@ -459,29 +481,6 @@ export type QualifierIndex = Brand<number, 'QualifierIndex'>;
 
 // @public
 const qualifierIndex: Converter<QualifierIndex, unknown>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-class QualifierMap extends ConvertingResultMap<QualifierName, Qualifier> {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor(params: IQualifierMapCreateParams);
-    // (undocumented)
-    protected _convertNext(value: unknown): Result<Qualifier>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static createQualifierMap(params: IQualifierMapCreateParams): Result<QualifierMap>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getAt(index: number): Result<Qualifier>;
-    get qualifiers(): ReadonlyMap<QualifierName, Qualifier>;
-    // (undocumented)
-    protected _qualifierTypes: QualifierTypeCollector;
-}
 
 // @public
 export type QualifierMatchScore = Brand<number, 'QualifierMatchScore'>;
@@ -500,8 +499,9 @@ declare namespace Qualifiers {
         Qualifier,
         IQualifierDecl,
         IValidatedQualifierDecl,
-        IQualifierMapCreateParams,
-        QualifierMap
+        IQualifierCollectorCreateParams,
+        QualifierCollector,
+        ReadOnlyQualifierCollector
     }
 }
 export { Qualifiers }
@@ -612,9 +612,20 @@ declare namespace QualifierTypes {
         ITerritoryQualifierTypeCreateParams,
         TerritoryQualifierType,
         IQualifierTypeCollectorCreateParams,
-        QualifierTypeCollector
+        QualifierTypeCollector,
+        ReadOnlyQualifierTypeCollector
     }
 }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type ReadOnlyQualifierCollector = Readonly<QualifierCollector>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type ReadOnlyQualifierTypeCollector = Collections.IReadOnlyConvertingCollector<QualifierTypeName, QualifierTypeIndex, QualifierType>;
 
 declare namespace RegularExpressions {
     export {

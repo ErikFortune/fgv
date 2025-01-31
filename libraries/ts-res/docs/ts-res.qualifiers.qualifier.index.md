@@ -4,10 +4,10 @@
 
 ## Qualifiers.Qualifier.index property
 
-Optional index for the qualifier.
+The index of the qualifier.
 
 **Signature:**
 
 ```typescript
-readonly index: QualifierIndex;
+get index(): QualifierIndex | undefined;
 ```
