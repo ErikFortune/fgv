@@ -9,9 +9,9 @@ Collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in 
 **Signature:**
 
 ```typescript
-export interface ICollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> extends IReadOnlyResultMap<TKEY, TITEM> 
+export interface ICollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> extends IReadOnlyCollector<TKEY, TINDEX, TITEM> 
 ```
-**Extends:** [IReadOnlyResultMap](./ts-utils.ireadonlyresultmap.md)<!-- -->&lt;TKEY, TITEM&gt;
+**Extends:** [IReadOnlyCollector](./ts-utils.collections.ireadonlycollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
 
 ## Methods
 
@@ -27,17 +27,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[getAt(index)](./ts-utils.icollector.getat.md)
-
-
-</td><td>
-
-Gets the item at a specified index.
-
-
-</td></tr>
-<tr><td>
 
 [getOrAdd(key, item)](./ts-utils.icollector.getoradd.md)
 

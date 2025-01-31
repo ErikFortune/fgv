@@ -26,6 +26,23 @@ import { KeyValueEntry } from './common';
 import { IReadOnlyResultMap, ResultMapForEachCb, ResultMapResultDetail } from './readonlyResultMap';
 
 /**
+ * A read-only interface exposing non-mutating methods of a {@link Collections.ICollector | Collector}.
+ * @public
+ */
+export interface IReadOnlyCollector<
+  TKEY extends string = string,
+  TINDEX extends number = number,
+  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
+> extends IReadOnlyResultMap<TKEY, TITEM> {
+  /**
+   * Gets the item at a specified index.
+   * @param index - The index of the item to retrieve.
+   * @returns Returns {@link Success | Success} with the item if it exists, or {@link Failure | Failure} with an error if the index is out of range.
+   */
+  getAt(index: number): Result<TITEM>;
+}
+
+/**
  * Collects {@link Collections.ICollectible | ICollectible} items. Items in a collector are created by key and are assigned an index at the
  * time of addition.  Items are immutable once added.
  * @public
@@ -35,14 +52,7 @@ export interface ICollector<
   TINDEX extends number = number,
   TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
   TSRC = TITEM
-> extends IReadOnlyResultMap<TKEY, TITEM> {
-  /**
-   * Gets the item at a specified index.
-   * @param index - The index of the item to retrieve.
-   * @returns Returns {@link Success | Success} with the item if it exists, or {@link Failure | Failure} with an error if the index is out of range.
-   */
-  getAt(index: number): Result<TITEM>;
-
+> extends IReadOnlyCollector<TKEY, TINDEX, TITEM> {
   /**
    * Gets an item by key if it exists, or creates a new item and adds it using the default {@link Collections.CollectibleFactory | factory} if not.
    * @param key - The key of the item to retrieve.
@@ -66,7 +76,7 @@ export interface ICollector<
   /**
    * Gets a {@link IReadOnlyResultMap | read-only map} which can access the items in the collector.
    */
-  toReadOnly(): IReadOnlyResultMap<TKEY, TITEM>;
+  toReadOnly(): IReadOnlyCollector<TKEY, TINDEX, TITEM>;
 }
 
 /**
@@ -196,7 +206,7 @@ export class Collector<
   }
 
   /**
-   * {@inheritdoc ICollector.getAt}
+   * {@inheritdoc Collections.IReadOnlyCollector.getAt}
    */
   public getAt(index: number): Result<TITEM> {
     if (index < 0 || index >= this._byIndex.length) {
@@ -258,7 +268,7 @@ export class Collector<
   /**
    * {@inheritdoc ICollector.toReadOnly}
    */
-  public toReadOnly(): IReadOnlyResultMap<TKEY, TITEM> {
+  public toReadOnly(): IReadOnlyCollector<TKEY, TINDEX, TITEM> {
     return this;
   }
 

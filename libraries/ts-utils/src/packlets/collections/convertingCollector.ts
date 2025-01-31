@@ -23,11 +23,33 @@
 import { captureResult, DetailedResult, Result } from '../base';
 import { CollectibleFactory, CollectibleFactoryCallback, ICollectible } from './collectible';
 import { Collector } from './collector';
-import { CollectorConverter } from './collectorConverter';
+import { CollectorConverter, IReadOnlyCollectorConverter } from './collectorConverter';
 import { KeyValueEntry } from './common';
 import { IReadOnlyConvertingResultMap } from './convertingResultMap';
 import { KeyValueConverters } from './keyValueConverters';
 import { ResultMapResultDetail } from './readonlyResultMap';
+
+/**
+ * A read-only interface exposing non-mutating methods of a
+ * {@link Collections.ConvertingCollector | ConvertingCollector}.
+ * @public
+ */
+
+export interface IReadOnlyConvertingCollector<
+  TKEY extends string = string,
+  TINDEX extends number = number,
+  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
+> extends IReadOnlyConvertingResultMap<TKEY, TITEM> {
+  /**
+   * {@inheritdoc Collections.ConvertingCollector.converting}
+   */
+  readonly converting: IReadOnlyCollectorConverter<TKEY, TINDEX, TITEM>;
+
+  /**
+   * {@inheritdoc Collections.Collector.getAt}
+   */
+  readonly getAt: (index: number) => Result<TITEM>;
+}
 
 /**
  * Parameters for constructing a {@link Collections.ConvertingCollector | ConvertingCollector}.
@@ -136,7 +158,7 @@ export class ConvertingCollector<
    * {@link Collections.IReadOnlyConvertingResultMap | read-only map}.
    * @returns
    */
-  public toReadOnly(): IReadOnlyConvertingResultMap<TKEY, TITEM> {
+  public toReadOnly(): IReadOnlyConvertingCollector<TKEY, TINDEX, TITEM> {
     return this;
   }
 }

@@ -176,15 +176,18 @@ declare namespace Collections {
         CollectibleFactory,
         CollectibleFactoryCallback,
         Collectible,
+        IReadOnlyCollector,
         ICollector,
         ISimpleCollector,
         IConvertingCollector,
         ICollectorConstructorParams,
         Collector,
+        IReadOnlyCollectorConverter,
         ICollectorConverterCreateParams,
         CollectorConverter,
         ISimpleCollectorCreateParams,
         SimpleCollector,
+        IReadOnlyConvertingCollector,
         IConvertingCollectorConstructorParams,
         ConvertingCollector,
         KeyValueEntry,
@@ -221,6 +224,9 @@ export class Collector<TKEY extends string = string, TINDEX extends number = num
     //
     // (undocumented)
     get(key: TKEY): DetailedResult<TITEM, ResultMapResultDetail>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
     getAt(index: number): Result<TITEM>;
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
@@ -240,7 +246,7 @@ export class Collector<TKEY extends string = string, TINDEX extends number = num
     keys(): IterableIterator<TKEY>;
     // (undocumented)
     get size(): number;
-    toReadOnly(): IReadOnlyResultMap<TKEY, TITEM>;
+    toReadOnly(): IReadOnlyCollector<TKEY, TINDEX, TITEM>;
     // (undocumented)
     values(): IterableIterator<TITEM>;
 }
@@ -285,7 +291,7 @@ class CollectorConverter<TKEY extends string = string, TINDEX extends number = n
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    toReadOnly(): IReadOnlyResultMapConverter<TKEY, TITEM>;
+    toReadOnly(): IReadOnlyCollectorConverter<TKEY, TINDEX, TITEM>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -432,7 +438,7 @@ export class ConvertingCollector<TKEY extends string = string, TINDEX extends nu
     // (undocumented)
     getOrAdd(key: TKEY, cb: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>): DetailedResult<TITEM, ResultMapResultDetail>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    toReadOnly(): IReadOnlyConvertingResultMap<TKEY, TITEM>;
+    toReadOnly(): IReadOnlyConvertingCollector<TKEY, TINDEX, TITEM>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -800,8 +806,7 @@ export interface ICollectible<TKEY extends string = string, TINDEX extends numbe
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-export interface ICollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> extends IReadOnlyResultMap<TKEY, TITEM> {
-    getAt(index: number): Result<TITEM>;
+export interface ICollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> extends IReadOnlyCollector<TKEY, TINDEX, TITEM> {
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -810,7 +815,7 @@ export interface ICollector<TKEY extends string = string, TINDEX extends number 
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getOrAdd(key: TKEY, callback: CollectibleFactoryCallback<TKEY, TINDEX>): DetailedResult<TITEM, ResultMapResultDetail>;
-    toReadOnly(): IReadOnlyResultMap<TKEY, TITEM>;
+    toReadOnly(): IReadOnlyCollector<TKEY, TINDEX, TITEM>;
 }
 
 // @public
@@ -905,6 +910,47 @@ class InMemoryLogger extends LoggerBase {
     get silent(): string[];
     // (undocumented)
     protected _silent: string[];
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IReadOnlyCollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>> extends IReadOnlyResultMap<TKEY, TITEM> {
+    getAt(index: number): Result<TITEM>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IReadOnlyCollectorConverter<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY> = ICollectible<TKEY, TINDEX>> extends IReadOnlyResultMapConverter<TKEY, TITEM> {
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get(key: string): DetailedResult<TITEM, ResultMapResultDetail>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    has(key: string): boolean;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly map: IReadOnlyResultMap<TKEY, TITEM>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IReadOnlyConvertingCollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>> extends IReadOnlyConvertingResultMap<TKEY, TITEM> {
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly converting: IReadOnlyCollectorConverter<TKEY, TINDEX, TITEM>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly getAt: (index: number) => Result<TITEM>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

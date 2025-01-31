@@ -210,6 +210,39 @@ Parameters for constructing a [KeyValueConverters](./ts-utils.collections.keyval
 </td></tr>
 <tr><td>
 
+[IReadOnlyCollector](./ts-utils.collections.ireadonlycollector.md)
+
+
+</td><td>
+
+A read-only interface exposing non-mutating methods of a [Collector](./ts-utils.collections.icollector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyCollectorConverter](./ts-utils.collections.ireadonlycollectorconverter.md)
+
+
+</td><td>
+
+A read-only interface exposing non-mutating methods of a [CollectorConverter](./ts-utils.collections.collectorconverter.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyConvertingCollector](./ts-utils.collections.ireadonlyconvertingcollector.md)
+
+
+</td><td>
+
+A read-only interface exposing non-mutating methods of a [ConvertingCollector](./ts-utils.collections.convertingcollector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [IReadOnlyConvertingResultMap](./ts-utils.collections.ireadonlyconvertingresultmap.md)
 
 

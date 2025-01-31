@@ -29,6 +29,32 @@ import { ICollector } from './collector';
 import { IReadOnlyResultMapConverter } from './resultMapConverter';
 
 /**
+ * A read-only interface exposing non-mutating methods of a
+ * {@link Collections.CollectorConverter | CollectorConverter}.
+ * @public
+ */
+export interface IReadOnlyCollectorConverter<
+  TKEY extends string = string,
+  TINDEX extends number = number,
+  TITEM extends ICollectible<TKEY> = ICollectible<TKEY, TINDEX>
+> extends IReadOnlyResultMapConverter<TKEY, TITEM> {
+  /**
+   * {@inheritdoc Collections.CollectorConverter.map}
+   */
+  readonly map: IReadOnlyResultMap<TKEY, TITEM>;
+
+  /**
+   * {@inheritdoc Collections.Collector.get}
+   */
+  get(key: string): DetailedResult<TITEM, ResultMapResultDetail>;
+
+  /**
+   * {@inheritdoc Collections.Collector.has}
+   */
+  has(key: string): boolean;
+}
+
+/**
  * Parameters for constructing a {@link Collections.CollectorConverter | CollectorConverter}.
  * @public
  */
@@ -117,7 +143,7 @@ export class CollectorConverter<
   /**
    * {@inheritdoc Collections.Collector.toReadOnly}
    */
-  public toReadOnly(): IReadOnlyResultMapConverter<TKEY, TITEM> {
+  public toReadOnly(): IReadOnlyCollectorConverter<TKEY, TINDEX, TITEM> {
     return this;
   }
 

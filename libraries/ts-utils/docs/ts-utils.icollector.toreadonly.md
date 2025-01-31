@@ -9,9 +9,9 @@ Gets a [read-only map](./ts-utils.ireadonlyresultmap.md) which can access the it
 **Signature:**
 
 ```typescript
-toReadOnly(): IReadOnlyResultMap<TKEY, TITEM>;
+toReadOnly(): IReadOnlyCollector<TKEY, TINDEX, TITEM>;
 ```
 **Returns:**
 
-[IReadOnlyResultMap](./ts-utils.ireadonlyresultmap.md)<!-- -->&lt;TKEY, TITEM&gt;
+[IReadOnlyCollector](./ts-utils.collections.ireadonlycollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
 
