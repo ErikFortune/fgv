@@ -143,11 +143,7 @@ export class ConvertingCollector<
     itemOrCb: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
   ): DetailedResult<TITEM, CollectorResultDetail> {
     if (this._isFactoryCB(itemOrCb)) {
-      const convertResult = this._converters.convertKey(key);
-      if (convertResult.isFailure()) {
-        return failWithDetail(convertResult.message, convertResult.detail);
-      }
-      return super.getOrAdd(convertResult.value, itemOrCb);
+      return super.getOrAdd(key, itemOrCb);
     }
 
     const convertResult = this._converters.convertEntry([key, itemOrCb]);

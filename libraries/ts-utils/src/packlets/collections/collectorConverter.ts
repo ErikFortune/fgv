@@ -98,6 +98,28 @@ export class CollectorConverter<
   }
 
   /**
+   * {@inheritdoc Collections.Collector.(add:1)}
+   */
+  public add(key: string, value: unknown): DetailedResult<TITEM, CollectorResultDetail>;
+
+  /**
+   * {@inheritdoc Collections.Collector.(add:2)}
+   */
+  public add(
+    key: string,
+    factory: ResultMapValueFactory<TKEY, TITEM>
+  ): DetailedResult<TITEM, CollectorResultDetail>;
+  public add(
+    key: string,
+    valueOrFactory: unknown | ResultMapValueFactory<TKEY, TITEM>
+  ): DetailedResult<TITEM, CollectorResultDetail> {
+    if (this.has(key)) {
+      return failWithDetail(`${key}: already exists`, 'exists');
+    }
+    return this.getOrAdd(key, valueOrFactory);
+  }
+
+  /**
    * {@inheritdoc Collections.Collector.get}
    */
   public get(key: string): DetailedResult<TITEM, ResultMapResultDetail> {

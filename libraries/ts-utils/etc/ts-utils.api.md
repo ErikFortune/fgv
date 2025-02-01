@@ -223,6 +223,19 @@ export { Collections }
 export class Collector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> implements ICollector<TKEY, TINDEX, TITEM, TSRC> {
     [Symbol.iterator](): IterableIterator<KeyValueEntry<TKEY, TITEM>>;
     protected constructor(params: ICollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>);
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    add(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    //
+    // (undocumented)
+    add(key: TKEY, cb: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "addItem" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "addItem" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    addItem(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
     // (undocumented)
     entries(): IterableIterator<[TKEY, TITEM]>;
     // (undocumented)
@@ -269,6 +282,18 @@ export class Collector<TKEY extends string = string, TINDEX extends number = num
 class CollectorConverter<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> implements IReadOnlyResultMapConverter<TKEY, TITEM> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(params: ICollectorConverterCreateParams<TKEY, TINDEX, TITEM, TSRC>);
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    add(key: string, value: unknown): DetailedResult<TITEM, CollectorResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    add(key: string, factory: ResultMapValueFactory<TKEY, TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
     // (undocumented)
     protected _collector: ICollector<TKEY, TINDEX, TITEM, TSRC>;
     // (undocumented)
@@ -849,6 +874,19 @@ interface ICollectibleConstructorParamsWithIndex<TKEY extends string = string, T
 //
 // @public
 export interface ICollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> extends IReadOnlyCollector<TKEY, TINDEX, TITEM> {
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    add(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    //
+    // (undocumented)
+    add(key: TKEY, callback: CollectibleFactoryCallback<TKEY, TINDEX>): DetailedResult<TITEM, CollectorResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "addItem" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "addItem" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    addItem(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

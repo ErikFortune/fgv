@@ -223,6 +223,42 @@ describe('ConvertingCollector', () => {
       expect(thing).toSucceedWith(collectibles[2]);
     });
 
+    describe('add', () => {
+      test('adds a new item to the underlying collector', () => {
+        const collector = new ConvertingCollector(testCollectorParams);
+        const thing: ITestThing = { str: 'six', num: 6, bool: false };
+        const collectible = new CollectibleTestThing(thing, 'thing6' as TestKey, 0 as TestIndex);
+        expect(collector.get(collectible.key)).toFailWith(/not found/);
+        expect(collector.converting.get('thing6')).toFailWith(/not found/);
+        expect(collector.converting.add('thing6', thing)).toSucceedWith(collectible);
+        expect(collector.get(collectible.key)).toSucceedWith(collectible);
+      });
+
+      test('fails with detail exists if the entry already exists', () => {
+        const collector = new ConvertingCollector({ ...testCollectorParams, entries });
+        const thing: ITestThing = { str: 'three', num: 300, bool: true };
+        expect(collector.converting.add('thing3', thing)).toFailWithDetail(/already exists/i, 'exists');
+      });
+
+      test('fails with detail invalid-key if the key is invalid', () => {
+        const collector = new ConvertingCollector(testCollectorParams);
+        const thing: ITestThing = { str: 'thing1', num: 1, bool: true };
+        expect(collector.converting.add('thingamajig1', thing)).toFailWithDetail(
+          /not a valid test thing key/i,
+          'invalid-key'
+        );
+      });
+
+      test('fails with detail invalid-value if the entry is invalid', () => {
+        const collector = new ConvertingCollector(entryValidatingTestCollectorParams);
+        const thing: ITestThing = { str: 'thing1', num: 1, bool: true };
+        expect(collector.converting.add('thing1', thing)).toFailWithDetail(
+          /key cannot be same as string property/i,
+          'invalid-value'
+        );
+      });
+    });
+
     describe('getOrAdd', () => {
       test('adds a new item to the underlying collector', () => {
         const collector = new ConvertingCollector(testCollectorParams);
@@ -265,6 +301,28 @@ describe('ConvertingCollector', () => {
           (key, index) => succeed(new CollectibleTestThing(thing, key, index as TestIndex))
         );
         expect(collector.converting.getOrAdd('thing3', factory)).toSucceedWith(existing);
+        expect(factory).not.toHaveBeenCalled();
+      });
+
+      test('fails with detail invalid-key for an item if the key is invalid', () => {
+        const collector = new ConvertingCollector(testCollectorParams);
+        const thing: ITestThing = { str: 'thing1', num: 1, bool: true };
+        expect(collector.converting.getOrAdd('thingamajig1', thing)).toFailWithDetail(
+          /not a valid test thing key/i,
+          'invalid-key'
+        );
+      });
+
+      test('fails with detail invalid-key and does call factory if the key is invalid', () => {
+        const collector = new ConvertingCollector(testCollectorParams);
+        const thing: ITestThing = { str: 'thing1', num: 1, bool: true };
+        const factory: CollectibleFactoryCallback<TestKey, TestIndex, CollectibleTestThing> = jest.fn(
+          (key, index) => succeed(new CollectibleTestThing(thing, key, index as TestIndex))
+        );
+        expect(collector.converting.getOrAdd('thingamajig1', factory)).toFailWithDetail(
+          /not a valid test thing key/i,
+          'invalid-key'
+        );
         expect(factory).not.toHaveBeenCalled();
       });
 

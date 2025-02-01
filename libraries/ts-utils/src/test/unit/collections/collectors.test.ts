@@ -144,6 +144,61 @@ describe('Collectors', () => {
       });
     });
 
+    describe('add', () => {
+      test('adds an item to the collector', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>();
+        const thing = new CollectibleTestThing({ str: 'new', num: 6, bool: false }, 'newThing');
+        expect(collector.add(thing.key, thing)).toSucceedWith(thing);
+        expect(collector.size).toBe(1);
+        expect(collector.get(thing.key)).toSucceedWith(thing);
+      });
+
+      test('adds an item to the collector using a factory function', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>();
+        const thing: ITestThing = { str: 'new', num: 6, bool: false };
+        const factory: CollectibleFactoryCallback<string, number, CollectibleTestThing> = jest.fn(
+          (key, index) => succeed(new CollectibleTestThing(thing, key, index))
+        );
+        expect(collector.add('newThing', factory)).toSucceedWith(expect.objectContaining(thing));
+        expect(factory).toHaveBeenCalledWith('newThing', 0);
+        expect(collector.size).toBe(1);
+        expect(collector.get('newThing')).toSucceedWith(expect.objectContaining(thing));
+      });
+
+      test('fails if the item key is already in the collector', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>({ items: collectibles });
+        const thing = collectibles[0];
+        expect(collector.add(thing.key, thing)).toFailWith(/already exists/);
+        expect(collector.size).toBe(5);
+        expect(collector.get(thing.key)).toSucceedWith(thing);
+      });
+    });
+
+    describe('addItem', () => {
+      test('adds an item to the collector', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>();
+        const thing = new CollectibleTestThing({ str: 'new', num: 6, bool: false }, 'newThing');
+        expect(collector.addItem(thing)).toSucceedWith(thing);
+        expect(collector.size).toBe(1);
+        expect(collector.get(thing.key)).toSucceedWith(thing);
+      });
+
+      test('fails if the item key is already in the collector', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>({ items: collectibles });
+        const thing = collectibles[0];
+        expect(collector.addItem(thing)).toFailWith(/already exists/);
+        expect(collector.size).toBe(5);
+        expect(collector.get(thing.key)).toSucceedWith(thing);
+      });
+
+      test('fails if the item index cannot be changed', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>();
+        const thing = new CollectibleTestThing({ str: 'new', num: 6, bool: false }, 'newThing', 5);
+        expect(collector.addItem(thing)).toFailWith(/cannot be changed/);
+        expect(collector.size).toBe(0);
+      });
+    });
+
     describe('get', () => {
       test('returns an item by key', () => {
         const collector = new SimpleCollector<CollectibleTestThing>({ items: collectibles });

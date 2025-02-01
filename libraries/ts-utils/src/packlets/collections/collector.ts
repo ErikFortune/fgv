@@ -60,6 +60,30 @@ export interface ICollector<
   TSRC = TITEM
 > extends IReadOnlyCollector<TKEY, TINDEX, TITEM> {
   /**
+   * Adds an item to the collector using the default {@link Collections.CollectibleFactory | factory}
+   * at a specified key, failing if an item with that key already exists.
+   * @param key - The key of the item to add.
+   * @param item - The source representation of the item to be added.
+   * @returns Returns {@link Success | Success} with the item if it is added, or {@link Failure | Failure} with
+   * an error if the item cannot be created and indexed.
+   * @public
+   */
+  add(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
+  add(
+    key: TKEY,
+    callback: CollectibleFactoryCallback<TKEY, TINDEX>
+  ): DetailedResult<TITEM, CollectorResultDetail>;
+
+  /**
+   * Adds an item to the collector using the default {@link Collections.CollectibleFactory | factory}
+   * at a specified key, failing if an item with that key already exists.
+   * @param item - The item to add.
+   * @returns Returns {@link Success | Success} with the item if it is added, or {@link Failure | Failure} with an
+   * error if the item cannot be created and indexed.
+   */
+  addItem(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
+
+  /**
    * Gets an item by key if it exists, or creates a new item and adds it using the default {@link Collections.CollectibleFactory | factory} if not.
    * @param key - The key of the item to retrieve.
    * @param item - The source representation of the item to be added if it does not exist.
@@ -228,6 +252,37 @@ export class Collector<
       return fail(`${index}: out of range.`);
     }
     return succeed(this._byIndex[index]);
+  }
+
+  /**
+   * {@inheritdoc ICollector.(add:1)}
+   */
+  public add(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
+  /**
+   * {@inheritdoc ICollector.(add:2)}
+   */
+  public add(
+    key: TKEY,
+    cb: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+  ): DetailedResult<TITEM, CollectorResultDetail>;
+  public add(
+    key: TKEY,
+    itemOrCb: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+  ): DetailedResult<TITEM, CollectorResultDetail> {
+    if (this._byKey.has(key)) {
+      return failWithDetail(`${key}: already exists.`, 'exists');
+    }
+    return this.getOrAdd(key, itemOrCb as TSRC);
+  }
+
+  /**
+   * {@inheritdoc ICollector.addItem}
+   */
+  public addItem(item: TITEM): DetailedResult<TITEM, CollectorResultDetail> {
+    if (this._byKey.has(item.key)) {
+      return failWithDetail(`${item.key}: already exists.`, 'exists');
+    }
+    return this.getOrAddItem(item);
   }
 
   /**
