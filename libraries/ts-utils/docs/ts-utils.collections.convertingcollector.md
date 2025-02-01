@@ -150,34 +150,6 @@ Creates a new [ConvertingCollector](./ts-utils.collections.convertingcollector.m
 </td></tr>
 <tr><td>
 
-[getOrAdd(key, item)](./ts-utils.collections.convertingcollector.getoradd.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets an item by key if it exists, or creates a new item and adds it using the default [factory](./ts-utils.collections.collectiblefactory.md) if not.
-
-
-</td></tr>
-<tr><td>
-
-[getOrAdd(key, cb)](./ts-utils.collections.convertingcollector.getoradd_1.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets an item by key if it exists, or creates a new item and adds it using the specified [factory callback](./ts-utils.collections.collectiblefactorycallback.md) if not.
-
-
-</td></tr>
-<tr><td>
-
 [toReadOnly()](./ts-utils.collections.convertingcollector.toreadonly.md)
 
 

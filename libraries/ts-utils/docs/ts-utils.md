@@ -30,6 +30,17 @@ A [Collector](./ts-utils.icollector.md) that collects [ICollectible](./ts-utils.
 </td></tr>
 <tr><td>
 
+[ConvertingCollector](./ts-utils.convertingcollector.md)
+
+
+</td><td>
+
+A [Collector](./ts-utils.collections.collector.md) with a [CollectorConverter](./ts-utils.collections.collectorconverter.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+
+
+</td></tr>
+<tr><td>
+
 [ConvertingResultMap](./ts-utils.convertingresultmap.md)
 
 
@@ -451,6 +462,17 @@ Description
 </td><td>
 
 Generic converter to convert unknown to a templated type `<T>`<!-- -->, using intrinsic rules or as modified by an optional conversion context of optional templated type `<TC>` (default `undefined`<!-- -->).
+
+
+</td></tr>
+<tr><td>
+
+[ICollectible](./ts-utils.icollectible.md)
+
+
+</td><td>
+
+An item that can be collected by some [Collector](./ts-utils.collector.md)<!-- -->.
 
 
 </td></tr>

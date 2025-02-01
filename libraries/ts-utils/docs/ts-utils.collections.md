@@ -144,6 +144,28 @@ An item that can be collected by some [Collector](./ts-utils.collector.md)<!-- -
 </td></tr>
 <tr><td>
 
+[ICollectibleConstructorParamsWithConverter](./ts-utils.collections.icollectibleconstructorparamswithconverter.md)
+
+
+</td><td>
+
+Parameters for constructing a new [ICollectible](./ts-utils.collections.icollectible.md) instance with an index converter.
+
+
+</td></tr>
+<tr><td>
+
+[ICollectibleConstructorParamsWithIndex](./ts-utils.collections.icollectibleconstructorparamswithindex.md)
+
+
+</td><td>
+
+Parameters for constructing a new [ICollectible](./ts-utils.collections.icollectible.md) instance with a defined, strongly-typed index.
+
+
+</td></tr>
+<tr><td>
+
 [ICollector](./ts-utils.collections.icollector.md)
 
 
@@ -205,6 +227,39 @@ Parameters for constructing a [ResultMap](./ts-utils.collections.resultmap.md)<!
 </td><td>
 
 Parameters for constructing a [KeyValueConverters](./ts-utils.collections.keyvalueconverters.md) instance.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyCollector](./ts-utils.collections.ireadonlycollector.md)
+
+
+</td><td>
+
+A read-only interface exposing non-mutating methods of a [Collector](./ts-utils.collections.icollector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyCollectorConverter](./ts-utils.collections.ireadonlycollectorconverter.md)
+
+
+</td><td>
+
+A read-only interface exposing non-mutating methods of a [CollectorConverter](./ts-utils.collections.collectorconverter.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyConvertingCollector](./ts-utils.collections.ireadonlyconvertingcollector.md)
+
+
+</td><td>
+
+A read-only interface exposing non-mutating methods of a [ConvertingCollector](./ts-utils.collections.convertingcollector.md)<!-- -->.
 
 
 </td></tr>
@@ -332,6 +387,28 @@ Factory function for creating a new [ICollectible](./ts-utils.collections.icolle
 </td><td>
 
 Factory function for creating a new [ICollectible](./ts-utils.collections.icollectible.md) instance given a key and an index.
+
+
+</td></tr>
+<tr><td>
+
+[CollectorResultDetail](./ts-utils.collections.collectorresultdetail.md)
+
+
+</td><td>
+
+Additional success or failure details for mutating [Collector](./ts-utils.icollector.md) calls.
+
+
+</td></tr>
+<tr><td>
+
+[ICollectibleConstructorParams](./ts-utils.collections.icollectibleconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a new [ICollectible](./ts-utils.collections.icollectible.md) instance.
 
 
 </td></tr>

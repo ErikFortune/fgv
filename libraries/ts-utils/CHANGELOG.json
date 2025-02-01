@@ -2,6 +2,12 @@
   "name": "@fgv/ts-utils",
   "entries": [
     {
+      "version": "4.4.0",
+      "tag": "@fgv/ts-utils_v4.4.0",
+      "date": "Sat, 01 Feb 2025 17:13:10 GMT",
+      "comments": {}
+    },
+    {
       "version": "4.3.0",
       "tag": "@fgv/ts-utils_v4.3.0",
       "date": "Thu, 30 Jan 2025 00:35:17 GMT",

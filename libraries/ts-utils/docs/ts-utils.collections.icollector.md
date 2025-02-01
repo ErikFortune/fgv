@@ -9,9 +9,9 @@ Collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in 
 **Signature:**
 
 ```typescript
-export interface ICollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> extends IReadOnlyResultMap<TKEY, TITEM> 
+export interface ICollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> extends IReadOnlyCollector<TKEY, TINDEX, TITEM> 
 ```
-**Extends:** [IReadOnlyResultMap](./ts-utils.ireadonlyresultmap.md)<!-- -->&lt;TKEY, TITEM&gt;
+**Extends:** [IReadOnlyCollector](./ts-utils.collections.ireadonlycollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
 
 ## Methods
 
@@ -28,12 +28,32 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[getAt(index)](./ts-utils.collections.icollector.getat.md)
+[add(key, item)](./ts-utils.collections.icollector.add.md)
 
 
 </td><td>
 
-Gets the item at a specified index.
+Adds an item to the collector using the default [factory](./ts-utils.collections.collectiblefactory.md) at a specified key, failing if an item with that key already exists.
+
+
+</td></tr>
+<tr><td>
+
+[add(key, callback)](./ts-utils.collections.icollector.add_1.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[addItem(item)](./ts-utils.collections.icollector.additem.md)
+
+
+</td><td>
+
+Adds an item to the collector using the default [factory](./ts-utils.collections.collectiblefactory.md) at a specified key, failing if an item with that key already exists.
 
 
 </td></tr>
@@ -56,6 +76,17 @@ Gets an item by key if it exists, or creates a new item and adds it using the de
 </td><td>
 
 Gets an item by key if it exists, or creates a new item and adds it using the specified [factory callback](./ts-utils.collections.collectiblefactorycallback.md) if not.
+
+
+</td></tr>
+<tr><td>
+
+[getOrAddItem(item)](./ts-utils.collections.icollector.getoradditem.md)
+
+
+</td><td>
+
+Gets an existing item with a key matching that of a supplied item, or adds the supplied item to the collector if no item with that key exists.
 
 
 </td></tr>

@@ -9,7 +9,7 @@ Gets an item by key if it exists, or creates a new item and adds it using the sp
 **Signature:**
 
 ```typescript
-getOrAdd(key: TKEY, callback: CollectibleFactoryCallback<TKEY, TINDEX>): DetailedResult<TITEM, ResultMapResultDetail>;
+getOrAdd(key: TKEY, callback: CollectibleFactoryCallback<TKEY, TINDEX>): DetailedResult<TITEM, CollectorResultDetail>;
 ```
 
 ## Parameters
@@ -65,7 +65,7 @@ The factory callback to create the item if it does not exist.
 </tbody></table>
 **Returns:**
 
-[DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TITEM, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;
+[DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TITEM, [CollectorResultDetail](./ts-utils.collections.collectorresultdetail.md)<!-- -->&gt;
 
 Returns [Success](./ts-utils.success.md) with the item if it exists, or [Failure](./ts-utils.failure.md) with an error if the item is not found.
 

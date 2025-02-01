@@ -11,5 +11,5 @@ A [Collector](./ts-utils.icollector.md) with non-branded `string` key and `numbe
 ```typescript
 export type IConvertingCollector<TITEM extends ICollectible<string, number>, TSRC> = ICollector<string, number, TITEM, TSRC>;
 ```
-**References:** [ICollectible](./ts-utils.collections.icollectible.md)<!-- -->, [ICollector](./ts-utils.icollector.md)
+**References:** [ICollectible](./ts-utils.icollectible.md)<!-- -->, [ICollector](./ts-utils.icollector.md)
 

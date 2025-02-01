@@ -29,6 +29,7 @@ import {
   ICollectorConstructorParams
 } from '../../../packlets/collections';
 import { Result, succeed } from '../../../packlets/base';
+import { Converters } from '../../../packlets/conversion';
 
 interface ITestThing {
   str?: string;
@@ -36,64 +37,44 @@ interface ITestThing {
   bool?: boolean;
 }
 
-class CollectibleTestThing<TKEY extends string = string, TINDEX extends number = number>
-  extends Collectible<TKEY, TINDEX>
-  implements ITestThing
-{
+class CollectibleTestThing extends Collectible<string, number> implements ITestThing {
   public str?: string;
   public num?: number;
   public bool?: boolean;
 
-  public constructor(thing: ITestThing, key: TKEY, index?: TINDEX) {
-    super(key, index);
+  public constructor(thing: ITestThing, key: string, index?: number) {
+    super({ key, index, indexConverter: Converters.number });
     this.str = thing.str;
     this.num = thing.num;
     this.bool = thing.bool;
   }
 }
 
-class BrokenCollectibleTestThing<
-  TKEY extends string = string,
-  TINDEX extends number = number
-> extends CollectibleTestThing<TKEY, TINDEX> {
-  public constructor(thing: ITestThing, key: TKEY, index?: TINDEX) {
-    super(thing, key, index ? ((index + 1) as TINDEX) : undefined);
+class BrokenCollectibleTestThing extends CollectibleTestThing {
+  public constructor(thing: ITestThing, key: string, index?: number) {
+    super(thing, key, index ? ((index + 1) as number) : undefined);
   }
 
-  public setIndex(index: TINDEX): Result<TINDEX> {
-    this._index = (index + 1) as TINDEX;
+  public setIndex(index: number): Result<number> {
+    this._index = index + 1;
     return succeed(this.index!);
   }
 }
 
-class TestCollector<TKEY extends string = string, TINDEX extends number = number> extends Collector<
-  TKEY,
-  TINDEX,
-  CollectibleTestThing<TKEY, TINDEX>,
-  ITestThing
-> {
+class TestCollector extends Collector<string, number, CollectibleTestThing, ITestThing> {
   public constructor(things?: ITestThing[]) {
     const entries = things
-      ? { entries: things.map((thing, index): [TKEY, ITestThing] => [`thing${index}` as TKEY, thing]) }
+      ? { entries: things.map((thing, index): [string, ITestThing] => [`thing${index}`, thing]) }
       : {};
-    const params: ICollectorConstructorParams<
-      TKEY,
-      TINDEX,
-      CollectibleTestThing<TKEY, TINDEX>,
-      ITestThing
-    > = {
+    const params: ICollectorConstructorParams<string, number, CollectibleTestThing, ITestThing> = {
       factory: TestCollector._factory,
       ...entries
     };
     super(params);
   }
 
-  protected static _factory<TKEY extends string, TINDEX extends number>(
-    key: TKEY,
-    index: number,
-    item: ITestThing
-  ): Result<CollectibleTestThing<TKEY, TINDEX>> {
-    return succeed(new CollectibleTestThing(item, key, index as TINDEX));
+  protected static _factory(key: string, index: number, item: ITestThing): Result<CollectibleTestThing> {
+    return succeed(new CollectibleTestThing(item, key, index));
   }
 }
 
@@ -160,6 +141,61 @@ describe('Collectors', () => {
             }
           }
         );
+      });
+    });
+
+    describe('add', () => {
+      test('adds an item to the collector', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>();
+        const thing = new CollectibleTestThing({ str: 'new', num: 6, bool: false }, 'newThing');
+        expect(collector.add(thing.key, thing)).toSucceedWith(thing);
+        expect(collector.size).toBe(1);
+        expect(collector.get(thing.key)).toSucceedWith(thing);
+      });
+
+      test('adds an item to the collector using a factory function', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>();
+        const thing: ITestThing = { str: 'new', num: 6, bool: false };
+        const factory: CollectibleFactoryCallback<string, number, CollectibleTestThing> = jest.fn(
+          (key, index) => succeed(new CollectibleTestThing(thing, key, index))
+        );
+        expect(collector.add('newThing', factory)).toSucceedWith(expect.objectContaining(thing));
+        expect(factory).toHaveBeenCalledWith('newThing', 0);
+        expect(collector.size).toBe(1);
+        expect(collector.get('newThing')).toSucceedWith(expect.objectContaining(thing));
+      });
+
+      test('fails if the item key is already in the collector', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>({ items: collectibles });
+        const thing = collectibles[0];
+        expect(collector.add(thing.key, thing)).toFailWith(/already exists/);
+        expect(collector.size).toBe(5);
+        expect(collector.get(thing.key)).toSucceedWith(thing);
+      });
+    });
+
+    describe('addItem', () => {
+      test('adds an item to the collector', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>();
+        const thing = new CollectibleTestThing({ str: 'new', num: 6, bool: false }, 'newThing');
+        expect(collector.addItem(thing)).toSucceedWith(thing);
+        expect(collector.size).toBe(1);
+        expect(collector.get(thing.key)).toSucceedWith(thing);
+      });
+
+      test('fails if the item key is already in the collector', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>({ items: collectibles });
+        const thing = collectibles[0];
+        expect(collector.addItem(thing)).toFailWith(/already exists/);
+        expect(collector.size).toBe(5);
+        expect(collector.get(thing.key)).toSucceedWith(thing);
+      });
+
+      test('fails if the item index cannot be changed', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>();
+        const thing = new CollectibleTestThing({ str: 'new', num: 6, bool: false }, 'newThing', 5);
+        expect(collector.addItem(thing)).toFailWith(/cannot be changed/);
+        expect(collector.size).toBe(0);
       });
     });
 
@@ -248,6 +284,40 @@ describe('Collectors', () => {
         expect(collector.getOrAdd('newThing', thing)).toFailWith(/index mismatch/);
       });
     });
+
+    describe('getOrAddItem', () => {
+      test('adds a new item to the collector', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>();
+        const thing = new CollectibleTestThing({ str: 'new', num: 6, bool: false }, 'thing0');
+        expect(collector.getOrAddItem(thing)).toSucceedWith(thing);
+        expect(collector.size).toBe(1);
+        expect(collector.get(thing.key)).toSucceedWith(thing);
+      });
+
+      test('returns an existing item if it is already in the collector', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>({ items: collectibles });
+        const newThing = new CollectibleTestThing(things[2], 'thing0');
+        expect(collector.getOrAddItem(newThing)).toSucceedWithDetail(collectibles[0], 'exists');
+        expect(collector.size).toBe(5);
+        expect(collector.get(newThing.key)).toSucceedWith(collectibles[0]);
+      });
+
+      test('fails without adding if the item index cannot be set', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>();
+        const thing = new CollectibleTestThing({ str: 'new', num: 6, bool: false }, 'thing0', 5);
+        expect(collector.getOrAddItem(thing)).toFailWithDetail(/cannot be changed/, 'invalid-index');
+        expect(collector.size).toBe(0);
+      });
+
+      test('does not check index of item to be added if key is already in collector', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>({ items: collectibles });
+        const newThing = new CollectibleTestThing(things[2], 'thing0', 5);
+        expect(collector.getOrAddItem(newThing)).toSucceedWithDetail(collectibles[0], 'exists');
+        expect(collector.size).toBe(5);
+        expect(collector.get(newThing.key)).toSucceedWith(collectibles[0]);
+      });
+    });
+
     describe('toReadOnly', () => {
       test('returns a readonly map of the collector', () => {
         const collector = new SimpleCollector<CollectibleTestThing>({ items: collectibles });

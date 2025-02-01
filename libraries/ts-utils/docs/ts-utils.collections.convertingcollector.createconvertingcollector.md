@@ -49,7 +49,7 @@ Required parameters for constructing the collector.
 </tbody></table>
 **Returns:**
 
-[Result](./ts-utils.result.md)<!-- -->&lt;[ConvertingCollector](./ts-utils.collections.convertingcollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;&gt;
+[Result](./ts-utils.result.md)<!-- -->&lt;[ConvertingCollector](./ts-utils.convertingcollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;&gt;
 
 [Success](./ts-utils.success.md) with the new collector if successful, [Failure](./ts-utils.failure.md) otherwise.
 

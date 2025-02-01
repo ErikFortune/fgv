@@ -26,6 +26,29 @@ import { KeyValueEntry } from './common';
 import { IReadOnlyResultMap, ResultMapForEachCb, ResultMapResultDetail } from './readonlyResultMap';
 
 /**
+ * Additional success or failure details for mutating {@link ICollector | Collector} calls.
+ * @public
+ */
+export type CollectorResultDetail = ResultMapResultDetail | 'invalid-index';
+
+/**
+ * A read-only interface exposing non-mutating methods of a {@link Collections.ICollector | Collector}.
+ * @public
+ */
+export interface IReadOnlyCollector<
+  TKEY extends string = string,
+  TINDEX extends number = number,
+  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
+> extends IReadOnlyResultMap<TKEY, TITEM> {
+  /**
+   * Gets the item at a specified index.
+   * @param index - The index of the item to retrieve.
+   * @returns Returns {@link Success | Success} with the item if it exists, or {@link Failure | Failure} with an error if the index is out of range.
+   */
+  getAt(index: number): Result<TITEM>;
+}
+
+/**
  * Collects {@link Collections.ICollectible | ICollectible} items. Items in a collector are created by key and are assigned an index at the
  * time of addition.  Items are immutable once added.
  * @public
@@ -35,13 +58,30 @@ export interface ICollector<
   TINDEX extends number = number,
   TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
   TSRC = TITEM
-> extends IReadOnlyResultMap<TKEY, TITEM> {
+> extends IReadOnlyCollector<TKEY, TINDEX, TITEM> {
   /**
-   * Gets the item at a specified index.
-   * @param index - The index of the item to retrieve.
-   * @returns Returs {@link Success | Success} with the item if it exists, or {@link Failure | Failure} with an error if the index is out of range.
+   * Adds an item to the collector using the default {@link Collections.CollectibleFactory | factory}
+   * at a specified key, failing if an item with that key already exists.
+   * @param key - The key of the item to add.
+   * @param item - The source representation of the item to be added.
+   * @returns Returns {@link Success | Success} with the item if it is added, or {@link Failure | Failure} with
+   * an error if the item cannot be created and indexed.
+   * @public
    */
-  getAt(index: TINDEX): Result<TITEM>;
+  add(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
+  add(
+    key: TKEY,
+    callback: CollectibleFactoryCallback<TKEY, TINDEX>
+  ): DetailedResult<TITEM, CollectorResultDetail>;
+
+  /**
+   * Adds an item to the collector using the default {@link Collections.CollectibleFactory | factory}
+   * at a specified key, failing if an item with that key already exists.
+   * @param item - The item to add.
+   * @returns Returns {@link Success | Success} with the item if it is added, or {@link Failure | Failure} with an
+   * error if the item cannot be created and indexed.
+   */
+  addItem(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
    * Gets an item by key if it exists, or creates a new item and adds it using the default {@link Collections.CollectibleFactory | factory} if not.
@@ -50,7 +90,7 @@ export interface ICollector<
    * @returns Returns {@link Success | Success} with the item if it exists or could be created, or {@link Failure | Failure} with an error if the
    * item cannot be created and indexed.
    */
-  getOrAdd(key: TKEY, item: TSRC): DetailedResult<TITEM, ResultMapResultDetail>;
+  getOrAdd(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
    * Gets an item by key if it exists, or creates a new item and adds it using the specified {@link Collections.CollectibleFactoryCallback | factory callback} if not.
@@ -61,12 +101,21 @@ export interface ICollector<
   getOrAdd(
     key: TKEY,
     callback: CollectibleFactoryCallback<TKEY, TINDEX>
-  ): DetailedResult<TITEM, ResultMapResultDetail>;
+  ): DetailedResult<TITEM, CollectorResultDetail>;
+
+  /**
+   * Gets an existing item with a key matching that of a supplied item, or adds the supplied
+   * item to the collector if no item with that key exists.
+   * @param item - The item to retrieve or add.
+   * @returns Returns {@link Success | Success} with the item stored in the collector
+   * or {@link Failure | Failure} with an error if the item cannot be created and indexed.
+   */
+  getOrAddItem(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
    * Gets a {@link IReadOnlyResultMap | read-only map} which can access the items in the collector.
    */
-  toReadOnly(): IReadOnlyResultMap<TKEY, TITEM>;
+  toReadOnly(): IReadOnlyCollector<TKEY, TINDEX, TITEM>;
 }
 
 /**
@@ -196,9 +245,9 @@ export class Collector<
   }
 
   /**
-   * {@inheritdoc ICollector.getAt}
+   * {@inheritdoc Collections.IReadOnlyCollector.getAt}
    */
-  public getAt(index: TINDEX): Result<TITEM> {
+  public getAt(index: number): Result<TITEM> {
     if (index < 0 || index >= this._byIndex.length) {
       return fail(`${index}: out of range.`);
     }
@@ -206,20 +255,52 @@ export class Collector<
   }
 
   /**
+   * {@inheritdoc ICollector.(add:1)}
+   */
+  public add(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
+  /**
+   * {@inheritdoc ICollector.(add:2)}
+   */
+  public add(
+    key: TKEY,
+    cb: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+  ): DetailedResult<TITEM, CollectorResultDetail>;
+  public add(
+    key: TKEY,
+    itemOrCb: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+  ): DetailedResult<TITEM, CollectorResultDetail> {
+    if (this._byKey.has(key)) {
+      return failWithDetail(`${key}: already exists.`, 'exists');
+    }
+    return this.getOrAdd(key, itemOrCb as TSRC);
+  }
+
+  /**
+   * {@inheritdoc ICollector.addItem}
+   */
+  public addItem(item: TITEM): DetailedResult<TITEM, CollectorResultDetail> {
+    if (this._byKey.has(item.key)) {
+      return failWithDetail(`${item.key}: already exists.`, 'exists');
+    }
+    return this.getOrAddItem(item);
+  }
+
+  /**
    * {@inheritdoc ICollector.(getOrAdd:1)}
    */
-  public getOrAdd(key: TKEY, item: TSRC): DetailedResult<TITEM, ResultMapResultDetail>;
+  public getOrAdd(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
   /**
    * {@inheritdoc ICollector.(getOrAdd:2)}
    */
   public getOrAdd(
     key: TKEY,
     cb: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
-  ): DetailedResult<TITEM, ResultMapResultDetail>;
+  ): DetailedResult<TITEM, CollectorResultDetail>;
+
   public getOrAdd(
     key: TKEY,
     itemOrCb: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
-  ): DetailedResult<TITEM, ResultMapResultDetail> {
+  ): DetailedResult<TITEM, CollectorResultDetail> {
     if (this._byKey.has(key)) {
       return succeedWithDetail(this._byKey.get(key)!, 'exists');
     }
@@ -227,7 +308,7 @@ export class Collector<
       ? itemOrCb(key, this._byIndex.length)
       : this._factory(key, this._byIndex.length, itemOrCb);
     if (build.isFailure()) {
-      return failWithDetail<TITEM, ResultMapResultDetail>(build.message, 'invalid-value');
+      return failWithDetail<TITEM, CollectorResultDetail>(build.message, 'invalid-value');
     }
     const newItem = build.value;
 
@@ -240,12 +321,28 @@ export class Collector<
     if (newItem.index !== this._byIndex.length) {
       return failWithDetail(
         `$[key}: index mismatch in created item - ${newItem.index} !== ${this._byIndex.length}`,
-        'invalid-value'
+        'invalid-index'
       );
     }
     this._byKey.set(key, newItem);
     this._byIndex.push(newItem);
     return succeedWithDetail(newItem, 'added');
+  }
+
+  /**
+   * {@inheritdoc ICollector.getOrAddItem}
+   */
+  public getOrAddItem(item: TITEM): DetailedResult<TITEM, CollectorResultDetail> {
+    if (this._byKey.has(item.key)) {
+      return succeedWithDetail(this._byKey.get(item.key)!, 'exists');
+    }
+    const { message } = item.setIndex(this._byIndex.length);
+    if (message !== undefined) {
+      return failWithDetail(message, 'invalid-index');
+    }
+    this._byKey.set(item.key, item);
+    this._byIndex.push(item);
+    return succeedWithDetail(item, 'added');
   }
 
   /**
@@ -258,7 +355,7 @@ export class Collector<
   /**
    * {@inheritdoc ICollector.toReadOnly}
    */
-  public toReadOnly(): IReadOnlyResultMap<TKEY, TITEM> {
+  public toReadOnly(): IReadOnlyCollector<TKEY, TINDEX, TITEM> {
     return this;
   }
 
@@ -268,6 +365,23 @@ export class Collector<
    */
   public [Symbol.iterator](): IterableIterator<KeyValueEntry<TKEY, TITEM>> {
     return this._byKey[Symbol.iterator]();
+  }
+
+  /**
+   * A simple factory method for derived classes which directly store the supplied
+   * object.
+   * @param key - The key of the item to create.
+   * @param index - The index of the item to create.
+   * @param item - The source item to create.
+   * @returns `Success` with the created item and a detail of 'success', or
+   * `Failure` with an error message and appropriate detail.
+   */
+  protected static _simpleFactory<
+    TKEY extends string = string,
+    TINDEX extends number = number,
+    TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
+  >(key: TKEY, index: number, item: TITEM): Result<TITEM> {
+    return item.setIndex(index).onSuccess(() => succeed(item));
   }
 
   protected _isFactoryCB(

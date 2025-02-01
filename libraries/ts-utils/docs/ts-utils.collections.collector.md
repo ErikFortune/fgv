@@ -146,6 +146,24 @@ Description
 </td></tr>
 <tr><td>
 
+[\_simpleFactory(key, index, item)](./ts-utils.collections.collector._simplefactory.md)
+
+
+</td><td>
+
+`protected`
+
+`static`
+
+
+</td><td>
+
+A simple factory method for derived classes which directly store the supplied object.
+
+
+</td></tr>
+<tr><td>
+
 [\[Symbol.iterator\]()](./ts-utils.collections.collector._symbol.iterator_.md)
 
 
@@ -155,6 +173,47 @@ Description
 </td><td>
 
 Gets an iterator over the map entries.
+
+
+</td></tr>
+<tr><td>
+
+[add(key, item)](./ts-utils.collections.collector.add.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds an item to the collector using the default [factory](./ts-utils.collections.collectiblefactory.md) at a specified key, failing if an item with that key already exists.
+
+
+</td></tr>
+<tr><td>
+
+[add(key, cb)](./ts-utils.collections.collector.add_1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[addItem(item)](./ts-utils.collections.collector.additem.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds an item to the collector using the default [factory](./ts-utils.collections.collectiblefactory.md) at a specified key, failing if an item with that key already exists.
 
 
 </td></tr>
@@ -233,6 +292,20 @@ Gets an item by key if it exists, or creates a new item and adds it using the de
 </td><td>
 
 Gets an item by key if it exists, or creates a new item and adds it using the specified [factory callback](./ts-utils.collections.collectiblefactorycallback.md) if not.
+
+
+</td></tr>
+<tr><td>
+
+[getOrAddItem(item)](./ts-utils.collections.collector.getoradditem.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets an existing item with a key matching that of a supplied item, or adds the supplied item to the collector if no item with that key exists.
 
 
 </td></tr>

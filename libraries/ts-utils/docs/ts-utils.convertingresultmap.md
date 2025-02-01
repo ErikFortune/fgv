@@ -115,20 +115,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[add(key, value)](./ts-utils.convertingresultmap.add.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Sets a key/value pair in the map if the key does not already exist.
-
-
-</td></tr>
-<tr><td>
-
 [createConvertingResultMap(params)](./ts-utils.convertingresultmap.createconvertingresultmap.md)
 
 
@@ -145,48 +131,6 @@ Creates a new [ConvertingResultMap](./ts-utils.collections.convertingresultmap.m
 </td></tr>
 <tr><td>
 
-[getOrAdd(key, value)](./ts-utils.convertingresultmap.getoradd.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets a value from the map, or adds a supplied value it if it does not exist.
-
-
-</td></tr>
-<tr><td>
-
-[getOrAdd(key, factory)](./ts-utils.convertingresultmap.getoradd_1.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets a value from the map, or adds a value created by a factory function if it does not exist.
-
-
-</td></tr>
-<tr><td>
-
-[set(key, value)](./ts-utils.convertingresultmap.set.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Sets a key/value pair in the map.
-
-
-</td></tr>
-<tr><td>
-
 [toReadOnly()](./ts-utils.convertingresultmap.toreadonly.md)
 
 
@@ -196,20 +140,6 @@ Sets a key/value pair in the map.
 </td><td>
 
 Gets a read-only version of this map.
-
-
-</td></tr>
-<tr><td>
-
-[update(key, value)](./ts-utils.convertingresultmap.update.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Updates an existing key in the map - the map is not updated if the key does not exist.
 
 
 </td></tr>

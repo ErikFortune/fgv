@@ -9,7 +9,7 @@ Gets the item at a specified index.
 **Signature:**
 
 ```typescript
-getAt(index: TINDEX): Result<TITEM>;
+getAt(index: number): Result<TITEM>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ index
 
 </td><td>
 
-TINDEX
+number
 
 
 </td><td>
@@ -51,5 +51,5 @@ The index of the item to retrieve.
 
 [Result](./ts-utils.result.md)<!-- -->&lt;TITEM&gt;
 
-Returs [Success](./ts-utils.success.md) with the item if it exists, or [Failure](./ts-utils.failure.md) with an error if the index is out of range.
+Returns [Success](./ts-utils.success.md) with the item if it exists, or [Failure](./ts-utils.failure.md) with an error if the index is out of range.
 
