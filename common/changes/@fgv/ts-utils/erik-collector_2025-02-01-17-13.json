@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@fgv/ts-utils",
-      "comment": "",
+      "comment": "update collectors",
       "type": "none"
     }
   ],
