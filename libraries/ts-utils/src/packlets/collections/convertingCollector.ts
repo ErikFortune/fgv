@@ -20,9 +20,9 @@
  * SOFTWARE.
  */
 
-import { captureResult, DetailedResult, failWithDetail, Result } from '../base';
-import { CollectibleFactory, CollectibleFactoryCallback, ICollectible } from './collectible';
-import { Collector, CollectorResultDetail } from './collector';
+import { captureResult, Result } from '../base';
+import { CollectibleFactory, ICollectible } from './collectible';
+import { Collector } from './collector';
 import { CollectorConverter, IReadOnlyCollectorConverter } from './collectorConverter';
 import { KeyValueEntry } from './common';
 import { IReadOnlyConvertingResultMap } from './convertingResultMap';

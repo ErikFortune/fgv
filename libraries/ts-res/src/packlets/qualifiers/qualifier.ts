@@ -21,7 +21,7 @@
  */
 
 import { captureResult, Collections, ICollectible, Result } from '@fgv/ts-utils';
-import { ConditionPriority, QualifierIndex, QualifierName } from '../common';
+import { ConditionPriority, QualifierIndex, QualifierName, Convert as CommonConvert } from '../common';
 import { QualifierType } from './qualifierTypes';
 import { IValidatedQualifierDecl } from './qualifierDecl';
 
@@ -75,7 +75,11 @@ export class Qualifier implements IValidatedQualifierDecl, ICollectible<Qualifie
     this.name = name;
     this.type = type;
     this.defaultPriority = defaultPriority;
-    this._collectible = new Collections.Collectible(name, index);
+    this._collectible = new Collections.Collectible<QualifierName, QualifierIndex>({
+      key: name,
+      index,
+      indexConverter: CommonConvert.qualifierIndex
+    });
   }
 
   /**

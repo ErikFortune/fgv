@@ -1,6 +1,11 @@
 # Change Log - @fgv/ts-sudoku-lib
 
-This log was last generated on Thu, 30 Jan 2025 00:35:17 GMT and should not be manually modified.
+This log was last generated on Sat, 01 Feb 2025 17:13:10 GMT and should not be manually modified.
+
+## 4.4.0
+Sat, 01 Feb 2025 17:13:10 GMT
+
+_Version update only_
 
 ## 4.3.0
 Thu, 30 Jan 2025 00:35:17 GMT

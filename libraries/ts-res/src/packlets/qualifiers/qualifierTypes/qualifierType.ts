@@ -172,10 +172,11 @@ export abstract class QualifierType implements IQualifierType {
   protected constructor({ name, index, allowContextList }: IQualifierTypeCreateParams) {
     this.name = Convert.qualifierTypeName.convert(name).orThrow();
     this._allowContextList = allowContextList === true;
-    this._collectible = new Collections.Collectible(
-      this.name,
-      Convert.qualifierTypeIndex.convert(index).orDefault()
-    );
+    this._collectible = new Collections.Collectible<QualifierTypeName, QualifierTypeIndex>({
+      key: this.name,
+      index: index,
+      indexConverter: Convert.qualifierTypeIndex
+    });
   }
 
   /**

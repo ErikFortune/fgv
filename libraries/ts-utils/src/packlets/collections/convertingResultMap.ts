@@ -20,12 +20,12 @@
  * SOFTWARE.
  */
 
-import { captureResult, DetailedResult, failWithDetail, Result, succeed } from '../base';
+import { captureResult, Result } from '../base';
 import { KeyValueEntry } from './common';
-import { IReadOnlyResultMap, ResultMapResultDetail } from './readonlyResultMap';
-import { ResultMap, ResultMapValueFactory } from './resultMap';
-import { IReadOnlyResultMapConverter, ResultMapConverter } from './resultMapConverter';
 import { KeyValueConverters } from './keyValueConverters';
+import { IReadOnlyResultMap } from './readonlyResultMap';
+import { ResultMap } from './resultMap';
+import { IReadOnlyResultMapConverter, ResultMapConverter } from './resultMapConverter';
 
 /**
  * A read-only interface exposing non-mutating methods of a {@link Collections.ConvertingResultMap | ConvertingResultMap}.
