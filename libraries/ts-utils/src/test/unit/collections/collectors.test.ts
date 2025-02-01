@@ -229,6 +229,40 @@ describe('Collectors', () => {
         expect(collector.getOrAdd('newThing', thing)).toFailWith(/index mismatch/);
       });
     });
+
+    describe('getOrAddItem', () => {
+      test('adds a new item to the collector', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>();
+        const thing = new CollectibleTestThing({ str: 'new', num: 6, bool: false }, 'thing0');
+        expect(collector.getOrAddItem(thing)).toSucceedWith(thing);
+        expect(collector.size).toBe(1);
+        expect(collector.get(thing.key)).toSucceedWith(thing);
+      });
+
+      test('returns an existing item if it is already in the collector', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>({ items: collectibles });
+        const newThing = new CollectibleTestThing(things[2], 'thing0');
+        expect(collector.getOrAddItem(newThing)).toSucceedWithDetail(collectibles[0], 'exists');
+        expect(collector.size).toBe(5);
+        expect(collector.get(newThing.key)).toSucceedWith(collectibles[0]);
+      });
+
+      test('fails without adding if the item index cannot be set', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>();
+        const thing = new CollectibleTestThing({ str: 'new', num: 6, bool: false }, 'thing0', 5);
+        expect(collector.getOrAddItem(thing)).toFailWithDetail(/cannot be changed/, 'invalid-index');
+        expect(collector.size).toBe(0);
+      });
+
+      test('does not check index of item to be added if key is already in collector', () => {
+        const collector = new SimpleCollector<CollectibleTestThing>({ items: collectibles });
+        const newThing = new CollectibleTestThing(things[2], 'thing0', 5);
+        expect(collector.getOrAddItem(newThing)).toSucceedWithDetail(collectibles[0], 'exists');
+        expect(collector.size).toBe(5);
+        expect(collector.get(newThing.key)).toSucceedWith(collectibles[0]);
+      });
+    });
+
     describe('toReadOnly', () => {
       test('returns a readonly map of the collector', () => {
         const collector = new SimpleCollector<CollectibleTestThing>({ items: collectibles });

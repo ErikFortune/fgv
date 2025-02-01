@@ -392,6 +392,17 @@ Factory function for creating a new [ICollectible](./ts-utils.collections.icolle
 </td></tr>
 <tr><td>
 
+[CollectorResultDetail](./ts-utils.collections.collectorresultdetail.md)
+
+
+</td><td>
+
+Additional success or failure details for mutating [Collector](./ts-utils.icollector.md) calls.
+
+
+</td></tr>
+<tr><td>
+
 [ICollectibleConstructorParams](./ts-utils.collections.icollectibleconstructorparams.md)
 
 

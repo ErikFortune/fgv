@@ -20,14 +20,13 @@
  * SOFTWARE.
  */
 
-import { captureResult, DetailedResult, Result } from '../base';
+import { captureResult, DetailedResult, failWithDetail, Result } from '../base';
 import { CollectibleFactory, CollectibleFactoryCallback, ICollectible } from './collectible';
-import { Collector } from './collector';
+import { Collector, CollectorResultDetail } from './collector';
 import { CollectorConverter, IReadOnlyCollectorConverter } from './collectorConverter';
 import { KeyValueEntry } from './common';
 import { IReadOnlyConvertingResultMap } from './convertingResultMap';
 import { KeyValueConverters } from './keyValueConverters';
-import { ResultMapResultDetail } from './readonlyResultMap';
 
 /**
  * A read-only interface exposing non-mutating methods of a
@@ -130,7 +129,7 @@ export class ConvertingCollector<
   /**
    * {@inheritdoc Collections.Collector.(getOrAdd:1)}
    */
-  public getOrAdd(key: TKEY, item: TSRC): DetailedResult<TITEM, ResultMapResultDetail>;
+  public getOrAdd(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
    * {@inheritdoc Collections.Collector.(getOrAdd:2)}
@@ -138,19 +137,24 @@ export class ConvertingCollector<
   public getOrAdd(
     key: TKEY,
     cb: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
-  ): DetailedResult<TITEM, ResultMapResultDetail>;
+  ): DetailedResult<TITEM, CollectorResultDetail>;
   public getOrAdd(
     key: TKEY,
     itemOrCb: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
-  ): DetailedResult<TITEM, ResultMapResultDetail> {
+  ): DetailedResult<TITEM, CollectorResultDetail> {
     if (this._isFactoryCB(itemOrCb)) {
-      return this.converting.converters.convertKey(key).onSuccess((k) => {
-        return super.getOrAdd(k, itemOrCb);
-      });
+      const convertResult = this._converters.convertKey(key);
+      if (convertResult.isFailure()) {
+        return failWithDetail(convertResult.message, convertResult.detail);
+      }
+      return super.getOrAdd(convertResult.value, itemOrCb);
     }
-    return this.converting.converters.convertEntry([key, itemOrCb]).onSuccess(([k, v]) => {
-      return super.getOrAdd(k, v);
-    });
+
+    const convertResult = this._converters.convertEntry([key, itemOrCb]);
+    if (convertResult.isFailure()) {
+      return failWithDetail(convertResult.message, convertResult.detail);
+    }
+    return super.getOrAdd(convertResult.value[0], convertResult.value[1]);
   }
 
   /**

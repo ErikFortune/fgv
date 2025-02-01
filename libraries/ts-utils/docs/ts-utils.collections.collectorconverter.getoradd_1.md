@@ -9,7 +9,7 @@ Gets an item by key if it exists, or creates a new item and adds it using the sp
 **Signature:**
 
 ```typescript
-getOrAdd(key: string, factory: ResultMapValueFactory<TKEY, TITEM>): DetailedResult<TITEM, ResultMapResultDetail>;
+getOrAdd(key: string, factory: ResultMapValueFactory<TKEY, TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
 ```
 
 ## Parameters
@@ -63,7 +63,7 @@ factory
 </tbody></table>
 **Returns:**
 
-[DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TITEM, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;
+[DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TITEM, [CollectorResultDetail](./ts-utils.collections.collectorresultdetail.md)<!-- -->&gt;
 
 Returns [Success](./ts-utils.success.md) with the item if it exists, or [Failure](./ts-utils.failure.md) with an error if the item is not found.
 

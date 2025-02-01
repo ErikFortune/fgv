@@ -256,6 +256,20 @@ Gets an item by key if it exists, or creates a new item and adds it using the sp
 </td></tr>
 <tr><td>
 
+[getOrAddItem(item)](./ts-utils.collector.getoradditem.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets an existing item with a key matching that of a supplied item, or adds the supplied item to the collector if no item with that key exists.
+
+
+</td></tr>
+<tr><td>
+
 [has(key)](./ts-utils.collector.has.md)
 
 

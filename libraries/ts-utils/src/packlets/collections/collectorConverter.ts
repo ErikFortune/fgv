@@ -20,12 +20,12 @@
  * SOFTWARE.
  */
 
-import { DetailedResult } from '../base';
+import { DetailedResult, failWithDetail } from '../base';
 import { IReadOnlyResultMap, ResultMapResultDetail } from './readonlyResultMap';
 import { ResultMapValueFactory } from './resultMap';
 import { KeyValueConverters } from './keyValueConverters';
 import { CollectibleFactoryCallback, ICollectible } from './collectible';
-import { ICollector } from './collector';
+import { CollectorResultDetail, ICollector } from './collector';
 import { IReadOnlyResultMapConverter } from './resultMapConverter';
 
 /**
@@ -109,7 +109,7 @@ export class CollectorConverter<
   /**
    * {@inheritdoc Collections.Collector.(getOrAdd:1)}
    */
-  public getOrAdd(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail>;
+  public getOrAdd(key: string, value: unknown): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
    * {@inheritdoc Collections.Collector.(getOrAdd:2)}
@@ -117,19 +117,25 @@ export class CollectorConverter<
   public getOrAdd(
     key: string,
     factory: ResultMapValueFactory<TKEY, TITEM>
-  ): DetailedResult<TITEM, ResultMapResultDetail>;
+  ): DetailedResult<TITEM, CollectorResultDetail>;
+
   public getOrAdd(
     key: string,
     valueOrFactory: unknown | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
-  ): DetailedResult<TITEM, ResultMapResultDetail> {
+  ): DetailedResult<TITEM, CollectorResultDetail> {
     if (!this._isCollectibleFactoryCallback(valueOrFactory)) {
-      return this.converters.convertEntry([key, valueOrFactory]).onSuccess(([vk, vs]) => {
-        return this._collector.getOrAdd(vk, vs);
-      });
+      const converted = this.converters.convertEntry([key, valueOrFactory]);
+      if (converted.isFailure()) {
+        return failWithDetail(converted.message, converted.detail);
+      }
+      const [vk, vs] = converted.value;
+      return this._collector.getOrAdd(vk, vs);
     } else {
-      return this.converters.convertKey(key).onSuccess((k) => {
-        return this._collector.getOrAdd(k, valueOrFactory);
-      });
+      const converted = this.converters.convertKey(key);
+      if (converted.isFailure()) {
+        return failWithDetail(converted.message, converted.detail);
+      }
+      return this._collector.getOrAdd(converted.value, valueOrFactory);
     }
   }
 

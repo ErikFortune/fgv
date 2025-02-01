@@ -9,7 +9,7 @@ Gets an item by key if it exists, or creates a new item and adds it using the de
 **Signature:**
 
 ```typescript
-getOrAdd(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail>;
+getOrAdd(key: string, value: unknown): DetailedResult<TITEM, CollectorResultDetail>;
 ```
 
 ## Parameters
@@ -63,7 +63,7 @@ unknown
 </tbody></table>
 **Returns:**
 
-[DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TITEM, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;
+[DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TITEM, [CollectorResultDetail](./ts-utils.collections.collectorresultdetail.md)<!-- -->&gt;
 
 Returns [Success](./ts-utils.success.md) with the item if it exists or could be created, or [Failure](./ts-utils.failure.md) with an error if the item cannot be created and indexed.
 

@@ -26,6 +26,12 @@ import { KeyValueEntry } from './common';
 import { IReadOnlyResultMap, ResultMapForEachCb, ResultMapResultDetail } from './readonlyResultMap';
 
 /**
+ * Additional success or failure details for mutating {@link ICollector | Collector} calls.
+ * @public
+ */
+export type CollectorResultDetail = ResultMapResultDetail | 'invalid-index';
+
+/**
  * A read-only interface exposing non-mutating methods of a {@link Collections.ICollector | Collector}.
  * @public
  */
@@ -60,7 +66,7 @@ export interface ICollector<
    * @returns Returns {@link Success | Success} with the item if it exists or could be created, or {@link Failure | Failure} with an error if the
    * item cannot be created and indexed.
    */
-  getOrAdd(key: TKEY, item: TSRC): DetailedResult<TITEM, ResultMapResultDetail>;
+  getOrAdd(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
    * Gets an item by key if it exists, or creates a new item and adds it using the specified {@link Collections.CollectibleFactoryCallback | factory callback} if not.
@@ -71,7 +77,16 @@ export interface ICollector<
   getOrAdd(
     key: TKEY,
     callback: CollectibleFactoryCallback<TKEY, TINDEX>
-  ): DetailedResult<TITEM, ResultMapResultDetail>;
+  ): DetailedResult<TITEM, CollectorResultDetail>;
+
+  /**
+   * Gets an existing item with a key matching that of a supplied item, or adds the supplied
+   * item to the collector if no item with that key exists.
+   * @param item - The item to retrieve or add.
+   * @returns Returns {@link Success | Success} with the item stored in the collector
+   * or {@link Failure | Failure} with an error if the item cannot be created and indexed.
+   */
+  getOrAddItem(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
    * Gets a {@link IReadOnlyResultMap | read-only map} which can access the items in the collector.
@@ -218,18 +233,19 @@ export class Collector<
   /**
    * {@inheritdoc ICollector.(getOrAdd:1)}
    */
-  public getOrAdd(key: TKEY, item: TSRC): DetailedResult<TITEM, ResultMapResultDetail>;
+  public getOrAdd(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
   /**
    * {@inheritdoc ICollector.(getOrAdd:2)}
    */
   public getOrAdd(
     key: TKEY,
     cb: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
-  ): DetailedResult<TITEM, ResultMapResultDetail>;
+  ): DetailedResult<TITEM, CollectorResultDetail>;
+
   public getOrAdd(
     key: TKEY,
     itemOrCb: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
-  ): DetailedResult<TITEM, ResultMapResultDetail> {
+  ): DetailedResult<TITEM, CollectorResultDetail> {
     if (this._byKey.has(key)) {
       return succeedWithDetail(this._byKey.get(key)!, 'exists');
     }
@@ -237,7 +253,7 @@ export class Collector<
       ? itemOrCb(key, this._byIndex.length)
       : this._factory(key, this._byIndex.length, itemOrCb);
     if (build.isFailure()) {
-      return failWithDetail<TITEM, ResultMapResultDetail>(build.message, 'invalid-value');
+      return failWithDetail<TITEM, CollectorResultDetail>(build.message, 'invalid-value');
     }
     const newItem = build.value;
 
@@ -250,12 +266,28 @@ export class Collector<
     if (newItem.index !== this._byIndex.length) {
       return failWithDetail(
         `$[key}: index mismatch in created item - ${newItem.index} !== ${this._byIndex.length}`,
-        'invalid-value'
+        'invalid-index'
       );
     }
     this._byKey.set(key, newItem);
     this._byIndex.push(newItem);
     return succeedWithDetail(newItem, 'added');
+  }
+
+  /**
+   * {@inheritdoc ICollector.getOrAddItem}
+   */
+  public getOrAddItem(item: TITEM): DetailedResult<TITEM, CollectorResultDetail> {
+    if (this._byKey.has(item.key)) {
+      return succeedWithDetail(this._byKey.get(item.key)!, 'exists');
+    }
+    const { message } = item.setIndex(this._byIndex.length);
+    if (message !== undefined) {
+      return failWithDetail(message, 'invalid-index');
+    }
+    this._byKey.set(item.key, item);
+    this._byIndex.push(item);
+    return succeedWithDetail(item, 'added');
   }
 
   /**
