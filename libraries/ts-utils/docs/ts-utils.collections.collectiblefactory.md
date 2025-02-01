@@ -11,5 +11,5 @@ Factory function for creating a new [ICollectible](./ts-utils.collections.icolle
 ```typescript
 export type CollectibleFactory<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> = (key: TKEY, index: number, item: TSRC) => Result<TITEM>;
 ```
-**References:** [ICollectible](./ts-utils.collections.icollectible.md)<!-- -->, [Result](./ts-utils.result.md)
+**References:** [ICollectible](./ts-utils.icollectible.md)<!-- -->, [Result](./ts-utils.result.md)
 

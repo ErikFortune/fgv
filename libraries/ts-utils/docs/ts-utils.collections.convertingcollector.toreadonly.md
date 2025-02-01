@@ -9,10 +9,10 @@ Gets a read-only version of this collector as a [read-only map](./ts-utils.colle
 **Signature:**
 
 ```typescript
-toReadOnly(): IReadOnlyConvertingResultMap<TKEY, TITEM>;
+toReadOnly(): IReadOnlyConvertingCollector<TKEY, TINDEX, TITEM>;
 ```
 **Returns:**
 
-[IReadOnlyConvertingResultMap](./ts-utils.collections.ireadonlyconvertingresultmap.md)<!-- -->&lt;TKEY, TITEM&gt;
+[IReadOnlyConvertingCollector](./ts-utils.collections.ireadonlyconvertingcollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
 
 

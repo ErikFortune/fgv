@@ -11,7 +11,7 @@ Simple implementation of [ICollectible](./ts-utils.collections.icollectible.md) 
 ```typescript
 export declare class Collectible<TKEY extends string = string, TINDEX extends number = number> implements ICollectible<TKEY, TINDEX> 
 ```
-**Implements:** [ICollectible](./ts-utils.collections.icollectible.md)<!-- -->&lt;TKEY, TINDEX&gt;
+**Implements:** [ICollectible](./ts-utils.icollectible.md)<!-- -->&lt;TKEY, TINDEX&gt;
 
 ## Constructors
 
@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)(key, index)](./ts-utils.collections.collectible._constructor_.md)
+[(constructor)(params)](./ts-utils.collections.collectible._constructor_.md)
 
 
 </td><td>
@@ -86,6 +86,29 @@ TINDEX \| undefined
 
 
 </td><td>
+
+
+</td></tr>
+<tr><td>
+
+[\_indexConverter?](./ts-utils.collections.collectible._indexconverter.md)
+
+
+</td><td>
+
+`protected`
+
+`readonly`
+
+
+</td><td>
+
+[Validator](./ts-utils.validator.md)<!-- -->&lt;TINDEX, unknown&gt; \| [Converter](./ts-utils.converter.md)<!-- -->&lt;TINDEX, unknown&gt;
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>
@@ -152,6 +175,22 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[createCollectible(params)](./ts-utils.collections.collectible.createcollectible.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [Collectible](./ts-utils.collections.collectible.md) instance from the supplied parameters.
+
+
+</td></tr>
+<tr><td>
 
 [setIndex(index)](./ts-utils.collections.collectible.setindex.md)
 

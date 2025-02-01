@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult, succeed } from '../base';
+import { Result, captureResult } from '../base';
 import { ICollectible } from './collectible';
 import { Collector } from './collector';
 
@@ -50,7 +50,7 @@ export class SimpleCollector<TITEM extends ICollectible<string, number>> extends
    */
   public constructor(params?: ISimpleCollectorCreateParams<TITEM>) {
     const entries = params?.items?.map((item): [string, TITEM] => [item.key, item]);
-    super({ factory: SimpleCollector._factory, entries });
+    super({ factory: Collector._simpleFactory, entries });
   }
 
   /**
@@ -63,13 +63,5 @@ export class SimpleCollector<TITEM extends ICollectible<string, number>> extends
     params?: ISimpleCollectorCreateParams<TITEM>
   ): Result<SimpleCollector<TITEM>> {
     return captureResult(() => new SimpleCollector(params));
-  }
-
-  private static _factory<TITEM extends ICollectible<string, number>>(
-    key: string,
-    index: number,
-    item: TITEM
-  ): Result<TITEM> {
-    return item.setIndex(index).onSuccess(() => succeed(item));
   }
 }

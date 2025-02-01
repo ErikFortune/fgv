@@ -9,7 +9,7 @@ Constructs a new key-value validator.
 **Signature:**
 
 ```typescript
-constructor({ key, value, entry }: IKeyValueConverterConstructorParams<TK, TV>);
+constructor({ key, value }: IKeyValueConverterConstructorParams<TK, TV>);
 ```
 
 ## Parameters
@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-{ key, value, entry }
+{ key, value }
 
 
 </td><td>

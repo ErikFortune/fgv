@@ -20,14 +20,35 @@
  * SOFTWARE.
  */
 
-import { captureResult, DetailedResult, Result } from '../base';
-import { CollectibleFactory, CollectibleFactoryCallback, ICollectible } from './collectible';
+import { captureResult, Result } from '../base';
+import { CollectibleFactory, ICollectible } from './collectible';
 import { Collector } from './collector';
-import { CollectorConverter } from './collectorConverter';
+import { CollectorConverter, IReadOnlyCollectorConverter } from './collectorConverter';
 import { KeyValueEntry } from './common';
 import { IReadOnlyConvertingResultMap } from './convertingResultMap';
 import { KeyValueConverters } from './keyValueConverters';
-import { ResultMapResultDetail } from './readonlyResultMap';
+
+/**
+ * A read-only interface exposing non-mutating methods of a
+ * {@link Collections.ConvertingCollector | ConvertingCollector}.
+ * @public
+ */
+
+export interface IReadOnlyConvertingCollector<
+  TKEY extends string = string,
+  TINDEX extends number = number,
+  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
+> extends IReadOnlyConvertingResultMap<TKEY, TITEM> {
+  /**
+   * {@inheritdoc Collections.ConvertingCollector.converting}
+   */
+  readonly converting: IReadOnlyCollectorConverter<TKEY, TINDEX, TITEM>;
+
+  /**
+   * {@inheritdoc Collections.Collector.getAt}
+   */
+  readonly getAt: (index: number) => Result<TITEM>;
+}
 
 /**
  * Parameters for constructing a {@link Collections.ConvertingCollector | ConvertingCollector}.
@@ -106,37 +127,11 @@ export class ConvertingCollector<
   }
 
   /**
-   * {@inheritdoc Collections.Collector.(getOrAdd:1)}
-   */
-  public getOrAdd(key: TKEY, item: TSRC): DetailedResult<TITEM, ResultMapResultDetail>;
-
-  /**
-   * {@inheritdoc Collections.Collector.(getOrAdd:2)}
-   */
-  public getOrAdd(
-    key: TKEY,
-    cb: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
-  ): DetailedResult<TITEM, ResultMapResultDetail>;
-  public getOrAdd(
-    key: TKEY,
-    itemOrCb: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
-  ): DetailedResult<TITEM, ResultMapResultDetail> {
-    if (this._isFactoryCB(itemOrCb)) {
-      return this.converting.converters.convertKey(key).onSuccess((k) => {
-        return super.getOrAdd(k, itemOrCb);
-      });
-    }
-    return this.converting.converters.convertEntry([key, itemOrCb]).onSuccess(([k, v]) => {
-      return super.getOrAdd(k, v);
-    });
-  }
-
-  /**
    * Gets a read-only version of this collector as a
    * {@link Collections.IReadOnlyConvertingResultMap | read-only map}.
    * @returns
    */
-  public toReadOnly(): IReadOnlyConvertingResultMap<TKEY, TITEM> {
+  public toReadOnly(): IReadOnlyConvertingCollector<TKEY, TINDEX, TITEM> {
     return this;
   }
 }

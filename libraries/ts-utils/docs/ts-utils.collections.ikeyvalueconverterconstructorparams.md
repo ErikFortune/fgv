@@ -37,25 +37,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[entry?](./ts-utils.collections.ikeyvalueconverterconstructorparams.entry.md)
-
-
-</td><td>
-
-
-</td><td>
-
-[Validator](./ts-utils.validator.md)<!-- -->&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TK, TV&gt;, unknown&gt; \| [Converter](./ts-utils.converter.md)<!-- -->&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TK, TV&gt;, unknown&gt; \| [ConverterFunc](./ts-utils.conversion.converterfunc.md)<!-- -->&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TK, TV&gt;, unknown&gt;
-
-
-</td><td>
-
-_(Optional)_ Optional entry [validator](./ts-utils.validator.md)<!-- -->, [converter](./ts-utils.converter.md)<!-- -->, or [converter function](./ts-utils.conversion.converterfunc.md)<!-- -->. If no entry validator is provided, an entry is considered valid if both key and value are valid.
-
-
-</td></tr>
-<tr><td>
-
 [key](./ts-utils.collections.ikeyvalueconverterconstructorparams.key.md)
 
 

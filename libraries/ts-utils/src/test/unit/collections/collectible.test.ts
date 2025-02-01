@@ -22,35 +22,77 @@
 
 import '../../helpers/jest';
 import { Collectible } from '../../../packlets/collections';
+import { Converters } from '../../../packlets/conversion';
+import { fail, succeed } from '../../../packlets/base';
 
 describe('Collectible', () => {
   test('can be constructed with key and index', () => {
-    const item = new Collectible('key', 1);
+    const item = new Collectible({ key: 'key', index: 1 });
     expect(item.key).toBe('key');
     expect(item.index).toBe(1);
   });
 
   test('can be constructed with key only', () => {
-    const item = new Collectible('key');
+    const item = new Collectible({ key: 'key', indexConverter: Converters.number });
     expect(item.key).toBe('key');
     expect(item.index).toBeUndefined();
   });
 
   test('allows undefined index to be set', () => {
-    const item = new Collectible('key');
+    const item = new Collectible({ key: 'key', indexConverter: Converters.number });
     expect(item.setIndex(10)).toSucceedWith(10);
     expect(item.index).toBe(10);
   });
 
+  test('validates index if both index and converter are supplied', () => {
+    const indexConverter = jest.fn((i: unknown) =>
+      typeof i === 'number' ? succeed(i) : fail<number>('not a number')
+    );
+    expect(
+      Collectible.createCollectible({
+        key: 'key',
+        index: 13,
+        indexConverter
+      })
+    ).toSucceedAndSatisfy(() => {
+      expect(indexConverter).toHaveBeenCalled();
+    });
+  });
+
+  test('constructor throws if supplied index fails to convert', () => {
+    expect(
+      () =>
+        new Collectible({
+          key: 'key',
+          index: 13,
+          indexConverter: Converters.number.withConstraint((n) => n !== 13)
+        })
+    ).toThrow(/constraint/);
+  });
+
   test('does not allow index to be changed once set', () => {
-    const item = new Collectible<string, number>('key', 1);
+    const item = new Collectible<string, number>({ key: 'key', index: 1 });
     expect(item.setIndex(10)).toFailWith(/cannot be changed/);
     expect(item.index).toBe(1);
   });
 
   test('quietly succeeds if setIndex is called with current value', () => {
-    const item = new Collectible('key', 1);
+    const item = new Collectible({ key: 'key', index: 1 });
     expect(item.setIndex(1)).toSucceedWith(1);
     expect(item.index).toBe(1);
+  });
+
+  test('setItem fails if index fails to convert', () => {
+    const indexConverter = jest.fn((i: unknown) => {
+      if (typeof i !== 'number') {
+        return fail<number>('not a number');
+      }
+      if (i === 3) {
+        return fail<number>('unlucky number');
+      }
+      return succeed(i);
+    });
+    const item = new Collectible({ key: 'key', indexConverter });
+    expect(item.setIndex(3)).toFailWith(/unlucky number/);
   });
 });
