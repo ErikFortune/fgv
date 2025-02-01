@@ -20,25 +20,12 @@
  * SOFTWARE.
  */
 
-import {
-  Collections,
-  fail,
-  Failure,
-  Result,
-  succeed,
-  ConvertingResultMap,
-  Validation,
-  Validators
-} from '../../..';
+import { Collections, fail, Result, succeed, ConvertingResultMap, Validators } from '../../..';
 import '../../helpers/jest';
 
 describe('ConvertingResultMap', () => {
   type CavemanFirstName = 'fred' | 'barney' | 'wilma' | 'betty' | 'pebbles';
   type CavemanLastName = 'flintstone' | 'rubble';
-  const families: Record<CavemanLastName, CavemanFirstName[]> = {
-    flintstone: ['fred', 'wilma', 'pebbles'],
-    rubble: ['barney', 'betty']
-  };
   const firstNameConverter = Validators.enumeratedValue<CavemanFirstName>([
     'fred',
     'barney',
@@ -47,33 +34,9 @@ describe('ConvertingResultMap', () => {
     'pebbles'
   ]);
   const lastNameConverter = Validators.enumeratedValue<CavemanLastName>(['flintstone', 'rubble']);
-  const familyMemberConverter = new Validation.Base.GenericValidator<[CavemanFirstName, CavemanLastName]>({
-    validator: (from: unknown): boolean | Failure<[CavemanFirstName, CavemanLastName]> => {
-      if (!Array.isArray(from) || from.length !== 2) {
-        return fail('Expected an array of two elements');
-      }
-      const isValid = firstNameConverter.validate(from[0]).onSuccess((firstName) => {
-        return lastNameConverter.validate(from[1]).onSuccess((lastName) => {
-          return succeed(families[lastName].includes(firstName));
-        });
-      });
-      if (isValid.isSuccess()) {
-        if (!isValid.value) {
-          return fail(`No such family member: ${from[0]} ${from[1]}`);
-        }
-        return true;
-      }
-      return fail(isValid.message);
-    }
-  });
   const nameConverters = new Collections.KeyValueConverters({
     key: firstNameConverter,
     value: lastNameConverter
-  });
-  const familyConverters = new Collections.KeyValueConverters({
-    key: firstNameConverter,
-    value: lastNameConverter,
-    entry: familyMemberConverter
   });
 
   describe('constructor', () => {
@@ -88,23 +51,13 @@ describe('ConvertingResultMap', () => {
           key: (from: unknown): Result<CavemanFirstName> =>
             from === 'fred' ? succeed('fred') : fail('not fred'),
           value: (from: unknown): Result<CavemanLastName> =>
-            from === 'flintstone' ? succeed('flintstone') : fail('invalid value'),
-          entry: (from: unknown): Result<[CavemanFirstName, CavemanLastName]> => {
-            return Array.isArray(from) && from.length === 2 && from[0] === 'barney' && from[1] === 'rubble'
-              ? succeed(['barney', 'rubble'])
-              : fail('invalid value');
-          }
+            from === 'flintstone' ? succeed('flintstone') : fail('invalid value')
         })
       });
       expect(map.converting.converters.key.convert('fred')).toSucceedWith('fred');
       expect(map.converting.converters.key.convert('barney')).toFailWith('not fred');
       expect(map.converting.converters.value.convert('flintstone')).toSucceedWith('flintstone');
       expect(map.converting.converters.value.convert('rubble')).toFailWith(/invalid value/i);
-      expect(map.converting.converters.entry!.convert(['barney', 'rubble'])).toSucceedWith([
-        'barney',
-        'rubble'
-      ]);
-      expect(map.converting.converters.entry!.convert(['fred', 'flintstone'])).toFailWith(/invalid value/i);
     });
 
     test('constructs a new instance with the supplied converters and valid entries', () => {
@@ -116,9 +69,6 @@ describe('ConvertingResultMap', () => {
     test('throws if supplied entries are invalid', () => {
       expect(
         () => new ConvertingResultMap({ converters: nameConverters, entries: [['fred', 'jetson']] })
-      ).toThrow();
-      expect(
-        () => new ConvertingResultMap({ converters: familyConverters, entries: [['fred', 'rubble']] })
       ).toThrow();
     });
   });
@@ -200,20 +150,9 @@ describe('ConvertingResultMap', () => {
       expect(map.converting.update('fred', 'jetson')).toFailWithDetail(/invalid entry/i, 'invalid-value');
     });
 
-    test('applies entry validation if entry converter is supplied', () => {
-      const map = new ConvertingResultMap({ converters: familyConverters });
-      expect(map.converting.set('fred', 'rubble')).toFailWithDetail(
-        /no such family member/i,
-        'invalid-value'
-      );
-      expect(map.get('fred')).toFailWithDetail(/not found/i, 'not-found');
-      expect(map.converting.set('fred', 'flintstone')).toSucceedWith('flintstone');
-      expect(map.get('fred')).toSucceedWith('flintstone');
-    });
-
     describe('getOrAdd with factory', () => {
       test('adds a new entry if the key is not found', () => {
-        const map = new ConvertingResultMap({ converters: familyConverters });
+        const map = new ConvertingResultMap({ converters: nameConverters });
         const factory = jest.fn(() => succeed<CavemanLastName>('flintstone'));
         expect(map.converting.getOrAdd('wilma', factory)).toSucceedWith('flintstone');
         expect(map.get('wilma')).toSucceedWith('flintstone');
@@ -221,7 +160,7 @@ describe('ConvertingResultMap', () => {
 
       test('does not add a new entry if the key is found', () => {
         const map = new ConvertingResultMap({
-          converters: familyConverters,
+          converters: nameConverters,
           entries: [['fred', 'flintstone']]
         });
         const factory = jest.fn(() => succeed<CavemanLastName>('rubble'));
@@ -230,7 +169,7 @@ describe('ConvertingResultMap', () => {
       });
 
       test('fails with detail invalid-value if the factory fails', () => {
-        const map = new ConvertingResultMap({ converters: familyConverters });
+        const map = new ConvertingResultMap({ converters: nameConverters });
         const factory = jest.fn(() => fail<CavemanLastName>('nope'));
         expect(map.converting.getOrAdd('wilma', factory)).toFailWithDetail('nope', 'invalid-value');
         expect(map.get('wilma')).toFailWithDetail(/not found/i, 'not-found');
@@ -238,7 +177,7 @@ describe('ConvertingResultMap', () => {
 
       test('does not invoke the factory if the key is found', () => {
         const map = new ConvertingResultMap({
-          converters: familyConverters,
+          converters: nameConverters,
           entries: [['fred', 'flintstone']]
         });
         const factory = jest.fn(() => fail<CavemanLastName>('nope'));
@@ -248,24 +187,10 @@ describe('ConvertingResultMap', () => {
   });
 
   describe('ResultMap members', () => {
-    test('apply entry validation if entry converter is supplied', () => {
-      const map = new ConvertingResultMap({
-        converters: familyConverters,
-        entries: [['fred', 'flintstone']]
-      });
-      expect(map.set('fred', 'rubble')).toFailWithDetail(/no such family member/i, 'invalid-value');
-      expect(map.set('wilma', 'flintstone')).toSucceedWith('flintstone');
-      expect(map.get('fred')).toSucceedWith('flintstone');
-
-      expect(map.getOrAdd('fred', 'rubble')).toFailWithDetail(/no such family member/i, 'invalid-value');
-      expect(map.add('betty', 'flintstone')).toFailWithDetail(/no such family member/i, 'invalid-value');
-      expect(map.update('fred', 'rubble')).toFailWithDetail(/no such family member/i, 'invalid-value');
-    });
-
     describe('getOrAdd with factory', () => {
       test('adds a new entry if the key is not found', () => {
         const map = new ConvertingResultMap({
-          converters: familyConverters,
+          converters: nameConverters,
           entries: [['fred', 'flintstone']]
         });
         expect(map.getOrAdd('wilma', () => succeed<CavemanLastName>('flintstone'))).toSucceedWith(
@@ -276,7 +201,7 @@ describe('ConvertingResultMap', () => {
 
       test('does not add a new entry if the key is found', () => {
         const map = new ConvertingResultMap({
-          converters: familyConverters,
+          converters: nameConverters,
           entries: [['fred', 'flintstone']]
         });
         expect(map.getOrAdd('fred', () => succeed<CavemanLastName>('rubble'))).toSucceedWith('flintstone');
@@ -285,7 +210,7 @@ describe('ConvertingResultMap', () => {
 
       test('fails with detail invalid-value if the factory fails', () => {
         const map = new ConvertingResultMap({
-          converters: familyConverters,
+          converters: nameConverters,
           entries: [['fred', 'flintstone']]
         });
         expect(map.getOrAdd('wilma', () => fail<CavemanLastName>('nope'))).toFailWithDetail(
@@ -297,7 +222,7 @@ describe('ConvertingResultMap', () => {
 
       test('does not invoke the factory if the key is found', () => {
         const map = new ConvertingResultMap({
-          converters: familyConverters,
+          converters: nameConverters,
           entries: [['fred', 'flintstone']]
         });
         expect(map.getOrAdd('fred', () => fail<CavemanLastName>('nope'))).toSucceedWith('flintstone');
@@ -308,7 +233,7 @@ describe('ConvertingResultMap', () => {
   describe('toReadOnly', () => {
     test('returns a read-only version of the map', () => {
       const map = new ConvertingResultMap({
-        converters: familyConverters,
+        converters: nameConverters,
         entries: [['fred', 'flintstone']]
       });
       const readOnly = map.toReadOnly();

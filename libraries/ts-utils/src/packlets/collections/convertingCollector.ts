@@ -127,33 +127,6 @@ export class ConvertingCollector<
   }
 
   /**
-   * {@inheritdoc Collections.Collector.(getOrAdd:1)}
-   */
-  public getOrAdd(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
-
-  /**
-   * {@inheritdoc Collections.Collector.(getOrAdd:2)}
-   */
-  public getOrAdd(
-    key: TKEY,
-    cb: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
-  ): DetailedResult<TITEM, CollectorResultDetail>;
-  public getOrAdd(
-    key: TKEY,
-    itemOrCb: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
-  ): DetailedResult<TITEM, CollectorResultDetail> {
-    if (this._isFactoryCB(itemOrCb)) {
-      return super.getOrAdd(key, itemOrCb);
-    }
-
-    const convertResult = this._converters.convertEntry([key, itemOrCb]);
-    if (convertResult.isFailure()) {
-      return failWithDetail(convertResult.message, convertResult.detail);
-    }
-    return super.getOrAdd(convertResult.value[0], convertResult.value[1]);
-  }
-
-  /**
    * Gets a read-only version of this collector as a
    * {@link Collections.IReadOnlyConvertingResultMap | read-only map}.
    * @returns

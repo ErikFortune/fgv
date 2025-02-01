@@ -178,6 +178,47 @@ Gets an iterator over the map entries.
 </td></tr>
 <tr><td>
 
+[add(key, item)](./ts-utils.collections.collector.add.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds an item to the collector using the default [factory](./ts-utils.collections.collectiblefactory.md) at a specified key, failing if an item with that key already exists.
+
+
+</td></tr>
+<tr><td>
+
+[add(key, cb)](./ts-utils.collections.collector.add_1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[addItem(item)](./ts-utils.collections.collector.additem.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds an item to the collector using the default [factory](./ts-utils.collections.collectiblefactory.md) at a specified key, failing if an item with that key already exists.
+
+
+</td></tr>
+<tr><td>
+
 [entries()](./ts-utils.collections.collector.entries.md)
 
 

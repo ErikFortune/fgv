@@ -86,61 +86,6 @@ export class ConvertingResultMap<TK extends string = string, TV = unknown>
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.add}
-   */
-  public add(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail> {
-    return this.converting.converters.convertEntry([key, value]).onSuccess((entry) => {
-      return super.add(entry[0], entry[1]);
-    });
-  }
-
-  /**
-   * {@inheritdoc Collections.ResultMap.(getOrAdd:1)}
-   */
-  public getOrAdd(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
-  /**
-   * {@inheritdoc Collections.ResultMap.(getOrAdd:2)}
-   */
-  public getOrAdd(key: TK, factory: ResultMapValueFactory<TK, TV>): DetailedResult<TV, ResultMapResultDetail>;
-  public getOrAdd(
-    key: TK,
-    valueOrFactory: TV | ResultMapValueFactory<TK, TV>
-  ): DetailedResult<TV, ResultMapResultDetail> {
-    if (!this._isResultMapValueFactory(valueOrFactory)) {
-      return this.converting.converters.convertEntry([key, valueOrFactory]).onSuccess((entry) => {
-        return super.getOrAdd(entry[0], entry[1]);
-      });
-    } else {
-      return super.get(key).onFailure(() => {
-        const value = valueOrFactory(key)
-          .onSuccess((value) => this.converting.converters.convertEntry([key, value]))
-          .onSuccess(([__key, value]) => succeed(value));
-        return value.success
-          ? super.add(key, value.value)
-          : failWithDetail<TV, ResultMapResultDetail>(value.message, 'invalid-value');
-      });
-    }
-  }
-
-  /**
-   * {@inheritdoc Collections.ResultMap.set}
-   */
-  public set(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail> {
-    return this.converting.converters.convertEntry([key, value]).onSuccess((entry) => {
-      return super.set(entry[0], entry[1]);
-    });
-  }
-
-  /**
-   * {@inheritdoc Collections.ResultMap.update}
-   */
-  public update(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail> {
-    return this.converting.converters.convertEntry([key, value]).onSuccess((entry) => {
-      return super.update(entry[0], entry[1]);
-    });
-  }
-
-  /**
    * Gets a read-only version of this map.
    */
   public toReadOnly(): IReadOnlyConvertingResultMap<TK, TV> {

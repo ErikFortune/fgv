@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)({ key, value, entry })](./ts-utils.collections.keyvalueconverters._constructor_.md)
+[(constructor)({ key, value })](./ts-utils.collections.keyvalueconverters._constructor_.md)
 
 
 </td><td>
@@ -70,27 +70,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[entry?](./ts-utils.collections.keyvalueconverters.entry.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[Validator](./ts-utils.validator.md)<!-- -->&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TK, TV&gt;, unknown&gt; \| [Converter](./ts-utils.converter.md)<!-- -->&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TK, TV&gt;, unknown&gt;
-
-
-</td><td>
-
-_(Optional)_ Optional entry [validator](./ts-utils.validator.md) or [converter](./ts-utils.converter.md)<!-- -->. If no entry validator is provided, an entry is considered valid if both key and value are valid.
-
-
-</td></tr>
-<tr><td>
 
 [key](./ts-utils.collections.keyvalueconverters.key.md)
 

@@ -49,17 +49,6 @@ export interface IKeyValueConverterConstructorParams<TK extends string = string,
    * or {@link Conversion.ConverterFunc | converter function}.
    */
   value: Validator<TV, unknown> | Converter<TV, unknown> | ConverterFunc<TV, unknown>;
-
-  /**
-   * Optional entry {@link Validator | validator}, {@link Converter | converter},
-   * or {@link Conversion.ConverterFunc | converter function}.
-   * If no entry validator is provided, an entry is considered valid if both key and
-   * value are valid.
-   */
-  entry?:
-    | Validator<KeyValueEntry<TK, TV>, unknown>
-    | Converter<KeyValueEntry<TK, TV>, unknown>
-    | ConverterFunc<KeyValueEntry<TK, TV>, unknown>;
 }
 
 /**
@@ -78,28 +67,15 @@ export class KeyValueConverters<TK extends string = string, TV = unknown> {
   public readonly value: Validator<TV, unknown> | Converter<TV, unknown>;
 
   /**
-   * Optional entry {@link Validator | validator} or {@link Converter | converter}.
-   * If no entry validator is provided, an entry is considered valid if both key and
-   * value are valid.
-   */
-  public readonly entry?:
-    | Validator<KeyValueEntry<TK, TV>, unknown>
-    | Converter<KeyValueEntry<TK, TV>, unknown>;
-
-  /**
    * Constructs a new key-value validator.
    * @param key - Required key {@link Validator | validator}, {@link Converter | converter},
    * or {@link Conversion.ConverterFunc | converter function}.
    * @param value - Required value {@link Validator | validator}, {@link Converter | converter},
    * or {@link Conversion.ConverterFunc | converter function}.
-   * @param entry - Optional entry {@link Validator | validator}, {@link Converter | converter},
-   * or {@link Conversion.ConverterFunc | converter function}..  If no entry validator is provided,
-   * an entry is considered valid if both key and value are valid.
    */
-  public constructor({ key, value, entry }: IKeyValueConverterConstructorParams<TK, TV>) {
+  public constructor({ key, value }: IKeyValueConverterConstructorParams<TK, TV>) {
     this.key = typeof key === 'function' ? Converters.generic(key) : key;
     this.value = typeof value === 'function' ? Converters.generic(value) : value;
-    this.entry = entry ? (typeof entry === 'function' ? Converters.generic(entry) : entry) : undefined;
   }
 
   /**
@@ -130,9 +106,6 @@ export class KeyValueConverters<TK extends string = string, TV = unknown> {
    * the entry is invalid
    */
   public convertEntry(entry: unknown): DetailedResult<KeyValueEntry<TK, TV>, ResultMapResultDetail> {
-    if (this.entry) {
-      return this.entry.convert(entry).withFailureDetail('invalid-value');
-    }
     if (Array.isArray(entry) && entry.length === 2) {
       const errors = new MessageAggregator();
       const key = this.convertKey(entry[0]).aggregateError(errors).orDefault();

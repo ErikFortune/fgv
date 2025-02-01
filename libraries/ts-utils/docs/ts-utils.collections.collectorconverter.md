@@ -165,6 +165,33 @@ Determines if a value is a [CollectibleFactoryCallback](./ts-utils.collections.c
 </td></tr>
 <tr><td>
 
+[add(key, value)](./ts-utils.collections.collectorconverter.add.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds an item to the collector using the default [factory](./ts-utils.collections.collectiblefactory.md) at a specified key, failing if an item with that key already exists.
+
+
+</td></tr>
+<tr><td>
+
+[add(key, factory)](./ts-utils.collections.collectorconverter.add_1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
 [get(key)](./ts-utils.collections.collectorconverter.get.md)
 
 

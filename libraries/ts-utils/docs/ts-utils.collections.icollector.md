@@ -28,6 +28,37 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[add(key, item)](./ts-utils.collections.icollector.add.md)
+
+
+</td><td>
+
+Adds an item to the collector using the default [factory](./ts-utils.collections.collectiblefactory.md) at a specified key, failing if an item with that key already exists.
+
+
+</td></tr>
+<tr><td>
+
+[add(key, callback)](./ts-utils.collections.icollector.add_1.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[addItem(item)](./ts-utils.collections.icollector.additem.md)
+
+
+</td><td>
+
+Adds an item to the collector using the default [factory](./ts-utils.collections.collectiblefactory.md) at a specified key, failing if an item with that key already exists.
+
+
+</td></tr>
+<tr><td>
+
 [getOrAdd(key, item)](./ts-utils.collections.icollector.getoradd.md)
 
 
