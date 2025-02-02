@@ -4,12 +4,12 @@
 
 ## Collections.IValidatingCollector type
 
-A [Collector](./ts-utils.icollector.md) with non-branded `string` key and `number` index, and transformation of source items.
+A [IConvertingCollector](./ts-utils.iconvertingcollector.md) with non-branded `string` key and `number` index, and transformation of source items.
 
 **Signature:**
 
 ```typescript
-export type IValidatingCollector<TITEM extends ICollectible<string, number>, TSRC> = ICollector<string, number, TITEM, TSRC>;
+export type IValidatingCollector<TITEM extends ICollectible<string, number>, TSRC> = IConvertingCollector<string, number, TITEM, TSRC>;
 ```
-**References:** [ICollectible](./ts-utils.icollectible.md)<!-- -->, [ICollector](./ts-utils.icollector.md)
+**References:** [ICollectible](./ts-utils.icollectible.md)<!-- -->, [IConvertingCollector](./ts-utils.iconvertingcollector.md)
 

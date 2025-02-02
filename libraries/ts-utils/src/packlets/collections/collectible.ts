@@ -25,7 +25,7 @@ import { Converter, ConverterFunc, Converters } from '../conversion';
 import { Validator } from '../validation';
 
 /**
- * An item that can be collected by some {@link Collector | Collector}.
+ * An item that can be collected by some {@link ConvertingCollector | Collector}.
  * @public
  */
 export interface ICollectible<TKEY extends string = string, TINDEX extends number = number> {

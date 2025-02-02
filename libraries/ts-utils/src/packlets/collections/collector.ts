@@ -26,16 +26,16 @@ import { KeyValueEntry } from './common';
 import { IReadOnlyResultMap, ResultMapForEachCb, ResultMapResultDetail } from './readonlyResultMap';
 
 /**
- * Additional success or failure details for mutating {@link ICollector | Collector} calls.
+ * Additional success or failure details for mutating collector calls.
  * @public
  */
 export type CollectorResultDetail = ResultMapResultDetail | 'invalid-index';
 
 /**
- * A read-only interface exposing non-mutating methods of a {@link Collections.ICollector | Collector}.
+ * A read-only interface exposing non-mutating methods of a {@link Collections.IConvertingCollector | ConvertingCollector}.
  * @public
  */
-export interface IReadOnlyCollector<
+export interface IReadOnlyConvertingCollector<
   TKEY extends string = string,
   TINDEX extends number = number,
   TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
@@ -53,12 +53,12 @@ export interface IReadOnlyCollector<
  * time of addition.  Items are immutable once added.
  * @public
  */
-export interface ICollector<
+export interface IConvertingCollector<
   TKEY extends string = string,
   TINDEX extends number = number,
   TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
   TSRC = TITEM
-> extends IReadOnlyCollector<TKEY, TINDEX, TITEM> {
+> extends IReadOnlyConvertingCollector<TKEY, TINDEX, TITEM> {
   /**
    * Adds an item to the collector using the default {@link Collections.CollectibleFactory | factory}
    * at a specified key, failing if an item with that key already exists.
@@ -115,14 +115,14 @@ export interface ICollector<
   /**
    * Gets a {@link IReadOnlyResultMap | read-only map} which can access the items in the collector.
    */
-  toReadOnly(): IReadOnlyCollector<TKEY, TINDEX, TITEM>;
+  toReadOnly(): IReadOnlyConvertingCollector<TKEY, TINDEX, TITEM>;
 }
 
 /**
- * A simple {@link ICollector | ICollector} with non-branded `string` key and `number` index, and no transformation of source items.
+ * A simple {@link IConvertingCollector | IConvertingCollector} with non-branded `string` key and `number` index, and no transformation of source items.
  * @public
  */
-export type ISimpleCollector<TITEM extends ICollectible<string, number>> = ICollector<
+export type ISimpleCollector<TITEM extends ICollectible<string, number>> = IConvertingCollector<
   string,
   number,
   TITEM,
@@ -130,10 +130,10 @@ export type ISimpleCollector<TITEM extends ICollectible<string, number>> = IColl
 >;
 
 /**
- * A {@link ICollector | Collector} with non-branded `string` key and `number` index, and transformation of source items.
+ * A {@link IConvertingCollector | IConvertingCollector} with non-branded `string` key and `number` index, and transformation of source items.
  * @public
  */
-export type IValidatingCollector<TITEM extends ICollectible<string, number>, TSRC> = ICollector<
+export type IValidatingCollector<TITEM extends ICollectible<string, number>, TSRC> = IConvertingCollector<
   string,
   number,
   TITEM,
@@ -141,10 +141,10 @@ export type IValidatingCollector<TITEM extends ICollectible<string, number>, TSR
 >;
 
 /**
- * Parameters for constructing a {@link ICollector | Collector}.
+ * Parameters for constructing a {@link IConvertingCollector | IConvertingCollector}.
  * @public
  */
-export interface ICollectorConstructorParams<
+export interface IConvertingCollectorConstructorParams<
   TKEY extends string = string,
   TINDEX extends number = number,
   TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
@@ -161,16 +161,16 @@ export interface ICollectorConstructorParams<
 }
 
 /**
- * A {@link ICollector | Collector} that collects {@link Collections.ICollectible | ICollectible} items. Items in a collector are created by key and are assigned an index at the
+ * A {@link IConvertingCollector | ConvertingCollector} that collects {@link Collections.ICollectible | ICollectible} items. Items in a collector are created by key and are assigned an index at the
  * time of addition.  Items are immutable once added.  Keys and indexes might be branded types, and source items might be transformed on addition.
  * @public
  */
-export class Collector<
+export class ConvertingCollector<
   TKEY extends string = string,
   TINDEX extends number = number,
   TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
   TSRC = TITEM
-> implements ICollector<TKEY, TINDEX, TITEM, TSRC>
+> implements IConvertingCollector<TKEY, TINDEX, TITEM, TSRC>
 {
   private _byKey: Map<TKEY, TITEM>;
   private _byIndex: TITEM[];
@@ -187,7 +187,7 @@ export class Collector<
    * Constructor for derived classes.
    * @param params - Parameters for constructing the collector.
    */
-  protected constructor(params: ICollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>) {
+  protected constructor(params: IConvertingCollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>) {
     this._byKey = new Map<TKEY, TITEM>();
     this._byIndex = [];
     this._factory = params.factory;
@@ -245,7 +245,7 @@ export class Collector<
   }
 
   /**
-   * {@inheritdoc Collections.IReadOnlyCollector.getAt}
+   * {@inheritdoc Collections.IReadOnlyConvertingCollector.getAt}
    */
   public getAt(index: number): Result<TITEM> {
     if (index < 0 || index >= this._byIndex.length) {
@@ -255,11 +255,11 @@ export class Collector<
   }
 
   /**
-   * {@inheritdoc ICollector.(add:1)}
+   * {@inheritdoc IConvertingCollector.(add:1)}
    */
   public add(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
   /**
-   * {@inheritdoc ICollector.(add:2)}
+   * {@inheritdoc IConvertingCollector.(add:2)}
    */
   public add(
     key: TKEY,
@@ -276,7 +276,7 @@ export class Collector<
   }
 
   /**
-   * {@inheritdoc ICollector.addItem}
+   * {@inheritdoc IConvertingCollector.addItem}
    */
   public addItem(item: TITEM): DetailedResult<TITEM, CollectorResultDetail> {
     if (this._byKey.has(item.key)) {
@@ -286,11 +286,11 @@ export class Collector<
   }
 
   /**
-   * {@inheritdoc ICollector.(getOrAdd:1)}
+   * {@inheritdoc IConvertingCollector.(getOrAdd:1)}
    */
   public getOrAdd(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
   /**
-   * {@inheritdoc ICollector.(getOrAdd:2)}
+   * {@inheritdoc IConvertingCollector.(getOrAdd:2)}
    */
   public getOrAdd(
     key: TKEY,
@@ -330,7 +330,7 @@ export class Collector<
   }
 
   /**
-   * {@inheritdoc ICollector.getOrAddItem}
+   * {@inheritdoc IConvertingCollector.getOrAddItem}
    */
   public getOrAddItem(item: TITEM): DetailedResult<TITEM, CollectorResultDetail> {
     if (this._byKey.has(item.key)) {
@@ -353,9 +353,9 @@ export class Collector<
   }
 
   /**
-   * {@inheritdoc ICollector.toReadOnly}
+   * {@inheritdoc IConvertingCollector.toReadOnly}
    */
-  public toReadOnly(): IReadOnlyCollector<TKEY, TINDEX, TITEM> {
+  public toReadOnly(): IReadOnlyConvertingCollector<TKEY, TINDEX, TITEM> {
     return this;
   }
 

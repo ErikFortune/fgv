@@ -4,12 +4,12 @@
 
 ## Collections.ISimpleCollector type
 
-A simple [ICollector](./ts-utils.icollector.md) with non-branded `string` key and `number` index, and no transformation of source items.
+A simple [IConvertingCollector](./ts-utils.iconvertingcollector.md) with non-branded `string` key and `number` index, and no transformation of source items.
 
 **Signature:**
 
 ```typescript
-export type ISimpleCollector<TITEM extends ICollectible<string, number>> = ICollector<string, number, TITEM, TITEM>;
+export type ISimpleCollector<TITEM extends ICollectible<string, number>> = IConvertingCollector<string, number, TITEM, TITEM>;
 ```
-**References:** [ICollectible](./ts-utils.icollectible.md)<!-- -->, [ICollector](./ts-utils.icollector.md)
+**References:** [ICollectible](./ts-utils.icollectible.md)<!-- -->, [IConvertingCollector](./ts-utils.iconvertingcollector.md)
 

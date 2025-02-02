@@ -30,23 +30,23 @@ Simple implementation of [ICollectible](./ts-utils.collections.icollectible.md) 
 </td></tr>
 <tr><td>
 
-[Collector](./ts-utils.collections.collector.md)
-
-
-</td><td>
-
-A [Collector](./ts-utils.icollector.md) that collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in a collector are created by key and are assigned an index at the time of addition. Items are immutable once added. Keys and indexes might be branded types, and source items might be transformed on addition.
-
-
-</td></tr>
-<tr><td>
-
 [CollectorValidator](./ts-utils.collections.collectorvalidator.md)
 
 
 </td><td>
 
-A [Collector](./ts-utils.collections.collector.md) wrapper which validates weakly-typed keys and values before calling the wrapped collector.
+A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) wrapper which validates weakly-typed keys and values before calling the wrapped collector.
+
+
+</td></tr>
+<tr><td>
+
+[ConvertingCollector](./ts-utils.collections.convertingcollector.md)
+
+
+</td><td>
+
+A [ConvertingCollector](./ts-utils.iconvertingcollector.md) that collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in a collector are created by key and are assigned an index at the time of addition. Items are immutable once added. Keys and indexes might be branded types, and source items might be transformed on addition.
 
 
 </td></tr>
@@ -90,7 +90,7 @@ A [ResultMap](./ts-utils.collections.resultmap.md) wrapper which validates weakl
 
 </td><td>
 
-A simple [collector](./ts-utils.collector.md) that collects [ICollectible items](./ts-utils.collections.icollectible.md) with non-branded `string` key and `number` index, and with no transformation other than index assignment on addition.
+A simple [collector](./ts-utils.convertingcollector.md) that collects [ICollectible items](./ts-utils.collections.icollectible.md) with non-branded `string` key and `number` index, and with no transformation other than index assignment on addition.
 
 
 </td></tr>
@@ -101,7 +101,7 @@ A simple [collector](./ts-utils.collector.md) that collects [ICollectible items]
 
 </td><td>
 
-A [Collector](./ts-utils.collections.collector.md) with a [CollectorValidator](./ts-utils.collections.collectorvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) with a [CollectorValidator](./ts-utils.collections.collectorvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
 
 
 </td></tr>
@@ -138,7 +138,7 @@ Description
 
 </td><td>
 
-An item that can be collected by some [Collector](./ts-utils.collector.md)<!-- -->.
+An item that can be collected by some [Collector](./ts-utils.convertingcollector.md)<!-- -->.
 
 
 </td></tr>
@@ -166,7 +166,18 @@ Parameters for constructing a new [ICollectible](./ts-utils.collections.icollect
 </td></tr>
 <tr><td>
 
-[ICollector](./ts-utils.collections.icollector.md)
+[ICollectorValidatorCreateParams](./ts-utils.collections.icollectorvalidatorcreateparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [CollectorValidator](./ts-utils.collections.collectorvalidator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IConvertingCollector](./ts-utils.collections.iconvertingcollector.md)
 
 
 </td><td>
@@ -177,23 +188,12 @@ Collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in 
 </td></tr>
 <tr><td>
 
-[ICollectorConstructorParams](./ts-utils.collections.icollectorconstructorparams.md)
+[IConvertingCollectorConstructorParams](./ts-utils.collections.iconvertingcollectorconstructorparams.md)
 
 
 </td><td>
 
-Parameters for constructing a [Collector](./ts-utils.icollector.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[ICollectorValidatorCreateParams](./ts-utils.collections.icollectorvalidatorcreateparams.md)
-
-
-</td><td>
-
-Parameters for constructing a [CollectorValidator](./ts-utils.collections.collectorvalidator.md)<!-- -->.
+Parameters for constructing a [IConvertingCollector](./ts-utils.iconvertingcollector.md)<!-- -->.
 
 
 </td></tr>
@@ -210,23 +210,23 @@ Parameters for constructing a [KeyValueConverters](./ts-utils.collections.keyval
 </td></tr>
 <tr><td>
 
-[IReadOnlyCollector](./ts-utils.collections.ireadonlycollector.md)
-
-
-</td><td>
-
-A read-only interface exposing non-mutating methods of a [Collector](./ts-utils.collections.icollector.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [IReadOnlyCollectorValidator](./ts-utils.collections.ireadonlycollectorvalidator.md)
 
 
 </td><td>
 
 A read-only interface exposing non-mutating methods of a [CollectorValidator](./ts-utils.collections.collectorvalidator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyConvertingCollector](./ts-utils.collections.ireadonlyconvertingcollector.md)
+
+
+</td><td>
+
+A read-only interface exposing non-mutating methods of a [ConvertingCollector](./ts-utils.collections.iconvertingcollector.md)<!-- -->.
 
 
 </td></tr>
@@ -397,7 +397,7 @@ Factory function for creating a new [ICollectible](./ts-utils.collections.icolle
 
 </td><td>
 
-Additional success or failure details for mutating [Collector](./ts-utils.icollector.md) calls.
+Additional success or failure details for mutating collector calls.
 
 
 </td></tr>
@@ -419,7 +419,7 @@ Parameters for constructing a new [ICollectible](./ts-utils.collections.icollect
 
 </td><td>
 
-A simple [ICollector](./ts-utils.icollector.md) with non-branded `string` key and `number` index, and no transformation of source items.
+A simple [IConvertingCollector](./ts-utils.iconvertingcollector.md) with non-branded `string` key and `number` index, and no transformation of source items.
 
 
 </td></tr>
@@ -430,7 +430,7 @@ A simple [ICollector](./ts-utils.icollector.md) with non-branded `string` key an
 
 </td><td>
 
-A [Collector](./ts-utils.icollector.md) with non-branded `string` key and `number` index, and transformation of source items.
+A [IConvertingCollector](./ts-utils.iconvertingcollector.md) with non-branded `string` key and `number` index, and transformation of source items.
 
 
 </td></tr>

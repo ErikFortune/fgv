@@ -4,14 +4,14 @@
 
 ## Collections.ValidatingCollector class
 
-A [Collector](./ts-utils.collections.collector.md) with a [CollectorValidator](./ts-utils.collections.collectorvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) with a [CollectorValidator](./ts-utils.collections.collectorvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
 
 **Signature:**
 
 ```typescript
-export declare class ValidatingCollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> extends Collector<TKEY, TINDEX, TITEM, TSRC> 
+export declare class ValidatingCollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> extends ConvertingCollector<TKEY, TINDEX, TITEM, TSRC> 
 ```
-**Extends:** [Collector](./ts-utils.collector.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
+**Extends:** [ConvertingCollector](./ts-utils.convertingcollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
 
 ## Constructors
 

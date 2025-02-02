@@ -27,8 +27,8 @@ import * as Validation from './packlets/validation';
 
 import {
   ICollectible,
-  ICollector,
-  Collector,
+  IConvertingCollector,
+  ConvertingCollector,
   ValidatingCollector,
   IReadOnlyResultMap,
   ResultMap,
@@ -41,14 +41,14 @@ import { Validator, Validators } from './packlets/validation';
 export * from './packlets/base';
 export {
   Collections,
-  Collector,
+  ConvertingCollector,
   Conversion,
   Converter,
   Converters,
   ValidatingCollector,
   Hash,
   ICollectible,
-  ICollector,
+  IConvertingCollector,
   IReadOnlyResultMap,
   ObjectConverter,
   ResultMap,

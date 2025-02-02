@@ -19,12 +19,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[Collector](./ts-utils.collector.md)
+[ConvertingCollector](./ts-utils.convertingcollector.md)
 
 
 </td><td>
 
-A [Collector](./ts-utils.icollector.md) that collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in a collector are created by key and are assigned an index at the time of addition. Items are immutable once added. Keys and indexes might be branded types, and source items might be transformed on addition.
+A [ConvertingCollector](./ts-utils.iconvertingcollector.md) that collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in a collector are created by key and are assigned an index at the time of addition. Items are immutable once added. Keys and indexes might be branded types, and source items might be transformed on addition.
 
 
 </td></tr>
@@ -112,7 +112,7 @@ A [ResultMap](./ts-utils.collections.resultmap.md) class as a `Map<TK, TV>`<!-- 
 
 </td><td>
 
-A simple [collector](./ts-utils.collector.md) that collects [ICollectible items](./ts-utils.collections.icollectible.md) with non-branded `string` key and `number` index, and with no transformation other than index assignment on addition.
+A simple [collector](./ts-utils.convertingcollector.md) that collects [ICollectible items](./ts-utils.collections.icollectible.md) with non-branded `string` key and `number` index, and with no transformation other than index assignment on addition.
 
 
 </td></tr>
@@ -145,7 +145,7 @@ Reports a successful [result](./ts-utils.iresult.md) from some operation and the
 
 </td><td>
 
-A [Collector](./ts-utils.collections.collector.md) with a [CollectorValidator](./ts-utils.collections.collectorvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) with a [CollectorValidator](./ts-utils.collections.collectorvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
 
 
 </td></tr>
@@ -472,13 +472,13 @@ Generic converter to convert unknown to a templated type `<T>`<!-- -->, using in
 
 </td><td>
 
-An item that can be collected by some [Collector](./ts-utils.collector.md)<!-- -->.
+An item that can be collected by some [Collector](./ts-utils.convertingcollector.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[ICollector](./ts-utils.icollector.md)
+[IConvertingCollector](./ts-utils.iconvertingcollector.md)
 
 
 </td><td>

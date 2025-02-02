@@ -22,7 +22,7 @@
 
 import { captureResult, Result } from '../base';
 import { CollectibleFactory, ICollectible } from './collectible';
-import { Collector } from './collector';
+import { ConvertingCollector } from './collector';
 import { CollectorValidator, IReadOnlyCollectorValidator } from './collectorValidator';
 import { KeyValueEntry } from './common';
 import { IReadOnlyValidatingResultMap } from './validatingResultMap';
@@ -45,7 +45,7 @@ export interface IReadOnlyValidatingCollector<
   readonly validating: IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM>;
 
   /**
-   * {@inheritdoc Collections.Collector.getAt}
+   * {@inheritdoc Collections.ConvertingCollector.getAt}
    */
   readonly getAt: (index: number) => Result<TITEM>;
 }
@@ -61,7 +61,7 @@ export interface IValidatingCollectorConstructorParams<
   TSRC = TITEM
 > {
   /**
-   * {@inheritdoc Collections.ICollectorConstructorParams.factory}
+   * {@inheritdoc Collections.IConvertingCollectorConstructorParams.factory}
    */
   factory: CollectibleFactory<TKEY, TINDEX, TITEM, TSRC>;
 
@@ -71,13 +71,13 @@ export interface IValidatingCollectorConstructorParams<
   converters: KeyValueConverters<TKEY, TSRC>;
 
   /**
-   * {@inheritdoc Collections.ICollectorConstructorParams.entries}
+   * {@inheritdoc Collections.IConvertingCollectorConstructorParams.entries}
    */
   entries?: KeyValueEntry<TKEY, TSRC>[];
 }
 
 /**
- * A {@link Collections.Collector | Collector} with a {@link Collections.CollectorValidator | CollectorValidator}
+ * A {@link Collections.ConvertingCollector | ConvertingCollector} with a {@link Collections.CollectorValidator | CollectorValidator}
  * property that enables validated use of the underlying map with weakly-typed keys and values.
  * @public
  */
@@ -86,7 +86,7 @@ export class ValidatingCollector<
   TINDEX extends number = number,
   TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
   TSRC = TITEM
-> extends Collector<TKEY, TINDEX, TITEM, TSRC> {
+> extends ConvertingCollector<TKEY, TINDEX, TITEM, TSRC> {
   /**
    * A {@link Collections.CollectorValidator | CollectorValidator} which validates keys and values
    * before inserting them into this collector.

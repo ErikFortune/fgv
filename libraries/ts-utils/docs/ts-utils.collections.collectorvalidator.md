@@ -4,7 +4,7 @@
 
 ## Collections.CollectorValidator class
 
-A [Collector](./ts-utils.collections.collector.md) wrapper which validates weakly-typed keys and values before calling the wrapped collector.
+A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) wrapper which validates weakly-typed keys and values before calling the wrapped collector.
 
 **Signature:**
 
@@ -82,7 +82,7 @@ Description
 
 </td><td>
 
-[ICollector](./ts-utils.icollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
+[IConvertingCollector](./ts-utils.iconvertingcollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
 
 
 </td><td>

@@ -25,8 +25,8 @@ import {
   Collectible,
   SimpleCollector,
   CollectibleFactoryCallback,
-  Collector,
-  ICollectorConstructorParams
+  ConvertingCollector,
+  IConvertingCollectorConstructorParams
 } from '../../../packlets/collections';
 import { Result, succeed } from '../../../packlets/base';
 import { Converters } from '../../../packlets/conversion';
@@ -61,12 +61,12 @@ class BrokenCollectibleTestThing extends CollectibleTestThing {
   }
 }
 
-class TestCollector extends Collector<string, number, CollectibleTestThing, ITestThing> {
+class TestCollector extends ConvertingCollector<string, number, CollectibleTestThing, ITestThing> {
   public constructor(things?: ITestThing[]) {
     const entries = things
       ? { entries: things.map((thing, index): [string, ITestThing] => [`thing${index}`, thing]) }
       : {};
-    const params: ICollectorConstructorParams<string, number, CollectibleTestThing, ITestThing> = {
+    const params: IConvertingCollectorConstructorParams<string, number, CollectibleTestThing, ITestThing> = {
       factory: TestCollector._factory,
       ...entries
     };

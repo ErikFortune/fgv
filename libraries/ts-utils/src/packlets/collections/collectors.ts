@@ -22,7 +22,7 @@
 
 import { Result, captureResult } from '../base';
 import { ICollectible } from './collectible';
-import { Collector } from './collector';
+import { ConvertingCollector } from './collector';
 
 /**
  * Parameters for creating a {@link SimpleCollector | simple collector}.
@@ -33,12 +33,12 @@ export interface ISimpleCollectorCreateParams<TITEM extends ICollectible<string,
 }
 
 /**
- * A simple {@link Collector | collector} that collects {@link Collections.ICollectible | ICollectible items}
+ * A simple {@link ConvertingCollector | collector} that collects {@link Collections.ICollectible | ICollectible items}
  * with non-branded `string` key and `number` index, and with no transformation other than index assignment
  * on addition.
  * @public
  */
-export class SimpleCollector<TITEM extends ICollectible<string, number>> extends Collector<
+export class SimpleCollector<TITEM extends ICollectible<string, number>> extends ConvertingCollector<
   string,
   number,
   TITEM,
@@ -50,7 +50,7 @@ export class SimpleCollector<TITEM extends ICollectible<string, number>> extends
    */
   public constructor(params?: ISimpleCollectorCreateParams<TITEM>) {
     const entries = params?.items?.map((item): [string, TITEM] => [item.key, item]);
-    super({ factory: Collector._simpleFactory, entries });
+    super({ factory: ConvertingCollector._simpleFactory, entries });
   }
 
   /**
