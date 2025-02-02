@@ -188,7 +188,7 @@ describe('ValidatingCollector', () => {
     });
   });
 
-  describe('converting', () => {
+  describe('validating', () => {
     test('retrieves from the underlying collector', () => {
       const collector = new ValidatingCollector({ ...testCollectorParams, entries });
       const thing = collector.validating.get('thing3');

@@ -105,7 +105,7 @@ describe('ValidatingResultMap', () => {
     });
   });
 
-  describe('converting member', () => {
+  describe('validating member', () => {
     test('retrieves from the underlying map', () => {
       const map = new ValidatingResultMap({ converters: nameConverters, entries: [['fred', 'flintstone']] });
       expect(map.validating.get('fred')).toSucceedWith('flintstone');
@@ -137,7 +137,7 @@ describe('ValidatingResultMap', () => {
       expect(map.validating.add('wilma', 'flintstone')).toSucceedWithDetail('flintstone', 'added');
     });
 
-    test('validates on all converting calls', () => {
+    test('validates on all appropriate calls', () => {
       const map = new ValidatingResultMap({ converters: nameConverters, entries: [['fred', 'flintstone']] });
       expect(map.validating.delete('george')).toFailWithDetail(/invalid enumerated value/i, 'invalid-key');
       expect(map.validating.get('george')).toFailWithDetail(/invalid enumerated value/i, 'invalid-key');
