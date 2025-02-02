@@ -24,6 +24,7 @@ import * as Utils from './utils';
 
 export * from './collectible';
 export * from './convertingCollector';
+export * from './collector';
 export * from './collectorValidator';
 export * from './collectors';
 export * from './validatingCollector';

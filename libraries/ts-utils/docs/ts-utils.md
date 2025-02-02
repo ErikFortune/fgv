@@ -19,6 +19,19 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[Collector](./ts-utils.collector.md)
+
+
+</td><td>
+
+A [Collector](./ts-utils.collections.collector.md) that is a specialized collection which contains items of type [ICollectible](./ts-utils.collections.icollectible.md)<!-- -->, which have a unique key and a write-once index.
+
+Items are assigned an index sequentially as they are added to the collection. Once added, items are immutable - they cannot be removed or replaced.
+
+
+</td></tr>
+<tr><td>
+
 [ConvertingCollector](./ts-utils.convertingcollector.md)
 
 

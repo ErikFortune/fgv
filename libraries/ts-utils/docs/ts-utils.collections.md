@@ -30,6 +30,19 @@ Simple implementation of [ICollectible](./ts-utils.collections.icollectible.md) 
 </td></tr>
 <tr><td>
 
+[Collector](./ts-utils.collections.collector.md)
+
+
+</td><td>
+
+A [Collector](./ts-utils.collections.collector.md) that is a specialized collection which contains items of type [ICollectible](./ts-utils.collections.icollectible.md)<!-- -->, which have a unique key and a write-once index.
+
+Items are assigned an index sequentially as they are added to the collection. Once added, items are immutable - they cannot be removed or replaced.
+
+
+</td></tr>
+<tr><td>
+
 [CollectorValidator](./ts-utils.collections.collectorvalidator.md)
 
 
@@ -166,6 +179,17 @@ Parameters for constructing a new [ICollectible](./ts-utils.collections.icollect
 </td></tr>
 <tr><td>
 
+[ICollectorCreateParams](./ts-utils.collections.icollectorcreateparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [ICollector](./ts-utils.collections.collector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [ICollectorValidatorCreateParams](./ts-utils.collections.icollectorvalidatorcreateparams.md)
 
 
@@ -205,6 +229,17 @@ Parameters for constructing a [IConvertingCollector](./ts-utils.iconvertingcolle
 </td><td>
 
 Parameters for constructing a [KeyValueConverters](./ts-utils.collections.keyvalueconverters.md) instance.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyCollector](./ts-utils.collections.ireadonlycollector.md)
+
+
+</td><td>
+
+A read-only interface exposing only the non-mutating methods of a [ICollector](./ts-utils.collections.collector.md)<!-- -->.
 
 
 </td></tr>

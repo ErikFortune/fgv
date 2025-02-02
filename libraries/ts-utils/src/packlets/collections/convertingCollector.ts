@@ -22,14 +22,9 @@
 
 import { DetailedResult, Result, fail, failWithDetail, succeed, succeedWithDetail } from '../base';
 import { ICollectible, CollectibleFactoryCallback, CollectibleFactory } from './collectible';
+import { CollectorResultDetail } from './collector';
 import { KeyValueEntry } from './common';
 import { IReadOnlyResultMap, ResultMapForEachCb, ResultMapResultDetail } from './readonlyResultMap';
-
-/**
- * Additional success or failure details for mutating collector calls.
- * @public
- */
-export type CollectorResultDetail = ResultMapResultDetail | 'invalid-index';
 
 /**
  * A read-only interface exposing non-mutating methods of a {@link Collections.IConvertingCollector | ConvertingCollector}.

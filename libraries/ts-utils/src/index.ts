@@ -26,6 +26,7 @@ import * as Hash from './packlets/hash';
 import * as Validation from './packlets/validation';
 
 import {
+  Collector,
   ICollectible,
   IConvertingCollector,
   ConvertingCollector,
@@ -41,6 +42,7 @@ import { Validator, Validators } from './packlets/validation';
 export * from './packlets/base';
 export {
   Collections,
+  Collector,
   ConvertingCollector,
   Conversion,
   Converter,
