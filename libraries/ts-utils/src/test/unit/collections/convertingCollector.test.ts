@@ -24,8 +24,8 @@ import { Brand, Result, fail, succeed } from '../../../packlets/base';
 import {
   Collectible,
   CollectibleFactoryCallback,
-  ConvertingCollector,
-  IConvertingCollectorConstructorParams,
+  ValidatingCollector,
+  IValidatingCollectorConstructorParams,
   KeyValueConverters
 } from '../../../packlets/collections';
 import { Converters } from '../../../packlets/conversion';
@@ -73,7 +73,7 @@ function _collectibleTestThingFactory(
   return succeed(new CollectibleTestThing(item, key, index as TestIndex));
 }
 
-export const testCollectorParams: IConvertingCollectorConstructorParams<
+export const testCollectorParams: IValidatingCollectorConstructorParams<
   TestKey,
   TestIndex,
   CollectibleTestThing,
@@ -86,7 +86,7 @@ export const testCollectorParams: IConvertingCollectorConstructorParams<
   })
 };
 
-export const entryValidatingTestCollectorParams: IConvertingCollectorConstructorParams<
+export const entryValidatingTestCollectorParams: IValidatingCollectorConstructorParams<
   TestKey,
   TestIndex,
   CollectibleTestThing,
@@ -99,7 +99,7 @@ export const entryValidatingTestCollectorParams: IConvertingCollectorConstructor
   })
 };
 
-describe('ConvertingCollector', () => {
+describe('ValidatingCollector', () => {
   let entries: [TestKey, ITestThing][];
   let things: ITestThing[];
   let collectibles: CollectibleTestThing[];
@@ -120,7 +120,7 @@ describe('ConvertingCollector', () => {
 
   describe('constructor', () => {
     test('can be constructed with initial items', () => {
-      const collector = new ConvertingCollector({ ...testCollectorParams, entries });
+      const collector = new ValidatingCollector({ ...testCollectorParams, entries });
       expect(collector.size).toEqual(5);
       expect(collector.inner.size).toEqual(5);
       expect(collector.validating.map.size).toEqual(5);
@@ -144,7 +144,7 @@ describe('ConvertingCollector', () => {
     });
 
     test('can be constructed with no initial items', () => {
-      const collector = new ConvertingCollector(testCollectorParams);
+      const collector = new ValidatingCollector(testCollectorParams);
       expect(collector.size).toEqual(0);
       expect(collector.inner.size).toEqual(0);
       expect(Array.from(collector.keys())).toEqual([]);
@@ -153,16 +153,16 @@ describe('ConvertingCollector', () => {
     });
   });
 
-  describe('createConvertingCollector static method', () => {
-    test('can create a new ConvertingCollector', () => {
-      const collector = ConvertingCollector.createConvertingCollector(testCollectorParams);
+  describe('createValidatingCollector static method', () => {
+    test('can create a new ValidatingCollector', () => {
+      const collector = ValidatingCollector.createValidatingCollector(testCollectorParams);
       expect(collector).toSucceedAndSatisfy((c) => {
         expect(c.size).toEqual(0);
       });
     });
 
-    test('can create a new ConvertingCollector with initial items', () => {
-      const collector = ConvertingCollector.createConvertingCollector({ ...testCollectorParams, entries });
+    test('can create a new ValidatingCollector with initial items', () => {
+      const collector = ValidatingCollector.createValidatingCollector({ ...testCollectorParams, entries });
       expect(collector).toSucceedAndSatisfy((c) => {
         expect(c.size).toEqual(5);
         expect(c.inner.size).toEqual(5);
@@ -190,14 +190,14 @@ describe('ConvertingCollector', () => {
 
   describe('converting', () => {
     test('retrieves from the underlying collector', () => {
-      const collector = new ConvertingCollector({ ...testCollectorParams, entries });
+      const collector = new ValidatingCollector({ ...testCollectorParams, entries });
       const thing = collector.validating.get('thing3');
       expect(thing).toSucceedWith(collectibles[2]);
     });
 
     describe('add', () => {
       test('adds a new item to the underlying collector', () => {
-        const collector = new ConvertingCollector(testCollectorParams);
+        const collector = new ValidatingCollector(testCollectorParams);
         const thing: ITestThing = { str: 'six', num: 6, bool: false };
         const collectible = new CollectibleTestThing(thing, 'thing6' as TestKey, 0 as TestIndex);
         expect(collector.get(collectible.key)).toFailWith(/not found/);
@@ -207,13 +207,13 @@ describe('ConvertingCollector', () => {
       });
 
       test('fails with detail exists if the entry already exists', () => {
-        const collector = new ConvertingCollector({ ...testCollectorParams, entries });
+        const collector = new ValidatingCollector({ ...testCollectorParams, entries });
         const thing: ITestThing = { str: 'three', num: 300, bool: true };
         expect(collector.validating.add('thing3', thing)).toFailWithDetail(/already exists/i, 'exists');
       });
 
       test('fails with detail invalid-key if the key is invalid', () => {
-        const collector = new ConvertingCollector(testCollectorParams);
+        const collector = new ValidatingCollector(testCollectorParams);
         const thing: ITestThing = { str: 'thing1', num: 1, bool: true };
         expect(collector.validating.add('thingamajig1', thing)).toFailWithDetail(
           /not a valid test thing key/i,
@@ -222,7 +222,7 @@ describe('ConvertingCollector', () => {
       });
 
       test('fails with detail invalid-value if the entry is invalid', () => {
-        const collector = new ConvertingCollector(testCollectorParams);
+        const collector = new ValidatingCollector(testCollectorParams);
         const thing = { str: 10, num: '10', bool: 'yes' };
         expect(collector.validating.add('thing1', thing)).toFailWithDetail(/not a/i, 'invalid-value');
       });
@@ -230,7 +230,7 @@ describe('ConvertingCollector', () => {
 
     describe('getOrAdd', () => {
       test('adds a new item to the underlying collector', () => {
-        const collector = new ConvertingCollector(testCollectorParams);
+        const collector = new ValidatingCollector(testCollectorParams);
         const thing: ITestThing = { str: 'six', num: 6, bool: false };
         const collectible = new CollectibleTestThing(thing, 'thing6' as TestKey, 0 as TestIndex);
         expect(collector.get(collectible.key)).toFailWith(/not found/);
@@ -240,7 +240,7 @@ describe('ConvertingCollector', () => {
       });
 
       test('returns an existing item from the collector', () => {
-        const collector = new ConvertingCollector({ ...testCollectorParams, entries });
+        const collector = new ValidatingCollector({ ...testCollectorParams, entries });
         const thing: ITestThing = { str: 'three', num: 300, bool: true };
         const existing = collector.validating.get('thing3').orThrow();
         expect(existing).toEqual(collectibles[2]);
@@ -250,7 +250,7 @@ describe('ConvertingCollector', () => {
       });
 
       test('uses a factory to create a new item if not already in the collector', () => {
-        const collector = new ConvertingCollector(testCollectorParams);
+        const collector = new ValidatingCollector(testCollectorParams);
         const thing: ITestThing = { str: 'six', num: 6, bool: false };
         const factory: CollectibleFactoryCallback<TestKey, TestIndex, CollectibleTestThing> = jest.fn(
           (key, index) => succeed(new CollectibleTestThing(thing, key, index as TestIndex))
@@ -262,7 +262,7 @@ describe('ConvertingCollector', () => {
       });
 
       test('does not call the factory if the item is already in the collector', () => {
-        const collector = new ConvertingCollector({ ...testCollectorParams, entries });
+        const collector = new ValidatingCollector({ ...testCollectorParams, entries });
         const thing: ITestThing = { str: 'three', num: 300, bool: true };
         const existing = collector.validating.get('thing3').orThrow();
         expect(existing).toEqual(collectibles[2]);
@@ -274,7 +274,7 @@ describe('ConvertingCollector', () => {
       });
 
       test('fails with detail invalid-key for an item if the key is invalid', () => {
-        const collector = new ConvertingCollector(testCollectorParams);
+        const collector = new ValidatingCollector(testCollectorParams);
         const thing: ITestThing = { str: 'thing1', num: 1, bool: true };
         expect(collector.validating.getOrAdd('thingamajig1', thing)).toFailWithDetail(
           /not a valid test thing key/i,
@@ -283,7 +283,7 @@ describe('ConvertingCollector', () => {
       });
 
       test('fails with detail invalid-key and does call factory if the key is invalid', () => {
-        const collector = new ConvertingCollector(testCollectorParams);
+        const collector = new ValidatingCollector(testCollectorParams);
         const thing: ITestThing = { str: 'thing1', num: 1, bool: true };
         const factory: CollectibleFactoryCallback<TestKey, TestIndex, CollectibleTestThing> = jest.fn(
           (key, index) => succeed(new CollectibleTestThing(thing, key, index as TestIndex))
@@ -296,7 +296,7 @@ describe('ConvertingCollector', () => {
       });
 
       test('fails with detail invalid-value if the factory fails', () => {
-        const collector = new ConvertingCollector(testCollectorParams);
+        const collector = new ValidatingCollector(testCollectorParams);
         const factory: CollectibleFactoryCallback<TestKey, TestIndex, CollectibleTestThing> = jest.fn(
           (key, index) => fail('factory failed')
         );
@@ -308,7 +308,7 @@ describe('ConvertingCollector', () => {
     });
 
     test('validates on all calls that return Result', () => {
-      const collector = new ConvertingCollector(entryValidatingTestCollectorParams);
+      const collector = new ValidatingCollector(entryValidatingTestCollectorParams);
       expect(collector.validating.get('thingamajig1')).toFailWith(/not a valid test thing key/i);
       expect(collector.validating.has('thingamajig1')).toBe(false);
       expect(collector.validating.getOrAdd('thingamajig1', things[0])).toFailWith(
@@ -319,7 +319,7 @@ describe('ConvertingCollector', () => {
 
   describe('toReadOnly', () => {
     test('returns the collector as a read-only map', () => {
-      const collector = new ConvertingCollector({ ...testCollectorParams, entries });
+      const collector = new ValidatingCollector({ ...testCollectorParams, entries });
       const readOnly = collector.toReadOnly();
       expect(readOnly).toBeDefined();
       expect(readOnly.size).toEqual(5);

@@ -30,17 +30,6 @@ A [Collector](./ts-utils.icollector.md) that collects [ICollectible](./ts-utils.
 </td></tr>
 <tr><td>
 
-[ConvertingCollector](./ts-utils.convertingcollector.md)
-
-
-</td><td>
-
-A [Collector](./ts-utils.collections.collector.md) with a [CollectorValidator](./ts-utils.collections.collectorvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
-
-
-</td></tr>
-<tr><td>
-
 [DetailedFailure](./ts-utils.detailedfailure.md)
 
 
@@ -146,6 +135,17 @@ The [StringConverter](./ts-utils.conversion.stringconverter.md) class extends [B
 </td><td>
 
 Reports a successful [result](./ts-utils.iresult.md) from some operation and the corresponding value.
+
+
+</td></tr>
+<tr><td>
+
+[ValidatingCollector](./ts-utils.validatingcollector.md)
+
+
+</td><td>
+
+A [Collector](./ts-utils.collections.collector.md) with a [CollectorValidator](./ts-utils.collections.collectorvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
 
 
 </td></tr>

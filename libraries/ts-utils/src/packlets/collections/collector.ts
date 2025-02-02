@@ -133,7 +133,7 @@ export type ISimpleCollector<TITEM extends ICollectible<string, number>> = IColl
  * A {@link ICollector | Collector} with non-branded `string` key and `number` index, and transformation of source items.
  * @public
  */
-export type IConvertingCollector<TITEM extends ICollectible<string, number>, TSRC> = ICollector<
+export type IValidatingCollector<TITEM extends ICollectible<string, number>, TSRC> = ICollector<
   string,
   number,
   TITEM,

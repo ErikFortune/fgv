@@ -30,17 +30,17 @@ import { KeyValueConverters } from './keyValueConverters';
 
 /**
  * A read-only interface exposing non-mutating methods of a
- * {@link Collections.ConvertingCollector | ConvertingCollector}.
+ * {@link Collections.ValidatingCollector | ValidatingCollector}.
  * @public
  */
 
-export interface IReadOnlyConvertingCollector<
+export interface IReadOnlyValidatingCollector<
   TKEY extends string = string,
   TINDEX extends number = number,
   TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
 > extends IReadOnlyValidatingResultMap<TKEY, TITEM> {
   /**
-   * {@inheritdoc Collections.ConvertingCollector.validating}
+   * {@inheritdoc Collections.ValidatingCollector.validating}
    */
   readonly validating: IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM>;
 
@@ -51,10 +51,10 @@ export interface IReadOnlyConvertingCollector<
 }
 
 /**
- * Parameters for constructing a {@link Collections.ConvertingCollector | ConvertingCollector}.
+ * Parameters for constructing a {@link Collections.ValidatingCollector | ValidatingCollector}.
  * @public
  */
-export interface IConvertingCollectorConstructorParams<
+export interface IValidatingCollectorConstructorParams<
   TKEY extends string = string,
   TINDEX extends number = number,
   TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
@@ -81,7 +81,7 @@ export interface IConvertingCollectorConstructorParams<
  * property that enables validated use of the underlying map with weakly-typed keys and values.
  * @public
  */
-export class ConvertingCollector<
+export class ValidatingCollector<
   TKEY extends string = string,
   TINDEX extends number = number,
   TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
@@ -96,11 +96,11 @@ export class ConvertingCollector<
   protected readonly _converters: KeyValueConverters<TKEY, TSRC>;
 
   /**
-   * Constructs a new {@link Collections.ConvertingCollector | ConvertingCollector}
-   * from the supplied {@link Collections.IConvertingCollectorConstructorParams | parameters}.
+   * Constructs a new {@link Collections.ValidatingCollector | ValidatingCollector}
+   * from the supplied {@link Collections.IValidatingCollectorConstructorParams | parameters}.
    * @param params - Required parameters for constructing the collector.
    */
-  public constructor(params: IConvertingCollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>) {
+  public constructor(params: IValidatingCollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>) {
     super({ factory: params.factory });
     this._converters = params.converters;
     this.validating = new CollectorValidator({ collector: this, converters: params.converters });
@@ -110,20 +110,20 @@ export class ConvertingCollector<
   }
 
   /**
-   * Creates a new {@link Collections.ConvertingCollector | ConvertingCollector} instance from
-   * the supplied {@link Collections.IConvertingCollectorConstructorParams | parameters}.
+   * Creates a new {@link Collections.ValidatingCollector | ValidatingCollector} instance from
+   * the supplied {@link Collections.IValidatingCollectorConstructorParams | parameters}.
    * @param params - Required parameters for constructing the collector.
    * @returns {@link Success} with the new collector if successful, {@link Failure} otherwise.
    */
-  public static createConvertingCollector<
+  public static createValidatingCollector<
     TKEY extends string = string,
     TINDEX extends number = number,
     TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
     TSRC = TITEM
   >(
-    params: IConvertingCollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>
-  ): Result<ConvertingCollector<TKEY, TINDEX, TITEM, TSRC>> {
-    return captureResult(() => new ConvertingCollector(params));
+    params: IValidatingCollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>
+  ): Result<ValidatingCollector<TKEY, TINDEX, TITEM, TSRC>> {
+    return captureResult(() => new ValidatingCollector(params));
   }
 
   /**
@@ -131,7 +131,7 @@ export class ConvertingCollector<
    * {@link Collections.IReadOnlyValidatingResultMap | read-only map}.
    * @returns
    */
-  public toReadOnly(): IReadOnlyConvertingCollector<TKEY, TINDEX, TITEM> {
+  public toReadOnly(): IReadOnlyValidatingCollector<TKEY, TINDEX, TITEM> {
     return this;
   }
 }
