@@ -9,9 +9,9 @@ A read-only interface exposing non-mutating methods of a [CollectorConverter](./
 **Signature:**
 
 ```typescript
-export interface IReadOnlyCollectorConverter<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY> = ICollectible<TKEY, TINDEX>> extends IReadOnlyResultMapConverter<TKEY, TITEM> 
+export interface IReadOnlyCollectorConverter<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY> = ICollectible<TKEY, TINDEX>> extends IReadOnlyResultMapValidator<TKEY, TITEM> 
 ```
-**Extends:** [IReadOnlyResultMapConverter](./ts-utils.collections.ireadonlyresultmapconverter.md)<!-- -->&lt;TKEY, TITEM&gt;
+**Extends:** [IReadOnlyResultMapValidator](./ts-utils.collections.ireadonlyresultmapvalidator.md)<!-- -->&lt;TKEY, TITEM&gt;
 
 ## Properties
 

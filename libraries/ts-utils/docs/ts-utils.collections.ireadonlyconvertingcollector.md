@@ -9,9 +9,9 @@ A read-only interface exposing non-mutating methods of a [ConvertingCollector](.
 **Signature:**
 
 ```typescript
-export interface IReadOnlyConvertingCollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>> extends IReadOnlyConvertingResultMap<TKEY, TITEM> 
+export interface IReadOnlyConvertingCollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>> extends IReadOnlyValidatingResultMap<TKEY, TITEM> 
 ```
-**Extends:** [IReadOnlyConvertingResultMap](./ts-utils.collections.ireadonlyconvertingresultmap.md)<!-- -->&lt;TKEY, TITEM&gt;
+**Extends:** [IReadOnlyValidatingResultMap](./ts-utils.collections.ireadonlyvalidatingresultmap.md)<!-- -->&lt;TKEY, TITEM&gt;
 
 ## Properties
 
@@ -38,27 +38,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[converting](./ts-utils.collections.ireadonlyconvertingcollector.converting.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IReadOnlyCollectorConverter](./ts-utils.collections.ireadonlycollectorconverter.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
-
-
-</td><td>
-
-A [CollectorConverter](./ts-utils.collections.collectorconverter.md) which validates keys and values before inserting them into this collector.
-
-
-</td></tr>
-<tr><td>
-
 [getAt](./ts-utils.collections.ireadonlyconvertingcollector.getat.md)
 
 
@@ -75,6 +54,27 @@ A [CollectorConverter](./ts-utils.collections.collectorconverter.md) which valid
 </td><td>
 
 Gets the item at a specified index.
+
+
+</td></tr>
+<tr><td>
+
+[validating](./ts-utils.collections.ireadonlyconvertingcollector.validating.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IReadOnlyCollectorConverter](./ts-utils.collections.ireadonlycollectorconverter.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+
+
+</td><td>
+
+A [CollectorConverter](./ts-utils.collections.collectorconverter.md) which validates keys and values before inserting them into this collector.
 
 
 </td></tr>

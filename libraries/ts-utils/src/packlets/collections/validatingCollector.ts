@@ -25,7 +25,7 @@ import { CollectibleFactory, ICollectible } from './collectible';
 import { Collector } from './collector';
 import { CollectorConverter, IReadOnlyCollectorConverter } from './collectorValidator';
 import { KeyValueEntry } from './common';
-import { IReadOnlyConvertingResultMap } from './validatingResultMap';
+import { IReadOnlyValidatingResultMap } from './validatingResultMap';
 import { KeyValueConverters } from './keyValueConverters';
 
 /**
@@ -38,11 +38,11 @@ export interface IReadOnlyConvertingCollector<
   TKEY extends string = string,
   TINDEX extends number = number,
   TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
-> extends IReadOnlyConvertingResultMap<TKEY, TITEM> {
+> extends IReadOnlyValidatingResultMap<TKEY, TITEM> {
   /**
-   * {@inheritdoc Collections.ConvertingCollector.converting}
+   * {@inheritdoc Collections.ConvertingCollector.validating}
    */
-  readonly converting: IReadOnlyCollectorConverter<TKEY, TINDEX, TITEM>;
+  readonly validating: IReadOnlyCollectorConverter<TKEY, TINDEX, TITEM>;
 
   /**
    * {@inheritdoc Collections.Collector.getAt}
@@ -91,7 +91,7 @@ export class ConvertingCollector<
    * A {@link Collections.CollectorConverter | CollectorConverter} which validates keys and values
    * before inserting them into this collector.
    */
-  public readonly converting: CollectorConverter<TKEY, TINDEX, TITEM, TSRC>;
+  public readonly validating: CollectorConverter<TKEY, TINDEX, TITEM, TSRC>;
 
   protected readonly _converters: KeyValueConverters<TKEY, TSRC>;
 
@@ -103,7 +103,7 @@ export class ConvertingCollector<
   public constructor(params: IConvertingCollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>) {
     super({ factory: params.factory });
     this._converters = params.converters;
-    this.converting = new CollectorConverter({ collector: this, converters: params.converters });
+    this.validating = new CollectorConverter({ collector: this, converters: params.converters });
     for (const entry of params.entries ?? []) {
       this.getOrAdd(entry[0], entry[1]).orThrow();
     }
@@ -128,7 +128,7 @@ export class ConvertingCollector<
 
   /**
    * Gets a read-only version of this collector as a
-   * {@link Collections.IReadOnlyConvertingResultMap | read-only map}.
+   * {@link Collections.IReadOnlyValidatingResultMap | read-only map}.
    * @returns
    */
   public toReadOnly(): IReadOnlyConvertingCollector<TKEY, TINDEX, TITEM> {

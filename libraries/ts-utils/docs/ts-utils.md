@@ -41,17 +41,6 @@ A [Collector](./ts-utils.collections.collector.md) with a [CollectorConverter](.
 </td></tr>
 <tr><td>
 
-[ConvertingResultMap](./ts-utils.convertingresultmap.md)
-
-
-</td><td>
-
-A [ResultMap](./ts-utils.collections.resultmap.md) with a [validator](./ts-utils.collections.resultmapconverter.md) property that enables validated use of the underlying map with weakly-typed keys and values.
-
-
-</td></tr>
-<tr><td>
-
 [DetailedFailure](./ts-utils.detailedfailure.md)
 
 
@@ -157,6 +146,17 @@ The [StringConverter](./ts-utils.conversion.stringconverter.md) class extends [B
 </td><td>
 
 Reports a successful [result](./ts-utils.iresult.md) from some operation and the corresponding value.
+
+
+</td></tr>
+<tr><td>
+
+[ValidatingResultMap](./ts-utils.validatingresultmap.md)
+
+
+</td><td>
+
+A [ResultMap](./ts-utils.collections.resultmap.md) with a [validator](./ts-utils.collections.resultmapvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
 
 
 </td></tr>

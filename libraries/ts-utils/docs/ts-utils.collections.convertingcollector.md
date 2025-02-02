@@ -93,7 +93,7 @@ Description
 </td></tr>
 <tr><td>
 
-[converting](./ts-utils.collections.convertingcollector.converting.md)
+[validating](./ts-utils.collections.convertingcollector.validating.md)
 
 
 </td><td>
@@ -158,7 +158,7 @@ Creates a new [ConvertingCollector](./ts-utils.collections.convertingcollector.m
 
 </td><td>
 
-Gets a read-only version of this collector as a [read-only map](./ts-utils.collections.ireadonlyconvertingresultmap.md)<!-- -->.
+Gets a read-only version of this collector as a [read-only map](./ts-utils.collections.ireadonlyvalidatingresultmap.md)<!-- -->.
 
 
 </td></tr>

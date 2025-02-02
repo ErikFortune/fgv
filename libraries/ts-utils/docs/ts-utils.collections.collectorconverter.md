@@ -9,9 +9,9 @@ A [Collector](./ts-utils.collections.collector.md) wrapper which validates weakl
 **Signature:**
 
 ```typescript
-export declare class CollectorConverter<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> implements IReadOnlyResultMapConverter<TKEY, TITEM> 
+export declare class CollectorConverter<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> implements IReadOnlyResultMapValidator<TKEY, TITEM> 
 ```
-**Implements:** [IReadOnlyResultMapConverter](./ts-utils.collections.ireadonlyresultmapconverter.md)<!-- -->&lt;TKEY, TITEM&gt;
+**Implements:** [IReadOnlyResultMapValidator](./ts-utils.collections.ireadonlyresultmapvalidator.md)<!-- -->&lt;TKEY, TITEM&gt;
 
 ## Constructors
 

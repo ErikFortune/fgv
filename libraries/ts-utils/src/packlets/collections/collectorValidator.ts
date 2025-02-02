@@ -26,7 +26,7 @@ import { ResultMapValueFactory } from './resultMap';
 import { KeyValueConverters } from './keyValueConverters';
 import { CollectibleFactoryCallback, ICollectible } from './collectible';
 import { CollectorResultDetail, ICollector } from './collector';
-import { IReadOnlyResultMapConverter } from './resultMapValidator';
+import { IReadOnlyResultMapValidator } from './resultMapValidator';
 
 /**
  * A read-only interface exposing non-mutating methods of a
@@ -37,7 +37,7 @@ export interface IReadOnlyCollectorConverter<
   TKEY extends string = string,
   TINDEX extends number = number,
   TITEM extends ICollectible<TKEY> = ICollectible<TKEY, TINDEX>
-> extends IReadOnlyResultMapConverter<TKEY, TITEM> {
+> extends IReadOnlyResultMapValidator<TKEY, TITEM> {
   /**
    * {@inheritdoc Collections.CollectorConverter.map}
    */
@@ -78,7 +78,7 @@ export class CollectorConverter<
   TINDEX extends number = number,
   TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
   TSRC = TITEM
-> implements IReadOnlyResultMapConverter<TKEY, TITEM>
+> implements IReadOnlyResultMapValidator<TKEY, TITEM>
 {
   public readonly converters: KeyValueConverters<TKEY, TSRC>;
 

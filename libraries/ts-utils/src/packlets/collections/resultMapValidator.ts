@@ -26,12 +26,12 @@ import { ResultMap, ResultMapValueFactory } from './resultMap';
 import { KeyValueConverters } from './keyValueConverters';
 
 /**
- * A read-only interface exposing non-mutating methods of a {@link Collections.ResultMapConverter | ResultMapConverter}.
+ * A read-only interface exposing non-mutating methods of a {@link Collections.ResultMapValidator | ResultMapValidator}.
  * @public
  */
-export interface IReadOnlyResultMapConverter<TK extends string = string, TV = unknown> {
+export interface IReadOnlyResultMapValidator<TK extends string = string, TV = unknown> {
   /**
-   * {@inheritdoc Collections.ResultMapConverter.map}
+   * {@inheritdoc Collections.ResultMapValidator.map}
    */
   readonly map: IReadOnlyResultMap<TK, TV>;
 
@@ -47,10 +47,10 @@ export interface IReadOnlyResultMapConverter<TK extends string = string, TV = un
 }
 
 /**
- * Parameters for constructing a {@link Collections.ResultMapConverter | ResultMapConverter}.
+ * Parameters for constructing a {@link Collections.ResultMapValidator | ResultMapValidator}.
  * @public
  */
-export interface IResultMapConverterCreateParams<TK extends string = string, TV = unknown> {
+export interface IResultMapValidatorCreateParams<TK extends string = string, TV = unknown> {
   map: ResultMap<TK, TV>;
   converters: KeyValueConverters<TK, TV>;
 }
@@ -60,8 +60,8 @@ export interface IResultMapConverterCreateParams<TK extends string = string, TV 
  * before calling the wrapped result map.
  * @public
  */
-export class ResultMapConverter<TK extends string = string, TV = unknown>
-  implements IReadOnlyResultMapConverter<TK, TV>
+export class ResultMapValidator<TK extends string = string, TV = unknown>
+  implements IReadOnlyResultMapValidator<TK, TV>
 {
   public readonly converters: KeyValueConverters<TK, TV>;
   public get map(): IReadOnlyResultMap<TK, TV> {
@@ -71,10 +71,10 @@ export class ResultMapConverter<TK extends string = string, TV = unknown>
   protected _map: ResultMap<TK, TV>;
 
   /**
-   * Constructs a new {@link Collections.ResultMapConverter | ResultMapConverter}.
-   * @param params - Required parameters for constructing the result map converter.
+   * Constructs a new {@link Collections.ResultMapValidator | ResultMapValidator}.
+   * @param params - Required parameters for constructing the result map validator.
    */
-  public constructor(params: IResultMapConverterCreateParams<TK, TV>) {
+  public constructor(params: IResultMapValidatorCreateParams<TK, TV>) {
     this._map = params.map;
     this.converters = params.converters;
   }
@@ -169,7 +169,7 @@ export class ResultMapConverter<TK extends string = string, TV = unknown>
   /**
    * Gets a read-only version of this validator.
    */
-  public toReadOnly(): IReadOnlyResultMapConverter<TK, TV> {
+  public toReadOnly(): IReadOnlyResultMapValidator<TK, TV> {
     return this;
   }
 

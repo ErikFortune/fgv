@@ -63,17 +63,6 @@ A [Collector](./ts-utils.collections.collector.md) with a [CollectorConverter](.
 </td></tr>
 <tr><td>
 
-[ConvertingResultMap](./ts-utils.collections.convertingresultmap.md)
-
-
-</td><td>
-
-A [ResultMap](./ts-utils.collections.resultmap.md) with a [validator](./ts-utils.collections.resultmapconverter.md) property that enables validated use of the underlying map with weakly-typed keys and values.
-
-
-</td></tr>
-<tr><td>
-
 [KeyValueConverters](./ts-utils.collections.keyvalueconverters.md)
 
 
@@ -96,7 +85,7 @@ A [ResultMap](./ts-utils.collections.resultmap.md) class as a `Map<TK, TV>`<!-- 
 </td></tr>
 <tr><td>
 
-[ResultMapConverter](./ts-utils.collections.resultmapconverter.md)
+[ResultMapValidator](./ts-utils.collections.resultmapvalidator.md)
 
 
 </td><td>
@@ -113,6 +102,17 @@ A [ResultMap](./ts-utils.collections.resultmap.md) wrapper which validates weakl
 </td><td>
 
 A simple [collector](./ts-utils.collector.md) that collects [ICollectible items](./ts-utils.collections.icollectible.md) with non-branded `string` key and `number` index, and with no transformation other than index assignment on addition.
+
+
+</td></tr>
+<tr><td>
+
+[ValidatingResultMap](./ts-utils.collections.validatingresultmap.md)
+
+
+</td><td>
+
+A [ResultMap](./ts-utils.collections.resultmap.md) with a [validator](./ts-utils.collections.resultmapvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
 
 
 </td></tr>
@@ -210,17 +210,6 @@ Parameters for constructing a [ConvertingCollector](./ts-utils.collections.conve
 </td></tr>
 <tr><td>
 
-[IConvertingResultMapConstructorParams](./ts-utils.collections.iconvertingresultmapconstructorparams.md)
-
-
-</td><td>
-
-Parameters for constructing a [ResultMap](./ts-utils.collections.resultmap.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [IKeyValueConverterConstructorParams](./ts-utils.collections.ikeyvalueconverterconstructorparams.md)
 
 
@@ -265,17 +254,6 @@ A read-only interface exposing non-mutating methods of a [ConvertingCollector](.
 </td></tr>
 <tr><td>
 
-[IReadOnlyConvertingResultMap](./ts-utils.collections.ireadonlyconvertingresultmap.md)
-
-
-</td><td>
-
-A read-only interface exposing non-mutating methods of a [ConvertingResultMap](./ts-utils.collections.convertingresultmap.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [IReadOnlyResultMap](./ts-utils.collections.ireadonlyresultmap.md)
 
 
@@ -287,12 +265,23 @@ A readonly `ReadonlyMap<TK, TV>`<!-- -->-like object which reports success or fa
 </td></tr>
 <tr><td>
 
-[IReadOnlyResultMapConverter](./ts-utils.collections.ireadonlyresultmapconverter.md)
+[IReadOnlyResultMapValidator](./ts-utils.collections.ireadonlyresultmapvalidator.md)
 
 
 </td><td>
 
-A read-only interface exposing non-mutating methods of a [ResultMapConverter](./ts-utils.collections.resultmapconverter.md)<!-- -->.
+A read-only interface exposing non-mutating methods of a [ResultMapValidator](./ts-utils.collections.resultmapvalidator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyValidatingResultMap](./ts-utils.collections.ireadonlyvalidatingresultmap.md)
+
+
+</td><td>
+
+A read-only interface exposing non-mutating methods of a [ValidatingResultMap](./ts-utils.collections.validatingresultmap.md)<!-- -->.
 
 
 </td></tr>
@@ -309,12 +298,12 @@ Parameters for constructing a [ResultMap](./ts-utils.collections.resultmap.md)<!
 </td></tr>
 <tr><td>
 
-[IResultMapConverterCreateParams](./ts-utils.collections.iresultmapconvertercreateparams.md)
+[IResultMapValidatorCreateParams](./ts-utils.collections.iresultmapvalidatorcreateparams.md)
 
 
 </td><td>
 
-Parameters for constructing a [ResultMapConverter](./ts-utils.collections.resultmapconverter.md)<!-- -->.
+Parameters for constructing a [ResultMapValidator](./ts-utils.collections.resultmapvalidator.md)<!-- -->.
 
 
 </td></tr>
@@ -326,6 +315,17 @@ Parameters for constructing a [ResultMapConverter](./ts-utils.collections.result
 </td><td>
 
 Parameters for creating a [simple collector](./ts-utils.simplecollector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IValidatingResultMapConstructorParams](./ts-utils.collections.ivalidatingresultmapconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [ResultMap](./ts-utils.collections.resultmap.md)<!-- -->.
 
 
 </td></tr>

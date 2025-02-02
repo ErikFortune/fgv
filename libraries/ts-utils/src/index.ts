@@ -33,7 +33,7 @@ import {
   IReadOnlyResultMap,
   ResultMap,
   SimpleCollector,
-  ConvertingResultMap
+  ValidatingResultMap
 } from './packlets/collections';
 import { Converter, Converters, ObjectConverter, StringConverter } from './packlets/conversion';
 import { Validator, Validators } from './packlets/validation';
@@ -54,7 +54,7 @@ export {
   ResultMap,
   SimpleCollector,
   StringConverter,
-  ConvertingResultMap,
+  ValidatingResultMap,
   Validation,
   Validator,
   Validators

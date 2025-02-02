@@ -25,70 +25,70 @@ import { KeyValueEntry } from './common';
 import { KeyValueConverters } from './keyValueConverters';
 import { IReadOnlyResultMap } from './readonlyResultMap';
 import { ResultMap } from './resultMap';
-import { IReadOnlyResultMapConverter, ResultMapConverter } from './resultMapValidator';
+import { IReadOnlyResultMapValidator, ResultMapValidator } from './resultMapValidator';
 
 /**
- * A read-only interface exposing non-mutating methods of a {@link Collections.ConvertingResultMap | ConvertingResultMap}.
+ * A read-only interface exposing non-mutating methods of a {@link Collections.ValidatingResultMap | ValidatingResultMap}.
  * @public
  */
-export interface IReadOnlyConvertingResultMap<TK extends string = string, TV = unknown>
+export interface IReadOnlyValidatingResultMap<TK extends string = string, TV = unknown>
   extends IReadOnlyResultMap<TK, TV> {
   /**
-   * {@inheritdoc Collections.ConvertingResultMap.converting}
+   * {@inheritdoc Collections.ValidatingResultMap.validating}
    */
-  readonly converting: IReadOnlyResultMapConverter<TK, TV>;
+  readonly validating: IReadOnlyResultMapValidator<TK, TV>;
 }
 
 /**
  * Parameters for constructing a {@link Collections.ResultMap | ResultMap}.
  * @public
  */
-export interface IConvertingResultMapConstructorParams<TK extends string = string, TV = unknown> {
+export interface IValidatingResultMapConstructorParams<TK extends string = string, TV = unknown> {
   entries?: Iterable<KeyValueEntry<string, unknown>>;
   converters: KeyValueConverters<TK, TV>;
 }
 
 /**
- * A {@link Collections.ResultMap | ResultMap} with a {@link Collections.ResultMapConverter | validator}
+ * A {@link Collections.ResultMap | ResultMap} with a {@link Collections.ResultMapValidator | validator}
  * property that enables validated use of the underlying map with weakly-typed keys and values.
  * @public
  */
-export class ConvertingResultMap<TK extends string = string, TV = unknown>
+export class ValidatingResultMap<TK extends string = string, TV = unknown>
   extends ResultMap<TK, TV>
-  implements IReadOnlyConvertingResultMap<TK, TV>
+  implements IReadOnlyValidatingResultMap<TK, TV>
 {
   /**
-   * A {@link Collections.ResultMapConverter | ResultMapConverter} which validates keys and values
+   * A {@link Collections.ResultMapValidator | ResultMapValidator} which validates keys and values
    * before inserting them into this collection.
    */
-  public readonly converting: ResultMapConverter<TK, TV>;
+  public readonly validating: ResultMapValidator<TK, TV>;
 
   /**
-   * Constructs a new {@link Collections.ConvertingResultMap | ConvertingResultMap}.
+   * Constructs a new {@link Collections.ValidatingResultMap | ValidatingResultMap}.
    * @param params - Required parameters for constructing the map.
    */
-  public constructor(params: IConvertingResultMapConstructorParams<TK, TV>) {
+  public constructor(params: IValidatingResultMapConstructorParams<TK, TV>) {
     const entries = params.converters.convertEntries([...(params.entries ?? [])]).orThrow();
     super({ entries });
-    this.converting = new ResultMapConverter<TK, TV>({ map: this, converters: params.converters });
+    this.validating = new ResultMapValidator<TK, TV>({ map: this, converters: params.converters });
   }
 
   /**
-   * Creates a new {@link Collections.ConvertingResultMap | ConvertingResultMap} instance.
+   * Creates a new {@link Collections.ValidatingResultMap | ValidatingResultMap} instance.
    * @param params - Required parameters for constructing the map.
    * @returns `Success` with the new map if successful, `Failure` otherwise.
    * @public
    */
-  public static createConvertingResultMap<TK extends string = string, TV = unknown>(
-    params: IConvertingResultMapConstructorParams<TK, TV>
-  ): Result<ConvertingResultMap<TK, TV>> {
-    return captureResult(() => new ConvertingResultMap(params));
+  public static createValidatingResultMap<TK extends string = string, TV = unknown>(
+    params: IValidatingResultMapConstructorParams<TK, TV>
+  ): Result<ValidatingResultMap<TK, TV>> {
+    return captureResult(() => new ValidatingResultMap(params));
   }
 
   /**
    * Gets a read-only version of this map.
    */
-  public toReadOnly(): IReadOnlyConvertingResultMap<TK, TV> {
+  public toReadOnly(): IReadOnlyValidatingResultMap<TK, TV> {
     return this;
   }
 }

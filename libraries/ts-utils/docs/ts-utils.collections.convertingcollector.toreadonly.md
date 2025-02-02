@@ -4,7 +4,7 @@
 
 ## Collections.ConvertingCollector.toReadOnly() method
 
-Gets a read-only version of this collector as a [read-only map](./ts-utils.collections.ireadonlyconvertingresultmap.md)<!-- -->.
+Gets a read-only version of this collector as a [read-only map](./ts-utils.collections.ireadonlyvalidatingresultmap.md)<!-- -->.
 
 **Signature:**
 
