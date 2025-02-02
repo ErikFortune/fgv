@@ -24,14 +24,14 @@ import * as Utils from './utils';
 
 export * from './collectible';
 export * from './collector';
-export * from './collectorConverter';
+export * from './collectorValidator';
 export * from './collectors';
-export * from './convertingCollector';
+export * from './validatingCollector';
 export * from './common';
 export * from './keyValueConverters';
 export * from './readonlyResultMap';
 export * from './resultMap';
-export * from './resultMapConverter';
-export * from './convertingResultMap';
+export * from './resultMapValidator';
+export * from './validatingResultMap';
 
 export { Utils };

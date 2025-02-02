@@ -23,9 +23,9 @@
 import { captureResult, Result } from '../base';
 import { CollectibleFactory, ICollectible } from './collectible';
 import { Collector } from './collector';
-import { CollectorConverter, IReadOnlyCollectorConverter } from './collectorConverter';
+import { CollectorConverter, IReadOnlyCollectorConverter } from './collectorValidator';
 import { KeyValueEntry } from './common';
-import { IReadOnlyConvertingResultMap } from './convertingResultMap';
+import { IReadOnlyConvertingResultMap } from './validatingResultMap';
 import { KeyValueConverters } from './keyValueConverters';
 
 /**

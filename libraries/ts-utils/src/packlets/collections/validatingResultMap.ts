@@ -25,7 +25,7 @@ import { KeyValueEntry } from './common';
 import { KeyValueConverters } from './keyValueConverters';
 import { IReadOnlyResultMap } from './readonlyResultMap';
 import { ResultMap } from './resultMap';
-import { IReadOnlyResultMapConverter, ResultMapConverter } from './resultMapConverter';
+import { IReadOnlyResultMapConverter, ResultMapConverter } from './resultMapValidator';
 
 /**
  * A read-only interface exposing non-mutating methods of a {@link Collections.ConvertingResultMap | ConvertingResultMap}.

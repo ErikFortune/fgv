@@ -26,7 +26,7 @@ import { ResultMapValueFactory } from './resultMap';
 import { KeyValueConverters } from './keyValueConverters';
 import { CollectibleFactoryCallback, ICollectible } from './collectible';
 import { CollectorResultDetail, ICollector } from './collector';
-import { IReadOnlyResultMapConverter } from './resultMapConverter';
+import { IReadOnlyResultMapConverter } from './resultMapValidator';
 
 /**
  * A read-only interface exposing non-mutating methods of a
