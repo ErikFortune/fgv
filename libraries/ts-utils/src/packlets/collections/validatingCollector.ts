@@ -23,7 +23,7 @@
 import { captureResult, Result } from '../base';
 import { CollectibleFactory, ICollectible } from './collectible';
 import { Collector } from './collector';
-import { CollectorConverter, IReadOnlyCollectorConverter } from './collectorValidator';
+import { CollectorValidator, IReadOnlyCollectorValidator } from './collectorValidator';
 import { KeyValueEntry } from './common';
 import { IReadOnlyValidatingResultMap } from './validatingResultMap';
 import { KeyValueConverters } from './keyValueConverters';
@@ -42,7 +42,7 @@ export interface IReadOnlyConvertingCollector<
   /**
    * {@inheritdoc Collections.ConvertingCollector.validating}
    */
-  readonly validating: IReadOnlyCollectorConverter<TKEY, TINDEX, TITEM>;
+  readonly validating: IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM>;
 
   /**
    * {@inheritdoc Collections.Collector.getAt}
@@ -66,7 +66,7 @@ export interface IConvertingCollectorConstructorParams<
   factory: CollectibleFactory<TKEY, TINDEX, TITEM, TSRC>;
 
   /**
-   * {@inheritdoc Collections.ICollectorConverterCreateParams.converters}
+   * {@inheritdoc Collections.ICollectorValidatorCreateParams.converters}
    */
   converters: KeyValueConverters<TKEY, TSRC>;
 
@@ -77,7 +77,7 @@ export interface IConvertingCollectorConstructorParams<
 }
 
 /**
- * A {@link Collections.Collector | Collector} with a {@link Collections.CollectorConverter | CollectorConverter}
+ * A {@link Collections.Collector | Collector} with a {@link Collections.CollectorValidator | CollectorValidator}
  * property that enables validated use of the underlying map with weakly-typed keys and values.
  * @public
  */
@@ -88,10 +88,10 @@ export class ConvertingCollector<
   TSRC = TITEM
 > extends Collector<TKEY, TINDEX, TITEM, TSRC> {
   /**
-   * A {@link Collections.CollectorConverter | CollectorConverter} which validates keys and values
+   * A {@link Collections.CollectorValidator | CollectorValidator} which validates keys and values
    * before inserting them into this collector.
    */
-  public readonly validating: CollectorConverter<TKEY, TINDEX, TITEM, TSRC>;
+  public readonly validating: CollectorValidator<TKEY, TINDEX, TITEM, TSRC>;
 
   protected readonly _converters: KeyValueConverters<TKEY, TSRC>;
 
@@ -103,7 +103,7 @@ export class ConvertingCollector<
   public constructor(params: IConvertingCollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>) {
     super({ factory: params.factory });
     this._converters = params.converters;
-    this.validating = new CollectorConverter({ collector: this, converters: params.converters });
+    this.validating = new CollectorValidator({ collector: this, converters: params.converters });
     for (const entry of params.entries ?? []) {
       this.getOrAdd(entry[0], entry[1]).orThrow();
     }

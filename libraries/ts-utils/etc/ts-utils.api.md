@@ -190,9 +190,9 @@ declare namespace Collections {
         IConvertingCollector,
         ICollectorConstructorParams,
         Collector,
-        IReadOnlyCollectorConverter,
-        ICollectorConverterCreateParams,
-        CollectorConverter,
+        IReadOnlyCollectorValidator,
+        ICollectorValidatorCreateParams,
+        CollectorValidator,
         ISimpleCollectorCreateParams,
         SimpleCollector,
         IReadOnlyConvertingCollector,
@@ -276,12 +276,15 @@ export class Collector<TKEY extends string = string, TINDEX extends number = num
     values(): IterableIterator<TITEM>;
 }
 
+// @public
+type CollectorResultDetail = ResultMapResultDetail | 'invalid-index';
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class CollectorConverter<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> implements IReadOnlyResultMapValidator<TKEY, TITEM> {
+class CollectorValidator<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> implements IReadOnlyResultMapValidator<TKEY, TITEM> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    constructor(params: ICollectorConverterCreateParams<TKEY, TINDEX, TITEM, TSRC>);
+    constructor(params: ICollectorValidatorCreateParams<TKEY, TINDEX, TITEM, TSRC>);
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -328,11 +331,8 @@ class CollectorConverter<TKEY extends string = string, TINDEX extends number = n
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    toReadOnly(): IReadOnlyCollectorConverter<TKEY, TINDEX, TITEM>;
+    toReadOnly(): IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM>;
 }
-
-// @public
-type CollectorResultDetail = ResultMapResultDetail | 'invalid-index';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -466,7 +466,7 @@ export class ConvertingCollector<TKEY extends string = string, TINDEX extends nu
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     toReadOnly(): IReadOnlyConvertingCollector<TKEY, TINDEX, TITEM>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    readonly validating: CollectorConverter<TKEY, TINDEX, TITEM, TSRC>;
+    readonly validating: CollectorValidator<TKEY, TINDEX, TITEM, TSRC>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -855,7 +855,7 @@ interface ICollectorConstructorParams<TKEY extends string = string, TINDEX exten
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface ICollectorConverterCreateParams<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> {
+interface ICollectorValidatorCreateParams<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> {
     // (undocumented)
     collector: ICollector<TKEY, TINDEX, TITEM, TSRC>;
     // (undocumented)
@@ -937,7 +937,7 @@ interface IReadOnlyCollector<TKEY extends string = string, TINDEX extends number
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IReadOnlyCollectorConverter<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY> = ICollectible<TKEY, TINDEX>> extends IReadOnlyResultMapValidator<TKEY, TITEM> {
+interface IReadOnlyCollectorValidator<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY> = ICollectible<TKEY, TINDEX>> extends IReadOnlyResultMapValidator<TKEY, TITEM> {
     // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -965,7 +965,7 @@ interface IReadOnlyConvertingCollector<TKEY extends string = string, TINDEX exte
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    readonly validating: IReadOnlyCollectorConverter<TKEY, TINDEX, TITEM>;
+    readonly validating: IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM>;
 }
 
 // @public

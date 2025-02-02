@@ -69,12 +69,12 @@ Gets the item at a specified index.
 
 </td><td>
 
-[IReadOnlyCollectorConverter](./ts-utils.collections.ireadonlycollectorconverter.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+[IReadOnlyCollectorValidator](./ts-utils.collections.ireadonlycollectorvalidator.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
 
 
 </td><td>
 
-A [CollectorConverter](./ts-utils.collections.collectorconverter.md) which validates keys and values before inserting them into this collector.
+A [CollectorValidator](./ts-utils.collections.collectorvalidator.md) which validates keys and values before inserting them into this collector.
 
 
 </td></tr>

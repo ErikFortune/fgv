@@ -4,7 +4,7 @@
 
 ## Collections.ConvertingCollector class
 
-A [Collector](./ts-utils.collections.collector.md) with a [CollectorConverter](./ts-utils.collections.collectorconverter.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+A [Collector](./ts-utils.collections.collector.md) with a [CollectorValidator](./ts-utils.collections.collectorvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
 
 **Signature:**
 
@@ -103,12 +103,12 @@ Description
 
 </td><td>
 
-[CollectorConverter](./ts-utils.collections.collectorconverter.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
+[CollectorValidator](./ts-utils.collections.collectorvalidator.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
 
 
 </td><td>
 
-A [CollectorConverter](./ts-utils.collections.collectorconverter.md) which validates keys and values before inserting them into this collector.
+A [CollectorValidator](./ts-utils.collections.collectorvalidator.md) which validates keys and values before inserting them into this collector.
 
 
 </td></tr>

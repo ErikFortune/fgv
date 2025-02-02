@@ -4,10 +4,10 @@
 
 ## Collections.ConvertingCollector.validating property
 
-A [CollectorConverter](./ts-utils.collections.collectorconverter.md) which validates keys and values before inserting them into this collector.
+A [CollectorValidator](./ts-utils.collections.collectorvalidator.md) which validates keys and values before inserting them into this collector.
 
 **Signature:**
 
 ```typescript
-readonly validating: CollectorConverter<TKEY, TINDEX, TITEM, TSRC>;
+readonly validating: CollectorValidator<TKEY, TINDEX, TITEM, TSRC>;
 ```

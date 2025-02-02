@@ -35,7 +35,7 @@ A [Collector](./ts-utils.icollector.md) that collects [ICollectible](./ts-utils.
 
 </td><td>
 
-A [Collector](./ts-utils.collections.collector.md) with a [CollectorConverter](./ts-utils.collections.collectorconverter.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+A [Collector](./ts-utils.collections.collector.md) with a [CollectorValidator](./ts-utils.collections.collectorvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
 
 
 </td></tr>

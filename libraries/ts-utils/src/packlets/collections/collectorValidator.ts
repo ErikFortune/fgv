@@ -30,16 +30,16 @@ import { IReadOnlyResultMapValidator } from './resultMapValidator';
 
 /**
  * A read-only interface exposing non-mutating methods of a
- * {@link Collections.CollectorConverter | CollectorConverter}.
+ * {@link Collections.CollectorValidator | CollectorValidator}.
  * @public
  */
-export interface IReadOnlyCollectorConverter<
+export interface IReadOnlyCollectorValidator<
   TKEY extends string = string,
   TINDEX extends number = number,
   TITEM extends ICollectible<TKEY> = ICollectible<TKEY, TINDEX>
 > extends IReadOnlyResultMapValidator<TKEY, TITEM> {
   /**
-   * {@inheritdoc Collections.CollectorConverter.map}
+   * {@inheritdoc Collections.CollectorValidator.map}
    */
   readonly map: IReadOnlyResultMap<TKEY, TITEM>;
 
@@ -55,10 +55,10 @@ export interface IReadOnlyCollectorConverter<
 }
 
 /**
- * Parameters for constructing a {@link Collections.CollectorConverter | CollectorConverter}.
+ * Parameters for constructing a {@link Collections.CollectorValidator | CollectorValidator}.
  * @public
  */
-export interface ICollectorConverterCreateParams<
+export interface ICollectorValidatorCreateParams<
   TKEY extends string = string,
   TINDEX extends number = number,
   TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
@@ -73,7 +73,7 @@ export interface ICollectorConverterCreateParams<
  * and values before calling the wrapped collector.
  * @public
  */
-export class CollectorConverter<
+export class CollectorValidator<
   TKEY extends string = string,
   TINDEX extends number = number,
   TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
@@ -89,10 +89,10 @@ export class CollectorConverter<
   protected _collector: ICollector<TKEY, TINDEX, TITEM, TSRC>;
 
   /**
-   * Constructs a new {@link Collections.CollectorConverter | CollectorConverter}.
-   * @param params - Required parameters for constructing the collector converter.
+   * Constructs a new {@link Collections.CollectorValidator | CollectorValidator}.
+   * @param params - Required parameters for constructing the collector validator.
    */
-  public constructor(params: ICollectorConverterCreateParams<TKEY, TINDEX, TITEM, TSRC>) {
+  public constructor(params: ICollectorValidatorCreateParams<TKEY, TINDEX, TITEM, TSRC>) {
     this._collector = params.collector;
     this.converters = params.converters;
   }
@@ -171,7 +171,7 @@ export class CollectorConverter<
   /**
    * {@inheritdoc Collections.Collector.toReadOnly}
    */
-  public toReadOnly(): IReadOnlyCollectorConverter<TKEY, TINDEX, TITEM> {
+  public toReadOnly(): IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM> {
     return this;
   }
 

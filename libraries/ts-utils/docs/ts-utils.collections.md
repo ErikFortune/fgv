@@ -41,7 +41,7 @@ A [Collector](./ts-utils.icollector.md) that collects [ICollectible](./ts-utils.
 </td></tr>
 <tr><td>
 
-[CollectorConverter](./ts-utils.collections.collectorconverter.md)
+[CollectorValidator](./ts-utils.collections.collectorvalidator.md)
 
 
 </td><td>
@@ -57,7 +57,7 @@ A [Collector](./ts-utils.collections.collector.md) wrapper which validates weakl
 
 </td><td>
 
-A [Collector](./ts-utils.collections.collector.md) with a [CollectorConverter](./ts-utils.collections.collectorconverter.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+A [Collector](./ts-utils.collections.collector.md) with a [CollectorValidator](./ts-utils.collections.collectorvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
 
 
 </td></tr>
@@ -188,12 +188,12 @@ Parameters for constructing a [Collector](./ts-utils.icollector.md)<!-- -->.
 </td></tr>
 <tr><td>
 
-[ICollectorConverterCreateParams](./ts-utils.collections.icollectorconvertercreateparams.md)
+[ICollectorValidatorCreateParams](./ts-utils.collections.icollectorvalidatorcreateparams.md)
 
 
 </td><td>
 
-Parameters for constructing a [CollectorConverter](./ts-utils.collections.collectorconverter.md)<!-- -->.
+Parameters for constructing a [CollectorValidator](./ts-utils.collections.collectorvalidator.md)<!-- -->.
 
 
 </td></tr>
@@ -232,12 +232,12 @@ A read-only interface exposing non-mutating methods of a [Collector](./ts-utils.
 </td></tr>
 <tr><td>
 
-[IReadOnlyCollectorConverter](./ts-utils.collections.ireadonlycollectorconverter.md)
+[IReadOnlyCollectorValidator](./ts-utils.collections.ireadonlycollectorvalidator.md)
 
 
 </td><td>
 
-A read-only interface exposing non-mutating methods of a [CollectorConverter](./ts-utils.collections.collectorconverter.md)<!-- -->.
+A read-only interface exposing non-mutating methods of a [CollectorValidator](./ts-utils.collections.collectorvalidator.md)<!-- -->.
 
 
 </td></tr>
