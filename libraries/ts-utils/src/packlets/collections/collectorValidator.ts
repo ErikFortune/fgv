@@ -25,7 +25,7 @@ import { IReadOnlyResultMap, ResultMapResultDetail } from './readonlyResultMap';
 import { ResultMapValueFactory } from './resultMap';
 import { KeyValueConverters } from './keyValueConverters';
 import { CollectibleFactoryCallback, ICollectible } from './collectible';
-import { CollectorResultDetail, IConvertingCollector } from './collector';
+import { CollectorResultDetail, IConvertingCollector } from './convertingCollector';
 import { IReadOnlyResultMapValidator } from './resultMapValidator';
 
 /**

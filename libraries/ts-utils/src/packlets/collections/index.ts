@@ -23,7 +23,7 @@
 import * as Utils from './utils';
 
 export * from './collectible';
-export * from './collector';
+export * from './convertingCollector';
 export * from './collectorValidator';
 export * from './collectors';
 export * from './validatingCollector';

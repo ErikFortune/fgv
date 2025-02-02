@@ -22,7 +22,7 @@
 
 import { captureResult, Result } from '../base';
 import { CollectibleFactory, ICollectible } from './collectible';
-import { ConvertingCollector } from './collector';
+import { ConvertingCollector } from './convertingCollector';
 import { CollectorValidator, IReadOnlyCollectorValidator } from './collectorValidator';
 import { KeyValueEntry } from './common';
 import { IReadOnlyValidatingResultMap } from './validatingResultMap';

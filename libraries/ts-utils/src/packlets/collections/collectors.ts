@@ -22,7 +22,7 @@
 
 import { Result, captureResult } from '../base';
 import { ICollectible } from './collectible';
-import { ConvertingCollector } from './collector';
+import { ConvertingCollector } from './convertingCollector';
 
 /**
  * Parameters for creating a {@link SimpleCollector | simple collector}.
