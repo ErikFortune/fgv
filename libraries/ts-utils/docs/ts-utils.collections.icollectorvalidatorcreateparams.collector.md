@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-collector: IConvertingCollector<TKEY, TINDEX, TITEM, TSRC>;
+collector: ConvertingCollector<TKEY, TINDEX, TITEM, TSRC>;
 ```

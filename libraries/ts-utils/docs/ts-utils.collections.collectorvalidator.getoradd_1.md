@@ -4,7 +4,7 @@
 
 ## Collections.CollectorValidator.getOrAdd() method
 
-Gets an item by key if it exists, or creates a new item and adds it using the specified [factory callback](./ts-utils.collections.collectiblefactorycallback.md) if not.
+Adds an item to the collector using a supplied [factory callback](./ts-utils.collections.collectiblefactorycallback.md) at a specified key, failing if an item with that key already exists or if the created item is invalid.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ string
 
 </td><td>
 
-The key of the item to retrieve.
+The key of the item to add.
 
 
 </td></tr>
@@ -65,5 +65,5 @@ factory
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TITEM, [CollectorResultDetail](./ts-utils.collections.collectorresultdetail.md)<!-- -->&gt;
 
-Returns [Success](./ts-utils.success.md) with the item if it exists, or [Failure](./ts-utils.failure.md) with an error if the item is not found.
+Returns [Success](./ts-utils.success.md) with the item if it is added, or [Failure](./ts-utils.failure.md) with an error if the item cannot be created and indexed.
 

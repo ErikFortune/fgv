@@ -4,7 +4,7 @@
 
 ## Collections.IConvertingCollectorConstructorParams interface
 
-Parameters for constructing a [IConvertingCollector](./ts-utils.iconvertingcollector.md)<!-- -->.
+Parameters for constructing a [ConvertingCollector](./ts-utils.collections.convertingcollector.md)<!-- -->.
 
 **Signature:**
 

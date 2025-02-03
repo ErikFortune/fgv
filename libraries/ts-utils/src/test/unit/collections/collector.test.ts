@@ -21,6 +21,7 @@
  */
 
 import '../../helpers/jest';
+import { fail } from '../../../packlets/base';
 import { Collector, IReadOnlyCollector } from '../../../packlets/collections';
 import { CollectibleTestThing, getTestThings, ITestThing } from './helpers';
 
@@ -146,12 +147,12 @@ describe('Collector class', () => {
 
     test('fails if the item key is already in the collector with a different object', () => {
       const collector = new Collector<string, number, CollectibleTestThing>({ items: collectibles });
-      const thing = new CollectibleTestThing({ str: 'new', num: 6, bool: false }, 'thing1');
+      const thing = new CollectibleTestThing({ str: 'new', num: 6, bool: false }, collectibles[1].key);
       expect(collector.add(thing)).toFailWith(/already exists/);
       expect(collector.size).toBe(collectibles.length);
       expect(collector.get(thing.key)).toSucceedAndSatisfy((c) => {
         expect(c).not.toBe(thing);
-        expect(c).toBe(collectibles[0]);
+        expect(c).toBe(collectibles[1]);
       });
     });
 
@@ -196,7 +197,7 @@ describe('Collector class', () => {
     });
   });
 
-  describe('getOrAddItem', () => {
+  describe('getOrAdd', () => {
     test('adds a new item to the collector', () => {
       const collector = new Collector<string, number, CollectibleTestThing>();
       const thing = new CollectibleTestThing({ str: 'new', num: 6, bool: false }, 'thing0');
@@ -205,12 +206,49 @@ describe('Collector class', () => {
       expect(collector.get(thing.key)).toSucceedWith(thing);
     });
 
+    test('adds a new item to the collector with a factory', () => {
+      const collector = new Collector<string, number, CollectibleTestThing>();
+      const thing = { str: 'new', num: 6, bool: false };
+      expect(
+        collector.getOrAdd('thing0', () => CollectibleTestThing.create(thing, 'thing0'))
+      ).toSucceedAndSatisfy((c) => {
+        expect(c.str).toBe(thing.str);
+        expect(c.num).toBe(thing.num);
+        expect(c.bool).toBe(thing.bool);
+        expect(c.key).toBe('thing0');
+      });
+      expect(collector.size).toBe(1);
+      expect(collector.get('thing0')).toSucceedAndSatisfy((c) => {
+        expect(c.str).toBe(thing.str);
+        expect(c.num).toBe(thing.num);
+        expect(c.bool).toBe(thing.bool);
+        expect(c.key).toBe('thing0');
+      });
+    });
+
+    test('fails if the factory fails', () => {
+      const collector = new Collector<string, number, CollectibleTestThing>();
+      expect(collector.getOrAdd('thing0', () => fail('factory failed'))).toFailWith(/factory failed/);
+      expect(collector.size).toBe(0);
+    });
+
     test('returns an existing item if it is already in the collector', () => {
       const collector = new Collector<string, number, CollectibleTestThing>({ items: collectibles });
-      const newThing = new CollectibleTestThing(things[2], 'thing1');
-      expect(collector.getOrAdd(newThing)).toSucceedWithDetail(collectibles[0], 'exists');
+      const newThing = new CollectibleTestThing(things[2], collectibles[1].key, 10);
+      expect(collector.getOrAdd(newThing)).toSucceedWithDetail(collectibles[1], 'exists');
       expect(collector.size).toBe(collectibles.length);
-      expect(collector.get(newThing.key)).toSucceedWith(collectibles[0]);
+      expect(collector.get(newThing.key)).toSucceedWith(collectibles[1]);
+    });
+
+    test('does not invoke the factory if the key is already in the collector', () => {
+      const collector = new Collector<string, number, CollectibleTestThing>({ items: collectibles });
+      const newThing = new CollectibleTestThing(things[2], collectibles[1].key, 10);
+      expect(collector.getOrAdd(newThing.key, () => fail('factory called'))).toSucceedWithDetail(
+        collectibles[1],
+        'exists'
+      );
+      expect(collector.size).toBe(collectibles.length);
+      expect(collector.get(newThing.key)).toSucceedWith(collectibles[1]);
     });
 
     test('fails without adding if the item index cannot be set', () => {

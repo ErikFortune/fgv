@@ -29,7 +29,7 @@ import {
   succeed,
   succeedWithDetail
 } from '../base';
-import { ICollectible } from './collectible';
+import { CollectibleFactoryCallback, ICollectible } from './collectible';
 import { KeyValueEntry } from './common';
 import { IReadOnlyResultMap, ResultMapForEachCb, ResultMapResultDetail } from './readonlyResultMap';
 
@@ -145,6 +145,8 @@ export class Collector<
     const indexResult = item.setIndex(this._byIndex.length);
     if (indexResult.isFailure()) {
       return failWithDetail(`${item.key}: ${indexResult.message}`, 'invalid-index');
+    } else if (item.index !== this._byIndex.length) {
+      return failWithDetail(`${item.key}: index mismatch - built item has ${item.index}`, 'invalid-index');
     }
     this._byKey.set(item.key, item);
     this._byIndex.push(item);
@@ -192,12 +194,45 @@ export class Collector<
    * @returns Returns {@link Success | Success} with the item stored in the collector
    * or {@link Failure | Failure} with an error if the item cannot be created and indexed.
    */
-  public getOrAdd(item: TITEM): DetailedResult<TITEM, CollectorResultDetail> {
-    const existing = this._byKey.get(item.key);
+  public getOrAdd(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
+
+  /**
+   * Adds an item to the collector using a supplied {@link Collections.CollectibleFactoryCallback | factory callback}
+   * at a specified key, failing if an item with that key already exists or if the created item is invalid.
+   * @param key - The key of the item to add.
+   * @param callback - The factory callback to create the item.
+   * @returns Returns {@link Success | Success} with the item if it is added, or {@link Failure | Failure} with
+   * an error if the item cannot be created and indexed.
+   */
+  public getOrAdd(
+    key: TKEY,
+    factory: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+  ): DetailedResult<TITEM, CollectorResultDetail>;
+
+  public getOrAdd(
+    keyOrItem: TKEY | TITEM,
+    factory?: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+  ): DetailedResult<TITEM, CollectorResultDetail> {
+    const key = typeof keyOrItem === 'string' ? keyOrItem : keyOrItem.key;
+    const existing = this._byKey.get(key);
     if (existing) {
       return succeedWithDetail(existing, 'exists');
     }
-    return this.add(item);
+
+    const itemResult =
+      typeof keyOrItem === 'string' ? factory!(keyOrItem, this._byIndex.length) : succeed(keyOrItem);
+    if (itemResult.isFailure()) {
+      return failWithDetail(`${key}: ${itemResult.message}`, 'invalid-value');
+    }
+    const item = itemResult.value;
+
+    if (item.key !== key) {
+      return failWithDetail(`${key}: key mismatch - built item has ${key}`, 'invalid-key');
+    }
+
+    return itemResult.withFailureDetail<CollectorResultDetail>('invalid-index').onSuccess((item) => {
+      return this.add(item);
+    });
   }
 
   /**
@@ -222,7 +257,7 @@ export class Collector<
   }
 
   /**
-   * {@inheritdoc IConvertingCollector.toReadOnly}
+   * Gets a read-only version of this collector.
    */
   public toReadOnly(): IReadOnlyCollector<TKEY, TINDEX, TITEM> {
     return this;
@@ -234,5 +269,36 @@ export class Collector<
    */
   public [Symbol.iterator](): IterableIterator<KeyValueEntry<TKEY, TITEM>> {
     return this._byKey[Symbol.iterator]();
+  }
+}
+
+/**
+ * A simple {@link Collections.Collector | collector} with non-branded `string` key and `number` index,
+ * and no transformation of source items.
+ * @public
+ */
+export class SimpleCollector<TITEM extends ICollectible<string, number>> extends Collector<
+  string,
+  number,
+  TITEM
+> {
+  /**
+   * Constructs a new {@link Collections.SimpleCollector | SimpleCollector}.
+   * @param params - Optional initialization parameters for the collector.
+   */
+  public constructor(params?: ICollectorCreateParams<string, number, TITEM>) {
+    super(params);
+  }
+
+  /**
+   * Creates a new {@link Collections.SimpleCollector | SimpleCollector} instance.
+   * @param params - Optional initialization parameters for the collector.
+   * @returns Returns {@link Success | Success} with the new collector if it was created successfully,
+   * or {@link Failure | Failure} with an error if the collector could not be created.
+   */
+  public static createSimpleCollector<TITEM extends ICollectible<string, number>>(
+    params?: ICollectorCreateParams<string, number, TITEM>
+  ): Result<SimpleCollector<TITEM>> {
+    return captureResult(() => new SimpleCollector(params));
   }
 }

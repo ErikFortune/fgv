@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-protected _collector: IConvertingCollector<TKEY, TINDEX, TITEM, TSRC>;
+protected _collector: ConvertingCollector<TKEY, TINDEX, TITEM, TSRC>;
 ```

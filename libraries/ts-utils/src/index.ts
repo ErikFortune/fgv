@@ -28,7 +28,6 @@ import * as Validation from './packlets/validation';
 import {
   Collector,
   ICollectible,
-  IConvertingCollector,
   ConvertingCollector,
   ValidatingCollector,
   IReadOnlyResultMap,
@@ -50,7 +49,6 @@ export {
   ValidatingCollector,
   Hash,
   ICollectible,
-  IConvertingCollector,
   IReadOnlyResultMap,
   ObjectConverter,
   ResultMap,

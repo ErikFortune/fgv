@@ -45,7 +45,7 @@ Description
 
 </td><td>
 
-[IConvertingCollector](./ts-utils.iconvertingcollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
+[ConvertingCollector](./ts-utils.convertingcollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
 
 
 </td><td>

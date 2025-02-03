@@ -4,7 +4,6 @@
 
 ## Collections.CollectorValidator.add() method
 
-Adds an item to the collector using the default [factory](./ts-utils.collections.collectiblefactory.md) at a specified key, failing if an item with that key already exists.
 
 **Signature:**
 
@@ -42,8 +41,6 @@ string
 
 </td><td>
 
-The key of the item to add.
-
 
 </td></tr>
 <tr><td>
@@ -64,6 +61,4 @@ unknown
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TITEM, [CollectorResultDetail](./ts-utils.collections.collectorresultdetail.md)<!-- -->&gt;
-
-Returns [Success](./ts-utils.success.md) with the item if it is added, or [Failure](./ts-utils.failure.md) with an error if the item cannot be created and indexed.
 

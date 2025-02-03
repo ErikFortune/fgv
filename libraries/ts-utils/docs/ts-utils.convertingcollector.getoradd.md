@@ -4,12 +4,12 @@
 
 ## ConvertingCollector.getOrAdd() method
 
-Gets an item by key if it exists, or creates a new item and adds it using the default [factory](./ts-utils.collections.collectiblefactory.md) if not.
+Gets an existing item with a key matching that of a supplied item, or adds the supplied item to the collector if no item with that key exists.
 
 **Signature:**
 
 ```typescript
-getOrAdd(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
+getOrAdd(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
 ```
 
 ## Parameters
@@ -32,33 +32,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-key
-
-
-</td><td>
-
-TKEY
-
-
-</td><td>
-
-The key of the item to retrieve.
-
-
-</td></tr>
-<tr><td>
-
 item
 
 
 </td><td>
 
-TSRC
+TITEM
 
 
 </td><td>
 
-The source representation of the item to be added if it does not exist.
+The item to retrieve or add.
 
 
 </td></tr>
@@ -67,5 +51,5 @@ The source representation of the item to be added if it does not exist.
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TITEM, [CollectorResultDetail](./ts-utils.collections.collectorresultdetail.md)<!-- -->&gt;
 
-Returns [Success](./ts-utils.success.md) with the item if it exists or could be created, or [Failure](./ts-utils.failure.md) with an error if the item cannot be created and indexed.
+Returns [Success](./ts-utils.success.md) with the item stored in the collector or [Failure](./ts-utils.failure.md) with an error if the item cannot be created and indexed.
 

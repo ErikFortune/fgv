@@ -37,7 +37,7 @@ Items are assigned an index sequentially as they are added to the collection. On
 
 </td><td>
 
-A [ConvertingCollector](./ts-utils.iconvertingcollector.md) that collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in a collector are created by key and are assigned an index at the time of addition. Items are immutable once added. Keys and indexes might be branded types, and source items might be transformed on addition.
+A [collector](./ts-utils.collector.md) that collects [ICollectible](./ts-utils.collections.icollectible.md) items, optionally converting them from a source representation to the target representation using a factory supplied at default or at the time of collection.
 
 
 </td></tr>
@@ -125,7 +125,7 @@ A [ResultMap](./ts-utils.collections.resultmap.md) class as a `Map<TK, TV>`<!-- 
 
 </td><td>
 
-A simple [collector](./ts-utils.convertingcollector.md) that collects [ICollectible items](./ts-utils.collections.icollectible.md) with non-branded `string` key and `number` index, and with no transformation other than index assignment on addition.
+A simple [collector](./ts-utils.collections.collector.md) with non-branded `string` key and `number` index, and no transformation of source items.
 
 
 </td></tr>
@@ -486,17 +486,6 @@ Generic converter to convert unknown to a templated type `<T>`<!-- -->, using in
 </td><td>
 
 An item that can be collected by some [Collector](./ts-utils.convertingcollector.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[IConvertingCollector](./ts-utils.iconvertingcollector.md)
-
-
-</td><td>
-
-Collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in a collector are created by key and are assigned an index at the time of addition. Items are immutable once added.
 
 
 </td></tr>

@@ -88,6 +88,7 @@ Description
 
 </td><td>
 
+Returns `true` if the map contains a key.
 
 
 </td></tr>

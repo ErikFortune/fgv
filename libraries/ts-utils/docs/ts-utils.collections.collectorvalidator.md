@@ -82,7 +82,7 @@ Description
 
 </td><td>
 
-[IConvertingCollector](./ts-utils.iconvertingcollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
+[ConvertingCollector](./ts-utils.convertingcollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
 
 
 </td><td>
@@ -173,7 +173,6 @@ Determines if a value is a [CollectibleFactoryCallback](./ts-utils.collections.c
 
 </td><td>
 
-Adds an item to the collector using the default [factory](./ts-utils.collections.collectiblefactory.md) at a specified key, failing if an item with that key already exists.
 
 
 </td></tr>
@@ -187,6 +186,7 @@ Adds an item to the collector using the default [factory](./ts-utils.collections
 
 </td><td>
 
+Adds an item to the collector using the default [factory](./ts-utils.collections.collectiblefactory.md) at a specified key, failing if an item with that key already exists.
 
 
 </td></tr>
@@ -227,7 +227,7 @@ Gets an item by key if it exists, or creates a new item and adds it using the de
 
 </td><td>
 
-Gets an item by key if it exists, or creates a new item and adds it using the specified [factory callback](./ts-utils.collections.collectiblefactorycallback.md) if not.
+Adds an item to the collector using a supplied [factory callback](./ts-utils.collections.collectiblefactorycallback.md) at a specified key, failing if an item with that key already exists or if the created item is invalid.
 
 
 </td></tr>
@@ -241,6 +241,7 @@ Gets an item by key if it exists, or creates a new item and adds it using the sp
 
 </td><td>
 
+Returns `true` if the map contains a key.
 
 
 </td></tr>
@@ -254,7 +255,7 @@ Gets an item by key if it exists, or creates a new item and adds it using the sp
 
 </td><td>
 
-Gets a [read-only map](./ts-utils.ireadonlyresultmap.md) which can access the items in the collector.
+Gets a read-only version of this collector.
 
 
 </td></tr>

@@ -4,12 +4,12 @@
 
 ## SimpleCollector.createSimpleCollector() method
 
-Creates a new [simple collector](./ts-utils.simplecollector.md)<!-- -->.
+Creates a new [SimpleCollector](./ts-utils.collections.simplecollector.md) instance.
 
 **Signature:**
 
 ```typescript
-static createSimpleCollector<TITEM extends ICollectible<string, number>>(params?: ISimpleCollectorCreateParams<TITEM>): Result<SimpleCollector<TITEM>>;
+static createSimpleCollector<TITEM extends ICollectible<string, number>>(params?: ICollectorCreateParams<string, number, TITEM>): Result<SimpleCollector<TITEM>>;
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ params
 
 </td><td>
 
-[ISimpleCollectorCreateParams](./ts-utils.collections.isimplecollectorcreateparams.md)<!-- -->&lt;TITEM&gt;
+[ICollectorCreateParams](./ts-utils.collections.icollectorcreateparams.md)<!-- -->&lt;string, number, TITEM&gt;
 
 
 </td><td>
 
-_(Optional)_ [Creation parameters](./ts-utils.collections.isimplecollectorcreateparams.md) for the collector.
+_(Optional)_ Optional initialization parameters for the collector.
 
 
 </td></tr>
@@ -51,5 +51,5 @@ _(Optional)_ [Creation parameters](./ts-utils.collections.isimplecollectorcreate
 
 [Result](./ts-utils.result.md)<!-- -->&lt;[SimpleCollector](./ts-utils.simplecollector.md)<!-- -->&lt;TITEM&gt;&gt;
 
-[Success](./ts-utils.success.md) if the collector is created successfully, or [Failure](./ts-utils.failure.md) if not.
+Returns [Success](./ts-utils.success.md) with the new collector if it was created successfully, or [Failure](./ts-utils.failure.md) with an error if the collector could not be created.
 

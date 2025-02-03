@@ -20,8 +20,12 @@
  * SOFTWARE.
  */
 
-import { Brand, Result, succeed } from '../../../packlets/base';
-import { Collectible } from '../../../packlets/collections';
+import { Brand, captureResult, Result, succeed } from '../../../packlets/base';
+import {
+  Collectible,
+  ConvertingCollector,
+  IConvertingCollectorConstructorParams
+} from '../../../packlets/collections';
 import { Converter, Converters } from '../../../packlets/conversion';
 
 export type TestThingKey = Brand<string, 'TestThingKey'>;
@@ -52,6 +56,10 @@ export class CollectibleTestThing extends Collectible<string, number> implements
     this.num = thing.num;
     this.bool = thing.bool;
   }
+
+  public static create(thing: ITestThing, key: string, index?: number): Result<CollectibleTestThing> {
+    return captureResult(() => new CollectibleTestThing(thing, key, index));
+  }
 }
 
 export class BrokenCollectibleTestThing extends CollectibleTestThing {
@@ -65,15 +73,31 @@ export class BrokenCollectibleTestThing extends CollectibleTestThing {
   }
 }
 
+export class TestCollector extends ConvertingCollector<string, number, CollectibleTestThing, ITestThing> {
+  public constructor(things?: ITestThing[]) {
+    const entries = things
+      ? { entries: things.map((thing, index): [string, ITestThing] => [`thing${index}`, thing]) }
+      : {};
+    const params: IConvertingCollectorConstructorParams<string, number, CollectibleTestThing, ITestThing> = {
+      factory: TestCollector._factory,
+      ...entries
+    };
+    super(params);
+  }
+
+  protected static _factory(key: string, index: number, item: ITestThing): Result<CollectibleTestThing> {
+    return succeed(new CollectibleTestThing(item, key, index));
+  }
+}
+
 export function getTestThings(): { things: ITestThing[]; collectibles: CollectibleTestThing[] } {
   const things = [
+    { str: 'thing0', num: 0, bool: false },
     { str: 'thing1', num: 1, bool: true },
     { str: 'thing2', num: 2, bool: false },
     { str: 'thing3', num: 3, bool: true },
     { str: 'thing4', num: 4, bool: false }
   ];
-  const collectibles = things.map(
-    (thing, index) => new CollectibleTestThing(thing, `thing${index + 1}`, index)
-  );
+  const collectibles = things.map((thing, index) => new CollectibleTestThing(thing, `thing${index}`, index));
   return { things, collectibles };
 }

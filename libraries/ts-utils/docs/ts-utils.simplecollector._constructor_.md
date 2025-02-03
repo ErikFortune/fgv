@@ -4,12 +4,12 @@
 
 ## SimpleCollector.(constructor)
 
-Constructs a new [simple collector](./ts-utils.simplecollector.md)<!-- -->.
+Constructs a new [SimpleCollector](./ts-utils.collections.simplecollector.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-constructor(params?: ISimpleCollectorCreateParams<TITEM>);
+constructor(params?: ICollectorCreateParams<string, number, TITEM>);
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ params
 
 </td><td>
 
-[ISimpleCollectorCreateParams](./ts-utils.collections.isimplecollectorcreateparams.md)<!-- -->&lt;TITEM&gt;
+[ICollectorCreateParams](./ts-utils.collections.icollectorcreateparams.md)<!-- -->&lt;string, number, TITEM&gt;
 
 
 </td><td>
 
-_(Optional)_ [Creation parameters](./ts-utils.collections.isimplecollectorcreateparams.md) for the collector.
+_(Optional)_ Optional initialization parameters for the collector.
 
 
 </td></tr>

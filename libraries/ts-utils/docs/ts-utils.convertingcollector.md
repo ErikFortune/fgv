@@ -4,14 +4,14 @@
 
 ## ConvertingCollector class
 
-A [ConvertingCollector](./ts-utils.iconvertingcollector.md) that collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in a collector are created by key and are assigned an index at the time of addition. Items are immutable once added. Keys and indexes might be branded types, and source items might be transformed on addition.
+A [collector](./ts-utils.collector.md) that collects [ICollectible](./ts-utils.collections.icollectible.md) items, optionally converting them from a source representation to the target representation using a factory supplied at default or at the time of collection.
 
 **Signature:**
 
 ```typescript
-export declare class ConvertingCollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> implements IConvertingCollector<TKEY, TINDEX, TITEM, TSRC> 
+export declare class ConvertingCollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> extends Collector<TKEY, TINDEX, TITEM> 
 ```
-**Implements:** [IConvertingCollector](./ts-utils.iconvertingcollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
+**Extends:** [Collector](./ts-utils.collector.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
 
 ## Constructors
 
@@ -49,69 +49,6 @@ Constructor for derived classes.
 </td></tr>
 </tbody></table>
 
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[inner](./ts-utils.convertingcollector.inner.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyMap&lt;TKEY, TITEM&gt;
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[size](./ts-utils.convertingcollector.size.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-number
-
-
-</td><td>
-
-
-</td></tr>
-</tbody></table>
-
 ## Methods
 
 <table><thead><tr><th>
@@ -132,7 +69,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_isFactoryCB(item)](./ts-utils.convertingcollector._isfactorycb.md)
+[\_buildItem(key, itemOrCb)](./ts-utils.convertingcollector._builditem.md)
 
 
 </td><td>
@@ -142,43 +79,59 @@ Description
 
 </td><td>
 
+Helper method for derived classes to build an item from a key and a source representation using a default or supplied factory.
+
 
 </td></tr>
 <tr><td>
 
-[\_simpleFactory(key, index, item)](./ts-utils.convertingcollector._simplefactory.md)
+[\_isFactoryCB(itemOrCb)](./ts-utils.convertingcollector._isfactorycb.md)
 
 
 </td><td>
 
 `protected`
 
-`static`
-
 
 </td><td>
 
-A simple factory method for derived classes which directly store the supplied object.
+Helper method for derived classes to determine if a supplied itemOrCb parameter is a factory callback.
 
 
 </td></tr>
 <tr><td>
 
-[\[Symbol.iterator\]()](./ts-utils.convertingcollector._symbol.iterator_.md)
+[\_overloadIsItem(keyOrItem, itemOrCb)](./ts-utils.convertingcollector._overloadisitem.md)
 
 
 </td><td>
 
+`protected`
+
 
 </td><td>
 
-Gets an iterator over the map entries.
+Helper method for derived classes to determine if a supplied keyOrItem parameter is an item.
 
 
 </td></tr>
 <tr><td>
 
-[add(key, item)](./ts-utils.convertingcollector.add.md)
+[add(item)](./ts-utils.convertingcollector.add.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds an item to the collection, failing if an item with that key already exists.
+
+
+</td></tr>
+<tr><td>
+
+[add(key, item)](./ts-utils.convertingcollector.add_1.md)
 
 
 </td><td>
@@ -192,7 +145,7 @@ Adds an item to the collector using the default [factory](./ts-utils.collections
 </td></tr>
 <tr><td>
 
-[add(key, cb)](./ts-utils.convertingcollector.add_1.md)
+[add(key, cb)](./ts-utils.convertingcollector.add_2.md)
 
 
 </td><td>
@@ -200,104 +153,13 @@ Adds an item to the collector using the default [factory](./ts-utils.collections
 
 </td><td>
 
+Adds an item to the collector using a supplied [factory callback](./ts-utils.collections.collectiblefactorycallback.md) at a specified key, failing if an item with that key already exists or if the created item is invalid.
 
 
 </td></tr>
 <tr><td>
 
-[addItem(item)](./ts-utils.convertingcollector.additem.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Adds an item to the collector using the default [factory](./ts-utils.collections.collectiblefactory.md) at a specified key, failing if an item with that key already exists.
-
-
-</td></tr>
-<tr><td>
-
-[entries()](./ts-utils.convertingcollector.entries.md)
-
-
-</td><td>
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[forEach(callback, arg)](./ts-utils.convertingcollector.foreach.md)
-
-
-</td><td>
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[get(key)](./ts-utils.convertingcollector.get.md)
-
-
-</td><td>
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[getAt(index)](./ts-utils.convertingcollector.getat.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets the item at a specified index.
-
-
-</td></tr>
-<tr><td>
-
-[getOrAdd(key, item)](./ts-utils.convertingcollector.getoradd.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets an item by key if it exists, or creates a new item and adds it using the default [factory](./ts-utils.collections.collectiblefactory.md) if not.
-
-
-</td></tr>
-<tr><td>
-
-[getOrAdd(key, cb)](./ts-utils.convertingcollector.getoradd_1.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets an item by key if it exists, or creates a new item and adds it using the specified [factory callback](./ts-utils.collections.collectiblefactorycallback.md) if not.
-
-
-</td></tr>
-<tr><td>
-
-[getOrAddItem(item)](./ts-utils.convertingcollector.getoradditem.md)
+[getOrAdd(item)](./ts-utils.convertingcollector.getoradd.md)
 
 
 </td><td>
@@ -311,19 +173,21 @@ Gets an existing item with a key matching that of a supplied item, or adds the s
 </td></tr>
 <tr><td>
 
-[has(key)](./ts-utils.convertingcollector.has.md)
+[getOrAdd(key, callback)](./ts-utils.convertingcollector.getoradd_1.md)
 
 
 </td><td>
 
 
 </td><td>
+
+Adds an item to the collector using a supplied [factory callback](./ts-utils.collections.collectiblefactorycallback.md) at a specified key, failing if an item with that key already exists or if the created item is invalid.
 
 
 </td></tr>
 <tr><td>
 
-[keys()](./ts-utils.convertingcollector.keys.md)
+[getOrAdd(key, item)](./ts-utils.convertingcollector.getoradd_2.md)
 
 
 </td><td>
@@ -331,31 +195,7 @@ Gets an existing item with a key matching that of a supplied item, or adds the s
 
 </td><td>
 
-
-</td></tr>
-<tr><td>
-
-[toReadOnly()](./ts-utils.convertingcollector.toreadonly.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets a [read-only map](./ts-utils.ireadonlyresultmap.md) which can access the items in the collector.
-
-
-</td></tr>
-<tr><td>
-
-[values()](./ts-utils.convertingcollector.values.md)
-
-
-</td><td>
-
-
-</td><td>
+Gets an item by key if it exists, or creates a new item and adds it using the default [factory](./ts-utils.collections.collectiblefactory.md) if not.
 
 
 </td></tr>

@@ -4,10 +4,12 @@
 
 ## ConvertingCollector.\_isFactoryCB() method
 
+Helper method for derived classes to determine if a supplied itemOrCb parameter is a factory callback.
+
 **Signature:**
 
 ```typescript
-protected _isFactoryCB(item: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>): item is CollectibleFactoryCallback<TKEY, TINDEX, TITEM>;
+protected _isFactoryCB(itemOrCb: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>): itemOrCb is CollectibleFactoryCallback<TKEY, TINDEX, TITEM>;
 ```
 
 ## Parameters
@@ -30,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-item
+itemOrCb
 
 
 </td><td>
@@ -40,10 +42,14 @@ TSRC \| [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactoryca
 
 </td><td>
 
+Overloaded parameter is either `TKEY` or a [factory callback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->.
+
 
 </td></tr>
 </tbody></table>
 **Returns:**
 
-item is [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+itemOrCb is [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+
+Returns `true` if the parameter is a factory callback, `false` otherwise.
 

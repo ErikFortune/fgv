@@ -4,6 +4,7 @@
 
 ## Collections.CollectorValidator.has() method
 
+Returns `true` if the map contains a key.
 
 **Signature:**
 
@@ -41,10 +42,14 @@ string
 
 </td><td>
 
+The key to check.
+
 
 </td></tr>
 </tbody></table>
 **Returns:**
 
 boolean
+
+`true` if the key exists, `false` otherwise.
 

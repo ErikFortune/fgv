@@ -45,7 +45,7 @@ export interface IReadOnlyValidatingCollector<
   readonly validating: IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM>;
 
   /**
-   * {@inheritdoc Collections.ConvertingCollector.getAt}
+   * {@inheritdoc Collections.IReadOnlyCollector.getAt}
    */
   readonly getAt: (index: number) => Result<TITEM>;
 }

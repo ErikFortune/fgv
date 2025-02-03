@@ -250,6 +250,20 @@ Gets an existing item with a key matching that of a supplied item, or adds the s
 </td></tr>
 <tr><td>
 
+[getOrAdd(key, factory)](./ts-utils.collector.getoradd_1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds an item to the collector using a supplied [factory callback](./ts-utils.collections.collectiblefactorycallback.md) at a specified key, failing if an item with that key already exists or if the created item is invalid.
+
+
+</td></tr>
+<tr><td>
+
 [has(key)](./ts-utils.collector.has.md)
 
 
@@ -282,7 +296,7 @@ Gets an existing item with a key matching that of a supplied item, or adds the s
 
 </td><td>
 
-Gets a [read-only map](./ts-utils.ireadonlyresultmap.md) which can access the items in the collector.
+Gets a read-only version of this collector.
 
 
 </td></tr>

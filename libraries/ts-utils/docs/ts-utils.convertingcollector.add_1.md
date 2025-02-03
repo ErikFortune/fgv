@@ -4,11 +4,12 @@
 
 ## ConvertingCollector.add() method
 
+Adds an item to the collector using the default [factory](./ts-utils.collections.collectiblefactory.md) at a specified key, failing if an item with that key already exists.
 
 **Signature:**
 
 ```typescript
-add(key: TKEY, cb: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
+add(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
 ```
 
 ## Parameters
@@ -41,19 +42,23 @@ TKEY
 
 </td><td>
 
+The key of the item to add.
+
 
 </td></tr>
 <tr><td>
 
-cb
+item
 
 
 </td><td>
 
-[CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+TSRC
 
 
 </td><td>
+
+The source representation of the item to be added.
 
 
 </td></tr>
@@ -61,4 +66,6 @@ cb
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TITEM, [CollectorResultDetail](./ts-utils.collections.collectorresultdetail.md)<!-- -->&gt;
+
+Returns [Success](./ts-utils.success.md) with the item if it is added, or [Failure](./ts-utils.failure.md) with an error if the item cannot be created and indexed.
 

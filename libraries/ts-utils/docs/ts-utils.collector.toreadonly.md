@@ -4,7 +4,7 @@
 
 ## Collector.toReadOnly() method
 
-Gets a [read-only map](./ts-utils.ireadonlyresultmap.md) which can access the items in the collector.
+Gets a read-only version of this collector.
 
 **Signature:**
 

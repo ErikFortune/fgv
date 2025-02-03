@@ -20,123 +20,22 @@
  * SOFTWARE.
  */
 
-import { DetailedResult, Result, fail, failWithDetail, succeed, succeedWithDetail } from '../base';
+import { DetailedResult, Result } from '../base';
 import { ICollectible, CollectibleFactoryCallback, CollectibleFactory } from './collectible';
-import { CollectorResultDetail } from './collector';
+import { Collector, CollectorResultDetail } from './collector';
 import { KeyValueEntry } from './common';
-import { IReadOnlyResultMap, ResultMapForEachCb, ResultMapResultDetail } from './readonlyResultMap';
 
 /**
- * A read-only interface exposing non-mutating methods of a {@link Collections.IConvertingCollector | ConvertingCollector}.
+ * A {@link Collections.ConvertingCollector | ConvertingCollector} with non-branded `string` key and `number` index, and transformation of source items.
  * @public
  */
-export interface IReadOnlyConvertingCollector<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
-> extends IReadOnlyResultMap<TKEY, TITEM> {
-  /**
-   * Gets the item at a specified index.
-   * @param index - The index of the item to retrieve.
-   * @returns Returns {@link Success | Success} with the item if it exists, or {@link Failure | Failure} with an error if the index is out of range.
-   */
-  getAt(index: number): Result<TITEM>;
-}
-
-/**
- * Collects {@link Collections.ICollectible | ICollectible} items. Items in a collector are created by key and are assigned an index at the
- * time of addition.  Items are immutable once added.
- * @public
- */
-export interface IConvertingCollector<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
-  TSRC = TITEM
-> extends IReadOnlyConvertingCollector<TKEY, TINDEX, TITEM> {
-  /**
-   * Adds an item to the collector using the default {@link Collections.CollectibleFactory | factory}
-   * at a specified key, failing if an item with that key already exists.
-   * @param key - The key of the item to add.
-   * @param item - The source representation of the item to be added.
-   * @returns Returns {@link Success | Success} with the item if it is added, or {@link Failure | Failure} with
-   * an error if the item cannot be created and indexed.
-   * @public
-   */
-  add(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
-  add(
-    key: TKEY,
-    callback: CollectibleFactoryCallback<TKEY, TINDEX>
-  ): DetailedResult<TITEM, CollectorResultDetail>;
-
-  /**
-   * Adds an item to the collector using the default {@link Collections.CollectibleFactory | factory}
-   * at a specified key, failing if an item with that key already exists.
-   * @param item - The item to add.
-   * @returns Returns {@link Success | Success} with the item if it is added, or {@link Failure | Failure} with an
-   * error if the item cannot be created and indexed.
-   */
-  addItem(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
-
-  /**
-   * Gets an item by key if it exists, or creates a new item and adds it using the default {@link Collections.CollectibleFactory | factory} if not.
-   * @param key - The key of the item to retrieve.
-   * @param item - The source representation of the item to be added if it does not exist.
-   * @returns Returns {@link Success | Success} with the item if it exists or could be created, or {@link Failure | Failure} with an error if the
-   * item cannot be created and indexed.
-   */
-  getOrAdd(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
-
-  /**
-   * Gets an item by key if it exists, or creates a new item and adds it using the specified {@link Collections.CollectibleFactoryCallback | factory callback} if not.
-   * @param key - The key of the item to retrieve.
-   * @param callback - The factory callback to create the item if it does not exist.
-   * @returns Returns {@link Success | Success} with the item if it exists, or {@link Failure | Failure} with an error if the item is not found.
-   */
-  getOrAdd(
-    key: TKEY,
-    callback: CollectibleFactoryCallback<TKEY, TINDEX>
-  ): DetailedResult<TITEM, CollectorResultDetail>;
-
-  /**
-   * Gets an existing item with a key matching that of a supplied item, or adds the supplied
-   * item to the collector if no item with that key exists.
-   * @param item - The item to retrieve or add.
-   * @returns Returns {@link Success | Success} with the item stored in the collector
-   * or {@link Failure | Failure} with an error if the item cannot be created and indexed.
-   */
-  getOrAddItem(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
-
-  /**
-   * Gets a {@link IReadOnlyResultMap | read-only map} which can access the items in the collector.
-   */
-  toReadOnly(): IReadOnlyConvertingCollector<TKEY, TINDEX, TITEM>;
-}
-
-/**
- * A simple {@link IConvertingCollector | IConvertingCollector} with non-branded `string` key and `number` index, and no transformation of source items.
- * @public
- */
-export type ISimpleCollector<TITEM extends ICollectible<string, number>> = IConvertingCollector<
-  string,
-  number,
-  TITEM,
-  TITEM
->;
-
-/**
- * A {@link IConvertingCollector | IConvertingCollector} with non-branded `string` key and `number` index, and transformation of source items.
- * @public
- */
-export type IValidatingCollector<TITEM extends ICollectible<string, number>, TSRC> = IConvertingCollector<
-  string,
-  number,
-  TITEM,
+export type ISimpleConvertingCollector<
+  TITEM extends ICollectible<string, number>,
   TSRC
->;
+> = ConvertingCollector<string, number, TITEM, TSRC>;
 
 /**
- * Parameters for constructing a {@link IConvertingCollector | IConvertingCollector}.
+ * Parameters for constructing a {@link Collections.ConvertingCollector | ConvertingCollector}.
  * @public
  */
 export interface IConvertingCollectorConstructorParams<
@@ -156,8 +55,9 @@ export interface IConvertingCollectorConstructorParams<
 }
 
 /**
- * A {@link IConvertingCollector | ConvertingCollector} that collects {@link Collections.ICollectible | ICollectible} items. Items in a collector are created by key and are assigned an index at the
- * time of addition.  Items are immutable once added.  Keys and indexes might be branded types, and source items might be transformed on addition.
+ * A {@link Collector | collector} that collects {@link Collections.ICollectible | ICollectible} items,
+ * optionally converting them from a source representation to the target representation using a factory
+ * supplied at default or at the time of collection.
  * @public
  */
 export class ConvertingCollector<
@@ -165,26 +65,15 @@ export class ConvertingCollector<
   TINDEX extends number = number,
   TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
   TSRC = TITEM
-> implements IConvertingCollector<TKEY, TINDEX, TITEM, TSRC>
-{
-  private _byKey: Map<TKEY, TITEM>;
-  private _byIndex: TITEM[];
+> extends Collector<TKEY, TINDEX, TITEM> {
   private _factory: CollectibleFactory<TKEY, TINDEX, TITEM, TSRC>;
-
-  /**
-   * {@inheritdoc IReadOnlyResultMap.inner}
-   */
-  public get inner(): ReadonlyMap<TKEY, TITEM> {
-    return this._byKey;
-  }
 
   /**
    * Constructor for derived classes.
    * @param params - Parameters for constructing the collector.
    */
   protected constructor(params: IConvertingCollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>) {
-    this._byKey = new Map<TKEY, TITEM>();
-    this._byIndex = [];
+    super();
     this._factory = params.factory;
     params.entries?.forEach((entry) => {
       this.getOrAdd(entry[0], entry[1]);
@@ -192,196 +81,132 @@ export class ConvertingCollector<
   }
 
   /**
-   * {@inheritdoc IReadOnlyResultMap.size}
+   * {@inheritdoc Collections.Collector.add}
    */
-  public get size(): number {
-    return this._byKey.size;
-  }
+  public add(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
-   * {@inheritdoc IReadOnlyResultMap.keys}
-   */
-  public keys(): IterableIterator<TKEY> {
-    return this._byKey.keys();
-  }
-
-  /**
-   * {@inheritdoc IReadOnlyResultMap.values}
-   */
-  public values(): IterableIterator<TITEM> {
-    return this._byKey.values();
-  }
-
-  /**
-   * {@inheritdoc IReadOnlyResultMap.entries}
-   */
-  public entries(): IterableIterator<[TKEY, TITEM]> {
-    return this._byKey.entries();
-  }
-
-  /**
-   * {@inheritdoc IReadOnlyResultMap.forEach}
-   */
-  public forEach(callback: ResultMapForEachCb<TKEY, TITEM>, arg?: unknown): void {
-    for (const [key, value] of this._byKey.entries()) {
-      callback(value, key, this, arg);
-    }
-  }
-
-  /**
-   * {@inheritdoc IReadOnlyResultMap.get}
-   */
-  public get(key: TKEY): DetailedResult<TITEM, ResultMapResultDetail> {
-    const item = this._byKey.get(key);
-    if (item === undefined) {
-      return failWithDetail<TITEM, ResultMapResultDetail>(`${key}: not found.`, 'not-found');
-    }
-    return succeedWithDetail(item, 'success');
-  }
-
-  /**
-   * {@inheritdoc Collections.IReadOnlyConvertingCollector.getAt}
-   */
-  public getAt(index: number): Result<TITEM> {
-    if (index < 0 || index >= this._byIndex.length) {
-      return fail(`${index}: out of range.`);
-    }
-    return succeed(this._byIndex[index]);
-  }
-
-  /**
-   * {@inheritdoc IConvertingCollector.(add:1)}
+   * Adds an item to the collector using the default {@link Collections.CollectibleFactory | factory}
+   * at a specified key, failing if an item with that key already exists.
+   * @param key - The key of the item to add.
+   * @param item - The source representation of the item to be added.
+   * @returns Returns {@link Success | Success} with the item if it is added, or {@link Failure | Failure} with
+   * an error if the item cannot be created and indexed.
+   * @public
    */
   public add(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
+
   /**
-   * {@inheritdoc IConvertingCollector.(add:2)}
+   * Adds an item to the collector using a supplied {@link Collections.CollectibleFactoryCallback | factory callback}
+   * at a specified key, failing if an item with that key already exists or if the created item is invalid.
+   * @param key - The key of the item to add.
+   * @param callback - The factory callback to create the item.
+   * @returns Returns {@link Success | Success} with the item if it is added, or {@link Failure | Failure} with
+   * an error if the item cannot be created and indexed.
    */
   public add(
     key: TKEY,
     cb: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
   ): DetailedResult<TITEM, CollectorResultDetail>;
+
   public add(
-    key: TKEY,
-    itemOrCb: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+    keyOrItem: TKEY | TITEM,
+    itemOrCb?: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
   ): DetailedResult<TITEM, CollectorResultDetail> {
-    if (this._byKey.has(key)) {
-      return failWithDetail(`${key}: already exists.`, 'exists');
+    if (this._overloadIsItem(keyOrItem, itemOrCb)) {
+      return super.add(keyOrItem);
     }
-    return this.getOrAdd(key, itemOrCb as TSRC);
+    return this._buildItem(keyOrItem, itemOrCb!)
+      .withFailureDetail<CollectorResultDetail>('invalid-value')
+      .onSuccess((item) => {
+        return super.add(item);
+      });
   }
 
   /**
-   * {@inheritdoc IConvertingCollector.addItem}
+   * {@inheritdoc Collections.Collector.(getOrAdd:1)}
    */
-  public addItem(item: TITEM): DetailedResult<TITEM, CollectorResultDetail> {
-    if (this._byKey.has(item.key)) {
-      return failWithDetail(`${item.key}: already exists.`, 'exists');
-    }
-    return this.getOrAddItem(item);
-  }
+  public getOrAdd(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
-   * {@inheritdoc IConvertingCollector.(getOrAdd:1)}
+   * {@inheritdoc Collections.Collector.(getOrAdd:2)}
+   */
+  public getOrAdd(
+    key: TKEY,
+    callback: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+  ): DetailedResult<TITEM, CollectorResultDetail>;
+
+  /**
+   * Gets an item by key if it exists, or creates a new item and adds it using the default {@link Collections.CollectibleFactory | factory} if not.
+   * @param key - The key of the item to retrieve.
+   * @param item - The source representation of the item to be added if it does not exist.
+   * @returns Returns {@link Success | Success} with the item if it exists or could be created, or {@link Failure | Failure} with an error if the
+   * item cannot be created and indexed.
    */
   public getOrAdd(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
-  /**
-   * {@inheritdoc IConvertingCollector.(getOrAdd:2)}
-   */
-  public getOrAdd(
-    key: TKEY,
-    cb: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
-  ): DetailedResult<TITEM, CollectorResultDetail>;
 
   public getOrAdd(
+    keyOrItem: TKEY | TITEM,
+    itemOrCb?: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+  ): DetailedResult<TITEM, CollectorResultDetail> {
+    if (this._overloadIsItem(keyOrItem, itemOrCb)) {
+      return super.getOrAdd(keyOrItem);
+    }
+
+    if (this.has(keyOrItem)) {
+      return this.get(keyOrItem);
+    }
+
+    return this._buildItem(keyOrItem, itemOrCb!)
+      .withFailureDetail<CollectorResultDetail>('invalid-value')
+      .onSuccess((item) => {
+        return super.add(item);
+      });
+  }
+
+  /**
+   * Helper method for derived classes to determine if a supplied
+   * itemOrCb parameter is a factory callback.
+   * @param itemOrCb - Overloaded parameter is either `TKEY` or
+   * a {@link Collections.CollectibleFactoryCallback | factory callback}.
+   * @returns Returns `true` if the parameter is a factory callback, `false` otherwise.
+   * @public
+   */
+  protected _isFactoryCB(
+    itemOrCb: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+  ): itemOrCb is CollectibleFactoryCallback<TKEY, TINDEX, TITEM> {
+    return typeof itemOrCb === 'function';
+  }
+
+  /**
+   * Helper method for derived classes to determine if a supplied
+   * keyOrItem parameter is an item.
+   * @param keyOrItem - Overloaded parameter is either `TKEY` or `TITEM`.
+   * @param itemOrCb - Overloaded parameter is either `TSRC`, a {@link Collections.CollectibleFactoryCallback | factory callback}
+   * or `undefined`.
+   * @returns Returns `true` if the parameter is an item, `false` otherwise.
+   * @public
+   */
+  protected _overloadIsItem(
+    keyOrItem: TKEY | TITEM,
+    itemOrCb?: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+  ): keyOrItem is TITEM {
+    return itemOrCb === undefined;
+  }
+
+  /**
+   * Helper method for derived classes to build an item from a key and a source representation using
+   * a default or supplied factory.
+   * @param key - The key of the item to build.
+   * @param itemOrCb - The source representation of the item to build, or a factory callback to create it.
+   * @returns Returns {@link Success | Success} with the item if it is built, or {@link Failure | Failure}
+   * with an error if the item cannot be built.
+   * @public
+   */
+  protected _buildItem(
     key: TKEY,
     itemOrCb: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
-  ): DetailedResult<TITEM, CollectorResultDetail> {
-    if (this._byKey.has(key)) {
-      return succeedWithDetail(this._byKey.get(key)!, 'exists');
-    }
-    const build = this._isFactoryCB(itemOrCb)
-      ? itemOrCb(key, this._byIndex.length)
-      : this._factory(key, this._byIndex.length, itemOrCb);
-    if (build.isFailure()) {
-      return failWithDetail<TITEM, CollectorResultDetail>(build.message, 'invalid-value');
-    }
-    const newItem = build.value;
-
-    if (newItem.key !== key) {
-      return failWithDetail(
-        `$[key}: key mismatch in created item - ${newItem.key} !== ${key}`,
-        'invalid-key'
-      );
-    }
-    if (newItem.index !== this._byIndex.length) {
-      return failWithDetail(
-        `$[key}: index mismatch in created item - ${newItem.index} !== ${this._byIndex.length}`,
-        'invalid-index'
-      );
-    }
-    this._byKey.set(key, newItem);
-    this._byIndex.push(newItem);
-    return succeedWithDetail(newItem, 'added');
-  }
-
-  /**
-   * {@inheritdoc IConvertingCollector.getOrAddItem}
-   */
-  public getOrAddItem(item: TITEM): DetailedResult<TITEM, CollectorResultDetail> {
-    if (this._byKey.has(item.key)) {
-      return succeedWithDetail(this._byKey.get(item.key)!, 'exists');
-    }
-    const { message } = item.setIndex(this._byIndex.length);
-    if (message !== undefined) {
-      return failWithDetail(message, 'invalid-index');
-    }
-    this._byKey.set(item.key, item);
-    this._byIndex.push(item);
-    return succeedWithDetail(item, 'added');
-  }
-
-  /**
-   * {@inheritdoc IReadOnlyResultMap.has}
-   */
-  public has(key: TKEY): boolean {
-    return this._byKey.has(key);
-  }
-
-  /**
-   * {@inheritdoc IConvertingCollector.toReadOnly}
-   */
-  public toReadOnly(): IReadOnlyConvertingCollector<TKEY, TINDEX, TITEM> {
-    return this;
-  }
-
-  /**
-   * Gets an iterator over the map entries.
-   * @returns An iterator over the map entries.
-   */
-  public [Symbol.iterator](): IterableIterator<KeyValueEntry<TKEY, TITEM>> {
-    return this._byKey[Symbol.iterator]();
-  }
-
-  /**
-   * A simple factory method for derived classes which directly store the supplied
-   * object.
-   * @param key - The key of the item to create.
-   * @param index - The index of the item to create.
-   * @param item - The source item to create.
-   * @returns `Success` with the created item and a detail of 'success', or
-   * `Failure` with an error message and appropriate detail.
-   */
-  protected static _simpleFactory<
-    TKEY extends string = string,
-    TINDEX extends number = number,
-    TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
-  >(key: TKEY, index: number, item: TITEM): Result<TITEM> {
-    return item.setIndex(index).onSuccess(() => succeed(item));
-  }
-
-  protected _isFactoryCB(
-    item: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
-  ): item is CollectibleFactoryCallback<TKEY, TINDEX, TITEM> {
-    return typeof item === 'function';
+  ): Result<TITEM> {
+    return this._isFactoryCB(itemOrCb) ? itemOrCb(key, this.size) : this._factory(key, this.size, itemOrCb);
   }
 }
