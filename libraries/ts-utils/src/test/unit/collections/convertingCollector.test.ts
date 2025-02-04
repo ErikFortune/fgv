@@ -25,8 +25,8 @@ import { fail, succeed } from '../../../packlets/base';
 import {
   CollectibleFactory,
   CollectibleFactoryCallback,
-  KeyValueEntry,
-  SimpleConvertingCollector
+  ConvertingCollector,
+  KeyValueEntry
 } from '../../../packlets/collections';
 import { CollectibleTestThing, getTestThings, ITestThing } from './helpers';
 
@@ -44,25 +44,11 @@ describe('ConvertingCollector', () => {
     factory = (k, ix, it) => CollectibleTestThing.create(it, k, ix);
   });
 
-  describe('SimpleConvertingCollector', () => {
-    describe('constructor', () => {
-      test('constructor throws if an entry fails construction', () => {
-        factory = (k, ix, it) => {
-          if (ix === 1) {
-            return fail('bad thing');
-          }
-          return CollectibleTestThing.create(it, k, ix);
-        };
-        expect(
-          () => new SimpleConvertingCollector<CollectibleTestThing, ITestThing>({ factory, entries })
-        ).toThrow(/bad thing/);
-      });
-    });
-
+  describe('ConvertingCollector', () => {
     describe('createSimpleConverter method', () => {
       test('constructs a new empty instance by default', () => {
         expect(
-          SimpleConvertingCollector.createSimpleCollector<CollectibleTestThing, ITestThing>({ factory })
+          ConvertingCollector.createConvertingCollector<CollectibleTestThing, ITestThing>({ factory })
         ).toSucceedAndSatisfy((collector) => {
           expect(collector).toBeDefined();
           expect(collector.size).toBe(0);
@@ -71,7 +57,7 @@ describe('ConvertingCollector', () => {
 
       test('constructs a new instance with an initial set of entries', () => {
         expect(
-          SimpleConvertingCollector.createSimpleCollector<CollectibleTestThing, ITestThing>({
+          ConvertingCollector.createConvertingCollector<CollectibleTestThing, ITestThing>({
             factory,
             entries
           })
@@ -101,7 +87,7 @@ describe('ConvertingCollector', () => {
           return CollectibleTestThing.create(it, k, ix);
         };
         expect(
-          SimpleConvertingCollector.createSimpleCollector<CollectibleTestThing, ITestThing>({
+          ConvertingCollector.createConvertingCollector<CollectibleTestThing, ITestThing>({
             factory,
             entries
           })
@@ -111,7 +97,9 @@ describe('ConvertingCollector', () => {
 
     describe('add method', () => {
       test('adds an item to the collector', () => {
-        const collector = new SimpleConvertingCollector<CollectibleTestThing, ITestThing>({ factory });
+        const collector = ConvertingCollector.createConvertingCollector<CollectibleTestThing, ITestThing>({
+          factory
+        }).orThrow();
         const [key, thing] = entries[0];
         const expected = collectibles[0];
         expect(collector.add(key, thing)).toSucceedAndSatisfy((result) => {
@@ -122,7 +110,7 @@ describe('ConvertingCollector', () => {
       });
 
       test('fails if the key already exists', () => {
-        const collector = new SimpleConvertingCollector<CollectibleTestThing, ITestThing>({
+        const collector = new ConvertingCollector<CollectibleTestThing, ITestThing>({
           factory,
           entries
         });
@@ -132,7 +120,7 @@ describe('ConvertingCollector', () => {
 
       test('succeeds if the key already exists but the item is the same (identity)', () => {
         factory = (k, ix, it) => succeed(collectibles[ix]);
-        const collector = new SimpleConvertingCollector<CollectibleTestThing, ITestThing>({
+        const collector = new ConvertingCollector<CollectibleTestThing, ITestThing>({
           factory,
           entries
         });
@@ -148,7 +136,7 @@ describe('ConvertingCollector', () => {
 
       test('propagates errors from the factory', () => {
         factory = (k, ix, it) => fail('bad thing');
-        const collector = new SimpleConvertingCollector<CollectibleTestThing, ITestThing>({ factory });
+        const collector = new ConvertingCollector<CollectibleTestThing, ITestThing>({ factory });
         const [key, thing] = entries[0];
         expect(collector.add(key, thing)).toFailWith(/bad thing/);
       });
@@ -156,7 +144,7 @@ describe('ConvertingCollector', () => {
 
     describe('getOrAdd with source object', () => {
       test('adds an item to the collector if it does not exist', () => {
-        const collector = new SimpleConvertingCollector<CollectibleTestThing, ITestThing>({ factory });
+        const collector = new ConvertingCollector<CollectibleTestThing, ITestThing>({ factory });
         const [key, thing] = entries[0];
         const expected = collectibles[0];
         expect(collector.getOrAdd(key, thing)).toSucceedAndSatisfy((result) => {
@@ -169,7 +157,7 @@ describe('ConvertingCollector', () => {
 
       test('returns an existing item if present, without invoking the factory', () => {
         const factoryFn = jest.fn(factory);
-        const collector = new SimpleConvertingCollector<CollectibleTestThing, ITestThing>({
+        const collector = new ConvertingCollector<CollectibleTestThing, ITestThing>({
           factory: factoryFn,
           entries
         });
@@ -184,7 +172,7 @@ describe('ConvertingCollector', () => {
 
       test('uses a supplied factory function to create a new item if the key does not exist', () => {
         const factoryFn = jest.fn(factory);
-        const collector = new SimpleConvertingCollector<CollectibleTestThing, ITestThing>({
+        const collector = new ConvertingCollector<CollectibleTestThing, ITestThing>({
           factory: factoryFn
         });
         const [key] = entries[0];
@@ -205,19 +193,19 @@ describe('ConvertingCollector', () => {
 
       test('fails if the collectible to be added has a mismatched key', () => {
         factory = (k, ix, it) => CollectibleTestThing.create(it, `not_${k}`, ix);
-        const collector = new SimpleConvertingCollector<CollectibleTestThing, ITestThing>({ factory });
+        const collector = new ConvertingCollector<CollectibleTestThing, ITestThing>({ factory });
         expect(collector.getOrAdd('foo', things[0])).toFailWithDetail(/key mismatch/, 'invalid-key');
       });
 
       test('fails if the collectible to be added has a mismatched index', () => {
         factory = (k, ix, it) => CollectibleTestThing.create(it, k, ix + 1);
-        const collector = new SimpleConvertingCollector<CollectibleTestThing, ITestThing>({ factory });
+        const collector = new ConvertingCollector<CollectibleTestThing, ITestThing>({ factory });
         expect(collector.getOrAdd('foo', things[0])).toFailWith(/cannot be changed/);
       });
 
       test('propagates errors from the factory', () => {
         factory = (k, ix, it) => fail('bad thing');
-        const collector = new SimpleConvertingCollector<CollectibleTestThing, ITestThing>({ factory });
+        const collector = new ConvertingCollector<CollectibleTestThing, ITestThing>({ factory });
         const [key, thing] = entries[0];
         expect(collector.getOrAdd(key, thing)).toFailWith(/bad thing/);
       });
@@ -225,7 +213,7 @@ describe('ConvertingCollector', () => {
 
     describe('getOrAdd with target item', () => {
       test('adds a new item to the collector', () => {
-        const collector = new SimpleConvertingCollector<CollectibleTestThing, ITestThing>({ factory });
+        const collector = new ConvertingCollector<CollectibleTestThing, ITestThing>({ factory });
 
         expect(collector.getOrAdd(collectibles[0])).toSucceedAndSatisfy((collectible) => {
           expect(collectible).toBe(collectibles[0]);
@@ -236,7 +224,7 @@ describe('ConvertingCollector', () => {
 
       test('returns an existing item if present, without invoking the factory', () => {
         const factoryFn = jest.fn(factory);
-        const collector = new SimpleConvertingCollector<CollectibleTestThing, ITestThing>({
+        const collector = new ConvertingCollector<CollectibleTestThing, ITestThing>({
           factory: factoryFn,
           entries
         });
@@ -250,7 +238,7 @@ describe('ConvertingCollector', () => {
       });
 
       test('fails without adding if the item index cannot be set', () => {
-        const collector = new SimpleConvertingCollector<CollectibleTestThing, ITestThing>({ factory });
+        const collector = new ConvertingCollector<CollectibleTestThing, ITestThing>({ factory });
         const toAdd = new CollectibleTestThing(things[0], 'thing0', 1);
         expect(collector.getOrAdd(toAdd)).toFailWithDetail(/cannot be changed/, 'invalid-index');
       });

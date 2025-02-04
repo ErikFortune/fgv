@@ -38,12 +38,10 @@ Description
 
 </td><td>
 
-`protected`
-
 
 </td><td>
 
-Constructor for derived classes.
+Constructs a new [ConvertingCollector](./ts-utils.collections.convertingcollector.md)<!-- -->.
 
 
 </td></tr>
@@ -154,6 +152,22 @@ Adds an item to the collector using the default [factory](./ts-utils.collections
 </td><td>
 
 Adds an item to the collector using a supplied [factory callback](./ts-utils.collections.collectiblefactorycallback.md) at a specified key, failing if an item with that key already exists or if the created item is invalid.
+
+
+</td></tr>
+<tr><td>
+
+[createConvertingCollector(params)](./ts-utils.collections.convertingcollector.createconvertingcollector.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [ConvertingCollector](./ts-utils.collections.convertingcollector.md)<!-- -->.
 
 
 </td></tr>

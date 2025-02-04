@@ -120,17 +120,6 @@ A [ResultMap](./ts-utils.collections.resultmap.md) class as a `Map<TK, TV>`<!-- 
 </td></tr>
 <tr><td>
 
-[SimpleCollector](./ts-utils.simplecollector.md)
-
-
-</td><td>
-
-A simple [collector](./ts-utils.collections.collector.md) with non-branded `string` key and `number` index.
-
-
-</td></tr>
-<tr><td>
-
 [StringConverter](./ts-utils.stringconverter.md)
 
 

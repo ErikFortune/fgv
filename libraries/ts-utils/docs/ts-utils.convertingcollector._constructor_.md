@@ -4,12 +4,12 @@
 
 ## ConvertingCollector.(constructor)
 
-Constructor for derived classes.
+Constructs a new [ConvertingCollector](./ts-utils.collections.convertingcollector.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-protected constructor(params: IConvertingCollectorConstructorParams<TITEM, TSRC>);
+constructor(params: IConvertingCollectorConstructorParams<TITEM, TSRC>);
 ```
 
 ## Parameters

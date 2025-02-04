@@ -271,29 +271,3 @@ export class Collector<
     return typeof keyOrItem !== 'string';
   }
 }
-
-/**
- * A simple {@link Collections.Collector | collector} with non-branded `string` key and `number` index.
- * @public
- */
-export class SimpleCollector<TITEM extends ICollectible<string, number>> extends Collector<TITEM> {
-  /**
-   * Constructs a new {@link Collections.SimpleCollector | SimpleCollector}.
-   * @param params - Optional initialization parameters for the collector.
-   */
-  public constructor(params?: ICollectorConstructorParams<TITEM>) {
-    super(params);
-  }
-
-  /**
-   * Creates a new {@link Collections.SimpleCollector | SimpleCollector} instance.
-   * @param params - Optional initialization parameters for the collector.
-   * @returns Returns {@link Success | Success} with the new collector if it was created successfully,
-   * or {@link Failure | Failure} with an error if the collector could not be created.
-   */
-  public static createSimpleCollector<TITEM extends ICollectible<string, number>>(
-    params?: ICollectorConstructorParams<TITEM>
-  ): Result<SimpleCollector<TITEM>> {
-    return captureResult(() => new SimpleCollector(params));
-  }
-}

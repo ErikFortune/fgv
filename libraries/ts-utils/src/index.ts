@@ -31,7 +31,6 @@ import {
   ConvertingCollector,
   IReadOnlyResultMap,
   ResultMap,
-  SimpleCollector,
   ValidatingCollector,
   ValidatingConvertingCollector,
   ValidatingResultMap
@@ -52,7 +51,6 @@ export {
   IReadOnlyResultMap,
   ObjectConverter,
   ResultMap,
-  SimpleCollector,
   StringConverter,
   ValidatingCollector,
   ValidatingConvertingCollector,

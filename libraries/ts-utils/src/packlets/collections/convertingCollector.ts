@@ -58,15 +58,28 @@ export class ConvertingCollector<
   private _factory: CollectibleFactory<TITEM, TSRC>;
 
   /**
-   * Constructor for derived classes.
+   * Constructs a new {@link Collections.ConvertingCollector | ConvertingCollector}.
    * @param params - Parameters for constructing the collector.
    */
-  protected constructor(params: IConvertingCollectorConstructorParams<TITEM, TSRC>) {
+  public constructor(params: IConvertingCollectorConstructorParams<TITEM, TSRC>) {
     super();
     this._factory = params.factory;
     params.entries?.forEach((entry) => {
       this.getOrAdd(entry[0], entry[1]).orThrow();
     });
+  }
+
+  /**
+   * Creates a new {@link Collections.ConvertingCollector | ConvertingCollector}.
+   * @param params - Required parameters for constructing the collector.
+   * @returns Returns {@link Success | Success} with the new collector if it is created, or {@link Failure | Failure}
+   * with an error if the collector cannot be created.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public static createConvertingCollector<TITEM extends ICollectible<any, any>, TSRC = TITEM>(
+    params: IConvertingCollectorConstructorParams<TITEM, TSRC>
+  ): Result<ConvertingCollector<TITEM, TSRC>> {
+    return captureResult(() => new ConvertingCollector(params));
   }
 
   /**
@@ -206,33 +219,5 @@ export class ConvertingCollector<
     itemOrCb: TSRC | CollectibleFactoryCallback<TITEM>
   ): Result<TITEM> {
     return this._isFactoryCB(itemOrCb) ? itemOrCb(key, this.size) : this._factory(key, this.size, itemOrCb);
-  }
-}
-
-/**
- * A {@link Collections.ConvertingCollector | ConvertingCollector} with non-branded `string` key and `number` index, and transformation of source items.
- * @public
- */
-export class SimpleConvertingCollector<
-  TITEM extends ICollectible<string, number>,
-  TSRC
-> extends ConvertingCollector<TITEM, TSRC> {
-  /**
-   * Constructs a new {@link Collections.SimpleConvertingCollector | SimpleConvertingCollector} from the supplied parameters.
-   * @param params - Required parameters for constructing the collector.
-   */
-  public constructor(params: IConvertingCollectorConstructorParams<TITEM, TSRC>) {
-    super(params);
-  }
-
-  /**
-   * Creates a new {@link Collections.SimpleConvertingCollector | SimpleConvertingCollector} instance from the supplied parameters.
-   * @param params - Required parameters for constructing the collector.
-   * @returns {@link Success} with the new collector if successful, {@link Failure} otherwise.
-   */
-  public static createSimpleCollector<TITEM extends ICollectible<string, number>, TSRC>(
-    params: IConvertingCollectorConstructorParams<TITEM, TSRC>
-  ): Result<SimpleConvertingCollector<TITEM, TSRC>> {
-    return captureResult(() => new SimpleConvertingCollector(params));
   }
 }

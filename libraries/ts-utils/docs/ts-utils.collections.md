@@ -109,28 +109,6 @@ A [ResultMap](./ts-utils.collections.resultmap.md) wrapper which validates weakl
 </td></tr>
 <tr><td>
 
-[SimpleCollector](./ts-utils.collections.simplecollector.md)
-
-
-</td><td>
-
-A simple [collector](./ts-utils.collections.collector.md) with non-branded `string` key and `number` index.
-
-
-</td></tr>
-<tr><td>
-
-[SimpleConvertingCollector](./ts-utils.collections.simpleconvertingcollector.md)
-
-
-</td><td>
-
-A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) with non-branded `string` key and `number` index, and transformation of source items.
-
-
-</td></tr>
-<tr><td>
-
 [ValidatingCollector](./ts-utils.collections.validatingcollector.md)
 
 
