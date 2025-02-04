@@ -4,12 +4,12 @@
 
 ## Collector.(constructor)
 
-Constructor for derived classes.
+Constructs a new [Collector](./ts-utils.collections.collector.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-protected constructor(params: ICollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>);
+constructor(params?: ICollectorConstructorParams<TITEM>);
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ params
 
 </td><td>
 
-[ICollectorConstructorParams](./ts-utils.collections.icollectorconstructorparams.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
+[ICollectorConstructorParams](./ts-utils.collections.icollectorconstructorparams.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>
 
-Parameters for constructing the collector.
+_(Optional)_ Optional [initialization parameters](./ts-utils.collections.icollectorconstructorparams.md) used to construct the collector.
 
 
 </td></tr>

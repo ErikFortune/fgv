@@ -4,12 +4,12 @@
 
 ## Collections.Collectible.createCollectible() method
 
-Creates a new [Collectible](./ts-utils.collections.collectible.md) instance from the supplied parameters.
+Creates a new [Collectible](./ts-utils.collections.collectible.md) instance with a defined, strongly-typed index.
 
 **Signature:**
 
 ```typescript
-static createCollectible<TKEY extends string = string, TINDEX extends number = number>(params: ICollectibleConstructorParams<TKEY, TINDEX>): Result<Collectible<TKEY, TINDEX>>;
+static createCollectible<TKEY extends string = string, TINDEX extends number = number>(params: ICollectibleConstructorParamsWithIndex<TKEY, TINDEX>): Result<Collectible<TKEY, TINDEX>>;
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ params
 
 </td><td>
 
-[ICollectibleConstructorParams](./ts-utils.collections.icollectibleconstructorparams.md)<!-- -->&lt;TKEY, TINDEX&gt;
+[ICollectibleConstructorParamsWithIndex](./ts-utils.collections.icollectibleconstructorparamswithindex.md)<!-- -->&lt;TKEY, TINDEX&gt;
 
 
 </td><td>
 
-Required parameters for constructing the collectible.
+[Parameters](./ts-utils.collections.icollectibleconstructorparamswithindex.md) for constructing the collectible.
 
 
 </td></tr>
@@ -51,5 +51,5 @@ Required parameters for constructing the collectible.
 
 [Result](./ts-utils.result.md)<!-- -->&lt;[Collectible](./ts-utils.collections.collectible.md)<!-- -->&lt;TKEY, TINDEX&gt;&gt;
 
-`Success` with the new collectible if successful, or `Failure` with an error message if not.
+[Success](./ts-utils.success.md) with the new collectible if successful, [Failure](./ts-utils.failure.md) otherwise.
 

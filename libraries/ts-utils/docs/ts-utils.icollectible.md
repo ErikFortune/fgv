@@ -4,7 +4,7 @@
 
 ## ICollectible interface
 
-An item that can be collected by some [Collector](./ts-utils.collector.md)<!-- -->.
+An item that can be collected by some [Collector](./ts-utils.convertingcollector.md)<!-- -->.
 
 **Signature:**
 

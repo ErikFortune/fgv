@@ -4,12 +4,16 @@
 
 ## Collections.Collector.entries() method
 
+Returns an iterator over the map entries.
+
 **Signature:**
 
 ```typescript
-entries(): IterableIterator<[TKEY, TITEM]>;
+entries(): MapIterator<KeyValueEntry<CollectibleKey<TITEM>, TITEM>>;
 ```
 **Returns:**
 
-IterableIterator&lt;\[TKEY, TITEM\]&gt;
+MapIterator&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;, TITEM&gt;&gt;
+
+An iterator over the map entries.
 

@@ -4,12 +4,12 @@
 
 ## ConvertingCollector.createConvertingCollector() method
 
-Creates a new [ConvertingCollector](./ts-utils.collections.convertingcollector.md) instance from the supplied [parameters](./ts-utils.collections.iconvertingcollectorconstructorparams.md)<!-- -->.
+Creates a new [ConvertingCollector](./ts-utils.collections.convertingcollector.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-static createConvertingCollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM>(params: IConvertingCollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>): Result<ConvertingCollector<TKEY, TINDEX, TITEM, TSRC>>;
+static createConvertingCollector<TITEM extends ICollectible<any, any>, TSRC = TITEM>(params: IConvertingCollectorConstructorParams<TITEM, TSRC>): Result<ConvertingCollector<TITEM, TSRC>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[IConvertingCollectorConstructorParams](./ts-utils.collections.iconvertingcollectorconstructorparams.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
+[IConvertingCollectorConstructorParams](./ts-utils.collections.iconvertingcollectorconstructorparams.md)<!-- -->&lt;TITEM, TSRC&gt;
 
 
 </td><td>
@@ -49,7 +49,7 @@ Required parameters for constructing the collector.
 </tbody></table>
 **Returns:**
 
-[Result](./ts-utils.result.md)<!-- -->&lt;[ConvertingCollector](./ts-utils.convertingcollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;&gt;
+[Result](./ts-utils.result.md)<!-- -->&lt;[ConvertingCollector](./ts-utils.convertingcollector.md)<!-- -->&lt;TITEM, TSRC&gt;&gt;
 
-[Success](./ts-utils.success.md) with the new collector if successful, [Failure](./ts-utils.failure.md) otherwise.
+Returns [Success](./ts-utils.success.md) with the new collector if it is created, or [Failure](./ts-utils.failure.md) with an error if the collector cannot be created.
 

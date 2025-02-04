@@ -4,12 +4,12 @@
 
 ## Collections.Collectible.(constructor)
 
-Constructs a new [Collectible](./ts-utils.collections.collectible.md) instance.
+Constructs a new [Collectible](./ts-utils.collections.collectible.md) instance with a defined, strongly-typed index.
 
 **Signature:**
 
 ```typescript
-constructor(params: ICollectibleConstructorParams<TKEY, TINDEX>);
+constructor(params: ICollectibleConstructorParamsWithIndex<TKEY, TINDEX>);
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ params
 
 </td><td>
 
-[ICollectibleConstructorParams](./ts-utils.collections.icollectibleconstructorparams.md)<!-- -->&lt;TKEY, TINDEX&gt;
+[ICollectibleConstructorParamsWithIndex](./ts-utils.collections.icollectibleconstructorparamswithindex.md)<!-- -->&lt;TKEY, TINDEX&gt;
 
 
 </td><td>
 
-Required parameters for constructing the collectible.
+[Parameters](./ts-utils.collections.icollectibleconstructorparamswithindex.md) for constructing the collectible.
 
 
 </td></tr>

@@ -4,12 +4,12 @@
 
 ## Collections.Collector.getOrAdd() method
 
-Gets an item by key if it exists, or creates a new item and adds it using the specified [factory callback](./ts-utils.collections.collectiblefactorycallback.md) if not.
+Gets an existing item with a key matching the supplied key, or adds a new item to the collector using a factory callback if no item with that key exists.
 
 **Signature:**
 
 ```typescript
-getOrAdd(key: TKEY, cb: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
+getOrAdd(key: CollectibleKey<TITEM>, factory: CollectibleFactoryCallback<TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
 ```
 
 ## Parameters
@@ -37,23 +37,23 @@ key
 
 </td><td>
 
-TKEY
+[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>
 
-The key of the item to retrieve.
+The key of the item to add.
 
 
 </td></tr>
 <tr><td>
 
-cb
+factory
 
 
 </td><td>
 
-[CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+[CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>
@@ -65,5 +65,5 @@ cb
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TITEM, [CollectorResultDetail](./ts-utils.collections.collectorresultdetail.md)<!-- -->&gt;
 
-Returns [Success](./ts-utils.success.md) with the item if it exists, or [Failure](./ts-utils.failure.md) with an error if the item is not found.
+Returns [Success](./ts-utils.detailedsuccess.md) with the item stored in the collector - detail `exists` indicates that an existing item return and detail `added` indicates that the item was added. Returns [Failure](./ts-utils.detailedfailure.md) with an error and appropriate detail if the item could not be added.
 

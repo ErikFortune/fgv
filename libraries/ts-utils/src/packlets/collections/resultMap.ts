@@ -47,13 +47,6 @@ export type ResultMapValueFactory<TK extends string = string, TV = unknown> = (k
  */
 export class ResultMap<TK extends string = string, TV = unknown> implements IReadOnlyResultMap<TK, TV> {
   /**
-   * Readonly raw access to the inner `Map<TK, TV>` object.
-   */
-  public get inner(): ReadonlyMap<TK, TV> {
-    return this._inner;
-  }
-
-  /**
    * Protected raw access to the inner `Map<TK, TV>` object.
    * @public
    */

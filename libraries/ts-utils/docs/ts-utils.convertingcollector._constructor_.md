@@ -4,12 +4,12 @@
 
 ## ConvertingCollector.(constructor)
 
-Constructs a new [ConvertingCollector](./ts-utils.collections.convertingcollector.md) from the supplied [parameters](./ts-utils.collections.iconvertingcollectorconstructorparams.md)<!-- -->.
+Constructs a new [ConvertingCollector](./ts-utils.collections.convertingcollector.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-constructor(params: IConvertingCollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>);
+constructor(params: IConvertingCollectorConstructorParams<TITEM, TSRC>);
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ params
 
 </td><td>
 
-[IConvertingCollectorConstructorParams](./ts-utils.collections.iconvertingcollectorconstructorparams.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
+[IConvertingCollectorConstructorParams](./ts-utils.collections.iconvertingcollectorconstructorparams.md)<!-- -->&lt;TITEM, TSRC&gt;
 
 
 </td><td>
 
-Required parameters for constructing the collector.
+Parameters for constructing the collector.
 
 
 </td></tr>

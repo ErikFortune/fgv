@@ -4,7 +4,7 @@
 
 ## Collections.CollectorResultDetail type
 
-Additional success or failure details for mutating [Collector](./ts-utils.icollector.md) calls.
+Additional success or failure details for mutating collector calls.
 
 **Signature:**
 

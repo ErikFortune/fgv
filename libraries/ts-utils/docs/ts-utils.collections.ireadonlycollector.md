@@ -4,14 +4,14 @@
 
 ## Collections.IReadOnlyCollector interface
 
-A read-only interface exposing non-mutating methods of a [Collector](./ts-utils.collections.icollector.md)<!-- -->.
+A read-only interface exposing only the non-mutating methods of a [ICollector](./ts-utils.collections.collector.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-export interface IReadOnlyCollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>> extends IReadOnlyResultMap<TKEY, TITEM> 
+export interface IReadOnlyCollector<TITEM extends ICollectible<any, any>> extends IReadOnlyResultMap<CollectibleKey<TITEM>, TITEM> 
 ```
-**Extends:** [IReadOnlyResultMap](./ts-utils.ireadonlyresultmap.md)<!-- -->&lt;TKEY, TITEM&gt;
+**Extends:** [IReadOnlyResultMap](./ts-utils.ireadonlyresultmap.md)<!-- -->&lt;[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;, TITEM&gt;
 
 ## Methods
 
