@@ -8,5 +8,5 @@
 **Signature:**
 
 ```typescript
-items?: TITEM[];
+items?: unknown[];
 ```

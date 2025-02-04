@@ -165,22 +165,6 @@ Helper to convert a value, returning a [DetailedResult](./ts-utils.detailedresul
 </td></tr>
 <tr><td>
 
-[\_isCollectibleFactoryCallback(value)](./ts-utils.collections.collectorvalidator._iscollectiblefactorycallback.md)
-
-
-</td><td>
-
-`protected`
-
-
-</td><td>
-
-Determines if a value is a [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [add(item)](./ts-utils.collections.collectorvalidator.add.md)
 
 
