@@ -29,10 +29,11 @@ import {
   Collector,
   ICollectible,
   ConvertingCollector,
-  ValidatingConvertingCollector,
   IReadOnlyResultMap,
   ResultMap,
   SimpleCollector,
+  ValidatingCollector,
+  ValidatingConvertingCollector,
   ValidatingResultMap
 } from './packlets/collections';
 import { Converter, Converters, ObjectConverter, StringConverter } from './packlets/conversion';
@@ -46,7 +47,6 @@ export {
   Conversion,
   Converter,
   Converters,
-  ValidatingConvertingCollector,
   Hash,
   ICollectible,
   IReadOnlyResultMap,
@@ -54,6 +54,8 @@ export {
   ResultMap,
   SimpleCollector,
   StringConverter,
+  ValidatingCollector,
+  ValidatingConvertingCollector,
   ValidatingResultMap,
   Validation,
   Validator,

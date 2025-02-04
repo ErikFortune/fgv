@@ -43,6 +43,17 @@ Items are assigned an index sequentially as they are added to the collection. On
 </td></tr>
 <tr><td>
 
+[CollectorValidator](./ts-utils.collections.collectorvalidator.md)
+
+
+</td><td>
+
+A [Collector](./ts-utils.collections.collector.md) wrapper which validates weakly-typed keys and values before calling the wrapped collector.
+
+
+</td></tr>
+<tr><td>
+
 [ConvertingCollector](./ts-utils.collections.convertingcollector.md)
 
 
@@ -201,6 +212,17 @@ Parameters for constructing a [ICollector](./ts-utils.collections.collector.md)<
 </td></tr>
 <tr><td>
 
+[ICollectorValidatorCreateParams](./ts-utils.collections.icollectorvalidatorcreateparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [CollectorValidator](./ts-utils.collections.collectorvalidator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [IConvertingCollectorConstructorParams](./ts-utils.collections.iconvertingcollectorconstructorparams.md)
 
 
@@ -240,6 +262,17 @@ Parameters for constructing a [KeyValueConverters](./ts-utils.collections.keyval
 </td><td>
 
 A read-only interface exposing only the non-mutating methods of a [ICollector](./ts-utils.collections.collector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyCollectorValidator](./ts-utils.collections.ireadonlycollectorvalidator.md)
+
+
+</td><td>
+
+A read-only interface exposing non-mutating methods of a [CollectorValidator](./ts-utils.collections.collectorvalidator.md)<!-- -->.
 
 
 </td></tr>
