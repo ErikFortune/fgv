@@ -73,7 +73,6 @@ describe('ValidatingCollector', () => {
         ...testCollectorParams,
         items: collectibles
       });
-      expect(collector.inner.size).toBe(collectibles.length);
       expect(collector.size).toBe(collectibles.length);
       expect(collector.validating.map.size).toBe(collectibles.length);
       expect(Array.from(collector.entries())).toEqual(collectibles.map((c) => [c.key, c]));

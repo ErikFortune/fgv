@@ -109,27 +109,6 @@ Protected raw access to the inner `Map<TK, TV>` object.
 </td></tr>
 <tr><td>
 
-[inner](./ts-utils.resultmap.inner.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyMap&lt;TK, TV&gt;
-
-
-</td><td>
-
-Readonly raw access to the inner `Map<TK, TV>` object.
-
-
-</td></tr>
-<tr><td>
-
 [size](./ts-utils.resultmap.size.md)
 
 

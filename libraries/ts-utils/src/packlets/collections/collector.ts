@@ -88,13 +88,6 @@ export class Collector<
   private readonly _byIndex: TITEM[];
 
   /**
-   * {@inheritdoc Collections.ResultMap.inner}
-   */
-  public get inner(): ReadonlyMap<TKEY, TITEM> {
-    return this._byKey;
-  }
-
-  /**
    * {@inheritdoc Collections.ResultMap.size}
    */
   public get size(): number {

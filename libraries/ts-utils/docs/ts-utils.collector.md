@@ -74,27 +74,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[inner](./ts-utils.collector.inner.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyMap&lt;TKEY, TITEM&gt;
-
-
-</td><td>
-
-Readonly raw access to the inner `Map<TK, TV>` object.
-
-
-</td></tr>
-<tr><td>
-
 [size](./ts-utils.collector.size.md)
 
 

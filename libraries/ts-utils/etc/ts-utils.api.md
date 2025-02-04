@@ -262,10 +262,6 @@ export class Collector<TKEY extends string = string, TINDEX extends number = num
     getOrAdd(key: TKEY, factory: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
     // (undocumented)
     has(key: TKEY): boolean;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    get inner(): ReadonlyMap<TKEY, TITEM>;
     // (undocumented)
     keys(): IterableIterator<TKEY>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1026,10 +1022,6 @@ export interface IReadOnlyResultMap<TK extends string = string, TV = unknown> {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    readonly inner: ReadonlyMap<TK, TV>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     keys(): MapIterator<TK>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -1642,7 +1634,6 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getOrAdd(key: TK, factory: ResultMapValueFactory<TK, TV>): DetailedResult<TV, ResultMapResultDetail>;
     has(key: TK): boolean;
-    get inner(): ReadonlyMap<TK, TV>;
     protected readonly _inner: Map<TK, TV>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

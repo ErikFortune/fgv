@@ -40,7 +40,6 @@ describe('Collector class', () => {
     test('can be constructed with initial items', () => {
       const collector = new Collector<string, number, CollectibleTestThing>({ items: collectibles });
       expect(collector.size).toBe(collectibles.length);
-      expect(collector.inner.size).toBe(collectibles.length);
       collectibles.forEach((c) => {
         // index should have been set when it was added
         expect(c.index).toBeDefined();
@@ -88,7 +87,6 @@ describe('Collector class', () => {
         Collector.createCollector<string, number, CollectibleTestThing>({ items: collectibles })
       ).toSucceedAndSatisfy((collector) => {
         expect(collector.size).toBe(collectibles.length);
-        expect(collector.inner.size).toBe(collectibles.length);
         collectibles.forEach((c) => {
           // index should have been set when it was added
           expect(c.index).toBeDefined();

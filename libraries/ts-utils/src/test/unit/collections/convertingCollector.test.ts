@@ -78,7 +78,6 @@ describe('ConvertingCollector', () => {
         ).toSucceedAndSatisfy((collector) => {
           expect(collector).toBeDefined();
           expect(collector.size).toBe(entries.length);
-          expect(collector.inner.size).toBe(entries.length);
 
           entries.forEach(([key, item], index) => {
             expect(collector.get(key)).toSucceedAndSatisfy((c) => {
@@ -119,7 +118,6 @@ describe('ConvertingCollector', () => {
           expect(result).toEqual(expect.objectContaining(expected));
           expect(result).not.toBe(expected);
           expect(collector.size).toBe(1);
-          expect(collector.inner.size).toBe(1);
         });
       });
 
@@ -166,7 +164,6 @@ describe('ConvertingCollector', () => {
           expect(result).toEqual(expect.objectContaining(expected));
           expect(result).not.toBe(expected);
           expect(collector.size).toBe(1);
-          expect(collector.inner.size).toBe(1);
         });
       });
 
@@ -201,7 +198,6 @@ describe('ConvertingCollector', () => {
           // call factory returns from the collectibles array so identity is expected
           expect(result).toBe(collectibles[0]);
           expect(collector.size).toBe(1);
-          expect(collector.inner.size).toBe(1);
         });
         expect(callFactoryFn).toHaveBeenCalled();
         expect(factoryFn).not.toHaveBeenCalled();
@@ -235,7 +231,6 @@ describe('ConvertingCollector', () => {
           expect(collectible).toBe(collectibles[0]);
           expect(collectible.index).toBe(0);
           expect(collector.size).toBe(1);
-          expect(collector.inner.size).toBe(1);
         });
       });
 

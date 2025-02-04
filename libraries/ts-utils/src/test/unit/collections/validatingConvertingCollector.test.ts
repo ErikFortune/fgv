@@ -109,7 +109,6 @@ describe('ValidatingConvertingCollector', () => {
     test('can be constructed with initial items', () => {
       const collector = new ValidatingConvertingCollector({ ...testCollectorParams, entries });
       expect(collector.size).toEqual(5);
-      expect(collector.inner.size).toEqual(5);
       expect(collector.validating.map.size).toEqual(5);
       things.forEach((thing, i) => {
         expect(collector.validating.get(`thing${i + 1}`)).toSucceedAndSatisfy((collectible) => {
@@ -133,7 +132,6 @@ describe('ValidatingConvertingCollector', () => {
     test('can be constructed with no initial items', () => {
       const collector = new ValidatingConvertingCollector(testCollectorParams);
       expect(collector.size).toEqual(0);
-      expect(collector.inner.size).toEqual(0);
       expect(Array.from(collector.keys())).toEqual([]);
       expect(Array.from(collector.values())).toEqual([]);
       expect(Array.from(collector.entries())).toEqual([]);
@@ -155,7 +153,6 @@ describe('ValidatingConvertingCollector', () => {
       });
       expect(collector).toSucceedAndSatisfy((c) => {
         expect(c.size).toEqual(5);
-        expect(c.inner.size).toEqual(5);
         things.forEach((thing, i) => {
           expect(c.validating.has(`thing${i + 1}`)).toBe(true);
           expect(c.validating.get(`thing${i + 1}`)).toSucceedAndSatisfy((collectible) => {
