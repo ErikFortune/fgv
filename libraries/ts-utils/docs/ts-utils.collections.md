@@ -114,7 +114,7 @@ A [ResultMap](./ts-utils.collections.resultmap.md) wrapper which validates weakl
 
 </td><td>
 
-A simple [collector](./ts-utils.collections.collector.md) with non-branded `string` key and `number` index, and no transformation of source items.
+A simple [collector](./ts-utils.collections.collector.md) with non-branded `string` key and `number` index.
 
 
 </td></tr>
@@ -444,6 +444,28 @@ Factory function for creating a new [ICollectible](./ts-utils.collections.icolle
 </td><td>
 
 Factory function for creating a new [ICollectible](./ts-utils.collections.icollectible.md) instance given a key and an index.
+
+
+</td></tr>
+<tr><td>
+
+[CollectibleIndex](./ts-utils.collections.collectibleindex.md)
+
+
+</td><td>
+
+Infer the index type from an [ICollectible](./ts-utils.collections.icollectible.md) type.
+
+
+</td></tr>
+<tr><td>
+
+[CollectibleKey](./ts-utils.collections.collectiblekey.md)
+
+
+</td><td>
+
+Infer the key type from an [ICollectible](./ts-utils.collections.icollectible.md) type.
 
 
 </td></tr>

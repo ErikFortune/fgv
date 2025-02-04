@@ -73,18 +73,14 @@ function _collectibleTestThingFactory(
   return testIndex.convert(index).onSuccess((i) => succeed(new CollectibleTestThing(item, key, i)));
 }
 
-const testCollectorParams: IValidatingConvertingCollectorConstructorParams<
-  TestKey,
-  TestIndex,
-  CollectibleTestThing,
-  ITestThing
-> = {
-  factory: _collectibleTestThingFactory,
-  converters: new KeyValueConverters<TestKey, ITestThing>({
-    key: testKey,
-    value: testThing
-  })
-};
+const testCollectorParams: IValidatingConvertingCollectorConstructorParams<CollectibleTestThing, ITestThing> =
+  {
+    factory: _collectibleTestThingFactory,
+    converters: new KeyValueConverters<TestKey, ITestThing>({
+      key: testKey,
+      value: testThing
+    })
+  };
 
 describe('ValidatingConvertingCollector', () => {
   let entries: [TestKey, ITestThing][];
@@ -239,8 +235,8 @@ describe('ValidatingConvertingCollector', () => {
       test('uses a factory to create a new item if not already in the collector', () => {
         const collector = new ValidatingConvertingCollector(testCollectorParams);
         const thing: ITestThing = { str: 'six', num: 6, bool: false };
-        const factory: CollectibleFactoryCallback<TestKey, TestIndex, CollectibleTestThing> = jest.fn(
-          (key, index) => succeed(new CollectibleTestThing(thing, key, index as TestIndex))
+        const factory: CollectibleFactoryCallback<CollectibleTestThing> = jest.fn((key, index) =>
+          succeed(new CollectibleTestThing(thing, key, index as TestIndex))
         );
         const collectible = new CollectibleTestThing(thing, 'thing6' as TestKey, 0 as TestIndex);
         expect(collector.validating.get('thing6')).toFailWith(/not found/);
@@ -253,8 +249,8 @@ describe('ValidatingConvertingCollector', () => {
         const thing: ITestThing = { str: 'three', num: 300, bool: true };
         const existing = collector.validating.get('thing3').orThrow();
         expect(existing).toEqual(collectibles[2]);
-        const factory: CollectibleFactoryCallback<TestKey, TestIndex, CollectibleTestThing> = jest.fn(
-          (key, index) => succeed(new CollectibleTestThing(thing, key, index as TestIndex))
+        const factory: CollectibleFactoryCallback<CollectibleTestThing> = jest.fn((key, index) =>
+          succeed(new CollectibleTestThing(thing, key, index as TestIndex))
         );
         expect(collector.validating.getOrAdd('thing3', factory)).toSucceedWith(existing);
         expect(factory).not.toHaveBeenCalled();
@@ -272,8 +268,8 @@ describe('ValidatingConvertingCollector', () => {
       test('fails with detail invalid-key and does call factory if the key is invalid', () => {
         const collector = new ValidatingConvertingCollector(testCollectorParams);
         const thing: ITestThing = { str: 'thing1', num: 1, bool: true };
-        const factory: CollectibleFactoryCallback<TestKey, TestIndex, CollectibleTestThing> = jest.fn(
-          (key, index) => succeed(new CollectibleTestThing(thing, key, index as TestIndex))
+        const factory: CollectibleFactoryCallback<CollectibleTestThing> = jest.fn((key, index) =>
+          succeed(new CollectibleTestThing(thing, key, index as TestIndex))
         );
         expect(collector.validating.getOrAdd('thingamajig1', factory)).toFailWithDetail(
           /not a valid test thing key/i,
@@ -284,8 +280,8 @@ describe('ValidatingConvertingCollector', () => {
 
       test('fails with detail invalid-value if the factory fails', () => {
         const collector = new ValidatingConvertingCollector(testCollectorParams);
-        const factory: CollectibleFactoryCallback<TestKey, TestIndex, CollectibleTestThing> = jest.fn(
-          (key, index) => fail('factory failed')
+        const factory: CollectibleFactoryCallback<CollectibleTestThing> = jest.fn((key, index) =>
+          fail('factory failed')
         );
         expect(collector.validating.getOrAdd('thing6', factory)).toFailWithDetail(
           'factory failed',

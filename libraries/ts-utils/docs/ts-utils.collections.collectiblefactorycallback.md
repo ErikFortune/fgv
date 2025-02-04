@@ -9,7 +9,7 @@ Factory function for creating a new [ICollectible](./ts-utils.collections.icolle
 **Signature:**
 
 ```typescript
-export type CollectibleFactoryCallback<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>> = (key: TKEY, index: number) => Result<TITEM>;
+export type CollectibleFactoryCallback<TITEM extends ICollectible<any, any>> = (key: CollectibleKey<TITEM>, index: number) => Result<TITEM>;
 ```
-**References:** [ICollectible](./ts-utils.icollectible.md)<!-- -->, [Result](./ts-utils.result.md)
+**References:** [ICollectible](./ts-utils.icollectible.md)<!-- -->, [CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->, [Result](./ts-utils.result.md)
 

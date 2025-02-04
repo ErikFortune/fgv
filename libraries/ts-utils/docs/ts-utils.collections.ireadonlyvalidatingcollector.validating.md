@@ -9,5 +9,5 @@ A [CollectorValidator](./ts-utils.collections.collectorvalidator.md) which valid
 **Signature:**
 
 ```typescript
-readonly validating: IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM>;
+readonly validating: IReadOnlyCollectorValidator<TITEM>;
 ```

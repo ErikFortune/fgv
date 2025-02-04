@@ -9,9 +9,9 @@ A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) with a [C
 **Signature:**
 
 ```typescript
-export declare class ValidatingConvertingCollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> extends ConvertingCollector<TKEY, TINDEX, TITEM, TSRC> 
+export declare class ValidatingConvertingCollector<TITEM extends ICollectible<any, any>, TSRC = TITEM> extends ConvertingCollector<TITEM, TSRC> 
 ```
-**Extends:** [ConvertingCollector](./ts-utils.convertingcollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
+**Extends:** [ConvertingCollector](./ts-utils.convertingcollector.md)<!-- -->&lt;TITEM, TSRC&gt;
 
 ## Constructors
 
@@ -84,7 +84,7 @@ Description
 
 </td><td>
 
-[KeyValueConverters](./ts-utils.collections.keyvalueconverters.md)<!-- -->&lt;TKEY, TSRC&gt;
+[KeyValueConverters](./ts-utils.collections.keyvalueconverters.md)<!-- -->&lt;[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;, TSRC&gt;
 
 
 </td><td>
@@ -103,7 +103,7 @@ Description
 
 </td><td>
 
-[ConvertingCollectorValidator](./ts-utils.collections.convertingcollectorvalidator.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
+[ConvertingCollectorValidator](./ts-utils.collections.convertingcollectorvalidator.md)<!-- -->&lt;TITEM, TSRC&gt;
 
 
 </td><td>

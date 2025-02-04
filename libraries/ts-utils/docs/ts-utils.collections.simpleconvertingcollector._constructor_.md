@@ -9,7 +9,7 @@ Constructs a new [SimpleConvertingCollector](./ts-utils.collections.simpleconver
 **Signature:**
 
 ```typescript
-constructor(params: IConvertingCollectorConstructorParams<string, number, TITEM, TSRC>);
+constructor(params: IConvertingCollectorConstructorParams<TITEM, TSRC>);
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[IConvertingCollectorConstructorParams](./ts-utils.collections.iconvertingcollectorconstructorparams.md)<!-- -->&lt;string, number, TITEM, TSRC&gt;
+[IConvertingCollectorConstructorParams](./ts-utils.collections.iconvertingcollectorconstructorparams.md)<!-- -->&lt;TITEM, TSRC&gt;
 
 
 </td><td>

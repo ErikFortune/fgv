@@ -24,7 +24,7 @@ import { DetailedResult, failWithDetail } from '../base';
 import { IReadOnlyResultMap, ResultMapResultDetail } from './readonlyResultMap';
 import { ResultMapValueFactory } from './resultMap';
 import { KeyValueConverters } from './keyValueConverters';
-import { CollectibleFactoryCallback, ICollectible } from './collectible';
+import { CollectibleFactoryCallback, CollectibleKey, ICollectible } from './collectible';
 import { CollectorResultDetail } from './collector';
 import { ConvertingCollector } from './convertingCollector';
 import { IReadOnlyCollectorValidator } from './collectorValidator';
@@ -34,13 +34,12 @@ import { IReadOnlyCollectorValidator } from './collectorValidator';
  * @public
  */
 export interface IConvertingCollectorValidatorCreateParams<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TITEM extends ICollectible<any, any>,
   TSRC = TITEM
 > {
-  collector: ConvertingCollector<TKEY, TINDEX, TITEM, TSRC>;
-  converters: KeyValueConverters<TKEY, TSRC>;
+  collector: ConvertingCollector<TITEM, TSRC>;
+  converters: KeyValueConverters<CollectibleKey<TITEM>, TSRC>;
 }
 
 /**
@@ -50,25 +49,24 @@ export interface IConvertingCollectorValidatorCreateParams<
  * @public
  */
 export class ConvertingCollectorValidator<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TITEM extends ICollectible<any, any>,
   TSRC = TITEM
-> implements IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM>
+> implements IReadOnlyCollectorValidator<TITEM>
 {
-  public readonly converters: KeyValueConverters<TKEY, TSRC>;
+  public readonly converters: KeyValueConverters<CollectibleKey<TITEM>, TSRC>;
 
-  public get map(): IReadOnlyResultMap<TKEY, TITEM> {
+  public get map(): IReadOnlyResultMap<CollectibleKey<TITEM>, TITEM> {
     return this._collector.toReadOnly();
   }
 
-  protected _collector: ConvertingCollector<TKEY, TINDEX, TITEM, TSRC>;
+  protected _collector: ConvertingCollector<TITEM, TSRC>;
 
   /**
    * Constructs a new {@link Collections.ConvertingCollectorValidator | ConvertingCollectorValidator}.
    * @param params - Required parameters for constructing the collector validator.
    */
-  public constructor(params: IConvertingCollectorValidatorCreateParams<TKEY, TINDEX, TITEM, TSRC>) {
+  public constructor(params: IConvertingCollectorValidatorCreateParams<TITEM, TSRC>) {
     this._collector = params.collector;
     this.converters = params.converters;
   }
@@ -83,11 +81,11 @@ export class ConvertingCollectorValidator<
    */
   public add(
     key: string,
-    factory: ResultMapValueFactory<TKEY, TITEM>
+    factory: ResultMapValueFactory<CollectibleKey<TITEM>, TITEM>
   ): DetailedResult<TITEM, CollectorResultDetail>;
   public add(
     key: string,
-    valueOrFactory: unknown | ResultMapValueFactory<TKEY, TITEM>
+    valueOrFactory: unknown | ResultMapValueFactory<CollectibleKey<TITEM>, TITEM>
   ): DetailedResult<TITEM, CollectorResultDetail> {
     if (this.has(key)) {
       return failWithDetail(`${key}: already exists`, 'exists');
@@ -114,12 +112,12 @@ export class ConvertingCollectorValidator<
    */
   public getOrAdd(
     key: string,
-    factory: ResultMapValueFactory<TKEY, TITEM>
+    factory: ResultMapValueFactory<CollectibleKey<TITEM>, TITEM>
   ): DetailedResult<TITEM, CollectorResultDetail>;
 
   public getOrAdd(
     key: string,
-    valueOrFactory: unknown | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+    valueOrFactory: unknown | CollectibleFactoryCallback<TITEM>
   ): DetailedResult<TITEM, CollectorResultDetail> {
     if (!this._isCollectibleFactoryCallback(valueOrFactory)) {
       const converted = this.converters.convertEntry([key, valueOrFactory]);
@@ -141,13 +139,13 @@ export class ConvertingCollectorValidator<
    * {@inheritdoc Collections.ResultMap.has}
    */
   public has(key: string): boolean {
-    return this._collector.has(key as TKEY);
+    return this._collector.has(key as CollectibleKey<TITEM>);
   }
 
   /**
    * {@inheritdoc Collections.Collector.toReadOnly}
    */
-  public toReadOnly(): IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM> {
+  public toReadOnly(): IReadOnlyCollectorValidator<TITEM> {
     return this;
   }
 
@@ -159,8 +157,8 @@ export class ConvertingCollectorValidator<
    * @public
    */
   protected _isCollectibleFactoryCallback(
-    value: unknown | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
-  ): value is CollectibleFactoryCallback<TKEY, TINDEX, TITEM> {
+    value: unknown | CollectibleFactoryCallback<TITEM>
+  ): value is CollectibleFactoryCallback<TITEM> {
     return typeof value === 'function';
   }
 }

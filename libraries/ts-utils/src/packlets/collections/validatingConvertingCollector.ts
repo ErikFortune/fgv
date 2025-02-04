@@ -21,7 +21,7 @@
  */
 
 import { captureResult, Result } from '../base';
-import { CollectibleFactory, ICollectible } from './collectible';
+import { CollectibleFactory, CollectibleKey, ICollectible } from './collectible';
 import { ConvertingCollector } from './convertingCollector';
 import { ConvertingCollectorValidator } from './convertingCollectorValidator';
 import { KeyValueEntry } from './common';
@@ -33,25 +33,24 @@ import { IReadOnlyValidatingCollector } from './validatingCollector';
  * @public
  */
 export interface IValidatingConvertingCollectorConstructorParams<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TITEM extends ICollectible<any, any>,
   TSRC = TITEM
 > {
   /**
    * {@inheritdoc Collections.IConvertingCollectorConstructorParams.factory}
    */
-  factory: CollectibleFactory<TKEY, TINDEX, TITEM, TSRC>;
+  factory: CollectibleFactory<TITEM, TSRC>;
 
   /**
    * {@inheritdoc Collections.IConvertingCollectorValidatorCreateParams.converters}
    */
-  converters: KeyValueConverters<TKEY, TSRC>;
+  converters: KeyValueConverters<CollectibleKey<TITEM>, TSRC>;
 
   /**
    * {@inheritdoc Collections.IConvertingCollectorConstructorParams.entries}
    */
-  entries?: KeyValueEntry<TKEY, TSRC>[];
+  entries?: KeyValueEntry<CollectibleKey<TITEM>, TSRC>[];
 }
 
 /**
@@ -61,25 +60,24 @@ export interface IValidatingConvertingCollectorConstructorParams<
  * @public
  */
 export class ValidatingConvertingCollector<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TITEM extends ICollectible<any, any>,
   TSRC = TITEM
-> extends ConvertingCollector<TKEY, TINDEX, TITEM, TSRC> {
+> extends ConvertingCollector<TITEM, TSRC> {
   /**
    * A {@link Collections.ConvertingCollectorValidator | ConvertingCollectorValidator} which validates keys and values
    * before inserting them into this collector.
    */
-  public readonly validating: ConvertingCollectorValidator<TKEY, TINDEX, TITEM, TSRC>;
+  public readonly validating: ConvertingCollectorValidator<TITEM, TSRC>;
 
-  protected readonly _converters: KeyValueConverters<TKEY, TSRC>;
+  protected readonly _converters: KeyValueConverters<CollectibleKey<TITEM>, TSRC>;
 
   /**
    * Constructs a new {@link Collections.ValidatingConvertingCollector | ValidatingConvertingCollector}
    * from the supplied {@link Collections.IValidatingConvertingCollectorConstructorParams | parameters}.
    * @param params - Required parameters for constructing the collector.
    */
-  public constructor(params: IValidatingConvertingCollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>) {
+  public constructor(params: IValidatingConvertingCollectorConstructorParams<TITEM, TSRC>) {
     super({ factory: params.factory });
     this._converters = params.converters;
     this.validating = new ConvertingCollectorValidator({ collector: this, converters: params.converters });
@@ -95,13 +93,12 @@ export class ValidatingConvertingCollector<
    * @returns {@link Success} with the new collector if successful, {@link Failure} otherwise.
    */
   public static createValidatingCollector<
-    TKEY extends string = string,
-    TINDEX extends number = number,
-    TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    TITEM extends ICollectible<any, any>,
     TSRC = TITEM
   >(
-    params: IValidatingConvertingCollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>
-  ): Result<ValidatingConvertingCollector<TKEY, TINDEX, TITEM, TSRC>> {
+    params: IValidatingConvertingCollectorConstructorParams<TITEM, TSRC>
+  ): Result<ValidatingConvertingCollector<TITEM, TSRC>> {
     return captureResult(() => new ValidatingConvertingCollector(params));
   }
 
@@ -110,7 +107,7 @@ export class ValidatingConvertingCollector<
    * {@link Collections.IReadOnlyValidatingResultMap | read-only map}.
    * @returns
    */
-  public toReadOnly(): IReadOnlyValidatingCollector<TKEY, TINDEX, TITEM> {
+  public toReadOnly(): IReadOnlyValidatingCollector<TITEM> {
     return this;
   }
 }

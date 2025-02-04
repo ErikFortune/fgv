@@ -31,16 +31,11 @@ import {
   BrandedCollectibleTestThing,
   getBrandedTestThings,
   ITestThing,
-  TestThingIndex,
   testThingKey,
   TestThingKey
 } from './helpers';
 
-const testCollectorParams: IValidatingCollectorConstructorParams<
-  TestThingKey,
-  TestThingIndex,
-  BrandedCollectibleTestThing
-> = {
+const testCollectorParams: IValidatingCollectorConstructorParams<BrandedCollectibleTestThing> = {
   converters: new KeyValueConverters<TestThingKey, BrandedCollectibleTestThing>({
     key: testThingKey,
     value: (thing) => {

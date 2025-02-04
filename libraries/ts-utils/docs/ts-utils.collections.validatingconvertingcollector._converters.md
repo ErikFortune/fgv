@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-protected readonly _converters: KeyValueConverters<TKEY, TSRC>;
+protected readonly _converters: KeyValueConverters<CollectibleKey<TITEM>, TSRC>;
 ```

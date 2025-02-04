@@ -9,7 +9,7 @@ Helper method for derived classes to determine if a supplied itemOrCb parameter 
 **Signature:**
 
 ```typescript
-protected _isFactoryCB(itemOrCb: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>): itemOrCb is CollectibleFactoryCallback<TKEY, TINDEX, TITEM>;
+protected _isFactoryCB(itemOrCb: TSRC | CollectibleFactoryCallback<TITEM>): itemOrCb is CollectibleFactoryCallback<TITEM>;
 ```
 
 ## Parameters
@@ -37,19 +37,19 @@ itemOrCb
 
 </td><td>
 
-TSRC \| [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+TSRC \| [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>
 
-Overloaded parameter is either `TKEY` or a [factory callback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->.
+Overloaded parameter is either `CollectibleKey<TITEM>` or a [factory callback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->.
 
 
 </td></tr>
 </tbody></table>
 **Returns:**
 
-itemOrCb is [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+itemOrCb is [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TITEM&gt;
 
 Returns `true` if the parameter is a factory callback, `false` otherwise.
 

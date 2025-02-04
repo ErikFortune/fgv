@@ -9,7 +9,7 @@ Helper method for derived classes to determine if a supplied keyOrItem parameter
 **Signature:**
 
 ```typescript
-protected _overloadIsItem(keyOrItem: TKEY | TITEM, itemOrCb?: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>): keyOrItem is TITEM;
+protected _overloadIsItem(keyOrItem: CollectibleKey<TITEM> | TITEM, itemOrCb?: TSRC | CollectibleFactoryCallback<TITEM>): keyOrItem is TITEM;
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ keyOrItem
 
 </td><td>
 
-TKEY \| TITEM
+[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt; \| TITEM
 
 
 </td><td>
 
-Overloaded parameter is either `TKEY` or `TITEM`<!-- -->.
+Overloaded parameter is either `CollectibleKey<TITEM>` or `TITEM`<!-- -->.
 
 
 </td></tr>
@@ -53,7 +53,7 @@ itemOrCb
 
 </td><td>
 
-TSRC \| [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+TSRC \| [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>

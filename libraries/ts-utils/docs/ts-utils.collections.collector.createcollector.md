@@ -9,7 +9,7 @@ Creates a new [Collector](./ts-utils.collections.collector.md) instance.
 **Signature:**
 
 ```typescript
-static createCollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>>(params?: ICollectorConstructorParams<TKEY, TINDEX, TITEM>): Result<Collector<TKEY, TINDEX, TITEM>>;
+static createCollector<TITEM extends ICollectible<any, any>>(params?: ICollectorConstructorParams<TITEM>): Result<Collector<TITEM>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[ICollectorConstructorParams](./ts-utils.collections.icollectorconstructorparams.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+[ICollectorConstructorParams](./ts-utils.collections.icollectorconstructorparams.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>
@@ -49,7 +49,7 @@ _(Optional)_ Optional [initialization parameters](./ts-utils.collections.icollec
 </tbody></table>
 **Returns:**
 
-[Result](./ts-utils.result.md)<!-- -->&lt;[Collector](./ts-utils.collector.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;&gt;
+[Result](./ts-utils.result.md)<!-- -->&lt;[Collector](./ts-utils.collector.md)<!-- -->&lt;TITEM&gt;&gt;
 
 Returns [Success](./ts-utils.success.md) with the new collector if it was created successfully, or [Failure](./ts-utils.failure.md) with an error if the collector could not be created.
 

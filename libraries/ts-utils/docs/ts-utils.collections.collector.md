@@ -11,9 +11,9 @@ Items are assigned an index sequentially as they are added to the collection. On
 **Signature:**
 
 ```typescript
-export declare class Collector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>> implements IReadOnlyCollector<TKEY, TINDEX, TITEM> 
+export declare class Collector<TITEM extends ICollectible<any, any>> implements IReadOnlyCollector<TITEM> 
 ```
-**Implements:** [IReadOnlyCollector](./ts-utils.collections.ireadonlycollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+**Implements:** [IReadOnlyCollector](./ts-utils.collections.ireadonlycollector.md)<!-- -->&lt;TITEM&gt;
 
 ## Constructors
 
@@ -114,6 +114,20 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[\_isItem(keyOrItem)](./ts-utils.collections.collector._isitem.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
 
 [\[Symbol.iterator\]()](./ts-utils.collections.collector._symbol.iterator_.md)
 

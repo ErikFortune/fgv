@@ -9,7 +9,7 @@ Adds an item to the collector using a supplied [factory callback](./ts-utils.col
 **Signature:**
 
 ```typescript
-add(key: TKEY, cb: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
+add(key: CollectibleKey<TITEM>, cb: CollectibleFactoryCallback<TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ key
 
 </td><td>
 
-TKEY
+[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>
@@ -53,7 +53,7 @@ cb
 
 </td><td>
 
-[CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+[CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>

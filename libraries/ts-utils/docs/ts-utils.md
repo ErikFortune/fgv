@@ -125,7 +125,7 @@ A [ResultMap](./ts-utils.collections.resultmap.md) class as a `Map<TK, TV>`<!-- 
 
 </td><td>
 
-A simple [collector](./ts-utils.collections.collector.md) with non-branded `string` key and `number` index, and no transformation of source items.
+A simple [collector](./ts-utils.collections.collector.md) with non-branded `string` key and `number` index.
 
 
 </td></tr>

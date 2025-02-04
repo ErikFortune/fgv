@@ -34,7 +34,7 @@ describe('ConvertingCollector', () => {
   let things: ITestThing[];
   let collectibles: CollectibleTestThing[];
   let entries: KeyValueEntry<string, ITestThing>[];
-  let factory: CollectibleFactory<string, number, CollectibleTestThing, ITestThing>;
+  let factory: CollectibleFactory<CollectibleTestThing, ITestThing>;
 
   beforeEach(() => {
     const td = getTestThings();
@@ -188,7 +188,7 @@ describe('ConvertingCollector', () => {
           factory: factoryFn
         });
         const [key] = entries[0];
-        const callFactory: CollectibleFactoryCallback<string, number, CollectibleTestThing> = (k, ix) => {
+        const callFactory: CollectibleFactoryCallback<CollectibleTestThing> = (k, ix) => {
           return succeed(collectibles[ix]);
         };
         const callFactoryFn = jest.fn(callFactory);

@@ -9,7 +9,7 @@ Constructor for derived classes.
 **Signature:**
 
 ```typescript
-protected constructor(params: IConvertingCollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>);
+protected constructor(params: IConvertingCollectorConstructorParams<TITEM, TSRC>);
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[IConvertingCollectorConstructorParams](./ts-utils.collections.iconvertingcollectorconstructorparams.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
+[IConvertingCollectorConstructorParams](./ts-utils.collections.iconvertingcollectorconstructorparams.md)<!-- -->&lt;TITEM, TSRC&gt;
 
 
 </td><td>

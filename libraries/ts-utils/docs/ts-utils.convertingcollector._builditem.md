@@ -9,7 +9,7 @@ Helper method for derived classes to build an item from a key and a source repre
 **Signature:**
 
 ```typescript
-protected _buildItem(key: TKEY, itemOrCb: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>): Result<TITEM>;
+protected _buildItem(key: CollectibleKey<TITEM>, itemOrCb: TSRC | CollectibleFactoryCallback<TITEM>): Result<TITEM>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ key
 
 </td><td>
 
-TKEY
+[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>
@@ -53,7 +53,7 @@ itemOrCb
 
 </td><td>
 
-TSRC \| [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+TSRC \| [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>

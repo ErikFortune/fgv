@@ -9,7 +9,7 @@ Adds an item to the collector using the default [factory](./ts-utils.collections
 **Signature:**
 
 ```typescript
-add(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
+add(key: CollectibleKey<TITEM>, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ key
 
 </td><td>
 
-TKEY
+[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>

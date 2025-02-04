@@ -9,11 +9,11 @@ Returns an iterator over the map keys.
 **Signature:**
 
 ```typescript
-keys(): IterableIterator<TKEY>;
+keys(): IterableIterator<CollectibleKey<TITEM>>;
 ```
 **Returns:**
 
-IterableIterator&lt;TKEY&gt;
+IterableIterator&lt;[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;&gt;
 
 An iterator over the map keys.
 

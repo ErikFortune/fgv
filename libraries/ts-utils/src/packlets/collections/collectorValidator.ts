@@ -26,7 +26,7 @@ import { ResultMapValueFactory } from './resultMap';
 import { KeyValueConverters } from './keyValueConverters';
 import { Collector, CollectorResultDetail } from './collector';
 import { IReadOnlyResultMapValidator } from './resultMapValidator';
-import { ICollectible } from './collectible';
+import { CollectibleKey, ICollectible } from './collectible';
 
 /**
  * A read-only interface exposing non-mutating methods of a
@@ -34,14 +34,13 @@ import { ICollectible } from './collectible';
  * @public
  */
 export interface IReadOnlyCollectorValidator<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY> = ICollectible<TKEY, TINDEX>
-> extends IReadOnlyResultMapValidator<TKEY, TITEM> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TITEM extends ICollectible<any, any>
+> extends IReadOnlyResultMapValidator<CollectibleKey<TITEM>, TITEM> {
   /**
    * {@inheritdoc Collections.ConvertingCollectorValidator.map}
    */
-  readonly map: IReadOnlyResultMap<TKEY, TITEM>;
+  readonly map: IReadOnlyResultMap<CollectibleKey<TITEM>, TITEM>;
 
   /**
    * {@inheritdoc Collections.Collector.get}
@@ -58,7 +57,7 @@ export interface IReadOnlyCollectorValidator<
    */
   getOrAdd(
     key: string,
-    factory: ResultMapValueFactory<TKEY, TITEM>
+    factory: ResultMapValueFactory<CollectibleKey<TITEM>, TITEM>
   ): DetailedResult<TITEM, CollectorResultDetail>;
 }
 
@@ -67,12 +66,11 @@ export interface IReadOnlyCollectorValidator<
  * @public
  */
 export interface ICollectorValidatorCreateParams<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TITEM extends ICollectible<any, any>
 > {
-  readonly collector: Collector<TKEY, TINDEX, TITEM>;
-  readonly converters: KeyValueConverters<TKEY, TITEM>;
+  readonly collector: Collector<TITEM>;
+  readonly converters: KeyValueConverters<CollectibleKey<TITEM>, TITEM>;
 }
 
 /**
@@ -81,24 +79,23 @@ export interface ICollectorValidatorCreateParams<
  * @public
  */
 export class CollectorValidator<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
-> implements IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TITEM extends ICollectible<any, any>
+> implements IReadOnlyCollectorValidator<TITEM>
 {
-  public readonly converters: KeyValueConverters<TKEY, TITEM>;
+  public readonly converters: KeyValueConverters<CollectibleKey<TITEM>, TITEM>;
 
-  public get map(): IReadOnlyResultMap<TKEY, TITEM> {
+  public get map(): IReadOnlyResultMap<CollectibleKey<TITEM>, TITEM> {
     return this._collector.toReadOnly();
   }
 
-  protected _collector: Collector<TKEY, TINDEX, TITEM>;
+  protected _collector: Collector<TITEM>;
 
   /**
    * Constructs a new {@link Collections.ConvertingCollectorValidator | ConvertingCollectorValidator}.
    * @param params - Required parameters for constructing the collector validator.
    */
-  public constructor(params: ICollectorValidatorCreateParams<TKEY, TINDEX, TITEM>) {
+  public constructor(params: ICollectorValidatorCreateParams<TITEM>) {
     this._collector = params.collector;
     this.converters = params.converters;
   }
@@ -126,7 +123,7 @@ export class CollectorValidator<
    */
   public getOrAdd(
     key: string,
-    factory: ResultMapValueFactory<TKEY, TITEM>
+    factory: ResultMapValueFactory<CollectibleKey<TITEM>, TITEM>
   ): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
@@ -137,7 +134,7 @@ export class CollectorValidator<
 
   public getOrAdd(
     keyOrItem: string | unknown,
-    factoryCb?: ResultMapValueFactory<TKEY, TITEM>
+    factoryCb?: ResultMapValueFactory<CollectibleKey<TITEM>, TITEM>
   ): DetailedResult<TITEM, CollectorResultDetail> {
     if (factoryCb === undefined) {
       return this._convertValue(keyOrItem).onSuccess((item) => this._collector.getOrAdd(item));
@@ -153,13 +150,13 @@ export class CollectorValidator<
    * {@inheritdoc Collections.ResultMap.has}
    */
   public has(key: string): boolean {
-    return this._collector.has(key as TKEY);
+    return this._collector.has(key as CollectibleKey<TITEM>);
   }
 
   /**
    * {@inheritdoc Collections.Collector.toReadOnly}
    */
-  public toReadOnly(): IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM> {
+  public toReadOnly(): IReadOnlyCollectorValidator<TITEM> {
     return this;
   }
 

@@ -9,7 +9,7 @@ Gets a value from the map.
 **Signature:**
 
 ```typescript
-get(key: TKEY): DetailedResult<TITEM, ResultMapResultDetail>;
+get(key: CollectibleKey<TITEM>): DetailedResult<TITEM, ResultMapResultDetail>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ key
 
 </td><td>
 
-TKEY
+[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>

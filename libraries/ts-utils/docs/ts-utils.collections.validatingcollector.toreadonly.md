@@ -9,10 +9,10 @@ Gets a read-only version of this collector as a [read-only map](./ts-utils.colle
 **Signature:**
 
 ```typescript
-toReadOnly(): IReadOnlyValidatingCollector<TKEY, TINDEX, TITEM>;
+toReadOnly(): IReadOnlyValidatingCollector<TITEM>;
 ```
 **Returns:**
 
-[IReadOnlyValidatingCollector](./ts-utils.collections.ireadonlyvalidatingcollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+[IReadOnlyValidatingCollector](./ts-utils.collections.ireadonlyvalidatingcollector.md)<!-- -->&lt;TITEM&gt;
 
 

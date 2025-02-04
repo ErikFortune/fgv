@@ -162,8 +162,8 @@ describe('Collectors', () => {
       test('uses a factory function to create a new item if it is not already in the collector', () => {
         const collector = new SimpleCollector<CollectibleTestThing>();
         const thing: ITestThing = { str: 'new', num: 6, bool: false };
-        const factory: CollectibleFactoryCallback<string, number, CollectibleTestThing> = jest.fn(
-          (key, index) => succeed(new CollectibleTestThing(thing, key, index))
+        const factory: CollectibleFactoryCallback<CollectibleTestThing> = jest.fn((key, index) =>
+          succeed(new CollectibleTestThing(thing, key, index))
         );
         expect(collector.getOrAdd('newThing', factory)).toSucceedWith(expect.objectContaining(thing));
         expect(factory).toHaveBeenCalledWith('newThing', 0);
@@ -174,8 +174,8 @@ describe('Collectors', () => {
       test('does not call the factory if an item is already in the collector', () => {
         const collector = new SimpleCollector<CollectibleTestThing>({ items: collectibles });
         const thing = collectibles[0];
-        const factory: CollectibleFactoryCallback<string, number, CollectibleTestThing> = jest.fn(
-          (key, index) => succeed(new CollectibleTestThing({ str: 'new', num: 6, bool: false }, key, index))
+        const factory: CollectibleFactoryCallback<CollectibleTestThing> = jest.fn((key, index) =>
+          succeed(new CollectibleTestThing({ str: 'new', num: 6, bool: false }, key, index))
         );
         expect(collector.getOrAdd(thing.key, factory)).toSucceedWith(thing);
         expect(factory).not.toHaveBeenCalled();

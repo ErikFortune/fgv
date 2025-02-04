@@ -9,9 +9,9 @@ A read-only interface exposing non-mutating methods of a [ValidatingCollector](.
 **Signature:**
 
 ```typescript
-export interface IReadOnlyValidatingCollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>> extends IReadOnlyValidatingResultMap<TKEY, TITEM> 
+export interface IReadOnlyValidatingCollector<TITEM extends ICollectible<any, any>> extends IReadOnlyValidatingResultMap<CollectibleKey<TITEM>, TITEM> 
 ```
-**Extends:** [IReadOnlyValidatingResultMap](./ts-utils.collections.ireadonlyvalidatingresultmap.md)<!-- -->&lt;TKEY, TITEM&gt;
+**Extends:** [IReadOnlyValidatingResultMap](./ts-utils.collections.ireadonlyvalidatingresultmap.md)<!-- -->&lt;[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;, TITEM&gt;
 
 ## Properties
 
@@ -68,7 +68,7 @@ Description
 
 </td><td>
 
-[IReadOnlyCollectorValidator](./ts-utils.collections.ireadonlycollectorvalidator.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+[IReadOnlyCollectorValidator](./ts-utils.collections.ireadonlycollectorvalidator.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>

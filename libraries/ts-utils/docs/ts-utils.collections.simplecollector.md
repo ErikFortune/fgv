@@ -4,14 +4,14 @@
 
 ## Collections.SimpleCollector class
 
-A simple [collector](./ts-utils.collections.collector.md) with non-branded `string` key and `number` index, and no transformation of source items.
+A simple [collector](./ts-utils.collections.collector.md) with non-branded `string` key and `number` index.
 
 **Signature:**
 
 ```typescript
-export declare class SimpleCollector<TITEM extends ICollectible<string, number>> extends Collector<string, number, TITEM> 
+export declare class SimpleCollector<TITEM extends ICollectible<string, number>> extends Collector<TITEM> 
 ```
-**Extends:** [Collector](./ts-utils.collector.md)<!-- -->&lt;string, number, TITEM&gt;
+**Extends:** [Collector](./ts-utils.collector.md)<!-- -->&lt;TITEM&gt;
 
 ## Constructors
 

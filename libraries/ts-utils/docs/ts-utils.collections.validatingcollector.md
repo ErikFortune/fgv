@@ -9,9 +9,9 @@ A [Collector](./ts-utils.collections.collector.md) with a [CollectorValidator](.
 **Signature:**
 
 ```typescript
-export declare class ValidatingCollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>> extends Collector<TKEY, TINDEX, TITEM> 
+export declare class ValidatingCollector<TITEM extends ICollectible<any, any>> extends Collector<TITEM> 
 ```
-**Extends:** [Collector](./ts-utils.collector.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+**Extends:** [Collector](./ts-utils.collector.md)<!-- -->&lt;TITEM&gt;
 
 ## Constructors
 
@@ -84,7 +84,7 @@ Description
 
 </td><td>
 
-[KeyValueConverters](./ts-utils.collections.keyvalueconverters.md)<!-- -->&lt;TKEY, TITEM&gt;
+[KeyValueConverters](./ts-utils.collections.keyvalueconverters.md)<!-- -->&lt;[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;, TITEM&gt;
 
 
 </td><td>
@@ -103,7 +103,7 @@ Description
 
 </td><td>
 
-[CollectorValidator](./ts-utils.collections.collectorvalidator.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+[CollectorValidator](./ts-utils.collections.collectorvalidator.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>

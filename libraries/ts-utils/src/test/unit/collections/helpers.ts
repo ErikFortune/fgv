@@ -104,12 +104,12 @@ export class BrokenCollectibleTestThing extends CollectibleTestThing {
   }
 }
 
-export class TestCollector extends ConvertingCollector<string, number, CollectibleTestThing, ITestThing> {
+export class TestCollector extends ConvertingCollector<CollectibleTestThing, ITestThing> {
   public constructor(things?: ITestThing[]) {
     const entries = things
       ? { entries: things.map((thing, index): [string, ITestThing] => [`thing${index}`, thing]) }
       : {};
-    const params: IConvertingCollectorConstructorParams<string, number, CollectibleTestThing, ITestThing> = {
+    const params: IConvertingCollectorConstructorParams<CollectibleTestThing, ITestThing> = {
       factory: TestCollector._factory,
       ...entries
     };

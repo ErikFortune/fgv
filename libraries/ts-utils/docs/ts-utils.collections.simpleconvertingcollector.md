@@ -9,9 +9,9 @@ A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) with non-
 **Signature:**
 
 ```typescript
-export declare class SimpleConvertingCollector<TITEM extends ICollectible<string, number>, TSRC> extends ConvertingCollector<string, number, TITEM, TSRC> 
+export declare class SimpleConvertingCollector<TITEM extends ICollectible<string, number>, TSRC> extends ConvertingCollector<TITEM, TSRC> 
 ```
-**Extends:** [ConvertingCollector](./ts-utils.convertingcollector.md)<!-- -->&lt;string, number, TITEM, TSRC&gt;
+**Extends:** [ConvertingCollector](./ts-utils.convertingcollector.md)<!-- -->&lt;TITEM, TSRC&gt;
 
 ## Constructors
 

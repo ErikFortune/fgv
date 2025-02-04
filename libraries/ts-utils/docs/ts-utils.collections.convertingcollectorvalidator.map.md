@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-get map(): IReadOnlyResultMap<TKEY, TITEM>;
+get map(): IReadOnlyResultMap<CollectibleKey<TITEM>, TITEM>;
 ```

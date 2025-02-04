@@ -21,7 +21,7 @@
  */
 
 import { captureResult, DetailedResult, failWithDetail, Result, succeedWithDetail } from '../base';
-import { ICollectible, CollectibleFactoryCallback, CollectibleFactory } from './collectible';
+import { ICollectible, CollectibleFactoryCallback, CollectibleFactory, CollectibleKey } from './collectible';
 import { Collector, CollectorResultDetail } from './collector';
 import { KeyValueEntry } from './common';
 
@@ -30,19 +30,18 @@ import { KeyValueEntry } from './common';
  * @public
  */
 export interface IConvertingCollectorConstructorParams<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TITEM extends ICollectible<any, any>,
   TSRC = TITEM
 > {
   /**
    * The default {@link Collections.CollectibleFactory | factory} to create items.
    */
-  factory: CollectibleFactory<TKEY, TINDEX, TITEM, TSRC>;
+  factory: CollectibleFactory<TITEM, TSRC>;
   /**
    * An optional array of entries to add to the collector.
    */
-  entries?: KeyValueEntry<TKEY, TSRC>[];
+  entries?: KeyValueEntry<CollectibleKey<TITEM>, TSRC>[];
 }
 
 /**
@@ -52,18 +51,17 @@ export interface IConvertingCollectorConstructorParams<
  * @public
  */
 export class ConvertingCollector<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TITEM extends ICollectible<any, any>,
   TSRC = TITEM
-> extends Collector<TKEY, TINDEX, TITEM> {
-  private _factory: CollectibleFactory<TKEY, TINDEX, TITEM, TSRC>;
+> extends Collector<TITEM> {
+  private _factory: CollectibleFactory<TITEM, TSRC>;
 
   /**
    * Constructor for derived classes.
    * @param params - Parameters for constructing the collector.
    */
-  protected constructor(params: IConvertingCollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>) {
+  protected constructor(params: IConvertingCollectorConstructorParams<TITEM, TSRC>) {
     super();
     this._factory = params.factory;
     params.entries?.forEach((entry) => {
@@ -85,7 +83,7 @@ export class ConvertingCollector<
    * an error if the item cannot be created and indexed.
    * @public
    */
-  public add(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
+  public add(key: CollectibleKey<TITEM>, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
    * Adds an item to the collector using a supplied {@link Collections.CollectibleFactoryCallback | factory callback}
@@ -96,13 +94,13 @@ export class ConvertingCollector<
    * an error if the item cannot be created and indexed.
    */
   public add(
-    key: TKEY,
-    cb: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+    key: CollectibleKey<TITEM>,
+    cb: CollectibleFactoryCallback<TITEM>
   ): DetailedResult<TITEM, CollectorResultDetail>;
 
   public add(
-    keyOrItem: TKEY | TITEM,
-    itemOrCb?: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+    keyOrItem: CollectibleKey<TITEM> | TITEM,
+    itemOrCb?: TSRC | CollectibleFactoryCallback<TITEM>
   ): DetailedResult<TITEM, CollectorResultDetail> {
     if (this._overloadIsItem(keyOrItem, itemOrCb)) {
       return super.add(keyOrItem);
@@ -123,8 +121,8 @@ export class ConvertingCollector<
    * {@inheritdoc Collections.Collector.(getOrAdd:2)}
    */
   public getOrAdd(
-    key: TKEY,
-    callback: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+    key: CollectibleKey<TITEM>,
+    callback: CollectibleFactoryCallback<TITEM>
   ): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
@@ -134,11 +132,11 @@ export class ConvertingCollector<
    * @returns Returns {@link Success | Success} with the item if it exists or could be created, or {@link Failure | Failure} with an error if the
    * item cannot be created and indexed.
    */
-  public getOrAdd(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
+  public getOrAdd(key: CollectibleKey<TITEM>, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
 
   public getOrAdd(
-    keyOrItem: TKEY | TITEM,
-    itemOrCb?: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+    keyOrItem: CollectibleKey<TITEM> | TITEM,
+    itemOrCb?: TSRC | CollectibleFactoryCallback<TITEM>
   ): DetailedResult<TITEM, CollectorResultDetail> {
     if (this._overloadIsItem(keyOrItem, itemOrCb)) {
       return super.getOrAdd(keyOrItem);
@@ -167,29 +165,29 @@ export class ConvertingCollector<
   /**
    * Helper method for derived classes to determine if a supplied
    * itemOrCb parameter is a factory callback.
-   * @param itemOrCb - Overloaded parameter is either `TKEY` or
+   * @param itemOrCb - Overloaded parameter is either `CollectibleKey<TITEM>` or
    * a {@link Collections.CollectibleFactoryCallback | factory callback}.
    * @returns Returns `true` if the parameter is a factory callback, `false` otherwise.
    * @public
    */
   protected _isFactoryCB(
-    itemOrCb: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
-  ): itemOrCb is CollectibleFactoryCallback<TKEY, TINDEX, TITEM> {
+    itemOrCb: TSRC | CollectibleFactoryCallback<TITEM>
+  ): itemOrCb is CollectibleFactoryCallback<TITEM> {
     return typeof itemOrCb === 'function';
   }
 
   /**
    * Helper method for derived classes to determine if a supplied
    * keyOrItem parameter is an item.
-   * @param keyOrItem - Overloaded parameter is either `TKEY` or `TITEM`.
+   * @param keyOrItem - Overloaded parameter is either `CollectibleKey<TITEM>` or `TITEM`.
    * @param itemOrCb - Overloaded parameter is either `TSRC`, a {@link Collections.CollectibleFactoryCallback | factory callback}
    * or `undefined`.
    * @returns Returns `true` if the parameter is an item, `false` otherwise.
    * @public
    */
   protected _overloadIsItem(
-    keyOrItem: TKEY | TITEM,
-    itemOrCb?: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+    keyOrItem: CollectibleKey<TITEM> | TITEM,
+    itemOrCb?: TSRC | CollectibleFactoryCallback<TITEM>
   ): keyOrItem is TITEM {
     return itemOrCb === undefined;
   }
@@ -204,8 +202,8 @@ export class ConvertingCollector<
    * @public
    */
   protected _buildItem(
-    key: TKEY,
-    itemOrCb: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+    key: CollectibleKey<TITEM>,
+    itemOrCb: TSRC | CollectibleFactoryCallback<TITEM>
   ): Result<TITEM> {
     return this._isFactoryCB(itemOrCb) ? itemOrCb(key, this.size) : this._factory(key, this.size, itemOrCb);
   }
@@ -218,12 +216,12 @@ export class ConvertingCollector<
 export class SimpleConvertingCollector<
   TITEM extends ICollectible<string, number>,
   TSRC
-> extends ConvertingCollector<string, number, TITEM, TSRC> {
+> extends ConvertingCollector<TITEM, TSRC> {
   /**
    * Constructs a new {@link Collections.SimpleConvertingCollector | SimpleConvertingCollector} from the supplied parameters.
    * @param params - Required parameters for constructing the collector.
    */
-  public constructor(params: IConvertingCollectorConstructorParams<string, number, TITEM, TSRC>) {
+  public constructor(params: IConvertingCollectorConstructorParams<TITEM, TSRC>) {
     super(params);
   }
 
@@ -233,7 +231,7 @@ export class SimpleConvertingCollector<
    * @returns {@link Success} with the new collector if successful, {@link Failure} otherwise.
    */
   public static createSimpleCollector<TITEM extends ICollectible<string, number>, TSRC>(
-    params: IConvertingCollectorConstructorParams<string, number, TITEM, TSRC>
+    params: IConvertingCollectorConstructorParams<TITEM, TSRC>
   ): Result<SimpleConvertingCollector<TITEM, TSRC>> {
     return captureResult(() => new SimpleConvertingCollector(params));
   }

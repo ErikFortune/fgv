@@ -9,9 +9,9 @@ Gets a read-only version of this collector.
 **Signature:**
 
 ```typescript
-toReadOnly(): IReadOnlyCollector<TKEY, TINDEX, TITEM>;
+toReadOnly(): IReadOnlyCollector<TITEM>;
 ```
 **Returns:**
 
-[IReadOnlyCollector](./ts-utils.collections.ireadonlycollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+[IReadOnlyCollector](./ts-utils.collections.ireadonlycollector.md)<!-- -->&lt;TITEM&gt;
 

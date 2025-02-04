@@ -9,7 +9,7 @@ Creates a new [ValidatingCollector](./ts-utils.collections.validatingcollector.m
 **Signature:**
 
 ```typescript
-static createValidatingCollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>>(params: IValidatingCollectorConstructorParams<TKEY, TINDEX, TITEM>): Result<ValidatingCollector<TKEY, TINDEX, TITEM>>;
+static createValidatingCollector<TITEM extends ICollectible<any, any>>(params: IValidatingCollectorConstructorParams<TITEM>): Result<ValidatingCollector<TITEM>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[IValidatingCollectorConstructorParams](./ts-utils.collections.ivalidatingcollectorconstructorparams.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+[IValidatingCollectorConstructorParams](./ts-utils.collections.ivalidatingcollectorconstructorparams.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>
@@ -49,7 +49,7 @@ Required parameters for constructing the collector.
 </tbody></table>
 **Returns:**
 
-[Result](./ts-utils.result.md)<!-- -->&lt;[ValidatingCollector](./ts-utils.validatingcollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;&gt;
+[Result](./ts-utils.result.md)<!-- -->&lt;[ValidatingCollector](./ts-utils.validatingcollector.md)<!-- -->&lt;TITEM&gt;&gt;
 
 [Success](./ts-utils.success.md) with the new collector if successful, [Failure](./ts-utils.failure.md) otherwise.
 

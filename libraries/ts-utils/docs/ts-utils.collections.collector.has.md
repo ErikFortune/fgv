@@ -9,7 +9,7 @@ Returns `true` if the map contains a key.
 **Signature:**
 
 ```typescript
-has(key: TKEY): boolean;
+has(key: CollectibleKey<TITEM>): boolean;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ key
 
 </td><td>
 
-TKEY
+[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>

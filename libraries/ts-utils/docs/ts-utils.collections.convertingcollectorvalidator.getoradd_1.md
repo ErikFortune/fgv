@@ -9,7 +9,7 @@ Gets an existing item with a key matching the supplied key, or adds a new item t
 **Signature:**
 
 ```typescript
-getOrAdd(key: string, factory: ResultMapValueFactory<TKEY, TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
+getOrAdd(key: string, factory: ResultMapValueFactory<CollectibleKey<TITEM>, TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ factory
 
 </td><td>
 
-[ResultMapValueFactory](./ts-utils.collections.resultmapvaluefactory.md)<!-- -->&lt;TKEY, TITEM&gt;
+[ResultMapValueFactory](./ts-utils.collections.resultmapvaluefactory.md)<!-- -->&lt;[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;, TITEM&gt;
 
 
 </td><td>

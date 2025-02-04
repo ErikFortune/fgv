@@ -9,9 +9,9 @@ A [Collector](./ts-utils.collections.collector.md) wrapper which validates weakl
 **Signature:**
 
 ```typescript
-export declare class CollectorValidator<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>> implements IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM> 
+export declare class CollectorValidator<TITEM extends ICollectible<any, any>> implements IReadOnlyCollectorValidator<TITEM> 
 ```
-**Implements:** [IReadOnlyCollectorValidator](./ts-utils.collections.ireadonlycollectorvalidator.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+**Implements:** [IReadOnlyCollectorValidator](./ts-utils.collections.ireadonlycollectorvalidator.md)<!-- -->&lt;TITEM&gt;
 
 ## Constructors
 
@@ -82,7 +82,7 @@ Description
 
 </td><td>
 
-[Collector](./ts-utils.collector.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+[Collector](./ts-utils.collector.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>
@@ -101,7 +101,7 @@ Description
 
 </td><td>
 
-[KeyValueConverters](./ts-utils.collections.keyvalueconverters.md)<!-- -->&lt;TKEY, TITEM&gt;
+[KeyValueConverters](./ts-utils.collections.keyvalueconverters.md)<!-- -->&lt;[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;, TITEM&gt;
 
 
 </td><td>
@@ -120,7 +120,7 @@ Description
 
 </td><td>
 
-[IReadOnlyResultMap](./ts-utils.ireadonlyresultmap.md)<!-- -->&lt;TKEY, TITEM&gt;
+[IReadOnlyResultMap](./ts-utils.ireadonlyresultmap.md)<!-- -->&lt;[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;, TITEM&gt;
 
 
 </td><td>

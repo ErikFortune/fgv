@@ -8,5 +8,5 @@
 **Signature:**
 
 ```typescript
-converters: KeyValueConverters<TKEY, TITEM>;
+converters: KeyValueConverters<CollectibleKey<TITEM>, TITEM>;
 ```

@@ -9,7 +9,7 @@ Parameters for constructing a [ValidatingConvertingCollector](./ts-utils.collect
 **Signature:**
 
 ```typescript
-export interface IValidatingConvertingCollectorConstructorParams<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> 
+export interface IValidatingConvertingCollectorConstructorParams<TITEM extends ICollectible<any, any>, TSRC = TITEM> 
 ```
 
 ## Properties
@@ -45,7 +45,7 @@ Description
 
 </td><td>
 
-[KeyValueConverters](./ts-utils.collections.keyvalueconverters.md)<!-- -->&lt;TKEY, TSRC&gt;
+[KeyValueConverters](./ts-utils.collections.keyvalueconverters.md)<!-- -->&lt;[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;, TSRC&gt;
 
 
 </td><td>
@@ -63,7 +63,7 @@ Description
 
 </td><td>
 
-[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TKEY, TSRC&gt;\[\]
+[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;, TSRC&gt;\[\]
 
 
 </td><td>
@@ -82,7 +82,7 @@ _(Optional)_ An optional array of entries to add to the collector.
 
 </td><td>
 
-[CollectibleFactory](./ts-utils.collections.collectiblefactory.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
+[CollectibleFactory](./ts-utils.collections.collectiblefactory.md)<!-- -->&lt;TITEM, TSRC&gt;
 
 
 </td><td>

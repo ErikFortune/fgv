@@ -9,5 +9,5 @@ A [ConvertingCollectorValidator](./ts-utils.collections.convertingcollectorvalid
 **Signature:**
 
 ```typescript
-readonly validating: ConvertingCollectorValidator<TKEY, TINDEX, TITEM, TSRC>;
+readonly validating: ConvertingCollectorValidator<TITEM, TSRC>;
 ```

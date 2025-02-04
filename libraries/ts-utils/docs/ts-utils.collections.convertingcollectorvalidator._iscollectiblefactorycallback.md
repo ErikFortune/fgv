@@ -9,7 +9,7 @@ Determines if a value is a [CollectibleFactoryCallback](./ts-utils.collections.c
 **Signature:**
 
 ```typescript
-protected _isCollectibleFactoryCallback(value: unknown | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>): value is CollectibleFactoryCallback<TKEY, TINDEX, TITEM>;
+protected _isCollectibleFactoryCallback(value: unknown | CollectibleFactoryCallback<TITEM>): value is CollectibleFactoryCallback<TITEM>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ value
 
 </td><td>
 
-unknown \| [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+unknown \| [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>
@@ -49,7 +49,7 @@ The value to check.
 </tbody></table>
 **Returns:**
 
-value is [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+value is [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TITEM&gt;
 
 `true` if the value is a [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->, `false` otherwise.
 

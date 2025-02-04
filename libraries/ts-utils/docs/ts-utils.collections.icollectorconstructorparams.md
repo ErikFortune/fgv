@@ -9,7 +9,7 @@ Parameters for constructing a [ICollector](./ts-utils.collections.collector.md)<
 **Signature:**
 
 ```typescript
-export interface ICollectorConstructorParams<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>> 
+export interface ICollectorConstructorParams<TITEM extends ICollectible<any, any>> 
 ```
 
 ## Properties

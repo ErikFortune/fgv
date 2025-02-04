@@ -9,7 +9,7 @@ Gets an existing item with a key matching the supplied key, or adds a new item t
 **Signature:**
 
 ```typescript
-getOrAdd(key: TKEY, factory: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
+getOrAdd(key: CollectibleKey<TITEM>, factory: CollectibleFactoryCallback<TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ key
 
 </td><td>
 
-TKEY
+[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>
@@ -53,7 +53,7 @@ factory
 
 </td><td>
 
-[CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+[CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>

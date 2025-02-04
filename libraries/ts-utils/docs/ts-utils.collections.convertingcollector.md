@@ -9,9 +9,9 @@ A [collector](./ts-utils.collector.md) that collects [ICollectible](./ts-utils.c
 **Signature:**
 
 ```typescript
-export declare class ConvertingCollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> extends Collector<TKEY, TINDEX, TITEM> 
+export declare class ConvertingCollector<TITEM extends ICollectible<any, any>, TSRC = TITEM> extends Collector<TITEM> 
 ```
-**Extends:** [Collector](./ts-utils.collector.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+**Extends:** [Collector](./ts-utils.collector.md)<!-- -->&lt;TITEM&gt;
 
 ## Constructors
 

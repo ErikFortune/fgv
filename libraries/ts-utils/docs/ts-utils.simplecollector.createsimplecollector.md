@@ -9,7 +9,7 @@ Creates a new [SimpleCollector](./ts-utils.collections.simplecollector.md) insta
 **Signature:**
 
 ```typescript
-static createSimpleCollector<TITEM extends ICollectible<string, number>>(params?: ICollectorConstructorParams<string, number, TITEM>): Result<SimpleCollector<TITEM>>;
+static createSimpleCollector<TITEM extends ICollectible<string, number>>(params?: ICollectorConstructorParams<TITEM>): Result<SimpleCollector<TITEM>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[ICollectorConstructorParams](./ts-utils.collections.icollectorconstructorparams.md)<!-- -->&lt;string, number, TITEM&gt;
+[ICollectorConstructorParams](./ts-utils.collections.icollectorconstructorparams.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>

@@ -9,7 +9,7 @@ Constructs a new [ValidatingConvertingCollector](./ts-utils.collections.validati
 **Signature:**
 
 ```typescript
-constructor(params: IValidatingConvertingCollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>);
+constructor(params: IValidatingConvertingCollectorConstructorParams<TITEM, TSRC>);
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[IValidatingConvertingCollectorConstructorParams](./ts-utils.collections.ivalidatingconvertingcollectorconstructorparams.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
+[IValidatingConvertingCollectorConstructorParams](./ts-utils.collections.ivalidatingconvertingcollectorconstructorparams.md)<!-- -->&lt;TITEM, TSRC&gt;
 
 
 </td><td>

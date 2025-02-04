@@ -29,7 +29,7 @@ import {
   succeed,
   succeedWithDetail
 } from '../base';
-import { CollectibleFactoryCallback, ICollectible } from './collectible';
+import { CollectibleFactoryCallback, CollectibleKey, ICollectible } from './collectible';
 import { KeyValueEntry } from './common';
 import { IReadOnlyResultMap, ResultMapForEachCb, ResultMapResultDetail } from './readonlyResultMap';
 
@@ -44,10 +44,9 @@ export type CollectorResultDetail = ResultMapResultDetail | 'invalid-index';
  * @public
  */
 export interface IReadOnlyCollector<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
-> extends IReadOnlyResultMap<TKEY, TITEM> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TITEM extends ICollectible<any, any>
+> extends IReadOnlyResultMap<CollectibleKey<TITEM>, TITEM> {
   /**
    * Gets the item at a specified index.
    * @param index - The index of the item to retrieve.
@@ -62,9 +61,8 @@ export interface IReadOnlyCollector<
  * @public
  */
 export interface ICollectorConstructorParams<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TITEM extends ICollectible<any, any>
 > {
   items?: TITEM[];
 }
@@ -79,12 +77,11 @@ export interface ICollectorConstructorParams<
  * @public
  */
 export class Collector<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
-> implements IReadOnlyCollector<TKEY, TINDEX, TITEM>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TITEM extends ICollectible<any, any>
+> implements IReadOnlyCollector<TITEM>
 {
-  private readonly _byKey: Map<TKEY, TITEM>;
+  private readonly _byKey: Map<CollectibleKey<TITEM>, TITEM>;
   private readonly _byIndex: TITEM[];
 
   /**
@@ -99,8 +96,8 @@ export class Collector<
    * @param params - Optional {@link Collections.ICollectorConstructorParams | initialization parameters} used
    * to construct the collector.
    */
-  public constructor(params?: ICollectorConstructorParams<TKEY, TINDEX, TITEM>) {
-    this._byKey = new Map<TKEY, TITEM>();
+  public constructor(params?: ICollectorConstructorParams<TITEM>) {
+    this._byKey = new Map<CollectibleKey<TITEM>, TITEM>();
     this._byIndex = [];
     for (const item of params?.items ?? []) {
       this.add(item).orThrow();
@@ -115,10 +112,9 @@ export class Collector<
    * or {@link Failure | Failure} with an error if the collector could not be created.
    */
   public static createCollector<
-    TKEY extends string = string,
-    TINDEX extends number = number,
-    TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
-  >(params?: ICollectorConstructorParams<TKEY, TINDEX, TITEM>): Result<Collector<TKEY, TINDEX, TITEM>> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    TITEM extends ICollectible<any, any>
+  >(params?: ICollectorConstructorParams<TITEM>): Result<Collector<TITEM>> {
     return captureResult(() => new Collector(params));
   }
 
@@ -151,14 +147,14 @@ export class Collector<
   /**
    * {@inheritdoc Collections.ResultMap.entries}
    */
-  public entries(): MapIterator<KeyValueEntry<TKEY, TITEM>> {
+  public entries(): MapIterator<KeyValueEntry<CollectibleKey<TITEM>, TITEM>> {
     return this._byKey.entries();
   }
 
   /**
    * {@inheritdoc Collections.ResultMap.forEach}
    */
-  public forEach(callback: ResultMapForEachCb<TKEY, TITEM>, arg?: unknown): void {
+  public forEach(callback: ResultMapForEachCb<CollectibleKey<TITEM>, TITEM>, arg?: unknown): void {
     for (const [key, value] of this._byKey.entries()) {
       callback(value, key, this, arg);
     }
@@ -167,7 +163,7 @@ export class Collector<
   /**
    * {@inheritdoc Collections.ResultMap.get}
    */
-  public get(key: TKEY): DetailedResult<TITEM, ResultMapResultDetail> {
+  public get(key: CollectibleKey<TITEM>): DetailedResult<TITEM, ResultMapResultDetail> {
     const item = this._byKey.get(key);
     return item ? succeedWithDetail(item, 'exists') : failWithDetail(`${key}: not found`, 'not-found');
   }
@@ -204,22 +200,23 @@ export class Collector<
    * detail if the item could not be added.
    */
   public getOrAdd(
-    key: TKEY,
-    factory: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+    key: CollectibleKey<TITEM>,
+    factory: CollectibleFactoryCallback<TITEM>
   ): DetailedResult<TITEM, CollectorResultDetail>;
 
   public getOrAdd(
-    keyOrItem: TKEY | TITEM,
-    factory?: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
+    keyOrItem: CollectibleKey<TITEM> | TITEM,
+    factory?: CollectibleFactoryCallback<TITEM>
   ): DetailedResult<TITEM, CollectorResultDetail> {
-    const key = typeof keyOrItem === 'string' ? keyOrItem : keyOrItem.key;
+    const key = !this._isItem(keyOrItem) ? keyOrItem : keyOrItem.key;
     const existing = this._byKey.get(key);
     if (existing) {
       return succeedWithDetail(existing, 'exists');
     }
 
-    const itemResult =
-      typeof keyOrItem === 'string' ? factory!(keyOrItem, this._byIndex.length) : succeed(keyOrItem);
+    const itemResult = !this._isItem(keyOrItem)
+      ? factory!(keyOrItem, this._byIndex.length)
+      : succeed(keyOrItem);
     if (itemResult.isFailure()) {
       return failWithDetail(`${key}: ${itemResult.message}`, 'invalid-value');
     }
@@ -237,14 +234,14 @@ export class Collector<
   /**
    * {@inheritdoc Collections.ResultMap.has}
    */
-  public has(key: TKEY): boolean {
+  public has(key: CollectibleKey<TITEM>): boolean {
     return this._byKey.has(key);
   }
 
   /**
    * {@inheritdoc Collections.ResultMap.keys}
    */
-  public keys(): IterableIterator<TKEY> {
+  public keys(): IterableIterator<CollectibleKey<TITEM>> {
     return this._byKey.keys();
   }
 
@@ -258,7 +255,7 @@ export class Collector<
   /**
    * Gets a read-only version of this collector.
    */
-  public toReadOnly(): IReadOnlyCollector<TKEY, TINDEX, TITEM> {
+  public toReadOnly(): IReadOnlyCollector<TITEM> {
     return this;
   }
 
@@ -266,8 +263,12 @@ export class Collector<
    * Gets an iterator over the map entries.
    * @returns An iterator over the map entries.
    */
-  public [Symbol.iterator](): IterableIterator<KeyValueEntry<TKEY, TITEM>> {
+  public [Symbol.iterator](): IterableIterator<KeyValueEntry<CollectibleKey<TITEM>, TITEM>> {
     return this._byKey[Symbol.iterator]();
+  }
+
+  protected _isItem(keyOrItem: CollectibleKey<TITEM> | TITEM): keyOrItem is TITEM {
+    return typeof keyOrItem !== 'string';
   }
 }
 
@@ -275,16 +276,12 @@ export class Collector<
  * A simple {@link Collections.Collector | collector} with non-branded `string` key and `number` index.
  * @public
  */
-export class SimpleCollector<TITEM extends ICollectible<string, number>> extends Collector<
-  string,
-  number,
-  TITEM
-> {
+export class SimpleCollector<TITEM extends ICollectible<string, number>> extends Collector<TITEM> {
   /**
    * Constructs a new {@link Collections.SimpleCollector | SimpleCollector}.
    * @param params - Optional initialization parameters for the collector.
    */
-  public constructor(params?: ICollectorConstructorParams<string, number, TITEM>) {
+  public constructor(params?: ICollectorConstructorParams<TITEM>) {
     super(params);
   }
 
@@ -295,7 +292,7 @@ export class SimpleCollector<TITEM extends ICollectible<string, number>> extends
    * or {@link Failure | Failure} with an error if the collector could not be created.
    */
   public static createSimpleCollector<TITEM extends ICollectible<string, number>>(
-    params?: ICollectorConstructorParams<string, number, TITEM>
+    params?: ICollectorConstructorParams<TITEM>
   ): Result<SimpleCollector<TITEM>> {
     return captureResult(() => new SimpleCollector(params));
   }

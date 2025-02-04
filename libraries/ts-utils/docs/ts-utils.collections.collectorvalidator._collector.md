@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-protected _collector: Collector<TKEY, TINDEX, TITEM>;
+protected _collector: Collector<TITEM>;
 ```

@@ -8,5 +8,5 @@
 **Signature:**
 
 ```typescript
-readonly map: IReadOnlyResultMap<TKEY, TITEM>;
+readonly map: IReadOnlyResultMap<CollectibleKey<TITEM>, TITEM>;
 ```

@@ -35,26 +35,43 @@ export interface ICollectible<TKEY extends string = string, TINDEX extends numbe
 }
 
 /**
+ * Infer the key type from an {@link Collections.ICollectible | ICollectible} type.
+ * @public
+ */
+export type CollectibleKey<TITEM extends ICollectible> = TITEM extends ICollectible<infer TKEY>
+  ? TKEY
+  : never;
+
+/**
+ * Infer the index type from an {@link Collections.ICollectible | ICollectible} type.
+ * @public
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type CollectibleIndex<TITEM extends ICollectible> = TITEM extends ICollectible<any, infer TINDEX>
+  ? TINDEX
+  : never;
+
+/**
  * Factory function for creating a new {@link Collections.ICollectible | ICollectible} instance given a key, an index and a source representation
  * of the item to be added.
  * @public
  */
-export type CollectibleFactory<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
-  TSRC = TITEM
-> = (key: TKEY, index: number, item: TSRC) => Result<TITEM>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type CollectibleFactory<TITEM extends ICollectible<any, any>, TSRC> = (
+  key: CollectibleKey<TITEM>,
+  index: number,
+  item: TSRC
+) => Result<TITEM>;
 
 /**
  * Factory function for creating a new {@link Collections.ICollectible | ICollectible} instance given a key and an index.
  * @public
  */
-export type CollectibleFactoryCallback<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
-> = (key: TKEY, index: number) => Result<TITEM>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type CollectibleFactoryCallback<TITEM extends ICollectible<any, any>> = (
+  key: CollectibleKey<TITEM>,
+  index: number
+) => Result<TITEM>;
 
 /**
  * Parameters for constructing a new {@link Collections.ICollectible | ICollectible} instance with

@@ -9,5 +9,5 @@ An optional array of entries to add to the collector.
 **Signature:**
 
 ```typescript
-entries?: KeyValueEntry<TKEY, TSRC>[];
+entries?: KeyValueEntry<CollectibleKey<TITEM>, TSRC>[];
 ```
