@@ -8,14 +8,14 @@ import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
-import { ConvertingCollector } from '@fgv/ts-utils';
-import { ConvertingResultMap } from '@fgv/ts-utils';
 import { DetailedResult } from '@fgv/ts-utils';
 import { ICollectible } from '@fgv/ts-utils';
 import { JsonValue } from '@fgv/ts-json-base';
 import { ObjectConverter } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 import { ResultMap } from '@fgv/ts-utils';
+import { ValidatingConvertingCollector } from '@fgv/ts-utils';
+import { ValidatingResultMap } from '@fgv/ts-utils';
 
 // @public
 export const allConditionOperators: ConditionOperator[];
@@ -449,7 +449,7 @@ const qualifier: Converter<Qualifier, IQualifierConvertContext>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class QualifierCollector extends ConvertingCollector<QualifierName, QualifierIndex, Qualifier, IQualifierDecl> {
+class QualifierCollector extends ValidatingConvertingCollector<Qualifier, IQualifierDecl> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(params: IQualifierCollectorCreateParams);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -574,7 +574,7 @@ const qualifierType: Converter<QualifierType, IQualifierTypeConvertContext>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class QualifierTypeCollector extends ConvertingCollector<QualifierTypeName, QualifierTypeIndex, QualifierType, QualifierType> {
+class QualifierTypeCollector extends ValidatingConvertingCollector<QualifierType, QualifierType> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(params?: IQualifierTypeCollectorCreateParams);
@@ -625,7 +625,7 @@ type ReadOnlyQualifierCollector = Readonly<QualifierCollector>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ReadOnlyQualifierTypeCollector = Collections.IReadOnlyConvertingCollector<QualifierTypeName, QualifierTypeIndex, QualifierType>;
+type ReadOnlyQualifierTypeCollector = Collections.IReadOnlyValidatingCollector<QualifierType>;
 
 declare namespace RegularExpressions {
     export {
@@ -776,7 +776,7 @@ const resourceTypeIndex: Converter<ResourceTypeIndex, unknown>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ResourceTypeMap = ConvertingResultMap<ResourceTypeName, IResourceType>;
+type ResourceTypeMap = ValidatingResultMap<ResourceTypeName, IResourceType>;
 
 // @public
 export type ResourceTypeName = Brand<string, 'ResourceTypeName'>;

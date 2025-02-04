@@ -50,7 +50,7 @@ export const qualifierType = Converters.generic<QualifierType, IQualifierTypeCon
       return fail('qualifierType converter requires a context');
     }
     if (typeof from === 'string') {
-      return context.qualifierTypes.converting.get(from);
+      return context.qualifierTypes.validating.get(from);
     } else if (typeof from === 'number') {
       return context.qualifierTypes.getAt(from);
     }

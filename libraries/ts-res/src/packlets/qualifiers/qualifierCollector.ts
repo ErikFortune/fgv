@@ -21,9 +21,9 @@
  */
 
 import * as Common from '../common';
-import { captureResult, Collections, ConvertingCollector, Result } from '@fgv/ts-utils';
+import { captureResult, Collections, Result, ValidatingConvertingCollector } from '@fgv/ts-utils';
 import { IQualifierDecl } from './qualifierDecl';
-import { QualifierIndex, QualifierName } from '../common';
+import { QualifierName } from '../common';
 import { Qualifier } from './qualifier';
 import { IQualifierDeclConvertContext, qualifierDecl, validatedQualifierDecl } from './convert';
 import { ReadOnlyQualifierTypeCollector } from './qualifierTypes';
@@ -52,12 +52,7 @@ export interface IQualifierCollectorCreateParams {
  * and index.
  * @public
  */
-export class QualifierCollector extends ConvertingCollector<
-  QualifierName,
-  QualifierIndex,
-  Qualifier,
-  IQualifierDecl
-> {
+export class QualifierCollector extends ValidatingConvertingCollector<Qualifier, IQualifierDecl> {
   /**
    * The {@link Qualifiers.QualifierTypes.QualifierTypeCollector | qualifier types} that this collector uses.
    */

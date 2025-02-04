@@ -47,7 +47,7 @@ export const validatedConditionDecl = Converters.generic<
     return fail('validatedConditionDecl converter requires a context');
   }
   return conditionDecl.convert(from).onSuccess((decl) => {
-    return context.qualifiers.converting.get(decl.name).onSuccess((qualifier) => {
+    return context.qualifiers.validating.get(decl.name).onSuccess((qualifier) => {
       return populateObject<IValidatedConditionDecl>({
         qualifier: () => succeed(qualifier),
         value: () => qualifier.type.validateCondition(decl.value),

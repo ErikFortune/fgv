@@ -21,9 +21,16 @@
  */
 
 import * as Common from '../../common';
-import { Collections, ConvertingCollector, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import {
+  Collections,
+  Result,
+  ValidatingConvertingCollector,
+  captureResult,
+  fail,
+  succeed
+} from '@fgv/ts-utils';
 import { QualifierType } from './qualifierType';
-import { QualifierTypeIndex, QualifierTypeName } from '../../common';
+import { QualifierTypeName } from '../../common';
 
 /**
  * Parameters for creating a new {@link Qualifiers.QualifierTypes.QualifierTypeCollector | QualifierTypeCollector}.
@@ -41,12 +48,7 @@ export interface IQualifierTypeCollectorCreateParams {
  * Collector for {@link Qualifiers.QualifierType | QualifierType} objects.
  * @public
  */
-export class QualifierTypeCollector extends ConvertingCollector<
-  QualifierTypeName,
-  QualifierTypeIndex,
-  QualifierType,
-  QualifierType
-> {
+export class QualifierTypeCollector extends ValidatingConvertingCollector<QualifierType, QualifierType> {
   /**
    * Constructor for a {@link Qualifiers.QualifierTypes.QualifierTypeCollector | QualifierTypeCollector} object.
    * @param params - Optional {@link Qualifiers.QualifierTypes.IQualifierTypeCollectorCreateParams | parameters} used to construct the collector.
@@ -92,8 +94,4 @@ export class QualifierTypeCollector extends ConvertingCollector<
  * Interface exposing non-mutating members of a {@link Qualifiers.QualifierTypes.QualifierTypeCollector | QualifierTypeCollector}.
  * @public
  */
-export type ReadOnlyQualifierTypeCollector = Collections.IReadOnlyConvertingCollector<
-  QualifierTypeName,
-  QualifierTypeIndex,
-  QualifierType
->;
+export type ReadOnlyQualifierTypeCollector = Collections.IReadOnlyValidatingCollector<QualifierType>;

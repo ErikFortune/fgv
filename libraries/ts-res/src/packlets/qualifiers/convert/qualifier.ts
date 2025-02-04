@@ -46,7 +46,7 @@ export const qualifier = Converters.generic<Qualifier, IQualifierConvertContext>
       return fail('qualifier converter requires a context');
     }
     if (typeof from === 'string') {
-      return context.qualifiers.converting.get(from);
+      return context.qualifiers.validating.get(from);
     } else if (typeof from === 'number') {
       return context.qualifiers.getAt(from);
     }

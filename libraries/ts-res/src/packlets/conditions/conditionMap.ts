@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Collections, Converter, ConvertingResultMap, mapResults, Result, succeed } from '@fgv/ts-utils';
+import { Collections, Converter, ValidatingResultMap, mapResults, Result, succeed } from '@fgv/ts-utils';
 import { ReadOnlyQualifierCollector } from '../qualifiers';
 import { IConditionDeclConvertContext, validatedConditionDecl } from './convert';
 import { Condition } from './condition';
@@ -36,7 +36,7 @@ export interface IConditionMapCreateParams {
   conditions?: IConditionDecl[];
 }
 
-export class ConditionMap extends ConvertingResultMap<ConditionKey, Condition> {
+export class ConditionMap extends ValidatingResultMap<ConditionKey, Condition> {
   public get conditions(): ReadonlyArray<Condition> {
     return Array.from(this.values());
   }
