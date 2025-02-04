@@ -110,7 +110,7 @@ export class ValidatingConvertingCollector<
   }
 
   /**
-   * Creates a new {@link Collections.ValidatingConvertingCollector | ValidatingCollector} instance from
+   * Creates a new {@link Collections.ValidatingConvertingCollector | ValidatingConvertingCollector} instance from
    * the supplied {@link Collections.IValidatingConvertingCollectorConstructorParams | parameters}.
    * @param params - Required parameters for constructing the collector.
    * @returns {@link Success} with the new collector if successful, {@link Failure} otherwise.

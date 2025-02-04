@@ -249,7 +249,7 @@ describe('Collectors', () => {
     });
   });
 
-  describe('ValidatingCollector', () => {
+  describe('ValidatingConvertingCollector', () => {
     describe('constructor', () => {
       test('can be constructed with initial items', () => {
         const collector = new TestCollector(things);

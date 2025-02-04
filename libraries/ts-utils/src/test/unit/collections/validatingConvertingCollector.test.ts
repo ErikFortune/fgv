@@ -99,7 +99,7 @@ export const entryValidatingTestCollectorParams: IValidatingConvertingCollectorC
   })
 };
 
-describe('ValidatingCollector', () => {
+describe('ValidatingConvertingCollector', () => {
   let entries: [TestKey, ITestThing][];
   let things: ITestThing[];
   let collectibles: CollectibleTestThing[];
@@ -154,14 +154,14 @@ describe('ValidatingCollector', () => {
   });
 
   describe('createValidatingCollector static method', () => {
-    test('can create a new ValidatingCollector', () => {
+    test('can create a new ValidatingConvertingCollector', () => {
       const collector = ValidatingConvertingCollector.createValidatingCollector(testCollectorParams);
       expect(collector).toSucceedAndSatisfy((c) => {
         expect(c.size).toEqual(0);
       });
     });
 
-    test('can create a new ValidatingCollector with initial items', () => {
+    test('can create a new ValidatingConvertingCollector with initial items', () => {
       const collector = ValidatingConvertingCollector.createValidatingCollector({
         ...testCollectorParams,
         entries

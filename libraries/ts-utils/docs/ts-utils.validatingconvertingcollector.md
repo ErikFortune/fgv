@@ -144,7 +144,7 @@ Description
 
 </td><td>
 
-Creates a new [ValidatingCollector](./ts-utils.collections.validatingconvertingcollector.md) instance from the supplied [parameters](./ts-utils.collections.ivalidatingconvertingcollectorconstructorparams.md)<!-- -->.
+Creates a new [ValidatingConvertingCollector](./ts-utils.collections.validatingconvertingcollector.md) instance from the supplied [parameters](./ts-utils.collections.ivalidatingconvertingcollectorconstructorparams.md)<!-- -->.
 
 
 </td></tr>
