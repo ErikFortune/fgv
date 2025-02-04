@@ -137,7 +137,7 @@ Gets an iterator over the map entries.
 
 </td><td>
 
-Adds an item to the collection, failing if an item with that key already exists.
+Adds an item to the collection, failing if a different item with the same key already exists. Note that adding an object that is already in the collection again will succeed without updating the collection.
 
 
 </td></tr>
@@ -237,7 +237,7 @@ Gets an existing item with a key matching that of a supplied item, or adds the s
 
 </td><td>
 
-Adds an item to the collector using a supplied [factory callback](./ts-utils.collections.collectiblefactorycallback.md) at a specified key, failing if an item with that key already exists or if the created item is invalid.
+Gets an existing item with a key matching the supplied key, or adds a new item to the collector using a factory callback if no item with that key exists.
 
 
 </td></tr>
@@ -251,6 +251,8 @@ Adds an item to the collector using a supplied [factory callback](./ts-utils.col
 
 </td><td>
 
+Returns `true` if the map contains a key.
+
 
 </td></tr>
 <tr><td>
@@ -262,6 +264,8 @@ Adds an item to the collector using a supplied [factory callback](./ts-utils.col
 
 
 </td><td>
+
+Returns an iterator over the map keys.
 
 
 </td></tr>
@@ -288,6 +292,8 @@ Gets a read-only version of this collector.
 
 
 </td><td>
+
+Returns an iterator over the map values.
 
 
 </td></tr>

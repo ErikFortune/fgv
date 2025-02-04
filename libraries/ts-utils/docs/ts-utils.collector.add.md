@@ -4,7 +4,7 @@
 
 ## Collector.add() method
 
-Adds an item to the collection, failing if an item with that key already exists.
+Adds an item to the collection, failing if a different item with the same key already exists. Note that adding an object that is already in the collection again will succeed without updating the collection.
 
 **Signature:**
 
@@ -51,5 +51,5 @@ The item to add.
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TITEM, [CollectorResultDetail](./ts-utils.collections.collectorresultdetail.md)<!-- -->&gt;
 
-Returns [Success](./ts-utils.success.md) with the item if it was added successfully, or [Failure](./ts-utils.failure.md) with an error if the item could not be added.
+Returns [Success](./ts-utils.detailedsuccess.md) with the item and detail `added` if it was added or detail `exists` if the item was already in the map. Returns [Failure](./ts-utils.detailedfailure.md) with an error message and appropriate detail if the item could not be added.
 

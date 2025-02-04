@@ -4,6 +4,7 @@
 
 ## Collections.Collector.forEach() method
 
+Calls a function for each entry in the map.
 
 **Signature:**
 
@@ -55,7 +56,7 @@ unknown
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ An optional argument to pass to the callback.
 
 
 </td></tr>

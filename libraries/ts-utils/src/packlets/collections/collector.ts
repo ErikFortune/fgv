@@ -123,10 +123,12 @@ export class Collector<
   }
 
   /**
-   * Adds an item to the collection, failing if an item with that key already exists.
+   * Adds an item to the collection, failing if a different item with the same key already exists. Note
+   * that adding an object that is already in the collection again will succeed without updating the collection.
    * @param item - The item to add.
-   * @returns Returns {@link Success | Success} with the item if it was added successfully, or
-   * {@link Failure | Failure} with an error if the item could not be added.
+   * @returns Returns {@link DetailedSuccess | Success} with the item and detail `added` if it was added
+   * or detail `exists` if the item was already in the map.  Returns {@link DetailedFailure | Failure} with
+   * an error message and appropriate detail if the item could not be added.
    */
   public add(item: TITEM): DetailedResult<TITEM, CollectorResultDetail> {
     const existing = this._byKey.get(item.key);
@@ -147,14 +149,14 @@ export class Collector<
   }
 
   /**
-   * {@inheritdoc Collections.IReadOnlyResultMap.entries}
+   * {@inheritdoc Collections.ResultMap.entries}
    */
   public entries(): MapIterator<KeyValueEntry<TKEY, TITEM>> {
     return this._byKey.entries();
   }
 
   /**
-   * {@inheritdoc Collections.IReadOnlyResultMap.forEach}
+   * {@inheritdoc Collections.ResultMap.forEach}
    */
   public forEach(callback: ResultMapForEachCb<TKEY, TITEM>, arg?: unknown): void {
     for (const [key, value] of this._byKey.entries()) {
@@ -163,7 +165,7 @@ export class Collector<
   }
 
   /**
-   * {@inheritdoc Collections.IReadOnlyResultMap.get}
+   * {@inheritdoc Collections.ResultMap.get}
    */
   public get(key: TKEY): DetailedResult<TITEM, ResultMapResultDetail> {
     const item = this._byKey.get(key);
@@ -183,19 +185,23 @@ export class Collector<
   /**
    * Gets an existing item with a key matching that of a supplied item, or adds the supplied
    * item to the collector if no item with that key exists.
-   * @param item - The item to retrieve or add.
-   * @returns Returns {@link Success | Success} with the item stored in the collector
-   * or {@link Failure | Failure} with an error if the item cannot be created and indexed.
+   * @param item - The item to get or add.
+   * @returns Returns {@link DetailedSuccess | Success} with the item stored in the collector -
+   * detail `exists` indicates that an existing item return and detail `added` indicates that the
+   * item was added. Returns {@link DetailedFailure | Failure} with an error and appropriate
+   * detail if the item could not be added.
    */
   public getOrAdd(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
-   * Adds an item to the collector using a supplied {@link Collections.CollectibleFactoryCallback | factory callback}
-   * at a specified key, failing if an item with that key already exists or if the created item is invalid.
+   * Gets an existing item with a key matching the supplied key, or adds a new item to the collector
+   * using a factory callback if no item with that key exists.
    * @param key - The key of the item to add.
    * @param callback - The factory callback to create the item.
-   * @returns Returns {@link Success | Success} with the item if it is added, or {@link Failure | Failure} with
-   * an error if the item cannot be created and indexed.
+   * @returns Returns {@link DetailedSuccess | Success} with the item stored in the collector -
+   * detail `exists` indicates that an existing item return and detail `added` indicates that the
+   * item was added. Returns {@link DetailedFailure | Failure} with an error and appropriate
+   * detail if the item could not be added.
    */
   public getOrAdd(
     key: TKEY,
@@ -229,21 +235,21 @@ export class Collector<
   }
 
   /**
-   * {@inheritdoc IReadOnlyResultMap.has}
+   * {@inheritdoc Collections.ResultMap.has}
    */
   public has(key: TKEY): boolean {
     return this._byKey.has(key);
   }
 
   /**
-   * {@inheritdoc IReadOnlyResultMap.keys}
+   * {@inheritdoc Collections.ResultMap.keys}
    */
   public keys(): IterableIterator<TKEY> {
     return this._byKey.keys();
   }
 
   /**
-   * {@inheritdoc IReadOnlyResultMap.values}
+   * {@inheritdoc Collections.ResultMap.values}
    */
   public values(): IterableIterator<TITEM> {
     return this._byKey.values();
@@ -266,8 +272,7 @@ export class Collector<
 }
 
 /**
- * A simple {@link Collections.Collector | collector} with non-branded `string` key and `number` index,
- * and no transformation of source items.
+ * A simple {@link Collections.Collector | collector} with non-branded `string` key and `number` index.
  * @public
  */
 export class SimpleCollector<TITEM extends ICollectible<string, number>> extends Collector<

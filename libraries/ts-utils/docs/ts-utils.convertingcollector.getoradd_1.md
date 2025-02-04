@@ -4,7 +4,7 @@
 
 ## ConvertingCollector.getOrAdd() method
 
-Adds an item to the collector using a supplied [factory callback](./ts-utils.collections.collectiblefactorycallback.md) at a specified key, failing if an item with that key already exists or if the created item is invalid.
+Gets an existing item with a key matching the supplied key, or adds a new item to the collector using a factory callback if no item with that key exists.
 
 **Signature:**
 
@@ -67,5 +67,5 @@ The factory callback to create the item.
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TITEM, [CollectorResultDetail](./ts-utils.collections.collectorresultdetail.md)<!-- -->&gt;
 
-Returns [Success](./ts-utils.success.md) with the item if it is added, or [Failure](./ts-utils.failure.md) with an error if the item cannot be created and indexed.
+Returns [Success](./ts-utils.detailedsuccess.md) with the item stored in the collector - detail `exists` indicates that an existing item return and detail `added` indicates that the item was added. Returns [Failure](./ts-utils.detailedfailure.md) with an error and appropriate detail if the item could not be added.
 

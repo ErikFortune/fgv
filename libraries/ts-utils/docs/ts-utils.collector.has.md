@@ -4,6 +4,8 @@
 
 ## Collector.has() method
 
+Returns `true` if the map contains a key.
+
 **Signature:**
 
 ```typescript
@@ -40,10 +42,14 @@ TKEY
 
 </td><td>
 
+The key to check.
+
 
 </td></tr>
 </tbody></table>
 **Returns:**
 
 boolean
+
+`true` if the key exists, `false` otherwise.
 

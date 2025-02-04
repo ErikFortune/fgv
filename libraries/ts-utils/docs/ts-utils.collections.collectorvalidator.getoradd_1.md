@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-The item to retrieve or add.
+The item to get or add.
 
 
 </td></tr>
@@ -51,5 +51,5 @@ The item to retrieve or add.
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TITEM, [CollectorResultDetail](./ts-utils.collections.collectorresultdetail.md)<!-- -->&gt;
 
-Returns [Success](./ts-utils.success.md) with the item stored in the collector or [Failure](./ts-utils.failure.md) with an error if the item cannot be created and indexed.
+Returns [Success](./ts-utils.detailedsuccess.md) with the item stored in the collector - detail `exists` indicates that an existing item return and detail `added` indicates that the item was added. Returns [Failure](./ts-utils.detailedfailure.md) with an error and appropriate detail if the item could not be added.
 

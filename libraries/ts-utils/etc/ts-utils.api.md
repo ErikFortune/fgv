@@ -258,10 +258,13 @@ export class Collector<TKEY extends string = string, TINDEX extends number = num
     getOrAdd(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getOrAdd(key: TKEY, factory: CollectibleFactoryCallback<TKEY, TINDEX, TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
     // (undocumented)
     has(key: TKEY): boolean;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
     // (undocumented)
     keys(): IterableIterator<TKEY>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -269,6 +272,8 @@ export class Collector<TKEY extends string = string, TINDEX extends number = num
     // (undocumented)
     get size(): number;
     toReadOnly(): IReadOnlyCollector<TKEY, TINDEX, TITEM>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
     // (undocumented)
     values(): IterableIterator<TITEM>;
 }

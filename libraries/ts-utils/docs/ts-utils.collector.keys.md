@@ -4,6 +4,8 @@
 
 ## Collector.keys() method
 
+Returns an iterator over the map keys.
+
 **Signature:**
 
 ```typescript
@@ -12,4 +14,6 @@ keys(): IterableIterator<TKEY>;
 **Returns:**
 
 IterableIterator&lt;TKEY&gt;
+
+An iterator over the map keys.
 

@@ -4,6 +4,7 @@
 
 ## Collections.Collector.entries() method
 
+Returns an iterator over the map entries.
 
 **Signature:**
 
@@ -13,4 +14,6 @@ entries(): MapIterator<KeyValueEntry<TKEY, TITEM>>;
 **Returns:**
 
 MapIterator&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TKEY, TITEM&gt;&gt;
+
+An iterator over the map entries.
 
