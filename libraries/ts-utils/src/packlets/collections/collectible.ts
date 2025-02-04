@@ -25,7 +25,7 @@ import { Converter, ConverterFunc, Converters } from '../conversion';
 import { Validator } from '../validation';
 
 /**
- * An item that can be collected by some {@link Collector | Collector}.
+ * An item that can be collected by some {@link ConvertingCollector | Collector}.
  * @public
  */
 export interface ICollectible<TKEY extends string = string, TINDEX extends number = number> {
@@ -35,26 +35,43 @@ export interface ICollectible<TKEY extends string = string, TINDEX extends numbe
 }
 
 /**
+ * Infer the key type from an {@link Collections.ICollectible | ICollectible} type.
+ * @public
+ */
+export type CollectibleKey<TITEM extends ICollectible> = TITEM extends ICollectible<infer TKEY>
+  ? TKEY
+  : never;
+
+/**
+ * Infer the index type from an {@link Collections.ICollectible | ICollectible} type.
+ * @public
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type CollectibleIndex<TITEM extends ICollectible> = TITEM extends ICollectible<any, infer TINDEX>
+  ? TINDEX
+  : never;
+
+/**
  * Factory function for creating a new {@link Collections.ICollectible | ICollectible} instance given a key, an index and a source representation
  * of the item to be added.
  * @public
  */
-export type CollectibleFactory<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
-  TSRC = TITEM
-> = (key: TKEY, index: number, item: TSRC) => Result<TITEM>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type CollectibleFactory<TITEM extends ICollectible<any, any>, TSRC> = (
+  key: CollectibleKey<TITEM>,
+  index: number,
+  item: TSRC
+) => Result<TITEM>;
 
 /**
  * Factory function for creating a new {@link Collections.ICollectible | ICollectible} instance given a key and an index.
  * @public
  */
-export type CollectibleFactoryCallback<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
-> = (key: TKEY, index: number) => Result<TITEM>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type CollectibleFactoryCallback<TITEM extends ICollectible<any, any>> = (
+  key: CollectibleKey<TITEM>,
+  index: number
+) => Result<TITEM>;
 
 /**
  * Parameters for constructing a new {@link Collections.ICollectible | ICollectible} instance with
@@ -115,9 +132,27 @@ export class Collectible<TKEY extends string = string, TINDEX extends number = n
   protected readonly _indexConverter?: Validator<TINDEX, unknown> | Converter<TINDEX, unknown>;
 
   /**
-   * Constructs a new {@link Collections.Collectible | Collectible} instance.
-   * @param params - Required parameters for constructing the collectible.
+   * Constructs a new {@link Collections.Collectible | Collectible} instance
+   * with a defined, strongly-typed index.
+   * @param params - {@link Collections.ICollectibleConstructorParamsWithIndex | Parameters} for constructing
+   * the collectible.
    */
+  public constructor(params: ICollectibleConstructorParamsWithIndex<TKEY, TINDEX>);
+
+  /**
+   * Constructs a new {@link Collections.Collectible | Collectible} instance with
+   * an undefined index and an index converter to validate te index when it is set.
+   * @param params - {@link Collections.ICollectibleConstructorParamsWithConverter | Parameters} for constructing
+   * the collectible.
+   */
+  public constructor(params: ICollectibleConstructorParamsWithConverter<TKEY, TINDEX>);
+
+  /**
+   * Constructs a new {@link Collections.Collectible | Collectible} instance.
+   * @param params - {@link Collections.ICollectibleConstructorParams | Parameters} for constructing
+   * the collectible.
+   */
+  public constructor(params: ICollectibleConstructorParams<TKEY, TINDEX>);
   public constructor(params: ICollectibleConstructorParams<TKEY, TINDEX>) {
     this.key = params.key;
     if ('indexConverter' in params) {
@@ -134,10 +169,37 @@ export class Collectible<TKEY extends string = string, TINDEX extends number = n
   }
 
   /**
-   * Creates a new {@link Collections.Collectible | Collectible} instance from the supplied parameters.
-   * @param params - Required parameters for constructing the collectible.
-   * @returns `Success` with the new collectible if successful, or `Failure` with an error message if not.
+   * Creates a new {@link Collections.Collectible | Collectible} instance with a defined, strongly-typed index.
+   * @param params - {@link Collections.ICollectibleConstructorParamsWithIndex | Parameters} for constructing
+   * the collectible.
+   * @returns {@link Success} with the new collectible if successful, {@link Failure} otherwise.
    */
+  public static createCollectible<TKEY extends string = string, TINDEX extends number = number>(
+    params: ICollectibleConstructorParamsWithIndex<TKEY, TINDEX>
+  ): Result<Collectible<TKEY, TINDEX>>;
+
+  /**
+   * Creates a new {@link Collections.Collectible | Collectible} instance with an undefined index and an index
+   * converter to validate the index when it is set.
+   * @param params - {@link Collections.ICollectibleConstructorParamsWithConverter | Parameters} for constructing
+   * the collectible.
+   * @returns {@link Success} with the new collectible if successful, {@link Failure} otherwise.
+   */
+  public static createCollectible<TKEY extends string = string, TINDEX extends number = number>(
+    params: ICollectibleConstructorParamsWithConverter<TKEY, TINDEX>
+  ): Result<Collectible<TKEY, TINDEX>>;
+
+  /**
+   * Creates a new {@link Collections.Collectible | Collectible} instance.
+   * @param params - {@link Collections.ICollectibleConstructorParams | Parameters} for constructing
+   * the collectible.
+   * @returns {@link Success} with the new collectible if successful, {@link Failure} otherwise
+   * @public
+   */
+  public static createCollectible<TKEY extends string = string, TINDEX extends number = number>(
+    params: ICollectibleConstructorParams<TKEY, TINDEX>
+  ): Result<Collectible<TKEY, TINDEX>>;
+
   public static createCollectible<TKEY extends string = string, TINDEX extends number = number>(
     params: ICollectibleConstructorParams<TKEY, TINDEX>
   ): Result<Collectible<TKEY, TINDEX>> {

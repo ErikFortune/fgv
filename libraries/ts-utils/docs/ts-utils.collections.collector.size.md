@@ -4,6 +4,8 @@
 
 ## Collections.Collector.size property
 
+Returns the number of entries in the map.
+
 **Signature:**
 
 ```typescript

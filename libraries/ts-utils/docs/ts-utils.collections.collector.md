@@ -4,14 +4,16 @@
 
 ## Collections.Collector class
 
-A [Collector](./ts-utils.icollector.md) that collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in a collector are created by key and are assigned an index at the time of addition. Items are immutable once added. Keys and indexes might be branded types, and source items might be transformed on addition.
+A [Collector](./ts-utils.collections.collector.md) that is a specialized collection which contains items of type [ICollectible](./ts-utils.collections.icollectible.md)<!-- -->, which have a unique key and a write-once index.
+
+Items are assigned an index sequentially as they are added to the collection. Once added, items are immutable - they cannot be removed or replaced.
 
 **Signature:**
 
 ```typescript
-export declare class Collector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> implements ICollector<TKEY, TINDEX, TITEM, TSRC> 
+export declare class Collector<TITEM extends ICollectible<any, any>> implements IReadOnlyCollector<TITEM> 
 ```
-**Implements:** [ICollector](./ts-utils.icollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
+**Implements:** [IReadOnlyCollector](./ts-utils.collections.ireadonlycollector.md)<!-- -->&lt;TITEM&gt;
 
 ## Constructors
 
@@ -38,12 +40,10 @@ Description
 
 </td><td>
 
-`protected`
-
 
 </td><td>
 
-Constructor for derived classes.
+Constructs a new [Collector](./ts-utils.collections.collector.md)<!-- -->.
 
 
 </td></tr>
@@ -74,25 +74,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[inner](./ts-utils.collections.collector.inner.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyMap&lt;TKEY, TITEM&gt;
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
 [size](./ts-utils.collections.collector.size.md)
 
 
@@ -107,6 +88,8 @@ number
 
 
 </td><td>
+
+Returns the number of entries in the map.
 
 
 </td></tr>
@@ -132,7 +115,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_isFactoryCB(item)](./ts-utils.collections.collector._isfactorycb.md)
+[\_isItem(keyOrItem)](./ts-utils.collections.collector._isitem.md)
 
 
 </td><td>
@@ -141,24 +124,6 @@ Description
 
 
 </td><td>
-
-
-</td></tr>
-<tr><td>
-
-[\_simpleFactory(key, index, item)](./ts-utils.collections.collector._simplefactory.md)
-
-
-</td><td>
-
-`protected`
-
-`static`
-
-
-</td><td>
-
-A simple factory method for derived classes which directly store the supplied object.
 
 
 </td></tr>
@@ -178,7 +143,7 @@ Gets an iterator over the map entries.
 </td></tr>
 <tr><td>
 
-[add(key, item)](./ts-utils.collections.collector.add.md)
+[add(item)](./ts-utils.collections.collector.add.md)
 
 
 </td><td>
@@ -186,34 +151,23 @@ Gets an iterator over the map entries.
 
 </td><td>
 
-Adds an item to the collector using the default [factory](./ts-utils.collections.collectiblefactory.md) at a specified key, failing if an item with that key already exists.
+Adds an item to the collection, failing if a different item with the same key already exists. Note that adding an object that is already in the collection again will succeed without updating the collection.
 
 
 </td></tr>
 <tr><td>
 
-[add(key, cb)](./ts-utils.collections.collector.add_1.md)
+[createCollector(params)](./ts-utils.collections.collector.createcollector.md)
 
 
 </td><td>
 
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
-[addItem(item)](./ts-utils.collections.collector.additem.md)
+`static`
 
 
 </td><td>
 
-
-</td><td>
-
-Adds an item to the collector using the default [factory](./ts-utils.collections.collectiblefactory.md) at a specified key, failing if an item with that key already exists.
+Creates a new [Collector](./ts-utils.collections.collector.md) instance.
 
 
 </td></tr>
@@ -227,6 +181,8 @@ Adds an item to the collector using the default [factory](./ts-utils.collections
 
 </td><td>
 
+Returns an iterator over the map entries.
+
 
 </td></tr>
 <tr><td>
@@ -239,6 +195,8 @@ Adds an item to the collector using the default [factory](./ts-utils.collections
 
 </td><td>
 
+Calls a function for each entry in the map.
+
 
 </td></tr>
 <tr><td>
@@ -250,6 +208,8 @@ Adds an item to the collector using the default [factory](./ts-utils.collections
 
 
 </td><td>
+
+Gets a value from the map.
 
 
 </td></tr>
@@ -269,35 +229,7 @@ Gets the item at a specified index.
 </td></tr>
 <tr><td>
 
-[getOrAdd(key, item)](./ts-utils.collections.collector.getoradd.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets an item by key if it exists, or creates a new item and adds it using the default [factory](./ts-utils.collections.collectiblefactory.md) if not.
-
-
-</td></tr>
-<tr><td>
-
-[getOrAdd(key, cb)](./ts-utils.collections.collector.getoradd_1.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets an item by key if it exists, or creates a new item and adds it using the specified [factory callback](./ts-utils.collections.collectiblefactorycallback.md) if not.
-
-
-</td></tr>
-<tr><td>
-
-[getOrAddItem(item)](./ts-utils.collections.collector.getoradditem.md)
+[getOrAdd(item)](./ts-utils.collections.collector.getoradd.md)
 
 
 </td><td>
@@ -311,6 +243,20 @@ Gets an existing item with a key matching that of a supplied item, or adds the s
 </td></tr>
 <tr><td>
 
+[getOrAdd(key, factory)](./ts-utils.collections.collector.getoradd_1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets an existing item with a key matching the supplied key, or adds a new item to the collector using a factory callback if no item with that key exists.
+
+
+</td></tr>
+<tr><td>
+
 [has(key)](./ts-utils.collections.collector.has.md)
 
 
@@ -318,6 +264,8 @@ Gets an existing item with a key matching that of a supplied item, or adds the s
 
 
 </td><td>
+
+Returns `true` if the map contains a key.
 
 
 </td></tr>
@@ -331,6 +279,8 @@ Gets an existing item with a key matching that of a supplied item, or adds the s
 
 </td><td>
 
+Returns an iterator over the map keys.
+
 
 </td></tr>
 <tr><td>
@@ -343,7 +293,7 @@ Gets an existing item with a key matching that of a supplied item, or adds the s
 
 </td><td>
 
-Gets a [read-only map](./ts-utils.ireadonlyresultmap.md) which can access the items in the collector.
+Gets a read-only version of this collector.
 
 
 </td></tr>
@@ -356,6 +306,8 @@ Gets a [read-only map](./ts-utils.ireadonlyresultmap.md) which can access the it
 
 
 </td><td>
+
+Returns an iterator over the map values.
 
 
 </td></tr>

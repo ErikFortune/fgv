@@ -26,14 +26,14 @@ import * as Hash from './packlets/hash';
 import * as Validation from './packlets/validation';
 
 import {
-  ICollectible,
-  ICollector,
   Collector,
+  ICollectible,
   ConvertingCollector,
   IReadOnlyResultMap,
   ResultMap,
-  SimpleCollector,
-  ConvertingResultMap
+  ValidatingCollector,
+  ValidatingConvertingCollector,
+  ValidatingResultMap
 } from './packlets/collections';
 import { Converter, Converters, ObjectConverter, StringConverter } from './packlets/conversion';
 import { Validator, Validators } from './packlets/validation';
@@ -42,19 +42,19 @@ export * from './packlets/base';
 export {
   Collections,
   Collector,
+  ConvertingCollector,
   Conversion,
   Converter,
   Converters,
-  ConvertingCollector,
   Hash,
   ICollectible,
-  ICollector,
   IReadOnlyResultMap,
   ObjectConverter,
   ResultMap,
-  SimpleCollector,
   StringConverter,
-  ConvertingResultMap,
+  ValidatingCollector,
+  ValidatingConvertingCollector,
+  ValidatingResultMap,
   Validation,
   Validator,
   Validators

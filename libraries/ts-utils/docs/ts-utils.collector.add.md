@@ -4,12 +4,12 @@
 
 ## Collector.add() method
 
-Adds an item to the collector using the default [factory](./ts-utils.collections.collectiblefactory.md) at a specified key, failing if an item with that key already exists.
+Adds an item to the collection, failing if a different item with the same key already exists. Note that adding an object that is already in the collection again will succeed without updating the collection.
 
 **Signature:**
 
 ```typescript
-add(key: TKEY, item: TSRC): DetailedResult<TITEM, CollectorResultDetail>;
+add(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
 ```
 
 ## Parameters
@@ -32,33 +32,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-key
-
-
-</td><td>
-
-TKEY
-
-
-</td><td>
-
-The key of the item to add.
-
-
-</td></tr>
-<tr><td>
-
 item
 
 
 </td><td>
 
-TSRC
+TITEM
 
 
 </td><td>
 
-The source representation of the item to be added.
+The item to add.
 
 
 </td></tr>
@@ -67,5 +51,5 @@ The source representation of the item to be added.
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TITEM, [CollectorResultDetail](./ts-utils.collections.collectorresultdetail.md)<!-- -->&gt;
 
-Returns [Success](./ts-utils.success.md) with the item if it is added, or [Failure](./ts-utils.failure.md) with an error if the item cannot be created and indexed.
+Returns [Success](./ts-utils.detailedsuccess.md) with the item and detail `added` if it was added or detail `exists` if the item was already in the map. Returns [Failure](./ts-utils.detailedfailure.md) with an error message and appropriate detail if the item could not be added.
 

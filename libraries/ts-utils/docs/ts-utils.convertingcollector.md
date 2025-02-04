@@ -4,14 +4,14 @@
 
 ## ConvertingCollector class
 
-A [Collector](./ts-utils.collections.collector.md) with a [CollectorConverter](./ts-utils.collections.collectorconverter.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+A [collector](./ts-utils.collector.md) that collects [ICollectible](./ts-utils.collections.icollectible.md) items, optionally converting them from a source representation to the target representation using a factory supplied at default or at the time of collection.
 
 **Signature:**
 
 ```typescript
-export declare class ConvertingCollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> extends Collector<TKEY, TINDEX, TITEM, TSRC> 
+export declare class ConvertingCollector<TITEM extends ICollectible<any, any>, TSRC = TITEM> extends Collector<TITEM> 
 ```
-**Extends:** [Collector](./ts-utils.collector.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
+**Extends:** [Collector](./ts-utils.collector.md)<!-- -->&lt;TITEM&gt;
 
 ## Constructors
 
@@ -41,74 +41,7 @@ Description
 
 </td><td>
 
-Constructs a new [ConvertingCollector](./ts-utils.collections.convertingcollector.md) from the supplied [parameters](./ts-utils.collections.iconvertingcollectorconstructorparams.md)<!-- -->.
-
-
-</td></tr>
-</tbody></table>
-
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[\_converters](./ts-utils.convertingcollector._converters.md)
-
-
-</td><td>
-
-`protected`
-
-`readonly`
-
-
-</td><td>
-
-[KeyValueConverters](./ts-utils.collections.keyvalueconverters.md)<!-- -->&lt;TKEY, TSRC&gt;
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[converting](./ts-utils.convertingcollector.converting.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[CollectorConverter](./ts-utils.collections.collectorconverter.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
-
-
-</td><td>
-
-A [CollectorConverter](./ts-utils.collections.collectorconverter.md) which validates keys and values before inserting them into this collector.
+Constructs a new [ConvertingCollector](./ts-utils.collections.convertingcollector.md)<!-- -->.
 
 
 </td></tr>
@@ -134,6 +67,96 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[\_buildItem(key, itemOrCb)](./ts-utils.convertingcollector._builditem.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+Helper method for derived classes to build an item from a key and a source representation using a default or supplied factory.
+
+
+</td></tr>
+<tr><td>
+
+[\_isFactoryCB(itemOrCb)](./ts-utils.convertingcollector._isfactorycb.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+Helper method for derived classes to determine if a supplied itemOrCb parameter is a factory callback.
+
+
+</td></tr>
+<tr><td>
+
+[\_overloadIsItem(keyOrItem, itemOrCb)](./ts-utils.convertingcollector._overloadisitem.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+Helper method for derived classes to determine if a supplied keyOrItem parameter is an item.
+
+
+</td></tr>
+<tr><td>
+
+[add(item)](./ts-utils.convertingcollector.add.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds an item to the collection, failing if a different item with the same key already exists. Note that adding an object that is already in the collection again will succeed without updating the collection.
+
+
+</td></tr>
+<tr><td>
+
+[add(key, item)](./ts-utils.convertingcollector.add_1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds an item to the collector using the default [factory](./ts-utils.collections.collectiblefactory.md) at a specified key, failing if an item with that key already exists.
+
+
+</td></tr>
+<tr><td>
+
+[add(key, cb)](./ts-utils.convertingcollector.add_2.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds an item to the collector using a supplied [factory callback](./ts-utils.collections.collectiblefactorycallback.md) at a specified key, failing if an item with that key already exists or if the created item is invalid.
+
+
+</td></tr>
+<tr><td>
+
 [createConvertingCollector(params)](./ts-utils.convertingcollector.createconvertingcollector.md)
 
 
@@ -144,13 +167,13 @@ Description
 
 </td><td>
 
-Creates a new [ConvertingCollector](./ts-utils.collections.convertingcollector.md) instance from the supplied [parameters](./ts-utils.collections.iconvertingcollectorconstructorparams.md)<!-- -->.
+Creates a new [ConvertingCollector](./ts-utils.collections.convertingcollector.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[toReadOnly()](./ts-utils.convertingcollector.toreadonly.md)
+[getOrAdd(item)](./ts-utils.convertingcollector.getoradd.md)
 
 
 </td><td>
@@ -158,7 +181,35 @@ Creates a new [ConvertingCollector](./ts-utils.collections.convertingcollector.m
 
 </td><td>
 
-Gets a read-only version of this collector as a [read-only map](./ts-utils.collections.ireadonlyconvertingresultmap.md)<!-- -->.
+Gets an existing item with a key matching that of a supplied item, or adds the supplied item to the collector if no item with that key exists.
+
+
+</td></tr>
+<tr><td>
+
+[getOrAdd(key, callback)](./ts-utils.convertingcollector.getoradd_1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets an existing item with a key matching the supplied key, or adds a new item to the collector using a factory callback if no item with that key exists.
+
+
+</td></tr>
+<tr><td>
+
+[getOrAdd(key, item)](./ts-utils.convertingcollector.getoradd_2.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets an item by key if it exists, or creates a new item and adds it using the default [factory](./ts-utils.collections.collectiblefactory.md) if not.
 
 
 </td></tr>

@@ -29,7 +29,6 @@ describe('ResultMap', () => {
     test('should construct an empty ResultMap by default', () => {
       const resultMap = new ResultMap();
       expect(resultMap.size).toBe(0);
-      expect(resultMap.inner.size).toBe(0);
     });
 
     test('should construct a ResultMap from supplied entries', () => {
@@ -38,7 +37,6 @@ describe('ResultMap', () => {
         ['key2', 2]
       ]);
       expect(resultMap.size).toBe(2);
-      expect(resultMap.inner.size).toBe(2);
       expect(resultMap.get('key1')).toSucceedWith(1);
       expect(resultMap.get('key2')).toSucceedWith(2);
     });
@@ -51,7 +49,6 @@ describe('ResultMap', () => {
         ]
       });
       expect(resultMap.size).toBe(2);
-      expect(resultMap.inner.size).toBe(2);
       expect(resultMap.get('key1')).toSucceedWith(1);
       expect(resultMap.get('key2')).toSucceedWith(2);
     });
@@ -61,7 +58,6 @@ describe('ResultMap', () => {
     test('should create an empty ResultMap by default', () => {
       expect(ResultMap.create()).toSucceedAndSatisfy((resultMap: ResultMap) => {
         expect(resultMap.size).toBe(0);
-        expect(resultMap.inner.size).toBe(0);
       });
     });
 
@@ -73,7 +69,6 @@ describe('ResultMap', () => {
         ])
       ).toSucceedAndSatisfy((resultMap: ResultMap) => {
         expect(resultMap.size).toBe(2);
-        expect(resultMap.inner.size).toBe(2);
         expect(resultMap.get('key1')).toSucceedWith(1);
         expect(resultMap.get('key2')).toSucceedWith(2);
       });

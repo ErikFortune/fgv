@@ -4,10 +4,12 @@
 
 ## Collections.Collector.get() method
 
+Gets a value from the map.
+
 **Signature:**
 
 ```typescript
-get(key: TKEY): DetailedResult<TITEM, ResultMapResultDetail>;
+get(key: CollectibleKey<TITEM>): DetailedResult<TITEM, ResultMapResultDetail>;
 ```
 
 ## Parameters
@@ -35,10 +37,12 @@ key
 
 </td><td>
 
-TKEY
+[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;
 
 
 </td><td>
+
+The key to retrieve.
 
 
 </td></tr>
@@ -46,4 +50,6 @@ TKEY
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TITEM, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;
+
+`Success` with the value and detail `exists` if the key was found, `Failure` with detail `not-found` if the key was not found or with detail `invalid-key` if the key is invalid.
 

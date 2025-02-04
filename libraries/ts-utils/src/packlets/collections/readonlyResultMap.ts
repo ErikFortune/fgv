@@ -57,11 +57,6 @@ export type ResultMapForEachCb<TK extends string = string, TE = unknown> = (
  */
 export interface IReadOnlyResultMap<TK extends string = string, TV = unknown> {
   /**
-   * {@inheritdoc Collections.ResultMap.inner}
-   */
-  readonly inner: ReadonlyMap<TK, TV>;
-
-  /**
    * {@inheritdoc Collections.ResultMap.size}
    */
   readonly size: number;

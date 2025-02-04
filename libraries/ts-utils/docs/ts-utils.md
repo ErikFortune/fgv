@@ -24,7 +24,9 @@ Description
 
 </td><td>
 
-A [Collector](./ts-utils.icollector.md) that collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in a collector are created by key and are assigned an index at the time of addition. Items are immutable once added. Keys and indexes might be branded types, and source items might be transformed on addition.
+A [Collector](./ts-utils.collections.collector.md) that is a specialized collection which contains items of type [ICollectible](./ts-utils.collections.icollectible.md)<!-- -->, which have a unique key and a write-once index.
+
+Items are assigned an index sequentially as they are added to the collection. Once added, items are immutable - they cannot be removed or replaced.
 
 
 </td></tr>
@@ -35,18 +37,7 @@ A [Collector](./ts-utils.icollector.md) that collects [ICollectible](./ts-utils.
 
 </td><td>
 
-A [Collector](./ts-utils.collections.collector.md) with a [CollectorConverter](./ts-utils.collections.collectorconverter.md) property that enables validated use of the underlying map with weakly-typed keys and values.
-
-
-</td></tr>
-<tr><td>
-
-[ConvertingResultMap](./ts-utils.convertingresultmap.md)
-
-
-</td><td>
-
-A [ResultMap](./ts-utils.collections.resultmap.md) with a [validator](./ts-utils.collections.resultmapconverter.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+A [collector](./ts-utils.collector.md) that collects [ICollectible](./ts-utils.collections.icollectible.md) items, optionally converting them from a source representation to the target representation using a factory supplied at default or at the time of collection.
 
 
 </td></tr>
@@ -129,17 +120,6 @@ A [ResultMap](./ts-utils.collections.resultmap.md) class as a `Map<TK, TV>`<!-- 
 </td></tr>
 <tr><td>
 
-[SimpleCollector](./ts-utils.simplecollector.md)
-
-
-</td><td>
-
-A simple [collector](./ts-utils.collector.md) that collects [ICollectible items](./ts-utils.collections.icollectible.md) with non-branded `string` key and `number` index, and with no transformation other than index assignment on addition.
-
-
-</td></tr>
-<tr><td>
-
 [StringConverter](./ts-utils.stringconverter.md)
 
 
@@ -157,6 +137,39 @@ The [StringConverter](./ts-utils.conversion.stringconverter.md) class extends [B
 </td><td>
 
 Reports a successful [result](./ts-utils.iresult.md) from some operation and the corresponding value.
+
+
+</td></tr>
+<tr><td>
+
+[ValidatingCollector](./ts-utils.validatingcollector.md)
+
+
+</td><td>
+
+A [Collector](./ts-utils.collections.collector.md) with a [CollectorValidator](./ts-utils.collections.collectorvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+
+
+</td></tr>
+<tr><td>
+
+[ValidatingConvertingCollector](./ts-utils.validatingconvertingcollector.md)
+
+
+</td><td>
+
+A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) with a [ConvertingCollectorValidator](./ts-utils.collections.convertingcollectorvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+
+
+</td></tr>
+<tr><td>
+
+[ValidatingResultMap](./ts-utils.validatingresultmap.md)
+
+
+</td><td>
+
+A [ResultMap](./ts-utils.collections.resultmap.md) with a [validator](./ts-utils.collections.resultmapvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
 
 
 </td></tr>
@@ -472,18 +485,7 @@ Generic converter to convert unknown to a templated type `<T>`<!-- -->, using in
 
 </td><td>
 
-An item that can be collected by some [Collector](./ts-utils.collector.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[ICollector](./ts-utils.icollector.md)
-
-
-</td><td>
-
-Collects [ICollectible](./ts-utils.collections.icollectible.md) items. Items in a collector are created by key and are assigned an index at the time of addition. Items are immutable once added.
+An item that can be collected by some [Collector](./ts-utils.convertingcollector.md)<!-- -->.
 
 
 </td></tr>

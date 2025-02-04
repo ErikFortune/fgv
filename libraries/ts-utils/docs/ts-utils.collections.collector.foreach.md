@@ -4,10 +4,12 @@
 
 ## Collections.Collector.forEach() method
 
+Calls a function for each entry in the map.
+
 **Signature:**
 
 ```typescript
-forEach(callback: ResultMapForEachCb<TKEY, TITEM>, arg?: unknown): void;
+forEach(callback: ResultMapForEachCb<CollectibleKey<TITEM>, TITEM>, arg?: unknown): void;
 ```
 
 ## Parameters
@@ -35,7 +37,7 @@ callback
 
 </td><td>
 
-[ResultMapForEachCb](./ts-utils.collections.resultmapforeachcb.md)<!-- -->&lt;TKEY, TITEM&gt;
+[ResultMapForEachCb](./ts-utils.collections.resultmapforeachcb.md)<!-- -->&lt;[CollectibleKey](./ts-utils.collections.collectiblekey.md)<!-- -->&lt;TITEM&gt;, TITEM&gt;
 
 
 </td><td>
@@ -54,7 +56,7 @@ unknown
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ An optional argument to pass to the callback.
 
 
 </td></tr>

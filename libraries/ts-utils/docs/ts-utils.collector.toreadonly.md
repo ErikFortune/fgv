@@ -4,14 +4,14 @@
 
 ## Collector.toReadOnly() method
 
-Gets a [read-only map](./ts-utils.ireadonlyresultmap.md) which can access the items in the collector.
+Gets a read-only version of this collector.
 
 **Signature:**
 
 ```typescript
-toReadOnly(): IReadOnlyCollector<TKEY, TINDEX, TITEM>;
+toReadOnly(): IReadOnlyCollector<TITEM>;
 ```
 **Returns:**
 
-[IReadOnlyCollector](./ts-utils.collections.ireadonlycollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+[IReadOnlyCollector](./ts-utils.collections.ireadonlycollector.md)<!-- -->&lt;TITEM&gt;
 

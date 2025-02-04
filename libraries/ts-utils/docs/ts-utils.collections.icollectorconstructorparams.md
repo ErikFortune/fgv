@@ -4,12 +4,12 @@
 
 ## Collections.ICollectorConstructorParams interface
 
-Parameters for constructing a [Collector](./ts-utils.icollector.md)<!-- -->.
+Parameters for constructing a [ICollector](./ts-utils.collections.collector.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-export interface ICollectorConstructorParams<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> 
+export interface ICollectorConstructorParams<TITEM extends ICollectible<any, any>> 
 ```
 
 ## Properties
@@ -37,7 +37,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[entries?](./ts-utils.collections.icollectorconstructorparams.entries.md)
+[items?](./ts-utils.collections.icollectorconstructorparams.items.md)
 
 
 </td><td>
@@ -45,31 +45,12 @@ Description
 
 </td><td>
 
-[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;TKEY, TSRC&gt;\[\]
+TITEM\[\]
 
 
 </td><td>
 
-_(Optional)_ An optional array of entries to add to the collector.
-
-
-</td></tr>
-<tr><td>
-
-[factory](./ts-utils.collections.icollectorconstructorparams.factory.md)
-
-
-</td><td>
-
-
-</td><td>
-
-[CollectibleFactory](./ts-utils.collections.collectiblefactory.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
-
-
-</td><td>
-
-The default [factory](./ts-utils.collections.collectiblefactory.md) to create items.
+_(Optional)_
 
 
 </td></tr>

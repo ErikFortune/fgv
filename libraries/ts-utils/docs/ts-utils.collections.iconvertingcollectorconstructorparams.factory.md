@@ -9,5 +9,5 @@ The default [factory](./ts-utils.collections.collectiblefactory.md) to create it
 **Signature:**
 
 ```typescript
-factory: CollectibleFactory<TKEY, TINDEX, TITEM, TSRC>;
+factory: CollectibleFactory<TITEM, TSRC>;
 ```
