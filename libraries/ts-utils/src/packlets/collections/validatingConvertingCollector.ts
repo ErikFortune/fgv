@@ -23,7 +23,10 @@
 import { captureResult, Result } from '../base';
 import { CollectibleFactory, ICollectible } from './collectible';
 import { ConvertingCollector } from './convertingCollector';
-import { CollectorValidator, IReadOnlyCollectorValidator } from './convertingCollectorValidator';
+import {
+  ConvertingCollectorValidator,
+  IReadOnlyConvertingCollectorValidator
+} from './convertingCollectorValidator';
 import { KeyValueEntry } from './common';
 import { IReadOnlyValidatingResultMap } from './validatingResultMap';
 import { KeyValueConverters } from './keyValueConverters';
@@ -42,7 +45,7 @@ export interface IReadOnlyValidatingConvertingCollector<
   /**
    * {@inheritdoc Collections.ValidatingConvertingCollector.validating}
    */
-  readonly validating: IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM>;
+  readonly validating: IReadOnlyConvertingCollectorValidator<TKEY, TINDEX, TITEM>;
 
   /**
    * {@inheritdoc Collections.IReadOnlyValidatingConvertingCollector.getAt}
@@ -66,7 +69,7 @@ export interface IValidatingConvertingCollectorConstructorParams<
   factory: CollectibleFactory<TKEY, TINDEX, TITEM, TSRC>;
 
   /**
-   * {@inheritdoc Collections.ICollectorValidatorCreateParams.converters}
+   * {@inheritdoc Collections.IConvertingCollectorValidatorCreateParams.converters}
    */
   converters: KeyValueConverters<TKEY, TSRC>;
 
@@ -77,7 +80,8 @@ export interface IValidatingConvertingCollectorConstructorParams<
 }
 
 /**
- * A {@link Collections.ConvertingCollector | ConvertingCollector} with a {@link Collections.CollectorValidator | CollectorValidator}
+ * A {@link Collections.ConvertingCollector | ConvertingCollector} with a
+ * {@link Collections.ConvertingCollectorValidator | ConvertingCollectorValidator}
  * property that enables validated use of the underlying map with weakly-typed keys and values.
  * @public
  */
@@ -88,10 +92,10 @@ export class ValidatingConvertingCollector<
   TSRC = TITEM
 > extends ConvertingCollector<TKEY, TINDEX, TITEM, TSRC> {
   /**
-   * A {@link Collections.CollectorValidator | CollectorValidator} which validates keys and values
+   * A {@link Collections.ConvertingCollectorValidator | ConvertingCollectorValidator} which validates keys and values
    * before inserting them into this collector.
    */
-  public readonly validating: CollectorValidator<TKEY, TINDEX, TITEM, TSRC>;
+  public readonly validating: ConvertingCollectorValidator<TKEY, TINDEX, TITEM, TSRC>;
 
   protected readonly _converters: KeyValueConverters<TKEY, TSRC>;
 
@@ -103,7 +107,7 @@ export class ValidatingConvertingCollector<
   public constructor(params: IValidatingConvertingCollectorConstructorParams<TKEY, TINDEX, TITEM, TSRC>) {
     super({ factory: params.factory });
     this._converters = params.converters;
-    this.validating = new CollectorValidator({ collector: this, converters: params.converters });
+    this.validating = new ConvertingCollectorValidator({ collector: this, converters: params.converters });
     for (const entry of params.entries ?? []) {
       this.getOrAdd(entry[0], entry[1]).orThrow();
     }

@@ -68,12 +68,12 @@ Description
 
 </td><td>
 
-[IReadOnlyCollectorValidator](./ts-utils.collections.ireadonlycollectorvalidator.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+[IReadOnlyConvertingCollectorValidator](./ts-utils.collections.ireadonlyconvertingcollectorvalidator.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
 
 
 </td><td>
 
-A [CollectorValidator](./ts-utils.collections.collectorvalidator.md) which validates keys and values before inserting them into this collector.
+A [ConvertingCollectorValidator](./ts-utils.collections.convertingcollectorvalidator.md) which validates keys and values before inserting them into this collector.
 
 
 </td></tr>

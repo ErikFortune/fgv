@@ -43,23 +43,23 @@ Items are assigned an index sequentially as they are added to the collection. On
 </td></tr>
 <tr><td>
 
-[CollectorValidator](./ts-utils.collections.collectorvalidator.md)
-
-
-</td><td>
-
-A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) wrapper which validates weakly-typed keys and values before calling the wrapped collector.
-
-
-</td></tr>
-<tr><td>
-
 [ConvertingCollector](./ts-utils.collections.convertingcollector.md)
 
 
 </td><td>
 
 A [collector](./ts-utils.collector.md) that collects [ICollectible](./ts-utils.collections.icollectible.md) items, optionally converting them from a source representation to the target representation using a factory supplied at default or at the time of collection.
+
+
+</td></tr>
+<tr><td>
+
+[ConvertingCollectorValidator](./ts-utils.collections.convertingcollectorvalidator.md)
+
+
+</td><td>
+
+A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) wrapper which validates weakly-typed keys and values before calling the wrapped collector.
 
 
 </td></tr>
@@ -125,7 +125,7 @@ A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) with non-
 
 </td><td>
 
-A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) with a [CollectorValidator](./ts-utils.collections.collectorvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) with a [ConvertingCollectorValidator](./ts-utils.collections.convertingcollectorvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
 
 
 </td></tr>
@@ -201,23 +201,23 @@ Parameters for constructing a [ICollector](./ts-utils.collections.collector.md)<
 </td></tr>
 <tr><td>
 
-[ICollectorValidatorCreateParams](./ts-utils.collections.icollectorvalidatorcreateparams.md)
-
-
-</td><td>
-
-Parameters for constructing a [CollectorValidator](./ts-utils.collections.collectorvalidator.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [IConvertingCollectorConstructorParams](./ts-utils.collections.iconvertingcollectorconstructorparams.md)
 
 
 </td><td>
 
 Parameters for constructing a [ConvertingCollector](./ts-utils.collections.convertingcollector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IConvertingCollectorValidatorCreateParams](./ts-utils.collections.iconvertingcollectorvalidatorcreateparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [ConvertingCollectorValidator](./ts-utils.collections.convertingcollectorvalidator.md)<!-- -->.
 
 
 </td></tr>
@@ -245,12 +245,12 @@ A read-only interface exposing only the non-mutating methods of a [ICollector](.
 </td></tr>
 <tr><td>
 
-[IReadOnlyCollectorValidator](./ts-utils.collections.ireadonlycollectorvalidator.md)
+[IReadOnlyConvertingCollectorValidator](./ts-utils.collections.ireadonlyconvertingcollectorvalidator.md)
 
 
 </td><td>
 
-A read-only interface exposing non-mutating methods of a [CollectorValidator](./ts-utils.collections.collectorvalidator.md)<!-- -->.
+A read-only interface exposing non-mutating methods of a [ConvertingCollectorValidator](./ts-utils.collections.convertingcollectorvalidator.md)<!-- -->.
 
 
 </td></tr>
