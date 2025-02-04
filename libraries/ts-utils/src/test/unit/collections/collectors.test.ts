@@ -203,7 +203,7 @@ describe('Collectors', () => {
       });
     });
 
-    describe('getOrAddItem', () => {
+    describe('getOrAdd with item', () => {
       test('adds a new item to the collector', () => {
         const collector = new SimpleCollector<CollectibleTestThing>();
         const thing = new CollectibleTestThing({ str: 'new', num: 6, bool: false }, 'thing0');

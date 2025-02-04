@@ -183,9 +183,9 @@ declare namespace Collections {
         ICollectibleConstructorParamsWithConverter,
         ICollectibleConstructorParams,
         Collectible,
-        ISimpleConvertingCollector,
         IConvertingCollectorConstructorParams,
         ConvertingCollector,
+        SimpleConvertingCollector,
         CollectorResultDetail,
         IReadOnlyCollector,
         ICollectorCreateParams,
@@ -1074,11 +1074,6 @@ function isA<T, TC = unknown>(description: string, guard: TypeGuardWithContext<T
 // @public
 function isA_2<T, TC = unknown>(description: string, guard: TypeGuardWithContext<T, TC>, params?: Omit<TypeGuardValidatorConstructorParams<T, TC>, 'description' | 'guard'>): TypeGuardValidator<T, TC>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-type ISimpleConvertingCollector<TITEM extends ICollectible<string, number>, TSRC> = ConvertingCollector<string, number, TITEM, TSRC>;
-
 // @public
 function isIterable<TE = unknown, TI extends Iterable<TE> = Iterable<TE>, TO = unknown>(value: TI | TO): value is TI;
 
@@ -1670,6 +1665,16 @@ export class SimpleCollector<TITEM extends ICollectible<string, number>> extends
     constructor(params?: ICollectorCreateParams<string, number, TITEM>);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createSimpleCollector<TITEM extends ICollectible<string, number>>(params?: ICollectorCreateParams<string, number, TITEM>): Result<SimpleCollector<TITEM>>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class SimpleConvertingCollector<TITEM extends ICollectible<string, number>, TSRC> extends ConvertingCollector<string, number, TITEM, TSRC> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(params: IConvertingCollectorConstructorParams<string, number, TITEM, TSRC>);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static createSimpleCollector<TITEM extends ICollectible<string, number>, TSRC>(params: IConvertingCollectorConstructorParams<string, number, TITEM, TSRC>): Result<SimpleConvertingCollector<TITEM, TSRC>>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

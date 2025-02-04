@@ -20,19 +20,10 @@
  * SOFTWARE.
  */
 
-import { DetailedResult, Result } from '../base';
+import { captureResult, DetailedResult, failWithDetail, Result, succeedWithDetail } from '../base';
 import { ICollectible, CollectibleFactoryCallback, CollectibleFactory } from './collectible';
 import { Collector, CollectorResultDetail } from './collector';
 import { KeyValueEntry } from './common';
-
-/**
- * A {@link Collections.ConvertingCollector | ConvertingCollector} with non-branded `string` key and `number` index, and transformation of source items.
- * @public
- */
-export type ISimpleConvertingCollector<
-  TITEM extends ICollectible<string, number>,
-  TSRC
-> = ConvertingCollector<string, number, TITEM, TSRC>;
 
 /**
  * Parameters for constructing a {@link Collections.ConvertingCollector | ConvertingCollector}.
@@ -76,7 +67,7 @@ export class ConvertingCollector<
     super();
     this._factory = params.factory;
     params.entries?.forEach((entry) => {
-      this.getOrAdd(entry[0], entry[1]);
+      this.getOrAdd(entry[0], entry[1]).orThrow();
     });
   }
 
@@ -160,6 +151,15 @@ export class ConvertingCollector<
     return this._buildItem(keyOrItem, itemOrCb!)
       .withFailureDetail<CollectorResultDetail>('invalid-value')
       .onSuccess((item) => {
+        if (item.key !== keyOrItem) {
+          return failWithDetail<TITEM, CollectorResultDetail>(
+            `${keyOrItem}: key mismatch - item has unexpected key ${item.key}`,
+            'invalid-key'
+          );
+        }
+        return succeedWithDetail(item, 'success');
+      })
+      .onSuccess((item) => {
         return super.add(item);
       });
   }
@@ -208,5 +208,33 @@ export class ConvertingCollector<
     itemOrCb: TSRC | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
   ): Result<TITEM> {
     return this._isFactoryCB(itemOrCb) ? itemOrCb(key, this.size) : this._factory(key, this.size, itemOrCb);
+  }
+}
+
+/**
+ * A {@link Collections.ConvertingCollector | ConvertingCollector} with non-branded `string` key and `number` index, and transformation of source items.
+ * @public
+ */
+export class SimpleConvertingCollector<
+  TITEM extends ICollectible<string, number>,
+  TSRC
+> extends ConvertingCollector<string, number, TITEM, TSRC> {
+  /**
+   * Constructs a new {@link Collections.SimpleConvertingCollector | SimpleConvertingCollector} from the supplied parameters.
+   * @param params - Required parameters for constructing the collector.
+   */
+  public constructor(params: IConvertingCollectorConstructorParams<string, number, TITEM, TSRC>) {
+    super(params);
+  }
+
+  /**
+   * Creates a new {@link Collections.SimpleConvertingCollector | SimpleConvertingCollector} instance from the supplied parameters.
+   * @param params - Required parameters for constructing the collector.
+   * @returns {@link Success} with the new collector if successful, {@link Failure} otherwise.
+   */
+  public static createSimpleCollector<TITEM extends ICollectible<string, number>, TSRC>(
+    params: IConvertingCollectorConstructorParams<string, number, TITEM, TSRC>
+  ): Result<SimpleConvertingCollector<TITEM, TSRC>> {
+    return captureResult(() => new SimpleConvertingCollector(params));
   }
 }
