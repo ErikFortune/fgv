@@ -153,7 +153,7 @@ Reports a successful [result](./ts-utils.iresult.md) from some operation and the
 </td></tr>
 <tr><td>
 
-[ValidatingCollector](./ts-utils.validatingcollector.md)
+[ValidatingConvertingCollector](./ts-utils.validatingconvertingcollector.md)
 
 
 </td><td>

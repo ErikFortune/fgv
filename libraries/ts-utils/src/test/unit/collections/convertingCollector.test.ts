@@ -248,7 +248,7 @@ describe('ConvertingCollector', () => {
         const existing = collector.get(collectibles[0].key).orThrow();
         const toAdd = new CollectibleTestThing(things[0], 'thing0', 0);
         factoryFn.mockClear();
-        expect(collector.getOrAdd(existing)).toSucceedAndSatisfy((result) => {
+        expect(collector.getOrAdd(toAdd)).toSucceedAndSatisfy((result) => {
           expect(result).toBe(existing);
           expect(factoryFn).not.toHaveBeenCalled();
         });

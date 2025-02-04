@@ -109,7 +109,18 @@ A simple [collector](./ts-utils.collections.collector.md) with non-branded `stri
 </td></tr>
 <tr><td>
 
-[ValidatingCollector](./ts-utils.collections.validatingcollector.md)
+[SimpleConvertingCollector](./ts-utils.collections.simpleconvertingcollector.md)
+
+
+</td><td>
+
+A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) with non-branded `string` key and `number` index, and transformation of source items.
+
+
+</td></tr>
+<tr><td>
+
+[ValidatingConvertingCollector](./ts-utils.collections.validatingconvertingcollector.md)
 
 
 </td><td>
@@ -267,12 +278,12 @@ A read-only interface exposing non-mutating methods of a [ResultMapValidator](./
 </td></tr>
 <tr><td>
 
-[IReadOnlyValidatingCollector](./ts-utils.collections.ireadonlyvalidatingcollector.md)
+[IReadOnlyValidatingConvertingCollector](./ts-utils.collections.ireadonlyvalidatingconvertingcollector.md)
 
 
 </td><td>
 
-A read-only interface exposing non-mutating methods of a [ValidatingCollector](./ts-utils.collections.validatingcollector.md)<!-- -->.
+A read-only interface exposing non-mutating methods of a [ValidatingConvertingCollector](./ts-utils.collections.validatingconvertingcollector.md)<!-- -->.
 
 
 </td></tr>
@@ -311,12 +322,12 @@ Parameters for constructing a [ResultMapValidator](./ts-utils.collections.result
 </td></tr>
 <tr><td>
 
-[IValidatingCollectorConstructorParams](./ts-utils.collections.ivalidatingcollectorconstructorparams.md)
+[IValidatingConvertingCollectorConstructorParams](./ts-utils.collections.ivalidatingconvertingcollectorconstructorparams.md)
 
 
 </td><td>
 
-Parameters for constructing a [ValidatingCollector](./ts-utils.collections.validatingcollector.md)<!-- -->.
+Parameters for constructing a [ValidatingConvertingCollector](./ts-utils.collections.validatingconvertingcollector.md)<!-- -->.
 
 
 </td></tr>
@@ -411,17 +422,6 @@ Additional success or failure details for mutating collector calls.
 </td><td>
 
 Parameters for constructing a new [ICollectible](./ts-utils.collections.icollectible.md) instance.
-
-
-</td></tr>
-<tr><td>
-
-[ISimpleConvertingCollector](./ts-utils.collections.isimpleconvertingcollector.md)
-
-
-</td><td>
-
-A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) with non-branded `string` key and `number` index, and transformation of source items.
 
 
 </td></tr>
