@@ -132,9 +132,27 @@ export class Collectible<TKEY extends string = string, TINDEX extends number = n
   protected readonly _indexConverter?: Validator<TINDEX, unknown> | Converter<TINDEX, unknown>;
 
   /**
-   * Constructs a new {@link Collections.Collectible | Collectible} instance.
-   * @param params - Required parameters for constructing the collectible.
+   * Constructs a new {@link Collections.Collectible | Collectible} instance
+   * with a defined, strongly-typed index.
+   * @param params - {@link Collections.ICollectibleConstructorParamsWithIndex | Parameters} for constructing
+   * the collectible.
    */
+  public constructor(params: ICollectibleConstructorParamsWithIndex<TKEY, TINDEX>);
+
+  /**
+   * Constructs a new {@link Collections.Collectible | Collectible} instance with
+   * an undefined index and an index converter to validate te index when it is set.
+   * @param params - {@link Collections.ICollectibleConstructorParamsWithConverter | Parameters} for constructing
+   * the collectible.
+   */
+  public constructor(params: ICollectibleConstructorParamsWithConverter<TKEY, TINDEX>);
+
+  /**
+   * Constructs a new {@link Collections.Collectible | Collectible} instance.
+   * @param params - {@link Collections.ICollectibleConstructorParams | Parameters} for constructing
+   * the collectible.
+   */
+  public constructor(params: ICollectibleConstructorParams<TKEY, TINDEX>);
   public constructor(params: ICollectibleConstructorParams<TKEY, TINDEX>) {
     this.key = params.key;
     if ('indexConverter' in params) {
@@ -151,10 +169,37 @@ export class Collectible<TKEY extends string = string, TINDEX extends number = n
   }
 
   /**
-   * Creates a new {@link Collections.Collectible | Collectible} instance from the supplied parameters.
-   * @param params - Required parameters for constructing the collectible.
-   * @returns `Success` with the new collectible if successful, or `Failure` with an error message if not.
+   * Creates a new {@link Collections.Collectible | Collectible} instance with a defined, strongly-typed index.
+   * @param params - {@link Collections.ICollectibleConstructorParamsWithIndex | Parameters} for constructing
+   * the collectible.
+   * @returns {@link Success} with the new collectible if successful, {@link Failure} otherwise.
    */
+  public static createCollectible<TKEY extends string = string, TINDEX extends number = number>(
+    params: ICollectibleConstructorParamsWithIndex<TKEY, TINDEX>
+  ): Result<Collectible<TKEY, TINDEX>>;
+
+  /**
+   * Creates a new {@link Collections.Collectible | Collectible} instance with an undefined index and an index
+   * converter to validate the index when it is set.
+   * @param params - {@link Collections.ICollectibleConstructorParamsWithConverter | Parameters} for constructing
+   * the collectible.
+   * @returns {@link Success} with the new collectible if successful, {@link Failure} otherwise.
+   */
+  public static createCollectible<TKEY extends string = string, TINDEX extends number = number>(
+    params: ICollectibleConstructorParamsWithConverter<TKEY, TINDEX>
+  ): Result<Collectible<TKEY, TINDEX>>;
+
+  /**
+   * Creates a new {@link Collections.Collectible | Collectible} instance.
+   * @param params - {@link Collections.ICollectibleConstructorParams | Parameters} for constructing
+   * the collectible.
+   * @returns {@link Success} with the new collectible if successful, {@link Failure} otherwise
+   * @public
+   */
+  public static createCollectible<TKEY extends string = string, TINDEX extends number = number>(
+    params: ICollectibleConstructorParams<TKEY, TINDEX>
+  ): Result<Collectible<TKEY, TINDEX>>;
+
   public static createCollectible<TKEY extends string = string, TINDEX extends number = number>(
     params: ICollectibleConstructorParams<TKEY, TINDEX>
   ): Result<Collectible<TKEY, TINDEX>> {

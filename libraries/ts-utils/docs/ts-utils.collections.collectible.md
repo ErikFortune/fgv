@@ -41,6 +41,34 @@ Description
 
 </td><td>
 
+Constructs a new [Collectible](./ts-utils.collections.collectible.md) instance with a defined, strongly-typed index.
+
+
+</td></tr>
+<tr><td>
+
+[(constructor)(params)](./ts-utils.collections.collectible._constructor__1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [Collectible](./ts-utils.collections.collectible.md) instance with an undefined index and an index converter to validate te index when it is set.
+
+
+</td></tr>
+<tr><td>
+
+[(constructor)(params)](./ts-utils.collections.collectible._constructor__2.md)
+
+
+</td><td>
+
+
+</td><td>
+
 Constructs a new [Collectible](./ts-utils.collections.collectible.md) instance.
 
 
@@ -186,7 +214,39 @@ Description
 
 </td><td>
 
-Creates a new [Collectible](./ts-utils.collections.collectible.md) instance from the supplied parameters.
+Creates a new [Collectible](./ts-utils.collections.collectible.md) instance with a defined, strongly-typed index.
+
+
+</td></tr>
+<tr><td>
+
+[createCollectible(params)](./ts-utils.collections.collectible.createcollectible_1.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [Collectible](./ts-utils.collections.collectible.md) instance with an undefined index and an index converter to validate the index when it is set.
+
+
+</td></tr>
+<tr><td>
+
+[createCollectible(params)](./ts-utils.collections.collectible.createcollectible_2.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [Collectible](./ts-utils.collections.collectible.md) instance.
 
 
 </td></tr>

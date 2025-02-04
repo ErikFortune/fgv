@@ -142,7 +142,21 @@ declare namespace Classes {
 // @public
 class Collectible<TKEY extends string = string, TINDEX extends number = number> implements ICollectible<TKEY, TINDEX> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(params: ICollectibleConstructorParamsWithIndex<TKEY, TINDEX>);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(params: ICollectibleConstructorParamsWithConverter<TKEY, TINDEX>);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(params: ICollectibleConstructorParams<TKEY, TINDEX>);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static createCollectible<TKEY extends string = string, TINDEX extends number = number>(params: ICollectibleConstructorParamsWithIndex<TKEY, TINDEX>): Result<Collectible<TKEY, TINDEX>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static createCollectible<TKEY extends string = string, TINDEX extends number = number>(params: ICollectibleConstructorParamsWithConverter<TKEY, TINDEX>): Result<Collectible<TKEY, TINDEX>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createCollectible<TKEY extends string = string, TINDEX extends number = number>(params: ICollectibleConstructorParams<TKEY, TINDEX>): Result<Collectible<TKEY, TINDEX>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
