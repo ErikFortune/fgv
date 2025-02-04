@@ -153,6 +153,17 @@ Reports a successful [result](./ts-utils.iresult.md) from some operation and the
 </td></tr>
 <tr><td>
 
+[ValidatingCollector](./ts-utils.validatingcollector.md)
+
+
+</td><td>
+
+A [Collector](./ts-utils.collections.collector.md) with a [CollectorValidator](./ts-utils.collections.collectorvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+
+
+</td></tr>
+<tr><td>
+
 [ValidatingConvertingCollector](./ts-utils.validatingconvertingcollector.md)
 
 

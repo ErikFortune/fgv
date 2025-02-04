@@ -9,7 +9,7 @@ Constructs a new [Collector](./ts-utils.collections.collector.md)<!-- -->.
 **Signature:**
 
 ```typescript
-constructor(params?: ICollectorCreateParams<TKEY, TINDEX, TITEM>);
+constructor(params?: ICollectorConstructorParams<TKEY, TINDEX, TITEM>);
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ params
 
 </td><td>
 
-[ICollectorCreateParams](./ts-utils.collections.icollectorcreateparams.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+[ICollectorConstructorParams](./ts-utils.collections.icollectorconstructorparams.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional [initialization parameters](./ts-utils.collections.icollectorcreateparams.md) used to construct the collector.
+_(Optional)_ Optional [initialization parameters](./ts-utils.collections.icollectorconstructorparams.md) used to construct the collector.
 
 
 </td></tr>

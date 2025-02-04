@@ -4,14 +4,14 @@
 
 ## Collections.ConvertingCollectorValidator class
 
-A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) wrapper which validates weakly-typed keys and values before calling the wrapped collector.
+A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) wrapper which validates weakly-typed keys and values before calling the wrapped collector. Unlike the basic [CollectorValidator](./ts-utils.collections.collectorvalidator.md)<!-- -->, the converting collector expects the items to be in the source type of the converting collector, not the target type.
 
 **Signature:**
 
 ```typescript
-export declare class ConvertingCollectorValidator<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> implements IReadOnlyConvertingCollectorValidator<TKEY, TINDEX, TITEM> 
+export declare class ConvertingCollectorValidator<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> implements IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM> 
 ```
-**Implements:** [IReadOnlyConvertingCollectorValidator](./ts-utils.collections.ireadonlyconvertingcollectorvalidator.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+**Implements:** [IReadOnlyCollectorValidator](./ts-utils.collections.ireadonlycollectorvalidator.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
 
 ## Constructors
 

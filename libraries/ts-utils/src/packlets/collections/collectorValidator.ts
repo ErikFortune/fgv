@@ -20,13 +20,13 @@
  * SOFTWARE.
  */
 
-import { DetailedResult, failWithDetail } from '../base';
+import { DetailedResult } from '../base';
 import { IReadOnlyResultMap, ResultMapResultDetail } from './readonlyResultMap';
 import { ResultMapValueFactory } from './resultMap';
 import { KeyValueConverters } from './keyValueConverters';
-import { CollectibleFactoryCallback, ICollectible } from './collectible';
 import { Collector, CollectorResultDetail } from './collector';
 import { IReadOnlyResultMapValidator } from './resultMapValidator';
+import { ICollectible } from './collectible';
 
 /**
  * A read-only interface exposing non-mutating methods of a
@@ -104,6 +104,15 @@ export class CollectorValidator<
   }
 
   /**
+   * {@inheritdoc Collections.Collector.add}
+   */
+  public add(item: unknown): DetailedResult<TITEM, CollectorResultDetail> {
+    return this._convertValue(item).onSuccess((i) => {
+      return this._collector.add(i);
+    });
+  }
+
+  /**
    * {@inheritdoc Collections.Collector.get}
    */
   public get(key: string): DetailedResult<TITEM, ResultMapResultDetail> {
@@ -118,12 +127,26 @@ export class CollectorValidator<
   public getOrAdd(
     key: string,
     factory: ResultMapValueFactory<TKEY, TITEM>
+  ): DetailedResult<TITEM, CollectorResultDetail>;
+
+  /**
+   * {@inheritdoc Collections.Collector.(getOrAdd:1)}
+   * @param item - The item to add to the collector.
+   */
+  public getOrAdd(item: unknown): DetailedResult<TITEM, CollectorResultDetail>;
+
+  public getOrAdd(
+    keyOrItem: string | unknown,
+    factoryCb?: ResultMapValueFactory<TKEY, TITEM>
   ): DetailedResult<TITEM, CollectorResultDetail> {
-    const keyResult = this.converters.convertKey(key);
-    if (keyResult.isFailure()) {
-      return failWithDetail(keyResult.message, keyResult.detail);
+    if (factoryCb === undefined) {
+      return this._convertValue(keyOrItem).onSuccess((item) => this._collector.getOrAdd(item));
+    } else {
+      return this.converters
+        .convertKey(keyOrItem)
+        .withDetail<CollectorResultDetail>('invalid-key', 'success')
+        .onSuccess((key) => this._collector.getOrAdd(key, factoryCb));
     }
-    return this._collector.getOrAdd(keyResult.value, factory);
   }
 
   /**
@@ -141,15 +164,18 @@ export class CollectorValidator<
   }
 
   /**
-   * Determines if a value is a {@link Collections.CollectibleFactoryCallback | CollectibleFactoryCallback}.
-   * @param value - The value to check.
-   * @returns `true` if the value is a {@link Collections.CollectibleFactoryCallback | CollectibleFactoryCallback},
-   * `false` otherwise.
-   * @public
+   * Helper to convert a value, returning a {@link DetailedResult | DetailedResult}
+   * and formatting the error message.
+   * @param value - The value to convert.
+   * @returns {@link DetailedSuccess | DetailedSuccess} with the converted value
+   * and detail `success` if conversion is successful, or
+   * {@link DetailedFailure | DetailedFailure} with the error message and detail `invalid-value`
+   * if conversion fails.
    */
-  protected _isCollectibleFactoryCallback(
-    value: unknown | CollectibleFactoryCallback<TKEY, TINDEX, TITEM>
-  ): value is CollectibleFactoryCallback<TKEY, TINDEX, TITEM> {
-    return typeof value === 'function';
+  protected _convertValue(value: unknown): DetailedResult<TITEM, CollectorResultDetail> {
+    return this.converters
+      .convertValue(value)
+      .withErrorFormat((message) => `invalid item: ${message}`)
+      .withDetail<CollectorResultDetail>('invalid-value', 'success');
   }
 }

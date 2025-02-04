@@ -210,7 +210,7 @@ describe('ConvertingCollector', () => {
       test('fails if the collectible to be added has a mismatched key', () => {
         factory = (k, ix, it) => CollectibleTestThing.create(it, `not_${k}`, ix);
         const collector = new SimpleConvertingCollector<CollectibleTestThing, ITestThing>({ factory });
-        expect(collector.getOrAdd('foo', things[0])).toFailWith(/key mismatch/);
+        expect(collector.getOrAdd('foo', things[0])).toFailWithDetail(/key mismatch/, 'invalid-key');
       });
 
       test('fails if the collectible to be added has a mismatched index', () => {

@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly converters: KeyValueConverters<TKEY, TSRC>;
+readonly converters: KeyValueConverters<TKEY, TITEM>;
 ```

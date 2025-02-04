@@ -9,9 +9,9 @@ Gets a read-only version of this collector.
 **Signature:**
 
 ```typescript
-toReadOnly(): IReadOnlyConvertingCollectorValidator<TKEY, TINDEX, TITEM>;
+toReadOnly(): IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM>;
 ```
 **Returns:**
 
-[IReadOnlyConvertingCollectorValidator](./ts-utils.collections.ireadonlyconvertingcollectorvalidator.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+[IReadOnlyCollectorValidator](./ts-utils.collections.ireadonlycollectorvalidator.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
 

@@ -9,7 +9,7 @@ Parameters for constructing a [CollectorValidator](./ts-utils.collections.collec
 **Signature:**
 
 ```typescript
-export interface ICollectorValidatorCreateParams<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> 
+export interface ICollectorValidatorCreateParams<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>> 
 ```
 
 ## Properties
@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-[ConvertingCollector](./ts-utils.convertingcollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
+[Collector](./ts-utils.collector.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
 
 
 </td><td>
@@ -66,7 +66,7 @@ Description
 
 </td><td>
 
-[KeyValueConverters](./ts-utils.collections.keyvalueconverters.md)<!-- -->&lt;TKEY, TSRC&gt;
+[KeyValueConverters](./ts-utils.collections.keyvalueconverters.md)<!-- -->&lt;TKEY, TITEM&gt;
 
 
 </td><td>

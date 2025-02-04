@@ -32,7 +32,7 @@ export type TestThingKey = Brand<string, 'TestThingKey'>;
 export type TestThingIndex = Brand<number, 'TestThingIndex'>;
 
 export const testThingKey: Converter<TestThingKey, unknown> = Converters.string
-  .withConstraint((s) => /~thing\d{1,4}$/.test(s))
+  .withConstraint((s) => /^thing\d{1,4}$/.test(s))
   .withFormattedError((val: unknown) => `${val} is not a valid TestThingKey`)
   .withBrand('TestThingKey');
 
@@ -44,6 +44,36 @@ export interface ITestThing {
   str?: string;
   num?: number;
   bool?: boolean;
+}
+
+export const testThing: Converter<ITestThing, unknown> = Converters.strictObject<ITestThing>({
+  str: Converters.string.optional(),
+  num: Converters.number.optional(),
+  bool: Converters.boolean.optional()
+});
+
+export class BrandedCollectibleTestThing
+  extends Collectible<TestThingKey, TestThingIndex>
+  implements ITestThing
+{
+  public str?: string;
+  public num?: number;
+  public bool?: boolean;
+
+  public constructor(thing: ITestThing, key: TestThingKey, index?: TestThingIndex) {
+    super({ key, index, indexConverter: testThingIndex });
+    this.str = thing.str;
+    this.num = thing.num;
+    this.bool = thing.bool;
+  }
+
+  public static create(thing: ITestThing, key: string, index?: number): Result<BrandedCollectibleTestThing> {
+    return testThingKey.convert(key).onSuccess((convertedKey) => {
+      return testThingIndex.convert(index).onSuccess((convertedIndex) => {
+        return captureResult(() => new BrandedCollectibleTestThing(thing, convertedKey, convertedIndex));
+      });
+    });
+  }
 }
 
 export class CollectibleTestThing extends Collectible<string, number> implements ITestThing {
@@ -74,14 +104,6 @@ export class BrokenCollectibleTestThing extends CollectibleTestThing {
   }
 }
 
-export function collectibleTestThingFactory(
-  key: string,
-  index: number,
-  item: ITestThing
-): Result<CollectibleTestThing> {
-  return succeed(new CollectibleTestThing(item, key, index));
-}
-
 export class TestCollector extends ConvertingCollector<string, number, CollectibleTestThing, ITestThing> {
   public constructor(things?: ITestThing[]) {
     const entries = things
@@ -108,5 +130,22 @@ export function getTestThings(): { things: ITestThing[]; collectibles: Collectib
     { str: 'thing4', num: 4, bool: false }
   ];
   const collectibles = things.map((thing, index) => new CollectibleTestThing(thing, `thing${index}`, index));
+  return { things, collectibles };
+}
+
+export function getBrandedTestThings(): {
+  things: ITestThing[];
+  collectibles: BrandedCollectibleTestThing[];
+} {
+  const things = [
+    { str: 'thing0', num: 0, bool: false },
+    { str: 'thing1', num: 1, bool: true },
+    { str: 'thing2', num: 2, bool: false },
+    { str: 'thing3', num: 3, bool: true },
+    { str: 'thing4', num: 4, bool: false }
+  ];
+  const collectibles = things.map((thing, index) =>
+    BrandedCollectibleTestThing.create(thing, `thing${index}`, index).orThrow()
+  );
   return { things, collectibles };
 }

@@ -9,7 +9,7 @@ A [Collector](./ts-utils.collections.collector.md) wrapper which validates weakl
 **Signature:**
 
 ```typescript
-export declare class CollectorValidator<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>, TSRC = TITEM> implements IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM> 
+export declare class CollectorValidator<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>> implements IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM> 
 ```
 **Implements:** [IReadOnlyCollectorValidator](./ts-utils.collections.ireadonlycollectorvalidator.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
 
@@ -82,7 +82,7 @@ Description
 
 </td><td>
 
-[ConvertingCollector](./ts-utils.convertingcollector.md)<!-- -->&lt;TKEY, TINDEX, TITEM, TSRC&gt;
+[Collector](./ts-utils.collector.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
 
 
 </td><td>
@@ -101,7 +101,7 @@ Description
 
 </td><td>
 
-[KeyValueConverters](./ts-utils.collections.keyvalueconverters.md)<!-- -->&lt;TKEY, TSRC&gt;
+[KeyValueConverters](./ts-utils.collections.keyvalueconverters.md)<!-- -->&lt;TKEY, TITEM&gt;
 
 
 </td><td>
@@ -149,6 +149,22 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[\_convertValue(value)](./ts-utils.collections.collectorvalidator._convertvalue.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+Helper to convert a value, returning a [DetailedResult](./ts-utils.detailedresult.md) and formatting the error message.
+
+
+</td></tr>
+<tr><td>
+
 [\_isCollectibleFactoryCallback(value)](./ts-utils.collections.collectorvalidator._iscollectiblefactorycallback.md)
 
 
@@ -160,6 +176,20 @@ Description
 </td><td>
 
 Determines if a value is a [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[add(item)](./ts-utils.collections.collectorvalidator.add.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds an item to the collection, failing if an item with that key already exists.
 
 
 </td></tr>
@@ -187,6 +217,20 @@ Determines if a value is a [CollectibleFactoryCallback](./ts-utils.collections.c
 </td><td>
 
 Adds an item to the collector using a supplied [factory callback](./ts-utils.collections.collectiblefactorycallback.md) at a specified key, failing if an item with that key already exists or if the created item is invalid.
+
+
+</td></tr>
+<tr><td>
+
+[getOrAdd(item)](./ts-utils.collections.collectorvalidator.getoradd_1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets an existing item with a key matching that of a supplied item, or adds the supplied item to the collector if no item with that key exists.
 
 
 </td></tr>

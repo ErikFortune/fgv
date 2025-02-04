@@ -9,7 +9,7 @@ Constructs a new [SimpleCollector](./ts-utils.collections.simplecollector.md)<!-
 **Signature:**
 
 ```typescript
-constructor(params?: ICollectorCreateParams<string, number, TITEM>);
+constructor(params?: ICollectorConstructorParams<string, number, TITEM>);
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[ICollectorCreateParams](./ts-utils.collections.icollectorcreateparams.md)<!-- -->&lt;string, number, TITEM&gt;
+[ICollectorConstructorParams](./ts-utils.collections.icollectorconstructorparams.md)<!-- -->&lt;string, number, TITEM&gt;
 
 
 </td><td>

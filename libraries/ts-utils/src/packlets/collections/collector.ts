@@ -61,7 +61,7 @@ export interface IReadOnlyCollector<
  * Parameters for constructing a {@link Collections.Collector | ICollector}.
  * @public
  */
-export interface ICollectorCreateParams<
+export interface ICollectorConstructorParams<
   TKEY extends string = string,
   TINDEX extends number = number,
   TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
@@ -103,10 +103,10 @@ export class Collector<
 
   /**
    * Constructs a new {@link Collections.Collector | Collector}.
-   * @param params - Optional {@link Collections.ICollectorCreateParams | initialization parameters} used
+   * @param params - Optional {@link Collections.ICollectorConstructorParams | initialization parameters} used
    * to construct the collector.
    */
-  public constructor(params?: ICollectorCreateParams<TKEY, TINDEX, TITEM>) {
+  public constructor(params?: ICollectorConstructorParams<TKEY, TINDEX, TITEM>) {
     this._byKey = new Map<TKEY, TITEM>();
     this._byIndex = [];
     for (const item of params?.items ?? []) {
@@ -116,7 +116,7 @@ export class Collector<
 
   /**
    * Creates a new {@link Collections.Collector | Collector} instance.
-   * @param params - Optional {@link Collections.ICollectorCreateParams | initialization parameters} used
+   * @param params - Optional {@link Collections.ICollectorConstructorParams | initialization parameters} used
    * to create the collector.
    * @returns Returns {@link Success | Success} with the new collector if it was created successfully,
    * or {@link Failure | Failure} with an error if the collector could not be created.
@@ -125,7 +125,7 @@ export class Collector<
     TKEY extends string = string,
     TINDEX extends number = number,
     TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
-  >(params?: ICollectorCreateParams<TKEY, TINDEX, TITEM>): Result<Collector<TKEY, TINDEX, TITEM>> {
+  >(params?: ICollectorConstructorParams<TKEY, TINDEX, TITEM>): Result<Collector<TKEY, TINDEX, TITEM>> {
     return captureResult(() => new Collector(params));
   }
 
@@ -286,7 +286,7 @@ export class SimpleCollector<TITEM extends ICollectible<string, number>> extends
    * Constructs a new {@link Collections.SimpleCollector | SimpleCollector}.
    * @param params - Optional initialization parameters for the collector.
    */
-  public constructor(params?: ICollectorCreateParams<string, number, TITEM>) {
+  public constructor(params?: ICollectorConstructorParams<string, number, TITEM>) {
     super(params);
   }
 
@@ -297,7 +297,7 @@ export class SimpleCollector<TITEM extends ICollectible<string, number>> extends
    * or {@link Failure | Failure} with an error if the collector could not be created.
    */
   public static createSimpleCollector<TITEM extends ICollectible<string, number>>(
-    params?: ICollectorCreateParams<string, number, TITEM>
+    params?: ICollectorConstructorParams<string, number, TITEM>
   ): Result<SimpleCollector<TITEM>> {
     return captureResult(() => new SimpleCollector(params));
   }

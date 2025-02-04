@@ -9,7 +9,7 @@ Creates a new [Collector](./ts-utils.collections.collector.md) instance.
 **Signature:**
 
 ```typescript
-static createCollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>>(params?: ICollectorCreateParams<TKEY, TINDEX, TITEM>): Result<Collector<TKEY, TINDEX, TITEM>>;
+static createCollector<TKEY extends string = string, TINDEX extends number = number, TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>>(params?: ICollectorConstructorParams<TKEY, TINDEX, TITEM>): Result<Collector<TKEY, TINDEX, TITEM>>;
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ params
 
 </td><td>
 
-[ICollectorCreateParams](./ts-utils.collections.icollectorcreateparams.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
+[ICollectorConstructorParams](./ts-utils.collections.icollectorconstructorparams.md)<!-- -->&lt;TKEY, TINDEX, TITEM&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional [initialization parameters](./ts-utils.collections.icollectorcreateparams.md) used to create the collector.
+_(Optional)_ Optional [initialization parameters](./ts-utils.collections.icollectorconstructorparams.md) used to create the collector.
 
 
 </td></tr>

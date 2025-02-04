@@ -40,12 +40,12 @@ export interface IReadOnlyValidatingCollector<
   TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
 > extends IReadOnlyValidatingResultMap<TKEY, TITEM> {
   /**
-   * {@inheritdoc Collections.ValidatingConvertingCollector.validating}
+   * {@inheritdoc Collections.ValidatingCollector.validating}
    */
   readonly validating: IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM>;
 
   /**
-   * {@inheritdoc Collections.IReadOnlyValidatingConvertingCollector.getAt}
+   * {@inheritdoc Collections.IReadOnlyValidatingCollector.getAt}
    */
   readonly getAt: (index: number) => Result<TITEM>;
 }
@@ -67,7 +67,7 @@ export interface IValidatingCollectorConstructorParams<
   /**
    * {@inheritdoc Collections.ICollectorConstructorParams.items}
    */
-  items?: TITEM[];
+  items?: unknown[];
 }
 
 /**
@@ -98,7 +98,7 @@ export class ValidatingCollector<
     this._converters = params.converters;
     this.validating = new CollectorValidator({ collector: this, converters: params.converters });
     for (const item of params.items ?? []) {
-      this.getOrAdd(item).orThrow();
+      this.validating.getOrAdd(item).orThrow();
     }
   }
 
