@@ -22,7 +22,7 @@
 
 import { captureResult, Result } from '../base';
 import { ICollectible } from './collectible';
-import { IReadOnlyConvertingCollectorValidator } from './convertingCollectorValidator';
+import { IReadOnlyCollectorValidator } from './collectorValidator';
 import { IReadOnlyValidatingResultMap } from './validatingResultMap';
 import { KeyValueConverters } from './keyValueConverters';
 import { Collector } from './collector';
@@ -42,7 +42,7 @@ export interface IReadOnlyValidatingCollector<
   /**
    * {@inheritdoc Collections.ValidatingConvertingCollector.validating}
    */
-  readonly validating: IReadOnlyConvertingCollectorValidator<TKEY, TINDEX, TITEM>;
+  readonly validating: IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM>;
 
   /**
    * {@inheritdoc Collections.IReadOnlyValidatingConvertingCollector.getAt}

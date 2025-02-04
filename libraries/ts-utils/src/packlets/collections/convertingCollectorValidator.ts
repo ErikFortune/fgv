@@ -26,34 +26,8 @@ import { ResultMapValueFactory } from './resultMap';
 import { KeyValueConverters } from './keyValueConverters';
 import { CollectibleFactoryCallback, ICollectible } from './collectible';
 import { CollectorResultDetail } from './collector';
-import { IReadOnlyResultMapValidator } from './resultMapValidator';
 import { ConvertingCollector } from './convertingCollector';
-
-/**
- * A read-only interface exposing non-mutating methods of a
- * {@link Collections.ConvertingCollectorValidator | ConvertingCollectorValidator}.
- * @public
- */
-export interface IReadOnlyConvertingCollectorValidator<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY> = ICollectible<TKEY, TINDEX>
-> extends IReadOnlyResultMapValidator<TKEY, TITEM> {
-  /**
-   * {@inheritdoc Collections.ConvertingCollectorValidator.map}
-   */
-  readonly map: IReadOnlyResultMap<TKEY, TITEM>;
-
-  /**
-   * {@inheritdoc Collections.Collector.get}
-   */
-  get(key: string): DetailedResult<TITEM, ResultMapResultDetail>;
-
-  /**
-   * {@inheritdoc Collections.ResultMap.has}
-   */
-  has(key: string): boolean;
-}
+import { IReadOnlyCollectorValidator } from './collectorValidator';
 
 /**
  * Parameters for constructing a {@link Collections.ConvertingCollectorValidator | ConvertingCollectorValidator}.
@@ -71,7 +45,8 @@ export interface IConvertingCollectorValidatorCreateParams<
 
 /**
  * A {@link Collections.ConvertingCollector | ConvertingCollector} wrapper which validates weakly-typed keys
- * and values before calling the wrapped collector.
+ * and values before calling the wrapped collector.  Unlike the basic {@link Collections.CollectorValidator | CollectorValidator},
+ * the converting collector expects the items to be in the source type of the converting collector, not the target type.
  * @public
  */
 export class ConvertingCollectorValidator<
@@ -79,7 +54,7 @@ export class ConvertingCollectorValidator<
   TINDEX extends number = number,
   TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>,
   TSRC = TITEM
-> implements IReadOnlyConvertingCollectorValidator<TKEY, TINDEX, TITEM>
+> implements IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM>
 {
   public readonly converters: KeyValueConverters<TKEY, TSRC>;
 
@@ -172,7 +147,7 @@ export class ConvertingCollectorValidator<
   /**
    * {@inheritdoc Collections.Collector.toReadOnly}
    */
-  public toReadOnly(): IReadOnlyConvertingCollectorValidator<TKEY, TINDEX, TITEM> {
+  public toReadOnly(): IReadOnlyCollectorValidator<TKEY, TINDEX, TITEM> {
     return this;
   }
 

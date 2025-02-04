@@ -23,35 +23,10 @@
 import { captureResult, Result } from '../base';
 import { CollectibleFactory, ICollectible } from './collectible';
 import { ConvertingCollector } from './convertingCollector';
-import {
-  ConvertingCollectorValidator,
-  IReadOnlyConvertingCollectorValidator
-} from './convertingCollectorValidator';
+import { ConvertingCollectorValidator } from './convertingCollectorValidator';
 import { KeyValueEntry } from './common';
-import { IReadOnlyValidatingResultMap } from './validatingResultMap';
 import { KeyValueConverters } from './keyValueConverters';
-
-/**
- * A read-only interface exposing non-mutating methods of a
- * {@link Collections.ValidatingConvertingCollector | ValidatingConvertingCollector}.
- * @public
- */
-
-export interface IReadOnlyValidatingConvertingCollector<
-  TKEY extends string = string,
-  TINDEX extends number = number,
-  TITEM extends ICollectible<TKEY, TINDEX> = ICollectible<TKEY, TINDEX>
-> extends IReadOnlyValidatingResultMap<TKEY, TITEM> {
-  /**
-   * {@inheritdoc Collections.ValidatingConvertingCollector.validating}
-   */
-  readonly validating: IReadOnlyConvertingCollectorValidator<TKEY, TINDEX, TITEM>;
-
-  /**
-   * {@inheritdoc Collections.IReadOnlyValidatingConvertingCollector.getAt}
-   */
-  readonly getAt: (index: number) => Result<TITEM>;
-}
+import { IReadOnlyValidatingCollector } from './validatingCollector';
 
 /**
  * Parameters for constructing a {@link Collections.ValidatingConvertingCollector | ValidatingConvertingCollector}.
@@ -135,7 +110,7 @@ export class ValidatingConvertingCollector<
    * {@link Collections.IReadOnlyValidatingResultMap | read-only map}.
    * @returns
    */
-  public toReadOnly(): IReadOnlyValidatingConvertingCollector<TKEY, TINDEX, TITEM> {
+  public toReadOnly(): IReadOnlyValidatingCollector<TKEY, TINDEX, TITEM> {
     return this;
   }
 }

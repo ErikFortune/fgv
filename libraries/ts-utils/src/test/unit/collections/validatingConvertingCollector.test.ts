@@ -70,23 +70,10 @@ function _collectibleTestThingFactory(
   index: number,
   item: ITestThing
 ): Result<CollectibleTestThing> {
-  return succeed(new CollectibleTestThing(item, key, index as TestIndex));
+  return testIndex.convert(index).onSuccess((i) => succeed(new CollectibleTestThing(item, key, i)));
 }
 
-export const testCollectorParams: IValidatingConvertingCollectorConstructorParams<
-  TestKey,
-  TestIndex,
-  CollectibleTestThing,
-  ITestThing
-> = {
-  factory: _collectibleTestThingFactory,
-  converters: new KeyValueConverters<TestKey, ITestThing>({
-    key: testKey,
-    value: testThing
-  })
-};
-
-export const entryValidatingTestCollectorParams: IValidatingConvertingCollectorConstructorParams<
+const testCollectorParams: IValidatingConvertingCollectorConstructorParams<
   TestKey,
   TestIndex,
   CollectibleTestThing,
@@ -311,7 +298,7 @@ describe('ValidatingConvertingCollector', () => {
     });
 
     test('validates on all calls that return Result', () => {
-      const collector = new ValidatingConvertingCollector(entryValidatingTestCollectorParams);
+      const collector = new ValidatingConvertingCollector(testCollectorParams);
       expect(collector.validating.get('thingamajig1')).toFailWith(/not a valid test thing key/i);
       expect(collector.validating.has('thingamajig1')).toBe(false);
       expect(collector.validating.getOrAdd('thingamajig1', things[0])).toFailWith(

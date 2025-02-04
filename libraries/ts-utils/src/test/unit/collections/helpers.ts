@@ -33,6 +33,7 @@ export type TestThingIndex = Brand<number, 'TestThingIndex'>;
 
 export const testThingKey: Converter<TestThingKey, unknown> = Converters.string
   .withConstraint((s) => /~thing\d{1,4}$/.test(s))
+  .withFormattedError((val: unknown) => `${val} is not a valid TestThingKey`)
   .withBrand('TestThingKey');
 
 export const testThingIndex: Converter<TestThingIndex, unknown> = Converters.number
@@ -71,6 +72,14 @@ export class BrokenCollectibleTestThing extends CollectibleTestThing {
     this._index = index + 1;
     return succeed(this.index!);
   }
+}
+
+export function collectibleTestThingFactory(
+  key: string,
+  index: number,
+  item: ITestThing
+): Result<CollectibleTestThing> {
+  return succeed(new CollectibleTestThing(item, key, index));
 }
 
 export class TestCollector extends ConvertingCollector<string, number, CollectibleTestThing, ITestThing> {
