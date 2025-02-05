@@ -89,17 +89,6 @@ Non-validated declaration of a [condition](./ts-res.conditions.condition.md)<!--
 </td></tr>
 <tr><td>
 
-[IConditionSetCreateParams](./ts-res.conditions.iconditionsetcreateparams.md)
-
-
-</td><td>
-
-Parameters for creating a [ConditionSet](./ts-res.conditions.conditionset.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [IConditionSetDecl](./ts-res.conditions.iconditionsetdecl.md)
 
 

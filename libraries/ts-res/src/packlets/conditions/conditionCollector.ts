@@ -20,15 +20,7 @@
  * SOFTWARE.
  */
 
-import {
-  captureResult,
-  Collections,
-  DetailedResult,
-  fail,
-  Result,
-  succeed,
-  ValidatingCollector
-} from '@fgv/ts-utils';
+import { captureResult, Collections, Result, succeed, ValidatingCollector } from '@fgv/ts-utils';
 import { ReadOnlyQualifierCollector } from '../qualifiers';
 import { IConditionDecl } from './conditionDecls';
 import { Condition } from './condition';
@@ -64,7 +56,7 @@ export class ConditionCollector extends ValidatingCollector<Condition> {
    * in this collector.
    * @public
    */
-  protected _qualifiers: ReadOnlyQualifierCollector;
+  public qualifiers: ReadOnlyQualifierCollector;
 
   /**
    * Constructor for a {@link Conditions.ConditionCollector | ConditionCollector} object.
@@ -75,13 +67,11 @@ export class ConditionCollector extends ValidatingCollector<Condition> {
     super({
       converters: new Collections.KeyValueConverters<ConditionKey, Condition>({
         key: CommonConvert.conditionKey,
-        value: (value: unknown) => {
-          return value instanceof Condition ? succeed(value) : fail('not a Condition');
-        }
+        value: (from: unknown) => this._toCondition(from)
       })
     });
-    this._qualifiers = params.qualifiers;
-    params.conditions?.forEach((c) => this.add(c));
+    this.qualifiers = params.qualifiers;
+    params.conditions?.forEach((c) => this.validating.add(c));
   }
 
   /**
@@ -95,78 +85,14 @@ export class ConditionCollector extends ValidatingCollector<Condition> {
     return captureResult(() => new ConditionCollector(params));
   }
 
-  /**
-   * Adds a condition to the collector given a {@link Conditions.IConditionDecl | condition declaration}.
-   * If an identical condition is already in the collector, the existing condition is returned.
-   * @param decl - The condition to add to the collector, supplied as an `unknown` value but
-   * expected to be a well-formed {@link Conditions.IConditionDecl | IConditionDecl}.
-   * @returns Returns `DetailedSuccess` with the condition and detail `added` if it was added
-   * or detail `exists` if the item was already in the map.  Returns `DetailedFailure` with
-   * an error message and appropriate detail if the condition could not be added.
-   */
-  public add(decl: unknown): DetailedResult<Condition, Collections.CollectorResultDetail>;
-
-  /**
-   * Adds a {@link Conditions.Condition | Condition} to the collection, failing if a different condition with
-   * the same key already exists. Note that adding condition that is already in the collection (using identity
-   * comparison) again will succeed without updating the collection.
-   * @param condition - The condition to add.
-   * @returns Returns `DetailedSuccess` with the condition and detail `added` if it was added
-   * or detail `exists` if the item was already in the map.  Returns `DetailedFailure` with
-   * an error message and appropriate detail if the condition could not be added.
-   */
-  public add(condition: Condition): DetailedResult<Condition, Collections.CollectorResultDetail>;
-  public add(
-    condition: Condition | IConditionDecl
-  ): DetailedResult<Condition, Collections.CollectorResultDetail> {
-    if (condition instanceof Condition) {
-      return super.add(condition);
-    }
-    return (
-      validatedConditionDecl
-        .convert(condition, { qualifiers: this._qualifiers, index: this.size })
-        .onSuccess((c) => Condition.create(c))
-        // if this is a re-add, get the existing condition
-        .onSuccess((c) => succeed(this.get(c.key).orDefault(c)))
-        .withDetail<Collections.CollectorResultDetail>('failure', 'success')
-        .onSuccess((c) => super.add(c))
-    );
-  }
-
-  /**
-   * Gets an existing {@link Conditions.Condition | condition} with a key matching that of a supplied
-   * {@link Conditions.IConditionDecl | condition declaration}, or creates a new condition from the
-   * declaration and adds that to the collection if no matching condition already exists.
-   * @param decl - The condition to get or add, supplied as an `unknown` value but expected to be a
-   * well-formed {@link Conditions.IConditionDecl | IConditionDecl}.
-   * @returns Returns `DetailedSuccess` with the condition stored in the collector - detail
-   * `exists` indicates that an existing condition was returned and detail `added` indicates that a new condition
-   * was created an added. Returns `DetailedFailure` with an error and appropriate detail
-   * if the condition could not be added.
-   */
-  public getOrAdd(decl: unknown): DetailedResult<Condition, Collections.CollectorResultDetail>;
-  /**
-   * Gets an existing {@link Conditions.Condition | condition} with a key matching that of a supplied
-   * condition, or adds the supplied condition to the collector if no condition with that key exists.
-   * @param condition - The condition to get or add.
-   * @returns Returns `DetailedSuccess` with the {@link Conditions.Condition | condition}
-   * stored in the collector - detail `exists` indicates that an existing condition was returned and detail
-   * `added` indicates that the condition was added. Returns `DetailedFailure` with an error
-   * and appropriate detail if the condition could not be added.
-   */
-  public getOrAdd(condition: Condition): DetailedResult<Condition, Collections.CollectorResultDetail>;
-  public getOrAdd(
-    condition: Condition | IConditionDecl
-  ): DetailedResult<Condition, Collections.CollectorResultDetail> {
-    if (condition instanceof Condition) {
-      return super.getOrAdd(condition);
+  private _toCondition(from: unknown): Result<Condition> {
+    if (from instanceof Condition) {
+      return succeed(from);
     }
     return validatedConditionDecl
-      .convert(condition, { qualifiers: this._qualifiers, index: this.size })
+      .convert(from, { qualifiers: this.qualifiers, index: this.size })
       .onSuccess((c) => Condition.create(c))
-      .onSuccess((c) => succeed(this.get(c.key).orDefault(c)))
-      .withDetail<Collections.CollectorResultDetail>('failure', 'success')
-      .onSuccess((c) => super.getOrAdd(c));
+      .onSuccess((c) => succeed(this.get(c.key).orDefault(c)));
   }
 }
 

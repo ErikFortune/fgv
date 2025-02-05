@@ -32,15 +32,6 @@ import {
 import { IValidatedConditionSetDecl } from './conditionSetDecls';
 
 /**
- * Parameters for creating a {@link Conditions.ConditionSet | ConditionSet}.
- * @public
- */
-export interface IConditionSetCreateParams {
-  conditions: ReadonlyArray<Condition>;
-  index?: ConditionSetIndex;
-}
-
-/**
  * Represents a set of {@link Conditions.Condition | conditions} that must all be met in some runtime
  * context for a resource instance to be valid.
  * @public
@@ -70,9 +61,10 @@ export class ConditionSet implements IValidatedConditionSetDecl {
 
   /**
    * Constructor for a {@link Conditions.ConditionSet | ConditionSet} object.
-   * @param params - {@link Conditions.IConditionSetCreateParams | Parameters} used to create the condition set.
+   * @param params - {@link Conditions.IValidatedConditionSetDecl | Validated declaration}
+   * used to create the condition set.
    */
-  protected constructor(params: IConditionSetCreateParams) {
+  protected constructor(params: IValidatedConditionSetDecl) {
     const qualifiers = new Map<QualifierName, Condition>();
     for (const condition of params.conditions) {
       if (qualifiers.has(condition.qualifier.name)) {
@@ -94,12 +86,13 @@ export class ConditionSet implements IValidatedConditionSetDecl {
 
   /**
    * Creates a new {@link Conditions.ConditionSet | ConditionSet} object.
-   * @param params - {@link Conditions.IConditionSetCreateParams | Parameters} used to create the condition set.
+   * @param params - {@link Conditions.IValidatedConditionSetDecl | Validated declaration}
+   * used to create the condition set.
    * @returns `Success` with the new {@link Conditions.ConditionSet | ConditionSet} object if successful,
    * or `Failure` with an error message if not.
    * @public
    */
-  public static create(params: IConditionSetCreateParams): Result<ConditionSet> {
+  public static create(params: IValidatedConditionSetDecl): Result<ConditionSet> {
     return captureResult(() => new ConditionSet(params));
   }
 

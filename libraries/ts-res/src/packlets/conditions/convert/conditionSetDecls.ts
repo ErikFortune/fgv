@@ -21,7 +21,6 @@
  */
 
 import { Converters, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
-import { ReadOnlyQualifierCollector } from '../../qualifiers';
 import { IConditionSetDecl, IValidatedConditionSetDecl } from '../conditionSetDecls';
 import { conditionDecl } from './decls';
 import { ConditionCollector } from '../conditionCollector';
@@ -42,7 +41,6 @@ export const conditionSetDecl = Converters.strictObject<IConditionSetDecl>({
  * @public
  */
 export interface IConditionSetDeclConvertContext {
-  readonly qualifiers: ReadOnlyQualifierCollector;
   readonly conditions: ConditionCollector;
   index?: number;
 }
@@ -62,11 +60,11 @@ export const validatedConditionSetDecl = Converters.generic<
   }
 
   return conditionSetDecl.convert(from).onSuccess((decl) => {
-    return mapResults(decl.conditions.map((condition) => context.conditions.getOrAdd(condition))).onSuccess(
-      (conditions) => {
-        const index = context.index ? context.index++ : undefined;
-        return succeed({ conditions, index });
-      }
-    );
+    return mapResults(
+      decl.conditions.map((condition) => context.conditions.validating.getOrAdd(condition))
+    ).onSuccess((conditions) => {
+      const index = context.index ? context.index++ : undefined;
+      return succeed({ conditions, index });
+    });
   });
 });

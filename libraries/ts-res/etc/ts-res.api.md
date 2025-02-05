@@ -77,21 +77,9 @@ class ConditionCollector extends ValidatingCollector<Condition> {
     protected constructor(params: IConditionCollectorCreateParams);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    add(decl: unknown): DetailedResult<Condition, Collections.CollectorResultDetail>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    add(condition: Condition): DetailedResult<Condition, Collections.CollectorResultDetail>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params: IConditionCollectorCreateParams): Result<ConditionCollector>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getOrAdd(decl: unknown): DetailedResult<Condition, Collections.CollectorResultDetail>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getOrAdd(condition: Condition): DetailedResult<Condition, Collections.CollectorResultDetail>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected _qualifiers: ReadOnlyQualifierCollector;
+    qualifiers: ReadOnlyQualifierCollector;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -135,7 +123,6 @@ declare namespace Conditions {
         IReadOnlyConditionCollector,
         IConditionDecl,
         IValidatedConditionDecl,
-        IConditionSetCreateParams,
         ConditionSet,
         IConditionSetDecl,
         IValidatedConditionSetDecl
@@ -149,7 +136,7 @@ export { Conditions }
 class ConditionSet implements IValidatedConditionSetDecl {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor(params: IConditionSetCreateParams);
+    protected constructor(params: IValidatedConditionSetDecl);
     // (undocumented)
     protected readonly _collectible: Collections.Collectible<ConditionSetKey, ConditionSetIndex>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -161,7 +148,7 @@ class ConditionSet implements IValidatedConditionSetDecl {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static create(params: IConditionSetCreateParams): Result<ConditionSet>;
+    static create(params: IValidatedConditionSetDecl): Result<ConditionSet>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static getKeyForDecl(decl: IValidatedConditionSetDecl): Result<ConditionSetKey>;
@@ -192,6 +179,9 @@ const conditionSetIndex: Converter<ConditionSetIndex, unknown>;
 // @public
 export type ConditionSetKey = Brand<string, 'ConditionSetKey'>;
 
+// @public
+const conditionSetKey: Converter<ConditionSetKey, unknown>;
+
 declare namespace Convert {
     export {
         qualifierName,
@@ -203,6 +193,7 @@ declare namespace Convert {
         conditionIndex,
         conditionKey,
         conditionSetIndex,
+        conditionSetKey,
         resourceId,
         resourceName,
         resourceIndex,
@@ -285,16 +276,6 @@ interface IConditionDeclConvertContext {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IConditionSetCreateParams {
-    // (undocumented)
-    conditions: ReadonlyArray<Condition>;
-    // (undocumented)
-    index?: ConditionSetIndex;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
 interface IConditionSetDecl {
     // (undocumented)
     conditions: IConditionDecl[];
@@ -309,8 +290,6 @@ interface IConditionSetDeclConvertContext {
     readonly conditions: ConditionCollector;
     // (undocumented)
     index?: number;
-    // (undocumented)
-    readonly qualifiers: ReadOnlyQualifierCollector;
 }
 
 // @internal (undocumented)

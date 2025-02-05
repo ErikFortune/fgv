@@ -74,12 +74,10 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_qualifiers](./ts-res.conditions.conditioncollector._qualifiers.md)
+[qualifiers](./ts-res.conditions.conditioncollector.qualifiers.md)
 
 
 </td><td>
-
-`protected`
 
 
 </td><td>
@@ -115,34 +113,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[add(decl)](./ts-res.conditions.conditioncollector.add.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Adds a condition to the collector given a [condition declaration](./ts-res.conditions.iconditiondecl.md)<!-- -->. If an identical condition is already in the collector, the existing condition is returned.
-
-
-</td></tr>
-<tr><td>
-
-[add(condition)](./ts-res.conditions.conditioncollector.add_1.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Adds a [Condition](./ts-res.conditions.condition.md) to the collection, failing if a different condition with the same key already exists. Note that adding condition that is already in the collection (using identity comparison) again will succeed without updating the collection.
-
-
-</td></tr>
-<tr><td>
-
 [create(params)](./ts-res.conditions.conditioncollector.create.md)
 
 
@@ -154,34 +124,6 @@ Adds a [Condition](./ts-res.conditions.condition.md) to the collection, failing 
 </td><td>
 
 Creates a new [ConditionCollector](./ts-res.conditions.conditioncollector.md) object.
-
-
-</td></tr>
-<tr><td>
-
-[getOrAdd(decl)](./ts-res.conditions.conditioncollector.getoradd.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets an existing [condition](./ts-res.conditions.condition.md) with a key matching that of a supplied [condition declaration](./ts-res.conditions.iconditiondecl.md)<!-- -->, or creates a new condition from the declaration and adds that to the collection if no matching condition already exists.
-
-
-</td></tr>
-<tr><td>
-
-[getOrAdd(condition)](./ts-res.conditions.conditioncollector.getoradd_1.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets an existing [condition](./ts-res.conditions.condition.md) with a key matching that of a supplied condition, or adds the supplied condition to the collector if no condition with that key exists.
 
 
 </td></tr>

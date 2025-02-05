@@ -9,7 +9,7 @@ Constructor for a [ConditionSet](./ts-res.conditions.conditionset.md) object.
 **Signature:**
 
 ```typescript
-protected constructor(params: IConditionSetCreateParams);
+protected constructor(params: IValidatedConditionSetDecl);
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ params
 
 </td><td>
 
-[IConditionSetCreateParams](./ts-res.conditions.iconditionsetcreateparams.md)
+[IValidatedConditionSetDecl](./ts-res.conditions.ivalidatedconditionsetdecl.md)
 
 
 </td><td>
 
-[Parameters](./ts-res.conditions.iconditionsetcreateparams.md) used to create the condition set.
+[Validated declaration](./ts-res.conditions.ivalidatedconditionsetdecl.md) used to create the condition set.
 
 
 </td></tr>

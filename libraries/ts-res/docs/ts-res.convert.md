@@ -74,6 +74,17 @@ Description
 </td></tr>
 <tr><td>
 
+[conditionSetKey](./ts-res.convert.conditionsetkey.md)
+
+
+</td><td>
+
+`Converter` which validates an `unknown` value as a [ConditionSetKey](./ts-res.conditionsetkey.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [qualifierIndex](./ts-res.convert.qualifierindex.md)
 
 

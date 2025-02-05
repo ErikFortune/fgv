@@ -73,23 +73,4 @@ _(Optional)_
 
 
 </td></tr>
-<tr><td>
-
-[qualifiers](./ts-res.conditions.convert.iconditionsetdeclconvertcontext.qualifiers.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[ReadOnlyQualifierCollector](./ts-res.qualifiers.readonlyqualifiercollector.md)
-
-
-</td><td>
-
-
-</td></tr>
 </tbody></table>
