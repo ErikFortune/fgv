@@ -58,7 +58,7 @@ export class Condition implements IValidatedConditionDecl {
   protected _collectible: Collections.Collectible<ConditionKey, ConditionIndex>;
 
   /**
-   * Constructs a new {@link Condition | Condition} object.
+   * Constructs a new {@link Conditions.Condition | Condition} object.
    * @param qualifier - The {@link Qualifiers.Qualifier | qualifier} used in this condition.
    * @param value - The value to be matched in this condition.
    * @param operator - The {@link ConditionOperator | operator} used when matching context value to condition value.
@@ -90,10 +90,12 @@ export class Condition implements IValidatedConditionDecl {
   }
 
   /**
-   * Creates a new {@link Condition | Condition} object from the supplied
-   * {@link IConditionCreateParams | parameters}.
-   * @param decl - The {@link IConditionCreateParams | parameters} to use when creating the new instance.
-   * @returns `Success` with the new {@link Condition | Condition} if successful, `Failure` otherwise.
+   * Creates a new {@link Conditions.Condition | Condition} object from the supplied
+   * {@link Conditions.IValidatedConditionDecl | validated condition declaration}.
+   * @param decl - The {@link Conditions.IValidatedConditionDecl | validated condition declaration}
+   * describing the condition to create.
+   * @returns `Success` with the new {@link Conditions.Condition | Condition} if successful,
+   * `Failure` otherwise.
    * @public
    */
   public static create(decl: IValidatedConditionDecl): Result<Condition> {
@@ -102,10 +104,10 @@ export class Condition implements IValidatedConditionDecl {
 
   /**
    * Compares two conditions for sorting purposes.
-   * @param c1 - The first {@link Condition | condition} to compare.
-   * @param c2 - The second {@link Condition | condition} to compare.
-   * @returns A negative number if c1 should come before c2, a positive number if c2 should come before c1,
-   * or zero if they are equivalent.
+   * @param c1 - The first {@link Conditions.Condition | condition} to compare.
+   * @param c2 - The second {@link Conditions.Condition | condition} to compare.
+   * @returns A negative number if c1 should come before c2, a positive number
+   * if c2 should come before c1, or zero if they are equivalent.
    * @public
    */
   public static compare(c1: Condition, c2: Condition): number {
@@ -133,8 +135,8 @@ export class Condition implements IValidatedConditionDecl {
   }
 
   /**
-   * Gets the {@link ConditionKey | condition key} for a supplied {@link IValidatedConditionDecl | condition declaration}.
-   * @param decl - The {@link IValidatedConditionDecl | condition declaration} for which to get the key.
+   * Gets the {@link ConditionKey | condition key} for a supplied {@link Conditions.IValidatedConditionDecl | condition declaration}.
+   * @param decl - The {@link Conditions.IValidatedConditionDecl | condition declaration} for which to get the key.
    * @returns `Success` with the condition key if successful, `Failure` otherwise.
    * @public
    */

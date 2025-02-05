@@ -39,6 +39,7 @@ export const conditionSetDecl = Converters.strictObject<IConditionSetDecl>({
 /**
  * Context for converting a {@link Conditions.IConditionSetDecl | condition set declaration}
  * into an instantiated {@link Conditions.ConditionSet | condition set} object.
+ * @public
  */
 export interface IConditionSetDeclConvertContext {
   readonly qualifiers: ReadOnlyQualifierCollector;
@@ -46,6 +47,12 @@ export interface IConditionSetDeclConvertContext {
   index: number;
 }
 
+/**
+ * Converter which constructs a {@link Conditions.IValidatedConditionSetDecl | validated condition set declaration}
+ * from a {@link Conditions.IConditionSetDecl | condition set declaration}, instantiating qualifiers by name
+ * from a supplied {@link Conditions.Convert.IConditionSetDeclConvertContext | conversion context}.
+ * @public
+ */
 export const validatedConditionSetDecl = Converters.generic<
   IValidatedConditionSetDecl,
   IConditionSetDeclConvertContext

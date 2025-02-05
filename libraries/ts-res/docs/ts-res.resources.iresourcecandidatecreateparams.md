@@ -62,7 +62,7 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;Condition&gt;
+ReadonlyArray&lt;[Condition](./ts-res.conditions.condition.md)<!-- -->&gt;
 
 
 </td><td>

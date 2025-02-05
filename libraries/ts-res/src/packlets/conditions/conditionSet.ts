@@ -26,7 +26,7 @@ import { ConditionSetKey, QualifierName, Validate } from '../common';
 import { IValidatedConditionSetDecl } from './conditionSetDecls';
 
 /**
- * Parameters for creating a {@link ConditionSet | ConditionSet}.
+ * Parameters for creating a {@link Conditions.ConditionSet | ConditionSet}.
  * @public
  */
 export interface IConditionSetCreateParams {
@@ -34,21 +34,21 @@ export interface IConditionSetCreateParams {
 }
 
 /**
- * Represents a set of {@link Condition | conditions} that must all be met in some runtime
+ * Represents a set of {@link Conditions.Condition | conditions} that must all be met in some runtime
  * context for a resource instance to be valid.
  * @public
  */
 export class ConditionSet implements IValidatedConditionSetDecl {
   /**
-   * The {@link Condition | conditions} that make up this condition
+   * The {@link Conditions.Condition | conditions} that make up this condition
    * set.
    * @public
    */
   public readonly conditions: ReadonlyArray<Condition>;
 
   /**
-   * Constructor for a {@link ConditionSet | ConditionSet} object.
-   * @param params - {@link IConditionSetCreateParams | Parameters} used to create the condition set.
+   * Constructor for a {@link Conditions.ConditionSet | ConditionSet} object.
+   * @param params - {@link Conditions.IConditionSetCreateParams | Parameters} used to create the condition set.
    */
   protected constructor(params: IConditionSetCreateParams) {
     const qualifiers = new Map<QualifierName, Condition>();
@@ -66,9 +66,9 @@ export class ConditionSet implements IValidatedConditionSetDecl {
   }
 
   /**
-   * Creates a new {@link ConditionSet | ConditionSet} object.
-   * @param params - {@link IConditionSetCreateParams | Parameters} used to create the condition set.
-   * @returns `Success` with the new {@link ConditionSet | ConditionSet} object if successful,
+   * Creates a new {@link Conditions.ConditionSet | ConditionSet} object.
+   * @param params - {@link Conditions.IConditionSetCreateParams | Parameters} used to create the condition set.
+   * @returns `Success` with the new {@link Conditions.ConditionSet | ConditionSet} object if successful,
    * or `Failure` with an error message if not.
    * @public
    */
@@ -77,9 +77,9 @@ export class ConditionSet implements IValidatedConditionSetDecl {
   }
 
   /**
-   * Compares two {@link ConditionSet | ConditionSets} for sorting purposes.
-   * @param cs1 - The first {@link ConditionSet | ConditionSet} to compare.
-   * @param cs2 - The second {@link ConditionSet | ConditionSet} to compare.
+   * Compares two {@link Conditions.ConditionSet | ConditionSets} for sorting purposes.
+   * @param cs1 - The first {@link Conditions.ConditionSet | ConditionSet} to compare.
+   * @param cs2 - The second {@link Conditions.ConditionSet | ConditionSet} to compare.
    * @returns A negative number if `cs1` should come before `cs2`, a positive
    * number if `cs1` should come after `cs2`, or zero if they are equivalent.
    * @public
@@ -96,8 +96,8 @@ export class ConditionSet implements IValidatedConditionSetDecl {
   }
 
   /**
-   * Gets the {@link ConditionSetKey | key} for a supplied {@link IValidatedConditionSetDecl | condition set declaration}.
-   * @param decl - The {@link IValidatedConditionSetDecl | condition set declaration} for which to get the key.
+   * Gets the {@link ConditionSetKey | key} for a supplied {@link Conditions.IValidatedConditionSetDecl | condition set declaration}.
+   * @param decl - The {@link Conditions.IValidatedConditionSetDecl | condition set declaration} for which to get the key.
    * @returns `Success` with the condition set key if successful, `Failure` otherwise.
    * @public
    */

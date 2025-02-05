@@ -53,7 +53,7 @@ export interface IConditionCollectorCreateParams {
 }
 
 /**
- * A {@link Collections.ValidatingCollector | ValidatingCollector} for {@link Conditions.Condition | Conditions},
+ * A `ValidatingCollector` for {@link Conditions.Condition | Conditions},
  * which collects conditions supplied as either {@link Conditions.Condition | Condition} or
  * {@link Conditions.IConditionDecl | IConditionDecl}.
  * @public
@@ -68,7 +68,8 @@ export class ConditionCollector extends ValidatingCollector<Condition> {
 
   /**
    * Constructor for a {@link Conditions.ConditionCollector | ConditionCollector} object.
-   * @param params - Required {@link IConditionCollectorCreateParams | parameters} for creating the collector.
+   * @param params - Required {@link Conditions.IConditionCollectorCreateParams | parameters} for
+   * creating the collector.
    */
   protected constructor(params: IConditionCollectorCreateParams) {
     super({
@@ -85,8 +86,9 @@ export class ConditionCollector extends ValidatingCollector<Condition> {
 
   /**
    * Creates a new {@link Conditions.ConditionCollector | ConditionCollector} object.
-   * @param params - Required {@link IConditionCollectorCreateParams | parameters} for creating the collector.
-   * @returns {@link Success | Success} with the new collector if successful, or {@link Failure | Failure} with
+   * @param params - Required {@link Conditions.IConditionCollectorCreateParams | parameters} for
+   * creating the collector.
+   * @returns `Success` with the new collector if successful, or `Failure` with
    * an error message if not.
    */
   public static create(params: IConditionCollectorCreateParams): Result<ConditionCollector> {
@@ -98,8 +100,8 @@ export class ConditionCollector extends ValidatingCollector<Condition> {
    * If an identical condition is already in the collector, the existing condition is returned.
    * @param decl - The condition to add to the collector, supplied as an `unknown` value but
    * expected to be a well-formed {@link Conditions.IConditionDecl | IConditionDecl}.
-   * @returns Returns {@link DetailedSuccess | Success} with the condition and detail `added` if it was added
-   * or detail `exists` if the item was already in the map.  Returns {@link DetailedFailure | Failure} with
+   * @returns Returns `DetailedSuccess` with the condition and detail `added` if it was added
+   * or detail `exists` if the item was already in the map.  Returns `DetailedFailure` with
    * an error message and appropriate detail if the condition could not be added.
    */
   public add(decl: unknown): DetailedResult<Condition, Collections.CollectorResultDetail>;
@@ -109,8 +111,8 @@ export class ConditionCollector extends ValidatingCollector<Condition> {
    * the same key already exists. Note that adding condition that is already in the collection (using identity
    * comparison) again will succeed without updating the collection.
    * @param condition - The condition to add.
-   * @returns Returns {@link DetailedSuccess | Success} with the condition and detail `added` if it was added
-   * or detail `exists` if the item was already in the map.  Returns {@link DetailedFailure | Failure} with
+   * @returns Returns `DetailedSuccess` with the condition and detail `added` if it was added
+   * or detail `exists` if the item was already in the map.  Returns `DetailedFailure` with
    * an error message and appropriate detail if the condition could not be added.
    */
   public add(condition: Condition): DetailedResult<Condition, Collections.CollectorResultDetail>;
@@ -137,9 +139,9 @@ export class ConditionCollector extends ValidatingCollector<Condition> {
    * declaration and adds that to the collection if no matching condition already exists.
    * @param decl - The condition to get or add, supplied as an `unknown` value but expected to be a
    * well-formed {@link Conditions.IConditionDecl | IConditionDecl}.
-   * @returns Returns {@link DetailedSuccess | Success} with the condition stored in the collector - detail
+   * @returns Returns `DetailedSuccess` with the condition stored in the collector - detail
    * `exists` indicates that an existing condition was returned and detail `added` indicates that a new condition
-   * was created an added. Returns {@link DetailedFailure | Failure} with an error and appropriate detail
+   * was created an added. Returns `DetailedFailure` with an error and appropriate detail
    * if the condition could not be added.
    */
   public getOrAdd(decl: unknown): DetailedResult<Condition, Collections.CollectorResultDetail>;
@@ -147,9 +149,9 @@ export class ConditionCollector extends ValidatingCollector<Condition> {
    * Gets an existing {@link Conditions.Condition | condition} with a key matching that of a supplied
    * condition, or adds the supplied condition to the collector if no condition with that key exists.
    * @param condition - The condition to get or add.
-   * @returns Returns {@link DetailedSuccess | Success} with the {@link Conditions.Condition | condition}
+   * @returns Returns `DetailedSuccess` with the {@link Conditions.Condition | condition}
    * stored in the collector - detail `exists` indicates that an existing condition was returned and detail
-   * `added` indicates that the condition was added. Returns {@link DetailedFailure | Failure} with an error
+   * `added` indicates that the condition was added. Returns `DetailedFailure` with an error
    * and appropriate detail if the condition could not be added.
    */
   public getOrAdd(condition: Condition): DetailedResult<Condition, Collections.CollectorResultDetail>;

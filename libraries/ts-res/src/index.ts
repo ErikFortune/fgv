@@ -21,8 +21,9 @@
  */
 
 import * as Qualifiers from './packlets/qualifiers';
+import * as Conditions from './packlets/conditions';
 import * as ResourceJson from './packlets/resource-json';
 import * as Resources from './packlets/resources';
 
 export * from './packlets/common';
-export { Qualifiers, ResourceJson, Resources };
+export { Qualifiers, Conditions, ResourceJson, Resources };

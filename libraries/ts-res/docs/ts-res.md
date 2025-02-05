@@ -19,6 +19,15 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[Conditions](./ts-res.conditions.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Convert](./ts-res.convert.md)
 
 

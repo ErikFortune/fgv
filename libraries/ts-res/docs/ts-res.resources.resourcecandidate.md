@@ -83,7 +83,7 @@ Description
 
 </td><td>
 
-ConditionSet
+[ConditionSet](./ts-res.conditions.conditionset.md)
 
 
 </td><td>

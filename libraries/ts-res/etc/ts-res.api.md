@@ -14,6 +14,7 @@ import { JsonValue } from '@fgv/ts-json-base';
 import { ObjectConverter } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 import { ResultMap } from '@fgv/ts-utils';
+import { ValidatingCollector } from '@fgv/ts-utils';
 import { ValidatingConvertingCollector } from '@fgv/ts-utils';
 import { ValidatingResultMap } from '@fgv/ts-utils';
 
@@ -31,6 +32,72 @@ declare namespace Builders {
         IResourceManagerCreateParams
     }
 }
+
+// @public
+class Condition implements IValidatedConditionDecl {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor({ qualifier, value, operator, priority, index }: IValidatedConditionDecl);
+    // (undocumented)
+    protected _collectible: Collections.Collectible<ConditionKey, ConditionIndex>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static compare(c1: Condition, c2: Condition): number;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(decl: IValidatedConditionDecl): Result<Condition>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static getKeyForDecl(decl: IValidatedConditionDecl): Result<ConditionKey>;
+    // (undocumented)
+    get index(): ConditionIndex | undefined;
+    // (undocumented)
+    get key(): ConditionKey;
+    readonly operator: ConditionOperator;
+    readonly priority: ConditionPriority;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly qualifier: Qualifier;
+    // (undocumented)
+    setIndex(index: ConditionIndex): Result<ConditionIndex>;
+    toKey(): ConditionKey;
+    toString(): string;
+    readonly value: QualifierConditionValue;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ConditionCollector extends ValidatingCollector<Condition> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(params: IConditionCollectorCreateParams);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    add(decl: unknown): DetailedResult<Condition, Collections.CollectorResultDetail>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    add(condition: Condition): DetailedResult<Condition, Collections.CollectorResultDetail>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params: IConditionCollectorCreateParams): Result<ConditionCollector>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getOrAdd(decl: unknown): DetailedResult<Condition, Collections.CollectorResultDetail>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getOrAdd(condition: Condition): DetailedResult<Condition, Collections.CollectorResultDetail>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected _qualifiers: ReadOnlyQualifierCollector;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const conditionDecl: ObjectConverter<IConditionDecl, unknown>;
 
 // @public
 export type ConditionIndex = Brand<number, 'ConditionIndex'>;
@@ -59,11 +126,56 @@ export type ConditionPriority = Brand<number, 'ConditionPriority'>;
 // @public
 const conditionPriority: Converter<ConditionPriority, unknown>;
 
+declare namespace Conditions {
+    export {
+        Convert_4 as Convert,
+        Condition,
+        IConditionCollectorCreateParams,
+        ConditionCollector,
+        IConditionDecl,
+        IValidatedConditionDecl,
+        IConditionSetCreateParams,
+        ConditionSet,
+        IConditionSetDecl,
+        IValidatedConditionSetDecl
+    }
+}
+export { Conditions }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ConditionSet implements IValidatedConditionSetDecl {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(params: IConditionSetCreateParams);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static compare(cs1: ConditionSet, cs2: ConditionSet): number;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly conditions: ReadonlyArray<Condition>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params: IConditionSetCreateParams): Result<ConditionSet>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static getKeyForDecl(decl: IValidatedConditionSetDecl): Result<ConditionSetKey>;
+    toKey(): ConditionSetKey;
+    toString(): string;
+}
+
 // @public
 type ConditionSetDecl = Record<QualifierName, string>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-const conditionSetDecl: Conversion.Converter<Record<QualifierName, string>, unknown>;
+const conditionSetDecl: ObjectConverter<IConditionSetDecl, unknown>;
+
+// @public
+const conditionSetDecl_2: Conversion.Converter<Record<QualifierName, string>, unknown>;
 
 // @public
 export type ConditionSetIndex = Brand<number, 'ConditionSetIndex'>;
@@ -114,10 +226,85 @@ declare namespace Convert_3 {
 
 declare namespace Convert_4 {
     export {
+        conditionDecl,
+        IConditionDeclConvertContext,
+        validatedConditionDecl,
         conditionSetDecl,
+        IConditionSetDeclConvertContext,
+        validatedConditionSetDecl
+    }
+}
+
+declare namespace Convert_5 {
+    export {
+        conditionSetDecl_2 as conditionSetDecl,
         resourceCandidateDecl,
         resourceCollectionDecl
     }
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IConditionCollectorCreateParams {
+    conditions?: IConditionDecl[];
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    qualifiers: ReadOnlyQualifierCollector;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IConditionDecl {
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    operator?: ConditionOperator;
+    // (undocumented)
+    priority?: number;
+    // (undocumented)
+    value: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IConditionDeclConvertContext {
+    // (undocumented)
+    index?: number;
+    // (undocumented)
+    readonly qualifiers: ReadOnlyQualifierCollector;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IConditionSetCreateParams {
+    // (undocumented)
+    conditions: ReadonlyArray<Condition>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IConditionSetDecl {
+    // (undocumented)
+    conditions: IConditionDecl[];
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IConditionSetDeclConvertContext {
+    // Warning: (ae-forgotten-export) The symbol "ConditionMap" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    readonly conditions: ConditionMap;
+    // (undocumented)
+    index: number;
+    // (undocumented)
+    readonly qualifiers: ReadOnlyQualifierCollector;
 }
 
 // @internal (undocumented)
@@ -244,8 +431,6 @@ interface IResourceBuilderCreateParams {
 interface IResourceCandidateCreateParams {
     // (undocumented)
     decl: ResourceJson.IResourceCandidateDecl;
-    // Warning: (ae-forgotten-export) The symbol "Condition" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     parentConditions: ReadonlyArray<Condition>;
     // (undocumented)
@@ -357,6 +542,30 @@ interface ITerritoryQualifierTypeCreateParams {
     allowedTerritories?: string[];
     // (undocumented)
     index: number;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IValidatedConditionDecl {
+    // (undocumented)
+    index?: ConditionIndex;
+    // (undocumented)
+    operator: ConditionOperator;
+    // (undocumented)
+    priority: ConditionPriority;
+    // (undocumented)
+    qualifier: Qualifier;
+    // (undocumented)
+    value: QualifierConditionValue;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IValidatedConditionSetDecl {
+    // (undocumented)
+    conditions: ReadonlyArray<Condition>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -698,7 +907,6 @@ class ResourceCandidate {
     protected constructor(params: IResourceCandidateCreateParams);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static compare(rc1: ResourceCandidate, rc2: ResourceCandidate): number;
-    // Warning: (ae-forgotten-export) The symbol "ConditionSet" needs to be exported by the entry point index.d.ts
     readonly conditions: ConditionSet;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -741,7 +949,7 @@ const resourceIndex: Converter<ResourceIndex, unknown>;
 
 declare namespace ResourceJson {
     export {
-        Convert_4 as Convert,
+        Convert_5 as Convert,
         ConditionSetDecl,
         IResourceCandidateDecl,
         IResourceCollectionDecl
@@ -907,6 +1115,20 @@ declare namespace Validate {
     }
 }
 export { Validate }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const validatedConditionDecl: Converter<IValidatedConditionDecl, IConditionDeclConvertContext>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const validatedConditionSetDecl: Converter<IValidatedConditionSetDecl, IConditionSetDeclConvertContext>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

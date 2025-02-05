@@ -24,6 +24,8 @@ import * as Convert from './convert';
 
 export * from './condition';
 export * from './conditionCollector';
+export * from './conditionDecls';
 export * from './conditionSet';
+export * from './conditionSetDecls';
 
 export { Convert };

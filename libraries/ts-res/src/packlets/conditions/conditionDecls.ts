@@ -24,7 +24,7 @@ import { ConditionIndex, ConditionOperator, ConditionPriority, QualifierConditio
 import { Qualifier } from '../qualifiers';
 
 /**
- * Non-validated declaration of a {@link Condition | condition}.
+ * Non-validated declaration of a {@link Conditions.Condition | condition}.
  * @public
  */
 export interface IConditionDecl {
@@ -35,7 +35,7 @@ export interface IConditionDecl {
 }
 
 /**
- * Validated declaration of a {@link Condition | condition} with all defaults applied.
+ * Validated declaration of a {@link Conditions.Condition | condition} with all defaults applied.
  * @public
  */
 export interface IValidatedConditionDecl {

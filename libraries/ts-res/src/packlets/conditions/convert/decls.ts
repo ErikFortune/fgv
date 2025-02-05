@@ -27,6 +27,10 @@ import { ReadOnlyQualifierCollector } from '../../qualifiers';
 
 /* eslint-disable @rushstack/typedef-var */
 
+/**
+ * Converter for a {@link Conditions.IConditionDecl | condition declaration}.
+ * @public
+ */
 export const conditionDecl = Converters.strictObject<IConditionDecl>({
   name: Converters.string,
   value: Converters.string,
@@ -34,11 +38,22 @@ export const conditionDecl = Converters.strictObject<IConditionDecl>({
   priority: Converters.number
 });
 
+/**
+ * Conversion context to uses when converting
+ * a {@link Conditions.IValidatedConditionDecl | validated condition declaration}.
+ * @public
+ */
 export interface IConditionDeclConvertContext {
   readonly qualifiers: ReadOnlyQualifierCollector;
   index?: number;
 }
 
+/**
+ * Converter which constructs a {@link Conditions.IValidatedConditionDecl | validated condition declaration}
+ * from a {@link Conditions.IConditionDecl | condition declaration}, instantiating qualifiers by name
+ * from a supplied {@link Conditions.Convert.IConditionDeclConvertContext | conversion context}.
+ * @public
+ */
 export const validatedConditionDecl = Converters.generic<
   IValidatedConditionDecl,
   IConditionDeclConvertContext
