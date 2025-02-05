@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-index: number;
+index?: number;
 ```

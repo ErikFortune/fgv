@@ -156,3 +156,29 @@ Description
 
 </td></tr>
 </tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[IReadOnlyConditionCollector](./ts-res.conditions.ireadonlyconditioncollector.md)
+
+
+</td><td>
+
+Type alias for a read-only [ConditionCollector](./ts-res.conditions.conditioncollector.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>

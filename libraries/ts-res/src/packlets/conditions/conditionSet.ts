@@ -20,9 +20,15 @@
  * SOFTWARE.
  */
 
-import { captureResult, Result } from '@fgv/ts-utils';
+import { captureResult, Collections, Result } from '@fgv/ts-utils';
 import { Condition } from './condition';
-import { ConditionSetKey, QualifierName, Validate } from '../common';
+import {
+  Convert as CommonConvert,
+  ConditionSetIndex,
+  ConditionSetKey,
+  QualifierName,
+  Validate
+} from '../common';
 import { IValidatedConditionSetDecl } from './conditionSetDecls';
 
 /**
@@ -31,6 +37,7 @@ import { IValidatedConditionSetDecl } from './conditionSetDecls';
  */
 export interface IConditionSetCreateParams {
   conditions: ReadonlyArray<Condition>;
+  index?: ConditionSetIndex;
 }
 
 /**
@@ -39,12 +46,27 @@ export interface IConditionSetCreateParams {
  * @public
  */
 export class ConditionSet implements IValidatedConditionSetDecl {
+  protected readonly _collectible: Collections.Collectible<ConditionSetKey, ConditionSetIndex>;
   /**
    * The {@link Conditions.Condition | conditions} that make up this condition
    * set.
    * @public
    */
   public readonly conditions: ReadonlyArray<Condition>;
+
+  /**
+   * The key for this condition set.
+   */
+  public get key(): ConditionSetKey {
+    return this._collectible.key;
+  }
+
+  /**
+   * The index for this condition set.
+   */
+  public get index(): ConditionSetIndex | undefined {
+    return this._collectible.index;
+  }
 
   /**
    * Constructor for a {@link Conditions.ConditionSet | ConditionSet} object.
@@ -63,6 +85,11 @@ export class ConditionSet implements IValidatedConditionSetDecl {
       }
     }
     this.conditions = Array.from(params.conditions).sort(Condition.compare);
+    this._collectible = new Collections.Collectible({
+      key: this.toKey(),
+      index: params.index,
+      indexConverter: CommonConvert.conditionSetIndex
+    });
   }
 
   /**
@@ -93,6 +120,15 @@ export class ConditionSet implements IValidatedConditionSetDecl {
       }
     }
     return cs1.conditions.length - cs2.conditions.length;
+  }
+
+  /**
+   * Sets the global index for this condition set.  Once set, the index cannot be changed.
+   * @param index - The index to set for this condition set.
+   * @returns `Success` with the index if successful, `Failure` otherwise.
+   */
+  public setIndex(index: ConditionSetIndex): Result<ConditionSetIndex> {
+    return this._collectible.setIndex(index);
   }
 
   /**

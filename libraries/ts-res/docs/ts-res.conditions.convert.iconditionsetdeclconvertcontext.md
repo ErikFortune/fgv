@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-ConditionMap
+[ConditionCollector](./ts-res.conditions.conditioncollector.md)
 
 
 </td><td>
@@ -56,7 +56,7 @@ ConditionMap
 </td></tr>
 <tr><td>
 
-[index](./ts-res.conditions.convert.iconditionsetdeclconvertcontext.index.md)
+[index?](./ts-res.conditions.convert.iconditionsetdeclconvertcontext.index.md)
 
 
 </td><td>
@@ -68,6 +68,8 @@ number
 
 
 </td><td>
+
+_(Optional)_
 
 
 </td></tr>

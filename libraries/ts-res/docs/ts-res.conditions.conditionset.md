@@ -74,6 +74,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[\_collectible](./ts-res.conditions.conditionset._collectible.md)
+
+
+</td><td>
+
+`protected`
+
+`readonly`
+
+
+</td><td>
+
+Collections.Collectible&lt;[ConditionSetKey](./ts-res.conditionsetkey.md)<!-- -->, [ConditionSetIndex](./ts-res.conditionsetindex.md)<!-- -->&gt;
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [conditions](./ts-res.conditions.conditionset.conditions.md)
 
 
@@ -90,6 +111,48 @@ ReadonlyArray&lt;[Condition](./ts-res.conditions.condition.md)<!-- -->&gt;
 </td><td>
 
 The [conditions](./ts-res.conditions.condition.md) that make up this condition set.
+
+
+</td></tr>
+<tr><td>
+
+[index](./ts-res.conditions.conditionset.index.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ConditionSetIndex](./ts-res.conditionsetindex.md) \| undefined
+
+
+</td><td>
+
+The index for this condition set.
+
+
+</td></tr>
+<tr><td>
+
+[key](./ts-res.conditions.conditionset.key.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ConditionSetKey](./ts-res.conditionsetkey.md)
+
+
+</td><td>
+
+The key for this condition set.
 
 
 </td></tr>
@@ -158,6 +221,20 @@ Creates a new [ConditionSet](./ts-res.conditions.conditionset.md) object.
 </td><td>
 
 Gets the [key](./ts-res.conditionsetkey.md) for a supplied [condition set declaration](./ts-res.conditions.ivalidatedconditionsetdecl.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[setIndex(index)](./ts-res.conditions.conditionset.setindex.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Sets the global index for this condition set. Once set, the index cannot be changed.
 
 
 </td></tr>

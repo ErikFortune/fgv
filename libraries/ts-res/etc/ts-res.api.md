@@ -132,6 +132,7 @@ declare namespace Conditions {
         Condition,
         IConditionCollectorCreateParams,
         ConditionCollector,
+        IReadOnlyConditionCollector,
         IConditionDecl,
         IValidatedConditionDecl,
         IConditionSetCreateParams,
@@ -149,6 +150,8 @@ class ConditionSet implements IValidatedConditionSetDecl {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(params: IConditionSetCreateParams);
+    // (undocumented)
+    protected readonly _collectible: Collections.Collectible<ConditionSetKey, ConditionSetIndex>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -162,6 +165,9 @@ class ConditionSet implements IValidatedConditionSetDecl {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static getKeyForDecl(decl: IValidatedConditionSetDecl): Result<ConditionSetKey>;
+    get index(): ConditionSetIndex | undefined;
+    get key(): ConditionSetKey;
+    setIndex(index: ConditionSetIndex): Result<ConditionSetIndex>;
     toKey(): ConditionSetKey;
     toString(): string;
 }
@@ -282,6 +288,8 @@ interface IConditionDeclConvertContext {
 interface IConditionSetCreateParams {
     // (undocumented)
     conditions: ReadonlyArray<Condition>;
+    // (undocumented)
+    index?: ConditionSetIndex;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -297,12 +305,10 @@ interface IConditionSetDecl {
 //
 // @public
 interface IConditionSetDeclConvertContext {
-    // Warning: (ae-forgotten-export) The symbol "ConditionMap" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
-    readonly conditions: ConditionMap;
+    readonly conditions: ConditionCollector;
     // (undocumented)
-    index: number;
+    index?: number;
     // (undocumented)
     readonly qualifiers: ReadOnlyQualifierCollector;
 }
@@ -412,6 +418,11 @@ interface IQualifierTypeCreateParams {
     index?: number;
     name: string;
 }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type IReadOnlyConditionCollector = Collections.IReadOnlyCollector<Condition>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -566,6 +577,8 @@ interface IValidatedConditionDecl {
 interface IValidatedConditionSetDecl {
     // (undocumented)
     conditions: ReadonlyArray<Condition>;
+    // (undocumented)
+    index?: number;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

@@ -20,11 +20,11 @@
  * SOFTWARE.
  */
 
-import { Converters, Result, fail } from '@fgv/ts-utils';
+import { Converters, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { ReadOnlyQualifierCollector } from '../../qualifiers';
 import { IConditionSetDecl, IValidatedConditionSetDecl } from '../conditionSetDecls';
 import { conditionDecl } from './decls';
-import { ConditionMap } from '../conditionMap';
+import { ConditionCollector } from '../conditionCollector';
 
 /* eslint-disable @rushstack/typedef-var */
 
@@ -43,8 +43,8 @@ export const conditionSetDecl = Converters.strictObject<IConditionSetDecl>({
  */
 export interface IConditionSetDeclConvertContext {
   readonly qualifiers: ReadOnlyQualifierCollector;
-  readonly conditions: ConditionMap;
-  index: number;
+  readonly conditions: ConditionCollector;
+  index?: number;
 }
 
 /**
@@ -60,17 +60,13 @@ export const validatedConditionSetDecl = Converters.generic<
   if (!context) {
     return fail('validatedConditionSetDecl converter requires a context');
   }
-  return fail('not implemented');
-  /*
-  return Converters.arrayOf(validatedConditionDecl).convert(from)
-    .onSuccess((decls) => {
-        return mapResults(decls.map((decl) => {
-            return Condition.getKeyForDecl(decl)
-                .onSuccess((key) => {
-                    return context.conditions.getOrAdd(key, () => {
-                        return Condition.create({...decl, index: context.conditions.size}
-                    })
-                })
-        }))
-    });*/
+
+  return conditionSetDecl.convert(from).onSuccess((decl) => {
+    return mapResults(decl.conditions.map((condition) => context.conditions.getOrAdd(condition))).onSuccess(
+      (conditions) => {
+        const index = context.index ? context.index++ : undefined;
+        return succeed({ conditions, index });
+      }
+    );
+  });
 });

@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly conditions: ConditionMap;
+readonly conditions: ConditionCollector;
 ```

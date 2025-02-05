@@ -169,3 +169,9 @@ export class ConditionCollector extends ValidatingCollector<Condition> {
       .onSuccess((c) => super.getOrAdd(c));
   }
 }
+
+/**
+ * Type alias for a read-only {@link Conditions.ConditionCollector | ConditionCollector}.
+ * @public
+ */
+export type IReadOnlyConditionCollector = Collections.IReadOnlyCollector<Condition>;

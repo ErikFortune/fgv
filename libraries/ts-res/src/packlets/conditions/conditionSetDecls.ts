@@ -37,4 +37,5 @@ export interface IConditionSetDecl {
  */
 export interface IValidatedConditionSetDecl {
   conditions: ReadonlyArray<Condition>;
+  index?: number;
 }

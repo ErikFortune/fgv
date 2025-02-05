@@ -52,4 +52,23 @@ ReadonlyArray&lt;[Condition](./ts-res.conditions.condition.md)<!-- -->&gt;
 
 
 </td></tr>
+<tr><td>
+
+[index?](./ts-res.conditions.iconditionsetcreateparams.index.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[ConditionSetIndex](./ts-res.conditionsetindex.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
 </tbody></table>
