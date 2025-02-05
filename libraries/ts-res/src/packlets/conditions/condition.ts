@@ -20,8 +20,9 @@
  * SOFTWARE.
  */
 
-import { captureResult, Result } from '@fgv/ts-utils';
+import { captureResult, Collections, Result } from '@fgv/ts-utils';
 import {
+  Convert as CommonConvert,
   ConditionIndex,
   ConditionKey,
   ConditionOperator,
@@ -54,10 +55,7 @@ export class Condition implements IValidatedConditionDecl {
    */
   public readonly priority: ConditionPriority;
 
-  /**
-   * Optional global index for the condition.
-   */
-  public readonly index: ConditionIndex;
+  protected _collectible: Collections.Collectible<ConditionKey, ConditionIndex>;
 
   /**
    * Constructs a new {@link Condition | Condition} object.
@@ -72,7 +70,23 @@ export class Condition implements IValidatedConditionDecl {
     this.operator = operator;
     this.value = value;
     this.priority = priority;
-    this.index = index;
+    this._collectible = new Collections.Collectible({
+      key: this.toKey(),
+      index,
+      indexConverter: CommonConvert.conditionIndex
+    });
+  }
+
+  public get key(): ConditionKey {
+    return this._collectible.key;
+  }
+
+  public get index(): ConditionIndex | undefined {
+    return this._collectible.index;
+  }
+
+  public setIndex(index: ConditionIndex): Result<ConditionIndex> {
+    return this._collectible.setIndex(index);
   }
 
   /**

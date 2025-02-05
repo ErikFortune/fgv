@@ -23,6 +23,7 @@
 import * as Convert from './convert';
 
 export * from './condition';
+export * from './conditionCollector';
 export * from './conditionSet';
 
 export { Convert };

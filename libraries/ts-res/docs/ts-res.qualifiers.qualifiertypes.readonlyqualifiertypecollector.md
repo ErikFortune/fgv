@@ -9,7 +9,7 @@ Interface exposing non-mutating members of a [QualifierTypeCollector](./ts-res.q
 **Signature:**
 
 ```typescript
-export type ReadOnlyQualifierTypeCollector = Collections.IReadOnlyConvertingCollector<QualifierTypeName, QualifierTypeIndex, QualifierType>;
+export type ReadOnlyQualifierTypeCollector = Collections.IReadOnlyValidatingCollector<QualifierType>;
 ```
-**References:** [QualifierTypeName](./ts-res.qualifiertypename.md)<!-- -->, [QualifierTypeIndex](./ts-res.qualifiertypeindex.md)<!-- -->, [QualifierType](./ts-res.qualifiers.qualifiertype.md)
+**References:** [QualifierType](./ts-res.qualifiers.qualifiertype.md)
 

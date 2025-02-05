@@ -9,9 +9,9 @@ Collects [Qualifiers](./ts-res.qualifiers.qualifier.md) from [declarations](./ts
 **Signature:**
 
 ```typescript
-export declare class QualifierCollector extends ConvertingCollector<QualifierName, QualifierIndex, Qualifier, IQualifierDecl> 
+export declare class QualifierCollector extends ValidatingConvertingCollector<Qualifier, IQualifierDecl> 
 ```
-**Extends:** ConvertingCollector&lt;[QualifierName](./ts-res.qualifiername.md)<!-- -->, [QualifierIndex](./ts-res.qualifierindex.md)<!-- -->, [Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->, [IQualifierDecl](./ts-res.qualifiers.iqualifierdecl.md)<!-- -->&gt;
+**Extends:** ValidatingConvertingCollector&lt;[Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->, [IQualifierDecl](./ts-res.qualifiers.iqualifierdecl.md)<!-- -->&gt;
 
 ## Constructors
 

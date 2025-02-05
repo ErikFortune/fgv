@@ -43,5 +43,5 @@ export interface IValidatedConditionDecl {
   value: QualifierConditionValue;
   operator: ConditionOperator;
   priority: ConditionPriority;
-  index: ConditionIndex;
+  index?: ConditionIndex;
 }

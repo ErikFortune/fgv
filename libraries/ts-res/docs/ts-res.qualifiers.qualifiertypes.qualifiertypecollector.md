@@ -9,9 +9,9 @@ Collector for [QualifierType](./ts-res.qualifiers.qualifiertype.md) objects.
 **Signature:**
 
 ```typescript
-export declare class QualifierTypeCollector extends ConvertingCollector<QualifierTypeName, QualifierTypeIndex, QualifierType, QualifierType> 
+export declare class QualifierTypeCollector extends ValidatingConvertingCollector<QualifierType, QualifierType> 
 ```
-**Extends:** ConvertingCollector&lt;[QualifierTypeName](./ts-res.qualifiertypename.md)<!-- -->, [QualifierTypeIndex](./ts-res.qualifiertypeindex.md)<!-- -->, [QualifierType](./ts-res.qualifiers.qualifiertype.md)<!-- -->, [QualifierType](./ts-res.qualifiers.qualifiertype.md)<!-- -->&gt;
+**Extends:** ValidatingConvertingCollector&lt;[QualifierType](./ts-res.qualifiers.qualifiertype.md)<!-- -->, [QualifierType](./ts-res.qualifiers.qualifiertype.md)<!-- -->&gt;
 
 ## Constructors
 
