@@ -37,6 +37,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Decisions](./ts-res.decisions.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Qualifiers](./ts-res.qualifiers.md)
 
 
@@ -169,6 +178,17 @@ Branded number representing a validated condition priority.
 </td></tr>
 <tr><td>
 
+[ConditionSetHash](./ts-res.conditionsethash.md)
+
+
+</td><td>
+
+Branded string representing a hash value for a condition set. The hash value is an 8-character string derived from the crc32 hash of the condition set key and is used to quickly and compactly identify a condition set or compare for equality.
+
+
+</td></tr>
+<tr><td>
+
 [ConditionSetIndex](./ts-res.conditionsetindex.md)
 
 
@@ -186,6 +206,28 @@ Branded number representing a validated condition set index.
 </td><td>
 
 Branded string representing a validated condition set key. A condition set key is a string value which fully describes the condition set apart from index. The condition set key can be used to quickly determine if two condition sets are identical apart from index, or for inspection.
+
+
+</td></tr>
+<tr><td>
+
+[DecisionIndex](./ts-res.decisionindex.md)
+
+
+</td><td>
+
+Branded number representing a validated decision index.
+
+
+</td></tr>
+<tr><td>
+
+[DecisionKey](./ts-res.decisionkey.md)
+
+
+</td><td>
+
+Branded string representing a validated decision key. A decision key is a string value which fully describes the decision apart from index. The decision key can be used to quickly determine if two decisions are identical apart from index.
 
 
 </td></tr>

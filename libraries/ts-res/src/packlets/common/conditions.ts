@@ -124,3 +124,26 @@ export type ConditionSetIndex = Brand<number, 'ConditionSetIndex'>;
  * @public
  */
 export type ConditionSetKey = Brand<string, 'ConditionSetKey'>;
+
+/**
+ * Branded string representing a hash value for a condition set. The hash value
+ * is an 8-character string derived from the crc32 hash of the condition set key
+ * and is used to quickly and compactly identify a condition set or compare for
+ * equality.
+ * @public
+ */
+export type ConditionSetHash = Brand<string, 'ConditionSetHash'>;
+
+/**
+ * Branded string representing a validated decision key. A decision key is a string
+ * value which fully describes the decision apart from index. The decision key can
+ * be used to quickly determine if two decisions are identical apart from index.
+ * @public
+ */
+export type DecisionKey = Brand<string, 'DecisionKey'>;
+
+/**
+ * Branded number representing a validated decision index.
+ * @public
+ */
+export type DecisionIndex = Brand<number, 'DecisionIndex'>;

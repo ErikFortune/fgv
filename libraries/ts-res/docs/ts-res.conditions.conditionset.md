@@ -240,6 +240,20 @@ Sets the global index for this condition set. Once set, the index cannot be chan
 </td></tr>
 <tr><td>
 
+[toHash()](./ts-res.conditions.conditionset.tohash.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a hash of this condition set.
+
+
+</td></tr>
+<tr><td>
+
 [toKey()](./ts-res.conditions.conditionset.tokey.md)
 
 

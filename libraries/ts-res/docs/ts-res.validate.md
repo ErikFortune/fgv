@@ -41,6 +41,17 @@ Determines whether a string is a valid condition key. A condition key has the fo
 </td></tr>
 <tr><td>
 
+[isValidConditionSetHash(hash)](./ts-res.validate.isvalidconditionsethash.md)
+
+
+</td><td>
+
+Determines whether a string is a valid condition set hash.
+
+
+</td></tr>
+<tr><td>
+
 [isValidConditionSetIndex(index)](./ts-res.validate.isvalidconditionsetindex.md)
 
 
@@ -58,6 +69,28 @@ Determines whether a number is a valid condition set index.
 </td><td>
 
 Determines whether a string is a valid condition set key.
+
+
+</td></tr>
+<tr><td>
+
+[isValidDecisionIndex(index)](./ts-res.validate.isvaliddecisionindex.md)
+
+
+</td><td>
+
+Determines whether a number is a valid decision index.
+
+
+</td></tr>
+<tr><td>
+
+[isValidDecisionKey(key)](./ts-res.validate.isvaliddecisionkey.md)
+
+
+</td><td>
+
+Determines whether a string is a valid decision key.
 
 
 </td></tr>
@@ -228,6 +261,17 @@ Converts a string to a [ConditionKey](./ts-res.conditionkey.md) if it is a valid
 </td></tr>
 <tr><td>
 
+[toConditionSetHash(hash)](./ts-res.validate.toconditionsethash.md)
+
+
+</td><td>
+
+Converts a string to a [ConditionSetHash](./ts-res.conditionsethash.md) if it is a valid condition set hash.
+
+
+</td></tr>
+<tr><td>
+
 [toConditionSetIndex(index)](./ts-res.validate.toconditionsetindex.md)
 
 
@@ -245,6 +289,28 @@ Converts a number to a [ConditionSetIndex](./ts-res.conditionsetindex.md) if it 
 </td><td>
 
 Converts a string to a [ConditionSetKey](./ts-res.conditionsetkey.md) if it is a valid condition set key.
+
+
+</td></tr>
+<tr><td>
+
+[toDecisionIndex(index)](./ts-res.validate.todecisionindex.md)
+
+
+</td><td>
+
+Converts a number to a [DecisionIndex](./ts-res.decisionindex.md) if it is a valid decision index.
+
+
+</td></tr>
+<tr><td>
+
+[toDecisionKey(key)](./ts-res.validate.todecisionkey.md)
+
+
+</td><td>
+
+Converts a number to a [DecisionIndex](./ts-res.decisionindex.md) if it is a valid decision index.
 
 
 </td></tr>

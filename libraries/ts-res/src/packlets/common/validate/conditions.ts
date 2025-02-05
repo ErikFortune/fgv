@@ -31,9 +31,12 @@ import {
   ConditionSetIndex,
   QualifierMatchScore,
   ConditionKey,
-  ConditionSetKey
+  ConditionSetKey,
+  DecisionKey,
+  DecisionIndex,
+  ConditionSetHash
 } from '../conditions';
-import { conditionKey, identifier } from './regularExpressions';
+import { conditionKey, conditionSetHash, decisionKey, identifier } from './regularExpressions';
 
 /**
  * Minimum valid priority for a condition.
@@ -178,6 +181,36 @@ export function isValidConditionSetKey(key: string): key is ConditionSetKey {
 }
 
 /**
+ * Determines whether a string is a valid condition set hash.
+ * @param hash - the string to validate.
+ * @returns `true` if the string is a valid condition set hash, `false` otherwise.
+ * @public
+ */
+export function isValidConditionSetHash(hash: string): hash is ConditionSetHash {
+  return conditionSetHash.test(hash);
+}
+
+/**
+ * Determines whether a string is a valid decision key.
+ * @param key - the string to validate
+ * @returns `true` if the string is a valid decision key, `false` otherwise.
+ * @public
+ */
+export function isValidDecisionKey(key: string): key is DecisionKey {
+  return decisionKey.test(key);
+}
+
+/**
+ * Determines whether a number is a valid decision index.
+ * @param index - the number to validate
+ * @returns `true` if the number is a valid decision index, `false` otherwise.
+ * @public
+ */
+export function isValidDecisionIndex(index: number): index is DecisionIndex {
+  return index >= 0;
+}
+
+/**
  * Converts a string to a {@link QualifierName} if it is a valid qualifier name.
  * @param name - the string to convert
  * @returns `Success` with the converted {@link QualifierName} if successful, or `Failure` with an
@@ -301,4 +334,46 @@ export function toConditionSetKey(key: string): Result<ConditionSetKey> {
     return fail(`${key}: not a valid condition set key`);
   }
   return succeed(key);
+}
+
+/**
+ * Converts a string to a {@link ConditionSetHash} if it is a valid condition set hash.
+ * @param key - the string to convert
+ * @returns `Success` with the converted {@link ConditionSetHash} if successful, or `Failure` with an
+ * error message if not.
+ * @public
+ */
+export function toConditionSetHash(hash: string): Result<ConditionSetHash> {
+  if (!isValidConditionSetHash(hash)) {
+    return fail(`${hash}: not a valid condition set hash`);
+  }
+  return succeed(hash);
+}
+
+/**
+ * Converts a number to a {@link DecisionIndex} if it is a valid decision index.
+ * @param index - the number to convert
+ * @returns `Success` with the converted {@link DecisionIndex} if successful, or `Failure` with an
+ * error message if not.
+ * @public
+ */
+export function toDecisionKey(key: string): Result<DecisionKey> {
+  if (!isValidDecisionKey(key)) {
+    return fail(`${key}: not a valid decision key`);
+  }
+  return succeed(key);
+}
+
+/**
+ * Converts a number to a {@link DecisionIndex} if it is a valid decision index.
+ * @param index - the number to convert
+ * @returns `Success` with the converted {@link DecisionIndex} if successful, or `Failure` with an
+ * error message if not.
+ * @public
+ */
+export function toDecisionIndex(index: number): Result<DecisionIndex> {
+  if (!isValidDecisionIndex(index)) {
+    return fail(`${index}: not a valid decision index`);
+  }
+  return succeed(index);
 }

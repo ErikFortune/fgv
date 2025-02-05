@@ -63,6 +63,17 @@ Description
 </td></tr>
 <tr><td>
 
+[conditionSetHash](./ts-res.convert.conditionsethash.md)
+
+
+</td><td>
+
+`Converter` which validates an `unknown` value as a [ConditionSetHash](./ts-res.conditionsethash.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [conditionSetIndex](./ts-res.convert.conditionsetindex.md)
 
 
@@ -80,6 +91,28 @@ Description
 </td><td>
 
 `Converter` which validates an `unknown` value as a [ConditionSetKey](./ts-res.conditionsetkey.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[decisionIndex](./ts-res.convert.decisionindex.md)
+
+
+</td><td>
+
+`Converter` which validates an `unknown` value as a [DecisionIndex](./ts-res.decisionindex.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[decisionKey](./ts-res.convert.decisionkey.md)
+
+
+</td><td>
+
+`Converter` which validates an `unknown` value as a [DecisionKey](./ts-res.decisionkey.md)<!-- -->.
 
 
 </td></tr>

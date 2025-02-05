@@ -20,32 +20,4 @@
  * SOFTWARE.
  */
 
-/**
- * @internal
- */
-export const identifier: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*$/;
-
-/**
- * @internal
- */
-export const segmentedIdentifier: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(\.[a-zA-Z_][a-zA-Z0-9_\-]*)*$/;
-
-/**
- * @internal
- */
-export const identifierList: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(,[a-zA-Z_][a-zA-Z0-9_\-]*)*$/;
-
-/**
- * @internal
- */
-export const conditionKey: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(-matches)?-\[.*\]@[0-9]{1,4}$/;
-
-/**
- * @internal
- */
-export const conditionSetHash: RegExp = /^[a-zA-Z0-9]{8}$/;
-
-/**
- * @internal
- */
-export const decisionKey: RegExp = /^[a-zA-Z0-9]+(?:\+[a-zA-Z0-9]+)*$/;
+export * from './decision';

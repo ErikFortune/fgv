@@ -157,6 +157,7 @@ class ConditionSet implements IValidatedConditionSetDecl {
     get index(): ConditionSetIndex | undefined;
     get key(): ConditionSetKey;
     setIndex(index: ConditionSetIndex): Result<ConditionSetIndex>;
+    toHash(): string;
     toKey(): ConditionSetKey;
     toString(): string;
 }
@@ -187,6 +188,15 @@ const conditionSetDecl: ObjectConverter<IConditionSetDecl, unknown>;
 const conditionSetDecl_2: Conversion.Converter<Record<QualifierName, string>, unknown>;
 
 // @public
+export type ConditionSetHash = Brand<string, 'ConditionSetHash'>;
+
+// @public
+const conditionSetHash: Converter<ConditionSetHash, unknown>;
+
+// @internal (undocumented)
+const conditionSetHash_2: RegExp;
+
+// @public
 export type ConditionSetIndex = Brand<number, 'ConditionSetIndex'>;
 
 // @public
@@ -210,6 +220,9 @@ declare namespace Convert {
         conditionKey,
         conditionSetIndex,
         conditionSetKey,
+        conditionSetHash,
+        decisionIndex,
+        decisionKey,
         resourceId,
         resourceName,
         resourceIndex,
@@ -255,6 +268,47 @@ declare namespace Convert_5 {
         resourceCollectionDecl
     }
 }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class Decision {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(params: IDecisionCreateParams);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly conditionSets: ReadonlyArray<ConditionSet>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params: IDecisionCreateParams): Result<Decision>;
+    static getKey(conditionSets: ReadonlyArray<ConditionSet>): DecisionKey;
+    get index(): DecisionIndex | undefined;
+    get key(): DecisionKey;
+    setIndex(index: number): Result<DecisionIndex>;
+}
+
+// @public
+export type DecisionIndex = Brand<number, 'DecisionIndex'>;
+
+// @public
+const decisionIndex: Converter<DecisionIndex, unknown>;
+
+// @public
+export type DecisionKey = Brand<string, 'DecisionKey'>;
+
+// @public
+const decisionKey: Converter<DecisionKey, unknown>;
+
+// @internal (undocumented)
+const decisionKey_2: RegExp;
+
+declare namespace Decisions {
+    export {
+        IDecisionCreateParams,
+        Decision
+    }
+}
+export { Decisions }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -314,6 +368,16 @@ interface IConditionSetDecl {
 interface IConditionSetDeclConvertContext {
     // (undocumented)
     readonly conditions: ConditionCollector;
+    // (undocumented)
+    index?: number;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IDecisionCreateParams {
+    // (undocumented)
+    conditionSets: ReadonlyArray<ConditionSet>;
     // (undocumented)
     index?: number;
 }
@@ -512,10 +576,19 @@ function isValidConditionIndex(index: number): index is ConditionIndex;
 function isValidConditionKey(key: string): key is ConditionKey;
 
 // @public
+function isValidConditionSetHash(hash: string): hash is ConditionSetHash;
+
+// @public
 function isValidConditionSetIndex(index: number): index is ConditionSetIndex;
 
 // @public
 function isValidConditionSetKey(key: string): key is ConditionSetKey;
+
+// @public
+function isValidDecisionIndex(index: number): index is DecisionIndex;
+
+// @public
+function isValidDecisionKey(key: string): key is DecisionKey;
 
 // @public
 function isValidMatchScore(value: number): value is QualifierMatchScore;
@@ -859,7 +932,9 @@ declare namespace RegularExpressions {
         identifier,
         segmentedIdentifier,
         identifierList,
-        conditionKey_2 as conditionKey
+        conditionKey_2 as conditionKey,
+        conditionSetHash_2 as conditionSetHash,
+        decisionKey_2 as decisionKey
     }
 }
 
@@ -1056,10 +1131,19 @@ function toConditionIndex(index: number): Result<ConditionIndex>;
 function toConditionKey(key: string): Result<ConditionKey>;
 
 // @public
+function toConditionSetHash(hash: string): Result<ConditionSetHash>;
+
+// @public
 function toConditionSetIndex(index: number): Result<ConditionSetIndex>;
 
 // @public
 function toConditionSetKey(key: string): Result<ConditionSetKey>;
+
+// @public
+function toDecisionIndex(index: number): Result<DecisionIndex>;
+
+// @public
+function toDecisionKey(key: string): Result<DecisionKey>;
 
 // @public
 function toPriority(priority: number): Result<ConditionPriority>;
@@ -1105,6 +1189,9 @@ declare namespace Validate {
         isValidConditionKey,
         isValidConditionSetIndex,
         isValidConditionSetKey,
+        isValidConditionSetHash,
+        isValidDecisionKey,
+        isValidDecisionIndex,
         toQualifierName,
         toQualifierIndex,
         toQualifierTypeName,
@@ -1114,6 +1201,9 @@ declare namespace Validate {
         toConditionKey,
         toConditionSetIndex,
         toConditionSetKey,
+        toConditionSetHash,
+        toDecisionKey,
+        toDecisionIndex,
         minPriority,
         maxPriority,
         NoMatch,

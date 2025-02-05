@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { captureResult, Collections, Result } from '@fgv/ts-utils';
+import { captureResult, Collections, Hash, Result } from '@fgv/ts-utils';
 import { Condition } from './condition';
 import {
   Convert as CommonConvert,
@@ -140,6 +140,16 @@ export class ConditionSet implements IValidatedConditionSetDecl {
    */
   public toKey(): ConditionSetKey {
     return ConditionSet.getKeyForDecl(this).orThrow();
+  }
+
+  /**
+   * Gets a hash of this condition set.
+   * @returns A hash of this condition
+   * set key.
+   * @public
+   */
+  public toHash(): string {
+    return Hash.Crc32Normalizer.crc32Hash([this.key]);
   }
 
   /**

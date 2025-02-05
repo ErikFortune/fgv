@@ -88,6 +88,24 @@ export const conditionSetIndex = Converters.number.map(Validate.toConditionSetIn
 export const conditionSetKey = Converters.string.map(Validate.toConditionSetKey);
 
 /**
+ * `Converter` which validates an `unknown` value as a {@link ConditionSetHash | ConditionSetHash}.
+ * @public
+ */
+export const conditionSetHash = Converters.string.map(Validate.toConditionSetHash);
+
+/**
+ * `Converter` which validates an `unknown` value as a {@link DecisionIndex | DecisionIndex}.
+ * @public
+ */
+export const decisionIndex = Converters.number.map(Validate.toDecisionIndex);
+
+/**
+ * `Converter` which validates an `unknown` value as a {@link DecisionKey | DecisionKey}.
+ * @public
+ */
+export const decisionKey = Converters.string.map(Validate.toDecisionKey);
+
+/**
  * `Converter` which validates an `unknown` value as a {@link ResourceId | ResourceId}.
  * @public
  */
