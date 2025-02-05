@@ -50,6 +50,17 @@ Represents a set of [conditions](./ts-res.conditions.condition.md) that must all
 
 
 </td></tr>
+<tr><td>
+
+[ConditionSetCollector](./ts-res.conditions.conditionsetcollector.md)
+
+
+</td><td>
+
+A `ValidatingCollector` for [ConditionSets](./ts-res.conditions.conditionset.md)<!-- -->, which collects condition sets supplied as [ConditionSet](./ts-res.conditions.conditionset.md) or as [IConditionSetDecl](./ts-res.conditions.iconditionsetdecl.md) via the methods on the `validating` property.
+
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -84,6 +95,17 @@ Parameters for creating a [ConditionCollector](./ts-res.conditions.conditioncoll
 </td><td>
 
 Non-validated declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IConditionSetCollectorCreateParams](./ts-res.conditions.iconditionsetcollectorcreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a [ConditionSetCollector](./ts-res.conditions.conditionsetcollector.md)<!-- -->.
 
 
 </td></tr>

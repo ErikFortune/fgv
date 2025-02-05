@@ -26,6 +26,7 @@ export * from './condition';
 export * from './conditionCollector';
 export * from './conditionDecls';
 export * from './conditionSet';
+export * from './conditionSetCollector';
 export * from './conditionSetDecls';
 
 export { Convert };

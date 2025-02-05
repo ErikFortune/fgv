@@ -48,8 +48,8 @@ export interface IConditionSetCollectorCreateParams {
 /**
  * A `ValidatingCollector` for {@link Conditions.ConditionSet | ConditionSets},
  * which collects condition sets supplied as {@link Conditions.ConditionSet | ConditionSet} or
- * as {@link Conditions.IConditionSetDecl | IConditionSetDecl} using the attached
- * {@link Conditions.ConditionCollector.validating | ConditionCollector}.
+ * as {@link Conditions.IConditionSetDecl | IConditionSetDecl} via the methods on the
+ * `validating` property.
  * @public
  */
 export class ConditionSetCollector extends ValidatingCollector<ConditionSet> {
