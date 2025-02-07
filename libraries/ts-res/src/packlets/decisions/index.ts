@@ -25,3 +25,4 @@ export * from './candidate';
 export * from './decision';
 export * from './abstractDecision';
 export * from './abstractDecisionCollector';
+export * from './concreteDecision';

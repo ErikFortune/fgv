@@ -52,6 +52,17 @@ Simple implementation of [ICandidate](./ts-res.decisions.icandidate.md) with hel
 </td></tr>
 <tr><td>
 
+[ConcreteDecision](./ts-res.decisions.concretedecision.md)
+
+
+</td><td>
+
+A [concrete decision](./ts-res.decisions.concretedecision.md) is a [decision](./ts-res.decisions.idecision.md) implemented as a reference to a common [abstract decision](./ts-res.decisions.abstractdecision.md) and a list of values that correspond to the candidates in the abstract decision. This allows us to represent a large number of related decisions with a single abstract decision and a list of values.
+
+
+</td></tr>
+<tr><td>
+
 [Decision](./ts-res.decisions.decision.md)
 
 
@@ -95,6 +106,28 @@ Parameters to create an [AbstractDecision](./ts-res.decisions.abstractdecision.m
 </td><td>
 
 A [resource candidate](./ts-res.decisions.icandidate.md) represents a single possible value for some resource, with the conditions under which it is valid.
+
+
+</td></tr>
+<tr><td>
+
+[IConcreteDecisionConstructorParams](./ts-res.decisions.iconcretedecisionconstructorparams.md)
+
+
+</td><td>
+
+Protected constructor parameters for [ConcreteDecision](./ts-res.decisions.concretedecision.md)<!-- -->, used to create a new concrete decision from an existing [AbstractDecision](./ts-res.decisions.abstractdecision.md) and a list of values.
+
+
+</td></tr>
+<tr><td>
+
+[IConcreteDecisionCreateParams](./ts-res.decisions.iconcretedecisioncreateparams.md)
+
+
+</td><td>
+
+Parameters used to create a new [ConcreteDecision](./ts-res.decisions.concretedecision.md)<!-- -->, given an [AbstractDecisionCollector](./ts-res.decisions.abstractdecisioncollector.md) and a list of [candidates](./ts-res.decisions.icandidate.md)<!-- -->.
 
 
 </td></tr>

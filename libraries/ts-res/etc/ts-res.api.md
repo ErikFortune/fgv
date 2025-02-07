@@ -80,6 +80,30 @@ class Candidate<TVALUE extends JsonValue = JsonValue> implements ICandidate<TVAL
     readonly value: TVALUE;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ConcreteDecision<TVALUE extends JsonValue = JsonValue> implements IDecision<TVALUE> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(params: IConcreteDecisionConstructorParams<TVALUE>);
+    // (undocumented)
+    readonly baseDecision: AbstractDecision;
+    // (undocumented)
+    readonly candidates: ReadonlyArray<ICandidate<TVALUE>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create<TVALUE extends JsonValue = JsonValue>(params: IConcreteDecisionCreateParams<TVALUE>): Result<ConcreteDecision<TVALUE>>;
+    // (undocumented)
+    readonly index?: DecisionIndex;
+    // (undocumented)
+    readonly key: DecisionKey;
+    // (undocumented)
+    readonly values: TVALUE[];
+}
+
 // @public
 class Condition implements IValidatedConditionDecl {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -358,7 +382,10 @@ declare namespace Decisions {
         Decision,
         IAbstractDecisionCreateParams,
         AbstractDecision,
-        AbstractDecisionCollector
+        AbstractDecisionCollector,
+        IConcreteDecisionCreateParams,
+        IConcreteDecisionConstructorParams,
+        ConcreteDecision
     }
 }
 export { Decisions }
@@ -381,6 +408,33 @@ interface ICandidate<TVALUE extends JsonValue = JsonValue> {
     readonly conditionSet: ConditionSet;
     // (undocumented)
     readonly value: TVALUE;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IConcreteDecisionConstructorParams<TVALUE extends JsonValue = JsonValue> {
+    // (undocumented)
+    baseDecision: AbstractDecision;
+    // (undocumented)
+    index?: DecisionIndex;
+    // (undocumented)
+    values: TVALUE[];
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IConcreteDecisionCreateParams<TVALUE extends JsonValue = JsonValue> {
+    // (undocumented)
+    candidates: ReadonlyArray<ICandidate<TVALUE>>;
+    // (undocumented)
+    decisions: AbstractDecisionCollector;
+    // (undocumented)
+    index?: number;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
