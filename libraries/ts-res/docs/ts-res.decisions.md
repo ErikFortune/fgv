@@ -19,12 +19,45 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[AbstractDecision](./ts-res.decisions.abstractdecision.md)
+
+
+</td><td>
+
+An abstract decision represents a class of decisions with candidates that differ only in value. It is a [IDecision&lt;number&gt;](./ts-res.decisions.decision.md) in which the `number` values are sequentially assigned indexes. This allows us to represent each related [decision](./ts-res.decisions.idecision.md) as an [abstract decision](./ts-res.decisions.abstractdecision.md) and a matching array containing the corresponding value for each candidate. This representation is highly cacheable.
+
+
+</td></tr>
+<tr><td>
+
+[AbstractDecisionCollector](./ts-res.decisions.abstractdecisioncollector.md)
+
+
+</td><td>
+
+A `ValidatingCollector` for [AbstractDecisions](./ts-res.decisions.abstractdecision.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[Candidate](./ts-res.decisions.candidate.md)
+
+
+</td><td>
+
+Simple implementation of [ICandidate](./ts-res.decisions.icandidate.md) with helper methods for sorting and presentation.
+
+
+</td></tr>
+<tr><td>
+
 [Decision](./ts-res.decisions.decision.md)
 
 
 </td><td>
 
-Represents an abstract decision, which is comprised of one [ConditionSet](./ts-res.conditions.conditionset.md) for each possible outcome.
+Simple collectible implementation of [IDecision](./ts-res.decisions.idecision.md)<!-- -->.
 
 
 </td></tr>
@@ -44,6 +77,39 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[IAbstractDecisionCreateParams](./ts-res.decisions.iabstractdecisioncreateparams.md)
+
+
+</td><td>
+
+Parameters to create an [AbstractDecision](./ts-res.decisions.abstractdecision.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ICandidate](./ts-res.decisions.icandidate.md)
+
+
+</td><td>
+
+A [resource candidate](./ts-res.decisions.icandidate.md) represents a single possible value for some resource, with the conditions under which it is valid.
+
+
+</td></tr>
+<tr><td>
+
+[IDecision](./ts-res.decisions.idecision.md)
+
+
+</td><td>
+
+Represents a decision, which is comprised of zero or more [candidates](./ts-res.decisions.candidate.md)<!-- -->, each of which represents a possible value for some resource, along with the conditions under which that value is valid.
+
+
+</td></tr>
+<tr><td>
 
 [IDecisionCreateParams](./ts-res.decisions.idecisioncreateparams.md)
 

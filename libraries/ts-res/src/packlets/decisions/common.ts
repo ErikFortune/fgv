@@ -20,8 +20,18 @@
  * SOFTWARE.
  */
 
-export * from './common';
-export * from './candidate';
-export * from './decision';
-export * from './abstractDecision';
-export * from './abstractDecisionCollector';
+import { DecisionIndex, DecisionKey } from '../common';
+import { JsonValue } from '@fgv/ts-json-base';
+import { ICandidate } from './candidate';
+
+/**
+ * Represents a decision, which is comprised of zero or more
+ * {@link Decisions.Candidate | candidates}, each of which represents a possible
+ * value for some resource, along with the conditions under which that value is valid.
+ * @public
+ */
+export interface IDecision<TVALUE extends JsonValue = JsonValue> {
+  key: DecisionKey;
+  candidates: ReadonlyArray<ICandidate<TVALUE>>;
+  index?: DecisionIndex;
+}

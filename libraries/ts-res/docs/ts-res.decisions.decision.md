@@ -4,13 +4,14 @@
 
 ## Decisions.Decision class
 
-Represents an abstract decision, which is comprised of one [ConditionSet](./ts-res.conditions.conditionset.md) for each possible outcome.
+Simple collectible implementation of [IDecision](./ts-res.decisions.idecision.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-export declare class Decision 
+export declare class Decision<TVALUE extends JsonValue = JsonValue> implements IDecision<TVALUE> 
 ```
+**Implements:** [IDecision](./ts-res.decisions.idecision.md)<!-- -->&lt;TVALUE&gt;
 
 ## Constructors
 
@@ -73,7 +74,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[conditionSets](./ts-res.decisions.decision.conditionsets.md)
+[candidates](./ts-res.decisions.decision.candidates.md)
 
 
 </td><td>
@@ -83,7 +84,7 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;[ConditionSet](./ts-res.conditions.conditionset.md)<!-- -->&gt;
+ReadonlyArray&lt;[Candidate](./ts-res.decisions.candidate.md)<!-- -->&lt;TVALUE&gt;&gt;
 
 
 </td><td>
@@ -156,7 +157,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[create(params)](./ts-res.decisions.decision.create.md)
+[createDecision(params)](./ts-res.decisions.decision.createdecision.md)
 
 
 </td><td>
@@ -172,7 +173,7 @@ Creates a new [Decision](./ts-res.decisions.decision.md) object.
 </td></tr>
 <tr><td>
 
-[getKey(conditionSets)](./ts-res.decisions.decision.getkey.md)
+[getKey(candidates)](./ts-res.decisions.decision.getkey.md)
 
 
 </td><td>

@@ -9,7 +9,7 @@ Parameters used to create a new [Decision](./ts-res.decisions.decision.md)<!-- -
 **Signature:**
 
 ```typescript
-export interface IDecisionCreateParams 
+export interface IDecisionCreateParams<TVALUE extends JsonValue = JsonValue> 
 ```
 
 ## Properties
@@ -37,7 +37,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[conditionSets](./ts-res.decisions.idecisioncreateparams.conditionsets.md)
+[candidates](./ts-res.decisions.idecisioncreateparams.candidates.md)
 
 
 </td><td>
@@ -45,7 +45,7 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;[ConditionSet](./ts-res.conditions.conditionset.md)<!-- -->&gt;
+ReadonlyArray&lt;[ICandidate](./ts-res.decisions.icandidate.md)<!-- -->&lt;TVALUE&gt;&gt;
 
 
 </td><td>

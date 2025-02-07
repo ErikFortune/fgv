@@ -9,7 +9,7 @@ Helper function to return a stable key for a set of condition sets.
 **Signature:**
 
 ```typescript
-static getKey(conditionSets: ReadonlyArray<ConditionSet>): DecisionKey;
+static getKey<TVALUE extends JsonValue = JsonValue>(candidates: ReadonlyArray<ICandidate<TVALUE>>): DecisionKey;
 ```
 
 ## Parameters
@@ -32,17 +32,15 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-conditionSets
+candidates
 
 
 </td><td>
 
-ReadonlyArray&lt;[ConditionSet](./ts-res.conditions.conditionset.md)<!-- -->&gt;
+ReadonlyArray&lt;[ICandidate](./ts-res.decisions.icandidate.md)<!-- -->&lt;TVALUE&gt;&gt;
 
 
 </td><td>
-
-The condition sets to use to create the key.
 
 
 </td></tr>

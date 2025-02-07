@@ -48,4 +48,4 @@ export const conditionSetHash: RegExp = /^[a-zA-Z0-9]{8}$/;
 /**
  * @internal
  */
-export const decisionKey: RegExp = /^[a-zA-Z0-9]+(?:\+[a-zA-Z0-9]+)*$/;
+export const decisionKey: RegExp = /^[a-zA-Z0-9]{8}(?:\+[a-zA-Z0-9]{8})*(?:|[a-zA-Z0-9]{8})?$/;

@@ -20,30 +20,32 @@
  * SOFTWARE.
  */
 
-import { captureResult, Collections, Result } from '@fgv/ts-utils';
-import { ConditionSet } from '../conditions';
+import { captureResult, Collections, Hash, Result } from '@fgv/ts-utils';
 import { Convert as CommonConvert, DecisionIndex, DecisionKey } from '../common';
+import { JsonValue } from '@fgv/ts-json-base';
+import { Candidate, ICandidate } from './candidate';
+import { IDecision } from './common';
+import { AbstractDecision } from './abstractDecision';
 
 /**
  * Parameters used to create a new {@link Decisions.Decision | Decision}.
  * @public
  */
-export interface IDecisionCreateParams {
-  conditionSets: ReadonlyArray<ConditionSet>;
+export interface IDecisionCreateParams<TVALUE extends JsonValue = JsonValue> {
+  candidates: ReadonlyArray<ICandidate<TVALUE>>;
   index?: number;
 }
 
 /**
- * Represents an abstract decision, which is comprised of one
- * {@link Conditions.ConditionSet  | ConditionSet} for each possible outcome.
+ * Simple collectible implementation of {@link Decisions.IDecision | IDecision}.
  * @public
  */
-export class Decision {
+export class Decision<TVALUE extends JsonValue = JsonValue> implements IDecision<TVALUE> {
   /**
    * The sorted {@link Conditions.ConditionSet  | ConditionSets} that make up this decision.
    * @public
    */
-  public readonly conditionSets: ReadonlyArray<ConditionSet>;
+  public readonly candidates: ReadonlyArray<Candidate<TVALUE>>;
 
   /**
    * Unique global key for this decision, derived from the contents
@@ -67,10 +69,13 @@ export class Decision {
    * @param params - {@link Decisions.IDecisionCreateParams | Parameters} used to create the decision.
    * @public
    */
-  protected constructor(params: IDecisionCreateParams) {
-    this.conditionSets = Array.from(params.conditionSets).sort();
+  protected constructor(params: IDecisionCreateParams<TVALUE>) {
+    this.candidates = Array.from(params.candidates)
+      .map((c) => new Candidate(c))
+      .sort(Candidate.compare);
+
     this._collectible = new Collections.Collectible<DecisionKey, DecisionIndex>({
-      key: Decision.getKey(this.conditionSets),
+      key: Decision.getKey(this.candidates),
       index: params.index,
       indexConverter: CommonConvert.decisionIndex
     });
@@ -82,7 +87,7 @@ export class Decision {
    * @returns `Success` with the new decision if successful, or `Failure` with an error message if not.
    * @public
    */
-  public static create(params: IDecisionCreateParams): Result<Decision> {
+  public static createDecision(params: IDecisionCreateParams): Result<Decision> {
     return captureResult(() => new Decision(params));
   }
 
@@ -102,14 +107,11 @@ export class Decision {
    * @returns A key derived from the condition set hashes.
    * @public
    */
-  public static getKey(conditionSets: ReadonlyArray<ConditionSet>): DecisionKey {
-    return CommonConvert.decisionKey
-      .convert(
-        Array.from(conditionSets)
-          .sort()
-          .map((c) => c.toHash())
-          .join('+')
-      )
-      .orThrow();
+  public static getKey<TVALUE extends JsonValue = JsonValue>(
+    candidates: ReadonlyArray<ICandidate<TVALUE>>
+  ): DecisionKey {
+    const abstractKey = AbstractDecision.getAbstractKey(candidates.map((c) => c.conditionSet));
+    const valueKey = Hash.Crc32Normalizer.crc32Hash(candidates.map((c) => JSON.stringify(c.value)));
+    return CommonConvert.decisionKey.convert(`${abstractKey}|${valueKey}`).orThrow();
   }
 }
