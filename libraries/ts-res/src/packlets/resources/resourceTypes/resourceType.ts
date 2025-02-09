@@ -21,20 +21,43 @@
  */
 
 import { JsonValue } from '@fgv/ts-json-base';
-import { Result } from '@fgv/ts-utils';
-import { ResourceTypeName, ResourceValueMergeMethod } from '../../common';
+import { Collections, ICollectible, Result } from '@fgv/ts-utils';
+import {
+  Convert as CommonConvert,
+  ResourceTypeIndex,
+  ResourceTypeName,
+  ResourceValueMergeMethod
+} from '../../common';
 
 /**
- * Interface describing a single resource type, which is responsible for
+ * Abstract base class for resource types which are responsible for
  * validating and converting JSON values into the appropriate strongly-typed
  * resource value.
  * @public
  */
-export interface IResourceType<T = unknown> {
+export abstract class ResourceType<T = unknown> implements ICollectible<ResourceTypeName, ResourceTypeIndex> {
+  private _collectible: Collections.Collectible<ResourceTypeName, ResourceTypeIndex>;
   /**
-   * The name of the resource type.
+   * The key for this resource type.
    */
-  readonly name: ResourceTypeName;
+  public get key(): ResourceTypeName {
+    return this._collectible.key;
+  }
+
+  /**
+   * The index for this resource type.
+   */
+  public get index(): ResourceTypeIndex | undefined {
+    return this._collectible.index;
+  }
+
+  protected constructor(key: ResourceTypeName, index?: ResourceTypeIndex) {
+    this._collectible = new Collections.Collectible<ResourceTypeName, ResourceTypeIndex>({
+      key,
+      index,
+      indexConverter: CommonConvert.resourceTypeIndex
+    });
+  }
 
   /**
    * Validates a {@link ResourceJson.IResourceCandidateDecl | resource candidate declaration} for
@@ -46,7 +69,7 @@ export interface IResourceType<T = unknown> {
    * method are valid, `Failure` with an error message otherwise.
    * @public
    */
-  validateDeclaration(
+  public abstract validateDeclaration(
     json: JsonValue,
     isPartial: true,
     mergeMethod: ResourceValueMergeMethod
@@ -62,7 +85,11 @@ export interface IResourceType<T = unknown> {
    * are valid, `Failure` with an error message otherwise.
    * @public
    */
-  validateDeclaration(json: JsonValue, isPartial: false, mergeMethod: ResourceValueMergeMethod): Result<T>;
+  public abstract validateDeclaration(
+    json: JsonValue,
+    isPartial: false,
+    mergeMethod: ResourceValueMergeMethod
+  ): Result<T>;
 
   /**
    * Validates a {@link ResourceJson.IResourceCandidateDecl | resource candidate declaration} for
@@ -74,10 +101,16 @@ export interface IResourceType<T = unknown> {
    * are valid, `Failure` with an error message otherwise.
    * @public
    */
-  validateDeclaration(
+  public abstract validateDeclaration(
     json: JsonValue,
     isPartial: boolean,
     mergeMethod: ResourceValueMergeMethod
+  ): Result<T | Partial<T>>;
+
+  public abstract validateDeclaration(
+    json: JsonValue,
+    isPartial: boolean,
+    mergeMethod?: ResourceValueMergeMethod
   ): Result<T | Partial<T>>;
 
   /**
@@ -88,7 +121,7 @@ export interface IResourceType<T = unknown> {
    * `Failure` with an error message otherwise.
    * @public
    */
-  validate(json: JsonValue, isPartial: true): Result<T>;
+  public abstract validate(json: JsonValue, isPartial: true): Result<T>;
 
   /**
    * Validates a JSON value for use as a complete resource instance value.
@@ -98,7 +131,7 @@ export interface IResourceType<T = unknown> {
    * `Failure` with an error message otherwise.
    * @public
    */
-  validate(json: JsonValue, isPartial: false): Result<Partial<T>>;
+  public abstract validate(json: JsonValue, isPartial: false): Result<Partial<T>>;
 
   /**
    * Validates a JSON value for use as a full or partial resource instance value.
@@ -108,5 +141,12 @@ export interface IResourceType<T = unknown> {
    * the JSON is valid, `Failure` with an error message otherwise.
    * @public
    */
-  validate(json: JsonValue, isPartial: boolean): Result<T | Partial<T>>;
+  public abstract validate(json: JsonValue, isPartial: boolean): Result<T | Partial<T>>;
+
+  /**
+   * Sets the index for this resource type.  Once set, the index cannot be changed.
+   */
+  public setIndex(index: number): Result<ResourceTypeIndex> {
+    return this._collectible.setIndex(index);
+  }
 }

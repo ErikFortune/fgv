@@ -25,7 +25,7 @@ import { ResourceId, ResourceValueMergeMethod } from '../common';
 import { Condition, ConditionSet, Convert as ConditionsConvert } from '../conditions';
 import { ReadOnlyQualifierCollector } from '../qualifiers';
 import * as ResourceJson from '../resource-json';
-import { IResourceType, ResourceTypeMap } from './resourceTypes';
+import { IResourceType, ResourceTypeCollector } from './resourceTypes';
 import { captureResult, MessageAggregator, Normalizer, Result, succeed } from '@fgv/ts-utils';
 
 /**
@@ -36,7 +36,7 @@ export interface IResourceCandidateCreateParams {
   decl: ResourceJson.IResourceCandidateDecl;
   parentConditions: ReadonlyArray<Condition>;
   qualifiers: ReadOnlyQualifierCollector;
-  resourceTypes: ResourceTypeMap;
+  resourceTypes: ResourceTypeCollector;
 }
 
 /**

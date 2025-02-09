@@ -20,12 +20,32 @@
  * SOFTWARE.
  */
 
-import { ValidatingResultMap } from '@fgv/ts-utils';
-import { ResourceTypeName } from '../../common';
-import { IResourceType } from './resourceType';
+import { Collections, Result, fail, succeed, ValidatingCollector, captureResult } from '@fgv/ts-utils';
+import { ResourceType } from './resourceType';
+import { Convert as CommonConvert, ResourceTypeName } from '../../common';
 
 /**
  * Map {@link ResourceTypeName | resource type names} to {@link Resources.ResourceTypes.IResourceType | resource types}.
  * @public
  */
-export type ResourceTypeMap = ValidatingResultMap<ResourceTypeName, IResourceType>;
+export class ResourceTypeCollector extends ValidatingCollector<ResourceType> {
+  protected constructor() {
+    super({
+      converters: new Collections.KeyValueConverters<ResourceTypeName, ResourceType>({
+        key: CommonConvert.resourceTypeName,
+        value: (from: unknown) => this._toResourceType(from)
+      })
+    });
+  }
+
+  public static create(): Result<ResourceTypeCollector> {
+    return captureResult(() => new ResourceTypeCollector());
+  }
+
+  protected _toResourceType(from: unknown): Result<ResourceType> {
+    if (from instanceof ResourceType) {
+      return succeed(from);
+    }
+    return fail('Not a resource type.');
+  }
+}

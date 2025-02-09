@@ -21,7 +21,7 @@
  */
 
 import { ReadOnlyQualifierCollector } from '../../qualifiers';
-import { ResourceTypeMap } from '../resourceTypes';
+import { ResourceTypeCollector } from '../resourceTypes';
 
 /**
  * Interface for parameters to the ResourceManagerBuilder constructor
@@ -29,5 +29,5 @@ import { ResourceTypeMap } from '../resourceTypes';
  */
 export interface IResourceManagerCreateParams {
   qualifiers: ReadOnlyQualifierCollector;
-  resourceTypes: ResourceTypeMap;
+  resourceTypes: ResourceTypeCollector;
 }

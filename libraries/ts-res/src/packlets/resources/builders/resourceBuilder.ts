@@ -32,7 +32,7 @@ import {
 } from '@fgv/ts-utils';
 import { ResourceId, Validate } from '../../common';
 import { ResourceCandidate } from '../resourceCandidate';
-import { IResourceType, ResourceTypeMap } from '../resourceTypes';
+import { IResourceType, ResourceTypeCollector } from '../resourceTypes';
 import { Resource } from '../resource';
 
 /**
@@ -42,7 +42,7 @@ import { Resource } from '../resource';
 export interface IResourceBuilderCreateParams {
   id: string;
   typeName?: string;
-  resourceTypes: ResourceTypeMap;
+  resourceTypes: ResourceTypeCollector;
 }
 
 /**
@@ -94,7 +94,7 @@ export class ResourceBuilder {
   /**
    * Map of all known {@link Resources.ResourceTypes.IResourceType | resource types}.
    */
-  protected _resourceTypes: ResourceTypeMap;
+  protected _resourceTypes: ResourceTypeCollector;
 
   /**
    * Constructor for a {@link Resources.Builders.ResourceBuilder | ResourceBuilder} object.
