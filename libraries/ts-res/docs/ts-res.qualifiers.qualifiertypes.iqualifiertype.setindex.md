@@ -9,7 +9,7 @@ Sets the index for this qualifier type. Once set, index is immutable.
 **Signature:**
 
 ```typescript
-setIndex(index: QualifierTypeIndex): Result<QualifierTypeIndex>;
+setIndex(index: number): Result<QualifierTypeIndex>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ index
 
 </td><td>
 
-[QualifierTypeIndex](./ts-res.qualifiertypeindex.md)
+number
 
 
 </td><td>

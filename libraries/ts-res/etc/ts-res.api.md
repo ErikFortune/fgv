@@ -600,7 +600,7 @@ interface IQualifierType extends ICollectible<QualifierTypeName, QualifierTypeIn
     readonly key: QualifierTypeName;
     matches(condition: QualifierConditionValue, context: QualifierContextValue, operator: ConditionOperator): QualifierMatchScore;
     readonly name: QualifierTypeName;
-    setIndex(index: QualifierTypeIndex): Result<QualifierTypeIndex>;
+    setIndex(index: number): Result<QualifierTypeIndex>;
     validateCondition(value: string, operator?: ConditionOperator): Result<QualifierConditionValue>;
     validateContextValue(value: string): Result<QualifierContextValue>;
 }
@@ -995,7 +995,7 @@ abstract class QualifierType implements IQualifierType {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    setIndex(index: QualifierTypeIndex): Result<QualifierTypeIndex>;
+    setIndex(index: number): Result<QualifierTypeIndex>;
     protected static _splitContext(value: QualifierContextValue): QualifierContextValue[];
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //

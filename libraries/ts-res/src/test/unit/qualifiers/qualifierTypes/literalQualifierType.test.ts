@@ -22,6 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../../index';
+import { QualifierType } from '../../../../packlets/qualifiers';
 
 const validIdentifiers: string[] = [
   'abc',
@@ -71,11 +72,18 @@ describe('LiteralQualifierType', () => {
     });
 
     test('fails if the name is not a valid qualifier type name', () => {
-      const params: TsRes.Qualifiers.QualifierTypes.ILiteralQualifierTypeCreateParams = {
-        name: 'not a valid name'
-      };
-      expect(TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create(params)).toFailWith(
+      const name = 'not a valid name';
+      expect(TsRes.Qualifiers.QualifierTypes.QualifierType.isValidName(name)).toBe(false);
+      expect(TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({ name })).toFailWith(
         /not a valid qualifier type name/i
+      );
+    });
+
+    test('fails if the index is not a valid qualifier type index', () => {
+      const index = -1;
+      expect(TsRes.Qualifiers.QualifierTypes.QualifierType.isValidIndex(index)).toBe(false);
+      expect(TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({ index })).toFailWith(
+        /not a valid qualifier type index/i
       );
     });
 
@@ -356,6 +364,74 @@ describe('LiteralQualifierType', () => {
           qt.matches('a' as TsRes.QualifierConditionValue, 'a, b' as TsRes.QualifierContextValue, 'matches')
         ).toBe(TsRes.NoMatch);
       });
+    });
+  });
+
+  describe('setIndex', () => {
+    let qt: TsRes.Qualifiers.QualifierTypes.QualifierType;
+
+    beforeEach(() => {
+      qt = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create().getValueOrThrow();
+    });
+
+    test('sets the index if it is valid', () => {
+      expect(qt.setIndex(10)).toSucceedWith(10 as TsRes.QualifierTypeIndex);
+      expect(qt.index).toBe(10);
+    });
+
+    test('fails if the index is not valid', () => {
+      expect(qt.setIndex(-1)).toFailWith(/not a valid qualifier type index/i);
+    });
+
+    test('fails if the index is already set', () => {
+      expect(qt.setIndex(1)).toSucceedWith(1 as TsRes.QualifierTypeIndex);
+      expect(qt.setIndex(10)).toFailWith(/cannot be changed/i);
+    });
+
+    test('succeeds if the index is already set to the same value', () => {
+      expect(qt.setIndex(1)).toSucceedWith(1 as TsRes.QualifierTypeIndex);
+      expect(qt.setIndex(1)).toSucceedWith(1 as TsRes.QualifierTypeIndex);
+    });
+  });
+
+  describe('compare', () => {
+    test('compares by index first', () => {
+      const qt1 = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({ index: 1 }).orThrow();
+      const qt2 = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({ index: 2 }).orThrow();
+      expect(QualifierType.compare(qt1, qt2)).toBeLessThan(0);
+      expect(QualifierType.compare(qt2, qt1)).toBeGreaterThan(0);
+    });
+
+    test('treats undefined index as less than defined index', () => {
+      const qt1 = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create().orThrow();
+      const qt2 = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({ index: 2 }).orThrow();
+      expect(QualifierType.compare(qt1, qt2)).toBeLessThan(0);
+      expect(QualifierType.compare(qt2, qt1)).toBeGreaterThan(0);
+    });
+
+    test('falls back to name if indexes are equal', () => {
+      const qt1 = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({
+        name: 'abacus',
+        index: 1
+      }).orThrow();
+      const qt2 = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({
+        name: 'xyzzy',
+        index: 1
+      }).orThrow();
+      expect(QualifierType.compare(qt1, qt2)).toBeLessThan(0);
+      expect(QualifierType.compare(qt1, qt2)).toBeGreaterThan(0);
+    });
+
+    test('returns 0 for identical qualifier types', () => {
+      const qt1 = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({
+        name: 'abacus',
+        index: 1
+      }).orThrow();
+      const qt2 = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({
+        name: 'abacus',
+        index: 1
+      }).orThrow();
+      expect(QualifierType.compare(qt1, qt2)).toBe(0);
     });
   });
 });

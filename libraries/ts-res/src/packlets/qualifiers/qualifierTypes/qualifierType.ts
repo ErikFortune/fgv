@@ -107,7 +107,7 @@ export interface IQualifierType extends ICollectible<QualifierTypeName, Qualifie
    * Sets the index for this qualifier type.  Once set, index is
    * immutable.
    */
-  setIndex(index: QualifierTypeIndex): Result<QualifierTypeIndex>;
+  setIndex(index: number): Result<QualifierTypeIndex>;
 }
 
 /**
@@ -239,7 +239,7 @@ export abstract class QualifierType implements IQualifierType {
   /**
    * {@inheritdoc Qualifiers.QualifierTypes.IQualifierType.setIndex}
    */
-  public setIndex(index: QualifierTypeIndex): Result<QualifierTypeIndex> {
+  public setIndex(index: number): Result<QualifierTypeIndex> {
     return this._collectible.setIndex(index);
   }
 
