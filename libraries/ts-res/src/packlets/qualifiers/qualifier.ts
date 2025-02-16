@@ -22,7 +22,7 @@
 
 import { captureResult, Collections, ICollectible, Result } from '@fgv/ts-utils';
 import { ConditionPriority, QualifierIndex, QualifierName, Convert as CommonConvert } from '../common';
-import { QualifierType } from './qualifierTypes';
+import { QualifierType } from '../qualifier-types';
 import { IValidatedQualifierDecl } from './qualifierDecl';
 
 /**
@@ -37,7 +37,7 @@ export class Qualifier implements IValidatedQualifierDecl, ICollectible<Qualifie
   public readonly name: QualifierName;
 
   /**
-   * The {@link Qualifiers.QualifierTypes.QualifierType | type} of the qualifier.
+   * The {@link QualifierTypes.QualifierType | type} of the qualifier.
    */
   public readonly type: QualifierType;
 
@@ -67,7 +67,7 @@ export class Qualifier implements IValidatedQualifierDecl, ICollectible<Qualifie
    * Constructs a new instance of a {@link Qualifiers.Qualifier | Qualifier} from the
    * supplied {@link Qualifiers.IValidatedQualifierDecl | validated declaration}.
    * @param name - The name of the qualifier.
-   * @param type - The {@link Qualifiers.QualifierTypes.QualifierType | type} of the qualifier.
+   * @param type - The {@link QualifierTypes.QualifierType | type} of the qualifier.
    * @param defaultPriority - The default {@link ConditionPriority | priority} of conditions
    * @public
    */

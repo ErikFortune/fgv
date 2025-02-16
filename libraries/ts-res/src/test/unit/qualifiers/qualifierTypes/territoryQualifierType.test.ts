@@ -30,8 +30,8 @@ const invalidTerritories: string[] = ['419', 'mexico', 'usa', 'CAN'];
 describe('TerritoryQualifierType', () => {
   describe('create static method', () => {
     test('creates a new TerritoryQualifierType with defaults', () => {
-      expect(TsRes.Qualifiers.QualifierTypes.TerritoryQualifierType.create()).toSucceedAndSatisfy((q) => {
-        expect(q).toBeInstanceOf(TsRes.Qualifiers.QualifierTypes.TerritoryQualifierType);
+      expect(TsRes.QualifierTypes.TerritoryQualifierType.create()).toSucceedAndSatisfy((q) => {
+        expect(q).toBeInstanceOf(TsRes.QualifierTypes.TerritoryQualifierType);
         expect(q.key).toBe('territory');
         expect(q.name).toBe('territory');
         expect(q.allowContextList).toBe(false);
@@ -42,14 +42,14 @@ describe('TerritoryQualifierType', () => {
 
     test('creates a new TerritoryQualifierType with specified values', () => {
       expect(
-        TsRes.Qualifiers.QualifierTypes.TerritoryQualifierType.create({
+        TsRes.QualifierTypes.TerritoryQualifierType.create({
           name: 'terr',
           allowContextList: true,
           index: 10,
           allowedTerritories: validTerritories
         })
       ).toSucceedAndSatisfy((q) => {
-        expect(q).toBeInstanceOf(TsRes.Qualifiers.QualifierTypes.TerritoryQualifierType);
+        expect(q).toBeInstanceOf(TsRes.QualifierTypes.TerritoryQualifierType);
         expect(q.key).toBe('terr');
         expect(q.name).toBe('terr');
         expect(q.allowContextList).toBe(true);
@@ -60,14 +60,14 @@ describe('TerritoryQualifierType', () => {
 
     test('normalizes allowed territory names to uppercase', () => {
       expect(
-        TsRes.Qualifiers.QualifierTypes.TerritoryQualifierType.create({
+        TsRes.QualifierTypes.TerritoryQualifierType.create({
           name: 'terr',
           allowContextList: true,
           index: 10,
           allowedTerritories: validTerritories.map((t) => t.toLowerCase())
         })
       ).toSucceedAndSatisfy((q) => {
-        expect(q).toBeInstanceOf(TsRes.Qualifiers.QualifierTypes.TerritoryQualifierType);
+        expect(q).toBeInstanceOf(TsRes.QualifierTypes.TerritoryQualifierType);
         expect(q.key).toBe('terr');
         expect(q.name).toBe('terr');
         expect(q.allowContextList).toBe(true);
@@ -78,7 +78,7 @@ describe('TerritoryQualifierType', () => {
 
     test('fails if the name is not a valid qualifier type name', () => {
       expect(
-        TsRes.Qualifiers.QualifierTypes.TerritoryQualifierType.create({
+        TsRes.QualifierTypes.TerritoryQualifierType.create({
           name: 'not a valid name'
         })
       ).toFailWith(/not a valid qualifier type name/i);
@@ -86,7 +86,7 @@ describe('TerritoryQualifierType', () => {
 
     test('fails if an allowed territory is not valid', () => {
       expect(
-        TsRes.Qualifiers.QualifierTypes.TerritoryQualifierType.create({
+        TsRes.QualifierTypes.TerritoryQualifierType.create({
           name: 'terr',
           allowContextList: true,
           index: 10,
@@ -97,10 +97,10 @@ describe('TerritoryQualifierType', () => {
   });
 
   describe('isValidConditionValue', () => {
-    let qt: TsRes.Qualifiers.QualifierTypes.TerritoryQualifierType;
+    let qt: TsRes.QualifierTypes.TerritoryQualifierType;
 
     beforeEach(() => {
-      qt = TsRes.Qualifiers.QualifierTypes.TerritoryQualifierType.create().getValueOrThrow();
+      qt = TsRes.QualifierTypes.TerritoryQualifierType.create().getValueOrThrow();
     });
 
     test('returns true for valid territories regardless of case', () => {
@@ -119,10 +119,10 @@ describe('TerritoryQualifierType', () => {
   });
 
   describe('matches', () => {
-    let qt: TsRes.Qualifiers.QualifierTypes.TerritoryQualifierType;
+    let qt: TsRes.QualifierTypes.TerritoryQualifierType;
 
     beforeEach(() => {
-      qt = TsRes.Qualifiers.QualifierTypes.TerritoryQualifierType.create().getValueOrThrow();
+      qt = TsRes.QualifierTypes.TerritoryQualifierType.create().getValueOrThrow();
     });
 
     test('returns a perfect match for matching territories', () => {
@@ -141,7 +141,7 @@ describe('TerritoryQualifierType', () => {
 
     describe('with allowed territories', () => {
       beforeEach(() => {
-        qt = TsRes.Qualifiers.QualifierTypes.TerritoryQualifierType.create({
+        qt = TsRes.QualifierTypes.TerritoryQualifierType.create({
           allowedTerritories: validTerritories
         }).orThrow();
       });

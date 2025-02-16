@@ -27,38 +27,38 @@ import { mapResults } from '@fgv/ts-utils';
 describe('QualifierTypeCollector', () => {
   describe('create static method', () => {
     test('creates a new empty QualifierTypeCollector by default', () => {
-      expect(TsRes.Qualifiers.QualifierTypes.QualifierTypeCollector.create()).toSucceedAndSatisfy((q) => {
-        expect(q).toBeInstanceOf(TsRes.Qualifiers.QualifierTypes.QualifierTypeCollector);
+      expect(TsRes.QualifierTypes.QualifierTypeCollector.create()).toSucceedAndSatisfy((q) => {
+        expect(q).toBeInstanceOf(TsRes.QualifierTypes.QualifierTypeCollector);
         expect(q.size).toBe(0);
       });
     });
 
     test('creates a new QualifierTypeCollector with specified values', () => {
-      const qualifierTypes = mapResults<TsRes.Qualifiers.QualifierTypes.QualifierType>([
-        TsRes.Qualifiers.QualifierTypes.LanguageQualifierType.create(),
-        TsRes.Qualifiers.QualifierTypes.TerritoryQualifierType.create(),
-        TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create()
+      const qualifierTypes = mapResults<TsRes.QualifierTypes.QualifierType>([
+        TsRes.QualifierTypes.LanguageQualifierType.create(),
+        TsRes.QualifierTypes.TerritoryQualifierType.create(),
+        TsRes.QualifierTypes.LiteralQualifierType.create()
       ]).orThrow();
-      expect(
-        TsRes.Qualifiers.QualifierTypes.QualifierTypeCollector.create({ qualifierTypes })
-      ).toSucceedAndSatisfy((q) => {
-        expect(q).toBeInstanceOf(TsRes.Qualifiers.QualifierTypes.QualifierTypeCollector);
-        expect(q.size).toBe(qualifierTypes.length);
-        qualifierTypes.forEach((qt, index) => {
-          expect(q.getAt(index)).toSucceedWith(qt);
-          expect(q.get(qt.key)).toSucceedWith(qt);
-        });
-      });
+      expect(TsRes.QualifierTypes.QualifierTypeCollector.create({ qualifierTypes })).toSucceedAndSatisfy(
+        (q) => {
+          expect(q).toBeInstanceOf(TsRes.QualifierTypes.QualifierTypeCollector);
+          expect(q.size).toBe(qualifierTypes.length);
+          qualifierTypes.forEach((qt, index) => {
+            expect(q.getAt(index)).toSucceedWith(qt);
+            expect(q.get(qt.key)).toSucceedWith(qt);
+          });
+        }
+      );
     });
   });
 
   describe('getOrAdd', () => {
-    let collector: TsRes.Qualifiers.QualifierTypes.QualifierTypeCollector;
-    let qt: TsRes.Qualifiers.QualifierTypes.QualifierType;
+    let collector: TsRes.QualifierTypes.QualifierTypeCollector;
+    let qt: TsRes.QualifierTypes.QualifierType;
 
     beforeEach(() => {
-      collector = TsRes.Qualifiers.QualifierTypes.QualifierTypeCollector.create().orThrow();
-      qt = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create().orThrow();
+      collector = TsRes.QualifierTypes.QualifierTypeCollector.create().orThrow();
+      qt = TsRes.QualifierTypes.LiteralQualifierType.create().orThrow();
     });
 
     test('adds a new qualifier type to the collector', () => {
@@ -79,14 +79,12 @@ describe('QualifierTypeCollector', () => {
 
     test('fails if key does not match the key of the value to be added', () => {
       expect(
-        collector.validating.getOrAdd('literal', () =>
-          TsRes.Qualifiers.QualifierTypes.TerritoryQualifierType.create()
-        )
+        collector.validating.getOrAdd('literal', () => TsRes.QualifierTypes.TerritoryQualifierType.create())
       ).toFailWith(/key mismatch/i);
       expect(
         collector.validating.getOrAdd(
           'literal',
-          TsRes.Qualifiers.QualifierTypes.TerritoryQualifierType.create().orThrow()
+          TsRes.QualifierTypes.TerritoryQualifierType.create().orThrow()
         )
       ).toFailWith(/key mismatch/i);
     });

@@ -64,7 +64,7 @@ number
 
 </td><td>
 
-[ReadOnlyQualifierTypeCollector](./ts-res.qualifiers.qualifiertypes.readonlyqualifiertypecollector.md)
+[ReadOnlyQualifierTypeCollector](./ts-res.qualifiertypes.readonlyqualifiertypecollector.md)
 
 
 </td><td>

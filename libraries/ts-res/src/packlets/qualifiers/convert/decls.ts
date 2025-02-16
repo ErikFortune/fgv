@@ -23,7 +23,7 @@
 import { Converters, populateObject, Result, succeed } from '@fgv/ts-utils';
 import { IQualifierDecl, IValidatedQualifierDecl } from '../qualifierDecl';
 import { Validate } from '../../common';
-import { ReadOnlyQualifierTypeCollector } from '../qualifierTypes/qualifierTypeCollector';
+import { ReadOnlyQualifierTypeCollector } from '../../qualifier-types';
 
 /* eslint-disable @rushstack/typedef-var */
 

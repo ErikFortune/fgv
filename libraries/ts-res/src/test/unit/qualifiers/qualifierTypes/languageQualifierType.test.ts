@@ -39,8 +39,8 @@ const invalidTags: string[] = ['en_US', 'fr-', 'sr-Cyrl_RS', 'cmn-Hans_CN', 'es-
 describe('LanguageQualifierType', () => {
   describe('create static method', () => {
     test('creates a new LanguageQualifierType with defaults', () => {
-      expect(TsRes.Qualifiers.QualifierTypes.LanguageQualifierType.create()).toSucceedAndSatisfy((q) => {
-        expect(q).toBeInstanceOf(TsRes.Qualifiers.QualifierTypes.LanguageQualifierType);
+      expect(TsRes.QualifierTypes.LanguageQualifierType.create()).toSucceedAndSatisfy((q) => {
+        expect(q).toBeInstanceOf(TsRes.QualifierTypes.LanguageQualifierType);
         expect(q.key).toBe('language');
         expect(q.name).toBe('language');
         expect(q.allowContextList).toBe(true);
@@ -50,13 +50,13 @@ describe('LanguageQualifierType', () => {
 
     test('creates a new LanguageQualifierType with specified values', () => {
       expect(
-        TsRes.Qualifiers.QualifierTypes.LanguageQualifierType.create({
+        TsRes.QualifierTypes.LanguageQualifierType.create({
           name: 'lang',
           allowContextList: false,
           index: 10
         })
       ).toSucceedAndSatisfy((q) => {
-        expect(q).toBeInstanceOf(TsRes.Qualifiers.QualifierTypes.LanguageQualifierType);
+        expect(q).toBeInstanceOf(TsRes.QualifierTypes.LanguageQualifierType);
         expect(q.key).toBe('lang');
         expect(q.name).toBe('lang');
         expect(q.allowContextList).toBe(false);
@@ -66,7 +66,7 @@ describe('LanguageQualifierType', () => {
 
     test('fails if the name is not a valid qualifier type name', () => {
       expect(
-        TsRes.Qualifiers.QualifierTypes.LanguageQualifierType.create({
+        TsRes.QualifierTypes.LanguageQualifierType.create({
           name: 'not a valid name'
         })
       ).toFailWith(/not a valid qualifier type name/i);
@@ -74,10 +74,10 @@ describe('LanguageQualifierType', () => {
   });
 
   describe('isValidConditionValue', () => {
-    let qt: TsRes.Qualifiers.QualifierTypes.LanguageQualifierType;
+    let qt: TsRes.QualifierTypes.LanguageQualifierType;
 
     beforeEach(() => {
-      qt = TsRes.Qualifiers.QualifierTypes.LanguageQualifierType.create().getValueOrThrow();
+      qt = TsRes.QualifierTypes.LanguageQualifierType.create().getValueOrThrow();
     });
 
     test('returns true for well-formed BCP-47 tags', () => {

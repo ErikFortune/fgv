@@ -22,7 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../../index';
-import { QualifierType } from '../../../../packlets/qualifiers';
+import { QualifierType } from '../../../../packlets/qualifier-types';
 
 const validIdentifiers: string[] = [
   'abc',
@@ -43,7 +43,7 @@ const invalidIdentifiers: string[] = [
 describe('LiteralQualifierType', () => {
   describe('create static method', () => {
     test('creates a new LiteralQualifierType with defaults', () => {
-      expect(TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create()).toSucceedAndSatisfy((q) => {
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create()).toSucceedAndSatisfy((q) => {
         expect(q.key).toBe('literal');
         expect(q.name).toBe('literal');
         expect(q.allowContextList).toBe(true);
@@ -54,14 +54,14 @@ describe('LiteralQualifierType', () => {
     });
 
     test('creates a new LiteralQualifierType with specified values', () => {
-      const params: TsRes.Qualifiers.QualifierTypes.ILiteralQualifierTypeCreateParams = {
+      const params: TsRes.QualifierTypes.ILiteralQualifierTypeCreateParams = {
         name: 'test',
         allowContextList: false,
         caseSensitive: true,
         enumeratedValues: ['a', 'b', 'c'],
         index: 11
       };
-      expect(TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create(params)).toSucceedAndSatisfy((q) => {
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create(params)).toSucceedAndSatisfy((q) => {
         expect(q.key).toBe('test');
         expect(q.name).toBe('test');
         expect(q.allowContextList).toBe(false);
@@ -73,25 +73,25 @@ describe('LiteralQualifierType', () => {
 
     test('fails if the name is not a valid qualifier type name', () => {
       const name = 'not a valid name';
-      expect(TsRes.Qualifiers.QualifierTypes.QualifierType.isValidName(name)).toBe(false);
-      expect(TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({ name })).toFailWith(
+      expect(TsRes.QualifierTypes.QualifierType.isValidName(name)).toBe(false);
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create({ name })).toFailWith(
         /not a valid qualifier type name/i
       );
     });
 
     test('fails if the index is not a valid qualifier type index', () => {
       const index = -1;
-      expect(TsRes.Qualifiers.QualifierTypes.QualifierType.isValidIndex(index)).toBe(false);
-      expect(TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({ index })).toFailWith(
+      expect(TsRes.QualifierTypes.QualifierType.isValidIndex(index)).toBe(false);
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create({ index })).toFailWith(
         /not a valid qualifier type index/i
       );
     });
 
     test('fails if any enumerated values are invalid', () => {
-      const params: TsRes.Qualifiers.QualifierTypes.ILiteralQualifierTypeCreateParams = {
+      const params: TsRes.QualifierTypes.ILiteralQualifierTypeCreateParams = {
         enumeratedValues: ['a', 'b', '']
       };
-      expect(TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create(params)).toFailWith(
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create(params)).toFailWith(
         /not a valid literal condition/i
       );
     });
@@ -99,10 +99,10 @@ describe('LiteralQualifierType', () => {
 
   describe('isValidConditionValue', () => {
     describe('with no enumerated values', () => {
-      let qt: TsRes.Qualifiers.QualifierTypes.QualifierType;
+      let qt: TsRes.QualifierTypes.QualifierType;
 
       beforeAll(() => {
-        qt = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create().orThrow();
+        qt = TsRes.QualifierTypes.LiteralQualifierType.create().orThrow();
       });
 
       test('returns true for any identifier', () => {
@@ -119,11 +119,11 @@ describe('LiteralQualifierType', () => {
     });
 
     describe('with enumerated values', () => {
-      let qt: TsRes.Qualifiers.QualifierTypes.QualifierType;
+      let qt: TsRes.QualifierTypes.QualifierType;
       const enumeratedValues: string[] = ['a', 'b', 'c'];
 
       beforeAll(() => {
-        qt = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({ enumeratedValues }).orThrow();
+        qt = TsRes.QualifierTypes.LiteralQualifierType.create({ enumeratedValues }).orThrow();
       });
 
       test('returns true for any enumerated value (case-insensitive)', () => {
@@ -144,11 +144,11 @@ describe('LiteralQualifierType', () => {
     });
 
     describe('with case-sensitive enumerated values', () => {
-      let qt: TsRes.Qualifiers.QualifierTypes.QualifierType;
+      let qt: TsRes.QualifierTypes.QualifierType;
       const enumeratedValues: string[] = ['a', 'b', 'c'];
 
       beforeAll(() => {
-        qt = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({
+        qt = TsRes.QualifierTypes.LiteralQualifierType.create({
           enumeratedValues,
           caseSensitive: true
         }).orThrow();
@@ -173,10 +173,10 @@ describe('LiteralQualifierType', () => {
   });
 
   describe('validateCondition', () => {
-    let qt: TsRes.Qualifiers.QualifierTypes.QualifierType;
+    let qt: TsRes.QualifierTypes.QualifierType;
 
     beforeAll(() => {
-      qt = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create().orThrow();
+      qt = TsRes.QualifierTypes.LiteralQualifierType.create().orThrow();
     });
 
     test('succeeds for any valid condition value and default operator or matches', () => {
@@ -202,10 +202,10 @@ describe('LiteralQualifierType', () => {
 
   describe('isValidContextValue/validateContextValue', () => {
     describe('with allowContextList false', () => {
-      let qt: TsRes.Qualifiers.QualifierTypes.QualifierType;
+      let qt: TsRes.QualifierTypes.QualifierType;
 
       beforeAll(() => {
-        qt = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({
+        qt = TsRes.QualifierTypes.LiteralQualifierType.create({
           allowContextList: false
         }).orThrow();
       });
@@ -235,10 +235,10 @@ describe('LiteralQualifierType', () => {
     });
 
     describe('with allowContextList true', () => {
-      let qt: TsRes.Qualifiers.QualifierTypes.QualifierType;
+      let qt: TsRes.QualifierTypes.QualifierType;
 
       beforeAll(() => {
-        qt = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({
+        qt = TsRes.QualifierTypes.LiteralQualifierType.create({
           allowContextList: true
         }).orThrow();
       });
@@ -270,10 +270,10 @@ describe('LiteralQualifierType', () => {
   });
 
   describe('matches', () => {
-    let qt: TsRes.Qualifiers.QualifierTypes.QualifierType;
+    let qt: TsRes.QualifierTypes.QualifierType;
 
     beforeAll(() => {
-      qt = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create().orThrow();
+      qt = TsRes.QualifierTypes.LiteralQualifierType.create().orThrow();
     });
 
     test('returns PerfectMatch for matching values', () => {
@@ -290,7 +290,7 @@ describe('LiteralQualifierType', () => {
 
     describe('with case-sensitive matching', () => {
       beforeAll(() => {
-        qt = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({ caseSensitive: true }).orThrow();
+        qt = TsRes.QualifierTypes.LiteralQualifierType.create({ caseSensitive: true }).orThrow();
       });
 
       test('returns PerfectMatch for matching values', () => {
@@ -305,7 +305,7 @@ describe('LiteralQualifierType', () => {
 
     describe('with allowContextList true', () => {
       beforeAll(() => {
-        qt = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({
+        qt = TsRes.QualifierTypes.LiteralQualifierType.create({
           allowContextList: true
         }).orThrow();
       });
@@ -351,7 +351,7 @@ describe('LiteralQualifierType', () => {
 
     describe('with allowContextList false', () => {
       beforeAll(() => {
-        qt = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({
+        qt = TsRes.QualifierTypes.LiteralQualifierType.create({
           allowContextList: false
         }).orThrow();
       });
@@ -368,10 +368,10 @@ describe('LiteralQualifierType', () => {
   });
 
   describe('setIndex', () => {
-    let qt: TsRes.Qualifiers.QualifierTypes.QualifierType;
+    let qt: TsRes.QualifierTypes.QualifierType;
 
     beforeEach(() => {
-      qt = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create().getValueOrThrow();
+      qt = TsRes.QualifierTypes.LiteralQualifierType.create().getValueOrThrow();
     });
 
     test('sets the index if it is valid', () => {
@@ -396,25 +396,25 @@ describe('LiteralQualifierType', () => {
 
   describe('compare', () => {
     test('compares by index first', () => {
-      const qt1 = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({ index: 1 }).orThrow();
-      const qt2 = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({ index: 2 }).orThrow();
+      const qt1 = TsRes.QualifierTypes.LiteralQualifierType.create({ index: 1 }).orThrow();
+      const qt2 = TsRes.QualifierTypes.LiteralQualifierType.create({ index: 2 }).orThrow();
       expect(QualifierType.compare(qt1, qt2)).toBeLessThan(0);
       expect(QualifierType.compare(qt2, qt1)).toBeGreaterThan(0);
     });
 
     test('treats undefined index as less than defined index', () => {
-      const qt1 = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create().orThrow();
-      const qt2 = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({ index: 2 }).orThrow();
+      const qt1 = TsRes.QualifierTypes.LiteralQualifierType.create().orThrow();
+      const qt2 = TsRes.QualifierTypes.LiteralQualifierType.create({ index: 2 }).orThrow();
       expect(QualifierType.compare(qt1, qt2)).toBeLessThan(0);
       expect(QualifierType.compare(qt2, qt1)).toBeGreaterThan(0);
     });
 
     test('falls back to name if indexes are equal', () => {
-      const qt1 = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({
+      const qt1 = TsRes.QualifierTypes.LiteralQualifierType.create({
         name: 'abacus',
         index: 1
       }).orThrow();
-      const qt2 = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({
+      const qt2 = TsRes.QualifierTypes.LiteralQualifierType.create({
         name: 'xyzzy',
         index: 1
       }).orThrow();
@@ -423,11 +423,11 @@ describe('LiteralQualifierType', () => {
     });
 
     test('returns 0 for identical qualifier types', () => {
-      const qt1 = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({
+      const qt1 = TsRes.QualifierTypes.LiteralQualifierType.create({
         name: 'abacus',
         index: 1
       }).orThrow();
-      const qt2 = TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create({
+      const qt2 = TsRes.QualifierTypes.LiteralQualifierType.create({
         name: 'abacus',
         index: 1
       }).orThrow();

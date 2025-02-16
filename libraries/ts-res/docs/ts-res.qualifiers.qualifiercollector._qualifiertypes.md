@@ -4,7 +4,7 @@
 
 ## Qualifiers.QualifierCollector.\_qualifierTypes property
 
-The [qualifier types](./ts-res.qualifiers.qualifiertypes.qualifiertypecollector.md) that this collector uses.
+The [qualifier types](./ts-res.qualifiertypes.qualifiertypecollector.md) that this collector uses.
 
 **Signature:**
 

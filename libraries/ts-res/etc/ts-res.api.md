@@ -296,18 +296,18 @@ export { Convert }
 
 declare namespace Convert_2 {
     export {
-        qualifierDecl,
-        IQualifierDeclConvertContext,
-        validatedQualifierDecl,
-        IQualifierConvertContext,
-        qualifier
+        IQualifierTypeConvertContext,
+        qualifierType
     }
 }
 
 declare namespace Convert_3 {
     export {
-        IQualifierTypeConvertContext,
-        qualifierType
+        qualifierDecl,
+        IQualifierDeclConvertContext,
+        validatedQualifierDecl,
+        IQualifierConvertContext,
+        qualifier
     }
 }
 
@@ -936,9 +936,7 @@ const qualifierName: Converter<QualifierName, unknown>;
 
 declare namespace Qualifiers {
     export {
-        Convert_2 as Convert,
-        QualifierType,
-        QualifierTypes,
+        Convert_3 as Convert,
         Qualifier,
         IQualifierDecl,
         IValidatedQualifierDecl,
@@ -1044,7 +1042,7 @@ const qualifierTypeName: Converter<QualifierTypeName, unknown>;
 
 declare namespace QualifierTypes {
     export {
-        Convert_3 as Convert,
+        Convert_2 as Convert,
         IQualifierType,
         IQualifierTypeCreateParams,
         QualifierType,
@@ -1059,6 +1057,7 @@ declare namespace QualifierTypes {
         ReadOnlyQualifierTypeCollector
     }
 }
+export { QualifierTypes }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

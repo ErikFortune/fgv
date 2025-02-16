@@ -21,11 +21,9 @@
  */
 
 import * as Convert from './convert';
-import * as QualifierTypes from './qualifierTypes';
-import { QualifierType } from './qualifierTypes';
 
 export * from './qualifier';
 export * from './qualifierDecl';
 export * from './qualifierCollector';
 
-export { Convert, QualifierType, QualifierTypes };
+export { Convert };

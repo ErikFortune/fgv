@@ -84,12 +84,12 @@ Description
 
 </td><td>
 
-[ReadOnlyQualifierTypeCollector](./ts-res.qualifiers.qualifiertypes.readonlyqualifiertypecollector.md)
+[ReadOnlyQualifierTypeCollector](./ts-res.qualifiertypes.readonlyqualifiertypecollector.md)
 
 
 </td><td>
 
-The [qualifier types](./ts-res.qualifiers.qualifiertypes.qualifiertypecollector.md) that this collector uses.
+The [qualifier types](./ts-res.qualifiertypes.qualifiertypecollector.md) that this collector uses.
 
 
 </td></tr>

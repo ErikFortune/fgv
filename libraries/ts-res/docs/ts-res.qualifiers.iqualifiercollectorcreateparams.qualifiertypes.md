@@ -4,7 +4,7 @@
 
 ## Qualifiers.IQualifierCollectorCreateParams.qualifierTypes property
 
-The [qualifier types](./ts-res.qualifiers.qualifiertypes.qualifiertypecollector.md) used to create [qualifiers](./ts-res.qualifiers.qualifier.md) from [declarations](./ts-res.qualifiers.iqualifierdecl.md)<!-- -->.
+The [qualifier types](./ts-res.qualifiertypes.qualifiertypecollector.md) used to create [qualifiers](./ts-res.qualifiers.qualifier.md) from [declarations](./ts-res.qualifiers.iqualifierdecl.md)<!-- -->.
 
 **Signature:**
 

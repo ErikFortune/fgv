@@ -41,32 +41,6 @@ Collects [Qualifiers](./ts-res.qualifiers.qualifier.md) from [declarations](./ts
 </td></tr>
 </tbody></table>
 
-## Abstract Classes
-
-<table><thead><tr><th>
-
-Abstract Class
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[QualifierType](./ts-res.qualifiers.qualifiertype.md)
-
-
-</td><td>
-
-Abstract base class for qualifier types. Provides default implementations for the [IQualifierType](./ts-res.qualifiers.qualifiertypes.iqualifiertype.md) interface.
-
-
-</td></tr>
-</tbody></table>
-
 ## Interfaces
 
 <table><thead><tr><th>
@@ -131,15 +105,6 @@ Description
 <tbody><tr><td>
 
 [Convert](./ts-res.qualifiers.convert.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[QualifierTypes](./ts-res.qualifiers.qualifiertypes.md)
 
 
 </td><td>

@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+import * as QualifierTypes from './packlets/qualifier-types';
 import * as Qualifiers from './packlets/qualifiers';
 import * as Conditions from './packlets/conditions';
 import * as ResourceJson from './packlets/resource-json';
@@ -27,4 +28,4 @@ import * as Resources from './packlets/resources';
 import * as Decisions from './packlets/decisions';
 
 export * from './packlets/common';
-export { Qualifiers, Conditions, ResourceJson, Resources, Decisions };
+export { QualifierTypes, Qualifiers, Conditions, ResourceJson, Resources, Decisions };

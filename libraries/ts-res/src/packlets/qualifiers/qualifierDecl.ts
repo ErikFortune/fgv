@@ -21,7 +21,7 @@
  */
 
 import { ConditionPriority, QualifierIndex, QualifierName } from '../common';
-import { QualifierType } from './qualifierTypes';
+import { QualifierType } from '../qualifier-types';
 
 /**
  * Simple declaration for a {@link Qualifiers.Qualifier | Qualifier}.
@@ -44,7 +44,7 @@ export interface IValidatedQualifierDecl {
   name: QualifierName;
 
   /**
-   * The {@link Qualifiers.QualifierTypes.QualifierType | type} of the qualifier.
+   * The {@link QualifierTypes.QualifierType | type} of the qualifier.
    */
   type: QualifierType;
 

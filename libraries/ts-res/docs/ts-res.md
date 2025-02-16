@@ -55,6 +55,15 @@ Description
 </td></tr>
 <tr><td>
 
+[QualifierTypes](./ts-res.qualifiertypes.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [ResourceJson](./ts-res.resourcejson.md)
 
 

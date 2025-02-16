@@ -26,7 +26,7 @@ import { IQualifierDecl } from './qualifierDecl';
 import { QualifierName } from '../common';
 import { Qualifier } from './qualifier';
 import { IQualifierDeclConvertContext, qualifierDecl, validatedQualifierDecl } from './convert';
-import { ReadOnlyQualifierTypeCollector } from './qualifierTypes';
+import { ReadOnlyQualifierTypeCollector } from '../qualifier-types';
 
 /**
  * Parameters for creating a new {@link Qualifiers.QualifierCollector}.
@@ -34,7 +34,7 @@ import { ReadOnlyQualifierTypeCollector } from './qualifierTypes';
  */
 export interface IQualifierCollectorCreateParams {
   /**
-   * The {@link Qualifiers.QualifierTypes.QualifierTypeCollector | qualifier types} used to
+   * The {@link QualifierTypes.QualifierTypeCollector | qualifier types} used to
    * create {@link Qualifiers.Qualifier | qualifiers} from {@link Qualifiers.IQualifierDecl | declarations}.
    */
   qualifierTypes: ReadOnlyQualifierTypeCollector;
@@ -54,7 +54,7 @@ export interface IQualifierCollectorCreateParams {
  */
 export class QualifierCollector extends ValidatingConvertingCollector<Qualifier, IQualifierDecl> {
   /**
-   * The {@link Qualifiers.QualifierTypes.QualifierTypeCollector | qualifier types} that this collector uses.
+   * The {@link QualifierTypes.QualifierTypeCollector | qualifier types} that this collector uses.
    */
   protected _qualifierTypes: ReadOnlyQualifierTypeCollector;
 

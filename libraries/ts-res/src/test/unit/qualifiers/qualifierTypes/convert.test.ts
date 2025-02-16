@@ -24,60 +24,58 @@ import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../../index';
 
 describe('qualifierType converter', () => {
-  let instantiatedTypes: TsRes.Qualifiers.QualifierTypes.QualifierType[];
-  let qualifierTypes: TsRes.Qualifiers.QualifierTypes.QualifierTypeCollector;
+  let instantiatedTypes: TsRes.QualifierTypes.QualifierType[];
+  let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
 
   beforeEach(() => {
     instantiatedTypes = [
-      TsRes.Qualifiers.QualifierTypes.LanguageQualifierType.create().orThrow(),
-      TsRes.Qualifiers.QualifierTypes.TerritoryQualifierType.create().orThrow(),
-      TsRes.Qualifiers.QualifierTypes.LiteralQualifierType.create().orThrow()
+      TsRes.QualifierTypes.LanguageQualifierType.create().orThrow(),
+      TsRes.QualifierTypes.TerritoryQualifierType.create().orThrow(),
+      TsRes.QualifierTypes.LiteralQualifierType.create().orThrow()
     ];
 
-    qualifierTypes = TsRes.Qualifiers.QualifierTypes.QualifierTypeCollector.create({
+    qualifierTypes = TsRes.QualifierTypes.QualifierTypeCollector.create({
       qualifierTypes: instantiatedTypes
     }).orThrow();
   });
 
   test('converts a string to the like named qualifier type', () => {
     for (const qt of instantiatedTypes) {
-      expect(
-        TsRes.Qualifiers.QualifierTypes.Convert.qualifierType.convert(qt.key, { qualifierTypes })
-      ).toSucceedWith(qt);
+      expect(TsRes.QualifierTypes.Convert.qualifierType.convert(qt.key, { qualifierTypes })).toSucceedWith(
+        qt
+      );
     }
   });
 
   test('converts a number to the qualifier type at that index', () => {
     for (let i = 0; i < instantiatedTypes.length; i++) {
-      expect(
-        TsRes.Qualifiers.QualifierTypes.Convert.qualifierType.convert(i, { qualifierTypes })
-      ).toSucceedWith(instantiatedTypes[i]);
+      expect(TsRes.QualifierTypes.Convert.qualifierType.convert(i, { qualifierTypes })).toSucceedWith(
+        instantiatedTypes[i]
+      );
     }
   });
 
   test('fails if a string references an unknown qualifier type', () => {
-    expect(
-      TsRes.Qualifiers.QualifierTypes.Convert.qualifierType.convert('unknown', { qualifierTypes })
-    ).toFailWith(/unknown/);
+    expect(TsRes.QualifierTypes.Convert.qualifierType.convert('unknown', { qualifierTypes })).toFailWith(
+      /unknown/
+    );
   });
 
   test('fails if a number is out of range', () => {
     expect(
-      TsRes.Qualifiers.QualifierTypes.Convert.qualifierType.convert(instantiatedTypes.length * 2, {
+      TsRes.QualifierTypes.Convert.qualifierType.convert(instantiatedTypes.length * 2, {
         qualifierTypes
       })
     ).toFailWith(/out of range/);
   });
 
   test('fails if the input is not a string or number', () => {
-    expect(
-      TsRes.Qualifiers.QualifierTypes.Convert.qualifierType.convert(true, { qualifierTypes })
-    ).toFailWith(/requires a string or a number/);
+    expect(TsRes.QualifierTypes.Convert.qualifierType.convert(true, { qualifierTypes })).toFailWith(
+      /requires a string or number/
+    );
   });
 
   test('fails if no context is supplied', () => {
-    expect(TsRes.Qualifiers.QualifierTypes.Convert.qualifierType.convert('literal')).toFailWith(
-      /requires a context/
-    );
+    expect(TsRes.QualifierTypes.Convert.qualifierType.convert('literal')).toFailWith(/requires a context/);
   });
 });

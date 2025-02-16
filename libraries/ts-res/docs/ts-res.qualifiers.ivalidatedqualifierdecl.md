@@ -102,12 +102,12 @@ The name of the qualifier.
 
 </td><td>
 
-[QualifierType](./ts-res.qualifiers.qualifiertype.md)
+[QualifierType](./ts-res.qualifiertypes.qualifiertype.md)
 
 
 </td><td>
 
-The [type](./ts-res.qualifiers.qualifiertypes.qualifiertype.md) of the qualifier.
+The [type](./ts-res.qualifiertypes.qualifiertype.md) of the qualifier.
 
 
 </td></tr>

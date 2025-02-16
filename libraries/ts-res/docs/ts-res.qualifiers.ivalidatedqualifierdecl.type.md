@@ -4,7 +4,7 @@
 
 ## Qualifiers.IValidatedQualifierDecl.type property
 
-The [type](./ts-res.qualifiers.qualifiertypes.qualifiertype.md) of the qualifier.
+The [type](./ts-res.qualifiertypes.qualifiertype.md) of the qualifier.
 
 **Signature:**
 

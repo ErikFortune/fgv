@@ -64,12 +64,12 @@ _(Optional)_ Optional list of [declarations](./ts-res.qualifiers.iqualifierdecl.
 
 </td><td>
 
-[ReadOnlyQualifierTypeCollector](./ts-res.qualifiers.qualifiertypes.readonlyqualifiertypecollector.md)
+[ReadOnlyQualifierTypeCollector](./ts-res.qualifiertypes.readonlyqualifiertypecollector.md)
 
 
 </td><td>
 
-The [qualifier types](./ts-res.qualifiers.qualifiertypes.qualifiertypecollector.md) used to create [qualifiers](./ts-res.qualifiers.qualifier.md) from [declarations](./ts-res.qualifiers.iqualifierdecl.md)<!-- -->.
+The [qualifier types](./ts-res.qualifiertypes.qualifiertypecollector.md) used to create [qualifiers](./ts-res.qualifiers.qualifier.md) from [declarations](./ts-res.qualifiers.iqualifierdecl.md)<!-- -->.
 
 
 </td></tr>
