@@ -63,7 +63,7 @@ export class QualifierTypeCollector extends ValidatingConvertingCollector<Qualif
     });
 
     params?.qualifierTypes?.forEach((qt) => {
-      this.getOrAdd(qt.name, qt);
+      this.getOrAdd(qt);
     });
   }
 

@@ -419,7 +419,7 @@ describe('LiteralQualifierType', () => {
         index: 1
       }).orThrow();
       expect(QualifierType.compare(qt1, qt2)).toBeLessThan(0);
-      expect(QualifierType.compare(qt1, qt2)).toBeGreaterThan(0);
+      expect(QualifierType.compare(qt2, qt1)).toBeGreaterThan(0);
     });
 
     test('returns 0 for identical qualifier types', () => {
