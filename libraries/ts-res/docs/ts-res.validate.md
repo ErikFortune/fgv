@@ -228,7 +228,7 @@ Checks if the given name is a valid resource type name.
 </td></tr>
 <tr><td>
 
-[joinId(base, names)](./ts-res.validate.joinid.md)
+[joinResourceId(base, names)](./ts-res.validate.joinresourceid.md)
 
 
 </td><td>
@@ -239,7 +239,7 @@ Joins a base [resource ID](./ts-res.resourceid.md) or [resource name](./ts-res.r
 </td></tr>
 <tr><td>
 
-[splitId(id)](./ts-res.validate.splitid.md)
+[splitResourceId(id)](./ts-res.validate.splitresourceid.md)
 
 
 </td><td>
