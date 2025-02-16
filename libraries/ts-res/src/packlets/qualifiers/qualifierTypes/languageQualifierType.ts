@@ -68,7 +68,7 @@ export class LanguageQualifierType extends QualifierType {
     allowContextList = allowContextList !== false;
     super({
       name: name ?? 'language',
-      allowContextList: allowContextList === undefined ? true : allowContextList,
+      allowContextList,
       index: index !== undefined ? Convert.qualifierTypeIndex.convert(index).orThrow() : index
     });
   }

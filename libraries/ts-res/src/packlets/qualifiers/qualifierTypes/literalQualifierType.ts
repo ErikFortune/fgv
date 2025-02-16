@@ -97,9 +97,10 @@ export class LiteralQualifierType extends QualifierType {
     enumeratedValues,
     index
   }: ILiteralQualifierTypeCreateParams) {
+    allowContextList = allowContextList !== false;
     super({
       name: name ?? 'literal',
-      allowContextList: allowContextList === undefined ? true : allowContextList,
+      allowContextList,
       index: index !== undefined ? Convert.qualifierTypeIndex.convert(index).orThrow() : undefined
     });
     this.caseSensitive = caseSensitive === true;
