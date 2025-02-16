@@ -132,7 +132,7 @@ export function toResourceIndex(index: number): Result<ResourceIndex> {
  * `Failure` with an error message if not.
  * @public
  */
-export function splitId(id: ResourceId): Result<ResourceName[]> {
+export function splitResourceId(id: ResourceId): Result<ResourceName[]> {
   return mapResults(id.split('.').map(toResourceName));
 }
 
@@ -146,7 +146,10 @@ export function splitId(id: ResourceId): Result<ResourceName[]> {
  * if not.
  * @public
  */
-export function joinId(base: ResourceName | ResourceId, ...names: ResourceName[]): Result<ResourceId> {
+export function joinResourceId(
+  base: ResourceName | ResourceId,
+  ...names: ResourceName[]
+): Result<ResourceId> {
   return toResourceId([base, ...names].join('.'));
 }
 

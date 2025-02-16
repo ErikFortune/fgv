@@ -799,7 +799,7 @@ interface IValidatedQualifierDecl {
 }
 
 // @public
-function joinId(base: ResourceName | ResourceId, ...names: ResourceName[]): Result<ResourceId>;
+function joinResourceId(base: ResourceName | ResourceId, ...names: ResourceName[]): Result<ResourceId>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1344,7 +1344,7 @@ const resourceValueMergeMethod: Converter<ResourceValueMergeMethod, ResourceValu
 const segmentedIdentifier: RegExp;
 
 // @public
-function splitId(id: ResourceId): Result<ResourceName[]>;
+function splitResourceId(id: ResourceId): Result<ResourceName[]>;
 
 // @public
 class TerritoryQualifierType extends QualifierType {
@@ -1462,8 +1462,8 @@ declare namespace Validate {
         toResourceName,
         toResourceId,
         toResourceIndex,
-        splitId,
-        joinId,
+        splitResourceId,
+        joinResourceId,
         toResourceTypeName,
         toResourceTypeIndex
     }
