@@ -99,4 +99,18 @@ Creates a new instance of a [language qualifier type](./ts-res.qualifiers.qualif
 
 
 </td></tr>
+<tr><td>
+
+[isValidConditionValue(value)](./ts-res.qualifiers.qualifiertypes.languagequalifiertype.isvalidconditionvalue.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Validates a condition value for this qualifier type.
+
+
+</td></tr>
 </tbody></table>

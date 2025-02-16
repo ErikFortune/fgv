@@ -187,7 +187,7 @@ describe('LiteralQualifierType', () => {
 
     test('fails for any invalid condition value', () => {
       invalidIdentifiers.forEach((id) => {
-        expect(qt.validateCondition(id)).toFailWith(/invalid literal condition/i);
+        expect(qt.validateCondition(id)).toFailWith(/invalid condition value/i);
       });
     });
   });

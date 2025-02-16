@@ -25,6 +25,7 @@ import {
   ConditionOperator,
   Convert,
   NoMatch,
+  PerfectMatch,
   QualifierConditionValue,
   QualifierContextValue,
   QualifierMatchScore,
@@ -183,9 +184,7 @@ export abstract class QualifierType implements IQualifierType {
   /**
    * {@inheritdoc Qualifiers.QualifierTypes.IQualifierType.isValidConditionValue}
    */
-  public isValidConditionValue(value: string): value is QualifierConditionValue {
-    return true;
-  }
+  public abstract isValidConditionValue(value: string): value is QualifierConditionValue;
 
   /**
    * {@inheritdoc Qualifiers.QualifierTypes.IQualifierType.isValidContextValue}
@@ -204,8 +203,9 @@ export abstract class QualifierType implements IQualifierType {
    * {@inheritdoc Qualifiers.QualifierTypes.IQualifierType.validateCondition}
    */
   public validateCondition(value: string, operator?: ConditionOperator): Result<QualifierConditionValue> {
+    operator = operator ?? 'matches';
     if (operator !== 'matches') {
-      return fail(`${operator}: unsupported condition operator`);
+      return fail(`${operator}: invalid condition operator`);
     } else if (!this.isValidConditionValue(value)) {
       return fail(`${value}: invalid condition value for qualifierType ${this.name}`);
     }
@@ -304,18 +304,18 @@ export abstract class QualifierType implements IQualifierType {
     context: QualifierContextValue[],
     operator: ConditionOperator
   ): QualifierMatchScore {
+    const scorePerPosition = 1 / context.length;
+    let baseScore = PerfectMatch - scorePerPosition;
+
     for (let i = 0; i < context.length; i++) {
       const score = this._matchOne(condition, context[i], operator);
       if (score > NoMatch) {
-        if (i === 0) {
-          return score;
-        }
-        const scorePerPosition = 1 / context.length;
-        const adjusted = 1.0 - scorePerPosition * i + score;
+        const adjusted = baseScore + scorePerPosition * score;
         if (Validate.isValidQualifierMatchScore(adjusted)) {
           return adjusted;
         }
       }
+      baseScore -= scorePerPosition;
     }
     return NoMatch;
   }

@@ -68,8 +68,8 @@ export class LanguageQualifierType extends QualifierType {
     allowContextList = allowContextList !== false;
     super({
       name: name ?? 'language',
-      allowContextList,
-      index: Convert.qualifierTypeIndex.convert(index).orThrow()
+      allowContextList: allowContextList === undefined ? true : allowContextList,
+      index: index !== undefined ? Convert.qualifierTypeIndex.convert(index).orThrow() : index
     });
   }
 
@@ -82,6 +82,13 @@ export class LanguageQualifierType extends QualifierType {
    */
   public static create(params?: ILanguageQualifierTypeCreateParams): Result<LanguageQualifierType> {
     return captureResult(() => new LanguageQualifierType(params ?? {}));
+  }
+
+  /**
+   * {@inheritdoc Qualifiers.QualifierTypes.IQualifierType.isValidConditionValue}
+   */
+  public isValidConditionValue(value: string): value is QualifierConditionValue {
+    return Bcp47.tag(value).isSuccess();
   }
 
   /**

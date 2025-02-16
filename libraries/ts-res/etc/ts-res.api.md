@@ -811,6 +811,10 @@ class LanguageQualifierType extends QualifierType {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: ILanguageQualifierTypeCreateParams): Result<LanguageQualifierType>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    isValidConditionValue(value: string): value is QualifierConditionValue;
     protected _matchOne(condition: QualifierConditionValue, context: QualifierContextValue, operator: ConditionOperator): QualifierMatchScore;
 }
 
@@ -952,7 +956,7 @@ abstract class QualifierType implements IQualifierType {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    isValidConditionValue(value: string): value is QualifierConditionValue;
+    abstract isValidConditionValue(value: string): value is QualifierConditionValue;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)

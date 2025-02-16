@@ -272,6 +272,8 @@ Compares two qualifier types by index.
 
 </td><td>
 
+`abstract`
+
 
 </td><td>
 

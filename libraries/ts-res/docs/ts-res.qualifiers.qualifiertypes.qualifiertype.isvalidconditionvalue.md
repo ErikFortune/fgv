@@ -9,7 +9,7 @@ Validates a condition value for this qualifier type.
 **Signature:**
 
 ```typescript
-isValidConditionValue(value: string): value is QualifierConditionValue;
+abstract isValidConditionValue(value: string): value is QualifierConditionValue;
 ```
 
 ## Parameters
