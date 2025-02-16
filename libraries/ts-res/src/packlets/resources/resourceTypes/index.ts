@@ -21,4 +21,4 @@
  */
 
 export * from './resourceType';
-export * from './resourceTypeMap';
+export * from './resourceTypeCollector';

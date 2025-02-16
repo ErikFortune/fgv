@@ -23,7 +23,7 @@
 import { MessageAggregator, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { ResourceId } from '../common';
 import { ResourceCandidate } from './resourceCandidate';
-import { IResourceType } from './resourceTypes';
+import { ResourceType } from './resourceTypes';
 
 /**
  * Parameters used to create a {@link Resources.Resource | Resource} object.
@@ -35,10 +35,10 @@ export interface IResourceCreateParams {
    */
   id: ResourceId;
   /**
-   * Optional {@link Resources.ResourceTypes.IResourceType | type} of the resource. If not specified, the type will be inferred
+   * Optional {@link Resources.ResourceType | type} of the resource. If not specified, the type will be inferred
    * from the candidates.
    */
-  type?: IResourceType;
+  type?: ResourceType;
   /**
    * Array of {@link Resources.ResourceCandidate | candidates} for the resource.
    */
@@ -56,9 +56,9 @@ export class Resource {
    */
   public readonly id: ResourceId;
   /**
-   * The {@link Resources.ResourceTypes.IResourceType | type} of the resource.
+   * The {@link Resources.ResourceType | type} of the resource.
    */
-  public readonly type: IResourceType;
+  public readonly type: ResourceType;
   /**
    * The array of {@link Resources.ResourceCandidate | candidates} for the resource.
    */
@@ -74,7 +74,7 @@ export class Resource {
     this.type = ResourceCandidate.validateResourceTypes(params.candidates, params.type)
       .onSuccess((t) => {
         if (t === undefined) {
-          return fail<IResourceType>(`${params.id}: no type specified and no candidates with types.`);
+          return fail<ResourceType>(`${params.id}: no type specified and no candidates with types.`);
         }
         return succeed(t);
       })

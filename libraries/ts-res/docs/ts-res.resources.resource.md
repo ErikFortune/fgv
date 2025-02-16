@@ -125,12 +125,12 @@ The unique [id](./ts-res.resourceid.md) of the resource.
 
 </td><td>
 
-[IResourceType](./ts-res.resources.resourcetypes.iresourcetype.md)
+[ResourceType](./ts-res.resources.resourcetype.md)
 
 
 </td><td>
 
-The [type](./ts-res.resources.resourcetypes.iresourcetype.md) of the resource.
+The [type](./ts-res.resources.resourcetype.md) of the resource.
 
 
 </td></tr>

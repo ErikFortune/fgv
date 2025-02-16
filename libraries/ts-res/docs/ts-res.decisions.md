@@ -154,3 +154,29 @@ Parameters used to create a new [Decision](./ts-res.decisions.decision.md)<!-- -
 
 </td></tr>
 </tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ReadOnlyAbstractDecisionCollector](./ts-res.decisions.readonlyabstractdecisioncollector.md)
+
+
+</td><td>
+
+A read-only [AbstractDecisionCollector](./ts-res.decisions.abstractdecisioncollector.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>

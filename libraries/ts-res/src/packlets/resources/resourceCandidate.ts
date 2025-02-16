@@ -25,7 +25,7 @@ import { ResourceId, ResourceValueMergeMethod } from '../common';
 import { Condition, ConditionSet, Convert as ConditionsConvert } from '../conditions';
 import { ReadOnlyQualifierCollector } from '../qualifiers';
 import * as ResourceJson from '../resource-json';
-import { IResourceType, ResourceTypeCollector } from './resourceTypes';
+import { ResourceType, ResourceTypeCollector } from './resourceTypes';
 import { captureResult, MessageAggregator, Normalizer, Result, succeed } from '@fgv/ts-utils';
 
 /**
@@ -73,14 +73,14 @@ export class ResourceCandidate {
   public readonly mergeMethod: ResourceValueMergeMethod;
 
   /**
-   * The {@link Resources.ResourceTypes.IResourceType | resource type} for the resource to which
+   * The {@link Resources.ResourceType | resource type} for the resource to which
    * this candidate belongs.
    */
-  public get resourceType(): IResourceType | undefined {
+  public get resourceType(): ResourceType | undefined {
     return this._resourceType;
   }
 
-  private _resourceType: IResourceType | undefined;
+  private _resourceType: ResourceType | undefined;
 
   /**
    * Constructor for a {@link Resources.ResourceCandidate | ResourceCandidate} object.
@@ -119,7 +119,7 @@ export class ResourceCandidate {
   }
 
   /**
-   * Extracts the {@link Resources.ResourceTypes.IResourceType | resource type} from a list of {@link Resources.ResourceCandidate | resource candidates},
+   * Extracts the {@link Resources.ResourceType | resource type} from a list of {@link Resources.ResourceCandidate | resource candidates},
    * if present.
    * @param candidates - The list of candidates from which to extract the resource type.
    * @returns `Success` with the resource type if successful, `Success` with `undefined` if none of the candidates
@@ -128,16 +128,16 @@ export class ResourceCandidate {
    */
   public static validateResourceTypes(
     candidates: ReadonlyArray<ResourceCandidate>,
-    expectedType?: IResourceType
-  ): Result<IResourceType | undefined> {
+    expectedType?: ResourceType
+  ): Result<ResourceType | undefined> {
     const errors = new MessageAggregator();
-    let selectedType: IResourceType | undefined = expectedType;
+    let selectedType: ResourceType | undefined = expectedType;
     for (const candidate of candidates) {
       if (selectedType === undefined) {
         selectedType = candidate.resourceType;
       } else if (candidate.resourceType && selectedType !== candidate.resourceType) {
         errors.addMessage(
-          `${candidate.id}: resource type mismatch (${selectedType.name} != ${candidate.resourceType?.name})`
+          `${candidate.id}: resource type mismatch (${selectedType.key} != ${candidate.resourceType?.key})`
         );
       }
     }

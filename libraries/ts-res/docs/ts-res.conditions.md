@@ -183,12 +183,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IReadOnlyConditionCollector](./ts-res.conditions.ireadonlyconditioncollector.md)
+[ReadOnlyConditionCollector](./ts-res.conditions.readonlyconditioncollector.md)
 
 
 </td><td>
 
 Type alias for a read-only [ConditionCollector](./ts-res.conditions.conditioncollector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ReadOnlyConditionSetCollector](./ts-res.conditions.readonlyconditionsetcollector.md)
+
+
+</td><td>
+
+A read-only [ConditionSetCollector](./ts-res.conditions.conditionsetcollector.md)<!-- -->.
 
 
 </td></tr>

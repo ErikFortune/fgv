@@ -4,12 +4,12 @@
 
 ## Resources.ResourceCandidate.validateResourceTypes() method
 
-Extracts the [resource type](./ts-res.resources.resourcetypes.iresourcetype.md) from a list of [resource candidates](./ts-res.resources.resourcecandidate.md)<!-- -->, if present.
+Extracts the [resource type](./ts-res.resources.resourcetype.md) from a list of [resource candidates](./ts-res.resources.resourcecandidate.md)<!-- -->, if present.
 
 **Signature:**
 
 ```typescript
-static validateResourceTypes(candidates: ReadonlyArray<ResourceCandidate>, expectedType?: IResourceType): Result<IResourceType | undefined>;
+static validateResourceTypes(candidates: ReadonlyArray<ResourceCandidate>, expectedType?: ResourceType): Result<ResourceType | undefined>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ expectedType
 
 </td><td>
 
-[IResourceType](./ts-res.resources.resourcetypes.iresourcetype.md)
+[ResourceType](./ts-res.resources.resourcetype.md)
 
 
 </td><td>
@@ -65,7 +65,7 @@ _(Optional)_
 </tbody></table>
 **Returns:**
 
-Result&lt;[IResourceType](./ts-res.resources.resourcetypes.iresourcetype.md) \| undefined&gt;
+Result&lt;[ResourceType](./ts-res.resources.resourcetype.md) \| undefined&gt;
 
 `Success` with the resource type if successful, `Success` with `undefined` if none of the candidates specify a resource tap, and `Failure` with an error message if clients specify conflicting resource types.
 

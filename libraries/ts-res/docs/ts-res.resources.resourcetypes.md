@@ -4,11 +4,11 @@
 
 ## Resources.ResourceTypes namespace
 
-## Interfaces
+## Classes
 
 <table><thead><tr><th>
 
-Interface
+Class
 
 
 </th><th>
@@ -19,12 +19,38 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IResourceType](./ts-res.resources.resourcetypes.iresourcetype.md)
+[ResourceTypeCollector](./ts-res.resources.resourcetypes.resourcetypecollector.md)
 
 
 </td><td>
 
-Interface describing a single resource type, which is responsible for validating and converting JSON values into the appropriate strongly-typed resource value.
+Map [resource type names](./ts-res.resourcetypename.md) to [resource types](./ts-res.resources.resourcetype.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
+
+## Abstract Classes
+
+<table><thead><tr><th>
+
+Abstract Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ResourceType](./ts-res.resources.resourcetypes.resourcetype.md)
+
+
+</td><td>
+
+Abstract base class for resource types which are responsible for validating and converting JSON values into the appropriate strongly-typed resource value.
 
 
 </td></tr>
@@ -45,12 +71,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[ResourceTypeMap](./ts-res.resources.resourcetypes.resourcetypemap.md)
+[ReadOnlyResourceTypeCollector](./ts-res.resources.resourcetypes.readonlyresourcetypecollector.md)
 
 
 </td><td>
 
-Map [resource type names](./ts-res.resourcetypename.md) to [resource types](./ts-res.resources.resourcetypes.iresourcetype.md)<!-- -->.
+A read-only version of [ResourceTypeCollector](./ts-res.resources.resourcetypes.resourcetypecollector.md)<!-- -->.
 
 
 </td></tr>

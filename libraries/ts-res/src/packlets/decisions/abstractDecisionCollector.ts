@@ -66,3 +66,9 @@ export class AbstractDecisionCollector extends ValidatingCollector<AbstractDecis
     return Array.isArray(from) && from.every((e) => e instanceof ConditionSet);
   }
 }
+
+/**
+ * A read-only {@link Decisions.AbstractDecisionCollector | AbstractDecisionCollector}.
+ * @public
+ */
+export type ReadOnlyAbstractDecisionCollector = Collections.IReadOnlyValidatingCollector<AbstractDecision>;

@@ -83,12 +83,12 @@ The id of the resource.
 
 </td><td>
 
-[IResourceType](./ts-res.resources.resourcetypes.iresourcetype.md)
+[ResourceType](./ts-res.resources.resourcetype.md)
 
 
 </td><td>
 
-_(Optional)_ Optional [type](./ts-res.resources.resourcetypes.iresourcetype.md) of the resource. If not specified, the type will be inferred from the candidates.
+_(Optional)_ Optional [type](./ts-res.resources.resourcetype.md) of the resource. If not specified, the type will be inferred from the candidates.
 
 
 </td></tr>

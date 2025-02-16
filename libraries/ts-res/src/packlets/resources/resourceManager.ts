@@ -20,41 +20,187 @@
  * SOFTWARE.
  */
 
-import { captureResult, Result } from '@fgv/ts-utils';
-import { ResourceId } from '../common';
+import {
+  captureResult,
+  Collections,
+  DetailedResult,
+  failWithDetail,
+  IReadOnlyResultMap,
+  MessageAggregator,
+  Result,
+  ResultMap,
+  succeed,
+  succeedWithDetail
+} from '@fgv/ts-utils';
+import {
+  ConditionCollector,
+  ConditionSetCollector,
+  ReadOnlyConditionCollector,
+  ReadOnlyConditionSetCollector
+} from '../conditions';
+import { AbstractDecisionCollector, ReadOnlyAbstractDecisionCollector } from '../decisions';
 import { ReadOnlyQualifierCollector } from '../qualifiers';
+import { ReadOnlyResourceTypeCollector } from './resourceTypes';
+import { ResourceId } from '../common';
+import { ResourceBuilder, ResourceBuilderResultDetail } from './resourceBuilder';
 import { Resource } from './resource';
-import { ResourceTypeCollector } from './resourceTypes';
+import { ResourceCandidate } from './resourceCandidate';
 
 /**
- * Parameters for creating a {@link ResourceManager | ResourceManager}.
+ * Interface for parameters to the {@link Resources.ResourceManager.create | ResourceManager create method}.
  * @public
  */
 export interface IResourceManagerCreateParams {
   qualifiers: ReadOnlyQualifierCollector;
-  resourceTypes: ResourceTypeCollector;
+  resourceTypes: ReadOnlyResourceTypeCollector;
 }
 
 /**
- * Class representing a map of resources.
+ * Error details that can be returned by a {@link Resources.ResourceManager | ResourceManager}.
+ * @public
+ */
+export type ResourceManagerResultDetail = Collections.ResultMapResultDetail | ResourceBuilderResultDetail;
+
+/**
+ * Represents a manager for a collection of {@link Resources.Resource | resources}.  Collects
+ * {@link Resources.ResourceCandidate | candidates} for each resource into a
+ * {@link Resources.ResourceBuilder | ResourceBuilder} per resource, validates them against each other,
+ * and builds a collection of {@link Resources.Resource | resources} once all candidates are collected.
  * @public
  */
 export class ResourceManager {
   public readonly qualifiers: ReadOnlyQualifierCollector;
-  public readonly resourceTypes: ResourceTypeCollector;
-  public get resources(): ReadonlyMap<ResourceId, Resource> {
+  public readonly resourceTypes: ReadOnlyResourceTypeCollector;
+
+  protected readonly _conditions: ConditionCollector;
+  protected readonly _conditionSets: ConditionSetCollector;
+  protected readonly _decisions: AbstractDecisionCollector;
+  protected readonly _resources: ResultMap<ResourceId, ResourceBuilder>;
+  protected readonly _builtResources: ResultMap<ResourceId, Resource>;
+  protected _built: boolean;
+
+  /**
+   * A {@link Conditions.ConditionCollector | ConditionCollector} which
+   * contains the {@link Conditions.Condition | conditions} used so far by
+   * the {@link Resources.ResourceCandidate | resource candidates} in this manager.
+   */
+  public get conditions(): ReadOnlyConditionCollector {
+    return this._conditions;
+  }
+
+  /**
+   * A {@link Conditions.ConditionSetCollector | ConditionSetCollector} which
+   * contains the {@link Conditions.ConditionSet | condition sets} used so far by
+   * the {@link Resources.ResourceCandidate | resource candidates} in this manager.
+   */
+  public get conditionSets(): ReadOnlyConditionSetCollector {
+    return this._conditionSets;
+  }
+
+  /**
+   * A {@link Decisions.AbstractDecisionCollector | AbstractDecisionCollector} which
+   * contains the {@link Decisions.Decision | abstract decisions} used so far by
+   * the {@link Resources.ResourceCandidate | resource candidates} in this manager.
+   */
+  public get decisions(): ReadOnlyAbstractDecisionCollector {
+    return this._decisions;
+  }
+
+  /**
+   * A read-only map of {@link Resources.ResourceBuilder | resource builders} used by the manager.
+   */
+  public get resources(): IReadOnlyResultMap<ResourceId, ResourceBuilder> {
     return this._resources;
   }
 
-  private readonly _resources: Map<ResourceId, Resource>;
+  /**
+   * The number of {@link Resources.Resource | resources} contained by the manager.
+   */
+  public get size(): number {
+    return this._resources.size;
+  }
 
+  /**
+   * Constructor for a {@link Resources.ResourceManager | ResourceManager} object.
+   * @param params - Parameters to create a new {@link Resources.ResourceManager | ResourceManager}.
+   * @public
+   */
   protected constructor(params: IResourceManagerCreateParams) {
     this.qualifiers = params.qualifiers;
     this.resourceTypes = params.resourceTypes;
-    this._resources = new Map<ResourceId, Resource>();
+    this._conditions = ConditionCollector.create({ qualifiers: params.qualifiers }).orThrow();
+    this._conditionSets = ConditionSetCollector.create({ conditions: this._conditions }).orThrow();
+    this._decisions = AbstractDecisionCollector.create().orThrow();
+    this._resources = new ResultMap();
+    this._builtResources = new ResultMap();
+    this._built = false;
   }
 
+  /**
+   * Creates a new {@link Resources.ResourceManager | ResourceManager} object.
+   * @param params - Parameters to create a new {@link Resources.ResourceManager | ResourceManager}.
+   * @returns `Success` with the new {@link Resources.ResourceManager | ResourceManager} object if successful,
+   * or `Failure` with an error message if not.
+   * @public
+   */
   public static create(params: IResourceManagerCreateParams): Result<ResourceManager> {
     return captureResult(() => new ResourceManager(params));
+  }
+
+  /**
+   * Adds a {@link Resources.ResourceCandidate | candidate} to the manager.
+   * @param candidate - The {@link Resources.ResourceCandidate | candidate} to add.
+   * @returns `Success` with the candidate if successful, or `Failure` with an error message if not.
+   * @public
+   */
+  public addCandidate(
+    candidate: ResourceCandidate
+  ): DetailedResult<ResourceCandidate, ResourceManagerResultDetail> {
+    const builderResult = this._resources.getOrAdd(candidate.id, () =>
+      ResourceBuilder.create({ id: candidate.id, resourceTypes: this.resourceTypes })
+    );
+    if (builderResult.isFailure()) {
+      return failWithDetail(
+        `${candidate.id}: unable to get or add resource\n${builderResult.message}`,
+        builderResult.detail
+      );
+    }
+    return builderResult.value.addCandidate(candidate).onSuccess((c, d) => {
+      this._builtResources.delete(candidate.id);
+      this._built = false;
+      return succeedWithDetail(c, d);
+    });
+  }
+
+  /**
+   * Gets an individual {@link Resources.Resource | built resource} from the manager.
+   * @param id - The {@link ResourceId | id} of the resource to get.
+   * @returns `Success` with the resource if successful, or `Failure` with an error message if not.
+   * @public
+   */
+  public getBuiltResource(id: ResourceId): Result<Resource> {
+    return this._resources
+      .get(id)
+      .onSuccess((builder) => this._builtResources.getOrAdd(id, () => builder.build()));
+  }
+
+  /**
+   * Builds the {@link Resources.Resource | resources} from the collected {@link Resources.ResourceCandidate | candidates}.
+   * @returns `Success` with a read-only map of {@link Resources.Resource | resources} if successful,
+   * or `Failure` with an error message if not.
+   * @public
+   */
+  public build(): Result<IReadOnlyResultMap<ResourceId, Resource>> {
+    if (!this._built) {
+      const errors: MessageAggregator = new MessageAggregator();
+      this._resources.forEach((r, id) => {
+        this._builtResources.getOrAdd(id, () => r.build()).aggregateError(errors);
+      });
+      if (errors.hasMessages) {
+        return fail(`build failed: ${errors.toString()}`);
+      }
+      this._built = true;
+    }
+    return succeed(this._builtResources);
   }
 }

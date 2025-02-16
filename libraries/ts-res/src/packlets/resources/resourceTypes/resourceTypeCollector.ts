@@ -25,7 +25,7 @@ import { ResourceType } from './resourceType';
 import { Convert as CommonConvert, ResourceTypeName } from '../../common';
 
 /**
- * Map {@link ResourceTypeName | resource type names} to {@link Resources.ResourceTypes.IResourceType | resource types}.
+ * Map {@link ResourceTypeName | resource type names} to {@link Resources.ResourceType | resource types}.
  * @public
  */
 export class ResourceTypeCollector extends ValidatingCollector<ResourceType> {
@@ -49,3 +49,9 @@ export class ResourceTypeCollector extends ValidatingCollector<ResourceType> {
     return fail('Not a resource type.');
   }
 }
+
+/**
+ * A read-only version of {@link Resources.ResourceTypes.ResourceTypeCollector | ResourceTypeCollector}.
+ * @public
+ */
+export type ReadOnlyResourceTypeCollector = Collections.IReadOnlyValidatingCollector<ResourceType>;

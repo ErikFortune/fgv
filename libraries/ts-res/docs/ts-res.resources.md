@@ -30,12 +30,60 @@ Represents a single logical resource, with a unique id and a set of possible can
 </td></tr>
 <tr><td>
 
+[ResourceBuilder](./ts-res.resources.resourcebuilder.md)
+
+
+</td><td>
+
+Represents a builder for a single logical [resource](./ts-res.resources.resource.md)<!-- -->. Collects candidates with a common resource ID, validates them against each other and builds a [resource](./ts-res.resources.resource.md) object once all candidates are collected.
+
+
+</td></tr>
+<tr><td>
+
 [ResourceCandidate](./ts-res.resources.resourcecandidate.md)
 
 
 </td><td>
 
 A [resource candidate](./ts-res.resources.resourcecandidate.md) represents a single possible instance value for some resource, with the conditions under which it applies and instructions on how to merge it with other instances.
+
+
+</td></tr>
+<tr><td>
+
+[ResourceManager](./ts-res.resources.resourcemanager.md)
+
+
+</td><td>
+
+Represents a manager for a collection of [resources](./ts-res.resources.resource.md)<!-- -->. Collects [candidates](./ts-res.resources.resourcecandidate.md) for each resource into a [ResourceBuilder](./ts-res.resources.resourcebuilder.md) per resource, validates them against each other, and builds a collection of [resources](./ts-res.resources.resource.md) once all candidates are collected.
+
+
+</td></tr>
+</tbody></table>
+
+## Abstract Classes
+
+<table><thead><tr><th>
+
+Abstract Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ResourceType](./ts-res.resources.resourcetype.md)
+
+
+</td><td>
+
+Abstract base class for resource types which are responsible for validating and converting JSON values into the appropriate strongly-typed resource value.
 
 
 </td></tr>
@@ -55,6 +103,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[IResourceBuilderCreateParams](./ts-res.resources.iresourcebuildercreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a [Resources.ResourceBuilder](./ts-res.resources.resourcebuilder.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
 
 [IResourceCandidateCreateParams](./ts-res.resources.iresourcecandidatecreateparams.md)
 
@@ -76,6 +135,17 @@ Parameters used to create a [Resource](./ts-res.resources.resource.md) object.
 
 
 </td></tr>
+<tr><td>
+
+[IResourceManagerCreateParams](./ts-res.resources.iresourcemanagercreateparams.md)
+
+
+</td><td>
+
+Interface for parameters to the [ResourceManager create method](./ts-res.resources.resourcemanager.create.md)<!-- -->.
+
+
+</td></tr>
 </tbody></table>
 
 ## Namespaces
@@ -93,19 +163,47 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[Builders](./ts-res.resources.builders.md)
+[ResourceTypes](./ts-res.resources.resourcetypes.md)
 
 
 </td><td>
 
 
 </td></tr>
-<tr><td>
+</tbody></table>
 
-[ResourceTypes](./ts-res.resources.resourcetypes.md)
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ResourceBuilderResultDetail](./ts-res.resources.resourcebuilderresultdetail.md)
 
 
 </td><td>
+
+Possible result details returned by the resource builder [addCandidate](./ts-res.resources.resourcebuilder.addcandidate.md) method.
+
+
+</td></tr>
+<tr><td>
+
+[ResourceManagerResultDetail](./ts-res.resources.resourcemanagerresultdetail.md)
+
+
+</td><td>
+
+Error details that can be returned by a [ResourceManager](./ts-res.resources.resourcemanager.md)<!-- -->.
 
 
 </td></tr>

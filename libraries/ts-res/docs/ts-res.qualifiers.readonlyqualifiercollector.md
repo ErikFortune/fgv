@@ -9,7 +9,7 @@ Readonly version of [QualifierCollector](./ts-res.qualifiers.qualifiercollector.
 **Signature:**
 
 ```typescript
-export type ReadOnlyQualifierCollector = Readonly<QualifierCollector>;
+export type ReadOnlyQualifierCollector = Collections.IReadOnlyValidatingCollector<Qualifier>;
 ```
-**References:** [QualifierCollector](./ts-res.qualifiers.qualifiercollector.md)
+**References:** [Qualifier](./ts-res.qualifiers.qualifier.md)
 

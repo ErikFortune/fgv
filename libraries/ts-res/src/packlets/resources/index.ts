@@ -22,7 +22,9 @@
 
 export * from './resourceCandidate';
 export * from './resource';
+export * from './resourceBuilder';
+export * from './resourceManager';
 
-import * as Builders from './builders';
 import * as ResourceTypes from './resourceTypes';
-export { Builders, ResourceTypes };
+import { ResourceType } from './resourceTypes/resourceType';
+export { ResourceType, ResourceTypes };

@@ -100,4 +100,4 @@ export class ConditionCollector extends ValidatingCollector<Condition> {
  * Type alias for a read-only {@link Conditions.ConditionCollector | ConditionCollector}.
  * @public
  */
-export type IReadOnlyConditionCollector = Collections.IReadOnlyCollector<Condition>;
+export type ReadOnlyConditionCollector = Collections.IReadOnlyValidatingCollector<Condition>;

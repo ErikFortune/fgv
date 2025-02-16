@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-resourceTypes: ResourceTypeMap;
+resourceTypes: ResourceTypeCollector;
 ```

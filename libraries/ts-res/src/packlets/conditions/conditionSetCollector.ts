@@ -92,3 +92,9 @@ export class ConditionSetCollector extends ValidatingCollector<ConditionSet> {
       .onSuccess((c) => succeed(this.get(c.key).orDefault(c)));
   }
 }
+
+/**
+ * A read-only {@link Conditions.ConditionSetCollector | ConditionSetCollector}.
+ * @public
+ */
+export type ReadOnlyConditionSetCollector = Collections.IReadOnlyValidatingCollector<ConditionSet>;

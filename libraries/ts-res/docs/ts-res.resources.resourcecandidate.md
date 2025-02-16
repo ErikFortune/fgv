@@ -188,12 +188,12 @@ The method to use when merging this candidate with other instances.
 
 </td><td>
 
-[IResourceType](./ts-res.resources.resourcetypes.iresourcetype.md) \| undefined
+[ResourceType](./ts-res.resources.resourcetype.md) \| undefined
 
 
 </td><td>
 
-The [resource type](./ts-res.resources.resourcetypes.iresourcetype.md) for the resource to which this candidate belongs.
+The [resource type](./ts-res.resources.resourcetype.md) for the resource to which this candidate belongs.
 
 
 </td></tr>
@@ -277,7 +277,7 @@ Compares two [ResourceCandidates](./ts-res.resources.resourcecandidate.md) for e
 
 </td><td>
 
-Extracts the [resource type](./ts-res.resources.resourcetypes.iresourcetype.md) from a list of [resource candidates](./ts-res.resources.resourcecandidate.md)<!-- -->, if present.
+Extracts the [resource type](./ts-res.resources.resourcetype.md) from a list of [resource candidates](./ts-res.resources.resourcecandidate.md)<!-- -->, if present.
 
 
 </td></tr>

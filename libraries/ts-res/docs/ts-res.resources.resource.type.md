@@ -4,10 +4,10 @@
 
 ## Resources.Resource.type property
 
-The [type](./ts-res.resources.resourcetypes.iresourcetype.md) of the resource.
+The [type](./ts-res.resources.resourcetype.md) of the resource.
 
 **Signature:**
 
 ```typescript
-readonly type: IResourceType;
+readonly type: ResourceType;
 ```

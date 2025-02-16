@@ -105,4 +105,4 @@ export class QualifierCollector extends ValidatingConvertingCollector<Qualifier,
  * Readonly version of {@link Qualifiers.QualifierCollector | QualifierCollector}.
  * @public
  */
-export type ReadOnlyQualifierCollector = Readonly<QualifierCollector>;
+export type ReadOnlyQualifierCollector = Collections.IReadOnlyValidatingCollector<Qualifier>;
