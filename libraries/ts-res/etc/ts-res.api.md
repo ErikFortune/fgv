@@ -30,8 +30,6 @@ class AbstractDecision extends Decision<number> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createAbstractDecision(params: IAbstractDecisionCreateParams): Result<AbstractDecision>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static getAbstractKey(conditionSets: ReadonlyArray<ConditionSet>): DecisionKey;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -338,12 +336,14 @@ declare namespace Convert_5 {
 class Decision<TVALUE extends JsonValue = JsonValue> implements IDecision<TVALUE> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor(params: IDecisionCreateParams<TVALUE>);
+    protected constructor(params: IDecisionConstructorParams<TVALUE>);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly candidates: ReadonlyArray<Candidate<TVALUE>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createDecision(params: IDecisionCreateParams): Result<Decision>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static getAbstractKey(conditionSets: ReadonlyArray<ConditionSet>): DecisionKey;
     static getKey<TVALUE extends JsonValue = JsonValue>(candidates: ReadonlyArray<ICandidate<TVALUE>>): DecisionKey;
     get index(): DecisionIndex | undefined;
     get key(): DecisionKey;
@@ -371,6 +371,7 @@ declare namespace Decisions {
         ICandidate,
         Candidate,
         IDecisionCreateParams,
+        IDecisionConstructorParams,
         Decision,
         IAbstractDecisionCreateParams,
         AbstractDecision,
@@ -504,6 +505,15 @@ interface IDecision<TVALUE extends JsonValue = JsonValue> {
     key: DecisionKey;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IDecisionConstructorParams<TVALUE extends JsonValue = JsonValue> extends IDecisionCreateParams<TVALUE> {
+    // (undocumented)
+    isAbstract: boolean;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public

@@ -22,7 +22,6 @@
 
 import { captureResult, Result } from '@fgv/ts-utils';
 import { ConditionSet } from '../conditions';
-import { Convert as CommonConvert, DecisionKey } from '../common';
 import { Candidate } from './candidate';
 import { Decision } from './decision';
 
@@ -55,7 +54,7 @@ export class AbstractDecision extends Decision<number> {
     const candidates = Array.from(params.conditionSets)
       .map((conditionSet, value) => new Candidate({ conditionSet, value }))
       .sort(Candidate.compare);
-    super({ candidates, index: params.index });
+    super({ candidates, index: params.index, isAbstract: true });
   }
 
   /**
@@ -68,25 +67,5 @@ export class AbstractDecision extends Decision<number> {
    */
   public static createAbstractDecision(params: IAbstractDecisionCreateParams): Result<AbstractDecision> {
     return captureResult(() => new AbstractDecision(params));
-  }
-
-  /**
-   * Helper function to return a stable key for a the condition sets that
-   * make up a {@link Decisions.AbstractDecision | decision}.  The abstract
-   * key is a `+`-separated list of the hashes of the sorted condition sets
-   * that make up the decision.
-   * @param conditionSets - The condition sets to use to create the key.
-   * @returns A key derived from the condition set hashes.
-   * @public
-   */
-  public static getAbstractKey(conditionSets: ReadonlyArray<ConditionSet>): DecisionKey {
-    return CommonConvert.decisionKey
-      .convert(
-        Array.from(conditionSets)
-          .sort()
-          .map((c) => c.toHash())
-          .join('+')
-      )
-      .orThrow();
   }
 }

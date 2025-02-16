@@ -25,15 +25,27 @@ import { Convert as CommonConvert, DecisionIndex, DecisionKey } from '../common'
 import { JsonValue } from '@fgv/ts-json-base';
 import { Candidate, ICandidate } from './candidate';
 import { IDecision } from './common';
-import { AbstractDecision } from './abstractDecision';
+import { ConditionSet } from '../conditions';
 
 /**
- * Parameters used to create a new {@link Decisions.Decision | Decision}.
+ * Parameters used to create a new {@link Decisions.Decision | Decision}
+ * with the {@link Decisions.Decision.createDecision | createDecision}
+ * static method.
  * @public
  */
 export interface IDecisionCreateParams<TVALUE extends JsonValue = JsonValue> {
   candidates: ReadonlyArray<ICandidate<TVALUE>>;
   index?: number;
+}
+
+/**
+ * Parameters used to construct a new {@link Decisions.Decision | Decision} with
+ * the protected constructor.
+ * @public
+ */
+export interface IDecisionConstructorParams<TVALUE extends JsonValue = JsonValue>
+  extends IDecisionCreateParams<TVALUE> {
+  isAbstract: boolean;
 }
 
 /**
@@ -66,16 +78,20 @@ export class Decision<TVALUE extends JsonValue = JsonValue> implements IDecision
 
   /**
    * Constructor for a {@link Decisions.Decision | Decision} object.
-   * @param params - {@link Decisions.IDecisionCreateParams | Parameters} used to create the decision.
+   * @param params - {@link Decisions.IDecisionConstructorParams | Parameters} used to create the decision.
    * @public
    */
-  protected constructor(params: IDecisionCreateParams<TVALUE>) {
+  protected constructor(params: IDecisionConstructorParams<TVALUE>) {
     this.candidates = Array.from(params.candidates)
       .map((c) => new Candidate(c))
       .sort(Candidate.compare);
 
+    const key = params.isAbstract
+      ? Decision.getAbstractKey(this.candidates.map((c) => c.conditionSet))
+      : Decision.getKey(this.candidates);
+
     this._collectible = new Collections.Collectible<DecisionKey, DecisionIndex>({
-      key: Decision.getKey(this.candidates),
+      key,
       index: params.index,
       indexConverter: CommonConvert.decisionIndex
     });
@@ -88,7 +104,7 @@ export class Decision<TVALUE extends JsonValue = JsonValue> implements IDecision
    * @public
    */
   public static createDecision(params: IDecisionCreateParams): Result<Decision> {
-    return captureResult(() => new Decision(params));
+    return captureResult(() => new Decision({ ...params, isAbstract: false }));
   }
 
   /**
@@ -102,6 +118,26 @@ export class Decision<TVALUE extends JsonValue = JsonValue> implements IDecision
   }
 
   /**
+   * Helper function to return a stable key for a the condition sets that
+   * make up a {@link Decisions.Decision | decision}.  The abstract
+   * key is a `+`-separated list of the hashes of the sorted condition sets
+   * that make up the decision.
+   * @param conditionSets - The condition sets to use to create the key.
+   * @returns A key derived from the condition set hashes.
+   * @public
+   */
+  public static getAbstractKey(conditionSets: ReadonlyArray<ConditionSet>): DecisionKey {
+    return CommonConvert.decisionKey
+      .convert(
+        Array.from(conditionSets)
+          .sort()
+          .map((c) => c.toHash())
+          .join('+')
+      )
+      .orThrow();
+  }
+
+  /**
    * Helper function to return a stable key for a set of condition sets.
    * @param conditionSets - The condition sets to use to create the key.
    * @returns A key derived from the condition set hashes.
@@ -110,7 +146,7 @@ export class Decision<TVALUE extends JsonValue = JsonValue> implements IDecision
   public static getKey<TVALUE extends JsonValue = JsonValue>(
     candidates: ReadonlyArray<ICandidate<TVALUE>>
   ): DecisionKey {
-    const abstractKey = AbstractDecision.getAbstractKey(candidates.map((c) => c.conditionSet));
+    const abstractKey = Decision.getAbstractKey(candidates.map((c) => c.conditionSet));
     const valueKey = Hash.Crc32Normalizer.crc32Hash(candidates.map((c) => JSON.stringify(c.value)));
     return CommonConvert.decisionKey.convert(`${abstractKey}|${valueKey}`).orThrow();
   }

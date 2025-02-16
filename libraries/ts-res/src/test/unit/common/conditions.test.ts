@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import * as TsRes from '../../..';
+import * as TsRes from '../../../index';
 
 const validIdentifiers: string[] = [
   'abc',

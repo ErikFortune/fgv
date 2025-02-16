@@ -9,7 +9,7 @@ Constructor for a [Decision](./ts-res.decisions.decision.md) object.
 **Signature:**
 
 ```typescript
-protected constructor(params: IDecisionCreateParams<TVALUE>);
+protected constructor(params: IDecisionConstructorParams<TVALUE>);
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ params
 
 </td><td>
 
-[IDecisionCreateParams](./ts-res.decisions.idecisioncreateparams.md)<!-- -->&lt;TVALUE&gt;
+[IDecisionConstructorParams](./ts-res.decisions.idecisionconstructorparams.md)<!-- -->&lt;TVALUE&gt;
 
 
 </td><td>
 
-[Parameters](./ts-res.decisions.idecisioncreateparams.md) used to create the decision.
+[Parameters](./ts-res.decisions.idecisionconstructorparams.md) used to create the decision.
 
 
 </td></tr>

@@ -144,12 +144,23 @@ Represents a decision, which is comprised of zero or more [candidates](./ts-res.
 </td></tr>
 <tr><td>
 
+[IDecisionConstructorParams](./ts-res.decisions.idecisionconstructorparams.md)
+
+
+</td><td>
+
+Parameters used to construct a new [Decision](./ts-res.decisions.decision.md) with the protected constructor.
+
+
+</td></tr>
+<tr><td>
+
 [IDecisionCreateParams](./ts-res.decisions.idecisioncreateparams.md)
 
 
 </td><td>
 
-Parameters used to create a new [Decision](./ts-res.decisions.decision.md)<!-- -->.
+Parameters used to create a new [Decision](./ts-res.decisions.decision.md) with the [createDecision](./ts-res.decisions.decision.createdecision.md) static method.
 
 
 </td></tr>

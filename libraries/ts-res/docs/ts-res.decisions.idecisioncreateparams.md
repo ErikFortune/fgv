@@ -4,7 +4,7 @@
 
 ## Decisions.IDecisionCreateParams interface
 
-Parameters used to create a new [Decision](./ts-res.decisions.decision.md)<!-- -->.
+Parameters used to create a new [Decision](./ts-res.decisions.decision.md) with the [createDecision](./ts-res.decisions.decision.createdecision.md) static method.
 
 **Signature:**
 

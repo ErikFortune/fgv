@@ -173,6 +173,22 @@ Creates a new [Decision](./ts-res.decisions.decision.md) object.
 </td></tr>
 <tr><td>
 
+[getAbstractKey(conditionSets)](./ts-res.decisions.decision.getabstractkey.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Helper function to return a stable key for a the condition sets that make up a [decision](./ts-res.decisions.decision.md)<!-- -->. The abstract key is a `+`<!-- -->-separated list of the hashes of the sorted condition sets that make up the decision.
+
+
+</td></tr>
+<tr><td>
+
 [getKey(candidates)](./ts-res.decisions.decision.getkey.md)
 
 
