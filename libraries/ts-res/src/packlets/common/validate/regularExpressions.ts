@@ -38,7 +38,7 @@ export const identifierList: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(,[a-zA-Z_][a-zA
 /**
  * @internal
  */
-export const conditionKey: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(-matches)?-\[.*\]@[0-9]{1,4}$/;
+export const conditionKey: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(-matches)?-\[.*\](?:@[0-9]{1,4})?$/;
 
 /**
  * @internal

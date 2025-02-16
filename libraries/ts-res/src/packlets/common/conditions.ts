@@ -78,10 +78,34 @@ export type QualifierContextValue = Brand<string, 'QualifierContextValue'>;
 export type QualifierMatchScore = Brand<number, 'QualifierMatchScore'>;
 
 /**
+ * {@link QualifierMatchScore | Match score} indicating no match.
+ * @public
+ */
+export const NoMatch: QualifierMatchScore = 0.0 as QualifierMatchScore;
+
+/**
+ * {@link QualifierMatchScore | Match score} indicating a perfect match.
+ * @public
+ */
+export const PerfectMatch: QualifierMatchScore = 1.0 as QualifierMatchScore;
+
+/**
  * Branded number representing a validated condition priority.
  * @public
  */
 export type ConditionPriority = Brand<number, 'ConditionPriority'>;
+
+/**
+ * Minimum valid priority for a condition.
+ * @public
+ */
+export const MinConditionPriority: ConditionPriority = 0 as ConditionPriority;
+
+/**
+ * Maximum valid priority for a condition.
+ * @public
+ */
+export const MaxConditionPriority: ConditionPriority = 1000 as ConditionPriority;
 
 /**
  * Condition operators for use in conditions.

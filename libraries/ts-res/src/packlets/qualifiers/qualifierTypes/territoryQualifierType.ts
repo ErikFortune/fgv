@@ -23,10 +23,11 @@
 import { captureResult, Result } from '@fgv/ts-utils';
 import {
   Convert,
+  NoMatch,
+  PerfectMatch,
   QualifierConditionValue,
   QualifierContextValue,
-  QualifierMatchScore,
-  Validate
+  QualifierMatchScore
 } from '../../common';
 import { QualifierType } from './qualifierType';
 
@@ -111,6 +112,6 @@ export class TerritoryQualifierType extends QualifierType {
     condition: QualifierConditionValue,
     context: QualifierContextValue
   ): QualifierMatchScore {
-    return condition.toUpperCase() === context.toUpperCase() ? Validate.PerfectMatch : Validate.NoMatch;
+    return condition.toUpperCase() === context.toUpperCase() ? PerfectMatch : NoMatch;
   }
 }

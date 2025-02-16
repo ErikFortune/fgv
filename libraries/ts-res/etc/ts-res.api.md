@@ -701,6 +701,12 @@ function isValidConditionIndex(index: number): index is ConditionIndex;
 function isValidConditionKey(key: string): key is ConditionKey;
 
 // @public
+function isValidConditionOperator(operator: string): operator is ConditionOperator;
+
+// @public
+function isValidConditionPriority(priority: number): priority is ConditionPriority;
+
+// @public
 function isValidConditionSetHash(hash: string): hash is ConditionSetHash;
 
 // @public
@@ -716,13 +722,10 @@ function isValidDecisionIndex(index: number): index is DecisionIndex;
 function isValidDecisionKey(key: string): key is DecisionKey;
 
 // @public
-function isValidMatchScore(value: number): value is QualifierMatchScore;
-
-// @public
-function isValidPriority(priority: number): priority is ConditionPriority;
-
-// @public
 function isValidQualifierIndex(index: number): index is QualifierIndex;
+
+// @public
+function isValidQualifierMatchScore(value: number): value is QualifierMatchScore;
 
 // @public
 function isValidQualifierName(name: string): name is QualifierName;
@@ -832,16 +835,16 @@ class LiteralQualifierType extends QualifierType {
 }
 
 // @public
-const maxPriority: ConditionPriority;
+export const MaxConditionPriority: ConditionPriority;
 
 // @public
-const minPriority: ConditionPriority;
+export const MinConditionPriority: ConditionPriority;
 
 // @public
-const NoMatch: QualifierMatchScore;
+export const NoMatch: QualifierMatchScore;
 
 // @public
-const PerfectMatch: QualifierMatchScore;
+export const PerfectMatch: QualifierMatchScore;
 
 // @public
 class Qualifier implements IValidatedQualifierDecl, ICollectible<QualifierName, QualifierIndex> {
@@ -1370,6 +1373,12 @@ function toConditionIndex(index: number): Result<ConditionIndex>;
 function toConditionKey(key: string): Result<ConditionKey>;
 
 // @public
+function toConditionOperator(operator: string): Result<ConditionOperator>;
+
+// @public
+function toConditionPriority(priority: number): Result<ConditionPriority>;
+
+// @public
 function toConditionSetHash(hash: string): Result<ConditionSetHash>;
 
 // @public
@@ -1385,10 +1394,10 @@ function toDecisionIndex(index: number): Result<DecisionIndex>;
 function toDecisionKey(key: string): Result<DecisionKey>;
 
 // @public
-function toPriority(priority: number): Result<ConditionPriority>;
+function toQualifierIndex(index: number): Result<QualifierIndex>;
 
 // @public
-function toQualifierIndex(index: number): Result<QualifierIndex>;
+function toQualifierMatchScore(value: number): Result<QualifierMatchScore>;
 
 // @public
 function toQualifierName(name: string): Result<QualifierName>;
@@ -1419,12 +1428,12 @@ declare namespace Validate {
         RegularExpressions,
         isValidQualifierName,
         isValidQualifierTypeName,
-        isValidPriority,
+        isValidConditionPriority,
         isValidQualifierIndex,
         isValidQualifierTypeIndex,
-        isValidMatchScore,
-        validateMatchScore,
+        isValidQualifierMatchScore,
         isValidConditionIndex,
+        isValidConditionOperator,
         isValidConditionKey,
         isValidConditionSetIndex,
         isValidConditionSetKey,
@@ -1435,18 +1444,16 @@ declare namespace Validate {
         toQualifierIndex,
         toQualifierTypeName,
         toQualifierTypeIndex,
-        toPriority,
+        toQualifierMatchScore,
+        toConditionPriority,
         toConditionIndex,
+        toConditionOperator,
         toConditionKey,
         toConditionSetIndex,
         toConditionSetKey,
         toConditionSetHash,
         toDecisionKey,
         toDecisionIndex,
-        minPriority,
-        maxPriority,
-        NoMatch,
-        PerfectMatch,
         isValidResourceName,
         isValidResourceId,
         isValidResourceIndex,
@@ -1483,9 +1490,6 @@ const validatedConditionSetDecl: Converter<IValidatedConditionSetDecl, IConditio
 //
 // @public
 const validatedQualifierDecl: Converter<IValidatedQualifierDecl, IQualifierDeclConvertContext>;
-
-// @public
-function validateMatchScore(value: number): Result<QualifierMatchScore>;
 
 // Warnings were encountered during analysis:
 //

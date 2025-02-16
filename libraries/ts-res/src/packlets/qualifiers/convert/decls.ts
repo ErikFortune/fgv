@@ -63,7 +63,7 @@ export const validatedQualifierDecl = Converters.generic<
     return populateObject<IValidatedQualifierDecl>({
       name: () => Validate.toQualifierName(decl.name),
       type: () => context.qualifierTypes.validating.get(decl.typeName),
-      defaultPriority: () => Validate.toPriority(decl.defaultPriority),
+      defaultPriority: () => Validate.toConditionPriority(decl.defaultPriority),
       index: () => Validate.toQualifierIndex(context.qualifierIndex)
     }).onSuccess((validated) => {
       context.qualifierIndex++;

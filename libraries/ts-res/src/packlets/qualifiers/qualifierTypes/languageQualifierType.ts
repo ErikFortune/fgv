@@ -25,6 +25,7 @@ import { Bcp47 } from '@fgv/ts-bcp47';
 import {
   ConditionOperator,
   Convert,
+  NoMatch,
   QualifierConditionValue,
   QualifierContextValue,
   QualifierMatchScore,
@@ -98,10 +99,10 @@ export class LanguageQualifierType extends QualifierType {
   ): QualifierMatchScore {
     if (operator === 'matches') {
       const similarity = Bcp47.similarity(condition, context).orDefault(Bcp47.tagSimilarity.none);
-      if (similarity > 0.0 && Validate.isValidMatchScore(similarity)) {
+      if (similarity > 0.0 && Validate.isValidQualifierMatchScore(similarity)) {
         return similarity;
       }
     }
-    return Validate.NoMatch;
+    return NoMatch;
   }
 }

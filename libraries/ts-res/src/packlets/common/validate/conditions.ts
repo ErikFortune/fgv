@@ -34,21 +34,15 @@ import {
   ConditionSetKey,
   DecisionKey,
   DecisionIndex,
-  ConditionSetHash
+  ConditionSetHash,
+  NoMatch,
+  PerfectMatch,
+  MinConditionPriority,
+  MaxConditionPriority,
+  ConditionOperator,
+  allConditionOperators
 } from '../conditions';
 import { conditionKey, conditionSetHash, decisionKey, identifier } from './regularExpressions';
-
-/**
- * Minimum valid priority for a condition.
- * @public
- */
-export const minPriority: ConditionPriority = 0 as ConditionPriority;
-
-/**
- * Maximum valid priority for a condition.
- * @public
- */
-export const maxPriority: ConditionPriority = 1000 as ConditionPriority;
 
 /**
  * Determines whether a string is a valid qualifier name.
@@ -76,8 +70,8 @@ export function isValidQualifierTypeName(name: string): name is QualifierTypeNam
  * @returns true if the number is a valid priority, false otherwise.
  * @public
  */
-export function isValidPriority(priority: number): priority is ConditionPriority {
-  return priority >= minPriority && priority <= maxPriority;
+export function isValidConditionPriority(priority: number): priority is ConditionPriority {
+  return priority >= MinConditionPriority && priority <= MaxConditionPriority;
 }
 
 /**
@@ -101,39 +95,13 @@ export function isValidQualifierTypeIndex(index: number): index is QualifierType
 }
 
 /**
- * {@link QualifierMatchScore | Match score} indicating no match.
- * @public
- */
-export const NoMatch: QualifierMatchScore = 0.0 as QualifierMatchScore;
-
-/**
- * {@link QualifierMatchScore | Match score} indicating a perfect match.
- * @public
- */
-export const PerfectMatch: QualifierMatchScore = 1.0 as QualifierMatchScore;
-
-/**
  * Determines whether a supplied value is a valid {@link QualifierMatchScore | match score}.
  * @param value - The value to validate.
  * @returns - `true` if the value is a valid match score, `false` otherwise.
  * @public
  */
-export function isValidMatchScore(value: number): value is QualifierMatchScore {
+export function isValidQualifierMatchScore(value: number): value is QualifierMatchScore {
   return value >= NoMatch && value <= PerfectMatch;
-}
-
-/**
- * Converts a number to a {@link QualifierMatchScore | match score} if it is a valid score.
- * @param value - The number to convert.
- * @returns `Success` with the converted score if successful, or `Failure` with an error message
- * if not.
- * @public
- */
-export function validateMatchScore(value: number): Result<QualifierMatchScore> {
-  if (!isValidMatchScore(value)) {
-    return fail(`${value}: not a valid match score`);
-  }
-  return succeed(value as QualifierMatchScore);
 }
 
 /**
@@ -144,6 +112,16 @@ export function validateMatchScore(value: number): Result<QualifierMatchScore> {
  */
 export function isValidConditionIndex(index: number): index is ConditionIndex {
   return index >= 0;
+}
+
+/**
+ * Determines whether a string is a valid condition operator.
+ * @param operator - the string to validate
+ * @returns true if the string is a valid condition operator, false otherwise.
+ * @public
+ */
+export function isValidConditionOperator(operator: string): operator is ConditionOperator {
+  return allConditionOperators.includes(operator as ConditionOperator);
 }
 
 /**
@@ -267,14 +245,28 @@ export function toQualifierTypeIndex(index: number): Result<QualifierTypeIndex> 
 }
 
 /**
+ * Converts a number to a {@link QualifierMatchScore | match score} if it is a valid score.
+ * @param value - The number to convert.
+ * @returns `Success` with the converted score if successful, or `Failure` with an error message
+ * if not.
+ * @public
+ */
+export function toQualifierMatchScore(value: number): Result<QualifierMatchScore> {
+  if (!isValidQualifierMatchScore(value)) {
+    return fail(`${value}: not a valid match score`);
+  }
+  return succeed(value as QualifierMatchScore);
+}
+
+/**
  * Converts a number to a {@link ConditionPriority} if it is a valid priority.
  * @param priority - the number to convert
  * @returns `Success` with the converted {@link ConditionPriority} if successful, or `Failure` with an
  * error message if not.
  * @public
  */
-export function toPriority(priority: number): Result<ConditionPriority> {
-  if (!isValidPriority(priority)) {
+export function toConditionPriority(priority: number): Result<ConditionPriority> {
+  if (!isValidConditionPriority(priority)) {
     return fail(`${priority}: not a valid priority`);
   }
   return succeed(priority);
@@ -292,6 +284,20 @@ export function toConditionIndex(index: number): Result<ConditionIndex> {
     return fail(`${index}: not a valid condition index`);
   }
   return succeed(index);
+}
+
+/**
+ * Converts a string to a {@link ConditionOperator} if it is a valid condition operator.
+ * @param operator - the string to convert
+ * @returns `Success` with the converted {@link ConditionOperator} if successful, or `Failure` with an
+ * error message if not.
+ * @public
+ */
+export function toConditionOperator(operator: string): Result<ConditionOperator> {
+  if (!isValidConditionOperator(operator)) {
+    return fail(`${operator}: not a valid condition operator`);
+  }
+  return succeed(operator as ConditionOperator);
 }
 
 /**

@@ -55,7 +55,7 @@ export const qualifierTypeIndex = Converters.number.map(Validate.toQualifierType
  * `Converter` which validates an `unknown` value as a {@link ConditionPriority | ConditionPriority}.
  * @public
  */
-export const conditionPriority = Converters.number.map(Validate.toPriority);
+export const conditionPriority = Converters.number.map(Validate.toConditionPriority);
 
 /**
  * `Converter` which validates an `unknown` value as a {@link ConditionOperator | ConditionOperator}.

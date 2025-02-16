@@ -117,6 +117,50 @@ Array of all possible [resource merge type](./ts-res.resourcevaluemergemethod.md
 
 
 </td></tr>
+<tr><td>
+
+[MaxConditionPriority](./ts-res.maxconditionpriority.md)
+
+
+</td><td>
+
+Maximum valid priority for a condition.
+
+
+</td></tr>
+<tr><td>
+
+[MinConditionPriority](./ts-res.minconditionpriority.md)
+
+
+</td><td>
+
+Minimum valid priority for a condition.
+
+
+</td></tr>
+<tr><td>
+
+[NoMatch](./ts-res.nomatch.md)
+
+
+</td><td>
+
+[Match score](./ts-res.qualifiermatchscore.md) indicating no match.
+
+
+</td></tr>
+<tr><td>
+
+[PerfectMatch](./ts-res.perfectmatch.md)
+
+
+</td><td>
+
+[Match score](./ts-res.qualifiermatchscore.md) indicating a perfect match.
+
+
+</td></tr>
 </tbody></table>
 
 ## Type Aliases

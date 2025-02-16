@@ -24,6 +24,8 @@ import { captureResult, Result } from '@fgv/ts-utils';
 import {
   ConditionOperator,
   Convert,
+  NoMatch,
+  PerfectMatch,
   QualifierConditionValue,
   QualifierContextValue,
   QualifierMatchScore,
@@ -130,9 +132,9 @@ export class LiteralQualifierType extends QualifierType {
     operator: ConditionOperator
   ): QualifierMatchScore {
     if (this._caseSensitive) {
-      return condition === (context as string) ? Validate.PerfectMatch : Validate.NoMatch;
+      return condition === (context as string) ? PerfectMatch : NoMatch;
     } else {
-      return condition.toLowerCase() === context.toLowerCase() ? Validate.PerfectMatch : Validate.NoMatch;
+      return condition.toLowerCase() === context.toLowerCase() ? PerfectMatch : NoMatch;
     }
   }
 

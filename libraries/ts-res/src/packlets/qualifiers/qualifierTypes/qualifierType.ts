@@ -24,6 +24,7 @@ import { Collections, ICollectible, Result, fail, succeed } from '@fgv/ts-utils'
 import {
   ConditionOperator,
   Convert,
+  NoMatch,
   QualifierConditionValue,
   QualifierContextValue,
   QualifierMatchScore,
@@ -302,18 +303,18 @@ export abstract class QualifierType implements IQualifierType {
   ): QualifierMatchScore {
     for (let i = 0; i < context.length; i++) {
       const score = this._matchOne(condition, context[i], operator);
-      if (score > Validate.NoMatch) {
+      if (score > NoMatch) {
         if (i === 0) {
           return score;
         }
         const scorePerPosition = 1 / context.length;
         const adjusted = 1.0 - scorePerPosition * i + score;
-        if (Validate.isValidMatchScore(adjusted)) {
+        if (Validate.isValidQualifierMatchScore(adjusted)) {
           return adjusted;
         }
       }
     }
-    return Validate.NoMatch;
+    return NoMatch;
   }
 
   /**

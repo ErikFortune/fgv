@@ -41,6 +41,28 @@ Determines whether a string is a valid condition key. A condition key has the fo
 </td></tr>
 <tr><td>
 
+[isValidConditionOperator(operator)](./ts-res.validate.isvalidconditionoperator.md)
+
+
+</td><td>
+
+Determines whether a string is a valid condition operator.
+
+
+</td></tr>
+<tr><td>
+
+[isValidConditionPriority(priority)](./ts-res.validate.isvalidconditionpriority.md)
+
+
+</td><td>
+
+Determines whether a number is a valid priority.
+
+
+</td></tr>
+<tr><td>
+
 [isValidConditionSetHash(hash)](./ts-res.validate.isvalidconditionsethash.md)
 
 
@@ -96,34 +118,23 @@ Determines whether a string is a valid decision key.
 </td></tr>
 <tr><td>
 
-[isValidMatchScore(value)](./ts-res.validate.isvalidmatchscore.md)
-
-
-</td><td>
-
-Determines whether a supplied value is a valid [match score](./ts-res.qualifiermatchscore.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[isValidPriority(priority)](./ts-res.validate.isvalidpriority.md)
-
-
-</td><td>
-
-Determines whether a number is a valid priority.
-
-
-</td></tr>
-<tr><td>
-
 [isValidQualifierIndex(index)](./ts-res.validate.isvalidqualifierindex.md)
 
 
 </td><td>
 
 Determines whether a number is a valid qualifier index.
+
+
+</td></tr>
+<tr><td>
+
+[isValidQualifierMatchScore(value)](./ts-res.validate.isvalidqualifiermatchscore.md)
+
+
+</td><td>
+
+Determines whether a supplied value is a valid [match score](./ts-res.qualifiermatchscore.md)<!-- -->.
 
 
 </td></tr>
@@ -261,6 +272,28 @@ Converts a string to a [ConditionKey](./ts-res.conditionkey.md) if it is a valid
 </td></tr>
 <tr><td>
 
+[toConditionOperator(operator)](./ts-res.validate.toconditionoperator.md)
+
+
+</td><td>
+
+Converts a string to a [ConditionOperator](./ts-res.conditionoperator.md) if it is a valid condition operator.
+
+
+</td></tr>
+<tr><td>
+
+[toConditionPriority(priority)](./ts-res.validate.toconditionpriority.md)
+
+
+</td><td>
+
+Converts a number to a [ConditionPriority](./ts-res.conditionpriority.md) if it is a valid priority.
+
+
+</td></tr>
+<tr><td>
+
 [toConditionSetHash(hash)](./ts-res.validate.toconditionsethash.md)
 
 
@@ -316,23 +349,23 @@ Converts a number to a [DecisionIndex](./ts-res.decisionindex.md) if it is a val
 </td></tr>
 <tr><td>
 
-[toPriority(priority)](./ts-res.validate.topriority.md)
-
-
-</td><td>
-
-Converts a number to a [ConditionPriority](./ts-res.conditionpriority.md) if it is a valid priority.
-
-
-</td></tr>
-<tr><td>
-
 [toQualifierIndex(index)](./ts-res.validate.toqualifierindex.md)
 
 
 </td><td>
 
 Converts a number to a [QualifierIndex](./ts-res.qualifierindex.md) if it is a valid qualifier index.
+
+
+</td></tr>
+<tr><td>
+
+[toQualifierMatchScore(value)](./ts-res.validate.toqualifiermatchscore.md)
+
+
+</td><td>
+
+Converts a number to a [match score](./ts-res.qualifiermatchscore.md) if it is a valid score.
 
 
 </td></tr>
@@ -424,17 +457,6 @@ Converts a string to a [resource type name](./ts-res.resourcetypename.md)<!-- --
 
 
 </td></tr>
-<tr><td>
-
-[validateMatchScore(value)](./ts-res.validate.validatematchscore.md)
-
-
-</td><td>
-
-Converts a number to a [match score](./ts-res.qualifiermatchscore.md) if it is a valid score.
-
-
-</td></tr>
 </tbody></table>
 
 ## Namespaces
@@ -456,65 +478,6 @@ Description
 
 
 </td><td>
-
-
-</td></tr>
-</tbody></table>
-
-## Variables
-
-<table><thead><tr><th>
-
-Variable
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[maxPriority](./ts-res.validate.maxpriority.md)
-
-
-</td><td>
-
-Maximum valid priority for a condition.
-
-
-</td></tr>
-<tr><td>
-
-[minPriority](./ts-res.validate.minpriority.md)
-
-
-</td><td>
-
-Minimum valid priority for a condition.
-
-
-</td></tr>
-<tr><td>
-
-[NoMatch](./ts-res.validate.nomatch.md)
-
-
-</td><td>
-
-[Match score](./ts-res.qualifiermatchscore.md) indicating no match.
-
-
-</td></tr>
-<tr><td>
-
-[PerfectMatch](./ts-res.validate.perfectmatch.md)
-
-
-</td><td>
-
-[Match score](./ts-res.qualifiermatchscore.md) indicating a perfect match.
 
 
 </td></tr>
