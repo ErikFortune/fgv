@@ -4,6 +4,8 @@
 
 ## Qualifiers.QualifierTypes.ITerritoryQualifierTypeCreateParams.allowedTerritories property
 
+Optional array enumerating allowed territories to further constrain the type.
+
 **Signature:**
 
 ```typescript

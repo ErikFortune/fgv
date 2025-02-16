@@ -49,3 +49,8 @@ export const conditionSetHash: RegExp = /^[a-zA-Z0-9]{8}$/;
  * @internal
  */
 export const decisionKey: RegExp = /^[a-zA-Z0-9]{8}(?:\+[a-zA-Z0-9]{8})*(?:|[a-zA-Z0-9]{8})?$/;
+
+/**
+ * @internal
+ */
+export const territoryCode: RegExp = /^[a-zA-Z]{2}$/;

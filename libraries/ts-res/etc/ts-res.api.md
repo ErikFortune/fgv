@@ -755,10 +755,19 @@ function isValidResourceTypeName(name: string): name is ResourceTypeName;
 //
 // @public
 interface ITerritoryQualifierTypeCreateParams {
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
     // (undocumented)
+    allowContextList?: boolean;
     allowedTerritories?: string[];
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
     // (undocumented)
-    index: number;
+    index?: number;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    name?: string;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1088,7 +1097,8 @@ declare namespace RegularExpressions {
         identifierList,
         conditionKey_2 as conditionKey,
         conditionSetHash_2 as conditionSetHash,
-        decisionKey_2 as decisionKey
+        decisionKey_2 as decisionKey,
+        territoryCode
     }
 }
 
@@ -1352,24 +1362,28 @@ const segmentedIdentifier: RegExp;
 // @public
 function splitResourceId(id: ResourceId): Result<ResourceName[]>;
 
+// @internal (undocumented)
+const territoryCode: RegExp;
+
 // @public
 class TerritoryQualifierType extends QualifierType {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor({ allowedTerritories, index }: ITerritoryQualifierTypeCreateParams);
-    protected readonly _allowedTerritories?: ReadonlyArray<string>;
+    protected constructor({ allowedTerritories, allowContextList, name, index }: ITerritoryQualifierTypeCreateParams);
+    readonly allowedTerritories?: ReadonlyArray<QualifierConditionValue>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static create(params: ITerritoryQualifierTypeCreateParams): Result<TerritoryQualifierType>;
+    static create(params?: ITerritoryQualifierTypeCreateParams): Result<TerritoryQualifierType>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     isValidConditionValue(value: string): value is QualifierConditionValue;
+    static isValidTerritoryConditionValue(value: string): value is QualifierConditionValue;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     protected _matchOne(condition: QualifierConditionValue, context: QualifierContextValue): QualifierMatchScore;
-    protected readonly _territoryRegExp: RegExp;
+    static toTerritoryConditionValue(value: string): Result<QualifierConditionValue>;
 }
 
 // @public

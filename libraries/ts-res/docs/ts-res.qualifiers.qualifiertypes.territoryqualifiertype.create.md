@@ -9,7 +9,7 @@ Creates a new [TerritoryQualifierType](./ts-res.qualifiers.qualifiertypes.territ
 **Signature:**
 
 ```typescript
-static create(params: ITerritoryQualifierTypeCreateParams): Result<TerritoryQualifierType>;
+static create(params?: ITerritoryQualifierTypeCreateParams): Result<TerritoryQualifierType>;
 ```
 
 ## Parameters
@@ -42,7 +42,7 @@ params
 
 </td><td>
 
-Optional [parameters](./ts-res.qualifiers.qualifiertypes.iterritoryqualifiertypecreateparams.md) to use when creating the instance.
+_(Optional)_ Optional [parameters](./ts-res.qualifiers.qualifiertypes.iterritoryqualifiertypecreateparams.md) to use when creating the instance.
 
 
 </td></tr>

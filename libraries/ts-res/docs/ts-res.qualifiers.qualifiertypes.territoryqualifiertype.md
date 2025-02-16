@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)({ allowedTerritories, index })](./ts-res.qualifiers.qualifiertypes.territoryqualifiertype._constructor_.md)
+[(constructor)({ allowedTerritories, allowContextList, name, index })](./ts-res.qualifiers.qualifiertypes.territoryqualifiertype._constructor_.md)
 
 
 </td><td>
@@ -74,47 +74,22 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_allowedTerritories?](./ts-res.qualifiers.qualifiertypes.territoryqualifiertype._allowedterritories.md)
+[allowedTerritories?](./ts-res.qualifiers.qualifiertypes.territoryqualifiertype.allowedterritories.md)
 
 
 </td><td>
-
-`protected`
 
 `readonly`
 
 
 </td><td>
 
-ReadonlyArray&lt;string&gt;
+ReadonlyArray&lt;[QualifierConditionValue](./ts-res.qualifierconditionvalue.md)<!-- -->&gt;
 
 
 </td><td>
 
 _(Optional)_ Optional array enumerating allowed territories to further constrain the type.
-
-
-</td></tr>
-<tr><td>
-
-[\_territoryRegExp](./ts-res.qualifiers.qualifiertypes.territoryqualifiertype._territoryregexp.md)
-
-
-</td><td>
-
-`protected`
-
-`readonly`
-
-
-</td><td>
-
-RegExp
-
-
-</td><td>
-
-Regular expression that matches valid territory codes. Canonical territory codes are uppercase, but this implementation handles incorrect casing.
 
 
 </td></tr>
@@ -181,6 +156,38 @@ Creates a new [TerritoryQualifierType](./ts-res.qualifiers.qualifiertypes.territ
 </td><td>
 
 Validates a condition value for this qualifier type.
+
+
+</td></tr>
+<tr><td>
+
+[isValidTerritoryConditionValue(value)](./ts-res.qualifiers.qualifiertypes.territoryqualifiertype.isvalidterritoryconditionvalue.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Determines whether a value is a valid condition value for a territory qualifier.
+
+
+</td></tr>
+<tr><td>
+
+[toTerritoryConditionValue(value)](./ts-res.qualifiers.qualifiertypes.territoryqualifiertype.toterritoryconditionvalue.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Converts a string value to a territory condition value.
 
 
 </td></tr>

@@ -9,7 +9,7 @@ Creates a new [TerritoryQualifierType](./ts-res.qualifiers.qualifiertypes.territ
 **Signature:**
 
 ```typescript
-protected constructor({ allowedTerritories, index }: ITerritoryQualifierTypeCreateParams);
+protected constructor({ allowedTerritories, allowContextList, name, index }: ITerritoryQualifierTypeCreateParams);
 ```
 
 ## Parameters
@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-{ allowedTerritories, index }
+{ allowedTerritories, allowContextList, name, index }
 
 
 </td><td>

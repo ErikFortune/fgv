@@ -37,6 +37,25 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[allowContextList?](./ts-res.qualifiers.qualifiertypes.iterritoryqualifiertypecreateparams.allowcontextlist.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_ Flag indicating whether this qualifier type allows a list of values in a context. Defaults to `false`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [allowedTerritories?](./ts-res.qualifiers.qualifiertypes.iterritoryqualifiertypecreateparams.allowedterritories.md)
 
 
@@ -50,13 +69,13 @@ string\[\]
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Optional array enumerating allowed territories to further constrain the type.
 
 
 </td></tr>
 <tr><td>
 
-[index](./ts-res.qualifiers.qualifiertypes.iterritoryqualifiertypecreateparams.index.md)
+[index?](./ts-res.qualifiers.qualifiertypes.iterritoryqualifiertypecreateparams.index.md)
 
 
 </td><td>
@@ -68,6 +87,27 @@ number
 
 
 </td><td>
+
+_(Optional)_ Global index for this qualifier type.
+
+
+</td></tr>
+<tr><td>
+
+[name?](./ts-res.qualifiers.qualifiertypes.iterritoryqualifiertypecreateparams.name.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ The name of the qualifier type. No default value.
 
 
 </td></tr>

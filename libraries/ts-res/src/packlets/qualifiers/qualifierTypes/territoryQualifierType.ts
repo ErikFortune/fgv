@@ -20,14 +20,15 @@
  * SOFTWARE.
  */
 
-import { captureResult, Result } from '@fgv/ts-utils';
+import { captureResult, Result, fail, succeed, mapResults } from '@fgv/ts-utils';
 import {
   Convert,
   NoMatch,
   PerfectMatch,
   QualifierConditionValue,
   QualifierContextValue,
-  QualifierMatchScore
+  QualifierMatchScore,
+  Validate
 } from '../../common';
 import { QualifierType } from './qualifierType';
 
@@ -36,9 +37,25 @@ import { QualifierType } from './qualifierType';
  * @public
  */
 export interface ITerritoryQualifierTypeCreateParams {
-  allowedTerritories?: string[];
+  /**
+   * {@inheritdoc Qualifiers.QualifierTypes.IQualifierTypeCreateParams.name}
+   */
+  name?: string;
 
-  index: number;
+  /**
+   * {@inheritdoc Qualifiers.QualifierTypes.IQualifierTypeCreateParams.allowContextList}
+   */
+  allowContextList?: boolean;
+
+  /**
+   * {@inheritdoc Qualifiers.QualifierTypes.IQualifierTypeCreateParams.index}
+   */
+  index?: number;
+
+  /**
+   * Optional array enumerating allowed territories to further constrain the type.
+   */
+  allowedTerritories?: string[];
 }
 
 /**
@@ -49,48 +66,46 @@ export interface ITerritoryQualifierTypeCreateParams {
  */
 export class TerritoryQualifierType extends QualifierType {
   /**
-   * Regular expression that matches valid territory codes.
-   * Canonical territory codes are uppercase, but this
-   * implementation handles incorrect casing.
-   * @public
-   */
-  protected readonly _territoryRegExp: RegExp = /^(?:[A-Za-z]{2})$/;
-
-  /**
    * Optional array enumerating allowed territories to further constrain the type.
    */
-  protected readonly _allowedTerritories?: ReadonlyArray<string>;
+  public readonly allowedTerritories?: ReadonlyArray<QualifierConditionValue>;
 
   /**
    * Creates a new {@link Qualifiers.QualifierTypes.TerritoryQualifierType | TerritoryQualifierType} instance.
    * @public
    */
-  protected constructor({ allowedTerritories, index }: ITerritoryQualifierTypeCreateParams) {
+  protected constructor({
+    allowedTerritories,
+    allowContextList,
+    name,
+    index
+  }: ITerritoryQualifierTypeCreateParams) {
+    allowContextList = allowContextList === true;
     super({
-      name: 'territory',
-      allowContextList: false,
-      index: Convert.qualifierTypeIndex.convert(index).orThrow()
+      name: name ?? 'territory',
+      allowContextList,
+      index: index !== undefined ? Convert.qualifierTypeIndex.convert(index).orThrow() : undefined
     });
-    if (allowedTerritories !== undefined) {
-      allowedTerritories.forEach((v) => {
-        if (!this._territoryRegExp.test(v)) {
-          throw new Error(
-            `${v}: Invalid territory value in enumerated value list for territory qualifier type.`
-          );
-        }
-      });
-    }
-    this._allowedTerritories = allowedTerritories?.map((t) => t.toUpperCase());
+    this.allowedTerritories =
+      allowedTerritories !== undefined
+        ? mapResults(
+            allowedTerritories.map((t) => TerritoryQualifierType.toTerritoryConditionValue(t))
+          ).orThrow()
+        : undefined;
   }
 
   /**
    * {@inheritdoc Qualifiers.QualifierTypes.QualifierType.isValidConditionValue}
    */
   public isValidConditionValue(value: string): value is QualifierConditionValue {
-    if (this._allowedTerritories !== undefined) {
-      return this._allowedTerritories.includes(value.toUpperCase());
+    const normalized = value.toUpperCase();
+    if (!TerritoryQualifierType.isValidTerritoryConditionValue(normalized)) {
+      return false;
     }
-    return this._territoryRegExp.test(value);
+    if (this.allowedTerritories !== undefined) {
+      return this.allowedTerritories.includes(normalized);
+    }
+    return true;
   }
 
   /**
@@ -101,8 +116,8 @@ export class TerritoryQualifierType extends QualifierType {
    * `Failure` with an error message otherwise.
    * @public
    */
-  public static create(params: ITerritoryQualifierTypeCreateParams): Result<TerritoryQualifierType> {
-    return captureResult(() => new TerritoryQualifierType(params));
+  public static create(params?: ITerritoryQualifierTypeCreateParams): Result<TerritoryQualifierType> {
+    return captureResult(() => new TerritoryQualifierType(params ?? {}));
   }
 
   /**
@@ -112,6 +127,32 @@ export class TerritoryQualifierType extends QualifierType {
     condition: QualifierConditionValue,
     context: QualifierContextValue
   ): QualifierMatchScore {
-    return condition.toUpperCase() === context.toUpperCase() ? PerfectMatch : NoMatch;
+    if (this.isValidConditionValue(condition) && condition.toUpperCase() === context.toUpperCase()) {
+      return PerfectMatch;
+    }
+    return NoMatch;
+  }
+
+  /**
+   * Determines whether a value is a valid condition value for a territory qualifier.
+   * @param value - The value to validate.
+   * @returns `true` if the value is a valid condition value, `false` otherwise.
+   * @public
+   */
+  public static isValidTerritoryConditionValue(value: string): value is QualifierConditionValue {
+    return Validate.RegularExpressions.territoryCode.test(value);
+  }
+
+  /**
+   * Converts a string value to a territory condition value.
+   * @param value - The value to convert.
+   * @returns `Success` with the converted value if successful, `Failure` with an error message otherwise.
+   * @public
+   */
+  public static toTerritoryConditionValue(value: string): Result<QualifierConditionValue> {
+    const normalized = value.toUpperCase();
+    return TerritoryQualifierType.isValidTerritoryConditionValue(normalized)
+      ? succeed(normalized)
+      : fail(`${value}: not a valid territory code`);
   }
 }
