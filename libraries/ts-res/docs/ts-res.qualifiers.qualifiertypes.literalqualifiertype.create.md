@@ -9,7 +9,7 @@ Creates a new [LiteralQualifierType](./ts-res.qualifiers.qualifiertypes.literalq
 **Signature:**
 
 ```typescript
-static create(params: ILiteralQualifierTypeCreateParams): Result<LiteralQualifierType>;
+static create(params?: ILiteralQualifierTypeCreateParams): Result<LiteralQualifierType>;
 ```
 
 ## Parameters
@@ -42,7 +42,7 @@ params
 
 </td><td>
 
-Optional [parameters](./ts-res.qualifiers.qualifiertypes.iliteralqualifiertypecreateparams.md) to use when creating the new instance.
+_(Optional)_ Optional [parameters](./ts-res.qualifiers.qualifiertypes.iliteralqualifiertypecreateparams.md) to use when creating the new instance.
 
 
 </td></tr>

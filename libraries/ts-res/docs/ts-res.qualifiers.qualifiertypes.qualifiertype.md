@@ -74,29 +74,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_allowContextList](./ts-res.qualifiers.qualifiertypes.qualifiertype._allowcontextlist.md)
-
-
-</td><td>
-
-`protected`
-
-`readonly`
-
-
-</td><td>
-
-boolean
-
-
-</td><td>
-
-Flag indicating whether this qualifier type allows a list of values in a context.
-
-
-</td></tr>
-<tr><td>
-
 [\_collectible](./ts-res.qualifiers.qualifiertypes.qualifiertype._collectible.md)
 
 
@@ -113,6 +90,27 @@ Collections.Collectible&lt;[QualifierTypeName](./ts-res.qualifiertypename.md)<!-
 
 
 </td><td>
+
+
+</td></tr>
+<tr><td>
+
+[allowContextList](./ts-res.qualifiers.qualifiertypes.qualifiertype.allowcontextlist.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+Flag indicating whether this qualifier type allows a list of values in a context.
 
 
 </td></tr>

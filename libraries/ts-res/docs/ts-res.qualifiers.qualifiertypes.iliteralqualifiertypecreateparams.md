@@ -94,7 +94,7 @@ _(Optional)_ Optional array of enumerated values to further constrain the type. 
 </td></tr>
 <tr><td>
 
-[index](./ts-res.qualifiers.qualifiertypes.iliteralqualifiertypecreateparams.index.md)
+[index?](./ts-res.qualifiers.qualifiertypes.iliteralqualifiertypecreateparams.index.md)
 
 
 </td><td>
@@ -107,7 +107,7 @@ number
 
 </td><td>
 
-Global index for this qualifier type.
+_(Optional)_ Global index for this qualifier type.
 
 
 </td></tr>

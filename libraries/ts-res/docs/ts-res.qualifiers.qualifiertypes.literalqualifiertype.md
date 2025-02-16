@@ -74,12 +74,10 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_caseSensitive](./ts-res.qualifiers.qualifiertypes.literalqualifiertype._casesensitive.md)
+[caseSensitive](./ts-res.qualifiers.qualifiertypes.literalqualifiertype.casesensitive.md)
 
 
 </td><td>
-
-`protected`
 
 `readonly`
 
@@ -97,19 +95,17 @@ Indicates whether the qualifier match is case-sensitive.
 </td></tr>
 <tr><td>
 
-[\_enumeratedValues?](./ts-res.qualifiers.qualifiertypes.literalqualifiertype._enumeratedvalues.md)
+[enumeratedValues?](./ts-res.qualifiers.qualifiertypes.literalqualifiertype.enumeratedvalues.md)
 
 
 </td><td>
-
-`protected`
 
 `readonly`
 
 
 </td><td>
 
-ReadonlyArray&lt;string&gt;
+ReadonlyArray&lt;[QualifierConditionValue](./ts-res.qualifierconditionvalue.md)<!-- -->&gt;
 
 
 </td><td>
@@ -181,6 +177,38 @@ Creates a new [LiteralQualifierType](./ts-res.qualifiers.qualifiertypes.literalq
 </td><td>
 
 Determines whether a value is a valid condition value for a literal qualifier. The [LiteralQualifierType](./ts-res.qualifiers.qualifiertypes.literalqualifiertype.md) accepts any identifier as a valid condition value.
+
+
+</td></tr>
+<tr><td>
+
+[isValidLiteralConditionValue(from)](./ts-res.qualifiers.qualifiertypes.literalqualifiertype.isvalidliteralconditionvalue.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Checks if the given value is a valid literal condition value.
+
+
+</td></tr>
+<tr><td>
+
+[toLiteralConditionValue(from)](./ts-res.qualifiers.qualifiertypes.literalqualifiertype.toliteralconditionvalue.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Converts a string to a [literal condition value](./ts-res.qualifierconditionvalue.md)<!-- -->.
 
 
 </td></tr>

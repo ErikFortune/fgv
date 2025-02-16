@@ -128,7 +128,7 @@ describe('common resources', () => {
     test('fails if base name is invalid', () => {
       expect(
         TsRes.Validate.joinResourceId('foo!' as TsRes.ResourceName, 'bar' as TsRes.ResourceName)
-      ).toFailWith(/not a valid resource name/i);
+      ).toFailWith(/not a valid resource/i);
     });
 
     test('fails if any part is invalid', () => {
@@ -138,7 +138,7 @@ describe('common resources', () => {
           'bar' as TsRes.ResourceName,
           'baz!' as TsRes.ResourceName
         )
-      ).toFailWith(/not a valid resource name/i);
+      ).toFailWith(/not a valid resource/i);
     });
   });
 });

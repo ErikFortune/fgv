@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { captureResult, Result } from '@fgv/ts-utils';
+import { captureResult, mapResults, Result, fail, succeed } from '@fgv/ts-utils';
 import {
   ConditionOperator,
   Convert,
@@ -64,7 +64,7 @@ export interface ILiteralQualifierTypeCreateParams {
   /**
    * Global index for this qualifier type.
    */
-  index: number;
+  index?: number;
 }
 
 /**
@@ -76,12 +76,12 @@ export class LiteralQualifierType extends QualifierType {
   /**
    * Indicates whether the qualifier match is case-sensitive.
    */
-  protected readonly _caseSensitive: boolean;
+  public readonly caseSensitive: boolean;
 
   /**
    * Optional array of enumerated values to further constrain the type.
    */
-  protected readonly _enumeratedValues?: ReadonlyArray<string>;
+  public readonly enumeratedValues?: ReadonlyArray<QualifierConditionValue>;
 
   /**
    * Constructs a new {@link Qualifiers.QualifierTypes.LiteralQualifierType | LiteralQualifierType}.
@@ -99,11 +99,13 @@ export class LiteralQualifierType extends QualifierType {
   }: ILiteralQualifierTypeCreateParams) {
     super({
       name: name ?? 'literal',
-      allowContextList,
-      index: Convert.qualifierTypeIndex.convert(index).orThrow()
+      allowContextList: allowContextList === undefined ? true : allowContextList,
+      index: index !== undefined ? Convert.qualifierTypeIndex.convert(index).orThrow() : undefined
     });
-    this._caseSensitive = caseSensitive === true;
-    this._enumeratedValues = enumeratedValues ? Array.from(enumeratedValues) : undefined;
+    this.caseSensitive = caseSensitive === true;
+    this.enumeratedValues = enumeratedValues
+      ? mapResults(Array.from(enumeratedValues).map(LiteralQualifierType.toLiteralConditionValue)).orThrow()
+      : undefined;
   }
 
   /**
@@ -114,13 +116,13 @@ export class LiteralQualifierType extends QualifierType {
    * @returns `true` if the value is a valid condition value, `false` otherwise.
    */
   public isValidConditionValue(value: string): value is QualifierConditionValue {
-    if (this._enumeratedValues) {
-      if (this._caseSensitive) {
-        return this._enumeratedValues.includes(value);
+    if (this.enumeratedValues) {
+      if (this.caseSensitive) {
+        return this.enumeratedValues.includes(value as QualifierConditionValue);
       }
-      return this._enumeratedValues.some((v) => v.toLowerCase() === value.toLowerCase());
+      return this.enumeratedValues.some((v) => v.toLowerCase() === value.toLowerCase());
     }
-    return Validate.RegularExpressions.identifier.test(value);
+    return LiteralQualifierType.isValidLiteralConditionValue(value);
   }
 
   /**
@@ -131,7 +133,7 @@ export class LiteralQualifierType extends QualifierType {
     context: QualifierContextValue,
     operator: ConditionOperator
   ): QualifierMatchScore {
-    if (this._caseSensitive) {
+    if (this.caseSensitive) {
       return condition === (context as string) ? PerfectMatch : NoMatch;
     } else {
       return condition.toLowerCase() === context.toLowerCase() ? PerfectMatch : NoMatch;
@@ -146,7 +148,30 @@ export class LiteralQualifierType extends QualifierType {
    * if successful, `Failure` with an error message otherwise.
    * @public
    */
-  public static create(params: ILiteralQualifierTypeCreateParams): Result<LiteralQualifierType> {
-    return captureResult(() => new LiteralQualifierType(params));
+  public static create(params?: ILiteralQualifierTypeCreateParams): Result<LiteralQualifierType> {
+    return captureResult(() => new LiteralQualifierType(params ?? {}));
+  }
+
+  /**
+   * Checks if the given value is a valid literal condition value.
+   * @param from - The value to validate.
+   * @returns `true` if the value is a valid literal condition value, otherwise `false`.
+   * @public
+   */
+  public static isValidLiteralConditionValue(from: string): from is QualifierConditionValue {
+    return Validate.RegularExpressions.identifier.test(from);
+  }
+
+  /**
+   * Converts a string to a {@link QualifierConditionValue | literal condition value}.
+   * @param from - The string to convert.
+   * @returns `Success` with the converted value if valid, or `Failure` with an error message
+   * if not.
+   * @public
+   */
+  public static toLiteralConditionValue(from: string): Result<QualifierConditionValue> {
+    return LiteralQualifierType.isValidLiteralConditionValue(from)
+      ? succeed(from)
+      : fail(`${from}: not a valid literal condition value.`);
   }
 }

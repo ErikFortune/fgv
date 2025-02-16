@@ -9,5 +9,5 @@ Global index for this qualifier type.
 **Signature:**
 
 ```typescript
-index: number;
+index?: number;
 ```

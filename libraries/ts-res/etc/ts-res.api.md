@@ -545,7 +545,7 @@ interface ILiteralQualifierTypeCreateParams {
     allowContextList?: boolean;
     caseSensitive?: boolean;
     enumeratedValues?: ReadonlyArray<string>;
-    index: number;
+    index?: number;
     name?: string;
 }
 
@@ -820,18 +820,20 @@ class LanguageQualifierType extends QualifierType {
 class LiteralQualifierType extends QualifierType {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor({ name, caseSensitive, allowContextList, enumeratedValues, index }: ILiteralQualifierTypeCreateParams);
-    protected readonly _caseSensitive: boolean;
+    readonly caseSensitive: boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static create(params: ILiteralQualifierTypeCreateParams): Result<LiteralQualifierType>;
-    protected readonly _enumeratedValues?: ReadonlyArray<string>;
+    static create(params?: ILiteralQualifierTypeCreateParams): Result<LiteralQualifierType>;
+    readonly enumeratedValues?: ReadonlyArray<QualifierConditionValue>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     isValidConditionValue(value: string): value is QualifierConditionValue;
+    static isValidLiteralConditionValue(from: string): from is QualifierConditionValue;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     protected _matchOne(condition: QualifierConditionValue, context: QualifierContextValue, operator: ConditionOperator): QualifierMatchScore;
+    static toLiteralConditionValue(from: string): Result<QualifierConditionValue>;
 }
 
 // @public
@@ -939,7 +941,7 @@ export { Qualifiers }
 // @public
 abstract class QualifierType implements IQualifierType {
     protected constructor({ name, index, allowContextList }: IQualifierTypeCreateParams);
-    protected readonly _allowContextList: boolean;
+    readonly allowContextList: boolean;
     // (undocumented)
     protected readonly _collectible: Collections.Collectible<QualifierTypeName, QualifierTypeIndex>;
     static compare(t1: QualifierType, t2: QualifierType): number;

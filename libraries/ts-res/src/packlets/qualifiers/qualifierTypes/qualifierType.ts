@@ -162,7 +162,7 @@ export abstract class QualifierType implements IQualifierType {
    * Flag indicating whether this qualifier type allows a list of values in a context.
    * @public
    */
-  protected readonly _allowContextList: boolean;
+  public readonly allowContextList: boolean;
 
   /**
    * Constructor for use by derived classes.
@@ -172,7 +172,7 @@ export abstract class QualifierType implements IQualifierType {
    */
   protected constructor({ name, index, allowContextList }: IQualifierTypeCreateParams) {
     this.name = Convert.qualifierTypeName.convert(name).orThrow();
-    this._allowContextList = allowContextList === true;
+    this.allowContextList = allowContextList === true;
     this._collectible = new Collections.Collectible<QualifierTypeName, QualifierTypeIndex>({
       key: this.name,
       index: index,
@@ -191,10 +191,13 @@ export abstract class QualifierType implements IQualifierType {
    * {@inheritdoc Qualifiers.QualifierTypes.IQualifierType.isValidContextValue}
    */
   public isValidContextValue(value: string): value is QualifierContextValue {
-    if (!this.isValidConditionValue(value) && this._allowContextList) {
-      return value.split(',').every((v) => this.isValidConditionValue(v));
+    if (this.isValidConditionValue(value)) {
+      return true;
     }
-    return true;
+    if (this.allowContextList) {
+      return value.split(',').every((v) => this.isValidConditionValue(v.trim()));
+    }
+    return false;
   }
 
   /**
@@ -227,7 +230,7 @@ export abstract class QualifierType implements IQualifierType {
     context: QualifierContextValue,
     operator: ConditionOperator
   ): QualifierMatchScore {
-    if (this._allowContextList) {
+    if (this.allowContextList) {
       return this._matchList(condition, QualifierType._splitContext(context), operator);
     }
     return this._matchOne(condition, context, operator);
