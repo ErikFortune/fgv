@@ -4,8 +4,10 @@
 
 ## Decisions.ConcreteDecision.index property
 
+Unique global index for this decision.
+
 **Signature:**
 
 ```typescript
-readonly index?: DecisionIndex;
+get index(): DecisionIndex | undefined;
 ```

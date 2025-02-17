@@ -57,7 +57,7 @@ describe('QualifierTypeCollector', () => {
     let qt: TsRes.QualifierTypes.QualifierType;
 
     beforeEach(() => {
-      collector = TsRes.QualifierTypes.QualifierTypeCollector.create({}).orThrow();
+      collector = TsRes.QualifierTypes.QualifierTypeCollector.create().orThrow();
       qt = TsRes.QualifierTypes.LiteralQualifierType.create().orThrow();
     });
 

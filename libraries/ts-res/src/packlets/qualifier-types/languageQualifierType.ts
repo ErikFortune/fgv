@@ -66,10 +66,13 @@ export class LanguageQualifierType extends QualifierType {
    */
   protected constructor({ name, allowContextList, index }: ILanguageQualifierTypeCreateParams) {
     allowContextList = allowContextList !== false;
+    name = name ?? 'language';
+    const validated = index ? { index: Convert.qualifierTypeIndex.convert(index).orThrow() } : {};
+
     super({
-      name: name ?? 'language',
+      name,
       allowContextList,
-      index: index !== undefined ? Convert.qualifierTypeIndex.convert(index).orThrow() : index
+      ...validated
     });
   }
 

@@ -25,7 +25,7 @@ import { Candidate, ICandidate } from './candidate';
 import { IDecision } from './common';
 import { AbstractDecisionCollector } from './abstractDecisionCollector';
 import { AbstractDecision } from './abstractDecision';
-import { captureResult, mapResults, Result, succeed } from '@fgv/ts-utils';
+import { captureResult, Collections, mapResults, Result, succeed } from '@fgv/ts-utils';
 import { ConditionSet } from '../conditions';
 import { Convert as CommonConvert, DecisionIndex, DecisionKey } from '../common';
 import { Decision } from './decision';
@@ -65,8 +65,23 @@ export class ConcreteDecision<TVALUE extends JsonValue = JsonValue> implements I
   public readonly baseDecision: AbstractDecision;
   public readonly values: TVALUE[];
   public readonly candidates: ReadonlyArray<ICandidate<TVALUE>>;
-  public readonly key: DecisionKey;
-  public readonly index?: DecisionIndex;
+
+  /**
+   * Unique global key for this decision, derived from the condition set and
+   * candidate values.
+   */
+  public get key(): DecisionKey {
+    return this._collectible.key;
+  }
+
+  /**
+   * Unique global index for this decision.
+   */
+  public get index(): DecisionIndex | undefined {
+    return this._collectible.index;
+  }
+
+  private _collectible: Collections.Collectible<DecisionKey, DecisionIndex>;
 
   /**
    * Constructor for a {@link Decisions.ConcreteDecision | ConcreteDecision} object.
@@ -81,8 +96,11 @@ export class ConcreteDecision<TVALUE extends JsonValue = JsonValue> implements I
       const value = this.values[candidate.value];
       return Candidate.createCandidate({ conditionSet: candidate.conditionSet, value }).orThrow();
     });
-    this.key = Decision.getKey(this.candidates);
-    this.index = params.index;
+    this._collectible = new Collections.Collectible({
+      key: Decision.getKey(this.candidates),
+      index: params.index,
+      indexConverter: CommonConvert.decisionIndex
+    });
   }
 
   /**
@@ -98,15 +116,18 @@ export class ConcreteDecision<TVALUE extends JsonValue = JsonValue> implements I
   ): Result<ConcreteDecision<TVALUE>> {
     const conditionSets = params.candidates
       .map((candidate) => candidate.conditionSet)
-      .sort(ConditionSet.compare);
+      .sort(ConditionSet.compare)
+      .reverse();
 
     const getBase = params.decisions.validating.getOrAdd(conditionSets);
+    /* c8 ignore next 3 - defense in depth against internal error hard to repro */
     if (getBase.isFailure()) {
       return fail(getBase.message);
     }
     const baseDecision = getBase.value;
     return mapResults(
       params.candidates.map((candidate, index) => {
+        /* c8 ignore next 5 - defense in depth against internal error hard to repro */
         if (candidate.conditionSet.key !== baseDecision.candidates[index].conditionSet.key) {
           return fail(
             `${candidate.conditionSet.key}: Candidate does not match base decision ${candidate.conditionSet.key}`
@@ -122,5 +143,14 @@ export class ConcreteDecision<TVALUE extends JsonValue = JsonValue> implements I
       }
       return captureResult(() => new ConcreteDecision({ baseDecision, values }));
     });
+  }
+
+  /**
+   * Sets the index for this decision.  Once set, index is immutable.
+   * @param index - The index to set.
+   * @returns `Success` with the new index if successful, or `Failure` with an error message if not.
+   */
+  public setIndex(index: number): Result<DecisionIndex> {
+    return this._collectible.setIndex(index);
   }
 }

@@ -97,7 +97,6 @@ export class ConditionSetCollector extends ValidatingCollector<ConditionSet> {
     return validatedConditionSetDecl
       .convert(from, { conditions: this._conditions, conditionSetIndex: this.size })
       .onSuccess((c) => ConditionSet.create(c));
-    //.onSuccess((c) => succeed(this.get(c.key).orDefault(c)));
   }
 }
 

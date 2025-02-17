@@ -53,7 +53,7 @@ export class QualifierTypeCollector extends ValidatingConvertingCollector<Qualif
    * Constructor for a {@link QualifierTypes.QualifierTypeCollector | QualifierTypeCollector} object.
    * @param params - Optional {@link QualifierTypes.IQualifierTypeCollectorCreateParams | parameters} used to construct the collector.
    */
-  protected constructor(params?: IQualifierTypeCollectorCreateParams) {
+  protected constructor({ qualifierTypes }: IQualifierTypeCollectorCreateParams) {
     super({
       converters: new Collections.KeyValueConverters({
         key: Common.Convert.qualifierTypeName,
@@ -62,7 +62,7 @@ export class QualifierTypeCollector extends ValidatingConvertingCollector<Qualif
       factory: QualifierTypeCollector._qualifierTypeFactory
     });
 
-    params?.qualifierTypes?.forEach((qt) => {
+    qualifierTypes?.forEach((qt) => {
       this.getOrAdd(qt);
     });
   }
@@ -74,7 +74,7 @@ export class QualifierTypeCollector extends ValidatingConvertingCollector<Qualif
    * @returns `Success` with the new collector if successful, or `Failure` if not.
    */
   public static create(params?: IQualifierTypeCollectorCreateParams): Result<QualifierTypeCollector> {
-    return captureResult(() => new QualifierTypeCollector(params));
+    return captureResult(() => new QualifierTypeCollector(params ?? {}));
   }
 
   protected static _qualifierTypeFactory(

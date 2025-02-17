@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)(params)](./ts-res.qualifiertypes.qualifiertypecollector._constructor_.md)
+[(constructor)({ qualifierTypes })](./ts-res.qualifiertypes.qualifiertypecollector._constructor_.md)
 
 
 </td><td>

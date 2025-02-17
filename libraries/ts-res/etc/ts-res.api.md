@@ -89,10 +89,9 @@ class ConcreteDecision<TVALUE extends JsonValue = JsonValue> implements IDecisio
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create<TVALUE extends JsonValue = JsonValue>(params: IConcreteDecisionCreateParams<TVALUE>): Result<ConcreteDecision<TVALUE>>;
-    // (undocumented)
-    readonly index?: DecisionIndex;
-    // (undocumented)
-    readonly key: DecisionKey;
+    get index(): DecisionIndex | undefined;
+    get key(): DecisionKey;
+    setIndex(index: number): Result<DecisionIndex>;
     // (undocumented)
     readonly values: TVALUE[];
 }
@@ -1033,7 +1032,7 @@ const qualifierType: Converter<QualifierType, IQualifierTypeConvertContext>;
 class QualifierTypeCollector extends ValidatingConvertingCollector<QualifierType, QualifierType> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor(params?: IQualifierTypeCollectorCreateParams);
+    protected constructor({ qualifierTypes }: IQualifierTypeCollectorCreateParams);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IQualifierTypeCollectorCreateParams): Result<QualifierTypeCollector>;

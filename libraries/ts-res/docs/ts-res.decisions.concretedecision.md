@@ -112,7 +112,7 @@ ReadonlyArray&lt;[ICandidate](./ts-res.decisions.icandidate.md)<!-- -->&lt;TVALU
 </td></tr>
 <tr><td>
 
-[index?](./ts-res.decisions.concretedecision.index.md)
+[index](./ts-res.decisions.concretedecision.index.md)
 
 
 </td><td>
@@ -122,12 +122,12 @@ ReadonlyArray&lt;[ICandidate](./ts-res.decisions.icandidate.md)<!-- -->&lt;TVALU
 
 </td><td>
 
-[DecisionIndex](./ts-res.decisionindex.md)
+[DecisionIndex](./ts-res.decisionindex.md) \| undefined
 
 
 </td><td>
 
-_(Optional)_
+Unique global index for this decision.
 
 
 </td></tr>
@@ -147,6 +147,8 @@ _(Optional)_
 
 
 </td><td>
+
+Unique global key for this decision, derived from the condition set and candidate values.
 
 
 </td></tr>
@@ -202,6 +204,20 @@ Description
 </td><td>
 
 Creates a new [ConcreteDecision](./ts-res.decisions.concretedecision.md) object.
+
+
+</td></tr>
+<tr><td>
+
+[setIndex(index)](./ts-res.decisions.concretedecision.setindex.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Sets the index for this decision. Once set, index is immutable.
 
 
 </td></tr>

@@ -9,7 +9,7 @@ Constructor for a [QualifierTypeCollector](./ts-res.qualifiertypes.qualifiertype
 **Signature:**
 
 ```typescript
-protected constructor(params?: IQualifierTypeCollectorCreateParams);
+protected constructor({ qualifierTypes }: IQualifierTypeCollectorCreateParams);
 ```
 
 ## Parameters
@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-params
+{ qualifierTypes }
 
 
 </td><td>
@@ -41,8 +41,6 @@ params
 
 
 </td><td>
-
-_(Optional)_ Optional [parameters](./ts-res.qualifiertypes.iqualifiertypecollectorcreateparams.md) used to construct the collector.
 
 
 </td></tr>
