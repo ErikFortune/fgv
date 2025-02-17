@@ -84,7 +84,8 @@ export class Decision<TVALUE extends JsonValue = JsonValue> implements IDecision
   protected constructor(params: IDecisionConstructorParams<TVALUE>) {
     this.candidates = Array.from(params.candidates)
       .map((c) => Candidate.createCandidate(c).orThrow())
-      .sort(Candidate.compare);
+      .sort(Candidate.compare)
+      .reverse();
 
     const key = params.isAbstract
       ? Decision.getAbstractKey(this.candidates.map((c) => c.conditionSet))
@@ -130,7 +131,8 @@ export class Decision<TVALUE extends JsonValue = JsonValue> implements IDecision
     return CommonConvert.decisionKey
       .convert(
         Array.from(conditionSets)
-          .sort()
+          .sort(ConditionSet.compare)
+          .reverse()
           .map((c) => c.toHash())
           .join('+')
       )
