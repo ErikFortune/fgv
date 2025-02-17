@@ -120,4 +120,35 @@ describe('Decision', () => {
       });
     });
   });
+
+  describe('index methods', () => {
+    test('index can be set in createDecision', () => {
+      expect(TsRes.Decisions.Decision.createDecision({ candidates, index: 1 })).toSucceedAndSatisfy((d) => {
+        expect(d.index).toBe(1);
+      });
+    });
+
+    test('setIndex sets the index on a decision with undefined index', () => {
+      const decision = TsRes.Decisions.Decision.createDecision({ candidates }).orThrow();
+      expect(decision.setIndex(1)).toSucceedWith(1 as TsRes.DecisionIndex);
+      expect(decision.index).toBe(1);
+    });
+
+    test('setIndex fails if the index is out-of-range', () => {
+      const decision = TsRes.Decisions.Decision.createDecision({ candidates }).orThrow();
+      expect(decision.setIndex(-1)).toFailWith(/index/);
+    });
+
+    test('setIndex fails if the index is already set', () => {
+      const decision = TsRes.Decisions.Decision.createDecision({ candidates }).orThrow();
+      expect(decision.setIndex(1)).toSucceedWith(1 as TsRes.DecisionIndex);
+      expect(decision.setIndex(2)).toFailWith(/index/);
+    });
+
+    test('setIndex succeeds if the index is already set to the same value', () => {
+      const decision = TsRes.Decisions.Decision.createDecision({ candidates }).orThrow();
+      expect(decision.setIndex(1)).toSucceedWith(1 as TsRes.DecisionIndex);
+      expect(decision.setIndex(1)).toSucceedWith(1 as TsRes.DecisionIndex);
+    });
+  });
 });
