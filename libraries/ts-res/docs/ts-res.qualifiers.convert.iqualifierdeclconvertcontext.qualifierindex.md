@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-qualifierIndex: number;
+qualifierIndex?: number;
 ```

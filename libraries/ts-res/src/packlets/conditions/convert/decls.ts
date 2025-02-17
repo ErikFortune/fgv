@@ -35,7 +35,7 @@ export const conditionDecl = Converters.strictObject<IConditionDecl>({
   name: Converters.string,
   value: Converters.string,
   operator: Common.Convert.conditionOperator.optional(),
-  priority: Converters.number
+  priority: Converters.number.optional()
 });
 
 /**

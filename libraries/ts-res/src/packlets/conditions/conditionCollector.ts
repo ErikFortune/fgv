@@ -71,7 +71,7 @@ export class ConditionCollector extends ValidatingCollector<Condition> {
       })
     });
     this.qualifiers = params.qualifiers;
-    params.conditions?.forEach((c) => this.validating.add(c));
+    params.conditions?.forEach((c) => this.validating.add(c).orThrow());
   }
 
   /**

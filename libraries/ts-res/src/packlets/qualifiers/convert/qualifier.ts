@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Converters, Result } from '@fgv/ts-utils';
+import { Converters, Result, fail } from '@fgv/ts-utils';
 import { ReadOnlyQualifierCollector } from '../qualifierCollector';
 import { Qualifier } from '../qualifier';
 

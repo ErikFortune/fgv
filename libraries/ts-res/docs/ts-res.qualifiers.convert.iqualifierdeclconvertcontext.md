@@ -37,7 +37,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[qualifierIndex](./ts-res.qualifiers.convert.iqualifierdeclconvertcontext.qualifierindex.md)
+[qualifierIndex?](./ts-res.qualifiers.convert.iqualifierdeclconvertcontext.qualifierindex.md)
 
 
 </td><td>
@@ -49,6 +49,8 @@ number
 
 
 </td><td>
+
+_(Optional)_
 
 
 </td></tr>

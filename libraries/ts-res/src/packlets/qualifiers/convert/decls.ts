@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Converters, populateObject, Result, succeed } from '@fgv/ts-utils';
+import { Converters, populateObject, Result, fail, succeed } from '@fgv/ts-utils';
 import { IQualifierDecl, IValidatedQualifierDecl } from '../qualifierDecl';
 import { Validate } from '../../common';
 import { ReadOnlyQualifierTypeCollector } from '../../qualifier-types';
