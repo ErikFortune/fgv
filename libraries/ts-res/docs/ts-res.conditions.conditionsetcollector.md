@@ -49,6 +49,52 @@ Creates a new [ConditionSetCollector](./ts-res.conditions.conditionsetcollector.
 </td></tr>
 </tbody></table>
 
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[conditions](./ts-res.conditions.conditionsetcollector.conditions.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ReadOnlyConditionCollector](./ts-res.conditions.readonlyconditioncollector.md)
+
+
+</td><td>
+
+Gets the [ConditionCollector](./ts-res.conditions.conditioncollector.md) used to create conditions for conditions in this collector.
+
+
+</td></tr>
+</tbody></table>
+
 ## Methods
 
 <table><thead><tr><th>

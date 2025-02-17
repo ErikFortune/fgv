@@ -123,35 +123,6 @@ describe('ConditionCollector class', () => {
       const condition = TsRes.Conditions.Condition.create(decl).orThrow();
       expect(cc.add(condition)).toSucceedWith(condition);
     });
-
-    test('returns the existing condition if the key is already in the collector', () => {
-      const cc = TsRes.Conditions.ConditionCollector.create({
-        qualifiers
-      }).orThrow();
-      const decl = {
-        qualifierName: 'homeTerritory',
-        value: 'US'
-      };
-      const condition = cc.validating.add(decl).orThrow();
-      expect(cc.validating.add(decl)).toSucceedAndSatisfy((c) => {
-        expect(c).toBe(condition);
-      });
-    });
-
-    test('returns a new condition if priority is different', () => {
-      const cc = TsRes.Conditions.ConditionCollector.create({
-        qualifiers
-      }).orThrow();
-      const decl = {
-        qualifierName: 'homeTerritory',
-        value: 'US'
-      };
-      const condition = cc.validating.add(decl).orThrow();
-      expect(cc.validating.add({ ...decl, priority: 123 })).toSucceedAndSatisfy((c) => {
-        expect(c).not.toBe(condition);
-        expect(c.priority).toBe(123);
-      });
-    });
   });
 
   describe('validating add method', () => {
@@ -182,6 +153,35 @@ describe('ConditionCollector class', () => {
         expect(condition.value).toBe('US');
         expect(condition.priority).toBe(800);
         expect(condition.operator).toBe('matches');
+      });
+    });
+
+    test('returns the existing condition if the key is already in the collector', () => {
+      const cc = TsRes.Conditions.ConditionCollector.create({
+        qualifiers
+      }).orThrow();
+      const decl = {
+        qualifierName: 'homeTerritory',
+        value: 'US'
+      };
+      const condition = cc.validating.add(decl).orThrow();
+      expect(cc.validating.add(decl)).toSucceedAndSatisfy((c) => {
+        expect(c).toBe(condition);
+      });
+    });
+
+    test('returns a new condition if priority is different', () => {
+      const cc = TsRes.Conditions.ConditionCollector.create({
+        qualifiers
+      }).orThrow();
+      const decl = {
+        qualifierName: 'homeTerritory',
+        value: 'US'
+      };
+      const condition = cc.validating.add(decl).orThrow();
+      expect(cc.validating.add({ ...decl, priority: 123 })).toSucceedAndSatisfy((c) => {
+        expect(c).not.toBe(condition);
+        expect(c.priority).toBe(123);
       });
     });
   });

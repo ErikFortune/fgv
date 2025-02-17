@@ -23,6 +23,7 @@
 import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../index';
 import { TestQualifierType } from '../qualifier-types/testQualifierType';
+import { ConditionCollector } from '../../../packlets/conditions';
 
 describe('conditions converters', () => {
   let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
@@ -89,6 +90,72 @@ describe('conditions converters', () => {
     test('fails if the context is missing', () => {
       const decl = { qualifierName: 'homeTerritory', value: 'CA' };
       expect(TsRes.Conditions.Convert.validatedConditionDecl.convert(decl)).toFailWith(/context/);
+    });
+  });
+
+  describe('validateConditionSetDecl converter', () => {
+    let conditions: ConditionCollector;
+    let conditionDecls: TsRes.Conditions.IConditionDecl[];
+
+    beforeEach(() => {
+      conditions = TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow();
+      conditionDecls = [
+        { qualifierName: 'homeTerritory', value: 'CA' },
+        { qualifierName: 'currentTerritory', value: 'US' },
+        { qualifierName: 'language', value: 'en' },
+        { qualifierName: 'some_thing', value: 'some_value' },
+        { qualifierName: 'testThing', value: 'test value' }
+      ];
+    });
+
+    test('converts a condition set declaration to a validated condition set declaration', () => {
+      const conditionSetDecl: TsRes.Conditions.IConditionSetDecl = {
+        conditions: conditionDecls
+      };
+
+      const conditionSet = TsRes.Conditions.Convert.validatedConditionSetDecl.convert(conditionSetDecl, {
+        conditions
+      });
+      expect(conditionSet).toSucceedAndSatisfy((cs) => {
+        expect(cs.conditions.length).toBe(conditionDecls.length);
+      });
+    });
+
+    test('assigns and increments index if supplied', () => {
+      const conditionSetDecl: TsRes.Conditions.IConditionSetDecl = {
+        conditions: conditionDecls
+      };
+      const context = { conditions, conditionSetIndex: 2 };
+
+      const conditionSet = TsRes.Conditions.Convert.validatedConditionSetDecl.convert(
+        conditionSetDecl,
+        context
+      );
+      expect(conditionSet).toSucceedAndSatisfy((cs) => {
+        expect(cs.conditions.length).toBe(conditionDecls.length);
+        expect(cs.index).toBe(2);
+        expect(context.conditionSetIndex).toBe(3);
+      });
+    });
+
+    test('fails if any of the supplied conditions are invalid', () => {
+      const conditionSetDecl: TsRes.Conditions.IConditionSetDecl = {
+        conditions: [{ qualifierName: 'homeTerritory', value: 'CA', priority: 10000000 }]
+      };
+
+      expect(
+        TsRes.Conditions.Convert.validatedConditionSetDecl.convert(conditionSetDecl, { conditions })
+      ).toFailWith(/unknown/);
+    });
+
+    test('fails if the context is missing', () => {
+      const conditionSetDecl: TsRes.Conditions.IConditionSetDecl = {
+        conditions: conditionDecls
+      };
+
+      expect(TsRes.Conditions.Convert.validatedConditionSetDecl.convert(conditionSetDecl)).toFailWith(
+        /context/
+      );
     });
   });
 });

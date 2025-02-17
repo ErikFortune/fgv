@@ -21,7 +21,7 @@
  */
 
 import { captureResult, Collections, Result, succeed, ValidatingCollector } from '@fgv/ts-utils';
-import { ConditionCollector } from './conditionCollector';
+import { ConditionCollector, ReadOnlyConditionCollector } from './conditionCollector';
 import { IConditionSetDecl } from './conditionSetDecls';
 import { ConditionSet } from './conditionSet';
 import { validatedConditionSetDecl } from './convert';
@@ -56,6 +56,14 @@ export class ConditionSetCollector extends ValidatingCollector<ConditionSet> {
   private _conditions: ConditionCollector;
 
   /**
+   * Gets the {@link Conditions.ConditionCollector | ConditionCollector} used to create conditions
+   * for conditions in this collector.
+   */
+  public get conditions(): ReadOnlyConditionCollector {
+    return this._conditions;
+  }
+
+  /**
    * Creates a new {@link Conditions.ConditionSetCollector | ConditionSetCollector}.
    * @param params - {@link Conditions.IConditionSetCollectorCreateParams | Parameters} used to create
    * the collector.
@@ -68,7 +76,7 @@ export class ConditionSetCollector extends ValidatingCollector<ConditionSet> {
       })
     });
     this._conditions = params.conditions;
-    params.conditionSets?.forEach((item) => this.validating.add(item));
+    params.conditionSets?.forEach((item) => this.validating.add(item).orThrow());
   }
 
   /**
