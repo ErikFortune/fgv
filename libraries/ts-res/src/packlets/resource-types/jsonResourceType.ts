@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Converters as JsonConverters, JsonValue } from '@fgv/ts-json-base';
+import { Converters as JsonConverters, JsonObject, JsonValue } from '@fgv/ts-json-base';
 import { ResourceType } from './resourceType';
 import { Convert, ResourceTypeName, ResourceValueMergeMethod } from '../common';
 import { captureResult, Result } from '@fgv/ts-utils';
@@ -47,7 +47,7 @@ export interface IJsonResourceTypeCreateParams {
  * Implementation of a {@link ResourceTypes.ResourceType | ResourceType} for JSON values.
  * @public
  */
-export class JsonResourceType extends ResourceType<JsonValue> {
+export class JsonResourceType extends ResourceType<JsonObject> {
   /**
    * Protected {@link ResourceTypes.JsonResourceType | JsonResourceType} constructor for use by subclasses.
    * Use {@link ResourceTypes.JsonResourceType.create | JsonResourceType.create} to create a new instance.
@@ -77,7 +77,7 @@ export class JsonResourceType extends ResourceType<JsonValue> {
     json: JsonValue,
     isPartial: true,
     mergeMethod?: ResourceValueMergeMethod
-  ): Result<Partial<JsonValue>>;
+  ): Result<Partial<JsonObject>>;
   /**
    * {@inheritdoc ResourceTypes.ResourceType.(validateDeclaration:2)}
    */
@@ -85,7 +85,7 @@ export class JsonResourceType extends ResourceType<JsonValue> {
     json: JsonValue,
     isPartial: false,
     mergeMethod?: ResourceValueMergeMethod
-  ): Result<JsonValue>;
+  ): Result<JsonObject>;
   /**
    * {@inheritdoc ResourceTypes.ResourceType.(validateDeclaration:3)}
    */
@@ -93,28 +93,28 @@ export class JsonResourceType extends ResourceType<JsonValue> {
     json: JsonValue,
     isPartial: boolean,
     mergeMethod?: ResourceValueMergeMethod
-  ): Result<JsonValue>;
+  ): Result<JsonObject | Partial<JsonObject>>;
   public validateDeclaration(
     json: JsonValue,
     __isPartial: boolean,
     __mergeMethod?: ResourceValueMergeMethod
-  ): Result<JsonValue> {
-    return JsonConverters.jsonValue.convert(json);
+  ): Result<JsonObject | Partial<JsonObject>> {
+    return JsonConverters.jsonObject.convert(json);
   }
 
   /**
    * {@inheritdoc ResourceTypes.ResourceType.(validate:1)}
    */
-  public validate(json: JsonValue, isPartial: true): Result<JsonValue>;
+  public validate(json: JsonObject, isPartial: true): Result<JsonObject>;
   /**
    * {@inheritdoc ResourceTypes.ResourceType.(validate:2)}
    */
-  public validate(json: JsonValue, isPartial: false): Result<JsonValue>;
+  public validate(json: JsonObject, isPartial: false): Result<JsonObject>;
   /**
    * {@inheritdoc ResourceTypes.ResourceType.(validate:3)}
    */
-  public validate(json: JsonValue, isPartial: boolean): Result<JsonValue>;
-  public validate(json: unknown, __isPartial: unknown): Result<JsonValue> {
-    return JsonConverters.jsonValue.convert(json);
+  public validate(json: JsonObject, isPartial: boolean): Result<JsonObject>;
+  public validate(json: JsonObject, __isPartial: boolean): Result<JsonObject> {
+    return JsonConverters.jsonObject.convert(json);
   }
 }

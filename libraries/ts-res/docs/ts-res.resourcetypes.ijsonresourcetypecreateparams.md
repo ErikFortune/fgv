@@ -64,7 +64,7 @@ _(Optional)_ Optional index for the new [JsonResourceType](./ts-res.resourcetype
 
 </td><td>
 
-[ResourceTypeName](./ts-res.resourcetypename.md)
+string
 
 
 </td><td>

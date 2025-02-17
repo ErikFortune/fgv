@@ -4,12 +4,52 @@
 
 ## ResourceTypes.ResourceTypeCollector.create() method
 
+Creates a new [ResourceTypeCollector](./ts-res.resourcetypes.resourcetypecollector.md)<!-- -->.
+
 **Signature:**
 
 ```typescript
-static create(): Result<ResourceTypeCollector>;
+static create(params?: IResourceCollectorCreateParams): Result<ResourceTypeCollector>;
 ```
+
+## Parameters
+
+<table><thead><tr><th>
+
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+params
+
+
+</td><td>
+
+[IResourceCollectorCreateParams](./ts-res.resourcetypes.iresourcecollectorcreateparams.md)
+
+
+</td><td>
+
+_(Optional)_ Optional for creating the new collector.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[ResourceTypeCollector](./ts-res.resourcetypes.resourcetypecollector.md)<!-- -->&gt;
+
+`Success` with the new instance, or `Failure` with an error message if the collector could not be created.
 

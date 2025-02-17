@@ -22,7 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../index';
-import { JsonValue } from '@fgv/ts-json-base';
+import { JsonObject } from '@fgv/ts-json-base';
 
 describe('JsonResourceType', () => {
   describe('static create method', () => {
@@ -65,7 +65,7 @@ describe('JsonResourceType', () => {
     });
 
     test('fails for non-json values', () => {
-      const value = { foo: () => true } as unknown as JsonValue;
+      const value = { foo: () => true } as unknown as JsonObject;
       const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
       expect(rt.validateDeclaration(value, false)).toFailWith(/not a valid JSON object/);
     });
@@ -80,7 +80,7 @@ describe('JsonResourceType', () => {
     });
 
     test('fails for non-json values', () => {
-      const value = { foo: () => true } as unknown as JsonValue;
+      const value = { foo: () => true } as unknown as JsonObject;
       const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
       expect(rt.validate(value, false)).toFailWith(/not a valid JSON object/);
     });

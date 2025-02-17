@@ -25,21 +25,38 @@ import { ResourceType } from './resourceType';
 import { Convert as CommonConvert, ResourceTypeName } from '../common';
 
 /**
+ * Parameters for creating a {@link ResourceTypes.ResourceTypeCollector | ResourceTypeCollector}.
+ * @public
+ */
+export interface IResourceCollectorCreateParams {
+  resourceTypes?: ResourceType[];
+}
+
+/**
  * Map {@link ResourceTypeName | resource type names} to {@link ResourceTypes.ResourceType | resource types}.
  * @public
  */
 export class ResourceTypeCollector extends ValidatingCollector<ResourceType> {
-  protected constructor() {
+  protected constructor({ resourceTypes }: IResourceCollectorCreateParams) {
     super({
       converters: new Collections.KeyValueConverters<ResourceTypeName, ResourceType>({
         key: CommonConvert.resourceTypeName,
         value: (from: unknown) => this._toResourceType(from)
       })
     });
+    resourceTypes?.forEach((resourceType) => {
+      this.add(resourceType).orThrow();
+    });
   }
 
-  public static create(): Result<ResourceTypeCollector> {
-    return captureResult(() => new ResourceTypeCollector());
+  /**
+   * Creates a new {@link ResourceTypes.ResourceTypeCollector | ResourceTypeCollector}.
+   * @param params - Optional for creating the new collector.
+   * @returns `Success` with the new instance, or `Failure` with an error
+   * message if the collector could not be created.
+   */
+  public static create(params?: IResourceCollectorCreateParams): Result<ResourceTypeCollector> {
+    return captureResult(() => new ResourceTypeCollector(params ?? {}));
   }
 
   protected _toResourceType(from: unknown): Result<ResourceType> {

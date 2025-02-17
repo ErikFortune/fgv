@@ -9,9 +9,9 @@ Implementation of a [ResourceType](./ts-res.resourcetypes.resourcetype.md) for J
 **Signature:**
 
 ```typescript
-export declare class JsonResourceType extends ResourceType<JsonValue> 
+export declare class JsonResourceType extends ResourceType<JsonObject> 
 ```
-**Extends:** [ResourceType](./ts-res.resourcetypes.resourcetype.md)<!-- -->&lt;JsonValue&gt;
+**Extends:** [ResourceType](./ts-res.resourcetypes.resourcetype.md)<!-- -->&lt;JsonObject&gt;
 
 ## Constructors
 

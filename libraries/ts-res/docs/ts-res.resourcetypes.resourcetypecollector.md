@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)()](./ts-res.resourcetypes.resourcetypecollector._constructor_.md)
+[(constructor)({ resourceTypes })](./ts-res.resourcetypes.resourcetypecollector._constructor_.md)
 
 
 </td><td>
@@ -83,7 +83,7 @@ Description
 </td></tr>
 <tr><td>
 
-[create()](./ts-res.resourcetypes.resourcetypecollector.create.md)
+[create(params)](./ts-res.resourcetypes.resourcetypecollector.create.md)
 
 
 </td><td>
@@ -92,6 +92,8 @@ Description
 
 
 </td><td>
+
+Creates a new [ResourceTypeCollector](./ts-res.resourcetypes.resourcetypecollector.md)<!-- -->.
 
 
 </td></tr>

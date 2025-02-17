@@ -9,7 +9,7 @@ Validates a JSON value for use as a partial resource instance value.
 **Signature:**
 
 ```typescript
-validate(json: JsonValue, isPartial: true): Result<JsonValue>;
+validate(json: JsonObject, isPartial: true): Result<JsonObject>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ json
 
 </td><td>
 
-JsonValue
+JsonObject
 
 
 </td><td>
@@ -65,7 +65,7 @@ true
 </tbody></table>
 **Returns:**
 
-Result&lt;JsonValue&gt;
+Result&lt;JsonObject&gt;
 
 `Success` with the strongly-typed partial resource value if the JSON is valid, `Failure` with an error message otherwise.
 

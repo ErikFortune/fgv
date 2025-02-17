@@ -9,5 +9,39 @@ Constructs a new instance of the `ResourceTypeCollector` class
 **Signature:**
 
 ```typescript
-protected constructor();
+protected constructor({ resourceTypes }: IResourceCollectorCreateParams);
 ```
+
+## Parameters
+
+<table><thead><tr><th>
+
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+{ resourceTypes }
+
+
+</td><td>
+
+[IResourceCollectorCreateParams](./ts-res.resourcetypes.iresourcecollectorcreateparams.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

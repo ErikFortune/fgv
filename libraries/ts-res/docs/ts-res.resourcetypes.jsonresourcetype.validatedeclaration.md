@@ -9,7 +9,7 @@ Validates a [resource candidate declaration](./ts-res.resourcejson.iresourcecand
 **Signature:**
 
 ```typescript
-validateDeclaration(json: JsonValue, isPartial: true, mergeMethod: ResourceValueMergeMethod): Result<Partial<JsonValue>>;
+validateDeclaration(json: JsonValue, isPartial: true, mergeMethod?: ResourceValueMergeMethod): Result<Partial<JsonObject>>;
 ```
 
 ## Parameters
@@ -74,14 +74,14 @@ mergeMethod
 
 </td><td>
 
-The method to use when merging with previously resolved values.
+_(Optional)_ The method to use when merging with previously resolved values.
 
 
 </td></tr>
 </tbody></table>
 **Returns:**
 
-Result&lt;Partial&lt;JsonValue&gt;&gt;
+Result&lt;Partial&lt;JsonObject&gt;&gt;
 
 `Success` with the strongly-typed resource value if the JSON and merge method are valid, `Failure` with an error message otherwise.
 

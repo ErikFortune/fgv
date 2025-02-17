@@ -91,6 +91,17 @@ Parameters to create a [JsonResourceType](./ts-res.resourcetypes.jsonresourcetyp
 
 
 </td></tr>
+<tr><td>
+
+[IResourceCollectorCreateParams](./ts-res.resourcetypes.iresourcecollectorcreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a [ResourceTypeCollector](./ts-res.resourcetypes.resourcetypecollector.md)<!-- -->.
+
+
+</td></tr>
 </tbody></table>
 
 ## Type Aliases

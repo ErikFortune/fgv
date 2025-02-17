@@ -9,5 +9,5 @@ Optional key for the new [JsonResourceType](./ts-res.resourcetypes.jsonresourcet
 **Signature:**
 
 ```typescript
-key?: ResourceTypeName;
+key?: string;
 ```
