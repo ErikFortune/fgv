@@ -71,7 +71,8 @@ export const validatedConditionDecl = Converters.generic<
           decl.priority
             ? Common.Convert.conditionPriority.convert(decl.priority)
             : succeed(qualifier.defaultPriority),
-        index: () => Common.Convert.conditionIndex.convert(context.index)
+        index: () =>
+          context.index ? Common.Convert.conditionIndex.convert(context.index) : succeed(undefined)
       })
         .onSuccess((result) => {
           if (context.index !== undefined) {

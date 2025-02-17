@@ -105,4 +105,84 @@ describe('ConditionCollector class', () => {
       ).toFailWith(/not found/i);
     });
   });
+
+  describe('add method', () => {
+    test('adds an instantiated condition to the collector', () => {
+      const cc = TsRes.Conditions.ConditionCollector.create({
+        qualifiers
+      }).orThrow();
+      const decl = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'homeTerritory',
+            value: 'US'
+          },
+          { qualifiers }
+        )
+        .orThrow();
+      const condition = TsRes.Conditions.Condition.create(decl).orThrow();
+      expect(cc.add(condition)).toSucceedWith(condition);
+    });
+
+    test('returns the existing condition if the key is already in the collector', () => {
+      const cc = TsRes.Conditions.ConditionCollector.create({
+        qualifiers
+      }).orThrow();
+      const decl = {
+        qualifierName: 'homeTerritory',
+        value: 'US'
+      };
+      const condition = cc.validating.add(decl).orThrow();
+      expect(cc.validating.add(decl)).toSucceedAndSatisfy((c) => {
+        expect(c).toBe(condition);
+      });
+    });
+
+    test('returns a new condition if priority is different', () => {
+      const cc = TsRes.Conditions.ConditionCollector.create({
+        qualifiers
+      }).orThrow();
+      const decl = {
+        qualifierName: 'homeTerritory',
+        value: 'US'
+      };
+      const condition = cc.validating.add(decl).orThrow();
+      expect(cc.validating.add({ ...decl, priority: 123 })).toSucceedAndSatisfy((c) => {
+        expect(c).not.toBe(condition);
+        expect(c.priority).toBe(123);
+      });
+    });
+  });
+
+  describe('validating add method', () => {
+    test('adds an instantiated condition to the collector', () => {
+      const cc = TsRes.Conditions.ConditionCollector.create({
+        qualifiers
+      }).orThrow();
+      const decl = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'homeTerritory',
+            value: 'US'
+          },
+          { qualifiers }
+        )
+        .orThrow();
+      const condition = TsRes.Conditions.Condition.create(decl).orThrow();
+      expect(cc.validating.add(condition)).toSucceedWith(condition);
+    });
+
+    test('adds a condition from a declaration to the collector', () => {
+      const cc = TsRes.Conditions.ConditionCollector.create({
+        qualifiers
+      }).orThrow();
+      const decl = { qualifierName: 'homeTerritory', value: 'US' };
+      expect(cc.validating.add(decl)).toSucceedAndSatisfy((condition) => {
+        expect(condition.qualifier.name).toBe('homeTerritory');
+        expect(condition.value).toBe('US');
+        expect(condition.priority).toBe(800);
+        expect(condition.operator).toBe('matches');
+      });
+    });
+  });
 });
