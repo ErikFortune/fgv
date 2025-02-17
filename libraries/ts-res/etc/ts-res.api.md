@@ -54,15 +54,19 @@ export const allResourceValueMergeMethods: ResourceValueMergeMethod[];
 class Candidate<TVALUE extends JsonValue = JsonValue> implements ICandidate<TVALUE> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    constructor(params: ICandidate<TVALUE>);
+    protected constructor(params: ICandidate<TVALUE>);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static compare(c1: ICandidate, c2: ICandidate): number;
     // (undocumented)
     readonly conditionSet: ConditionSet;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static createCandidate<TVALUE extends JsonValue>(params: ICandidate<TVALUE>): Result<ICandidate<TVALUE>>;
+    static createCandidate<TVALUE extends JsonValue>(params: ICandidate<TVALUE>): Result<Candidate<TVALUE>>;
+    // (undocumented)
+    readonly isPartial: boolean;
     get key(): string;
+    // (undocumented)
+    readonly mergeMethod: ResourceValueMergeMethod;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     toString(): string;
     // (undocumented)
@@ -405,6 +409,10 @@ interface ICandidate<TVALUE extends JsonValue = JsonValue> {
     // (undocumented)
     readonly conditionSet: ConditionSet;
     // (undocumented)
+    readonly isPartial?: boolean;
+    // (undocumented)
+    readonly mergeMethod?: ResourceValueMergeMethod;
+    // (undocumented)
     readonly value: TVALUE;
 }
 
@@ -494,7 +502,7 @@ interface IConditionSetDeclConvertContext {
     // (undocumented)
     readonly conditions: ConditionCollector;
     // (undocumented)
-    index?: number;
+    conditionSetIndex?: number;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

@@ -145,7 +145,7 @@ describe('conditions converters', () => {
 
       expect(
         TsRes.Conditions.Convert.validatedConditionSetDecl.convert(conditionSetDecl, { conditions })
-      ).toFailWith(/unknown/);
+      ).toFailWith(/not a valid priority/);
     });
 
     test('fails if the context is missing', () => {

@@ -23,6 +23,7 @@
 import { JsonValue } from '@fgv/ts-json-base';
 import { ConditionSet } from '../conditions';
 import { captureResult, Result } from '@fgv/ts-utils';
+import { ResourceValueMergeMethod } from '../common';
 
 /**
  * A {@link Decisions.ICandidate | resource candidate} represents a single
@@ -32,6 +33,8 @@ import { captureResult, Result } from '@fgv/ts-utils';
 export interface ICandidate<TVALUE extends JsonValue = JsonValue> {
   readonly conditionSet: ConditionSet;
   readonly value: TVALUE;
+  readonly isPartial?: boolean;
+  readonly mergeMethod?: ResourceValueMergeMethod;
 }
 
 /**
@@ -42,6 +45,8 @@ export interface ICandidate<TVALUE extends JsonValue = JsonValue> {
 export class Candidate<TVALUE extends JsonValue = JsonValue> implements ICandidate<TVALUE> {
   public readonly conditionSet: ConditionSet;
   public readonly value: TVALUE;
+  public readonly isPartial: boolean;
+  public readonly mergeMethod: ResourceValueMergeMethod;
 
   /**
    * Key of the condition set for this candidate.
@@ -55,9 +60,11 @@ export class Candidate<TVALUE extends JsonValue = JsonValue> implements ICandida
    * @param params - The {@link Decisions.ICandidate | parameters} to use to create the
    * new candidate.
    */
-  public constructor(params: ICandidate<TVALUE>) {
+  protected constructor(params: ICandidate<TVALUE>) {
     this.conditionSet = params.conditionSet;
     this.value = params.value;
+    this.isPartial = params.isPartial === true;
+    this.mergeMethod = params.mergeMethod ?? 'augment';
   }
 
   /**
@@ -69,7 +76,7 @@ export class Candidate<TVALUE extends JsonValue = JsonValue> implements ICandida
    */
   public static createCandidate<TVALUE extends JsonValue>(
     params: ICandidate<TVALUE>
-  ): Result<ICandidate<TVALUE>> {
+  ): Result<Candidate<TVALUE>> {
     return captureResult(() => new Candidate(params));
   }
 

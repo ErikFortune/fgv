@@ -28,7 +28,7 @@ describe('Condition', () => {
   let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
   let qualifiers: TsRes.Qualifiers.QualifierCollector;
 
-  beforeAll(() => {
+  beforeEach(() => {
     qualifierTypes = TsRes.QualifierTypes.QualifierTypeCollector.create({
       qualifierTypes: [
         TsRes.QualifierTypes.LanguageQualifierType.create().orThrow(),

@@ -79,7 +79,7 @@ export class ConcreteDecision<TVALUE extends JsonValue = JsonValue> implements I
     this.values = params.values;
     this.candidates = this.baseDecision.candidates.map((candidate) => {
       const value = this.values[candidate.value];
-      return new Candidate({ conditionSet: candidate.conditionSet, value });
+      return Candidate.createCandidate({ conditionSet: candidate.conditionSet, value }).orThrow();
     });
     this.key = Decision.getKey(this.candidates);
     this.index = params.index;

@@ -83,7 +83,7 @@ export class Decision<TVALUE extends JsonValue = JsonValue> implements IDecision
    */
   protected constructor(params: IDecisionConstructorParams<TVALUE>) {
     this.candidates = Array.from(params.candidates)
-      .map((c) => new Candidate(c))
+      .map((c) => Candidate.createCandidate(c).orThrow())
       .sort(Candidate.compare);
 
     const key = params.isAbstract

@@ -38,6 +38,8 @@ Description
 
 </td><td>
 
+`protected`
+
 
 </td><td>
 
@@ -91,6 +93,25 @@ Description
 </td></tr>
 <tr><td>
 
+[isPartial](./ts-res.decisions.candidate.ispartial.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [key](./ts-res.decisions.candidate.key.md)
 
 
@@ -107,6 +128,25 @@ string
 </td><td>
 
 Key of the condition set for this candidate.
+
+
+</td></tr>
+<tr><td>
+
+[mergeMethod](./ts-res.decisions.candidate.mergemethod.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ResourceValueMergeMethod](./ts-res.resourcevaluemergemethod.md)
+
+
+</td><td>
 
 
 </td></tr>

@@ -42,7 +42,7 @@ export const conditionSetDecl = Converters.strictObject<IConditionSetDecl>({
  */
 export interface IConditionSetDeclConvertContext {
   readonly conditions: ConditionCollector;
-  index?: number;
+  conditionSetIndex?: number;
 }
 
 /**
@@ -63,7 +63,7 @@ export const validatedConditionSetDecl = Converters.generic<
     return mapResults(
       decl.conditions.map((condition) => context.conditions.validating.getOrAdd(condition))
     ).onSuccess((conditions) => {
-      const index = context.index ? context.index++ : undefined;
+      const index = context.conditionSetIndex ? context.conditionSetIndex++ : undefined;
       return succeed({ conditions, index });
     });
   });

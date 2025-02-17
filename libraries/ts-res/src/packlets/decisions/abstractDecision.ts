@@ -52,7 +52,7 @@ export class AbstractDecision extends Decision<number> {
    */
   protected constructor(params: IAbstractDecisionCreateParams) {
     const candidates = Array.from(params.conditionSets)
-      .map((conditionSet, value) => new Candidate({ conditionSet, value }))
+      .map((conditionSet, value) => Candidate.createCandidate({ conditionSet, value }).orThrow())
       .sort(Candidate.compare);
     super({ candidates, index: params.index, isAbstract: true });
   }

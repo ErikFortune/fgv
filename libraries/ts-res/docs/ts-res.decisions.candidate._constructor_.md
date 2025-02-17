@@ -9,7 +9,7 @@ Construct a new [Candidate](./ts-res.decisions.candidate.md)<!-- -->.
 **Signature:**
 
 ```typescript
-constructor(params: ICandidate<TVALUE>);
+protected constructor(params: ICandidate<TVALUE>);
 ```
 
 ## Parameters

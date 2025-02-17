@@ -144,7 +144,7 @@ describe('ConditionSetCollector class', () => {
       cc.validating.add(conditionSet).orThrow();
       expect(cc.add(conditionSet)).toSucceedWith(conditionSet);
       expect(cc.size).toBe(1);
-      expect(cc.add(cs2)).toSucceedAndSatisfy((cs) => {
+      expect(cc.getOrAdd(cs2)).toSucceedAndSatisfy((cs) => {
         expect(cs).toBe(conditionSet);
         expect(cs).not.toBe(cs2);
         expect(cc.size).toBe(1);

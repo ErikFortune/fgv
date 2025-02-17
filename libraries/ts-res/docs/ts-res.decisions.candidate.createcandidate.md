@@ -9,7 +9,7 @@ Create a new [candidate](./ts-res.decisions.candidate.md)<!-- -->.
 **Signature:**
 
 ```typescript
-static createCandidate<TVALUE extends JsonValue>(params: ICandidate<TVALUE>): Result<ICandidate<TVALUE>>;
+static createCandidate<TVALUE extends JsonValue>(params: ICandidate<TVALUE>): Result<Candidate<TVALUE>>;
 ```
 
 ## Parameters
@@ -49,7 +49,7 @@ The [parameters](./ts-res.decisions.icandidate.md) to use to create the new cand
 </tbody></table>
 **Returns:**
 
-Result&lt;[ICandidate](./ts-res.decisions.icandidate.md)<!-- -->&lt;TVALUE&gt;&gt;
+Result&lt;[Candidate](./ts-res.decisions.candidate.md)<!-- -->&lt;TVALUE&gt;&gt;
 
 `Success` with the new candidate if successful, or `Failure` if the candidate could not be created.
 

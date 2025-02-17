@@ -56,7 +56,7 @@ Description
 </td></tr>
 <tr><td>
 
-[index?](./ts-res.conditions.convert.iconditionsetdeclconvertcontext.index.md)
+[conditionSetIndex?](./ts-res.conditions.convert.iconditionsetdeclconvertcontext.conditionsetindex.md)
 
 
 </td><td>
