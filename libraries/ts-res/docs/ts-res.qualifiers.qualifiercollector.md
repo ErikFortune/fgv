@@ -74,12 +74,10 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_qualifierTypes](./ts-res.qualifiers.qualifiercollector._qualifiertypes.md)
+[qualifierTypes](./ts-res.qualifiers.qualifiercollector.qualifiertypes.md)
 
 
 </td><td>
-
-`protected`
 
 
 </td><td>

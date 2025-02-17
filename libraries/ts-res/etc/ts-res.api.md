@@ -905,7 +905,7 @@ class QualifierCollector extends ValidatingConvertingCollector<Qualifier, IQuali
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected _qualifierFactory(__key: QualifierName, index: number, decl: IQualifierDecl): Result<Qualifier>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected _qualifierTypes: ReadOnlyQualifierTypeCollector;
+    qualifierTypes: ReadOnlyQualifierTypeCollector;
 }
 
 // @public

@@ -21,7 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import * as TsRes from '../../../../index';
+import * as TsRes from '../../../index';
 import { mapResults } from '@fgv/ts-utils';
 
 describe('QualifierTypeCollector', () => {

@@ -21,8 +21,8 @@
  */
 
 import '@fgv/ts-utils-jest';
-import * as TsRes from '../../../../index';
-import { QualifierType } from '../../../../packlets/qualifier-types';
+import * as TsRes from '../../../index';
+import { QualifierType } from '../../../packlets/qualifier-types';
 
 const validIdentifiers: string[] = [
   'abc',

@@ -56,7 +56,7 @@ export class QualifierCollector extends ValidatingConvertingCollector<Qualifier,
   /**
    * The {@link QualifierTypes.QualifierTypeCollector | qualifier types} that this collector uses.
    */
-  protected _qualifierTypes: ReadOnlyQualifierTypeCollector;
+  public qualifierTypes: ReadOnlyQualifierTypeCollector;
 
   /**
    * Constructor for a {@link Qualifiers.QualifierCollector | QualifierCollector} object.
@@ -71,8 +71,8 @@ export class QualifierCollector extends ValidatingConvertingCollector<Qualifier,
         value: qualifierDecl
       })
     });
-    this._qualifierTypes = params.qualifierTypes;
-    params.qualifiers?.forEach((q) => this.getOrAdd(Common.Validate.toQualifierName(q.name).orThrow(), q));
+    this.qualifierTypes = params.qualifierTypes;
+    params.qualifiers?.forEach((q) => this.validating.getOrAdd(q.name, q).orThrow());
   }
 
   /**
@@ -94,7 +94,7 @@ export class QualifierCollector extends ValidatingConvertingCollector<Qualifier,
    */
   protected _qualifierFactory(__key: QualifierName, index: number, decl: IQualifierDecl): Result<Qualifier> {
     const convertContext: IQualifierDeclConvertContext = {
-      qualifierTypes: this._qualifierTypes,
+      qualifierTypes: this.qualifierTypes,
       qualifierIndex: index
     };
     return validatedQualifierDecl.convert(decl, convertContext).onSuccess(Qualifier.create);
