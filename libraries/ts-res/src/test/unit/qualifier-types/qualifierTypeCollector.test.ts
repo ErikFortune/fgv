@@ -50,6 +50,18 @@ describe('QualifierTypeCollector', () => {
         }
       );
     });
+
+    test('fails if the supplied values are invalid', () => {
+      const qualifierTypes = mapResults<TsRes.QualifierTypes.QualifierType>([
+        TsRes.QualifierTypes.LanguageQualifierType.create(),
+        TsRes.QualifierTypes.TerritoryQualifierType.create(),
+        TsRes.QualifierTypes.LiteralQualifierType.create(),
+        TsRes.QualifierTypes.LanguageQualifierType.create()
+      ]).orThrow();
+      expect(TsRes.QualifierTypes.QualifierTypeCollector.create({ qualifierTypes })).toFailWith(
+        /already exists/i
+      );
+    });
   });
 
   describe('getOrAdd', () => {

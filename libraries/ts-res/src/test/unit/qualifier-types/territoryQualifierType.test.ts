@@ -100,7 +100,7 @@ describe('TerritoryQualifierType', () => {
     let qt: TsRes.QualifierTypes.TerritoryQualifierType;
 
     beforeEach(() => {
-      qt = TsRes.QualifierTypes.TerritoryQualifierType.create().getValueOrThrow();
+      qt = TsRes.QualifierTypes.TerritoryQualifierType.create().orThrow();
     });
 
     test('returns true for valid territories regardless of case', () => {
@@ -122,7 +122,7 @@ describe('TerritoryQualifierType', () => {
     let qt: TsRes.QualifierTypes.TerritoryQualifierType;
 
     beforeEach(() => {
-      qt = TsRes.QualifierTypes.TerritoryQualifierType.create().getValueOrThrow();
+      qt = TsRes.QualifierTypes.TerritoryQualifierType.create().orThrow();
     });
 
     test('returns a perfect match for matching territories', () => {

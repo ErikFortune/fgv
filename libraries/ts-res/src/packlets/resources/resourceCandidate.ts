@@ -22,11 +22,10 @@
 
 import { JsonValue } from '@fgv/ts-json-base';
 import { ResourceId, ResourceValueMergeMethod } from '../common';
-import { Condition, ConditionSet, Convert as ConditionsConvert } from '../conditions';
-import { ReadOnlyQualifierCollector } from '../qualifiers';
+import { Condition, ConditionSet, ConditionSetCollector, IConditionDecl } from '../conditions';
 import * as ResourceJson from '../resource-json';
-import { ResourceType, ResourceTypeCollector } from '../resource-types';
-import { captureResult, MessageAggregator, Normalizer, Result, succeed } from '@fgv/ts-utils';
+import { ReadOnlyResourceTypeCollector, ResourceType } from '../resource-types';
+import { captureResult, mapResults, MessageAggregator, Normalizer, Result, succeed } from '@fgv/ts-utils';
 
 /**
  * Parameters to create a {@link Resources.ResourceCandidate | ResourceCandidate}.
@@ -35,8 +34,8 @@ import { captureResult, MessageAggregator, Normalizer, Result, succeed } from '@
 export interface IResourceCandidateCreateParams {
   decl: ResourceJson.IResourceCandidateDecl;
   parentConditions: ReadonlyArray<Condition>;
-  qualifiers: ReadOnlyQualifierCollector;
-  resourceTypes: ResourceTypeCollector;
+  conditionSets: ConditionSetCollector;
+  resourceTypes: ReadOnlyResourceTypeCollector;
 }
 
 /**
@@ -91,12 +90,10 @@ export class ResourceCandidate {
     this.id = params.decl.id;
     this.json = params.decl.json;
     this.conditions = ResourceCandidate._mergeConditions(
-      params.qualifiers,
+      params.conditionSets,
       params.decl.conditions,
       params.parentConditions
-    )
-      .onSuccess((conditions) => ConditionSet.create({ conditions }))
-      .orThrow();
+    ).orThrow();
     this.isPartial = params.decl.isPartial ?? false;
     this.mergeMethod = params.decl.mergeMethod ?? 'replace';
     this._resourceType = params.decl.resourceTypeName
@@ -180,31 +177,38 @@ export class ResourceCandidate {
 
   /**
    * Validates declared conditions and merges them with parent conditions.
-   * @param qualifiers - The {@link Qualifiers.QualifierMap | qualifiers} to use when creating conditions.
+   * @param conditionSets - The {@link Conditions.ConditionSetCollector | condition set collector}
+   * to use for this candidate.
    * @param declared - The declared conditions for the candidate.
    * @param parent - The parent conditions to merge with the declared conditions.
    * @returns `Success` with the merged conditions if successful, `Failure` otherwise.
    * @internal
    */
   private static _mergeConditions(
-    qualifiers: ReadOnlyQualifierCollector,
+    conditionSets: ConditionSetCollector,
     declared: ResourceJson.ConditionSetDecl | undefined,
     parent: ReadonlyArray<Condition> | undefined
-  ): Result<Condition[]> {
-    const errors = new MessageAggregator();
-    const conditions = Array.from(parent ?? []);
+  ): Result<ConditionSet> {
+    declared = declared ?? {};
+    parent = parent ?? [];
 
-    for (const [qualifier, value] of Object.entries(declared ?? {})) {
-      ConditionsConvert.validatedConditionDecl
-        .convert({ qualifier, value }, { qualifiers, conditionIndex: conditions.length })
-        .onSuccess(Condition.create)
-        .aggregateError(errors)
-        .onSuccess((condition) => {
-          conditions.push(condition);
-          return succeed(condition);
-        });
-    }
+    const conditionDecls: IConditionDecl[] = Array.from(Object.entries(declared)).map(
+      ([qualifierName, value]) => {
+        return { qualifierName, value };
+      }
+    );
 
-    return errors.returnOrReport(succeed(conditions));
+    return mapResults(
+      // get or add all declared conditions from our condition collector
+      conditionDecls.map((decl) => conditionSets.conditions.validating.getOrAdd(decl))
+    ).onSuccess((declaredConditions) => {
+      // make sure our parent conditions all come from our condition collector too
+      return mapResults(parent.map((c) => conditionSets.conditions.getOrAdd(c))).onSuccess(
+        (parentConditions) => {
+          const conditions = [...parentConditions, ...declaredConditions];
+          return conditionSets.validating.getOrAdd({ conditions });
+        }
+      );
+    });
   }
 }

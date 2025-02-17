@@ -238,7 +238,7 @@ class ConditionSetCollector extends ValidatingCollector<ConditionSet> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(params: IConditionSetCollectorCreateParams);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    get conditions(): ReadOnlyConditionCollector;
+    conditions: ConditionCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params: IConditionSetCollectorCreateParams): Result<ConditionSetCollector>;
@@ -669,13 +669,13 @@ interface IResourceBuilderCreateParams {
 // @public
 interface IResourceCandidateCreateParams {
     // (undocumented)
+    conditionSets: ConditionSetCollector;
+    // (undocumented)
     decl: ResourceJson.IResourceCandidateDecl;
     // (undocumented)
     parentConditions: ReadonlyArray<Condition>;
     // (undocumented)
-    qualifiers: ReadOnlyQualifierCollector;
-    // (undocumented)
-    resourceTypes: ResourceTypeCollector;
+    resourceTypes: ReadOnlyResourceTypeCollector;
 }
 
 // @public
@@ -1587,7 +1587,7 @@ const validatedQualifierDecl: Converter<IValidatedQualifierDecl, IQualifierDeclC
 // Warnings were encountered during analysis:
 //
 // src/packlets/resources/resource.ts:124:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resourceCandidate.ts:189:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resourceCandidate.ts:187:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 

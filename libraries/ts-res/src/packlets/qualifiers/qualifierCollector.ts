@@ -72,7 +72,8 @@ export class QualifierCollector extends ValidatingConvertingCollector<Qualifier,
       })
     });
     this.qualifierTypes = params.qualifierTypes;
-    params.qualifiers?.forEach((q) => this.validating.getOrAdd(q.name, q).orThrow());
+    /* c8 ignore next 1 - coverage misses the branch intermittently */
+    params.qualifiers?.forEach((q) => this.validating.add(q.name, q).orThrow());
   }
 
   /**

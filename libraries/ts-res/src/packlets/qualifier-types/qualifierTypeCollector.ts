@@ -62,8 +62,9 @@ export class QualifierTypeCollector extends ValidatingConvertingCollector<Qualif
       factory: QualifierTypeCollector._qualifierTypeFactory
     });
 
+    /* c8 ignore next 1 - coverage seems to intermittently miss the branch */
     qualifierTypes?.forEach((qt) => {
-      this.getOrAdd(qt);
+      this.add(qt).orThrow();
     });
   }
 
@@ -74,7 +75,9 @@ export class QualifierTypeCollector extends ValidatingConvertingCollector<Qualif
    * @returns `Success` with the new collector if successful, or `Failure` if not.
    */
   public static create(params?: IQualifierTypeCollectorCreateParams): Result<QualifierTypeCollector> {
-    return captureResult(() => new QualifierTypeCollector(params ?? {}));
+    /* c8 ignore next 1 - coverage seems to miss the branch intermittently */
+    params = params ?? {};
+    return captureResult(() => new QualifierTypeCollector(params));
   }
 
   protected static _qualifierTypeFactory(

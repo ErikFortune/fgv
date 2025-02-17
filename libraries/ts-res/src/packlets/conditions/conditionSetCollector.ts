@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
-import { captureResult, Collections, Result, succeed, ValidatingCollector } from '@fgv/ts-utils';
-import { ConditionCollector, ReadOnlyConditionCollector } from './conditionCollector';
+import { captureResult, Collections, mapResults, Result, succeed, ValidatingCollector } from '@fgv/ts-utils';
+import { ConditionCollector } from './conditionCollector';
 import { IConditionSetDecl } from './conditionSetDecls';
 import { ConditionSet } from './conditionSet';
 import { validatedConditionSetDecl } from './convert';
@@ -53,15 +53,11 @@ export interface IConditionSetCollectorCreateParams {
  * @public
  */
 export class ConditionSetCollector extends ValidatingCollector<ConditionSet> {
-  private _conditions: ConditionCollector;
-
   /**
    * Gets the {@link Conditions.ConditionCollector | ConditionCollector} used to create conditions
    * for conditions in this collector.
    */
-  public get conditions(): ReadOnlyConditionCollector {
-    return this._conditions;
-  }
+  public conditions: ConditionCollector;
 
   /**
    * Creates a new {@link Conditions.ConditionSetCollector | ConditionSetCollector}.
@@ -75,7 +71,7 @@ export class ConditionSetCollector extends ValidatingCollector<ConditionSet> {
         value: (from: unknown) => this._toConditionSet(from)
       })
     });
-    this._conditions = params.conditions;
+    this.conditions = params.conditions;
     params.conditionSets?.forEach((item) => this.validating.add(item).orThrow());
   }
 
@@ -94,8 +90,13 @@ export class ConditionSetCollector extends ValidatingCollector<ConditionSet> {
     if (from instanceof ConditionSet) {
       return succeed(from);
     }
+    if (Array.isArray(from)) {
+      return mapResults(from.map((item) => this.conditions.validating.getOrAdd(item))).onSuccess(
+        (conditions) => ConditionSet.create({ conditions })
+      );
+    }
     return validatedConditionSetDecl
-      .convert(from, { conditions: this._conditions, conditionSetIndex: this.size })
+      .convert(from, { conditions: this.conditions, conditionSetIndex: this.size })
       .onSuccess((c) => ConditionSet.create(c));
   }
 }

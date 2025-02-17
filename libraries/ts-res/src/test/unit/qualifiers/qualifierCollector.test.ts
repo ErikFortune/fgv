@@ -101,6 +101,20 @@ describe('QualifierCollector class', () => {
         })
       ).toFailWith(/not a valid priority/i);
     });
+
+    test('fails if there are duplicate qualifiers', () => {
+      expect(
+        TsRes.Qualifiers.QualifierCollector.create({
+          qualifierTypes,
+          qualifiers: [
+            { name: 'homeTerritory', typeName: 'territory', defaultPriority: 900 },
+            { name: 'currentTerritory', typeName: 'territory', defaultPriority: 700 },
+            { name: 'language', typeName: 'language', defaultPriority: 600 },
+            { name: 'homeTerritory', typeName: 'territory', defaultPriority: 800 }
+          ]
+        })
+      ).toFailWith(/already exists/i);
+    });
   });
 
   describe('validating getOrAdd method', () => {

@@ -30,7 +30,8 @@ describe('ConditionSetCollector class', () => {
     { name: 'currentTerritory', typeName: 'territory', defaultPriority: 700 },
     { name: 'language', typeName: 'language', defaultPriority: 600 },
     { name: 'some_thing', typeName: 'literal', defaultPriority: 500 },
-    { name: 'testThing', typeName: 'test', defaultPriority: 400 }
+    { name: 'testThing', typeName: 'test', defaultPriority: 400 },
+    { name: 'extra', typeName: 'literal', defaultPriority: 300 }
   ];
   const conditionDecls: TsRes.Conditions.IConditionDecl[] = [
     { qualifierName: 'homeTerritory', value: 'CA' },
@@ -186,6 +187,30 @@ describe('ConditionSetCollector class', () => {
       expect(cc.validating.add(decl)).toSucceedAndSatisfy((conditionSet) => {
         expect(conditionSet.size).toBe(conditionDecls.length);
       });
+    });
+
+    test('adds a condition set from an array of declarations to the collector', () => {
+      const cc = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
+      expect(cc.validating.add(conditionDecls)).toSucceedAndSatisfy((conditionSet) => {
+        expect(conditionSet.size).toBe(conditionDecls.length);
+      });
+    });
+
+    test('adds a condition set from an array of instantiated conditions to the collector', () => {
+      const cc = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
+      expect(cc.validating.add(allConditions)).toSucceedAndSatisfy((conditionSet) => {
+        expect(conditionSet.size).toBe(allConditions.length);
+      });
+      expect(cc.size).toBe(1);
+    });
+
+    test('adds a condition set from a mixed array to the collector', () => {
+      const cc = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
+      const toAdd = [...allConditions, { qualifierName: 'extra', value: 'bonus' }];
+      expect(cc.validating.add(toAdd)).toSucceedAndSatisfy((conditionSet) => {
+        expect(conditionSet.size).toBe(allConditions.length + 1);
+      });
+      expect(cc.size).toBe(1);
     });
 
     test('fails if a condition set with the same key is already in the collector', () => {

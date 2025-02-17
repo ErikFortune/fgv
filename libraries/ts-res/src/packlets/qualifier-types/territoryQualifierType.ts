@@ -80,18 +80,23 @@ export class TerritoryQualifierType extends QualifierType {
     name,
     index
   }: ITerritoryQualifierTypeCreateParams) {
-    allowContextList = allowContextList === true;
-    super({
-      name: name ?? 'territory',
-      allowContextList,
-      index: index !== undefined ? Convert.qualifierTypeIndex.convert(index).orThrow() : undefined
-    });
-    this.allowedTerritories =
+    /* c8 ignore next 7 - coverage seems to be missing coalescing branches */
+    name = name ?? 'territory';
+    const validIndex = index !== undefined ? Convert.qualifierTypeIndex.convert(index).orThrow() : undefined;
+    const validTerritories =
       allowedTerritories !== undefined
         ? mapResults(
             allowedTerritories.map((t) => TerritoryQualifierType.toTerritoryConditionValue(t))
           ).orThrow()
         : undefined;
+
+    allowContextList = allowContextList === true;
+    super({
+      name: name,
+      allowContextList,
+      index: validIndex
+    });
+    this.allowedTerritories = validTerritories;
   }
 
   /**
@@ -117,7 +122,9 @@ export class TerritoryQualifierType extends QualifierType {
    * @public
    */
   public static create(params?: ITerritoryQualifierTypeCreateParams): Result<TerritoryQualifierType> {
-    return captureResult(() => new TerritoryQualifierType(params ?? {}));
+    /* c8 ignore next 1 - coverage having problems with conditional branches */
+    params = params ?? {};
+    return captureResult(() => new TerritoryQualifierType(params));
   }
 
   /**

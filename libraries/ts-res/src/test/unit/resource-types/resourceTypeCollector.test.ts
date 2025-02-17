@@ -88,12 +88,12 @@ describe('ResourceTypeCollector', () => {
     test('fails if another type with the same key exists', () => {
       const rt2 = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
       expect(collector.validating.add(rt)).toSucceedWith(rt);
-      expect(collector.validating.add(rt2)).toFailWith(/already exists/);
+      expect(collector.validating.add(rt2)).toFailWith(/already exists/i);
       expect(collector.size).toBe(1);
     });
 
     test('fails if the resource type is invalid', () => {
-      expect(collector.validating.add({})).toFailWith(/not a resource type/);
+      expect(collector.validating.add({})).toFailWith(/not a resource type/i);
     });
   });
 
