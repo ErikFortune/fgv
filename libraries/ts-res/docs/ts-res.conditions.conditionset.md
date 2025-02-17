@@ -156,6 +156,27 @@ The key for this condition set.
 
 
 </td></tr>
+<tr><td>
+
+[size](./ts-res.conditions.conditionset.size.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+The number of conditions in this condition set.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods

@@ -217,7 +217,8 @@ class ConditionSet implements IValidatedConditionSetDecl {
     static getKeyForDecl(decl: IValidatedConditionSetDecl): Result<ConditionSetKey>;
     get index(): ConditionSetIndex | undefined;
     get key(): ConditionSetKey;
-    setIndex(index: ConditionSetIndex): Result<ConditionSetIndex>;
+    setIndex(index: number): Result<ConditionSetIndex>;
+    get size(): number;
     toHash(): string;
     toKey(): ConditionSetKey;
     toString(): string;

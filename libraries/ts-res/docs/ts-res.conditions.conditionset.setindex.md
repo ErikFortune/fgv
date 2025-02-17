@@ -9,7 +9,7 @@ Sets the global index for this condition set. Once set, the index cannot be chan
 **Signature:**
 
 ```typescript
-setIndex(index: ConditionSetIndex): Result<ConditionSetIndex>;
+setIndex(index: number): Result<ConditionSetIndex>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ index
 
 </td><td>
 
-[ConditionSetIndex](./ts-res.conditionsetindex.md)
+number
 
 
 </td><td>

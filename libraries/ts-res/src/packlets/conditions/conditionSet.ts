@@ -53,6 +53,13 @@ export class ConditionSet implements IValidatedConditionSetDecl {
   }
 
   /**
+   * The number of conditions in this condition set.
+   */
+  public get size(): number {
+    return this.conditions.length;
+  }
+
+  /**
    * The index for this condition set.
    */
   public get index(): ConditionSetIndex | undefined {
@@ -68,6 +75,7 @@ export class ConditionSet implements IValidatedConditionSetDecl {
     const qualifiers = new Map<QualifierName, Condition>();
     for (const condition of params.conditions) {
       if (qualifiers.has(condition.qualifier.name)) {
+        /* c8 ignore next */
         const existing = qualifiers.get(condition.qualifier.name)?.toString() ?? 'unknown';
         throw new Error(
           `${
@@ -75,8 +83,9 @@ export class ConditionSet implements IValidatedConditionSetDecl {
           }: Duplicate conditions ${existing} and ${condition.toString()} are not supported.`
         );
       }
+      qualifiers.set(condition.qualifier.name, condition);
     }
-    this.conditions = Array.from(params.conditions).sort(Condition.compare);
+    this.conditions = Array.from(params.conditions).sort(Condition.compare).reverse();
     this._collectible = new Collections.Collectible({
       key: this.toKey(),
       index: params.index,
@@ -120,7 +129,7 @@ export class ConditionSet implements IValidatedConditionSetDecl {
    * @param index - The index to set for this condition set.
    * @returns `Success` with the index if successful, `Failure` otherwise.
    */
-  public setIndex(index: ConditionSetIndex): Result<ConditionSetIndex> {
+  public setIndex(index: number): Result<ConditionSetIndex> {
     return this._collectible.setIndex(index);
   }
 
