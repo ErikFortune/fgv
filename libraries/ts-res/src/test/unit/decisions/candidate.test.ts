@@ -31,19 +31,11 @@ describe('Candidate', () => {
     { name: 'language', typeName: 'language', defaultPriority: 600 },
     { name: 'some_thing', typeName: 'literal', defaultPriority: 500 }
   ];
-  const conditionDecls: TsRes.Conditions.IConditionDecl[] = [
-    { qualifierName: 'homeTerritory', value: 'CA' },
-    { qualifierName: 'currentTerritory', value: 'US' },
-    { qualifierName: 'language', value: 'en' },
-    { qualifierName: 'some_thing', value: 'some_value' },
-    { qualifierName: 'testThing', value: 'test value' }
-  ];
 
   let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
   let qualifiers: TsRes.Qualifiers.QualifierCollector;
   let conditions: TsRes.Conditions.ConditionCollector;
   let conditionSets: TsRes.Conditions.ConditionSetCollector;
-  let allConditions: TsRes.Conditions.Condition[];
 
   beforeEach(() => {
     qualifierTypes = TsRes.QualifierTypes.QualifierTypeCollector.create({
@@ -66,8 +58,6 @@ describe('Candidate', () => {
     conditionSets = TsRes.Conditions.ConditionSetCollector.create({
       conditions
     }).orThrow();
-
-    allConditions = Array.from(conditions.values());
   });
 
   describe('static createCandidate method', () => {

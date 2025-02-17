@@ -137,6 +137,25 @@ describe('ConditionSetCollector class', () => {
       expect(cc.get(conditionSet.key)).toSucceedWith(conditionSet);
     });
 
+    test('succeeds if the object is already in the collector', () => {
+      const cc = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
+      const conditionSet = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+      cc.add(conditionSet).orThrow();
+      expect(cc.add(conditionSet)).toSucceedWith(conditionSet);
+      expect(cc.size).toBe(1);
+    });
+
+    test('fails if another object with the same key is already in the collector', () => {
+      const cc = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
+      const conditionSet = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+      const cs2 = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+      cc.add(conditionSet).orThrow();
+      expect(cc.add(cs2)).toFailWith(/already exists/i);
+      expect(cc.size).toBe(1);
+    });
+  });
+
+  describe('getOrAdd method', () => {
     test('returns the existing condition set if the key is already in the collector', () => {
       const cc = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
       const conditionSet = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
@@ -169,11 +188,26 @@ describe('ConditionSetCollector class', () => {
       });
     });
 
+    test('fails if a condition set with the same key is already in the collector', () => {
+      const cc = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
+      const decl: TsRes.Conditions.IConditionSetDecl = { conditions: conditionDecls };
+      cc.validating.add(decl).orThrow();
+      expect(cc.validating.add(decl)).toFailWith(/already exists/i);
+      expect(cc.size).toBe(1);
+    });
+
+    test('fails if a condition cannot be constructed', () => {
+      const cc = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
+      expect(cc.validating.add({})).toFailWith(/invalid/);
+    });
+  });
+
+  describe('validating getOrAdd method', () => {
     test('returns the existing condition set if the key is already in the collector', () => {
       const cc = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
       const decl: TsRes.Conditions.IConditionSetDecl = { conditions: conditionDecls };
       const cs1 = cc.validating.add(decl).orThrow();
-      const cs2 = cc.validating.add(decl).orThrow();
+      const cs2 = cc.validating.getOrAdd(decl).orThrow();
       expect(cs1).toBe(cs2);
     });
   });

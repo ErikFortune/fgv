@@ -22,8 +22,6 @@
 
 import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../index';
-import { JsonValue } from '@fgv/ts-json-base';
-import { Hash } from '@fgv/ts-utils';
 
 describe('AbstractDecision', () => {
   const qualifierDecls: TsRes.Qualifiers.IQualifierDecl[] = [

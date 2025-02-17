@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { captureResult, Collections, Result, succeed, ValidatingCollector } from '@fgv/ts-utils';
+import { captureResult, Collections, Result, fail, succeed, ValidatingCollector } from '@fgv/ts-utils';
 import { AbstractDecision } from './abstractDecision';
 import { Convert as CommonConvert, DecisionKey } from '../common';
 import { ConditionSet } from '../conditions';
@@ -59,7 +59,7 @@ export class AbstractDecisionCollector extends ValidatingCollector<AbstractDecis
         conditionSets: from
       });
     }
-    return fail('Not an abstract decision');
+    return fail('invalid value: not an abstract decision or condition sets');
   }
 
   private _isConditionSetArray(from: unknown): from is ConditionSet[] {
