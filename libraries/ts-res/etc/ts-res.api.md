@@ -586,7 +586,7 @@ interface IQualifierDecl {
 // @public
 interface IQualifierDeclConvertContext {
     // (undocumented)
-    qualifierIndex: number;
+    qualifierIndex?: number;
     // (undocumented)
     readonly qualifierTypes: ReadOnlyQualifierTypeCollector;
 }

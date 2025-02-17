@@ -43,7 +43,7 @@ export const qualifierDecl = Converters.strictObject<IQualifierDecl>({
  */
 export interface IQualifierDeclConvertContext {
   readonly qualifierTypes: ReadOnlyQualifierTypeCollector;
-  qualifierIndex: number;
+  qualifierIndex?: number;
 }
 
 /**
@@ -64,9 +64,14 @@ export const validatedQualifierDecl = Converters.generic<
       name: () => Validate.toQualifierName(decl.name),
       type: () => context.qualifierTypes.validating.get(decl.typeName),
       defaultPriority: () => Validate.toConditionPriority(decl.defaultPriority),
-      index: () => Validate.toQualifierIndex(context.qualifierIndex)
+      index: () =>
+        context.qualifierIndex !== undefined
+          ? Validate.toQualifierIndex(context.qualifierIndex)
+          : succeed(undefined)
     }).onSuccess((validated) => {
-      context.qualifierIndex++;
+      if (context.qualifierIndex !== undefined) {
+        context.qualifierIndex++;
+      }
       return succeed(validated);
     });
   });
