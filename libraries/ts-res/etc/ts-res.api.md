@@ -544,6 +544,16 @@ const identifierList: RegExp;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+interface IJsonResourceTypeCreateParams {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    index?: number;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    key?: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 interface ILanguageQualifierTypeCreateParams extends Partial<IQualifierTypeCreateParams> {
     allowContextList?: boolean;
     name?: string;
@@ -820,6 +830,45 @@ interface IValidatedQualifierDecl {
 
 // @public
 function joinResourceId(base: ResourceName | ResourceId, ...names: ResourceName[]): Result<ResourceId>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class JsonResourceType extends ResourceType<JsonValue> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(key: ResourceTypeName, index?: number);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params?: IJsonResourceTypeCreateParams): Result<JsonResourceType>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    validate(json: JsonValue, isPartial: true): Result<JsonValue>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    validate(json: JsonValue, isPartial: false): Result<JsonValue>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    validate(json: JsonValue, isPartial: boolean): Result<JsonValue>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    validateDeclaration(json: JsonValue, isPartial: true, mergeMethod?: ResourceValueMergeMethod): Result<Partial<JsonValue>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    validateDeclaration(json: JsonValue, isPartial: false, mergeMethod?: ResourceValueMergeMethod): Result<JsonValue>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    validateDeclaration(json: JsonValue, isPartial: boolean, mergeMethod?: ResourceValueMergeMethod): Result<JsonValue>;
+}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1313,7 +1362,7 @@ export { Resources }
 
 // @public
 abstract class ResourceType<T = unknown> implements ICollectible<ResourceTypeName, ResourceTypeIndex> {
-    protected constructor(key: ResourceTypeName, index?: ResourceTypeIndex);
+    protected constructor(key: ResourceTypeName, index?: number);
     get index(): ResourceTypeIndex | undefined;
     get key(): ResourceTypeName;
     setIndex(index: number): Result<ResourceTypeIndex>;
@@ -1321,11 +1370,11 @@ abstract class ResourceType<T = unknown> implements ICollectible<ResourceTypeNam
     abstract validate(json: JsonValue, isPartial: false): Result<Partial<T>>;
     abstract validate(json: JsonValue, isPartial: boolean): Result<T | Partial<T>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    abstract validateDeclaration(json: JsonValue, isPartial: true, mergeMethod: ResourceValueMergeMethod): Result<Partial<T>>;
+    abstract validateDeclaration(json: JsonValue, isPartial: true, mergeMethod?: ResourceValueMergeMethod): Result<Partial<T>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    abstract validateDeclaration(json: JsonValue, isPartial: false, mergeMethod: ResourceValueMergeMethod): Result<T>;
+    abstract validateDeclaration(json: JsonValue, isPartial: false, mergeMethod?: ResourceValueMergeMethod): Result<T>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    abstract validateDeclaration(json: JsonValue, isPartial: boolean, mergeMethod: ResourceValueMergeMethod): Result<T | Partial<T>>;
+    abstract validateDeclaration(json: JsonValue, isPartial: boolean, mergeMethod?: ResourceValueMergeMethod): Result<T | Partial<T>>;
     // (undocumented)
     abstract validateDeclaration(json: JsonValue, isPartial: boolean, mergeMethod?: ResourceValueMergeMethod): Result<T | Partial<T>>;
 }
@@ -1357,7 +1406,9 @@ declare namespace ResourceTypes {
     export {
         ResourceType,
         ResourceTypeCollector,
-        ReadOnlyResourceTypeCollector
+        ReadOnlyResourceTypeCollector,
+        IJsonResourceTypeCreateParams,
+        JsonResourceType
     }
 }
 export { ResourceTypes }

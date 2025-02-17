@@ -9,7 +9,7 @@ Constructs a new instance of the `ResourceType` class
 **Signature:**
 
 ```typescript
-protected constructor(key: ResourceTypeName, index?: ResourceTypeIndex);
+protected constructor(key: ResourceTypeName, index?: number);
 ```
 
 ## Parameters
@@ -51,7 +51,7 @@ index
 
 </td><td>
 
-[ResourceTypeIndex](./ts-res.resourcetypeindex.md)
+number
 
 
 </td><td>

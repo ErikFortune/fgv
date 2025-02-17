@@ -24,6 +24,7 @@ import { JsonValue } from '@fgv/ts-json-base';
 import { Collections, ICollectible, Result } from '@fgv/ts-utils';
 import {
   Convert as CommonConvert,
+  Validate,
   ResourceTypeIndex,
   ResourceTypeName,
   ResourceValueMergeMethod
@@ -51,10 +52,10 @@ export abstract class ResourceType<T = unknown> implements ICollectible<Resource
     return this._collectible.index;
   }
 
-  protected constructor(key: ResourceTypeName, index?: ResourceTypeIndex) {
+  protected constructor(key: ResourceTypeName, index?: number) {
     this._collectible = new Collections.Collectible<ResourceTypeName, ResourceTypeIndex>({
       key,
-      index,
+      index: index !== undefined ? Validate.toResourceTypeIndex(index).orThrow() : undefined,
       indexConverter: CommonConvert.resourceTypeIndex
     });
   }
@@ -72,7 +73,7 @@ export abstract class ResourceType<T = unknown> implements ICollectible<Resource
   public abstract validateDeclaration(
     json: JsonValue,
     isPartial: true,
-    mergeMethod: ResourceValueMergeMethod
+    mergeMethod?: ResourceValueMergeMethod
   ): Result<Partial<T>>;
 
   /**
@@ -88,7 +89,7 @@ export abstract class ResourceType<T = unknown> implements ICollectible<Resource
   public abstract validateDeclaration(
     json: JsonValue,
     isPartial: false,
-    mergeMethod: ResourceValueMergeMethod
+    mergeMethod?: ResourceValueMergeMethod
   ): Result<T>;
 
   /**
@@ -104,7 +105,7 @@ export abstract class ResourceType<T = unknown> implements ICollectible<Resource
   public abstract validateDeclaration(
     json: JsonValue,
     isPartial: boolean,
-    mergeMethod: ResourceValueMergeMethod
+    mergeMethod?: ResourceValueMergeMethod
   ): Result<T | Partial<T>>;
 
   public abstract validateDeclaration(

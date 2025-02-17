@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[JsonResourceType](./ts-res.resourcetypes.jsonresourcetype.md)
+
+
+</td><td>
+
+Implementation of a [ResourceType](./ts-res.resourcetypes.resourcetype.md) for JSON values.
+
+
+</td></tr>
+<tr><td>
+
 [ResourceTypeCollector](./ts-res.resourcetypes.resourcetypecollector.md)
 
 
@@ -51,6 +62,32 @@ Description
 </td><td>
 
 Abstract base class for resource types which are responsible for validating and converting JSON values into the appropriate strongly-typed resource value.
+
+
+</td></tr>
+</tbody></table>
+
+## Interfaces
+
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[IJsonResourceTypeCreateParams](./ts-res.resourcetypes.ijsonresourcetypecreateparams.md)
+
+
+</td><td>
+
+Parameters to create a [JsonResourceType](./ts-res.resourcetypes.jsonresourcetype.md) instance.
 
 
 </td></tr>

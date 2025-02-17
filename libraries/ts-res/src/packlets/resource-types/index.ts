@@ -22,3 +22,4 @@
 
 export * from './resourceType';
 export * from './resourceTypeCollector';
+export * from './jsonResourceType';
