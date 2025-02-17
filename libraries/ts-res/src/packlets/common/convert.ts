@@ -52,6 +52,12 @@ export const qualifierTypeName = Converters.string.map(Validate.toQualifierTypeN
 export const qualifierTypeIndex = Converters.number.map(Validate.toQualifierTypeIndex);
 
 /**
+ * `Converter` which validates an `unknown` value as a {@link QualifierConditionValue | QualifierConditionValue}.
+ * @public
+ */
+export const qualifierMatchScore = Converters.number.map(Validate.toQualifierMatchScore);
+
+/**
  * `Converter` which validates an `unknown` value as a {@link ConditionPriority | ConditionPriority}.
  * @public
  */

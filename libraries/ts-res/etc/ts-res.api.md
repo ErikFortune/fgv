@@ -275,6 +275,7 @@ declare namespace Convert {
         qualifierIndex,
         qualifierTypeName,
         qualifierTypeIndex,
+        qualifierMatchScore,
         conditionPriority,
         conditionOperator,
         conditionIndex,
@@ -927,6 +928,9 @@ const qualifierIndex: Converter<QualifierIndex, unknown>;
 
 // @public
 export type QualifierMatchScore = Brand<number, 'QualifierMatchScore'>;
+
+// @public
+const qualifierMatchScore: Converter<QualifierMatchScore, unknown>;
 
 // @public
 export type QualifierName = Brand<string, 'QualifierName'>;

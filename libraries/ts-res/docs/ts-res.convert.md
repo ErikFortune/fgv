@@ -129,6 +129,17 @@ Description
 </td></tr>
 <tr><td>
 
+[qualifierMatchScore](./ts-res.convert.qualifiermatchscore.md)
+
+
+</td><td>
+
+`Converter` which validates an `unknown` value as a [QualifierConditionValue](./ts-res.qualifierconditionvalue.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [qualifierName](./ts-res.convert.qualifiername.md)
 
 

@@ -68,7 +68,7 @@ export class Condition implements IValidatedConditionDecl {
   protected constructor({ qualifier, value, operator, priority, index }: IValidatedConditionDecl) {
     this.qualifier = qualifier;
     this.operator = operator;
-    this.value = value;
+    this.value = qualifier.type.validateCondition(value, operator).orThrow();
     this.priority = priority;
     this._collectible = new Collections.Collectible({
       key: this.toKey(),

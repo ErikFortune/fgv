@@ -21,7 +21,7 @@
  */
 
 import * as Common from '../../common';
-import { Converters, populateObject, Result, succeed } from '@fgv/ts-utils';
+import { Converters, populateObject, Result, fail, succeed } from '@fgv/ts-utils';
 import { IConditionDecl, IValidatedConditionDecl } from '../conditionDecls';
 import { ReadOnlyQualifierCollector } from '../../qualifiers';
 
@@ -62,11 +62,12 @@ export const validatedConditionDecl = Converters.generic<
     return fail('validatedConditionDecl converter requires a context');
   }
   return conditionDecl.convert(from).onSuccess((decl) => {
+    const operator = decl.operator ?? 'matches';
     return context.qualifiers.validating.get(decl.qualifierName).onSuccess((qualifier) => {
       return populateObject<IValidatedConditionDecl>({
         qualifier: () => succeed(qualifier),
-        value: () => qualifier.type.validateCondition(decl.value),
-        operator: () => succeed(decl.operator ?? 'matches'),
+        value: () => qualifier.type.validateCondition(decl.value, operator),
+        operator: () => succeed(operator),
         priority: () =>
           decl.priority
             ? Common.Convert.conditionPriority.convert(decl.priority)
