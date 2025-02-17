@@ -1297,8 +1297,6 @@ const resourceName: Converter<ResourceName, unknown>;
 
 declare namespace Resources {
     export {
-        ResourceType,
-        ResourceTypes,
         IResourceCandidateCreateParams,
         ResourceCandidate,
         IResourceCreateParams,
@@ -1362,6 +1360,7 @@ declare namespace ResourceTypes {
         ReadOnlyResourceTypeCollector
     }
 }
+export { ResourceTypes }
 
 // @public
 export type ResourceValueMergeMethod = 'augment' | 'delete' | 'replace';

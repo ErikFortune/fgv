@@ -310,7 +310,7 @@ A read-only map of [resource builders](./ts-res.resources.resourcebuilder.md) us
 
 </td><td>
 
-[ReadOnlyResourceTypeCollector](./ts-res.resources.resourcetypes.readonlyresourcetypecollector.md)
+[ReadOnlyResourceTypeCollector](./ts-res.resourcetypes.readonlyresourcetypecollector.md)
 
 
 </td><td>

@@ -4,7 +4,7 @@
 
 ## Resources.ResourceBuilder.\_resourceType property
 
-The supplied or inferred [type](./ts-res.resources.resourcetype.md) of the resource being built.
+The supplied or inferred [type](./ts-res.resourcetypes.resourcetype.md) of the resource being built.
 
 **Signature:**
 

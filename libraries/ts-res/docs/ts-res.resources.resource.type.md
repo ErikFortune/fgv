@@ -4,7 +4,7 @@
 
 ## Resources.Resource.type property
 
-The [type](./ts-res.resources.resourcetype.md) of the resource.
+The [type](./ts-res.resourcetypes.resourcetype.md) of the resource.
 
 **Signature:**
 

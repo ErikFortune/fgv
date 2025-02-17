@@ -40,7 +40,7 @@ import {
 } from '../conditions';
 import { AbstractDecisionCollector, ReadOnlyAbstractDecisionCollector } from '../decisions';
 import { ReadOnlyQualifierCollector } from '../qualifiers';
-import { ReadOnlyResourceTypeCollector } from './resourceTypes';
+import { ReadOnlyResourceTypeCollector } from '../resource-types';
 import { ResourceId } from '../common';
 import { ResourceBuilder, ResourceBuilderResultDetail } from './resourceBuilder';
 import { Resource } from './resource';

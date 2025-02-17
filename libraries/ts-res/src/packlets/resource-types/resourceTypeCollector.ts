@@ -22,10 +22,10 @@
 
 import { Collections, Result, fail, succeed, ValidatingCollector, captureResult } from '@fgv/ts-utils';
 import { ResourceType } from './resourceType';
-import { Convert as CommonConvert, ResourceTypeName } from '../../common';
+import { Convert as CommonConvert, ResourceTypeName } from '../common';
 
 /**
- * Map {@link ResourceTypeName | resource type names} to {@link Resources.ResourceType | resource types}.
+ * Map {@link ResourceTypeName | resource type names} to {@link ResourceTypes.ResourceType | resource types}.
  * @public
  */
 export class ResourceTypeCollector extends ValidatingCollector<ResourceType> {
@@ -51,7 +51,7 @@ export class ResourceTypeCollector extends ValidatingCollector<ResourceType> {
 }
 
 /**
- * A read-only version of {@link Resources.ResourceTypes.ResourceTypeCollector | ResourceTypeCollector}.
+ * A read-only version of {@link ResourceTypes.ResourceTypeCollector | ResourceTypeCollector}.
  * @public
  */
 export type ReadOnlyResourceTypeCollector = Collections.IReadOnlyValidatingCollector<ResourceType>;

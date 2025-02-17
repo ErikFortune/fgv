@@ -24,7 +24,3 @@ export * from './resourceCandidate';
 export * from './resource';
 export * from './resourceBuilder';
 export * from './resourceManager';
-
-import * as ResourceTypes from './resourceTypes';
-import { ResourceType } from './resourceTypes/resourceType';
-export { ResourceType, ResourceTypes };

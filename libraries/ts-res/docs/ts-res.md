@@ -82,6 +82,15 @@ Description
 </td></tr>
 <tr><td>
 
+[ResourceTypes](./ts-res.resourcetypes.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Validate](./ts-res.validate.md)
 
 

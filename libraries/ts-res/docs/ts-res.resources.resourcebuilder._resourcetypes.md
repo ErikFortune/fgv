@@ -4,7 +4,7 @@
 
 ## Resources.ResourceBuilder.\_resourceTypes property
 
-Map of all known [resource types](./ts-res.resources.resourcetype.md)<!-- -->.
+Map of all known [resource types](./ts-res.resourcetypes.resourcetype.md)<!-- -->.
 
 **Signature:**
 

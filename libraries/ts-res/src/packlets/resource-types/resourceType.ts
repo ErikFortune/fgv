@@ -27,7 +27,7 @@ import {
   ResourceTypeIndex,
   ResourceTypeName,
   ResourceValueMergeMethod
-} from '../../common';
+} from '../common';
 
 /**
  * Abstract base class for resource types which are responsible for

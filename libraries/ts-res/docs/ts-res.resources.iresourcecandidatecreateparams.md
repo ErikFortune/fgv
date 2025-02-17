@@ -96,7 +96,7 @@ ReadonlyArray&lt;[Condition](./ts-res.conditions.condition.md)<!-- -->&gt;
 
 </td><td>
 
-[ResourceTypeCollector](./ts-res.resources.resourcetypes.resourcetypecollector.md)
+[ResourceTypeCollector](./ts-res.resourcetypes.resourcetypecollector.md)
 
 
 </td><td>

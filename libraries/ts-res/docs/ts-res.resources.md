@@ -63,32 +63,6 @@ Represents a manager for a collection of [resources](./ts-res.resources.resource
 </td></tr>
 </tbody></table>
 
-## Abstract Classes
-
-<table><thead><tr><th>
-
-Abstract Class
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[ResourceType](./ts-res.resources.resourcetype.md)
-
-
-</td><td>
-
-Abstract base class for resource types which are responsible for validating and converting JSON values into the appropriate strongly-typed resource value.
-
-
-</td></tr>
-</tbody></table>
-
 ## Interfaces
 
 <table><thead><tr><th>
@@ -143,30 +117,6 @@ Parameters used to create a [Resource](./ts-res.resources.resource.md) object.
 </td><td>
 
 Interface for parameters to the [ResourceManager create method](./ts-res.resources.resourcemanager.create.md)<!-- -->.
-
-
-</td></tr>
-</tbody></table>
-
-## Namespaces
-
-<table><thead><tr><th>
-
-Namespace
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[ResourceTypes](./ts-res.resources.resourcetypes.md)
-
-
-</td><td>
 
 
 </td></tr>

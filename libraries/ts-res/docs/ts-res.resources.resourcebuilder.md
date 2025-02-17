@@ -104,12 +104,12 @@ Map of [candidates](./ts-res.resources.resourcecandidate.md) for the resource be
 
 </td><td>
 
-[ResourceType](./ts-res.resources.resourcetype.md) \| undefined
+[ResourceType](./ts-res.resourcetypes.resourcetype.md) \| undefined
 
 
 </td><td>
 
-The supplied or inferred [type](./ts-res.resources.resourcetype.md) of the resource being built.
+The supplied or inferred [type](./ts-res.resourcetypes.resourcetype.md) of the resource being built.
 
 
 </td></tr>
@@ -125,12 +125,12 @@ The supplied or inferred [type](./ts-res.resources.resourcetype.md) of the resou
 
 </td><td>
 
-[ReadOnlyResourceTypeCollector](./ts-res.resources.resourcetypes.readonlyresourcetypecollector.md)
+[ReadOnlyResourceTypeCollector](./ts-res.resourcetypes.readonlyresourcetypecollector.md)
 
 
 </td><td>
 
-Map of all known [resource types](./ts-res.resources.resourcetype.md)<!-- -->.
+Map of all known [resource types](./ts-res.resourcetypes.resourcetype.md)<!-- -->.
 
 
 </td></tr>
@@ -188,12 +188,12 @@ The unique [id](./ts-res.resourceid.md) of the resource being built.
 
 </td><td>
 
-[ResourceType](./ts-res.resources.resourcetype.md) \| undefined
+[ResourceType](./ts-res.resourcetypes.resourcetype.md) \| undefined
 
 
 </td><td>
 
-Supplied or inferred [type](./ts-res.resources.resourcetype.md) of the resource being built. If no type is supplied, the type will be inferred from the candidates - at least one candidate must define resource type and all candidates must be of the same type.
+Supplied or inferred [type](./ts-res.resourcetypes.resourcetype.md) of the resource being built. If no type is supplied, the type will be inferred from the candidates - at least one candidate must define resource type and all candidates must be of the same type.
 
 
 </td></tr>

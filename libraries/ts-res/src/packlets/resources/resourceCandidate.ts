@@ -25,7 +25,7 @@ import { ResourceId, ResourceValueMergeMethod } from '../common';
 import { Condition, ConditionSet, Convert as ConditionsConvert } from '../conditions';
 import { ReadOnlyQualifierCollector } from '../qualifiers';
 import * as ResourceJson from '../resource-json';
-import { ResourceType, ResourceTypeCollector } from './resourceTypes';
+import { ResourceType, ResourceTypeCollector } from '../resource-types';
 import { captureResult, MessageAggregator, Normalizer, Result, succeed } from '@fgv/ts-utils';
 
 /**
@@ -73,7 +73,7 @@ export class ResourceCandidate {
   public readonly mergeMethod: ResourceValueMergeMethod;
 
   /**
-   * The {@link Resources.ResourceType | resource type} for the resource to which
+   * The {@link ResourceTypes.ResourceType | resource type} for the resource to which
    * this candidate belongs.
    */
   public get resourceType(): ResourceType | undefined {
@@ -119,7 +119,7 @@ export class ResourceCandidate {
   }
 
   /**
-   * Extracts the {@link Resources.ResourceType | resource type} from a list of {@link Resources.ResourceCandidate | resource candidates},
+   * Extracts the {@link ResourceTypes.ResourceType | resource type} from a list of {@link Resources.ResourceCandidate | resource candidates},
    * if present.
    * @param candidates - The list of candidates from which to extract the resource type.
    * @returns `Success` with the resource type if successful, `Success` with `undefined` if none of the candidates

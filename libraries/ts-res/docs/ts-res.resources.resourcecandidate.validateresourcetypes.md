@@ -4,7 +4,7 @@
 
 ## Resources.ResourceCandidate.validateResourceTypes() method
 
-Extracts the [resource type](./ts-res.resources.resourcetype.md) from a list of [resource candidates](./ts-res.resources.resourcecandidate.md)<!-- -->, if present.
+Extracts the [resource type](./ts-res.resourcetypes.resourcetype.md) from a list of [resource candidates](./ts-res.resources.resourcecandidate.md)<!-- -->, if present.
 
 **Signature:**
 
@@ -53,7 +53,7 @@ expectedType
 
 </td><td>
 
-[ResourceType](./ts-res.resources.resourcetype.md)
+[ResourceType](./ts-res.resourcetypes.resourcetype.md)
 
 
 </td><td>
@@ -65,7 +65,7 @@ _(Optional)_
 </tbody></table>
 **Returns:**
 
-Result&lt;[ResourceType](./ts-res.resources.resourcetype.md) \| undefined&gt;
+Result&lt;[ResourceType](./ts-res.resourcetypes.resourcetype.md) \| undefined&gt;
 
 `Success` with the resource type if successful, `Success` with `undefined` if none of the candidates specify a resource tap, and `Failure` with an error message if clients specify conflicting resource types.
 

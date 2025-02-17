@@ -4,7 +4,7 @@
 
 ## Resources.ResourceCandidate.resourceType property
 
-The [resource type](./ts-res.resources.resourcetype.md) for the resource to which this candidate belongs.
+The [resource type](./ts-res.resourcetypes.resourcetype.md) for the resource to which this candidate belongs.
 
 **Signature:**
 

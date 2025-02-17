@@ -23,7 +23,7 @@
 import { MessageAggregator, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { ResourceId } from '../common';
 import { ResourceCandidate } from './resourceCandidate';
-import { ResourceType } from './resourceTypes';
+import { ResourceType } from '../resource-types';
 
 /**
  * Parameters used to create a {@link Resources.Resource | Resource} object.
@@ -35,7 +35,7 @@ export interface IResourceCreateParams {
    */
   id: ResourceId;
   /**
-   * Optional {@link Resources.ResourceType | type} of the resource. If not specified, the type will be inferred
+   * Optional {@link ResourceTypes.ResourceType | type} of the resource. If not specified, the type will be inferred
    * from the candidates.
    */
   type?: ResourceType;
@@ -56,7 +56,7 @@ export class Resource {
    */
   public readonly id: ResourceId;
   /**
-   * The {@link Resources.ResourceType | type} of the resource.
+   * The {@link ResourceTypes.ResourceType | type} of the resource.
    */
   public readonly type: ResourceType;
   /**

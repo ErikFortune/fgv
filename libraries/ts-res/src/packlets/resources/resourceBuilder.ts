@@ -32,7 +32,7 @@ import {
 } from '@fgv/ts-utils';
 import { ResourceId, Validate } from '../common';
 import { ResourceCandidate } from './resourceCandidate';
-import { ReadOnlyResourceTypeCollector, ResourceType } from './resourceTypes';
+import { ReadOnlyResourceTypeCollector, ResourceType } from '../resource-types';
 import { Resource } from './resource';
 
 /**
@@ -65,7 +65,7 @@ export class ResourceBuilder {
   public readonly id: ResourceId;
 
   /**
-   * Supplied or inferred {@link Resources.ResourceType | type} of the resource being built.
+   * Supplied or inferred {@link ResourceTypes.ResourceType | type} of the resource being built.
    * If no type is supplied, the type will be inferred from the candidates - at least one candidate must
    * define resource type and all candidates must be of the same type.
    */
@@ -81,7 +81,7 @@ export class ResourceBuilder {
   }
 
   /**
-   * The supplied or inferred {@link Resources.ResourceType | type} of the resource
+   * The supplied or inferred {@link ResourceTypes.ResourceType | type} of the resource
    * being built.
    */
   protected _resourceType: ResourceType | undefined;
@@ -92,7 +92,7 @@ export class ResourceBuilder {
   protected _candidates: ResultMap<string, ResourceCandidate>;
 
   /**
-   * Map of all known {@link Resources.ResourceType | resource types}.
+   * Map of all known {@link ResourceTypes.ResourceType | resource types}.
    */
   protected _resourceTypes: ReadOnlyResourceTypeCollector;
 

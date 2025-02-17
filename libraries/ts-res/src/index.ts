@@ -25,7 +25,8 @@ import * as Qualifiers from './packlets/qualifiers';
 import * as Conditions from './packlets/conditions';
 import * as ResourceJson from './packlets/resource-json';
 import * as Resources from './packlets/resources';
+import * as ResourceTypes from './packlets/resource-types';
 import * as Decisions from './packlets/decisions';
 
 export * from './packlets/common';
-export { QualifierTypes, Qualifiers, Conditions, ResourceJson, Resources, Decisions };
+export { QualifierTypes, Qualifiers, Conditions, ResourceJson, Resources, ResourceTypes, Decisions };

@@ -4,7 +4,7 @@
 
 ## Resources.IResourceCreateParams.type property
 
-Optional [type](./ts-res.resources.resourcetype.md) of the resource. If not specified, the type will be inferred from the candidates.
+Optional [type](./ts-res.resourcetypes.resourcetype.md) of the resource. If not specified, the type will be inferred from the candidates.
 
 **Signature:**
 

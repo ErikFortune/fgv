@@ -4,7 +4,7 @@
 
 ## Resources.ResourceBuilder.resourceType property
 
-Supplied or inferred [type](./ts-res.resources.resourcetype.md) of the resource being built. If no type is supplied, the type will be inferred from the candidates - at least one candidate must define resource type and all candidates must be of the same type.
+Supplied or inferred [type](./ts-res.resourcetypes.resourcetype.md) of the resource being built. If no type is supplied, the type will be inferred from the candidates - at least one candidate must define resource type and all candidates must be of the same type.
 
 **Signature:**
 

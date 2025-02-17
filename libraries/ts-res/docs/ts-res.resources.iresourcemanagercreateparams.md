@@ -62,7 +62,7 @@ Description
 
 </td><td>
 
-[ReadOnlyResourceTypeCollector](./ts-res.resources.resourcetypes.readonlyresourcetypecollector.md)
+[ReadOnlyResourceTypeCollector](./ts-res.resourcetypes.readonlyresourcetypecollector.md)
 
 
 </td><td>
