@@ -45,7 +45,7 @@ export const conditionDecl = Converters.strictObject<IConditionDecl>({
  */
 export interface IConditionDeclConvertContext {
   readonly qualifiers: ReadOnlyQualifierCollector;
-  index?: number;
+  conditionIndex?: number;
 }
 
 /**
@@ -73,11 +73,13 @@ export const validatedConditionDecl = Converters.generic<
             ? Common.Convert.conditionPriority.convert(decl.priority)
             : succeed(qualifier.defaultPriority),
         index: () =>
-          context.index ? Common.Convert.conditionIndex.convert(context.index) : succeed(undefined)
+          context.conditionIndex
+            ? Common.Convert.conditionIndex.convert(context.conditionIndex)
+            : succeed(undefined)
       })
         .onSuccess((result) => {
-          if (context.index !== undefined) {
-            context.index++;
+          if (context.conditionIndex !== undefined) {
+            context.conditionIndex++;
           }
           return succeed(result);
         })

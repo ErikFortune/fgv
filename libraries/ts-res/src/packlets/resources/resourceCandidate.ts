@@ -196,7 +196,7 @@ export class ResourceCandidate {
 
     for (const [qualifier, value] of Object.entries(declared ?? {})) {
       ConditionsConvert.validatedConditionDecl
-        .convert({ qualifier, value }, { qualifiers, index: conditions.length })
+        .convert({ qualifier, value }, { qualifiers, conditionIndex: conditions.length })
         .onSuccess(Condition.create)
         .aggregateError(errors)
         .onSuccess((condition) => {

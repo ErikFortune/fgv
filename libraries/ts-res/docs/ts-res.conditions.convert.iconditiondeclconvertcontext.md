@@ -37,7 +37,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[index?](./ts-res.conditions.convert.iconditiondeclconvertcontext.index.md)
+[conditionIndex?](./ts-res.conditions.convert.iconditiondeclconvertcontext.conditionindex.md)
 
 
 </td><td>

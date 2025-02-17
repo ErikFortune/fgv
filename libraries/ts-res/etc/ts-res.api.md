@@ -461,7 +461,7 @@ interface IConditionDecl {
 // @public
 interface IConditionDeclConvertContext {
     // (undocumented)
-    index?: number;
+    conditionIndex?: number;
     // (undocumented)
     readonly qualifiers: ReadOnlyQualifierCollector;
 }
