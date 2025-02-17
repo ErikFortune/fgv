@@ -32,7 +32,7 @@ import { ReadOnlyQualifierCollector } from '../../qualifiers';
  * @public
  */
 export const conditionDecl = Converters.strictObject<IConditionDecl>({
-  name: Converters.string,
+  qualifierName: Converters.string,
   value: Converters.string,
   operator: Common.Convert.conditionOperator.optional(),
   priority: Converters.number.optional()
@@ -62,7 +62,7 @@ export const validatedConditionDecl = Converters.generic<
     return fail('validatedConditionDecl converter requires a context');
   }
   return conditionDecl.convert(from).onSuccess((decl) => {
-    return context.qualifiers.validating.get(decl.name).onSuccess((qualifier) => {
+    return context.qualifiers.validating.get(decl.qualifierName).onSuccess((qualifier) => {
       return populateObject<IValidatedConditionDecl>({
         qualifier: () => succeed(qualifier),
         value: () => qualifier.type.validateCondition(decl.value),

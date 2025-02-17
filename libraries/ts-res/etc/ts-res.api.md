@@ -445,11 +445,11 @@ interface IConditionCollectorCreateParams {
 // @public
 interface IConditionDecl {
     // (undocumented)
-    name: string;
-    // (undocumented)
     operator?: ConditionOperator;
     // (undocumented)
     priority?: number;
+    // (undocumented)
+    qualifierName: string;
     // (undocumented)
     value: string;
 }

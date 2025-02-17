@@ -28,7 +28,7 @@ import { Qualifier } from '../qualifiers';
  * @public
  */
 export interface IConditionDecl {
-  name: string;
+  qualifierName: string;
   value: string;
   operator?: ConditionOperator;
   priority?: number;

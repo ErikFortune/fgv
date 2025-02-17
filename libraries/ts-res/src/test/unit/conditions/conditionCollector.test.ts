@@ -62,11 +62,11 @@ describe('ConditionCollector class', () => {
 
     test('creates a ConditionCollector with initial conditions from supplied declarations', () => {
       const conditionDecls: TsRes.Conditions.IConditionDecl[] = [
-        { name: 'homeTerritory', value: 'US' },
-        { name: 'currentTerritory', value: 'CA' },
-        { name: 'homeTerritory', value: 'CA' },
-        { name: 'language', value: 'en-US', operator: 'matches' },
-        { name: 'some_thing', value: 'some_value', priority: 700 }
+        { qualifierName: 'homeTerritory', value: 'US' },
+        { qualifierName: 'currentTerritory', value: 'CA' },
+        { qualifierName: 'homeTerritory', value: 'CA' },
+        { qualifierName: 'language', value: 'en-US', operator: 'matches' },
+        { qualifierName: 'some_thing', value: 'some_value', priority: 700 }
       ];
       expect(
         TsRes.Conditions.ConditionCollector.create({
@@ -78,12 +78,12 @@ describe('ConditionCollector class', () => {
         expect(cc.qualifiers).toBe(qualifiers);
         conditionDecls.forEach((cd, index) => {
           expect(cc.getAt(index)).toSucceedAndSatisfy((c) => {
-            expect(c.qualifier.name).toBe(cd.name);
+            expect(c.qualifier.name).toBe(cd.qualifierName);
             expect(c.value).toBe(cd.value);
             if (cd.priority) {
               expect(c.priority).toBe(cd.priority);
             } else {
-              const expected = qualifiers.validating.get(cd.name).orDefault()?.defaultPriority;
+              const expected = qualifiers.validating.get(cd.qualifierName).orDefault()?.defaultPriority;
               expect(c.priority).toBe(expected);
             }
             expect(c.operator).toBe(cd.operator ?? 'matches');
@@ -98,8 +98,8 @@ describe('ConditionCollector class', () => {
         TsRes.Conditions.ConditionCollector.create({
           qualifiers,
           conditions: [
-            { name: 'language', value: 'en-US', operator: 'matches' },
-            { name: 'bogus', value: 'some_value' }
+            { qualifierName: 'language', value: 'en-US', operator: 'matches' },
+            { qualifierName: 'bogus', value: 'some_value' }
           ]
         })
       ).toFailWith(/not found/i);

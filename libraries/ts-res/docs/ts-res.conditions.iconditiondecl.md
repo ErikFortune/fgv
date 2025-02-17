@@ -37,23 +37,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[name](./ts-res.conditions.iconditiondecl.name.md)
-
-
-</td><td>
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
 [operator?](./ts-res.conditions.iconditiondecl.operator.md)
 
 
@@ -87,6 +70,23 @@ number
 </td><td>
 
 _(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[qualifierName](./ts-res.conditions.iconditiondecl.qualifiername.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string
+
+
+</td><td>
 
 
 </td></tr>
