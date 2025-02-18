@@ -167,7 +167,7 @@ Map of all known [resource types](./ts-res.resourcetypes.resourcetype.md)<!-- --
 
 </td><td>
 
-[ResourceCandidate](./ts-res.resources.resourcecandidate.md)<!-- -->\[\]
+ReadonlyArray&lt;[ResourceCandidate](./ts-res.resources.resourcecandidate.md)<!-- -->&gt;
 
 
 </td><td>

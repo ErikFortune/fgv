@@ -1208,7 +1208,7 @@ class ResourceBuilder {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     build(): Result<Resource>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    get candidates(): ResourceCandidate[];
+    get candidates(): ReadonlyArray<ResourceCandidate>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected _candidates: ResultMap<string, ResourceCandidate>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

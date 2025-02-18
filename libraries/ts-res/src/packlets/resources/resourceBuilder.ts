@@ -79,7 +79,7 @@ export class ResourceBuilder {
   /**
    * Array of {@link Resources.ResourceCandidate | candidates} for the resource being built.
    */
-  public get candidates(): ResourceCandidate[] {
+  public get candidates(): ReadonlyArray<ResourceCandidate> {
     return Array.from(this._candidates.values()).sort(ResourceCandidate.compare).reverse();
   }
 
@@ -143,6 +143,13 @@ export class ResourceBuilder {
   public addCandidate(
     decl: IResourceCandidateDecl
   ): DetailedResult<ResourceCandidate, ResourceBuilderResultDetail> {
+    if (decl.id !== this.id) {
+      return failWithDetail<ResourceCandidate, ResourceBuilderResultDetail>(
+        `${this.id}: mismatched candidate id ${decl.id}.`,
+        'failure'
+      );
+    }
+
     if (
       this._resourceType !== undefined &&
       decl.resourceTypeName !== undefined &&

@@ -9,5 +9,5 @@ Array of [candidates](./ts-res.resources.resourcecandidate.md) for the resource 
 **Signature:**
 
 ```typescript
-get candidates(): ResourceCandidate[];
+get candidates(): ReadonlyArray<ResourceCandidate>;
 ```
