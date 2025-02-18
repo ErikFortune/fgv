@@ -374,6 +374,20 @@ Adds a [candidate](./ts-res.resources.resourcecandidate.md) to the manager.
 </td></tr>
 <tr><td>
 
+[addCandidateDecl(decl)](./ts-res.resources.resourcemanager.addcandidatedecl.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Given a [resource candidate declaration](./ts-res.resourcejson.iresourcecandidatedecl.md)<!-- -->, builds and adds a [candidate](./ts-res.resources.resourcecandidate.md) to the manager.
+
+
+</td></tr>
+<tr><td>
+
 [build()](./ts-res.resources.resourcemanager.build.md)
 
 

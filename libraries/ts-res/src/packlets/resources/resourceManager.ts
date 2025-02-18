@@ -41,10 +41,11 @@ import {
 import { AbstractDecisionCollector, ReadOnlyAbstractDecisionCollector } from '../decisions';
 import { ReadOnlyQualifierCollector } from '../qualifiers';
 import { ReadOnlyResourceTypeCollector } from '../resource-types';
-import { ResourceId } from '../common';
+import { ResourceId, Validate } from '../common';
 import { ResourceBuilder, ResourceBuilderResultDetail } from './resourceBuilder';
 import { Resource } from './resource';
 import { ResourceCandidate } from './resourceCandidate';
+import { IResourceCandidateDecl } from '../resource-json';
 
 /**
  * Interface for parameters to the {@link Resources.ResourceManager.create | ResourceManager create method}.
@@ -171,6 +172,41 @@ export class ResourceManager {
     }
     return builderResult.value.addCandidate(candidate).onSuccess((c, d) => {
       this._builtResources.delete(candidate.id);
+      this._built = false;
+      return succeedWithDetail(c, d);
+    });
+  }
+
+  /**
+   * Given a {@link ResourceJson.IResourceCandidateDecl | resource candidate declaration}, builds and adds
+   * a {@link Resources.ResourceCandidate | candidate} to the manager.
+   * @param candidate - The {@link Resources.ResourceCandidate | candidate} to add.
+   * @returns `Success` with the candidate if successful, or `Failure` with an error message if not.
+   * @public
+   */
+  public addCandidateDecl(
+    decl: IResourceCandidateDecl
+  ): DetailedResult<ResourceCandidate, ResourceManagerResultDetail> {
+    const { value: id, message } = Validate.toResourceId(decl.id);
+    if (message !== undefined) {
+      return failWithDetail(`${decl.id}: invalid id - ${message}`, 'failure');
+    }
+
+    const builderResult = this._resources.getOrAdd(id, () =>
+      ResourceBuilder.create({
+        id,
+        resourceTypes: this.resourceTypes,
+        conditionSets: this._conditionSets
+      })
+    );
+    if (builderResult.isFailure()) {
+      return failWithDetail(
+        `${id}: unable to get or add resource\n${builderResult.message}`,
+        builderResult.detail
+      );
+    }
+    return builderResult.value.addCandidateDecl(decl).onSuccess((c, d) => {
+      this._builtResources.delete(id);
       this._built = false;
       return succeedWithDetail(c, d);
     });
