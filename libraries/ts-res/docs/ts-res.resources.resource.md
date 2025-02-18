@@ -115,7 +115,7 @@ The unique [id](./ts-res.resourceid.md) of the resource.
 </td></tr>
 <tr><td>
 
-[type](./ts-res.resources.resource.type.md)
+[resourceType](./ts-res.resources.resource.resourcetype.md)
 
 
 </td><td>

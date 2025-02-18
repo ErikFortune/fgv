@@ -9,5 +9,5 @@ The id of the resource.
 **Signature:**
 
 ```typescript
-id: ResourceId;
+id?: string;
 ```

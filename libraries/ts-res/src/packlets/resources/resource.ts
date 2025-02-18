@@ -21,7 +21,7 @@
  */
 
 import { MessageAggregator, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
-import { ResourceId } from '../common';
+import { ResourceId, Validate } from '../common';
 import { ResourceCandidate } from './resourceCandidate';
 import { ResourceType } from '../resource-types';
 
@@ -33,12 +33,12 @@ export interface IResourceCreateParams {
   /**
    * The id of the resource.
    */
-  id: ResourceId;
+  id?: string;
   /**
    * Optional {@link ResourceTypes.ResourceType | type} of the resource. If not specified, the type will be inferred
    * from the candidates.
    */
-  type?: ResourceType;
+  resourceType?: ResourceType;
   /**
    * Array of {@link Resources.ResourceCandidate | candidates} for the resource.
    */
@@ -58,7 +58,7 @@ export class Resource {
   /**
    * The {@link ResourceTypes.ResourceType | type} of the resource.
    */
-  public readonly type: ResourceType;
+  public readonly resourceType: ResourceType;
   /**
    * The array of {@link Resources.ResourceCandidate | candidates} for the resource.
    */
@@ -70,8 +70,13 @@ export class Resource {
    * @public
    */
   protected constructor(params: IResourceCreateParams) {
-    this.id = Resource._validateCandidateResourceIds(params.id, params.candidates).orThrow();
-    this.type = ResourceCandidate.validateResourceTypes(params.candidates, params.type)
+    if (params.candidates.length === 0) {
+      throw new Error(`${params.id ?? 'resource constructor'}: no candidates specified.`);
+    }
+
+    const id = params.id ? Validate.toResourceId(params.id).orThrow() : undefined;
+    this.id = Resource._validateCandidateResourceIds(id, params.candidates).orThrow();
+    this.resourceType = ResourceCandidate.validateResourceTypes(params.candidates, params.resourceType)
       .onSuccess((t) => {
         if (t === undefined) {
           return fail<ResourceType>(`${params.id}: no type specified and no candidates with types.`);
@@ -103,9 +108,11 @@ export class Resource {
    * @internal
    */
   private static _validateCandidateResourceIds(
-    resourceId: ResourceId,
+    resourceId: ResourceId | undefined,
     candidates: ReadonlyArray<ResourceCandidate>
   ): Result<ResourceId> {
+    resourceId = resourceId ?? candidates[0].id;
+
     const mismatched = candidates.filter((c) => c.id !== resourceId).map((c) => c.id);
     if (mismatched.length > 0) {
       return fail(`${resourceId}: candidates with mismatched ids ${mismatched.join(', ')}.`);
@@ -125,16 +132,21 @@ export class Resource {
     candidates: ReadonlyArray<ResourceCandidate>
   ): Result<ReadonlyArray<ResourceCandidate>> {
     const errors = new MessageAggregator();
+    const validated: Map<string, ResourceCandidate> = new Map();
 
-    const conditionSetStrings = new Set<string>();
     for (const candidate of candidates) {
       const conditionSetString = candidate.conditions.toString();
-      if (conditionSetStrings.has(conditionSetString)) {
-        errors.addMessage(`${candidate.id}: duplicate candidates for ${conditionSetString}.`);
+      const existing = validated.get(conditionSetString);
+      if (existing) {
+        if (!ResourceCandidate.equal(candidate, existing)) {
+          errors.addMessage(`${candidate.id}: duplicate candidates for ${conditionSetString}.`);
+        }
       } else {
-        conditionSetStrings.add(conditionSetString);
+        validated.set(conditionSetString, candidate);
       }
     }
-    return errors.returnOrReport(succeed(Array.from(candidates).sort(ResourceCandidate.compare)));
+    return errors.returnOrReport(
+      succeed(Array.from(validated.values()).sort(ResourceCandidate.compare).reverse())
+    );
   }
 }

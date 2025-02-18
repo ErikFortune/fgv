@@ -56,7 +56,7 @@ Array of [candidates](./ts-res.resources.resourcecandidate.md) for the resource.
 </td></tr>
 <tr><td>
 
-[id](./ts-res.resources.iresourcecreateparams.id.md)
+[id?](./ts-res.resources.iresourcecreateparams.id.md)
 
 
 </td><td>
@@ -64,18 +64,18 @@ Array of [candidates](./ts-res.resources.resourcecandidate.md) for the resource.
 
 </td><td>
 
-[ResourceId](./ts-res.resourceid.md)
+string
 
 
 </td><td>
 
-The id of the resource.
+_(Optional)_ The id of the resource.
 
 
 </td></tr>
 <tr><td>
 
-[type?](./ts-res.resources.iresourcecreateparams.type.md)
+[resourceType?](./ts-res.resources.iresourcecreateparams.resourcetype.md)
 
 
 </td><td>

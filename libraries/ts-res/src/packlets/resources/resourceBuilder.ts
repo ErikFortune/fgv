@@ -175,6 +175,6 @@ export class ResourceBuilder {
     if (this._resourceType === undefined) {
       return fail(`${this.id}: no resource type supplied or inferred.`);
     }
-    return Resource.create({ id: this.id, type: this._resourceType, candidates: this.candidates });
+    return Resource.create({ id: this.id, resourceType: this._resourceType, candidates: this.candidates });
   }
 }
