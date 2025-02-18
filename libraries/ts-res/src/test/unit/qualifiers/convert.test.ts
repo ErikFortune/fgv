@@ -67,7 +67,7 @@ describe('qualifier converter', () => {
       const decl = { name: 'languages', typeName: 'language', defaultPriority: 600 };
 
       const qualifier = TsRes.Qualifiers.Convert.validatedQualifierDecl.convert(decl);
-      expect(qualifier).toFailWith(/context/);
+      expect(qualifier).toFailWith(/validatedQualifierDecl converter requires a context/);
     });
   });
 

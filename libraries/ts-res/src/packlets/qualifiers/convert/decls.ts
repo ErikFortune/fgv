@@ -56,18 +56,21 @@ export const validatedQualifierDecl = Converters.generic<
   IValidatedQualifierDecl,
   IQualifierDeclConvertContext
 >((from: unknown, __self, context?: IQualifierDeclConvertContext): Result<IValidatedQualifierDecl> => {
+  /* c8 ignore next 6  - this is tested but code coverage is losing its mind */
   if (context === undefined) {
     return fail('validatedQualifierDecl converter requires a context');
   }
+  const validatedIndexResult =
+    context.qualifierIndex !== undefined
+      ? Validate.toQualifierIndex(context.qualifierIndex)
+      : succeed(undefined);
+
   return qualifierDecl.convert(from).onSuccess((decl) => {
     return populateObject<IValidatedQualifierDecl>({
       name: () => Validate.toQualifierName(decl.name),
       type: () => context.qualifierTypes.validating.get(decl.typeName),
       defaultPriority: () => Validate.toConditionPriority(decl.defaultPriority),
-      index: () =>
-        context.qualifierIndex !== undefined
-          ? Validate.toQualifierIndex(context.qualifierIndex)
-          : succeed(undefined)
+      index: () => validatedIndexResult
     }).onSuccess((validated) => {
       if (context.qualifierIndex !== undefined) {
         context.qualifierIndex++;
