@@ -37,6 +37,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[conditionSets](./ts-res.resources.iresourcebuildercreateparams.conditionsets.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[ConditionSetCollector](./ts-res.conditions.conditionsetcollector.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [id](./ts-res.resources.iresourcebuildercreateparams.id.md)
 
 

@@ -657,6 +657,8 @@ interface IQualifierTypeCreateParams {
 // @public
 interface IResourceBuilderCreateParams {
     // (undocumented)
+    conditionSets: ConditionSetCollector;
+    // (undocumented)
     id: string;
     // (undocumented)
     resourceTypes: ReadOnlyResourceTypeCollector;
@@ -1203,11 +1205,18 @@ class ResourceBuilder {
     addCandidate(candidate: ResourceCandidate): DetailedResult<ResourceCandidate, ResourceBuilderResultDetail>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    addCandidateDecl(decl: IResourceCandidateDecl): DetailedResult<ResourceCandidate, ResourceBuilderResultDetail>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     build(): Result<Resource>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get candidates(): ResourceCandidate[];
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected _candidates: ResultMap<string, ResourceCandidate>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected _conditionSets: ConditionSetCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

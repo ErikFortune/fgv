@@ -157,7 +157,11 @@ export class ResourceManager {
     candidate: ResourceCandidate
   ): DetailedResult<ResourceCandidate, ResourceManagerResultDetail> {
     const builderResult = this._resources.getOrAdd(candidate.id, () =>
-      ResourceBuilder.create({ id: candidate.id, resourceTypes: this.resourceTypes })
+      ResourceBuilder.create({
+        id: candidate.id,
+        resourceTypes: this.resourceTypes,
+        conditionSets: this._conditionSets
+      })
     );
     if (builderResult.isFailure()) {
       return failWithDetail(

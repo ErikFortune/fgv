@@ -94,6 +94,27 @@ Map of [candidates](./ts-res.resources.resourcecandidate.md) for the resource be
 </td></tr>
 <tr><td>
 
+[\_conditionSets](./ts-res.resources.resourcebuilder._conditionsets.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+[ConditionSetCollector](./ts-res.conditions.conditionsetcollector.md)
+
+
+</td><td>
+
+Common collector for [condition sets](./ts-res.conditions.conditionset.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [\_resourceType](./ts-res.resources.resourcebuilder._resourcetype.md)
 
 
@@ -228,6 +249,20 @@ Description
 </td><td>
 
 Adds a [candidate](./ts-res.resources.resourcecandidate.md) to the resource being built.
+
+
+</td></tr>
+<tr><td>
+
+[addCandidateDecl(decl)](./ts-res.resources.resourcebuilder.addcandidatedecl.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Given a [resource candidate declaration](./ts-res.resourcejson.iresourcecandidatedecl.md)<!-- -->, creates and adds a [candidate](./ts-res.resources.resourcecandidate.md) to the resource being built.
 
 
 </td></tr>

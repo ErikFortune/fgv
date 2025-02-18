@@ -34,6 +34,8 @@ import { ResourceId, Validate } from '../common';
 import { ResourceCandidate } from './resourceCandidate';
 import { ReadOnlyResourceTypeCollector, ResourceType } from '../resource-types';
 import { Resource } from './resource';
+import { ConditionSetCollector } from '../conditions';
+import { IResourceCandidateDecl } from '../resource-json';
 
 /**
  * Parameters for creating a {@link Resources.ResourceBuilder}.
@@ -42,6 +44,7 @@ import { Resource } from './resource';
 export interface IResourceBuilderCreateParams {
   id: string;
   typeName?: string;
+  conditionSets: ConditionSetCollector;
   resourceTypes: ReadOnlyResourceTypeCollector;
 }
 
@@ -77,7 +80,7 @@ export class ResourceBuilder {
    * Array of {@link Resources.ResourceCandidate | candidates} for the resource being built.
    */
   public get candidates(): ResourceCandidate[] {
-    return Array.from(this._candidates.values()).sort(ResourceCandidate.compare);
+    return Array.from(this._candidates.values()).sort(ResourceCandidate.compare).reverse();
   }
 
   /**
@@ -97,12 +100,18 @@ export class ResourceBuilder {
   protected _resourceTypes: ReadOnlyResourceTypeCollector;
 
   /**
+   * Common collector for {@link Conditions.ConditionSet | condition sets}.
+   */
+  protected _conditionSets: ConditionSetCollector;
+
+  /**
    * Constructor for a {@link Resources.ResourceBuilder | ResourceBuilder} object.
    * @param params - Parameters to construct the new {@link Resources.ResourceBuilder | ResourceBuilder}.
    */
   protected constructor(params: IResourceBuilderCreateParams) {
     this.id = Validate.toResourceId(params.id).orThrow();
     this._resourceTypes = params.resourceTypes;
+    this._conditionSets = params.conditionSets;
     this._candidates = new ResultMap<string, ResourceCandidate>();
     if (params.typeName) {
       this._resourceType = this._resourceTypes.validating.get(params.typeName).orThrow();
@@ -158,6 +167,57 @@ export class ResourceBuilder {
           this._resourceType = added.resourceType;
         }
         return succeedWithDetail(added, detail);
+      });
+  }
+
+  /**
+   * Given a {@link ResourceJson.IResourceCandidateDecl | resource candidate declaration}, creates and adds a
+   * {@link Resources.ResourceCandidate | candidate} to the resource being built.
+   * @param candidate - The {@link ResourceJson.IResourceCandidateDecl | IResourceCandidateDecl} to add to the
+   * resource being built.
+   * @returns `Success` with the added {@link Resources.ResourceCandidate | candidate} if successful,
+   * or `Failure` with an error message if not. Fails with error detail 'type-mismatch' if the candidate
+   * specifies a different resource type than previously added candidates, or with 'exists' if a candidate
+   * already exists with the same conditions but different values.  Succeeds with 'exists' and returns the
+   * existing candidate if the candidate to be added is identical to an existing candidate.
+   */
+  public addCandidateDecl(
+    decl: IResourceCandidateDecl
+  ): DetailedResult<ResourceCandidate, ResourceBuilderResultDetail> {
+    if (
+      this._resourceType !== undefined &&
+      decl.resourceTypeName !== undefined &&
+      this._resourceType.key !== decl.resourceTypeName
+    ) {
+      return failWithDetail<ResourceCandidate, ResourceBuilderResultDetail>(
+        `${this.id}: conflicting resource types ${this._resourceType.key} !== ${decl.resourceTypeName}.`,
+        'type-mismatch'
+      );
+    }
+
+    return ResourceCandidate.create({
+      decl,
+      conditionSets: this._conditionSets,
+      resourceTypes: this._resourceTypes
+    })
+      .withDetail<ResourceBuilderResultDetail>('failure', 'success')
+      .onSuccess((candidate) => {
+        return this._candidates
+          .getOrAdd(candidate.conditions.toString(), candidate)
+          .onSuccess((added, detail) => {
+            if (detail === 'exists') {
+              if (!ResourceCandidate.equal(added, candidate)) {
+                return failWithDetail<ResourceCandidate, Collections.ResultMapResultDetail>(
+                  `${this.id}: conflicting candidates.`,
+                  'exists'
+                );
+              }
+            }
+            if (this._resourceType === undefined && added.resourceType !== undefined) {
+              this._resourceType = added.resourceType;
+            }
+            return succeedWithDetail(added, detail);
+          });
       });
   }
 
