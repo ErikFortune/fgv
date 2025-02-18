@@ -149,42 +149,13 @@ export class ResourceManager {
   }
 
   /**
-   * Adds a {@link Resources.ResourceCandidate | candidate} to the manager.
-   * @param candidate - The {@link Resources.ResourceCandidate | candidate} to add.
-   * @returns `Success` with the candidate if successful, or `Failure` with an error message if not.
-   * @public
-   */
-  public addCandidate(
-    candidate: ResourceCandidate
-  ): DetailedResult<ResourceCandidate, ResourceManagerResultDetail> {
-    const builderResult = this._resources.getOrAdd(candidate.id, () =>
-      ResourceBuilder.create({
-        id: candidate.id,
-        resourceTypes: this.resourceTypes,
-        conditionSets: this._conditionSets
-      })
-    );
-    if (builderResult.isFailure()) {
-      return failWithDetail(
-        `${candidate.id}: unable to get or add resource\n${builderResult.message}`,
-        builderResult.detail
-      );
-    }
-    return builderResult.value.addCandidate(candidate).onSuccess((c, d) => {
-      this._builtResources.delete(candidate.id);
-      this._built = false;
-      return succeedWithDetail(c, d);
-    });
-  }
-
-  /**
    * Given a {@link ResourceJson.IResourceCandidateDecl | resource candidate declaration}, builds and adds
    * a {@link Resources.ResourceCandidate | candidate} to the manager.
    * @param candidate - The {@link Resources.ResourceCandidate | candidate} to add.
    * @returns `Success` with the candidate if successful, or `Failure` with an error message if not.
    * @public
    */
-  public addCandidateDecl(
+  public addCandidate(
     decl: IResourceCandidateDecl
   ): DetailedResult<ResourceCandidate, ResourceManagerResultDetail> {
     const { value: id, message } = Validate.toResourceId(decl.id);
@@ -205,7 +176,7 @@ export class ResourceManager {
         builderResult.detail
       );
     }
-    return builderResult.value.addCandidateDecl(decl).onSuccess((c, d) => {
+    return builderResult.value.addCandidate(decl).onSuccess((c, d) => {
       this._builtResources.delete(id);
       this._built = false;
       return succeedWithDetail(c, d);

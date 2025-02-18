@@ -130,47 +130,6 @@ export class ResourceBuilder {
   }
 
   /**
-   * Adds a {@link Resources.ResourceCandidate | candidate} to the resource being built.
-   * @param candidate - The {@link Resources.ResourceCandidate | candidate} to add to the resource being built.
-   * @returns `Success` with the added {@link Resources.ResourceCandidate | candidate} if successful,
-   * or `Failure` with an error message if not. Fails with error detail 'type-mismatch' if the candidate
-   * specifies a different resource type than previously added candidates, or with 'exists' if a candidate
-   * already exists with the same conditions but different values.  Succeeds with 'exists' and returns the
-   * existing candidate if the candidate to be added is identical to an existing candidate.
-   */
-  public addCandidate(
-    candidate: ResourceCandidate
-  ): DetailedResult<ResourceCandidate, ResourceBuilderResultDetail> {
-    if (
-      this._resourceType !== undefined &&
-      candidate.resourceType !== undefined &&
-      this._resourceType !== candidate.resourceType
-    ) {
-      return failWithDetail<ResourceCandidate, ResourceBuilderResultDetail>(
-        `${this.id}: conflicting resource types.`,
-        'type-mismatch'
-      );
-    }
-
-    return this._candidates
-      .getOrAdd(candidate.conditions.toString(), candidate)
-      .onSuccess((added, detail) => {
-        if (detail === 'exists') {
-          if (!ResourceCandidate.equal(added, candidate)) {
-            return failWithDetail<ResourceCandidate, Collections.ResultMapResultDetail>(
-              `${this.id}: conflicting candidates.`,
-              'exists'
-            );
-          }
-        }
-        if (this._resourceType === undefined && added.resourceType !== undefined) {
-          this._resourceType = added.resourceType;
-        }
-        return succeedWithDetail(added, detail);
-      });
-  }
-
-  /**
    * Given a {@link ResourceJson.IResourceCandidateDecl | resource candidate declaration}, creates and adds a
    * {@link Resources.ResourceCandidate | candidate} to the resource being built.
    * @param candidate - The {@link ResourceJson.IResourceCandidateDecl | IResourceCandidateDecl} to add to the
@@ -181,7 +140,7 @@ export class ResourceBuilder {
    * already exists with the same conditions but different values.  Succeeds with 'exists' and returns the
    * existing candidate if the candidate to be added is identical to an existing candidate.
    */
-  public addCandidateDecl(
+  public addCandidate(
     decl: IResourceCandidateDecl
   ): DetailedResult<ResourceCandidate, ResourceBuilderResultDetail> {
     if (

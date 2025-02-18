@@ -360,21 +360,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[addCandidate(candidate)](./ts-res.resources.resourcemanager.addcandidate.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Adds a [candidate](./ts-res.resources.resourcecandidate.md) to the manager.
-
-
-</td></tr>
-<tr><td>
-
-[addCandidateDecl(decl)](./ts-res.resources.resourcemanager.addcandidatedecl.md)
+[addCandidate(decl)](./ts-res.resources.resourcemanager.addcandidate.md)
 
 
 </td><td>

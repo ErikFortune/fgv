@@ -240,21 +240,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[addCandidate(candidate)](./ts-res.resources.resourcebuilder.addcandidate.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Adds a [candidate](./ts-res.resources.resourcecandidate.md) to the resource being built.
-
-
-</td></tr>
-<tr><td>
-
-[addCandidateDecl(decl)](./ts-res.resources.resourcebuilder.addcandidatedecl.md)
+[addCandidate(decl)](./ts-res.resources.resourcebuilder.addcandidate.md)
 
 
 </td><td>

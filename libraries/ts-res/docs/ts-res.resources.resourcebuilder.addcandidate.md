@@ -4,12 +4,12 @@
 
 ## Resources.ResourceBuilder.addCandidate() method
 
-Adds a [candidate](./ts-res.resources.resourcecandidate.md) to the resource being built.
+Given a [resource candidate declaration](./ts-res.resourcejson.iresourcecandidatedecl.md)<!-- -->, creates and adds a [candidate](./ts-res.resources.resourcecandidate.md) to the resource being built.
 
 **Signature:**
 
 ```typescript
-addCandidate(candidate: ResourceCandidate): DetailedResult<ResourceCandidate, ResourceBuilderResultDetail>;
+addCandidate(decl: IResourceCandidateDecl): DetailedResult<ResourceCandidate, ResourceBuilderResultDetail>;
 ```
 
 ## Parameters
@@ -32,17 +32,15 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-candidate
+decl
 
 
 </td><td>
 
-[ResourceCandidate](./ts-res.resources.resourcecandidate.md)
+[IResourceCandidateDecl](./ts-res.resourcejson.iresourcecandidatedecl.md)
 
 
 </td><td>
-
-The [candidate](./ts-res.resources.resourcecandidate.md) to add to the resource being built.
 
 
 </td></tr>

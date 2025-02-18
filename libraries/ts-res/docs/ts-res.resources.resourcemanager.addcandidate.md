@@ -4,12 +4,12 @@
 
 ## Resources.ResourceManager.addCandidate() method
 
-Adds a [candidate](./ts-res.resources.resourcecandidate.md) to the manager.
+Given a [resource candidate declaration](./ts-res.resourcejson.iresourcecandidatedecl.md)<!-- -->, builds and adds a [candidate](./ts-res.resources.resourcecandidate.md) to the manager.
 
 **Signature:**
 
 ```typescript
-addCandidate(candidate: ResourceCandidate): DetailedResult<ResourceCandidate, ResourceManagerResultDetail>;
+addCandidate(decl: IResourceCandidateDecl): DetailedResult<ResourceCandidate, ResourceManagerResultDetail>;
 ```
 
 ## Parameters
@@ -32,17 +32,15 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-candidate
+decl
 
 
 </td><td>
 
-[ResourceCandidate](./ts-res.resources.resourcecandidate.md)
+[IResourceCandidateDecl](./ts-res.resourcejson.iresourcecandidatedecl.md)
 
 
 </td><td>
-
-The [candidate](./ts-res.resources.resourcecandidate.md) to add.
 
 
 </td></tr>
