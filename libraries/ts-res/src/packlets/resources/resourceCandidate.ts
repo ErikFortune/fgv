@@ -21,11 +21,11 @@
  */
 
 import { JsonValue } from '@fgv/ts-json-base';
-import { ResourceId, ResourceValueMergeMethod } from '../common';
+import { ResourceId, ResourceValueMergeMethod, Validate } from '../common';
 import { Condition, ConditionSet, ConditionSetCollector, IConditionDecl } from '../conditions';
 import * as ResourceJson from '../resource-json';
 import { ReadOnlyResourceTypeCollector, ResourceType } from '../resource-types';
-import { captureResult, mapResults, MessageAggregator, Normalizer, Result, succeed } from '@fgv/ts-utils';
+import { captureResult, mapResults, Hash, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 
 /**
  * Parameters to create a {@link Resources.ResourceCandidate | ResourceCandidate}.
@@ -33,7 +33,7 @@ import { captureResult, mapResults, MessageAggregator, Normalizer, Result, succe
  */
 export interface IResourceCandidateCreateParams {
   decl: ResourceJson.IResourceCandidateDecl;
-  parentConditions: ReadonlyArray<Condition>;
+  parentConditions?: ReadonlyArray<Condition>;
   conditionSets: ConditionSetCollector;
   resourceTypes: ReadOnlyResourceTypeCollector;
 }
@@ -87,7 +87,12 @@ export class ResourceCandidate {
    * @public
    */
   protected constructor(params: IResourceCandidateCreateParams) {
-    this.id = params.decl.id;
+    const resourceType =
+      params.decl.resourceTypeName !== undefined
+        ? params.resourceTypes.validating.get(params.decl.resourceTypeName).orThrow()
+        : undefined;
+
+    this.id = Validate.toResourceId(params.decl.id).orThrow();
     this.json = params.decl.json;
     this.conditions = ResourceCandidate._mergeConditions(
       params.conditionSets,
@@ -95,10 +100,8 @@ export class ResourceCandidate {
       params.parentConditions
     ).orThrow();
     this.isPartial = params.decl.isPartial ?? false;
-    this.mergeMethod = params.decl.mergeMethod ?? 'replace';
-    this._resourceType = params.decl.resourceTypeName
-      ? params.resourceTypes.get(params.decl.resourceTypeName).orThrow()
-      : undefined;
+    this.mergeMethod = params.decl.mergeMethod ?? 'augment';
+    this._resourceType = resourceType;
     if (this._resourceType) {
       this._resourceType.validateDeclaration(this.json, this.isPartial, this.mergeMethod).orThrow();
     }
@@ -134,7 +137,7 @@ export class ResourceCandidate {
         selectedType = candidate.resourceType;
       } else if (candidate.resourceType && selectedType !== candidate.resourceType) {
         errors.addMessage(
-          `${candidate.id}: resource type mismatch (${selectedType.key} != ${candidate.resourceType?.key})`
+          `${candidate.id}: resource type mismatch (${selectedType.key} != ${candidate.resourceType.key})`
         );
       }
     }
@@ -161,15 +164,18 @@ export class ResourceCandidate {
    * @public
    */
   public static equal(rc1: ResourceCandidate, rc2: ResourceCandidate): boolean {
+    if (rc1 === rc2) {
+      return true;
+    }
     let equal =
       rc1.id === rc2.id &&
       rc1.isPartial === rc2.isPartial &&
       rc1.mergeMethod === rc2.mergeMethod &&
       ConditionSet.compare(rc1.conditions, rc2.conditions) === 0;
     if (equal) {
-      const normalizer = new Normalizer();
-      const n1 = normalizer.normalize(rc1.json).orDefault('(n1 normalization failed)');
-      const n2 = normalizer.normalize(rc2.json).orDefault('(n2 normalization failed)');
+      const normalizer = new Hash.Crc32Normalizer();
+      const n1 = normalizer.computeHash(rc1.json).orDefault('(n1 normalization failed)');
+      const n2 = normalizer.computeHash(rc2.json).orDefault('(n2 normalization failed)');
       equal = n1 === n2;
     }
     return equal;
@@ -189,6 +195,7 @@ export class ResourceCandidate {
     declared: ResourceJson.ConditionSetDecl | undefined,
     parent: ReadonlyArray<Condition> | undefined
   ): Result<ConditionSet> {
+    /* c8 ignore next 2 - code coverage is flaky */
     declared = declared ?? {};
     parent = parent ?? [];
 
@@ -206,7 +213,7 @@ export class ResourceCandidate {
       return mapResults(parent.map((c) => conditionSets.conditions.getOrAdd(c))).onSuccess(
         (parentConditions) => {
           const conditions = [...parentConditions, ...declaredConditions];
-          return conditionSets.validating.getOrAdd({ conditions });
+          return conditionSets.validating.getOrAdd(conditions);
         }
       );
     });

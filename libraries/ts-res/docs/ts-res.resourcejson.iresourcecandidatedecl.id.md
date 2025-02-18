@@ -9,5 +9,5 @@ The [id](./ts-res.resourceid.md) of the resource.
 **Signature:**
 
 ```typescript
-readonly id: ResourceId;
+readonly id: string;
 ```

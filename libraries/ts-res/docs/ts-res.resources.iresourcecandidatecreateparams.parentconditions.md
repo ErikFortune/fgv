@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-parentConditions: ReadonlyArray<Condition>;
+parentConditions?: ReadonlyArray<Condition>;
 ```

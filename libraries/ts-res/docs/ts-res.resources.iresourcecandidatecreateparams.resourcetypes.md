@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-resourceTypes: ResourceTypeCollector;
+resourceTypes: ReadOnlyResourceTypeCollector;
 ```

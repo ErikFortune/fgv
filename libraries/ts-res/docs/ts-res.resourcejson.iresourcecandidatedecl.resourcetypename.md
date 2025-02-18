@@ -9,5 +9,5 @@ The type of resource.
 **Signature:**
 
 ```typescript
-readonly resourceTypeName?: ResourceTypeName;
+readonly resourceTypeName?: string;
 ```

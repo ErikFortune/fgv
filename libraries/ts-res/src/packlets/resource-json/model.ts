@@ -21,12 +21,12 @@
  */
 
 import { JsonValue } from '@fgv/ts-json-base';
-import { QualifierName, ResourceId, ResourceTypeName, ResourceValueMergeMethod } from '../common';
+import { ResourceValueMergeMethod } from '../common';
 /**
  * Type representing a set of conditions that must be met for a resource to be selected.
  * @public
  */
-export type ConditionSetDecl = Record<QualifierName, string>;
+export type ConditionSetDecl = Record<string, string>;
 
 /**
  * Interface representing a resource candidate declaration.
@@ -36,7 +36,7 @@ export interface IResourceCandidateDecl {
   /**
    * The {@link ResourceId | id} of the resource.
    */
-  readonly id: ResourceId;
+  readonly id: string;
 
   /**
    * The JSON value of the resource.
@@ -62,7 +62,7 @@ export interface IResourceCandidateDecl {
   /**
    * The type of resource.
    */
-  readonly resourceTypeName?: ResourceTypeName;
+  readonly resourceTypeName?: string;
 }
 
 /**

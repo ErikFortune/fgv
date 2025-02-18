@@ -9,7 +9,5 @@ Type representing a set of conditions that must be met for a resource to be sele
 **Signature:**
 
 ```typescript
-export type ConditionSetDecl = Record<QualifierName, string>;
+export type ConditionSetDecl = Record<string, string>;
 ```
-**References:** [QualifierName](./ts-res.qualifiername.md)
-

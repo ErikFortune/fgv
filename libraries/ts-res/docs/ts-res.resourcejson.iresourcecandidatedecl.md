@@ -68,7 +68,7 @@ The conditions that must be met for the resource to be selected.
 
 </td><td>
 
-[ResourceId](./ts-res.resourceid.md)
+string
 
 
 </td><td>
@@ -152,7 +152,7 @@ _(Optional)_ The merge method to be used when merging the resource into the exis
 
 </td><td>
 
-[ResourceTypeName](./ts-res.resourcetypename.md)
+string
 
 
 </td><td>

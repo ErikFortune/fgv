@@ -91,8 +91,7 @@ export class ConditionCollector extends ValidatingCollector<Condition> {
     }
     return validatedConditionDecl
       .convert(from, { qualifiers: this.qualifiers, conditionIndex: this.size })
-      .onSuccess((c) => Condition.create(c))
-      .onSuccess((c) => succeed(this.get(c.key).orDefault(c)));
+      .onSuccess((c) => Condition.create(c));
   }
 }
 

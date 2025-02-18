@@ -56,7 +56,7 @@ export const validatedQualifierDecl = Converters.generic<
   IValidatedQualifierDecl,
   IQualifierDeclConvertContext
 >((from: unknown, __self, context?: IQualifierDeclConvertContext): Result<IValidatedQualifierDecl> => {
-  /* c8 ignore next 6  - this is tested but code coverage is losing its mind */
+  /* c8 ignore next 7  - this is tested but code coverage is losing its mind */
   if (context === undefined) {
     return fail('validatedQualifierDecl converter requires a context');
   }

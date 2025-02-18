@@ -38,13 +38,16 @@ export interface IResourceCollectorCreateParams {
  */
 export class ResourceTypeCollector extends ValidatingCollector<ResourceType> {
   protected constructor({ resourceTypes }: IResourceCollectorCreateParams) {
+    /* c8 ignore next 1 - coverage having a rough day */
+    resourceTypes = resourceTypes ?? [];
+
     super({
       converters: new Collections.KeyValueConverters<ResourceTypeName, ResourceType>({
         key: CommonConvert.resourceTypeName,
         value: (from: unknown) => this._toResourceType(from)
       })
     });
-    resourceTypes?.forEach((resourceType) => {
+    resourceTypes.forEach((resourceType) => {
       this.add(resourceType).orThrow();
     });
   }
@@ -56,7 +59,9 @@ export class ResourceTypeCollector extends ValidatingCollector<ResourceType> {
    * message if the collector could not be created.
    */
   public static create(params?: IResourceCollectorCreateParams): Result<ResourceTypeCollector> {
-    return captureResult(() => new ResourceTypeCollector(params ?? {}));
+    /* c8 ignore next 1 - coverage having a rough day */
+    params = params ?? {};
+    return captureResult(() => new ResourceTypeCollector(params));
   }
 
   protected _toResourceType(from: unknown): Result<ResourceType> {

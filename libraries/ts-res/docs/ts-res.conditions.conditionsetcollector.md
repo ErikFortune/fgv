@@ -79,12 +79,10 @@ Description
 
 </td><td>
 
-`readonly`
-
 
 </td><td>
 
-[ReadOnlyConditionCollector](./ts-res.conditions.readonlyconditioncollector.md)
+[ConditionCollector](./ts-res.conditions.conditioncollector.md)
 
 
 </td><td>

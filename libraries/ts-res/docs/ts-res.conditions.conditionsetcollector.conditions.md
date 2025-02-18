@@ -9,5 +9,5 @@ Gets the [ConditionCollector](./ts-res.conditions.conditioncollector.md) used to
 **Signature:**
 
 ```typescript
-get conditions(): ReadOnlyConditionCollector;
+conditions: ConditionCollector;
 ```

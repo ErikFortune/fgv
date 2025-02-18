@@ -245,7 +245,7 @@ class ConditionSetCollector extends ValidatingCollector<ConditionSet> {
 }
 
 // @public
-type ConditionSetDecl = Record<QualifierName, string>;
+type ConditionSetDecl = Record<string, string>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -673,7 +673,7 @@ interface IResourceCandidateCreateParams {
     // (undocumented)
     decl: ResourceJson.IResourceCandidateDecl;
     // (undocumented)
-    parentConditions: ReadonlyArray<Condition>;
+    parentConditions?: ReadonlyArray<Condition>;
     // (undocumented)
     resourceTypes: ReadOnlyResourceTypeCollector;
 }
@@ -681,11 +681,11 @@ interface IResourceCandidateCreateParams {
 // @public
 interface IResourceCandidateDecl {
     readonly conditions: ConditionSetDecl;
-    readonly id: ResourceId;
+    readonly id: string;
     readonly isPartial?: boolean;
     readonly json: JsonValue;
     readonly mergeMethod?: ResourceValueMergeMethod;
-    readonly resourceTypeName?: ResourceTypeName;
+    readonly resourceTypeName?: string;
 }
 
 // @public
@@ -1587,7 +1587,7 @@ const validatedQualifierDecl: Converter<IValidatedQualifierDecl, IQualifierDeclC
 // Warnings were encountered during analysis:
 //
 // src/packlets/resources/resource.ts:124:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resourceCandidate.ts:187:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resourceCandidate.ts:192:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 

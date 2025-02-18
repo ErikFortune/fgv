@@ -158,6 +158,14 @@ describe('TerritoryQualifierType', () => {
         }
       });
 
+      test('returns no match for invalid territories', () => {
+        invalidTerritories.forEach((t) => {
+          expect(
+            qt.matches(t as TsRes.QualifierConditionValue, t as TsRes.QualifierContextValue, 'matches')
+          ).toBe(TsRes.NoMatch);
+        });
+      });
+
       test('returns no match for valid but not allowed territories', () => {
         expect(
           qt.matches('AQ' as TsRes.QualifierConditionValue, 'AQ' as TsRes.QualifierContextValue, 'matches')

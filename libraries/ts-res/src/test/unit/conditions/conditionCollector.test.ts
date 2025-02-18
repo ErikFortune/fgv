@@ -156,7 +156,7 @@ describe('ConditionCollector class', () => {
       });
     });
 
-    test('returns the existing condition if the key is already in the collector', () => {
+    test('fails if a condition with the same key is already in the collector', () => {
       const cc = TsRes.Conditions.ConditionCollector.create({
         qualifiers
       }).orThrow();
@@ -164,10 +164,8 @@ describe('ConditionCollector class', () => {
         qualifierName: 'homeTerritory',
         value: 'US'
       };
-      const condition = cc.validating.add(decl).orThrow();
-      expect(cc.validating.add(decl)).toSucceedAndSatisfy((c) => {
-        expect(c).toBe(condition);
-      });
+      cc.validating.add(decl).orThrow();
+      expect(cc.validating.add(decl)).toFailWith(/already exists/i);
     });
 
     test('returns a new condition if priority is different', () => {
@@ -182,6 +180,22 @@ describe('ConditionCollector class', () => {
       expect(cc.validating.add({ ...decl, priority: 123 })).toSucceedAndSatisfy((c) => {
         expect(c).not.toBe(condition);
         expect(c.priority).toBe(123);
+      });
+    });
+  });
+
+  describe('validating getOrAdd method', () => {
+    test('returns the existing condition if the key is already in the collector', () => {
+      const cc = TsRes.Conditions.ConditionCollector.create({
+        qualifiers
+      }).orThrow();
+      const decl = {
+        qualifierName: 'homeTerritory',
+        value: 'US'
+      };
+      const condition = cc.validating.getOrAdd(decl).orThrow();
+      expect(cc.validating.getOrAdd(decl)).toSucceedAndSatisfy((c) => {
+        expect(c).toBe(condition);
       });
     });
   });

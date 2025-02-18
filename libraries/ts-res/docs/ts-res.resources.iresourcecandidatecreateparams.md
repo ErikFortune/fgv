@@ -37,6 +37,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[conditionSets](./ts-res.resources.iresourcecandidatecreateparams.conditionsets.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[ConditionSetCollector](./ts-res.conditions.conditionsetcollector.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [decl](./ts-res.resources.iresourcecandidatecreateparams.decl.md)
 
 
@@ -54,7 +71,7 @@ Description
 </td></tr>
 <tr><td>
 
-[parentConditions](./ts-res.resources.iresourcecandidatecreateparams.parentconditions.md)
+[parentConditions?](./ts-res.resources.iresourcecandidatecreateparams.parentconditions.md)
 
 
 </td><td>
@@ -67,22 +84,7 @@ ReadonlyArray&lt;[Condition](./ts-res.conditions.condition.md)<!-- -->&gt;
 
 </td><td>
 
-
-</td></tr>
-<tr><td>
-
-[qualifiers](./ts-res.resources.iresourcecandidatecreateparams.qualifiers.md)
-
-
-</td><td>
-
-
-</td><td>
-
-[ReadOnlyQualifierCollector](./ts-res.qualifiers.readonlyqualifiercollector.md)
-
-
-</td><td>
+_(Optional)_
 
 
 </td></tr>
@@ -96,7 +98,7 @@ ReadonlyArray&lt;[Condition](./ts-res.conditions.condition.md)<!-- -->&gt;
 
 </td><td>
 
-[ResourceTypeCollector](./ts-res.resourcetypes.resourcetypecollector.md)
+[ReadOnlyResourceTypeCollector](./ts-res.resourcetypes.readonlyresourcetypecollector.md)
 
 
 </td><td>
