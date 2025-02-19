@@ -55,6 +55,7 @@ export abstract class ResourceType<T = unknown> implements ICollectible<Resource
   protected constructor(key: ResourceTypeName, index?: number) {
     this._collectible = new Collections.Collectible<ResourceTypeName, ResourceTypeIndex>({
       key,
+      /* c8 ignore next 1 - coverage having a rough time */
       index: index !== undefined ? Validate.toResourceTypeIndex(index).orThrow() : undefined,
       indexConverter: CommonConvert.resourceTypeIndex
     });

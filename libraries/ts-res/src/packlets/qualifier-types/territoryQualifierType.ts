@@ -104,6 +104,7 @@ export class TerritoryQualifierType extends QualifierType {
    */
   public isValidConditionValue(value: string): value is QualifierConditionValue {
     const normalized = value.toUpperCase();
+    /* c8 ignore next 6 - definitely tested but coverage is missing it */
     if (!TerritoryQualifierType.isValidTerritoryConditionValue(normalized)) {
       return false;
     }

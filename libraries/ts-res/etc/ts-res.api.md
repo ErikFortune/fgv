@@ -694,6 +694,7 @@ interface IResourceCandidateDecl {
 interface IResourceCollectionDecl {
     readonly collections?: IResourceCollectionDecl[];
     readonly conditions?: ConditionSetDecl;
+    readonly id?: string;
     readonly resources?: IResourceCandidateDecl[];
 }
 

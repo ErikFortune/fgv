@@ -72,6 +72,11 @@ export interface IResourceCandidateDecl {
  */
 export interface IResourceCollectionDecl {
   /**
+   * The id of the collection
+   */
+  readonly id?: string;
+
+  /**
    * Optional conditions that apply to all resources in the collection.
    */
   readonly conditions?: ConditionSetDecl;

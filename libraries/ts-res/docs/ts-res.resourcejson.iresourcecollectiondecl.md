@@ -79,6 +79,27 @@ _(Optional)_ Optional conditions that apply to all resources in the collection.
 </td></tr>
 <tr><td>
 
+[id?](./ts-res.resourcejson.iresourcecollectiondecl.id.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ The id of the collection
+
+
+</td></tr>
+<tr><td>
+
 [resources?](./ts-res.resourcejson.iresourcecollectiondecl.resources.md)
 
 

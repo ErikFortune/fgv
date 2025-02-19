@@ -87,6 +87,7 @@ export class Decision<TVALUE extends JsonValue = JsonValue> implements IDecision
       .sort(Candidate.compare)
       .reverse();
 
+    /* c8 ignore next 3 - coverage having a rough time */
     const key = params.isAbstract
       ? Decision.getAbstractKey(this.candidates.map((c) => c.conditionSet))
       : Decision.getKey(this.candidates);

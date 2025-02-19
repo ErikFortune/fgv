@@ -55,6 +55,7 @@ export const resourceCandidateDecl = Converters.object<IResourceCandidateDecl>({
 export const resourceCollectionDecl = new Conversion.BaseConverter<IResourceCollectionDecl>(
   (from: unknown, self: Converter<IResourceCollectionDecl, unknown>, context?: unknown) => {
     return Converters.strictObject<IResourceCollectionDecl>({
+      id: CommonConvert.resourceId.optional(),
       conditions: conditionSetDecl.optional(),
       resources: Converters.arrayOf(resourceCandidateDecl).optional(),
       collections: Converters.arrayOf(self).optional()
