@@ -4,7 +4,7 @@
 
 ## ResourceTypes.ResourceType.validateDeclaration() method
 
-Validates a [resource candidate declaration](./ts-res.resourcejson.iresourcecandidatedecl.md) for a partial resource instance value.
+Validates a [resource candidate declaration](./ts-res.resourcejson.ilooseresourcecandidatedecl.md) for a partial resource instance value.
 
 **Signature:**
 

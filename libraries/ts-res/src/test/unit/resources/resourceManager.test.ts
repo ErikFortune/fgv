@@ -28,8 +28,8 @@ describe('ResourceManager', () => {
   let qualifierDecls: TsRes.Qualifiers.IQualifierDecl[];
   let qualifiers: TsRes.Qualifiers.QualifierCollector;
   let resourceTypes: TsRes.ResourceTypes.ResourceTypeCollector;
-  let someDecls: TsRes.ResourceJson.IResourceCandidateDecl[];
-  let otherDecls: TsRes.ResourceJson.IResourceCandidateDecl[];
+  let someDecls: TsRes.ResourceJson.ILooseResourceCandidateDecl[];
+  let otherDecls: TsRes.ResourceJson.ILooseResourceCandidateDecl[];
 
   beforeAll(() => {
     qualifierTypes = TsRes.QualifierTypes.QualifierTypeCollector.create({

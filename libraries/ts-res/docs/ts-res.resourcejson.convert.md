@@ -30,12 +30,12 @@ Description
 </td></tr>
 <tr><td>
 
-[resourceCandidateDecl](./ts-res.resourcejson.convert.resourcecandidatedecl.md)
+[looseResourceCandidateDecl](./ts-res.resourcejson.convert.looseresourcecandidatedecl.md)
 
 
 </td><td>
 
-`Converter` for a [resource candidate declaration](./ts-res.resourcejson.iresourcecandidatedecl.md)<!-- -->.
+`Converter` for a [loose resource candidate declaration](./ts-res.resourcejson.ilooseresourcecandidatedecl.md)<!-- -->.
 
 
 </td></tr>

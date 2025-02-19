@@ -9,5 +9,5 @@ The resources in the collection.
 **Signature:**
 
 ```typescript
-readonly resources?: IResourceCandidateDecl[];
+readonly resources?: ILooseResourceCandidateDecl[];
 ```

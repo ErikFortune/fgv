@@ -19,7 +19,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IResourceCandidateDecl](./ts-res.resourcejson.iresourcecandidatedecl.md)
+[ILooseResourceCandidateDecl](./ts-res.resourcejson.ilooseresourcecandidatedecl.md)
 
 
 </td><td>
@@ -57,6 +57,15 @@ Description
 <tbody><tr><td>
 
 [Convert](./ts-res.resourcejson.convert.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Normalized](./ts-res.resourcejson.normalized.md)
 
 
 </td><td>

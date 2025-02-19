@@ -110,7 +110,7 @@ _(Optional)_ The id of the collection
 
 </td><td>
 
-[IResourceCandidateDecl](./ts-res.resourcejson.iresourcecandidatedecl.md)<!-- -->\[\]
+[ILooseResourceCandidateDecl](./ts-res.resourcejson.ilooseresourcecandidatedecl.md)<!-- -->\[\]
 
 
 </td><td>

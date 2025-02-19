@@ -4,7 +4,7 @@
 
 ## ResourceTypes.JsonResourceType.validateDeclaration() method
 
-Validates a [resource candidate declaration](./ts-res.resourcejson.iresourcecandidatedecl.md) for a resource instance value.
+Validates a [resource candidate declaration](./ts-res.resourcejson.ilooseresourcecandidatedecl.md) for a resource instance value.
 
 **Signature:**
 

@@ -32,7 +32,7 @@ export type ConditionSetDecl = Record<string, string>;
  * Interface representing a resource candidate declaration.
  * @public
  */
-export interface IResourceCandidateDecl {
+export interface ILooseResourceCandidateDecl {
   /**
    * The {@link ResourceId | id} of the resource.
    */
@@ -84,7 +84,7 @@ export interface IResourceCollectionDecl {
   /**
    * The resources in the collection.
    */
-  readonly resources?: IResourceCandidateDecl[];
+  readonly resources?: ILooseResourceCandidateDecl[];
 
   /**
    * Optional collections contained within this collection.

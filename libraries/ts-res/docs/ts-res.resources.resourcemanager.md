@@ -368,7 +368,7 @@ Description
 
 </td><td>
 
-Given a [resource candidate declaration](./ts-res.resourcejson.iresourcecandidatedecl.md)<!-- -->, builds and adds a [candidate](./ts-res.resources.resourcecandidate.md) to the manager.
+Given a [resource candidate declaration](./ts-res.resourcejson.ilooseresourcecandidatedecl.md)<!-- -->, builds and adds a [candidate](./ts-res.resources.resourcecandidate.md) to the manager.
 
 
 </td></tr>

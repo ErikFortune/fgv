@@ -23,7 +23,7 @@
 import { Convert as CommonConvert } from '../common';
 import { Conversion, Converter, Converters } from '@fgv/ts-utils';
 import { Converters as JsonConverters } from '@fgv/ts-json-base';
-import { IResourceCandidateDecl, IResourceCollectionDecl } from './model';
+import { ILooseResourceCandidateDecl, IResourceCollectionDecl } from './model';
 
 /* eslint-disable @rushstack/typedef-var */
 
@@ -36,10 +36,10 @@ export const conditionSetDecl = Converters.recordOf(Converters.string, {
 });
 
 /**
- * `Converter` for a {@link ResourceJson.IResourceCandidateDecl | resource candidate declaration}.
+ * `Converter` for a {@link ResourceJson.ILooseResourceCandidateDecl | loose resource candidate declaration}.
  * @public
  */
-export const resourceCandidateDecl = Converters.object<IResourceCandidateDecl>({
+export const looseResourceCandidateDecl = Converters.object<ILooseResourceCandidateDecl>({
   id: CommonConvert.resourceId,
   json: JsonConverters.jsonValue,
   conditions: conditionSetDecl,
@@ -57,7 +57,7 @@ export const resourceCollectionDecl = new Conversion.BaseConverter<IResourceColl
     return Converters.strictObject<IResourceCollectionDecl>({
       id: CommonConvert.resourceId.optional(),
       conditions: conditionSetDecl.optional(),
-      resources: Converters.arrayOf(resourceCandidateDecl).optional(),
+      resources: Converters.arrayOf(looseResourceCandidateDecl).optional(),
       collections: Converters.arrayOf(self).optional()
     }).convert(from, context);
   }

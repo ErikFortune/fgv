@@ -62,7 +62,7 @@ export abstract class ResourceType<T = unknown> implements ICollectible<Resource
   }
 
   /**
-   * Validates a {@link ResourceJson.IResourceCandidateDecl | resource candidate declaration} for
+   * Validates a {@link ResourceJson.ILooseResourceCandidateDecl | resource candidate declaration} for
    * a partial resource instance value.
    * @param json - The JSON value to validate.
    * @param isPartial - `true` indicates that the value is expected to be incomplete.
@@ -78,7 +78,7 @@ export abstract class ResourceType<T = unknown> implements ICollectible<Resource
   ): Result<Partial<T>>;
 
   /**
-   * Validates a {@link ResourceJson.IResourceCandidateDecl | resource candidate declaration} for
+   * Validates a {@link ResourceJson.ILooseResourceCandidateDecl | resource candidate declaration} for
    * a complete resource instance value.
    * @param json - The JSON value to validate.
    * @param isPartial - `false` indicates that the value is expected to be complete.
@@ -94,7 +94,7 @@ export abstract class ResourceType<T = unknown> implements ICollectible<Resource
   ): Result<T>;
 
   /**
-   * Validates a {@link ResourceJson.IResourceCandidateDecl | resource candidate declaration} for
+   * Validates a {@link ResourceJson.ILooseResourceCandidateDecl | resource candidate declaration} for
    * a resource instance value.
    * @param json - The JSON value to validate.
    * @param isPartial - Indicates whether the value is expected to be incomplete.

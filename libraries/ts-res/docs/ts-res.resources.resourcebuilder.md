@@ -248,7 +248,7 @@ Description
 
 </td><td>
 
-Given a [resource candidate declaration](./ts-res.resourcejson.iresourcecandidatedecl.md)<!-- -->, creates and adds a [candidate](./ts-res.resources.resourcecandidate.md) to the resource being built.
+Given a [resource candidate declaration](./ts-res.resourcejson.ilooseresourcecandidatedecl.md)<!-- -->, creates and adds a [candidate](./ts-res.resources.resourcecandidate.md) to the resource being built.
 
 
 </td></tr>

@@ -35,7 +35,7 @@ import { ResourceCandidate } from './resourceCandidate';
 import { ReadOnlyResourceTypeCollector, ResourceType } from '../resource-types';
 import { Resource } from './resource';
 import { ConditionSetCollector } from '../conditions';
-import { IResourceCandidateDecl } from '../resource-json';
+import { ILooseResourceCandidateDecl } from '../resource-json';
 
 /**
  * Parameters for creating a {@link Resources.ResourceBuilder}.
@@ -130,9 +130,9 @@ export class ResourceBuilder {
   }
 
   /**
-   * Given a {@link ResourceJson.IResourceCandidateDecl | resource candidate declaration}, creates and adds a
+   * Given a {@link ResourceJson.ILooseResourceCandidateDecl | resource candidate declaration}, creates and adds a
    * {@link Resources.ResourceCandidate | candidate} to the resource being built.
-   * @param candidate - The {@link ResourceJson.IResourceCandidateDecl | IResourceCandidateDecl} to add to the
+   * @param candidate - The {@link ResourceJson.ILooseResourceCandidateDecl | IResourceCandidateDecl} to add to the
    * resource being built.
    * @returns `Success` with the added {@link Resources.ResourceCandidate | candidate} if successful,
    * or `Failure` with an error message if not. Fails with error detail 'type-mismatch' if the candidate
@@ -141,7 +141,7 @@ export class ResourceBuilder {
    * existing candidate if the candidate to be added is identical to an existing candidate.
    */
   public addCandidate(
-    decl: IResourceCandidateDecl
+    decl: ILooseResourceCandidateDecl
   ): DetailedResult<ResourceCandidate, ResourceBuilderResultDetail> {
     if (decl.id !== this.id) {
       return failWithDetail<ResourceCandidate, ResourceBuilderResultDetail>(

@@ -32,7 +32,7 @@ import { captureResult, mapResults, Hash, MessageAggregator, Result, succeed } f
  * @public
  */
 export interface IResourceCandidateCreateParams {
-  decl: ResourceJson.IResourceCandidateDecl;
+  decl: ResourceJson.ILooseResourceCandidateDecl;
   parentConditions?: ReadonlyArray<Condition>;
   conditionSets: ConditionSetCollector;
   resourceTypes: ReadOnlyResourceTypeCollector;

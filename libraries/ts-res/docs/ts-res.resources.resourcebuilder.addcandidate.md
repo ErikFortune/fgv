@@ -4,12 +4,12 @@
 
 ## Resources.ResourceBuilder.addCandidate() method
 
-Given a [resource candidate declaration](./ts-res.resourcejson.iresourcecandidatedecl.md)<!-- -->, creates and adds a [candidate](./ts-res.resources.resourcecandidate.md) to the resource being built.
+Given a [resource candidate declaration](./ts-res.resourcejson.ilooseresourcecandidatedecl.md)<!-- -->, creates and adds a [candidate](./ts-res.resources.resourcecandidate.md) to the resource being built.
 
 **Signature:**
 
 ```typescript
-addCandidate(decl: IResourceCandidateDecl): DetailedResult<ResourceCandidate, ResourceBuilderResultDetail>;
+addCandidate(decl: ILooseResourceCandidateDecl): DetailedResult<ResourceCandidate, ResourceBuilderResultDetail>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ decl
 
 </td><td>
 
-[IResourceCandidateDecl](./ts-res.resourcejson.iresourcecandidatedecl.md)
+[ILooseResourceCandidateDecl](./ts-res.resourcejson.ilooseresourcecandidatedecl.md)
 
 
 </td><td>

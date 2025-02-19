@@ -33,7 +33,7 @@ describe('Resource', () => {
   let otherType: TsRes.ResourceTypes.ResourceType;
   let conditions: TsRes.Conditions.ConditionCollector;
   let conditionSets: TsRes.Conditions.ConditionSetCollector;
-  let someDecls: TsRes.ResourceJson.IResourceCandidateDecl[];
+  let someDecls: TsRes.ResourceJson.ILooseResourceCandidateDecl[];
   let candidates: TsRes.Resources.ResourceCandidate[];
 
   beforeAll(() => {
