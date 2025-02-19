@@ -10,7 +10,6 @@ import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { DetailedResult } from '@fgv/ts-utils';
 import { ICollectible } from '@fgv/ts-utils';
-import { IReadOnlyResultMap } from '@fgv/ts-utils';
 import { JsonObject } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
 import { ObjectConverter } from '@fgv/ts-utils';
@@ -18,6 +17,7 @@ import { Result } from '@fgv/ts-utils';
 import { ResultMap } from '@fgv/ts-utils';
 import { ValidatingCollector } from '@fgv/ts-utils';
 import { ValidatingConvertingCollector } from '@fgv/ts-utils';
+import { ValidatingResultMap } from '@fgv/ts-utils';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1307,11 +1307,11 @@ class ResourceManager {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    build(): Result<IReadOnlyResultMap<ResourceId, Resource>>;
+    build(): Result<Collections.IReadOnlyValidatingResultMap<ResourceId, Resource>>;
     // (undocumented)
     protected _built: boolean;
     // (undocumented)
-    protected readonly _builtResources: ResultMap<ResourceId, Resource>;
+    protected readonly _builtResources: ValidatingResultMap<ResourceId, Resource>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1335,13 +1335,13 @@ class ResourceManager {
     // (undocumented)
     protected readonly _decisions: AbstractDecisionCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getBuiltResource(id: ResourceId): Result<Resource>;
+    getBuiltResource(id: string): Result<Resource>;
     // (undocumented)
     readonly qualifiers: ReadOnlyQualifierCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    get resources(): IReadOnlyResultMap<ResourceId, ResourceBuilder>;
+    get resources(): Collections.IReadOnlyValidatingResultMap<ResourceId, ResourceBuilder>;
     // (undocumented)
-    protected readonly _resources: ResultMap<ResourceId, ResourceBuilder>;
+    protected readonly _resources: ValidatingResultMap<ResourceId, ResourceBuilder>;
     // (undocumented)
     readonly resourceTypes: ReadOnlyResourceTypeCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

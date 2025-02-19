@@ -9,11 +9,11 @@ Builds the [resources](./ts-res.resources.resource.md) from the collected [candi
 **Signature:**
 
 ```typescript
-build(): Result<IReadOnlyResultMap<ResourceId, Resource>>;
+build(): Result<Collections.IReadOnlyValidatingResultMap<ResourceId, Resource>>;
 ```
 **Returns:**
 
-Result&lt;IReadOnlyResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [Resource](./ts-res.resources.resource.md)<!-- -->&gt;&gt;
+Result&lt;Collections.IReadOnlyValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [Resource](./ts-res.resources.resource.md)<!-- -->&gt;&gt;
 
 `Success` with a read-only map of [resources](./ts-res.resources.resource.md) if successful, or `Failure` with an error message if not.
 

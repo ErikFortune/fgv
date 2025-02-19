@@ -9,7 +9,7 @@ Gets an individual [built resource](./ts-res.resources.resource.md) from the man
 **Signature:**
 
 ```typescript
-getBuiltResource(id: ResourceId): Result<Resource>;
+getBuiltResource(id: string): Result<Resource>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ id
 
 </td><td>
 
-[ResourceId](./ts-res.resourceid.md)
+string
 
 
 </td><td>

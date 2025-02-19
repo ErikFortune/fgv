@@ -104,7 +104,7 @@ boolean
 
 </td><td>
 
-ResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [Resource](./ts-res.resources.resource.md)<!-- -->&gt;
+ValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [Resource](./ts-res.resources.resource.md)<!-- -->&gt;
 
 
 </td><td>
@@ -188,7 +188,7 @@ ResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [Resource](./ts-res.r
 
 </td><td>
 
-ResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [ResourceBuilder](./ts-res.resources.resourcebuilder.md)<!-- -->&gt;
+ValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [ResourceBuilder](./ts-res.resources.resourcebuilder.md)<!-- -->&gt;
 
 
 </td><td>
@@ -289,7 +289,7 @@ A [AbstractDecisionCollector](./ts-res.decisions.abstractdecisioncollector.md) w
 
 </td><td>
 
-IReadOnlyResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [ResourceBuilder](./ts-res.resources.resourcebuilder.md)<!-- -->&gt;
+Collections.IReadOnlyValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [ResourceBuilder](./ts-res.resources.resourcebuilder.md)<!-- -->&gt;
 
 
 </td><td>

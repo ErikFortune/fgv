@@ -25,12 +25,11 @@ import {
   Collections,
   DetailedResult,
   failWithDetail,
-  IReadOnlyResultMap,
   MessageAggregator,
   Result,
-  ResultMap,
   succeed,
-  succeedWithDetail
+  succeedWithDetail,
+  ValidatingResultMap
 } from '@fgv/ts-utils';
 import {
   ConditionCollector,
@@ -41,7 +40,7 @@ import {
 import { AbstractDecisionCollector, ReadOnlyAbstractDecisionCollector } from '../decisions';
 import { ReadOnlyQualifierCollector } from '../qualifiers';
 import { ReadOnlyResourceTypeCollector } from '../resource-types';
-import { ResourceId, Validate } from '../common';
+import { Convert, ResourceId, Validate } from '../common';
 import { ResourceBuilder, ResourceBuilderResultDetail } from './resourceBuilder';
 import { Resource } from './resource';
 import { ResourceCandidate } from './resourceCandidate';
@@ -76,8 +75,8 @@ export class ResourceManager {
   protected readonly _conditions: ConditionCollector;
   protected readonly _conditionSets: ConditionSetCollector;
   protected readonly _decisions: AbstractDecisionCollector;
-  protected readonly _resources: ResultMap<ResourceId, ResourceBuilder>;
-  protected readonly _builtResources: ResultMap<ResourceId, Resource>;
+  protected readonly _resources: ValidatingResultMap<ResourceId, ResourceBuilder>;
+  protected readonly _builtResources: ValidatingResultMap<ResourceId, Resource>;
   protected _built: boolean;
 
   /**
@@ -110,7 +109,7 @@ export class ResourceManager {
   /**
    * A read-only map of {@link Resources.ResourceBuilder | resource builders} used by the manager.
    */
-  public get resources(): IReadOnlyResultMap<ResourceId, ResourceBuilder> {
+  public get resources(): Collections.IReadOnlyValidatingResultMap<ResourceId, ResourceBuilder> {
     return this._resources;
   }
 
@@ -132,8 +131,21 @@ export class ResourceManager {
     this._conditions = ConditionCollector.create({ qualifiers: params.qualifiers }).orThrow();
     this._conditionSets = ConditionSetCollector.create({ conditions: this._conditions }).orThrow();
     this._decisions = AbstractDecisionCollector.create().orThrow();
-    this._resources = new ResultMap();
-    this._builtResources = new ResultMap();
+    this._resources = new ValidatingResultMap({
+      converters: new Collections.KeyValueConverters<ResourceId, ResourceBuilder>({
+        key: Convert.resourceId,
+        /* c8 ignore next 1 - defense in depth against internal error */
+        value: (from: unknown) =>
+          from instanceof ResourceBuilder ? succeed(from) : fail('not a resource builder')
+      })
+    });
+    this._builtResources = new ValidatingResultMap({
+      converters: new Collections.KeyValueConverters<ResourceId, Resource>({
+        key: Convert.resourceId,
+        /* c8 ignore next 1 - defense in depth against internal error */
+        value: (from: unknown) => (from instanceof Resource ? succeed(from) : fail('not a resource'))
+      })
+    });
     this._built = false;
   }
 
@@ -170,6 +182,7 @@ export class ResourceManager {
         conditionSets: this._conditionSets
       })
     );
+    /* c8 ignore next 6 - defense in depth against internal error */
     if (builderResult.isFailure()) {
       return failWithDetail(
         `${id}: unable to get or add resource\n${builderResult.message}`,
@@ -189,10 +202,10 @@ export class ResourceManager {
    * @returns `Success` with the resource if successful, or `Failure` with an error message if not.
    * @public
    */
-  public getBuiltResource(id: ResourceId): Result<Resource> {
-    return this._resources
+  public getBuiltResource(id: string): Result<Resource> {
+    return this._resources.validating
       .get(id)
-      .onSuccess((builder) => this._builtResources.getOrAdd(id, () => builder.build()));
+      .onSuccess((builder) => this._builtResources.validating.getOrAdd(id, () => builder.build()));
   }
 
   /**
@@ -201,12 +214,13 @@ export class ResourceManager {
    * or `Failure` with an error message if not.
    * @public
    */
-  public build(): Result<IReadOnlyResultMap<ResourceId, Resource>> {
+  public build(): Result<Collections.IReadOnlyValidatingResultMap<ResourceId, Resource>> {
     if (!this._built) {
       const errors: MessageAggregator = new MessageAggregator();
       this._resources.forEach((r, id) => {
         this._builtResources.getOrAdd(id, () => r.build()).aggregateError(errors);
       });
+      /* c8 ignore next 3 - defense in depth against internal error */
       if (errors.hasMessages) {
         return fail(`build failed: ${errors.toString()}`);
       }

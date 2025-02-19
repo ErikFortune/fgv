@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-protected readonly _builtResources: ResultMap<ResourceId, Resource>;
+protected readonly _builtResources: ValidatingResultMap<ResourceId, Resource>;
 ```

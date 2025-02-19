@@ -9,5 +9,5 @@ A read-only map of [resource builders](./ts-res.resources.resourcebuilder.md) us
 **Signature:**
 
 ```typescript
-get resources(): IReadOnlyResultMap<ResourceId, ResourceBuilder>;
+get resources(): Collections.IReadOnlyValidatingResultMap<ResourceId, ResourceBuilder>;
 ```
