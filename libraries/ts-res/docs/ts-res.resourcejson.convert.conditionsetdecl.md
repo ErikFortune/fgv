@@ -4,10 +4,10 @@
 
 ## ResourceJson.Convert.conditionSetDecl variable
 
-`Converter` for a condition set declaration.
+`Converter` for a normalized [condition set declaration](./ts-res.resourcejson.normalized.conditionsetdecl.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-conditionSetDecl: Conversion.Converter<Record<import("../common").QualifierName, string>, unknown>
+conditionSetDecl: Converter<Normalized.ConditionSetDecl>
 ```

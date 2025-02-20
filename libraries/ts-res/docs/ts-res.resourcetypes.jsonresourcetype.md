@@ -135,7 +135,7 @@ Validates a JSON value for use as a full or partial resource instance value.
 
 </td><td>
 
-Validates a [resource candidate declaration](./ts-res.resourcejson.ilooseresourcecandidatedecl.md) for a partial resource instance value.
+Validates a [resource candidate declaration](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md) for a partial resource instance value.
 
 
 </td></tr>
@@ -149,7 +149,7 @@ Validates a [resource candidate declaration](./ts-res.resourcejson.ilooseresourc
 
 </td><td>
 
-Validates a [resource candidate declaration](./ts-res.resourcejson.ilooseresourcecandidatedecl.md) for a complete resource instance value.
+Validates a [resource candidate declaration](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md) for a complete resource instance value.
 
 
 </td></tr>
@@ -163,7 +163,7 @@ Validates a [resource candidate declaration](./ts-res.resourcejson.ilooseresourc
 
 </td><td>
 
-Validates a [resource candidate declaration](./ts-res.resourcejson.ilooseresourcecandidatedecl.md) for a resource instance value.
+Validates a [resource candidate declaration](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md) for a resource instance value.
 
 
 </td></tr>

@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-ConditionSetDecl
+[ConditionSetDecl](./ts-res.resourcejson.json.conditionsetdecl.md)
 
 
 </td><td>
@@ -89,7 +89,7 @@ _(Optional)_
 
 </td><td>
 
-ReadonlyArray&lt;ILooseResourceCandidateDecl&gt;
+ReadonlyArray&lt;[ILooseResourceCandidateDecl](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md)<!-- -->&gt;
 
 
 </td><td>
@@ -110,7 +110,7 @@ _(Optional)_
 
 </td><td>
 
-ReadonlyArray&lt;IResourceCollectionDecl&gt;
+ReadonlyArray&lt;[IResourceCollectionDecl](./ts-res.resourcejson.json.iresourcecollectiondecl.md)<!-- -->&gt;
 
 
 </td><td>

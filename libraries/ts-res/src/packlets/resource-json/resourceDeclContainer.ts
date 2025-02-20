@@ -20,4 +20,14 @@
  * SOFTWARE.
  */
 
-export * from './model';
+import * as Normalized from './normalized';
+
+/**
+ * Generic container for resource and resource candidate
+ * declarations.
+ * @public
+ */
+export interface IResourceDeclContainer {
+  getLooseResources(): ReadonlyArray<Normalized.ILooseResourceDecl>;
+  getLooseCandidates(): ReadonlyArray<Normalized.ILooseResourceCandidateDecl>;
+}

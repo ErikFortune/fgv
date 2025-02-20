@@ -62,7 +62,7 @@ Description
 
 </td><td>
 
-ResourceJson.Json.ILooseResourceCandidateDecl
+[ResourceJson.Json.ILooseResourceCandidateDecl](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md)
 
 
 </td><td>

@@ -166,7 +166,7 @@ describe('ResourceCandidate', () => {
       ];
 
       const decl: TsRes.ResourceJson.Normalized.ILooseResourceCandidateDecl =
-        TsRes.ResourceJson.Normalized.Convert.looseResourceCandidateDecl.convert(someDecls[0]).orThrow();
+        TsRes.ResourceJson.Convert.looseResourceCandidateDecl.convert(someDecls[0]).orThrow();
       const numDeclConditions = decl.conditions?.length ?? 0;
       expect(conditions.size).toBe(1);
       expect(conditionSets.size).toBe(0);

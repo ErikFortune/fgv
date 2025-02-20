@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-ConditionSetDecl
+[ConditionSetDecl](./ts-res.resourcejson.json.conditionsetdecl.md)
 
 
 </td><td>

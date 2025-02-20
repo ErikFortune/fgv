@@ -19,12 +19,56 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[childConditionDecl](./ts-res.resourcejson.convert.childconditiondecl.md)
+
+
+</td><td>
+
+`Converter` for a normalized [child condition declaration](./ts-res.resourcejson.json.ichildconditiondecl.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[childResourceCandidateDecl](./ts-res.resourcejson.convert.childresourcecandidatedecl.md)
+
+
+</td><td>
+
+`Converter` for a normalized [child resource candidate declaration](./ts-res.resourcejson.json.ichildresourcecandidatedecl.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[childResourceDecl](./ts-res.resourcejson.convert.childresourcedecl.md)
+
+
+</td><td>
+
+`Converter` for a normalized [child resource declaration](./ts-res.resourcejson.normalized.ichildresourcedecl.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [conditionSetDecl](./ts-res.resourcejson.convert.conditionsetdecl.md)
 
 
 </td><td>
 
-`Converter` for a condition set declaration.
+`Converter` for a normalized [condition set declaration](./ts-res.resourcejson.normalized.conditionsetdecl.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[looseConditionDecl](./ts-res.resourcejson.convert.looseconditiondecl.md)
+
+
+</td><td>
+
+`Converter` for a normalized [loose condition declaration](./ts-res.resourcejson.json.ilooseconditiondecl.md)<!-- -->.
 
 
 </td></tr>
@@ -35,7 +79,18 @@ Description
 
 </td><td>
 
-`Converter` for a [loose resource candidate declaration](./ts-res.resourcejson.ilooseresourcecandidatedecl.md)<!-- -->.
+`Converter` for a normalized [loose resource candidate declaration](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[looseResourceDecl](./ts-res.resourcejson.convert.looseresourcedecl.md)
+
+
+</td><td>
+
+`Converter` for a normalized [loose resource declaration](./ts-res.resourcejson.normalized.ilooseresourcedecl.md)<!-- -->.
 
 
 </td></tr>
@@ -46,7 +101,29 @@ Description
 
 </td><td>
 
-`Converter` for a [resource collection declaration](./ts-res.resourcejson.iresourcecollectiondecl.md)<!-- -->.
+`Converter` for a normalized [resource collection declaration](./ts-res.resourcejson.normalized.iresourcecollectiondecl.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[resourceTreeNodeDecl](./ts-res.resourcejson.convert.resourcetreenodedecl.md)
+
+
+</td><td>
+
+`Converter` for a normalized [resource tree node declaration](./ts-res.resourcejson.normalized.iresourcetreenodedecl.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[resourceTreeRootDecl](./ts-res.resourcejson.convert.resourcetreerootdecl.md)
+
+
+</td><td>
+
+`Converter` for a normalized [resource tree root declaration](./ts-res.resourcejson.normalized.iresourcetreerootdecl.md)<!-- -->.
 
 
 </td></tr>

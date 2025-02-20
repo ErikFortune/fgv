@@ -4,7 +4,7 @@
 
 ## ResourceJson.Json.ILooseConditionDecl interface
 
-Normalized non-validated loose declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
+Non-validated loose declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
 
 **Signature:**
 

@@ -4,10 +4,10 @@
 
 ## ResourceJson.Convert.looseResourceCandidateDecl variable
 
-`Converter` for a [loose resource candidate declaration](./ts-res.resourcejson.ilooseresourcecandidatedecl.md)<!-- -->.
+`Converter` for a normalized [loose resource candidate declaration](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-looseResourceCandidateDecl: Conversion.ObjectConverter<ILooseResourceCandidateDecl, unknown>
+looseResourceCandidateDecl: Converter<Normalized.ILooseResourceCandidateDecl>
 ```

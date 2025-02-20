@@ -4,10 +4,10 @@
 
 ## ResourceJson.Convert.resourceCollectionDecl variable
 
-`Converter` for a [resource collection declaration](./ts-res.resourcejson.iresourcecollectiondecl.md)<!-- -->.
+`Converter` for a normalized [resource collection declaration](./ts-res.resourcejson.normalized.iresourcecollectiondecl.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-resourceCollectionDecl: Conversion.BaseConverter<IResourceCollectionDecl, unknown>
+resourceCollectionDecl: Converter<Normalized.IResourceCollectionDecl>
 ```

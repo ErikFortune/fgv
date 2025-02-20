@@ -21,10 +21,10 @@
  */
 
 import { JsonObject } from '@fgv/ts-json-base';
-import { ConditionOperator, ResourceValueMergeMethod } from '../../common';
+import { ConditionOperator, ResourceValueMergeMethod } from '../common';
 
 /**
- * Normalized non-validated loose declaration of a {@link Conditions.Condition | condition}.
+ * Non-validated loose declaration of a {@link Conditions.Condition | condition}.
  * @public
  */
 export interface ILooseConditionDecl {
@@ -73,7 +73,19 @@ export interface IChildConditionDecl {
  * Normalized non-validated declaration of a {@link Conditions.Condition | condition}.
  * @public
  */
-export type ConditionSetDecl = ReadonlyArray<ILooseConditionDecl>;
+export type ConditionSetDeclAsArray = ReadonlyArray<ILooseConditionDecl>;
+
+/**
+ * Normalized non-validated declaration of a {@link Conditions.Condition | condition}.
+ * @public
+ */
+export type ConditionSetDeclAsRecord = Record<string, string | IChildConditionDecl>;
+
+/**
+ * Normalized non-validated declaration of a {@link Conditions.Condition | condition}.
+ * @public
+ */
+export type ConditionSetDecl = ConditionSetDeclAsArray | ConditionSetDeclAsRecord;
 
 /**
  * Normalized non-validated loose declaration of a {@link Resources.ResourceCandidate | resource candidate}.

@@ -6,7 +6,6 @@
 
 import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
-import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { DetailedResult } from '@fgv/ts-utils';
 import { ICollectible } from '@fgv/ts-utils';
@@ -74,21 +73,20 @@ class Candidate<TVALUE extends JsonValue = JsonValue> implements ICandidate<TVAL
     readonly value: TVALUE;
 }
 
-// Warning: (ae-forgotten-export) The symbol "Model" needs to be exported by the entry point index.d.ts
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const childConditionDecl: Converter<Model.IChildConditionDecl>;
+const childConditionDecl: Converter<Json.IChildConditionDecl>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const childResourceCandidateDecl: Converter<Model.IChildResourceCandidateDecl>;
+const childResourceCandidateDecl: Converter<Normalized.IChildResourceCandidateDecl>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const childResourceDecl: Converter<Model.IChildResourceDecl>;
+const childResourceDecl: Converter<Normalized.IChildResourceDecl>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -260,8 +258,10 @@ class ConditionSetCollector extends ValidatingCollector<ConditionSet> {
     static create(params: IConditionSetCollectorCreateParams): Result<ConditionSetCollector>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-type ConditionSetDecl = Record<string, string>;
+type ConditionSetDecl = ConditionSetDeclAsArray | ConditionSetDeclAsRecord;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -271,20 +271,12 @@ const conditionSetDecl: ObjectConverter<IConditionSetDecl, unknown>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ConditionSetDecl_2 = ConditionSetDeclAsArray | ConditionSetDeclAsRecord;
-
-// @public
-const conditionSetDecl_2: Conversion.Converter<Record<QualifierName, string>, unknown>;
+type ConditionSetDecl_2 = ReadonlyArray<ILooseConditionDecl>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ConditionSetDecl_3 = ReadonlyArray<ILooseConditionDecl_2>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const conditionSetDecl_3: Converter<Model.ConditionSetDecl>;
+const conditionSetDecl_2: Converter<Normalized.ConditionSetDecl>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -373,24 +365,16 @@ declare namespace Convert_4 {
 
 declare namespace Convert_5 {
     export {
-        conditionSetDecl_2 as conditionSetDecl,
-        looseResourceCandidateDecl,
-        resourceCollectionDecl
-    }
-}
-
-declare namespace Convert_6 {
-    export {
         looseConditionDecl,
         childConditionDecl,
-        conditionSetDecl_3 as conditionSetDecl,
-        looseResourceCandidateDecl_2 as looseResourceCandidateDecl,
+        conditionSetDecl_2 as conditionSetDecl,
+        looseResourceCandidateDecl,
         childResourceCandidateDecl,
         looseResourceDecl,
         childResourceDecl,
         resourceTreeNodeDecl,
         resourceTreeRootDecl,
-        resourceCollectionDecl_2 as resourceCollectionDecl
+        resourceCollectionDecl
     }
 }
 
@@ -484,17 +468,8 @@ interface IChildConditionDecl {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IChildConditionDecl_2 {
-    operator?: ConditionOperator;
-    priority?: number;
-    value: string;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
 interface IChildResourceCandidateDecl {
-    readonly conditions?: ConditionSetDecl_2;
+    readonly conditions?: ConditionSetDecl;
     readonly isPartial?: boolean;
     readonly json: JsonObject;
     readonly mergeMethod?: ResourceValueMergeMethod;
@@ -504,7 +479,7 @@ interface IChildResourceCandidateDecl {
 //
 // @public
 interface IChildResourceCandidateDecl_2 {
-    readonly conditions?: ConditionSetDecl_3;
+    readonly conditions?: ConditionSetDecl_2;
     readonly isPartial?: boolean;
     readonly json: JsonObject;
     readonly mergeMethod?: ResourceValueMergeMethod;
@@ -697,29 +672,8 @@ interface ILooseConditionDecl {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface ILooseConditionDecl_2 {
-    operator?: ConditionOperator;
-    priority?: number;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    qualifierName: string;
-    value: string;
-}
-
-// @public
 interface ILooseResourceCandidateDecl {
-    readonly conditions: ConditionSetDecl;
-    readonly id: string;
-    readonly isPartial?: boolean;
-    readonly json: JsonValue;
-    readonly mergeMethod?: ResourceValueMergeMethod;
-    readonly resourceTypeName?: string;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-interface ILooseResourceCandidateDecl_2 {
-    readonly conditions?: ConditionSetDecl_2;
+    readonly conditions?: ConditionSetDecl;
     readonly id: string;
     readonly isPartial?: boolean;
     readonly json: JsonObject;
@@ -730,8 +684,8 @@ interface ILooseResourceCandidateDecl_2 {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface ILooseResourceCandidateDecl_3 {
-    readonly conditions?: ConditionSetDecl_3;
+interface ILooseResourceCandidateDecl_2 {
+    readonly conditions?: ConditionSetDecl_2;
     readonly id: string;
     readonly isPartial?: boolean;
     readonly json: JsonObject;
@@ -868,10 +822,16 @@ interface IResourceCandidateCreateParams {
 
 // @public
 interface IResourceCollectionDecl {
-    readonly collections?: IResourceCollectionDecl[];
-    readonly conditions?: ConditionSetDecl;
-    readonly id?: string;
-    readonly resources?: ILooseResourceCandidateDecl[];
+    // (undocumented)
+    readonly baseConditions?: ConditionSetDecl;
+    // (undocumented)
+    readonly baseName?: string;
+    // (undocumented)
+    readonly candidates?: ReadonlyArray<ILooseResourceCandidateDecl>;
+    // (undocumented)
+    readonly collections?: ReadonlyArray<IResourceCollectionDecl>;
+    // (undocumented)
+    readonly resources?: ReadonlyArray<ILooseResourceDecl>;
 }
 
 // @public
@@ -884,20 +844,6 @@ interface IResourceCollectionDecl_2 {
     readonly candidates?: ReadonlyArray<ILooseResourceCandidateDecl_2>;
     // (undocumented)
     readonly collections?: ReadonlyArray<IResourceCollectionDecl_2>;
-    // (undocumented)
-    readonly resources?: ReadonlyArray<ILooseResourceDecl>;
-}
-
-// @public
-interface IResourceCollectionDecl_3 {
-    // (undocumented)
-    readonly baseConditions?: ConditionSetDecl_3;
-    // (undocumented)
-    readonly baseName?: string;
-    // (undocumented)
-    readonly candidates?: ReadonlyArray<ILooseResourceCandidateDecl_3>;
-    // (undocumented)
-    readonly collections?: ReadonlyArray<IResourceCollectionDecl_3>;
     // (undocumented)
     readonly resources?: ReadonlyArray<ILooseResourceDecl_2>;
 }
@@ -919,6 +865,14 @@ interface IResourceCreateParams {
     id?: string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resourceType?: ResourceType;
+}
+
+// @public
+interface IResourceDeclContainer {
+    // (undocumented)
+    getLooseCandidates(): ReadonlyArray<Normalized.ILooseResourceCandidateDecl>;
+    // (undocumented)
+    getLooseResources(): ReadonlyArray<Normalized.ILooseResourceDecl>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1093,14 +1047,14 @@ declare namespace Json {
         IChildConditionDecl,
         ConditionSetDeclAsArray,
         ConditionSetDeclAsRecord,
-        ConditionSetDecl_2 as ConditionSetDecl,
-        ILooseResourceCandidateDecl_2 as ILooseResourceCandidateDecl,
+        ConditionSetDecl,
+        ILooseResourceCandidateDecl,
         IChildResourceCandidateDecl,
         ILooseResourceDecl,
         IChildResourceDecl,
         IResourceTreeNodeDecl,
         IResourceTreeRootDecl,
-        IResourceCollectionDecl_2 as IResourceCollectionDecl
+        IResourceCollectionDecl
     }
 }
 
@@ -1185,22 +1139,17 @@ class LiteralQualifierType extends QualifierType {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const looseConditionDecl: Converter<Model.ILooseConditionDecl>;
+const looseConditionDecl: Converter<Json.ILooseConditionDecl>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const looseResourceCandidateDecl: Conversion.ObjectConverter<ILooseResourceCandidateDecl, unknown>;
+const looseResourceCandidateDecl: Converter<Normalized.ILooseResourceCandidateDecl>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const looseResourceCandidateDecl_2: Converter<Model.ILooseResourceCandidateDecl>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const looseResourceDecl: Converter<Model.ILooseResourceDecl>;
+const looseResourceDecl: Converter<Normalized.ILooseResourceDecl>;
 
 // @public
 export const MaxConditionPriority: ConditionPriority;
@@ -1213,17 +1162,14 @@ export const NoMatch: QualifierMatchScore;
 
 declare namespace Normalized {
     export {
-        Convert_6 as Convert,
-        ILooseConditionDecl_2 as ILooseConditionDecl,
-        IChildConditionDecl_2 as IChildConditionDecl,
-        ConditionSetDecl_3 as ConditionSetDecl,
-        ILooseResourceCandidateDecl_3 as ILooseResourceCandidateDecl,
+        ConditionSetDecl_2 as ConditionSetDecl,
+        ILooseResourceCandidateDecl_2 as ILooseResourceCandidateDecl,
         IChildResourceCandidateDecl_2 as IChildResourceCandidateDecl,
         ILooseResourceDecl_2 as ILooseResourceDecl,
         IChildResourceDecl_2 as IChildResourceDecl,
         IResourceTreeNodeDecl_2 as IResourceTreeNodeDecl,
         IResourceTreeRootDecl_2 as IResourceTreeRootDecl,
-        IResourceCollectionDecl_3 as IResourceCollectionDecl
+        IResourceCollectionDecl_2 as IResourceCollectionDecl
     }
 }
 
@@ -1559,12 +1505,7 @@ class ResourceCandidate {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const resourceCollectionDecl: Conversion.BaseConverter<IResourceCollectionDecl, unknown>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const resourceCollectionDecl_2: Converter<Model.IResourceCollectionDecl>;
+const resourceCollectionDecl: Converter<Normalized.IResourceCollectionDecl>;
 
 // @public
 export type ResourceId = Brand<string, 'ResourceId'>;
@@ -1583,9 +1524,7 @@ declare namespace ResourceJson {
         Convert_5 as Convert,
         Json,
         Normalized,
-        ConditionSetDecl,
-        ILooseResourceCandidateDecl,
-        IResourceCollectionDecl
+        IResourceDeclContainer
     }
 }
 export { ResourceJson }
@@ -1678,12 +1617,12 @@ export { Resources }
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const resourceTreeNodeDecl: Converter<Model.IResourceTreeNodeDecl>;
+const resourceTreeNodeDecl: Converter<Normalized.IResourceTreeNodeDecl>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const resourceTreeRootDecl: Converter<Model.IResourceTreeRootDecl>;
+const resourceTreeRootDecl: Converter<Normalized.IResourceTreeRootDecl>;
 
 // @public
 abstract class ResourceType<T = unknown> implements ICollectible<ResourceTypeName, ResourceTypeIndex> {

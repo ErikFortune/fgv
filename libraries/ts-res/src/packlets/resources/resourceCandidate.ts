@@ -199,8 +199,7 @@ export class ResourceCandidate {
     declared = declared ?? {};
     parent = parent ?? [];
 
-    const { value: conditionDecls, message } =
-      ResourceJson.Normalized.Convert.conditionSetDecl.convert(declared);
+    const { value: conditionDecls, message } = ResourceJson.Convert.conditionSetDecl.convert(declared);
     if (message !== undefined) {
       return fail(message);
     }

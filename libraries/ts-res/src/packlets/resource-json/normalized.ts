@@ -21,71 +21,14 @@
  */
 
 import { JsonObject } from '@fgv/ts-json-base';
-import { ConditionOperator, ResourceValueMergeMethod } from '../../common';
-
-/**
- * Normalized non-validated loose declaration of a {@link Conditions.Condition | condition}.
- * @public
- */
-export interface ILooseConditionDecl {
-  /**
-   * The name of the {@link Qualifiers.Qualifier | qualifier} to be compared.
-   */
-  qualifierName: string;
-  /**
-   * The value to be compared.
-   */
-  value: string;
-  /**
-   * The operator to be used in the comparison.
-   * Default is 'matches'.
-   */
-  operator?: ConditionOperator;
-
-  /**
-   * The priority of the condition. Default is the default priority for the qualifier.
-   */
-  priority?: number;
-}
-
-/**
- * Normalized non-validated child declaration of a {@link Conditions.Condition | condition}.
- * @public
- */
-export interface IChildConditionDecl {
-  /**
-   * The value to be compared.
-   */
-  value: string;
-  /**
-   * The operator to be used in the comparison.
-   * Default is 'matches'.
-   */
-  operator?: ConditionOperator;
-
-  /**
-   * The priority of the condition. Default is the default priority for the qualifier.
-   */
-  priority?: number;
-}
+import { ResourceValueMergeMethod } from '../common';
+import { ILooseConditionDecl } from './json';
 
 /**
  * Normalized non-validated declaration of a {@link Conditions.Condition | condition}.
  * @public
  */
-export type ConditionSetDeclAsArray = ReadonlyArray<ILooseConditionDecl>;
-
-/**
- * Normalized non-validated declaration of a {@link Conditions.Condition | condition}.
- * @public
- */
-export type ConditionSetDeclAsRecord = Record<string, string | IChildConditionDecl>;
-
-/**
- * Normalized non-validated declaration of a {@link Conditions.Condition | condition}.
- * @public
- */
-export type ConditionSetDecl = ConditionSetDeclAsArray | ConditionSetDeclAsRecord;
+export type ConditionSetDecl = ReadonlyArray<ILooseConditionDecl>;
 
 /**
  * Normalized non-validated loose declaration of a {@link Resources.ResourceCandidate | resource candidate}.

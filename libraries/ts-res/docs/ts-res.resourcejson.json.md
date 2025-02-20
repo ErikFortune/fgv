@@ -57,7 +57,7 @@ Normalized non-validated child declaration of a [resource](./ts-res.resources.re
 
 </td><td>
 
-Normalized non-validated loose declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
+Non-validated loose declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
 
 
 </td></tr>

@@ -26,8 +26,8 @@ import * as TsRes from '../../../index';
 describe('ResourceJson', () => {
   describe('resourceCollectionDecl converter', () => {
     test('converts a valid resource collection declaration', () => {
-      const input: TsRes.ResourceJson.IResourceCollectionDecl = {
-        resources: [
+      const input: TsRes.ResourceJson.Json.IResourceCollectionDecl = {
+        candidates: [
           {
             id: 'someType.someKey',
             json: { someQualifier: 'someValue' },
@@ -37,13 +37,26 @@ describe('ResourceJson', () => {
       };
 
       const result = TsRes.ResourceJson.Convert.resourceCollectionDecl.convert(input);
-      expect(result).toSucceedWith(input);
+      expect(result).toSucceedWith({
+        candidates: [
+          {
+            id: 'someType.someKey',
+            json: { someQualifier: 'someValue' },
+            conditions: [
+              {
+                qualifierName: 'someQualifier',
+                value: 'someValue'
+              }
+            ]
+          }
+        ]
+      });
     });
 
     test('converts a nested resource collection declaration', () => {
-      const input: TsRes.ResourceJson.IResourceCollectionDecl = {
-        id: 'some',
-        resources: [
+      const input: TsRes.ResourceJson.Json.IResourceCollectionDecl = {
+        baseName: 'some',
+        candidates: [
           {
             id: 'someType.someKey',
             json: { someQualifier: 'someValue' },
@@ -52,8 +65,8 @@ describe('ResourceJson', () => {
         ],
         collections: [
           {
-            id: 'other',
-            resources: [
+            baseName: 'other',
+            candidates: [
               {
                 id: 'someType.someKey',
                 json: { someQualifier: 'someValue' },
@@ -65,7 +78,38 @@ describe('ResourceJson', () => {
       };
 
       const result = TsRes.ResourceJson.Convert.resourceCollectionDecl.convert(input);
-      expect(result).toSucceedWith(input);
+      expect(result).toSucceedWith({
+        baseName: 'some',
+        candidates: [
+          {
+            id: 'someType.someKey',
+            json: { someQualifier: 'someValue' },
+            conditions: [
+              {
+                qualifierName: 'someQualifier',
+                value: 'someValue'
+              }
+            ]
+          }
+        ],
+        collections: [
+          {
+            baseName: 'other',
+            candidates: [
+              {
+                id: 'someType.someKey',
+                json: { someQualifier: 'someValue' },
+                conditions: [
+                  {
+                    qualifierName: 'someQualifier',
+                    value: 'someValue'
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      });
     });
   });
 });

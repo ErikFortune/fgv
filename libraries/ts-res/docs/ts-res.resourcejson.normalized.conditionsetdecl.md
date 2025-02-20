@@ -11,3 +11,5 @@ Normalized non-validated declaration of a [condition](./ts-res.conditions.condit
 ```typescript
 export type ConditionSetDecl = ReadonlyArray<ILooseConditionDecl>;
 ```
+**References:** [ILooseConditionDecl](./ts-res.resourcejson.json.ilooseconditiondecl.md)
+

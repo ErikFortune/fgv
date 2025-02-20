@@ -4,7 +4,7 @@
 
 ## Resources.ResourceBuilder.addCandidate() method
 
-Given a [resource candidate declaration](./ts-res.resourcejson.ilooseresourcecandidatedecl.md)<!-- -->, creates and adds a [candidate](./ts-res.resources.resourcecandidate.md) to the resource being built.
+Given a [resource candidate declaration](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md)<!-- -->, creates and adds a [candidate](./ts-res.resources.resourcecandidate.md) to the resource being built.
 
 **Signature:**
 
@@ -37,7 +37,7 @@ decl
 
 </td><td>
 
-ResourceJson.Json.ILooseResourceCandidateDecl
+[ResourceJson.Json.ILooseResourceCandidateDecl](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md)
 
 
 </td><td>

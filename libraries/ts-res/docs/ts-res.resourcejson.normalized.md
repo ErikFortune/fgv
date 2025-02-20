@@ -19,17 +19,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IChildConditionDecl](./ts-res.resourcejson.normalized.ichildconditiondecl.md)
-
-
-</td><td>
-
-Normalized non-validated child declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [IChildResourceCandidateDecl](./ts-res.resourcejson.normalized.ichildresourcecandidatedecl.md)
 
 
@@ -47,17 +36,6 @@ Normalized non-validated child declaration of a [resource candidate](./ts-res.re
 </td><td>
 
 Normalized non-validated child declaration of a [resource](./ts-res.resources.resource.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[ILooseConditionDecl](./ts-res.resourcejson.normalized.ilooseconditiondecl.md)
-
-
-</td><td>
-
-Normalized non-validated loose declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
 
 
 </td></tr>
@@ -113,30 +91,6 @@ Normalized non-validated declaration of a [resource](./ts-res.resources.resource
 </td><td>
 
 Normalized non-validated declaration of a [resource](./ts-res.resources.resource.md) tree root.
-
-
-</td></tr>
-</tbody></table>
-
-## Namespaces
-
-<table><thead><tr><th>
-
-Namespace
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[Convert](./ts-res.resourcejson.normalized.convert.md)
-
-
-</td><td>
 
 
 </td></tr>

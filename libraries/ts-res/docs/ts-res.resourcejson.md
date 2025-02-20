@@ -19,23 +19,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[ILooseResourceCandidateDecl](./ts-res.resourcejson.ilooseresourcecandidatedecl.md)
+[IResourceDeclContainer](./ts-res.resourcejson.iresourcedeclcontainer.md)
 
 
 </td><td>
 
-Interface representing a resource candidate declaration.
-
-
-</td></tr>
-<tr><td>
-
-[IResourceCollectionDecl](./ts-res.resourcejson.iresourcecollectiondecl.md)
-
-
-</td><td>
-
-Interface representing a declaration of a collection of resources.
+Generic container for resource and resource candidate declarations.
 
 
 </td></tr>
@@ -78,32 +67,6 @@ Description
 
 
 </td><td>
-
-
-</td></tr>
-</tbody></table>
-
-## Type Aliases
-
-<table><thead><tr><th>
-
-Type Alias
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[ConditionSetDecl](./ts-res.resourcejson.conditionsetdecl.md)
-
-
-</td><td>
-
-Type representing a set of conditions that must be met for a resource to be selected.
 
 
 </td></tr>
