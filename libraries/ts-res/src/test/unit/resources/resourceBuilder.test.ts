@@ -32,7 +32,7 @@ describe('ResourceBuilder', () => {
   let otherType: TsRes.ResourceTypes.ResourceType;
   let conditions: TsRes.Conditions.ConditionCollector;
   let conditionSets: TsRes.Conditions.ConditionSetCollector;
-  let someDecls: TsRes.ResourceJson.ILooseResourceCandidateDecl[];
+  let someDecls: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl[];
 
   beforeAll(() => {
     qualifierTypes = TsRes.QualifierTypes.QualifierTypeCollector.create({

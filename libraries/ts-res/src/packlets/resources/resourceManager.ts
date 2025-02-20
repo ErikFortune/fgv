@@ -44,7 +44,7 @@ import { Convert, ResourceId, Validate } from '../common';
 import { ResourceBuilder, ResourceBuilderResultDetail } from './resourceBuilder';
 import { Resource } from './resource';
 import { ResourceCandidate } from './resourceCandidate';
-import { ILooseResourceCandidateDecl } from '../resource-json';
+import * as ResourceJson from '../resource-json';
 
 /**
  * Interface for parameters to the {@link Resources.ResourceManager.create | ResourceManager create method}.
@@ -134,7 +134,7 @@ export class ResourceManager {
     this._resources = new ValidatingResultMap({
       converters: new Collections.KeyValueConverters<ResourceId, ResourceBuilder>({
         key: Convert.resourceId,
-        /* c8 ignore next 1 - defense in depth against internal error */
+        /* c8 ignore next 2 - defense in depth against internal error */
         value: (from: unknown) =>
           from instanceof ResourceBuilder ? succeed(from) : fail('not a resource builder')
       })
@@ -161,14 +161,14 @@ export class ResourceManager {
   }
 
   /**
-   * Given a {@link ResourceJson.ILooseResourceCandidateDecl | resource candidate declaration}, builds and adds
+   * Given a {@link ResourceJson.Json.ILooseResourceCandidateDecl | resource candidate declaration}, builds and adds
    * a {@link Resources.ResourceCandidate | candidate} to the manager.
    * @param candidate - The {@link Resources.ResourceCandidate | candidate} to add.
    * @returns `Success` with the candidate if successful, or `Failure` with an error message if not.
    * @public
    */
   public addCandidate(
-    decl: ILooseResourceCandidateDecl
+    decl: ResourceJson.Json.ILooseResourceCandidateDecl
   ): DetailedResult<ResourceCandidate, ResourceManagerResultDetail> {
     const { value: id, message } = Validate.toResourceId(decl.id);
     if (message !== undefined) {

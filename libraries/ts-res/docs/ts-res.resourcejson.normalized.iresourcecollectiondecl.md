@@ -131,7 +131,7 @@ _(Optional)_
 
 </td><td>
 
-ReadonlyArray&lt;[ILooseResourceDecl](./ts-res.resourcejson.normalized.ilooseresourcedecl.md)<!-- -->&gt;
+ReadonlyArray&lt;ILooseResourceDecl&gt;
 
 
 </td><td>

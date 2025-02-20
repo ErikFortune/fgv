@@ -21,8 +21,9 @@
  */
 
 import * as Convert from './convert';
+import * as Json from './json';
 import * as Normalized from './normalized';
 
 export * from './model';
 
-export { Convert, Normalized };
+export { Convert, Json, Normalized };

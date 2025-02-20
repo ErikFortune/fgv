@@ -31,7 +31,7 @@ describe('ResourceCandidate', () => {
   let resourceTypes: TsRes.ResourceTypes.ResourceTypeCollector;
   let conditions: TsRes.Conditions.ConditionCollector;
   let conditionSets: TsRes.Conditions.ConditionSetCollector;
-  let someDecls: TsRes.ResourceJson.ILooseResourceCandidateDecl[];
+  let someDecls: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl[];
 
   beforeAll(() => {
     qualifierTypes = TsRes.QualifierTypes.QualifierTypeCollector.create({
@@ -100,7 +100,7 @@ describe('ResourceCandidate', () => {
 
   describe('static create method', () => {
     test('creates a new ResourceCandidate with no parent conditions', () => {
-      const decl: TsRes.ResourceJson.ILooseResourceCandidateDecl = {
+      const decl: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = {
         id: 'some.resource.path',
         json: { some: 'json' },
         conditions: {
@@ -132,7 +132,7 @@ describe('ResourceCandidate', () => {
     });
 
     test('defaults to non-partial and augment merge method', () => {
-      const decl: TsRes.ResourceJson.ILooseResourceCandidateDecl = {
+      const decl: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = {
         id: 'some.resource.path',
         json: { some: 'json' },
         conditions: {
@@ -165,8 +165,9 @@ describe('ResourceCandidate', () => {
         conditions.validating.add({ qualifierName: 'currentTerritory', value: 'AQ' }).orThrow()
       ];
 
-      const decl: TsRes.ResourceJson.ILooseResourceCandidateDecl = someDecls[0];
-      const numDeclConditions = Array.from(Object.keys(decl.conditions)).length;
+      const decl: TsRes.ResourceJson.Normalized.ILooseResourceCandidateDecl =
+        TsRes.ResourceJson.Normalized.Convert.looseResourceCandidateDecl.convert(someDecls[0]).orThrow();
+      const numDeclConditions = decl.conditions?.length ?? 0;
       expect(conditions.size).toBe(1);
       expect(conditionSets.size).toBe(0);
       expect(
@@ -189,7 +190,7 @@ describe('ResourceCandidate', () => {
     });
 
     test('fails if the resource type is not found', () => {
-      const decl: TsRes.ResourceJson.ILooseResourceCandidateDecl = {
+      const decl: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = {
         ...someDecls[0],
         resourceTypeName: 'bogus'
       };
@@ -203,7 +204,7 @@ describe('ResourceCandidate', () => {
     });
 
     test('fails if the resource ID is invalid', () => {
-      const decl: TsRes.ResourceJson.ILooseResourceCandidateDecl = {
+      const decl: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = {
         ...someDecls[0],
         id: 'resource ids cannot contain spaces or punctuation!'
       };
@@ -340,7 +341,7 @@ describe('ResourceCandidate', () => {
   });
 
   describe('equal static method', () => {
-    let decl: TsRes.ResourceJson.ILooseResourceCandidateDecl;
+    let decl: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl;
     beforeEach(() => {
       decl = {
         id: 'some.resource.path',

@@ -22,7 +22,7 @@
 
 import { JsonValue } from '@fgv/ts-json-base';
 import { ResourceId, ResourceValueMergeMethod, Validate } from '../common';
-import { Condition, ConditionSet, ConditionSetCollector, IConditionDecl } from '../conditions';
+import { Condition, ConditionSet, ConditionSetCollector } from '../conditions';
 import * as ResourceJson from '../resource-json';
 import { ReadOnlyResourceTypeCollector, ResourceType } from '../resource-types';
 import { captureResult, mapResults, Hash, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
@@ -32,7 +32,7 @@ import { captureResult, mapResults, Hash, MessageAggregator, Result, succeed } f
  * @public
  */
 export interface IResourceCandidateCreateParams {
-  decl: ResourceJson.ILooseResourceCandidateDecl;
+  decl: ResourceJson.Json.ILooseResourceCandidateDecl;
   parentConditions?: ReadonlyArray<Condition>;
   conditionSets: ConditionSetCollector;
   resourceTypes: ReadOnlyResourceTypeCollector;
@@ -192,18 +192,18 @@ export class ResourceCandidate {
    */
   private static _mergeConditions(
     conditionSets: ConditionSetCollector,
-    declared: ResourceJson.ConditionSetDecl | undefined,
+    declared: ResourceJson.Json.ConditionSetDecl | undefined,
     parent: ReadonlyArray<Condition> | undefined
   ): Result<ConditionSet> {
     /* c8 ignore next 2 - code coverage is flaky */
     declared = declared ?? {};
     parent = parent ?? [];
 
-    const conditionDecls: IConditionDecl[] = Array.from(Object.entries(declared)).map(
-      ([qualifierName, value]) => {
-        return { qualifierName, value };
-      }
-    );
+    const { value: conditionDecls, message } =
+      ResourceJson.Normalized.Convert.conditionSetDecl.convert(declared);
+    if (message !== undefined) {
+      return fail(message);
+    }
 
     return mapResults(
       // get or add all declared conditions from our condition collector

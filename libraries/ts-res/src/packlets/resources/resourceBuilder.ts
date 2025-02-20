@@ -35,7 +35,7 @@ import { ResourceCandidate } from './resourceCandidate';
 import { ReadOnlyResourceTypeCollector, ResourceType } from '../resource-types';
 import { Resource } from './resource';
 import { ConditionSetCollector } from '../conditions';
-import { ILooseResourceCandidateDecl } from '../resource-json';
+import * as ResourceJson from '../resource-json';
 
 /**
  * Parameters for creating a {@link Resources.ResourceBuilder}.
@@ -141,7 +141,7 @@ export class ResourceBuilder {
    * existing candidate if the candidate to be added is identical to an existing candidate.
    */
   public addCandidate(
-    decl: ILooseResourceCandidateDecl
+    decl: ResourceJson.Json.ILooseResourceCandidateDecl
   ): DetailedResult<ResourceCandidate, ResourceBuilderResultDetail> {
     if (decl.id !== this.id) {
       return failWithDetail<ResourceCandidate, ResourceBuilderResultDetail>(

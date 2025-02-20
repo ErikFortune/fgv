@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-decl: ResourceJson.ILooseResourceCandidateDecl;
+decl: ResourceJson.Json.ILooseResourceCandidateDecl;
 ```

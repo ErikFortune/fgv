@@ -65,6 +65,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Json](./ts-res.resourcejson.json.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Normalized](./ts-res.resourcejson.normalized.md)
 
 

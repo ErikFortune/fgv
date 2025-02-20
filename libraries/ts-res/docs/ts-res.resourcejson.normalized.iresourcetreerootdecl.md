@@ -68,7 +68,7 @@ _(Optional)_
 
 </td><td>
 
-Record&lt;string, [IChildResourceDecl](./ts-res.resourcejson.normalized.ichildresourcedecl.md) \| [IResourceTreeNodeDecl](./ts-res.resourcejson.normalized.iresourcetreenodedecl.md)<!-- -->&gt;
+Record&lt;string, IChildResourceDecl \| IResourceTreeNodeDecl&gt;
 
 
 </td><td>

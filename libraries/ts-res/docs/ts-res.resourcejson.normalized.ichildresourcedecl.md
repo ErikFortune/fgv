@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;[IChildResourceCandidateDecl](./ts-res.resourcejson.normalized.ichildresourcecandidatedecl.md)<!-- -->&gt;
+ReadonlyArray&lt;IChildResourceCandidateDecl&gt;
 
 
 </td><td>

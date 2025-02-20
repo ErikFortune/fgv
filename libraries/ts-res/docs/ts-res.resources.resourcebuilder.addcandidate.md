@@ -9,7 +9,7 @@ Given a [resource candidate declaration](./ts-res.resourcejson.ilooseresourcecan
 **Signature:**
 
 ```typescript
-addCandidate(decl: ILooseResourceCandidateDecl): DetailedResult<ResourceCandidate, ResourceBuilderResultDetail>;
+addCandidate(decl: ResourceJson.Json.ILooseResourceCandidateDecl): DetailedResult<ResourceCandidate, ResourceBuilderResultDetail>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ decl
 
 </td><td>
 
-[ILooseResourceCandidateDecl](./ts-res.resourcejson.ilooseresourcecandidatedecl.md)
+ResourceJson.Json.ILooseResourceCandidateDecl
 
 
 </td><td>
