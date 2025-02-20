@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { mapResults, fail, succeed, Result } from '@fgv/ts-utils';
+import { mapResults, fail, succeed, Result, MessageAggregator } from '@fgv/ts-utils';
 import { ResourceId, ResourceIndex, ResourceName, ResourceTypeIndex, ResourceTypeName } from '../resources';
 import { identifier, segmentedIdentifier } from './regularExpressions';
 
@@ -132,7 +132,10 @@ export function toResourceIndex(index: number): Result<ResourceIndex> {
  * `Failure` with an error message if not.
  * @public
  */
-export function splitResourceId(id: ResourceId): Result<ResourceName[]> {
+export function splitResourceId(id: string | undefined): Result<ResourceName[]> {
+  if (id === undefined) {
+    return succeed([]);
+  }
   return mapResults(id.split('.').map(toResourceName));
 }
 
@@ -146,11 +149,13 @@ export function splitResourceId(id: ResourceId): Result<ResourceName[]> {
  * if not.
  * @public
  */
-export function joinResourceId(
-  base: ResourceName | ResourceId,
-  ...names: ResourceName[]
-): Result<ResourceId> {
-  return toResourceId([base, ...names].join('.'));
+export function joinResourceIds(...ids: (string | undefined)[]): Result<ResourceId> {
+  const errors: MessageAggregator = new MessageAggregator();
+  const parts: ResourceName[] = [];
+  ids.forEach((id) => {
+    parts.push(...splitResourceId(id).aggregateError(errors).orDefault([]));
+  });
+  return errors.returnOrReport(toResourceId(parts.join('.')));
 }
 
 /**

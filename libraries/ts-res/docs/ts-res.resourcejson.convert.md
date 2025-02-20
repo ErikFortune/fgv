@@ -107,12 +107,12 @@ Description
 </td></tr>
 <tr><td>
 
-[resourceTreeNodeDecl](./ts-res.resourcejson.convert.resourcetreenodedecl.md)
+[resourceTreeChildNodeDecl](./ts-res.resourcejson.convert.resourcetreechildnodedecl.md)
 
 
 </td><td>
 
-`Converter` for a normalized [resource tree node declaration](./ts-res.resourcejson.normalized.iresourcetreenodedecl.md)<!-- -->.
+`Converter` for a normalized [resource tree child node declaration](./ts-res.resourcejson.normalized.iresourcetreechildnodedecl.md)<!-- -->.
 
 
 </td></tr>

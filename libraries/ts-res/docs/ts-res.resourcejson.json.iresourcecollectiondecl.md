@@ -4,7 +4,7 @@
 
 ## ResourceJson.Json.IResourceCollectionDecl interface
 
-Normalized non-validated declaration of a collection of resources.
+Non-validated declaration of a collection of resources.
 
 **Signature:**
 

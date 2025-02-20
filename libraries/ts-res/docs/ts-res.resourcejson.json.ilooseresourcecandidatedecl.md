@@ -4,7 +4,7 @@
 
 ## ResourceJson.Json.ILooseResourceCandidateDecl interface
 
-Normalized non-validated loose declaration of a [resource candidate](./ts-res.resources.resourcecandidate.md)<!-- -->.
+Non-validated loose declaration of a [resource candidate](./ts-res.resources.resourcecandidate.md)<!-- -->.
 
 **Signature:**
 

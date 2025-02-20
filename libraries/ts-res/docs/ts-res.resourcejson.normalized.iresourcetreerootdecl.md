@@ -68,7 +68,7 @@ _(Optional)_
 
 </td><td>
 
-Record&lt;string, IChildResourceDecl \| IResourceTreeNodeDecl&gt;
+Record&lt;string, IChildResourceDecl \| IResourceTreeChildNodeDecl&gt;
 
 
 </td><td>

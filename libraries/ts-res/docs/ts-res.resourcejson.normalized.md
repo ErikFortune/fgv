@@ -74,7 +74,7 @@ Normalized non-validated declaration of a collection of resources.
 </td></tr>
 <tr><td>
 
-[IResourceTreeNodeDecl](./ts-res.resourcejson.normalized.iresourcetreenodedecl.md)
+[IResourceTreeChildNodeDecl](./ts-res.resourcejson.normalized.iresourcetreechildnodedecl.md)
 
 
 </td><td>

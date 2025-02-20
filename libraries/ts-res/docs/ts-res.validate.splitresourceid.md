@@ -9,7 +9,7 @@ Splits a [resource id](./ts-res.resourceid.md) into its component [resource name
 **Signature:**
 
 ```typescript
-export declare function splitResourceId(id: ResourceId): Result<ResourceName[]>;
+export declare function splitResourceId(id: string | undefined): Result<ResourceName[]>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ id
 
 </td><td>
 
-[ResourceId](./ts-res.resourceid.md)
+string \| undefined
 
 
 </td><td>

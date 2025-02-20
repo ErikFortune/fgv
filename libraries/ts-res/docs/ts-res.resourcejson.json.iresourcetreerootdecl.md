@@ -4,7 +4,7 @@
 
 ## ResourceJson.Json.IResourceTreeRootDecl interface
 
-Normalized non-validated declaration of a [resource](./ts-res.resources.resource.md) tree root.
+Non-validated declaration of a [resource](./ts-res.resources.resource.md) tree root.
 
 **Signature:**
 
@@ -68,7 +68,7 @@ _(Optional)_
 
 </td><td>
 
-Record&lt;string, [IChildResourceDecl](./ts-res.resourcejson.json.ichildresourcedecl.md) \| [IResourceTreeNodeDecl](./ts-res.resourcejson.json.iresourcetreenodedecl.md)<!-- -->&gt;
+Record&lt;string, [IChildResourceDecl](./ts-res.resourcejson.json.ichildresourcedecl.md) \| [IResourceTreeChildNodeDecl](./ts-res.resourcejson.json.iresourcetreechildnodedecl.md)<!-- -->&gt;
 
 
 </td><td>

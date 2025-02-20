@@ -4,7 +4,7 @@
 
 ## ResourceJson.Json.ConditionSetDeclAsRecord type
 
-Normalized non-validated declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
+Non-validated declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
 
 **Signature:**
 

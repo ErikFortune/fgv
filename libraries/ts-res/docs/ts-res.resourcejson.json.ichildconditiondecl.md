@@ -4,7 +4,7 @@
 
 ## ResourceJson.Json.IChildConditionDecl interface
 
-Normalized non-validated child declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
+Non-validated child declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
 
 **Signature:**
 

@@ -4,7 +4,7 @@
 
 ## ResourceJson.Json.IChildResourceCandidateDecl interface
 
-Normalized non-validated child declaration of a [resource candidate](./ts-res.resources.resourcecandidate.md)<!-- -->.
+Non-validated child declaration of a [resource candidate](./ts-res.resources.resourcecandidate.md)<!-- -->.
 
 **Signature:**
 

@@ -24,7 +24,7 @@ Description
 
 </td><td>
 
-Normalized non-validated child declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
+Non-validated child declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
 
 
 </td></tr>
@@ -35,7 +35,7 @@ Normalized non-validated child declaration of a [condition](./ts-res.conditions.
 
 </td><td>
 
-Normalized non-validated child declaration of a [resource candidate](./ts-res.resources.resourcecandidate.md)<!-- -->.
+Non-validated child declaration of a [resource candidate](./ts-res.resources.resourcecandidate.md)<!-- -->.
 
 
 </td></tr>
@@ -46,7 +46,7 @@ Normalized non-validated child declaration of a [resource candidate](./ts-res.re
 
 </td><td>
 
-Normalized non-validated child declaration of a [resource](./ts-res.resources.resource.md)<!-- -->.
+Non-validated child declaration of a [resource](./ts-res.resources.resource.md)<!-- -->.
 
 
 </td></tr>
@@ -68,7 +68,7 @@ Non-validated loose declaration of a [condition](./ts-res.conditions.condition.m
 
 </td><td>
 
-Normalized non-validated loose declaration of a [resource candidate](./ts-res.resources.resourcecandidate.md)<!-- -->.
+Non-validated loose declaration of a [resource candidate](./ts-res.resources.resourcecandidate.md)<!-- -->.
 
 
 </td></tr>
@@ -79,7 +79,7 @@ Normalized non-validated loose declaration of a [resource candidate](./ts-res.re
 
 </td><td>
 
-Normalized non-validated loose declaration of a [resource](./ts-res.resources.resource.md)<!-- -->.
+Non-validated loose declaration of a [resource](./ts-res.resources.resource.md)<!-- -->.
 
 
 </td></tr>
@@ -90,18 +90,18 @@ Normalized non-validated loose declaration of a [resource](./ts-res.resources.re
 
 </td><td>
 
-Normalized non-validated declaration of a collection of resources.
+Non-validated declaration of a collection of resources.
 
 
 </td></tr>
 <tr><td>
 
-[IResourceTreeNodeDecl](./ts-res.resourcejson.json.iresourcetreenodedecl.md)
+[IResourceTreeChildNodeDecl](./ts-res.resourcejson.json.iresourcetreechildnodedecl.md)
 
 
 </td><td>
 
-Normalized non-validated declaration of a [resource](./ts-res.resources.resource.md) tree node.
+Non-validated declaration of a [resource](./ts-res.resources.resource.md) tree node.
 
 
 </td></tr>
@@ -112,7 +112,7 @@ Normalized non-validated declaration of a [resource](./ts-res.resources.resource
 
 </td><td>
 
-Normalized non-validated declaration of a [resource](./ts-res.resources.resource.md) tree root.
+Non-validated declaration of a [resource](./ts-res.resources.resource.md) tree root.
 
 
 </td></tr>
@@ -138,7 +138,7 @@ Description
 
 </td><td>
 
-Normalized non-validated declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
+Non-validated declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
 
 
 </td></tr>
@@ -149,7 +149,7 @@ Normalized non-validated declaration of a [condition](./ts-res.conditions.condit
 
 </td><td>
 
-Normalized non-validated declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
+Non-validated declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
 
 
 </td></tr>
@@ -160,7 +160,7 @@ Normalized non-validated declaration of a [condition](./ts-res.conditions.condit
 
 </td><td>
 
-Normalized non-validated declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
+Non-validated declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
 
 
 </td></tr>

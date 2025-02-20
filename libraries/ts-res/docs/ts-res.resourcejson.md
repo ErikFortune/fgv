@@ -4,6 +4,32 @@
 
 ## ResourceJson namespace
 
+## Classes
+
+<table><thead><tr><th>
+
+Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ResourceDeclCollection](./ts-res.resourcejson.resourcedeclcollection.md)
+
+
+</td><td>
+
+Class that extracts resources and candidates from a [resource collection declaration](./ts-res.resourcejson.json.iresourcecollectiondecl.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
+
 ## Interfaces
 
 <table><thead><tr><th>
@@ -46,6 +72,15 @@ Description
 <tbody><tr><td>
 
 [Convert](./ts-res.resourcejson.convert.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Helpers](./ts-res.resourcejson.helpers.md)
 
 
 </td><td>

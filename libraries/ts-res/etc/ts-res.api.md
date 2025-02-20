@@ -432,6 +432,14 @@ declare namespace Decisions {
 }
 export { Decisions }
 
+declare namespace Helpers {
+    export {
+        mergeLooseCandidate,
+        mergeChildCandidate,
+        mergeLooseResource
+    }
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -1033,7 +1041,7 @@ interface IValidatedQualifierDecl {
 }
 
 // @public
-function joinResourceId(base: ResourceName | ResourceId, ...names: ResourceName[]): Result<ResourceId>;
+function joinResourceIds(...ids: (string | undefined)[]): Result<ResourceId>;
 
 declare namespace Json {
     export {
@@ -1147,6 +1155,15 @@ const looseResourceDecl: Converter<Normalized.ILooseResourceDecl>;
 
 // @public
 export const MaxConditionPriority: ConditionPriority;
+
+// @public
+function mergeChildCandidate(candidate: Normalized.IChildResourceCandidateDecl, baseConditions?: Json.ILooseConditionDecl[]): Result<Normalized.IChildResourceCandidateDecl>;
+
+// @public
+function mergeLooseCandidate(candidate: Normalized.ILooseResourceCandidateDecl, baseName?: string, baseConditions?: Json.ILooseConditionDecl[]): Result<Normalized.ILooseResourceCandidateDecl>;
+
+// @public
+function mergeLooseResource(resource: Normalized.ILooseResourceDecl, baseName?: string, baseConditions?: Json.ILooseConditionDecl[]): Result<Normalized.ILooseResourceDecl>;
 
 // @public
 export const MinConditionPriority: ConditionPriority;
@@ -1501,6 +1518,26 @@ class ResourceCandidate {
 // @public
 const resourceCollectionDecl: Converter<Normalized.IResourceCollectionDecl>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ResourceDeclCollection implements IResourceDeclContainer {
+    protected constructor(collection: Normalized.IResourceCollectionDecl);
+    // (undocumented)
+    protected _candidates: Normalized.ILooseResourceCandidateDecl[];
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly collection: Normalized.IResourceCollectionDecl;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(from: unknown): Result<ResourceDeclCollection>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getLooseCandidates(): ReadonlyArray<Normalized.ILooseResourceCandidateDecl>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getLooseResources(): ReadonlyArray<Normalized.ILooseResourceDecl>;
+    // (undocumented)
+    protected _resources: Normalized.ILooseResourceDecl[];
+}
+
 // @public
 export type ResourceId = Brand<string, 'ResourceId'>;
 
@@ -1516,9 +1553,11 @@ const resourceIndex: Converter<ResourceIndex, unknown>;
 declare namespace ResourceJson {
     export {
         Convert_5 as Convert,
+        Helpers,
         Json,
         Normalized,
-        IResourceDeclContainer
+        IResourceDeclContainer,
+        ResourceDeclCollection
     }
 }
 export { ResourceJson }
@@ -1682,7 +1721,7 @@ const resourceValueMergeMethod: Converter<ResourceValueMergeMethod, ResourceValu
 const segmentedIdentifier: RegExp;
 
 // @public
-function splitResourceId(id: ResourceId): Result<ResourceName[]>;
+function splitResourceId(id: string | undefined): Result<ResourceName[]>;
 
 // @internal (undocumented)
 const territoryCode: RegExp;
@@ -1805,7 +1844,7 @@ declare namespace Validate {
         toResourceId,
         toResourceIndex,
         splitResourceId,
-        joinResourceId,
+        joinResourceIds,
         toResourceTypeName,
         toResourceTypeIndex
     }

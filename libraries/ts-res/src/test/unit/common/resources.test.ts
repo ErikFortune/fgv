@@ -118,27 +118,19 @@ describe('common resources', () => {
     });
   });
 
-  describe('joinResourceId', () => {
+  describe('joinResourceIds', () => {
     test.each(validResourceIds)('joins %o into %s', (tc) => {
-      expect(
-        TsRes.Validate.joinResourceId('foo' as TsRes.ResourceName, ...(tc.parts as TsRes.ResourceName[]))
-      ).toSucceedWith(`foo.${tc.id}` as TsRes.ResourceId);
+      expect(TsRes.Validate.joinResourceIds('foo', ...(tc.parts as TsRes.ResourceName[]))).toSucceedWith(
+        `foo.${tc.id}` as TsRes.ResourceId
+      );
     });
 
     test('fails if base name is invalid', () => {
-      expect(
-        TsRes.Validate.joinResourceId('foo!' as TsRes.ResourceName, 'bar' as TsRes.ResourceName)
-      ).toFailWith(/not a valid resource/i);
+      expect(TsRes.Validate.joinResourceIds('foo!', 'bar')).toFailWith(/not a valid resource/i);
     });
 
     test('fails if any part is invalid', () => {
-      expect(
-        TsRes.Validate.joinResourceId(
-          'foo' as TsRes.ResourceName,
-          'bar' as TsRes.ResourceName,
-          'baz!' as TsRes.ResourceName
-        )
-      ).toFailWith(/not a valid resource/i);
+      expect(TsRes.Validate.joinResourceIds('foo', 'bar', 'b@z')).toFailWith(/not a valid resource/i);
     });
   });
 });
