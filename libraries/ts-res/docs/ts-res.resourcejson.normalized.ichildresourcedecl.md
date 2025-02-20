@@ -58,27 +58,6 @@ _(Optional)_ Possible candidates for this value.
 </td></tr>
 <tr><td>
 
-[name](./ts-res.resourcejson.normalized.ichildresourcedecl.name.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-The name of the resource.
-
-
-</td></tr>
-<tr><td>
-
 [resourceTypeName](./ts-res.resourcejson.normalized.ichildresourcedecl.resourcetypename.md)
 
 

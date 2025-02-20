@@ -32,10 +32,10 @@ import * as Normalized from './normalized';
  */
 export const looseConditionDecl: Converter<Json.ILooseConditionDecl> =
   Converters.strictObject<Json.ILooseConditionDecl>({
-    qualifierName: Converters.string,
+    qualifierName: CommonConvert.qualifierName,
     value: Converters.string,
     operator: CommonConvert.conditionOperator.optional(),
-    priority: Converters.number.optional()
+    priority: CommonConvert.conditionPriority.optional()
   });
 
 /**
@@ -46,7 +46,7 @@ export const childConditionDecl: Converter<Json.IChildConditionDecl> =
   Converters.strictObject<Json.IChildConditionDecl>({
     value: Converters.string,
     operator: CommonConvert.conditionOperator.optional(),
-    priority: Converters.number.optional()
+    priority: CommonConvert.conditionPriority.optional()
   });
 
 function _isConditionSetRecord(from: unknown): from is Record<string, string | Json.IChildConditionDecl> {
@@ -116,7 +116,7 @@ export const childResourceCandidateDecl: Converter<Normalized.IChildResourceCand
  */
 export const looseResourceDecl: Converter<Normalized.ILooseResourceDecl> =
   Converters.strictObject<Normalized.ILooseResourceDecl>({
-    id: Converters.string,
+    id: CommonConvert.resourceId,
     resourceTypeName: CommonConvert.resourceTypeName,
     candidates: Converters.arrayOf(looseResourceCandidateDecl).optional()
   });
@@ -127,33 +127,29 @@ export const looseResourceDecl: Converter<Normalized.ILooseResourceDecl> =
  */
 export const childResourceDecl: Converter<Normalized.IChildResourceDecl> =
   Converters.strictObject<Normalized.IChildResourceDecl>({
-    name: Converters.string,
-    resourceTypeName: Converters.string,
+    resourceTypeName: CommonConvert.resourceTypeName,
     candidates: Converters.arrayOf(childResourceCandidateDecl).optional()
   });
 
 /**
- * `Converter` for a normalized {@link ResourceJson.Normalized.IResourceTreeNodeDecl | resource tree node declaration}.
+ * `Converter` for a normalized {@link ResourceJson.Normalized.IResourceTreeChildNodeDecl | resource tree child node declaration}.
  * @public
  */
-export const resourceTreeNodeDecl: Converter<Normalized.IResourceTreeNodeDecl> = Converters.generic<
-  Normalized.IResourceTreeNodeDecl,
+export const resourceTreeChildNodeDecl: Converter<Normalized.IResourceTreeChildNodeDecl> = Converters.generic<
+  Normalized.IResourceTreeChildNodeDecl,
   unknown
 >(
   (
     from: unknown,
-    self: Converter<Normalized.IResourceTreeNodeDecl, unknown>,
+    self: Converter<Normalized.IResourceTreeChildNodeDecl, unknown>,
     context?: unknown
-  ): Result<Normalized.IResourceTreeNodeDecl> => {
-    return Converters.strictObject<Normalized.IResourceTreeNodeDecl>({
-      name: Converters.string,
-      children: Converters.recordOf(
-        Converters.oneOf<Normalized.IChildResourceDecl | Normalized.IResourceTreeNodeDecl>([
-          childResourceDecl,
-          self
-        ])
-      )
-    }).convert(from, context);
+  ): Result<Normalized.IResourceTreeChildNodeDecl> => {
+    return Converters.recordOf(
+      Converters.oneOf<Normalized.IChildResourceDecl | Normalized.IResourceTreeChildNodeDecl>([
+        childResourceDecl,
+        self
+      ])
+    ).convert(from, context);
   }
 );
 
@@ -163,11 +159,11 @@ export const resourceTreeNodeDecl: Converter<Normalized.IResourceTreeNodeDecl> =
  */
 export const resourceTreeRootDecl: Converter<Normalized.IResourceTreeRootDecl> =
   Converters.strictObject<Normalized.IResourceTreeRootDecl>({
-    baseName: Converters.string.optional(),
+    baseName: CommonConvert.resourceId.optional(),
     children: Converters.recordOf(
-      Converters.oneOf<Normalized.IChildResourceDecl | Normalized.IResourceTreeNodeDecl>([
+      Converters.oneOf<Normalized.IChildResourceDecl | Normalized.IResourceTreeChildNodeDecl>([
         childResourceDecl,
-        resourceTreeNodeDecl
+        resourceTreeChildNodeDecl
       ])
     )
   });
@@ -186,7 +182,7 @@ export const resourceCollectionDecl: Converter<Normalized.IResourceCollectionDec
     context?: unknown
   ): Result<Normalized.IResourceCollectionDecl> => {
     return Converters.strictObject<Normalized.IResourceCollectionDecl>({
-      baseName: Converters.string.optional(),
+      baseName: CommonConvert.resourceId.optional(),
       baseConditions: conditionSetDecl.optional(),
       candidates: Converters.arrayOf(looseResourceCandidateDecl).optional(),
       resources: Converters.arrayOf(looseResourceDecl).optional(),

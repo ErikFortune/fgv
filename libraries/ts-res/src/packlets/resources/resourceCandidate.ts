@@ -25,7 +25,7 @@ import { ResourceId, ResourceValueMergeMethod, Validate } from '../common';
 import { Condition, ConditionSet, ConditionSetCollector } from '../conditions';
 import * as ResourceJson from '../resource-json';
 import { ReadOnlyResourceTypeCollector, ResourceType } from '../resource-types';
-import { captureResult, mapResults, Hash, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
+import { captureResult, mapResults, Hash, MessageAggregator, Result, fail, succeed } from '@fgv/ts-utils';
 
 /**
  * Parameters to create a {@link Resources.ResourceCandidate | ResourceCandidate}.

@@ -55,6 +55,7 @@ export const validatedConditionSetDecl = Converters.generic<
   IValidatedConditionSetDecl,
   IConditionSetDeclConvertContext
 >((from: unknown, __self, context?: IConditionSetDeclConvertContext): Result<IValidatedConditionSetDecl> => {
+  /* c8 ignore next 3 - coverage is having a bad day */
   if (!context) {
     return fail('validatedConditionSetDecl converter requires a context');
   }

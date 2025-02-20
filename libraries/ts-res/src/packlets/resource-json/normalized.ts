@@ -121,11 +121,6 @@ export interface ILooseResourceDecl {
  */
 export interface IChildResourceDecl {
   /**
-   * The name of the resource.
-   */
-  readonly name: string;
-
-  /**
    * The name of the type of this resource.
    */
   readonly resourceTypeName: string;
@@ -140,9 +135,8 @@ export interface IChildResourceDecl {
  * Normalized non-validated declaration of a {@link Resources.Resource | resource} tree node.
  * @public
  */
-export interface IResourceTreeNodeDecl {
-  readonly name: string;
-  readonly children: Record<string, IChildResourceDecl | IResourceTreeNodeDecl>;
+export interface IResourceTreeChildNodeDecl {
+  [key: string]: IChildResourceDecl | IResourceTreeChildNodeDecl;
 }
 
 /**
@@ -151,7 +145,7 @@ export interface IResourceTreeNodeDecl {
  */
 export interface IResourceTreeRootDecl {
   readonly baseName?: string;
-  readonly children: Record<string, IChildResourceDecl | IResourceTreeNodeDecl>;
+  readonly children: Record<string, IChildResourceDecl | IResourceTreeChildNodeDecl>;
 }
 
 /**

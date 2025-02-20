@@ -24,6 +24,88 @@ import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../index';
 
 describe('ResourceJson', () => {
+  describe('conditionSetDecl converter', () => {
+    test('converts a condition set containing string values', () => {
+      expect(
+        TsRes.ResourceJson.Convert.conditionSetDecl.convert({
+          foo: 'bar',
+          wut: 'xyzzy'
+        })
+      ).toSucceedWith([
+        {
+          qualifierName: 'foo',
+          value: 'bar'
+        },
+        {
+          qualifierName: 'wut',
+          value: 'xyzzy'
+        }
+      ]);
+    });
+
+    test('converts a condition set containing child condition declarations', () => {
+      expect(
+        TsRes.ResourceJson.Convert.conditionSetDecl.convert({
+          foo: { value: 'bar', priority: 100 },
+          wut: { value: 'xyzzy', priority: 200 }
+        })
+      ).toSucceedWith([
+        {
+          priority: 100,
+          qualifierName: 'foo',
+          value: 'bar'
+        },
+        {
+          priority: 200,
+          qualifierName: 'wut',
+          value: 'xyzzy'
+        }
+      ]);
+    });
+
+    test('converts a condition set containing both string values and child condition declarations', () => {
+      expect(
+        TsRes.ResourceJson.Convert.conditionSetDecl.convert({
+          foo: 'bar',
+          wut: { value: 'xyzzy', priority: 200 }
+        })
+      ).toSucceedWith([
+        {
+          qualifierName: 'foo',
+          value: 'bar'
+        },
+        {
+          qualifierName: 'wut',
+          value: 'xyzzy',
+          priority: 200
+        }
+      ]);
+    });
+
+    test('converts an array of loose condition declarations', () => {
+      expect(
+        TsRes.ResourceJson.Convert.conditionSetDecl.convert([
+          { qualifierName: 'foo', value: 'bar' },
+          { qualifierName: 'wut', value: 'xyzzy', priority: 200 }
+        ])
+      ).toSucceedWith([
+        {
+          qualifierName: 'foo',
+          value: 'bar'
+        },
+        {
+          qualifierName: 'wut',
+          value: 'xyzzy',
+          priority: 200
+        }
+      ]);
+    });
+
+    test('fails if the input is not an object or array', () => {
+      expect(TsRes.ResourceJson.Convert.conditionSetDecl.convert('foo')).toFailWith(/expected an object/i);
+    });
+  });
+
   describe('resourceCollectionDecl converter', () => {
     test('converts a valid resource collection declaration', () => {
       const input: TsRes.ResourceJson.Json.IResourceCollectionDecl = {
@@ -109,6 +191,77 @@ describe('ResourceJson', () => {
             ]
           }
         ]
+      });
+    });
+  });
+
+  describe('resourceTreeRootDecl converter', () => {
+    test('converts a valid nested resource tree', () => {
+      expect(
+        TsRes.ResourceJson.Convert.resourceTreeRootDecl.convert({
+          baseName: 'some',
+          children: {
+            resource1: {
+              resourceTypeName: 'type1',
+              candidates: [
+                {
+                  json: { payload: 'someValue' },
+                  conditions: { someQualifier: 'someValue' }
+                }
+              ]
+            },
+            child1: {
+              children: {
+                resource2: {
+                  resourceTypeName: 'type3',
+                  candidates: [
+                    {
+                      json: { payload: 'some other value' },
+                      conditions: { someQualifier: { value: 'someValue', priority: 200 } }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        })
+      ).toSucceedWith({
+        baseName: 'some',
+        children: {
+          resource1: {
+            resourceTypeName: 'type1',
+            candidates: [
+              {
+                json: { payload: 'someValue' },
+                conditions: [
+                  {
+                    qualifierName: 'someQualifier',
+                    value: 'someValue'
+                  }
+                ]
+              }
+            ]
+          },
+          child1: {
+            children: {
+              resource2: {
+                resourceTypeName: 'type3',
+                candidates: [
+                  {
+                    json: { payload: 'some other value' },
+                    conditions: [
+                      {
+                        qualifierName: 'someQualifier',
+                        value: 'someValue',
+                        priority: 200
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
       });
     });
   });

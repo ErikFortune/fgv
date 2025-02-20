@@ -216,6 +216,20 @@ describe('ResourceCandidate', () => {
         })
       ).toFailWith(/not a valid resource id/i);
     });
+
+    test('fails if the declaration cannot be normalized', () => {
+      const decl: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = {
+        ...someDecls[0],
+        conditions: { 'bogus name': 'bogus' }
+      };
+      expect(
+        TsRes.Resources.ResourceCandidate.create({
+          conditionSets,
+          resourceTypes,
+          decl
+        })
+      ).toFailWith(/not a valid qualifier name/i);
+    });
   });
 
   describe('validateResourceTypes static method', () => {

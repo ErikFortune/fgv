@@ -372,7 +372,7 @@ declare namespace Convert_5 {
         childResourceCandidateDecl,
         looseResourceDecl,
         childResourceDecl,
-        resourceTreeNodeDecl,
+        resourceTreeChildNodeDecl,
         resourceTreeRootDecl,
         resourceCollectionDecl
     }
@@ -490,7 +490,6 @@ interface IChildResourceCandidateDecl_2 {
 // @public
 interface IChildResourceDecl {
     readonly candidates?: ReadonlyArray<IChildResourceCandidateDecl>;
-    readonly name: string;
     readonly resourceTypeName: string;
 }
 
@@ -499,7 +498,6 @@ interface IChildResourceDecl {
 // @public
 interface IChildResourceDecl_2 {
     readonly candidates?: ReadonlyArray<IChildResourceCandidateDecl_2>;
-    readonly name: string;
     readonly resourceTypeName: string;
 }
 
@@ -888,21 +886,17 @@ interface IResourceManagerCreateParams {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IResourceTreeNodeDecl {
+interface IResourceTreeChildNodeDecl {
     // (undocumented)
-    readonly children: Record<string, IChildResourceDecl | IResourceTreeNodeDecl>;
-    // (undocumented)
-    readonly name: string;
+    [key: string]: IChildResourceDecl | IResourceTreeChildNodeDecl;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IResourceTreeNodeDecl_2 {
+interface IResourceTreeChildNodeDecl_2 {
     // (undocumented)
-    readonly children: Record<string, IChildResourceDecl_2 | IResourceTreeNodeDecl_2>;
-    // (undocumented)
-    readonly name: string;
+    [key: string]: IChildResourceDecl_2 | IResourceTreeChildNodeDecl_2;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -912,7 +906,7 @@ interface IResourceTreeRootDecl {
     // (undocumented)
     readonly baseName?: string;
     // (undocumented)
-    readonly children: Record<string, IChildResourceDecl | IResourceTreeNodeDecl>;
+    readonly children: Record<string, IChildResourceDecl | IResourceTreeChildNodeDecl>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -922,7 +916,7 @@ interface IResourceTreeRootDecl_2 {
     // (undocumented)
     readonly baseName?: string;
     // (undocumented)
-    readonly children: Record<string, IChildResourceDecl_2 | IResourceTreeNodeDecl_2>;
+    readonly children: Record<string, IChildResourceDecl_2 | IResourceTreeChildNodeDecl_2>;
 }
 
 // @public
@@ -1052,7 +1046,7 @@ declare namespace Json {
         IChildResourceCandidateDecl,
         ILooseResourceDecl,
         IChildResourceDecl,
-        IResourceTreeNodeDecl,
+        IResourceTreeChildNodeDecl,
         IResourceTreeRootDecl,
         IResourceCollectionDecl
     }
@@ -1167,7 +1161,7 @@ declare namespace Normalized {
         IChildResourceCandidateDecl_2 as IChildResourceCandidateDecl,
         ILooseResourceDecl_2 as ILooseResourceDecl,
         IChildResourceDecl_2 as IChildResourceDecl,
-        IResourceTreeNodeDecl_2 as IResourceTreeNodeDecl,
+        IResourceTreeChildNodeDecl_2 as IResourceTreeChildNodeDecl,
         IResourceTreeRootDecl_2 as IResourceTreeRootDecl,
         IResourceCollectionDecl_2 as IResourceCollectionDecl
     }
@@ -1617,7 +1611,7 @@ export { Resources }
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const resourceTreeNodeDecl: Converter<Normalized.IResourceTreeNodeDecl>;
+const resourceTreeChildNodeDecl: Converter<Normalized.IResourceTreeChildNodeDecl>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

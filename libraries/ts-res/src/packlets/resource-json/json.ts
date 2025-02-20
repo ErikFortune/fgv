@@ -49,7 +49,7 @@ export interface ILooseConditionDecl {
 }
 
 /**
- * Normalized non-validated child declaration of a {@link Conditions.Condition | condition}.
+ * Non-validated child declaration of a {@link Conditions.Condition | condition}.
  * @public
  */
 export interface IChildConditionDecl {
@@ -70,25 +70,25 @@ export interface IChildConditionDecl {
 }
 
 /**
- * Normalized non-validated declaration of a {@link Conditions.Condition | condition}.
+ * Non-validated declaration of a {@link Conditions.Condition | condition}.
  * @public
  */
 export type ConditionSetDeclAsArray = ReadonlyArray<ILooseConditionDecl>;
 
 /**
- * Normalized non-validated declaration of a {@link Conditions.Condition | condition}.
+ * Non-validated declaration of a {@link Conditions.Condition | condition}.
  * @public
  */
 export type ConditionSetDeclAsRecord = Record<string, string | IChildConditionDecl>;
 
 /**
- * Normalized non-validated declaration of a {@link Conditions.Condition | condition}.
+ * Non-validated declaration of a {@link Conditions.Condition | condition}.
  * @public
  */
 export type ConditionSetDecl = ConditionSetDeclAsArray | ConditionSetDeclAsRecord;
 
 /**
- * Normalized non-validated loose declaration of a {@link Resources.ResourceCandidate | resource candidate}.
+ * Non-validated loose declaration of a {@link Resources.ResourceCandidate | resource candidate}.
  * @public
  */
 export interface ILooseResourceCandidateDecl {
@@ -125,7 +125,7 @@ export interface ILooseResourceCandidateDecl {
 }
 
 /**
- * Normalized non-validated child declaration of a {@link Resources.ResourceCandidate | resource candidate}.
+ * Non-validated child declaration of a {@link Resources.ResourceCandidate | resource candidate}.
  * @public
  */
 export interface IChildResourceCandidateDecl {
@@ -152,7 +152,7 @@ export interface IChildResourceCandidateDecl {
 }
 
 /**
- * Normalized non-validated loose declaration of a {@link Resources.Resource | resource}.
+ * Non-validated loose declaration of a {@link Resources.Resource | resource}.
  * @public
  */
 export interface ILooseResourceDecl {
@@ -173,15 +173,10 @@ export interface ILooseResourceDecl {
 }
 
 /**
- * Normalized non-validated child declaration of a {@link Resources.Resource | resource}.
+ * Non-validated child declaration of a {@link Resources.Resource | resource}.
  * @public
  */
 export interface IChildResourceDecl {
-  /**
-   * The name of the resource.
-   */
-  readonly name: string;
-
   /**
    * The name of the type of this resource.
    */
@@ -194,25 +189,24 @@ export interface IChildResourceDecl {
 }
 
 /**
- * Normalized non-validated declaration of a {@link Resources.Resource | resource} tree node.
+ * Non-validated declaration of a {@link Resources.Resource | resource} tree node.
  * @public
  */
-export interface IResourceTreeNodeDecl {
-  readonly name: string;
-  readonly children: Record<string, IChildResourceDecl | IResourceTreeNodeDecl>;
+export interface IResourceTreeChildNodeDecl {
+  [key: string]: IChildResourceDecl | IResourceTreeChildNodeDecl;
 }
 
 /**
- * Normalized non-validated declaration of a {@link Resources.Resource | resource} tree root.
+ * Non-validated declaration of a {@link Resources.Resource | resource} tree root.
  * @public
  */
 export interface IResourceTreeRootDecl {
   readonly baseName?: string;
-  readonly children: Record<string, IChildResourceDecl | IResourceTreeNodeDecl>;
+  readonly children: Record<string, IChildResourceDecl | IResourceTreeChildNodeDecl>;
 }
 
 /**
- * Normalized non-validated declaration of a collection of resources.
+ * Non-validated declaration of a collection of resources.
  * @public
  */
 export interface IResourceCollectionDecl {
