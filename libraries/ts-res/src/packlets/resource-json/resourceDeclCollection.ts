@@ -55,9 +55,12 @@ export class ResourceDeclCollection implements IResourceDeclContainer {
    * @returns `Success` with the new collection if the JSON object is valid, otherwise `Failure`.
    */
   public static create(from: unknown): Result<ResourceDeclCollection> {
-    return Convert.resourceCollectionDecl.convert(from).onSuccess((decl) => {
-      return captureResult(() => new ResourceDeclCollection(decl));
-    });
+    return Convert.resourceCollectionDecl
+      .convert(from)
+      .withErrorFormat((err) => `Invalid resource collection: ${err}`)
+      .onSuccess((decl) => {
+        return captureResult(() => new ResourceDeclCollection(decl));
+      });
   }
 
   /**

@@ -293,5 +293,11 @@ describe('ResourceDeclCollection', () => {
         ]);
       });
     });
+
+    test('fails if the input is not valid', () => {
+      expect(TsRes.ResourceJson.ResourceDeclCollection.create({ bogus: 'property' })).toFailWith(
+        /invalid resource collection/i
+      );
+    });
   });
 });
