@@ -37,7 +37,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[children](./ts-res.resourcejson.json.iresourcetreechildnodedecl.children.md)
+[children?](./ts-res.resourcejson.json.iresourcetreechildnodedecl.children.md)
 
 
 </td><td>
@@ -52,11 +52,13 @@ Record&lt;string, [IResourceTreeChildNodeDecl](./ts-res.resourcejson.json.iresou
 
 </td><td>
 
+_(Optional)_
+
 
 </td></tr>
 <tr><td>
 
-[resources](./ts-res.resourcejson.json.iresourcetreechildnodedecl.resources.md)
+[resources?](./ts-res.resourcejson.json.iresourcetreechildnodedecl.resources.md)
 
 
 </td><td>
@@ -70,6 +72,8 @@ Record&lt;string, [IChildResourceDecl](./ts-res.resourcejson.json.ichildresource
 
 
 </td><td>
+
+_(Optional)_
 
 
 </td></tr>

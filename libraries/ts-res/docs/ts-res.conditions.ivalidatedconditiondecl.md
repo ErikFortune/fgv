@@ -107,6 +107,25 @@ _(Optional)_
 </td></tr>
 <tr><td>
 
+[scoreAsDefault?](./ts-res.conditions.ivalidatedconditiondecl.scoreasdefault.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[QualifierMatchScore](./ts-res.qualifiermatchscore.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
 [value](./ts-res.conditions.ivalidatedconditiondecl.value.md)
 
 

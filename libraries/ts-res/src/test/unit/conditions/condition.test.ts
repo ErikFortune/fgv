@@ -67,8 +67,31 @@ describe('Condition', () => {
         expect(c.value).toBe('CA');
         expect(c.operator).toBe('matches');
         expect(c.priority).toBe(800);
+        expect(c.scoreAsDefault).toBeUndefined();
         expect(c.key).toBe('homeTerritory-[CA]@800');
         expect(c.toString()).toBe('homeTerritory-[CA]@800');
+      });
+    });
+
+    test('creates a condition from a validated declaration with scoreAsDefault', () => {
+      const decl = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'homeTerritory',
+            value: 'CA',
+            scoreAsDefault: 0.5
+          },
+          { qualifiers }
+        )
+        .orThrow();
+      expect(TsRes.Conditions.Condition.create(decl)).toSucceedAndSatisfy((c) => {
+        expect(c.qualifier.name).toBe('homeTerritory');
+        expect(c.value).toBe('CA');
+        expect(c.operator).toBe('matches');
+        expect(c.priority).toBe(800);
+        expect(c.scoreAsDefault).toBe(0.5);
+        expect(c.key).toBe('homeTerritory-[CA]@800(0.5)');
+        expect(c.toString()).toBe('homeTerritory-[CA]@800(0.5)');
       });
     });
   });
@@ -101,7 +124,36 @@ describe('Condition', () => {
       expect(TsRes.Conditions.Condition.compare(c1, c2)).toBeGreaterThan(0);
     });
 
-    test('falls back to qualifier name if priorities are equal', () => {
+    test('falls back to scoreAsDefault if priorities are equal', () => {
+      const c1 = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'homeTerritory',
+            value: 'CA',
+            priority: 800,
+            scoreAsDefault: 0.5
+          },
+          { qualifiers }
+        )
+        .onSuccess(TsRes.Conditions.Condition.create)
+        .orThrow();
+      const c2 = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'homeTerritory',
+            value: 'AQ',
+            priority: 800,
+            scoreAsDefault: 0.6
+          },
+          { qualifiers }
+        )
+        .onSuccess(TsRes.Conditions.Condition.create)
+        .orThrow();
+
+      expect(TsRes.Conditions.Condition.compare(c1, c2)).toBeLessThan(0);
+    });
+
+    test('falls back to qualifier name if scores as default are equal', () => {
       const c1 = TsRes.Conditions.Convert.validatedConditionDecl
         .convert(
           {

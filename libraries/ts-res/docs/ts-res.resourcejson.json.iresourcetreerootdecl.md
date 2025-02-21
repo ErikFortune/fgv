@@ -59,7 +59,7 @@ _(Optional)_
 </td></tr>
 <tr><td>
 
-[children](./ts-res.resourcejson.json.iresourcetreerootdecl.children.md)
+[children?](./ts-res.resourcejson.json.iresourcetreerootdecl.children.md)
 
 
 </td><td>
@@ -74,11 +74,13 @@ Record&lt;string, [IResourceTreeChildNodeDecl](./ts-res.resourcejson.json.iresou
 
 </td><td>
 
+_(Optional)_
+
 
 </td></tr>
 <tr><td>
 
-[resources](./ts-res.resourcejson.json.iresourcetreerootdecl.resources.md)
+[resources?](./ts-res.resourcejson.json.iresourcetreerootdecl.resources.md)
 
 
 </td><td>
@@ -92,6 +94,8 @@ Record&lt;string, [IChildResourceDecl](./ts-res.resourcejson.json.ichildresource
 
 
 </td><td>
+
+_(Optional)_
 
 
 </td></tr>

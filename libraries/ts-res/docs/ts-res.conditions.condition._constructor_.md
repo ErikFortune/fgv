@@ -9,7 +9,7 @@ Constructs a new [Condition](./ts-res.conditions.condition.md) object.
 **Signature:**
 
 ```typescript
-protected constructor({ qualifier, value, operator, priority, index }: IValidatedConditionDecl);
+protected constructor({ qualifier, value, operator, priority, scoreAsDefault, index }: IValidatedConditionDecl);
 ```
 
 ## Parameters
@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-{ qualifier, value, operator, priority, index }
+{ qualifier, value, operator, priority, scoreAsDefault, index }
 
 
 </td><td>

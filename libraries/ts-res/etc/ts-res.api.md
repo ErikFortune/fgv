@@ -115,7 +115,7 @@ class ConcreteDecision<TVALUE extends JsonValue = JsonValue> implements IDecisio
 class Condition implements IValidatedConditionDecl {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor({ qualifier, value, operator, priority, index }: IValidatedConditionDecl);
+    protected constructor({ qualifier, value, operator, priority, scoreAsDefault, index }: IValidatedConditionDecl);
     // (undocumented)
     protected _collectible: Collections.Collectible<ConditionKey, ConditionIndex>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -137,6 +137,7 @@ class Condition implements IValidatedConditionDecl {
     readonly priority: ConditionPriority;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly qualifier: Qualifier;
+    readonly scoreAsDefault?: QualifierMatchScore;
     // (undocumented)
     setIndex(index: ConditionIndex): Result<ConditionIndex>;
     toKey(): ConditionKey;
@@ -177,7 +178,7 @@ export type ConditionKey = Brand<string, 'ConditionKey'>;
 // @public
 const conditionKey: Converter<ConditionKey, unknown>;
 
-// @internal (undocumented)
+// @internal
 const conditionKey_2: RegExp;
 
 // @public
@@ -556,6 +557,8 @@ interface IConditionDecl {
     priority?: number;
     // (undocumented)
     qualifierName: string;
+    // (undocumented)
+    scoreAsDefault?: number;
     // (undocumented)
     value: string;
 }
@@ -1024,6 +1027,8 @@ interface IValidatedConditionDecl {
     priority: ConditionPriority;
     // (undocumented)
     qualifier: Qualifier;
+    // (undocumented)
+    scoreAsDefault?: QualifierMatchScore;
     // (undocumented)
     value: QualifierConditionValue;
 }

@@ -35,7 +35,8 @@ export const conditionDecl = Converters.strictObject<IConditionDecl>({
   qualifierName: Converters.string,
   value: Converters.string,
   operator: Common.Convert.conditionOperator.optional(),
-  priority: Converters.number.optional()
+  priority: Converters.number.optional(),
+  scoreAsDefault: Converters.number.optional()
 });
 
 /**
@@ -73,6 +74,10 @@ export const validatedConditionDecl = Converters.generic<
           decl.priority
             ? Common.Convert.conditionPriority.convert(decl.priority)
             : succeed(qualifier.defaultPriority),
+        scoreAsDefault: () =>
+          decl.scoreAsDefault
+            ? Common.Convert.qualifierMatchScore.convert(decl.scoreAsDefault)
+            : succeed(undefined),
         index: () =>
           context.conditionIndex
             ? Common.Convert.conditionIndex.convert(context.conditionIndex)

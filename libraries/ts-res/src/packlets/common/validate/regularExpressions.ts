@@ -36,9 +36,13 @@ export const segmentedIdentifier: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(\.[a-zA-Z_
 export const identifierList: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(,[a-zA-Z_][a-zA-Z0-9_\-]*)*$/;
 
 /**
+ * Format is:
+ * <qualifierName>-[<value>][\@<priority>](<scoreAsDefault>) where operator is `matches`, or
+ * <qualifierName>-<operator>-[<value>][\@<priority>](<scoreAsDefault>)
  * @internal
  */
-export const conditionKey: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(-matches)?-\[.*\](?:@[0-9]{1,4})?$/;
+export const conditionKey: RegExp =
+  /^[a-zA-Z_][a-zA-Z0-9_\-]*(-matches)?-\[.*\](?:@[0-9]{1,4})?(?:\([01](?:\.[0-9]+)?\))?$/;
 
 /**
  * @internal

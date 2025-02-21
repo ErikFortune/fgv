@@ -28,10 +28,14 @@ import {
   ConditionOperator,
   ConditionPriority,
   QualifierConditionValue,
+  QualifierMatchScore,
   Validate
 } from '../common';
 import { Qualifier } from '../qualifiers';
 import { IValidatedConditionDecl } from './conditionDecls';
+
+// eslint-disable-next-line @rushstack/typedef-var
+const scoreFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
 
 /**
  * Represents a single condition applied to some resource instance.
@@ -42,18 +46,26 @@ export class Condition implements IValidatedConditionDecl {
    * The {@link Qualifiers.Qualifier | qualifier} used in this condition.
    */
   public readonly qualifier: Qualifier;
+
   /**
    * The value to be matched in this condition.
    */
   public readonly value: QualifierConditionValue;
+
   /**
    * The {@link ConditionOperator | operator} used when matching context value to condition value.
    */
   public readonly operator: ConditionOperator;
+
   /**
    * The {@link ConditionPriority | relative priority} of this condition.
    */
   public readonly priority: ConditionPriority;
+
+  /**
+   * The {@link QualifierMatchScore | score} to be used when this condition is the default.
+   */
+  public readonly scoreAsDefault?: QualifierMatchScore;
 
   protected _collectible: Collections.Collectible<ConditionKey, ConditionIndex>;
 
@@ -65,11 +77,19 @@ export class Condition implements IValidatedConditionDecl {
    * @param priority - The {@link ConditionPriority | relative priority} of this condition.
    * @public
    */
-  protected constructor({ qualifier, value, operator, priority, index }: IValidatedConditionDecl) {
+  protected constructor({
+    qualifier,
+    value,
+    operator,
+    priority,
+    scoreAsDefault,
+    index
+  }: IValidatedConditionDecl) {
     this.qualifier = qualifier;
     this.operator = operator;
     this.value = qualifier.type.validateCondition(value, operator).orThrow();
     this.priority = priority;
+    this.scoreAsDefault = scoreAsDefault;
     this._collectible = new Collections.Collectible({
       key: this.toKey(),
       index,
@@ -112,6 +132,7 @@ export class Condition implements IValidatedConditionDecl {
    */
   public static compare(c1: Condition, c2: Condition): number {
     let diff = c1.priority - c2.priority;
+    diff = diff === 0 ? (c1.scoreAsDefault ?? 0) - (c2.scoreAsDefault ?? 0) : diff;
     diff = diff === 0 ? c1.qualifier.name.localeCompare(c2.qualifier.name) : diff;
     diff = diff === 0 ? c1.value.localeCompare(c2.value) : diff;
     return diff;
@@ -141,10 +162,11 @@ export class Condition implements IValidatedConditionDecl {
    * @public
    */
   public static getKeyForDecl(decl: IValidatedConditionDecl): Result<ConditionKey> {
+    const scoreAsDefault = decl.scoreAsDefault ? `(${scoreFormatter.format(decl.scoreAsDefault)})` : '';
     const key =
       decl.operator === 'matches'
-        ? `${decl.qualifier.name}-[${decl.value}]@${decl.priority}`
-        : `${decl.qualifier.name}-${decl.operator}-[${decl.value}]@${decl.priority}`;
+        ? `${decl.qualifier.name}-[${decl.value}]@${decl.priority}${scoreAsDefault}`
+        : `${decl.qualifier.name}-${decl.operator}-[${decl.value}]@${decl.priority}${scoreAsDefault}`;
     return Validate.toConditionKey(key);
   }
 }

@@ -92,6 +92,25 @@ string
 </td></tr>
 <tr><td>
 
+[scoreAsDefault?](./ts-res.conditions.iconditiondecl.scoreasdefault.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
 [value](./ts-res.conditions.iconditiondecl.value.md)
 
 

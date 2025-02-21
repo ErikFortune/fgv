@@ -20,7 +20,13 @@
  * SOFTWARE.
  */
 
-import { ConditionIndex, ConditionOperator, ConditionPriority, QualifierConditionValue } from '../common';
+import {
+  ConditionIndex,
+  ConditionOperator,
+  ConditionPriority,
+  QualifierConditionValue,
+  QualifierMatchScore
+} from '../common';
 import { Qualifier } from '../qualifiers';
 
 /**
@@ -32,6 +38,7 @@ export interface IConditionDecl {
   value: string;
   operator?: ConditionOperator;
   priority?: number;
+  scoreAsDefault?: number;
 }
 
 /**
@@ -43,5 +50,6 @@ export interface IValidatedConditionDecl {
   value: QualifierConditionValue;
   operator: ConditionOperator;
   priority: ConditionPriority;
+  scoreAsDefault?: QualifierMatchScore;
   index?: ConditionIndex;
 }

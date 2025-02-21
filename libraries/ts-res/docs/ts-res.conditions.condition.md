@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)({ qualifier, value, operator, priority, index })](./ts-res.conditions.condition._constructor_.md)
+[(constructor)({ qualifier, value, operator, priority, scoreAsDefault, index })](./ts-res.conditions.condition._constructor_.md)
 
 
 </td><td>
@@ -189,6 +189,27 @@ The [relative priority](./ts-res.conditionpriority.md) of this condition.
 </td><td>
 
 The [qualifier](./ts-res.qualifiers.qualifier.md) used in this condition.
+
+
+</td></tr>
+<tr><td>
+
+[scoreAsDefault?](./ts-res.conditions.condition.scoreasdefault.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[QualifierMatchScore](./ts-res.qualifiermatchscore.md)
+
+
+</td><td>
+
+_(Optional)_ The [score](./ts-res.qualifiermatchscore.md) to be used when this condition is the default.
 
 
 </td></tr>
