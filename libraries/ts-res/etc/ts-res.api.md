@@ -897,9 +897,9 @@ interface IResourceManagerCreateParams {
 // @public
 interface IResourceTreeChildNodeDecl {
     // (undocumented)
-    readonly children: Record<string, IResourceTreeChildNodeDecl>;
+    readonly children?: Record<string, IResourceTreeChildNodeDecl>;
     // (undocumented)
-    readonly resources: Record<string, IChildResourceDecl>;
+    readonly resources?: Record<string, IChildResourceDecl>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -919,9 +919,9 @@ interface IResourceTreeRootDecl extends IResourceTreeChildNodeDecl {
     // (undocumented)
     readonly baseName?: string;
     // (undocumented)
-    readonly children: Record<string, IResourceTreeChildNodeDecl>;
+    readonly children?: Record<string, IResourceTreeChildNodeDecl>;
     // (undocumented)
-    readonly resources: Record<string, IChildResourceDecl>;
+    readonly resources?: Record<string, IChildResourceDecl>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

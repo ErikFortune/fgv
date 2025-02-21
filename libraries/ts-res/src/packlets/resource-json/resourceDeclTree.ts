@@ -45,7 +45,7 @@ export class ResourceDeclTree implements IResourceDeclContainer {
 
   protected constructor(tree: Normalized.IResourceTreeRootDecl) {
     this.tree = tree;
-    this._extract(tree, tree.baseName);
+    this._extract(tree, tree.baseName).orThrow();
   }
 
   /**
@@ -55,9 +55,12 @@ export class ResourceDeclTree implements IResourceDeclContainer {
    * @returns `Success` with the new tree if the JSON object is valid, otherwise `Failure`.
    */
   public static create(from: unknown): Result<ResourceDeclTree> {
-    return Convert.resourceTreeRootDecl.convert(from).onSuccess((decl) => {
-      return captureResult(() => new ResourceDeclTree(decl));
-    });
+    return Convert.resourceTreeRootDecl
+      .convert(from)
+      .withErrorFormat((err) => `Invalid resource tree: ${err}`)
+      .onSuccess((decl) => {
+        return captureResult(() => new ResourceDeclTree(decl));
+      });
   }
 
   /**

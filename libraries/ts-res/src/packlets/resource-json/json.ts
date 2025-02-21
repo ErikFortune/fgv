@@ -193,8 +193,8 @@ export interface ILooseResourceDecl extends IChildResourceDecl {
  * @public
  */
 export interface IResourceTreeChildNodeDecl {
-  readonly resources: Record<string, IChildResourceDecl>;
-  readonly children: Record<string, IResourceTreeChildNodeDecl>;
+  readonly resources?: Record<string, IChildResourceDecl>;
+  readonly children?: Record<string, IResourceTreeChildNodeDecl>;
 }
 
 /**
@@ -203,8 +203,8 @@ export interface IResourceTreeChildNodeDecl {
  */
 export interface IResourceTreeRootDecl extends IResourceTreeChildNodeDecl {
   readonly baseName?: string;
-  readonly resources: Record<string, IChildResourceDecl>;
-  readonly children: Record<string, IResourceTreeChildNodeDecl>;
+  readonly resources?: Record<string, IChildResourceDecl>;
+  readonly children?: Record<string, IResourceTreeChildNodeDecl>;
 }
 
 /**

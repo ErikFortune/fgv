@@ -39,6 +39,7 @@ export function mergeLooseCandidate(
   baseConditions?: Json.ILooseConditionDecl[]
 ): Result<Normalized.ILooseResourceCandidateDecl> {
   return Validate.joinResourceIds(baseName, candidate.id).onSuccess((id) => {
+    /* c8 ignore next 1 - defense in depth */
     const conditions = [...(baseConditions ?? []), ...(candidate.conditions ?? [])];
     return succeed({ ...candidate, id, conditions });
   });
@@ -55,6 +56,7 @@ export function mergeChildCandidate(
   candidate: Normalized.IChildResourceCandidateDecl,
   baseConditions?: Json.ILooseConditionDecl[]
 ): Result<Normalized.IChildResourceCandidateDecl> {
+  /* c8 ignore next 1 - defense in depth */
   const conditions = [...(baseConditions ?? []), ...(candidate.conditions ?? [])];
   return succeed({ ...candidate, conditions });
 }
@@ -74,6 +76,7 @@ export function mergeLooseResource(
 ): Result<Normalized.ILooseResourceDecl> {
   return Validate.joinResourceIds(baseName, resource.id).onSuccess((id) => {
     return mapResults(
+      /* c8 ignore next 1 - defense in depth */
       (resource.candidates ?? []).map((candidate) => mergeChildCandidate(candidate, baseConditions))
     ).onSuccess((candidates) => {
       return succeed({ ...resource, id, candidates });
@@ -98,6 +101,7 @@ export function mergeChildResource(
 ): Result<Normalized.ILooseResourceDecl> {
   return Validate.joinResourceIds(parentName, name).onSuccess((id) => {
     return mapResults(
+      /* c8 ignore next 1 - defense in depth */
       (resource.candidates ?? []).map((candidate) => mergeChildCandidate(candidate, parentConditions))
     ).onSuccess((candidates) => {
       return succeed({ ...resource, id, candidates });
