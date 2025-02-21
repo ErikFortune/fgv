@@ -45,7 +45,7 @@ export class ResourceDeclCollection implements IResourceDeclContainer {
 
   protected constructor(collection: Normalized.IResourceCollectionDecl) {
     this.collection = collection;
-    this._extract(collection);
+    this._extract(collection).orThrow();
   }
 
   /**
@@ -84,7 +84,7 @@ export class ResourceDeclCollection implements IResourceDeclContainer {
     parentConditions?: Json.ILooseConditionDecl[]
   ): Result<this> {
     const errors: MessageAggregator = new MessageAggregator();
-    return Validate.joinResourceIds(parentName, collection.baseName).onSuccess((baseName) => {
+    return Validate.joinOptionalResourceIds(parentName, collection.baseName).onSuccess((baseName) => {
       const baseConditions = [...(parentConditions ?? []), ...(collection.baseConditions ?? [])];
 
       const mergedCandidates =

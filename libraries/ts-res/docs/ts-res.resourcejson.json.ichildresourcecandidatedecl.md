@@ -9,9 +9,8 @@ Non-validated child declaration of a [resource candidate](./ts-res.resources.res
 **Signature:**
 
 ```typescript
-export interface IChildResourceCandidateDecl extends ILooseConditionDecl 
+export interface IChildResourceCandidateDecl 
 ```
-**Extends:** [ILooseConditionDecl](./ts-res.resourcejson.json.ilooseconditiondecl.md)
 
 ## Properties
 

@@ -91,7 +91,7 @@ export type ConditionSetDecl = ConditionSetDeclAsArray | ConditionSetDeclAsRecor
  * Non-validated child declaration of a {@link Resources.ResourceCandidate | resource candidate}.
  * @public
  */
-export interface IChildResourceCandidateDecl extends ILooseConditionDecl {
+export interface IChildResourceCandidateDecl {
   /**
    * The JSON value of the resource.
    */
@@ -118,7 +118,7 @@ export interface IChildResourceCandidateDecl extends ILooseConditionDecl {
  * Non-validated loose declaration of a {@link Resources.ResourceCandidate | resource candidate}.
  * @public
  */
-export interface ILooseResourceCandidateDecl {
+export interface ILooseResourceCandidateDecl extends IChildResourceCandidateDecl {
   /**
    * The {@link ResourceId | id} of the resource.
    */

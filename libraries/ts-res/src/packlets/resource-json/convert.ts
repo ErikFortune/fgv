@@ -118,7 +118,7 @@ export const looseResourceDecl: Converter<Normalized.ILooseResourceDecl> =
   Converters.strictObject<Normalized.ILooseResourceDecl>({
     id: CommonConvert.resourceId,
     resourceTypeName: CommonConvert.resourceTypeName,
-    candidates: Converters.arrayOf(looseResourceCandidateDecl).optional()
+    candidates: Converters.arrayOf(childResourceCandidateDecl).optional()
   });
 
 /**

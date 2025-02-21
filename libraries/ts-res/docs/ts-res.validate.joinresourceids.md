@@ -4,7 +4,7 @@
 
 ## Validate.joinResourceIds() function
 
-Joins a base [resource ID](./ts-res.resourceid.md) or [resource name](./ts-res.resourcename.md) with a list of additional names to create a new [resource ID](./ts-res.resourceid.md)<!-- -->.
+Joins a list of [resource ID](./ts-res.resourceid.md) or [resource name](./ts-res.resourcename.md) with to create a new [resource ID](./ts-res.resourceid.md)<!-- -->. Fails if resulting ID is invalid or empty.
 
 **Signature:**
 

@@ -477,7 +477,7 @@ interface IChildConditionDecl {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IChildResourceCandidateDecl extends ILooseConditionDecl {
+interface IChildResourceCandidateDecl {
     readonly conditions?: ConditionSetDecl;
     readonly isPartial?: boolean;
     readonly json: JsonObject;
@@ -679,7 +679,7 @@ interface ILooseConditionDecl {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface ILooseResourceCandidateDecl {
+interface ILooseResourceCandidateDecl extends IChildResourceCandidateDecl {
     readonly conditions?: ConditionSetDecl;
     readonly id: string;
     readonly isPartial?: boolean;
@@ -1048,6 +1048,9 @@ interface IValidatedQualifierDecl {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     type: QualifierType;
 }
+
+// @public
+function joinOptionalResourceIds(...ids: (string | undefined)[]): Result<ResourceId | undefined>;
 
 // @public
 function joinResourceIds(...ids: (string | undefined)[]): Result<ResourceId>;
@@ -1878,6 +1881,7 @@ declare namespace Validate {
         toResourceIndex,
         splitResourceId,
         joinResourceIds,
+        joinOptionalResourceIds,
         toResourceTypeName,
         toResourceTypeIndex
     }

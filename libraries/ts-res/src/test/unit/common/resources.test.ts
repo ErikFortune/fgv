@@ -125,12 +125,28 @@ describe('common resources', () => {
       );
     });
 
-    test('fails if base name is invalid', () => {
-      expect(TsRes.Validate.joinResourceIds('foo!', 'bar')).toFailWith(/not a valid resource/i);
+    test('fails if any part is invalid', () => {
+      expect(TsRes.Validate.joinResourceIds('foo', 'bar', 'b@z')).toFailWith(/not a valid resource/i);
+    });
+
+    test('fails if resulting id is empty', () => {
+      expect(TsRes.Validate.joinResourceIds(undefined, undefined)).toFailWith(/not a valid resource/i);
+    });
+  });
+
+  describe('joinOptionalResourceIds', () => {
+    test.each(validResourceIds)('joins %o into %s', (tc) => {
+      expect(
+        TsRes.Validate.joinOptionalResourceIds('foo', ...(tc.parts as TsRes.ResourceName[]))
+      ).toSucceedWith(`foo.${tc.id}` as TsRes.ResourceId);
     });
 
     test('fails if any part is invalid', () => {
-      expect(TsRes.Validate.joinResourceIds('foo', 'bar', 'b@z')).toFailWith(/not a valid resource/i);
+      expect(TsRes.Validate.joinOptionalResourceIds('foo', 'bar', 'b@z')).toFailWith(/not a valid resource/i);
+    });
+
+    test('returns undefined if resulting id is empty', () => {
+      expect(TsRes.Validate.joinOptionalResourceIds(undefined, undefined)).toSucceedWith(undefined);
     });
   });
 });
