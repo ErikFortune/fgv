@@ -9,8 +9,9 @@ Normalized non-validated declaration of a [resource](./ts-res.resources.resource
 **Signature:**
 
 ```typescript
-export interface IResourceTreeRootDecl 
+export interface IResourceTreeRootDecl extends IResourceTreeChildNodeDecl 
 ```
+**Extends:** IResourceTreeChildNodeDecl
 
 ## Properties
 
@@ -58,7 +59,7 @@ _(Optional)_
 </td></tr>
 <tr><td>
 
-[children](./ts-res.resourcejson.normalized.iresourcetreerootdecl.children.md)
+[children?](./ts-res.resourcejson.normalized.iresourcetreerootdecl.children.md)
 
 
 </td><td>
@@ -68,10 +69,33 @@ _(Optional)_
 
 </td><td>
 
-Record&lt;string, IChildResourceDecl \| IResourceTreeChildNodeDecl&gt;
+Record&lt;string, IResourceTreeChildNodeDecl&gt;
 
 
 </td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[resources?](./ts-res.resourcejson.normalized.iresourcetreerootdecl.resources.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Record&lt;string, IChildResourceDecl&gt;
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>

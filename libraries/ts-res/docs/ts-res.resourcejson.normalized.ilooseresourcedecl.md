@@ -9,8 +9,9 @@ Normalized non-validated loose declaration of a [resource](./ts-res.resources.re
 **Signature:**
 
 ```typescript
-export interface ILooseResourceDecl 
+export interface ILooseResourceDecl extends IChildResourceDecl 
 ```
+**Extends:** IChildResourceDecl
 
 ## Properties
 

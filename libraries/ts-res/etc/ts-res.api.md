@@ -436,7 +436,8 @@ declare namespace Helpers {
     export {
         mergeLooseCandidate,
         mergeChildCandidate,
-        mergeLooseResource
+        mergeLooseResource,
+        mergeChildResource
     }
 }
 
@@ -476,7 +477,7 @@ interface IChildConditionDecl {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IChildResourceCandidateDecl {
+interface IChildResourceCandidateDecl extends ILooseConditionDecl {
     readonly conditions?: ConditionSetDecl;
     readonly isPartial?: boolean;
     readonly json: JsonObject;
@@ -690,7 +691,7 @@ interface ILooseResourceCandidateDecl {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface ILooseResourceCandidateDecl_2 {
+interface ILooseResourceCandidateDecl_2 extends IChildResourceCandidateDecl_2 {
     readonly conditions?: ConditionSetDecl_2;
     readonly id: string;
     readonly isPartial?: boolean;
@@ -702,7 +703,7 @@ interface ILooseResourceCandidateDecl_2 {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface ILooseResourceDecl {
+interface ILooseResourceDecl extends IChildResourceDecl {
     readonly candidates?: ReadonlyArray<IChildResourceCandidateDecl>;
     readonly id: string;
     readonly resourceTypeName: string;
@@ -711,7 +712,7 @@ interface ILooseResourceDecl {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface ILooseResourceDecl_2 {
+interface ILooseResourceDecl_2 extends IChildResourceDecl_2 {
     readonly candidates?: ReadonlyArray<IChildResourceCandidateDecl_2>;
     readonly id: string;
     readonly resourceTypeName: string;
@@ -896,7 +897,9 @@ interface IResourceManagerCreateParams {
 // @public
 interface IResourceTreeChildNodeDecl {
     // (undocumented)
-    [key: string]: IChildResourceDecl | IResourceTreeChildNodeDecl;
+    readonly children: Record<string, IResourceTreeChildNodeDecl>;
+    // (undocumented)
+    readonly resources: Record<string, IChildResourceDecl>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -904,27 +907,33 @@ interface IResourceTreeChildNodeDecl {
 // @public
 interface IResourceTreeChildNodeDecl_2 {
     // (undocumented)
-    [key: string]: IChildResourceDecl_2 | IResourceTreeChildNodeDecl_2;
+    readonly children?: Record<string, IResourceTreeChildNodeDecl_2>;
+    // (undocumented)
+    readonly resources?: Record<string, IChildResourceDecl_2>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IResourceTreeRootDecl {
+interface IResourceTreeRootDecl extends IResourceTreeChildNodeDecl {
     // (undocumented)
     readonly baseName?: string;
     // (undocumented)
-    readonly children: Record<string, IChildResourceDecl | IResourceTreeChildNodeDecl>;
+    readonly children: Record<string, IResourceTreeChildNodeDecl>;
+    // (undocumented)
+    readonly resources: Record<string, IChildResourceDecl>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IResourceTreeRootDecl_2 {
+interface IResourceTreeRootDecl_2 extends IResourceTreeChildNodeDecl_2 {
     // (undocumented)
     readonly baseName?: string;
     // (undocumented)
-    readonly children: Record<string, IChildResourceDecl_2 | IResourceTreeChildNodeDecl_2>;
+    readonly children?: Record<string, IResourceTreeChildNodeDecl_2>;
+    // (undocumented)
+    readonly resources?: Record<string, IChildResourceDecl_2>;
 }
 
 // @public
@@ -1050,10 +1059,10 @@ declare namespace Json {
         ConditionSetDeclAsArray,
         ConditionSetDeclAsRecord,
         ConditionSetDecl,
-        ILooseResourceCandidateDecl,
         IChildResourceCandidateDecl,
-        ILooseResourceDecl,
+        ILooseResourceCandidateDecl,
         IChildResourceDecl,
+        ILooseResourceDecl,
         IResourceTreeChildNodeDecl,
         IResourceTreeRootDecl,
         IResourceCollectionDecl
@@ -1160,6 +1169,9 @@ export const MaxConditionPriority: ConditionPriority;
 function mergeChildCandidate(candidate: Normalized.IChildResourceCandidateDecl, baseConditions?: Json.ILooseConditionDecl[]): Result<Normalized.IChildResourceCandidateDecl>;
 
 // @public
+function mergeChildResource(resource: Normalized.IChildResourceDecl, name: string, parentName?: string, parentConditions?: Json.ILooseConditionDecl[]): Result<Normalized.ILooseResourceDecl>;
+
+// @public
 function mergeLooseCandidate(candidate: Normalized.ILooseResourceCandidateDecl, baseName?: string, baseConditions?: Json.ILooseConditionDecl[]): Result<Normalized.ILooseResourceCandidateDecl>;
 
 // @public
@@ -1174,10 +1186,10 @@ export const NoMatch: QualifierMatchScore;
 declare namespace Normalized {
     export {
         ConditionSetDecl_2 as ConditionSetDecl,
-        ILooseResourceCandidateDecl_2 as ILooseResourceCandidateDecl,
         IChildResourceCandidateDecl_2 as IChildResourceCandidateDecl,
-        ILooseResourceDecl_2 as ILooseResourceDecl,
+        ILooseResourceCandidateDecl_2 as ILooseResourceCandidateDecl,
         IChildResourceDecl_2 as IChildResourceDecl,
+        ILooseResourceDecl_2 as ILooseResourceDecl,
         IResourceTreeChildNodeDecl_2 as IResourceTreeChildNodeDecl,
         IResourceTreeRootDecl_2 as IResourceTreeRootDecl,
         IResourceCollectionDecl_2 as IResourceCollectionDecl
@@ -1538,6 +1550,26 @@ class ResourceDeclCollection implements IResourceDeclContainer {
     protected _resources: Normalized.ILooseResourceDecl[];
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ResourceDeclTree implements IResourceDeclContainer {
+    protected constructor(tree: Normalized.IResourceTreeRootDecl);
+    // (undocumented)
+    protected _candidates: Normalized.ILooseResourceCandidateDecl[];
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(from: unknown): Result<ResourceDeclTree>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getLooseCandidates(): ReadonlyArray<Normalized.ILooseResourceCandidateDecl>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getLooseResources(): ReadonlyArray<Normalized.ILooseResourceDecl>;
+    // (undocumented)
+    protected _resources: Normalized.ILooseResourceDecl[];
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly tree: Normalized.IResourceTreeRootDecl;
+}
+
 // @public
 export type ResourceId = Brand<string, 'ResourceId'>;
 
@@ -1557,7 +1589,8 @@ declare namespace ResourceJson {
         Json,
         Normalized,
         IResourceDeclContainer,
-        ResourceDeclCollection
+        ResourceDeclCollection,
+        ResourceDeclTree
     }
 }
 export { ResourceJson }

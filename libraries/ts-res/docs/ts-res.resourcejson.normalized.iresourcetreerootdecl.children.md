@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly children: Record<string, IChildResourceDecl | IResourceTreeChildNodeDecl>;
+readonly children?: Record<string, IResourceTreeChildNodeDecl>;
 ```

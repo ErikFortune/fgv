@@ -144,12 +144,10 @@ export const resourceTreeChildNodeDecl: Converter<Normalized.IResourceTreeChildN
     self: Converter<Normalized.IResourceTreeChildNodeDecl, unknown>,
     context?: unknown
   ): Result<Normalized.IResourceTreeChildNodeDecl> => {
-    return Converters.recordOf(
-      Converters.oneOf<Normalized.IChildResourceDecl | Normalized.IResourceTreeChildNodeDecl>([
-        childResourceDecl,
-        self
-      ])
-    ).convert(from, context);
+    return Converters.strictObject<Normalized.IResourceTreeChildNodeDecl>({
+      resources: Converters.recordOf(childResourceDecl).optional(),
+      children: Converters.recordOf(self).optional()
+    }).convert(from, context);
   }
 );
 
@@ -160,12 +158,8 @@ export const resourceTreeChildNodeDecl: Converter<Normalized.IResourceTreeChildN
 export const resourceTreeRootDecl: Converter<Normalized.IResourceTreeRootDecl> =
   Converters.strictObject<Normalized.IResourceTreeRootDecl>({
     baseName: CommonConvert.resourceId.optional(),
-    children: Converters.recordOf(
-      Converters.oneOf<Normalized.IChildResourceDecl | Normalized.IResourceTreeChildNodeDecl>([
-        childResourceDecl,
-        resourceTreeChildNodeDecl
-      ])
-    )
+    resources: Converters.recordOf(childResourceDecl).optional(),
+    children: Converters.recordOf(resourceTreeChildNodeDecl).optional()
   });
 
 /**

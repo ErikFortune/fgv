@@ -29,3 +29,4 @@ export { Convert, Helpers, Json, Normalized };
 
 export * from './resourceDeclContainer';
 export * from './resourceDeclCollection';
+export * from './resourceDeclTree';

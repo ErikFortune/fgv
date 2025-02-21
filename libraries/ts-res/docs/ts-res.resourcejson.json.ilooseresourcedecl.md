@@ -9,8 +9,9 @@ Non-validated loose declaration of a [resource](./ts-res.resources.resource.md)<
 **Signature:**
 
 ```typescript
-export interface ILooseResourceDecl 
+export interface ILooseResourceDecl extends IChildResourceDecl 
 ```
+**Extends:** [IChildResourceDecl](./ts-res.resourcejson.json.ichildresourcedecl.md)
 
 ## Properties
 

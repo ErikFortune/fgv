@@ -101,7 +101,7 @@ Non-validated declaration of a collection of resources.
 
 </td><td>
 
-Non-validated declaration of a [resource](./ts-res.resources.resource.md) tree node.
+Normalized non-validated declaration of a [resource](./ts-res.resources.resource.md) tree node.
 
 
 </td></tr>
@@ -112,7 +112,7 @@ Non-validated declaration of a [resource](./ts-res.resources.resource.md) tree n
 
 </td><td>
 
-Non-validated declaration of a [resource](./ts-res.resources.resource.md) tree root.
+Normalized non-validated declaration of a [resource](./ts-res.resources.resource.md) tree root.
 
 
 </td></tr>

@@ -4,13 +4,14 @@
 
 ## ResourceJson.Json.IResourceTreeRootDecl interface
 
-Non-validated declaration of a [resource](./ts-res.resources.resource.md) tree root.
+Normalized non-validated declaration of a [resource](./ts-res.resources.resource.md) tree root.
 
 **Signature:**
 
 ```typescript
-export interface IResourceTreeRootDecl 
+export interface IResourceTreeRootDecl extends IResourceTreeChildNodeDecl 
 ```
+**Extends:** [IResourceTreeChildNodeDecl](./ts-res.resourcejson.json.iresourcetreechildnodedecl.md)
 
 ## Properties
 
@@ -68,7 +69,26 @@ _(Optional)_
 
 </td><td>
 
-Record&lt;string, [IChildResourceDecl](./ts-res.resourcejson.json.ichildresourcedecl.md) \| [IResourceTreeChildNodeDecl](./ts-res.resourcejson.json.iresourcetreechildnodedecl.md)<!-- -->&gt;
+Record&lt;string, [IResourceTreeChildNodeDecl](./ts-res.resourcejson.json.iresourcetreechildnodedecl.md)<!-- -->&gt;
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[resources](./ts-res.resourcejson.json.iresourcetreerootdecl.resources.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Record&lt;string, [IChildResourceDecl](./ts-res.resourcejson.json.ichildresourcedecl.md)<!-- -->&gt;
 
 
 </td><td>

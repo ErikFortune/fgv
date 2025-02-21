@@ -88,6 +88,33 @@ export type ConditionSetDeclAsRecord = Record<string, string | IChildConditionDe
 export type ConditionSetDecl = ConditionSetDeclAsArray | ConditionSetDeclAsRecord;
 
 /**
+ * Non-validated child declaration of a {@link Resources.ResourceCandidate | resource candidate}.
+ * @public
+ */
+export interface IChildResourceCandidateDecl extends ILooseConditionDecl {
+  /**
+   * The JSON value of the resource.
+   */
+  readonly json: JsonObject;
+
+  /**
+   * The conditions that must be met for the resource to be selected.
+   */
+  readonly conditions?: ConditionSetDecl;
+
+  /**
+   * If true, the resource is only a partial representation of the full resource.
+   */
+  readonly isPartial?: boolean;
+
+  /**
+   * The merge method to be used when merging the resource into the existing resource.
+   * default is 'augment'.
+   */
+  readonly mergeMethod?: ResourceValueMergeMethod;
+}
+
+/**
  * Non-validated loose declaration of a {@link Resources.ResourceCandidate | resource candidate}.
  * @public
  */
@@ -125,37 +152,26 @@ export interface ILooseResourceCandidateDecl {
 }
 
 /**
- * Non-validated child declaration of a {@link Resources.ResourceCandidate | resource candidate}.
+ * Non-validated child declaration of a {@link Resources.Resource | resource}.
  * @public
  */
-export interface IChildResourceCandidateDecl {
+export interface IChildResourceDecl {
   /**
-   * The JSON value of the resource.
+   * The name of the type of this resource.
    */
-  readonly json: JsonObject;
+  readonly resourceTypeName: string;
 
   /**
-   * The conditions that must be met for the resource to be selected.
+   * Possible candidates for this value.
    */
-  readonly conditions?: ConditionSetDecl;
-
-  /**
-   * If true, the resource is only a partial representation of the full resource.
-   */
-  readonly isPartial?: boolean;
-
-  /**
-   * The merge method to be used when merging the resource into the existing resource.
-   * default is 'augment'.
-   */
-  readonly mergeMethod?: ResourceValueMergeMethod;
+  readonly candidates?: ReadonlyArray<IChildResourceCandidateDecl>;
 }
 
 /**
  * Non-validated loose declaration of a {@link Resources.Resource | resource}.
  * @public
  */
-export interface ILooseResourceDecl {
+export interface ILooseResourceDecl extends IChildResourceDecl {
   /**
    * The id of the resource.
    */
@@ -173,36 +189,22 @@ export interface ILooseResourceDecl {
 }
 
 /**
- * Non-validated child declaration of a {@link Resources.Resource | resource}.
- * @public
- */
-export interface IChildResourceDecl {
-  /**
-   * The name of the type of this resource.
-   */
-  readonly resourceTypeName: string;
-
-  /**
-   * Possible candidates for this value.
-   */
-  readonly candidates?: ReadonlyArray<IChildResourceCandidateDecl>;
-}
-
-/**
- * Non-validated declaration of a {@link Resources.Resource | resource} tree node.
+ * Normalized non-validated declaration of a {@link Resources.Resource | resource} tree node.
  * @public
  */
 export interface IResourceTreeChildNodeDecl {
-  [key: string]: IChildResourceDecl | IResourceTreeChildNodeDecl;
+  readonly resources: Record<string, IChildResourceDecl>;
+  readonly children: Record<string, IResourceTreeChildNodeDecl>;
 }
 
 /**
- * Non-validated declaration of a {@link Resources.Resource | resource} tree root.
+ * Normalized non-validated declaration of a {@link Resources.Resource | resource} tree root.
  * @public
  */
-export interface IResourceTreeRootDecl {
+export interface IResourceTreeRootDecl extends IResourceTreeChildNodeDecl {
   readonly baseName?: string;
-  readonly children: Record<string, IChildResourceDecl | IResourceTreeChildNodeDecl>;
+  readonly resources: Record<string, IChildResourceDecl>;
+  readonly children: Record<string, IResourceTreeChildNodeDecl>;
 }
 
 /**

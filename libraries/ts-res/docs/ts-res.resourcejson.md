@@ -28,6 +28,17 @@ Class that extracts resources and candidates from a [resource collection declara
 
 
 </td></tr>
+<tr><td>
+
+[ResourceDeclTree](./ts-res.resourcejson.resourcedecltree.md)
+
+
+</td><td>
+
+Class that extracts resources and candidates from a [resource tree root](./ts-res.resourcejson.json.iresourcetreerootdecl.md)<!-- -->.
+
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces

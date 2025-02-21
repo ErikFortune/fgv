@@ -200,7 +200,7 @@ describe('ResourceJson', () => {
       expect(
         TsRes.ResourceJson.Convert.resourceTreeRootDecl.convert({
           baseName: 'some',
-          children: {
+          resources: {
             resource1: {
               resourceTypeName: 'type1',
               candidates: [
@@ -209,9 +209,11 @@ describe('ResourceJson', () => {
                   conditions: { someQualifier: 'someValue' }
                 }
               ]
-            },
+            }
+          },
+          children: {
             child1: {
-              children: {
+              resources: {
                 resource2: {
                   resourceTypeName: 'type3',
                   candidates: [
@@ -227,7 +229,7 @@ describe('ResourceJson', () => {
         })
       ).toSucceedWith({
         baseName: 'some',
-        children: {
+        resources: {
           resource1: {
             resourceTypeName: 'type1',
             candidates: [
@@ -241,9 +243,11 @@ describe('ResourceJson', () => {
                 ]
               }
             ]
-          },
+          }
+        },
+        children: {
           child1: {
-            children: {
+            resources: {
               resource2: {
                 resourceTypeName: 'type3',
                 candidates: [

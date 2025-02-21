@@ -4,10 +4,73 @@
 
 ## ResourceJson.Json.IResourceTreeChildNodeDecl interface
 
-Non-validated declaration of a [resource](./ts-res.resources.resource.md) tree node.
+Normalized non-validated declaration of a [resource](./ts-res.resources.resource.md) tree node.
 
 **Signature:**
 
 ```typescript
 export interface IResourceTreeChildNodeDecl 
 ```
+
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[children](./ts-res.resourcejson.json.iresourcetreechildnodedecl.children.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Record&lt;string, [IResourceTreeChildNodeDecl](./ts-res.resourcejson.json.iresourcetreechildnodedecl.md)<!-- -->&gt;
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[resources](./ts-res.resourcejson.json.iresourcetreechildnodedecl.resources.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Record&lt;string, [IChildResourceDecl](./ts-res.resourcejson.json.ichildresourcedecl.md)<!-- -->&gt;
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

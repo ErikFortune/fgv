@@ -30,6 +30,17 @@ Helper method to merge a child candidate with base conditions.
 </td></tr>
 <tr><td>
 
+[mergeChildResource(resource, name, parentName, parentConditions)](./ts-res.resourcejson.helpers.mergechildresource.md)
+
+
+</td><td>
+
+Helper method to merge a child resource with a parent name and conditions.
+
+
+</td></tr>
+<tr><td>
+
 [mergeLooseCandidate(candidate, baseName, baseConditions)](./ts-res.resourcejson.helpers.mergeloosecandidate.md)
 
 

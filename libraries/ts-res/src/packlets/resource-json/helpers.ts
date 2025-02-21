@@ -80,3 +80,27 @@ export function mergeLooseResource(
     });
   });
 }
+
+/**
+ * Helper method to merge a child resource with a parent name and conditions.
+ * @param resource - The resource to merge.
+ * @param name - The name of the resource.
+ * @param parentName - The name of the parent resource.
+ * @param parentConditions - The conditions of the parent resource.
+ * @returns `Success` with the merged resource if successful, otherwise `Failure`.
+ * @public
+ */
+export function mergeChildResource(
+  resource: Normalized.IChildResourceDecl,
+  name: string,
+  parentName?: string,
+  parentConditions?: Json.ILooseConditionDecl[]
+): Result<Normalized.ILooseResourceDecl> {
+  return Validate.joinResourceIds(parentName, name).onSuccess((id) => {
+    return mapResults(
+      (resource.candidates ?? []).map((candidate) => mergeChildCandidate(candidate, parentConditions))
+    ).onSuccess((candidates) => {
+      return succeed({ ...resource, id, candidates });
+    });
+  });
+}
