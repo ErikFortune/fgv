@@ -251,6 +251,77 @@ importers:
       ts-node: 10.9.2_7476ce417acf706afa6b157e91a92051
       typescript: 5.7.3
 
+  ../../libraries/ts-res:
+    specifiers:
+      '@fgv/ts-bcp47': workspace:*
+      '@fgv/ts-extras': workspace:*
+      '@fgv/ts-json': workspace:*
+      '@fgv/ts-json-base': workspace:*
+      '@fgv/ts-utils': workspace:*
+      '@fgv/ts-utils-jest': workspace:*
+      '@microsoft/api-documenter': ^7.26.5
+      '@microsoft/api-extractor': ^7.49.1
+      '@rushstack/eslint-config': ~3.7.0
+      '@rushstack/heft': ~0.68.13
+      '@rushstack/heft-jest-plugin': ~0.14.3
+      '@rushstack/heft-node-rig': ~2.6.49
+      '@types/heft-jest': 1.0.6
+      '@types/jest': ^29.5.14
+      '@types/luxon': ^3.4.2
+      '@types/node': ^20.14.9
+      '@typescript-eslint/eslint-plugin': ^7.14.1
+      '@typescript-eslint/parser': ^7.14.1
+      eslint: ^8.57.0
+      eslint-config-prettier: ^9.1.0
+      eslint-plugin-import: ^2.31.0
+      eslint-plugin-n: ^16.6.2
+      eslint-plugin-node: ^11.1.0
+      eslint-plugin-prettier: ^5.2.1
+      eslint-plugin-promise: ^6.2.0
+      eslint-plugin-tsdoc: ~0.4.0
+      jest: ^29.7.0
+      luxon: ^3.5.0
+      prettier: ^3.4.2
+      rimraf: ^5.0.7
+      ts-jest: ^29.2.5
+      ts-node: ^10.9.2
+      typescript: ^5.7.3
+    dependencies:
+      luxon: 3.5.0
+    devDependencies:
+      '@fgv/ts-bcp47': link:../ts-bcp47
+      '@fgv/ts-extras': link:../ts-extras
+      '@fgv/ts-json': link:../ts-json
+      '@fgv/ts-json-base': link:../ts-json-base
+      '@fgv/ts-utils': link:../ts-utils
+      '@fgv/ts-utils-jest': link:../ts-utils-jest
+      '@microsoft/api-documenter': 7.26.5_@types+node@20.14.9
+      '@microsoft/api-extractor': 7.49.1_@types+node@20.14.9
+      '@rushstack/eslint-config': 3.7.0_eslint@8.57.0+typescript@5.7.3
+      '@rushstack/heft': 0.68.13_@types+node@20.14.9
+      '@rushstack/heft-jest-plugin': 0.14.3_352e5981973e698d8bead9c14ee6bca0
+      '@rushstack/heft-node-rig': 2.6.49_352e5981973e698d8bead9c14ee6bca0
+      '@types/heft-jest': 1.0.6
+      '@types/jest': 29.5.14
+      '@types/luxon': 3.4.2
+      '@types/node': 20.14.9
+      '@typescript-eslint/eslint-plugin': 7.14.1_b7b8d9606e80ca0751f3a0dd6b8c2577
+      '@typescript-eslint/parser': 7.14.1_eslint@8.57.0+typescript@5.7.3
+      eslint: 8.57.0
+      eslint-config-prettier: 9.1.0_eslint@8.57.0
+      eslint-plugin-import: 2.31.0_eslint@8.57.0
+      eslint-plugin-n: 16.6.2_eslint@8.57.0
+      eslint-plugin-node: 11.1.0_eslint@8.57.0
+      eslint-plugin-prettier: 5.2.1_f54954a14dfcb1958da38e0a8ac246d8
+      eslint-plugin-promise: 6.2.0_eslint@8.57.0
+      eslint-plugin-tsdoc: 0.4.0
+      jest: 29.7.0_23bb02697db7861e6a9a42bfeb194099
+      prettier: 3.4.2
+      rimraf: 5.0.7
+      ts-jest: 29.2.5_jest@29.7.0+typescript@5.7.3
+      ts-node: 10.9.2_7476ce417acf706afa6b157e91a92051
+      typescript: 5.7.3
+
   ../../libraries/ts-sudoku-lib:
     specifiers:
       '@fgv/ts-json-base': workspace:*

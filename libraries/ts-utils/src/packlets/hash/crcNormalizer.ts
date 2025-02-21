@@ -74,6 +74,6 @@ export class Crc32Normalizer extends HashingNormalizer {
   }
 
   public static crc32Hash(parts: string[]): string {
-    return String(crc32(textEncoder.encode(parts.join('|'))));
+    return crc32(textEncoder.encode(parts.join('|'))).toString(16);
   }
 }
