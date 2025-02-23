@@ -46,6 +46,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Import](./ts-res.import.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Qualifiers](./ts-res.qualifiers.md)
 
 

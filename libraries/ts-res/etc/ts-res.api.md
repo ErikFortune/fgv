@@ -195,7 +195,7 @@ const conditionPriority: Converter<ConditionPriority, unknown>;
 
 declare namespace Conditions {
     export {
-        Convert_4 as Convert,
+        Convert_2 as Convert,
         Condition,
         IConditionCollectorCreateParams,
         ConditionCollector,
@@ -338,23 +338,6 @@ export { Convert }
 
 declare namespace Convert_2 {
     export {
-        IQualifierTypeConvertContext,
-        qualifierType
-    }
-}
-
-declare namespace Convert_3 {
-    export {
-        qualifierDecl,
-        IQualifierDeclConvertContext,
-        validatedQualifierDecl,
-        IQualifierConvertContext,
-        qualifier
-    }
-}
-
-declare namespace Convert_4 {
-    export {
         conditionDecl,
         IConditionDeclConvertContext,
         validatedConditionDecl,
@@ -364,7 +347,7 @@ declare namespace Convert_4 {
     }
 }
 
-declare namespace Convert_5 {
+declare namespace Convert_3 {
     export {
         looseConditionDecl,
         childConditionDecl,
@@ -376,6 +359,23 @@ declare namespace Convert_5 {
         resourceTreeChildNodeDecl,
         resourceTreeRootDecl,
         resourceCollectionDecl
+    }
+}
+
+declare namespace Convert_4 {
+    export {
+        IQualifierTypeConvertContext,
+        qualifierType
+    }
+}
+
+declare namespace Convert_5 {
+    export {
+        qualifierDecl,
+        IQualifierDeclConvertContext,
+        validatedQualifierDecl,
+        IQualifierConvertContext,
+        qualifier
     }
 }
 
@@ -639,6 +639,48 @@ const identifier: RegExp;
 // @internal (undocumented)
 const identifierList: RegExp;
 
+// @public
+interface IImportable<T extends ImportableType = ImportableType> {
+    // (undocumented)
+    type: T;
+}
+
+// @public
+interface IImportableFile extends IImportable<'file'> {
+    // (undocumented)
+    context?: IImportContext;
+    // (undocumented)
+    path: string;
+    // (undocumented)
+    type: 'file';
+}
+
+// @public
+interface IImportableResourceCollection extends IImportable<'resourceCollection'> {
+    // (undocumented)
+    collection: ResourceJson.Json.IResourceCollectionDecl;
+    // (undocumented)
+    context?: IImportContext;
+    // (undocumented)
+    type: 'resourceCollection';
+}
+
+// @public
+interface IImportableResourceTree extends IImportable<'resourceTree'> {
+    // (undocumented)
+    context?: IImportContext;
+    // (undocumented)
+    tree: ResourceJson.Json.IResourceTreeRootDecl;
+    // (undocumented)
+    type: 'resourceTree';
+}
+
+// @public
+interface IImportContext {
+    readonly baseId?: ResourceId;
+    readonly conditions: IConditionDecl[];
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -719,6 +761,48 @@ interface ILooseResourceDecl_2 extends IChildResourceDecl_2 {
     readonly candidates?: ReadonlyArray<IChildResourceCandidateDecl_2>;
     readonly id: string;
     readonly resourceTypeName: string;
+}
+
+declare namespace Import {
+    export {
+        IImportContext,
+        ImportContext,
+        ImportableType,
+        IImportable,
+        IImportableFile,
+        IImportableResourceCollection,
+        IImportableResourceTree,
+        Importable
+    }
+}
+export { Import }
+
+// @public
+type Importable = IImportableFile | IImportableResourceCollection | IImportableResourceTree;
+
+// @public
+type ImportableType = 'file' | 'resourceCollection' | 'resourceTree' | 'json';
+
+// @public
+class ImportContext implements IImportContext {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(baseId?: string, conditions?: IConditionDecl[]);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly baseId: ResourceId | undefined;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly conditions: IConditionDecl[];
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(baseName?: string, conditions?: IConditionDecl[]): Result<ImportContext>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    withConditions(conditions: IConditionDecl[]): Result<ImportContext>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    withName(...names: string[]): Result<ImportContext>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1285,7 +1369,7 @@ const qualifierName: Converter<QualifierName, unknown>;
 
 declare namespace Qualifiers {
     export {
-        Convert_3 as Convert,
+        Convert_5 as Convert,
         Qualifier,
         IQualifierDecl,
         IValidatedQualifierDecl,
@@ -1391,7 +1475,7 @@ const qualifierTypeName: Converter<QualifierTypeName, unknown>;
 
 declare namespace QualifierTypes {
     export {
-        Convert_2 as Convert,
+        Convert_4 as Convert,
         IQualifierType,
         IQualifierTypeCreateParams,
         QualifierType,
@@ -1592,7 +1676,7 @@ const resourceIndex: Converter<ResourceIndex, unknown>;
 
 declare namespace ResourceJson {
     export {
-        Convert_5 as Convert,
+        Convert_3 as Convert,
         Helpers,
         Json,
         Normalized,
