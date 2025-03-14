@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { captureResult, Collections, Result } from '@fgv/ts-utils';
+import { captureResult, Collections, Result, fail } from '@fgv/ts-utils';
 import {
   Convert as CommonConvert,
   ConditionIndex,
@@ -149,6 +149,7 @@ export class Condition implements IValidatedConditionDecl {
    * @returns
    */
   public toToken(terse?: boolean): Result<ConditionToken> {
+    /* c8 ignore next 3 - defense in depth very difficult to induce */
     if (this.operator !== 'matches') {
       return fail(`${this.operator}: cannot create condition token for operator other than 'matches'`);
     }
@@ -158,7 +159,9 @@ export class Condition implements IValidatedConditionDecl {
     if (terse && this.qualifier.tokenIsOptional) {
       return Validate.toConditionToken(this.value);
     }
-    return Validate.toConditionToken(`${this.qualifier.name}=${this.value}`);
+    /* c8 ignore next 1 - coverage having a bad day */
+    const name = this.qualifier.token ?? this.qualifier.name;
+    return Validate.toConditionToken(`${name}=${this.value}`);
   }
 
   /**

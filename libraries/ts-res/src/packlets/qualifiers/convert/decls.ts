@@ -34,7 +34,9 @@ import { ReadOnlyQualifierTypeCollector } from '../../qualifier-types';
 export const qualifierDecl = Converters.strictObject<IQualifierDecl>({
   name: Converters.string,
   typeName: Converters.string,
-  defaultPriority: Converters.number
+  defaultPriority: Converters.number,
+  token: Converters.string.optional(),
+  tokenIsOptional: Converters.boolean.optional()
 });
 
 /**

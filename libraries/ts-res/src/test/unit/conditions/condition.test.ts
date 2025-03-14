@@ -39,7 +39,13 @@ describe('Condition', () => {
     }).orThrow();
 
     const qualifierDecls: TsRes.Qualifiers.IQualifierDecl[] = [
-      { name: 'homeTerritory', typeName: 'territory', defaultPriority: 800 },
+      {
+        name: 'homeTerritory',
+        typeName: 'territory',
+        defaultPriority: 800,
+        token: 'home',
+        tokenIsOptional: true
+      },
       { name: 'currentTerritory', typeName: 'territory', defaultPriority: 700 },
       { name: 'language', typeName: 'language', defaultPriority: 600 },
       { name: 'some_thing', typeName: 'literal', defaultPriority: 500 },
@@ -70,6 +76,8 @@ describe('Condition', () => {
         expect(c.scoreAsDefault).toBeUndefined();
         expect(c.key).toBe('homeTerritory-[CA]@800');
         expect(c.toString()).toBe('homeTerritory-[CA]@800');
+        expect(c.toToken()).toSucceedWith('home=CA' as TsRes.ConditionToken);
+        expect(c.toToken(true)).toSucceedWith('CA' as TsRes.ConditionToken);
       });
     });
 
@@ -93,6 +101,79 @@ describe('Condition', () => {
         expect(c.key).toBe('homeTerritory-[CA]@800(0.5)');
         expect(c.toString()).toBe('homeTerritory-[CA]@800(0.5)');
       });
+    });
+  });
+
+  describe('toToken method', () => {
+    test('uses qualifier token if present instead of name', () => {
+      const decl = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'homeTerritory',
+            value: 'CA'
+          },
+          { qualifiers }
+        )
+        .orThrow();
+      const condition = TsRes.Conditions.Condition.create(decl).orThrow();
+      expect(condition.toToken()).toSucceedWith('home=CA' as TsRes.ConditionToken);
+    });
+
+    test('uses qualifier name if token is not present', () => {
+      const decl = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'currentTerritory',
+            value: 'CA'
+          },
+          { qualifiers }
+        )
+        .orThrow();
+      const condition = TsRes.Conditions.Condition.create(decl).orThrow();
+      expect(condition.toToken()).toSucceedWith('currentTerritory=CA' as TsRes.ConditionToken);
+    });
+
+    test('omits qualifier name if terse is true and token is optional', () => {
+      const decl = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'homeTerritory',
+            value: 'CA'
+          },
+          { qualifiers }
+        )
+        .orThrow();
+      const condition = TsRes.Conditions.Condition.create(decl).orThrow();
+      expect(condition.toToken(true)).toSucceedWith('CA' as TsRes.ConditionToken);
+    });
+
+    test('does not omit qualifier name if terse is true and token is not optional', () => {
+      const decl = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'currentTerritory',
+            value: 'CA'
+          },
+          { qualifiers }
+        )
+        .orThrow();
+      const condition = TsRes.Conditions.Condition.create(decl).orThrow();
+      expect(condition.toToken(true)).toSucceedWith('currentTerritory=CA' as TsRes.ConditionToken);
+    });
+
+    test('fails if the priority is not the default', () => {
+      const decl = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'homeTerritory',
+            value: 'CA',
+            priority: 700
+          },
+          { qualifiers }
+        )
+        .orThrow();
+      const condition = TsRes.Conditions.Condition.create(decl).orThrow();
+      expect(condition.toToken()).toFailWith(/cannot create condition token for non-default priority/i);
     });
   });
 
