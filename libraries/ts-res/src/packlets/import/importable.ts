@@ -20,55 +20,75 @@
  * SOFTWARE.
  */
 
+import { JsonValue } from '@fgv/ts-json-base';
 import * as ResourceJson from '../resource-json';
-import { IImportContext } from './importContext';
-
-/**
- * Type of importable entities.
- * @public
- */
-export type ImportableType = 'file' | 'resourceCollection' | 'resourceTree' | 'json';
+import { ImportContext } from './importContext';
 
 /**
  * Base interface for importable entities.
  * @public
  */
-export interface IImportable<T extends ImportableType = ImportableType> {
-  type: T;
+export interface IImportable {
+  type: string;
+  context?: ImportContext;
 }
 
 /**
- * Interface for importable files.
+ * Represents a filesystem path to be imported.
  * @public
  */
-export interface IImportableFile extends IImportable<'file'> {
-  type: 'file';
+export interface IImportablePath extends IImportable {
+  type: 'path';
   path: string;
-  context?: IImportContext;
+  context?: ImportContext;
 }
 
 /**
- * Interface for importable resource collections.
+ * Represents a filesystem item to be imported.
  * @public
  */
-export interface IImportableResourceCollection extends IImportable<'resourceCollection'> {
+export interface IImportableFsItem extends IImportable {
+  type: 'fsItem';
+  item: string;
+  context?: ImportContext;
+}
+
+/**
+ * Represents some JSON to be imported.
+ * @public
+ */
+export interface IImportableJson extends IImportable {
+  type: 'json';
+  json: JsonValue;
+  context?: ImportContext;
+}
+
+/**
+ * Represents a resource collection to be imported.
+ * @public
+ */
+export interface IImportableResourceCollection extends IImportable {
   type: 'resourceCollection';
   collection: ResourceJson.Json.IResourceCollectionDecl;
-  context?: IImportContext;
+  context?: ImportContext;
 }
 
 /**
- * Interface for importable resource trees.
+ * Represents a resource tree to be imported.
  * @public
  */
-export interface IImportableResourceTree extends IImportable<'resourceTree'> {
+export interface IImportableResourceTree extends IImportable {
   type: 'resourceTree';
   tree: ResourceJson.Json.IResourceTreeRootDecl;
-  context?: IImportContext;
+  context?: ImportContext;
 }
 
 /**
  * Type of importable entities.
  * @public
  */
-export type Importable = IImportableFile | IImportableResourceCollection | IImportableResourceTree;
+export type Importable =
+  | IImportablePath
+  | IImportableFsItem
+  | IImportableResourceCollection
+  | IImportableResourceTree;

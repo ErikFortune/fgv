@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { captureResult, Collections, Hash, Result } from '@fgv/ts-utils';
+import { captureResult, Collections, Hash, mapResults, Result } from '@fgv/ts-utils';
 import { Condition } from './condition';
 import {
   Convert as CommonConvert,
@@ -141,6 +141,21 @@ export class ConditionSet implements IValidatedConditionSetDecl {
    */
   public static getKeyForDecl(decl: IValidatedConditionSetDecl): Result<ConditionSetKey> {
     return Validate.toConditionSetKey(decl.conditions.map((c) => c.toKey()).join('+'));
+  }
+
+  /**
+   * Gets a {@link ConditionSetToken | condition set token} for this condition set,
+   * if possible.
+   * @param terse - If true, the token will be terse, omitting qualifier names where
+   * possible.
+   * @returns `Success` with the {@link ConditionSetToken | condition set token} if successful,
+   * `Failure` with an error message otherwise.
+   * @public
+   */
+  public toToken(terse?: boolean): Result<string> {
+    return mapResults(this.conditions.map((c) => c.toToken(terse))).onSuccess((tokens) => {
+      return Validate.toConditionSetToken(tokens.join(','));
+    });
   }
 
   /**

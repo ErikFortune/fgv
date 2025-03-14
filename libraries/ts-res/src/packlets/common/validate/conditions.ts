@@ -40,9 +40,17 @@ import {
   MinConditionPriority,
   MaxConditionPriority,
   ConditionOperator,
-  allConditionOperators
+  allConditionOperators,
+  ConditionToken,
+  ConditionSetToken
 } from '../conditions';
-import { conditionKey, conditionSetHash, decisionKey, identifier } from './regularExpressions';
+import {
+  conditionKey,
+  conditionSetHash,
+  conditionToken,
+  decisionKey,
+  identifier
+} from './regularExpressions';
 
 /**
  * Determines whether a string is a valid qualifier name.
@@ -138,6 +146,18 @@ export function isValidConditionKey(key: string): key is ConditionKey {
 }
 
 /**
+ * Determines whether a string is a valid {@link ConditionToken | condition token}.
+ * A condition token has the format:
+ * `<qualifierName>=<value>` or `<value>`
+ * @param token -
+ * @returns `true` if the string is a valid condition token, `false` otherwise.
+ * @public
+ */
+export function isValidConditionToken(token: string): token is ConditionToken {
+  return conditionToken.test(token);
+}
+
+/**
  * Determines whether a number is a valid condition set index.
  * @param index - the number to validate
  * @returns true if the number is a valid condition set index, false otherwise.
@@ -156,6 +176,16 @@ export function isValidConditionSetIndex(index: number): index is ConditionSetIn
 export function isValidConditionSetKey(key: string): key is ConditionSetKey {
   // a condition set key is a `+` separated list of condition keys
   return key.split('+').every(isValidConditionKey);
+}
+
+/**
+ * Determines whether a string is a valid condition set token.
+ * @param token - the string to validate.
+ * @returns `true` if the string is a valid condition set token, `false` otherwise.
+ * @public
+ */
+export function isValidConditionSetToken(token: string): token is ConditionSetToken {
+  return token.split(',').every(isValidConditionToken);
 }
 
 /**
@@ -315,6 +345,20 @@ export function toConditionKey(key: string): Result<ConditionKey> {
 }
 
 /**
+ * Converts a string to a {@link ConditionToken} if it is a valid condition token.
+ * @param token - the string to convert
+ * @returns `Success` with the converted {@link ConditionToken} if successful, or `Failure` with an
+ * error message if not.
+ * @public
+ */
+export function toConditionToken(token: string): Result<ConditionToken> {
+  if (!isValidConditionToken(token)) {
+    return fail(`${token}: not a valid condition token`);
+  }
+  return succeed(token);
+}
+
+/**
  * Converts a number to a {@link ConditionSetIndex} if it is a valid condition set index.
  * @param index - the number to convert
  * @returns `Success` with the converted {@link ConditionSetIndex} if successful, or `Failure` with an
@@ -340,6 +384,20 @@ export function toConditionSetKey(key: string): Result<ConditionSetKey> {
     return fail(`${key}: not a valid condition set key`);
   }
   return succeed(key);
+}
+
+/**
+ * Converts a string to a {@link ConditionSetToken} if it is a valid condition set token.
+ * @param token - the string to convert
+ * @returns `Success` with the converted {@link ConditionSetToken} if successful, or `Failure` with an
+ * error message if not.
+ * @public
+ */
+export function toConditionSetToken(token: string): Result<ConditionSetToken> {
+  if (!isValidConditionSetToken(token)) {
+    return fail(`${token}: not a valid condition set token`);
+  }
+  return succeed(token);
 }
 
 /**

@@ -21,9 +21,10 @@
  */
 
 import * as Convert from './convert';
+import * as Helpers from './helpers';
 import * as Validate from './validate';
 
 export * from './conditions';
 export * from './resources';
 
-export { Convert, Validate };
+export { Convert, Helpers, Validate };

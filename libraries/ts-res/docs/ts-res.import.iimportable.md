@@ -9,7 +9,7 @@ Base interface for importable entities.
 **Signature:**
 
 ```typescript
-export interface IImportable<T extends ImportableType = ImportableType> 
+export interface IImportable 
 ```
 
 ## Properties
@@ -37,6 +37,25 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[context?](./ts-res.import.iimportable.context.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[ImportContext](./ts-res.import.importcontext.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
 [type](./ts-res.import.iimportable.type.md)
 
 
@@ -45,7 +64,7 @@ Description
 
 </td><td>
 
-T
+string
 
 
 </td><td>

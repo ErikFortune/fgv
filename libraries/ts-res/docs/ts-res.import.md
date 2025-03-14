@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[FsItem](./ts-res.import.fsitem.md)
+
+
+</td><td>
+
+Class describing some file system item to be imported.
+
+
+</td></tr>
+<tr><td>
+
 [ImportContext](./ts-res.import.importcontext.md)
 
 
@@ -45,6 +56,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[IFsItemProps](./ts-res.import.ifsitemprops.md)
+
+
+</td><td>
+
+Interface describing some single file system item.
+
+
+</td></tr>
+<tr><td>
+
 [IImportable](./ts-res.import.iimportable.md)
 
 
@@ -56,12 +78,34 @@ Base interface for importable entities.
 </td></tr>
 <tr><td>
 
-[IImportableFile](./ts-res.import.iimportablefile.md)
+[IImportableFsItem](./ts-res.import.iimportablefsitem.md)
 
 
 </td><td>
 
-Interface for importable files.
+Represents a filesystem item to be imported.
+
+
+</td></tr>
+<tr><td>
+
+[IImportableJson](./ts-res.import.iimportablejson.md)
+
+
+</td><td>
+
+Represents some JSON to be imported.
+
+
+</td></tr>
+<tr><td>
+
+[IImportablePath](./ts-res.import.iimportablepath.md)
+
+
+</td><td>
+
+Represents a filesystem path to be imported.
 
 
 </td></tr>
@@ -72,7 +116,7 @@ Interface for importable files.
 
 </td><td>
 
-Interface for importable resource collections.
+Represents a resource collection to be imported.
 
 
 </td></tr>
@@ -83,7 +127,7 @@ Interface for importable resource collections.
 
 </td><td>
 
-Interface for importable resource trees.
+Represents a resource tree to be imported.
 
 
 </td></tr>
@@ -95,6 +139,41 @@ Interface for importable resource trees.
 </td><td>
 
 Accumulated context of a resource import operation.
+
+
+</td></tr>
+<tr><td>
+
+[IValidatedImportContext](./ts-res.import.ivalidatedimportcontext.md)
+
+
+</td><td>
+
+Accumulated context of a resource import operation.
+
+
+</td></tr>
+</tbody></table>
+
+## Namespaces
+
+<table><thead><tr><th>
+
+Namespace
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Importers](./ts-res.import.importers.md)
+
+
+</td><td>
 
 
 </td></tr>
@@ -115,18 +194,29 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[Importable](./ts-res.import.importable.md)
+[FsItemResultDetail](./ts-res.import.fsitemresultdetail.md)
 
 
 </td><td>
 
-Type of importable entities.
+Result details for [FsItem](./ts-res.import.fsitem.md) operations.
 
 
 </td></tr>
 <tr><td>
 
-[ImportableType](./ts-res.import.importabletype.md)
+[FsItemType](./ts-res.import.fsitemtype.md)
+
+
+</td><td>
+
+Supported types of file system items.
+
+
+</td></tr>
+<tr><td>
+
+[Importable](./ts-res.import.importable.md)
 
 
 </td><td>

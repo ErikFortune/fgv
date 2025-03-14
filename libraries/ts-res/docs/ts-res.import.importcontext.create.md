@@ -9,7 +9,7 @@ Factory method to create a new [import context](./ts-res.import.importcontext.md
 **Signature:**
 
 ```typescript
-static create(baseName?: string, conditions?: IConditionDecl[]): Result<ImportContext>;
+static create(context?: IImportContext): Result<ImportContext>;
 ```
 
 ## Parameters
@@ -32,33 +32,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-baseName
+context
 
 
 </td><td>
 
-string
+[IImportContext](./ts-res.import.iimportcontext.md)
 
 
 </td><td>
 
-_(Optional)_ The base [resource ID](./ts-res.resourceid.md) for the import context.
-
-
-</td></tr>
-<tr><td>
-
-conditions
-
-
-</td><td>
-
-[IConditionDecl](./ts-res.conditions.iconditiondecl.md)<!-- -->\[\]
-
-
-</td><td>
-
-_(Optional)_ Conditions to be applied to resources imported in this context.
+_(Optional)_ The [import context](./ts-res.import.iimportcontext.md) to create the new context from.
 
 
 </td></tr>

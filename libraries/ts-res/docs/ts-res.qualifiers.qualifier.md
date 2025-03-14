@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)({ name, type, defaultPriority, index })](./ts-res.qualifiers.qualifier._constructor_.md)
+[(constructor)({ name, token, type, defaultPriority, tokenIsOptional, index })](./ts-res.qualifiers.qualifier._constructor_.md)
 
 
 </td><td>
@@ -174,6 +174,48 @@ The collector key for this qualifier.
 </td><td>
 
 The name of the qualifier.
+
+
+</td></tr>
+<tr><td>
+
+[token](./ts-res.qualifiers.qualifier.token.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[QualifierName](./ts-res.qualifiername.md)
+
+
+</td><td>
+
+The token used to identify the qualifier in the name or path of a resource being imported.
+
+
+</td></tr>
+<tr><td>
+
+[tokenIsOptional](./ts-res.qualifiers.qualifier.tokenisoptional.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+Indicates whether the token is optional in the name or path of a resource being imported.
 
 
 </td></tr>

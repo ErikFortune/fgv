@@ -21,7 +21,7 @@
  */
 
 import { captureResult, Collections, Result, succeed, ValidatingCollector } from '@fgv/ts-utils';
-import { ReadOnlyQualifierCollector } from '../qualifiers';
+import { IReadOnlyQualifierCollector } from '../qualifiers';
 import { IConditionDecl } from './conditionDecls';
 import { Condition } from './condition';
 import { Convert as CommonConvert, ConditionKey } from '../common';
@@ -33,10 +33,10 @@ import { validatedConditionDecl } from './convert';
  */
 export interface IConditionCollectorCreateParams {
   /**
-   * The {@link Qualifiers.ReadOnlyQualifierCollector | ReadOnlyQualifierCollector} used to
+   * The {@link Qualifiers.IReadOnlyQualifierCollector | ReadOnlyQualifierCollector} used to
    * create conditions in this collector.
    */
-  qualifiers: ReadOnlyQualifierCollector;
+  qualifiers: IReadOnlyQualifierCollector;
 
   /**
    * Optional array of condition declarations to add to the collector.
@@ -52,11 +52,11 @@ export interface IConditionCollectorCreateParams {
  */
 export class ConditionCollector extends ValidatingCollector<Condition> {
   /**
-   * The {@link Qualifiers.ReadOnlyQualifierCollector | ReadOnlyQualifierCollector} used to create conditions
+   * The {@link Qualifiers.IReadOnlyQualifierCollector | ReadOnlyQualifierCollector} used to create conditions
    * in this collector.
    * @public
    */
-  public qualifiers: ReadOnlyQualifierCollector;
+  public qualifiers: IReadOnlyQualifierCollector;
 
   /**
    * Constructor for a {@link Conditions.ConditionCollector | ConditionCollector} object.

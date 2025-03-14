@@ -28,5 +28,6 @@ export * from './conditionDecls';
 export * from './conditionSet';
 export * from './conditionSetCollector';
 export * from './conditionSetDecls';
+export * from './conditionToken';
 
 export { Convert };

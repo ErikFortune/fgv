@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Validate } from '../common';
+import { Helpers } from '../common';
 import { captureResult, Result } from '@fgv/ts-utils';
 import { IConditionDecl } from '../conditions';
 import { ResourceId } from '../common';
@@ -34,18 +34,34 @@ export interface IImportContext {
    * Base ID for the import context for resources imported
    * in this context.
    */
+  readonly baseId?: string;
+  /**
+   * Conditions to be applied to resources imported in this context.
+   */
+  readonly conditions?: ReadonlyArray<IConditionDecl>;
+}
+
+/**
+ * Accumulated context of a resource import operation.
+ * @public
+ */
+export interface IValidatedImportContext {
+  /**
+   * Base ID for the import context for resources imported
+   * in this context.
+   */
   readonly baseId?: ResourceId;
   /**
    * Conditions to be applied to resources imported in this context.
    */
-  readonly conditions: IConditionDecl[];
+  readonly conditions: ReadonlyArray<IConditionDecl>;
 }
 
 /**
  * Class to accumulate context for a resource import operation.
  * @public
  */
-export class ImportContext implements IImportContext {
+export class ImportContext implements IValidatedImportContext {
   /**
    * {@inheritdoc Import.IImportContext.baseId}
    */
@@ -54,28 +70,30 @@ export class ImportContext implements IImportContext {
   /**
    * {@inheritdoc Import.IImportContext.conditions}
    */
-  public readonly conditions: IConditionDecl[];
+  public readonly conditions: ReadonlyArray<IConditionDecl>;
 
   /**
    * Protected {@link Import.ImportContext | import context} for derived classes.
    * Public consumers use {@link Import.ImportContext.create | create} to create new instances.
-   * @param baseId - The base {@link ResourceId | resource ID} for the import context.
+   * @param baseId - The base ID for the import context.
    * @param conditions - Conditions to be applied to resources imported in this context.
    */
-  protected constructor(baseId?: string, conditions?: IConditionDecl[]) {
-    this.baseId = Validate.joinOptionalResourceIds(baseId).orThrow();
-    this.conditions = conditions ?? [];
+  protected constructor({ baseId, conditions }: IImportContext) {
+    this.baseId = Helpers.joinOptionalResourceIds(baseId).orThrow();
+    this.conditions = Array.from(conditions ?? []);
   }
 
   /**
    * Factory method to create a new {@link Import.ImportContext | import context}.
-   * @param baseName - The base {@link ResourceId | resource ID} for the import context.
-   * @param conditions - Conditions to be applied to resources imported in this context.
-   * @returns `Success` with the new {@link Import.ImportContext | import context} if successful,
-   * or `Failure` with an error message if creation fails.
+   * @param context - The {@link Import.IImportContext | import context} to create
+   * the new context from.
+   * @returns `Success` with the new {@link Import.ImportContext | import context}
+   * if successful, or `Failure` with an error message if creation fails.
    */
-  public static create(baseName?: string, conditions?: IConditionDecl[]): Result<ImportContext> {
-    return captureResult(() => new ImportContext(baseName, conditions));
+  public static create(context?: IImportContext): Result<ImportContext> {
+    /* c8 ignore next */
+    context = context ?? { conditions: [] };
+    return captureResult(() => new ImportContext(context));
   }
 
   /**
@@ -85,7 +103,10 @@ export class ImportContext implements IImportContext {
    * if successful, or `Failure` with an error message if the operation fails.
    */
   public withConditions(conditions: IConditionDecl[]): Result<ImportContext> {
-    return ImportContext.create(this.baseId, [...this.conditions, ...conditions]);
+    return ImportContext.create({
+      baseId: this.baseId,
+      conditions: [...this.conditions, ...conditions]
+    });
   }
 
   /**
@@ -95,8 +116,22 @@ export class ImportContext implements IImportContext {
    * if successful, or `Failure` with an error message if the operation fails.
    */
   public withName(...names: string[]): Result<ImportContext> {
-    return Validate.joinResourceIds(this.baseId, ...names).onSuccess((id) => {
-      return ImportContext.create(id, this.conditions);
+    return Helpers.joinResourceIds(this.baseId, ...names).onSuccess((baseId) => {
+      return ImportContext.create({ baseId, conditions: this.conditions });
+    });
+  }
+
+  /**
+   * Extends the import context with additional name segments and conditions.
+   * @param context - The {@link Import.IImportContext | import context} to extend this context with.
+   * @returns `Success` with a new {@link Import.ImportContext | import context}
+   * containing the extended context if successful, or `Failure` with an error
+   * message if the operation fails.
+   */
+  public extend(context?: IValidatedImportContext): Result<ImportContext> {
+    const conditions = [...this.conditions, ...(context?.conditions ?? [])];
+    return Helpers.joinResourceIds(this.baseId, context?.baseId).onSuccess((baseId) => {
+      return ImportContext.create({ baseId, conditions });
     });
   }
 }

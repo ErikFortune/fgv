@@ -78,6 +78,17 @@ Simple declaration for a [Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->.
 </td></tr>
 <tr><td>
 
+[IReadOnlyQualifierCollector](./ts-res.qualifiers.ireadonlyqualifiercollector.md)
+
+
+</td><td>
+
+Readonly version of [QualifierCollector](./ts-res.qualifiers.qualifiercollector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [IValidatedQualifierDecl](./ts-res.qualifiers.ivalidatedqualifierdecl.md)
 
 
@@ -108,32 +119,6 @@ Description
 
 
 </td><td>
-
-
-</td></tr>
-</tbody></table>
-
-## Type Aliases
-
-<table><thead><tr><th>
-
-Type Alias
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[ReadOnlyQualifierCollector](./ts-res.qualifiers.readonlyqualifiercollector.md)
-
-
-</td><td>
-
-Readonly version of [QualifierCollector](./ts-res.qualifiers.qualifiercollector.md)<!-- -->.
 
 
 </td></tr>

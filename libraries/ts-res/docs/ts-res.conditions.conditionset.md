@@ -301,4 +301,18 @@ Gets a human-readable string representation of this condition set.
 
 
 </td></tr>
+<tr><td>
+
+[toToken(terse)](./ts-res.conditions.conditionset.totoken.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a [condition set token](./ts-res.conditionsettoken.md) for this condition set, if possible.
+
+
+</td></tr>
 </tbody></table>

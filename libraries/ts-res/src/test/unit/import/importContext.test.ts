@@ -28,7 +28,7 @@ describe('importContext', () => {
     describe('create', () => {
       test('creates a new ImportContext with undefined baseId and empty conditions if not specified', () => {
         expect(TsRes.Import.ImportContext.create()).toSucceedAndSatisfy(
-          (context: TsRes.Import.IImportContext) => {
+          (context: TsRes.Import.IValidatedImportContext) => {
             expect(context.baseId).toBeUndefined();
             expect(context.conditions).toEqual([]);
           }
@@ -39,8 +39,8 @@ describe('importContext', () => {
         const baseId = 'baseId';
         const conditions: TsRes.Conditions.IConditionDecl[] = [{ qualifierName: 'test', value: 'value' }];
 
-        expect(TsRes.Import.ImportContext.create(baseId, conditions)).toSucceedAndSatisfy(
-          (context: TsRes.Import.IImportContext) => {
+        expect(TsRes.Import.ImportContext.create({ baseId, conditions })).toSucceedAndSatisfy(
+          (context: TsRes.Import.IValidatedImportContext) => {
             expect(context.baseId).toBe(baseId);
             expect(context.conditions).toEqual(conditions);
           }
@@ -48,33 +48,37 @@ describe('importContext', () => {
       });
 
       test('fails if the baseId is not a valid ResourceId', () => {
-        expect(TsRes.Import.ImportContext.create('bogus id')).toFailWith(/not a valid resource/i);
+        expect(TsRes.Import.ImportContext.create({ baseId: 'bogus id' })).toFailWith(/not a valid resource/i);
       });
     });
 
     describe('withConditions', () => {
       test('adds a name to an empty base context', () => {
         const context = TsRes.Import.ImportContext.create().orThrow();
-        expect(context.withName('someName')).toSucceedAndSatisfy((c2: TsRes.Import.IImportContext) => {
-          expect(c2.baseId).toBe('someName');
-          expect(c2.conditions).toEqual([]);
-        });
+        expect(context.withName('someName')).toSucceedAndSatisfy(
+          (c2: TsRes.Import.IValidatedImportContext) => {
+            expect(c2.baseId).toBe('someName');
+            expect(c2.conditions).toEqual([]);
+          }
+        );
       });
 
       test('adds conditions to an empty base context', () => {
         const context = TsRes.Import.ImportContext.create().orThrow();
         const conditions: TsRes.Conditions.IConditionDecl[] = [{ qualifierName: 'test', value: 'value' }];
 
-        expect(context.withConditions(conditions)).toSucceedAndSatisfy((c2: TsRes.Import.IImportContext) => {
-          expect(c2.baseId).toBeUndefined();
-          expect(c2.conditions).toEqual(conditions);
-        });
+        expect(context.withConditions(conditions)).toSucceedAndSatisfy(
+          (c2: TsRes.Import.IValidatedImportContext) => {
+            expect(c2.baseId).toBeUndefined();
+            expect(c2.conditions).toEqual(conditions);
+          }
+        );
       });
 
       test('adds a name to a context with a name', () => {
-        const context = TsRes.Import.ImportContext.create('baseId').orThrow();
+        const context = TsRes.Import.ImportContext.create({ baseId: 'baseId' }).orThrow();
         expect(context.withName('someName', 'more.stuff')).toSucceedAndSatisfy(
-          (c2: TsRes.Import.IImportContext) => {
+          (c2: TsRes.Import.IValidatedImportContext) => {
             expect(c2.baseId).toBe('baseId.someName.more.stuff');
             expect(c2.conditions).toEqual([]);
           }
@@ -83,17 +87,22 @@ describe('importContext', () => {
 
       test('adds conditions to a context with conditions', () => {
         const conditions1 = [{ qualifierName: 'test', value: 'value' }];
-        const context = TsRes.Import.ImportContext.create('baseId', conditions1).orThrow();
+        const context = TsRes.Import.ImportContext.create({
+          baseId: 'baseId',
+          conditions: conditions1
+        }).orThrow();
         const conditions2: TsRes.Conditions.IConditionDecl[] = [{ qualifierName: 'test2', value: 'value2' }];
 
-        expect(context.withConditions(conditions2)).toSucceedAndSatisfy((c2: TsRes.Import.IImportContext) => {
-          expect(c2.baseId).toBe('baseId');
-          expect(c2.conditions).toEqual([...conditions1, ...conditions2]);
-        });
+        expect(context.withConditions(conditions2)).toSucceedAndSatisfy(
+          (c2: TsRes.Import.IValidatedImportContext) => {
+            expect(c2.baseId).toBe('baseId');
+            expect(c2.conditions).toEqual([...conditions1, ...conditions2]);
+          }
+        );
       });
 
       test('fails if any of the names to be added are not valid ResourceIds', () => {
-        const context = TsRes.Import.ImportContext.create('baseId').orThrow();
+        const context = TsRes.Import.ImportContext.create({ baseId: 'baseId' }).orThrow();
         expect(context.withName('bogus id')).toFailWith(/not a valid resource/i);
       });
     });

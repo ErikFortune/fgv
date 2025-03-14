@@ -9,9 +9,11 @@ Collects [Qualifiers](./ts-res.qualifiers.qualifier.md) from [declarations](./ts
 **Signature:**
 
 ```typescript
-export declare class QualifierCollector extends ValidatingConvertingCollector<Qualifier, IQualifierDecl> 
+export declare class QualifierCollector extends ValidatingConvertingCollector<Qualifier, IQualifierDecl> implements IReadOnlyQualifierCollector 
 ```
 **Extends:** ValidatingConvertingCollector&lt;[Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->, [IQualifierDecl](./ts-res.qualifiers.iqualifierdecl.md)<!-- -->&gt;
+
+**Implements:** [IReadOnlyQualifierCollector](./ts-res.qualifiers.ireadonlyqualifiercollector.md)
 
 ## Constructors
 
@@ -140,6 +142,48 @@ Factory method for creating a [Qualifier](./ts-res.qualifiers.qualifier.md) from
 </td><td>
 
 Creates a new [QualifierCollector](./ts-res.qualifiers.qualifiercollector.md) object.
+
+
+</td></tr>
+<tr><td>
+
+[getByNameOrToken(nameOrToken)](./ts-res.qualifiers.qualifiercollector.getbynameortoken.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a [qualifier](./ts-res.qualifiers.qualifier.md) by name or token.
+
+
+</td></tr>
+<tr><td>
+
+[hasNameOrToken(nameOrToken)](./ts-res.qualifiers.qualifiercollector.hasnameortoken.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Checks if a qualifier with a given name or token is in the collection.
+
+
+</td></tr>
+<tr><td>
+
+[toReadOnly()](./ts-res.qualifiers.qualifiercollector.toreadonly.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a read-only view of this collector.
 
 
 </td></tr>

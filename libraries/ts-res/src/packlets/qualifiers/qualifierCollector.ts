@@ -21,12 +21,40 @@
  */
 
 import * as Common from '../common';
-import { captureResult, Collections, Result, ValidatingConvertingCollector } from '@fgv/ts-utils';
+import {
+  captureResult,
+  Collections,
+  failWithDetail,
+  Result,
+  succeed,
+  succeedWithDetail,
+  ValidatingConvertingCollector
+} from '@fgv/ts-utils';
 import { IQualifierDecl } from './qualifierDecl';
 import { QualifierName } from '../common';
 import { Qualifier } from './qualifier';
 import { IQualifierDeclConvertContext, qualifierDecl, validatedQualifierDecl } from './convert';
 import { ReadOnlyQualifierTypeCollector } from '../qualifier-types';
+
+/**
+ * Readonly version of {@link Qualifiers.QualifierCollector | QualifierCollector}.
+ * @public
+ */
+export interface IReadOnlyQualifierCollector extends Collections.IReadOnlyValidatingCollector<Qualifier> {
+  /**
+   * Gets a {@link Qualifiers.Qualifier | qualifier} by name or token.
+   * @param nameOrToken - The name or token of the qualifier to retrieve.
+   * @returns `Success` with the qualifier if found, or `Failure` if not.
+   */
+  getByNameOrToken(nameOrToken: string): Result<Qualifier>;
+
+  /**
+   * Checks if a qualifier with a given name or token is in the collection.
+   * @param nameOrToken - The name or token of the qualifier to check.
+   * @returns `true` if the qualifier is in the collection, `false` if not.
+   */
+  hasNameOrToken(nameOrToken: string): boolean;
+}
 
 /**
  * Parameters for creating a new {@link Qualifiers.QualifierCollector}.
@@ -52,7 +80,10 @@ export interface IQualifierCollectorCreateParams {
  * and index.
  * @public
  */
-export class QualifierCollector extends ValidatingConvertingCollector<Qualifier, IQualifierDecl> {
+export class QualifierCollector
+  extends ValidatingConvertingCollector<Qualifier, IQualifierDecl>
+  implements IReadOnlyQualifierCollector
+{
   /**
    * The {@link QualifierTypes.QualifierTypeCollector | qualifier types} that this collector uses.
    */
@@ -86,6 +117,43 @@ export class QualifierCollector extends ValidatingConvertingCollector<Qualifier,
   }
 
   /**
+   * {@inheritdoc Qualifiers.IReadOnlyQualifierCollector.getByNameOrToken}
+   */
+  public getByNameOrToken(nameOrToken: string): Result<Qualifier> {
+    return this.validating.get(nameOrToken).onFailure((message) => {
+      for (const q of this.values()) {
+        if (q.token === nameOrToken) {
+          return succeedWithDetail(q, 'success');
+        }
+      }
+      return failWithDetail(`Qualifier token '${nameOrToken}' not found`, 'not-found');
+    });
+  }
+
+  /**
+   * {@inheritdoc Qualifiers.IReadOnlyQualifierCollector.hasNameOrToken}
+   */
+  public hasNameOrToken(nameOrToken: string): boolean {
+    if (this.validating.has(nameOrToken)) {
+      return true;
+    }
+    for (const q of this.values()) {
+      if (q.token === nameOrToken) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Gets a read-only view of this collector.
+   * @returns A read-only view of this collector.
+   */
+  public toReadOnly(): IReadOnlyQualifierCollector {
+    return this;
+  }
+
+  /**
    * Factory method for creating a {@link Qualifiers.Qualifier | Qualifier} from a {@link Qualifiers.IQualifierDecl | declaration}.
    * @param __key - The key for the qualifier.
    * @param index - The index of the qualifier.
@@ -98,12 +166,16 @@ export class QualifierCollector extends ValidatingConvertingCollector<Qualifier,
       qualifierTypes: this.qualifierTypes,
       qualifierIndex: index
     };
-    return validatedQualifierDecl.convert(decl, convertContext).onSuccess(Qualifier.create);
+    return validatedQualifierDecl
+      .convert(decl, convertContext)
+      .onSuccess((validated) => {
+        if (this.hasNameOrToken(validated.token)) {
+          return fail(`Qualifier token '${validated.token}' is not unique or collides with name`);
+        } else if (this.hasNameOrToken(validated.name)) {
+          return fail(`Qualifier name '${validated.name}' is not unique or collides with token`);
+        }
+        return succeed(validated);
+      })
+      .onSuccess(Qualifier.create);
   }
 }
-
-/**
- * Readonly version of {@link Qualifiers.QualifierCollector | QualifierCollector}.
- * @public
- */
-export type ReadOnlyQualifierCollector = Collections.IReadOnlyValidatingCollector<Qualifier>;

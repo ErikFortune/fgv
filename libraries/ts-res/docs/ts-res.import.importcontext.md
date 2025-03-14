@@ -9,9 +9,9 @@ Class to accumulate context for a resource import operation.
 **Signature:**
 
 ```typescript
-export declare class ImportContext implements IImportContext 
+export declare class ImportContext implements IValidatedImportContext 
 ```
-**Implements:** [IImportContext](./ts-res.import.iimportcontext.md)
+**Implements:** [IValidatedImportContext](./ts-res.import.ivalidatedimportcontext.md)
 
 ## Constructors
 
@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)(baseId, conditions)](./ts-res.import.importcontext._constructor_.md)
+[(constructor)({ baseId, conditions })](./ts-res.import.importcontext._constructor_.md)
 
 
 </td><td>
@@ -105,7 +105,7 @@ Base ID for the import context for resources imported in this context.
 
 </td><td>
 
-[IConditionDecl](./ts-res.conditions.iconditiondecl.md)<!-- -->\[\]
+ReadonlyArray&lt;[IConditionDecl](./ts-res.conditions.iconditiondecl.md)<!-- -->&gt;
 
 
 </td><td>
@@ -136,7 +136,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[create(baseName, conditions)](./ts-res.import.importcontext.create.md)
+[create(context)](./ts-res.import.importcontext.create.md)
 
 
 </td><td>
@@ -147,6 +147,20 @@ Description
 </td><td>
 
 Factory method to create a new [import context](./ts-res.import.importcontext.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[extend(context)](./ts-res.import.importcontext.extend.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Extends the import context with additional name segments and conditions.
 
 
 </td></tr>

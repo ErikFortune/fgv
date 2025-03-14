@@ -23,7 +23,7 @@
 import { mapResults, Result, succeed } from '@fgv/ts-utils';
 import * as Normalized from './normalized';
 import * as Json from './json';
-import { Validate } from '../common';
+import { Helpers as CommonHelpers } from '../common';
 
 /**
  * Helper method to merge a loose candidate with a base name and conditions.
@@ -38,7 +38,7 @@ export function mergeLooseCandidate(
   baseName?: string,
   baseConditions?: Json.ILooseConditionDecl[]
 ): Result<Normalized.ILooseResourceCandidateDecl> {
-  return Validate.joinResourceIds(baseName, candidate.id).onSuccess((id) => {
+  return CommonHelpers.joinResourceIds(baseName, candidate.id).onSuccess((id) => {
     /* c8 ignore next 1 - defense in depth */
     const conditions = [...(baseConditions ?? []), ...(candidate.conditions ?? [])];
     return succeed({ ...candidate, id, conditions });
@@ -74,7 +74,7 @@ export function mergeLooseResource(
   baseName?: string,
   baseConditions?: Json.ILooseConditionDecl[]
 ): Result<Normalized.ILooseResourceDecl> {
-  return Validate.joinResourceIds(baseName, resource.id).onSuccess((id) => {
+  return CommonHelpers.joinResourceIds(baseName, resource.id).onSuccess((id) => {
     return mapResults(
       /* c8 ignore next 1 - defense in depth */
       (resource.candidates ?? []).map((candidate) => mergeChildCandidate(candidate, baseConditions))
@@ -99,7 +99,7 @@ export function mergeChildResource(
   parentName?: string,
   parentConditions?: Json.ILooseConditionDecl[]
 ): Result<Normalized.ILooseResourceDecl> {
-  return Validate.joinResourceIds(parentName, name).onSuccess((id) => {
+  return CommonHelpers.joinResourceIds(parentName, name).onSuccess((id) => {
     return mapResults(
       /* c8 ignore next 1 - defense in depth */
       (resource.candidates ?? []).map((candidate) => mergeChildCandidate(candidate, parentConditions))

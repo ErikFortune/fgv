@@ -38,7 +38,7 @@ import {
   ReadOnlyConditionSetCollector
 } from '../conditions';
 import { AbstractDecisionCollector, ReadOnlyAbstractDecisionCollector } from '../decisions';
-import { ReadOnlyQualifierCollector } from '../qualifiers';
+import { IReadOnlyQualifierCollector } from '../qualifiers';
 import { ReadOnlyResourceTypeCollector } from '../resource-types';
 import { Convert, ResourceId, Validate } from '../common';
 import { ResourceBuilder, ResourceBuilderResultDetail } from './resourceBuilder';
@@ -51,7 +51,7 @@ import * as ResourceJson from '../resource-json';
  * @public
  */
 export interface IResourceManagerCreateParams {
-  qualifiers: ReadOnlyQualifierCollector;
+  qualifiers: IReadOnlyQualifierCollector;
   resourceTypes: ReadOnlyResourceTypeCollector;
 }
 
@@ -69,7 +69,7 @@ export type ResourceManagerResultDetail = Collections.ResultMapResultDetail | Re
  * @public
  */
 export class ResourceManager {
-  public readonly qualifiers: ReadOnlyQualifierCollector;
+  public readonly qualifiers: IReadOnlyQualifierCollector;
   public readonly resourceTypes: ReadOnlyResourceTypeCollector;
 
   protected readonly _conditions: ConditionCollector;

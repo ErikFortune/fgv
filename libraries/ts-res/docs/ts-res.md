@@ -46,6 +46,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Helpers](./ts-res.helpers.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Import](./ts-res.import.md)
 
 
@@ -277,6 +286,28 @@ Branded number representing a validated condition set index.
 </td><td>
 
 Branded string representing a validated condition set key. A condition set key is a string value which fully describes the condition set apart from index. The condition set key can be used to quickly determine if two condition sets are identical apart from index, or for inspection.
+
+
+</td></tr>
+<tr><td>
+
+[ConditionSetToken](./ts-res.conditionsettoken.md)
+
+
+</td><td>
+
+A string representing a validated condition set token. Condition set tokens are typically extracted from the name of some resource (e.g. file or folder) being imported. A condition set token is a comma-separated list of one or more [condition tokens](./ts-res.conditiontoken.md)<!-- -->, where a condition token has either the form `<qualifierName>=<value>` or `<value>`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ConditionToken](./ts-res.conditiontoken.md)
+
+
+</td><td>
+
+A string representing a validated condition token. Condition tokens are typically extracted from the name of some resource (e.g. file or folder) being imported. A condition token has the form `<qualifierName>=<value>` or `<value>`<!-- -->.
 
 
 </td></tr>

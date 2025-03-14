@@ -71,6 +71,44 @@ string
 </td></tr>
 <tr><td>
 
+[token?](./ts-res.qualifiers.iqualifierdecl.token.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[tokenIsOptional?](./ts-res.qualifiers.iqualifierdecl.tokenisoptional.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
 [typeName](./ts-res.qualifiers.iqualifierdecl.typename.md)
 
 

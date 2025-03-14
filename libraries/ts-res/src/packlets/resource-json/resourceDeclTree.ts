@@ -25,7 +25,7 @@ import { IResourceDeclContainer } from './resourceDeclContainer';
 import * as Convert from './convert';
 import * as Normalized from './normalized';
 import * as Json from './json';
-import { Validate } from '../common';
+import { Helpers as CommonHelpers } from '../common';
 import { mergeChildResource } from './helpers';
 
 /**
@@ -96,7 +96,7 @@ export class ResourceDeclTree implements IResourceDeclContainer {
 
     const children = Array.from(Object.entries(node.children ?? {}));
     children.forEach(([name, childNode]) => {
-      Validate.joinResourceIds(parentName, name)
+      CommonHelpers.joinResourceIds(parentName, name)
         .onSuccess((childName) => {
           return this._extract(childNode, childName, parentConditions).aggregateError(errors);
         })

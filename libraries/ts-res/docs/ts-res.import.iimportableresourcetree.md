@@ -4,14 +4,14 @@
 
 ## Import.IImportableResourceTree interface
 
-Interface for importable resource trees.
+Represents a resource tree to be imported.
 
 **Signature:**
 
 ```typescript
-export interface IImportableResourceTree extends IImportable<'resourceTree'> 
+export interface IImportableResourceTree extends IImportable 
 ```
-**Extends:** [IImportable](./ts-res.import.iimportable.md)<!-- -->&lt;'resourceTree'&gt;
+**Extends:** [IImportable](./ts-res.import.iimportable.md)
 
 ## Properties
 
@@ -46,7 +46,7 @@ Description
 
 </td><td>
 
-[IImportContext](./ts-res.import.iimportcontext.md)
+[ImportContext](./ts-res.import.importcontext.md)
 
 
 </td><td>

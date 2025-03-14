@@ -342,4 +342,18 @@ Get a human-readable string representation of the condition.
 
 
 </td></tr>
+<tr><td>
+
+[toToken(terse)](./ts-res.conditions.condition.totoken.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a [condition token](./ts-res.conditiontoken.md) for this condition, if possible. It is not possible to get a token for a condition with an operator other than `matches`<!-- -->, with other-than-default priority, or with a name or value that contains other than alphanumeric characters, underscore or non-leading hyphen.
+
+
+</td></tr>
 </tbody></table>

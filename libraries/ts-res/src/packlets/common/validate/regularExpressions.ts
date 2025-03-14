@@ -36,13 +36,21 @@ export const segmentedIdentifier: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(\.[a-zA-Z_
 export const identifierList: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(,[a-zA-Z_][a-zA-Z0-9_\-]*)*$/;
 
 /**
- * Format is:
+ * The format of a {@link ConditionKey | condition key} is:
  * <qualifierName>-[<value>][\@<priority>](<scoreAsDefault>) where operator is `matches`, or
  * <qualifierName>-<operator>-[<value>][\@<priority>](<scoreAsDefault>)
  * @internal
  */
 export const conditionKey: RegExp =
   /^[a-zA-Z_][a-zA-Z0-9_\-]*(-matches)?-\[.*\](?:@[0-9]{1,4})?(?:\([01](?:\.[0-9]+)?\))?$/;
+
+/**
+ * A {@link ConditionToken | condition token} is a comma-separated list of one or more
+ * condition specifiers, where a condition specifier has either the form
+ * `<qualifierName>=<value>` or `<value>`.
+ * @internal
+ */
+export const conditionToken: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(?:=[a-zA-Z0-9_\-]+)?$/;
 
 /**
  * @internal

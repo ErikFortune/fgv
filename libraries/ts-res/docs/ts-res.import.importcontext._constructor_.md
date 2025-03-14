@@ -9,7 +9,7 @@ Protected [import context](./ts-res.import.importcontext.md) for derived classes
 **Signature:**
 
 ```typescript
-protected constructor(baseId?: string, conditions?: IConditionDecl[]);
+protected constructor({ baseId, conditions }: IImportContext);
 ```
 
 ## Parameters
@@ -32,33 +32,15 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-baseId
+{ baseId, conditions }
 
 
 </td><td>
 
-string
+[IImportContext](./ts-res.import.iimportcontext.md)
 
 
 </td><td>
-
-_(Optional)_ The base [resource ID](./ts-res.resourceid.md) for the import context.
-
-
-</td></tr>
-<tr><td>
-
-conditions
-
-
-</td><td>
-
-[IConditionDecl](./ts-res.conditions.iconditiondecl.md)<!-- -->\[\]
-
-
-</td><td>
-
-_(Optional)_ Conditions to be applied to resources imported in this context.
 
 
 </td></tr>

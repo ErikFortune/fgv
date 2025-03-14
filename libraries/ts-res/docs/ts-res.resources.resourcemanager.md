@@ -270,7 +270,7 @@ A [AbstractDecisionCollector](./ts-res.decisions.abstractdecisioncollector.md) w
 
 </td><td>
 
-[ReadOnlyQualifierCollector](./ts-res.qualifiers.readonlyqualifiercollector.md)
+[IReadOnlyQualifierCollector](./ts-res.qualifiers.ireadonlyqualifiercollector.md)
 
 
 </td><td>

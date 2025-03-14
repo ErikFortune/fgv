@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { mapResults, fail, succeed, Result, MessageAggregator } from '@fgv/ts-utils';
+import { fail, succeed, Result } from '@fgv/ts-utils';
 import { ResourceId, ResourceIndex, ResourceName, ResourceTypeIndex, ResourceTypeName } from '../resources';
 import { identifier, segmentedIdentifier } from './regularExpressions';
 
@@ -122,61 +122,6 @@ export function toResourceIndex(index: number): Result<ResourceIndex> {
     return fail(`${index}: not a valid resource index.`);
   }
   return succeed(index);
-}
-
-/**
- * Splits a {@link ResourceId | resource id} into its component {@link ResourceName | resource names}.
- *
- * @param id - The ID to split.
- * @returns `Success`with an array of {@link ResourceName | ResourceName} objects if the ID is valid, or
- * `Failure` with an error message if not.
- * @public
- */
-export function splitResourceId(id: string | undefined): Result<ResourceName[]> {
-  if (id === undefined) {
-    return succeed([]);
-  }
-  return mapResults(id.split('.').map(toResourceName));
-}
-
-/**
- * Joins a list of {@link ResourceId | resource ID} or {@link ResourceName | resource name} with
- * to create a new {@link ResourceId | resource ID}. Fails if resulting ID is invalid or empty.
- *
- * @param base - The base name or ID to join.
- * @param names - Additional names to join.
- * @returns `Success` with the new ID if the base and names are valid, or `Failure` with an error message
- * if not.
- * @public
- */
-export function joinResourceIds(...ids: (string | undefined)[]): Result<ResourceId> {
-  const errors: MessageAggregator = new MessageAggregator();
-  const parts: ResourceName[] = [];
-  ids.forEach((id) => {
-    parts.push(...splitResourceId(id).aggregateError(errors).orDefault([]));
-  });
-  const id = parts.join('.');
-  return errors.returnOrReport(toResourceId(id));
-}
-
-/**
- * Joins a list of {@link ResourceId | resource ID} or {@link ResourceName | resource name} with
- * to create a new {@link ResourceId | resource ID}. Returns `undefined` if no names are defined.
- *
- * @param base - The base name or ID to join.
- * @param names - Additional names to join.
- * @returns `Success` with the new ID if the base and names are valid, `Success` with `undefined`
- * if names were present, or `Failure` with an error message if the resulting id is invalid.
- * @public
- */
-export function joinOptionalResourceIds(...ids: (string | undefined)[]): Result<ResourceId | undefined> {
-  const errors: MessageAggregator = new MessageAggregator();
-  const parts: ResourceName[] = [];
-  ids.forEach((id) => {
-    parts.push(...splitResourceId(id).aggregateError(errors).orDefault([]));
-  });
-  const id = parts.join('.');
-  return errors.returnOrReport(id ? toResourceId(id) : succeed(undefined));
 }
 
 /**

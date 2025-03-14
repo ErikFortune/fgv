@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-[ResourceId](./ts-res.resourceid.md)
+string
 
 
 </td><td>
@@ -58,7 +58,7 @@ _(Optional)_ Base ID for the import context for resources imported in this conte
 </td></tr>
 <tr><td>
 
-[conditions](./ts-res.import.iimportcontext.conditions.md)
+[conditions?](./ts-res.import.iimportcontext.conditions.md)
 
 
 </td><td>
@@ -68,12 +68,12 @@ _(Optional)_ Base ID for the import context for resources imported in this conte
 
 </td><td>
 
-[IConditionDecl](./ts-res.conditions.iconditiondecl.md)<!-- -->\[\]
+ReadonlyArray&lt;[IConditionDecl](./ts-res.conditions.iconditiondecl.md)<!-- -->&gt;
 
 
 </td><td>
 
-Conditions to be applied to resources imported in this context.
+_(Optional)_ Conditions to be applied to resources imported in this context.
 
 
 </td></tr>
