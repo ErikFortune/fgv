@@ -13,6 +13,52 @@ export interface IReadOnlyQualifierCollector extends Collections.IReadOnlyValida
 ```
 **Extends:** Collections.IReadOnlyValidatingCollector&lt;[Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->&gt;
 
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[qualifierTypes](./ts-res.qualifiers.ireadonlyqualifiercollector.qualifiertypes.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ReadOnlyQualifierTypeCollector](./ts-res.qualifiertypes.readonlyqualifiertypecollector.md)
+
+
+</td><td>
+
+The [qualifier types](./ts-res.qualifiertypes.qualifiertypecollector.md) that this collector uses.
+
+
+</td></tr>
+</tbody></table>
+
 ## Methods
 
 <table><thead><tr><th>
