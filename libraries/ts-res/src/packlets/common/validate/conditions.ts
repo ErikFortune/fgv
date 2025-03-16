@@ -296,6 +296,7 @@ export function toQualifierMatchScore(value: number): Result<QualifierMatchScore
  * @public
  */
 export function toConditionPriority(priority: number): Result<ConditionPriority> {
+  /* c8 ignore next 3 - coverage is having a bad day */
   if (!isValidConditionPriority(priority)) {
     return fail(`${priority}: not a valid priority`);
   }

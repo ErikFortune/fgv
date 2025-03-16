@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { mapResults, Result, succeed } from '@fgv/ts-utils';
+import { mapResults, Result, fail, succeed } from '@fgv/ts-utils';
 import { Helpers as CommonHelpers, ConditionOperator } from '../common';
 import { IValidatedConditionDecl } from './conditionDecls';
 import { IReadOnlyQualifierCollector, Qualifier } from '../qualifiers';

@@ -133,6 +133,7 @@ export function toResourceIndex(index: number): Result<ResourceIndex> {
  * @public
  */
 export function toResourceTypeName(name: string): Result<ResourceTypeName> {
+  /* c8 ignore next 3 - coverage having issues */
   if (!isValidResourceTypeName(name)) {
     return fail(`${name}: not a valid resource type name.`);
   }

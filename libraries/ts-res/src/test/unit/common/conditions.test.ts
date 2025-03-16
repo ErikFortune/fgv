@@ -137,14 +137,14 @@ describe('common conditions', () => {
   );
 
   test.each(['foo=bar', 'foo', 'foo-bar=blarg'])('%s is a valid condition set token', (token) => {
-    expect(TsRes.Validate.isValidConditionSetToken(token)).toBe(true);
-    expect(TsRes.Validate.toConditionSetToken(token)).toSucceedWith(token as TsRes.ConditionSetToken);
+    expect(TsRes.Validate.isValidConditionToken(token)).toBe(true);
+    expect(TsRes.Validate.toConditionToken(token)).toSucceedWith(token as TsRes.ConditionToken);
   });
 
   test.each(['foo:bar', 'foo_bar,bar=baz+', 'foo=bar,bar,baz:blarg'])(
-    '%s is not a valid condition set token',
+    '%s is not a valid condition token',
     (token) => {
-      expect(TsRes.Validate.isValidConditionSetToken(token)).toBe(false);
+      expect(TsRes.Validate.isValidConditionToken(token)).toBe(false);
       expect(TsRes.Validate.toConditionSetToken(token)).toFailWith(/not a valid condition set token/i);
     }
   );
