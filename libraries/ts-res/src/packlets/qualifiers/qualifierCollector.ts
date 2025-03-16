@@ -26,11 +26,12 @@ import {
   Collections,
   failWithDetail,
   Result,
+  fail,
   succeed,
   succeedWithDetail,
   ValidatingConvertingCollector
 } from '@fgv/ts-utils';
-import { IQualifierDecl } from './qualifierDecl';
+import { IQualifierDecl, IValidatedQualifierDecl } from './qualifierDecl';
 import { QualifierName } from '../common';
 import { Qualifier } from './qualifier';
 import { IQualifierDeclConvertContext, qualifierDecl, validatedQualifierDecl } from './convert';
@@ -41,6 +42,11 @@ import { ReadOnlyQualifierTypeCollector } from '../qualifier-types';
  * @public
  */
 export interface IReadOnlyQualifierCollector extends Collections.IReadOnlyValidatingCollector<Qualifier> {
+  /**
+   * {@inheritdoc Qualifiers.QualifierCollector.qualifierTypes}
+   */
+  readonly qualifierTypes: ReadOnlyQualifierTypeCollector;
+
   /**
    * Gets a {@link Qualifiers.Qualifier | qualifier} by name or token.
    * @param nameOrToken - The name or token of the qualifier to retrieve.
@@ -170,9 +176,13 @@ export class QualifierCollector
       .convert(decl, convertContext)
       .onSuccess((validated) => {
         if (this.hasNameOrToken(validated.token)) {
-          return fail(`Qualifier token '${validated.token}' is not unique or collides with name`);
+          return fail<IValidatedQualifierDecl>(
+            `Qualifier token '${validated.token}' is not unique or collides with name`
+          );
         } else if (this.hasNameOrToken(validated.name)) {
-          return fail(`Qualifier name '${validated.name}' is not unique or collides with token`);
+          return fail<IValidatedQualifierDecl>(
+            `Qualifier name '${validated.name}' is not unique or collides with token`
+          );
         }
         return succeed(validated);
       })

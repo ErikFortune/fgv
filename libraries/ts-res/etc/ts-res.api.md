@@ -1090,6 +1090,10 @@ interface IReadOnlyQualifierCollector extends Collections.IReadOnlyValidatingCol
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getByNameOrToken(nameOrToken: string): Result<Qualifier>;
     hasNameOrToken(nameOrToken: string): boolean;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly qualifierTypes: ReadOnlyQualifierTypeCollector;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
