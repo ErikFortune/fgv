@@ -9,7 +9,7 @@ Creates a new [FileTree](./ts-utils.filetree.filetree.md) instance with the supp
 **Signature:**
 
 ```typescript
-static create(hal: FsFileTreeAccessors): Result<FileTree>;
+static create(hal: IFileTreeAccessors): Result<FileTree>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ hal
 
 </td><td>
 
-[FsFileTreeAccessors](./ts-utils.filetree.fsfiletreeaccessors.md)
+[IFileTreeAccessors](./ts-utils.filetree.ifiletreeaccessors.md)
 
 
 </td><td>

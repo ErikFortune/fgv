@@ -73,17 +73,15 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_hal](./ts-utils.filetree.filetree._hal.md)
+[hal](./ts-utils.filetree.filetree.hal.md)
 
 
 </td><td>
 
-`protected`
-
 
 </td><td>
 
-[FsFileTreeAccessors](./ts-utils.filetree.fsfiletreeaccessors.md)
+[IFileTreeAccessors](./ts-utils.filetree.ifiletreeaccessors.md)
 
 
 </td><td>

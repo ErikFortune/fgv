@@ -86,13 +86,18 @@ export class InMemoryTreeAccessors implements IFileTreeAccessors {
    * {@inheritdoc FileTree.IFileTreeAccessors.getExtension}
    */
   public getExtension(path: string): string {
-    return `.${path.split('.').pop()}`;
+    const parts = path.split('.');
+    if (parts.length === 1) {
+      return '';
+    }
+    return `.${parts.pop()}`;
   }
 
   /**
    * {@inheritdoc FileTree.IFileTreeAccessors.getBaseName}
    */
   public getBaseName(path: string, suffix?: string): string {
+    /* c8 ignore next 1 - ?? is defense in depth should never happen */
     const base = path.split('/').pop() ?? '';
     if (suffix && base.endsWith(suffix)) {
       return base.slice(0, base.length - suffix.length);
@@ -119,7 +124,7 @@ export class InMemoryTreeAccessors implements IFileTreeAccessors {
         return DirectoryItem.create(existing.absolutePath, this);
       }
     }
-    return fail(`${itemPath}: Not found`);
+    return fail(`${itemPath}: not found`);
   }
 
   /**
@@ -128,10 +133,10 @@ export class InMemoryTreeAccessors implements IFileTreeAccessors {
   public getFileContents(path: string): Result<string> {
     const item = this._tree.byAbsolutePath.get(path);
     if (item === undefined) {
-      return fail(`${path}: Not found`);
+      return fail(`${path}: not found`);
     }
     if (!(item instanceof InMemoryFile)) {
-      return fail(`${path}: Not a file`);
+      return fail(`${path}: not a file`);
     }
     return captureResult(() => JSON.stringify(item.contents));
   }
@@ -142,10 +147,10 @@ export class InMemoryTreeAccessors implements IFileTreeAccessors {
   public getChildren(path: string): Result<ReadonlyArray<FileTreeItem>> {
     const item = this._tree.byAbsolutePath.get(path);
     if (item === undefined) {
-      return fail(`${path}: Not found`);
+      return fail(`${path}: not found`);
     }
     if (!(item instanceof InMemoryDirectory)) {
-      return fail(`${path}: Not a directory`);
+      return fail(`${path}: not a directory`);
     }
     return captureResult(() => {
       const children: FileTreeItem[] = [];

@@ -813,15 +813,15 @@ export { FileTree }
 // @public
 class FileTree_2 {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor(hal: FsFileTreeAccessors);
+    protected constructor(hal: IFileTreeAccessors);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static create(hal: FsFileTreeAccessors): Result<FileTree_2>;
+    static create(hal: IFileTreeAccessors): Result<FileTree_2>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static forFilesystem(): Result<FileTree_2>;
     getItem(itemPath: string): Result<FileTreeItem>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected _hal: FsFileTreeAccessors;
+    hal: IFileTreeAccessors;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static inMemory(files: IInMemoryFile[], prefix?: string): Result<FileTree_2>;

@@ -21,7 +21,7 @@
  */
 
 import { captureResult, Result } from '../base';
-import { FileTreeItem } from './fileTreeAccessors';
+import { FileTreeItem, IFileTreeAccessors } from './fileTreeAccessors';
 import { FsFileTreeAccessors } from './fsTree';
 import { IInMemoryFile, InMemoryTreeAccessors } from './in-memory';
 
@@ -34,7 +34,7 @@ export class FileTree {
    * The {@link FileTree.IFileTreeAccessors | accessors} to use for file system operations.
    * @public
    */
-  protected _hal: FsFileTreeAccessors;
+  public hal: IFileTreeAccessors;
 
   /**
    * Protected constructor for derived classes.
@@ -42,8 +42,8 @@ export class FileTree {
    * file system operations.
    * @public
    */
-  protected constructor(hal: FsFileTreeAccessors) {
-    this._hal = hal;
+  protected constructor(hal: IFileTreeAccessors) {
+    this.hal = hal;
   }
 
   /**
@@ -52,7 +52,7 @@ export class FileTree {
    * @param hal - The {@link FileTree.IFileTreeAccessors | accessors} to use for
    * file system operations.
    */
-  public static create(hal: FsFileTreeAccessors): Result<FileTree> {
+  public static create(hal: IFileTreeAccessors): Result<FileTree> {
     return captureResult(() => new FileTree(hal));
   }
 
@@ -83,8 +83,8 @@ export class FileTree {
    * @returns The resolved path.
    */
   public getItem(itemPath: string): Result<FileTreeItem> {
-    const absolutePath = this._hal.resolveAbsolutePath(itemPath);
-    return this._hal.getItem(absolutePath);
+    const absolutePath = this.hal.resolveAbsolutePath(itemPath);
+    return this.hal.getItem(absolutePath);
   }
 }
 
