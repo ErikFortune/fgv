@@ -87,7 +87,7 @@ export class FileItem implements IFileTreeFileItem {
   public getContents<T>(converter?: Validator<T> | Converter<T>): Result<T | unknown> {
     return this._hal
       .getFileContents(this.absolutePath)
-      .onSuccess((body) => captureResult(() => JSON.parse(body)))
+      .onSuccess((body) => captureResult(() => JSON.parse(body)).onFailure(() => succeed(body)))
       .onSuccess((parsed) => {
         if (converter !== undefined) {
           return converter.convert(parsed);

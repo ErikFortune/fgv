@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { captureResult, fail, Result } from '../../base';
+import { captureResult, fail, Result, succeed } from '../../base';
 import { DirectoryItem } from '../directoryItem';
 import { FileItem } from '../fileItem';
 import { FileTreeItem, IFileTreeAccessors } from '../fileTreeAccessors';
@@ -137,6 +137,10 @@ export class InMemoryTreeAccessors implements IFileTreeAccessors {
     }
     if (!(item instanceof InMemoryFile)) {
       return fail(`${path}: not a file`);
+    }
+    // if the body is a string we don't want to add quotes
+    if (typeof item.contents === 'string') {
+      return succeed(item.contents);
     }
     return captureResult(() => JSON.stringify(item.contents));
   }
