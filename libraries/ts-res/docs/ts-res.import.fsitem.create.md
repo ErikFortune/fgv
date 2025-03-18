@@ -9,7 +9,7 @@ Creates a new [FsItem](./ts-res.import.fsitem.md) from a file system path.
 **Signature:**
 
 ```typescript
-static create(importPath: string, qualifiers: IReadOnlyQualifierCollector): DetailedResult<FsItem, FsItemResultDetail>;
+static create(importPath: string, qualifiers: IReadOnlyQualifierCollector, fs?: IImporterFilesystem): DetailedResult<FsItem, FsItemResultDetail>;
 ```
 
 ## Parameters
@@ -59,6 +59,22 @@ qualifiers
 </td><td>
 
 The [qualifiers](./ts-res.qualifiers.ireadonlyqualifiercollector.md) used to parse embedded condition set tokens.
+
+
+</td></tr>
+<tr><td>
+
+fs
+
+
+</td><td>
+
+[IImporterFilesystem](./ts-res.import.iimporterfilesystem.md)
+
+
+</td><td>
+
+_(Optional)_ An optional [file system implementation](./ts-res.import.iimporterfilesystem.md) to use for this item.
 
 
 </td></tr>

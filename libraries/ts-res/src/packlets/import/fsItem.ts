@@ -22,24 +22,17 @@
 
 import { captureResult, DetailedResult, mapResults, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 import { Helpers as CommonHelpers, Validate } from '../common';
-import path from 'path';
-import fs from 'fs';
 import { ImporterResultDetail } from './importers/importer';
 import * as Conditions from '../conditions';
 import { IReadOnlyQualifierCollector } from '../qualifiers';
 import { ImportContext } from './importContext';
+import { FsItemType, IImporterFilesystem, ImporterFilesystem } from './importerFilesystem';
 
 /**
  * Result details for {@link Import.FsItem | FsItem} operations.
  * @public
  */
 export type FsItemResultDetail = 'failed' | 'skipped' | 'succeeded';
-
-/**
- * Supported types of file system items.
- * @public
- */
-export type FsItemType = 'file' | 'directory';
 
 /**
  * Interface describing some single file system item.
@@ -100,19 +93,30 @@ export class FsItem implements IFsItemProps {
   public readonly qualifiers: IReadOnlyQualifierCollector;
 
   /**
+   * The file system implementation to use for this item.
+   */
+  public readonly fs: IImporterFilesystem;
+
+  /**
    * Protected constructor creates a new {@link Import.FsItem | FsItem}.
    * @param item - The {@link Import.IFsItemProps | file system item properties} to use for this item.
    * @param qualifiers - The {@link Qualifiers.IReadOnlyQualifierCollector | qualifiers} used to parse
    * embedded condition set tokens.
+   * @param fs - {@link Import.IImporterFilesystem | file system implementation} to use for this item.
    * @returns A {@link DetailedResult | result} containing the new {@link Import.FsItem | FsItem}.
    */
-  protected constructor(item: IFsItemProps, qualifiers: IReadOnlyQualifierCollector) {
+  protected constructor(
+    item: IFsItemProps,
+    qualifiers: IReadOnlyQualifierCollector,
+    fs: IImporterFilesystem
+  ) {
     const { absolutePath, baseName, conditions, itemType } = item;
     this.absolutePath = absolutePath;
     this.baseName = baseName;
     this.conditions = conditions;
     this.itemType = itemType;
     this.qualifiers = qualifiers;
+    this.fs = fs;
   }
 
   /**
@@ -124,21 +128,21 @@ export class FsItem implements IFsItemProps {
     if (this.itemType !== 'directory') {
       return fail(`${this.absolutePath}: not a directory`);
     }
+
     const errors = new MessageAggregator();
     const children: FsItem[] = [];
 
-    for (const child of fs.readdirSync(this.absolutePath)) {
-      if (child !== '.' && child !== '..') {
-        const itemResult = FsItem.create(path.join(this.absolutePath, child), this.qualifiers);
+    return this.fs.getChildren(this.absolutePath).onSuccess((entries) => {
+      for (const child of entries) {
+        const itemResult = FsItem.create(child.absolutePath, this.qualifiers, this.fs);
         if (itemResult.isSuccess()) {
           children.push(itemResult.value);
         } else if (itemResult.detail !== 'skipped') {
           errors.addMessage(itemResult.message);
         }
       }
-    }
-
-    return errors.returnOrReport(succeed(children));
+      return errors.returnOrReport(succeed(children));
+    });
   }
 
   /**
@@ -146,6 +150,7 @@ export class FsItem implements IFsItemProps {
    * @param importPath - The path to the file system item to import.
    * @param qualifiers - The {@link Qualifiers.IReadOnlyQualifierCollector | qualifiers} used to parse
    * embedded condition set tokens.
+   * @param fs - An optional {@link Import.IImporterFilesystem | file system implementation} to use for this item.
    * @returns `Success` containing the new {@link Import.FsItem | FsItem} if an item is created
    * successfully, or a `Failure` containing an error message if it is not.  Note that the result detail
    * `skipped` indicates that the item was not created because it is not relevant - this is a soft error
@@ -153,37 +158,39 @@ export class FsItem implements IFsItemProps {
    */
   public static create(
     importPath: string,
-    qualifiers: IReadOnlyQualifierCollector
+    qualifiers: IReadOnlyQualifierCollector,
+    fs?: IImporterFilesystem
   ): DetailedResult<FsItem, FsItemResultDetail> {
     let detail: ImporterResultDetail = 'failed';
-    return captureResult(() => {
-      const absolutePath = path.resolve(importPath);
-      let baseName: string;
-      let itemType: FsItemType;
 
-      const stat = fs.statSync(absolutePath);
-      if (stat.isFile()) {
-        const extension = path.extname(absolutePath);
-        if (extension !== '.json') {
-          detail = 'skipped';
-          throw new Error(`${importPath}: not a JSON file`);
+    fs = fs ?? new ImporterFilesystem();
+    const absolutePath = fs.resolveAbsolutePath(importPath);
+    let baseName: string;
+
+    return fs
+      .getEntry(absolutePath)
+      .onSuccess((entry) => {
+        const itemType = entry.type;
+        if (entry.type === 'file') {
+          const extension = fs.getExtension(absolutePath);
+          if (extension !== '.json') {
+            detail = 'skipped';
+            return fail(`${importPath}: not a JSON file`);
+          }
+          baseName = fs.getBaseName(absolutePath, extension);
+        } else if (entry.type === 'directory') {
+          baseName = fs.getBaseName(absolutePath);
         }
-        baseName = path.basename(absolutePath, extension);
-        itemType = 'file';
-      } else if (stat.isDirectory()) {
-        baseName = path.basename(absolutePath);
-        itemType = 'directory';
-      } else {
-        detail = 'skipped';
-        throw new Error(`${importPath}: not a file or directory`);
-      }
 
-      const { baseName: newBaseName, conditions } = FsItem.tryParseBaseName(baseName, qualifiers)
-        .withErrorFormat((msg) => `${baseName}: error extracting conditions - ${msg}`)
-        .orThrow();
-
-      return new FsItem({ absolutePath, baseName: newBaseName, conditions, itemType }, qualifiers);
-    }).withDetail(detail, 'succeeded');
+        return FsItem.tryParseBaseName(baseName, qualifiers)
+          .withErrorFormat((msg) => `${baseName}: error extracting conditions - ${msg}`)
+          .onSuccess(({ baseName: newBaseName, conditions }) => {
+            return captureResult(
+              () => new FsItem({ absolutePath, baseName: newBaseName, conditions, itemType }, qualifiers, fs)
+            );
+          });
+      })
+      .withDetail(detail, 'succeeded');
   }
 
   /**

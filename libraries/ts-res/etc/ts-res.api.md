@@ -500,9 +500,10 @@ class FsItem implements IFsItemProps {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "DetailedResult"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor(item: IFsItemProps, qualifiers: IReadOnlyQualifierCollector);
+    protected constructor(item: IFsItemProps, qualifiers: IReadOnlyQualifierCollector, fs: IImporterFilesystem);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -518,7 +519,9 @@ class FsItem implements IFsItemProps {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static create(importPath: string, qualifiers: IReadOnlyQualifierCollector): DetailedResult<FsItem, FsItemResultDetail>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(importPath: string, qualifiers: IReadOnlyQualifierCollector, fs?: IImporterFilesystem): DetailedResult<FsItem, FsItemResultDetail>;
+    readonly fs: IImporterFilesystem;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getChildren(): Result<FsItem[]>;
@@ -856,6 +859,28 @@ interface IImporter {
     readonly types: ReadonlyArray<string>;
 }
 
+// @public
+interface IImporterFilesystem {
+    // (undocumented)
+    getBaseName(absolutePath: string, suffix?: string): string;
+    // (undocumented)
+    getChildren(absolutePath: string): Result<IImporterFsEntry[]>;
+    // (undocumented)
+    getEntry(absolutePath: string): Result<IImporterFsEntry>;
+    // (undocumented)
+    getExtension(absolutePath: string): string;
+    // (undocumented)
+    resolveAbsolutePath(...paths: string[]): string;
+}
+
+// @public
+interface IImporterFsEntry {
+    // (undocumented)
+    readonly absolutePath: string;
+    // (undocumented)
+    readonly type: FsItemType;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -952,9 +977,12 @@ declare namespace Import {
         IImportableResourceTree,
         Importable,
         FsItemResultDetail,
-        FsItemType,
         IFsItemProps,
-        FsItem
+        FsItem,
+        FsItemType,
+        IImporterFsEntry,
+        IImporterFilesystem,
+        ImporterFilesystem
     }
 }
 export { Import }
@@ -986,6 +1014,17 @@ class ImportContext implements IValidatedImportContext {
     withConditions(conditions: IConditionDecl[]): Result<ImportContext>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     withName(...names: string[]): Result<ImportContext>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ImporterFilesystem implements IImporterFilesystem {
+    getBaseName(absolutePath: string, suffix?: string): string;
+    getChildren(absolutePath: string): Result<IImporterFsEntry[]>;
+    getEntry(absolutePath: string): Result<IImporterFsEntry>;
+    getExtension(absolutePath: string): string;
+    resolveAbsolutePath(...paths: string[]): string;
 }
 
 // @public

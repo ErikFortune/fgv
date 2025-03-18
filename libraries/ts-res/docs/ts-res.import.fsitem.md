@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)(item, qualifiers)](./ts-res.import.fsitem._constructor_.md)
+[(constructor)(item, qualifiers, fs)](./ts-res.import.fsitem._constructor_.md)
 
 
 </td><td>
@@ -137,6 +137,27 @@ The base name of the file system item, once any conditions set tokens have been 
 </td></tr>
 <tr><td>
 
+[fs](./ts-res.import.fsitem.fs.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IImporterFilesystem](./ts-res.import.iimporterfilesystem.md)
+
+
+</td><td>
+
+The file system implementation to use for this item.
+
+
+</td></tr>
+<tr><td>
+
 [itemType](./ts-res.import.fsitem.itemtype.md)
 
 
@@ -199,7 +220,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[create(importPath, qualifiers)](./ts-res.import.fsitem.create.md)
+[create(importPath, qualifiers, fs)](./ts-res.import.fsitem.create.md)
 
 
 </td><td>

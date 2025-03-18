@@ -37,7 +37,7 @@ import 'path';
 import path from 'path';
 import fs from 'fs';
 import { IReadOnlyQualifierCollector } from '../../qualifiers';
-import { FsItem } from '../fsItems';
+import { FsItem } from '../fsItem';
 import { ImportContext } from '../importContext';
 
 export interface IFileSystemImporterCreateParams {

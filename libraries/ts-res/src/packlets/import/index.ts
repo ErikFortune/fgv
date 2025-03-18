@@ -22,7 +22,8 @@
 
 export * from './importContext';
 export * from './importable';
-export * from './fsItems';
+export * from './fsItem';
+export * from './importerFilesystem';
 
 import * as Importers from './importers';
 export { Importers };
