@@ -818,7 +818,7 @@ class FileTree_2 {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(hal: IFileTreeAccessors): Result<FileTree_2>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static forFilesystem(): Result<FileTree_2>;
+    static forFilesystem(prefix?: string): Result<FileTree_2>;
     getItem(itemPath: string): Result<FileTreeItem>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     hal: IFileTreeAccessors;
@@ -837,12 +837,13 @@ type FileTreeItemType = 'directory' | 'file';
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function forFilesystem(): Result<FileTree_2>;
+function forFilesystem(prefix?: string): Result<FileTree_2>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 class FsFileTreeAccessors implements IFileTreeAccessors {
+    constructor(prefix?: string);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -867,6 +868,8 @@ class FsFileTreeAccessors implements IFileTreeAccessors {
     //
     // (undocumented)
     joinPaths(...paths: string[]): string;
+    // (undocumented)
+    readonly prefix: string | undefined;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)

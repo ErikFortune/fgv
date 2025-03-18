@@ -13,6 +13,84 @@ export declare class FsFileTreeAccessors implements IFileTreeAccessors
 ```
 **Implements:** [IFileTreeAccessors](./ts-utils.filetree.ifiletreeaccessors.md)
 
+## Constructors
+
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(prefix)](./ts-utils.filetree.fsfiletreeaccessors._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Protected constructor for derived classes.
+
+
+</td></tr>
+</tbody></table>
+
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[prefix](./ts-utils.filetree.fsfiletreeaccessors.prefix.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
+
 ## Methods
 
 <table><thead><tr><th>

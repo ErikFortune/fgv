@@ -9,8 +9,44 @@ Helper function to create a new [FileTree](./ts-utils.filetree.filetree.md) inst
 **Signature:**
 
 ```typescript
-export declare function forFilesystem(): Result<FileTree>;
+export declare function forFilesystem(prefix?: string): Result<FileTree>;
 ```
+
+## Parameters
+
+<table><thead><tr><th>
+
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+prefix
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ An optional prefix to prepended to supplied relative paths.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;FileTree&gt;

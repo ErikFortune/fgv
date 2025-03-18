@@ -78,7 +78,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[forFilesystem()](./ts-utils.filetree.forfilesystem.md)
+[forFilesystem(prefix)](./ts-utils.filetree.forfilesystem.md)
 
 
 </td><td>

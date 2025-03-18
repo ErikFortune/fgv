@@ -59,9 +59,11 @@ export class FileTree {
   /**
    * Creates a new {@link FileTree.FileTree | FileTree} instance with accessors
    * for the filesystem.
+   * @param prefix - An optional prefix to prepended to supplied relative
+   * paths.
    */
-  public static forFilesystem(): Result<FileTree> {
-    return captureResult(() => new FileTree(new FsFileTreeAccessors()));
+  public static forFilesystem(prefix?: string): Result<FileTree> {
+    return captureResult(() => new FileTree(new FsFileTreeAccessors(prefix)));
   }
 
   /**
@@ -91,12 +93,13 @@ export class FileTree {
 /**
  * Helper function to create a new {@link FileTree.FileTree | FileTree} instance
  * with accessors for the filesystem.
+ * @param prefix - An optional prefix to prepended to supplied relative paths.
  * @returns {@link Success | Success} with the new {@link FileTree.FileTree | FileTree} instance
  * if successful, or {@link Failure | Failure} with an error message otherwise.
  * @public
  */
-export function forFilesystem(): Result<FileTree> {
-  return FileTree.forFilesystem();
+export function forFilesystem(prefix?: string): Result<FileTree> {
+  return FileTree.forFilesystem(prefix);
 }
 
 /**

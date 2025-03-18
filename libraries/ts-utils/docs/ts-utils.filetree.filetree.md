@@ -128,7 +128,7 @@ Creates a new [FileTree](./ts-utils.filetree.filetree.md) instance with the supp
 </td></tr>
 <tr><td>
 
-[forFilesystem()](./ts-utils.filetree.filetree.forfilesystem.md)
+[forFilesystem(prefix)](./ts-utils.filetree.filetree.forfilesystem.md)
 
 
 </td><td>

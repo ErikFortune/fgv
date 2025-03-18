@@ -33,10 +33,24 @@ import { FileItem } from './fileItem';
  * @public
  */
 export class FsFileTreeAccessors implements IFileTreeAccessors {
+  public readonly prefix: string | undefined;
+
+  /**
+   * Protected constructor for derived classes.
+   * @param prefix - Optional prefix for the tree.
+   * @public
+   */
+  public constructor(prefix?: string) {
+    this.prefix = prefix;
+  }
+
   /**
    * {@inheritDoc FileTree.IFileTreeAccessors.resolveAbsolutePath}
    */
   public resolveAbsolutePath(...paths: string[]): string {
+    if (this.prefix && !path.isAbsolute(paths[0])) {
+      return path.resolve(this.prefix, ...paths);
+    }
     return path.resolve(...paths);
   }
 
@@ -66,13 +80,13 @@ export class FsFileTreeAccessors implements IFileTreeAccessors {
    */
   public getItem(itemPath: string): Result<FileTreeItem> {
     return captureResult(() => {
-      const stat = fs.statSync(path.resolve(itemPath));
+      const stat = fs.statSync(this.resolveAbsolutePath(itemPath));
       if (stat.isDirectory()) {
         return DirectoryItem.create(itemPath, this).orThrow();
       } else if (stat.isFile()) {
         return FileItem.create(itemPath, this).orThrow();
       }
-      throw new Error(`${itemPath}: Not a file or directory`);
+      throw new Error(`${itemPath}: not a file or directory`);
     });
   }
 
@@ -80,7 +94,7 @@ export class FsFileTreeAccessors implements IFileTreeAccessors {
    * {@inheritDoc FileTree.IFileTreeAccessors.getFileContents}
    */
   public getFileContents(filePath: string): Result<string> {
-    return captureResult(() => fs.readFileSync(path.resolve(filePath), 'utf8'));
+    return captureResult(() => fs.readFileSync(this.resolveAbsolutePath(filePath), 'utf8'));
   }
 
   /**
@@ -89,12 +103,9 @@ export class FsFileTreeAccessors implements IFileTreeAccessors {
   public getChildren(dirPath: string): Result<ReadonlyArray<FileTreeItem>> {
     return captureResult(() => {
       const children: FileTreeItem[] = [];
-      const files = fs.readdirSync(dirPath, { withFileTypes: true });
+      const files = fs.readdirSync(this.resolveAbsolutePath(dirPath), { withFileTypes: true });
       files.forEach((file) => {
-        if (file.name === '.' || file.name === '..') {
-          return;
-        }
-        const fullPath = path.resolve(dirPath, file.name);
+        const fullPath = this.resolveAbsolutePath(dirPath, file.name);
         if (file.isDirectory()) {
           children.push(DirectoryItem.create(fullPath, this).orThrow());
         } else if (file.isFile()) {
