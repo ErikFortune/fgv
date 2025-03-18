@@ -86,7 +86,7 @@ export class InMemoryDirectory {
       if (existing instanceof InMemoryDirectory) {
         return succeed(existing);
       }
-      return fail(`${name}: Child is not a directory`);
+      return fail(`${name}: not a directory`);
     }
     const child = new InMemoryDirectory(this.getChildPath(name));
     this._children.set(name, child);
@@ -102,7 +102,7 @@ export class InMemoryDirectory {
    */
   public addFile(name: string, contents: unknown): Result<InMemoryFile> {
     if (this._children.has(name)) {
-      return fail(`${name}: Child already exists`);
+      return fail(`${name}: already exists`);
     }
     const child = new InMemoryFile(this.getChildPath(name), contents);
     this._children.set(name, child);
@@ -117,6 +117,9 @@ export class InMemoryDirectory {
    * {@link Failure | Failure} with an error message otherwise.
    */
   public getChildPath(name: string): string {
+    if (this.absolutePath === '/') {
+      return `/${name}`;
+    }
     return [this.absolutePath, name].join('/');
   }
 }
@@ -149,7 +152,7 @@ export class TreeBuilder {
   protected constructor(prefix?: string) {
     this.prefix = prefix ?? '/';
     if (!this.prefix.startsWith('/')) {
-      throw new Error('Prefix must start with a /');
+      throw new Error(`${prefix}: not an absolute path`);
     }
     this.root = new InMemoryDirectory(this.prefix);
     this.byAbsolutePath = new Map<string, InMemoryDirectory | InMemoryFile>();
@@ -178,7 +181,7 @@ export class TreeBuilder {
   public addFile(absolutePath: string, contents: unknown): Result<InMemoryFile> {
     const parts = absolutePath.split('/').filter((p) => p.length > 0);
     if (parts.length === 0) {
-      return fail('Invalid file path');
+      return fail(`${absolutePath}: invalid file path`);
     }
     let dir = this.root;
     while (parts.length > 1) {
