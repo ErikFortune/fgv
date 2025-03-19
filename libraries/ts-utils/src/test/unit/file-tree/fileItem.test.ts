@@ -59,6 +59,7 @@ describe('FileItem', () => {
           expect(item.name).toEqual('file1.json');
           expect(item.type).toEqual('file');
           if (item.type === 'file') {
+            expect(item.baseName).toEqual('file1');
             expect(item.extension).toEqual('.json');
             expect(item.getContents()).toSucceedWith({ helloMyNameIs: 'file1' });
           }

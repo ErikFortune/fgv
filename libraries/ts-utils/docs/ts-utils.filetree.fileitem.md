@@ -118,6 +118,27 @@ The absolute path of the file.
 </td></tr>
 <tr><td>
 
+[baseName](./ts-utils.filetree.fileitem.basename.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+The base name of the file (without extension)
+
+
+</td></tr>
+<tr><td>
+
 [extension](./ts-utils.filetree.fileitem.extension.md)
 
 

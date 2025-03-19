@@ -48,6 +48,13 @@ export class FileItem implements IFileTreeFileItem {
   }
 
   /**
+   * {@inheritdoc FileTree.IFileTreeFileItem.baseName}
+   */
+  public get baseName(): string {
+    return this._hal.getBaseName(this.absolutePath, this.extension);
+  }
+
+  /**
    * {@inheritdoc FileTree.IFileTreeFileItem.extension}
    */
   public get extension(): string {

@@ -161,9 +161,10 @@ describe('FileSystemTree', () => {
 
     describe('getFileContents', () => {
       test('gets the contents of a file', () => {
-        expect(tree.hal.getFileContents('some/path/file1.json')).toSucceedWith(
-          JSON.stringify({ helloMyNameIs: 'file1' })
-        );
+        expect(tree.hal.getFileContents('some/path/file1.json')).toSucceedAndSatisfy((body) => {
+          const asJson = JSON.parse(body);
+          expect(asJson).toEqual({ helloMyNameIs: 'file1' });
+        });
       });
 
       test('fails to get the contents of a directory', () => {

@@ -51,6 +51,11 @@ export interface IFileTreeFileItem {
   readonly name: string;
 
   /**
+   * The base name of the file (without extension)
+   */
+  readonly baseName: string;
+
+  /**
    * The extension of the file
    */
   readonly extension: string;

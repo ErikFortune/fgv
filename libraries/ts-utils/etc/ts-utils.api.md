@@ -765,6 +765,10 @@ class FileItem implements IFileTreeFileItem {
     //
     // (undocumented)
     readonly absolutePath: string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get baseName(): string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(path: string, hal: IFileTreeAccessors): Result<FileItem>;
@@ -1127,6 +1131,7 @@ interface IFileTreeDirectoryItem {
 // @public
 interface IFileTreeFileItem {
     readonly absolutePath: string;
+    readonly baseName: string;
     readonly extension: string;
     getContents(): Result<unknown>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
