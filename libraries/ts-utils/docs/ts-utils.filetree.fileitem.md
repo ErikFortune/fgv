@@ -118,6 +118,27 @@ The absolute path of the file.
 </td></tr>
 <tr><td>
 
+[extension](./ts-utils.filetree.fileitem.extension.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+The extension of the file
+
+
+</td></tr>
+<tr><td>
+
 [name](./ts-utils.filetree.fileitem.name.md)
 
 

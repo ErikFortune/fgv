@@ -51,6 +51,11 @@ export interface IFileTreeFileItem {
   readonly name: string;
 
   /**
+   * The extension of the file
+   */
+  readonly extension: string;
+
+  /**
    * Gets the contents of the file as parsed JSON.
    * @returns {@link Success | Success} with the parsed contents if successful, or
    * {@link Failure | Failure}with an error message otherwise.

@@ -48,6 +48,13 @@ export class FileItem implements IFileTreeFileItem {
   }
 
   /**
+   * {@inheritdoc FileTree.IFileTreeFileItem.extension}
+   */
+  public get extension(): string {
+    return this._hal.getExtension(this.absolutePath);
+  }
+
+  /**
    * The {@link FileTree.IFileTreeAccessors | accessors} to use for file system operations.
    * @public
    */
