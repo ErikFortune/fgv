@@ -107,4 +107,22 @@ describe('importContext', () => {
       });
     });
   });
+
+  describe('extend', () => {
+    test('extends a context with a new baseId and conditions', () => {
+      const conditions1 = [{ qualifierName: 'test', value: 'value' }];
+      const context = TsRes.Import.ImportContext.create({
+        baseId: 'baseId',
+        conditions: conditions1
+      }).orThrow();
+      const conditions2: TsRes.Conditions.IConditionDecl[] = [{ qualifierName: 'test2', value: 'value2' }];
+
+      expect(
+        context.extend({ baseId: 'newBaseId' as TsRes.ResourceId, conditions: conditions2 })
+      ).toSucceedAndSatisfy((c2: TsRes.Import.IValidatedImportContext) => {
+        expect(c2.baseId).toBe('baseId.newBaseId');
+        expect(c2.conditions).toEqual([...conditions1, ...conditions2]);
+      });
+    });
+  });
 });
