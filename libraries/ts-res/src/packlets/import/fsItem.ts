@@ -27,6 +27,7 @@ import {
   mapResults,
   MessageAggregator,
   Result,
+  fail,
   succeed
 } from '@fgv/ts-utils';
 import { Helpers as CommonHelpers, Validate } from '../common';
@@ -174,6 +175,7 @@ export class FsItem implements IFsItemProps {
   ): DetailedResult<FsItem, FsItemResultDetail> {
     let detail: ImporterResultDetail = 'failed';
 
+    /* c8 ignore next 1 - ?? is defense in depth */
     tree = tree ?? FileTree.forFilesystem().orThrow();
     let baseName: string;
 
@@ -185,7 +187,7 @@ export class FsItem implements IFsItemProps {
           const extension = item.extension;
           if (extension !== '.json') {
             detail = 'skipped';
-            return fail(`${importPath}: not a JSON file`);
+            return fail<FsItem>(`${importPath}: not a JSON file`);
           }
           baseName = item.baseName;
         } else if (item.type === 'directory') {
