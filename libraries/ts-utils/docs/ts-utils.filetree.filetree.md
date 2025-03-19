@@ -144,6 +144,34 @@ Creates a new [FileTree](./ts-utils.filetree.filetree.md) instance with accessor
 </td></tr>
 <tr><td>
 
+[getDirectory(directoryPath)](./ts-utils.filetree.filetree.getdirectory.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a directory item from the tree.
+
+
+</td></tr>
+<tr><td>
+
+[getFile(filePath)](./ts-utils.filetree.filetree.getfile.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a file item from the tree.
+
+
+</td></tr>
+<tr><td>
+
 [getItem(itemPath)](./ts-utils.filetree.filetree.getitem.md)
 
 
@@ -152,7 +180,7 @@ Creates a new [FileTree](./ts-utils.filetree.filetree.md) instance with accessor
 
 </td><td>
 
-Resolves a path to an absolute path.
+Gets an item from the tree.
 
 
 </td></tr>

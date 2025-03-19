@@ -131,6 +131,53 @@ describe('InMemoryTree', () => {
     });
   });
 
+  describe('getFile', () => {
+    test('gets a file that exists', () => {
+      expect(FileTree.inMemory(files).orThrow().getFile('/some/path/file1.json')).toSucceedAndSatisfy(
+        (item) => {
+          expect(item.absolutePath).toEqual('/some/path/file1.json');
+          expect(item.name).toEqual('file1.json');
+          expect(item.type).toEqual('file');
+          expect(item.getContents()).toSucceedWith({ helloMyNameIs: 'file1' });
+        }
+      );
+    });
+
+    test('fails for a directory', () => {
+      expect(FileTree.inMemory(files).orThrow().getFile('/some/path')).toFailWith(/not a file/i);
+    });
+
+    test('fails for a path that does not exist', () => {
+      expect(FileTree.inMemory(files).orThrow().getFile('/some/path/file4.json')).toFailWith(/not found/i);
+    });
+  });
+
+  describe('getDirectory', () => {
+    test('gets a directory that exists', () => {
+      expect(FileTree.inMemory(files).orThrow().getDirectory('/some/path')).toSucceedAndSatisfy((item) => {
+        expect(item.absolutePath).toEqual('/some/path');
+        expect(item.name).toEqual('path');
+        expect(item.type).toEqual('directory');
+        expect(item.getChildren()).toSucceedAndSatisfy((children) => {
+          expect(children.length).toEqual(3);
+          expect(children.map((c) => c.name).sort()).toEqual(['below', 'file1.json', 'file3.json']);
+        });
+      });
+    });
+
+    test('fails for a file', () => {
+      expect(FileTree.inMemory(files).orThrow().getDirectory('/some/path/file1.json')).toFailWith(
+        /not a directory/i
+      );
+    });
+
+    test('fails for a path that does not exist', () => {
+      expect(FileTree.inMemory(files).orThrow().getDirectory('/some/path/does-not-exist')).toFailWith(
+        /not found/i
+      );
+    });
+  });
+
   describe('inMemory hal', () => {
     let tree: FileTree.FileTree;
 

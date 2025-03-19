@@ -4,7 +4,7 @@
 
 ## FileTree.FileTree.getItem() method
 
-Resolves a path to an absolute path.
+Gets an item from the tree.
 
 **Signature:**
 
@@ -42,6 +42,8 @@ string
 
 </td><td>
 
+The path to the item.
+
 
 </td></tr>
 </tbody></table>
@@ -49,5 +51,5 @@ string
 
 [Result](./ts-utils.result.md)<!-- -->&lt;[FileTreeItem](./ts-utils.filetree.filetreeitem.md)<!-- -->&gt;
 
-The resolved path.
+[Success](./ts-utils.success.md) with the item if successful, or [Failure](./ts-utils.failure.md) with an error message otherwise.
 

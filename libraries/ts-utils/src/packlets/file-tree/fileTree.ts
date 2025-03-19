@@ -20,8 +20,13 @@
  * SOFTWARE.
  */
 
-import { captureResult, Result } from '../base';
-import { FileTreeItem, IFileTreeAccessors } from './fileTreeAccessors';
+import { captureResult, Result, fail, succeed } from '../base';
+import {
+  FileTreeItem,
+  IFileTreeAccessors,
+  IFileTreeDirectoryItem,
+  IFileTreeFileItem
+} from './fileTreeAccessors';
 import { FsFileTreeAccessors } from './fsTree';
 import { IInMemoryFile, InMemoryTreeAccessors } from './in-memory';
 
@@ -80,13 +85,44 @@ export class FileTree {
   }
 
   /**
-   * Resolves a path to an absolute path.
-   * @param paths - The path components to resolve.
-   * @returns The resolved path.
+   * Gets an item from the tree.
+   * @param itemPath - The path to the item.
+   * @returns {@link Success | Success} with the item if successful,
+   * or {@link Failure | Failure} with an error message otherwise.
    */
   public getItem(itemPath: string): Result<FileTreeItem> {
     const absolutePath = this.hal.resolveAbsolutePath(itemPath);
     return this.hal.getItem(absolutePath);
+  }
+
+  /**
+   * Gets a file item from the tree.
+   * @param filePath - The path to the file.
+   * @returns {@link Success | Success} with the {@link FileTree.IFileTreeFileItem | file item}
+   * if successful, or {@link Failure | Failure} with an error message otherwise.
+   */
+  public getFile(filePath: string): Result<IFileTreeFileItem> {
+    return this.getItem(filePath).onSuccess((item) => {
+      if (item.type === 'file') {
+        return succeed(item);
+      }
+      return fail(`${filePath}: not a file`);
+    });
+  }
+
+  /**
+   * Gets a directory item from the tree.
+   * @param directoryPath - The path to the directory.
+   * @returns {@link Success | Success} with the {@link FileTree.IFileTreeDirectoryItem | directory item}
+   * if successful, or {@link Failure | Failure} with an error message otherwise.
+   */
+  public getDirectory(directoryPath: string): Result<IFileTreeDirectoryItem> {
+    return this.getItem(directoryPath).onSuccess((item) => {
+      if (item.type === 'directory') {
+        return succeed(item);
+      }
+      return fail(`${directoryPath}: not a directory`);
+    });
   }
 }
 

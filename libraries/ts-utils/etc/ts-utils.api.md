@@ -827,6 +827,10 @@ class FileTree_2 {
     static create(hal: IFileTreeAccessors): Result<FileTree_2>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static forFilesystem(prefix?: string): Result<FileTree_2>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getDirectory(directoryPath: string): Result<IFileTreeDirectoryItem>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getFile(filePath: string): Result<IFileTreeFileItem>;
     getItem(itemPath: string): Result<FileTreeItem>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     hal: IFileTreeAccessors;
