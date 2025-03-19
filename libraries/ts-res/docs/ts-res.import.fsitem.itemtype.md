@@ -9,5 +9,5 @@ The type of the file system item.
 **Signature:**
 
 ```typescript
-readonly itemType: FsItemType;
+readonly itemType: FileTree.FileTreeItemType;
 ```

@@ -20,13 +20,20 @@
  * SOFTWARE.
  */
 
-import { captureResult, DetailedResult, mapResults, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
+import {
+  captureResult,
+  DetailedResult,
+  FileTree,
+  mapResults,
+  MessageAggregator,
+  Result,
+  succeed
+} from '@fgv/ts-utils';
 import { Helpers as CommonHelpers, Validate } from '../common';
 import { ImporterResultDetail } from './importers/importer';
 import * as Conditions from '../conditions';
 import { IReadOnlyQualifierCollector } from '../qualifiers';
 import { ImportContext } from './importContext';
-import { FsItemType, IImporterFilesystem, ImporterFilesystem } from './importerFilesystem';
 
 /**
  * Result details for {@link Import.FsItem | FsItem} operations.
@@ -59,7 +66,7 @@ export interface IFsItemProps {
   /**
    * The type of the file system item.
    */
-  readonly itemType: FsItemType;
+  readonly itemType: FileTree.FileTreeItemType;
 }
 
 /**
@@ -85,7 +92,7 @@ export class FsItem implements IFsItemProps {
   /**
    * {@inheritDoc Import.IFsItemProps.itemType}
    */
-  public readonly itemType: FsItemType;
+  public readonly itemType: FileTree.FileTreeItemType;
 
   /**
    * The {@link Qualifiers.IReadOnlyQualifierCollector | qualifiers} to use for this item.
@@ -93,22 +100,23 @@ export class FsItem implements IFsItemProps {
   public readonly qualifiers: IReadOnlyQualifierCollector;
 
   /**
-   * The file system implementation to use for this item.
+   * The file tree implementation to use for this item.
    */
-  public readonly fs: IImporterFilesystem;
+  public readonly tree: FileTree.FileTree;
 
   /**
    * Protected constructor creates a new {@link Import.FsItem | FsItem}.
    * @param item - The {@link Import.IFsItemProps | file system item properties} to use for this item.
    * @param qualifiers - The {@link Qualifiers.IReadOnlyQualifierCollector | qualifiers} used to parse
    * embedded condition set tokens.
-   * @param fs - {@link Import.IImporterFilesystem | file system implementation} to use for this item.
-   * @returns A {@link DetailedResult | result} containing the new {@link Import.FsItem | FsItem}.
+   * @param tree - file tree implementation to use for this item.
+   * @returns `Success` containing the new {@link Import.FsItem | FsItem} if successful, or a `Failure`
+   * containing an error message if not.
    */
   protected constructor(
     item: IFsItemProps,
     qualifiers: IReadOnlyQualifierCollector,
-    fs: IImporterFilesystem
+    tree: FileTree.FileTree
   ) {
     const { absolutePath, baseName, conditions, itemType } = item;
     this.absolutePath = absolutePath;
@@ -116,7 +124,7 @@ export class FsItem implements IFsItemProps {
     this.conditions = conditions;
     this.itemType = itemType;
     this.qualifiers = qualifiers;
-    this.fs = fs;
+    this.tree = tree;
   }
 
   /**
@@ -132,17 +140,20 @@ export class FsItem implements IFsItemProps {
     const errors = new MessageAggregator();
     const children: FsItem[] = [];
 
-    return this.fs.getChildren(this.absolutePath).onSuccess((entries) => {
-      for (const child of entries) {
-        const itemResult = FsItem.create(child.absolutePath, this.qualifiers, this.fs);
-        if (itemResult.isSuccess()) {
-          children.push(itemResult.value);
-        } else if (itemResult.detail !== 'skipped') {
-          errors.addMessage(itemResult.message);
+    return this.tree
+      .getDirectory(this.absolutePath)
+      .onSuccess((dir) => dir.getChildren())
+      .onSuccess((entries) => {
+        for (const child of entries) {
+          const itemResult = FsItem.create(child.absolutePath, this.qualifiers, this.tree);
+          if (itemResult.isSuccess()) {
+            children.push(itemResult.value);
+          } else if (itemResult.detail !== 'skipped') {
+            errors.addMessage(itemResult.message);
+          }
         }
-      }
-      return errors.returnOrReport(succeed(children));
-    });
+        return errors.returnOrReport(succeed(children));
+      });
   }
 
   /**
@@ -159,34 +170,35 @@ export class FsItem implements IFsItemProps {
   public static create(
     importPath: string,
     qualifiers: IReadOnlyQualifierCollector,
-    fs?: IImporterFilesystem
+    tree?: FileTree.FileTree
   ): DetailedResult<FsItem, FsItemResultDetail> {
     let detail: ImporterResultDetail = 'failed';
 
-    fs = fs ?? new ImporterFilesystem();
-    const absolutePath = fs.resolveAbsolutePath(importPath);
+    tree = tree ?? FileTree.forFilesystem().orThrow();
     let baseName: string;
 
-    return fs
-      .getEntry(absolutePath)
-      .onSuccess((entry) => {
-        const itemType = entry.type;
-        if (entry.type === 'file') {
-          const extension = fs.getExtension(absolutePath);
+    return tree
+      .getItem(importPath)
+      .onSuccess((item) => {
+        const itemType = item.type;
+        if (item.type === 'file') {
+          const extension = item.extension;
           if (extension !== '.json') {
             detail = 'skipped';
             return fail(`${importPath}: not a JSON file`);
           }
-          baseName = fs.getBaseName(absolutePath, extension);
-        } else if (entry.type === 'directory') {
-          baseName = fs.getBaseName(absolutePath);
+          baseName = item.baseName;
+        } else if (item.type === 'directory') {
+          baseName = item.name;
         }
+        const absolutePath = item.absolutePath;
 
         return FsItem.tryParseBaseName(baseName, qualifiers)
           .withErrorFormat((msg) => `${baseName}: error extracting conditions - ${msg}`)
           .onSuccess(({ baseName: newBaseName, conditions }) => {
             return captureResult(
-              () => new FsItem({ absolutePath, baseName: newBaseName, conditions, itemType }, qualifiers, fs)
+              () =>
+                new FsItem({ absolutePath, baseName: newBaseName, conditions, itemType }, qualifiers, tree)
             );
           });
       })

@@ -9,7 +9,7 @@ Protected constructor creates a new [FsItem](./ts-res.import.fsitem.md)<!-- -->.
 **Signature:**
 
 ```typescript
-protected constructor(item: IFsItemProps, qualifiers: IReadOnlyQualifierCollector, fs: IImporterFilesystem);
+protected constructor(item: IFsItemProps, qualifiers: IReadOnlyQualifierCollector, tree: FileTree.FileTree);
 ```
 
 ## Parameters
@@ -64,17 +64,17 @@ The [qualifiers](./ts-res.qualifiers.ireadonlyqualifiercollector.md) used to par
 </td></tr>
 <tr><td>
 
-fs
+tree
 
 
 </td><td>
 
-[IImporterFilesystem](./ts-res.import.iimporterfilesystem.md)
+FileTree.FileTree
 
 
 </td><td>
 
-[file system implementation](./ts-res.import.iimporterfilesystem.md) to use for this item.
+file tree implementation to use for this item.
 
 
 </td></tr>

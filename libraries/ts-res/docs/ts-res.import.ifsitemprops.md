@@ -110,7 +110,7 @@ The base name of the file system item, once any conditions set tokens have been 
 
 </td><td>
 
-[FsItemType](./ts-res.import.fsitemtype.md)
+FileTree.FileTreeItemType
 
 
 </td><td>

@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)(item, qualifiers, fs)](./ts-res.import.fsitem._constructor_.md)
+[(constructor)(item, qualifiers, tree)](./ts-res.import.fsitem._constructor_.md)
 
 
 </td><td>
@@ -137,27 +137,6 @@ The base name of the file system item, once any conditions set tokens have been 
 </td></tr>
 <tr><td>
 
-[fs](./ts-res.import.fsitem.fs.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IImporterFilesystem](./ts-res.import.iimporterfilesystem.md)
-
-
-</td><td>
-
-The file system implementation to use for this item.
-
-
-</td></tr>
-<tr><td>
-
 [itemType](./ts-res.import.fsitem.itemtype.md)
 
 
@@ -168,7 +147,7 @@ The file system implementation to use for this item.
 
 </td><td>
 
-[FsItemType](./ts-res.import.fsitemtype.md)
+FileTree.FileTreeItemType
 
 
 </td><td>
@@ -198,6 +177,27 @@ The [qualifiers](./ts-res.qualifiers.ireadonlyqualifiercollector.md) to use for 
 
 
 </td></tr>
+<tr><td>
+
+[tree](./ts-res.import.fsitem.tree.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+FileTree.FileTree
+
+
+</td><td>
+
+The file tree implementation to use for this item.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods
@@ -220,7 +220,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[create(importPath, qualifiers, fs)](./ts-res.import.fsitem.create.md)
+[create(importPath, qualifiers, tree)](./ts-res.import.fsitem.create.md)
 
 
 </td><td>

@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-item: string;
+item: FileTree.FileTreeItem;
 ```

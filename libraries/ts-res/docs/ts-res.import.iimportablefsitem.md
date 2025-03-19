@@ -65,7 +65,7 @@ _(Optional)_
 
 </td><td>
 
-string
+FileTree.FileTreeItem
 
 
 </td><td>

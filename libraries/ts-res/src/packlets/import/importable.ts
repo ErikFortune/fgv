@@ -23,6 +23,7 @@
 import { JsonValue } from '@fgv/ts-json-base';
 import * as ResourceJson from '../resource-json';
 import { ImportContext } from './importContext';
+import { FileTree } from '@fgv/ts-utils';
 
 /**
  * Base interface for importable entities.
@@ -49,7 +50,7 @@ export interface IImportablePath extends IImportable {
  */
 export interface IImportableFsItem extends IImportable {
   type: 'fsItem';
-  item: string;
+  item: FileTree.FileTreeItem;
   context?: ImportContext;
 }
 

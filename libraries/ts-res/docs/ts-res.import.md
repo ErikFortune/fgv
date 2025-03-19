@@ -39,17 +39,6 @@ Class to accumulate context for a resource import operation.
 
 
 </td></tr>
-<tr><td>
-
-[ImporterFilesystem](./ts-res.import.importerfilesystem.md)
-
-
-</td><td>
-
-Default implementation of the [IImporterFilesystem](./ts-res.import.iimporterfilesystem.md) interface
-
-
-</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -155,28 +144,6 @@ Accumulated context of a resource import operation.
 </td></tr>
 <tr><td>
 
-[IImporterFilesystem](./ts-res.import.iimporterfilesystem.md)
-
-
-</td><td>
-
-Abstract file system importer interface.
-
-
-</td></tr>
-<tr><td>
-
-[IImporterFsEntry](./ts-res.import.iimporterfsentry.md)
-
-
-</td><td>
-
-Interface describing a single file system entry.
-
-
-</td></tr>
-<tr><td>
-
 [IValidatedImportContext](./ts-res.import.ivalidatedimportcontext.md)
 
 
@@ -233,17 +200,6 @@ Description
 </td><td>
 
 Result details for [FsItem](./ts-res.import.fsitem.md) operations.
-
-
-</td></tr>
-<tr><td>
-
-[FsItemType](./ts-res.import.fsitemtype.md)
-
-
-</td><td>
-
-Supported types of file system items.
 
 
 </td></tr>
