@@ -371,6 +371,17 @@ Converts a number to a [DecisionIndex](./ts-res.decisionindex.md) if it is a val
 </td></tr>
 <tr><td>
 
+[toOptionalResourceId(id)](./ts-res.validate.tooptionalresourceid.md)
+
+
+</td><td>
+
+Converts an optional string to an optional [resource ID](./ts-res.resourceid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [toQualifierIndex(index)](./ts-res.validate.toqualifierindex.md)
 
 

@@ -23,6 +23,7 @@
 import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-utils';
 import * as TsRes from '../../../index';
+import path from 'path';
 
 const resourceFiles: FileTree.IInMemoryFile[] = [
   {
@@ -115,7 +116,18 @@ describe('FsItem', () => {
     tree = FileTree.inMemory(files).orThrow();
   });
 
-  describe('create static method', () => {
+  describe('createForPath static method', () => {
+    test('creates a new FsItem using filesystem if no tree is provided', () => {
+      expect(TsRes.Import.FsItem.createForPath('src/test/data/sample.json', qualifiers)).toSucceedAndSatisfy(
+        (item) => {
+          expect(item.item.absolutePath).toEqual(path.resolve('src/test/data/sample.json'));
+          expect(item.baseName).toEqual('sample');
+          expect(item.conditions.length).toEqual(0);
+          expect(item.item.type).toEqual('file');
+        }
+      );
+    });
+
     test('creates a new FsItem from a valid unconditional file path', () => {
       expect(TsRes.Import.FsItem.createForPath('/US/resources.json', qualifiers, tree)).toSucceedAndSatisfy(
         (item) => {
@@ -169,14 +181,14 @@ describe('FsItem', () => {
     });
 
     test('creates a new FsItem from a valid unconditional directory path', () => {
-      expect(TsRes.Import.FsItem.createForPath('/home=CA', qualifiers, tree)).toSucceedAndSatisfy((item) => {
-        expect(item.item.absolutePath).toEqual('/home=CA');
-        expect(item.baseName).toEqual('');
-        expect(item.conditions.length).toEqual(1);
-        expect(item.conditions[0].qualifier.name).toEqual('homeTerritory');
-        expect(item.conditions[0].value).toEqual('CA');
-        expect(item.item.type).toEqual('directory');
-      });
+      expect(TsRes.Import.FsItem.createForPath('/resources', qualifiers, tree)).toSucceedAndSatisfy(
+        (item) => {
+          expect(item.item.absolutePath).toEqual('/resources');
+          expect(item.baseName).toEqual('resources');
+          expect(item.conditions.length).toEqual(0);
+          expect(item.item.type).toEqual('directory');
+        }
+      );
     });
 
     test('creates a new FsItem from a valid conditional directory path', () => {

@@ -41,6 +41,32 @@ Class to accumulate context for a resource import operation.
 </td></tr>
 </tbody></table>
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[isImportable(i)](./ts-res.import.isimportable.md)
+
+
+</td><td>
+
+Type guard for [importables](./ts-res.import.importable.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
+
 ## Interfaces
 
 <table><thead><tr><th>

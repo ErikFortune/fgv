@@ -110,6 +110,18 @@ export function toResourceId(id: string): Result<ResourceId> {
 }
 
 /**
+ * Converts an optional string to an optional {@link ResourceId | resource ID}.
+ *
+ * @param id - The string to convert.
+ * @returns `Success` with the converted ID if valid, or `Failure` with an error message
+ * if not.
+ * @public
+ */
+export function toOptionalResourceId(id?: string): Result<ResourceId | undefined> {
+  return id ? toResourceId(id) : succeed(undefined);
+}
+
+/**
  * Converts a number to a {@link ResourceIndex | resource index}.
  *
  * @param index - The number to convert.

@@ -149,8 +149,14 @@ export class FsItem implements IFsItemProps {
     qualifiers: IReadOnlyQualifierCollector,
     tree?: FileTree.FileTree
   ): DetailedResult<FsItem, FsItemResultDetail> {
-    /* c8 ignore next 1 - ?? is defense in depth */
-    tree = tree ?? FileTree.forFilesystem().orThrow();
+    if (tree === undefined) {
+      const treeResult = FileTree.forFilesystem();
+      /* c8 ignore next 3 - defense in depth should never happen */
+      if (treeResult.isFailure()) {
+        return failWithDetail(treeResult.message, 'failed');
+      }
+      tree = treeResult.value;
+    }
 
     return tree
       .getItem(importPath)
@@ -200,7 +206,7 @@ export class FsItem implements IFsItemProps {
    * if successful, or a `Failure` containing an error message if an error occurs.
    */
   public getContext(): Result<ImportContext> {
-    return Validate.toResourceId(this.baseName).onSuccess((baseId) => {
+    return Validate.toOptionalResourceId(this.baseName).onSuccess((baseId) => {
       const conditions = this.conditions.map((c) => {
         return {
           qualifierName: c.qualifier.name,

@@ -25,19 +25,17 @@ import {
   DetailedResult,
   failWithDetail,
   Result,
-  fail,
   succeed,
   succeedWithDetail,
   FileTree,
-  mapResults
+  MessageAggregator
 } from '@fgv/ts-utils';
 import { Converters as JsonConverters } from '@fgv/ts-json-base';
 import { ResourceManager } from '../../resources';
-import { IImportable, IImportableJson } from '../importable';
+import { IImportable, IImportableJson, Importable } from '../importable';
 import { IImporter, ImporterResultDetail } from './importer';
 import { IReadOnlyQualifierCollector } from '../../qualifiers';
-import { FsItem } from '../fsItem';
-import { ImportContext } from '../importContext';
+import { FsItem, FsItemResultDetail } from '../fsItem';
 
 /**
  * Parameters for creating a {@link Import.Importers.FileTreeImporter | FileTreeImporter}.
@@ -93,33 +91,41 @@ export class FileTreeImporter implements IImporter {
     item: IImportable,
     __manager: ResourceManager
   ): DetailedResult<IImportable[], ImporterResultDetail> {
-    const { value: fsItem, message } = this._getFileTreeItemFromImportable(item);
-    if (message !== undefined) {
-      return failWithDetail(message, 'failed');
+    const {
+      value: fsItem,
+      message: getTreeMessage,
+      detail: getTreeDetail
+    } = this._getFileTreeItemFromImportable(item);
+    if (getTreeMessage !== undefined) {
+      return failWithDetail(getTreeMessage, getTreeDetail === 'skipped' ? 'skipped' : 'failed');
     }
 
-    const context = (item.context ?? ImportContext.create().orThrow())
-      .extend(fsItem.getContext().orThrow())
-      .orThrow();
+    const { value: context, message: getContextMessage } = fsItem.getContext().onSuccess((fsItemContext) => {
+      return item.context ? item.context.extend(fsItemContext) : succeed(fsItemContext);
+    });
+
+    /* c8 ignore next 3 - defense in depth nearly impossible to reproduce */
+    if (getContextMessage) {
+      return failWithDetail(getContextMessage, 'failed');
+    }
 
     if (fsItem.item.type === 'directory') {
       return fsItem.item
         .getChildren()
-        .onSuccess((children) =>
-          mapResults(children.map((child) => FsItem.createForItem(child, this.qualifiers)))
-        )
-        .onSuccess((items) =>
-          succeed(
-            items.map((item) => {
-              return {
-                type: 'fsItem',
-                item: item,
-                context
-              };
-            })
-          )
-        )
-        .withDetail('failed', 'consumed');
+        .onSuccess((children) => {
+          const errors = new MessageAggregator();
+          const items: Importable[] = [];
+          for (const child of children) {
+            const { value: item, message, detail } = FsItem.createForItem(child, this.qualifiers);
+            if (item) {
+              items.push({ type: 'fsItem', item, context });
+            } else if (detail !== 'skipped') {
+              errors.addMessage(message);
+            }
+          }
+          return errors.returnOrReport(succeed(items));
+        })
+        .withDetail('failed', 'processed');
     } else if (fsItem.item.type === 'file' && fsItem.item.extension === '.json') {
       return fsItem.item
         .getContents(JsonConverters.jsonValue)
@@ -133,6 +139,7 @@ export class FileTreeImporter implements IImporter {
         })
         .withDetail('failed', 'processed');
     }
+    /* c8 ignore next 2 - defense in depth near impossible to reproduce */
     return succeedWithDetail([], 'skipped');
   }
 
@@ -141,18 +148,18 @@ export class FileTreeImporter implements IImporter {
    * @param item - The importable to convert.
    * @returns `Success` containing the `FsItem` if successful, `Failure` with an error message if not.
    */
-  protected _getFileTreeItemFromImportable(item: IImportable): Result<FsItem> {
-    if (item.type === 'ftItem') {
+  protected _getFileTreeItemFromImportable(item: IImportable): DetailedResult<FsItem, FsItemResultDetail> {
+    if (item.type === 'fsItem') {
       if ('item' in item && item.item instanceof FsItem) {
-        return succeed(item.item);
+        return succeedWithDetail(item.item, 'succeeded');
       }
-      return fail(`malformed fsItem importable does not contain a valid item`);
+      return failWithDetail(`malformed fsItem importable does not contain a valid item`, 'failed');
     } else if (item.type === 'path') {
       if ('path' in item && typeof item.path === 'string') {
-        return FsItem.createForPath(item.path, this.qualifiers);
+        return FsItem.createForPath(item.path, this.qualifiers, this.tree);
       }
-      return fail(`malformed path importable does not contain a string path`);
+      return failWithDetail(`malformed path importable does not contain a string path`, 'failed');
     }
-    return fail(`${item.type}: not a valid importable type for a FileTreeImporter`);
+    return failWithDetail(`${item.type}: invalid importable type for a FileTreeImporter`, 'failed');
   }
 }

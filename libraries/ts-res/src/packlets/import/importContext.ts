@@ -132,7 +132,7 @@ export class ImportContext implements IValidatedImportContext {
     /* c8 ignore next 1 */
     context = context ?? { conditions: [] };
     const conditions = [...this.conditions, ...context.conditions];
-    return Helpers.joinResourceIds(this.baseId, context.baseId).onSuccess((baseId) => {
+    return Helpers.joinOptionalResourceIds(this.baseId, context.baseId).onSuccess((baseId) => {
       return ImportContext.create({ baseId, conditions });
     });
   }

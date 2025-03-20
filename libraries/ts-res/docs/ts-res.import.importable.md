@@ -9,7 +9,7 @@ Type of importable entities.
 **Signature:**
 
 ```typescript
-export type Importable = IImportablePath | IImportableFsItem | IImportableResourceCollection | IImportableResourceTree;
+export type Importable = IImportablePath | IImportableFsItem | IImportableJson | IImportableResourceCollection | IImportableResourceTree;
 ```
-**References:** [IImportablePath](./ts-res.import.iimportablepath.md)<!-- -->, [IImportableFsItem](./ts-res.import.iimportablefsitem.md)<!-- -->, [IImportableResourceCollection](./ts-res.import.iimportableresourcecollection.md)<!-- -->, [IImportableResourceTree](./ts-res.import.iimportableresourcetree.md)
+**References:** [IImportablePath](./ts-res.import.iimportablepath.md)<!-- -->, [IImportableFsItem](./ts-res.import.iimportablefsitem.md)<!-- -->, [IImportableJson](./ts-res.import.iimportablejson.md)<!-- -->, [IImportableResourceCollection](./ts-res.import.iimportableresourcecollection.md)<!-- -->, [IImportableResourceTree](./ts-res.import.iimportableresourcetree.md)
 

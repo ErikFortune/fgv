@@ -91,5 +91,17 @@ export interface IImportableResourceTree extends IImportable {
 export type Importable =
   | IImportablePath
   | IImportableFsItem
+  | IImportableJson
   | IImportableResourceCollection
   | IImportableResourceTree;
+
+/**
+ * Type guard for {@link Import.Importable | importables}.
+ * @param i - The entity to check.
+ * @returns `true` if the supplied {@link Import.IImportable | IImportable} is a
+ * {@link Import.Importable | known importable}, `false` otherwise.
+ * @public
+ */
+export function isImportable(i: IImportable): i is Importable {
+  return ['path', 'fsItem', 'json', 'resourceCollection', 'resourceTree'].includes(i.type);
+}

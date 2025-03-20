@@ -9,7 +9,7 @@ Gets an [FsItem](./ts-res.import.fsitem.md) from an [importable](./ts-res.import
 **Signature:**
 
 ```typescript
-protected _getFileTreeItemFromImportable(item: IImportable): Result<FsItem>;
+protected _getFileTreeItemFromImportable(item: IImportable): DetailedResult<FsItem, FsItemResultDetail>;
 ```
 
 ## Parameters
@@ -49,7 +49,7 @@ The importable to convert.
 </tbody></table>
 **Returns:**
 
-Result&lt;[FsItem](./ts-res.import.fsitem.md)<!-- -->&gt;
+DetailedResult&lt;[FsItem](./ts-res.import.fsitem.md)<!-- -->, [FsItemResultDetail](./ts-res.import.fsitemresultdetail.md)<!-- -->&gt;
 
 `Success` containing the `FsItem` if successful, `Failure` with an error message if not.
 

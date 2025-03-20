@@ -508,7 +508,7 @@ class FileTreeImporter implements IImporter {
     static create(params: IFileTreeImporterCreateParams): Result<FileTreeImporter>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected _getFileTreeItemFromImportable(item: IImportable): Result<FsItem>;
+    protected _getFileTreeItemFromImportable(item: IImportable): DetailedResult<FsItem, FsItemResultDetail>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -972,6 +972,7 @@ declare namespace Import {
         IImportContext,
         IValidatedImportContext,
         ImportContext,
+        isImportable,
         IImportable,
         IImportablePath,
         IImportableFsItem,
@@ -987,7 +988,7 @@ declare namespace Import {
 export { Import }
 
 // @public
-type Importable = IImportablePath | IImportableFsItem | IImportableResourceCollection | IImportableResourceTree;
+type Importable = IImportablePath | IImportableFsItem | IImportableJson | IImportableResourceCollection | IImportableResourceTree;
 
 // @public
 class ImportContext implements IValidatedImportContext {
@@ -1261,6 +1262,13 @@ interface IResourceTreeRootDecl_2 extends IResourceTreeChildNodeDecl_2 {
     // (undocumented)
     readonly resources?: Record<string, IChildResourceDecl_2>;
 }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isImportable(i: IImportable): i is Importable;
 
 // @public
 function isValidConditionIndex(index: number): index is ConditionIndex;
@@ -2176,6 +2184,9 @@ function toDecisionIndex(index: number): Result<DecisionIndex>;
 function toDecisionKey(key: string): Result<DecisionKey>;
 
 // @public
+function toOptionalResourceId(id?: string): Result<ResourceId | undefined>;
+
+// @public
 function toQualifierIndex(index: number): Result<QualifierIndex>;
 
 // @public
@@ -2247,6 +2258,7 @@ declare namespace Validate {
         isValidResourceTypeIndex,
         toResourceName,
         toResourceId,
+        toOptionalResourceId,
         toResourceIndex,
         toResourceTypeName,
         toResourceTypeIndex
