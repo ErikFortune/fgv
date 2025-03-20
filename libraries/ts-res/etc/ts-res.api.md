@@ -496,6 +496,30 @@ declare namespace Decisions {
 }
 export { Decisions }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class FileTreeImporter implements IImporter {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(params: IFileTreeImporterCreateParams);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params: IFileTreeImporterCreateParams): Result<FileTreeImporter>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected _getFileTreeItemFromImportable(item: IImportable): Result<FsItem>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    import(item: IImportable, __manager: ResourceManager): DetailedResult<IImportable[], ImporterResultDetail>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly qualifiers: IReadOnlyQualifierCollector;
+    readonly tree: FileTree.FileTree;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly types: ReadonlyArray<string>;
+}
+
 // @public
 class FsItem implements IFsItemProps {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -765,6 +789,16 @@ const identifier: RegExp;
 // @internal (undocumented)
 const identifierList: RegExp;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IFileTreeImporterCreateParams {
+    // (undocumented)
+    qualifiers: IReadOnlyQualifierCollector;
+    // (undocumented)
+    tree?: FileTree.FileTree;
+}
+
 // @public
 interface IFsItemProps {
     readonly baseName: string;
@@ -987,7 +1021,9 @@ type ImporterResultDetail = 'consumed' | 'processed' | 'skipped' | 'failed';
 declare namespace Importers {
     export {
         ImporterResultDetail,
-        IImporter
+        IImporter,
+        IFileTreeImporterCreateParams,
+        FileTreeImporter
     }
 }
 

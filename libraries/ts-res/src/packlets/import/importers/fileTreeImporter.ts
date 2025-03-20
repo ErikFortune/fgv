@@ -39,26 +39,56 @@ import { IReadOnlyQualifierCollector } from '../../qualifiers';
 import { FsItem } from '../fsItem';
 import { ImportContext } from '../importContext';
 
+/**
+ * Parameters for creating a {@link Import.Importers.FileTreeImporter | FileTreeImporter}.
+ * @public
+ */
 export interface IFileTreeImporterCreateParams {
   qualifiers: IReadOnlyQualifierCollector;
   tree?: FileTree.FileTree;
 }
 
+/**
+ * {@link Import.Importers.IImporter | Importer} implementation which imports resources from a `FileTree`.
+ * @public
+ */
 export class FileTreeImporter implements IImporter {
+  /**
+   * The {@link Qualifiers.IReadOnlyQualifierCollector | qualifier collector} to use for this importer.
+   */
   public readonly qualifiers: IReadOnlyQualifierCollector;
+
+  /**
+   * The `FileTree` from which resources will be imported.
+   */
   public readonly tree: FileTree.FileTree;
 
+  /**
+   * The types of {@link Import.IImportable | importables} that this importer can handle.
+   */
   public readonly types: ReadonlyArray<string> = ['path', 'fsItem'];
 
+  /**
+   * Protected constructor for the {@link Import.Importers.FileTreeImporter | FileTreeImporter}.
+   * @param params - Parameters for creating the {@link Import.Importers.FileTreeImporter | FileTreeImporter}.
+   */
   protected constructor(params: IFileTreeImporterCreateParams) {
     this.qualifiers = params.qualifiers;
     this.tree = params.tree ?? FileTree.forFilesystem().orThrow();
   }
 
+  /**
+   * Creates a new {@link Import.Importers.FileTreeImporter | FileTreeImporter}.
+   * @param params - Parameters for creating the {@link Import.Importers.FileTreeImporter | FileTreeImporter}.
+   * @returns `Success` with the new `FileTreeImporter` if successful, `Failure` with an error message if not.
+   */
   public static create(params: IFileTreeImporterCreateParams): Result<FileTreeImporter> {
     return captureResult(() => new FileTreeImporter(params));
   }
 
+  /**
+   * {@inheritdoc Import.Importers.IImporter.import}
+   */
   public import(
     item: IImportable,
     __manager: ResourceManager
@@ -106,6 +136,11 @@ export class FileTreeImporter implements IImporter {
     return succeedWithDetail([], 'skipped');
   }
 
+  /**
+   * Gets an {@link Import.FsItem | FsItem} from an {@link Import.IImportable | importable}.
+   * @param item - The importable to convert.
+   * @returns `Success` containing the `FsItem` if successful, `Failure` with an error message if not.
+   */
   protected _getFileTreeItemFromImportable(item: IImportable): Result<FsItem> {
     if (item.type === 'ftItem') {
       if ('item' in item && item.item instanceof FsItem) {

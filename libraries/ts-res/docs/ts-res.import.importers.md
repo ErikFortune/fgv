@@ -4,6 +4,32 @@
 
 ## Import.Importers namespace
 
+## Classes
+
+<table><thead><tr><th>
+
+Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[FileTreeImporter](./ts-res.import.importers.filetreeimporter.md)
+
+
+</td><td>
+
+[Importer](./ts-res.import.importers.iimporter.md) implementation which imports resources from a `FileTree`<!-- -->.
+
+
+</td></tr>
+</tbody></table>
+
 ## Interfaces
 
 <table><thead><tr><th>
@@ -18,6 +44,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[IFileTreeImporterCreateParams](./ts-res.import.importers.ifiletreeimportercreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a [FileTreeImporter](./ts-res.import.importers.filetreeimporter.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
 
 [IImporter](./ts-res.import.importers.iimporter.md)
 
