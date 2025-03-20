@@ -65,7 +65,7 @@ _(Optional)_
 
 </td><td>
 
-FileTree.FileTreeItem
+[FsItem](./ts-res.import.fsitem.md)
 
 
 </td><td>

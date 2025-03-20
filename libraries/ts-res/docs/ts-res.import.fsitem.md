@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)(item, qualifiers, tree)](./ts-res.import.fsitem._constructor_.md)
+[(constructor)(props, qualifiers)](./ts-res.import.fsitem._constructor_.md)
 
 
 </td><td>
@@ -73,27 +73,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[absolutePath](./ts-res.import.fsitem.absolutepath.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-The absolute path of the file system item.
-
-
-</td></tr>
-<tr><td>
 
 [baseName](./ts-res.import.fsitem.basename.md)
 
@@ -137,7 +116,7 @@ The base name of the file system item, once any conditions set tokens have been 
 </td></tr>
 <tr><td>
 
-[itemType](./ts-res.import.fsitem.itemtype.md)
+[item](./ts-res.import.fsitem.item.md)
 
 
 </td><td>
@@ -147,12 +126,12 @@ The base name of the file system item, once any conditions set tokens have been 
 
 </td><td>
 
-FileTree.FileTreeItemType
+FileTree.FileTreeItem
 
 
 </td><td>
 
-The type of the file system item.
+The underlying `FileTreeItem` for this item.
 
 
 </td></tr>
@@ -174,27 +153,6 @@ The type of the file system item.
 </td><td>
 
 The [qualifiers](./ts-res.qualifiers.ireadonlyqualifiercollector.md) to use for this item.
-
-
-</td></tr>
-<tr><td>
-
-[tree](./ts-res.import.fsitem.tree.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-FileTree.FileTree
-
-
-</td><td>
-
-The file tree implementation to use for this item.
 
 
 </td></tr>
@@ -220,7 +178,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[create(importPath, qualifiers, tree)](./ts-res.import.fsitem.create.md)
+[createForItem(item, qualifiers)](./ts-res.import.fsitem.createforitem.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [FsItem](./ts-res.import.fsitem.md) from a `FileTreeItem`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[createForPath(importPath, qualifiers, tree)](./ts-res.import.fsitem.createforpath.md)
 
 
 </td><td>
@@ -231,20 +205,6 @@ Description
 </td><td>
 
 Creates a new [FsItem](./ts-res.import.fsitem.md) from a file system path.
-
-
-</td></tr>
-<tr><td>
-
-[getChildren()](./ts-res.import.fsitem.getchildren.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets the children of a [FsItem](./ts-res.import.fsitem.md) if it is a directory.
 
 
 </td></tr>

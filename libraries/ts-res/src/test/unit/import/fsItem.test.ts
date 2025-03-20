@@ -117,150 +117,107 @@ describe('FsItem', () => {
 
   describe('create static method', () => {
     test('creates a new FsItem from a valid unconditional file path', () => {
-      expect(TsRes.Import.FsItem.create('/US/resources.json', qualifiers, tree)).toSucceedAndSatisfy(
+      expect(TsRes.Import.FsItem.createForPath('/US/resources.json', qualifiers, tree)).toSucceedAndSatisfy(
         (item) => {
-          expect(item.absolutePath).toEqual('/US/resources.json');
+          expect(item.item.absolutePath).toEqual('/US/resources.json');
           expect(item.baseName).toEqual('resources');
           expect(item.conditions.length).toEqual(0);
-          expect(item.itemType).toEqual('file');
+          expect(item.item.type).toEqual('file');
         }
       );
     });
 
     test('creates a new FsItem from a valid conditional file path', () => {
-      expect(TsRes.Import.FsItem.create('/resources.home=MX.json', qualifiers, tree)).toSucceedAndSatisfy(
-        (item) => {
-          expect(item.absolutePath).toEqual('/resources.home=MX.json');
-          expect(item.baseName).toEqual('resources');
-          expect(item.conditions.length).toEqual(1);
-          expect(item.conditions[0].qualifier.name).toEqual('homeTerritory');
-          expect(item.conditions[0].value).toEqual('MX');
-          expect(item.itemType).toEqual('file');
-        }
-      );
+      expect(
+        TsRes.Import.FsItem.createForPath('/resources.home=MX.json', qualifiers, tree)
+      ).toSucceedAndSatisfy((item) => {
+        expect(item.item.absolutePath).toEqual('/resources.home=MX.json');
+        expect(item.baseName).toEqual('resources');
+        expect(item.conditions.length).toEqual(1);
+        expect(item.conditions[0].qualifier.name).toEqual('homeTerritory');
+        expect(item.conditions[0].value).toEqual('MX');
+        expect(item.item.type).toEqual('file');
+      });
     });
 
     test('creates a new FsItem from a valid conditional file path with multiple conditions', () => {
       expect(
-        TsRes.Import.FsItem.create('/resources/home=CA,language=fr.json', qualifiers, tree)
+        TsRes.Import.FsItem.createForPath('/resources/home=CA,language=fr.json', qualifiers, tree)
       ).toSucceedAndSatisfy((item) => {
-        expect(item.absolutePath).toEqual('/resources/home=CA,language=fr.json');
+        expect(item.item.absolutePath).toEqual('/resources/home=CA,language=fr.json');
         expect(item.baseName).toEqual('');
         expect(item.conditions.length).toEqual(2);
         expect(item.conditions[0].qualifier.name).toEqual('homeTerritory');
         expect(item.conditions[0].value).toEqual('CA');
         expect(item.conditions[1].qualifier.name).toEqual('language');
         expect(item.conditions[1].value).toEqual('fr');
-        expect(item.itemType).toEqual('file');
+        expect(item.item.type).toEqual('file');
       });
     });
 
     test('creates a new FsItem from a file with an entirely conditional name', () => {
       expect(
-        TsRes.Import.FsItem.create('/resources.home=PR/language=es-419.json', qualifiers, tree)
+        TsRes.Import.FsItem.createForPath('/resources.home=PR/language=es-419.json', qualifiers, tree)
       ).toSucceedAndSatisfy((item) => {
-        expect(item.absolutePath).toEqual('/resources.home=PR/language=es-419.json');
+        expect(item.item.absolutePath).toEqual('/resources.home=PR/language=es-419.json');
         expect(item.baseName).toEqual('');
         expect(item.conditions.length).toEqual(1);
         expect(item.conditions[0].qualifier.name).toEqual('language');
         expect(item.conditions[0].value).toEqual('es-419');
-        expect(item.itemType).toEqual('file');
+        expect(item.item.type).toEqual('file');
       });
     });
 
     test('creates a new FsItem from a valid unconditional directory path', () => {
-      expect(TsRes.Import.FsItem.create('/home=CA', qualifiers, tree)).toSucceedAndSatisfy((item) => {
-        expect(item.absolutePath).toEqual('/home=CA');
+      expect(TsRes.Import.FsItem.createForPath('/home=CA', qualifiers, tree)).toSucceedAndSatisfy((item) => {
+        expect(item.item.absolutePath).toEqual('/home=CA');
         expect(item.baseName).toEqual('');
         expect(item.conditions.length).toEqual(1);
         expect(item.conditions[0].qualifier.name).toEqual('homeTerritory');
         expect(item.conditions[0].value).toEqual('CA');
-        expect(item.itemType).toEqual('directory');
+        expect(item.item.type).toEqual('directory');
       });
     });
 
     test('creates a new FsItem from a valid conditional directory path', () => {
-      expect(TsRes.Import.FsItem.create('/home=CA', qualifiers, tree)).toSucceedAndSatisfy((item) => {
-        expect(item.absolutePath).toEqual('/home=CA');
+      expect(TsRes.Import.FsItem.createForPath('/home=CA', qualifiers, tree)).toSucceedAndSatisfy((item) => {
+        expect(item.item.absolutePath).toEqual('/home=CA');
         expect(item.baseName).toEqual('');
         expect(item.conditions.length).toEqual(1);
         expect(item.conditions[0].qualifier.name).toEqual('homeTerritory');
         expect(item.conditions[0].value).toEqual('CA');
-        expect(item.itemType).toEqual('directory');
+        expect(item.item.type).toEqual('directory');
       });
     });
 
     test('fails for a non-existent file', () => {
-      expect(TsRes.Import.FsItem.create('/US/nonexistent.json', qualifiers, tree)).toFailWith(/not found/i);
+      expect(TsRes.Import.FsItem.createForPath('/US/nonexistent.json', qualifiers, tree)).toFailWith(
+        /not found/i
+      );
     });
 
     test('fails for a file with an invalid condition value', () => {
-      expect(TsRes.Import.FsItem.create('/broken/resources/home=Mars.json', qualifiers, tree)).toFailWith(
-        /invalid condition value/i
-      );
+      expect(
+        TsRes.Import.FsItem.createForPath('/broken/resources/home=Mars.json', qualifiers, tree)
+      ).toFailWith(/invalid condition value/i);
     });
 
     test('fails for a directory with an invalid condition value', () => {
-      expect(TsRes.Import.FsItem.create('/broken/resources.home=Antarctica', qualifiers, tree)).toFailWith(
-        /invalid condition value/i
-      );
+      expect(
+        TsRes.Import.FsItem.createForPath('/broken/resources.home=Antarctica', qualifiers, tree)
+      ).toFailWith(/invalid condition value/i);
     });
 
     test('fails with detail "skipped" for a non-json file', () => {
-      expect(TsRes.Import.FsItem.create('/resources.home=PR/readme.txt', qualifiers, tree)).toFailWithDetail(
-        /not a JSON file/i,
-        'skipped'
-      );
-    });
-  });
-
-  describe('getChildren', () => {
-    test('returns the children of a directory', () => {
-      expect(TsRes.Import.FsItem.create('/resources.home=PR', qualifiers, tree)).toSucceedAndSatisfy(
-        (item) => {
-          expect(item.getChildren()).toSucceedAndSatisfy((children) => {
-            expect(children.length).toEqual(2);
-            expect(children[0].absolutePath).toEqual('/resources.home=PR/language=es-419.json');
-            expect(children[0].conditions.length).toEqual(1);
-            expect(children[1].absolutePath).toEqual('/resources.home=PR/language=en.json');
-            expect(children[1].conditions.length).toEqual(1);
-          });
-        }
-      );
-    });
-
-    test('silently ignores non-JSON files', () => {
-      expect(TsRes.Import.FsItem.create('/resources.home=PR', qualifiers, tree)).toSucceedAndSatisfy(
-        (item) => {
-          expect(item.getChildren()).toSucceedAndSatisfy((children) => {
-            expect(children.length).toEqual(2);
-            expect(children[0].absolutePath).toEqual('/resources.home=PR/language=es-419.json');
-            expect(children[0].conditions.length).toEqual(1);
-            expect(children[1].absolutePath).toEqual('/resources.home=PR/language=en.json');
-            expect(children[1].conditions.length).toEqual(1);
-          });
-        }
-      );
-    });
-
-    test('fails if a child has an invalid name', () => {
-      expect(TsRes.Import.FsItem.create('/broken', qualifiers, tree)).toSucceedAndSatisfy((item) => {
-        expect(item.getChildren()).toFailWith(/invalid condition value/i);
-      });
-    });
-
-    test('fails for a file', () => {
       expect(
-        TsRes.Import.FsItem.create('/resources.home=PR/language=es-419.json', qualifiers, tree)
-      ).toSucceedAndSatisfy((item) => {
-        expect(item.getChildren()).toFailWith(/not a directory/i);
-      });
+        TsRes.Import.FsItem.createForPath('/resources.home=PR/readme.txt', qualifiers, tree)
+      ).toFailWithDetail(/not a JSON file/i, 'skipped');
     });
   });
 
   describe('getContext', () => {
     test('returns an empty context for an unconditional file', () => {
-      expect(TsRes.Import.FsItem.create('/US/resources.json', qualifiers, tree)).toSucceedAndSatisfy(
+      expect(TsRes.Import.FsItem.createForPath('/US/resources.json', qualifiers, tree)).toSucceedAndSatisfy(
         (item) => {
           expect(item.getContext()).toSucceedAndSatisfy((context) => {
             expect(context.baseId).toBe('resources');
@@ -271,16 +228,16 @@ describe('FsItem', () => {
     });
 
     test('returns a context for a conditional file', () => {
-      expect(TsRes.Import.FsItem.create('/resources.home=MX.json', qualifiers, tree)).toSucceedAndSatisfy(
-        (item) => {
-          expect(item.getContext()).toSucceedAndSatisfy((context) => {
-            expect(context.baseId).toBe('resources');
-            expect(context.conditions.length).toEqual(1);
-            expect(context.conditions[0].qualifierName).toEqual('homeTerritory');
-            expect(context.conditions[0].value).toEqual('MX');
-          });
-        }
-      );
+      expect(
+        TsRes.Import.FsItem.createForPath('/resources.home=MX.json', qualifiers, tree)
+      ).toSucceedAndSatisfy((item) => {
+        expect(item.getContext()).toSucceedAndSatisfy((context) => {
+          expect(context.baseId).toBe('resources');
+          expect(context.conditions.length).toEqual(1);
+          expect(context.conditions[0].qualifierName).toEqual('homeTerritory');
+          expect(context.conditions[0].value).toEqual('MX');
+        });
+      });
     });
   });
 });

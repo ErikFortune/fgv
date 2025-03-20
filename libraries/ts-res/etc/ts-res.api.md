@@ -502,11 +502,7 @@ class FsItem implements IFsItemProps {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor(item: IFsItemProps, qualifiers: IReadOnlyQualifierCollector, tree: FileTree.FileTree);
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    readonly absolutePath: string;
+    protected constructor(props: IFsItemProps, qualifiers: IReadOnlyQualifierCollector);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -518,22 +514,22 @@ class FsItem implements IFsItemProps {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static createForItem(item: FileTree.FileTreeItem, qualifiers: IReadOnlyQualifierCollector): DetailedResult<FsItem, FsItemResultDetail>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static create(importPath: string, qualifiers: IReadOnlyQualifierCollector, tree?: FileTree.FileTree): DetailedResult<FsItem, FsItemResultDetail>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getChildren(): Result<FsItem[]>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static createForPath(importPath: string, qualifiers: IReadOnlyQualifierCollector, tree?: FileTree.FileTree): DetailedResult<FsItem, FsItemResultDetail>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getContext(): Result<ImportContext>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    readonly itemType: FileTree.FileTreeItemType;
+    readonly item: FileTree.FileTreeItem;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly qualifiers: IReadOnlyQualifierCollector;
-    readonly tree: FileTree.FileTree;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static tryParseBaseName(baseName: string, qualifiers: IReadOnlyQualifierCollector): Result<Omit<IFsItemProps, 'absolutePath' | 'itemType'>>;
+    static tryParseBaseName(baseName: string, qualifiers: IReadOnlyQualifierCollector): Result<Omit<IFsItemProps, 'item'>>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -771,12 +767,11 @@ const identifierList: RegExp;
 
 // @public
 interface IFsItemProps {
-    readonly absolutePath: string;
     readonly baseName: string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly conditions: Conditions.IValidatedConditionDecl[];
-    readonly itemType: FileTree.FileTreeItemType;
+    readonly item: FileTree.FileTreeItem;
 }
 
 // @public
@@ -792,7 +787,7 @@ interface IImportableFsItem extends IImportable {
     // (undocumented)
     context?: ImportContext;
     // (undocumented)
-    item: FileTree.FileTreeItem;
+    item: FsItem;
     // (undocumented)
     type: 'fsItem';
 }

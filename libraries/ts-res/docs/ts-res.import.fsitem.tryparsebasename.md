@@ -9,7 +9,7 @@ Tries to parse a base name into a base name and a set of conditions.
 **Signature:**
 
 ```typescript
-static tryParseBaseName(baseName: string, qualifiers: IReadOnlyQualifierCollector): Result<Omit<IFsItemProps, 'absolutePath' | 'itemType'>>;
+static tryParseBaseName(baseName: string, qualifiers: IReadOnlyQualifierCollector): Result<Omit<IFsItemProps, 'item'>>;
 ```
 
 ## Parameters
@@ -65,7 +65,7 @@ The [qualifiers](./ts-res.qualifiers.ireadonlyqualifiercollector.md) used to par
 </tbody></table>
 **Returns:**
 
-Result&lt;Omit&lt;[IFsItemProps](./ts-res.import.ifsitemprops.md)<!-- -->, 'absolutePath' \| 'itemType'&gt;&gt;
+Result&lt;Omit&lt;[IFsItemProps](./ts-res.import.ifsitemprops.md)<!-- -->, 'item'&gt;&gt;
 
 `Success` containing the parsed base name and conditions on success, or `Failure` containing an error message if it is not.
 

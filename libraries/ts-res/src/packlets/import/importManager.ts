@@ -24,7 +24,7 @@ import { captureResult, MessageAggregator, Result, succeed } from '@fgv/ts-utils
 import { ResourceManager } from '../resources';
 import { ImportContext } from './importContext';
 import { IImportable, IImportablePath } from './importable';
-import { FileSystemImporter } from './importers/fileSystemImporter';
+import { FileTreeImporter } from './importers/fileTreeImporter';
 import { IImporter } from './importers';
 
 /**
@@ -71,7 +71,7 @@ export class ImportManager {
     this.resources = params.resources;
     this.initialContext = params.initialContext ?? ImportContext.create().orThrow();
     this._importers = [
-      FileSystemImporter.create({
+      FileTreeImporter.create({
         qualifiers: this.resources.qualifiers
       }).orThrow()
     ];

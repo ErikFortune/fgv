@@ -37,27 +37,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[absolutePath](./ts-res.import.ifsitemprops.absolutepath.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-The absolute path of the file system item.
-
-
-</td></tr>
-<tr><td>
-
 [baseName](./ts-res.import.ifsitemprops.basename.md)
 
 
@@ -100,7 +79,7 @@ The base name of the file system item, once any conditions set tokens have been 
 </td></tr>
 <tr><td>
 
-[itemType](./ts-res.import.ifsitemprops.itemtype.md)
+[item](./ts-res.import.ifsitemprops.item.md)
 
 
 </td><td>
@@ -110,12 +89,12 @@ The base name of the file system item, once any conditions set tokens have been 
 
 </td><td>
 
-FileTree.FileTreeItemType
+FileTree.FileTreeItem
 
 
 </td><td>
 
-The type of the file system item.
+The underlying `FileTreeItem` for this item.
 
 
 </td></tr>

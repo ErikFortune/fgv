@@ -9,7 +9,7 @@ Protected constructor creates a new [FsItem](./ts-res.import.fsitem.md)<!-- -->.
 **Signature:**
 
 ```typescript
-protected constructor(item: IFsItemProps, qualifiers: IReadOnlyQualifierCollector, tree: FileTree.FileTree);
+protected constructor(props: IFsItemProps, qualifiers: IReadOnlyQualifierCollector);
 ```
 
 ## Parameters
@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-item
+props
 
 
 </td><td>
@@ -59,22 +59,6 @@ qualifiers
 </td><td>
 
 The [qualifiers](./ts-res.qualifiers.ireadonlyqualifiercollector.md) used to parse embedded condition set tokens.
-
-
-</td></tr>
-<tr><td>
-
-tree
-
-
-</td><td>
-
-FileTree.FileTree
-
-
-</td><td>
-
-file tree implementation to use for this item.
 
 
 </td></tr>
