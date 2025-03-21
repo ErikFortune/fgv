@@ -28,6 +28,17 @@ Description
 
 
 </td></tr>
+<tr><td>
+
+[JsonImporter](./ts-res.import.importers.jsonimporter.md)
+
+
+</td><td>
+
+[Importer](./ts-res.import.importers.iimporter.md) implementation which imports resources from a JSON object.
+
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces

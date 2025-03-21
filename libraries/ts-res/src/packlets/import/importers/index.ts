@@ -22,3 +22,4 @@
 
 export * from './importer';
 export * from './fileTreeImporter';
+export * from './jsonImporter';

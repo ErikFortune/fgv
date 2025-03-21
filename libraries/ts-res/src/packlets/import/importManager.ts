@@ -25,7 +25,7 @@ import { ResourceManager } from '../resources';
 import { ImportContext } from './importContext';
 import { IImportable, IImportablePath } from './importable';
 import { FileTreeImporter } from './importers/fileTreeImporter';
-import { IImporter } from './importers';
+import { IImporter, JsonImporter } from './importers';
 
 /**
  * Parameters for creating an {@link  Import.ImportManager | ImportManager}.
@@ -73,7 +73,8 @@ export class ImportManager {
     this._importers = [
       FileTreeImporter.create({
         qualifiers: this.resources.qualifiers
-      }).orThrow()
+      }).orThrow(),
+      JsonImporter.create().orThrow()
     ];
   }
 
