@@ -64,6 +64,7 @@ const conditionSetDeclFromRecord: Converter<Normalized.ConditionSetDecl> = Conve
     self: Converter<Normalized.ConditionSetDecl, unknown>,
     context?: unknown
   ): Result<Normalized.ConditionSetDecl> => {
+    /* c8 ignore next 3 - this is tested but coverage is confused */
     if (!_isConditionSetRecord(from)) {
       return fail('Expected an object');
     }

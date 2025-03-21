@@ -72,6 +72,9 @@ export class ConditionSetCollector extends ValidatingCollector<ConditionSet> {
       })
     });
     this.conditions = params.conditions;
+    // it's very helpful for debugging if the unconditional condition set is always
+    // in position 0
+    this.validating.add(ConditionSet.create({ conditions: [] }).orThrow()).orThrow();
     params.conditionSets?.forEach((item) => this.validating.add(item).orThrow());
   }
 

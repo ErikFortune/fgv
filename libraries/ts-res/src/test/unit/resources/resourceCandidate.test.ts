@@ -112,7 +112,7 @@ describe('ResourceCandidate', () => {
         resourceTypeName: 'json'
       };
       expect(conditions.size).toBe(0);
-      expect(conditionSets.size).toBe(0);
+      expect(conditionSets.size).toBe(1);
       expect(
         TsRes.Resources.ResourceCandidate.create({
           conditionSets,
@@ -126,7 +126,7 @@ describe('ResourceCandidate', () => {
         expect(c.mergeMethod).toBe('replace');
         expect(c.conditions.size).toBe(2);
         expect(conditions.size).toBe(2);
-        expect(conditionSets.size).toBe(1);
+        expect(conditionSets.size).toBe(2);
         expect(c.resourceType?.key).toBe('json');
       });
     });
@@ -141,7 +141,7 @@ describe('ResourceCandidate', () => {
         }
       };
       expect(conditions.size).toBe(0);
-      expect(conditionSets.size).toBe(0);
+      expect(conditionSets.size).toBe(1);
       expect(
         TsRes.Resources.ResourceCandidate.create({
           conditionSets,
@@ -155,7 +155,7 @@ describe('ResourceCandidate', () => {
         expect(c.mergeMethod).toBe('augment');
         expect(c.conditions.size).toBe(2);
         expect(conditions.size).toBe(2);
-        expect(conditionSets.size).toBe(1);
+        expect(conditionSets.size).toBe(2);
         expect(c.resourceType?.key).toBeUndefined();
       });
     });
@@ -169,7 +169,7 @@ describe('ResourceCandidate', () => {
         TsRes.ResourceJson.Convert.looseResourceCandidateDecl.convert(someDecls[0]).orThrow();
       const numDeclConditions = decl.conditions?.length ?? 0;
       expect(conditions.size).toBe(1);
-      expect(conditionSets.size).toBe(0);
+      expect(conditionSets.size).toBe(1);
       expect(
         TsRes.Resources.ResourceCandidate.create({
           conditionSets,
@@ -185,7 +185,7 @@ describe('ResourceCandidate', () => {
         expect(c.conditions.size).toBe(numDeclConditions + parentConditions.length);
         expect(c.resourceType?.key).toBeUndefined();
         expect(conditions.size).toBe(numDeclConditions + parentConditions.length);
-        expect(conditionSets.size).toBe(1);
+        expect(conditionSets.size).toBe(2);
       });
     });
 
