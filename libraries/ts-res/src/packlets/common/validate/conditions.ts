@@ -154,6 +154,9 @@ export function isValidConditionKey(key: string): key is ConditionKey {
  * @public
  */
 export function isValidConditionToken(token: string): token is ConditionToken {
+  if (token === '') {
+    return true;
+  }
   return conditionToken.test(token);
 }
 
@@ -174,6 +177,9 @@ export function isValidConditionSetIndex(index: number): index is ConditionSetIn
  * @public
  */
 export function isValidConditionSetKey(key: string): key is ConditionSetKey {
+  if (key === '') {
+    return true;
+  }
   // a condition set key is a `+` separated list of condition keys
   return key.split('+').every(isValidConditionKey);
 }

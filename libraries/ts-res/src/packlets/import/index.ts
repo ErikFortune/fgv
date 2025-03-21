@@ -23,6 +23,7 @@
 export * from './importContext';
 export * from './importable';
 export * from './fsItem';
+export * from './importManager';
 
 import * as Importers from './importers';
 export { Importers };

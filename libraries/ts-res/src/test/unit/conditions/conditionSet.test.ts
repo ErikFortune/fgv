@@ -108,6 +108,16 @@ describe('ConditionSet', () => {
       }
     });
 
+    test('creates an empty (unconditional) condition set', () => {
+      expect(TsRes.Conditions.ConditionSet.create({ conditions: [] })).toSucceedAndSatisfy((cs) => {
+        expect(cs.size).toBe(0);
+        expect(cs.key).toBe('');
+        expect(cs.toKey()).toBe(cs.key);
+        expect(cs.toString()).toBe(cs.key);
+        expect(cs.toToken()).toSucceedWith('');
+      });
+    });
+
     test('fails if there are duplicate conditions for the same qualifier', () => {
       const cExtra = conditions.validating
         .add({

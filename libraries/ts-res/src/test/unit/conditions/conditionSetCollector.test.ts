@@ -146,6 +146,14 @@ describe('ConditionSetCollector class', () => {
       expect(cc.size).toBe(1);
     });
 
+    test('adds an empty (unconditional) condition set to the collector', () => {
+      const cc = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
+      const conditionSet = TsRes.Conditions.ConditionSet.create({ conditions: [] }).orThrow();
+      expect(cc.add(conditionSet)).toSucceedWith(conditionSet);
+      expect(cc.size).toBe(1);
+      expect(cc.get(conditionSet.key)).toSucceedWith(conditionSet);
+    });
+
     test('fails if another object with the same key is already in the collector', () => {
       const cc = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
       const conditionSet = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();

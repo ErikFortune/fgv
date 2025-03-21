@@ -61,7 +61,7 @@ export class JsonImporter implements IImporter {
     if (!isImportable(item) || item.type !== 'json') {
       /* c8 ignore next 1 - defense in depth */
       const name = item.context?.baseId ?? 'unknown';
-      return failWithDetail(`${name}: not a valid JSON importable (${item.type})`, 'failed');
+      return failWithDetail(`${name}: not a valid JSON importable (${item.type})`, 'skipped');
     }
     const items: IImportable[] = [];
     return JsonConverters.jsonObject

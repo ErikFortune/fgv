@@ -90,6 +90,10 @@ describe('ResourceManager', () => {
         conditions: {
           language: 'es'
         }
+      },
+      {
+        id: 'some.resource.path',
+        json: { speaks: 'Esperanto' }
       }
     ];
     otherDecls = [
@@ -166,6 +170,19 @@ describe('ResourceManager', () => {
       expect(manager.addCandidate(otherDecls[0])).toSucceedAndSatisfy((c) => {
         expect(c.id).toEqual(otherDecls[0].id);
         expect(manager.size).toEqual(2);
+      });
+    });
+
+    test('adds an unconditional candidate to a manager', () => {
+      const unconditional = {
+        id: 'some.resource.path',
+        json: { speaks: 'Esperanto' }
+      };
+      expect(manager.size).toEqual(0);
+      expect(manager.addCandidate(unconditional)).toSucceedAndSatisfy((c) => {
+        expect(c.id).toEqual(unconditional.id);
+        expect(c.conditions.conditions.length).toEqual(0);
+        expect(manager.size).toEqual(1);
       });
     });
 

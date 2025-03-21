@@ -160,6 +160,6 @@ export class FileTreeImporter implements IImporter {
       }
       return failWithDetail(`malformed path importable does not contain a string path`, 'failed');
     }
-    return failWithDetail(`${item.type}: invalid importable type for a FileTreeImporter`, 'failed');
+    return failWithDetail(`${item.type}: invalid importable type for a FileTreeImporter`, 'skipped');
   }
 }

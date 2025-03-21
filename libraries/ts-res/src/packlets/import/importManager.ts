@@ -42,6 +42,11 @@ export interface IImporterCreateParams {
    * An optional initial {@link Import.ImportContext | import context} for the import operation.
    */
   initialContext?: ImportContext;
+
+  /**
+   * An optional list of {@link Import.Importers.IImporter | importers} to use for the import.
+   */
+  importers?: IImporter[];
 }
 
 /**
@@ -54,6 +59,14 @@ export class ImportManager {
    * will be imported.
    */
   public readonly resources: ResourceManager;
+
+  /**
+   * The list of {@link Import.Importers.IImporter | importers} to use for the
+   * import operations.
+   */
+  public get importers(): ReadonlyArray<IImporter> {
+    return this._importers;
+  }
 
   /**
    * The initial {@link Import.ImportContext | import context} for the import operation.
@@ -70,7 +83,7 @@ export class ImportManager {
   protected constructor(params: IImporterCreateParams) {
     this.resources = params.resources;
     this.initialContext = params.initialContext ?? ImportContext.create().orThrow();
-    this._importers = [
+    this._importers = params.importers ?? [
       FileTreeImporter.create({
         qualifiers: this.resources.qualifiers
       }).orThrow(),
@@ -89,6 +102,17 @@ export class ImportManager {
   }
 
   /**
+   * Imports resources from an {@link Import.IImportable | importable} object.
+   * @param importable - The {@link Import.IImportable | importable} object to import.
+   * @returns `Success` with the {@link Import.ImportManager | ImportManager} if successful,
+   * or `Failure` with an error message if the import fails.
+   */
+  public import(importable: IImportable): Result<ImportManager> {
+    this._stack.push(importable);
+    return this._import();
+  }
+
+  /**
    * Imports resources from a file system path.
    * @param filePath - The path to import resources from.
    * @returns `Success` with the {@link Import.ImportManager | ImportManager} if successful,
@@ -96,8 +120,7 @@ export class ImportManager {
    */
   public importFromFileSystem(filePath: string): Result<ImportManager> {
     const importable: IImportablePath = { type: 'path', path: filePath };
-    this._stack.push(importable);
-    return this._import();
+    return this.import(importable);
   }
 
   /**
@@ -114,13 +137,19 @@ export class ImportManager {
       if (item !== undefined) {
         let processed: boolean = false;
         for (const importer of this._importers) {
+          if (!importer.types.includes(item.type)) {
+            continue;
+          }
           const result = importer.import(item, this.resources).aggregateError(errors);
           if (result.isSuccess()) {
             this._stack.push(...result.value);
             processed = true;
-            if (result.detail === 'failed') {
+            if (result.detail === 'consumed') {
+              // it was consumed, we're done.
               break;
             }
+          } else if (result.detail !== 'skipped') {
+            errors.addMessage(`${item.type}: ${result.message}`);
           }
         }
         if (!processed) {

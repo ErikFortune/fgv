@@ -119,7 +119,7 @@ describe('jsonImporter', () => {
       const badImportable = { type: 'unknown', json: { helloMyNameIs: 'importable' }, context };
       expect(importer.import(badImportable, manager)).toFailWithDetail(
         /not a valid JSON importable/i,
-        'failed'
+        'skipped'
       );
     });
 
@@ -127,7 +127,7 @@ describe('jsonImporter', () => {
       const badImportable = { type: 'path', path: 'some/path', context };
       expect(importer.import(badImportable, manager)).toFailWithDetail(
         /not a valid JSON importable/i,
-        'failed'
+        'skipped'
       );
     });
 

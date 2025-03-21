@@ -39,6 +39,17 @@ Class to accumulate context for a resource import operation.
 
 
 </td></tr>
+<tr><td>
+
+[ImportManager](./ts-res.import.importmanager.md)
+
+
+</td><td>
+
+Class to manage the import of resources from various sources.
+
+
+</td></tr>
 </tbody></table>
 
 ## Functions
@@ -165,6 +176,17 @@ Represents a resource tree to be imported.
 </td><td>
 
 Accumulated context of a resource import operation.
+
+
+</td></tr>
+<tr><td>
+
+[IImporterCreateParams](./ts-res.import.iimportercreateparams.md)
+
+
+</td><td>
+
+Parameters for creating an [ImportManager](./ts-res.import.importmanager.md)<!-- -->.
 
 
 </td></tr>
