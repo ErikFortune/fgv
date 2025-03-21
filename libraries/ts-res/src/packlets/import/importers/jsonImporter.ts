@@ -59,6 +59,7 @@ export class JsonImporter implements IImporter {
     manager: ResourceManager
   ): DetailedResult<IImportable[], ImporterResultDetail> {
     if (!isImportable(item) || item.type !== 'json') {
+      /* c8 ignore next 1 - defense in depth */
       const name = item.context?.baseId ?? 'unknown';
       return failWithDetail(`${name}: not a valid JSON importable (${item.type})`, 'failed');
     }
@@ -66,6 +67,7 @@ export class JsonImporter implements IImporter {
     return JsonConverters.jsonObject
       .convert(item.json)
       .onSuccess((json) => {
+        /* c8 ignore next 2 - defense in depth */
         const id = item.context?.baseId ?? '';
         const conditions = item.context?.conditions;
         const candidate: ResourceJson.Json.ILooseResourceCandidateDecl = { id, conditions, json };
