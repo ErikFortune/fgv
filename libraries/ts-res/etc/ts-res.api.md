@@ -38,9 +38,11 @@ class AbstractDecision extends Decision<number> {
 // @public
 class AbstractDecisionCollector extends ValidatingCollector<AbstractDecision> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor();
+    protected constructor(params: IAbstractDecisionCollectorCreateParams);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static create(): Result<AbstractDecisionCollector>;
+    readonly conditionSets: ReadOnlyConditionSetCollector;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params: IAbstractDecisionCollectorCreateParams): Result<AbstractDecisionCollector>;
 }
 
 // @public
@@ -255,6 +257,7 @@ class ConditionSet implements IValidatedConditionSetDecl {
     toKey(): ConditionSetKey;
     toString(): string;
     toToken(terse?: boolean): Result<string>;
+    static UnconditionalKey: ConditionSetKey;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -271,6 +274,9 @@ class ConditionSetCollector extends ValidatingCollector<ConditionSet> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params: IConditionSetCollectorCreateParams): Result<ConditionSetCollector>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get unconditionalConditionSet(): ConditionSet;
+    static UnconditionalIndex: ConditionSetIndex;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -487,6 +493,7 @@ declare namespace Decisions {
         Decision,
         IAbstractDecisionCreateParams,
         AbstractDecision,
+        IAbstractDecisionCollectorCreateParams,
         AbstractDecisionCollector,
         ReadOnlyAbstractDecisionCollector,
         IConcreteDecisionCreateParams,
@@ -582,6 +589,14 @@ declare namespace Helpers_2 {
         mergeLooseResource,
         mergeChildResource
     }
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IAbstractDecisionCollectorCreateParams {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    conditionSets: ReadOnlyConditionSetCollector;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

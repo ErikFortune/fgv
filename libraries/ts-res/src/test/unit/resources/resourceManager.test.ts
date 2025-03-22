@@ -124,7 +124,7 @@ describe('ResourceManager', () => {
         expect(m.size).toEqual(0);
         expect(m.conditions.size).toEqual(0);
         expect(m.conditionSets.size).toEqual(1);
-        expect(m.decisions.size).toEqual(0);
+        expect(m.decisions.size).toEqual(2);
         expect(m.resources.size).toEqual(0);
       });
     });

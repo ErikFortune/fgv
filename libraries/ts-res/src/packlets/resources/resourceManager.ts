@@ -130,7 +130,7 @@ export class ResourceManager {
     this.resourceTypes = params.resourceTypes;
     this._conditions = ConditionCollector.create({ qualifiers: params.qualifiers }).orThrow();
     this._conditionSets = ConditionSetCollector.create({ conditions: this._conditions }).orThrow();
-    this._decisions = AbstractDecisionCollector.create().orThrow();
+    this._decisions = AbstractDecisionCollector.create({ conditionSets: this._conditionSets }).orThrow();
     this._resources = new ValidatingResultMap({
       converters: new Collections.KeyValueConverters<ResourceId, ResourceBuilder>({
         key: Convert.resourceId,

@@ -9,5 +9,39 @@ Creates a new instance of [AbstractDecisionCollector](./ts-res.decisions.abstrac
 **Signature:**
 
 ```typescript
-protected constructor();
+protected constructor(params: IAbstractDecisionCollectorCreateParams);
 ```
+
+## Parameters
+
+<table><thead><tr><th>
+
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+params
+
+
+</td><td>
+
+[IAbstractDecisionCollectorCreateParams](./ts-res.decisions.iabstractdecisioncollectorcreateparams.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>

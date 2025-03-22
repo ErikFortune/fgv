@@ -95,8 +95,13 @@ describe('AbstractDecisionCollector', () => {
 
   describe('createStatic method', () => {
     test('creates an empty AbstractDecisionCollector by default', () => {
-      expect(TsRes.Decisions.AbstractDecisionCollector.create()).toSucceedAndSatisfy((cc) => {
-        expect(cc.size).toBe(0);
+      expect(
+        TsRes.Decisions.AbstractDecisionCollector.create({ conditionSets: conditionSetCollector })
+      ).toSucceedAndSatisfy((cc) => {
+        // abstract decision collector is initialized with:
+        // 0: empty decision (no condition sets)
+        // 1: single default value decision (unconditional condition set)
+        expect(cc.size).toBe(2);
       });
     });
   });
@@ -104,24 +109,30 @@ describe('AbstractDecisionCollector', () => {
   describe('add method', () => {
     test('adds a new instantiated AbstractDecision to the collector', () => {
       const decision = TsRes.Decisions.AbstractDecision.createAbstractDecision({ conditionSets }).orThrow();
-      const dc = TsRes.Decisions.AbstractDecisionCollector.create().orThrow();
+      const dc = TsRes.Decisions.AbstractDecisionCollector.create({
+        conditionSets: conditionSetCollector
+      }).orThrow();
       expect(dc.add(decision)).toSucceedAndSatisfy((d) => {
         expect(d).toBe(decision);
-        expect(dc.size).toBe(1);
+        expect(dc.size).toBe(3);
         expect(dc.get(decision.key)).toSucceedWith(decision);
       });
     });
 
     test('succeeds if the object already exists in the collector', () => {
       const decision = TsRes.Decisions.AbstractDecision.createAbstractDecision({ conditionSets }).orThrow();
-      const dc = TsRes.Decisions.AbstractDecisionCollector.create().orThrow();
+      const dc = TsRes.Decisions.AbstractDecisionCollector.create({
+        conditionSets: conditionSetCollector
+      }).orThrow();
       dc.add(decision).orThrow();
       expect(dc.add(decision)).toSucceedWith(decision);
     });
 
     test('fails if another object with the same key is already in the collector', () => {
       const decision = TsRes.Decisions.AbstractDecision.createAbstractDecision({ conditionSets }).orThrow();
-      const dc = TsRes.Decisions.AbstractDecisionCollector.create().orThrow();
+      const dc = TsRes.Decisions.AbstractDecisionCollector.create({
+        conditionSets: conditionSetCollector
+      }).orThrow();
       const dc2 = TsRes.Decisions.AbstractDecision.createAbstractDecision({ conditionSets }).orThrow();
       dc.add(decision).orThrow();
       expect(dc.add(dc2)).toFailWith(/already exists/);
@@ -132,24 +143,30 @@ describe('AbstractDecisionCollector', () => {
     test('returns the existing decision if the key is already in the collector', () => {
       const decision = TsRes.Decisions.AbstractDecision.createAbstractDecision({ conditionSets }).orThrow();
       const d2 = TsRes.Decisions.AbstractDecision.createAbstractDecision({ conditionSets }).orThrow();
-      const dc = TsRes.Decisions.AbstractDecisionCollector.create().orThrow();
+      const dc = TsRes.Decisions.AbstractDecisionCollector.create({
+        conditionSets: conditionSetCollector
+      }).orThrow();
       dc.validating.add(decision).orThrow();
       expect(dc.getOrAdd(d2)).toSucceedWith(decision);
-      expect(dc.size).toBe(1);
+      expect(dc.size).toBe(3);
     });
   });
 
   describe('validating add method', () => {
     test('adds a new instantiated AbstractDecision to the validating collector', () => {
       const decision = TsRes.Decisions.AbstractDecision.createAbstractDecision({ conditionSets }).orThrow();
-      const dc = TsRes.Decisions.AbstractDecisionCollector.create().orThrow();
+      const dc = TsRes.Decisions.AbstractDecisionCollector.create({
+        conditionSets: conditionSetCollector
+      }).orThrow();
       expect(dc.validating.add(decision)).toSucceedWith(decision);
-      expect(dc.size).toBe(1);
+      expect(dc.size).toBe(3);
       expect(dc.get(decision.key)).toSucceedWith(decision);
     });
 
     test('adds a decision to the collector from an array of condition sets', () => {
-      const dc = TsRes.Decisions.AbstractDecisionCollector.create().orThrow();
+      const dc = TsRes.Decisions.AbstractDecisionCollector.create({
+        conditionSets: conditionSetCollector
+      }).orThrow();
       expect(dc.validating.add(conditionSets)).toSucceedAndSatisfy((d) => {
         expect(d.candidates.length).toBe(conditionSets.length);
         expect(d.key).toBe(conditionSetsKey);
@@ -157,23 +174,29 @@ describe('AbstractDecisionCollector', () => {
     });
 
     test('fails if another object with the same key is already in the collector', () => {
-      const dc = TsRes.Decisions.AbstractDecisionCollector.create().orThrow();
+      const dc = TsRes.Decisions.AbstractDecisionCollector.create({
+        conditionSets: conditionSetCollector
+      }).orThrow();
       dc.validating.add(conditionSets).orThrow();
       expect(dc.validating.add(conditionSets)).toFailWith(/already exists/);
     });
 
     test('fails if the object to be added cannot be converted', () => {
-      const dc = TsRes.Decisions.AbstractDecisionCollector.create().orThrow();
+      const dc = TsRes.Decisions.AbstractDecisionCollector.create({
+        conditionSets: conditionSetCollector
+      }).orThrow();
       expect(dc.validating.add({})).toFailWith(/invalid/);
     });
   });
 
   describe('validating getOrAdd method', () => {
     test('returns the existing decision if the key is already in the collector', () => {
-      const dc = TsRes.Decisions.AbstractDecisionCollector.create().orThrow();
+      const dc = TsRes.Decisions.AbstractDecisionCollector.create({
+        conditionSets: conditionSetCollector
+      }).orThrow();
       const decision = dc.validating.add(conditionSets).orThrow();
       expect(dc.validating.getOrAdd(conditionSets)).toSucceedWith(decision);
-      expect(dc.size).toBe(1);
+      expect(dc.size).toBe(3);
     });
   });
 });

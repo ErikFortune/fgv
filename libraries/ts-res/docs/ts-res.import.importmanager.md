@@ -111,6 +111,27 @@ Description
 </td></tr>
 <tr><td>
 
+[importers](./ts-res.import.importmanager.importers.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[IImporter](./ts-res.import.importers.iimporter.md)<!-- -->&gt;
+
+
+</td><td>
+
+The list of [importers](./ts-res.import.importers.iimporter.md) to use for the import operations.
+
+
+</td></tr>
+<tr><td>
+
 [initialContext](./ts-res.import.importmanager.initialcontext.md)
 
 
@@ -198,6 +219,20 @@ Imports any items on the import stack.
 </td><td>
 
 Factory method to create a new [ImportManager](./ts-res.import.importmanager.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[import(importable)](./ts-res.import.importmanager.import.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Imports resources from an [importable](./ts-res.import.iimportable.md) object.
 
 
 </td></tr>

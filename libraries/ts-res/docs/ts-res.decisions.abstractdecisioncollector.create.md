@@ -9,8 +9,42 @@ Creates a new instance of [AbstractDecisionCollector](./ts-res.decisions.abstrac
 **Signature:**
 
 ```typescript
-static create(): Result<AbstractDecisionCollector>;
+static create(params: IAbstractDecisionCollectorCreateParams): Result<AbstractDecisionCollector>;
 ```
+
+## Parameters
+
+<table><thead><tr><th>
+
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+params
+
+
+</td><td>
+
+[IAbstractDecisionCollectorCreateParams](./ts-res.decisions.iabstractdecisioncollectorcreateparams.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 Result&lt;[AbstractDecisionCollector](./ts-res.decisions.abstractdecisioncollector.md)<!-- -->&gt;

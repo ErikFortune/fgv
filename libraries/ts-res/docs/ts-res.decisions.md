@@ -89,6 +89,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[IAbstractDecisionCollectorCreateParams](./ts-res.decisions.iabstractdecisioncollectorcreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a [AbstractDecisionCollector](./ts-res.decisions.abstractdecisioncollector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [IAbstractDecisionCreateParams](./ts-res.decisions.iabstractdecisioncreateparams.md)
 
 

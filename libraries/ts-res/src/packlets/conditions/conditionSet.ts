@@ -67,6 +67,11 @@ export class ConditionSet implements IValidatedConditionSetDecl {
   }
 
   /**
+   * The key for an unconditional condition set.
+   */
+  public static UnconditionalKey: ConditionSetKey = Validate.toConditionSetKey('').orThrow();
+
+  /**
    * Constructor for a {@link Conditions.ConditionSet | ConditionSet} object.
    * @param params - {@link Conditions.IValidatedConditionSetDecl | Validated declaration}
    * used to create the condition set.
@@ -173,7 +178,7 @@ export class ConditionSet implements IValidatedConditionSetDecl {
    * @public
    */
   public toHash(): string {
-    return Hash.Crc32Normalizer.crc32Hash([this.key]);
+    return Hash.Crc32Normalizer.crc32Hash([this.key]).padStart(8, '0');
   }
 
   /**

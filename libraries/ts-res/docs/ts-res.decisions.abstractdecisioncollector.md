@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)()](./ts-res.decisions.abstractdecisioncollector._constructor_.md)
+[(constructor)(params)](./ts-res.decisions.abstractdecisioncollector._constructor_.md)
 
 
 </td><td>
@@ -44,6 +44,52 @@ Description
 </td><td>
 
 Creates a new instance of [AbstractDecisionCollector](./ts-res.decisions.abstractdecisioncollector.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
+
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[conditionSets](./ts-res.decisions.abstractdecisioncollector.conditionsets.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ReadOnlyConditionSetCollector](./ts-res.conditions.readonlyconditionsetcollector.md)
+
+
+</td><td>
+
+The [ConditionSetCollector](./ts-res.conditions.readonlyconditionsetcollector.md) used to create conditions sets for decisions in this collector.
 
 
 </td></tr>
@@ -69,7 +115,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[create()](./ts-res.decisions.abstractdecisioncollector.create.md)
+[create(params)](./ts-res.decisions.abstractdecisioncollector.create.md)
 
 
 </td><td>

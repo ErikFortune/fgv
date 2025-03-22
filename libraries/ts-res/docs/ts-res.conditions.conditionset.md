@@ -177,6 +177,27 @@ The number of conditions in this condition set.
 
 
 </td></tr>
+<tr><td>
+
+[UnconditionalKey](./ts-res.conditions.conditionset.unconditionalkey.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+[ConditionSetKey](./ts-res.conditionsetkey.md)
+
+
+</td><td>
+
+The key for an unconditional condition set.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods

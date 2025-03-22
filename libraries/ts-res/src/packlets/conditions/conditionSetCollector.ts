@@ -25,7 +25,7 @@ import { ConditionCollector } from './conditionCollector';
 import { IConditionSetDecl } from './conditionSetDecls';
 import { ConditionSet } from './conditionSet';
 import { validatedConditionSetDecl } from './convert';
-import { ConditionSetKey, Convert as CommonConvert } from '../common';
+import { ConditionSetKey, Convert as CommonConvert, ConditionSetIndex, Validate } from '../common';
 
 /**
  * Parameters for creating a {@link Conditions.ConditionSetCollector | ConditionSetCollector}.
@@ -58,6 +58,19 @@ export class ConditionSetCollector extends ValidatingCollector<ConditionSet> {
    * for conditions in this collector.
    */
   public conditions: ConditionCollector;
+
+  /**
+   * Gets the {@link Conditions.ConditionSet | ConditionSet} at the unconditional
+   * condition set index.
+   */
+  public get unconditionalConditionSet(): ConditionSet {
+    return this.getAt(ConditionSetCollector.UnconditionalIndex).orThrow();
+  }
+
+  /**
+   * The index of the unconditional condition set.
+   */
+  public static UnconditionalIndex: ConditionSetIndex = Validate.toConditionSetIndex(0).orThrow();
 
   /**
    * Creates a new {@link Conditions.ConditionSetCollector | ConditionSetCollector}.

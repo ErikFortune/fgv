@@ -211,6 +211,9 @@ export function isValidConditionSetHash(hash: string): hash is ConditionSetHash 
  * @public
  */
 export function isValidDecisionKey(key: string): key is DecisionKey {
+  if (key === '') {
+    return true;
+  }
   return decisionKey.test(key);
 }
 

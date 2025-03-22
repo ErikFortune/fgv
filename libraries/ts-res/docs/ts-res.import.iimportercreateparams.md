@@ -37,6 +37,25 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[importers?](./ts-res.import.iimportercreateparams.importers.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[IImporter](./ts-res.import.importers.iimporter.md)<!-- -->\[\]
+
+
+</td><td>
+
+_(Optional)_ An optional list of [importers](./ts-res.import.importers.iimporter.md) to use for the import.
+
+
+</td></tr>
+<tr><td>
+
 [initialContext?](./ts-res.import.iimportercreateparams.initialcontext.md)
 
 
