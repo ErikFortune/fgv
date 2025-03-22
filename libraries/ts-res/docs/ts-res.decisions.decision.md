@@ -95,6 +95,52 @@ The sorted [ConditionSets](./ts-res.conditions.conditionset.md) that make up thi
 </td></tr>
 <tr><td>
 
+[DefaultOnlyDecisionKey](./ts-res.decisions.decision.defaultonlydecisionkey.md)
+
+
+</td><td>
+
+`static`
+
+`readonly`
+
+
+</td><td>
+
+[DecisionKey](./ts-res.decisionkey.md)
+
+
+</td><td>
+
+Key for the default-only decision (single condition set with no conditions).
+
+
+</td></tr>
+<tr><td>
+
+[EmptyDecisionKey](./ts-res.decisions.decision.emptydecisionkey.md)
+
+
+</td><td>
+
+`static`
+
+`readonly`
+
+
+</td><td>
+
+[DecisionKey](./ts-res.decisionkey.md)
+
+
+</td><td>
+
+Key for the empty decision (no condition sets).
+
+
+</td></tr>
+<tr><td>
+
 [index](./ts-res.decisions.decision.index.md)
 
 

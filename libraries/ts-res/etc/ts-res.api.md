@@ -43,6 +43,10 @@ class AbstractDecisionCollector extends ValidatingCollector<AbstractDecision> {
     readonly conditionSets: ReadOnlyConditionSetCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params: IAbstractDecisionCollectorCreateParams): Result<AbstractDecisionCollector>;
+    get defaultOnlyDecision(): AbstractDecision;
+    static readonly DefaultOnlyDecisionIndex: DecisionIndex;
+    get emptyDecision(): AbstractDecision;
+    static readonly EmptyDecisionIndex: DecisionIndex;
 }
 
 // @public
@@ -460,6 +464,8 @@ class Decision<TVALUE extends JsonValue = JsonValue> implements IDecision<TVALUE
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createDecision(params: IDecisionCreateParams): Result<Decision>;
+    static readonly DefaultOnlyDecisionKey: DecisionKey;
+    static readonly EmptyDecisionKey: DecisionKey;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static getAbstractKey(conditionSets: ReadonlyArray<ConditionSet>): DecisionKey;
     static getKey<TVALUE extends JsonValue = JsonValue>(candidates: ReadonlyArray<ICandidate<TVALUE>>): DecisionKey;

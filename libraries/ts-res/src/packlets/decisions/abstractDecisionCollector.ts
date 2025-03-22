@@ -22,7 +22,7 @@
 
 import { captureResult, Collections, Result, fail, succeed, ValidatingCollector } from '@fgv/ts-utils';
 import { AbstractDecision } from './abstractDecision';
-import { Convert as CommonConvert, DecisionKey } from '../common';
+import { Convert as CommonConvert, DecisionIndex, DecisionKey, Validate } from '../common';
 import { ConditionSet, ReadOnlyConditionSetCollector } from '../conditions';
 
 /**
@@ -47,6 +47,30 @@ export class AbstractDecisionCollector extends ValidatingCollector<AbstractDecis
    * sets for decisions in this collector.
    */
   public readonly conditionSets: ReadOnlyConditionSetCollector;
+
+  /**
+   * The empty decision (no condition sets) for this collector.
+   */
+  public get emptyDecision(): AbstractDecision {
+    return this.getAt(AbstractDecisionCollector.EmptyDecisionIndex).orThrow();
+  }
+
+  /**
+   * The default-only decision (one condition set with no conditions) for this collector.
+   */
+  public get defaultOnlyDecision(): AbstractDecision {
+    return this.getAt(AbstractDecisionCollector.DefaultOnlyDecisionIndex).orThrow();
+  }
+
+  /**
+   * The index for the empty decision.
+   */
+  public static readonly EmptyDecisionIndex: DecisionIndex = Validate.toDecisionIndex(0).orThrow();
+
+  /**
+   * The index for the default-only decision.
+   */
+  public static readonly DefaultOnlyDecisionIndex: DecisionIndex = Validate.toDecisionIndex(1).orThrow();
 
   /**
    * Creates a new instance of {@link Decisions.AbstractDecisionCollector | AbstractDecisionCollector}.

@@ -93,6 +93,94 @@ The [ConditionSetCollector](./ts-res.conditions.readonlyconditionsetcollector.md
 
 
 </td></tr>
+<tr><td>
+
+[defaultOnlyDecision](./ts-res.decisions.abstractdecisioncollector.defaultonlydecision.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[AbstractDecision](./ts-res.decisions.abstractdecision.md)
+
+
+</td><td>
+
+The default-only decision (one condition set with no conditions) for this collector.
+
+
+</td></tr>
+<tr><td>
+
+[DefaultOnlyDecisionIndex](./ts-res.decisions.abstractdecisioncollector.defaultonlydecisionindex.md)
+
+
+</td><td>
+
+`static`
+
+`readonly`
+
+
+</td><td>
+
+[DecisionIndex](./ts-res.decisionindex.md)
+
+
+</td><td>
+
+The index for the default-only decision.
+
+
+</td></tr>
+<tr><td>
+
+[emptyDecision](./ts-res.decisions.abstractdecisioncollector.emptydecision.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[AbstractDecision](./ts-res.decisions.abstractdecision.md)
+
+
+</td><td>
+
+The empty decision (no condition sets) for this collector.
+
+
+</td></tr>
+<tr><td>
+
+[EmptyDecisionIndex](./ts-res.decisions.abstractdecisioncollector.emptydecisionindex.md)
+
+
+</td><td>
+
+`static`
+
+`readonly`
+
+
+</td><td>
+
+[DecisionIndex](./ts-res.decisionindex.md)
+
+
+</td><td>
+
+The index for the empty decision.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods

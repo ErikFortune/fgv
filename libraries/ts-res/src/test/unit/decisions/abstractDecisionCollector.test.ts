@@ -102,6 +102,20 @@ describe('AbstractDecisionCollector', () => {
         // 0: empty decision (no condition sets)
         // 1: single default value decision (unconditional condition set)
         expect(cc.size).toBe(2);
+
+        const empty = cc.emptyDecision;
+        expect(empty.candidates.length).toBe(0);
+
+        const defaultOnly = cc.defaultOnlyDecision;
+        expect(defaultOnly.candidates.length).toBe(1);
+        expect(defaultOnly.candidates[0].conditionSet.conditions.length).toBe(0);
+
+        expect(cc.getAt(TsRes.Decisions.AbstractDecisionCollector.EmptyDecisionIndex)).toSucceedWith(empty);
+        expect(cc.getAt(TsRes.Decisions.AbstractDecisionCollector.DefaultOnlyDecisionIndex)).toSucceedWith(
+          defaultOnly
+        );
+        expect(cc.get(TsRes.Decisions.Decision.EmptyDecisionKey)).toSucceedWith(empty);
+        expect(cc.get(TsRes.Decisions.Decision.DefaultOnlyDecisionKey)).toSucceedWith(defaultOnly);
       });
     });
   });
