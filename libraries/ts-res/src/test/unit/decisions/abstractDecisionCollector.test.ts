@@ -105,10 +105,14 @@ describe('AbstractDecisionCollector', () => {
 
         const empty = cc.emptyDecision;
         expect(empty.candidates.length).toBe(0);
+        expect(empty.key).toBe(TsRes.Decisions.Decision.EmptyDecisionKey);
+        expect(empty.index).toBe(TsRes.Decisions.AbstractDecisionCollector.EmptyDecisionIndex);
 
         const defaultOnly = cc.defaultOnlyDecision;
         expect(defaultOnly.candidates.length).toBe(1);
         expect(defaultOnly.candidates[0].conditionSet.conditions.length).toBe(0);
+        expect(defaultOnly.key).toBe(TsRes.Decisions.Decision.DefaultOnlyDecisionKey);
+        expect(defaultOnly.index).toBe(TsRes.Decisions.AbstractDecisionCollector.DefaultOnlyDecisionIndex);
 
         expect(cc.getAt(TsRes.Decisions.AbstractDecisionCollector.EmptyDecisionIndex)).toSucceedWith(empty);
         expect(cc.getAt(TsRes.Decisions.AbstractDecisionCollector.DefaultOnlyDecisionIndex)).toSucceedWith(

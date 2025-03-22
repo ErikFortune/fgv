@@ -74,6 +74,10 @@ const resourceFiles: FileTree.IInMemoryFile[] = [
     contents: { helloMyNameIs: 'resources for Mars' }
   },
   {
+    path: '/broken/US/resources.json',
+    contents: 'not a json object'
+  },
+  {
     path: '/resources.home=PR/readme.txt',
     contents: 'This is a readme file'
   }
@@ -189,6 +193,34 @@ describe('ImportManager', () => {
           expect(resource.candidates[0].conditions.conditions.length).toEqual(0);
         });
       });
+    });
+
+    test('imports a directory that exists', () => {
+      expect(importManager.importFromFileSystem('resources')).toSucceedAndSatisfy(() => {
+        expect(resourceManager.resources.validating.has('resources')).toBe(true);
+        expect(resourceManager.resources.validating.get('resources')).toSucceedAndSatisfy((resource) => {
+          expect(resource.id).toEqual('resources');
+          expect(resource.candidates.length).toEqual(3);
+          expect(resource.candidates[0].json).toEqual({ helloMyNameIs: 'resources for CA in fr' });
+          expect(resource.candidates[0].conditions.conditions.length).toEqual(2);
+          expect(resource.candidates[1].json).toEqual({ helloMyNameIs: 'resources for AQ' });
+          expect(resource.candidates[1].conditions.conditions.length).toEqual(1);
+          expect(resource.candidates[2].json).toEqual({ helloMyNameIs: 'resources for fr' });
+          expect(resource.candidates[2].conditions.conditions.length).toEqual(1);
+        });
+      });
+    });
+
+    test('fails for a file with an unsupported file type', () => {
+      expect(importManager.importFromFileSystem('/resources.home=PR/readme.txt')).toFailWith(
+        /no matching importer/i
+      );
+    });
+
+    test('fails for an malformed file', () => {
+      expect(importManager.importFromFileSystem('/broken/US/resources.json')).toFailWith(
+        /not a valid json object/i
+      );
     });
   });
 });

@@ -75,7 +75,12 @@ describe('ConditionSetCollector class', () => {
         // condition set collector is created with the unconditional condition set in position 0
         expect(cc.size).toBe(1);
         expect(cc.conditions).toBe(conditions);
-        const unconditional = cc.getAt(TsRes.Conditions.ConditionSetCollector.UnconditionalIndex).orThrow();
+
+        const unconditional = cc.unconditionalConditionSet;
+        expect(unconditional.size).toBe(0);
+        expect(unconditional.index).toBe(TsRes.Conditions.ConditionSetCollector.UnconditionalIndex);
+        expect(unconditional.key).toBe(TsRes.Conditions.ConditionSet.UnconditionalKey);
+
         expect(cc.getAt(TsRes.Conditions.ConditionSetCollector.UnconditionalIndex)).toSucceedWith(
           unconditional
         );

@@ -149,6 +149,7 @@ export class ImportManager {
               break;
             }
           } else if (result.detail !== 'skipped') {
+            processed = true;
             errors.addMessage(`${item.type}: ${result.message}`);
           }
         }

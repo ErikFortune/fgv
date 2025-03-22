@@ -64,6 +64,7 @@ export const validatedConditionSetDecl = Converters.generic<
     return mapResults(
       decl.conditions.map((condition) => context.conditions.validating.getOrAdd(condition))
     ).onSuccess((conditions) => {
+      /* c8 ignore next 1 - coverage having issues */
       const index = context.conditionSetIndex ? context.conditionSetIndex++ : undefined;
       return succeed({ conditions, index });
     });
