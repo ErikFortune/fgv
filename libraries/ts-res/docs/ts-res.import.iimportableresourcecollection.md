@@ -46,7 +46,7 @@ Description
 
 </td><td>
 
-[ResourceJson.Json.IResourceCollectionDecl](./ts-res.resourcejson.json.iresourcecollectiondecl.md)
+[ResourceJson.ResourceDeclCollection](./ts-res.resourcejson.resourcedeclcollection.md)
 
 
 </td><td>

@@ -24,7 +24,7 @@ import { captureResult, DetailedResult, failWithDetail, Result, succeed } from '
 import { Converters as JsonConverters } from '@fgv/ts-json-base';
 import { IImporter, ImporterResultDetail } from './importer';
 import { ResourceManager } from '../../resources';
-import { IImportable, isImportable } from '../importable';
+import { IImportable, IImportableJson, Importable, isImportable } from '../importable';
 import * as ResourceJson from '../../resource-json';
 
 /**
@@ -63,7 +63,43 @@ export class JsonImporter implements IImporter {
       const name = item.context?.baseId ?? 'unknown';
       return failWithDetail(`${name}: not a valid JSON importable (${item.type})`, 'skipped');
     }
-    const items: IImportable[] = [];
+    return this._tryImportResourceCollection(item)
+      .onFailure(() => this._tryImportResourceTree(item))
+      .onFailure(() => this._tryImportResource(item, manager));
+  }
+
+  private _tryImportResourceCollection(
+    item: IImportableJson
+  ): DetailedResult<IImportable[], ImporterResultDetail> {
+    return ResourceJson.ResourceDeclCollection.create(item.json)
+      .onSuccess((collection) => {
+        const importable: Importable = {
+          type: 'resourceCollection',
+          collection,
+          context: item.context
+        };
+        return succeed([importable]);
+      })
+      .withDetail('skipped', 'consumed');
+  }
+
+  private _tryImportResourceTree(item: IImportableJson): DetailedResult<IImportable[], ImporterResultDetail> {
+    return ResourceJson.ResourceDeclTree.create(item.json)
+      .onSuccess((tree) => {
+        const importable: Importable = {
+          type: 'resourceTree',
+          tree,
+          context: item.context
+        };
+        return succeed([importable]);
+      })
+      .withDetail('skipped', 'consumed');
+  }
+
+  private _tryImportResource(
+    item: IImportableJson,
+    manager: ResourceManager
+  ): DetailedResult<IImportable[], ImporterResultDetail> {
     return JsonConverters.jsonObject
       .convert(item.json)
       .onSuccess((json) => {
@@ -74,7 +110,7 @@ export class JsonImporter implements IImporter {
         return manager.addCandidate(candidate);
       })
       .onSuccess(() => {
-        return succeed(items);
+        return succeed([]);
       })
       .withDetail('failed', 'consumed');
   }

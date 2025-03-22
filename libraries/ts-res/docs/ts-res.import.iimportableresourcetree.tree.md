@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-tree: ResourceJson.Json.IResourceTreeRootDecl;
+tree: ResourceJson.ResourceDeclTree;
 ```

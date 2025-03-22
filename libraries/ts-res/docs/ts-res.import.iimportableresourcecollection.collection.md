@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-collection: ResourceJson.Json.IResourceCollectionDecl;
+collection: ResourceJson.ResourceDeclCollection;
 ```

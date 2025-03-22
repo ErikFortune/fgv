@@ -65,7 +65,7 @@ _(Optional)_
 
 </td><td>
 
-[ResourceJson.Json.IResourceTreeRootDecl](./ts-res.resourcejson.json.iresourcetreerootdecl.md)
+[ResourceJson.ResourceDeclTree](./ts-res.resourcejson.resourcedecltree.md)
 
 
 </td><td>

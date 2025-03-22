@@ -23,6 +23,7 @@
 import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../index';
 import { ResourceManager } from '../../../packlets/resources';
+import { JsonValue } from '@fgv/ts-json-base';
 
 describe('jsonImporter', () => {
   let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
@@ -107,6 +108,67 @@ describe('jsonImporter', () => {
           importable.context!.conditions![1].value
         );
       });
+    });
+
+    test('returns a new importable for a resource decl collection', () => {
+      const jsonDecl: TsRes.ResourceJson.Json.IResourceCollectionDecl = {
+        candidates: [
+          {
+            id: 'foo',
+            json: { myNameIs: 'foo' },
+            conditions: { foo: 'bar' }
+          },
+          {
+            id: 'bar',
+            json: { myNameIs: 'bar' },
+            conditions: { wut: { value: 'xyzzy', priority: 200 } }
+          }
+        ]
+      };
+      const importable: TsRes.Import.Importable = { type: 'json', json: jsonDecl as JsonValue, context };
+      const importResult = importer.import(importable, manager);
+      expect(importResult).toSucceedAndSatisfy((importables) => {
+        expect(importables.length).toEqual(1);
+        expect(importables[0].type).toEqual('resourceCollection');
+        expect('collection' in importables[0]).toBe(true);
+        expect(importables[0].context).toEqual(context);
+      });
+      expect(importResult.detail).toEqual('consumed');
+    });
+
+    test('returns a new importable for a resource decl tree', () => {
+      const jsonDecl: TsRes.ResourceJson.Json.IResourceTreeRootDecl = {
+        resources: {
+          foo: {
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { myNameIs: 'foo' },
+                conditions: { foo: 'bar' }
+              }
+            ]
+          },
+          bar: {
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { myNameIs: 'bar' },
+                conditions: { foo: { value: 'baz', priority: 100 } },
+                isPartial: true
+              }
+            ]
+          }
+        }
+      };
+      const importable: TsRes.Import.Importable = { type: 'json', json: jsonDecl as JsonValue, context };
+      const importResult = importer.import(importable, manager);
+      expect(importResult).toSucceedAndSatisfy((importables) => {
+        expect(importables.length).toEqual(1);
+        expect(importables[0].type).toEqual('resourceTree');
+        expect('tree' in importables[0]).toBe(true);
+        expect(importables[0].context).toEqual(context);
+      });
+      expect(importResult.detail).toEqual('consumed');
     });
 
     test('fails for an item with an invalid id', () => {

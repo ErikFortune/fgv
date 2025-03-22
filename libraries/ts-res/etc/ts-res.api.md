@@ -867,7 +867,7 @@ interface IImportablePath extends IImportable {
 // @public
 interface IImportableResourceCollection extends IImportable {
     // (undocumented)
-    collection: ResourceJson.Json.IResourceCollectionDecl;
+    collection: ResourceJson.ResourceDeclCollection;
     // (undocumented)
     context?: ImportContext;
     // (undocumented)
@@ -879,7 +879,7 @@ interface IImportableResourceTree extends IImportable {
     // (undocumented)
     context?: ImportContext;
     // (undocumented)
-    tree: ResourceJson.Json.IResourceTreeRootDecl;
+    tree: ResourceJson.ResourceDeclTree;
     // (undocumented)
     type: 'resourceTree';
 }

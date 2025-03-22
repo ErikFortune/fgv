@@ -70,7 +70,7 @@ export interface IImportableJson extends IImportable {
  */
 export interface IImportableResourceCollection extends IImportable {
   type: 'resourceCollection';
-  collection: ResourceJson.Json.IResourceCollectionDecl;
+  collection: ResourceJson.ResourceDeclCollection;
   context?: ImportContext;
 }
 
@@ -80,7 +80,7 @@ export interface IImportableResourceCollection extends IImportable {
  */
 export interface IImportableResourceTree extends IImportable {
   type: 'resourceTree';
-  tree: ResourceJson.Json.IResourceTreeRootDecl;
+  tree: ResourceJson.ResourceDeclTree;
   context?: ImportContext;
 }
 
