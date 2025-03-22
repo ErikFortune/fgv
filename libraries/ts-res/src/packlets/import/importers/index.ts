@@ -21,5 +21,6 @@
  */
 
 export * from './importer';
-export * from './fileTreeImporter';
+export * from './fsItemImporter';
 export * from './jsonImporter';
+export * from './pathImporter';

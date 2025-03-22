@@ -79,14 +79,14 @@ const resourceFiles: FileTree.IInMemoryFile[] = [
   }
 ];
 
-describe('FileTreeImporter', () => {
+describe('PathImporter', () => {
   let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
   let qualifiers: TsRes.Qualifiers.QualifierCollector;
   let resourceTypes: TsRes.ResourceTypes.ResourceTypeCollector;
 
   let files: FileTree.IInMemoryFile[];
   let tree: FileTree.FileTree;
-  let importer: TsRes.Import.Importers.FileTreeImporter;
+  let importer: TsRes.Import.Importers.PathImporter;
   let manager: TsRes.Resources.ResourceManager;
 
   beforeEach(() => {
@@ -117,7 +117,7 @@ describe('FileTreeImporter', () => {
 
     files = JSON.parse(JSON.stringify(resourceFiles));
     tree = FileTree.inMemory(files).orThrow();
-    importer = TsRes.Import.Importers.FileTreeImporter.create({ qualifiers, tree }).orThrow();
+    importer = TsRes.Import.Importers.PathImporter.create({ qualifiers, tree }).orThrow();
 
     resourceTypes = TsRes.ResourceTypes.ResourceTypeCollector.create({
       resourceTypes: [
@@ -130,22 +130,22 @@ describe('FileTreeImporter', () => {
   });
 
   describe('create static method', () => {
-    test('creates a new FileTreeImporter with supplied qualifiers and FileTree', () => {
-      expect(TsRes.Import.Importers.FileTreeImporter.create({ qualifiers, tree })).toSucceedAndSatisfy(
+    test('creates a new PathImporter with supplied qualifiers and FileTree', () => {
+      expect(TsRes.Import.Importers.PathImporter.create({ qualifiers, tree })).toSucceedAndSatisfy(
         (newImporter) => {
           expect(newImporter.qualifiers).toBe(qualifiers);
           expect(newImporter.tree).toBe(tree);
-          expect(newImporter.types).toEqual(['path', 'fsItem']);
+          expect(newImporter.types).toEqual(['path']);
         }
       );
     });
 
-    test('creates a new FileTreeImporter with default qualifiers and filesystem default FileTree', () => {
-      expect(TsRes.Import.Importers.FileTreeImporter.create({ qualifiers })).toSucceedAndSatisfy(
+    test('creates a new PathImporter with default qualifiers and filesystem default FileTree', () => {
+      expect(TsRes.Import.Importers.PathImporter.create({ qualifiers })).toSucceedAndSatisfy(
         (newImporter) => {
           expect(newImporter.qualifiers).toBe(qualifiers);
           expect(newImporter.tree.hal).toBeInstanceOf(FileTree.FsFileTreeAccessors);
-          expect(newImporter.types).toEqual(['path', 'fsItem']);
+          expect(newImporter.types).toEqual(['path']);
         }
       );
     });
@@ -156,10 +156,12 @@ describe('FileTreeImporter', () => {
       const importable: TsRes.Import.Importable = { type: 'path', path: '/US/resources.json' };
       expect(importer.import(importable, manager)).toSucceedAndSatisfy((results) => {
         expect(results.length).toEqual(1);
-        expect(results[0].type).toEqual('json');
-        if (TsRes.Import.isImportable(results[0]) && results[0].type === 'json') {
-          expect(results[0].json).toEqual({ helloMyNameIs: 'resources for US' });
-          expect(results[0].context?.conditions.length).toEqual(0);
+        expect(results[0].type).toEqual('fsItem');
+        if (TsRes.Import.isImportable(results[0]) && results[0].type === 'fsItem') {
+          expect(results[0].item.item.type === 'file');
+          expect(results[0].item.baseName).toEqual('resources');
+          expect(results[0].item.conditions.length).toEqual(0);
+          expect(results[0].context).toBeUndefined();
         }
       });
     });
@@ -168,12 +170,14 @@ describe('FileTreeImporter', () => {
       const importable: TsRes.Import.Importable = { type: 'path', path: '/resources.home=MX.json' };
       expect(importer.import(importable, manager)).toSucceedAndSatisfy((results) => {
         expect(results.length).toEqual(1);
-        expect(results[0].type).toEqual('json');
-        if (TsRes.Import.isImportable(results[0]) && results[0].type === 'json') {
-          expect(results[0].json).toEqual({ helloMyNameIs: 'resources for MX' });
-          expect(results[0].context?.conditions.length).toEqual(1);
-          expect(results[0].context?.conditions[0].qualifierName).toEqual('homeTerritory');
-          expect(results[0].context?.conditions[0].value).toEqual('MX');
+        expect(results[0].type).toEqual('fsItem');
+        if (TsRes.Import.isImportable(results[0]) && results[0].type === 'fsItem') {
+          expect(results[0].item.baseName).toEqual('resources');
+          expect(results[0].item.item.type === 'file');
+          expect(results[0].item.conditions.length).toEqual(1);
+          expect(results[0].item.conditions[0].qualifier.name).toEqual('homeTerritory');
+          expect(results[0].item.conditions[0].value).toEqual('MX');
+          expect(results[0].context).toBeUndefined();
         }
       });
     });
@@ -181,42 +185,29 @@ describe('FileTreeImporter', () => {
     test('imports an unconditional directory path', () => {
       const importable: TsRes.Import.Importable = { type: 'path', path: '/resources' };
       expect(importer.import(importable, manager)).toSucceedAndSatisfy((results) => {
-        const importables = results.filter((r) => TsRes.Import.isImportable(r));
-        const names = importables.map((i) => (i.type === 'fsItem' ? i.item.item.name : 'unknown')).sort();
-        expect(importables.length).toEqual(3);
-        expect(names).toEqual(['AQ.json', 'home=CA,language=fr.json', 'language=fr.json']);
-        expect(importables.every((i) => i.context?.conditions.length === 0)).toBe(true);
+        expect(results.length).toEqual(1);
+        expect(results[0].type).toEqual('fsItem');
+        if (TsRes.Import.isImportable(results[0]) && results[0].type === 'fsItem') {
+          expect(results[0].item.baseName).toEqual('resources');
+          expect(results[0].item.item.type === 'directory');
+          expect(results[0].item.conditions.length).toEqual(0);
+          expect(results[0].context).toBeUndefined();
+        }
       });
     });
 
     test('imports a conditional directory path', () => {
       const importable: TsRes.Import.Importable = { type: 'path', path: '/home=CA' };
       expect(importer.import(importable, manager)).toSucceedAndSatisfy((results) => {
-        const importables = results.filter((r) => TsRes.Import.isImportable(r));
-        const names = importables.map((i) => (i.type === 'fsItem' ? i.item.item.name : 'unknown')).sort();
-        expect(importables.length).toEqual(1);
-        expect(names).toEqual(['resources.json']);
-        expect(
-          importables.every((i) => {
-            return (
-              i.context?.conditions.length === 1 &&
-              i.context.conditions[0].qualifierName === 'homeTerritory' &&
-              i.context.conditions[0].value === 'CA'
-            );
-          })
-        ).toBe(true);
-      });
-    });
-
-    test('imports an fsItem', () => {
-      const item = TsRes.Import.FsItem.createForPath('/US/resources.json', qualifiers, tree).orThrow();
-      const importable: TsRes.Import.Importable = { type: 'fsItem', item };
-      expect(importer.import(importable, manager)).toSucceedAndSatisfy((results) => {
         expect(results.length).toEqual(1);
-        expect(results[0].type).toEqual('json');
-        if (TsRes.Import.isImportable(results[0]) && results[0].type === 'json') {
-          expect(results[0].json).toEqual({ helloMyNameIs: 'resources for US' });
-          expect(results[0].context?.conditions.length).toEqual(0);
+        expect(results[0].type).toEqual('fsItem');
+        if (TsRes.Import.isImportable(results[0]) && results[0].type === 'fsItem') {
+          expect(results[0].item.baseName).toEqual('');
+          expect(results[0].item.item.type === 'directory');
+          expect(results[0].item.conditions.length).toEqual(1);
+          expect(results[0].item.conditions[0].qualifier.name).toEqual('homeTerritory');
+          expect(results[0].item.conditions[0].value).toEqual('CA');
+          expect(results[0].context).toBeUndefined();
         }
       });
     });
@@ -235,15 +226,17 @@ describe('FileTreeImporter', () => {
       };
       expect(importer.import(importable, manager)).toSucceedAndSatisfy((results) => {
         expect(results.length).toEqual(1);
-        expect(results[0].type).toEqual('json');
-        if (TsRes.Import.isImportable(results[0]) && results[0].type === 'json') {
-          expect(results[0].json).toEqual({ helloMyNameIs: 'resources for en-US in US' });
-          expect(results[0].context?.baseId).toEqual('some.resource.path.resources');
-          expect(results[0].context?.conditions.length).toEqual(2);
+        expect(results[0].type).toEqual('fsItem');
+        if (TsRes.Import.isImportable(results[0]) && results[0].type === 'fsItem') {
+          expect(results[0].item.baseName).toEqual('resources');
+          expect(results[0].item.item.type === 'file');
+          expect(results[0].context?.conditions.length).toEqual(1);
           expect(results[0].context?.conditions[0].qualifierName).toEqual('homeTerritory');
           expect(results[0].context?.conditions[0].value).toEqual('US');
-          expect(results[0].context?.conditions[1].qualifierName).toEqual('language');
-          expect(results[0].context?.conditions[1].value).toEqual('en-US');
+
+          expect(results[0].item.conditions.length).toEqual(1);
+          expect(results[0].item.conditions[0].qualifier.name).toEqual('language');
+          expect(results[0].item.conditions[0].value).toEqual('en-US');
         }
       });
     });
@@ -253,22 +246,31 @@ describe('FileTreeImporter', () => {
       expect(importer.import(importable, manager)).toFailWithDetail(/not found/i, 'failed');
     });
 
-    test('succeeds with no importables and with detail skipped for a non-json file that is not ignored', () => {
+    test('succeeds with an importable and with detail processed for a non-json file that is not ignored', () => {
       const importable: TsRes.Import.Importable = { type: 'path', path: '/resources.home=PR/readme.txt' };
-      importer = TsRes.Import.Importers.FileTreeImporter.create({
+      importer = TsRes.Import.Importers.PathImporter.create({
         qualifiers,
         tree
       }).orThrow();
       const importResult = importer.import(importable, manager);
       expect(importResult).toSucceedAndSatisfy((results) => {
-        expect(results.length).toEqual(0);
+        expect(results.length).toEqual(1);
+        expect(results[0].type).toEqual('fsItem');
+        if (TsRes.Import.isImportable(results[0]) && results[0].type === 'fsItem') {
+          expect(results[0].item.baseName).toEqual('readme');
+          expect(results[0].item.item.type === 'file');
+          // file itself is unconditional and the importer does not process conditions
+          // from the parent directory
+          expect(results[0].item.conditions.length).toEqual(0);
+          expect(results[0].context).toBeUndefined();
+        }
       });
-      expect(importResult.detail).toEqual('skipped');
+      expect(importResult.detail).toEqual('processed');
     });
 
     test('succeeds with no importables and with detail processed for a non-json that is ignored', () => {
       const importable: TsRes.Import.Importable = { type: 'path', path: '/resources.home=PR/readme.txt' };
-      importer = TsRes.Import.Importers.FileTreeImporter.create({
+      importer = TsRes.Import.Importers.PathImporter.create({
         qualifiers,
         tree,
         ignoreFileTypes: ['.txt']
@@ -278,16 +280,6 @@ describe('FileTreeImporter', () => {
         expect(results.length).toEqual(0);
       });
       expect(importResult.detail).toEqual('processed');
-    });
-
-    test('fails to import a directory with invalid children', () => {
-      const importable: TsRes.Import.Importable = { type: 'path', path: '/broken' };
-      expect(importer.import(importable, manager)).toFailWithDetail(/invalid condition value/i, 'failed');
-    });
-
-    test('fails for a malformed fsItem importable', () => {
-      const importable: TsRes.Import.IImportable = { type: 'fsItem' };
-      expect(importer.import(importable, manager)).toFailWith(/malformed fsItem importable/i);
     });
 
     test('fails for a malformed path importable', () => {

@@ -123,9 +123,12 @@ describe('ImportManager', () => {
     files = JSON.parse(JSON.stringify(resourceFiles));
     tree = FileTree.inMemory(files).orThrow();
     importers = [
-      TsRes.Import.Importers.FileTreeImporter.create({
+      TsRes.Import.Importers.PathImporter.create({
         qualifiers,
         tree
+      }).orThrow(),
+      TsRes.Import.Importers.FsItemImporter.create({
+        qualifiers
       }).orThrow(),
       TsRes.Import.Importers.JsonImporter.create().orThrow()
     ];
@@ -147,7 +150,7 @@ describe('ImportManager', () => {
         (manager) => {
           expect(manager.resources).toBe(resourceManager);
           expect(manager.initialContext.conditions.length).toEqual(0);
-          expect(manager.importers.length).toEqual(2);
+          expect(manager.importers.length).toEqual(3);
         }
       );
     });
@@ -158,7 +161,7 @@ describe('ImportManager', () => {
       ).toSucceedAndSatisfy((manager) => {
         expect(manager.resources).toBe(resourceManager);
         expect(manager.initialContext.conditions.length).toEqual(0);
-        expect(manager.importers.length).toEqual(2);
+        expect(manager.importers.length).toEqual(3);
         expect(manager.importers).toEqual(importers);
       });
     });
@@ -176,7 +179,7 @@ describe('ImportManager', () => {
       ).toSucceedAndSatisfy((manager) => {
         expect(manager.resources).toBe(resourceManager);
         expect(manager.initialContext).toBe(context);
-        expect(manager.importers.length).toEqual(2);
+        expect(manager.importers.length).toEqual(3);
         expect(manager.importers).toEqual(importers);
       });
     });
@@ -218,7 +221,7 @@ describe('ImportManager', () => {
     });
 
     test('silently ignores a file with an unsupported file type if file type is ignored', () => {
-      importers[0] = TsRes.Import.Importers.FileTreeImporter.create({
+      importers[0] = TsRes.Import.Importers.PathImporter.create({
         qualifiers,
         tree,
         ignoreFileTypes: ['.txt']

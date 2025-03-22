@@ -19,7 +19,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[FileTreeImporter](./ts-res.import.importers.filetreeimporter.md)
+[FsItemImporter](./ts-res.import.importers.fsitemimporter.md)
 
 
 </td><td>
@@ -36,6 +36,17 @@ Description
 </td><td>
 
 [Importer](./ts-res.import.importers.iimporter.md) implementation which imports resources from a JSON object.
+
+
+</td></tr>
+<tr><td>
+
+[PathImporter](./ts-res.import.importers.pathimporter.md)
+
+
+</td><td>
+
+[Importer](./ts-res.import.importers.iimporter.md) implementation which imports resources from a `FileTree` given a path.
 
 
 </td></tr>
@@ -56,12 +67,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IFileTreeImporterCreateParams](./ts-res.import.importers.ifiletreeimportercreateparams.md)
+[IFsItemImporterCreateParams](./ts-res.import.importers.ifsitemimportercreateparams.md)
 
 
 </td><td>
 
-Parameters for creating a [FileTreeImporter](./ts-res.import.importers.filetreeimporter.md)<!-- -->.
+Parameters for creating a [FsItemImporter](./ts-res.import.importers.fsitemimporter.md)<!-- -->.
 
 
 </td></tr>
@@ -73,6 +84,17 @@ Parameters for creating a [FileTreeImporter](./ts-res.import.importers.filetreei
 </td><td>
 
 Generic interface for an importer than accepts a typed [importable](./ts-res.import.iimportable.md) item, extracts any resources or candidates from it, and returns an optional list of additional importable items derived from the original.
+
+
+</td></tr>
+<tr><td>
+
+[IPathImporterCreateParams](./ts-res.import.importers.ipathimportercreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a [PathImporter](./ts-res.import.importers.pathimporter.md)<!-- -->.
 
 
 </td></tr>

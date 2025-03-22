@@ -27,7 +27,6 @@ import {
   Result,
   succeed,
   succeedWithDetail,
-  FileTree,
   MessageAggregator
 } from '@fgv/ts-utils';
 import { Converters as JsonConverters } from '@fgv/ts-json-base';
@@ -38,57 +37,43 @@ import { IReadOnlyQualifierCollector } from '../../qualifiers';
 import { FsItem, FsItemResultDetail } from '../fsItem';
 
 /**
- * Parameters for creating a {@link Import.Importers.FileTreeImporter | FileTreeImporter}.
+ * Parameters for creating a {@link Import.Importers.FsItemImporter | FsItemImporter}.
  * @public
  */
-export interface IFileTreeImporterCreateParams {
+export interface IFsItemImporterCreateParams {
   qualifiers: IReadOnlyQualifierCollector;
-  tree?: FileTree.FileTree;
-  ignoreFileTypes?: string[];
 }
 
 /**
  * {@link Import.Importers.IImporter | Importer} implementation which imports resources from a `FileTree`.
  * @public
  */
-export class FileTreeImporter implements IImporter {
+export class FsItemImporter implements IImporter {
   /**
    * The {@link Qualifiers.IReadOnlyQualifierCollector | qualifier collector} to use for this importer.
    */
   public readonly qualifiers: IReadOnlyQualifierCollector;
 
   /**
-   * The `FileTree` from which resources will be imported.
-   */
-  public readonly tree: FileTree.FileTree;
-
-  /**
    * The types of {@link Import.IImportable | importables} that this importer can handle.
    */
-  public readonly types: ReadonlyArray<string> = ['path', 'fsItem'];
+  public readonly types: ReadonlyArray<string> = ['fsItem'];
 
   /**
-   * The types of files to consume and ignore when importing.
+   * Protected constructor for the {@link Import.Importers.FsItemImporter | FsItemImporter}.
+   * @param params - Parameters for creating the {@link Import.Importers.FsItemImporter | FsItemImporter}.
    */
-  public readonly ignoreFileTypes: string[];
-
-  /**
-   * Protected constructor for the {@link Import.Importers.FileTreeImporter | FileTreeImporter}.
-   * @param params - Parameters for creating the {@link Import.Importers.FileTreeImporter | FileTreeImporter}.
-   */
-  protected constructor(params: IFileTreeImporterCreateParams) {
+  protected constructor(params: IFsItemImporterCreateParams) {
     this.qualifiers = params.qualifiers;
-    this.tree = params.tree ?? FileTree.forFilesystem().orThrow();
-    this.ignoreFileTypes = params.ignoreFileTypes ?? [];
   }
 
   /**
-   * Creates a new {@link Import.Importers.FileTreeImporter | FileTreeImporter}.
-   * @param params - Parameters for creating the {@link Import.Importers.FileTreeImporter | FileTreeImporter}.
-   * @returns `Success` with the new `FileTreeImporter` if successful, `Failure` with an error message if not.
+   * Creates a new {@link Import.Importers.FsItemImporter | FsItemImporter}.
+   * @param params - Parameters for creating the {@link Import.Importers.FsItemImporter | FsItemImporter}.
+   * @returns `Success` with the new `FsItemImporter` if successful, `Failure` with an error message if not.
    */
-  public static create(params: IFileTreeImporterCreateParams): Result<FileTreeImporter> {
-    return captureResult(() => new FileTreeImporter(params));
+  public static create(params: IFsItemImporterCreateParams): Result<FsItemImporter> {
+    return captureResult(() => new FsItemImporter(params));
   }
 
   /**
@@ -146,8 +131,6 @@ export class FileTreeImporter implements IImporter {
             return succeed([jsonItem]);
           })
           .withDetail('failed', 'processed');
-      } else if (this.ignoreFileTypes.includes(fsItem.item.extension)) {
-        return succeedWithDetail([], 'processed');
       }
     }
     /* c8 ignore next 2 - defense in depth near impossible to reproduce */
@@ -165,12 +148,7 @@ export class FileTreeImporter implements IImporter {
         return succeedWithDetail(item.item, 'succeeded');
       }
       return failWithDetail(`malformed fsItem importable does not contain a valid item`, 'failed');
-    } else if (item.type === 'path') {
-      if ('path' in item && typeof item.path === 'string') {
-        return FsItem.createForPath(item.path, this.qualifiers, this.tree);
-      }
-      return failWithDetail(`malformed path importable does not contain a string path`, 'failed');
     }
-    return failWithDetail(`${item.type}: invalid importable type for a FileTreeImporter`, 'skipped');
+    return failWithDetail(`${item.type}: invalid importable type for an FsItemImporter`, 'skipped');
   }
 }

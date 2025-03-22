@@ -20,12 +20,12 @@
  * SOFTWARE.
  */
 
-import { captureResult, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
+import { captureResult, FileTree, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 import { ResourceManager } from '../resources';
 import { ImportContext } from './importContext';
 import { IImportable, IImportablePath } from './importable';
-import { FileTreeImporter } from './importers/fileTreeImporter';
-import { IImporter, JsonImporter } from './importers';
+import { FsItemImporter } from './importers/fsItemImporter';
+import { IImporter, JsonImporter, PathImporter } from './importers';
 
 /**
  * Parameters for creating an {@link  Import.ImportManager | ImportManager}.
@@ -42,6 +42,11 @@ export interface IImporterCreateParams {
    * An optional initial {@link Import.ImportContext | import context} for the import operation.
    */
   initialContext?: ImportContext;
+
+  /**
+   * An optional `FileTree` for importing path items.
+   */
+  fileTree?: FileTree.FileTree;
 
   /**
    * An optional list of {@link Import.Importers.IImporter | importers} to use for the import.
@@ -84,7 +89,11 @@ export class ImportManager {
     this.resources = params.resources;
     this.initialContext = params.initialContext ?? ImportContext.create().orThrow();
     this._importers = params.importers ?? [
-      FileTreeImporter.create({
+      PathImporter.create({
+        qualifiers: this.resources.qualifiers,
+        tree: params.fileTree
+      }).orThrow(),
+      FsItemImporter.create({
         qualifiers: this.resources.qualifiers
       }).orThrow(),
       JsonImporter.create().orThrow()
@@ -136,22 +145,24 @@ export class ImportManager {
       const item = this._stack.pop();
       if (item !== undefined) {
         let processed: boolean = false;
+        let consumed: boolean = false;
+
         for (const importer of this._importers) {
-          if (!importer.types.includes(item.type)) {
+          if (consumed || !importer.types.includes(item.type)) {
             continue;
           }
+
           const result = importer.import(item, this.resources).aggregateError(errors);
           processed = processed || result.detail !== 'skipped';
+          consumed = consumed || result.detail === 'consumed';
+
           if (result.isSuccess()) {
             this._stack.push(...result.value);
-            if (result.detail === 'consumed') {
-              // it was consumed, we're done.
-              break;
-            }
           } else if (result.detail !== 'skipped') {
             errors.addMessage(`${item.type}: ${result.message}`);
           }
         }
+
         if (!processed) {
           errors.addMessage(`${item.type}: No matching importer found`);
         }

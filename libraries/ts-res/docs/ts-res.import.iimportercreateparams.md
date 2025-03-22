@@ -37,6 +37,25 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[fileTree?](./ts-res.import.iimportercreateparams.filetree.md)
+
+
+</td><td>
+
+
+</td><td>
+
+FileTree.FileTree
+
+
+</td><td>
+
+_(Optional)_ An optional `FileTree` for importing path items.
+
+
+</td></tr>
+<tr><td>
+
 [importers?](./ts-res.import.iimportercreateparams.importers.md)
 
 
