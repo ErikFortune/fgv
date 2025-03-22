@@ -44,6 +44,7 @@ import { FsItem, FsItemResultDetail } from '../fsItem';
 export interface IFileTreeImporterCreateParams {
   qualifiers: IReadOnlyQualifierCollector;
   tree?: FileTree.FileTree;
+  ignoreFileTypes?: string[];
 }
 
 /**
@@ -67,12 +68,18 @@ export class FileTreeImporter implements IImporter {
   public readonly types: ReadonlyArray<string> = ['path', 'fsItem'];
 
   /**
+   * The types of files to consume and ignore when importing.
+   */
+  public readonly ignoreFileTypes: string[];
+
+  /**
    * Protected constructor for the {@link Import.Importers.FileTreeImporter | FileTreeImporter}.
    * @param params - Parameters for creating the {@link Import.Importers.FileTreeImporter | FileTreeImporter}.
    */
   protected constructor(params: IFileTreeImporterCreateParams) {
     this.qualifiers = params.qualifiers;
     this.tree = params.tree ?? FileTree.forFilesystem().orThrow();
+    this.ignoreFileTypes = params.ignoreFileTypes ?? [];
   }
 
   /**
@@ -126,18 +133,22 @@ export class FileTreeImporter implements IImporter {
           return errors.returnOrReport(succeed(items));
         })
         .withDetail('failed', 'processed');
-    } else if (fsItem.item.type === 'file' && fsItem.item.extension === '.json') {
-      return fsItem.item
-        .getContents(JsonConverters.jsonValue)
-        .onSuccess((json) => {
-          const jsonItem: IImportableJson = {
-            type: 'json',
-            json,
-            context
-          };
-          return succeed([jsonItem]);
-        })
-        .withDetail('failed', 'processed');
+    } else if (fsItem.item.type === 'file') {
+      if (fsItem.item.extension === '.json') {
+        return fsItem.item
+          .getContents(JsonConverters.jsonValue)
+          .onSuccess((json) => {
+            const jsonItem: IImportableJson = {
+              type: 'json',
+              json,
+              context
+            };
+            return succeed([jsonItem]);
+          })
+          .withDetail('failed', 'processed');
+      } else if (this.ignoreFileTypes.includes(fsItem.item.extension)) {
+        return succeedWithDetail([], 'processed');
+      }
     }
     /* c8 ignore next 2 - defense in depth near impossible to reproduce */
     return succeedWithDetail([], 'skipped');

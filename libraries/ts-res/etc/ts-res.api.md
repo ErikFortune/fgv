@@ -522,6 +522,7 @@ class FileTreeImporter implements IImporter {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected _getFileTreeItemFromImportable(item: IImportable): DetailedResult<FsItem, FsItemResultDetail>;
+    readonly ignoreFileTypes: string[];
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -814,6 +815,8 @@ const identifierList: RegExp;
 //
 // @public
 interface IFileTreeImporterCreateParams {
+    // (undocumented)
+    ignoreFileTypes?: string[];
     // (undocumented)
     qualifiers: IReadOnlyQualifierCollector;
     // (undocumented)

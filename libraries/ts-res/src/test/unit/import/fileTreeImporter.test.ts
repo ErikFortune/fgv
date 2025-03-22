@@ -253,9 +253,31 @@ describe('FileTreeImporter', () => {
       expect(importer.import(importable, manager)).toFailWithDetail(/not found/i, 'failed');
     });
 
-    test('fails with detail skipped for a non-json file', () => {
+    test('succeeds with no importables and with detail skipped for a non-json file that is not ignored', () => {
       const importable: TsRes.Import.Importable = { type: 'path', path: '/resources.home=PR/readme.txt' };
-      expect(importer.import(importable, manager)).toFailWithDetail(/not a JSON file/i, 'skipped');
+      importer = TsRes.Import.Importers.FileTreeImporter.create({
+        qualifiers,
+        tree
+      }).orThrow();
+      const importResult = importer.import(importable, manager);
+      expect(importResult).toSucceedAndSatisfy((results) => {
+        expect(results.length).toEqual(0);
+      });
+      expect(importResult.detail).toEqual('skipped');
+    });
+
+    test('succeeds with no importables and with detail processed for a non-json that is ignored', () => {
+      const importable: TsRes.Import.Importable = { type: 'path', path: '/resources.home=PR/readme.txt' };
+      importer = TsRes.Import.Importers.FileTreeImporter.create({
+        qualifiers,
+        tree,
+        ignoreFileTypes: ['.txt']
+      }).orThrow();
+      const importResult = importer.import(importable, manager);
+      expect(importResult).toSucceedAndSatisfy((results) => {
+        expect(results.length).toEqual(0);
+      });
+      expect(importResult.detail).toEqual('processed');
     });
 
     test('fails to import a directory with invalid children', () => {

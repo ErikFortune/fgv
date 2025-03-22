@@ -121,10 +121,6 @@ export class FsItem implements IFsItemProps {
   ): DetailedResult<FsItem, FsItemResultDetail> {
     const baseName: string = item.type === 'file' ? item.baseName : item.name;
 
-    if (item.type === 'file' && item.extension !== '.json') {
-      return failWithDetail(`${item.absolutePath}: not a JSON file`, 'skipped');
-    }
-
     return FsItem.tryParseBaseName(baseName, qualifiers)
       .withErrorFormat((msg) => `${baseName}: error extracting conditions - ${msg}`)
       .onSuccess(({ baseName: newBaseName, conditions }) => {

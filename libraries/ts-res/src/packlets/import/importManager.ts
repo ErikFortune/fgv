@@ -141,15 +141,14 @@ export class ImportManager {
             continue;
           }
           const result = importer.import(item, this.resources).aggregateError(errors);
+          processed = processed || result.detail !== 'skipped';
           if (result.isSuccess()) {
             this._stack.push(...result.value);
-            processed = true;
             if (result.detail === 'consumed') {
               // it was consumed, we're done.
               break;
             }
           } else if (result.detail !== 'skipped') {
-            processed = true;
             errors.addMessage(`${item.type}: ${result.message}`);
           }
         }

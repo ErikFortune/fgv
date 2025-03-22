@@ -219,12 +219,6 @@ describe('FsItem', () => {
         TsRes.Import.FsItem.createForPath('/broken/resources.home=Antarctica', qualifiers, tree)
       ).toFailWith(/invalid condition value/i);
     });
-
-    test('fails with detail "skipped" for a non-json file', () => {
-      expect(
-        TsRes.Import.FsItem.createForPath('/resources.home=PR/readme.txt', qualifiers, tree)
-      ).toFailWithDetail(/not a JSON file/i, 'skipped');
-    });
   });
 
   describe('getContext', () => {

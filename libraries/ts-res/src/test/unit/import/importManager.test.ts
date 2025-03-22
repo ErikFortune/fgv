@@ -217,6 +217,18 @@ describe('ImportManager', () => {
       );
     });
 
+    test('silently ignores a file with an unsupported file type if file type is ignored', () => {
+      importers[0] = TsRes.Import.Importers.FileTreeImporter.create({
+        qualifiers,
+        tree,
+        ignoreFileTypes: ['.txt']
+      }).orThrow();
+      importManager = TsRes.Import.ImportManager.create({ resources: resourceManager, importers }).orThrow();
+      expect(importManager.importFromFileSystem('/resources.home=PR/readme.txt')).toSucceedAndSatisfy(() => {
+        expect(resourceManager.resources.size).toEqual(0);
+      });
+    });
+
     test('fails for an malformed file', () => {
       expect(importManager.importFromFileSystem('/broken/US/resources.json')).toFailWith(
         /not a valid json object/i
