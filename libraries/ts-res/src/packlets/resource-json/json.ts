@@ -46,6 +46,11 @@ export interface ILooseConditionDecl {
    * The priority of the condition. Default is the default priority for the qualifier.
    */
   priority?: number;
+
+  /**
+   * The score to be used if the condition is used as a default.
+   */
+  scoreAsDefault?: number;
 }
 
 /**
@@ -67,6 +72,11 @@ export interface IChildConditionDecl {
    * The priority of the condition. Default is the default priority for the qualifier.
    */
   priority?: number;
+
+  /**
+   * The score to be used if the condition is used as a default.
+   */
+  scoreAsDefault?: number;
 }
 
 /**

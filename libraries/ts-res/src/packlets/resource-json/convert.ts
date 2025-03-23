@@ -35,7 +35,8 @@ export const looseConditionDecl: Converter<Json.ILooseConditionDecl> =
     qualifierName: CommonConvert.qualifierName,
     value: Converters.string,
     operator: CommonConvert.conditionOperator.optional(),
-    priority: CommonConvert.conditionPriority.optional()
+    priority: CommonConvert.conditionPriority.optional(),
+    scoreAsDefault: Converters.number.optional()
   });
 
 /**
@@ -46,7 +47,8 @@ export const childConditionDecl: Converter<Json.IChildConditionDecl> =
   Converters.strictObject<Json.IChildConditionDecl>({
     value: Converters.string,
     operator: CommonConvert.conditionOperator.optional(),
-    priority: CommonConvert.conditionPriority.optional()
+    priority: CommonConvert.conditionPriority.optional(),
+    scoreAsDefault: Converters.number.optional()
   });
 
 function _isConditionSetRecord(from: unknown): from is Record<string, string | Json.IChildConditionDecl> {

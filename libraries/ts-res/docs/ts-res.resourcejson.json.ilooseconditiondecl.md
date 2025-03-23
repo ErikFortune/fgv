@@ -94,6 +94,25 @@ The name of the [qualifier](./ts-res.qualifiers.qualifier.md) to be compared.
 </td></tr>
 <tr><td>
 
+[scoreAsDefault?](./ts-res.resourcejson.json.ilooseconditiondecl.scoreasdefault.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+_(Optional)_ The score to be used if the condition is used as a default.
+
+
+</td></tr>
+<tr><td>
+
 [value](./ts-res.resourcejson.json.ilooseconditiondecl.value.md)
 
 

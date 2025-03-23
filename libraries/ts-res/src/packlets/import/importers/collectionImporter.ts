@@ -28,9 +28,11 @@ import {
   Result,
   succeed
 } from '@fgv/ts-utils';
-import { ResourceManager } from '../../resources';
+import { ResourceBuilder, ResourceCandidate, ResourceManager } from '../../resources';
 import { IImportable, isImportable } from '../importable';
 import { IImporter, ImporterResultDetail } from './importer';
+import * as ResourceJson from '../../resource-json';
+import { ImportContext } from '../importContext';
 
 /**
  * {@link Import.Importers.IImporter | Importer} implementation which imports
@@ -52,7 +54,9 @@ export class CollectionImporter implements IImporter {
   /**
    * Creates a new {@link Import.Importers.CollectionImporter | CollectionImporter} instance.
    * @returns `Success` with the new {@link Import.Importers.CollectionImporter | CollectionImporter} if successful,
-   * `Failure` otherwise.
+   * `Failure` o4
+   *
+   * therwise.
    */
   public static create(): Result<CollectionImporter> {
     return captureResult(() => new CollectionImporter());
@@ -75,12 +79,65 @@ export class CollectionImporter implements IImporter {
 
     const errors: MessageAggregator = new MessageAggregator();
     for (const resource of collection.getLooseResources()) {
-      manager.addResource(resource).aggregateError(errors);
+      this._addResource(manager, resource, item.context).aggregateError(errors);
     }
 
     for (const candidate of collection.getLooseCandidates()) {
-      manager.addLooseCandidate(candidate).aggregateError(errors);
+      this._addCandidate(manager, candidate, item.context).aggregateError(errors);
     }
     return errors.returnOrReport(succeed([])).withDetail('failed', 'consumed');
+  }
+
+  /**
+   * Adds a {@link ResourceJson.Normalized.ILooseResourceDecl | declared resource} to
+   * the supplied {@link Resources.ResourceManager | resource manager}, merging an
+   * optional {@link Import.ImportContext | import context} if provided.
+   * @param manager - The {@link Resources.ResourceManager | resource manager} to which
+   * the resource will be added.
+   * @param resource - The {@link ResourceJson.Normalized.ILooseResourceDecl | resource}
+   * to add.
+   * @param context - Optional {@link Import.ImportContext | import context} to merge
+   * with the resource.
+   * @returns `Success` with the {@link Resources.ResourceBuilder | resource builder}
+   * for the resource if successful, `Failure` with an error message if not.
+   */
+  private _addResource(
+    manager: ResourceManager,
+    resource: ResourceJson.Normalized.ILooseResourceDecl,
+    context?: ImportContext
+  ): Result<ResourceBuilder> {
+    if (context) {
+      return ResourceJson.Helpers.mergeLooseResource(resource, context.baseId, context.conditions).onSuccess(
+        (merged) => manager.addResource(merged)
+      );
+    }
+    return manager.addResource(resource);
+  }
+
+  /**
+   * Adds a {@link ResourceJson.Normalized.ILooseResourceCandidateDecl | declared resource candidate}
+   * to the supplied {@link Resources.ResourceManager | resource manager}, merging an optional
+   * {@link Import.ImportContext | import context} if provided.
+   * @param manager - The {@link Resources.ResourceManager | resource manager} to which the
+   * candidate will be added.
+   * @param candidate - The {@link ResourceJson.Normalized.ILooseResourceCandidateDecl | candidate}
+   * to add.
+   * @param context - Optional {@link Import.ImportContext | import context} to merge with the candidate.
+   * @returns `Success` with the {@link Resources.ResourceCandidate | resource candidate} if successful,
+   * `Failure` with an error message if not.
+   */
+  private _addCandidate(
+    manager: ResourceManager,
+    candidate: ResourceJson.Normalized.ILooseResourceCandidateDecl,
+    context?: ImportContext
+  ): Result<ResourceCandidate> {
+    if (context) {
+      return ResourceJson.Helpers.mergeLooseCandidate(
+        candidate,
+        context.baseId,
+        context.conditions
+      ).onSuccess((merged) => manager.addLooseCandidate(merged));
+    }
+    return manager.addLooseCandidate(candidate);
   }
 }

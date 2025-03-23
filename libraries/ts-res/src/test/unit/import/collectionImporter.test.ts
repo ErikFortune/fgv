@@ -168,20 +168,20 @@ describe('CollectionImporter', () => {
       expect(importResult.detail).toEqual('consumed');
     });
 
-    xtest('imports a resource collection merging in a supplied context', () => {
+    test('imports a resource collection merging in a supplied context', () => {
       const importable: TsRes.Import.Importable = { type: 'resourceCollection', collection, context };
       const importResult = importer.import(importable, manager);
       expect(importResult).toSucceedAndSatisfy((importables) => {
         expect(importables.length).toEqual(0);
         expect(manager.size).toEqual(3);
-        expect(manager.resources.validating.has('foo')).toBe(true);
-        expect(manager.resources.validating.has('bar')).toBe(true);
-        expect(manager.resources.validating.has('baz')).toBe(true);
-        expect(manager.resources.validating.get('foo')).toSucceedAndSatisfy((r) => {
+        expect(manager.resources.validating.has('some.resource.id.foo')).toBe(true);
+        expect(manager.resources.validating.has('some.resource.id.bar')).toBe(true);
+        expect(manager.resources.validating.has('some.resource.id.baz')).toBe(true);
+        expect(manager.resources.validating.get('some.resource.id.foo')).toSucceedAndSatisfy((r) => {
           expect(r.candidates.length).toEqual(1);
           expect(r.candidates[0].conditions.size).toEqual(2);
-          expect(r.candidates[0].conditions.conditions[0].toString()).toEqual('language-en-US@600');
-          expect(r.candidates[0].conditions.conditions[1].toString()).toEqual('some_thing-thing@500');
+          expect(r.candidates[0].conditions.conditions[0].toKey()).toEqual('language-[en-US]@600');
+          expect(r.candidates[0].conditions.conditions[1].toKey()).toEqual('some_thing-[thing]@500');
         });
       });
       expect(importResult.detail).toEqual('consumed');

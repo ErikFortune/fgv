@@ -655,6 +655,7 @@ interface ICandidate<TVALUE extends JsonValue = JsonValue> {
 interface IChildConditionDecl {
     operator?: ConditionOperator;
     priority?: number;
+    scoreAsDefault?: number;
     value: string;
 }
 
@@ -973,6 +974,7 @@ interface ILooseConditionDecl {
     priority?: number;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     qualifierName: string;
+    scoreAsDefault?: number;
     value: string;
 }
 
@@ -1643,16 +1645,16 @@ const looseResourceDecl: Converter<Normalized.ILooseResourceDecl>;
 export const MaxConditionPriority: ConditionPriority;
 
 // @public
-function mergeChildCandidate(candidate: Normalized.IChildResourceCandidateDecl, baseConditions?: Json.ILooseConditionDecl[]): Result<Normalized.IChildResourceCandidateDecl>;
+function mergeChildCandidate(candidate: Normalized.IChildResourceCandidateDecl, baseConditions?: ReadonlyArray<Json.ILooseConditionDecl | Conditions.IConditionDecl>): Result<Normalized.IChildResourceCandidateDecl>;
 
 // @public
-function mergeChildResource(resource: Normalized.IChildResourceDecl, name: string, parentName?: string, parentConditions?: Json.ILooseConditionDecl[]): Result<Normalized.ILooseResourceDecl>;
+function mergeChildResource(resource: Normalized.IChildResourceDecl, name: string, parentName?: string, parentConditions?: ReadonlyArray<Json.ILooseConditionDecl | Conditions.IConditionDecl>): Result<Normalized.ILooseResourceDecl>;
 
 // @public
-function mergeLooseCandidate(candidate: Normalized.ILooseResourceCandidateDecl, baseName?: string, baseConditions?: Json.ILooseConditionDecl[]): Result<Normalized.ILooseResourceCandidateDecl>;
+function mergeLooseCandidate(candidate: Normalized.ILooseResourceCandidateDecl, baseName?: string, baseConditions?: ReadonlyArray<Json.ILooseConditionDecl | Conditions.IConditionDecl>): Result<Normalized.ILooseResourceCandidateDecl>;
 
 // @public
-function mergeLooseResource(resource: Normalized.ILooseResourceDecl, baseName?: string, baseConditions?: Json.ILooseConditionDecl[]): Result<Normalized.ILooseResourceDecl>;
+function mergeLooseResource(resource: Normalized.ILooseResourceDecl, baseName?: string, baseConditions?: ReadonlyArray<Json.ILooseConditionDecl | Conditions.IConditionDecl>): Result<Normalized.ILooseResourceDecl>;
 
 // @public
 export const MinConditionPriority: ConditionPriority;
@@ -2448,6 +2450,20 @@ const validatedQualifierDecl: Converter<IValidatedQualifierDecl, IQualifierDeclC
 
 // Warnings were encountered during analysis:
 //
+// src/packlets/import/importers/collectionImporter.ts:104:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/import/importers/collectionImporter.ts:104:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/import/importers/collectionImporter.ts:104:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/import/importers/collectionImporter.ts:104:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/import/importers/collectionImporter.ts:104:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/import/importers/collectionImporter.ts:104:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/import/importers/collectionImporter.ts:104:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/import/importers/collectionImporter.ts:128:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/import/importers/collectionImporter.ts:128:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/import/importers/collectionImporter.ts:128:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/import/importers/collectionImporter.ts:128:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/import/importers/collectionImporter.ts:128:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/import/importers/collectionImporter.ts:128:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/import/importers/collectionImporter.ts:128:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resource.ts:131:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resourceCandidate.ts:185:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 

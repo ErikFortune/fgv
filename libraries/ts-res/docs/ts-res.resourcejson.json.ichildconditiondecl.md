@@ -75,6 +75,25 @@ _(Optional)_ The priority of the condition. Default is the default priority for 
 </td></tr>
 <tr><td>
 
+[scoreAsDefault?](./ts-res.resourcejson.json.ichildconditiondecl.scoreasdefault.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+_(Optional)_ The score to be used if the condition is used as a default.
+
+
+</td></tr>
+<tr><td>
+
 [value](./ts-res.resourcejson.json.ichildconditiondecl.value.md)
 
 

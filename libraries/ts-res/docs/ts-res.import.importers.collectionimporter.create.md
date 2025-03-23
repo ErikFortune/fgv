@@ -15,5 +15,7 @@ static create(): Result<CollectionImporter>;
 
 Result&lt;[CollectionImporter](./ts-res.import.importers.collectionimporter.md)<!-- -->&gt;
 
-`Success` with the new [CollectionImporter](./ts-res.import.importers.collectionimporter.md) if successful, `Failure` otherwise.
+`Success` with the new [CollectionImporter](./ts-res.import.importers.collectionimporter.md) if successful, `Failure` o4
+
+therwise.
 

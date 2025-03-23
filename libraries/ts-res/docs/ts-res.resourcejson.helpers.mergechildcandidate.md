@@ -9,7 +9,7 @@ Helper method to merge a child candidate with base conditions.
 **Signature:**
 
 ```typescript
-export declare function mergeChildCandidate(candidate: Normalized.IChildResourceCandidateDecl, baseConditions?: Json.ILooseConditionDecl[]): Result<Normalized.IChildResourceCandidateDecl>;
+export declare function mergeChildCandidate(candidate: Normalized.IChildResourceCandidateDecl, baseConditions?: ReadonlyArray<Json.ILooseConditionDecl | Conditions.IConditionDecl>): Result<Normalized.IChildResourceCandidateDecl>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ baseConditions
 
 </td><td>
 
-[Json.ILooseConditionDecl](./ts-res.resourcejson.json.ilooseconditiondecl.md)<!-- -->\[\]
+ReadonlyArray&lt;[Json.ILooseConditionDecl](./ts-res.resourcejson.json.ilooseconditiondecl.md) \| [Conditions.IConditionDecl](./ts-res.conditions.iconditiondecl.md)<!-- -->&gt;
 
 
 </td><td>
