@@ -5,7 +5,7 @@ import { IMatchedCall, matcherName, predicate } from './predicate';
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars, @typescript-eslint/ban-types, @typescript-eslint/naming-convention
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars, @typescript-eslint/naming-convention
     interface Matchers<R> {
       /**
        * Use .toSucceedWith to verify that a Result<T> is a success
