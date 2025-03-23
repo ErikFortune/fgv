@@ -160,9 +160,6 @@ export class ResourceBuilder {
                 );
               }
             }
-            if (this._resourceType === undefined && added.resourceType !== undefined) {
-              this._resourceType = added.resourceType;
-            }
             return succeedWithDetail(added, detail);
           });
       });

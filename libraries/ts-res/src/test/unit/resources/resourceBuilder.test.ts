@@ -173,9 +173,19 @@ describe('ResourceBuilder', () => {
       expect(builder.resourceType).toEqual(jsonType);
     });
 
-    test('adds non-conflicting candidates to a builder', () => {
+    test('infers type if resource type is undefined', () => {
+      const decl = { ...someDecls[1], resourceTypeName: jsonType.key };
       expect(builder.addLooseCandidate(someDecls[0])).toSucceed();
-      expect(builder.addLooseCandidate(someDecls[1])).toSucceed();
+      expect(builder.resourceType).toBeUndefined();
+      expect(builder.addLooseCandidate(decl)).toSucceed();
+      expect(builder.resourceType).toEqual(jsonType);
+    });
+
+    test('adds non-conflicting candidates to a builder', () => {
+      const decl1 = { ...someDecls[0], resourceTypeName: jsonType.key };
+      const decl2 = { ...someDecls[1], resourceTypeName: jsonType.key };
+      expect(builder.addLooseCandidate(decl1)).toSucceed();
+      expect(builder.addLooseCandidate(decl2)).toSucceed();
       expect(builder.candidates.length).toEqual(2);
     });
 

@@ -231,6 +231,49 @@ describe('ResourceManager', () => {
     });
   });
 
+  describe('addResource method', () => {
+    let manager: TsRes.Resources.ResourceManager;
+
+    beforeEach(() => {
+      manager = TsRes.Resources.ResourceManager.create({
+        qualifiers,
+        resourceTypes
+      }).orThrow();
+    });
+
+    test('adds a resource to a manager', () => {
+      const resource: TsRes.ResourceJson.Json.ILooseResourceDecl = {
+        id: 'some.resource.path',
+        candidates: [
+          { json: { home: 'United States' }, conditions: { homeTerritory: 'US' } },
+          { json: { speaks: 'English' }, conditions: { language: 'en' } }
+        ],
+        resourceTypeName: 'json'
+      };
+
+      expect(manager.size).toEqual(0);
+      expect(manager.addResource(resource)).toSucceedAndSatisfy((r) => {
+        expect(r.id).toEqual(resource.id);
+        expect(r.resourceType?.key).toEqual('json');
+        expect(manager.size).toEqual(1);
+      });
+    });
+
+    test('fails to add a resource with an invalid id', () => {
+      const resource: TsRes.ResourceJson.Json.ILooseResourceDecl = {
+        id: 'invalid id',
+        candidates: [
+          { json: { home: 'United States' }, conditions: { homeTerritory: 'US' } },
+          { json: { speaks: 'English' }, conditions: { language: 'en' } }
+        ],
+        resourceTypeName: 'json'
+      };
+
+      expect(manager.size).toEqual(0);
+      expect(manager.addResource(resource)).toFailWith(/invalid id/i);
+    });
+  });
+
   describe('build method', () => {
     let manager: TsRes.Resources.ResourceManager;
 

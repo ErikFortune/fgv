@@ -212,10 +212,7 @@ export class ResourceManager {
         conditionSets: this._conditionSets
       })
         .onSuccess((builder) => {
-          if (decl.resourceTypeName) {
-            return builder.setResourceType(decl.resourceTypeName);
-          }
-          return succeed(builder);
+          return builder.setResourceType(decl.resourceTypeName);
         })
         .onSuccess((builder) => {
           if (decl.candidates) {
