@@ -428,6 +428,8 @@ describe('Converters module', () => {
     expect(s).toBeDefined();
     expect(narr).toBeDefined();
     expect(objt).toBeDefined();
+    expect(narc).toBeDefined();
+    expect(objc).toBeDefined();
     // cSpell: enable
   });
 

@@ -7,7 +7,7 @@ import { ResultDetailType, ResultValueType } from '@fgv/ts-utils';
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
-    // eslint-disable-next-line @typescript-eslint/ban-types,@typescript-eslint/naming-convention
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     interface Matchers<R, T> {
       /**
        * Use .toSucceed to verify that a Result\<T\> is a success
@@ -42,7 +42,6 @@ declare global {
        * Use .toSucceedAndMatchInlineSnapshot to verify that a Result\<T\> is a success
        * and that the result value matches an inline snapshot
        */
-      // eslint-disable-next-line @typescript-eslint/ban-types
       toSucceedAndMatchInlineSnapshot(snapshot: string | undefined): R;
 
       /**
