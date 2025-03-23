@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-sudoku-lib",
+      "comment": "upgrade-dependencies",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-sudoku-lib"
+}
