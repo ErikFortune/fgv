@@ -100,40 +100,39 @@ describe('ResourceCandidate', () => {
 
   describe('static create method', () => {
     test('creates a new ResourceCandidate with no parent conditions', () => {
-      const decl: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = {
-        id: 'some.resource.path',
+      const resourceType = resourceTypes.validating.get('json').orThrow();
+      const decl: TsRes.ResourceJson.Json.IChildResourceCandidateDecl = {
         json: { some: 'json' },
         conditions: {
           homeTerritory: 'US',
           language: 'en'
         },
         isPartial: true,
-        mergeMethod: 'replace',
-        resourceTypeName: 'json'
+        mergeMethod: 'replace'
       };
       expect(conditions.size).toBe(0);
-      expect(conditionSets.size).toBe(0);
+      expect(conditionSets.size).toBe(1);
       expect(
         TsRes.Resources.ResourceCandidate.create({
+          id: 'some.resource.path',
           conditionSets,
-          resourceTypes,
+          resourceType,
           decl
         })
       ).toSucceedAndSatisfy((c) => {
-        expect(c.id).toBe(decl.id);
+        expect(c.id).toBe('some.resource.path');
         expect(c.json).toEqual(decl.json);
         expect(c.isPartial).toBe(true);
         expect(c.mergeMethod).toBe('replace');
         expect(c.conditions.size).toBe(2);
         expect(conditions.size).toBe(2);
-        expect(conditionSets.size).toBe(1);
+        expect(conditionSets.size).toBe(2);
         expect(c.resourceType?.key).toBe('json');
       });
     });
 
     test('defaults to non-partial and augment merge method', () => {
-      const decl: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = {
-        id: 'some.resource.path',
+      const decl: TsRes.ResourceJson.Json.IChildResourceCandidateDecl = {
         json: { some: 'json' },
         conditions: {
           homeTerritory: 'US',
@@ -141,21 +140,21 @@ describe('ResourceCandidate', () => {
         }
       };
       expect(conditions.size).toBe(0);
-      expect(conditionSets.size).toBe(0);
+      expect(conditionSets.size).toBe(1);
       expect(
         TsRes.Resources.ResourceCandidate.create({
+          id: 'some.resource.path',
           conditionSets,
-          resourceTypes,
           decl
         })
       ).toSucceedAndSatisfy((c) => {
-        expect(c.id).toBe(decl.id);
+        expect(c.id).toBe('some.resource.path');
         expect(c.json).toEqual(decl.json);
         expect(c.isPartial).toBe(false);
         expect(c.mergeMethod).toBe('augment');
         expect(c.conditions.size).toBe(2);
         expect(conditions.size).toBe(2);
-        expect(conditionSets.size).toBe(1);
+        expect(conditionSets.size).toBe(2);
         expect(c.resourceType?.key).toBeUndefined();
       });
     });
@@ -169,11 +168,11 @@ describe('ResourceCandidate', () => {
         TsRes.ResourceJson.Convert.looseResourceCandidateDecl.convert(someDecls[0]).orThrow();
       const numDeclConditions = decl.conditions?.length ?? 0;
       expect(conditions.size).toBe(1);
-      expect(conditionSets.size).toBe(0);
+      expect(conditionSets.size).toBe(1);
       expect(
         TsRes.Resources.ResourceCandidate.create({
+          id: decl.id,
           conditionSets,
-          resourceTypes,
           decl,
           parentConditions
         })
@@ -185,33 +184,16 @@ describe('ResourceCandidate', () => {
         expect(c.conditions.size).toBe(numDeclConditions + parentConditions.length);
         expect(c.resourceType?.key).toBeUndefined();
         expect(conditions.size).toBe(numDeclConditions + parentConditions.length);
-        expect(conditionSets.size).toBe(1);
+        expect(conditionSets.size).toBe(2);
       });
     });
 
-    test('fails if the resource type is not found', () => {
-      const decl: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = {
-        ...someDecls[0],
-        resourceTypeName: 'bogus'
-      };
-      expect(
-        TsRes.Resources.ResourceCandidate.create({
-          conditionSets,
-          resourceTypes,
-          decl
-        })
-      ).toFailWith(/not found/i);
-    });
-
     test('fails if the resource ID is invalid', () => {
-      const decl: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = {
-        ...someDecls[0],
-        id: 'resource ids cannot contain spaces or punctuation!'
-      };
+      const decl: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = someDecls[0];
       expect(
         TsRes.Resources.ResourceCandidate.create({
+          id: 'resource ids cannot contain spaces or punctuation!',
           conditionSets,
-          resourceTypes,
           decl
         })
       ).toFailWith(/not a valid resource id/i);
@@ -224,8 +206,8 @@ describe('ResourceCandidate', () => {
       };
       expect(
         TsRes.Resources.ResourceCandidate.create({
+          id: decl.id,
           conditionSets,
-          resourceTypes,
           decl
         })
       ).toFailWith(/not a valid qualifier name/i);
@@ -237,13 +219,17 @@ describe('ResourceCandidate', () => {
       someDecls[0] = { ...someDecls[0], resourceTypeName: 'json' };
       someDecls[3] = { ...someDecls[3], resourceTypeName: 'json' };
       const candidates = mapResults(
-        someDecls.map((decl) =>
-          TsRes.Resources.ResourceCandidate.create({
+        someDecls.map((decl) => {
+          const resourceType = decl.resourceTypeName
+            ? resourceTypes.validating.get(decl.resourceTypeName).orThrow()
+            : undefined;
+          return TsRes.Resources.ResourceCandidate.create({
+            id: decl.id,
             conditionSets,
-            resourceTypes,
-            decl
-          })
-        )
+            decl,
+            resourceType
+          });
+        })
       ).orThrow();
       const expectedType = resourceTypes.validating.get('json').orThrow();
       expect(TsRes.Resources.ResourceCandidate.validateResourceTypes(candidates)).toSucceedWith(expectedType);
@@ -253,13 +239,17 @@ describe('ResourceCandidate', () => {
       someDecls[0] = { ...someDecls[0], resourceTypeName: 'json' };
       someDecls[3] = { ...someDecls[3], resourceTypeName: 'json' };
       const candidates = mapResults(
-        someDecls.map((decl) =>
-          TsRes.Resources.ResourceCandidate.create({
+        someDecls.map((decl) => {
+          const resourceType = decl.resourceTypeName
+            ? resourceTypes.validating.get(decl.resourceTypeName).orThrow()
+            : undefined;
+          return TsRes.Resources.ResourceCandidate.create({
+            id: decl.id,
             conditionSets,
-            resourceTypes,
-            decl
-          })
-        )
+            decl,
+            resourceType
+          });
+        })
       ).orThrow();
       const expectedType = resourceTypes.validating.get('json').orThrow();
       expect(TsRes.Resources.ResourceCandidate.validateResourceTypes(candidates, expectedType)).toSucceedWith(
@@ -271,8 +261,8 @@ describe('ResourceCandidate', () => {
       const candidates = mapResults(
         someDecls.map((decl) =>
           TsRes.Resources.ResourceCandidate.create({
+            id: decl.id,
             conditionSets,
-            resourceTypes,
             decl
           })
         )
@@ -284,8 +274,8 @@ describe('ResourceCandidate', () => {
       const candidates = mapResults(
         someDecls.map((decl) =>
           TsRes.Resources.ResourceCandidate.create({
+            id: decl.id,
             conditionSets,
-            resourceTypes,
             decl
           })
         )
@@ -300,13 +290,17 @@ describe('ResourceCandidate', () => {
       someDecls[0] = { ...someDecls[0], resourceTypeName: 'json' };
       someDecls[3] = { ...someDecls[3], resourceTypeName: 'other' };
       const candidates = mapResults(
-        someDecls.map((decl) =>
-          TsRes.Resources.ResourceCandidate.create({
+        someDecls.map((decl) => {
+          const resourceType = decl.resourceTypeName
+            ? resourceTypes.validating.get(decl.resourceTypeName).orThrow()
+            : undefined;
+          return TsRes.Resources.ResourceCandidate.create({
+            id: decl.id,
             conditionSets,
-            resourceTypes,
-            decl
-          })
-        )
+            decl,
+            resourceType
+          });
+        })
       ).orThrow();
       expect(TsRes.Resources.ResourceCandidate.validateResourceTypes(candidates)).toFailWith(
         /resource type mismatch/i
@@ -317,13 +311,17 @@ describe('ResourceCandidate', () => {
       someDecls[0] = { ...someDecls[0], resourceTypeName: 'other' };
       someDecls[3] = { ...someDecls[3], resourceTypeName: 'other' };
       const candidates = mapResults(
-        someDecls.map((decl) =>
-          TsRes.Resources.ResourceCandidate.create({
+        someDecls.map((decl) => {
+          const resourceType = decl.resourceTypeName
+            ? resourceTypes.validating.get(decl.resourceTypeName).orThrow()
+            : undefined;
+          return TsRes.Resources.ResourceCandidate.create({
+            id: decl.id,
             conditionSets,
-            resourceTypes,
-            decl
-          })
-        )
+            decl,
+            resourceType
+          });
+        })
       ).orThrow();
       const expectedType = resourceTypes.validating.get('json').orThrow();
       expect(TsRes.Resources.ResourceCandidate.validateResourceTypes(candidates, expectedType)).toFailWith(
@@ -337,8 +335,8 @@ describe('ResourceCandidate', () => {
       const candidates = mapResults(
         someDecls.map((decl) =>
           TsRes.Resources.ResourceCandidate.create({
+            id: decl.id,
             conditionSets,
-            resourceTypes,
             decl
           })
         )
@@ -369,8 +367,8 @@ describe('ResourceCandidate', () => {
     });
     test('matches for identical candidates', () => {
       const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: decl.id,
         conditionSets,
-        resourceTypes,
         decl
       }).orThrow();
       expect(TsRes.Resources.ResourceCandidate.equal(candidate, candidate)).toBe(true);
@@ -378,13 +376,13 @@ describe('ResourceCandidate', () => {
 
     test('matches for candidates with identical contents', () => {
       const candidate1 = TsRes.Resources.ResourceCandidate.create({
+        id: decl.id,
         conditionSets,
-        resourceTypes,
         decl
       }).orThrow();
       const candidate2 = TsRes.Resources.ResourceCandidate.create({
+        id: decl.id,
         conditionSets,
-        resourceTypes,
         decl
       }).orThrow();
       expect(TsRes.Resources.ResourceCandidate.equal(candidate1, candidate2)).toBe(true);
@@ -392,13 +390,13 @@ describe('ResourceCandidate', () => {
 
     test('matches candidates with identical normalized contents', () => {
       const candidate1 = TsRes.Resources.ResourceCandidate.create({
+        id: decl.id,
         conditionSets,
-        resourceTypes,
         decl: { ...decl, json: { this: 'that', other: 'thing' } }
       }).orThrow();
       const candidate2 = TsRes.Resources.ResourceCandidate.create({
+        id: decl.id,
         conditionSets,
-        resourceTypes,
         decl: { ...decl, json: { other: 'thing', this: 'that' } }
       }).orThrow();
       expect(TsRes.Resources.ResourceCandidate.equal(candidate1, candidate2)).toBe(true);
@@ -406,27 +404,27 @@ describe('ResourceCandidate', () => {
 
     test('does not match for candidates with different IDs', () => {
       const candidate1 = TsRes.Resources.ResourceCandidate.create({
+        id: decl.id,
         conditionSets,
-        resourceTypes,
         decl
       }).orThrow();
       const candidate2 = TsRes.Resources.ResourceCandidate.create({
+        id: 'other.resource.path',
         conditionSets,
-        resourceTypes,
-        decl: { ...decl, id: 'other.resource.path' }
+        decl
       }).orThrow();
       expect(TsRes.Resources.ResourceCandidate.equal(candidate1, candidate2)).toBe(false);
     });
 
     test('does not match for candidates with different conditions', () => {
       const candidate1 = TsRes.Resources.ResourceCandidate.create({
+        id: decl.id,
         conditionSets,
-        resourceTypes,
         decl
       }).orThrow();
       const candidate2 = TsRes.Resources.ResourceCandidate.create({
+        id: decl.id,
         conditionSets,
-        resourceTypes,
         decl: { ...decl, conditions: { homeTerritory: 'CA' } }
       }).orThrow();
       expect(TsRes.Resources.ResourceCandidate.equal(candidate1, candidate2)).toBe(false);
@@ -434,13 +432,13 @@ describe('ResourceCandidate', () => {
 
     test('does not match for candidates with different partial flags', () => {
       const candidate1 = TsRes.Resources.ResourceCandidate.create({
+        id: decl.id,
         conditionSets,
-        resourceTypes,
         decl
       }).orThrow();
       const candidate2 = TsRes.Resources.ResourceCandidate.create({
+        id: decl.id,
         conditionSets,
-        resourceTypes,
         decl: { ...decl, isPartial: false }
       }).orThrow();
       expect(TsRes.Resources.ResourceCandidate.equal(candidate1, candidate2)).toBe(false);
@@ -448,13 +446,13 @@ describe('ResourceCandidate', () => {
 
     test('does not match for candidates with different merge methods', () => {
       const candidate1 = TsRes.Resources.ResourceCandidate.create({
+        id: decl.id,
         conditionSets,
-        resourceTypes,
         decl
       }).orThrow();
       const candidate2 = TsRes.Resources.ResourceCandidate.create({
+        id: decl.id,
         conditionSets,
-        resourceTypes,
         decl: { ...decl, mergeMethod: 'augment' }
       }).orThrow();
       expect(TsRes.Resources.ResourceCandidate.equal(candidate1, candidate2)).toBe(false);
@@ -462,13 +460,13 @@ describe('ResourceCandidate', () => {
 
     test('does not match for candidates with different JSON', () => {
       const candidate1 = TsRes.Resources.ResourceCandidate.create({
+        id: decl.id,
         conditionSets,
-        resourceTypes,
         decl
       }).orThrow();
       const candidate2 = TsRes.Resources.ResourceCandidate.create({
+        id: decl.id,
         conditionSets,
-        resourceTypes,
         decl: { ...decl, json: { other: 'json' } }
       }).orThrow();
       expect(TsRes.Resources.ResourceCandidate.equal(candidate1, candidate2)).toBe(false);

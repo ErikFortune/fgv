@@ -74,6 +74,18 @@ export class Decision<TVALUE extends JsonValue = JsonValue> implements IDecision
     return this._collectible.index;
   }
 
+  /**
+   * Key for the empty decision (no condition sets).
+   */
+  public static readonly EmptyDecisionKey: DecisionKey = CommonConvert.decisionKey.convert('').orThrow();
+
+  /**
+   * Key for the default-only decision (single condition set with no conditions).
+   */
+  public static readonly DefaultOnlyDecisionKey: DecisionKey = CommonConvert.decisionKey
+    .convert('00000000')
+    .orThrow();
+
   private _collectible: Collections.Collectible<DecisionKey, DecisionIndex>;
 
   /**

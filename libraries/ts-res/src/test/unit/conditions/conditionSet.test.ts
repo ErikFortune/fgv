@@ -23,6 +23,7 @@
 import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../index';
 import { TestQualifierType } from '../qualifier-types/testQualifierType';
+import { mapResults } from '@fgv/ts-utils';
 
 describe('ConditionSet', () => {
   const qualifierDecls: TsRes.Qualifiers.IQualifierDecl[] = [
@@ -37,7 +38,7 @@ describe('ConditionSet', () => {
     { qualifierName: 'currentTerritory', value: 'US' },
     { qualifierName: 'language', value: 'en' },
     { qualifierName: 'some_thing', value: 'some_value' },
-    { qualifierName: 'testThing', value: 'test value' }
+    { qualifierName: 'testThing', value: 'test-value' }
   ];
 
   let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
@@ -75,6 +76,14 @@ describe('ConditionSet', () => {
         .reverse()
         .map((c) => c.key)
         .join('+');
+      const expectedToken = mapResults(
+        Array.from(allConditions)
+          .sort(TsRes.Conditions.Condition.compare)
+          .reverse()
+          .map((c) => c.toToken())
+      )
+        .orThrow()
+        .join(',');
 
       expect(TsRes.Conditions.ConditionSet.create({ conditions: allConditions })).toSucceedAndSatisfy(
         (cs) => {
@@ -82,6 +91,7 @@ describe('ConditionSet', () => {
           expect(cs.key).toBe(expectedKey);
           expect(cs.toKey()).toBe(cs.key);
           expect(cs.toString()).toBe(cs.key);
+          expect(cs.toToken()).toSucceedWith(expectedToken);
         }
       );
     });
@@ -96,6 +106,16 @@ describe('ConditionSet', () => {
       for (let i = 0; i < cs1.size; i++) {
         expect(cs1.conditions[i].key).toBe(cs2.conditions[i].key);
       }
+    });
+
+    test('creates an empty (unconditional) condition set', () => {
+      expect(TsRes.Conditions.ConditionSet.create({ conditions: [] })).toSucceedAndSatisfy((cs) => {
+        expect(cs.size).toBe(0);
+        expect(cs.key).toBe('');
+        expect(cs.toKey()).toBe(cs.key);
+        expect(cs.toString()).toBe(cs.key);
+        expect(cs.toToken()).toSucceedWith('');
+      });
     });
 
     test('fails if there are duplicate conditions for the same qualifier', () => {

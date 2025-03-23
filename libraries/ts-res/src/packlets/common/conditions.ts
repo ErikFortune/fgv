@@ -135,6 +135,15 @@ export type ConditionIndex = Brand<number, 'ConditionIndex'>;
 export type ConditionKey = Brand<string, 'ConditionKey'>;
 
 /**
+ * A string representing a validated condition token.  Condition tokens are
+ * typically extracted from the name of some resource (e.g. file or folder)
+ * being imported.   A condition token has the form `<qualifierName>=<value>`
+ * or `<value>`.
+ * @public
+ */
+export type ConditionToken = Brand<string, 'ConditionToken'>;
+
+/**
  * Branded number representing a validated condition set index.
  * @public
  */
@@ -148,6 +157,16 @@ export type ConditionSetIndex = Brand<number, 'ConditionSetIndex'>;
  * @public
  */
 export type ConditionSetKey = Brand<string, 'ConditionSetKey'>;
+
+/**
+ * A string representing a validated condition set token.  Condition set tokens are
+ * typically extracted from the name of some resource (e.g. file or folder) being
+ * imported.  A condition set token is a comma-separated list of one or more
+ * {@link ConditionToken | condition tokens}, where a condition token has either
+ * the form `<qualifierName>=<value>` or `<value>`.
+ * @public
+ */
+export type ConditionSetToken = Brand<string, 'ConditionSetToken'>;
 
 /**
  * Branded string representing a hash value for a condition set. The hash value

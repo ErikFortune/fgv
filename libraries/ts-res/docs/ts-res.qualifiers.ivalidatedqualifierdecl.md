@@ -94,6 +94,44 @@ The name of the qualifier.
 </td></tr>
 <tr><td>
 
+[token](./ts-res.qualifiers.ivalidatedqualifierdecl.token.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[QualifierName](./ts-res.qualifiername.md)
+
+
+</td><td>
+
+The token used to identify the qualifier in the name or path of a resource being imported.
+
+
+</td></tr>
+<tr><td>
+
+[tokenIsOptional](./ts-res.qualifiers.ivalidatedqualifierdecl.tokenisoptional.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+Indicates whether the token is optional when parsing a resource token.
+
+
+</td></tr>
+<tr><td>
+
 [type](./ts-res.qualifiers.ivalidatedqualifierdecl.type.md)
 
 

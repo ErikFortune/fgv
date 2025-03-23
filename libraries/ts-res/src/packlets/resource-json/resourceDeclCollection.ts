@@ -25,7 +25,7 @@ import { IResourceDeclContainer } from './resourceDeclContainer';
 import * as Convert from './convert';
 import * as Normalized from './normalized';
 import * as Json from './json';
-import { Validate } from '../common';
+import { Helpers as CommonHelpers } from '../common';
 import { mergeLooseCandidate, mergeLooseResource } from './helpers';
 
 /**
@@ -87,7 +87,7 @@ export class ResourceDeclCollection implements IResourceDeclContainer {
     parentConditions?: Json.ILooseConditionDecl[]
   ): Result<this> {
     const errors: MessageAggregator = new MessageAggregator();
-    return Validate.joinOptionalResourceIds(parentName, collection.baseName).onSuccess((baseName) => {
+    return CommonHelpers.joinOptionalResourceIds(parentName, collection.baseName).onSuccess((baseName) => {
       const baseConditions = [...(parentConditions ?? []), ...(collection.baseConditions ?? [])];
 
       const mergedCandidates =

@@ -31,6 +31,8 @@ export interface IQualifierDecl {
   name: string;
   typeName: string;
   defaultPriority: number;
+  token?: string;
+  tokenIsOptional?: boolean;
 }
 
 /**
@@ -44,6 +46,12 @@ export interface IValidatedQualifierDecl {
   name: QualifierName;
 
   /**
+   * The token used to identify the qualifier in the name or
+   * path of a resource being imported.
+   */
+  token: QualifierName;
+
+  /**
    * The {@link QualifierTypes.QualifierType | type} of the qualifier.
    */
   type: QualifierType;
@@ -53,6 +61,11 @@ export interface IValidatedQualifierDecl {
    * that depend on this qualifier.
    */
   defaultPriority: ConditionPriority;
+
+  /**
+   * Indicates whether the token is optional when parsing a resource token.
+   */
+  tokenIsOptional: boolean;
 
   /**
    * Index of the qualifier.

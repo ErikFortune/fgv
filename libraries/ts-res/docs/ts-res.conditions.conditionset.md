@@ -177,6 +177,27 @@ The number of conditions in this condition set.
 
 
 </td></tr>
+<tr><td>
+
+[UnconditionalKey](./ts-res.conditions.conditionset.unconditionalkey.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+[ConditionSetKey](./ts-res.conditionsetkey.md)
+
+
+</td><td>
+
+The key for an unconditional condition set.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods
@@ -298,6 +319,20 @@ Gets the [key](./ts-res.conditionsetkey.md) for this condition set.
 </td><td>
 
 Gets a human-readable string representation of this condition set.
+
+
+</td></tr>
+<tr><td>
+
+[toToken(terse)](./ts-res.conditions.conditionset.totoken.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a [condition set token](./ts-res.conditionsettoken.md) for this condition set, if possible.
 
 
 </td></tr>

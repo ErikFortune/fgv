@@ -23,7 +23,7 @@
 import * as Common from '../../common';
 import { Converters, populateObject, Result, fail, succeed } from '@fgv/ts-utils';
 import { IConditionDecl, IValidatedConditionDecl } from '../conditionDecls';
-import { ReadOnlyQualifierCollector } from '../../qualifiers';
+import { IReadOnlyQualifierCollector } from '../../qualifiers';
 
 /* eslint-disable @rushstack/typedef-var */
 
@@ -45,7 +45,7 @@ export const conditionDecl = Converters.strictObject<IConditionDecl>({
  * @public
  */
 export interface IConditionDeclConvertContext {
-  readonly qualifiers: ReadOnlyQualifierCollector;
+  readonly qualifiers: IReadOnlyQualifierCollector;
   conditionIndex?: number;
 }
 

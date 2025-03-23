@@ -599,6 +599,15 @@ Description
 </td></tr>
 <tr><td>
 
+[FileTree](./ts-utils.filetree.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Hash](./ts-utils.hash.md)
 
 

@@ -115,6 +115,47 @@ describe('QualifierCollector class', () => {
         })
       ).toFailWith(/already exists/i);
     });
+
+    test('fails if a qualifier token collides with an existing qualifier name', () => {
+      expect(
+        TsRes.Qualifiers.QualifierCollector.create({
+          qualifierTypes,
+          qualifiers: [
+            { name: 'home', typeName: 'territory', defaultPriority: 900 },
+            { name: 'homeTerritory', typeName: 'territory', defaultPriority: 800, token: 'home' },
+            { name: 'currentTerritory', typeName: 'territory', defaultPriority: 700 },
+            { name: 'language', typeName: 'language', defaultPriority: 600 }
+          ]
+        })
+      ).toFailWith(/qualifier token.*not unique/i);
+    });
+
+    test('fails if a qualifier token collides with an existing qualifier token', () => {
+      expect(
+        TsRes.Qualifiers.QualifierCollector.create({
+          qualifierTypes,
+          qualifiers: [
+            { name: 'home', typeName: 'territory', defaultPriority: 900, token: 'terr' },
+            { name: 'currentTerritory', typeName: 'territory', defaultPriority: 700, token: 'terr' },
+            { name: 'language', typeName: 'language', defaultPriority: 600 }
+          ]
+        })
+      ).toFailWith(/qualifier token.*not unique/i);
+    });
+
+    test('fails if a qualifier name collides with an existing qualifier token', () => {
+      expect(
+        TsRes.Qualifiers.QualifierCollector.create({
+          qualifierTypes,
+          qualifiers: [
+            { name: 'homeTerritory', typeName: 'territory', defaultPriority: 900, token: 'home' },
+            { name: 'home', typeName: 'territory', defaultPriority: 800, token: 'h' },
+            { name: 'currentTerritory', typeName: 'territory', defaultPriority: 700 },
+            { name: 'language', typeName: 'language', defaultPriority: 600 }
+          ]
+        })
+      ).toFailWith(/qualifier name.*not unique/i);
+    });
   });
 
   describe('validating getOrAdd method', () => {
@@ -144,6 +185,90 @@ describe('QualifierCollector class', () => {
       expect(qc.validating.getOrAdd('someTerritory', decl)).toSucceedAndSatisfy((q2) => {
         expect(q2).toBe(q);
         expect(qc.size).toBe(1);
+      });
+    });
+  });
+
+  describe('getByNameOrToken method', () => {
+    let collector: TsRes.Qualifiers.QualifierCollector;
+
+    beforeEach(() => {
+      collector = TsRes.Qualifiers.QualifierCollector.create({
+        qualifierTypes,
+        qualifiers: [
+          { name: 'homeTerritory', typeName: 'territory', defaultPriority: 800, token: 'home' },
+          { name: 'currentTerritory', typeName: 'territory', defaultPriority: 700 },
+          { name: 'language', typeName: 'language', defaultPriority: 600 }
+        ]
+      }).orThrow();
+    });
+
+    test('returns a qualifier by name if it exists', () => {
+      expect(collector.getByNameOrToken('homeTerritory')).toSucceedAndSatisfy((q) => {
+        expect(q.name).toBe('homeTerritory');
+        expect(q.type.name).toBe('territory');
+        expect(q.defaultPriority).toBe(800);
+      });
+    });
+
+    test('returns a qualifier by token if it exists', () => {
+      expect(collector.getByNameOrToken('home')).toSucceedAndSatisfy((q) => {
+        expect(q.name).toBe('homeTerritory');
+        expect(q.type.name).toBe('territory');
+        expect(q.defaultPriority).toBe(800);
+      });
+    });
+
+    test('fails if no qualifier with the specified name or token exists', () => {
+      expect(collector.getByNameOrToken('bogus')).toFailWith(/not found/i);
+    });
+  });
+
+  describe('hasNameOrToken method', () => {
+    let collector: TsRes.Qualifiers.QualifierCollector;
+
+    beforeEach(() => {
+      collector = TsRes.Qualifiers.QualifierCollector.create({
+        qualifierTypes,
+        qualifiers: [
+          { name: 'homeTerritory', typeName: 'territory', defaultPriority: 800, token: 'home' },
+          { name: 'currentTerritory', typeName: 'territory', defaultPriority: 700 },
+          { name: 'language', typeName: 'language', defaultPriority: 600 }
+        ]
+      }).orThrow();
+    });
+
+    test('returns true if a qualifier with the specified name exists', () => {
+      expect(collector.hasNameOrToken('homeTerritory')).toBe(true);
+    });
+
+    test('returns true if a qualifier with the specified token exists', () => {
+      expect(collector.hasNameOrToken('home')).toBe(true);
+    });
+
+    test('returns false if no qualifier with the specified name or token exists', () => {
+      expect(collector.hasNameOrToken('bogus')).toBe(false);
+    });
+  });
+
+  describe('toReadOnly method', () => {
+    test('returns a read-only view of the collector', () => {
+      const collector = TsRes.Qualifiers.QualifierCollector.create({
+        qualifierTypes,
+        qualifiers: [
+          { name: 'homeTerritory', typeName: 'territory', defaultPriority: 800, token: 'home' },
+          { name: 'currentTerritory', typeName: 'territory', defaultPriority: 700 },
+          { name: 'language', typeName: 'language', defaultPriority: 600 }
+        ]
+      }).orThrow();
+
+      const ro = collector.toReadOnly();
+      expect(ro.size).toBe(collector.size);
+      expect(ro.qualifierTypes).toBe(collector.qualifierTypes);
+      expect(ro.getByNameOrToken('homeTerritory')).toSucceedAndSatisfy((q) => {
+        expect(q.name).toBe('homeTerritory');
+        expect(q.type.name).toBe('territory');
+        expect(q.defaultPriority).toBe(800);
       });
     });
   });

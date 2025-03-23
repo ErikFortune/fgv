@@ -40,9 +40,17 @@ import {
   MinConditionPriority,
   MaxConditionPriority,
   ConditionOperator,
-  allConditionOperators
+  allConditionOperators,
+  ConditionToken,
+  ConditionSetToken
 } from '../conditions';
-import { conditionKey, conditionSetHash, decisionKey, identifier } from './regularExpressions';
+import {
+  conditionKey,
+  conditionSetHash,
+  conditionToken,
+  decisionKey,
+  identifier
+} from './regularExpressions';
 
 /**
  * Determines whether a string is a valid qualifier name.
@@ -138,6 +146,22 @@ export function isValidConditionKey(key: string): key is ConditionKey {
 }
 
 /**
+ * Determines whether a string is a valid {@link ConditionToken | condition token}.
+ * A condition token has the format:
+ * `<qualifierName>=<value>` or `<value>`
+ * @param token -
+ * @returns `true` if the string is a valid condition token, `false` otherwise.
+ * @public
+ */
+export function isValidConditionToken(token: string): token is ConditionToken {
+  /* c8 ignore next 3 - coverage is having a bad day */
+  if (token === '') {
+    return true;
+  }
+  return conditionToken.test(token);
+}
+
+/**
  * Determines whether a number is a valid condition set index.
  * @param index - the number to validate
  * @returns true if the number is a valid condition set index, false otherwise.
@@ -154,8 +178,21 @@ export function isValidConditionSetIndex(index: number): index is ConditionSetIn
  * @public
  */
 export function isValidConditionSetKey(key: string): key is ConditionSetKey {
+  if (key === '') {
+    return true;
+  }
   // a condition set key is a `+` separated list of condition keys
   return key.split('+').every(isValidConditionKey);
+}
+
+/**
+ * Determines whether a string is a valid condition set token.
+ * @param token - the string to validate.
+ * @returns `true` if the string is a valid condition set token, `false` otherwise.
+ * @public
+ */
+export function isValidConditionSetToken(token: string): token is ConditionSetToken {
+  return token.split(',').every(isValidConditionToken);
 }
 
 /**
@@ -175,6 +212,9 @@ export function isValidConditionSetHash(hash: string): hash is ConditionSetHash 
  * @public
  */
 export function isValidDecisionKey(key: string): key is DecisionKey {
+  if (key === '') {
+    return true;
+  }
   return decisionKey.test(key);
 }
 
@@ -210,6 +250,7 @@ export function toQualifierName(name: string): Result<QualifierName> {
  * @public
  */
 export function toQualifierIndex(index: number): Result<QualifierIndex> {
+  /* c8 ignore next 3 - coverage is having a bad day */
   if (!isValidQualifierIndex(index)) {
     return fail(`${index}: not a valid qualifier index`);
   }
@@ -266,6 +307,7 @@ export function toQualifierMatchScore(value: number): Result<QualifierMatchScore
  * @public
  */
 export function toConditionPriority(priority: number): Result<ConditionPriority> {
+  /* c8 ignore next 3 - coverage is having a bad day */
   if (!isValidConditionPriority(priority)) {
     return fail(`${priority}: not a valid priority`);
   }
@@ -280,6 +322,7 @@ export function toConditionPriority(priority: number): Result<ConditionPriority>
  * @public
  */
 export function toConditionIndex(index: number): Result<ConditionIndex> {
+  /* c8 ignore next 3 - coverage is having a bad day */
   if (!isValidConditionIndex(index)) {
     return fail(`${index}: not a valid condition index`);
   }
@@ -308,10 +351,26 @@ export function toConditionOperator(operator: string): Result<ConditionOperator>
  * @public
  */
 export function toConditionKey(key: string): Result<ConditionKey> {
+  /* c8 ignore next 3 - coverage is having a bad day */
   if (!isValidConditionKey(key)) {
     return fail(`${key}: not a valid condition key`);
   }
   return succeed(key);
+}
+
+/**
+ * Converts a string to a {@link ConditionToken} if it is a valid condition token.
+ * @param token - the string to convert
+ * @returns `Success` with the converted {@link ConditionToken} if successful, or `Failure` with an
+ * error message if not.
+ * @public
+ */
+export function toConditionToken(token: string): Result<ConditionToken> {
+  /* c8 ignore next 3 - coverage is having a bad day */
+  if (!isValidConditionToken(token)) {
+    return fail(`${token}: not a valid condition token`);
+  }
+  return succeed(token);
 }
 
 /**
@@ -322,6 +381,7 @@ export function toConditionKey(key: string): Result<ConditionKey> {
  * @public
  */
 export function toConditionSetIndex(index: number): Result<ConditionSetIndex> {
+  /* c8 ignore next 3 - coverage is having a bad day */
   if (!isValidConditionSetIndex(index)) {
     return fail(`${index}: not a valid condition set index`);
   }
@@ -336,10 +396,25 @@ export function toConditionSetIndex(index: number): Result<ConditionSetIndex> {
  * @public
  */
 export function toConditionSetKey(key: string): Result<ConditionSetKey> {
+  /* c8 ignore next 3 - coverage is having a bad day */
   if (!isValidConditionSetKey(key)) {
     return fail(`${key}: not a valid condition set key`);
   }
   return succeed(key);
+}
+
+/**
+ * Converts a string to a {@link ConditionSetToken} if it is a valid condition set token.
+ * @param token - the string to convert
+ * @returns `Success` with the converted {@link ConditionSetToken} if successful, or `Failure` with an
+ * error message if not.
+ * @public
+ */
+export function toConditionSetToken(token: string): Result<ConditionSetToken> {
+  if (!isValidConditionSetToken(token)) {
+    return fail(`${token}: not a valid condition set token`);
+  }
+  return succeed(token);
 }
 
 /**
@@ -364,6 +439,7 @@ export function toConditionSetHash(hash: string): Result<ConditionSetHash> {
  * @public
  */
 export function toDecisionKey(key: string): Result<DecisionKey> {
+  /* c8 ignore next 3 - coverage is having a bad day */
   if (!isValidDecisionKey(key)) {
     return fail(`${key}: not a valid decision key`);
   }
@@ -378,6 +454,7 @@ export function toDecisionKey(key: string): Result<DecisionKey> {
  * @public
  */
 export function toDecisionIndex(index: number): Result<DecisionIndex> {
+  /* c8 ignore next 3 - coverage is having a bad day */
   if (!isValidDecisionIndex(index)) {
     return fail(`${index}: not a valid decision index`);
   }

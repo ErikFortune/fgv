@@ -62,7 +62,24 @@ Description
 
 </td><td>
 
-[ResourceJson.Json.ILooseResourceCandidateDecl](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md)
+[ResourceJson.Json.IChildResourceCandidateDecl](./ts-res.resourcejson.json.ichildresourcecandidatedecl.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[id](./ts-res.resources.iresourcecandidatecreateparams.id.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string
 
 
 </td><td>
@@ -90,7 +107,7 @@ _(Optional)_
 </td></tr>
 <tr><td>
 
-[resourceTypes](./ts-res.resources.iresourcecandidatecreateparams.resourcetypes.md)
+[resourceType?](./ts-res.resources.iresourcecandidatecreateparams.resourcetype.md)
 
 
 </td><td>
@@ -98,10 +115,12 @@ _(Optional)_
 
 </td><td>
 
-[ReadOnlyResourceTypeCollector](./ts-res.resourcetypes.readonlyresourcetypecollector.md)
+[ResourceType](./ts-res.resourcetypes.resourcetype.md)
 
 
 </td><td>
+
+_(Optional)_
 
 
 </td></tr>

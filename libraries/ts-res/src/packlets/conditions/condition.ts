@@ -20,13 +20,14 @@
  * SOFTWARE.
  */
 
-import { captureResult, Collections, Result } from '@fgv/ts-utils';
+import { captureResult, Collections, Result, fail } from '@fgv/ts-utils';
 import {
   Convert as CommonConvert,
   ConditionIndex,
   ConditionKey,
   ConditionOperator,
   ConditionPriority,
+  ConditionToken,
   QualifierConditionValue,
   QualifierMatchScore,
   Validate
@@ -136,6 +137,31 @@ export class Condition implements IValidatedConditionDecl {
     diff = diff === 0 ? c1.qualifier.name.localeCompare(c2.qualifier.name) : diff;
     diff = diff === 0 ? c1.value.localeCompare(c2.value) : diff;
     return diff;
+  }
+
+  /**
+   * Gets a {@link ConditionToken | condition token} for this condition, if possible.
+   * It is not possible to get a token for a condition with an operator other than `matches`,
+   * with other-than-default priority, or with a name or value that contains other than alphanumeric
+   * characters, underscore or non-leading hyphen.
+   * @param terse - if `true` and if the qualifier token is optional, the token will be omitted
+   * from the generated {@link ConditionToken | condition token}.
+   * @returns
+   */
+  public toToken(terse?: boolean): Result<ConditionToken> {
+    /* c8 ignore next 3 - defense in depth very difficult to induce */
+    if (this.operator !== 'matches') {
+      return fail(`${this.operator}: cannot create condition token for operator other than 'matches'`);
+    }
+    if (this.priority !== this.qualifier.defaultPriority) {
+      return fail(`${this.priority}: cannot create condition token for non-default priority`);
+    }
+    if (terse && this.qualifier.tokenIsOptional) {
+      return Validate.toConditionToken(this.value);
+    }
+    /* c8 ignore next 1 - coverage having a bad day */
+    const name = this.qualifier.token ?? this.qualifier.name;
+    return Validate.toConditionToken(`${name}=${this.value}`);
   }
 
   /**

@@ -9,7 +9,7 @@ Constructs a new instance of a [Qualifier](./ts-res.qualifiers.qualifier.md) fro
 **Signature:**
 
 ```typescript
-protected constructor({ name, type, defaultPriority, index }: IValidatedQualifierDecl);
+protected constructor({ name, token, type, defaultPriority, tokenIsOptional, index }: IValidatedQualifierDecl);
 ```
 
 ## Parameters
@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-{ name, type, defaultPriority, index }
+{ name, token, type, defaultPriority, tokenIsOptional, index }
 
 
 </td><td>

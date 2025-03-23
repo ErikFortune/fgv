@@ -96,6 +96,28 @@ Description
 </td></tr>
 <tr><td>
 
+[conditionSetToken](./ts-res.convert.conditionsettoken.md)
+
+
+</td><td>
+
+`Converter` which validates an `unknown` value as a [ConditionSetToken](./ts-res.conditionsettoken.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[conditionToken](./ts-res.convert.conditiontoken.md)
+
+
+</td><td>
+
+`Converter` which validates an `unknown` value as a [ConditionToken](./ts-res.conditiontoken.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [decisionIndex](./ts-res.convert.decisionindex.md)
 
 

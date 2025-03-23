@@ -4,10 +4,10 @@
 
 ## Conditions.ConditionCollector.qualifiers property
 
-The [ReadOnlyQualifierCollector](./ts-res.qualifiers.readonlyqualifiercollector.md) used to create conditions in this collector.
+The [ReadOnlyQualifierCollector](./ts-res.qualifiers.ireadonlyqualifiercollector.md) used to create conditions in this collector.
 
 **Signature:**
 
 ```typescript
-qualifiers: ReadOnlyQualifierCollector;
+qualifiers: IReadOnlyQualifierCollector;
 ```

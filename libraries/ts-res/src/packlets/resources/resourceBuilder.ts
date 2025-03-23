@@ -28,6 +28,7 @@ import {
   captureResult,
   fail,
   failWithDetail,
+  succeed,
   succeedWithDetail
 } from '@fgv/ts-utils';
 import { ResourceId, Validate } from '../common';
@@ -50,10 +51,10 @@ export interface IResourceBuilderCreateParams {
 
 /**
  * Possible result details returned by the resource builder
- * {@link Resources.ResourceBuilder.addCandidate | addCandidate} method.
+ * {@link Resources.ResourceBuilder.addLooseCandidate | addLooseCandidate} method.
  * @public
  */
-export type ResourceBuilderResultDetail = Collections.ResultMapResultDetail | 'type-mismatch';
+export type ResourceBuilderResultDetail = Collections.ResultMapResultDetail | 'id-mismatch' | 'type-mismatch';
 
 /**
  * Represents a builder for a single logical {@link Resources.Resource | resource}.  Collects candidates
@@ -130,41 +131,21 @@ export class ResourceBuilder {
   }
 
   /**
-   * Given a {@link ResourceJson.Json.ILooseResourceCandidateDecl | resource candidate declaration}, creates and adds a
+   * Given a {@link ResourceJson.Json.IChildResourceCandidateDecl | child resource candidate declaration}, creates and adds a
    * {@link Resources.ResourceCandidate | candidate} to the resource being built.
-   * @param candidate - The {@link ResourceJson.Json.ILooseResourceCandidateDecl | IResourceCandidateDecl} to add to the
+   * @param candidate - The {@link ResourceJson.Json.IChildResourceCandidateDecl | IChildResourceCandidateDecl} to add to the
    * resource being built.
    * @returns `Success` with the added {@link Resources.ResourceCandidate | candidate} if successful,
-   * or `Failure` with an error message if not. Fails with error detail 'type-mismatch' if the candidate
-   * specifies a different resource type than previously added candidates, or with 'exists' if a candidate
-   * already exists with the same conditions but different values.  Succeeds with 'exists' and returns the
-   * existing candidate if the candidate to be added is identical to an existing candidate.
+   * or `Failure` with an error message if not.
    */
-  public addCandidate(
-    decl: ResourceJson.Json.ILooseResourceCandidateDecl
+  public addChildCandidate(
+    childDecl: ResourceJson.Json.IChildResourceCandidateDecl
   ): DetailedResult<ResourceCandidate, ResourceBuilderResultDetail> {
-    if (decl.id !== this.id) {
-      return failWithDetail<ResourceCandidate, ResourceBuilderResultDetail>(
-        `${this.id}: mismatched candidate id ${decl.id}.`,
-        'failure'
-      );
-    }
-
-    if (
-      this._resourceType !== undefined &&
-      decl.resourceTypeName !== undefined &&
-      this._resourceType.key !== decl.resourceTypeName
-    ) {
-      return failWithDetail<ResourceCandidate, ResourceBuilderResultDetail>(
-        `${this.id}: conflicting resource types ${this._resourceType.key} !== ${decl.resourceTypeName}.`,
-        'type-mismatch'
-      );
-    }
-
     return ResourceCandidate.create({
-      decl,
-      conditionSets: this._conditionSets,
-      resourceTypes: this._resourceTypes
+      id: this.id,
+      resourceType: this._resourceType,
+      decl: childDecl,
+      conditionSets: this._conditionSets
     })
       .withDetail<ResourceBuilderResultDetail>('failure', 'success')
       .onSuccess((candidate) => {
@@ -179,12 +160,61 @@ export class ResourceBuilder {
                 );
               }
             }
-            if (this._resourceType === undefined && added.resourceType !== undefined) {
-              this._resourceType = added.resourceType;
-            }
             return succeedWithDetail(added, detail);
           });
       });
+  }
+
+  /**
+   * Given a {@link ResourceJson.Json.ILooseResourceCandidateDecl | resource candidate declaration}, creates and adds a
+   * {@link Resources.ResourceCandidate | candidate} to the resource being built.
+   * @param candidate - The {@link ResourceJson.Json.ILooseResourceCandidateDecl | IResourceCandidateDecl} to add to the
+   * resource being built.
+   * @returns `Success` with the added {@link Resources.ResourceCandidate | candidate} if successful,
+   * or `Failure` with an error message if not. Fails with error detail 'type-mismatch' if the candidate
+   * specifies a different resource type than previously added candidates, or with 'exists' if a candidate
+   * already exists with the same conditions but different values.  Succeeds with 'exists' and returns the
+   * existing candidate if the candidate to be added is identical to an existing candidate.
+   */
+  public addLooseCandidate(
+    decl: ResourceJson.Json.ILooseResourceCandidateDecl
+  ): DetailedResult<ResourceCandidate, ResourceBuilderResultDetail> {
+    if (decl.id !== this.id) {
+      return failWithDetail<ResourceCandidate, ResourceBuilderResultDetail>(
+        `${this.id}: mismatched candidate id ${decl.id}.`,
+        'id-mismatch'
+      );
+    }
+
+    if (decl.resourceTypeName !== undefined) {
+      const rt = this.setResourceType(decl.resourceTypeName);
+      if (rt.isFailure()) {
+        return failWithDetail<ResourceCandidate, ResourceBuilderResultDetail>(rt.message, 'type-mismatch');
+      }
+    }
+
+    return this.addChildCandidate(decl);
+  }
+
+  /**
+   * Sets the resource type for the resource being built.  Fails if a resource type has already been set
+   * and it does not match the new resource type.
+   * @param resourceTypeName - The name of the resource type to set.
+   * @returns `Success` with the updated {@link Resources.ResourceBuilder | ResourceBuilder} object if successful,
+   * or `Failure` with an error message if not.
+   */
+  public setResourceType(resourceTypeName: string): Result<ResourceBuilder> {
+    if (this._resourceType?.key === resourceTypeName) {
+      return succeed(this);
+    } else if (this._resourceType !== undefined) {
+      return fail(
+        `${this.id}: conflicting resource types ${this._resourceType.key} !== ${resourceTypeName}.`
+      );
+    }
+    return this._resourceTypes.validating.get(resourceTypeName).onSuccess((resourceType) => {
+      this._resourceType = resourceType;
+      return succeedWithDetail(this, 'success');
+    });
   }
 
   /**

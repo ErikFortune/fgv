@@ -24,7 +24,7 @@ import { JsonValue } from '@fgv/ts-json-base';
 import { ResourceId, ResourceValueMergeMethod, Validate } from '../common';
 import { Condition, ConditionSet, ConditionSetCollector } from '../conditions';
 import * as ResourceJson from '../resource-json';
-import { ReadOnlyResourceTypeCollector, ResourceType } from '../resource-types';
+import { ResourceType } from '../resource-types';
 import { captureResult, mapResults, Hash, MessageAggregator, Result, fail, succeed } from '@fgv/ts-utils';
 
 /**
@@ -32,10 +32,11 @@ import { captureResult, mapResults, Hash, MessageAggregator, Result, fail, succe
  * @public
  */
 export interface IResourceCandidateCreateParams {
-  decl: ResourceJson.Json.ILooseResourceCandidateDecl;
+  id: string;
+  decl: ResourceJson.Json.IChildResourceCandidateDecl;
+  resourceType?: ResourceType;
   parentConditions?: ReadonlyArray<Condition>;
   conditionSets: ConditionSetCollector;
-  resourceTypes: ReadOnlyResourceTypeCollector;
 }
 
 /**
@@ -75,11 +76,7 @@ export class ResourceCandidate {
    * The {@link ResourceTypes.ResourceType | resource type} for the resource to which
    * this candidate belongs.
    */
-  public get resourceType(): ResourceType | undefined {
-    return this._resourceType;
-  }
-
-  private _resourceType: ResourceType | undefined;
+  public readonly resourceType: ResourceType | undefined;
 
   /**
    * Constructor for a {@link Resources.ResourceCandidate | ResourceCandidate} object.
@@ -87,12 +84,7 @@ export class ResourceCandidate {
    * @public
    */
   protected constructor(params: IResourceCandidateCreateParams) {
-    const resourceType =
-      params.decl.resourceTypeName !== undefined
-        ? params.resourceTypes.validating.get(params.decl.resourceTypeName).orThrow()
-        : undefined;
-
-    this.id = Validate.toResourceId(params.decl.id).orThrow();
+    this.id = Validate.toResourceId(params.id).orThrow();
     this.json = params.decl.json;
     this.conditions = ResourceCandidate._mergeConditions(
       params.conditionSets,
@@ -101,9 +93,9 @@ export class ResourceCandidate {
     ).orThrow();
     this.isPartial = params.decl.isPartial ?? false;
     this.mergeMethod = params.decl.mergeMethod ?? 'augment';
-    this._resourceType = resourceType;
-    if (this._resourceType) {
-      this._resourceType.validateDeclaration(this.json, this.isPartial, this.mergeMethod).orThrow();
+    this.resourceType = params.resourceType;
+    if (this.resourceType) {
+      this.resourceType.validateDeclaration(this.json, this.isPartial, this.mergeMethod).orThrow();
     }
   }
 

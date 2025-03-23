@@ -69,7 +69,9 @@ describe('ConcreteDecision', () => {
       conditions
     }).orThrow();
 
-    decisions = TsRes.Decisions.AbstractDecisionCollector.create().orThrow();
+    decisions = TsRes.Decisions.AbstractDecisionCollector.create({
+      conditionSets
+    }).orThrow();
 
     const cs1 = conditionSets.validating
       .add({
@@ -114,14 +116,14 @@ describe('ConcreteDecision', () => {
       );
       const expectedKey = `${expectedAbstractKey}|${expectedValueKey}`;
 
-      expect(decisions.size).toBe(0);
+      expect(decisions.size).toBe(2);
       expect(decisions.validating.has(expectedAbstractKey)).toBe(false);
       expect(TsRes.Decisions.ConcreteDecision.create({ decisions, candidates })).toSucceedAndSatisfy((d) => {
         expect(d.candidates.length).toBe(candidates.length);
         expect(d.key).toBe(expectedKey);
         expect(d.index).toBeUndefined();
         expect(decisions.validating.has(expectedAbstractKey)).toBe(true);
-        expect(decisions.size).toBe(1);
+        expect(decisions.size).toBe(3);
       });
     });
   });

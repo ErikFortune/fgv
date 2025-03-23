@@ -82,12 +82,12 @@ Description
 
 </td><td>
 
-[ReadOnlyQualifierCollector](./ts-res.qualifiers.readonlyqualifiercollector.md)
+[IReadOnlyQualifierCollector](./ts-res.qualifiers.ireadonlyqualifiercollector.md)
 
 
 </td><td>
 
-The [ReadOnlyQualifierCollector](./ts-res.qualifiers.readonlyqualifiercollector.md) used to create conditions in this collector.
+The [ReadOnlyQualifierCollector](./ts-res.qualifiers.ireadonlyqualifiercollector.md) used to create conditions in this collector.
 
 
 </td></tr>

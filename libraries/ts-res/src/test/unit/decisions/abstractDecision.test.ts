@@ -102,5 +102,15 @@ describe('AbstractDecision', () => {
         }
       );
     });
+
+    test('creates an empty abstract decision if no condition sets are provided', () => {
+      expect(
+        TsRes.Decisions.AbstractDecision.createAbstractDecision({ conditionSets: [] })
+      ).toSucceedAndSatisfy((d) => {
+        expect(d.candidates.length).toBe(0);
+        expect(d.key).toBe('');
+        expect(d.index).toBeUndefined();
+      });
+    });
   });
 });

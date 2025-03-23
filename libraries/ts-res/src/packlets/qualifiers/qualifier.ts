@@ -37,9 +37,20 @@ export class Qualifier implements IValidatedQualifierDecl, ICollectible<Qualifie
   public readonly name: QualifierName;
 
   /**
+   * The token used to identify the qualifier in the name or
+   * path of a resource being imported.
+   */
+  public readonly token: QualifierName;
+
+  /**
    * The {@link QualifierTypes.QualifierType | type} of the qualifier.
    */
   public readonly type: QualifierType;
+
+  /**
+   * Indicates whether the token is optional in the name or path of a resource being imported.
+   */
+  public readonly tokenIsOptional: boolean;
 
   /**
    * The index of the qualifier.
@@ -71,10 +82,19 @@ export class Qualifier implements IValidatedQualifierDecl, ICollectible<Qualifie
    * @param defaultPriority - The default {@link ConditionPriority | priority} of conditions
    * @public
    */
-  protected constructor({ name, type, defaultPriority, index }: IValidatedQualifierDecl) {
+  protected constructor({
+    name,
+    token,
+    type,
+    defaultPriority,
+    tokenIsOptional,
+    index
+  }: IValidatedQualifierDecl) {
     this.name = name;
+    this.token = token;
     this.type = type;
     this.defaultPriority = defaultPriority;
+    this.tokenIsOptional = tokenIsOptional;
     this._collectible = new Collections.Collectible<QualifierName, QualifierIndex>({
       key: name,
       index,

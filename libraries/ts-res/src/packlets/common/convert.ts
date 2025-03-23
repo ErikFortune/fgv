@@ -82,6 +82,12 @@ export const conditionIndex = Converters.number.map(Validate.toConditionIndex);
 export const conditionKey = Converters.string.map(Validate.toConditionKey);
 
 /**
+ * `Converter` which validates an `unknown` value as a {@link ConditionToken | ConditionToken}.
+ * @public
+ */
+export const conditionToken = Converters.string.map(Validate.toConditionToken);
+
+/**
  * `Converter` which validates an `unknown` value as a {@link ConditionSetIndex | ConditionSetIndex}.
  * @public
  */
@@ -92,6 +98,12 @@ export const conditionSetIndex = Converters.number.map(Validate.toConditionSetIn
  * @public
  */
 export const conditionSetKey = Converters.string.map(Validate.toConditionSetKey);
+
+/**
+ * `Converter` which validates an `unknown` value as a {@link ConditionSetToken | ConditionSetToken}.
+ * @public
+ */
+export const conditionSetToken = Converters.string.map(Validate.toConditionSetToken);
 
 /**
  * `Converter` which validates an `unknown` value as a {@link ConditionSetHash | ConditionSetHash}.

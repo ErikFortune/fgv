@@ -72,8 +72,19 @@ describe('ConditionSetCollector class', () => {
   describe('create static method', () => {
     test('creates an empty ConditionSetCollector by default', () => {
       expect(TsRes.Conditions.ConditionSetCollector.create({ conditions })).toSucceedAndSatisfy((cc) => {
-        expect(cc.size).toBe(0);
+        // condition set collector is created with the unconditional condition set in position 0
+        expect(cc.size).toBe(1);
         expect(cc.conditions).toBe(conditions);
+
+        const unconditional = cc.unconditionalConditionSet;
+        expect(unconditional.size).toBe(0);
+        expect(unconditional.index).toBe(TsRes.Conditions.ConditionSetCollector.UnconditionalIndex);
+        expect(unconditional.key).toBe(TsRes.Conditions.ConditionSet.UnconditionalKey);
+
+        expect(cc.getAt(TsRes.Conditions.ConditionSetCollector.UnconditionalIndex)).toSucceedWith(
+          unconditional
+        );
+        expect(cc.get(TsRes.Conditions.ConditionSet.UnconditionalKey)).toSucceedWith(unconditional);
       });
     });
 
@@ -89,7 +100,7 @@ describe('ConditionSetCollector class', () => {
           conditionSets: conditionSetDecls
         })
       ).toSucceedAndSatisfy((cc) => {
-        expect(cc.size).toBe(conditionSetDecls.length);
+        expect(cc.size).toBe(conditionSetDecls.length + 1);
         expect(cc.conditions).toBe(conditions);
       });
     });
@@ -134,7 +145,7 @@ describe('ConditionSetCollector class', () => {
       const cc = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
       const conditionSet = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
       expect(cc.add(conditionSet)).toSucceedWith(conditionSet);
-      expect(cc.size).toBe(1);
+      expect(cc.size).toBe(2);
       expect(cc.get(conditionSet.key)).toSucceedWith(conditionSet);
     });
 
@@ -143,7 +154,13 @@ describe('ConditionSetCollector class', () => {
       const conditionSet = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
       cc.add(conditionSet).orThrow();
       expect(cc.add(conditionSet)).toSucceedWith(conditionSet);
-      expect(cc.size).toBe(1);
+      expect(cc.size).toBe(2);
+    });
+
+    test('fails to add an empty (unconditional) condition set to the collector', () => {
+      const cc = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
+      const conditionSet = TsRes.Conditions.ConditionSet.create({ conditions: [] }).orThrow();
+      expect(cc.add(conditionSet)).toFailWith(/already exists/i);
     });
 
     test('fails if another object with the same key is already in the collector', () => {
@@ -152,7 +169,7 @@ describe('ConditionSetCollector class', () => {
       const cs2 = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
       cc.add(conditionSet).orThrow();
       expect(cc.add(cs2)).toFailWith(/already exists/i);
-      expect(cc.size).toBe(1);
+      expect(cc.size).toBe(2);
     });
   });
 
@@ -163,10 +180,19 @@ describe('ConditionSetCollector class', () => {
       const cs2 = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
       cc.validating.add(conditionSet).orThrow();
       expect(cc.add(conditionSet)).toSucceedWith(conditionSet);
-      expect(cc.size).toBe(1);
+      expect(cc.size).toBe(2);
       expect(cc.getOrAdd(cs2)).toSucceedAndSatisfy((cs) => {
         expect(cs).toBe(conditionSet);
         expect(cs).not.toBe(cs2);
+        expect(cc.size).toBe(2);
+      });
+    });
+
+    test('returns an unconditional condition set', () => {
+      const cc = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: [] }).orThrow();
+      expect(cc.getOrAdd(cs)).toSucceedAndSatisfy((cs) => {
+        expect(cs.size).toBe(0);
         expect(cc.size).toBe(1);
       });
     });
@@ -177,7 +203,7 @@ describe('ConditionSetCollector class', () => {
       const cc = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
       const conditionSet = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
       expect(cc.validating.add(conditionSet)).toSucceedWith(conditionSet);
-      expect(cc.size).toBe(1);
+      expect(cc.size).toBe(2);
       expect(cc.get(conditionSet.key)).toSucceedWith(conditionSet);
     });
 
@@ -201,7 +227,7 @@ describe('ConditionSetCollector class', () => {
       expect(cc.validating.add(allConditions)).toSucceedAndSatisfy((conditionSet) => {
         expect(conditionSet.size).toBe(allConditions.length);
       });
-      expect(cc.size).toBe(1);
+      expect(cc.size).toBe(2);
     });
 
     test('adds a condition set from a mixed array to the collector', () => {
@@ -210,7 +236,7 @@ describe('ConditionSetCollector class', () => {
       expect(cc.validating.add(toAdd)).toSucceedAndSatisfy((conditionSet) => {
         expect(conditionSet.size).toBe(allConditions.length + 1);
       });
-      expect(cc.size).toBe(1);
+      expect(cc.size).toBe(2);
     });
 
     test('fails if a condition set with the same key is already in the collector', () => {
@@ -218,7 +244,7 @@ describe('ConditionSetCollector class', () => {
       const decl: TsRes.Conditions.IConditionSetDecl = { conditions: conditionDecls };
       cc.validating.add(decl).orThrow();
       expect(cc.validating.add(decl)).toFailWith(/already exists/i);
-      expect(cc.size).toBe(1);
+      expect(cc.size).toBe(2);
     });
 
     test('fails if a condition cannot be constructed', () => {

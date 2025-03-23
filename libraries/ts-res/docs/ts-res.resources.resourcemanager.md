@@ -270,7 +270,7 @@ A [AbstractDecisionCollector](./ts-res.decisions.abstractdecisioncollector.md) w
 
 </td><td>
 
-[ReadOnlyQualifierCollector](./ts-res.qualifiers.readonlyqualifiercollector.md)
+[IReadOnlyQualifierCollector](./ts-res.qualifiers.ireadonlyqualifiercollector.md)
 
 
 </td><td>
@@ -360,7 +360,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[addCandidate(decl)](./ts-res.resources.resourcemanager.addcandidate.md)
+[addLooseCandidate(decl)](./ts-res.resources.resourcemanager.addloosecandidate.md)
 
 
 </td><td>
@@ -369,6 +369,18 @@ Description
 </td><td>
 
 Given a [resource candidate declaration](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md)<!-- -->, builds and adds a [candidate](./ts-res.resources.resourcecandidate.md) to the manager.
+
+
+</td></tr>
+<tr><td>
+
+[addResource(decl)](./ts-res.resources.resourcemanager.addresource.md)
+
+
+</td><td>
+
+
+</td><td>
 
 
 </td></tr>

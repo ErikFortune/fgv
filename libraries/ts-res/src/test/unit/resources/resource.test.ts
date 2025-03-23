@@ -102,9 +102,7 @@ describe('Resource', () => {
       }
     ];
     candidates = mapResults(
-      someDecls.map((decl) =>
-        TsRes.Resources.ResourceCandidate.create({ decl, conditionSets, resourceTypes })
-      )
+      someDecls.map((decl) => TsRes.Resources.ResourceCandidate.create({ id: decl.id, decl, conditionSets }))
     ).orThrow();
   });
 
@@ -112,16 +110,15 @@ describe('Resource', () => {
     test('creates a Resource object from a list of ResourceCandidate objects, inferring id and type', () => {
       candidates.push(
         TsRes.Resources.ResourceCandidate.create({
+          id: 'some.resource.path',
           conditionSets,
-          resourceTypes,
+          resourceType: jsonType,
           decl: {
-            id: 'some.resource.path',
             json: { at: 'Antarctica' },
             conditions: {
               currentTerritory: 'AQ'
             },
-            isPartial: true,
-            resourceTypeName: jsonType.key
+            isPartial: true
           }
         }).orThrow()
       );
@@ -150,9 +147,9 @@ describe('Resource', () => {
     test('fails if candidates have mismatched ids', () => {
       candidates.push(
         TsRes.Resources.ResourceCandidate.create({
+          id: 'some.other.resource.path',
           conditionSets,
-          resourceTypes,
-          decl: { ...someDecls[0], id: 'some.other.resource.path' }
+          decl: { ...someDecls[0] }
         }).orThrow()
       );
       const resource = TsRes.Resources.Resource.create({ candidates });
@@ -162,16 +159,18 @@ describe('Resource', () => {
     test('fails if candidates have mismatched types', () => {
       candidates.push(
         TsRes.Resources.ResourceCandidate.create({
+          id: someDecls[0].id,
           conditionSets,
-          resourceTypes,
-          decl: { ...someDecls[0], resourceTypeName: jsonType.key }
+          resourceType: jsonType,
+          decl: someDecls[0]
         }).orThrow()
       );
       candidates.push(
         TsRes.Resources.ResourceCandidate.create({
+          id: someDecls[1].id,
           conditionSets,
-          resourceTypes,
-          decl: { ...someDecls[1], resourceTypeName: otherType.key }
+          resourceType: otherType,
+          decl: someDecls[1]
         }).orThrow()
       );
       const resource = TsRes.Resources.Resource.create({ candidates });
@@ -200,9 +199,10 @@ describe('Resource', () => {
     test('fails if supplied type does not match candidates', () => {
       candidates.push(
         TsRes.Resources.ResourceCandidate.create({
+          id: someDecls[0].id,
           conditionSets,
-          resourceTypes,
-          decl: { ...someDecls[0], resourceTypeName: jsonType.key }
+          resourceType: jsonType,
+          decl: someDecls[0]
         }).orThrow()
       );
       const resource = TsRes.Resources.Resource.create({
@@ -216,9 +216,10 @@ describe('Resource', () => {
     test('fails if there are multiple different candidates for the same id', () => {
       candidates.push(
         TsRes.Resources.ResourceCandidate.create({
+          id: someDecls[0].id,
           conditionSets,
-          resourceTypes,
-          decl: { ...someDecls[0], json: { some_other: 'property' }, resourceTypeName: jsonType.key }
+          resourceType: jsonType,
+          decl: { ...someDecls[0], json: { some_other: 'property' } }
         }).orThrow()
       );
       const resource = TsRes.Resources.Resource.create({ candidates });
@@ -228,8 +229,8 @@ describe('Resource', () => {
     test('silently ignores multiple identical candidates for the same id', () => {
       candidates.push(
         TsRes.Resources.ResourceCandidate.create({
+          id: someDecls[0].id,
           conditionSets,
-          resourceTypes,
           decl: { ...someDecls[0] }
         }).orThrow()
       );

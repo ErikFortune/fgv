@@ -66,7 +66,7 @@ _(Optional)_
 
 </td><td>
 
-[ReadOnlyQualifierCollector](./ts-res.qualifiers.readonlyqualifiercollector.md)
+[IReadOnlyQualifierCollector](./ts-res.qualifiers.ireadonlyqualifiercollector.md)
 
 
 </td><td>

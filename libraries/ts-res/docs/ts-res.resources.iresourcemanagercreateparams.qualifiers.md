@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-qualifiers: ReadOnlyQualifierCollector;
+qualifiers: IReadOnlyQualifierCollector;
 ```

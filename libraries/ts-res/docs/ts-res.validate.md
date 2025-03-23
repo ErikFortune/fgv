@@ -96,6 +96,28 @@ Determines whether a string is a valid condition set key.
 </td></tr>
 <tr><td>
 
+[isValidConditionSetToken(token)](./ts-res.validate.isvalidconditionsettoken.md)
+
+
+</td><td>
+
+Determines whether a string is a valid condition set token.
+
+
+</td></tr>
+<tr><td>
+
+[isValidConditionToken(token)](./ts-res.validate.isvalidconditiontoken.md)
+
+
+</td><td>
+
+Determines whether a string is a valid [condition token](./ts-res.conditiontoken.md)<!-- -->. A condition token has the format: `<qualifierName>=<value>` or `<value>`
+
+
+</td></tr>
+<tr><td>
+
 [isValidDecisionIndex(index)](./ts-res.validate.isvaliddecisionindex.md)
 
 
@@ -228,39 +250,6 @@ Checks if the given name is a valid resource type name.
 </td></tr>
 <tr><td>
 
-[joinOptionalResourceIds(ids)](./ts-res.validate.joinoptionalresourceids.md)
-
-
-</td><td>
-
-Joins a list of [resource ID](./ts-res.resourceid.md) or [resource name](./ts-res.resourcename.md) with to create a new [resource ID](./ts-res.resourceid.md)<!-- -->. Returns `undefined` if no names are defined.
-
-
-</td></tr>
-<tr><td>
-
-[joinResourceIds(ids)](./ts-res.validate.joinresourceids.md)
-
-
-</td><td>
-
-Joins a list of [resource ID](./ts-res.resourceid.md) or [resource name](./ts-res.resourcename.md) with to create a new [resource ID](./ts-res.resourceid.md)<!-- -->. Fails if resulting ID is invalid or empty.
-
-
-</td></tr>
-<tr><td>
-
-[splitResourceId(id)](./ts-res.validate.splitresourceid.md)
-
-
-</td><td>
-
-Splits a [resource id](./ts-res.resourceid.md) into its component [resource names](./ts-res.resourcename.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [toConditionIndex(index)](./ts-res.validate.toconditionindex.md)
 
 
@@ -338,6 +327,28 @@ Converts a string to a [ConditionSetKey](./ts-res.conditionsetkey.md) if it is a
 </td></tr>
 <tr><td>
 
+[toConditionSetToken(token)](./ts-res.validate.toconditionsettoken.md)
+
+
+</td><td>
+
+Converts a string to a [ConditionSetToken](./ts-res.conditionsettoken.md) if it is a valid condition set token.
+
+
+</td></tr>
+<tr><td>
+
+[toConditionToken(token)](./ts-res.validate.toconditiontoken.md)
+
+
+</td><td>
+
+Converts a string to a [ConditionToken](./ts-res.conditiontoken.md) if it is a valid condition token.
+
+
+</td></tr>
+<tr><td>
+
 [toDecisionIndex(index)](./ts-res.validate.todecisionindex.md)
 
 
@@ -355,6 +366,17 @@ Converts a number to a [DecisionIndex](./ts-res.decisionindex.md) if it is a val
 </td><td>
 
 Converts a number to a [DecisionIndex](./ts-res.decisionindex.md) if it is a valid decision index.
+
+
+</td></tr>
+<tr><td>
+
+[toOptionalResourceId(id)](./ts-res.validate.tooptionalresourceid.md)
+
+
+</td><td>
+
+Converts an optional string to an optional [resource ID](./ts-res.resourceid.md)<!-- -->.
 
 
 </td></tr>

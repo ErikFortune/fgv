@@ -38,7 +38,7 @@ import {
   ReadOnlyConditionSetCollector
 } from '../conditions';
 import { AbstractDecisionCollector, ReadOnlyAbstractDecisionCollector } from '../decisions';
-import { ReadOnlyQualifierCollector } from '../qualifiers';
+import { IReadOnlyQualifierCollector } from '../qualifiers';
 import { ReadOnlyResourceTypeCollector } from '../resource-types';
 import { Convert, ResourceId, Validate } from '../common';
 import { ResourceBuilder, ResourceBuilderResultDetail } from './resourceBuilder';
@@ -51,7 +51,7 @@ import * as ResourceJson from '../resource-json';
  * @public
  */
 export interface IResourceManagerCreateParams {
-  qualifiers: ReadOnlyQualifierCollector;
+  qualifiers: IReadOnlyQualifierCollector;
   resourceTypes: ReadOnlyResourceTypeCollector;
 }
 
@@ -69,7 +69,7 @@ export type ResourceManagerResultDetail = Collections.ResultMapResultDetail | Re
  * @public
  */
 export class ResourceManager {
-  public readonly qualifiers: ReadOnlyQualifierCollector;
+  public readonly qualifiers: IReadOnlyQualifierCollector;
   public readonly resourceTypes: ReadOnlyResourceTypeCollector;
 
   protected readonly _conditions: ConditionCollector;
@@ -130,7 +130,7 @@ export class ResourceManager {
     this.resourceTypes = params.resourceTypes;
     this._conditions = ConditionCollector.create({ qualifiers: params.qualifiers }).orThrow();
     this._conditionSets = ConditionSetCollector.create({ conditions: this._conditions }).orThrow();
-    this._decisions = AbstractDecisionCollector.create().orThrow();
+    this._decisions = AbstractDecisionCollector.create({ conditionSets: this._conditionSets }).orThrow();
     this._resources = new ValidatingResultMap({
       converters: new Collections.KeyValueConverters<ResourceId, ResourceBuilder>({
         key: Convert.resourceId,
@@ -167,12 +167,12 @@ export class ResourceManager {
    * @returns `Success` with the candidate if successful, or `Failure` with an error message if not.
    * @public
    */
-  public addCandidate(
+  public addLooseCandidate(
     decl: ResourceJson.Json.ILooseResourceCandidateDecl
   ): DetailedResult<ResourceCandidate, ResourceManagerResultDetail> {
     const { value: id, message } = Validate.toResourceId(decl.id);
     if (message !== undefined) {
-      return failWithDetail(`${decl.id}: invalid id - ${message}`, 'failure');
+      return failWithDetail(`${id}: invalid id - ${message}`, 'failure');
     }
 
     const builderResult = this._resources.getOrAdd(id, () =>
@@ -189,11 +189,38 @@ export class ResourceManager {
         builderResult.detail
       );
     }
-    return builderResult.value.addCandidate(decl).onSuccess((c, d) => {
+    return builderResult.value.addLooseCandidate(decl).onSuccess((c, d) => {
       this._builtResources.delete(id);
       this._built = false;
       return succeedWithDetail(c, d);
     });
+  }
+
+  public addResource(
+    decl: ResourceJson.Json.ILooseResourceDecl
+  ): DetailedResult<ResourceBuilder, ResourceManagerResultDetail> {
+    const { value: id, message } = Validate.toResourceId(decl.id);
+    if (message !== undefined) {
+      return failWithDetail(`${id}: invalid id - ${message}`, 'failure');
+    }
+
+    return this._resources.getOrAdd(id, () =>
+      ResourceBuilder.create({
+        id,
+        typeName: decl.resourceTypeName,
+        resourceTypes: this.resourceTypes,
+        conditionSets: this._conditionSets
+      })
+        .onSuccess((builder) => {
+          return builder.setResourceType(decl.resourceTypeName);
+        })
+        .onSuccess((builder) => {
+          if (decl.candidates) {
+            decl.candidates.forEach((c) => builder.addChildCandidate(c));
+          }
+          return succeed(builder);
+        })
+    );
   }
 
   /**

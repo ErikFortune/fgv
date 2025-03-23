@@ -34,7 +34,9 @@ import { ReadOnlyQualifierTypeCollector } from '../../qualifier-types';
 export const qualifierDecl = Converters.strictObject<IQualifierDecl>({
   name: Converters.string,
   typeName: Converters.string,
-  defaultPriority: Converters.number
+  defaultPriority: Converters.number,
+  token: Converters.string.optional(),
+  tokenIsOptional: Converters.boolean.optional()
 });
 
 /**
@@ -66,8 +68,11 @@ export const validatedQualifierDecl = Converters.generic<
       : succeed(undefined);
 
   return qualifierDecl.convert(from).onSuccess((decl) => {
+    const token = decl.token ?? decl.name;
     return populateObject<IValidatedQualifierDecl>({
       name: () => Validate.toQualifierName(decl.name),
+      token: () => Validate.toQualifierName(token),
+      tokenIsOptional: () => succeed(decl.tokenIsOptional === true),
       type: () => context.qualifierTypes.validating.get(decl.typeName),
       defaultPriority: () => Validate.toConditionPriority(decl.defaultPriority),
       index: () => validatedIndexResult

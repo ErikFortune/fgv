@@ -61,6 +61,17 @@ A `ValidatingCollector` for [ConditionSets](./ts-res.conditions.conditionset.md)
 
 
 </td></tr>
+<tr><td>
+
+[ConditionTokens](./ts-res.conditions.conditiontokens.md)
+
+
+</td><td>
+
+Helper class to parse and validate condition tokens.
+
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces

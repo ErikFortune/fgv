@@ -100,7 +100,7 @@ describe('common resources', () => {
 
   describe('splitResourceId', () => {
     test.each(validResourceIds)('splits %s into %o', (tc) => {
-      expect(TsRes.Validate.splitResourceId(tc.id as TsRes.ResourceId)).toSucceedWith(
+      expect(TsRes.Helpers.splitResourceId(tc.id as TsRes.ResourceId)).toSucceedWith(
         tc.parts as TsRes.ResourceName[]
       );
     });
@@ -114,39 +114,39 @@ describe('common resources', () => {
       'resource+path',
       'resource/path'
     ])('fails for invalid id %s', (id) => {
-      expect(TsRes.Validate.splitResourceId(id as TsRes.ResourceId)).toFailWith(/not a valid resource/i);
+      expect(TsRes.Helpers.splitResourceId(id as TsRes.ResourceId)).toFailWith(/not a valid resource/i);
     });
   });
 
   describe('joinResourceIds', () => {
     test.each(validResourceIds)('joins %o into %s', (tc) => {
-      expect(TsRes.Validate.joinResourceIds('foo', ...(tc.parts as TsRes.ResourceName[]))).toSucceedWith(
+      expect(TsRes.Helpers.joinResourceIds('foo', ...(tc.parts as TsRes.ResourceName[]))).toSucceedWith(
         `foo.${tc.id}` as TsRes.ResourceId
       );
     });
 
     test('fails if any part is invalid', () => {
-      expect(TsRes.Validate.joinResourceIds('foo', 'bar', 'b@z')).toFailWith(/not a valid resource/i);
+      expect(TsRes.Helpers.joinResourceIds('foo', 'bar', 'b@z')).toFailWith(/not a valid resource/i);
     });
 
     test('fails if resulting id is empty', () => {
-      expect(TsRes.Validate.joinResourceIds(undefined, undefined)).toFailWith(/not a valid resource/i);
+      expect(TsRes.Helpers.joinResourceIds(undefined, undefined)).toFailWith(/not a valid resource/i);
     });
   });
 
   describe('joinOptionalResourceIds', () => {
     test.each(validResourceIds)('joins %o into %s', (tc) => {
       expect(
-        TsRes.Validate.joinOptionalResourceIds('foo', ...(tc.parts as TsRes.ResourceName[]))
+        TsRes.Helpers.joinOptionalResourceIds('foo', ...(tc.parts as TsRes.ResourceName[]))
       ).toSucceedWith(`foo.${tc.id}` as TsRes.ResourceId);
     });
 
     test('fails if any part is invalid', () => {
-      expect(TsRes.Validate.joinOptionalResourceIds('foo', 'bar', 'b@z')).toFailWith(/not a valid resource/i);
+      expect(TsRes.Helpers.joinOptionalResourceIds('foo', 'bar', 'b@z')).toFailWith(/not a valid resource/i);
     });
 
     test('returns undefined if resulting id is empty', () => {
-      expect(TsRes.Validate.joinOptionalResourceIds(undefined, undefined)).toSucceedWith(undefined);
+      expect(TsRes.Helpers.joinOptionalResourceIds(undefined, undefined)).toSucceedWith(undefined);
     });
   });
 });

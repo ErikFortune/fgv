@@ -91,6 +91,48 @@ Gets the [ConditionCollector](./ts-res.conditions.conditioncollector.md) used to
 
 
 </td></tr>
+<tr><td>
+
+[unconditionalConditionSet](./ts-res.conditions.conditionsetcollector.unconditionalconditionset.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ConditionSet](./ts-res.conditions.conditionset.md)
+
+
+</td><td>
+
+Gets the [ConditionSet](./ts-res.conditions.conditionset.md) at the unconditional condition set index.
+
+
+</td></tr>
+<tr><td>
+
+[UnconditionalIndex](./ts-res.conditions.conditionsetcollector.unconditionalindex.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+[ConditionSetIndex](./ts-res.conditionsetindex.md)
+
+
+</td><td>
+
+The index of the unconditional condition set.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods

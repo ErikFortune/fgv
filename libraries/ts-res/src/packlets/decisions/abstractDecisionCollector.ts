@@ -22,8 +22,20 @@
 
 import { captureResult, Collections, Result, fail, succeed, ValidatingCollector } from '@fgv/ts-utils';
 import { AbstractDecision } from './abstractDecision';
-import { Convert as CommonConvert, DecisionKey } from '../common';
-import { ConditionSet } from '../conditions';
+import { Convert as CommonConvert, DecisionIndex, DecisionKey, Validate } from '../common';
+import { ConditionSet, ReadOnlyConditionSetCollector } from '../conditions';
+
+/**
+ * Parameters for creating a {@link Decisions.AbstractDecisionCollector | AbstractDecisionCollector}.
+ * @public
+ */
+export interface IAbstractDecisionCollectorCreateParams {
+  /**
+   * {@link Conditions.ReadOnlyConditionSetCollector | ConditionSetCollector} used to create conditions
+   * sets for decisions in this collector.
+   */
+  conditionSets: ReadOnlyConditionSetCollector;
+}
 
 /**
  * A `ValidatingCollector` for {@link Decisions.AbstractDecision | AbstractDecisions}.
@@ -31,23 +43,57 @@ import { ConditionSet } from '../conditions';
  */
 export class AbstractDecisionCollector extends ValidatingCollector<AbstractDecision> {
   /**
+   * The {@link Conditions.ReadOnlyConditionSetCollector | ConditionSetCollector} used to create conditions
+   * sets for decisions in this collector.
+   */
+  public readonly conditionSets: ReadOnlyConditionSetCollector;
+
+  /**
+   * The empty decision (no condition sets) for this collector.
+   */
+  public get emptyDecision(): AbstractDecision {
+    return this.getAt(AbstractDecisionCollector.EmptyDecisionIndex).orThrow();
+  }
+
+  /**
+   * The default-only decision (one condition set with no conditions) for this collector.
+   */
+  public get defaultOnlyDecision(): AbstractDecision {
+    return this.getAt(AbstractDecisionCollector.DefaultOnlyDecisionIndex).orThrow();
+  }
+
+  /**
+   * The index for the empty decision.
+   */
+  public static readonly EmptyDecisionIndex: DecisionIndex = Validate.toDecisionIndex(0).orThrow();
+
+  /**
+   * The index for the default-only decision.
+   */
+  public static readonly DefaultOnlyDecisionIndex: DecisionIndex = Validate.toDecisionIndex(1).orThrow();
+
+  /**
    * Creates a new instance of {@link Decisions.AbstractDecisionCollector | AbstractDecisionCollector}.
    */
-  protected constructor() {
+  protected constructor(params: IAbstractDecisionCollectorCreateParams) {
     super({
       converters: new Collections.KeyValueConverters<DecisionKey, AbstractDecision>({
         key: CommonConvert.decisionKey,
         value: (from: unknown) => this._toAbstractDecision(from)
       })
     });
+    this.conditionSets = params.conditionSets;
+    this.add(AbstractDecision.createAbstractDecision({ conditionSets: [] }).orThrow()).orThrow();
+    const cs = this.conditionSets.validating.get('').orThrow();
+    this.add(AbstractDecision.createAbstractDecision({ conditionSets: [cs] }).orThrow()).orThrow();
   }
 
   /**
    * Creates a new instance of {@link Decisions.AbstractDecisionCollector | AbstractDecisionCollector}.
    * @returns `Success` with the new instance, or `Failure` with an error if the instance could not be created.
    */
-  public static create(): Result<AbstractDecisionCollector> {
-    return captureResult(() => new AbstractDecisionCollector());
+  public static create(params: IAbstractDecisionCollectorCreateParams): Result<AbstractDecisionCollector> {
+    return captureResult(() => new AbstractDecisionCollector(params));
   }
 
   private _toAbstractDecision(from: unknown): Result<AbstractDecision> {
