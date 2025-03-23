@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { IInMemoryFile } from './in-memory';
+import { IInMemoryFile, InMemoryTreeAccessors } from './in-memory';
 
 export * from './directoryItem';
 export * from './fileItem';
@@ -28,4 +28,4 @@ export * from './fileTreeAccessors';
 export * from './fsTree';
 export * from './fileTree';
 
-export { IInMemoryFile };
+export { IInMemoryFile, InMemoryTreeAccessors };

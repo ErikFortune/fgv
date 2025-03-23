@@ -61,6 +61,17 @@ Implementation of [IFileTreeAccessors](./ts-utils.filetree.ifiletreeaccessors.md
 
 
 </td></tr>
+<tr><td>
+
+[InMemoryTreeAccessors](./ts-utils.filetree.inmemorytreeaccessors.md)
+
+
+</td><td>
+
+Implementation of [IFileTreeAccessors](./ts-utils.filetree.ifiletreeaccessors.md) that uses an in-memory tree to access files and directories.
+
+
+</td></tr>
 </tbody></table>
 
 ## Functions

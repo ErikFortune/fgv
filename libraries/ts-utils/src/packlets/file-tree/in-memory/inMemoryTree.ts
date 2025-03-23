@@ -52,7 +52,7 @@ export class InMemoryTreeAccessors implements IFileTreeAccessors {
 
   /**
    * Protected constructor for derived classes.
-   * @param files - An array of {@link IInMemoryFile | in-memory files} to include in the tree.
+   * @param files - An array of {@link FileTree.IInMemoryFile | in-memory files} to include in the tree.
    * @param prefix - Optional prefix for the tree.
    * @public
    */
@@ -64,9 +64,9 @@ export class InMemoryTreeAccessors implements IFileTreeAccessors {
   }
 
   /**
-   * Creates a new {@link InMemoryTreeAccessors | InMemoryTreeAccessors} instance with the supplied
+   * Creates a new {@link FileTree.InMemoryTreeAccessors | InMemoryTreeAccessors} instance with the supplied
    * in-memory files.
-   * @param files - An array of {@link IInMemoryFile | in-memory files} to include in the tree.
+   * @param files - An array of {@link FileTree.IInMemoryFile | in-memory files} to include in the tree.
    * @param prefix - Optional prefix for the tree.
    */
   public static create(files: IInMemoryFile[], prefix?: string): Result<InMemoryTreeAccessors> {
