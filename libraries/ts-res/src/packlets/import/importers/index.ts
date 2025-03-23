@@ -21,6 +21,7 @@
  */
 
 export * from './importer';
+export * from './collectionImporter';
 export * from './fsItemImporter';
 export * from './jsonImporter';
 export * from './pathImporter';

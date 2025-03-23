@@ -9,5 +9,5 @@ The [resource type](./ts-res.resourcetypes.resourcetype.md) for the resource to 
 **Signature:**
 
 ```typescript
-get resourceType(): ResourceType | undefined;
+readonly resourceType: ResourceType | undefined;
 ```

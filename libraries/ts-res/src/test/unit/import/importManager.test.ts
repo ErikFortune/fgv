@@ -23,6 +23,7 @@
 import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-utils';
 import * as TsRes from '../../../index';
+import { ImportManager } from '../../../packlets/import';
 
 const resourceFiles: FileTree.IInMemoryFile[] = [
   {
@@ -122,16 +123,7 @@ describe('ImportManager', () => {
 
     files = JSON.parse(JSON.stringify(resourceFiles));
     tree = FileTree.inMemory(files).orThrow();
-    importers = [
-      TsRes.Import.Importers.PathImporter.create({
-        qualifiers,
-        tree
-      }).orThrow(),
-      TsRes.Import.Importers.FsItemImporter.create({
-        qualifiers
-      }).orThrow(),
-      TsRes.Import.Importers.JsonImporter.create().orThrow()
-    ];
+    importers = [...ImportManager.getDefaultImporters(qualifiers, tree)];
 
     resourceTypes = TsRes.ResourceTypes.ResourceTypeCollector.create({
       resourceTypes: [
@@ -144,13 +136,43 @@ describe('ImportManager', () => {
     importManager = TsRes.Import.ImportManager.create({ resources: resourceManager, importers }).orThrow();
   });
 
+  describe('getDefaultImporters static method', () => {
+    test('returns a list of default importers', () => {
+      const defaultImporters = ImportManager.getDefaultImporters(qualifiers);
+      expect(defaultImporters.length).toEqual(4);
+      const pathImporter = defaultImporters.find((i) => i instanceof TsRes.Import.Importers.PathImporter);
+      expect(pathImporter).toBeDefined();
+      expect(pathImporter!.tree.hal).toBeInstanceOf(FileTree.FsFileTreeAccessors);
+      expect(pathImporter?.qualifiers).toBe(qualifiers);
+      expect(defaultImporters.find((i) => i instanceof TsRes.Import.Importers.FsItemImporter)).toBeDefined();
+      expect(defaultImporters.find((i) => i instanceof TsRes.Import.Importers.JsonImporter)).toBeDefined();
+      expect(
+        defaultImporters.find((i) => i instanceof TsRes.Import.Importers.CollectionImporter)
+      ).toBeDefined();
+    });
+
+    test('returns a list of default importers using a supplied file tree for paths', () => {
+      const defaultImporters = ImportManager.getDefaultImporters(qualifiers, tree);
+      expect(defaultImporters.length).toEqual(4);
+      const pathImporter = defaultImporters.find((i) => i instanceof TsRes.Import.Importers.PathImporter);
+      expect(pathImporter).toBeDefined();
+      expect(pathImporter!.tree.hal).toBeInstanceOf(FileTree.InMemoryTreeAccessors);
+      expect(pathImporter?.qualifiers).toBe(qualifiers);
+      expect(defaultImporters.find((i) => i instanceof TsRes.Import.Importers.FsItemImporter)).toBeDefined();
+      expect(defaultImporters.find((i) => i instanceof TsRes.Import.Importers.JsonImporter)).toBeDefined();
+      expect(
+        defaultImporters.find((i) => i instanceof TsRes.Import.Importers.CollectionImporter)
+      ).toBeDefined();
+    });
+  });
+
   describe('create static method', () => {
     test('creates an import manager with the supplied resource manager, default importers and empty context', () => {
       expect(TsRes.Import.ImportManager.create({ resources: resourceManager })).toSucceedAndSatisfy(
         (manager) => {
           expect(manager.resources).toBe(resourceManager);
           expect(manager.initialContext.conditions.length).toEqual(0);
-          expect(manager.importers.length).toEqual(3);
+          expect(manager.importers.length).toEqual(importers.length);
         }
       );
     });
@@ -161,7 +183,7 @@ describe('ImportManager', () => {
       ).toSucceedAndSatisfy((manager) => {
         expect(manager.resources).toBe(resourceManager);
         expect(manager.initialContext.conditions.length).toEqual(0);
-        expect(manager.importers.length).toEqual(3);
+        expect(manager.importers.length).toEqual(importers.length);
         expect(manager.importers).toEqual(importers);
       });
     });
@@ -179,7 +201,7 @@ describe('ImportManager', () => {
       ).toSucceedAndSatisfy((manager) => {
         expect(manager.resources).toBe(resourceManager);
         expect(manager.initialContext).toBe(context);
-        expect(manager.importers.length).toEqual(3);
+        expect(manager.importers.length).toEqual(importers.length);
         expect(manager.importers).toEqual(importers);
       });
     });

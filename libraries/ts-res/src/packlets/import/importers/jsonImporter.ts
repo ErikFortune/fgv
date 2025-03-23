@@ -107,7 +107,7 @@ export class JsonImporter implements IImporter {
         const id = item.context?.baseId ?? '';
         const conditions = item.context?.conditions;
         const candidate: ResourceJson.Json.ILooseResourceCandidateDecl = { id, conditions, json };
-        return manager.addCandidate(candidate);
+        return manager.addLooseCandidate(candidate);
       })
       .onSuccess(() => {
         return succeed([]);

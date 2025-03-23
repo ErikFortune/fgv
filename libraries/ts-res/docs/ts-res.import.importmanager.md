@@ -224,6 +224,22 @@ Factory method to create a new [ImportManager](./ts-res.import.importmanager.md)
 </td></tr>
 <tr><td>
 
+[getDefaultImporters(qualifiers, tree)](./ts-res.import.importmanager.getdefaultimporters.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Gets the default importers using supplied [qualifiers](./ts-res.qualifiers.ireadonlyqualifiercollector.md) and optional `FileTree`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [import(importable)](./ts-res.import.importmanager.import.md)
 
 

@@ -25,7 +25,8 @@ import { ResourceManager } from '../resources';
 import { ImportContext } from './importContext';
 import { IImportable, IImportablePath } from './importable';
 import { FsItemImporter } from './importers/fsItemImporter';
-import { IImporter, JsonImporter, PathImporter } from './importers';
+import { CollectionImporter, IImporter, JsonImporter, PathImporter } from './importers';
+import { IReadOnlyQualifierCollector } from '../qualifiers';
 
 /**
  * Parameters for creating an {@link  Import.ImportManager | ImportManager}.
@@ -88,16 +89,9 @@ export class ImportManager {
   protected constructor(params: IImporterCreateParams) {
     this.resources = params.resources;
     this.initialContext = params.initialContext ?? ImportContext.create().orThrow();
-    this._importers = params.importers ?? [
-      PathImporter.create({
-        qualifiers: this.resources.qualifiers,
-        tree: params.fileTree
-      }).orThrow(),
-      FsItemImporter.create({
-        qualifiers: this.resources.qualifiers
-      }).orThrow(),
-      JsonImporter.create().orThrow()
-    ];
+    this._importers = Array.from(
+      params.importers ?? ImportManager.getDefaultImporters(this.resources.qualifiers, params.fileTree)
+    );
   }
 
   /**
@@ -130,6 +124,25 @@ export class ImportManager {
   public importFromFileSystem(filePath: string): Result<ImportManager> {
     const importable: IImportablePath = { type: 'path', path: filePath };
     return this.import(importable);
+  }
+
+  /**
+   * Gets the default importers using supplied {@link Qualifiers.IReadOnlyQualifierCollector | qualifiers}
+   * and optional `FileTree`.
+   * @param qualifiers - The {@link Qualifiers.IReadOnlyQualifierCollector | qualifiers} to use for the import.
+   * @param tree - An optional `FileTree` for importing path items.
+   * @returns A read-only array of {@link Import.Importers.IImporter | importers}.
+   */
+  public static getDefaultImporters(
+    qualifiers: IReadOnlyQualifierCollector,
+    tree?: FileTree.FileTree
+  ): ReadonlyArray<IImporter> {
+    return [
+      PathImporter.create({ qualifiers, tree }).orThrow(),
+      FsItemImporter.create({ qualifiers }).orThrow(),
+      JsonImporter.create().orThrow(),
+      CollectionImporter.create().orThrow()
+    ];
   }
 
   /**

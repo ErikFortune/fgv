@@ -4,10 +4,10 @@
 
 ## Resources.ResourceBuilderResultDetail type
 
-Possible result details returned by the resource builder [addCandidate](./ts-res.resources.resourcebuilder.addcandidate.md) method.
+Possible result details returned by the resource builder [addLooseCandidate](./ts-res.resources.resourcebuilder.addloosecandidate.md) method.
 
 **Signature:**
 
 ```typescript
-export type ResourceBuilderResultDetail = Collections.ResultMapResultDetail | 'type-mismatch';
+export type ResourceBuilderResultDetail = Collections.ResultMapResultDetail | 'id-mismatch' | 'type-mismatch';
 ```

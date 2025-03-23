@@ -140,7 +140,7 @@ describe('ResourceBuilder', () => {
     });
   });
 
-  describe('addCandidate method', () => {
+  describe('addLooseCandidate method', () => {
     let builder: TsRes.Resources.ResourceBuilder;
 
     beforeEach(() => {
@@ -152,7 +152,7 @@ describe('ResourceBuilder', () => {
     });
 
     test('adds a candidate to an empty builder', () => {
-      expect(builder.addCandidate(someDecls[0])).toSucceedAndSatisfy((c) => {
+      expect(builder.addLooseCandidate(someDecls[0])).toSucceedAndSatisfy((c) => {
         expect(c.id).toEqual('some.resource.path');
         expect(c.json).toEqual({ home: 'United States' });
         expect(c.conditions.toString()).toEqual('homeTerritory-[US]@800');
@@ -163,7 +163,7 @@ describe('ResourceBuilder', () => {
 
     test('infers type from a candidate', () => {
       const decl = { ...someDecls[0], resourceTypeName: jsonType.key };
-      expect(builder.addCandidate(decl)).toSucceedAndSatisfy((c) => {
+      expect(builder.addLooseCandidate(decl)).toSucceedAndSatisfy((c) => {
         expect(c.id).toEqual('some.resource.path');
         expect(c.json).toEqual({ home: 'United States' });
         expect(c.conditions.toString()).toEqual('homeTerritory-[US]@800');
@@ -174,32 +174,32 @@ describe('ResourceBuilder', () => {
     });
 
     test('adds non-conflicting candidates to a builder', () => {
-      expect(builder.addCandidate(someDecls[0])).toSucceed();
-      expect(builder.addCandidate(someDecls[1])).toSucceed();
+      expect(builder.addLooseCandidate(someDecls[0])).toSucceed();
+      expect(builder.addLooseCandidate(someDecls[1])).toSucceed();
       expect(builder.candidates.length).toEqual(2);
     });
 
     test('fails if a candidate has a conflicting id', () => {
       const decl = { ...someDecls[0], id: 'some.other.resource.path' };
-      expect(builder.addCandidate(decl)).toFailWith(/mismatched candidate id/);
+      expect(builder.addLooseCandidate(decl)).toFailWith(/mismatched candidate id/);
     });
 
     test('fails if a candidate has a conflicting type', () => {
       const decl1 = { ...someDecls[0], resourceTypeName: jsonType.key };
       const decl2 = { ...someDecls[1], resourceTypeName: otherType.key };
-      expect(builder.addCandidate(decl1)).toSucceed();
-      expect(builder.addCandidate(decl2)).toFailWith(/conflicting resource types/);
+      expect(builder.addLooseCandidate(decl1)).toSucceed();
+      expect(builder.addLooseCandidate(decl2)).toFailWith(/conflicting resource types/);
     });
 
     test('fails to add a candidate with an existing condition set and different values', () => {
       const decl = { ...someDecls[0], json: { home: 'Mars' } };
-      expect(builder.addCandidate(someDecls[0])).toSucceed();
-      expect(builder.addCandidate(decl)).toFailWithDetail(/conflicting/, 'exists');
+      expect(builder.addLooseCandidate(someDecls[0])).toSucceed();
+      expect(builder.addLooseCandidate(decl)).toFailWithDetail(/conflicting/, 'exists');
     });
 
     test('silently succeeds without adding a candidate with an existing condition set and identical values', () => {
-      expect(builder.addCandidate(someDecls[0])).toSucceed();
-      expect(builder.addCandidate(someDecls[0])).toSucceed();
+      expect(builder.addLooseCandidate(someDecls[0])).toSucceed();
+      expect(builder.addLooseCandidate(someDecls[0])).toSucceed();
       expect(builder.candidates.length).toEqual(1);
     });
   });
@@ -217,7 +217,7 @@ describe('ResourceBuilder', () => {
 
     test('builds a resource with at least one candidate', () => {
       const decl = { ...someDecls[0], resourceTypeName: jsonType.key };
-      expect(builder.addCandidate(decl)).toSucceed();
+      expect(builder.addLooseCandidate(decl)).toSucceed();
       expect(builder.build()).toSucceedAndSatisfy((r) => {
         expect(r.id).toEqual('some.resource.path');
         expect(r.resourceType).toBe(jsonType);
@@ -230,7 +230,7 @@ describe('ResourceBuilder', () => {
     });
 
     test('fails to build a resource with no type', () => {
-      expect(builder.addCandidate(someDecls[0])).toSucceed();
+      expect(builder.addLooseCandidate(someDecls[0])).toSucceed();
       expect(builder.build()).toFailWith(/no resource type/);
     });
   });

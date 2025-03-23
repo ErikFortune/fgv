@@ -130,7 +130,7 @@ describe('ResourceManager', () => {
     });
   });
 
-  describe('addCandidate method', () => {
+  describe('addLooseCandidate method', () => {
     let manager: TsRes.Resources.ResourceManager;
 
     beforeEach(() => {
@@ -142,7 +142,7 @@ describe('ResourceManager', () => {
 
     test('adds a candidate to an empty manager for a new resource', () => {
       expect(manager.size).toEqual(0);
-      const result = manager.addCandidate(someDecls[0]);
+      const result = manager.addLooseCandidate(someDecls[0]);
       expect(result).toSucceedAndSatisfy((c) => {
         expect(c.id).toEqual(someDecls[0].id);
         expect(manager.size).toEqual(1);
@@ -153,9 +153,9 @@ describe('ResourceManager', () => {
 
     test('adds an additional candidate to the manager for an existing resource', () => {
       expect(manager.size).toEqual(0);
-      manager.addCandidate(someDecls[0]).orThrow();
+      manager.addLooseCandidate(someDecls[0]).orThrow();
       expect(manager.size).toEqual(1);
-      const result = manager.addCandidate(someDecls[1]);
+      const result = manager.addLooseCandidate(someDecls[1]);
       expect(result).toSucceedAndSatisfy((c) => {
         expect(c.id).toEqual(someDecls[1].id);
         expect(manager.size).toEqual(1);
@@ -165,9 +165,9 @@ describe('ResourceManager', () => {
 
     test('adds a candidate for a new resource in a manager', () => {
       expect(manager.size).toEqual(0);
-      manager.addCandidate(someDecls[0]).orThrow();
+      manager.addLooseCandidate(someDecls[0]).orThrow();
       expect(manager.size).toEqual(1);
-      expect(manager.addCandidate(otherDecls[0])).toSucceedAndSatisfy((c) => {
+      expect(manager.addLooseCandidate(otherDecls[0])).toSucceedAndSatisfy((c) => {
         expect(c.id).toEqual(otherDecls[0].id);
         expect(manager.size).toEqual(2);
       });
@@ -179,7 +179,7 @@ describe('ResourceManager', () => {
         json: { speaks: 'Esperanto' }
       };
       expect(manager.size).toEqual(0);
-      expect(manager.addCandidate(unconditional)).toSucceedAndSatisfy((c) => {
+      expect(manager.addLooseCandidate(unconditional)).toSucceedAndSatisfy((c) => {
         expect(c.id).toEqual(unconditional.id);
         expect(c.conditions.conditions.length).toEqual(0);
         expect(manager.size).toEqual(1);
@@ -187,12 +187,12 @@ describe('ResourceManager', () => {
     });
 
     test('fails for a candidate with an invalid id', () => {
-      const result = manager.addCandidate({ ...someDecls[0], id: 'invalid id' });
+      const result = manager.addLooseCandidate({ ...someDecls[0], id: 'invalid id' });
       expect(result).toFailWith(/invalid id/i);
     });
 
     test('fails for a candidate with an unknown resource type', () => {
-      const result = manager.addCandidate({ ...someDecls[0], resourceTypeName: 'unknown' });
+      const result = manager.addLooseCandidate({ ...someDecls[0], resourceTypeName: 'unknown' });
       expect(result).toFailWith(/not found/i);
     });
   });
@@ -208,10 +208,10 @@ describe('ResourceManager', () => {
     });
 
     test('gets a built resource by id', () => {
-      manager.addCandidate({ ...someDecls[0], resourceTypeName: 'json' }).orThrow();
-      manager.addCandidate(someDecls[1]).orThrow();
-      manager.addCandidate(someDecls[2]).orThrow();
-      manager.addCandidate(someDecls[3]).orThrow();
+      manager.addLooseCandidate({ ...someDecls[0], resourceTypeName: 'json' }).orThrow();
+      manager.addLooseCandidate(someDecls[1]).orThrow();
+      manager.addLooseCandidate(someDecls[2]).orThrow();
+      manager.addLooseCandidate(someDecls[3]).orThrow();
 
       const resource = manager.getBuiltResource('some.resource.path');
       expect(resource).toSucceedAndSatisfy((r) => {
@@ -221,10 +221,10 @@ describe('ResourceManager', () => {
     });
 
     test('fails to get a built resource by id if it does not exist', () => {
-      manager.addCandidate({ ...someDecls[0], resourceTypeName: 'json' }).orThrow();
-      manager.addCandidate(someDecls[1]).orThrow();
-      manager.addCandidate(someDecls[2]).orThrow();
-      manager.addCandidate(someDecls[3]).orThrow();
+      manager.addLooseCandidate({ ...someDecls[0], resourceTypeName: 'json' }).orThrow();
+      manager.addLooseCandidate(someDecls[1]).orThrow();
+      manager.addLooseCandidate(someDecls[2]).orThrow();
+      manager.addLooseCandidate(someDecls[3]).orThrow();
 
       const resource = manager.getBuiltResource('some.other.path');
       expect(resource).toFailWith(/not found/i);
@@ -242,11 +242,11 @@ describe('ResourceManager', () => {
     });
 
     test('builds all resources in a resource manager', () => {
-      manager.addCandidate({ ...someDecls[0], resourceTypeName: 'json' }).orThrow();
-      manager.addCandidate(someDecls[1]).orThrow();
-      manager.addCandidate(someDecls[2]).orThrow();
-      manager.addCandidate(someDecls[3]).orThrow();
-      manager.addCandidate({ ...otherDecls[0], resourceTypeName: 'json' }).orThrow();
+      manager.addLooseCandidate({ ...someDecls[0], resourceTypeName: 'json' }).orThrow();
+      manager.addLooseCandidate(someDecls[1]).orThrow();
+      manager.addLooseCandidate(someDecls[2]).orThrow();
+      manager.addLooseCandidate(someDecls[3]).orThrow();
+      manager.addLooseCandidate({ ...otherDecls[0], resourceTypeName: 'json' }).orThrow();
 
       expect(manager.build()).toSucceedAndSatisfy((r) => {
         expect(r.size).toEqual(2);

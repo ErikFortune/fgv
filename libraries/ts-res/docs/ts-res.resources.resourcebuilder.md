@@ -240,7 +240,21 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[addCandidate(decl)](./ts-res.resources.resourcebuilder.addcandidate.md)
+[addChildCandidate(childDecl)](./ts-res.resources.resourcebuilder.addchildcandidate.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Given a [child resource candidate declaration](./ts-res.resourcejson.json.ichildresourcecandidatedecl.md)<!-- -->, creates and adds a [candidate](./ts-res.resources.resourcecandidate.md) to the resource being built.
+
+
+</td></tr>
+<tr><td>
+
+[addLooseCandidate(decl)](./ts-res.resources.resourcebuilder.addloosecandidate.md)
 
 
 </td><td>
@@ -279,6 +293,20 @@ Builds the [resource](./ts-res.resources.resource.md) object from this builder.
 </td><td>
 
 Creates a new [ResourceBuilder](./ts-res.resources.resourcebuilder.md) object.
+
+
+</td></tr>
+<tr><td>
+
+[setResourceType(resourceTypeName)](./ts-res.resources.resourcebuilder.setresourcetype.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Sets the resource type for the resource being built. Fails if a resource type has already been set and it does not match the new resource type.
 
 
 </td></tr>

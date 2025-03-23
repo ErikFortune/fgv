@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[CollectionImporter](./ts-res.import.importers.collectionimporter.md)
+
+
+</td><td>
+
+[Importer](./ts-res.import.importers.iimporter.md) implementation which imports a [resource collection](./ts-res.resourcejson.resourcedeclcollection.md) or [resource tree](./ts-res.resourcejson.resourcedecltree.md) from an importable item.
+
+
+</td></tr>
+<tr><td>
+
 [FsItemImporter](./ts-res.import.importers.fsitemimporter.md)
 
 

@@ -142,7 +142,7 @@ Description
 
 </td><td>
 
-Possible result details returned by the resource builder [addCandidate](./ts-res.resources.resourcebuilder.addcandidate.md) method.
+Possible result details returned by the resource builder [addLooseCandidate](./ts-res.resources.resourcebuilder.addloosecandidate.md) method.
 
 
 </td></tr>

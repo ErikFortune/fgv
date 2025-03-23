@@ -167,12 +167,12 @@ export class ResourceManager {
    * @returns `Success` with the candidate if successful, or `Failure` with an error message if not.
    * @public
    */
-  public addCandidate(
+  public addLooseCandidate(
     decl: ResourceJson.Json.ILooseResourceCandidateDecl
   ): DetailedResult<ResourceCandidate, ResourceManagerResultDetail> {
     const { value: id, message } = Validate.toResourceId(decl.id);
     if (message !== undefined) {
-      return failWithDetail(`${decl.id}: invalid id - ${message}`, 'failure');
+      return failWithDetail(`${id}: invalid id - ${message}`, 'failure');
     }
 
     const builderResult = this._resources.getOrAdd(id, () =>
@@ -189,11 +189,41 @@ export class ResourceManager {
         builderResult.detail
       );
     }
-    return builderResult.value.addCandidate(decl).onSuccess((c, d) => {
+    return builderResult.value.addLooseCandidate(decl).onSuccess((c, d) => {
       this._builtResources.delete(id);
       this._built = false;
       return succeedWithDetail(c, d);
     });
+  }
+
+  public addResource(
+    decl: ResourceJson.Json.ILooseResourceDecl
+  ): DetailedResult<ResourceBuilder, ResourceManagerResultDetail> {
+    const { value: id, message } = Validate.toResourceId(decl.id);
+    if (message !== undefined) {
+      return failWithDetail(`${id}: invalid id - ${message}`, 'failure');
+    }
+
+    return this._resources.getOrAdd(id, () =>
+      ResourceBuilder.create({
+        id,
+        typeName: decl.resourceTypeName,
+        resourceTypes: this.resourceTypes,
+        conditionSets: this._conditionSets
+      })
+        .onSuccess((builder) => {
+          if (decl.resourceTypeName) {
+            return builder.setResourceType(decl.resourceTypeName);
+          }
+          return succeed(builder);
+        })
+        .onSuccess((builder) => {
+          if (decl.candidates) {
+            decl.candidates.forEach((c) => builder.addChildCandidate(c));
+          }
+          return succeed(builder);
+        })
+    );
   }
 
   /**
