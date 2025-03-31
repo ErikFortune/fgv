@@ -34,6 +34,7 @@ import {
 } from '../common';
 import { Qualifier } from '../qualifiers';
 import { IValidatedConditionDecl } from './conditionDecls';
+import * as ResourceJson from '../resource-json';
 
 // eslint-disable-next-line @rushstack/typedef-var
 const scoreFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
@@ -179,6 +180,73 @@ export class Condition implements IValidatedConditionDecl {
    */
   public toString(): string {
     return this.toKey();
+  }
+
+  /**
+   * Gets the {@link ResourceJson.Json.IChildConditionDecl | child condition declaration} for this condition.
+   * @param options - The {@link ResourceJson.Helpers.IDeclarationOptions | options} to use when creating the child
+   * condition declaration.
+   * @returns The {@link ResourceJson.Json.IChildConditionDecl | child condition declaration} for this condition.
+   * @public
+   */
+  public toChildConditionDecl(
+    options?: ResourceJson.Helpers.IDeclarationOptions
+  ): ResourceJson.Json.IChildConditionDecl {
+    const showDefaults = options?.showDefaults === true;
+    return {
+      value: this.value,
+      /* c8 ignore next 1 - not really possible to reproduce right now */
+      ...(showDefaults || this.operator !== 'matches' ? { operator: this.operator } : {}),
+      ...(showDefaults || this.priority !== this.qualifier.defaultPriority
+        ? { priority: this.priority }
+        : {}),
+      ...(this.scoreAsDefault ? { scoreAsDefault: this.scoreAsDefault } : {})
+    };
+  }
+
+  /**
+   * Gets the value for this condition, or the {@link ResourceJson.Json.IChildConditionDecl | child condition declaration}
+   * if the condition has non-default operator, priority or a score as default.
+   * @param options - The {@link ResourceJson.Helpers.IDeclarationOptions | options} to use when creating the child
+   * condition declaration.
+   * @returns A string value for this condition, or the {@link ResourceJson.Json.IChildConditionDecl | child condition declaration}
+   * if the condition has non-default operator, priority or a score as default.
+   */
+  public toValueOrChildConditionDecl(
+    options?: ResourceJson.Helpers.IDeclarationOptions
+  ): string | ResourceJson.Json.IChildConditionDecl {
+    if (
+      options?.showDefaults !== true &&
+      this.operator === 'matches' &&
+      this.priority === this.qualifier.defaultPriority &&
+      this.scoreAsDefault === undefined
+    ) {
+      return this.value;
+    }
+    return this.toChildConditionDecl(options);
+  }
+
+  /**
+   * Gets the {@link ResourceJson.Json.ILooseConditionDecl | loose condition declaration} for this condition.
+   * @param options - The {@link ResourceJson.Helpers.IDeclarationOptions | options} to use when creating the loose
+   * condition declaration.
+   * @returns The {@link ResourceJson.Json.ILooseConditionDecl | loose condition declaration} for this condition.
+   * @public
+   */
+  public toLooseConditionDecl(
+    options?: ResourceJson.Helpers.IDeclarationOptions
+  ): ResourceJson.Json.ILooseConditionDecl {
+    const showDefaults = options?.showDefaults === true;
+    return {
+      qualifierName: this.qualifier.name,
+      value: this.value,
+      /* c8 ignore next 1 - not really possible to reproduce right now */
+      ...(showDefaults || this.operator !== 'matches' ? { operator: this.operator } : {}),
+      ...(showDefaults || this.priority !== this.qualifier.defaultPriority
+        ? { priority: this.priority }
+        : {}),
+      ...(this.scoreAsDefault ? { scoreAsDefault: this.scoreAsDefault } : {})
+    };
   }
 
   /**

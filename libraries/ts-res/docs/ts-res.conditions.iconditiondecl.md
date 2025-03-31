@@ -2,128 +2,14 @@
 
 [Home](./index.md) &gt; [@fgv/ts-res](./ts-res.md) &gt; [Conditions](./ts-res.conditions.md) &gt; [IConditionDecl](./ts-res.conditions.iconditiondecl.md)
 
-## Conditions.IConditionDecl interface
+## Conditions.IConditionDecl type
 
 Non-validated declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-export interface IConditionDecl 
+export type IConditionDecl = ResourceJson.Json.ILooseConditionDecl;
 ```
+**References:** [ResourceJson.Json.ILooseConditionDecl](./ts-res.resourcejson.json.ilooseconditiondecl.md)
 
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[operator?](./ts-res.conditions.iconditiondecl.operator.md)
-
-
-</td><td>
-
-
-</td><td>
-
-[ConditionOperator](./ts-res.conditionoperator.md)
-
-
-</td><td>
-
-_(Optional)_
-
-
-</td></tr>
-<tr><td>
-
-[priority?](./ts-res.conditions.iconditiondecl.priority.md)
-
-
-</td><td>
-
-
-</td><td>
-
-number
-
-
-</td><td>
-
-_(Optional)_
-
-
-</td></tr>
-<tr><td>
-
-[qualifierName](./ts-res.conditions.iconditiondecl.qualifiername.md)
-
-
-</td><td>
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[scoreAsDefault?](./ts-res.conditions.iconditiondecl.scoreasdefault.md)
-
-
-</td><td>
-
-
-</td><td>
-
-number
-
-
-</td><td>
-
-_(Optional)_
-
-
-</td></tr>
-<tr><td>
-
-[value](./ts-res.conditions.iconditiondecl.value.md)
-
-
-</td><td>
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-
-</td></tr>
-</tbody></table>

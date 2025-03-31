@@ -24,16 +24,17 @@ import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../index';
 import { TestQualifierType } from '../qualifier-types/testQualifierType';
 import { mapResults } from '@fgv/ts-utils';
+import { sanitizeJsonObject } from '@fgv/ts-json-base';
 
 describe('ConditionSet', () => {
-  const qualifierDecls: TsRes.Qualifiers.IQualifierDecl[] = [
+  const defaultQualifierDecls: TsRes.Qualifiers.IQualifierDecl[] = [
     { name: 'homeTerritory', typeName: 'territory', defaultPriority: 800 },
     { name: 'currentTerritory', typeName: 'territory', defaultPriority: 700 },
     { name: 'language', typeName: 'language', defaultPriority: 600 },
     { name: 'some_thing', typeName: 'literal', defaultPriority: 500 },
     { name: 'testThing', typeName: 'test', defaultPriority: 400 }
   ];
-  const conditionDecls: TsRes.Conditions.IConditionDecl[] = [
+  const defaultConditionDecls: TsRes.Conditions.IConditionDecl[] = [
     { qualifierName: 'homeTerritory', value: 'CA' },
     { qualifierName: 'currentTerritory', value: 'US' },
     { qualifierName: 'language', value: 'en' },
@@ -41,12 +42,16 @@ describe('ConditionSet', () => {
     { qualifierName: 'testThing', value: 'test-value' }
   ];
 
+  let qualifierDecls: TsRes.Qualifiers.IQualifierDecl[];
+  let conditionDecls: TsRes.Conditions.IConditionDecl[];
   let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
   let qualifiers: TsRes.Qualifiers.QualifierCollector;
   let conditions: TsRes.Conditions.ConditionCollector;
   let allConditions: TsRes.Conditions.Condition[];
 
   beforeEach(() => {
+    qualifierDecls = sanitizeJsonObject(defaultQualifierDecls).orThrow();
+    conditionDecls = sanitizeJsonObject(defaultConditionDecls).orThrow();
     qualifierTypes = TsRes.QualifierTypes.QualifierTypeCollector.create({
       qualifierTypes: [
         TsRes.QualifierTypes.LanguageQualifierType.create().orThrow(),
@@ -129,6 +134,34 @@ describe('ConditionSet', () => {
       expect(TsRes.Conditions.ConditionSet.create({ conditions: allConditions })).toFailWith(
         /duplicate conditions/i
       );
+    });
+  });
+
+  describe('toConditionSetRecordDecl method', () => {
+    test('returns a condition set record declaration', () => {
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+      const decl = cs.toConditionSetRecordDecl();
+      expect(decl).toEqual({
+        homeTerritory: 'CA',
+        currentTerritory: 'US',
+        language: 'en',
+        some_thing: 'some_value',
+        testThing: 'test-value'
+      });
+    });
+  });
+
+  describe('toConditionSetArrayDecl method', () => {
+    test('returns a condition set array declaration', () => {
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+      const decl = cs.toConditionSetArrayDecl();
+      expect(decl).toEqual([
+        { qualifierName: 'homeTerritory', value: 'CA' },
+        { qualifierName: 'currentTerritory', value: 'US' },
+        { qualifierName: 'language', value: 'en' },
+        { qualifierName: 'some_thing', value: 'some_value' },
+        { qualifierName: 'testThing', value: 'test-value' }
+      ]);
     });
   });
 

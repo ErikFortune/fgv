@@ -9,7 +9,7 @@ Helper method to merge a child resource with a parent name and conditions.
 **Signature:**
 
 ```typescript
-export declare function mergeChildResource(resource: Normalized.IChildResourceDecl, name: string, parentName?: string, parentConditions?: ReadonlyArray<Json.ILooseConditionDecl | Conditions.IConditionDecl>): Result<Normalized.ILooseResourceDecl>;
+export declare function mergeChildResource(resource: Normalized.IChildResourceDecl, name: string, parentName?: string, parentConditions?: ReadonlyArray<Json.ILooseConditionDecl>): Result<Normalized.ILooseResourceDecl>;
 ```
 
 ## Parameters
@@ -85,7 +85,7 @@ parentConditions
 
 </td><td>
 
-ReadonlyArray&lt;[Json.ILooseConditionDecl](./ts-res.resourcejson.json.ilooseconditiondecl.md) \| [Conditions.IConditionDecl](./ts-res.conditions.iconditiondecl.md)<!-- -->&gt;
+ReadonlyArray&lt;[Json.ILooseConditionDecl](./ts-res.resourcejson.json.ilooseconditiondecl.md)<!-- -->&gt;
 
 
 </td><td>

@@ -177,6 +177,168 @@ describe('Condition', () => {
     });
   });
 
+  describe('toChildConditionDecl method', () => {
+    test('returns the child condition declaration with defaults', () => {
+      const decl: TsRes.ResourceJson.Json.IChildConditionDecl = {
+        value: 'CA'
+      };
+      const condition = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'homeTerritory',
+            ...decl
+          },
+          { qualifiers }
+        )
+        .onSuccess(TsRes.Conditions.Condition.create)
+        .orThrow();
+      expect(condition.toChildConditionDecl()).toEqual(decl);
+    });
+
+    test('returns all condition properties if showDefaults is true', () => {
+      const decl: TsRes.ResourceJson.Json.IChildConditionDecl = {
+        value: 'CA'
+      };
+      const condition = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'homeTerritory',
+            ...decl
+          },
+          { qualifiers }
+        )
+        .onSuccess(TsRes.Conditions.Condition.create)
+        .orThrow();
+      expect(condition.toChildConditionDecl({ showDefaults: true })).toEqual({
+        ...decl,
+        operator: 'matches',
+        priority: 800
+      });
+    });
+
+    test('returns the child condition declaration with non-defaults', () => {
+      const decl: TsRes.ResourceJson.Json.IChildConditionDecl = {
+        value: 'CA',
+        priority: 700,
+        scoreAsDefault: 0.5
+      };
+      const condition = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'homeTerritory',
+            ...decl
+          },
+          { qualifiers }
+        )
+        .onSuccess(TsRes.Conditions.Condition.create)
+        .orThrow();
+      expect(condition.toChildConditionDecl()).toEqual(decl);
+    });
+  });
+
+  describe('toValueOrChildConditionDecl method', () => {
+    test('returns the value if defaults', () => {
+      const decl: TsRes.ResourceJson.Json.IChildConditionDecl = {
+        value: 'CA'
+      };
+      const condition = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'homeTerritory',
+            ...decl
+          },
+          { qualifiers }
+        )
+        .onSuccess(TsRes.Conditions.Condition.create)
+        .orThrow();
+      expect(condition.toValueOrChildConditionDecl()).toEqual(decl.value);
+    });
+
+    test('returns all properties if showDefaults is true', () => {
+      const decl: TsRes.ResourceJson.Json.IChildConditionDecl = {
+        value: 'CA'
+      };
+      const condition = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'homeTerritory',
+            ...decl
+          },
+          { qualifiers }
+        )
+        .onSuccess(TsRes.Conditions.Condition.create)
+        .orThrow();
+      expect(condition.toValueOrChildConditionDecl({ showDefaults: true })).toEqual({
+        ...decl,
+        operator: 'matches',
+        priority: 800
+      });
+    });
+
+    test('returns the child condition declaration with non-defaults', () => {
+      const decl: TsRes.ResourceJson.Json.IChildConditionDecl = {
+        value: 'CA',
+        priority: 700,
+        scoreAsDefault: 0.5
+      };
+      const condition = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'homeTerritory',
+            ...decl
+          },
+          { qualifiers }
+        )
+        .onSuccess(TsRes.Conditions.Condition.create)
+        .orThrow();
+      expect(condition.toValueOrChildConditionDecl()).toEqual(decl);
+    });
+  });
+
+  describe('toLooseConditionDecl method', () => {
+    test('returns the loose condition declaration with defaults', () => {
+      const decl: TsRes.ResourceJson.Json.ILooseConditionDecl = {
+        qualifierName: 'homeTerritory',
+        value: 'CA'
+      };
+      const condition = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(decl, { qualifiers })
+        .onSuccess(TsRes.Conditions.Condition.create)
+        .orThrow();
+      expect(condition.toLooseConditionDecl()).toEqual(decl);
+    });
+
+    test('returns the loose condition declaration with all properties if showDefaults is true', () => {
+      const decl: TsRes.ResourceJson.Json.ILooseConditionDecl = {
+        qualifierName: 'homeTerritory',
+        value: 'CA'
+      };
+      const condition = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(decl, { qualifiers })
+        .onSuccess(TsRes.Conditions.Condition.create)
+        .orThrow();
+      expect(condition.toLooseConditionDecl({ showDefaults: true })).toEqual({
+        ...decl,
+        operator: 'matches',
+        priority: 800
+      });
+    });
+
+    test('returns the loose condition declaration with non-defaults', () => {
+      const decl: TsRes.ResourceJson.Json.ILooseConditionDecl = {
+        qualifierName: 'homeTerritory',
+        value: 'CA',
+        priority: 700,
+        scoreAsDefault: 0.5
+      };
+      const condition = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(decl, { qualifiers })
+        .onSuccess(TsRes.Conditions.Condition.create)
+        .orThrow();
+      expect(condition.toLooseConditionDecl()).toEqual(decl);
+    });
+  });
+
   describe('compare static method', () => {
     test('considers priority first', () => {
       const c1 = TsRes.Conditions.Convert.validatedConditionDecl

@@ -100,17 +100,6 @@ Parameters for creating a [ConditionCollector](./ts-res.conditions.conditioncoll
 </td></tr>
 <tr><td>
 
-[IConditionDecl](./ts-res.conditions.iconditiondecl.md)
-
-
-</td><td>
-
-Non-validated declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [IConditionSetCollectorCreateParams](./ts-res.conditions.iconditionsetcollectorcreateparams.md)
 
 
@@ -193,6 +182,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[IConditionDecl](./ts-res.conditions.iconditiondecl.md)
+
+
+</td><td>
+
+Non-validated declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
 
 [ReadOnlyConditionCollector](./ts-res.conditions.readonlyconditioncollector.md)
 

@@ -24,6 +24,7 @@ import { MessageAggregator, Result, captureResult, fail, succeed } from '@fgv/ts
 import { ResourceId, Validate } from '../common';
 import { ResourceCandidate } from './resourceCandidate';
 import { ResourceType } from '../resource-types';
+import * as ResourceJson from '../resource-json';
 
 /**
  * Parameters used to create a {@link Resources.Resource | Resource} object.
@@ -70,10 +71,6 @@ export class Resource {
    * @public
    */
   protected constructor(params: IResourceCreateParams) {
-    if (params.candidates.length === 0) {
-      throw new Error(`${params.id ?? 'resource constructor'}: no candidates specified.`);
-    }
-
     const id = params.id ? Validate.toResourceId(params.id).orThrow() : undefined;
     this.id = Resource._validateCandidateResourceIds(id, params.candidates).orThrow();
     this.resourceType = ResourceCandidate.validateResourceTypes(params.candidates, params.resourceType)
@@ -100,6 +97,37 @@ export class Resource {
   }
 
   /**
+   * Gets the {@link ResourceJson.Json.IChildResourceDecl | child resource declaration} for this resource.
+   * @param options - {@link ResourceJson.Helpers.IDeclarationOptions | options} for the declaration.
+   * @returns The {@link ResourceJson.Json.IChildResourceDecl | child resource declaration}.
+   */
+  public toChildResourceDecl(
+    options?: ResourceJson.Helpers.IDeclarationOptions
+  ): ResourceJson.Json.IChildResourceDecl {
+    const candidates = this.candidates.map((c) => c.toChildResourceCandidateDecl(options));
+    return {
+      resourceTypeName: this.resourceType.key,
+      ...(candidates.length > 0 ? { candidates } : {})
+    };
+  }
+
+  /**
+   * Gets the {@link ResourceJson.Json.ILooseResourceDecl | loose resource declaration} for this resource.
+   * @param options - {@link ResourceJson.Helpers.IDeclarationOptions | options} for the declaration.
+   * @returns The {@link ResourceJson.Json.ILooseResourceDecl | loose resource declaration}.
+   */
+  public toLooseResourceDecl(
+    options?: ResourceJson.Helpers.IDeclarationOptions
+  ): ResourceJson.Json.ILooseResourceDecl {
+    const candidates = this.candidates.map((c) => c.toChildResourceCandidateDecl(options));
+    return {
+      id: this.id,
+      resourceTypeName: this.resourceType.key,
+      ...(candidates.length > 0 ? { candidates } : {})
+    };
+  }
+
+  /**
    * Validates that all candidates have the same id as the resource.
    * @param resourceId - The expected id of the resource.
    * @param candidates - The array of candidates to validate.
@@ -111,6 +139,9 @@ export class Resource {
     resourceId: ResourceId | undefined,
     candidates: ReadonlyArray<ResourceCandidate>
   ): Result<ResourceId> {
+    if (!resourceId && candidates.length === 0) {
+      return fail('unknown: no resource id and no candidates.');
+    }
     resourceId = resourceId ?? candidates[0].id;
 
     const mismatched = candidates.filter((c) => c.id !== resourceId).map((c) => c.id);

@@ -30,6 +30,7 @@ import {
   Validate
 } from '../common';
 import { IValidatedConditionSetDecl } from './conditionSetDecls';
+import * as ResourceJson from '../resource-json';
 
 /**
  * Represents a set of {@link Conditions.Condition | conditions} that must all be met in some runtime
@@ -187,5 +188,31 @@ export class ConditionSet implements IValidatedConditionSetDecl {
    */
   public toString(): string {
     return this.toKey();
+  }
+
+  /**
+   * Gets the {@link ResourceJson.Json.ConditionSetDeclAsRecord | condition set declaration as a record} for this condition set.
+   * @param options - {@link ResourceJson.Helpers.IDeclarationOptions | options} for the condition set declaration.
+   * @returns The {@link ResourceJson.Json.ConditionSetDeclAsRecord | condition set declaration as a record} for this condition set.
+   */
+  public toConditionSetRecordDecl(
+    options?: ResourceJson.Helpers.IDeclarationOptions
+  ): ResourceJson.Json.ConditionSetDeclAsRecord {
+    return Object.fromEntries(
+      this.conditions.map((c): [string, ResourceJson.Json.IChildConditionDecl | string] => {
+        return [c.qualifier.name, c.toValueOrChildConditionDecl(options)];
+      })
+    );
+  }
+
+  /**
+   * Gets the {@link ResourceJson.Json.ConditionSetDeclAsArray | condition set declaration as an array} for this condition set.
+   * @param options - {@link ResourceJson.Helpers.IDeclarationOptions | options} for the condition set declaration.
+   * @returns The {@link ResourceJson.Json.ConditionSetDeclAsArray | condition set declaration as an array} for this condition set.
+   */
+  public toConditionSetArrayDecl(
+    options?: ResourceJson.Helpers.IDeclarationOptions
+  ): ResourceJson.Json.ConditionSetDeclAsArray {
+    return this.conditions.map((c) => c.toLooseConditionDecl(options));
   }
 }

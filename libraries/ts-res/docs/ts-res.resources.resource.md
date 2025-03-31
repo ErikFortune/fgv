@@ -170,4 +170,32 @@ Creates a new [Resource](./ts-res.resources.resource.md) object.
 
 
 </td></tr>
+<tr><td>
+
+[toChildResourceDecl(options)](./ts-res.resources.resource.tochildresourcedecl.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the [child resource declaration](./ts-res.resourcejson.json.ichildresourcedecl.md) for this resource.
+
+
+</td></tr>
+<tr><td>
+
+[toLooseResourceDecl(options)](./ts-res.resources.resource.tolooseresourcedecl.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the [loose resource declaration](./ts-res.resourcejson.json.ilooseresourcedecl.md) for this resource.
+
+
+</td></tr>
 </tbody></table>

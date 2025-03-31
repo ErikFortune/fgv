@@ -267,6 +267,34 @@ Compares two [ResourceCandidates](./ts-res.resources.resourcecandidate.md) for e
 </td></tr>
 <tr><td>
 
+[toChildResourceCandidateDecl(options)](./ts-res.resources.resourcecandidate.tochildresourcecandidatedecl.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the [child resource candidate declaration](./ts-res.resourcejson.json.ichildresourcecandidatedecl.md) for this candidate.
+
+
+</td></tr>
+<tr><td>
+
+[toLooseResourceCandidateDecl(options)](./ts-res.resources.resourcecandidate.tolooseresourcecandidatedecl.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the [loose resource candidate declaration](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md) for this candidate.
+
+
+</td></tr>
+<tr><td>
+
 [validateResourceTypes(candidates, expectedType)](./ts-res.resources.resourcecandidate.validateresourcetypes.md)
 
 

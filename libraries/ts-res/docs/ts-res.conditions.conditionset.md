@@ -282,6 +282,34 @@ Sets the global index for this condition set. Once set, the index cannot be chan
 </td></tr>
 <tr><td>
 
+[toConditionSetArrayDecl(options)](./ts-res.conditions.conditionset.toconditionsetarraydecl.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the [condition set declaration as an array](./ts-res.resourcejson.json.conditionsetdeclasarray.md) for this condition set.
+
+
+</td></tr>
+<tr><td>
+
+[toConditionSetRecordDecl(options)](./ts-res.conditions.conditionset.toconditionsetrecorddecl.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the [condition set declaration as a record](./ts-res.resourcejson.json.conditionsetdeclasrecord.md) for this condition set.
+
+
+</td></tr>
+<tr><td>
+
 [toHash()](./ts-res.conditions.conditionset.tohash.md)
 
 

@@ -9,5 +9,5 @@ Converter for a [condition declaration](./ts-res.conditions.iconditiondecl.md)<!
 **Signature:**
 
 ```typescript
-conditionDecl: import("@fgv/ts-utils").ObjectConverter<IConditionDecl, unknown>
+conditionDecl: import("@fgv/ts-utils").ObjectConverter<import("../../resource-json/json").ILooseConditionDecl, unknown>
 ```

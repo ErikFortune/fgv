@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res",
+      "comment": "add decl generators",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-res"
+}
