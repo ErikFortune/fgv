@@ -28,18 +28,13 @@ import {
   QualifierMatchScore
 } from '../common';
 import { Qualifier } from '../qualifiers';
+import * as ResourceJson from '../resource-json';
 
 /**
  * Non-validated declaration of a {@link Conditions.Condition | condition}.
  * @public
  */
-export interface IConditionDecl {
-  qualifierName: string;
-  value: string;
-  operator?: ConditionOperator;
-  priority?: number;
-  scoreAsDefault?: number;
-}
+export type IConditionDecl = ResourceJson.Json.ILooseConditionDecl;
 
 /**
  * Validated declaration of a {@link Conditions.Condition | condition} with all defaults applied.

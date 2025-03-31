@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { JsonValue } from '@fgv/ts-json-base';
+import { JsonObject, JsonValue } from '@fgv/ts-json-base';
 import { ResourceId, ResourceValueMergeMethod, Validate } from '../common';
 import { Condition, ConditionSet, ConditionSetCollector } from '../conditions';
 import * as ResourceJson from '../resource-json';
@@ -108,6 +108,37 @@ export class ResourceCandidate {
    */
   public static create(params: IResourceCandidateCreateParams): Result<ResourceCandidate> {
     return captureResult(() => new ResourceCandidate(params));
+  }
+
+  /**
+   * Gets the {@link ResourceJson.Json.IChildResourceCandidateDecl | child resource candidate declaration}
+   * for this candidate.
+   * @returns The {@link ResourceJson.Json.IChildResourceCandidateDecl | child resource candidate declaration}.
+   */
+  public toChildResourceCandidateDecl(): ResourceJson.Json.IChildResourceCandidateDecl {
+    return {
+      json: this.json as JsonObject,
+      conditions: this.conditions.toConditionSetRecordDecl(),
+      isPartial: this.isPartial,
+      mergeMethod: this.mergeMethod
+    };
+  }
+
+  /**
+   * Gets the {@link ResourceJson.Json.ILooseResourceCandidateDecl | loose resource candidate declaration}
+   * for this candidate.
+   * @returns The {@link ResourceJson.Json.ILooseResourceCandidateDecl | loose resource candidate declaration}.
+   */
+  public toLooseResourceCandidateDecl(): ResourceJson.Json.ILooseResourceCandidateDecl {
+    const resourceTypeName = this.resourceType?.key;
+    return {
+      id: this.id.toString(),
+      json: this.json as JsonObject,
+      conditions: this.conditions.toConditionSetRecordDecl(),
+      isPartial: this.isPartial,
+      mergeMethod: this.mergeMethod,
+      ...(resourceTypeName ? { resourceTypeName } : {})
+    };
   }
 
   /**

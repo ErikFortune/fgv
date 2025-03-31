@@ -24,6 +24,7 @@ import { MessageAggregator, Result, captureResult, fail, succeed } from '@fgv/ts
 import { ResourceId, Validate } from '../common';
 import { ResourceCandidate } from './resourceCandidate';
 import { ResourceType } from '../resource-types';
+import * as ResourceJson from '../resource-json';
 
 /**
  * Parameters used to create a {@link Resources.Resource | Resource} object.
@@ -97,6 +98,31 @@ export class Resource {
    */
   public static create(params: IResourceCreateParams): Result<Resource> {
     return captureResult(() => new Resource(params));
+  }
+
+  /**
+   * Gets the {@link ResourceJson.Json.IChildResourceDecl | child resource declaration} for this resource.
+   * @returns The {@link ResourceJson.Json.IChildResourceDecl | child resource declaration}.
+   */
+  public toChildResourceDecl(): ResourceJson.Json.IChildResourceDecl {
+    const candidates = this.candidates.map((c) => c.toChildResourceCandidateDecl());
+    return {
+      resourceTypeName: this.resourceType.key,
+      ...(candidates.length > 0 ? { candidates } : {})
+    };
+  }
+
+  /**
+   * Gets the {@link ResourceJson.Json.ILooseResourceDecl | loose resource declaration} for this resource.
+   * @returns The {@link ResourceJson.Json.ILooseResourceDecl | loose resource declaration}.
+   */
+  public toLooseResourceDecl(): ResourceJson.Json.ILooseResourceDecl {
+    const candidates = this.candidates.map((c) => c.toChildResourceCandidateDecl());
+    return {
+      id: this.id,
+      resourceTypeName: this.resourceType.key,
+      ...(candidates.length > 0 ? { candidates } : {})
+    };
   }
 
   /**

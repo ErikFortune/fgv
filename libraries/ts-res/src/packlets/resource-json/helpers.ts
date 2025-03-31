@@ -24,7 +24,6 @@ import { mapResults, Result, succeed } from '@fgv/ts-utils';
 import * as Normalized from './normalized';
 import * as Json from './json';
 import { Helpers as CommonHelpers } from '../common';
-import * as Conditions from '../conditions';
 
 /**
  * Helper method to merge a loose candidate with a base name and conditions.
@@ -37,7 +36,7 @@ import * as Conditions from '../conditions';
 export function mergeLooseCandidate(
   candidate: Normalized.ILooseResourceCandidateDecl,
   baseName?: string,
-  baseConditions?: ReadonlyArray<Json.ILooseConditionDecl | Conditions.IConditionDecl>
+  baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>
 ): Result<Normalized.ILooseResourceCandidateDecl> {
   return CommonHelpers.joinResourceIds(baseName, candidate.id).onSuccess((id) => {
     /* c8 ignore next 1 - defense in depth */
@@ -55,7 +54,7 @@ export function mergeLooseCandidate(
  */
 export function mergeChildCandidate(
   candidate: Normalized.IChildResourceCandidateDecl,
-  baseConditions?: ReadonlyArray<Json.ILooseConditionDecl | Conditions.IConditionDecl>
+  baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>
 ): Result<Normalized.IChildResourceCandidateDecl> {
   /* c8 ignore next 1 - defense in depth */
   const conditions = [...(baseConditions ?? []), ...(candidate.conditions ?? [])];
@@ -73,7 +72,7 @@ export function mergeChildCandidate(
 export function mergeLooseResource(
   resource: Normalized.ILooseResourceDecl,
   baseName?: string,
-  baseConditions?: ReadonlyArray<Json.ILooseConditionDecl | Conditions.IConditionDecl>
+  baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>
 ): Result<Normalized.ILooseResourceDecl> {
   return CommonHelpers.joinResourceIds(baseName, resource.id).onSuccess((id) => {
     return mapResults(
@@ -98,7 +97,7 @@ export function mergeChildResource(
   resource: Normalized.IChildResourceDecl,
   name: string,
   parentName?: string,
-  parentConditions?: ReadonlyArray<Json.ILooseConditionDecl | Conditions.IConditionDecl>
+  parentConditions?: ReadonlyArray<Json.ILooseConditionDecl>
 ): Result<Normalized.ILooseResourceDecl> {
   return CommonHelpers.joinResourceIds(parentName, name).onSuccess((id) => {
     return mapResults(

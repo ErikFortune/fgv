@@ -316,6 +316,20 @@ Gets the [condition key](./ts-res.conditionkey.md) for a supplied [condition dec
 </td></tr>
 <tr><td>
 
+[toChildConditionDecl()](./ts-res.conditions.condition.tochildconditiondecl.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the [child condition declaration](./ts-res.resourcejson.json.ichildconditiondecl.md) for this condition.
+
+
+</td></tr>
+<tr><td>
+
 [toKey()](./ts-res.conditions.condition.tokey.md)
 
 
@@ -325,6 +339,20 @@ Gets the [condition key](./ts-res.conditionkey.md) for a supplied [condition dec
 </td><td>
 
 Gets the [key](./ts-res.conditionkey.md) for this condition.
+
+
+</td></tr>
+<tr><td>
+
+[toLooseConditionDecl()](./ts-res.conditions.condition.tolooseconditiondecl.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the [loose condition declaration](./ts-res.resourcejson.json.ilooseconditiondecl.md) for this condition.
 
 
 </td></tr>
@@ -353,6 +381,20 @@ Get a human-readable string representation of the condition.
 </td><td>
 
 Gets a [condition token](./ts-res.conditiontoken.md) for this condition, if possible. It is not possible to get a token for a condition with an operator other than `matches`<!-- -->, with other-than-default priority, or with a name or value that contains other than alphanumeric characters, underscore or non-leading hyphen.
+
+
+</td></tr>
+<tr><td>
+
+[toValueOrChildConditionDecl()](./ts-res.conditions.condition.tovalueorchildconditiondecl.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the value for this condition, or the [child condition declaration](./ts-res.resourcejson.json.ichildconditiondecl.md) if the condition has non-default operator, priority or a score as default.
 
 
 </td></tr>

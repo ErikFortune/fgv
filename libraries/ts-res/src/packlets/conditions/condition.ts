@@ -34,6 +34,7 @@ import {
 } from '../common';
 import { Qualifier } from '../qualifiers';
 import { IValidatedConditionDecl } from './conditionDecls';
+import * as ResourceJson from '../resource-json';
 
 // eslint-disable-next-line @rushstack/typedef-var
 const scoreFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
@@ -179,6 +180,52 @@ export class Condition implements IValidatedConditionDecl {
    */
   public toString(): string {
     return this.toKey();
+  }
+
+  /**
+   * Gets the {@link ResourceJson.Json.IChildConditionDecl | child condition declaration} for this condition.
+   * @returns The {@link ResourceJson.Json.IChildConditionDecl | child condition declaration} for this condition.
+   * @public
+   */
+  public toChildConditionDecl(): ResourceJson.Json.IChildConditionDecl {
+    return {
+      value: this.value,
+      operator: this.operator,
+      priority: this.priority,
+      ...(this.scoreAsDefault ? { scoreAsDefault: this.scoreAsDefault } : {})
+    };
+  }
+
+  /**
+   * Gets the value for this condition, or the {@link ResourceJson.Json.IChildConditionDecl | child condition declaration}
+   * if the condition has non-default operator, priority or a score as default.
+   * @returns A string value for this condition, or the {@link ResourceJson.Json.IChildConditionDecl | child condition declaration}
+   * if the condition has non-default operator, priority or a score as default.
+   */
+  public toValueOrChildConditionDecl(): string | ResourceJson.Json.IChildConditionDecl {
+    if (
+      this.operator === 'matches' &&
+      this.priority === this.qualifier.defaultPriority &&
+      this.scoreAsDefault === undefined
+    ) {
+      return this.value;
+    }
+    return this.toChildConditionDecl();
+  }
+
+  /**
+   * Gets the {@link ResourceJson.Json.ILooseConditionDecl | loose condition declaration} for this condition.
+   * @returns The {@link ResourceJson.Json.ILooseConditionDecl | loose condition declaration} for this condition.
+   * @public
+   */
+  public toLooseConditionDecl(): ResourceJson.Json.ILooseConditionDecl {
+    return {
+      qualifierName: this.qualifier.name,
+      value: this.value,
+      operator: this.operator,
+      priority: this.priority,
+      ...(this.scoreAsDefault ? { scoreAsDefault: this.scoreAsDefault } : {})
+    };
   }
 
   /**
