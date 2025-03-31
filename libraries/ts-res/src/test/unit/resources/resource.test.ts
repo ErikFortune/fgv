@@ -22,7 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../index';
-import { mapResults } from '@fgv/ts-utils';
+import { mapResults, omit } from '@fgv/ts-utils';
 
 describe('Resource', () => {
   let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
@@ -177,13 +177,19 @@ describe('Resource', () => {
       expect(resource).toFailWith(/type mismatch/);
     });
 
-    test('fails if no candidates are supplied', () => {
-      expect(TsRes.Resources.Resource.create({ candidates: [] })).toFailWith(
-        /resource constructor: no candidates/i
-      );
-      expect(TsRes.Resources.Resource.create({ id: 'foo', candidates: [] })).toFailWith(
-        /foo: no candidates/i
-      );
+    test('succeeds if an id but no candidates are supplied', () => {
+      expect(
+        TsRes.Resources.Resource.create({ candidates: [], id: 'some.resource.id', resourceType: jsonType })
+      ).toSucceedAndSatisfy((r) => {
+        expect(r.id).toBe('some.resource.id');
+        expect(r.resourceType?.key).toBe('json');
+        expect(r.candidates).toEqual([]);
+      });
+    });
+
+    test('fails if no id and no candidates are supplied', () => {
+      const resource = TsRes.Resources.Resource.create({ candidates: [], resourceType: jsonType });
+      expect(resource).toFailWith(/no resource id and no candidates/);
     });
 
     test('fails if no type is supplied and not candidates have types', () => {
@@ -240,6 +246,175 @@ describe('Resource', () => {
         expect(r.resourceType?.key).toBe('json');
         expect(r.candidates).toEqual(expect.arrayContaining(candidates));
         expect(r.candidates.length).toBe(candidates.length - 1);
+      });
+    });
+  });
+
+  describe('toChildResourceDecl method', () => {
+    test('returns a child resource declaration for a resource', () => {
+      const resource = TsRes.Resources.Resource.create({ candidates, resourceType: jsonType }).orThrow();
+      expect(resource.toChildResourceDecl()).toEqual({
+        resourceTypeName: 'json',
+        candidates: expect.arrayContaining(someDecls.map((d) => omit(d, ['id'])))
+      });
+    });
+
+    test('omits candidates property if no candidates are present', () => {
+      const resource = TsRes.Resources.Resource.create({
+        id: 'some.resource.id',
+        candidates: [],
+        resourceType: jsonType
+      }).orThrow();
+      expect(resource.toChildResourceDecl()).toEqual({
+        resourceTypeName: 'json'
+      });
+    });
+
+    test('includes properties with default values if showDefaults is true', () => {
+      const resource = TsRes.Resources.Resource.create({ candidates, resourceType: jsonType }).orThrow();
+      expect(resource.toChildResourceDecl({ showDefaults: true })).toEqual({
+        resourceTypeName: 'json',
+        candidates: expect.arrayContaining([
+          {
+            conditions: {
+              homeTerritory: {
+                operator: 'matches',
+                priority: 800,
+                value: 'US'
+              }
+            },
+            isPartial: false,
+            json: { home: 'United States' },
+            mergeMethod: 'augment'
+          },
+          {
+            conditions: {
+              language: {
+                operator: 'matches',
+                priority: 600,
+                value: 'en'
+              }
+            },
+            isPartial: false,
+            json: { speaks: 'English' },
+            mergeMethod: 'augment'
+          },
+          {
+            conditions: {
+              homeTerritory: {
+                operator: 'matches',
+                priority: 800,
+                value: 'CA'
+              },
+              language: {
+                operator: 'matches',
+                priority: 600,
+                value: 'en-CA'
+              }
+            },
+            isPartial: false,
+            json: { home: 'Canada', speaks: 'Canadian English' },
+            mergeMethod: 'replace'
+          },
+          {
+            conditions: {
+              language: {
+                operator: 'matches',
+                priority: 600,
+                value: 'es'
+              }
+            },
+            isPartial: false,
+            json: { speaks: 'Español' },
+            mergeMethod: 'augment'
+          }
+        ])
+      });
+    });
+  });
+
+  describe('toLooseResourceDecl method', () => {
+    test('returns a loose resource declaration for a resource', () => {
+      const resource = TsRes.Resources.Resource.create({ candidates, resourceType: jsonType }).orThrow();
+      expect(resource.toLooseResourceDecl()).toEqual({
+        id: 'some.resource.path',
+        resourceTypeName: 'json',
+        candidates: expect.arrayContaining(someDecls.map((d) => omit(d, ['id'])))
+      });
+    });
+
+    test('omits candidates property if no candidates are present', () => {
+      const resource = TsRes.Resources.Resource.create({
+        id: 'some.resource.path',
+        candidates: [],
+        resourceType: jsonType
+      }).orThrow();
+      expect(resource.toLooseResourceDecl()).toEqual({
+        id: 'some.resource.path',
+        resourceTypeName: 'json'
+      });
+    });
+
+    test('includes properties with default values if showDefaults is true', () => {
+      const resource = TsRes.Resources.Resource.create({ candidates, resourceType: jsonType }).orThrow();
+      expect(resource.toLooseResourceDecl({ showDefaults: true })).toEqual({
+        id: 'some.resource.path',
+        resourceTypeName: 'json',
+        candidates: expect.arrayContaining([
+          {
+            conditions: {
+              homeTerritory: {
+                operator: 'matches',
+                priority: 800,
+                value: 'US'
+              }
+            },
+            isPartial: false,
+            json: { home: 'United States' },
+            mergeMethod: 'augment'
+          },
+          {
+            conditions: {
+              language: {
+                operator: 'matches',
+                priority: 600,
+                value: 'en'
+              }
+            },
+            isPartial: false,
+            json: { speaks: 'English' },
+            mergeMethod: 'augment'
+          },
+          {
+            conditions: {
+              homeTerritory: {
+                operator: 'matches',
+                priority: 800,
+                value: 'CA'
+              },
+              language: {
+                operator: 'matches',
+                priority: 600,
+                value: 'en-CA'
+              }
+            },
+            isPartial: false,
+            json: { home: 'Canada', speaks: 'Canadian English' },
+            mergeMethod: 'replace'
+          },
+          {
+            conditions: {
+              language: {
+                operator: 'matches',
+                priority: 600,
+                value: 'es'
+              }
+            },
+            isPartial: false,
+            json: { speaks: 'Español' },
+            mergeMethod: 'augment'
+          }
+        ])
       });
     });
   });

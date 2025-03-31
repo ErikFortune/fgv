@@ -71,10 +71,6 @@ export class Resource {
    * @public
    */
   protected constructor(params: IResourceCreateParams) {
-    if (params.candidates.length === 0) {
-      throw new Error(`${params.id ?? 'resource constructor'}: no candidates specified.`);
-    }
-
     const id = params.id ? Validate.toResourceId(params.id).orThrow() : undefined;
     this.id = Resource._validateCandidateResourceIds(id, params.candidates).orThrow();
     this.resourceType = ResourceCandidate.validateResourceTypes(params.candidates, params.resourceType)
@@ -143,6 +139,9 @@ export class Resource {
     resourceId: ResourceId | undefined,
     candidates: ReadonlyArray<ResourceCandidate>
   ): Result<ResourceId> {
+    if (!resourceId && candidates.length === 0) {
+      return fail('unknown: no resource id and no candidates.');
+    }
     resourceId = resourceId ?? candidates[0].id;
 
     const mismatched = candidates.filter((c) => c.id !== resourceId).map((c) => c.id);
