@@ -190,8 +190,9 @@ export class Condition implements IValidatedConditionDecl {
   public toChildConditionDecl(): ResourceJson.Json.IChildConditionDecl {
     return {
       value: this.value,
-      operator: this.operator,
-      priority: this.priority,
+      /* c8 ignore next 1 - not really possible to reproduce right now */
+      ...(this.operator !== 'matches' ? { operator: this.operator } : {}),
+      ...(this.priority !== this.qualifier.defaultPriority ? { priority: this.priority } : {}),
       ...(this.scoreAsDefault ? { scoreAsDefault: this.scoreAsDefault } : {})
     };
   }
@@ -222,8 +223,9 @@ export class Condition implements IValidatedConditionDecl {
     return {
       qualifierName: this.qualifier.name,
       value: this.value,
-      operator: this.operator,
-      priority: this.priority,
+      /* c8 ignore next 1 - not really possible to reproduce right now */
+      ...(this.operator !== 'matches' ? { operator: this.operator } : {}),
+      ...(this.priority !== this.qualifier.defaultPriority ? { priority: this.priority } : {}),
       ...(this.scoreAsDefault ? { scoreAsDefault: this.scoreAsDefault } : {})
     };
   }
