@@ -9,8 +9,44 @@ Gets the [child condition declaration](./ts-res.resourcejson.json.ichildconditio
 **Signature:**
 
 ```typescript
-toChildConditionDecl(): ResourceJson.Json.IChildConditionDecl;
+toChildConditionDecl(options?: ResourceJson.Helpers.IDeclarationOptions): ResourceJson.Json.IChildConditionDecl;
 ```
+
+## Parameters
+
+<table><thead><tr><th>
+
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+options
+
+
+</td><td>
+
+ResourceJson.Helpers.IDeclarationOptions
+
+
+</td><td>
+
+_(Optional)_ The [options](./ts-res.resourcejson.helpers.ideclarationoptions.md) to use when creating the child condition declaration.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [ResourceJson.Json.IChildConditionDecl](./ts-res.resourcejson.json.ichildconditiondecl.md)

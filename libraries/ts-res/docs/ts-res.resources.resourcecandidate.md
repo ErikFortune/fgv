@@ -267,7 +267,7 @@ Compares two [ResourceCandidates](./ts-res.resources.resourcecandidate.md) for e
 </td></tr>
 <tr><td>
 
-[toChildResourceCandidateDecl()](./ts-res.resources.resourcecandidate.tochildresourcecandidatedecl.md)
+[toChildResourceCandidateDecl(options)](./ts-res.resources.resourcecandidate.tochildresourcecandidatedecl.md)
 
 
 </td><td>
@@ -281,7 +281,7 @@ Gets the [child resource candidate declaration](./ts-res.resourcejson.json.ichil
 </td></tr>
 <tr><td>
 
-[toLooseResourceCandidateDecl()](./ts-res.resources.resourcecandidate.tolooseresourcecandidatedecl.md)
+[toLooseResourceCandidateDecl(options)](./ts-res.resources.resourcecandidate.tolooseresourcecandidatedecl.md)
 
 
 </td><td>

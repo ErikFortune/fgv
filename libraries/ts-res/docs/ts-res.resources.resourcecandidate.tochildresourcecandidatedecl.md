@@ -9,8 +9,44 @@ Gets the [child resource candidate declaration](./ts-res.resourcejson.json.ichil
 **Signature:**
 
 ```typescript
-toChildResourceCandidateDecl(): ResourceJson.Json.IChildResourceCandidateDecl;
+toChildResourceCandidateDecl(options?: ResourceJson.Helpers.IDeclarationOptions): ResourceJson.Json.IChildResourceCandidateDecl;
 ```
+
+## Parameters
+
+<table><thead><tr><th>
+
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+options
+
+
+</td><td>
+
+ResourceJson.Helpers.IDeclarationOptions
+
+
+</td><td>
+
+_(Optional)_ [options](./ts-res.resourcejson.helpers.ideclarationoptions.md) to use when creating the declaration.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [ResourceJson.Json.IChildResourceCandidateDecl](./ts-res.resourcejson.json.ichildresourcecandidatedecl.md)

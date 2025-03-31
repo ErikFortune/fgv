@@ -113,30 +113,38 @@ export class ResourceCandidate {
   /**
    * Gets the {@link ResourceJson.Json.IChildResourceCandidateDecl | child resource candidate declaration}
    * for this candidate.
+   * @param options - {@link ResourceJson.Helpers.IDeclarationOptions | options} to use when creating the declaration.
    * @returns The {@link ResourceJson.Json.IChildResourceCandidateDecl | child resource candidate declaration}.
    */
-  public toChildResourceCandidateDecl(): ResourceJson.Json.IChildResourceCandidateDecl {
+  public toChildResourceCandidateDecl(
+    options?: ResourceJson.Helpers.IDeclarationOptions
+  ): ResourceJson.Json.IChildResourceCandidateDecl {
+    const showDefaults = options?.showDefaults === true;
     return {
       json: this.json as JsonObject,
-      conditions: this.conditions.toConditionSetRecordDecl(),
-      isPartial: this.isPartial,
-      mergeMethod: this.mergeMethod
+      conditions: this.conditions.toConditionSetRecordDecl(options),
+      ...(showDefaults ?? this.isPartial ? { isPartial: this.isPartial } : {}),
+      ...(showDefaults ?? this.mergeMethod !== 'augment' ? { mergeMethod: this.mergeMethod } : {})
     };
   }
 
   /**
    * Gets the {@link ResourceJson.Json.ILooseResourceCandidateDecl | loose resource candidate declaration}
    * for this candidate.
+   * @param options - {@link ResourceJson.Helpers.IDeclarationOptions | options} to use when creating the declaration.
    * @returns The {@link ResourceJson.Json.ILooseResourceCandidateDecl | loose resource candidate declaration}.
    */
-  public toLooseResourceCandidateDecl(): ResourceJson.Json.ILooseResourceCandidateDecl {
+  public toLooseResourceCandidateDecl(
+    options?: ResourceJson.Helpers.IDeclarationOptions
+  ): ResourceJson.Json.ILooseResourceCandidateDecl {
+    const showDefaults = options?.showDefaults === true;
     const resourceTypeName = this.resourceType?.key;
     return {
       id: this.id.toString(),
       json: this.json as JsonObject,
-      conditions: this.conditions.toConditionSetRecordDecl(),
-      isPartial: this.isPartial,
-      mergeMethod: this.mergeMethod,
+      conditions: this.conditions.toConditionSetRecordDecl(options),
+      ...(showDefaults ?? this.isPartial ? { isPartial: this.isPartial } : {}),
+      ...(showDefaults ?? this.mergeMethod !== 'augment' ? { mergeMethod: this.mergeMethod } : {}),
       ...(resourceTypeName ? { resourceTypeName } : {})
     };
   }

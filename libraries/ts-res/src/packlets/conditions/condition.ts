@@ -184,15 +184,22 @@ export class Condition implements IValidatedConditionDecl {
 
   /**
    * Gets the {@link ResourceJson.Json.IChildConditionDecl | child condition declaration} for this condition.
+   * @param options - The {@link ResourceJson.Helpers.IDeclarationOptions | options} to use when creating the child
+   * condition declaration.
    * @returns The {@link ResourceJson.Json.IChildConditionDecl | child condition declaration} for this condition.
    * @public
    */
-  public toChildConditionDecl(): ResourceJson.Json.IChildConditionDecl {
+  public toChildConditionDecl(
+    options?: ResourceJson.Helpers.IDeclarationOptions
+  ): ResourceJson.Json.IChildConditionDecl {
+    const showDefaults = options?.showDefaults === true;
     return {
       value: this.value,
       /* c8 ignore next 1 - not really possible to reproduce right now */
-      ...(this.operator !== 'matches' ? { operator: this.operator } : {}),
-      ...(this.priority !== this.qualifier.defaultPriority ? { priority: this.priority } : {}),
+      ...(showDefaults || this.operator !== 'matches' ? { operator: this.operator } : {}),
+      ...(showDefaults || this.priority !== this.qualifier.defaultPriority
+        ? { priority: this.priority }
+        : {}),
       ...(this.scoreAsDefault ? { scoreAsDefault: this.scoreAsDefault } : {})
     };
   }
@@ -200,32 +207,44 @@ export class Condition implements IValidatedConditionDecl {
   /**
    * Gets the value for this condition, or the {@link ResourceJson.Json.IChildConditionDecl | child condition declaration}
    * if the condition has non-default operator, priority or a score as default.
+   * @param options - The {@link ResourceJson.Helpers.IDeclarationOptions | options} to use when creating the child
+   * condition declaration.
    * @returns A string value for this condition, or the {@link ResourceJson.Json.IChildConditionDecl | child condition declaration}
    * if the condition has non-default operator, priority or a score as default.
    */
-  public toValueOrChildConditionDecl(): string | ResourceJson.Json.IChildConditionDecl {
+  public toValueOrChildConditionDecl(
+    options?: ResourceJson.Helpers.IDeclarationOptions
+  ): string | ResourceJson.Json.IChildConditionDecl {
     if (
+      options?.showDefaults !== true &&
       this.operator === 'matches' &&
       this.priority === this.qualifier.defaultPriority &&
       this.scoreAsDefault === undefined
     ) {
       return this.value;
     }
-    return this.toChildConditionDecl();
+    return this.toChildConditionDecl(options);
   }
 
   /**
    * Gets the {@link ResourceJson.Json.ILooseConditionDecl | loose condition declaration} for this condition.
+   * @param options - The {@link ResourceJson.Helpers.IDeclarationOptions | options} to use when creating the loose
+   * condition declaration.
    * @returns The {@link ResourceJson.Json.ILooseConditionDecl | loose condition declaration} for this condition.
    * @public
    */
-  public toLooseConditionDecl(): ResourceJson.Json.ILooseConditionDecl {
+  public toLooseConditionDecl(
+    options?: ResourceJson.Helpers.IDeclarationOptions
+  ): ResourceJson.Json.ILooseConditionDecl {
+    const showDefaults = options?.showDefaults === true;
     return {
       qualifierName: this.qualifier.name,
       value: this.value,
       /* c8 ignore next 1 - not really possible to reproduce right now */
-      ...(this.operator !== 'matches' ? { operator: this.operator } : {}),
-      ...(this.priority !== this.qualifier.defaultPriority ? { priority: this.priority } : {}),
+      ...(showDefaults || this.operator !== 'matches' ? { operator: this.operator } : {}),
+      ...(showDefaults || this.priority !== this.qualifier.defaultPriority
+        ? { priority: this.priority }
+        : {}),
       ...(this.scoreAsDefault ? { scoreAsDefault: this.scoreAsDefault } : {})
     };
   }

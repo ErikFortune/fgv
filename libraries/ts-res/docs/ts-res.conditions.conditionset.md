@@ -282,7 +282,7 @@ Sets the global index for this condition set. Once set, the index cannot be chan
 </td></tr>
 <tr><td>
 
-[toConditionSetArrayDecl()](./ts-res.conditions.conditionset.toconditionsetarraydecl.md)
+[toConditionSetArrayDecl(options)](./ts-res.conditions.conditionset.toconditionsetarraydecl.md)
 
 
 </td><td>
@@ -296,7 +296,7 @@ Gets the [condition set declaration as an array](./ts-res.resourcejson.json.cond
 </td></tr>
 <tr><td>
 
-[toConditionSetRecordDecl()](./ts-res.conditions.conditionset.toconditionsetrecorddecl.md)
+[toConditionSetRecordDecl(options)](./ts-res.conditions.conditionset.toconditionsetrecorddecl.md)
 
 
 </td><td>

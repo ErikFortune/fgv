@@ -26,6 +26,18 @@ import * as Json from './json';
 import { Helpers as CommonHelpers } from '../common';
 
 /**
+ * Common options when creating or displaying declarations.
+ * @public
+ */
+export interface IDeclarationOptions {
+  /**
+   * If `true`, properties with default values will be included in the
+   * output. IF omitted or `false`, properties with default values will be omitted.
+   */
+  showDefaults?: boolean;
+}
+
+/**
  * Helper method to merge a loose candidate with a base name and conditions.
  * @param candidate - The candidate to merge.
  * @param baseName - The base name to merge with the candidate.

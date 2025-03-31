@@ -102,10 +102,13 @@ export class Resource {
 
   /**
    * Gets the {@link ResourceJson.Json.IChildResourceDecl | child resource declaration} for this resource.
+   * @param options - {@link ResourceJson.Helpers.IDeclarationOptions | options} for the declaration.
    * @returns The {@link ResourceJson.Json.IChildResourceDecl | child resource declaration}.
    */
-  public toChildResourceDecl(): ResourceJson.Json.IChildResourceDecl {
-    const candidates = this.candidates.map((c) => c.toChildResourceCandidateDecl());
+  public toChildResourceDecl(
+    options?: ResourceJson.Helpers.IDeclarationOptions
+  ): ResourceJson.Json.IChildResourceDecl {
+    const candidates = this.candidates.map((c) => c.toChildResourceCandidateDecl(options));
     return {
       resourceTypeName: this.resourceType.key,
       ...(candidates.length > 0 ? { candidates } : {})
@@ -114,10 +117,13 @@ export class Resource {
 
   /**
    * Gets the {@link ResourceJson.Json.ILooseResourceDecl | loose resource declaration} for this resource.
+   * @param options - {@link ResourceJson.Helpers.IDeclarationOptions | options} for the declaration.
    * @returns The {@link ResourceJson.Json.ILooseResourceDecl | loose resource declaration}.
    */
-  public toLooseResourceDecl(): ResourceJson.Json.ILooseResourceDecl {
-    const candidates = this.candidates.map((c) => c.toChildResourceCandidateDecl());
+  public toLooseResourceDecl(
+    options?: ResourceJson.Helpers.IDeclarationOptions
+  ): ResourceJson.Json.ILooseResourceDecl {
+    const candidates = this.candidates.map((c) => c.toChildResourceCandidateDecl(options));
     return {
       id: this.id,
       resourceTypeName: this.resourceType.key,

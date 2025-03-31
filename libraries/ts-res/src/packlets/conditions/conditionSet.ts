@@ -192,21 +192,27 @@ export class ConditionSet implements IValidatedConditionSetDecl {
 
   /**
    * Gets the {@link ResourceJson.Json.ConditionSetDeclAsRecord | condition set declaration as a record} for this condition set.
+   * @param options - {@link ResourceJson.Helpers.IDeclarationOptions | options} for the condition set declaration.
    * @returns The {@link ResourceJson.Json.ConditionSetDeclAsRecord | condition set declaration as a record} for this condition set.
    */
-  public toConditionSetRecordDecl(): ResourceJson.Json.ConditionSetDeclAsRecord {
+  public toConditionSetRecordDecl(
+    options?: ResourceJson.Helpers.IDeclarationOptions
+  ): ResourceJson.Json.ConditionSetDeclAsRecord {
     return Object.fromEntries(
       this.conditions.map((c): [string, ResourceJson.Json.IChildConditionDecl | string] => {
-        return [c.key, c.toValueOrChildConditionDecl()];
+        return [c.qualifier.name, c.toValueOrChildConditionDecl(options)];
       })
     );
   }
 
   /**
    * Gets the {@link ResourceJson.Json.ConditionSetDeclAsArray | condition set declaration as an array} for this condition set.
+   * @param options - {@link ResourceJson.Helpers.IDeclarationOptions | options} for the condition set declaration.
    * @returns The {@link ResourceJson.Json.ConditionSetDeclAsArray | condition set declaration as an array} for this condition set.
    */
-  public toConditionSetArrayDecl(): ResourceJson.Json.ConditionSetDeclAsArray {
-    return this.conditions.map((c) => c.toLooseConditionDecl());
+  public toConditionSetArrayDecl(
+    options?: ResourceJson.Helpers.IDeclarationOptions
+  ): ResourceJson.Json.ConditionSetDeclAsArray {
+    return this.conditions.map((c) => c.toLooseConditionDecl(options));
   }
 }

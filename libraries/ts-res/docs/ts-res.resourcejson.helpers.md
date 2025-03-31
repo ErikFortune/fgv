@@ -62,3 +62,29 @@ Helper method to merge a loose resource with a base name and conditions.
 
 </td></tr>
 </tbody></table>
+
+## Interfaces
+
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[IDeclarationOptions](./ts-res.resourcejson.helpers.ideclarationoptions.md)
+
+
+</td><td>
+
+Common options when creating or displaying declarations.
+
+
+</td></tr>
+</tbody></table>

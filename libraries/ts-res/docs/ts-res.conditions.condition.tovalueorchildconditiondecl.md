@@ -9,8 +9,44 @@ Gets the value for this condition, or the [child condition declaration](./ts-res
 **Signature:**
 
 ```typescript
-toValueOrChildConditionDecl(): string | ResourceJson.Json.IChildConditionDecl;
+toValueOrChildConditionDecl(options?: ResourceJson.Helpers.IDeclarationOptions): string | ResourceJson.Json.IChildConditionDecl;
 ```
+
+## Parameters
+
+<table><thead><tr><th>
+
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+options
+
+
+</td><td>
+
+ResourceJson.Helpers.IDeclarationOptions
+
+
+</td><td>
+
+_(Optional)_ The [options](./ts-res.resourcejson.helpers.ideclarationoptions.md) to use when creating the child condition declaration.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 string \| [ResourceJson.Json.IChildConditionDecl](./ts-res.resourcejson.json.ichildconditiondecl.md)

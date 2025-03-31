@@ -9,8 +9,44 @@ Gets the [loose condition declaration](./ts-res.resourcejson.json.ilooseconditio
 **Signature:**
 
 ```typescript
-toLooseConditionDecl(): ResourceJson.Json.ILooseConditionDecl;
+toLooseConditionDecl(options?: ResourceJson.Helpers.IDeclarationOptions): ResourceJson.Json.ILooseConditionDecl;
 ```
+
+## Parameters
+
+<table><thead><tr><th>
+
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+options
+
+
+</td><td>
+
+ResourceJson.Helpers.IDeclarationOptions
+
+
+</td><td>
+
+_(Optional)_ The [options](./ts-res.resourcejson.helpers.ideclarationoptions.md) to use when creating the loose condition declaration.
+
+
+</td></tr>
+</tbody></table>
 **Returns:**
 
 [ResourceJson.Json.ILooseConditionDecl](./ts-res.resourcejson.json.ilooseconditiondecl.md)

@@ -316,7 +316,7 @@ Gets the [condition key](./ts-res.conditionkey.md) for a supplied [condition dec
 </td></tr>
 <tr><td>
 
-[toChildConditionDecl()](./ts-res.conditions.condition.tochildconditiondecl.md)
+[toChildConditionDecl(options)](./ts-res.conditions.condition.tochildconditiondecl.md)
 
 
 </td><td>
@@ -344,7 +344,7 @@ Gets the [key](./ts-res.conditionkey.md) for this condition.
 </td></tr>
 <tr><td>
 
-[toLooseConditionDecl()](./ts-res.conditions.condition.tolooseconditiondecl.md)
+[toLooseConditionDecl(options)](./ts-res.conditions.condition.tolooseconditiondecl.md)
 
 
 </td><td>
@@ -386,7 +386,7 @@ Gets a [condition token](./ts-res.conditiontoken.md) for this condition, if poss
 </td></tr>
 <tr><td>
 
-[toValueOrChildConditionDecl()](./ts-res.conditions.condition.tovalueorchildconditiondecl.md)
+[toValueOrChildConditionDecl(options)](./ts-res.conditions.condition.tovalueorchildconditiondecl.md)
 
 
 </td><td>
