@@ -123,8 +123,8 @@ export class ResourceCandidate {
     return {
       json: this.json as JsonObject,
       conditions: this.conditions.toConditionSetRecordDecl(options),
-      ...(showDefaults ?? this.isPartial ? { isPartial: this.isPartial } : {}),
-      ...(showDefaults ?? this.mergeMethod !== 'augment' ? { mergeMethod: this.mergeMethod } : {})
+      ...(showDefaults || this.isPartial ? { isPartial: this.isPartial } : {}),
+      ...(showDefaults || this.mergeMethod !== 'augment' ? { mergeMethod: this.mergeMethod } : {})
     };
   }
 
@@ -143,8 +143,8 @@ export class ResourceCandidate {
       id: this.id.toString(),
       json: this.json as JsonObject,
       conditions: this.conditions.toConditionSetRecordDecl(options),
-      ...(showDefaults ?? this.isPartial ? { isPartial: this.isPartial } : {}),
-      ...(showDefaults ?? this.mergeMethod !== 'augment' ? { mergeMethod: this.mergeMethod } : {}),
+      ...(showDefaults || this.isPartial ? { isPartial: this.isPartial } : {}),
+      ...(showDefaults || this.mergeMethod !== 'augment' ? { mergeMethod: this.mergeMethod } : {}),
       ...(resourceTypeName ? { resourceTypeName } : {})
     };
   }

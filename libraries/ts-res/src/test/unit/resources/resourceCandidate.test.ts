@@ -22,7 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../index';
-import { mapResults } from '@fgv/ts-utils';
+import { mapResults, omit } from '@fgv/ts-utils';
 
 describe('ResourceCandidate', () => {
   let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
@@ -211,6 +211,187 @@ describe('ResourceCandidate', () => {
           decl
         })
       ).toFailWith(/not a valid qualifier name/i);
+    });
+  });
+
+  describe('toChildResourceCandidateDecl method', () => {
+    test('returns a declaration for a child resource candidate, omitting defaults', () => {
+      const resourceType = resourceTypes.validating.get('json').orThrow();
+      const decl: TsRes.ResourceJson.Json.IChildResourceCandidateDecl = {
+        json: { some: 'json' },
+        conditions: {
+          homeTerritory: 'US',
+          language: 'en'
+        },
+        isPartial: false,
+        mergeMethod: 'augment'
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'some.resource.path',
+        conditionSets,
+        resourceType,
+        decl
+      }).orThrow();
+      expect(candidate.toChildResourceCandidateDecl()).toEqual(omit(decl, ['isPartial', 'mergeMethod']));
+    });
+
+    test('returns a declaration for a child resource candidate with non-defaults', () => {
+      const resourceType = resourceTypes.validating.get('json').orThrow();
+      const decl: TsRes.ResourceJson.Json.IChildResourceCandidateDecl = {
+        json: { some: 'json' },
+        conditions: {
+          homeTerritory: 'US',
+          language: 'en'
+        },
+        isPartial: true,
+        mergeMethod: 'replace'
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'some.resource.path',
+        conditionSets,
+        resourceType,
+        decl
+      }).orThrow();
+      expect(candidate.toChildResourceCandidateDecl()).toEqual(decl);
+    });
+
+    test('returns a declaration for a child resource candidate, including all defaults if showDefaults is true', () => {
+      const resourceType = resourceTypes.validating.get('json').orThrow();
+      const decl: TsRes.ResourceJson.Json.IChildResourceCandidateDecl = {
+        json: { some: 'json' },
+        conditions: {
+          homeTerritory: 'US',
+          language: 'en'
+        },
+        isPartial: false,
+        mergeMethod: 'augment'
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'some.resource.path',
+        conditionSets,
+        resourceType,
+        decl
+      }).orThrow();
+      expect(candidate.toChildResourceCandidateDecl({ showDefaults: true })).toEqual({
+        ...decl,
+        conditions: {
+          homeTerritory: {
+            operator: 'matches',
+            priority: 800,
+            value: 'US'
+          },
+          language: {
+            operator: 'matches',
+            priority: 600,
+            value: 'en'
+          }
+        }
+      });
+    });
+  });
+
+  describe('toLooseResourceCandidateDecl method', () => {
+    test('returns a declaration for a loose resource candidate, omitting defaults', () => {
+      const resourceType = resourceTypes.validating.get('json').orThrow();
+      const decl: TsRes.ResourceJson.Json.IChildResourceCandidateDecl = {
+        json: { some: 'json' },
+        conditions: {
+          homeTerritory: 'US',
+          language: 'en'
+        },
+        isPartial: false,
+        mergeMethod: 'augment'
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'some.resource.path',
+        conditionSets,
+        resourceType,
+        decl
+      }).orThrow();
+      expect(candidate.toLooseResourceCandidateDecl()).toEqual({
+        id: 'some.resource.path',
+        resourceTypeName: 'json',
+        ...omit(decl, ['isPartial', 'mergeMethod'])
+      });
+    });
+
+    test('returns a declaration for a loose resource candidate with defaults, omitting resource type name if undefined', () => {
+      const decl: TsRes.ResourceJson.Json.IChildResourceCandidateDecl = {
+        json: { some: 'json' },
+        conditions: {
+          homeTerritory: 'US',
+          language: 'en'
+        }
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'some.resource.path',
+        conditionSets,
+        decl
+      }).orThrow();
+      expect(candidate.toLooseResourceCandidateDecl()).toEqual({
+        id: 'some.resource.path',
+        ...decl
+      });
+    });
+
+    test('returns a declaration for a loose resource candidate with non-defaults', () => {
+      const resourceType = resourceTypes.validating.get('json').orThrow();
+      const decl: TsRes.ResourceJson.Json.IChildResourceCandidateDecl = {
+        json: { some: 'json' },
+        conditions: {
+          homeTerritory: 'US',
+          language: 'en'
+        },
+        isPartial: true,
+        mergeMethod: 'replace'
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'some.resource.path',
+        conditionSets,
+        resourceType,
+        decl
+      }).orThrow();
+      expect(candidate.toLooseResourceCandidateDecl()).toEqual({
+        id: 'some.resource.path',
+        resourceTypeName: 'json',
+        ...decl
+      });
+    });
+
+    test('returns a declaration for a loose resource candidate, including all defaults if showDefaults is true', () => {
+      const resourceType = resourceTypes.validating.get('json').orThrow();
+      const decl: TsRes.ResourceJson.Json.IChildResourceCandidateDecl = {
+        json: { some: 'json' },
+        conditions: {
+          homeTerritory: 'US',
+          language: 'en'
+        },
+        isPartial: false,
+        mergeMethod: 'augment'
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'some.resource.path',
+        conditionSets,
+        resourceType,
+        decl
+      }).orThrow();
+      expect(candidate.toLooseResourceCandidateDecl({ showDefaults: true })).toEqual({
+        id: 'some.resource.path',
+        resourceTypeName: 'json',
+        ...decl,
+        conditions: {
+          homeTerritory: {
+            operator: 'matches',
+            priority: 800,
+            value: 'US'
+          },
+          language: {
+            operator: 'matches',
+            priority: 600,
+            value: 'en'
+          }
+        }
+      });
     });
   });
 
