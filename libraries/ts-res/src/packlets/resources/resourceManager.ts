@@ -217,6 +217,7 @@ export class ResourceManager {
         conditionSets: this._conditionSets
       })
     );
+    /* c8 ignore next 3 - defense in depth against internal error */
     if (getOrAddMessage !== undefined) {
       return failWithDetail(`${id}: unable to get or add resource\n${getOrAddMessage}`, detail);
     }
@@ -228,7 +229,8 @@ export class ResourceManager {
       }
     }
 
-    return mapResults(decl.candidates?.map((c) => builder.addChildCandidate(c)) ?? [])
+    const candidates = decl.candidates ?? [];
+    return mapResults(candidates.map((c) => builder.addChildCandidate(c)))
       .onSuccess(() => {
         return succeed(builder);
       })

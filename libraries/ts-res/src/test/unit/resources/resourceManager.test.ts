@@ -259,6 +259,20 @@ describe('ResourceManager', () => {
       });
     });
 
+    test('adds a resource with no candidates array', () => {
+      const resource: TsRes.ResourceJson.Json.ILooseResourceDecl = {
+        id: 'some.resource.path',
+        resourceTypeName: 'json'
+      };
+      expect(manager.size).toEqual(0);
+      expect(manager.addResource(resource)).toSucceedAndSatisfy((r) => {
+        expect(r.id).toEqual(resource.id);
+        expect(r.resourceType?.key).toEqual('json');
+        expect(manager.size).toEqual(1);
+        expect(r.candidates.length).toEqual(0);
+      });
+    });
+
     test('merges candidates for an existing resource', () => {
       const resource: TsRes.ResourceJson.Json.ILooseResourceDecl = {
         id: 'some.resource.path',
@@ -288,6 +302,28 @@ describe('ResourceManager', () => {
         expect(r.id).toEqual(newResource.id);
         expect(r.candidates.length).toEqual(3);
       });
+    });
+
+    test('fails to merge if resource types do not match', () => {
+      const resource: TsRes.ResourceJson.Json.ILooseResourceDecl = {
+        id: 'some.resource.path',
+        candidates: [
+          { json: { home: 'United States' }, conditions: { homeTerritory: 'US' } },
+          { json: { speaks: 'English' }, conditions: { language: 'en' } }
+        ],
+        resourceTypeName: 'json'
+      };
+      const otherResource: TsRes.ResourceJson.Json.ILooseResourceDecl = {
+        id: 'some.resource.path',
+        candidates: [
+          { json: { home: 'Canada', speaks: 'Canadian English' }, conditions: { homeTerritory: 'CA' } }
+        ],
+        resourceTypeName: 'other'
+      };
+      expect(manager.size).toEqual(0);
+      manager.addResource(resource).orThrow();
+      expect(manager.size).toEqual(1);
+      expect(manager.addResource(otherResource)).toFailWith(/conflicting resource types/i);
     });
 
     test('fails to add a resource with an invalid id', () => {
