@@ -48,7 +48,7 @@ A [collector](./ts-utils.collector.md) that collects [ICollectible](./ts-utils.c
 
 </td><td>
 
-A [DetailedFailure](./ts-utils.detailedfailure.md) extends [Failure](./ts-utils.failure.md) to report optional failure details in addition to the error message.
+A [DetailedFailure&lt;T, TD&gt;](./ts-utils.detailedfailure.md) extends [Failure&lt;T&gt;](./ts-utils.failure.md) to report optional failure details in addition to the error message.
 
 
 </td></tr>
@@ -218,6 +218,28 @@ Wraps a function which might throw to convert exception results to [Failure](./t
 </td><td>
 
 Returns [Failure&lt;T&gt;](./ts-utils.failure.md) with the supplied error message.
+
+
+</td></tr>
+<tr><td>
+
+[fails(message)](./ts-utils.fails.md)
+
+
+</td><td>
+
+Returns [Failure&lt;T&gt;](./ts-utils.failure.md) with the supplied error message.
+
+
+</td></tr>
+<tr><td>
+
+[failsWithDetail(message, detail)](./ts-utils.failswithdetail.md)
+
+
+</td><td>
+
+Returns [DetailedFailure&lt;T, TD&gt;](./ts-utils.detailedfailure.md) with a supplied error message and detail.
 
 
 </td></tr>
@@ -438,6 +460,28 @@ Applies a factory method to convert a `Record<TK, TS>` into a `Map<TK, TD>`<!-- 
 </td><td>
 
 Returns [Success&lt;T&gt;](./ts-utils.success.md) with the supplied result value.
+
+
+</td></tr>
+<tr><td>
+
+[succeeds(value)](./ts-utils.succeeds.md)
+
+
+</td><td>
+
+Returns [Success&lt;T&gt;](./ts-utils.success.md) with the supplied result value.
+
+
+</td></tr>
+<tr><td>
+
+[succeedsWithDetail(value, detail)](./ts-utils.succeedswithdetail.md)
+
+
+</td><td>
+
+Returns [DetailedSuccess&lt;T, TD&gt;](./ts-utils.detailedsuccess.md) with a supplied value and optional detail.
 
 
 </td></tr>

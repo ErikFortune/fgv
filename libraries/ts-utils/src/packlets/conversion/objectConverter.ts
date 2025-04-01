@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { fail, isKeyOf, succeed } from '../base';
+import { fail, isKeyOf, Result, succeed } from '../base';
 import { Validator } from '../validation';
 import { BaseConverter } from './baseConverter';
 import { Converter } from './converter';
@@ -94,6 +94,8 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
    * a {@link Converter} for each field.
    * @param optional - An array of `keyof T` listing fields that are not required.
    * {@label WITH_KEYS}
+   * @deprecated Use {@link Conversion.Converter.optional | .optional()} on the individual
+   * fields, or pass {@link Conversion.ObjectConverterOptions | ObjectConverterOptions<T>} to the constructor.
    */
   public constructor(fields: FieldConverters<T, TC>, optional?: (keyof T)[]);
   /**
@@ -101,49 +103,12 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
    * @internal
    */
   public constructor(fields: FieldConverters<T, TC>, opt?: ObjectConverterOptions<T> | (keyof T)[]) {
-    super((from: unknown, __self, context?: TC) => {
-      // eslint bug thinks key is used before defined
-      // eslint-disable-next-line no-use-before-define
-      const converted = {} as { [key in keyof T]: T[key] };
-      const errors: string[] = [];
-      for (const key in fields) {
-        if (fields[key]) {
-          const isOptional = (fields[key].isOptional || this.options.optionalFields?.includes(key)) ?? false;
-          const result = isOptional
-            ? optionalField(key, fields[key]).convert(from, context)
-            : field(key, fields[key]).convert(from, context);
-          if (result.isSuccess() && result.value !== undefined) {
-            converted[key] = result.value;
-          } else if (result.isFailure()) {
-            errors.push(result.message);
-          }
-        }
-      }
+    const options = Array.isArray(opt) ? { optionalFields: opt } : opt ?? { optionalFields: [] };
 
-      if (this.options.strict === true) {
-        if (typeof from === 'object' && !Array.isArray(from)) {
-          for (const key in from) {
-            if (from.hasOwnProperty(key) && (!isKeyOf(key, fields) || fields[key] === undefined)) {
-              errors.push(`${key}: unexpected property in source object`);
-            }
-          }
-        } else {
-          errors.push('source is not an object');
-        }
-      }
-      return errors.length === 0
-        ? succeed(converted)
-        : fail(
-            this.options.description ? `${this.options.description}: ${errors.join('\n')}` : errors.join('\n')
-          );
-    });
+    super((from: unknown, __self, context?: TC) => ObjectConverter._convert(from, context, fields, options));
 
     this.fields = fields;
-    if (Array.isArray(opt)) {
-      this.options = { optionalFields: opt };
-    } else {
-      this.options = opt ?? {};
-    }
+    this.options = options;
   }
 
   /**
@@ -189,5 +154,45 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
     return this.partial([...(this.options.optionalFields ?? []), ...addOptionalProperties])._with(
       this._traits()
     );
+  }
+
+  private static _convert<T, TC>(
+    from: unknown,
+    context: TC | undefined,
+    fields: FieldConverters<T, TC>,
+    options: ObjectConverterOptions<T>
+  ): Result<T> {
+    // eslint bug thinks key is used before defined
+    // eslint-disable-next-line no-use-before-define
+    const converted = {} as { [key in keyof T]: T[key] };
+    const errors: string[] = [];
+    for (const key in fields) {
+      if (fields[key]) {
+        const isOptional = (fields[key].isOptional || options.optionalFields?.includes(key)) ?? false;
+        const result = isOptional
+          ? optionalField(key, fields[key]).convert(from, context)
+          : field(key, fields[key]).convert(from, context);
+        if (result.isSuccess() && result.value !== undefined) {
+          converted[key] = result.value;
+        } else if (result.isFailure()) {
+          errors.push(result.message);
+        }
+      }
+    }
+
+    if (options.strict === true) {
+      if (typeof from === 'object' && !Array.isArray(from)) {
+        for (const key in from) {
+          if (from.hasOwnProperty(key) && (!isKeyOf(key, fields) || fields[key] === undefined)) {
+            errors.push(`${key}: unexpected property in source object`);
+          }
+        }
+      } else {
+        errors.push('source is not an object');
+      }
+    }
+    return errors.length === 0
+      ? succeed(converted)
+      : fail(options.description ? `${options.description}: ${errors.join('\n')}` : errors.join('\n'));
   }
 }

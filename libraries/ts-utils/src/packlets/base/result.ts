@@ -297,7 +297,7 @@ export class Success<T> implements IResult<T> {
   /**
    * @internal
    */
-  private readonly _value: T;
+  protected readonly _value: T;
 
   /**
    * Constructs a {@link Success} with the supplied value.
@@ -367,7 +367,7 @@ export class Success<T> implements IResult<T> {
    * {@inheritdoc IResult.onSuccess}
    */
   public onSuccess<TN>(cb: SuccessContinuation<T, TN>): Result<TN> {
-    return cb(this.value);
+    return cb(this._value);
   }
 
   /**
@@ -388,21 +388,31 @@ export class Success<T> implements IResult<T> {
    * {@inheritdoc IResult.withFailureDetail}
    */
   public withFailureDetail<TD>(__detail: TD): DetailedResult<T, TD> {
-    return succeedWithDetail(this.value);
+    return succeedWithDetail(this._value);
   }
 
   /**
    * {@inheritdoc IResult.withDetail}
    */
   public withDetail<TD>(detail: TD, successDetail?: TD): DetailedResult<T, TD> {
-    return succeedWithDetail(this.value, successDetail ?? detail);
+    return succeedWithDetail(this._value, successDetail ?? detail);
   }
 
   /**
    * {@inheritdoc IResult.aggregateError}
    */
-  public aggregateError(errors: IMessageAggregator): this {
+  public aggregateError(__errors: IMessageAggregator): this {
     return this;
+  }
+
+  /**
+   * Creates a {@link Success | Success<T>} with the supplied value.
+   * @param value - The value to be returned.
+   * @returns The resulting {@link Success | Success<T>} with the supplied value.
+   * @public
+   */
+  public static with<T>(value: T): Success<T> {
+    return new Success<T>(value);
   }
 }
 
@@ -423,7 +433,7 @@ export class Failure<T> implements IResult<T> {
   /**
    * @internal
    */
-  private readonly _message: string;
+  protected readonly _message: string;
 
   /**
    * Constructs a {@link Failure} with the supplied message.
@@ -499,42 +509,42 @@ export class Failure<T> implements IResult<T> {
    * {@inheritdoc IResult.onSuccess}
    */
   public onSuccess<TN>(__: SuccessContinuation<T, TN>): Result<TN> {
-    return new Failure(this.message);
+    return new Failure(this._message);
   }
 
   /**
    * {@inheritdoc IResult.onFailure}
    */
   public onFailure(cb: FailureContinuation<T>): Result<T> {
-    return cb(this.message);
+    return cb(this._message);
   }
 
   /**
    * {@inheritdoc IResult.withErrorFormat}
    */
   public withErrorFormat(cb: ErrorFormatter): Result<T> {
-    return fail(cb(this.message));
+    return fail(cb(this._message));
   }
 
   /**
    * {@inheritdoc IResult.withFailureDetail}
    */
   public withFailureDetail<TD>(detail: TD): DetailedResult<T, TD> {
-    return failWithDetail(this.message, detail);
+    return failWithDetail(this._message, detail);
   }
 
   /**
    * {@inheritdoc IResult.withDetail}
    */
   public withDetail<TD>(detail: TD, __successDetail?: TD): DetailedResult<T, TD> {
-    return failWithDetail(this.message, detail);
+    return failWithDetail(this._message, detail);
   }
 
   /**
    * {@inheritdoc IResult.aggregateError}
    */
   public aggregateError(errors: IMessageAggregator): this {
-    errors.addMessage(this.message);
+    errors.addMessage(this._message);
     return this;
   }
 
@@ -545,13 +555,26 @@ export class Failure<T> implements IResult<T> {
    * @returns A string representing this object.
    */
   public toString(): string {
-    return this.message;
+    return this._message;
+  }
+
+  /**
+   * Creates a {@link Failure | Failure<T>} with the supplied error message.
+   * @param message - The error message to be returned.
+   * @returns The resulting {@link Failure | Failure<T>} with the supplied error message.
+   */
+  public static with<T>(message: string): Failure<T> {
+    return new Failure<T>(message);
   }
 }
 
 /**
  * Returns {@link Success | Success<T>} with the supplied result value.
  * @param value - The successful result value to be returned
+ * @remarks
+ * A `succeeds` alias was added in release 5.0 for
+ * naming consistency with {@link fails | fails}, which was added
+ * to avoid conflicts with test frameworks and libraries.
  * @public
  */
 export function succeed<T>(value: T): Success<T> {
@@ -559,8 +582,19 @@ export function succeed<T>(value: T): Success<T> {
 }
 
 /**
+ * {@inheritdoc succeed}
+ * @public
+ */
+export function succeeds<T>(value: T): Success<T> {
+  return new Success<T>(value);
+}
+
+/**
  * Returns {@link Failure | Failure<T>} with the supplied error message.
  * @param message - Error message to be returned.
+ * @remarks
+ * A `fails` alias was added in release 5.0 due to
+ * issues with the name `fail` being used test frameworks and libraries.
  * @public
  */
 export function fail<T>(message: string): Failure<T> {
@@ -568,7 +602,15 @@ export function fail<T>(message: string): Failure<T> {
 }
 
 /**
- * Callback to be called when a {@link DetailedResult} encounters success.
+ * {@inheritdoc fail}
+ * @public
+ */
+export function fails<T>(message: string): Failure<T> {
+  return new Failure<T>(message);
+}
+
+/**
+ * Callback to be called when a {@link DetailedResult | DetailedResult} encounters success.
  * @remarks
  * A success callback can return a different result type than it receives, allowing
  * success results to chain through intermediate result types.
@@ -577,17 +619,18 @@ export function fail<T>(message: string): Failure<T> {
 export type DetailedSuccessContinuation<T, TD, TN> = (value: T, detail?: TD) => DetailedResult<TN, TD>;
 
 /**
- * Callback to be called when a {@link DetailedResult} encounters a failure.
+ * Callback to be called when a {@link DetailedResult | DetailedResult} encounters a failure.
  * @remarks
- * A failure callback can change {@link Failure} to {@link Success} (e.g. by returning a default value)
+ * A failure callback can change {@link DetailedFailure | DetailedFailure<T, TD>} to
+ * {@link DetailedSuccess | DetailedSuccess<T, TD>} (e.g. by returning a default value)
  * or it can change or embellish the error message, but it cannot change the success return type.
  * @public
  */
-export type DetailedFailureContinuation<T, TD> = (message: string, detail: TD) => DetailedResult<T, TD>;
+export type DetailedFailureContinuation<T, TD> = (message: string, detail?: TD) => DetailedResult<T, TD>;
 
 /**
- * A {@link DetailedSuccess} extends {@link Success} to report optional success details in
- * addition to the error message.
+ * A {@link DetailedSuccess | DetailedSuccess} extends {@link Success | Success} to report optional success
+ * details in addition to the error message.
  * @public
  */
 export class DetailedSuccess<T, TD> extends Success<T> {
@@ -637,7 +680,7 @@ export class DetailedSuccess<T, TD> extends Success<T> {
    * @returns The {@link DetailedResult | DetailedResult<T, TD>} returned by the success callback.
    */
   public onSuccess<TN>(cb: DetailedSuccessContinuation<T, TD, TN>): DetailedResult<TN, TD> {
-    return cb(this.value, this._detail);
+    return cb(this._value, this._detail);
   }
 
   /**
@@ -658,18 +701,26 @@ export class DetailedSuccess<T, TD> extends Success<T> {
   public withErrorFormat(cb: ErrorFormatter): DetailedResult<T, TD> {
     return this;
   }
+
+  /**
+   * Creates a {@link DetailedSuccess | DetailedSuccess<T, TD>} with the supplied value and
+   * optional detail.
+   */
+  public static with<T, TD>(value: T, detail?: TD): DetailedSuccess<T, TD> {
+    return new DetailedSuccess<T, TD>(value, detail);
+  }
 }
 
 /**
- * A {@link DetailedFailure} extends {@link Failure} to report optional failure details in
- * addition to the error message.
+ * A {@link DetailedFailure | DetailedFailure<T, TD>} extends {@link Failure | Failure<T>} to report optional
+ * failure details in addition to the error message.
  * @public
  */
 export class DetailedFailure<T, TD> extends Failure<T> {
   /**
    * @internal
    */
-  protected _detail: TD;
+  protected _detail?: TD;
 
   /**
    * Constructs a new {@link DetailedFailure | DetailedFailure<T, TD>} with the supplied
@@ -677,7 +728,7 @@ export class DetailedFailure<T, TD> extends Failure<T> {
    * @param message - The message to be returned.
    * @param detail - The error detail to be returned.
    */
-  public constructor(message: string, detail: TD) {
+  public constructor(message: string, detail?: TD) {
     super(message);
     this._detail = detail;
   }
@@ -685,7 +736,7 @@ export class DetailedFailure<T, TD> extends Failure<T> {
   /**
    * The error detail associated with this {@link DetailedFailure}.
    */
-  public get detail(): TD {
+  public get detail(): TD | undefined {
     return this._detail;
   }
 
@@ -712,7 +763,7 @@ export class DetailedFailure<T, TD> extends Failure<T> {
    * the error message and detail from this one.
    */
   public onSuccess<TN>(__cb: DetailedSuccessContinuation<T, TD, TN>): DetailedResult<TN, TD> {
-    return new DetailedFailure<TN, TD>(this.message, this._detail);
+    return new DetailedFailure<TN, TD>(this._message, this._detail);
   }
 
   /**
@@ -722,14 +773,27 @@ export class DetailedFailure<T, TD> extends Failure<T> {
    * @returns The {@link DetailedResult | DetailedResult<T, TD>} returned by the failure callback.
    */
   public onFailure(cb: DetailedFailureContinuation<T, TD>): DetailedResult<T, TD> {
-    return cb(this.message, this._detail);
+    return cb(this._message, this._detail);
   }
 
   /**
    * {@inheritdoc IResult.withErrorFormat}
    */
   public withErrorFormat(cb: ErrorFormatter<TD>): DetailedResult<T, TD> {
-    return failWithDetail(cb(this.message, this._detail), this._detail);
+    return failWithDetail(cb(this._message, this._detail), this._detail);
+  }
+
+  /**
+   * Creates a {@link DetailedFailure | DetailedFailure<T, TD>} with the supplied error message
+   * and optional detail.
+   * @param message - The error message to be returned.
+   * @param detail - The error detail to be returned.
+   * @returns The resulting {@link DetailedFailure | DetailedFailure<T, TD>} with the supplied
+   * error message and detail.
+   * @public
+   */
+  public static with<T, TD>(message: string, detail?: TD): DetailedFailure<T, TD> {
+    return new DetailedFailure<T, TD>(message, detail);
   }
 }
 
@@ -752,9 +816,21 @@ export type ResultDetailType<T> = T extends DetailedResult<unknown, infer TD> ? 
  * @param detail - An optional detail of type `<TD>` to be returned.
  * @returns A {@link DetailedSuccess | DetailedSuccess<T, TD>} with the supplied value
  * and detail, if supplied.
+ * @remarks
+ * The `succeedsWithDetail` alias was added in release 5.0 for
+ * naming consistency with {@link fails | fails}, which was added to avoid conflicts
+ * with test frameworks and libraries.
  * @public
  */
 export function succeedWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess<T, TD> {
+  return new DetailedSuccess<T, TD>(value, detail);
+}
+
+/**
+ * {@inheritdoc succeedWithDetail}
+ * @public
+ */
+export function succeedsWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess<T, TD> {
   return new DetailedSuccess<T, TD>(value, detail);
 }
 
@@ -764,9 +840,20 @@ export function succeedWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess
  * @param detail - The event detail to be returned.
  * @returns An {@link DetailedFailure | DetailedFailure<T, TD>} with the supplied error
  * message and detail.
+ * @remarks
+ * The `failsWithDetail` alias was added in release 5.0 for naming consistency
+ * with {@link fails | fails}, which was added to avoid conflicts with test frameworks and libraries.
  * @public
  */
-export function failWithDetail<T, TD>(message: string, detail: TD): DetailedFailure<T, TD> {
+export function failWithDetail<T, TD>(message: string, detail?: TD): DetailedFailure<T, TD> {
+  return new DetailedFailure<T, TD>(message, detail);
+}
+
+/**
+ * {@inheritdoc failWithDetail}
+ * @public
+ */
+export function failsWithDetail<T, TD>(message: string, detail?: TD): DetailedFailure<T, TD> {
   return new DetailedFailure<T, TD>(message, detail);
 }
 
