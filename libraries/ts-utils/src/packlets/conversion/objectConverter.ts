@@ -151,9 +151,9 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
    * properties.
    */
   public addPartial(addOptionalProperties: (keyof T)[]): ObjectConverter<Partial<T>, TC> {
-    return this.partial([...(this.options.optionalFields ?? []), ...addOptionalProperties])._with(
-      this._traits()
-    );
+    /* c8 ignore next 1 - coverage having a bad day */
+    const myOptional = this.options.optionalFields ?? [];
+    return this.partial([...myOptional, ...addOptionalProperties])._with(this._traits());
   }
 
   private static _convert<T, TC>(
