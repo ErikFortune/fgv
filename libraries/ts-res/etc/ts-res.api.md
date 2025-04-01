@@ -2258,8 +2258,8 @@ abstract class ResourceType<T = unknown> implements ICollectible<ResourceTypeNam
     get index(): ResourceTypeIndex | undefined;
     get key(): ResourceTypeName;
     setIndex(index: number): Result<ResourceTypeIndex>;
-    abstract validate(json: JsonValue, isPartial: true): Result<T>;
-    abstract validate(json: JsonValue, isPartial: false): Result<Partial<T>>;
+    abstract validate(json: JsonValue, isPartial: true): Result<Partial<T>>;
+    abstract validate(json: JsonValue, isPartial: false): Result<T>;
     abstract validate(json: JsonValue, isPartial: boolean): Result<T | Partial<T>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     abstract validateDeclaration(json: JsonValue, isPartial: true, mergeMethod?: ResourceValueMergeMethod): Result<Partial<T>>;

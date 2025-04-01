@@ -24,6 +24,7 @@ import {
   captureResult,
   Collections,
   DetailedResult,
+  fail,
   failWithDetail,
   mapResults,
   MessageAggregator,

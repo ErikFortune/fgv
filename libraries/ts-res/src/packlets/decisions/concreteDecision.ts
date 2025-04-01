@@ -25,7 +25,7 @@ import { Candidate, ICandidate } from './candidate';
 import { IDecision } from './common';
 import { AbstractDecisionCollector } from './abstractDecisionCollector';
 import { AbstractDecision } from './abstractDecision';
-import { captureResult, Collections, mapResults, Result, succeed } from '@fgv/ts-utils';
+import { captureResult, Collections, mapResults, Result, fail, succeed } from '@fgv/ts-utils';
 import { ConditionSet } from '../conditions';
 import { Convert as CommonConvert, DecisionIndex, DecisionKey } from '../common';
 import { Decision } from './decision';
@@ -122,14 +122,14 @@ export class ConcreteDecision<TVALUE extends JsonValue = JsonValue> implements I
     const getBase = params.decisions.validating.getOrAdd(conditionSets);
     /* c8 ignore next 3 - defense in depth against internal error hard to repro */
     if (getBase.isFailure()) {
-      return fail(getBase.message);
+      return fail<ConcreteDecision<TVALUE>>(getBase.message);
     }
     const baseDecision = getBase.value;
     return mapResults(
       params.candidates.map((candidate, index) => {
         /* c8 ignore next 5 - defense in depth against internal error hard to repro */
         if (candidate.conditionSet.key !== baseDecision.candidates[index].conditionSet.key) {
-          return fail(
+          return fail<TVALUE>(
             `${candidate.conditionSet.key}: Candidate does not match base decision ${candidate.conditionSet.key}`
           );
         }

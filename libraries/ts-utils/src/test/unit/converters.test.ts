@@ -23,7 +23,7 @@
 import '../helpers/jest';
 
 import { Validation } from '../../index';
-import { Result, succeed } from '../../packlets/base';
+import { omit, Result, succeed } from '../../packlets/base';
 import { Converters, FieldConverters, Infer } from '../../packlets/conversion';
 
 describe('Converters module', () => {
@@ -1139,6 +1139,84 @@ describe('Converters module', () => {
       test('includes description in error message if present', () => {
         const converter = Converters.object(wantConverters, { description: 'xyzzy' });
         expect(converter.convert({ invalid: 'totally unexpected' })).toFailWith(/xyzzy/i);
+      });
+    });
+
+    describe('with partial modifier', () => {
+      test('succeeds even if required fields are missing', () => {
+        expect(Converters.object<IWant>(wantConverters, { modifier: 'partial' }).convert({})).toSucceedWith(
+          {} as IWant
+        );
+
+        expect(Converters.object<IWant>(wantConverters).partial().convert({})).toSucceedWith({} as IWant);
+
+        expect(Converters.object<IWant>(wantConverters).convertPartial({})).toSucceedWith({} as IWant);
+      });
+
+      test('addPartial appends to existing optional fields', () => {
+        expect(
+          Converters.object<IWant>(wantConverters, { optionalFields })
+            .addPartial(['stringField'])
+            .convert(omit(required, ['stringField']))
+        ).toSucceedWith(omit(required, ['stringField']) as IWant);
+      });
+
+      test('partial steps on existing optional fields', () => {
+        expect(
+          Converters.object<IWant>(wantConverters, { optionalFields })
+            .partial(['stringField'])
+            .convert(omit(required, ['stringField']))
+        ).toFailWith(/optionalStringField not found/i);
+
+        expect(
+          Converters.object<IWant>(wantConverters, { optionalFields })
+            .partial({ optionalFields: ['stringField'] })
+            .convert(omit(required, ['stringField']))
+        ).toFailWith(/optionalStringField not found/i);
+      });
+
+      test('respects strict property', () => {
+        expect(
+          Converters.object<IWant>(wantConverters, { modifier: 'partial' }).convert({ bogus: 10 })
+        ).toSucceedWith({} as IWant);
+
+        expect(
+          Converters.object<IWant>(wantConverters, { modifier: 'partial', strict: true }).convert({
+            bogus: 10
+          })
+        ).toFailWith(/unexpected property/i);
+
+        expect(
+          Converters.object<IWant>(wantConverters, { strict: true }).partial().convert({ bogus: 10 })
+        ).toFailWith(/unexpected property/i);
+
+        expect(
+          Converters.object<IWant>(wantConverters, { strict: true }).convertPartial({ bogus: 10 })
+        ).toFailWith(/unexpected property/i);
+
+        expect(
+          Converters.strictObject<IWant>(wantConverters, { modifier: 'partial' }).convert({ bogus: 10 })
+        ).toFailWith(/unexpected property/i);
+
+        expect(Converters.strictObject<IWant>(wantConverters).convertPartial({ bogus: 10 })).toFailWith(
+          /unexpected property/i
+        );
+      });
+    });
+
+    describe('with required modifier', () => {
+      test('fails if otherwise optional fields are missing', () => {
+        expect(
+          Converters.object<IWant>(wantConverters, { modifier: 'required' }).convert(required)
+        ).toFailWith(/optionalStringField not found/i);
+
+        expect(Converters.object<IWant>(wantConverters).required().convert(required)).toFailWith(
+          /optionalStringField not found/i
+        );
+
+        expect(Converters.object<IWant>(wantConverters).convertRequired(required)).toFailWith(
+          /optionalStringField not found/i
+        );
       });
     });
 

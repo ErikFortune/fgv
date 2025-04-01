@@ -1709,17 +1709,29 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     addPartial(addOptionalProperties: (keyof T)[]): ObjectConverter<Partial<T>, TC>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    convertPartial(from: unknown, context?: TC): Result<Partial<T>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    convertRequired(from: unknown, context?: TC): Result<Required<T>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly fields: FieldConverters<T, TC>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly options: ObjectConverterOptions<T>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    partial(): ObjectConverter<Partial<T>, TC>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @deprecated
     partial(options: ObjectConverterOptions<T>): ObjectConverter<Partial<T>, TC>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    partial(optional?: (keyof T)[]): ObjectConverter<Partial<T>, TC>;
+    partial(optional: (keyof T)[]): ObjectConverter<Partial<T>, TC>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    required(): ObjectConverter<Required<T>, TC>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1727,6 +1739,7 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
 // @public
 interface ObjectConverterOptions<T> {
     description?: string;
+    modifier?: 'partial' | 'required';
     optionalFields?: (keyof T)[];
     strict?: boolean;
 }
