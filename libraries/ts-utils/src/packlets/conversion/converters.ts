@@ -750,6 +750,7 @@ export function object<T, TC = unknown>(
   properties: FieldConverters<T, TC>,
   optional: (keyof T)[]
 ): ObjectConverter<T, TC>;
+
 /**
  * Concrete implementation of {@link Converters.(object:1) | Converters.object(fields, options)}
  * and {@link Converters.(object:2) | Converters.objects(fields, optionalKeys)}.

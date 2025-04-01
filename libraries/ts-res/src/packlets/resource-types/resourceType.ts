@@ -123,7 +123,7 @@ export abstract class ResourceType<T = unknown> implements ICollectible<Resource
    * `Failure` with an error message otherwise.
    * @public
    */
-  public abstract validate(json: JsonValue, isPartial: true): Result<T>;
+  public abstract validate(json: JsonValue, isPartial: true): Result<Partial<T>>;
 
   /**
    * Validates a JSON value for use as a complete resource instance value.
@@ -133,7 +133,7 @@ export abstract class ResourceType<T = unknown> implements ICollectible<Resource
    * `Failure` with an error message otherwise.
    * @public
    */
-  public abstract validate(json: JsonValue, isPartial: false): Result<Partial<T>>;
+  public abstract validate(json: JsonValue, isPartial: false): Result<T>;
 
   /**
    * Validates a JSON value for use as a full or partial resource instance value.

@@ -45,6 +45,11 @@ export interface ObjectConverterOptions<T> {
    * Optional description to be included in error messages.
    */
   description?: string;
+
+  /**
+   * Optional modifier to apply to the converter.
+   */
+  modifier?: 'partial' | 'required';
 }
 
 /**
@@ -58,7 +63,7 @@ export type FieldConverters<T, TC = unknown> = {
 };
 
 /**
- * A {@link Converter} which converts an object of type `<T>` without changing shape, given
+ * A {@link Converter | Converter} which converts an object of type `<T>` without changing shape, given
  * a {@link Conversion.FieldConverters | FieldConverters<T>} for the fields in the object.
  * @remarks
  * By default, if all of the required fields exist and can be converted, returns a new object with
@@ -112,12 +117,45 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
   }
 
   /**
+   * Converts the supplied object using the {@link Conversion.ObjectConverter | ObjectConverter}
+   * with all fields optional.
+   * @param from - The object to be converted.
+   * @param context - An optional context object passed to the field converters.
+   * @returns A {@link Result} containing the converted object or an error message.
+   */
+  public convertPartial(from: unknown, context?: TC): Result<Partial<T>> {
+    const options: ObjectConverterOptions<T> = { ...this.options, modifier: 'partial' };
+    return ObjectConverter._convert(from, context, this.fields, options);
+  }
+
+  /**
+   * Converts the supplied object using the {@link Conversion.ObjectConverter | ObjectConverter}
+   * with all fields required.
+   * @param from - The object to be converted.
+   * @param context - An optional context object passed to the field converters.
+   * @returns A {@link Result} containing the converted object or an error message.
+   */
+  public convertRequired(from: unknown, context?: TC): Result<Required<T>> {
+    const options: ObjectConverterOptions<T> = { ...this.options, modifier: 'required' };
+    return ObjectConverter._convert(from, context, this.fields, options) as Result<Required<T>>;
+  }
+
+  /**
+   * Creates a new {@link Conversion.ObjectConverter | ObjectConverter} derived from this one but with
+   * all properties optional.
+   * @returns A new {@link Conversion.ObjectConverter | ObjectConverter} with the additional optional source properties.
+   * {@label WITHOUT_OPTIONS}
+   */
+  public partial(): ObjectConverter<Partial<T>, TC>;
+
+  /**
    * Creates a new {@link Conversion.ObjectConverter | ObjectConverter} derived from this one but with
    * new optional properties as specified by a supplied {@link Conversion.ObjectConverterOptions | ObjectConverterOptions<T>}.
    * @param options - The {@link Conversion.ObjectConverterOptions | options} to be applied to the new
    * converter.
    * @returns A new {@link Conversion.ObjectConverter | ObjectConverter} with the additional optional source properties.
    * {@label WITH_OPTIONS}
+   * @deprecated Pass just the keys to be made optional.
    */
   public partial(options: ObjectConverterOptions<T>): ObjectConverter<Partial<T>, TC>;
 
@@ -129,7 +167,8 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
    * properties.
    * {@label WITH_KEYS}
    */
-  public partial(optional?: (keyof T)[]): ObjectConverter<Partial<T>, TC>;
+  public partial(optional: (keyof T)[]): ObjectConverter<Partial<T>, TC>;
+
   /**
    * Concrete implementation of
    * {@link Conversion.ObjectConverter.(partial:1) | ObjectConverter.partial(ObjectConverterOptions)} and
@@ -137,10 +176,15 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
    * @internal
    */
   public partial(opt?: ObjectConverterOptions<T> | (keyof T)[]): ObjectConverter<Partial<T>, TC> {
-    return new ObjectConverter<Partial<T>, TC>(
-      this.fields as FieldConverters<Partial<T>, TC>,
-      opt as ObjectConverterOptions<Partial<T>>
-    )._with(this._traits());
+    const options: ObjectConverterOptions<Partial<T>> =
+      opt === undefined
+        ? { ...this.options, modifier: 'partial' }
+        : Array.isArray(opt)
+        ? { ...this.options, optionalFields: [...opt] }
+        : (opt as ObjectConverterOptions<Partial<T>>);
+    return new ObjectConverter<Partial<T>, TC>(this.fields as FieldConverters<Partial<T>, TC>, options)._with(
+      this._traits()
+    );
   }
 
   /**
@@ -153,7 +197,21 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
   public addPartial(addOptionalProperties: (keyof T)[]): ObjectConverter<Partial<T>, TC> {
     /* c8 ignore next 1 - coverage having a bad day */
     const myOptional = this.options.optionalFields ?? [];
-    return this.partial([...myOptional, ...addOptionalProperties])._with(this._traits());
+    const optional = [...myOptional, ...addOptionalProperties];
+    return this.partial(optional)._with(this._traits());
+  }
+
+  /**
+   * Creates a new {@link Conversion.ObjectConverter | ObjectConverter} derived from this one but with
+   * all properties required.
+   * @returns A new {@link Conversion.ObjectConverter | ObjectConverter} with the additional required source properties.
+   */
+  public required(): ObjectConverter<Required<T>, TC> {
+    const options: ObjectConverterOptions<Required<T>> = { ...this.options, modifier: 'required' };
+    return new ObjectConverter<Required<T>, TC>(
+      this.fields as FieldConverters<Required<T>, TC>,
+      options
+    )._with(this._traits());
   }
 
   private static _convert<T, TC>(
@@ -168,7 +226,10 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
     const errors: string[] = [];
     for (const key in fields) {
       if (fields[key]) {
-        const isOptional = (fields[key].isOptional || options.optionalFields?.includes(key)) ?? false;
+        const isOptional =
+          options.modifier === 'partial' ||
+          (options.modifier !== 'required' &&
+            (fields[key].isOptional === true || options.optionalFields?.includes(key) === true));
         const result = isOptional
           ? optionalField(key, fields[key]).convert(from, context)
           : field(key, fields[key]).convert(from, context);
