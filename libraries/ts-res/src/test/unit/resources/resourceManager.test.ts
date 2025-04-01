@@ -259,6 +259,37 @@ describe('ResourceManager', () => {
       });
     });
 
+    test('merges candidates for an existing resource', () => {
+      const resource: TsRes.ResourceJson.Json.ILooseResourceDecl = {
+        id: 'some.resource.path',
+        candidates: [
+          { json: { home: 'United States' }, conditions: { homeTerritory: 'US' } },
+          { json: { speaks: 'English' }, conditions: { language: 'en' } }
+        ],
+        resourceTypeName: 'json'
+      };
+
+      expect(manager.size).toEqual(0);
+      manager.addResource(resource).orThrow();
+      expect(manager.size).toEqual(1);
+
+      const newResource: TsRes.ResourceJson.Json.ILooseResourceDecl = {
+        id: 'some.resource.path',
+        candidates: [
+          {
+            json: { home: 'Canada', speaks: 'Canadian English' },
+            conditions: { homeTerritory: 'CA', language: 'en-CA' }
+          }
+        ],
+        resourceTypeName: 'json'
+      };
+
+      expect(manager.addResource(newResource)).toSucceedAndSatisfy((r) => {
+        expect(r.id).toEqual(newResource.id);
+        expect(r.candidates.length).toEqual(3);
+      });
+    });
+
     test('fails to add a resource with an invalid id', () => {
       const resource: TsRes.ResourceJson.Json.ILooseResourceDecl = {
         id: 'invalid id',

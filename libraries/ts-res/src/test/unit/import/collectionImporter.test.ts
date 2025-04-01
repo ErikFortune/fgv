@@ -116,7 +116,7 @@ describe('CollectionImporter', () => {
           candidates: [
             {
               json: { myNameIs: 'foo' },
-              conditions: { foo: 'bar' }
+              conditions: { homeTerritory: 'TV' }
             }
           ]
         },
@@ -125,7 +125,7 @@ describe('CollectionImporter', () => {
           candidates: [
             {
               json: { myNameIs: 'bar' },
-              conditions: { foo: { value: 'baz', priority: 100 } },
+              conditions: { language: { value: 'es-419', priority: 100 } },
               isPartial: true
             }
           ]

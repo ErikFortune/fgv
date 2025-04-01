@@ -25,6 +25,7 @@ import {
   Collections,
   DetailedResult,
   failWithDetail,
+  mapResults,
   MessageAggregator,
   Result,
   succeed,
@@ -204,23 +205,34 @@ export class ResourceManager {
       return failWithDetail(`${id}: invalid id - ${message}`, 'failure');
     }
 
-    return this._resources.getOrAdd(id, () =>
+    const {
+      value: builder,
+      message: getOrAddMessage,
+      detail
+    } = this._resources.getOrAdd(id, () =>
       ResourceBuilder.create({
         id,
         typeName: decl.resourceTypeName,
         resourceTypes: this.resourceTypes,
         conditionSets: this._conditionSets
       })
-        .onSuccess((builder) => {
-          return builder.setResourceType(decl.resourceTypeName);
-        })
-        .onSuccess((builder) => {
-          if (decl.candidates) {
-            decl.candidates.forEach((c) => builder.addChildCandidate(c));
-          }
-          return succeed(builder);
-        })
     );
+    if (getOrAddMessage !== undefined) {
+      return failWithDetail(`${id}: unable to get or add resource\n${getOrAddMessage}`, detail);
+    }
+
+    if (detail === 'exists') {
+      const { message } = builder.setResourceType(decl.resourceTypeName);
+      if (message !== undefined) {
+        return failWithDetail(`${id}: unable to set resource type\n${message}`, 'type-mismatch');
+      }
+    }
+
+    return mapResults(decl.candidates?.map((c) => builder.addChildCandidate(c)) ?? [])
+      .onSuccess(() => {
+        return succeed(builder);
+      })
+      .withDetail('failure', detail);
   }
 
   /**
