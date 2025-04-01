@@ -155,6 +155,22 @@ Invokes the supplied [success callback](./ts-utils.detailedsuccesscontinuation.m
 </td></tr>
 <tr><td>
 
+[with(value, detail)](./ts-utils.detailedsuccess.with.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a [DetailedSuccess&lt;T, TD&gt;](./ts-utils.detailedsuccess.md) with the supplied value and optional detail.
+
+
+</td></tr>
+<tr><td>
+
 [withErrorFormat(cb)](./ts-utils.detailedsuccess.witherrorformat.md)
 
 
