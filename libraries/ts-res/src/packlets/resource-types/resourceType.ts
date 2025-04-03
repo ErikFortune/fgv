@@ -27,8 +27,39 @@ import {
   Validate,
   ResourceTypeIndex,
   ResourceTypeName,
-  ResourceValueMergeMethod
+  ResourceValueMergeMethod,
+  ResourceId
 } from '../common';
+
+/**
+ * Parameters used to validate a {@link ResourceJson.Json.ILooseResourceCandidateDecl | resource candidate declaration}.
+ * @public
+ */
+export interface IResourceCandidateValidationProperties {
+  /**
+   * {@inheritdoc ResourceJson.Json.ILooseResourceCandidateDecl.id}
+   * @public
+   */
+  id: ResourceId;
+
+  /**
+   * {@inheritdoc ResourceJson.Json.ILooseResourceCandidateDecl.isPartial}
+   * @public
+   */
+  isPartial: boolean;
+
+  /**
+   * {@inheritdoc ResourceJson.Json.ILooseResourceCandidateDecl.json}
+   * @public
+   */
+  json: JsonValue;
+
+  /**
+   * {@inheritdoc ResourceJson.Json.ILooseResourceCandidateDecl.mergeMethod}
+   * @public
+   */
+  mergeMethod: ResourceValueMergeMethod;
+}
 
 /**
  * Abstract base class for resource types which are responsible for
@@ -62,58 +93,14 @@ export abstract class ResourceType<T = unknown> implements ICollectible<Resource
   }
 
   /**
-   * Validates a {@link ResourceJson.Json.ILooseResourceCandidateDecl | resource candidate declaration} for
-   * a partial resource instance value.
-   * @param json - The JSON value to validate.
-   * @param isPartial - `true` indicates that the value is expected to be incomplete.
-   * @param mergeMethod - The method to use when merging with previously resolved values.
-   * @returns `Success` with the strongly-typed resource value if the JSON and merge
-   * method are valid, `Failure` with an error message otherwise.
-   * @public
-   */
-  public abstract validateDeclaration(
-    json: JsonValue,
-    isPartial: true,
-    mergeMethod?: ResourceValueMergeMethod
-  ): Result<Partial<T>>;
-
-  /**
-   * Validates a {@link ResourceJson.Json.ILooseResourceCandidateDecl | resource candidate declaration} for
-   * a complete resource instance value.
-   * @param json - The JSON value to validate.
-   * @param isPartial - `false` indicates that the value is expected to be complete.
-   * @param mergeMethod - The method to use when merging with previously resolved values.
-   * @returns `Success` with the strongly-typed resource value if the JSON and merge method
-   * are valid, `Failure` with an error message otherwise.
-   * @public
-   */
-  public abstract validateDeclaration(
-    json: JsonValue,
-    isPartial: false,
-    mergeMethod?: ResourceValueMergeMethod
-  ): Result<T>;
-
-  /**
-   * Validates a {@link ResourceJson.Json.ILooseResourceCandidateDecl | resource candidate declaration} for
+   * Validates properties of a {@link ResourceJson.Json.ILooseResourceCandidateDecl | resource candidate declaration} for
    * a resource instance value.
-   * @param json - The JSON value to validate.
-   * @param isPartial - Indicates whether the value is expected to be incomplete.
-   * @param mergeMethod - The method to use when merging with previously resolved values.
+   * @param props - The {@link ResourceTypes.IResourceCandidateValidationProperties | properties } to validate.
    * @returns `Success` with the strongly-typed resource value if the JSON and merge method
    * are valid, `Failure` with an error message otherwise.
    * @public
    */
-  public abstract validateDeclaration(
-    json: JsonValue,
-    isPartial: boolean,
-    mergeMethod?: ResourceValueMergeMethod
-  ): Result<T | Partial<T>>;
-
-  public abstract validateDeclaration(
-    json: JsonValue,
-    isPartial: boolean,
-    mergeMethod?: ResourceValueMergeMethod
-  ): Result<T | Partial<T>>;
+  public abstract validateDeclaration(props: IResourceCandidateValidationProperties): Result<T | Partial<T>>;
 
   /**
    * Validates a JSON value for use as a partial resource instance value.
@@ -143,7 +130,7 @@ export abstract class ResourceType<T = unknown> implements ICollectible<Resource
    * the JSON is valid, `Failure` with an error message otherwise.
    * @public
    */
-  public abstract validate(json: JsonValue, isPartial: boolean): Result<T | Partial<T>>;
+  public abstract validate(json: JsonValue, isPartial?: boolean): Result<T | Partial<T>>;
 
   /**
    * Sets the index for this resource type.  Once set, the index cannot be changed.

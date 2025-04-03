@@ -127,7 +127,7 @@ Validates a JSON value for use as a full or partial resource instance value.
 </td></tr>
 <tr><td>
 
-[validateDeclaration(json, isPartial, mergeMethod)](./ts-res.resourcetypes.jsonresourcetype.validatedeclaration.md)
+[validateDeclaration(props)](./ts-res.resourcetypes.jsonresourcetype.validatedeclaration.md)
 
 
 </td><td>
@@ -135,35 +135,7 @@ Validates a JSON value for use as a full or partial resource instance value.
 
 </td><td>
 
-Validates a [resource candidate declaration](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md) for a partial resource instance value.
-
-
-</td></tr>
-<tr><td>
-
-[validateDeclaration(json, isPartial, mergeMethod)](./ts-res.resourcetypes.jsonresourcetype.validatedeclaration_1.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Validates a [resource candidate declaration](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md) for a complete resource instance value.
-
-
-</td></tr>
-<tr><td>
-
-[validateDeclaration(json, isPartial, mergeMethod)](./ts-res.resourcetypes.jsonresourcetype.validatedeclaration_2.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Validates a [resource candidate declaration](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md) for a resource instance value.
+Validates properties of a [resource candidate declaration](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md) for a resource instance value.
 
 
 </td></tr>

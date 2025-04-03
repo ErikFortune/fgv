@@ -20,9 +20,9 @@
  * SOFTWARE.
  */
 
-import { Converters as JsonConverters, JsonObject, JsonValue } from '@fgv/ts-json-base';
-import { ResourceType } from './resourceType';
-import { Convert, ResourceTypeName, ResourceValueMergeMethod } from '../common';
+import { Converters as JsonConverters, JsonObject } from '@fgv/ts-json-base';
+import { IResourceCandidateValidationProperties, ResourceType } from './resourceType';
+import { Convert, ResourceTypeName } from '../common';
 import { captureResult, Result } from '@fgv/ts-utils';
 
 /**
@@ -71,35 +71,11 @@ export class JsonResourceType extends ResourceType<JsonObject> {
   }
 
   /**
-   * {@inheritdoc ResourceTypes.ResourceType.(validateDeclaration:1)}
+   * {@inheritdoc ResourceTypes.ResourceType.validateDeclaration}
    */
-  public validateDeclaration(
-    json: JsonValue,
-    isPartial: true,
-    mergeMethod?: ResourceValueMergeMethod
-  ): Result<Partial<JsonObject>>;
-  /**
-   * {@inheritdoc ResourceTypes.ResourceType.(validateDeclaration:2)}
-   */
-  public validateDeclaration(
-    json: JsonValue,
-    isPartial: false,
-    mergeMethod?: ResourceValueMergeMethod
-  ): Result<JsonObject>;
-  /**
-   * {@inheritdoc ResourceTypes.ResourceType.(validateDeclaration:3)}
-   */
-  public validateDeclaration(
-    json: JsonValue,
-    isPartial: boolean,
-    mergeMethod?: ResourceValueMergeMethod
-  ): Result<JsonObject | Partial<JsonObject>>;
-  public validateDeclaration(
-    json: JsonValue,
-    __isPartial: boolean,
-    __mergeMethod?: ResourceValueMergeMethod
-  ): Result<JsonObject | Partial<JsonObject>> {
-    return JsonConverters.jsonObject.convert(json);
+
+  public validateDeclaration(props: IResourceCandidateValidationProperties): Result<JsonObject> {
+    return JsonConverters.jsonObject.convert(props.json);
   }
 
   /**
@@ -114,7 +90,7 @@ export class JsonResourceType extends ResourceType<JsonObject> {
    * {@inheritdoc ResourceTypes.ResourceType.(validate:3)}
    */
   public validate(json: JsonObject, isPartial: boolean): Result<JsonObject>;
-  public validate(json: JsonObject, __isPartial: boolean): Result<JsonObject> {
+  public validate(json: JsonObject, __isPartial?: boolean): Result<JsonObject> {
     return JsonConverters.jsonObject.convert(json);
   }
 }

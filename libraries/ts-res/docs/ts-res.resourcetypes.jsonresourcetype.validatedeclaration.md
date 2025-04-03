@@ -4,12 +4,12 @@
 
 ## ResourceTypes.JsonResourceType.validateDeclaration() method
 
-Validates a [resource candidate declaration](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md) for a partial resource instance value.
+Validates properties of a [resource candidate declaration](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md) for a resource instance value.
 
 **Signature:**
 
 ```typescript
-validateDeclaration(json: JsonValue, isPartial: true, mergeMethod?: ResourceValueMergeMethod): Result<Partial<JsonObject>>;
+validateDeclaration(props: IResourceCandidateValidationProperties): Result<JsonObject>;
 ```
 
 ## Parameters
@@ -32,56 +32,24 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-json
+props
 
 
 </td><td>
 
-JsonValue
+[IResourceCandidateValidationProperties](./ts-res.resourcetypes.iresourcecandidatevalidationproperties.md)
 
 
 </td><td>
 
-The JSON value to validate.
-
-
-</td></tr>
-<tr><td>
-
-isPartial
-
-
-</td><td>
-
-true
-
-
-</td><td>
-
-`true` indicates that the value is expected to be incomplete.
-
-
-</td></tr>
-<tr><td>
-
-mergeMethod
-
-
-</td><td>
-
-[ResourceValueMergeMethod](./ts-res.resourcevaluemergemethod.md)
-
-
-</td><td>
-
-_(Optional)_ The method to use when merging with previously resolved values.
+The [properties](./ts-res.resourcetypes.iresourcecandidatevalidationproperties.md) to validate.
 
 
 </td></tr>
 </tbody></table>
 **Returns:**
 
-Result&lt;Partial&lt;JsonObject&gt;&gt;
+Result&lt;JsonObject&gt;
 
 `Success` with the strongly-typed resource value if the JSON and merge method are valid, `Failure` with an error message otherwise.
 

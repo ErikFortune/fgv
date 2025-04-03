@@ -1276,6 +1276,28 @@ interface IResourceCandidateCreateParams {
     resourceType?: ResourceType;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IResourceCandidateValidationProperties {
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    id: ResourceId;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    isPartial: boolean;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    json: JsonValue;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    mergeMethod: ResourceValueMergeMethod;
+}
+
 // @public
 interface IResourceCollectionDecl {
     // (undocumented)
@@ -1591,15 +1613,7 @@ class JsonResourceType extends ResourceType<JsonObject> {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    validateDeclaration(json: JsonValue, isPartial: true, mergeMethod?: ResourceValueMergeMethod): Result<Partial<JsonObject>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    validateDeclaration(json: JsonValue, isPartial: false, mergeMethod?: ResourceValueMergeMethod): Result<JsonObject>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    validateDeclaration(json: JsonValue, isPartial: boolean, mergeMethod?: ResourceValueMergeMethod): Result<JsonObject | Partial<JsonObject>>;
+    validateDeclaration(props: IResourceCandidateValidationProperties): Result<JsonObject>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2202,6 +2216,15 @@ class ResourceManager {
     // (undocumented)
     protected readonly _decisions: AbstractDecisionCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getAllBuiltCandidates(): Result<ReadonlyArray<ResourceCandidate>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getAllBuiltResources(): Result<ReadonlyArray<Resource>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getAllCandidates(): ReadonlyArray<ResourceCandidate>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getAllResources(): ReadonlyArray<ResourceBuilder>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getBuiltResource(id: string): Result<Resource>;
     // (undocumented)
     readonly qualifiers: IReadOnlyQualifierCollector;
@@ -2260,15 +2283,10 @@ abstract class ResourceType<T = unknown> implements ICollectible<ResourceTypeNam
     setIndex(index: number): Result<ResourceTypeIndex>;
     abstract validate(json: JsonValue, isPartial: true): Result<Partial<T>>;
     abstract validate(json: JsonValue, isPartial: false): Result<T>;
-    abstract validate(json: JsonValue, isPartial: boolean): Result<T | Partial<T>>;
+    abstract validate(json: JsonValue, isPartial?: boolean): Result<T | Partial<T>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    abstract validateDeclaration(json: JsonValue, isPartial: true, mergeMethod?: ResourceValueMergeMethod): Result<Partial<T>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    abstract validateDeclaration(json: JsonValue, isPartial: false, mergeMethod?: ResourceValueMergeMethod): Result<T>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    abstract validateDeclaration(json: JsonValue, isPartial: boolean, mergeMethod?: ResourceValueMergeMethod): Result<T | Partial<T>>;
-    // (undocumented)
-    abstract validateDeclaration(json: JsonValue, isPartial: boolean, mergeMethod?: ResourceValueMergeMethod): Result<T | Partial<T>>;
+    abstract validateDeclaration(props: IResourceCandidateValidationProperties): Result<T | Partial<T>>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2296,6 +2314,7 @@ const resourceTypeName: Converter<ResourceTypeName, unknown>;
 
 declare namespace ResourceTypes {
     export {
+        IResourceCandidateValidationProperties,
         ResourceType,
         IResourceCollectorCreateParams,
         ResourceTypeCollector,

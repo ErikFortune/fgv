@@ -93,6 +93,17 @@ Parameters to create a [JsonResourceType](./ts-res.resourcetypes.jsonresourcetyp
 </td></tr>
 <tr><td>
 
+[IResourceCandidateValidationProperties](./ts-res.resourcetypes.iresourcecandidatevalidationproperties.md)
+
+
+</td><td>
+
+Parameters used to validate a [resource candidate declaration](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [IResourceCollectorCreateParams](./ts-res.resourcetypes.iresourcecollectorcreateparams.md)
 
 

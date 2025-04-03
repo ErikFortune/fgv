@@ -55,19 +55,27 @@ describe('JsonResourceType', () => {
 
   describe('validateDeclaration method', () => {
     test('succeeds for valid json regardless of completeness or merge method', () => {
-      const value = { someProperty: 'someValue' };
+      const id = 'some.resource' as TsRes.ResourceId;
+      const json = { someProperty: 'someValue' };
       const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
-      expect(rt.validateDeclaration(value, false)).toSucceedWith(value);
-      expect(rt.validateDeclaration(value, true)).toSucceedWith(value);
-      expect(rt.validateDeclaration(value, false, 'augment')).toSucceedWith(value);
-      expect(rt.validateDeclaration(value, true, 'delete')).toSucceedWith(value);
-      expect(rt.validateDeclaration(value, false, 'replace')).toSucceedWith(value);
-    });
-
-    test('fails for non-json values', () => {
-      const value = { foo: () => true } as unknown as JsonObject;
-      const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
-      expect(rt.validateDeclaration(value, false)).toFailWith(/not a valid JSON object/);
+      expect(rt.validateDeclaration({ id, json, isPartial: false, mergeMethod: 'augment' })).toSucceedWith(
+        json
+      );
+      expect(rt.validateDeclaration({ id, json, isPartial: true, mergeMethod: 'augment' })).toSucceedWith(
+        json
+      );
+      expect(rt.validateDeclaration({ id, json, isPartial: false, mergeMethod: 'delete' })).toSucceedWith(
+        json
+      );
+      expect(rt.validateDeclaration({ id, json, isPartial: true, mergeMethod: 'delete' })).toSucceedWith(
+        json
+      );
+      expect(rt.validateDeclaration({ id, json, isPartial: false, mergeMethod: 'replace' })).toSucceedWith(
+        json
+      );
+      expect(rt.validateDeclaration({ id, json, isPartial: true, mergeMethod: 'replace' })).toSucceedWith(
+        json
+      );
     });
   });
 

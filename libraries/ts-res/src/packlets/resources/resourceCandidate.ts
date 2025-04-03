@@ -95,7 +95,7 @@ export class ResourceCandidate {
     this.mergeMethod = params.decl.mergeMethod ?? 'augment';
     this.resourceType = params.resourceType;
     if (this.resourceType) {
-      this.resourceType.validateDeclaration(this.json, this.isPartial, this.mergeMethod).orThrow();
+      this.resourceType.validateDeclaration(this).orThrow();
     }
   }
 
