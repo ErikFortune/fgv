@@ -195,7 +195,8 @@ describe('ResourceDeclCollection', () => {
           {
             context: {
               baseId: 'child',
-              conditions: { grandchild: 'true' }
+              conditions: { grandchild: 'true' },
+              mergeMethod: 'augment'
             },
             candidates: [
               {
@@ -297,6 +298,170 @@ describe('ResourceDeclCollection', () => {
                   { qualifierName: 'greatGrandchild', value: 'true' },
                   { qualifierName: 'wut', value: 'xyzzy', priority: 200 }
                 ]
+              }
+            ]
+          }
+        ]);
+      });
+    });
+
+    test('extracts child collections, replacing name and conditions if specified', () => {
+      const jsonDecl: TsRes.ResourceJson.Json.IResourceCollectionDecl = {
+        context: {
+          baseId: 'parent',
+          conditions: { orphaned: 'false' }
+        },
+        collections: [
+          {
+            context: {
+              mergeMethod: 'replace',
+              baseId: 'child',
+              conditions: { grandchild: 'true' }
+            },
+            candidates: [
+              {
+                id: 'foo',
+                json: { myNameIs: 'foo' },
+                conditions: { foo: 'bar' }
+              },
+              {
+                id: 'bar',
+                json: { myNameIs: 'bar' },
+                conditions: { wut: { value: 'xyzzy', priority: 200 } }
+              }
+            ],
+            resources: [
+              {
+                id: 'foo_res',
+                resourceTypeName: 'fooType',
+                candidates: [
+                  {
+                    json: { myNameIs: 'foo' },
+                    conditions: { foo: 'bar' }
+                  },
+                  {
+                    json: { myNameIs: 'magic foo' },
+                    conditions: { wut: { value: 'xyzzy', priority: 200 } }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      };
+      expect(TsRes.ResourceJson.ResourceDeclCollection.create(jsonDecl)).toSucceedAndSatisfy((collection) => {
+        expect(collection.getLooseCandidates()).toEqual([
+          {
+            id: 'child.foo',
+            json: { myNameIs: 'foo' },
+            conditions: [
+              { qualifierName: 'grandchild', value: 'true' },
+              { qualifierName: 'foo', value: 'bar' }
+            ]
+          },
+          {
+            id: 'child.bar',
+            json: { myNameIs: 'bar' },
+            conditions: [
+              { qualifierName: 'grandchild', value: 'true' },
+              { qualifierName: 'wut', value: 'xyzzy', priority: 200 }
+            ]
+          }
+        ]);
+
+        expect(collection.getLooseResources()).toEqual([
+          {
+            id: 'child.foo_res',
+            resourceTypeName: 'fooType',
+            candidates: [
+              {
+                json: { myNameIs: 'foo' },
+                conditions: [
+                  { qualifierName: 'grandchild', value: 'true' },
+                  { qualifierName: 'foo', value: 'bar' }
+                ]
+              },
+              {
+                json: { myNameIs: 'magic foo' },
+                conditions: [
+                  { qualifierName: 'grandchild', value: 'true' },
+                  { qualifierName: 'wut', value: 'xyzzy', priority: 200 }
+                ]
+              }
+            ]
+          }
+        ]);
+      });
+    });
+
+    test('extracts child collections, deleting name and conditions if specified', () => {
+      const jsonDecl: TsRes.ResourceJson.Json.IResourceCollectionDecl = {
+        context: {
+          baseId: 'parent',
+          conditions: { orphaned: 'false' }
+        },
+        collections: [
+          {
+            context: {
+              mergeMethod: 'delete'
+            },
+            candidates: [
+              {
+                id: 'foo',
+                json: { myNameIs: 'foo' },
+                conditions: { foo: 'bar' }
+              },
+              {
+                id: 'bar',
+                json: { myNameIs: 'bar' },
+                conditions: { wut: { value: 'xyzzy', priority: 200 } }
+              }
+            ],
+            resources: [
+              {
+                id: 'foo_res',
+                resourceTypeName: 'fooType',
+                candidates: [
+                  {
+                    json: { myNameIs: 'foo' },
+                    conditions: { foo: 'bar' }
+                  },
+                  {
+                    json: { myNameIs: 'magic foo' },
+                    conditions: { wut: { value: 'xyzzy', priority: 200 } }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      };
+      expect(TsRes.ResourceJson.ResourceDeclCollection.create(jsonDecl)).toSucceedAndSatisfy((collection) => {
+        expect(collection.getLooseCandidates()).toEqual([
+          {
+            id: 'foo',
+            json: { myNameIs: 'foo' },
+            conditions: [{ qualifierName: 'foo', value: 'bar' }]
+          },
+          {
+            id: 'bar',
+            json: { myNameIs: 'bar' },
+            conditions: [{ qualifierName: 'wut', value: 'xyzzy', priority: 200 }]
+          }
+        ]);
+
+        expect(collection.getLooseResources()).toEqual([
+          {
+            id: 'foo_res',
+            resourceTypeName: 'fooType',
+            candidates: [
+              {
+                json: { myNameIs: 'foo' },
+                conditions: [{ qualifierName: 'foo', value: 'bar' }]
+              },
+              {
+                json: { myNameIs: 'magic foo' },
+                conditions: [{ qualifierName: 'wut', value: 'xyzzy', priority: 200 }]
               }
             ]
           }
