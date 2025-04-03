@@ -89,7 +89,7 @@ _(Optional)_
 
 </td><td>
 
-[IResourceContextDecl](./ts-res.resourcejson.json.iresourcecontextdecl.md)
+[IContainerContextDecl](./ts-res.resourcejson.json.icontainercontextdecl.md)
 
 
 </td><td>

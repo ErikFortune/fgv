@@ -69,7 +69,7 @@ _(Optional)_
 
 </td><td>
 
-IResourceContextDecl
+IContainerContextDecl
 
 
 </td><td>

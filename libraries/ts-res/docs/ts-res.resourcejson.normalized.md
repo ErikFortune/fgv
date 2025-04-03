@@ -41,6 +41,17 @@ Normalized non-validated child declaration of a [resource](./ts-res.resources.re
 </td></tr>
 <tr><td>
 
+[IContainerContextDecl](./ts-res.resourcejson.normalized.icontainercontextdecl.md)
+
+
+</td><td>
+
+Declared context for a resource container.
+
+
+</td></tr>
+<tr><td>
+
 [ILooseResourceCandidateDecl](./ts-res.resourcejson.normalized.ilooseresourcecandidatedecl.md)
 
 
@@ -69,17 +80,6 @@ Normalized non-validated loose declaration of a [resource](./ts-res.resources.re
 </td><td>
 
 Normalized non-validated declaration of a collection of resources.
-
-
-</td></tr>
-<tr><td>
-
-[IResourceContextDecl](./ts-res.resourcejson.normalized.iresourcecontextdecl.md)
-
-
-</td><td>
-
-Declared context for some collection of resources.
 
 
 </td></tr>

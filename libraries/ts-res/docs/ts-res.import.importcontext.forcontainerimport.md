@@ -4,12 +4,12 @@
 
 ## Import.ImportContext.forContainerImport() method
 
-Creates a new [import context](./ts-res.import.importcontext.md) to import resources from a container with the specified [container context declaration](./ts-res.resourcejson.normalized.iresourcecontextdecl.md)<!-- -->e
+Creates a new [import context](./ts-res.import.importcontext.md) to import resources from a container with the specified [container context declaration](./ts-res.resourcejson.normalized.icontainercontextdecl.md)<!-- -->e
 
 **Signature:**
 
 ```typescript
-static forContainerImport(container?: ResourceJson.Normalized.IResourceContextDecl, importer?: ImportContext): Result<ImportContext | undefined>;
+static forContainerImport(container?: ResourceJson.Normalized.IContainerContextDecl, importer?: ImportContext): Result<ImportContext | undefined>;
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ container
 
 </td><td>
 
-ResourceJson.Normalized.IResourceContextDecl
+ResourceJson.Normalized.IContainerContextDecl
 
 
 </td><td>
 
-_(Optional)_ The [container context declaration](./ts-res.resourcejson.normalized.iresourcecontextdecl.md) to consider when creating the new context.
+_(Optional)_ The [container context declaration](./ts-res.resourcejson.normalized.icontainercontextdecl.md) to consider when creating the new context.
 
 
 </td></tr>

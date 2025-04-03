@@ -4,10 +4,10 @@
 
 ## ResourceJson.IResourceDeclContainer.context property
 
-Optional initial [resource context](./ts-res.resourcejson.normalized.iresourcecontextdecl.md) declaration for the container.
+Optional initial  declaration for the container.
 
 **Signature:**
 
 ```typescript
-readonly context?: Normalized.IResourceContextDecl;
+readonly context?: Normalized.IContainerContextDecl;
 ```

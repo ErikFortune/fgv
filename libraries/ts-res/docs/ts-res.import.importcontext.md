@@ -176,7 +176,7 @@ Extends the import context with additional name segments and conditions.
 
 </td><td>
 
-Creates a new [import context](./ts-res.import.importcontext.md) to import resources from a container with the specified [container context declaration](./ts-res.resourcejson.normalized.iresourcecontextdecl.md)<!-- -->e
+Creates a new [import context](./ts-res.import.importcontext.md) to import resources from a container with the specified [container context declaration](./ts-res.resourcejson.normalized.icontainercontextdecl.md)<!-- -->e
 
 
 </td></tr>

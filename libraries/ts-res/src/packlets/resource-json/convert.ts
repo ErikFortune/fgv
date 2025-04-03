@@ -135,11 +135,11 @@ export const childResourceDecl: Converter<Normalized.IChildResourceDecl> =
   });
 
 /**
- * `Converter` for a normalized {@link ResourceJson.Normalized.IResourceContextDecl | resource context declaration}.
+ * `Converter` for a normalized {@link ResourceJson.Normalized.IContainerContextDecl | resource context declaration}.
  * @public
  */
-export const resourceContextDecl: Converter<Normalized.IResourceContextDecl> =
-  Converters.strictObject<Normalized.IResourceContextDecl>({
+export const containerContextDecl: Converter<Normalized.IContainerContextDecl> =
+  Converters.strictObject<Normalized.IContainerContextDecl>({
     baseId: Converters.oneOf([CommonConvert.resourceId, Converters.literal('')]).optional(),
     conditions: conditionSetDecl.optional(),
     mergeMethod: CommonConvert.resourceValueMergeMethod.optional()
@@ -171,7 +171,7 @@ export const resourceTreeChildNodeDecl: Converter<Normalized.IResourceTreeChildN
  */
 export const resourceTreeRootDecl: Converter<Normalized.IResourceTreeRootDecl> =
   Converters.strictObject<Normalized.IResourceTreeRootDecl>({
-    context: resourceContextDecl.optional(),
+    context: containerContextDecl.optional(),
     resources: Converters.recordOf(childResourceDecl).optional(),
     children: Converters.recordOf(resourceTreeChildNodeDecl).optional()
   });
@@ -190,7 +190,7 @@ export const resourceCollectionDecl: Converter<Normalized.IResourceCollectionDec
     context?: unknown
   ): Result<Normalized.IResourceCollectionDecl> => {
     return Converters.strictObject<Normalized.IResourceCollectionDecl>({
-      context: resourceContextDecl.optional(),
+      context: containerContextDecl.optional(),
       candidates: Converters.arrayOf(looseResourceCandidateDecl).optional(),
       resources: Converters.arrayOf(looseResourceDecl).optional(),
       collections: Converters.arrayOf(self).optional()

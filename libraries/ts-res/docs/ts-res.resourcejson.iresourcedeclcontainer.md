@@ -47,12 +47,12 @@ Description
 
 </td><td>
 
-Normalized.IResourceContextDecl
+Normalized.IContainerContextDecl
 
 
 </td><td>
 
-_(Optional)_ Optional initial [resource context](./ts-res.resourcejson.normalized.iresourcecontextdecl.md) declaration for the container.
+_(Optional)_ Optional initial  declaration for the container.
 
 
 </td></tr>

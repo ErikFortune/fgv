@@ -140,8 +140,8 @@ export class ImportContext implements IValidatedImportContext {
 
   /**
    * Creates a new {@link Import.ImportContext | import context} to import resources from a
-   * container with the specified {@link ResourceJson.Normalized.IResourceContextDecl | container context declaration}e
-   * @param container - The {@link ResourceJson.Normalized.IResourceContextDecl | container context declaration}
+   * container with the specified {@link ResourceJson.Normalized.IContainerContextDecl | container context declaration}e
+   * @param container - The {@link ResourceJson.Normalized.IContainerContextDecl | container context declaration}
    * to consider when creating the new context.
    * @param importer - The base {@link Import.ImportContext | import context} to adjust for the container
    * context.
@@ -156,7 +156,7 @@ export class ImportContext implements IValidatedImportContext {
    * - `delete`: The base context is deleted. This means that the container context is not used at all.
    */
   public static forContainerImport(
-    container?: ResourceJson.Normalized.IResourceContextDecl,
+    container?: ResourceJson.Normalized.IContainerContextDecl,
     importer?: ImportContext
   ): Result<ImportContext | undefined> {
     if (!importer) {

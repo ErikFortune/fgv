@@ -42,7 +42,7 @@ export class ResourceDeclCollection implements IResourceDeclContainer {
   /**
    * {@inheritdoc ResourceJson.IResourceDeclContainer.context}
    */
-  public get context(): Normalized.IResourceContextDecl | undefined {
+  public get context(): Normalized.IContainerContextDecl | undefined {
     return this.collection.context;
   }
 

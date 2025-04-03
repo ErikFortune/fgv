@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly context?: IResourceContextDecl;
+readonly context?: IContainerContextDecl;
 ```

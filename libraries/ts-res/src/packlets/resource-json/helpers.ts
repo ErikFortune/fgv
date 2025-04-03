@@ -47,10 +47,10 @@ export interface IDeclarationOptions {
  * @public
  */
 export function mergeContextDecl(
-  decl?: Normalized.IResourceContextDecl,
+  decl?: Normalized.IContainerContextDecl,
   parentName?: string,
   parentConditions?: ReadonlyArray<Json.ILooseConditionDecl>
-): Result<Normalized.IResourceContextDecl> {
+): Result<Normalized.IContainerContextDecl> {
   if (!decl) {
     return sanitizeJsonObject({ id: parentName, conditions: parentConditions });
   } else if (!parentName && !parentConditions) {

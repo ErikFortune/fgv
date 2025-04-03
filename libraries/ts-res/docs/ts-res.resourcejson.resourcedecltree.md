@@ -122,12 +122,12 @@ Normalized.ILooseResourceDecl\[\]
 
 </td><td>
 
-Normalized.IResourceContextDecl \| undefined
+Normalized.IContainerContextDecl \| undefined
 
 
 </td><td>
 
-Optional initial [resource context](./ts-res.resourcejson.normalized.iresourcecontextdecl.md) declaration for the container.
+Optional initial  declaration for the container.
 
 
 </td></tr>

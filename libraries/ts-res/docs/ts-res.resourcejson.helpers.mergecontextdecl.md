@@ -9,7 +9,7 @@ Helper method to merge a resource context declaration with a parent name and con
 **Signature:**
 
 ```typescript
-export declare function mergeContextDecl(decl?: Normalized.IResourceContextDecl, parentName?: string, parentConditions?: ReadonlyArray<Json.ILooseConditionDecl>): Result<Normalized.IResourceContextDecl>;
+export declare function mergeContextDecl(decl?: Normalized.IContainerContextDecl, parentName?: string, parentConditions?: ReadonlyArray<Json.ILooseConditionDecl>): Result<Normalized.IContainerContextDecl>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ decl
 
 </td><td>
 
-Normalized.IResourceContextDecl
+Normalized.IContainerContextDecl
 
 
 </td><td>
@@ -81,7 +81,7 @@ _(Optional)_ The conditions of the parent resource.
 </tbody></table>
 **Returns:**
 
-Result&lt;Normalized.IResourceContextDecl&gt;
+Result&lt;Normalized.IContainerContextDecl&gt;
 
 `Success` with the merged resource context declaration if successful, otherwise `Failure`<!-- -->.
 

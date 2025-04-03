@@ -29,10 +29,10 @@ import * as Normalized from './normalized';
  */
 export interface IResourceDeclContainer {
   /**
-   * Optional initial {@link ResourceJson.Normalized.IResourceContextDecl | resource context}
+   * Optional initial {@link ResourceJson.Normalized.IContainerContextDecl | resource context}
    * declaration for the container.
    */
-  readonly context?: Normalized.IResourceContextDecl;
+  readonly context?: Normalized.IContainerContextDecl;
 
   /**
    * Gets a normalized array of {@link ResourceJson.Normalized.ILooseResourceDecl | loose resource}
