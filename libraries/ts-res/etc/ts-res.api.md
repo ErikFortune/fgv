@@ -470,6 +470,7 @@ declare namespace Convert_3 {
         childResourceCandidateDecl,
         looseResourceDecl,
         childResourceDecl,
+        resourceContextDecl,
         resourceTreeChildNodeDecl,
         resourceTreeRootDecl,
         resourceCollectionDecl
@@ -1301,13 +1302,11 @@ interface IResourceCandidateValidationProperties {
 // @public
 interface IResourceCollectionDecl {
     // (undocumented)
-    readonly baseConditions?: ConditionSetDecl;
-    // (undocumented)
-    readonly baseName?: string;
-    // (undocumented)
     readonly candidates?: ReadonlyArray<ILooseResourceCandidateDecl>;
     // (undocumented)
     readonly collections?: ReadonlyArray<IResourceCollectionDecl>;
+    // (undocumented)
+    readonly context?: IResourceContextDecl;
     // (undocumented)
     readonly resources?: ReadonlyArray<ILooseResourceDecl>;
 }
@@ -1315,13 +1314,11 @@ interface IResourceCollectionDecl {
 // @public
 interface IResourceCollectionDecl_2 {
     // (undocumented)
-    readonly baseConditions?: ConditionSetDecl_2;
-    // (undocumented)
-    readonly baseName?: string;
-    // (undocumented)
     readonly candidates?: ReadonlyArray<ILooseResourceCandidateDecl_2>;
     // (undocumented)
     readonly collections?: ReadonlyArray<IResourceCollectionDecl_2>;
+    // (undocumented)
+    readonly context?: IResourceContextDecl_2;
     // (undocumented)
     readonly resources?: ReadonlyArray<ILooseResourceDecl_2>;
 }
@@ -1332,6 +1329,26 @@ interface IResourceCollectionDecl_2 {
 interface IResourceCollectorCreateParams {
     // (undocumented)
     resourceTypes?: ResourceType[];
+}
+
+// @public
+interface IResourceContextDecl {
+    // (undocumented)
+    readonly conditions?: ConditionSetDecl;
+    // (undocumented)
+    readonly id?: string;
+    // (undocumented)
+    readonly mergeMethod?: ResourceValueMergeMethod;
+}
+
+// @public
+interface IResourceContextDecl_2 {
+    // (undocumented)
+    readonly conditions?: ConditionSetDecl_2;
+    // (undocumented)
+    readonly id?: string;
+    // (undocumented)
+    readonly mergeMethod?: ResourceValueMergeMethod;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1388,9 +1405,9 @@ interface IResourceTreeChildNodeDecl_2 {
 // @public
 interface IResourceTreeRootDecl extends IResourceTreeChildNodeDecl {
     // (undocumented)
-    readonly baseName?: string;
-    // (undocumented)
     readonly children?: Record<string, IResourceTreeChildNodeDecl>;
+    // (undocumented)
+    readonly context?: IResourceContextDecl;
     // (undocumented)
     readonly resources?: Record<string, IChildResourceDecl>;
 }
@@ -1400,9 +1417,9 @@ interface IResourceTreeRootDecl extends IResourceTreeChildNodeDecl {
 // @public
 interface IResourceTreeRootDecl_2 extends IResourceTreeChildNodeDecl_2 {
     // (undocumented)
-    readonly baseName?: string;
-    // (undocumented)
     readonly children?: Record<string, IResourceTreeChildNodeDecl_2>;
+    // (undocumented)
+    readonly context?: IResourceContextDecl_2;
     // (undocumented)
     readonly resources?: Record<string, IChildResourceDecl_2>;
 }
@@ -1561,6 +1578,7 @@ declare namespace Json {
         IChildResourceDecl,
         ILooseResourceDecl,
         IResourceTreeChildNodeDecl,
+        IResourceContextDecl,
         IResourceTreeRootDecl,
         IResourceCollectionDecl
     }
@@ -1699,6 +1717,7 @@ declare namespace Normalized {
         IChildResourceDecl_2 as IChildResourceDecl,
         ILooseResourceDecl_2 as ILooseResourceDecl,
         IResourceTreeChildNodeDecl_2 as IResourceTreeChildNodeDecl,
+        IResourceContextDecl_2 as IResourceContextDecl,
         IResourceTreeRootDecl_2 as IResourceTreeRootDecl,
         IResourceCollectionDecl_2 as IResourceCollectionDecl
     }
@@ -2103,6 +2122,11 @@ class ResourceCandidate {
 //
 // @public
 const resourceCollectionDecl: Converter<Normalized.IResourceCollectionDecl>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const resourceContextDecl: Converter<Normalized.IResourceContextDecl>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

@@ -58,8 +58,10 @@ describe('ResourceDeclCollection', () => {
 
     test('extracts loose candidates with parent name and conditions', () => {
       const jsonDecl: TsRes.ResourceJson.Json.IResourceCollectionDecl = {
-        baseName: 'parent',
-        baseConditions: { orphaned: 'false' },
+        context: {
+          id: 'parent',
+          conditions: { orphaned: 'false' }
+        },
         candidates: [
           {
             id: 'foo',
@@ -136,8 +138,10 @@ describe('ResourceDeclCollection', () => {
 
     test('extracts loose resources with parent name and conditions', () => {
       const jsonDecl: TsRes.ResourceJson.Json.IResourceCollectionDecl = {
-        baseName: 'parent',
-        baseConditions: { orphaned: 'false' },
+        context: {
+          id: 'parent',
+          conditions: { orphaned: 'false' }
+        },
         resources: [
           {
             id: 'foo.bar',
@@ -183,12 +187,16 @@ describe('ResourceDeclCollection', () => {
 
     test('extracts child collections, aggregating name and conditions', () => {
       const jsonDecl: TsRes.ResourceJson.Json.IResourceCollectionDecl = {
-        baseName: 'parent',
-        baseConditions: { orphaned: 'false' },
+        context: {
+          id: 'parent',
+          conditions: { orphaned: 'false' }
+        },
         collections: [
           {
-            baseName: 'child',
-            baseConditions: { grandchild: 'true' },
+            context: {
+              id: 'child',
+              conditions: { grandchild: 'true' }
+            },
             candidates: [
               {
                 id: 'foo',
@@ -203,8 +211,10 @@ describe('ResourceDeclCollection', () => {
             ],
             collections: [
               {
-                baseName: 'grandchild',
-                baseConditions: { greatGrandchild: 'true' },
+                context: {
+                  id: 'grandchild',
+                  conditions: { greatGrandchild: 'true' }
+                },
                 candidates: [
                   {
                     id: 'foo',

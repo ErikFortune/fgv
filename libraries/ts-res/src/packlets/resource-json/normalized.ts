@@ -141,11 +141,21 @@ export interface IResourceTreeChildNodeDecl {
 }
 
 /**
+ * Declared context for some collection of resources.
+ * @public
+ */
+export interface IResourceContextDecl {
+  readonly id?: string;
+  readonly conditions?: ConditionSetDecl;
+  readonly mergeMethod?: ResourceValueMergeMethod;
+}
+
+/**
  * Normalized non-validated declaration of a {@link Resources.Resource | resource} tree root.
  * @public
  */
 export interface IResourceTreeRootDecl extends IResourceTreeChildNodeDecl {
-  readonly baseName?: string;
+  readonly context?: IResourceContextDecl;
   readonly resources?: Record<string, IChildResourceDecl>;
   readonly children?: Record<string, IResourceTreeChildNodeDecl>;
 }
@@ -155,8 +165,7 @@ export interface IResourceTreeRootDecl extends IResourceTreeChildNodeDecl {
  * @public
  */
 export interface IResourceCollectionDecl {
-  readonly baseName?: string;
-  readonly baseConditions?: ConditionSetDecl;
+  readonly context?: IResourceContextDecl;
   readonly candidates?: ReadonlyArray<ILooseResourceCandidateDecl>;
   readonly resources?: ReadonlyArray<ILooseResourceDecl>;
   readonly collections?: ReadonlyArray<IResourceCollectionDecl>;

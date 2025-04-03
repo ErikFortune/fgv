@@ -87,8 +87,8 @@ export class ResourceDeclCollection implements IResourceDeclContainer {
     parentConditions?: Json.ILooseConditionDecl[]
   ): Result<this> {
     const errors: MessageAggregator = new MessageAggregator();
-    return CommonHelpers.joinOptionalResourceIds(parentName, collection.baseName).onSuccess((baseName) => {
-      const baseConditions = [...(parentConditions ?? []), ...(collection.baseConditions ?? [])];
+    return CommonHelpers.joinOptionalResourceIds(parentName, collection.context?.id).onSuccess((baseName) => {
+      const baseConditions = [...(parentConditions ?? []), ...(collection.context?.conditions ?? [])];
 
       const mergedCandidates =
         collection.candidates?.map((candidate) => mergeLooseCandidate(candidate, baseName, baseConditions)) ??

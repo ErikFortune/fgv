@@ -107,6 +107,17 @@ Description
 </td></tr>
 <tr><td>
 
+[resourceContextDecl](./ts-res.resourcejson.convert.resourcecontextdecl.md)
+
+
+</td><td>
+
+`Converter` for a normalized [resource context declaration](./ts-res.resourcejson.normalized.iresourcecontextdecl.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [resourceTreeChildNodeDecl](./ts-res.resourcejson.convert.resourcetreechildnodedecl.md)
 
 

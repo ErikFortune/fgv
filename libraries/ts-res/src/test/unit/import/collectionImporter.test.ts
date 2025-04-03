@@ -109,7 +109,9 @@ describe('CollectionImporter', () => {
       ]
     };
     treeJson = {
-      baseName: 'base',
+      context: {
+        id: 'base'
+      },
       resources: {
         foo: {
           resourceTypeName: 'json',

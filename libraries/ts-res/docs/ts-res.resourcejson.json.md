@@ -96,6 +96,17 @@ Non-validated declaration of a collection of resources.
 </td></tr>
 <tr><td>
 
+[IResourceContextDecl](./ts-res.resourcejson.json.iresourcecontextdecl.md)
+
+
+</td><td>
+
+Declared context for some collection of resources.
+
+
+</td></tr>
+<tr><td>
+
 [IResourceTreeChildNodeDecl](./ts-res.resourcejson.json.iresourcetreechildnodedecl.md)
 
 
