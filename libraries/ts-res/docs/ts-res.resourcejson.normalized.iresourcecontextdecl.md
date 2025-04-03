@@ -37,6 +37,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[baseId?](./ts-res.resourcejson.normalized.iresourcecontextdecl.baseid.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
 [conditions?](./ts-res.resourcejson.normalized.iresourcecontextdecl.conditions.md)
 
 
@@ -48,27 +69,6 @@ Description
 </td><td>
 
 ConditionSetDecl
-
-
-</td><td>
-
-_(Optional)_
-
-
-</td></tr>
-<tr><td>
-
-[id?](./ts-res.resourcejson.normalized.iresourcecontextdecl.id.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-string
 
 
 </td><td>

@@ -138,7 +138,7 @@ describe('ResourceJson', () => {
     test('converts a nested resource collection declaration', () => {
       const input: TsRes.ResourceJson.Json.IResourceCollectionDecl = {
         context: {
-          id: 'some'
+          baseId: 'some'
         },
         candidates: [
           {
@@ -150,7 +150,7 @@ describe('ResourceJson', () => {
         collections: [
           {
             context: {
-              id: 'other'
+              baseId: 'other'
             },
             candidates: [
               {
@@ -166,7 +166,7 @@ describe('ResourceJson', () => {
       const result = TsRes.ResourceJson.Convert.resourceCollectionDecl.convert(input);
       expect(result).toSucceedWith({
         context: {
-          id: 'some'
+          baseId: 'some'
         },
         candidates: [
           {
@@ -183,7 +183,7 @@ describe('ResourceJson', () => {
         collections: [
           {
             context: {
-              id: 'other'
+              baseId: 'other'
             },
             candidates: [
               {
@@ -208,7 +208,7 @@ describe('ResourceJson', () => {
       expect(
         TsRes.ResourceJson.Convert.resourceTreeRootDecl.convert({
           context: {
-            id: 'some'
+            baseId: 'some'
           },
           resources: {
             resource1: {
@@ -239,7 +239,7 @@ describe('ResourceJson', () => {
         })
       ).toSucceedWith({
         context: {
-          id: 'some'
+          baseId: 'some'
         },
         resources: {
           resource1: {

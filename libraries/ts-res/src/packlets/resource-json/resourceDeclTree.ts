@@ -40,12 +40,19 @@ export class ResourceDeclTree implements IResourceDeclContainer {
    */
   public readonly tree: Normalized.IResourceTreeRootDecl;
 
+  /**
+   * {@inheritdoc ResourceJson.IResourceDeclContainer.context}
+   */
+  public get context(): Normalized.IResourceContextDecl | undefined {
+    return this.tree.context;
+  }
+
   protected _resources: Normalized.ILooseResourceDecl[] = [];
   protected _candidates: Normalized.ILooseResourceCandidateDecl[] = [];
 
   protected constructor(tree: Normalized.IResourceTreeRootDecl) {
     this.tree = tree;
-    const id = tree.context?.id;
+    const id = tree.context?.baseId;
     const conditions = tree.context?.conditions;
     this._extract(tree, id, conditions).orThrow();
   }

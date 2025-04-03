@@ -131,6 +131,27 @@ The [resource collection declaration](./ts-res.resourcejson.normalized.iresource
 
 
 </td></tr>
+<tr><td>
+
+[context](./ts-res.resourcejson.resourcedeclcollection.context.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Normalized.IResourceContextDecl \| undefined
+
+
+</td><td>
+
+Optional initial [resource context](./ts-res.resourcejson.normalized.iresourcecontextdecl.md) declaration for the container.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods

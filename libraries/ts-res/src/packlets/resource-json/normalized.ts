@@ -145,7 +145,7 @@ export interface IResourceTreeChildNodeDecl {
  * @public
  */
 export interface IResourceContextDecl {
-  readonly id?: string;
+  readonly baseId?: string;
   readonly conditions?: ConditionSetDecl;
   readonly mergeMethod?: ResourceValueMergeMethod;
 }

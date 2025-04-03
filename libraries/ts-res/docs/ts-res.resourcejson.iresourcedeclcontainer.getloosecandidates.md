@@ -4,6 +4,8 @@
 
 ## ResourceJson.IResourceDeclContainer.getLooseCandidates() method
 
+Gets a normalized array of [loose resource candidate](./ts-res.resourcejson.normalized.ilooseresourcecandidatedecl.md) declarations for all resources in the container, including children.
+
 **Signature:**
 
 ```typescript

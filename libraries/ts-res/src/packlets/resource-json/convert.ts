@@ -63,7 +63,7 @@ const conditionSetDeclFromRecord: Converter<Normalized.ConditionSetDecl> = Conve
 >(
   (
     from: unknown,
-    self: Converter<Normalized.ConditionSetDecl, unknown>,
+    __self: Converter<Normalized.ConditionSetDecl, unknown>,
     context?: unknown
   ): Result<Normalized.ConditionSetDecl> => {
     /* c8 ignore next 3 - this is tested but coverage is confused */
@@ -140,7 +140,7 @@ export const childResourceDecl: Converter<Normalized.IChildResourceDecl> =
  */
 export const resourceContextDecl: Converter<Normalized.IResourceContextDecl> =
   Converters.strictObject<Normalized.IResourceContextDecl>({
-    id: Converters.oneOf([CommonConvert.resourceId, Converters.literal('')]).optional(),
+    baseId: Converters.oneOf([CommonConvert.resourceId, Converters.literal('')]).optional(),
     conditions: conditionSetDecl.optional(),
     mergeMethod: CommonConvert.resourceValueMergeMethod.optional()
   });

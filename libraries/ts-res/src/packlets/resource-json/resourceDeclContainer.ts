@@ -28,6 +28,21 @@ import * as Normalized from './normalized';
  * @public
  */
 export interface IResourceDeclContainer {
+  /**
+   * Optional initial {@link ResourceJson.Normalized.IResourceContextDecl | resource context}
+   * declaration for the container.
+   */
+  readonly context?: Normalized.IResourceContextDecl;
+
+  /**
+   * Gets a normalized array of {@link ResourceJson.Normalized.ILooseResourceDecl | loose resource}
+   * declarations for all resources in the container, including children.
+   */
   getLooseResources(): ReadonlyArray<Normalized.ILooseResourceDecl>;
+
+  /**
+   * Gets a normalized array of {@link ResourceJson.Normalized.ILooseResourceCandidateDecl | loose resource candidate}
+   * declarations for all resources in the container, including children.
+   */
   getLooseCandidates(): ReadonlyArray<Normalized.ILooseResourceCandidateDecl>;
 }

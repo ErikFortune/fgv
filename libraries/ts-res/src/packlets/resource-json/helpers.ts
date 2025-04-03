@@ -24,6 +24,7 @@ import { mapResults, Result, succeed } from '@fgv/ts-utils';
 import * as Normalized from './normalized';
 import * as Json from './json';
 import { Helpers as CommonHelpers } from '../common';
+import { sanitizeJsonObject } from '@fgv/ts-json-base';
 
 /**
  * Common options when creating or displaying declarations.
@@ -35,6 +36,41 @@ export interface IDeclarationOptions {
    * output. IF omitted or `false`, properties with default values will be omitted.
    */
   showDefaults?: boolean;
+}
+
+/**
+ * Helper method to merge a resource context declaration with a parent name and conditions.
+ * @param decl - The resource context declaration to merge.
+ * @param parentName - The name of the parent resource.
+ * @param parentConditions - The conditions of the parent resource.
+ * @returns `Success` with the merged resource context declaration if successful, otherwise `Failure`.
+ * @public
+ */
+export function mergeContextDecl(
+  decl?: Normalized.IResourceContextDecl,
+  parentName?: string,
+  parentConditions?: ReadonlyArray<Json.ILooseConditionDecl>
+): Result<Normalized.IResourceContextDecl> {
+  if (!decl) {
+    return sanitizeJsonObject({ id: parentName, conditions: parentConditions });
+  } else if (!parentName && !parentConditions) {
+    return succeed(decl);
+  }
+  switch (decl.mergeMethod ?? 'augment') {
+    case 'augment':
+      return CommonHelpers.joinResourceIds(parentName, decl.baseId).onSuccess((baseId) => {
+        const conditions = [...(parentConditions ?? []), ...(decl.conditions ?? [])];
+        return sanitizeJsonObject({ baseId, conditions });
+      });
+    case 'replace': {
+      const baseId = decl.baseId ?? parentName;
+      const conditions = decl.conditions ?? parentConditions;
+      return sanitizeJsonObject({ baseId, conditions });
+    }
+    case 'delete': {
+      return succeed(decl);
+    }
+  }
 }
 
 /**

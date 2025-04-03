@@ -52,9 +52,11 @@ export function splitResourceId(id: string | undefined): Result<ResourceName[]> 
 export function joinResourceIds(...ids: (string | undefined)[]): Result<ResourceId> {
   const errors: MessageAggregator = new MessageAggregator();
   const parts: ResourceName[] = [];
-  ids.forEach((id) => {
-    parts.push(...splitResourceId(id).aggregateError(errors).orDefault([]));
-  });
+  ids
+    .filter((id) => id !== '')
+    .forEach((id) => {
+      parts.push(...splitResourceId(id).aggregateError(errors).orDefault([]));
+    });
   const id = parts.join('.');
   return errors.returnOrReport(toResourceId(id));
 }
@@ -72,9 +74,11 @@ export function joinResourceIds(...ids: (string | undefined)[]): Result<Resource
 export function joinOptionalResourceIds(...ids: (string | undefined)[]): Result<ResourceId | undefined> {
   const errors: MessageAggregator = new MessageAggregator();
   const parts: ResourceName[] = [];
-  ids.forEach((id) => {
-    parts.push(...splitResourceId(id).aggregateError(errors).orDefault([]));
-  });
+  ids
+    .filter((id) => id !== '')
+    .forEach((id) => {
+      parts.push(...splitResourceId(id).aggregateError(errors).orDefault([]));
+    });
   const id = parts.join('.');
   return errors.returnOrReport(id ? toResourceId(id) : succeed(undefined));
 }

@@ -166,6 +166,22 @@ Extends the import context with additional name segments and conditions.
 </td></tr>
 <tr><td>
 
+[forContainerImport(container, importer)](./ts-res.import.importcontext.forcontainerimport.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [import context](./ts-res.import.importcontext.md) to import resources from a container with the specified [container context declaration](./ts-res.resourcejson.normalized.iresourcecontextdecl.md)<!-- -->e
+
+
+</td></tr>
+<tr><td>
+
 [withConditions(conditions)](./ts-res.import.importcontext.withconditions.md)
 
 

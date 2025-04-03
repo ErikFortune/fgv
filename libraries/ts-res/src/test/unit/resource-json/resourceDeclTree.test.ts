@@ -80,7 +80,7 @@ describe('ResourceDeclTree', () => {
     test('extracts resources from a valid tree root with a base name', () => {
       const json: TsRes.ResourceJson.Json.IResourceTreeRootDecl = {
         context: {
-          id: 'base'
+          baseId: 'base'
         },
         resources: {
           foo: {
@@ -134,7 +134,7 @@ describe('ResourceDeclTree', () => {
     test('extracts resources from an entire tree', () => {
       const json: TsRes.ResourceJson.Json.IResourceTreeRootDecl = {
         context: {
-          id: 'base'
+          baseId: 'base'
         },
         resources: {
           foo: {

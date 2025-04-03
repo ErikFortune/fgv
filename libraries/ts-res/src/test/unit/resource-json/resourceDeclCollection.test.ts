@@ -59,7 +59,7 @@ describe('ResourceDeclCollection', () => {
     test('extracts loose candidates with parent name and conditions', () => {
       const jsonDecl: TsRes.ResourceJson.Json.IResourceCollectionDecl = {
         context: {
-          id: 'parent',
+          baseId: 'parent',
           conditions: { orphaned: 'false' }
         },
         candidates: [
@@ -139,7 +139,7 @@ describe('ResourceDeclCollection', () => {
     test('extracts loose resources with parent name and conditions', () => {
       const jsonDecl: TsRes.ResourceJson.Json.IResourceCollectionDecl = {
         context: {
-          id: 'parent',
+          baseId: 'parent',
           conditions: { orphaned: 'false' }
         },
         resources: [
@@ -188,13 +188,13 @@ describe('ResourceDeclCollection', () => {
     test('extracts child collections, aggregating name and conditions', () => {
       const jsonDecl: TsRes.ResourceJson.Json.IResourceCollectionDecl = {
         context: {
-          id: 'parent',
+          baseId: 'parent',
           conditions: { orphaned: 'false' }
         },
         collections: [
           {
             context: {
-              id: 'child',
+              baseId: 'child',
               conditions: { grandchild: 'true' }
             },
             candidates: [
@@ -212,7 +212,7 @@ describe('ResourceDeclCollection', () => {
             collections: [
               {
                 context: {
-                  id: 'grandchild',
+                  baseId: 'grandchild',
                   conditions: { greatGrandchild: 'true' }
                 },
                 candidates: [
