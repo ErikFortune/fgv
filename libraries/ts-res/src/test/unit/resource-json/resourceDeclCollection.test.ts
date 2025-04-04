@@ -185,7 +185,7 @@ describe('ResourceDeclCollection', () => {
       });
     });
 
-    test('extracts child collections, aggregating name and conditions', () => {
+    test('extracts child collections, augmenting name and conditions', () => {
       const jsonDecl: TsRes.ResourceJson.Json.IResourceCollectionDecl = {
         context: {
           baseId: 'parent',
@@ -239,6 +239,30 @@ describe('ResourceDeclCollection', () => {
                     ]
                   }
                 ]
+              },
+              {
+                context: {
+                  baseId: 'g2'
+                },
+                candidates: [
+                  {
+                    id: 'foo',
+                    json: { myNameIs: 'foo' },
+                    conditions: { foo: 'bar' }
+                  }
+                ]
+              },
+              {
+                context: {
+                  conditions: { g2: 'true' }
+                },
+                candidates: [
+                  {
+                    id: 'foo',
+                    json: { myNameIs: 'foo' },
+                    conditions: { foo: 'bar' }
+                  }
+                ]
               }
             ]
           }
@@ -271,6 +295,25 @@ describe('ResourceDeclCollection', () => {
               { qualifierName: 'orphaned', value: 'false' },
               { qualifierName: 'grandchild', value: 'true' },
               { qualifierName: 'greatGrandchild', value: 'true' },
+              { qualifierName: 'foo', value: 'bar' }
+            ]
+          },
+          {
+            id: 'parent.child.g2.foo',
+            json: { myNameIs: 'foo' },
+            conditions: [
+              { qualifierName: 'orphaned', value: 'false' },
+              { qualifierName: 'grandchild', value: 'true' },
+              { qualifierName: 'foo', value: 'bar' }
+            ]
+          },
+          {
+            id: 'parent.child.foo',
+            json: { myNameIs: 'foo' },
+            conditions: [
+              { qualifierName: 'orphaned', value: 'false' },
+              { qualifierName: 'grandchild', value: 'true' },
+              { qualifierName: 'g2', value: 'true' },
               { qualifierName: 'foo', value: 'bar' }
             ]
           }
@@ -346,6 +389,36 @@ describe('ResourceDeclCollection', () => {
                 ]
               }
             ]
+          },
+          {
+            context: {
+              mergeMethod: 'replace',
+              baseId: 'child2'
+            },
+            candidates: [
+              {
+                id: 'foo_the_second',
+                json: { myNameIs: 'foo the second' },
+                conditions: {
+                  c2foo2: 'true'
+                }
+              }
+            ]
+          },
+          {
+            context: {
+              mergeMethod: 'replace',
+              conditions: { c3: 'true' }
+            },
+            candidates: [
+              {
+                id: 'foo_the_third',
+                json: { myNameIs: 'foo the third' },
+                conditions: {
+                  c3foo3: 'true'
+                }
+              }
+            ]
           }
         ]
       };
@@ -365,6 +438,22 @@ describe('ResourceDeclCollection', () => {
             conditions: [
               { qualifierName: 'grandchild', value: 'true' },
               { qualifierName: 'wut', value: 'xyzzy', priority: 200 }
+            ]
+          },
+          {
+            id: 'child2.foo_the_second',
+            json: { myNameIs: 'foo the second' },
+            conditions: [
+              { qualifierName: 'orphaned', value: 'false' },
+              { qualifierName: 'c2foo2', value: 'true' }
+            ]
+          },
+          {
+            id: 'parent.foo_the_third',
+            json: { myNameIs: 'foo the third' },
+            conditions: [
+              { qualifierName: 'c3', value: 'true' },
+              { qualifierName: 'c3foo3', value: 'true' }
             ]
           }
         ]);

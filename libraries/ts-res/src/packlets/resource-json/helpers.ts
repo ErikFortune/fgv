@@ -59,6 +59,7 @@ export function mergeContextDecl(
   switch (decl.mergeMethod ?? 'augment') {
     case 'augment':
       return CommonHelpers.joinResourceIds(parentName, decl.baseId).onSuccess((baseId) => {
+        /* c8 ignore next 1 - defense in depth */
         const conditions = [...(parentConditions ?? []), ...(decl.conditions ?? [])];
         return sanitizeJsonObject({ baseId, conditions });
       });
