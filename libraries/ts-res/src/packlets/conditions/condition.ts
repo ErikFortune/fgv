@@ -35,6 +35,7 @@ import {
 import { Qualifier } from '../qualifiers';
 import { IValidatedConditionDecl } from './conditionDecls';
 import * as ResourceJson from '../resource-json';
+import * as Context from '../context';
 
 // eslint-disable-next-line @rushstack/typedef-var
 const scoreFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
@@ -122,6 +123,33 @@ export class Condition implements IValidatedConditionDecl {
    */
   public static create(decl: IValidatedConditionDecl): Result<Condition> {
     return captureResult(() => new Condition(decl));
+  }
+
+  /**
+   * Determines if this condition matches the supplied {@link Context.IValidatedContextDecl | validated context}.
+   * @param context - The {@link Context.IValidatedContextDecl | context} to match against.
+   * @returns A {@link QualifierMatchScore | match score} indicating match quality if the condition is present
+   * in the context to be matched, `undefined` otherwise.
+   */
+  public matchContext(context: Context.IValidatedContextDecl): QualifierMatchScore | undefined {
+    if (this.qualifier.name in context) {
+      const contextValue = context[this.qualifier.name];
+      return this.qualifier.type.matches(this.value, contextValue, this.operator);
+    }
+    return undefined;
+  }
+
+  /**
+   * Determines if this condition matches the supplied {@link Context.IValidatedContextDecl | validated context}.
+   * @remarks
+   * A condition matches a context if it is present and the comparison yields a non-zero {@link QualifierMatchScore | match score},
+   * *or* if the condition is not present in the context.
+   * @param context - The {@link Context.IValidatedContextDecl | context} to match against.
+   * @returns `true` if the condition matches the context, `false` otherwise.
+   * @public
+   */
+  public isContextMatch(context: Context.IValidatedContextDecl): boolean {
+    return this.matchContext(context) !== undefined;
   }
 
   /**

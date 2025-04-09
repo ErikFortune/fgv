@@ -169,8 +169,14 @@ class Condition implements IValidatedConditionDecl {
     static getKeyForDecl(decl: IValidatedConditionDecl): Result<ConditionKey>;
     // (undocumented)
     get index(): ConditionIndex | undefined;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    isContextMatch(context: Context.IValidatedContextDecl): boolean;
     // (undocumented)
     get key(): ConditionKey;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    matchContext(context: Context.IValidatedContextDecl): QualifierMatchScore | undefined;
     readonly operator: ConditionOperator;
     readonly priority: ConditionPriority;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
