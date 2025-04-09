@@ -20,27 +20,7 @@
  * SOFTWARE.
  */
 
-import * as QualifierTypes from './packlets/qualifier-types';
-import * as Qualifiers from './packlets/qualifiers';
-import * as Conditions from './packlets/conditions';
-import * as Context from './packlets/context';
-import * as Decisions from './packlets/decisions';
-import * as ResourceJson from './packlets/resource-json';
-import * as Resources from './packlets/resources';
-import * as ResourceTypes from './packlets/resource-types';
-import * as Import from './packlets/import';
+import * as Convert from './convert';
+export * from './contextDecls';
 
-export * from './packlets/common';
-export * from './packlets/common';
-
-export {
-  Conditions,
-  Context,
-  Decisions,
-  Import,
-  QualifierTypes,
-  Qualifiers,
-  ResourceJson,
-  Resources,
-  ResourceTypes
-};
+export { Convert };

@@ -148,7 +148,7 @@ Normalized.IContainerContextDecl \| undefined
 
 </td><td>
 
-Optional initial  declaration for the container.
+Optional initial [resource context](./ts-res.resourcejson.normalized.icontainercontextdecl.md) declaration for the container.
 
 
 </td></tr>

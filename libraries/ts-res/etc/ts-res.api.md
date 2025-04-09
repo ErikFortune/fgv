@@ -427,6 +427,27 @@ class ConditionTokens {
 // @public
 const containerContextDecl: Converter<Normalized.IContainerContextDecl>;
 
+declare namespace Context {
+    export {
+        Convert_4 as Convert,
+        IContextQualifierValueDecl,
+        IContextDecl,
+        IValidatedContextQualifierValueDecl,
+        IValidatedContextDecl
+    }
+}
+export { Context }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const contextDecl: Converter<Record<string, string>, unknown>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const contextQualifierValueDecl: ObjectConverter<IContextQualifierValueDecl, unknown>;
+
 declare namespace Convert {
     export {
         qualifierName,
@@ -484,12 +505,22 @@ declare namespace Convert_3 {
 
 declare namespace Convert_4 {
     export {
+        contextQualifierValueDecl,
+        contextDecl,
+        IContextDeclConvertContext,
+        validatedContextQualifierValueDecl,
+        validatedContextDecl
+    }
+}
+
+declare namespace Convert_5 {
+    export {
         IQualifierTypeConvertContext,
         qualifierType
     }
 }
 
-declare namespace Convert_5 {
+declare namespace Convert_6 {
     export {
         qualifierDecl,
         IQualifierDeclConvertContext,
@@ -829,6 +860,28 @@ interface IContainerContextDecl_2 {
     readonly conditions?: ConditionSetDecl_2;
     // (undocumented)
     readonly mergeMethod?: ResourceValueMergeMethod;
+}
+
+// @public
+type IContextDecl = Record<string, string>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IContextDeclConvertContext {
+    // (undocumented)
+    readonly qualifiers: IReadOnlyQualifierCollector;
+}
+
+// @public
+interface IContextQualifierValueDecl {
+    // (undocumented)
+    qualifier: string;
+    // (undocumented)
+    value: string;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1556,6 +1609,17 @@ interface IValidatedConditionSetDecl {
 }
 
 // @public
+type IValidatedContextDecl = Record<QualifierName, QualifierContextValue>;
+
+// @public
+interface IValidatedContextQualifierValueDecl {
+    // (undocumented)
+    qualifier: QualifierName;
+    // (undocumented)
+    value: QualifierContextValue;
+}
+
+// @public
 interface IValidatedImportContext {
     readonly baseId?: ResourceId;
     readonly conditions: ReadonlyArray<IConditionDecl>;
@@ -1868,7 +1932,7 @@ const qualifierName: Converter<QualifierName, unknown>;
 
 declare namespace Qualifiers {
     export {
-        Convert_5 as Convert,
+        Convert_6 as Convert,
         Qualifier,
         IQualifierDecl,
         IValidatedQualifierDecl,
@@ -1974,7 +2038,7 @@ const qualifierTypeName: Converter<QualifierTypeName, unknown>;
 
 declare namespace QualifierTypes {
     export {
-        Convert_4 as Convert,
+        Convert_5 as Convert,
         IQualifierType,
         IQualifierTypeCreateParams,
         QualifierType,
@@ -2534,6 +2598,20 @@ const validatedConditionDecl: Converter<IValidatedConditionDecl, IConditionDeclC
 //
 // @public
 const validatedConditionSetDecl: Converter<IValidatedConditionSetDecl, IConditionSetDeclConvertContext>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const validatedContextDecl: Converter<IValidatedContextDecl, IContextDeclConvertContext>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const validatedContextQualifierValueDecl: Converter<IContextQualifierValueDecl, IContextDeclConvertContext>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

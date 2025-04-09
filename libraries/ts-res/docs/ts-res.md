@@ -28,6 +28,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Context](./ts-res.context.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Convert](./ts-res.convert.md)
 
 

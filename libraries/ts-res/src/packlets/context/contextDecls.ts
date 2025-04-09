@@ -20,27 +20,37 @@
  * SOFTWARE.
  */
 
-import * as QualifierTypes from './packlets/qualifier-types';
-import * as Qualifiers from './packlets/qualifiers';
-import * as Conditions from './packlets/conditions';
-import * as Context from './packlets/context';
-import * as Decisions from './packlets/decisions';
-import * as ResourceJson from './packlets/resource-json';
-import * as Resources from './packlets/resources';
-import * as ResourceTypes from './packlets/resource-types';
-import * as Import from './packlets/import';
+import { QualifierContextValue, QualifierName } from '../common';
 
-export * from './packlets/common';
-export * from './packlets/common';
+/**
+ * Non-validated declaration of a single context qualifier value.
+ * @public
+ */
+export interface IContextQualifierValueDecl {
+  qualifier: string;
+  value: string;
+}
 
-export {
-  Conditions,
-  Context,
-  Decisions,
-  Import,
-  QualifierTypes,
-  Qualifiers,
-  ResourceJson,
-  Resources,
-  ResourceTypes
-};
+/**
+ * Non-validated declaration of a context, consisting of named
+ * values.
+ * @public
+ */
+export type IContextDecl = Record<string, string>;
+
+/**
+ * Validated declaration of a single context qualifier value.
+ * @public
+ */
+export interface IValidatedContextQualifierValueDecl {
+  qualifier: QualifierName;
+  value: QualifierContextValue;
+}
+
+/**
+ * Validated declaration of a context, a record with strongly-typed
+ * {@link QualifierTypeName | qualifier type names} as keys and
+ * {@link QualifierContextValue | qualifier context values} as values.
+ * @public
+ */
+export type IValidatedContextDecl = Record<QualifierName, QualifierContextValue>;
