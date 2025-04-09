@@ -63,7 +63,7 @@ export interface IContextDeclConvertContext {
  * @public
  */
 export const validatedContextQualifierValueDecl = Converters.generic<
-  IContextQualifierValueDecl,
+  IValidatedContextQualifierValueDecl,
   IContextDeclConvertContext
 >(
   (
@@ -79,9 +79,9 @@ export const validatedContextQualifierValueDecl = Converters.generic<
       if (message !== undefined) {
         return Failure.with(message);
       }
-      return qualifier.type.validateContextValue(decl.value).onSuccess((value) => {
+      return qualifier.validateContextValue(decl.value).onSuccess((value) => {
         return Success.with({
-          qualifier: qualifier.name,
+          qualifier,
           value
         });
       });
@@ -109,7 +109,7 @@ export const validatedContextDecl = Converters.generic<IValidatedContextDecl, IC
         if (key in decl) {
           const { value: qualifier } = context.qualifiers.validating.get(key).aggregateError(errors);
           if (qualifier !== undefined) {
-            qualifier.type
+            qualifier
               .validateContextValue(decl[key])
               .onSuccess((value) => {
                 result[qualifier.name] = value;

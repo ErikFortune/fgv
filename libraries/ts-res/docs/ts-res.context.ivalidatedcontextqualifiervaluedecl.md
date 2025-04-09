@@ -45,7 +45,7 @@ Description
 
 </td><td>
 
-[QualifierName](./ts-res.qualifiername.md)
+[Qualifier](./ts-res.qualifiers.qualifier.md)
 
 
 </td><td>

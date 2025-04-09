@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-qualifier: QualifierName;
+qualifier: Qualifier;
 ```

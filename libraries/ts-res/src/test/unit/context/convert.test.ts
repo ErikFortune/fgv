@@ -54,7 +54,7 @@ describe('context converters', () => {
         qualifiers
       });
       expect(contextQualifierValue).toSucceedAndSatisfy((c) => {
-        expect(c.qualifier).toEqual('homeTerritory');
+        expect(c.qualifier.name).toEqual('homeTerritory');
         expect(c.value).toEqual('CA');
       });
     });

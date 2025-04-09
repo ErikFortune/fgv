@@ -9,5 +9,5 @@ Converter which constructs a [validated context qualifier value declaration](./t
 **Signature:**
 
 ```typescript
-validatedContextQualifierValueDecl: import("@fgv/ts-utils").Converter<IContextQualifierValueDecl, IContextDeclConvertContext>
+validatedContextQualifierValueDecl: import("@fgv/ts-utils").Converter<IValidatedContextQualifierValueDecl, IContextDeclConvertContext>
 ```

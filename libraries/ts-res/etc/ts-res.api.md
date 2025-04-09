@@ -1614,7 +1614,7 @@ type IValidatedContextDecl = Record<QualifierName, QualifierContextValue>;
 // @public
 interface IValidatedContextQualifierValueDecl {
     // (undocumented)
-    qualifier: QualifierName;
+    qualifier: Qualifier;
     // (undocumented)
     value: QualifierContextValue;
 }
@@ -1858,6 +1858,14 @@ class Qualifier implements IValidatedQualifierDecl, ICollectible<QualifierName, 
     static create(decl: IValidatedQualifierDecl): Result<Qualifier>;
     readonly defaultPriority: ConditionPriority;
     get index(): QualifierIndex | undefined;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    isValidConditionValue(value: string): value is QualifierConditionValue;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    isValidContextValue(value: string): value is QualifierContextValue;
     get key(): QualifierName;
     readonly name: QualifierName;
     setIndex(index: QualifierIndex): Result<QualifierIndex>;
@@ -1865,6 +1873,14 @@ class Qualifier implements IValidatedQualifierDecl, ICollectible<QualifierName, 
     readonly tokenIsOptional: boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly type: QualifierType;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    validateCondition(value: string, operator?: ConditionOperator): Result<QualifierConditionValue>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    validateContextValue(value: string): Result<QualifierContextValue>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2611,7 +2627,7 @@ const validatedContextDecl: Converter<IValidatedContextDecl, IContextDeclConvert
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const validatedContextQualifierValueDecl: Converter<IContextQualifierValueDecl, IContextDeclConvertContext>;
+const validatedContextQualifierValueDecl: Converter<IValidatedContextQualifierValueDecl, IContextDeclConvertContext>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

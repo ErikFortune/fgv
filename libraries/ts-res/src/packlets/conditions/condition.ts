@@ -89,7 +89,7 @@ export class Condition implements IValidatedConditionDecl {
   }: IValidatedConditionDecl) {
     this.qualifier = qualifier;
     this.operator = operator;
-    this.value = qualifier.type.validateCondition(value, operator).orThrow();
+    this.value = qualifier.validateCondition(value, operator).orThrow();
     this.priority = priority;
     this.scoreAsDefault = scoreAsDefault;
     this._collectible = new Collections.Collectible({

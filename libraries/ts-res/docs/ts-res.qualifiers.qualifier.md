@@ -278,6 +278,32 @@ Creates a new instance of a [Qualifier](./ts-res.qualifiers.qualifier.md) from t
 </td></tr>
 <tr><td>
 
+[isValidConditionValue(value)](./ts-res.qualifiers.qualifier.isvalidconditionvalue.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[isValidContextValue(value)](./ts-res.qualifiers.qualifier.isvalidcontextvalue.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
 [setIndex(index)](./ts-res.qualifiers.qualifier.setindex.md)
 
 
@@ -287,6 +313,32 @@ Creates a new instance of a [Qualifier](./ts-res.qualifiers.qualifier.md) from t
 </td><td>
 
 Sets the index of this qualifier. Once set, the index cannot be changed.
+
+
+</td></tr>
+<tr><td>
+
+[validateCondition(value, operator)](./ts-res.qualifiers.qualifier.validatecondition.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[validateContextValue(value)](./ts-res.qualifiers.qualifier.validatecontextvalue.md)
+
+
+</td><td>
+
+
+</td><td>
+
 
 
 </td></tr>

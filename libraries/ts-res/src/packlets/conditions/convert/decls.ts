@@ -68,7 +68,7 @@ export const validatedConditionDecl = Converters.generic<
     return context.qualifiers.validating.get(decl.qualifierName).onSuccess((qualifier) => {
       return populateObject<IValidatedConditionDecl>({
         qualifier: () => succeed(qualifier),
-        value: () => qualifier.type.validateCondition(decl.value, operator),
+        value: () => qualifier.validateCondition(decl.value, operator),
         operator: () => succeed(operator),
         priority: () =>
           decl.priority

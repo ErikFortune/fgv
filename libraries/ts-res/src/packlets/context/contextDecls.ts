@@ -21,6 +21,7 @@
  */
 
 import { QualifierContextValue, QualifierName } from '../common';
+import { Qualifier } from '../qualifiers';
 
 /**
  * Non-validated declaration of a single context qualifier value.
@@ -43,7 +44,7 @@ export type IContextDecl = Record<string, string>;
  * @public
  */
 export interface IValidatedContextQualifierValueDecl {
-  qualifier: QualifierName;
+  qualifier: Qualifier;
   value: QualifierContextValue;
 }
 
