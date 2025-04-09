@@ -162,15 +162,18 @@ export class ImportContext implements IValidatedImportContext {
     if (!importer) {
       return succeed(undefined);
     }
-    const mergeMethod = container?.mergeMethod ?? 'augment';
+    /* c8 ignore next 1 */
+    container = container ?? {};
+    const mergeMethod = container.mergeMethod ?? 'augment';
+
     switch (mergeMethod) {
       case 'augment':
         return succeed(importer);
       case 'replace': {
         // if the container defines baseId or conditions, then we ignore
         // the corresponding values in the importer
-        const baseId = container?.baseId ? undefined : importer.baseId;
-        const conditions = container?.conditions ? undefined : importer.conditions;
+        const baseId = container.baseId ? undefined : importer.baseId;
+        const conditions = container.conditions ? undefined : importer.conditions;
         return ImportContext.create({ baseId, conditions });
       }
       case 'delete':
