@@ -69,3 +69,7 @@ _(Optional)_ The [options](./ts-res.context.icontextmatchoptions.md) to use when
 
 A [match score](./ts-res.qualifiermatchscore.md) indicating match quality if the condition is present in the context to be matched, `undefined` otherwise.
 
+## Remarks
+
+If [\`options.partialContextMatch\`\`](./ts-res.context.icontextmatchoptions.partialcontextmatch.md) is `true`<!-- -->, then the method will return `undefined` if the corresponding qualifier is not present in the context.
+

@@ -34,6 +34,12 @@ export interface IContextMatchOptions {
    * will yield `scoreAsDefault`instead of `NoMatch`.
    */
   acceptDefaultScore?: boolean;
+
+  /**
+   * If true, then conditions for which a corresponding values is not present in the
+   * context being matched will yield `undefined` instead of `NoMatch`.
+   */
+  partialContextMatch?: boolean;
 }
 
 /**

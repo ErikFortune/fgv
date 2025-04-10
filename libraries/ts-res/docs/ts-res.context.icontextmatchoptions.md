@@ -54,4 +54,23 @@ _(Optional)_ If true, then conditions which would otherwise yield [NoMatch](./ts
 
 
 </td></tr>
+<tr><td>
+
+[partialContextMatch?](./ts-res.context.icontextmatchoptions.partialcontextmatch.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_ If true, then conditions for which a corresponding values is not present in the context being matched will yield `undefined` instead of `NoMatch`<!-- -->.
+
+
+</td></tr>
 </tbody></table>

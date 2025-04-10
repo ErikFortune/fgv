@@ -132,6 +132,9 @@ export class Condition implements IValidatedConditionDecl {
    * @param options - The {@link Context.IContextMatchOptions | options} to use when matching the context.
    * @returns A {@link QualifierMatchScore | match score} indicating match quality if the condition is present
    * in the context to be matched, `undefined` otherwise.
+   * @remarks
+   * If {@link Context.IContextMatchOptions.partialContextMatch | `options.partialContextMatch``} is `true`, then
+   * the method will return `undefined` if the corresponding qualifier is not present in the context.
    */
   public getContextMatch(
     context: Context.IValidatedContextDecl,
@@ -146,7 +149,7 @@ export class Condition implements IValidatedConditionDecl {
       }
       return match;
     }
-    return undefined;
+    return options.partialContextMatch === true ? undefined : NoMatch;
   }
 
   /**
@@ -163,7 +166,7 @@ export class Condition implements IValidatedConditionDecl {
     context: Context.IValidatedContextDecl,
     options?: Context.IContextMatchOptions
   ): boolean {
-    return this.getContextMatch(context, options) !== undefined;
+    return this.getContextMatch(context, options) !== NoMatch;
   }
 
   /**

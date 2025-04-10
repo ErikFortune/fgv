@@ -150,7 +150,7 @@ export class ConditionSet implements IValidatedConditionSetDecl {
     context: Context.IValidatedContextDecl,
     options?: Context.IContextMatchOptions
   ): boolean {
-    return this.conditions.every((c) => c.matchesContext(context, options));
+    return this.conditions.every((c) => c.matchesContext(context, options) !== false);
   }
 
   /**
