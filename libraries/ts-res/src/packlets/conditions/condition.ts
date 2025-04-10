@@ -28,6 +28,7 @@ import {
   ConditionOperator,
   ConditionPriority,
   ConditionToken,
+  NoMatch,
   QualifierConditionValue,
   QualifierMatchScore,
   Validate
@@ -128,13 +129,22 @@ export class Condition implements IValidatedConditionDecl {
   /**
    * Determines if this condition matches the supplied {@link Context.IValidatedContextDecl | validated context}.
    * @param context - The {@link Context.IValidatedContextDecl | context} to match against.
+   * @param options - The {@link Context.IContextMatchOptions | options} to use when matching the context.
    * @returns A {@link QualifierMatchScore | match score} indicating match quality if the condition is present
    * in the context to be matched, `undefined` otherwise.
    */
-  public matchContext(context: Context.IValidatedContextDecl): QualifierMatchScore | undefined {
+  public getContextMatch(
+    context: Context.IValidatedContextDecl,
+    options?: Context.IContextMatchOptions
+  ): QualifierMatchScore | undefined {
+    options = options ?? {};
     if (this.qualifier.name in context) {
       const contextValue = context[this.qualifier.name];
-      return this.qualifier.type.matches(this.value, contextValue, this.operator);
+      const match = this.qualifier.type.matches(this.value, contextValue, this.operator);
+      if (match === NoMatch && options.acceptDefaultScore === true && this.scoreAsDefault !== undefined) {
+        return this.scoreAsDefault;
+      }
+      return match;
     }
     return undefined;
   }
@@ -145,11 +155,15 @@ export class Condition implements IValidatedConditionDecl {
    * A condition matches a context if it is present and the comparison yields a non-zero {@link QualifierMatchScore | match score},
    * *or* if the condition is not present in the context.
    * @param context - The {@link Context.IValidatedContextDecl | context} to match against.
+   * @param options - The {@link Context.IContextMatchOptions | options} to use when matching the context.
    * @returns `true` if the condition matches the context, `false` otherwise.
    * @public
    */
-  public isContextMatch(context: Context.IValidatedContextDecl): boolean {
-    return this.matchContext(context) !== undefined;
+  public matchesContext(
+    context: Context.IValidatedContextDecl,
+    options?: Context.IContextMatchOptions
+  ): boolean {
+    return this.getContextMatch(context, options) !== undefined;
   }
 
   /**

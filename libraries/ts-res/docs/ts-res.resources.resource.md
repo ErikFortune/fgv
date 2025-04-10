@@ -172,6 +172,20 @@ Creates a new [Resource](./ts-res.resources.resource.md) object.
 </td></tr>
 <tr><td>
 
+[getCandidatesForContext(context, options)](./ts-res.resources.resource.getcandidatesforcontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the candidates for this resource that match the specified [context](./ts-res.context.ivalidatedcontextdecl.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [toChildResourceDecl(options)](./ts-res.resources.resource.tochildresourcedecl.md)
 
 

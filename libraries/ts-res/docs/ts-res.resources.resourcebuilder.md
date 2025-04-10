@@ -298,6 +298,20 @@ Creates a new [ResourceBuilder](./ts-res.resources.resourcebuilder.md) object.
 </td></tr>
 <tr><td>
 
+[getCandidatesForContext(context, options)](./ts-res.resources.resourcebuilder.getcandidatesforcontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the [candidates](./ts-res.resources.resourcecandidate.md) that match a given [context](./ts-res.context.ivalidatedcontextdecl.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [setResourceType(resourceTypeName)](./ts-res.resources.resourcebuilder.setresourcetype.md)
 
 

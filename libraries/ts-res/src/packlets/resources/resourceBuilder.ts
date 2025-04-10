@@ -37,6 +37,7 @@ import { ReadOnlyResourceTypeCollector, ResourceType } from '../resource-types';
 import { Resource } from './resource';
 import { ConditionSetCollector } from '../conditions';
 import * as ResourceJson from '../resource-json';
+import * as Context from '../context';
 
 /**
  * Parameters for creating a {@link Resources.ResourceBuilder}.
@@ -128,6 +129,21 @@ export class ResourceBuilder {
    */
   public static create(params: IResourceBuilderCreateParams): Result<ResourceBuilder> {
     return captureResult(() => new ResourceBuilder(params));
+  }
+
+  /**
+   * Gets the {@link Resources.ResourceCandidate | candidates} that match a given {@link Context.IValidatedContextDecl | context}.
+   * @param context - The {@link Context.IValidatedContextDecl | context} to get candidates for.
+   * @param options - Optional {@link Context.IContextMatchOptions | context match options} to use when matching candidates.
+   * @returns An array of {@link Resources.ResourceCandidate | candidates} that match the given context.
+   */
+  public getCandidatesForContext(
+    context: Context.IValidatedContextDecl,
+    options?: Context.IContextMatchOptions
+  ): ReadonlyArray<ResourceCandidate> {
+    return Array.from(this._candidates.values()).filter((candidate) =>
+      candidate.matchesContext(context, options)
+    );
   }
 
   /**

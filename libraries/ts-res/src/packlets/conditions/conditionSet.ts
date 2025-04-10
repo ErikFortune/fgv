@@ -31,6 +31,7 @@ import {
 } from '../common';
 import { IValidatedConditionSetDecl } from './conditionSetDecls';
 import * as ResourceJson from '../resource-json';
+import * as Context from '../context';
 
 /**
  * Represents a set of {@link Conditions.Condition | conditions} that must all be met in some runtime
@@ -137,6 +138,19 @@ export class ConditionSet implements IValidatedConditionSetDecl {
    */
   public setIndex(index: number): Result<ConditionSetIndex> {
     return this._collectible.setIndex(index);
+  }
+
+  /**
+   * Determines if this condition set can match a supplied {@link Context.IValidatedContextDecl | context}.
+   * @param context - The {@link Context.IValidatedContextDecl | context} to match.
+   * @param options - The {@link Context.IContextMatchOptions | options} to use when matching.
+   * @returns
+   */
+  public matchesContext(
+    context: Context.IValidatedContextDecl,
+    options?: Context.IContextMatchOptions
+  ): boolean {
+    return this.conditions.every((c) => c.matchesContext(context, options));
   }
 
   /**

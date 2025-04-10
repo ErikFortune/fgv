@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[IContextMatchOptions](./ts-res.context.icontextmatchoptions.md)
+
+
+</td><td>
+
+Options to control matching of conditions against a context.
+
+
+</td></tr>
+<tr><td>
+
 [IContextQualifierValueDecl](./ts-res.context.icontextqualifiervaluedecl.md)
 
 

@@ -26,6 +26,7 @@ import { Condition, ConditionSet, ConditionSetCollector } from '../conditions';
 import * as ResourceJson from '../resource-json';
 import { ResourceType } from '../resource-types';
 import { captureResult, mapResults, Hash, MessageAggregator, Result, fail, succeed } from '@fgv/ts-utils';
+import * as Context from '../context';
 
 /**
  * Parameters to create a {@link Resources.ResourceCandidate | ResourceCandidate}.
@@ -108,6 +109,19 @@ export class ResourceCandidate {
    */
   public static create(params: IResourceCandidateCreateParams): Result<ResourceCandidate> {
     return captureResult(() => new ResourceCandidate(params));
+  }
+
+  /**
+   * Determines if this candidate matches the supplied context.
+   * @param context - The {@link Context.IValidatedContextDecl | context} to match.
+   * @param options - {@link Context.IContextMatchOptions | options} to use when matching.
+   * @returns `true` if the candidate matches the context, `false` otherwise.
+   */
+  public matchesContext(
+    context: Context.IValidatedContextDecl,
+    options?: Context.IContextMatchOptions
+  ): boolean {
+    return this.conditions.matchesContext(context);
   }
 
   /**

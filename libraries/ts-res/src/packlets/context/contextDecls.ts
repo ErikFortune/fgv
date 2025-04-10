@@ -24,6 +24,19 @@ import { QualifierContextValue, QualifierName } from '../common';
 import { Qualifier } from '../qualifiers';
 
 /**
+ * Options to control matching of conditions against a context.
+ * @public
+ */
+export interface IContextMatchOptions {
+  /**
+   * If true, then conditions which would otherwise yield
+   * {@link NoMatch | NoMatch} but have a defined {@link Conditions.Condition.scoreAsDefault | scoreAsDefault}
+   * will yield `scoreAsDefault`instead of `NoMatch`.
+   */
+  acceptDefaultScore?: boolean;
+}
+
+/**
  * Non-validated declaration of a single context qualifier value.
  * @public
  */
