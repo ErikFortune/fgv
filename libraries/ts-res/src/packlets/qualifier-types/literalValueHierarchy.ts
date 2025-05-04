@@ -100,6 +100,7 @@ export class LiteralValueHierarchy<T extends string = string> {
     return captureResult(() => new LiteralValueHierarchy(params));
   }
 
+  public match(condition: T, context: T): QualifierMatchScore;
   /**
    * Matches a condition value against a context value, where an exact match of the condition and
    * context returns {@link PerfectMatch | PerfectMatch}, a condition value that does not
@@ -116,12 +117,14 @@ export class LiteralValueHierarchy<T extends string = string> {
   public match(
     condition: QualifierConditionValue,
     context: QualifierContextValue,
-    __operator: ConditionOperator
-  ): QualifierMatchScore {
+    __operator?: ConditionOperator
+  ): QualifierMatchScore;
+  public match(condition: string, context: string, __operator?: ConditionOperator): QualifierMatchScore {
     if ((condition as string) === (context as string)) {
       return PerfectMatch;
     }
     const values: ReadonlyMap<string, ILiteralValue<string>> = this.values;
+    /* c8 ignore next 1 - ? is defense in depth */
     let value = values.get(context)?.parent;
     if (!value) {
       return NoMatch;

@@ -25,6 +25,7 @@ import * as TsRes from '../../../index';
 
 type TestPlatform =
   | 'some_stb'
+  | 'some_stb_variant'
   | 'other_stb'
   | 'ya_stb'
   | 'android'
@@ -39,6 +40,7 @@ type TestPlatform =
   | 'web';
 const allTestPlatforms: TestPlatform[] = [
   'some_stb',
+  'some_stb_variant',
   'other_stb',
   'ya_stb',
   'android',
@@ -54,6 +56,8 @@ const allTestPlatforms: TestPlatform[] = [
 ];
 const defaultHierarchy: TsRes.QualifierTypes.LiteralValueHierarchyDecl<TestPlatform> = {
   some_stb: 'stb',
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  some_stb_variant: 'some_stb',
   other_stb: 'stb',
   ya_stb: 'stb',
   stb: 'ctv',
@@ -110,7 +114,7 @@ describe('LiteralValueHierarchy', () => {
         if (value) {
           expect(value.name).toBe('some_stb');
           expect(value.parent?.name).toBe('stb');
-          expect(value.children).toBeUndefined();
+          expect(value.children).toEqual(['some_stb_variant']);
         }
 
         value = h.values.get('stb');
@@ -154,6 +158,54 @@ describe('LiteralValueHierarchy', () => {
       expect(TsRes.QualifierTypes.LiteralValueHierarchy.create(init)).toFailWith(
         /circular reference detected/i
       );
+    });
+  });
+
+  describe('match method', () => {
+    let lvh: TsRes.QualifierTypes.LiteralValueHierarchy<TestPlatform>;
+
+    beforeEach(() => {
+      const init: TsRes.QualifierTypes.ILiteralValueHierarchyCreateParams<TestPlatform> = {
+        values,
+        hierarchy
+      };
+      lvh = TsRes.QualifierTypes.LiteralValueHierarchy.create(init).orThrow();
+    });
+
+    test('returns PerfectMatch for identical values', () => {
+      expect(lvh.match('some_stb', 'some_stb')).toEqual(TsRes.PerfectMatch);
+    });
+
+    test('returns NoMatch for unrelated values', () => {
+      expect(lvh.match('some_stb', 'web')).toEqual(TsRes.NoMatch);
+      expect(lvh.match('some_stb', 'other_stb')).toEqual(TsRes.NoMatch);
+    });
+
+    test('returns partial match for related values', () => {
+      const condition: TestPlatform = 'stb';
+      const context: TestPlatform = 'some_stb';
+      const score = lvh.match(condition, context);
+      expect(score).toBeGreaterThan(TsRes.NoMatch);
+      expect(score).toBeLessThan(TsRes.PerfectMatch);
+    });
+
+    test('returns decreasing match scores for deeper hierarchy levels', () => {
+      const context: TestPlatform = 'some_stb_variant';
+
+      const someStbScore = lvh.match(`some_stb`, context);
+      expect(someStbScore).toBeGreaterThan(TsRes.NoMatch);
+      expect(someStbScore).toBeLessThan(TsRes.PerfectMatch);
+
+      const stbScore = lvh.match(`stb`, context);
+      expect(stbScore).toBeGreaterThan(TsRes.NoMatch);
+      expect(stbScore).toBeLessThan(someStbScore);
+      expect(stbScore).toBeLessThan(TsRes.PerfectMatch);
+
+      const ctvScore = lvh.match(`ctv`, context);
+      expect(ctvScore).toBeGreaterThan(TsRes.NoMatch);
+      expect(ctvScore).toBeLessThan(stbScore);
+      expect(ctvScore).toBeLessThan(someStbScore);
+      expect(ctvScore).toBeLessThan(TsRes.PerfectMatch);
     });
   });
 });
