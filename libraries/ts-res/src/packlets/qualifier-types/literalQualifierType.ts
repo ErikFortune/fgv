@@ -132,7 +132,7 @@ export class LiteralQualifierType extends QualifierType {
   protected _matchOne(
     condition: QualifierConditionValue,
     context: QualifierContextValue,
-    operator: ConditionOperator
+    __operator: ConditionOperator
   ): QualifierMatchScore {
     if (this.caseSensitive) {
       return condition === (context as string) ? PerfectMatch : NoMatch;

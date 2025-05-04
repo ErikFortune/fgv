@@ -1085,6 +1085,28 @@ interface ILiteralQualifierTypeCreateParams {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+interface ILiteralValue<T extends string> {
+    // (undocumented)
+    readonly children?: ReadonlyArray<T>;
+    // (undocumented)
+    readonly name: T;
+    // (undocumented)
+    readonly parent?: ILiteralValue<T>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface ILiteralValueHierarchyCreateParams<T extends string = string> {
+    // (undocumented)
+    hierarchy?: LiteralValueHierarchyDecl<T>;
+    // (undocumented)
+    values: T[];
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 interface ILooseConditionDecl {
     operator?: ConditionOperator;
     priority?: number;
@@ -1768,9 +1790,26 @@ class LiteralQualifierType extends QualifierType {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    protected _matchOne(condition: QualifierConditionValue, context: QualifierContextValue, operator: ConditionOperator): QualifierMatchScore;
+    protected _matchOne(condition: QualifierConditionValue, context: QualifierContextValue, __operator: ConditionOperator): QualifierMatchScore;
     static toLiteralConditionValue(from: string): Result<QualifierConditionValue>;
 }
+
+// @public
+class LiteralValueHierarchy<T extends string = string> {
+    protected constructor(params: ILiteralValueHierarchyCreateParams<T>);
+    // (undocumented)
+    protected static _buildValuesFromHierarchy<T extends string>(params: ILiteralValueHierarchyCreateParams<T>): Result<ReadonlyMap<T, ILiteralValue<T>>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create<T extends string>(params: ILiteralValueHierarchyCreateParams<T>): Result<LiteralValueHierarchy<T>>;
+    match(condition: QualifierConditionValue, context: QualifierContextValue, __operator: ConditionOperator): QualifierMatchScore;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly values: ReadonlyMap<T, ILiteralValue<T>>;
+}
+
+// @public
+type LiteralValueHierarchyDecl<T extends string> = Record<T, T>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -2083,6 +2122,10 @@ declare namespace QualifierTypes {
         LanguageQualifierType,
         ILiteralQualifierTypeCreateParams,
         LiteralQualifierType,
+        LiteralValueHierarchyDecl,
+        ILiteralValue,
+        ILiteralValueHierarchyCreateParams,
+        LiteralValueHierarchy,
         ITerritoryQualifierTypeCreateParams,
         TerritoryQualifierType,
         IQualifierTypeCollectorCreateParams,

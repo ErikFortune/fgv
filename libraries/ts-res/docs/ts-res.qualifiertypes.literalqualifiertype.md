@@ -136,7 +136,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_matchOne(condition, context, operator)](./ts-res.qualifiertypes.literalqualifiertype._matchone.md)
+[\_matchOne(condition, context, \_\_operator)](./ts-res.qualifiertypes.literalqualifiertype._matchone.md)
 
 
 </td><td>
