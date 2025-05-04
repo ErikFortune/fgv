@@ -529,6 +529,7 @@ declare namespace Convert_4 {
 
 declare namespace Convert_5 {
     export {
+        literalValueHierarchyCreateParams,
         IQualifierTypeConvertContext,
         qualifierType
     }
@@ -1808,8 +1809,13 @@ class LiteralValueHierarchy<T extends string = string> {
     readonly values: ReadonlyMap<T, ILiteralValue<T>>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-type LiteralValueHierarchyDecl<T extends string> = Record<T, T>;
+function literalValueHierarchyCreateParams<T extends string>(valueConverter: Converter<T>): Converter<ILiteralValueHierarchyCreateParams<T>>;
+
+// @public
+type LiteralValueHierarchyDecl<T extends string> = Partial<Record<T, T>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

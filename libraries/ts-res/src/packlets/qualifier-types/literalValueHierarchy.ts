@@ -40,7 +40,7 @@ import {
  * the relationship between values when matching conditions and contexts.
  * @public
  */
-export type LiteralValueHierarchyDecl<T extends string> = Record<T, T>;
+export type LiteralValueHierarchyDecl<T extends string> = Partial<Record<T, T>>;
 
 /**
  * Describes a single valid literal value including optional parent and child values.
