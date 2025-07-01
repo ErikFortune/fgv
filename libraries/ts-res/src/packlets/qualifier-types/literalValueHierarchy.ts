@@ -82,8 +82,16 @@ export class LiteralValueHierarchy<T extends string = string> {
    */
   public readonly values: ReadonlyMap<T, ILiteralValue<T>>;
 
+  /**
+   * Indicates whether this hierarchy was created with open values (no enumerated values
+   * provided), allowing any value to be used in matching operations.
+   */
+  public readonly isOpenValues: boolean;
+
   protected constructor(params: ILiteralValueHierarchyCreateParams<T>) {
-    this.values = LiteralValueHierarchy._buildValuesFromHierarchy(params).orThrow();
+    const result = LiteralValueHierarchy._buildValuesFromHierarchy(params);
+    this.values = result.orThrow();
+    this.isOpenValues = !params.values || params.values.length === 0;
   }
 
   /**
@@ -188,18 +196,23 @@ export class LiteralValueHierarchy<T extends string = string> {
     __operator?: ConditionOperator
   ): QualifierMatchScore;
   public match(condition: string, context: string, __operator?: ConditionOperator): QualifierMatchScore {
-    // Validate that both condition and context exist in the hierarchy
-    if (!this.values.has(condition as T)) {
-      return NoMatch;
-    }
-    if (!this.values.has(context as T)) {
-      return NoMatch;
+    // For open hierarchies, skip validation and allow any values
+    if (!this.isOpenValues) {
+      // Validate that both condition and context exist in the hierarchy
+      if (!this.values.has(condition as T)) {
+        return NoMatch;
+      }
+      if (!this.values.has(context as T)) {
+        return NoMatch;
+      }
     }
 
     if ((condition as string) === (context as string)) {
       return PerfectMatch;
     }
 
+    // For open hierarchies, if values aren't in the hierarchy, treat as no match
+    // but don't fail validation
     const values: ReadonlyMap<string, ILiteralValue<string>> = this.values;
     /* c8 ignore next 1 - ? is defense in depth */
     let value = values.get(context)?.parent;
@@ -224,7 +237,19 @@ export class LiteralValueHierarchy<T extends string = string> {
     const values = params.values;
     const hierarchy = params.hierarchy ?? {};
 
-    const valueMap = new Map<T, ILiteralValueBuilder<T>>(values.map((name) => [name, { name }]));
+    // If no values are provided, collect all values from the hierarchy
+    let allValues: T[];
+    if (!values || values.length === 0) {
+      const hierarchyValues = new Set<T>();
+      // Add all keys and values from the hierarchy
+      Object.keys(hierarchy).forEach((key) => hierarchyValues.add(key as T));
+      Object.values(hierarchy).forEach((value) => hierarchyValues.add(value as T));
+      allValues = Array.from(hierarchyValues);
+    } else {
+      allValues = [...values];
+    }
+
+    const valueMap = new Map<T, ILiteralValueBuilder<T>>(allValues.map((name) => [name, { name }]));
 
     if (hierarchy) {
       for (const [valueName, parentName] of Object.entries(hierarchy)) {

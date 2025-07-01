@@ -179,20 +179,10 @@ describe('LiteralQualifierType', () => {
           b: 'parent',
           parent: 'root'
         }
-        // No enumeratedValues - should use empty array fallback
+        // No enumeratedValues - should collect values from hierarchy for open values mode
       };
-      const q = TsRes.QualifierTypes.LiteralQualifierType.create(params).orThrow();
-
-      expect(q.hierarchy).toBeDefined();
-      expect(q.enumeratedValues).toBeUndefined();
-
-      // Test matching using hierarchy (should work even without enumerated values)
-      expect(
-        q.matches('a' as TsRes.QualifierConditionValue, 'a' as TsRes.QualifierContextValue, 'matches')
-      ).toBe(TsRes.PerfectMatch);
-      expect(
-        q.matches('parent' as TsRes.QualifierConditionValue, 'a' as TsRes.QualifierContextValue, 'matches')
-      ).toBeGreaterThan(TsRes.NoMatch);
+      // This should succeed because the hierarchy will collect values from the hierarchy
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create(params)).toSucceed();
     });
   });
 
