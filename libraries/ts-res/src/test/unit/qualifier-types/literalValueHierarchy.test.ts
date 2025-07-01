@@ -208,4 +208,71 @@ describe('LiteralValueHierarchy', () => {
       expect(ctvScore).toBeLessThan(TsRes.PerfectMatch);
     });
   });
+
+  describe('utility methods', () => {
+    let lvh: TsRes.QualifierTypes.LiteralValueHierarchy<TestPlatform>;
+
+    beforeEach(() => {
+      const init: TsRes.QualifierTypes.ILiteralValueHierarchyCreateParams<TestPlatform> = {
+        values,
+        hierarchy
+      };
+      lvh = TsRes.QualifierTypes.LiteralValueHierarchy.create(init).orThrow();
+    });
+
+    describe('hasValue', () => {
+      test('returns true for values in hierarchy', () => {
+        expect(lvh.hasValue('some_stb')).toBe(true);
+        expect(lvh.hasValue('stb')).toBe(true);
+        expect(lvh.hasValue('ctv')).toBe(true);
+      });
+
+      test('returns false for values not in hierarchy', () => {
+        expect(lvh.hasValue('nonexistent' as TestPlatform)).toBe(false);
+      });
+    });
+
+    describe('getRoots', () => {
+      test('returns root values', () => {
+        const roots = lvh.getRoots();
+        expect(roots).toContain('ctv');
+        expect(roots).toContain('mobile');
+        expect(roots).toContain('web');
+        expect(roots).not.toContain('some_stb');
+        expect(roots).not.toContain('stb');
+      });
+    });
+
+    describe('getAncestors', () => {
+      test('returns ancestors in order from immediate parent to root', () => {
+        expect(lvh.getAncestors('some_stb')).toEqual(['stb', 'ctv']);
+        expect(lvh.getAncestors('stb')).toEqual(['ctv']);
+        expect(lvh.getAncestors('ctv')).toEqual([]);
+      });
+
+      test('returns empty array for root values', () => {
+        expect(lvh.getAncestors('ctv')).toEqual([]);
+        expect(lvh.getAncestors('mobile')).toEqual([]);
+        expect(lvh.getAncestors('web')).toEqual([]);
+      });
+    });
+
+    describe('getDescendants', () => {
+      test('returns all descendants', () => {
+        expect(lvh.getDescendants('ctv')).toContain('stb');
+        expect(lvh.getDescendants('ctv')).toContain('some_stb');
+        expect(lvh.getDescendants('ctv')).toContain('other_stb');
+        expect(lvh.getDescendants('ctv')).toContain('ya_stb');
+        expect(lvh.getDescendants('ctv')).toContain('androidtv');
+        expect(lvh.getDescendants('ctv')).toContain('appletv');
+        expect(lvh.getDescendants('ctv')).toContain('firetv');
+        expect(lvh.getDescendants('ctv')).toContain('webOs');
+      });
+
+      test('returns empty array for leaf values', () => {
+        expect(lvh.getDescendants('some_stb_variant')).toEqual([]);
+        expect(lvh.getDescendants('web')).toEqual([]);
+      });
+    });
+  });
 });

@@ -123,6 +123,47 @@ describe('LiteralQualifierType', () => {
         /not a valid literal condition/i
       );
     });
+
+    test('creates hierarchy with values not in enumeratedValues', () => {
+      const params: TsRes.QualifierTypes.ILiteralQualifierTypeCreateParams = {
+        name: 'test',
+        enumeratedValues: ['a', 'b'],
+        hierarchy: {
+          a: 'parent',
+          b: 'parent',
+          parent: 'root'
+        }
+      };
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create(params)).toFailWith(
+        /parent.*is not a valid literal value/i
+      );
+    });
+
+    test('creates hierarchy when all referenced values are in enumeratedValues', () => {
+      const params: TsRes.QualifierTypes.ILiteralQualifierTypeCreateParams = {
+        name: 'test',
+        enumeratedValues: ['a', 'b', 'parent', 'root'],
+        hierarchy: {
+          a: 'parent',
+          b: 'parent',
+          parent: 'root'
+        }
+      };
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create(params)).toSucceedAndSatisfy((q) => {
+        expect(q.hierarchy).toBeDefined();
+        if (q.hierarchy) {
+          expect(q.hierarchy.hasValue('a')).toBe(true);
+          expect(q.hierarchy.hasValue('b')).toBe(true);
+          expect(q.hierarchy.hasValue('parent')).toBe(true);
+          expect(q.hierarchy.hasValue('root')).toBe(true);
+
+          // Check hierarchy relationships
+          expect(q.hierarchy.getAncestors('a')).toEqual(['parent', 'root']);
+          expect(q.hierarchy.getAncestors('parent')).toEqual(['root']);
+          expect(q.hierarchy.getRoots()).toEqual(['root']);
+        }
+      });
+    });
   });
 
   describe('isValidConditionValue', () => {

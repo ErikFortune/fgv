@@ -100,6 +100,61 @@ export class LiteralValueHierarchy<T extends string = string> {
     return captureResult(() => new LiteralValueHierarchy(params));
   }
 
+  /**
+   * Checks if a value exists in the hierarchy.
+   * @param value - The value to check.
+   * @returns `true` if the value exists in the hierarchy, `false` otherwise.
+   */
+  public hasValue(value: T): boolean {
+    return this.values.has(value);
+  }
+
+  /**
+   * Gets all root values (values with no parent) in the hierarchy.
+   * @returns An array of root values.
+   */
+  public getRoots(): T[] {
+    return Array.from(this.values.values())
+      .filter((v) => !v.parent)
+      .map((v) => v.name);
+  }
+
+  /**
+   * Gets all ancestors of a value in the hierarchy.
+   * @param value - The value to get ancestors for.
+   * @returns An array of ancestor values, ordered from immediate parent to root.
+   */
+  public getAncestors(value: T): T[] {
+    const ancestors: T[] = [];
+    let current = this.values.get(value);
+
+    while (current?.parent) {
+      ancestors.push(current.parent.name);
+      current = current.parent;
+    }
+
+    return ancestors;
+  }
+
+  /**
+   * Gets all descendants of a value in the hierarchy.
+   * @param value - The value to get descendants for.
+   * @returns An array of descendant values.
+   */
+  public getDescendants(value: T): T[] {
+    const descendants: T[] = [];
+    const current = this.values.get(value);
+
+    if (current?.children) {
+      for (const childName of current.children) {
+        descendants.push(childName);
+        descendants.push(...this.getDescendants(childName));
+      }
+    }
+
+    return descendants;
+  }
+
   public match(condition: T, context: T): QualifierMatchScore;
   /**
    * Matches a condition value against a context value, where an exact match of the condition and
@@ -120,9 +175,18 @@ export class LiteralValueHierarchy<T extends string = string> {
     __operator?: ConditionOperator
   ): QualifierMatchScore;
   public match(condition: string, context: string, __operator?: ConditionOperator): QualifierMatchScore {
+    // Validate that both condition and context exist in the hierarchy
+    if (!this.values.has(condition as T)) {
+      return NoMatch;
+    }
+    if (!this.values.has(context as T)) {
+      return NoMatch;
+    }
+
     if ((condition as string) === (context as string)) {
       return PerfectMatch;
     }
+
     const values: ReadonlyMap<string, ILiteralValue<string>> = this.values;
     /* c8 ignore next 1 - ? is defense in depth */
     let value = values.get(context)?.parent;

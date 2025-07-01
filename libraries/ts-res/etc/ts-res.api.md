@@ -1808,6 +1808,10 @@ class LiteralValueHierarchy<T extends string = string> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create<T extends string>(params: ILiteralValueHierarchyCreateParams<T>): Result<LiteralValueHierarchy<T>>;
+    getAncestors(value: T): T[];
+    getDescendants(value: T): T[];
+    getRoots(): T[];
+    hasValue(value: T): boolean;
     // (undocumented)
     match(condition: T, context: T): QualifierMatchScore;
     match(condition: QualifierConditionValue, context: QualifierContextValue, __operator?: ConditionOperator): QualifierMatchScore;

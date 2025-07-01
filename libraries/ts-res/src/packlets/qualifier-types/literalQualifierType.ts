@@ -122,6 +122,9 @@ export class LiteralQualifierType extends QualifierType {
       ? mapResults(Array.from(enumeratedValues).map(LiteralQualifierType.toLiteralConditionValue)).orThrow()
       : undefined;
     if (hierarchy) {
+      // Note: LiteralValueHierarchy.create() will validate that all hierarchy values
+      // are present in the enumeratedValues array and fail with an appropriate error
+      // if any parent references are missing.
       this.hierarchy = LiteralValueHierarchy.create({
         values: enumeratedValues ?? [],
         hierarchy: hierarchy
