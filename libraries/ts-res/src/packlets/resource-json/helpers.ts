@@ -69,7 +69,7 @@ export function mergeContextDecl(
       return sanitizeJsonObject({ baseId, conditions });
     }
     case 'delete': {
-      return succeed(decl);
+      return sanitizeJsonObject({});
     }
   }
 }
