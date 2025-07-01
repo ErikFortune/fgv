@@ -2,6 +2,12 @@
   "name": "@fgv/ts-extras",
   "entries": [
     {
+      "version": "4.5.1",
+      "tag": "@fgv/ts-extras_v4.5.1",
+      "date": "Mon, 01 Jul 2025 21:51:00 GMT",
+      "comments": {}
+    },
+    {
       "version": "4.5.0",
       "tag": "@fgv/ts-extras_v4.5.0",
       "date": "Tue, 01 Jul 2025 03:26:11 GMT",
