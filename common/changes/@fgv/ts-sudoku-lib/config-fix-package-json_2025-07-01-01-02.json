@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-sudoku-lib",
+      "comment": "Fix incorrect TypeScript declaration file reference and build script in package.json",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-sudoku-lib"
+}
