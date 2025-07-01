@@ -40,12 +40,21 @@ export class ResourceDeclTree implements IResourceDeclContainer {
    */
   public readonly tree: Normalized.IResourceTreeRootDecl;
 
+  /**
+   * {@inheritdoc ResourceJson.IResourceDeclContainer.context}
+   */
+  public get context(): Normalized.IContainerContextDecl | undefined {
+    return this.tree.context;
+  }
+
   protected _resources: Normalized.ILooseResourceDecl[] = [];
   protected _candidates: Normalized.ILooseResourceCandidateDecl[] = [];
 
   protected constructor(tree: Normalized.IResourceTreeRootDecl) {
     this.tree = tree;
-    this._extract(tree, tree.baseName).orThrow();
+    const id = tree.context?.baseId;
+    const conditions = tree.context?.conditions;
+    this._extract(tree, id, conditions).orThrow();
   }
 
   /**
@@ -84,7 +93,7 @@ export class ResourceDeclTree implements IResourceDeclContainer {
   private _extract(
     node: Normalized.IResourceTreeChildNodeDecl,
     parentName?: string,
-    parentConditions?: Json.ILooseConditionDecl[]
+    parentConditions?: ReadonlyArray<Json.ILooseConditionDecl>
   ): Result<this> {
     const errors: MessageAggregator = new MessageAggregator();
 

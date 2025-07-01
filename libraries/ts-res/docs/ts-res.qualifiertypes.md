@@ -41,6 +41,17 @@ A [qualifier](./ts-res.qualifiertypes.qualifiertype.md) that matches a literal v
 </td></tr>
 <tr><td>
 
+[LiteralValueHierarchy](./ts-res.qualifiertypes.literalvaluehierarchy.md)
+
+
+</td><td>
+
+A class that implements a hierarchy of literal values. The hierarchy is defined as a tree, where each value can have multiple children but only one parent. The root of the tree has no parent. The hierarchy is used to determine the relationship between values when matching conditions and contexts.
+
+
+</td></tr>
+<tr><td>
+
 [QualifierTypeCollector](./ts-res.qualifiertypes.qualifiertypecollector.md)
 
 
@@ -121,6 +132,28 @@ Interface defining the parameters that can be used to create a new [LanguageQual
 </td><td>
 
 Interface defining the parameters that can be used to create a new [LiteralQualifierType](./ts-res.qualifiertypes.literalqualifiertype.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ILiteralValue](./ts-res.qualifiertypes.iliteralvalue.md)
+
+
+</td><td>
+
+Describes a single valid literal value including optional parent and child values. [LiteralValueHierarchy](./ts-res.qualifiertypes.literalvaluehierarchy.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ILiteralValueHierarchyCreateParams](./ts-res.qualifiertypes.iliteralvaluehierarchycreateparams.md)
+
+
+</td><td>
+
+Describes the parameters used to create a new [LiteralValueHierarchy](./ts-res.qualifiertypes.literalvaluehierarchy.md)<!-- -->.
 
 
 </td></tr>
@@ -208,6 +241,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[LiteralValueHierarchyDecl](./ts-res.qualifiertypes.literalvaluehierarchydecl.md)
+
+
+</td><td>
+
+Declares a hierarchy of literal values. The keys are the names of the values, and the values are the names of their parents.
+
+
+</td></tr>
+<tr><td>
 
 [ReadOnlyQualifierTypeCollector](./ts-res.qualifiertypes.readonlyqualifiertypecollector.md)
 

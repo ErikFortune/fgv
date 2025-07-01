@@ -37,48 +37,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[baseConditions?](./ts-res.resourcejson.json.iresourcecollectiondecl.baseconditions.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[ConditionSetDecl](./ts-res.resourcejson.json.conditionsetdecl.md)
-
-
-</td><td>
-
-_(Optional)_
-
-
-</td></tr>
-<tr><td>
-
-[baseName?](./ts-res.resourcejson.json.iresourcecollectiondecl.basename.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-_(Optional)_
-
-
-</td></tr>
-<tr><td>
-
 [candidates?](./ts-res.resourcejson.json.iresourcecollectiondecl.candidates.md)
 
 
@@ -111,6 +69,27 @@ _(Optional)_
 </td><td>
 
 ReadonlyArray&lt;[IResourceCollectionDecl](./ts-res.resourcejson.json.iresourcecollectiondecl.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[context?](./ts-res.resourcejson.json.iresourcecollectiondecl.context.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IContainerContextDecl](./ts-res.resourcejson.json.icontainercontextdecl.md)
 
 
 </td><td>

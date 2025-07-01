@@ -125,4 +125,74 @@ describe('importContext', () => {
       });
     });
   });
+
+  describe('forContainerImport', () => {
+    let container: TsRes.ResourceJson.Normalized.IContainerContextDecl;
+    let importer: TsRes.Import.ImportContext;
+
+    beforeEach(() => {
+      container = {
+        baseId: 'baseId',
+        conditions: [
+          { qualifierName: 'test', value: 'value' },
+          { qualifierName: 'test2', value: 'value2' }
+        ]
+      };
+      importer = TsRes.Import.ImportContext.create({
+        baseId: 'importerBaseId',
+        conditions: [
+          { qualifierName: 'importerTest', value: 'importerValue' },
+          { qualifierName: 'importerTest2', value: 'importerValue2' }
+        ]
+      }).orThrow();
+    });
+    test('succeeds with undefined if importer context is undefined', () => {
+      expect(TsRes.Import.ImportContext.forContainerImport()).toSucceedWith(undefined);
+      expect(TsRes.Import.ImportContext.forContainerImport(container, undefined)).toSucceedWith(undefined);
+    });
+
+    test('succeeds with the importer context if the container context is undefined', () => {
+      expect(TsRes.Import.ImportContext.forContainerImport(undefined, importer)).toSucceedWith(importer);
+    });
+
+    test('succeeds with the importer context if the container context has undefined merge method', () => {
+      expect(TsRes.Import.ImportContext.forContainerImport(container, importer)).toSucceedWith(importer);
+    });
+
+    test('succeeds with the importer context if the container context has augment merge method', () => {
+      container = { ...container, mergeMethod: 'augment' };
+      expect(TsRes.Import.ImportContext.forContainerImport(container, importer)).toSucceedWith(importer);
+    });
+
+    test('succeeds with a reduced context if the container contains the replace merge method', () => {
+      container = { ...container, mergeMethod: 'replace' };
+      expect(TsRes.Import.ImportContext.forContainerImport(container, importer)).toSucceedAndSatisfy(
+        (merged) => {
+          expect(merged?.baseId).toBeUndefined();
+          expect(merged?.conditions).toEqual([]);
+        }
+      );
+
+      const c2: TsRes.ResourceJson.Normalized.IContainerContextDecl = {
+        baseId: 'baseId',
+        mergeMethod: 'replace'
+      };
+      expect(TsRes.Import.ImportContext.forContainerImport(c2, importer)).toSucceedAndSatisfy((merged) => {
+        expect(merged?.baseId).toBeUndefined();
+        expect(merged?.conditions).toEqual([
+          { qualifierName: 'importerTest', value: 'importerValue' },
+          { qualifierName: 'importerTest2', value: 'importerValue2' }
+        ]);
+      });
+
+      const c3: TsRes.ResourceJson.Normalized.IContainerContextDecl = {
+        conditions: [],
+        mergeMethod: 'replace'
+      };
+      expect(TsRes.Import.ImportContext.forContainerImport(c3, importer)).toSucceedAndSatisfy((merged) => {
+        expect(merged?.baseId).toEqual(importer.baseId);
+        expect(merged?.conditions).toEqual([]);
+      });
+    });
+  });
 });

@@ -112,6 +112,27 @@ Normalized.ILooseResourceDecl\[\]
 </td></tr>
 <tr><td>
 
+[context](./ts-res.resourcejson.resourcedecltree.context.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Normalized.IContainerContextDecl \| undefined
+
+
+</td><td>
+
+Optional initial [resource context](./ts-res.resourcejson.normalized.icontainercontextdecl.md) declaration for the container.
+
+
+</td></tr>
+<tr><td>
+
 [tree](./ts-res.resourcejson.resourcedecltree.tree.md)
 
 

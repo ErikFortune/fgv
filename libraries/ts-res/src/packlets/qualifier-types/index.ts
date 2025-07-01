@@ -25,6 +25,7 @@ import * as Convert from './convert';
 export * from './qualifierType';
 export * from './languageQualifierType';
 export * from './literalQualifierType';
+export * from './literalValueHierarchy';
 export * from './territoryQualifierType';
 export * from './qualifierTypeCollector';
 

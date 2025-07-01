@@ -52,6 +52,17 @@ Non-validated child declaration of a [resource](./ts-res.resources.resource.md)<
 </td></tr>
 <tr><td>
 
+[IContainerContextDecl](./ts-res.resourcejson.json.icontainercontextdecl.md)
+
+
+</td><td>
+
+Declared context for a resource container.
+
+
+</td></tr>
+<tr><td>
+
 [ILooseConditionDecl](./ts-res.resourcejson.json.ilooseconditiondecl.md)
 
 

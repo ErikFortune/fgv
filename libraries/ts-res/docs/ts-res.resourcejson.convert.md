@@ -63,6 +63,17 @@ Description
 </td></tr>
 <tr><td>
 
+[containerContextDecl](./ts-res.resourcejson.convert.containercontextdecl.md)
+
+
+</td><td>
+
+`Converter` for a normalized [resource context declaration](./ts-res.resourcejson.normalized.icontainercontextdecl.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [looseConditionDecl](./ts-res.resourcejson.convert.looseconditiondecl.md)
 
 

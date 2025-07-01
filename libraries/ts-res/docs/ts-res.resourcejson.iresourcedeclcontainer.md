@@ -12,6 +12,52 @@ Generic container for resource and resource candidate declarations.
 export interface IResourceDeclContainer 
 ```
 
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[context?](./ts-res.resourcejson.iresourcedeclcontainer.context.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Normalized.IContainerContextDecl
+
+
+</td><td>
+
+_(Optional)_ Optional initial [resource context](./ts-res.resourcejson.normalized.icontainercontextdecl.md) declaration for the container.
+
+
+</td></tr>
+</tbody></table>
+
 ## Methods
 
 <table><thead><tr><th>
@@ -32,6 +78,8 @@ Description
 
 </td><td>
 
+Gets a normalized array of [loose resource candidate](./ts-res.resourcejson.normalized.ilooseresourcecandidatedecl.md) declarations for all resources in the container, including children.
+
 
 </td></tr>
 <tr><td>
@@ -40,6 +88,8 @@ Description
 
 
 </td><td>
+
+Gets a normalized array of [loose resource](./ts-res.resourcejson.normalized.ilooseresourcedecl.md) declarations for all resources in the container, including children.
 
 
 </td></tr>

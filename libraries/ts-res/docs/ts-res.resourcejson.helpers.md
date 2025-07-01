@@ -41,6 +41,17 @@ Helper method to merge a child resource with a parent name and conditions.
 </td></tr>
 <tr><td>
 
+[mergeContextDecl(decl, parentName, parentConditions)](./ts-res.resourcejson.helpers.mergecontextdecl.md)
+
+
+</td><td>
+
+Helper method to merge a resource context declaration with a parent name and conditions.
+
+
+</td></tr>
+<tr><td>
+
 [mergeLooseCandidate(candidate, baseName, baseConditions)](./ts-res.resourcejson.helpers.mergeloosecandidate.md)
 
 

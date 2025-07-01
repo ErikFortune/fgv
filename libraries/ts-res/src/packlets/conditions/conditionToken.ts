@@ -164,7 +164,7 @@ export class ConditionTokens {
   ): Result<Qualifier> {
     const matched: Qualifier[] = [];
     for (const qualifier of qualifiers.values()) {
-      if (qualifier.tokenIsOptional && qualifier.type.validateCondition(value).isSuccess()) {
+      if (qualifier.tokenIsOptional && qualifier.validateCondition(value).isSuccess()) {
         matched.push(qualifier);
       }
     }

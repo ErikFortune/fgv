@@ -288,6 +288,20 @@ Creates a new [Condition](./ts-res.conditions.condition.md) object from the supp
 </td></tr>
 <tr><td>
 
+[getContextMatch(context, options)](./ts-res.conditions.condition.getcontextmatch.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Determines if this condition matches the supplied [validated context](./ts-res.context.ivalidatedcontextdecl.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [getKeyForDecl(decl)](./ts-res.conditions.condition.getkeyfordecl.md)
 
 
@@ -299,6 +313,20 @@ Creates a new [Condition](./ts-res.conditions.condition.md) object from the supp
 </td><td>
 
 Gets the [condition key](./ts-res.conditionkey.md) for a supplied [condition declaration](./ts-res.conditions.ivalidatedconditiondecl.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[matchesContext(context, options)](./ts-res.conditions.condition.matchescontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Determines if this condition matches the supplied [validated context](./ts-res.context.ivalidatedcontextdecl.md)<!-- -->.
 
 
 </td></tr>

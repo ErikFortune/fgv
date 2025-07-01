@@ -71,6 +71,34 @@ describe('LiteralQualifierType', () => {
       });
     });
 
+    test('creates a new LiteralQualifierType with a hierarchy', () => {
+      const params: TsRes.QualifierTypes.ILiteralQualifierTypeCreateParams = {
+        name: 'test',
+        allowContextList: false,
+        hierarchy: {
+          a: 'b',
+          b: 'c'
+        },
+        enumeratedValues: ['a', 'b', 'c', 'd'],
+        index: 11
+      };
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create(params)).toSucceedAndSatisfy((q) => {
+        expect(q.key).toBe('test');
+        expect(q.name).toBe('test');
+        expect(q.allowContextList).toBe(false);
+        expect(q.caseSensitive).toBe(false);
+        expect(q.enumeratedValues).toEqual(['a', 'b', 'c', 'd']);
+        expect(q.index).toBe(11);
+        expect(q.hierarchy).toBeDefined();
+        if (q.hierarchy) {
+          expect(q.hierarchy.values.get('a')).toBeDefined();
+          expect(q.hierarchy.values.get('b')).toBeDefined();
+          expect(q.hierarchy.values.get('c')).toBeDefined();
+          expect(q.hierarchy.values.get('d')).toBeDefined();
+        }
+      });
+    });
+
     test('fails if the name is not a valid qualifier type name', () => {
       const name = 'not a valid name';
       expect(TsRes.QualifierTypes.QualifierType.isValidName(name)).toBe(false);
@@ -94,6 +122,77 @@ describe('LiteralQualifierType', () => {
       expect(TsRes.QualifierTypes.LiteralQualifierType.create(params)).toFailWith(
         /not a valid literal condition/i
       );
+    });
+
+    test('creates hierarchy with values not in enumeratedValues', () => {
+      const params: TsRes.QualifierTypes.ILiteralQualifierTypeCreateParams = {
+        name: 'test',
+        enumeratedValues: ['a', 'b'],
+        hierarchy: {
+          a: 'parent',
+          b: 'parent',
+          parent: 'root'
+        }
+      };
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create(params)).toFailWith(
+        /parent.*is not a valid literal value/i
+      );
+    });
+
+    test('creates hierarchy when all referenced values are in enumeratedValues', () => {
+      const params: TsRes.QualifierTypes.ILiteralQualifierTypeCreateParams = {
+        name: 'test',
+        enumeratedValues: ['a', 'b', 'parent', 'root'],
+        hierarchy: {
+          a: 'parent',
+          b: 'parent',
+          parent: 'root'
+        }
+      };
+      const q = TsRes.QualifierTypes.LiteralQualifierType.create(params).orThrow();
+
+      // Check hierarchy relationships
+      expect(q.hierarchy!.getAncestors('a')).toSucceedWith(['parent', 'root']);
+      expect(q.hierarchy!.getAncestors('parent')).toSucceedWith(['root']);
+      expect(q.hierarchy!.getRoots()).toSucceedWith(['root']);
+
+      // Test matching using hierarchy
+      expect(
+        q.matches('a' as TsRes.QualifierConditionValue, 'a' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        q.matches('parent' as TsRes.QualifierConditionValue, 'a' as TsRes.QualifierContextValue, 'matches')
+      ).toBeGreaterThan(TsRes.NoMatch);
+      expect(
+        q.matches('root' as TsRes.QualifierConditionValue, 'a' as TsRes.QualifierContextValue, 'matches')
+      ).toBeGreaterThan(TsRes.NoMatch);
+      expect(
+        q.matches('a' as TsRes.QualifierConditionValue, 'parent' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.NoMatch);
+    });
+
+    test('creates hierarchy without enumerated values (uses empty array fallback)', () => {
+      const params: TsRes.QualifierTypes.ILiteralQualifierTypeCreateParams = {
+        name: 'test-no-enum',
+        hierarchy: {
+          a: 'parent',
+          b: 'parent',
+          parent: 'root'
+        }
+        // No enumeratedValues - should use empty array fallback
+      };
+      const q = TsRes.QualifierTypes.LiteralQualifierType.create(params).orThrow();
+
+      expect(q.hierarchy).toBeDefined();
+      expect(q.enumeratedValues).toBeUndefined();
+
+      // Test matching using hierarchy (should work even without enumerated values)
+      expect(
+        q.matches('a' as TsRes.QualifierConditionValue, 'a' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        q.matches('parent' as TsRes.QualifierConditionValue, 'a' as TsRes.QualifierContextValue, 'matches')
+      ).toBeGreaterThan(TsRes.NoMatch);
     });
   });
 
@@ -303,6 +402,44 @@ describe('LiteralQualifierType', () => {
       });
     });
 
+    describe('with case-insensitive matching (no enumerated values)', () => {
+      beforeAll(() => {
+        qt = TsRes.QualifierTypes.LiteralQualifierType.create({ caseSensitive: false }).orThrow();
+      });
+
+      test('returns PerfectMatch for matching values (case-insensitive)', () => {
+        expect(
+          qt.matches('a' as TsRes.QualifierConditionValue, 'a' as TsRes.QualifierContextValue, 'matches')
+        ).toBe(TsRes.PerfectMatch);
+        expect(
+          qt.matches('a' as TsRes.QualifierConditionValue, 'A' as TsRes.QualifierContextValue, 'matches')
+        ).toBe(TsRes.PerfectMatch);
+        expect(
+          qt.matches('A' as TsRes.QualifierConditionValue, 'a' as TsRes.QualifierContextValue, 'matches')
+        ).toBe(TsRes.PerfectMatch);
+        expect(
+          qt.matches(
+            'Test' as TsRes.QualifierConditionValue,
+            'test' as TsRes.QualifierContextValue,
+            'matches'
+          )
+        ).toBe(TsRes.PerfectMatch);
+      });
+
+      test('returns NoMatch for non-matching values', () => {
+        expect(
+          qt.matches('a' as TsRes.QualifierConditionValue, 'b' as TsRes.QualifierContextValue, 'matches')
+        ).toBe(TsRes.NoMatch);
+        expect(
+          qt.matches(
+            'Test' as TsRes.QualifierConditionValue,
+            'Other' as TsRes.QualifierContextValue,
+            'matches'
+          )
+        ).toBe(TsRes.NoMatch);
+      });
+    });
+
     describe('with allowContextList true', () => {
       beforeAll(() => {
         qt = TsRes.QualifierTypes.LiteralQualifierType.create({
@@ -364,6 +501,18 @@ describe('LiteralQualifierType', () => {
           qt.matches('a' as TsRes.QualifierConditionValue, 'a, b' as TsRes.QualifierContextValue, 'matches')
         ).toBe(TsRes.NoMatch);
       });
+    });
+
+    test('does not match case-insensitively when values are different', () => {
+      const params: TsRes.QualifierTypes.ILiteralQualifierTypeCreateParams = {
+        name: 'case-insensitive-nonmatch',
+        caseSensitive: false,
+        enumeratedValues: ['foo', 'bar']
+      };
+      const qt = TsRes.QualifierTypes.LiteralQualifierType.create(params).orThrow();
+      expect(
+        qt.matches('foo' as TsRes.QualifierConditionValue, 'baz' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.NoMatch);
     });
   });
 
@@ -432,6 +581,76 @@ describe('LiteralQualifierType', () => {
         index: 1
       }).orThrow();
       expect(QualifierType.compare(qt1, qt2)).toBe(0);
+    });
+  });
+
+  describe('case-sensitive matching', () => {
+    test('matches case-sensitively when caseSensitive is true', () => {
+      const params: TsRes.QualifierTypes.ILiteralQualifierTypeCreateParams = {
+        name: 'case-sensitive',
+        caseSensitive: true,
+        enumeratedValues: ['Test', 'test', 'TEST']
+      };
+      const qt = TsRes.QualifierTypes.LiteralQualifierType.create(params).orThrow();
+
+      expect(
+        qt.matches('Test' as TsRes.QualifierConditionValue, 'Test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        qt.matches('test' as TsRes.QualifierConditionValue, 'test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        qt.matches('TEST' as TsRes.QualifierConditionValue, 'TEST' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        qt.matches('Test' as TsRes.QualifierConditionValue, 'test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.NoMatch);
+      expect(
+        qt.matches('test' as TsRes.QualifierConditionValue, 'Test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.NoMatch);
+    });
+
+    test('matches case-insensitively when caseSensitive is false', () => {
+      const params: TsRes.QualifierTypes.ILiteralQualifierTypeCreateParams = {
+        name: 'case-insensitive',
+        caseSensitive: false,
+        enumeratedValues: ['Test', 'test', 'TEST']
+      };
+      const qt = TsRes.QualifierTypes.LiteralQualifierType.create(params).orThrow();
+
+      expect(
+        qt.matches('Test' as TsRes.QualifierConditionValue, 'Test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        qt.matches('test' as TsRes.QualifierConditionValue, 'test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        qt.matches('TEST' as TsRes.QualifierConditionValue, 'TEST' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        qt.matches('Test' as TsRes.QualifierConditionValue, 'test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        qt.matches('test' as TsRes.QualifierConditionValue, 'Test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        qt.matches('TEST' as TsRes.QualifierConditionValue, 'test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+    });
+
+    test('matches case-insensitively by default', () => {
+      const params: TsRes.QualifierTypes.ILiteralQualifierTypeCreateParams = {
+        name: 'default',
+        enumeratedValues: ['Test', 'test', 'TEST']
+      };
+      const qt = TsRes.QualifierTypes.LiteralQualifierType.create(params).orThrow();
+
+      expect(
+        qt.matches('Test' as TsRes.QualifierConditionValue, 'test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        qt.matches('test' as TsRes.QualifierConditionValue, 'Test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
     });
   });
 });

@@ -21,9 +21,10 @@
  */
 
 import { Helpers } from '../common';
-import { captureResult, Result } from '@fgv/ts-utils';
+import { captureResult, Result, succeed } from '@fgv/ts-utils';
 import { IConditionDecl } from '../conditions';
 import { ResourceId } from '../common';
+import * as ResourceJson from '../resource-json';
 
 /**
  * Accumulated context of a resource import operation.
@@ -135,5 +136,48 @@ export class ImportContext implements IValidatedImportContext {
     return Helpers.joinOptionalResourceIds(this.baseId, context.baseId).onSuccess((baseId) => {
       return ImportContext.create({ baseId, conditions });
     });
+  }
+
+  /**
+   * Creates a new {@link Import.ImportContext | import context} to import resources from a
+   * container with the specified {@link ResourceJson.Normalized.IContainerContextDecl | container context declaration}e
+   * @param container - The {@link ResourceJson.Normalized.IContainerContextDecl | container context declaration}
+   * to consider when creating the new context.
+   * @param importer - The base {@link Import.ImportContext | import context} to adjust for the container
+   * context.
+   * @returns `Success` with the new {@link Import.ImportContext | import context} if successful,
+   * or `Failure` with an error message if the operation fails.
+   * @remarks
+   * A container context declaration may specify a merge method, which determines how the
+   * container context is merged with the base context. The merge method can be one of the following:
+   * - `augment`: The base context is augmented with the container context. This is the default behavior.
+   * - `replace`: The base context is selectively replaced with the container context. If the container context
+   *   specifies a base ID or conditions, the corresponding values in the base context are ignored.
+   * - `delete`: The base context is deleted. This means that the container context is not used at all.
+   */
+  public static forContainerImport(
+    container?: ResourceJson.Normalized.IContainerContextDecl,
+    importer?: ImportContext
+  ): Result<ImportContext | undefined> {
+    if (!importer) {
+      return succeed(undefined);
+    }
+    /* c8 ignore next 1 */
+    container = container ?? {};
+    const mergeMethod = container.mergeMethod ?? 'augment';
+
+    switch (mergeMethod) {
+      case 'augment':
+        return succeed(importer);
+      case 'replace': {
+        // if the container defines baseId or conditions, then we ignore
+        // the corresponding values in the importer
+        const baseId = container.baseId ? undefined : importer.baseId;
+        const conditions = container.conditions ? undefined : importer.conditions;
+        return ImportContext.create({ baseId, conditions });
+      }
+      case 'delete':
+        return succeed(undefined);
+    }
   }
 }

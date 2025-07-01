@@ -4,6 +4,32 @@
 
 ## QualifierTypes.Convert namespace
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[literalValueHierarchyCreateParams(valueConverter)](./ts-res.qualifiertypes.convert.literalvaluehierarchycreateparams.md)
+
+
+</td><td>
+
+Gets a converter for [ILiteralValueHierarchyCreateParams](./ts-res.qualifiertypes.iliteralvaluehierarchycreateparams.md) objects with values validated by a supplied value converter.
+
+
+</td></tr>
+</tbody></table>
+
 ## Interfaces
 
 <table><thead><tr><th>

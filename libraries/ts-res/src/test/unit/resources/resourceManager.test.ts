@@ -371,4 +371,58 @@ describe('ResourceManager', () => {
       });
     });
   });
+
+  describe('getAll methods', () => {
+    let manager: TsRes.Resources.ResourceManager;
+
+    beforeEach(() => {
+      manager = TsRes.Resources.ResourceManager.create({
+        qualifiers,
+        resourceTypes
+      }).orThrow();
+      manager.addLooseCandidate({ ...someDecls[0], resourceTypeName: 'json' }).orThrow();
+      manager.addLooseCandidate(someDecls[1]).orThrow();
+      manager.addLooseCandidate(someDecls[2]).orThrow();
+      manager.addLooseCandidate(someDecls[3]).orThrow();
+      manager.addLooseCandidate({ ...otherDecls[0], resourceTypeName: 'json' }).orThrow();
+    });
+
+    test('getAllResources method returns sorted resources', () => {
+      const resources = manager.getAllResources();
+      expect(resources.length).toEqual(2);
+      expect(resources[0].id).toEqual('some.other.path');
+      expect(resources[0].candidates.length).toEqual(1);
+      expect(resources[1].id).toEqual('some.resource.path');
+      expect(resources[1].candidates.length).toEqual(4);
+    });
+
+    test('getAllCandidates method returns sorted candidates', () => {
+      const candidates = manager.getAllCandidates();
+      expect(candidates.length).toEqual(5);
+      expect(candidates[0].id).toEqual('some.other.path');
+      expect(candidates[1].id).toEqual('some.resource.path');
+      expect(candidates[2].id).toEqual('some.resource.path');
+      expect(candidates[3].id).toEqual('some.resource.path');
+      expect(candidates[4].id).toEqual('some.resource.path');
+    });
+
+    test('getAllBuiltResources method gets sorted built resources', () => {
+      expect(manager.getAllBuiltResources()).toSucceedAndSatisfy((builtResources) => {
+        expect(builtResources.length).toEqual(2);
+        expect(builtResources[0].id).toEqual('some.other.path');
+        expect(builtResources[1].id).toEqual('some.resource.path');
+      });
+    });
+
+    test('getAllBuiltCandidates method gets sorted built candidates', () => {
+      expect(manager.getAllBuiltCandidates()).toSucceedAndSatisfy((builtCandidates) => {
+        expect(builtCandidates.length).toEqual(5);
+        expect(builtCandidates[0].id).toEqual('some.other.path');
+        expect(builtCandidates[1].id).toEqual('some.resource.path');
+        expect(builtCandidates[2].id).toEqual('some.resource.path');
+        expect(builtCandidates[3].id).toEqual('some.resource.path');
+        expect(builtCandidates[4].id).toEqual('some.resource.path');
+      });
+    });
+  });
 });

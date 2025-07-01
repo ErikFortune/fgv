@@ -71,6 +71,12 @@ describe('QualifierCollector class', () => {
           expect(q.name).toBe('language');
           expect(q.type.name).toBe('language');
           expect(q.defaultPriority).toBe(600);
+          expect(q.isValidConditionValue('en')).toBe(true);
+          expect(q.isValidConditionValue('en-US,de')).toBe(false);
+          expect(q.isValidConditionValue('english')).toBe(false);
+          expect(q.isValidContextValue('en')).toBe(true);
+          expect(q.isValidContextValue('en-US,de')).toBe(true);
+          expect(q.isValidContextValue('english')).toBe(false);
         });
       });
     });

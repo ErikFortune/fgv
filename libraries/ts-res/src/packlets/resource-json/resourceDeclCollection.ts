@@ -25,8 +25,7 @@ import { IResourceDeclContainer } from './resourceDeclContainer';
 import * as Convert from './convert';
 import * as Normalized from './normalized';
 import * as Json from './json';
-import { Helpers as CommonHelpers } from '../common';
-import { mergeLooseCandidate, mergeLooseResource } from './helpers';
+import { mergeContextDecl, mergeLooseCandidate, mergeLooseResource } from './helpers';
 
 /**
  * Class that extracts resources and candidates from a
@@ -39,6 +38,13 @@ export class ResourceDeclCollection implements IResourceDeclContainer {
    * being processed.
    */
   public readonly collection: Normalized.IResourceCollectionDecl;
+
+  /**
+   * {@inheritdoc ResourceJson.IResourceDeclContainer.context}
+   */
+  public get context(): Normalized.IContainerContextDecl | undefined {
+    return this.collection.context;
+  }
 
   protected _resources: Normalized.ILooseResourceDecl[] = [];
   protected _candidates: Normalized.ILooseResourceCandidateDecl[] = [];
@@ -84,25 +90,27 @@ export class ResourceDeclCollection implements IResourceDeclContainer {
   private _extract(
     collection: Normalized.IResourceCollectionDecl,
     parentName?: string,
-    parentConditions?: Json.ILooseConditionDecl[]
+    parentConditions?: ReadonlyArray<Json.ILooseConditionDecl>
   ): Result<this> {
     const errors: MessageAggregator = new MessageAggregator();
-    return CommonHelpers.joinOptionalResourceIds(parentName, collection.baseName).onSuccess((baseName) => {
-      const baseConditions = [...(parentConditions ?? []), ...(collection.baseConditions ?? [])];
+    return mergeContextDecl(collection.context, parentName, parentConditions).onSuccess(
+      ({ baseId: baseName, conditions: baseConditions }) => {
+        const mergedCandidates =
+          collection.candidates?.map((candidate) =>
+            mergeLooseCandidate(candidate, baseName, baseConditions)
+          ) ?? [];
+        this._candidates.push(...mapResults(mergedCandidates).aggregateError(errors).orDefault([]));
 
-      const mergedCandidates =
-        collection.candidates?.map((candidate) => mergeLooseCandidate(candidate, baseName, baseConditions)) ??
-        [];
-      this._candidates.push(...mapResults(mergedCandidates).aggregateError(errors).orDefault([]));
+        const mergedResources =
+          collection.resources?.map((resource) => mergeLooseResource(resource, baseName, baseConditions)) ??
+          [];
+        this._resources.push(...mapResults(mergedResources).aggregateError(errors).orDefault([]));
 
-      const mergedResources =
-        collection.resources?.map((resource) => mergeLooseResource(resource, baseName, baseConditions)) ?? [];
-      this._resources.push(...mapResults(mergedResources).aggregateError(errors).orDefault([]));
-
-      collection.collections?.forEach((subCollection) => {
-        this._extract(subCollection, baseName, baseConditions).aggregateError(errors);
-      });
-      return errors.returnOrReport(succeed(this));
-    });
+        collection.collections?.forEach((subCollection) => {
+          this._extract(subCollection, baseName, baseConditions).aggregateError(errors);
+        });
+        return errors.returnOrReport(succeed(this));
+      }
+    );
   }
 }

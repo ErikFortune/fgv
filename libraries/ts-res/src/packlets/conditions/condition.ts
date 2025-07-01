@@ -28,6 +28,7 @@ import {
   ConditionOperator,
   ConditionPriority,
   ConditionToken,
+  NoMatch,
   QualifierConditionValue,
   QualifierMatchScore,
   Validate
@@ -35,6 +36,7 @@ import {
 import { Qualifier } from '../qualifiers';
 import { IValidatedConditionDecl } from './conditionDecls';
 import * as ResourceJson from '../resource-json';
+import * as Context from '../context';
 
 // eslint-disable-next-line @rushstack/typedef-var
 const scoreFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
@@ -89,7 +91,7 @@ export class Condition implements IValidatedConditionDecl {
   }: IValidatedConditionDecl) {
     this.qualifier = qualifier;
     this.operator = operator;
-    this.value = qualifier.type.validateCondition(value, operator).orThrow();
+    this.value = qualifier.validateCondition(value, operator).orThrow();
     this.priority = priority;
     this.scoreAsDefault = scoreAsDefault;
     this._collectible = new Collections.Collectible({
@@ -122,6 +124,49 @@ export class Condition implements IValidatedConditionDecl {
    */
   public static create(decl: IValidatedConditionDecl): Result<Condition> {
     return captureResult(() => new Condition(decl));
+  }
+
+  /**
+   * Determines if this condition matches the supplied {@link Context.IValidatedContextDecl | validated context}.
+   * @param context - The {@link Context.IValidatedContextDecl | context} to match against.
+   * @param options - The {@link Context.IContextMatchOptions | options} to use when matching the context.
+   * @returns A {@link QualifierMatchScore | match score} indicating match quality if the condition is present
+   * in the context to be matched, `undefined` otherwise.
+   * @remarks
+   * If {@link Context.IContextMatchOptions.partialContextMatch | `options.partialContextMatch``} is `true`, then
+   * the method will return `undefined` if the corresponding qualifier is not present in the context.
+   */
+  public getContextMatch(
+    context: Context.IValidatedContextDecl,
+    options?: Context.IContextMatchOptions
+  ): QualifierMatchScore | undefined {
+    options = options ?? {};
+    if (this.qualifier.name in context) {
+      const contextValue = context[this.qualifier.name];
+      const match = this.qualifier.type.matches(this.value, contextValue, this.operator);
+      if (match === NoMatch && options.acceptDefaultScore === true && this.scoreAsDefault !== undefined) {
+        return this.scoreAsDefault;
+      }
+      return match;
+    }
+    return options.partialContextMatch === true ? undefined : NoMatch;
+  }
+
+  /**
+   * Determines if this condition matches the supplied {@link Context.IValidatedContextDecl | validated context}.
+   * @remarks
+   * A condition matches a context if it is present and the comparison yields a non-zero {@link QualifierMatchScore | match score},
+   * *or* if the condition is not present in the context.
+   * @param context - The {@link Context.IValidatedContextDecl | context} to match against.
+   * @param options - The {@link Context.IContextMatchOptions | options} to use when matching the context.
+   * @returns `true` if the condition matches the context, `false` otherwise.
+   * @public
+   */
+  public matchesContext(
+    context: Context.IValidatedContextDecl,
+    options?: Context.IContextMatchOptions
+  ): boolean {
+    return this.getContextMatch(context, options) !== NoMatch;
   }
 
   /**

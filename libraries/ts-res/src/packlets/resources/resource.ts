@@ -25,6 +25,7 @@ import { ResourceId, Validate } from '../common';
 import { ResourceCandidate } from './resourceCandidate';
 import { ResourceType } from '../resource-types';
 import * as ResourceJson from '../resource-json';
+import * as Context from '../context';
 
 /**
  * Parameters used to create a {@link Resources.Resource | Resource} object.
@@ -94,6 +95,19 @@ export class Resource {
    */
   public static create(params: IResourceCreateParams): Result<Resource> {
     return captureResult(() => new Resource(params));
+  }
+
+  /**
+   * Gets the candidates for this resource that match the specified {@link Context.IValidatedContextDecl | context}.
+   * @param context - The {@link Context.IValidatedContextDecl | context} to match against.
+   * @param options - {@link Context.IContextMatchOptions | options} for the context match.
+   * @returns The array of {@link Resources.ResourceCandidate | candidates} that match the context.
+   */
+  public getCandidatesForContext(
+    context: Context.IValidatedContextDecl,
+    options?: Context.IContextMatchOptions
+  ): ReadonlyArray<ResourceCandidate> {
+    return this.candidates.filter((c) => c.matchesContext(context, options));
   }
 
   /**

@@ -239,6 +239,22 @@ export class ResourceManager {
   }
 
   /**
+   * Gets a read-only array of all {@link Resources.ResourceBuilder | resource builders} present in the manager.
+   * @returns `Success` with the {@link Resources.ResourceBuilder | resource builder} if successful,
+   * or `Failure` with an error message if not.
+   */
+  public getAllResources(): ReadonlyArray<ResourceBuilder> {
+    return Array.from(this._resources.values()).sort((a, b) => a.id.localeCompare(b.id));
+  }
+
+  /**
+   * Gets a read-only array of all {@link Resources.ResourceCandidate | resource candidates} present in the manager.
+   */
+  public getAllCandidates(): ReadonlyArray<ResourceCandidate> {
+    return this.getAllResources().flatMap((r) => r.candidates);
+  }
+
+  /**
    * Gets an individual {@link Resources.Resource | built resource} from the manager.
    * @param id - The {@link ResourceId | id} of the resource to get.
    * @returns `Success` with the resource if successful, or `Failure` with an error message if not.
@@ -248,6 +264,26 @@ export class ResourceManager {
     return this._resources.validating
       .get(id)
       .onSuccess((builder) => this._builtResources.validating.getOrAdd(id, () => builder.build()));
+  }
+
+  /**
+   * Gets a read-only array of all {@link Resources.Resource | built resources} in the manager.
+   * @returns `Success` with an array of resources if successful, or `Failure` with an error message if not.
+   * @public
+   */
+  public getAllBuiltResources(): Result<ReadonlyArray<Resource>> {
+    return this.build().onSuccess((built) =>
+      succeed(Array.from(built.values()).sort((a, b) => a.id.localeCompare(b.id)))
+    );
+  }
+
+  /**
+   * Gets a read-only array of all {@link Resources.Resource | built resources} in the manager.
+   * @returns `Success` with an array of resources if successful, or `Failure` with an error message if not.
+   * @public
+   */
+  public getAllBuiltCandidates(): Result<ReadonlyArray<ResourceCandidate>> {
+    return this.getAllBuiltResources().onSuccess((built) => succeed(built.flatMap((r) => r.candidates)));
   }
 
   /**

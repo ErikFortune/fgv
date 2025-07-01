@@ -267,6 +267,20 @@ Compares two [ResourceCandidates](./ts-res.resources.resourcecandidate.md) for e
 </td></tr>
 <tr><td>
 
+[matchesContext(context, options)](./ts-res.resources.resourcecandidate.matchescontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Determines if this candidate matches the supplied context.
+
+
+</td></tr>
+<tr><td>
+
 [toChildResourceCandidateDecl(options)](./ts-res.resources.resourcecandidate.tochildresourcecandidatedecl.md)
 
 

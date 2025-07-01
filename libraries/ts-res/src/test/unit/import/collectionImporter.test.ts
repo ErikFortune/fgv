@@ -109,7 +109,9 @@ describe('CollectionImporter', () => {
       ]
     };
     treeJson = {
-      baseName: 'base',
+      context: {
+        baseId: 'base'
+      },
       resources: {
         foo: {
           resourceTypeName: 'json',
@@ -185,6 +187,199 @@ describe('CollectionImporter', () => {
         });
       });
       expect(importResult.detail).toEqual('consumed');
+    });
+
+    describe('with merge method replace', () => {
+      test('imports a resource collection replacing id and conditions', () => {
+        collectionJson = {
+          ...collectionJson,
+          context: {
+            mergeMethod: 'replace',
+            baseId: 'overridden',
+            conditions: [{ qualifierName: 'some_thing', value: 'replace' }]
+          }
+        };
+        collection = TsRes.ResourceJson.ResourceDeclCollection.create(collectionJson).orThrow();
+
+        const importable: TsRes.Import.Importable = { type: 'resourceCollection', collection, context };
+        const importResult = importer.import(importable, manager);
+        expect(importResult).toSucceedAndSatisfy((importables) => {
+          expect(importables.length).toEqual(0);
+          expect(manager.size).toEqual(3);
+          expect(manager.resources.validating.has('overridden.foo')).toBe(true);
+          expect(manager.resources.validating.has('overridden.bar')).toBe(true);
+          expect(manager.resources.validating.has('overridden.baz')).toBe(true);
+          expect(manager.resources.validating.get('overridden.foo')).toSucceedAndSatisfy((r) => {
+            expect(r.candidates.length).toEqual(1);
+            expect(r.candidates[0].conditions.size).toEqual(2);
+            expect(r.candidates[0].conditions.conditions[0].toKey()).toEqual('language-[en-US]@600');
+            expect(r.candidates[0].conditions.conditions[1].toKey()).toEqual('some_thing-[replace]@500');
+          });
+        });
+        expect(importResult.detail).toEqual('consumed');
+      });
+
+      test('imports a resource collection replacing only id', () => {
+        collectionJson = {
+          ...collectionJson,
+          context: {
+            mergeMethod: 'replace',
+            baseId: 'overridden'
+          }
+        };
+        collection = TsRes.ResourceJson.ResourceDeclCollection.create(collectionJson).orThrow();
+        const importable: TsRes.Import.Importable = { type: 'resourceCollection', collection, context };
+        const importResult = importer.import(importable, manager);
+        expect(importResult).toSucceedAndSatisfy((importables) => {
+          expect(importables.length).toEqual(0);
+          expect(manager.size).toEqual(3);
+          expect(manager.resources.validating.has('overridden.foo')).toBe(true);
+          expect(manager.resources.validating.has('overridden.bar')).toBe(true);
+          expect(manager.resources.validating.has('overridden.baz')).toBe(true);
+          expect(manager.resources.validating.get('overridden.foo')).toSucceedAndSatisfy((r) => {
+            expect(r.candidates.length).toEqual(1);
+            expect(r.candidates[0].conditions.size).toEqual(2);
+            expect(r.candidates[0].conditions.conditions[0].toKey()).toEqual('language-[en-US]@600');
+            expect(r.candidates[0].conditions.conditions[1].toKey()).toEqual('some_thing-[thing]@500');
+          });
+        });
+        expect(importResult.detail).toEqual('consumed');
+      });
+
+      test('imports a resource collection replacing only conditions', () => {
+        collectionJson = {
+          ...collectionJson,
+          context: {
+            mergeMethod: 'replace',
+            conditions: [{ qualifierName: 'some_thing', value: 'replace' }]
+          }
+        };
+        collection = TsRes.ResourceJson.ResourceDeclCollection.create(collectionJson).orThrow();
+        const importable: TsRes.Import.Importable = { type: 'resourceCollection', collection, context };
+        const importResult = importer.import(importable, manager);
+        expect(importResult).toSucceedAndSatisfy((importables) => {
+          expect(importables.length).toEqual(0);
+          expect(manager.size).toEqual(3);
+          expect(manager.resources.validating.has('some.resource.id.foo')).toBe(true);
+          expect(manager.resources.validating.has('some.resource.id.bar')).toBe(true);
+          expect(manager.resources.validating.has('some.resource.id.baz')).toBe(true);
+          expect(manager.resources.validating.get('some.resource.id.foo')).toSucceedAndSatisfy((r) => {
+            expect(r.candidates.length).toEqual(1);
+            expect(r.candidates[0].conditions.size).toEqual(2);
+            expect(r.candidates[0].conditions.conditions[0].toKey()).toEqual('language-[en-US]@600');
+            expect(r.candidates[0].conditions.conditions[1].toKey()).toEqual('some_thing-[replace]@500');
+          });
+        });
+        expect(importResult.detail).toEqual('consumed');
+      });
+    });
+
+    describe('with merge method delete', () => {
+      test('imports a resource collection ignoring parent id and conditions', () => {
+        collectionJson = {
+          ...collectionJson,
+          context: {
+            mergeMethod: 'delete',
+            baseId: 'overridden',
+            conditions: [{ qualifierName: 'some_thing', value: 'replace' }]
+          }
+        };
+        collection = TsRes.ResourceJson.ResourceDeclCollection.create(collectionJson).orThrow();
+        const importable: TsRes.Import.Importable = { type: 'resourceCollection', collection, context };
+        const importResult = importer.import(importable, manager);
+        expect(importResult).toSucceedAndSatisfy((importables) => {
+          expect(importables.length).toEqual(0);
+          expect(manager.size).toEqual(3);
+          expect(manager.resources.validating.has('overridden.foo')).toBe(true);
+          expect(manager.resources.validating.has('overridden.bar')).toBe(true);
+          expect(manager.resources.validating.has('overridden.baz')).toBe(true);
+          expect(manager.resources.validating.get('overridden.foo')).toSucceedAndSatisfy((r) => {
+            expect(r.candidates.length).toEqual(1);
+            expect(r.candidates[0].conditions.size).toEqual(2);
+            expect(r.candidates[0].conditions.conditions[0].toKey()).toEqual('language-[en-US]@600');
+            expect(r.candidates[0].conditions.conditions[1].toKey()).toEqual('some_thing-[replace]@500');
+          });
+        });
+        expect(importResult.detail).toEqual('consumed');
+      });
+
+      test('imports a resource collection ignoring parent id and conditions even if container context only has id', () => {
+        collectionJson = {
+          ...collectionJson,
+          context: {
+            mergeMethod: 'delete',
+            baseId: 'overridden'
+          }
+        };
+        collection = TsRes.ResourceJson.ResourceDeclCollection.create(collectionJson).orThrow();
+        const importable: TsRes.Import.Importable = { type: 'resourceCollection', collection, context };
+        const importResult = importer.import(importable, manager);
+        expect(importResult).toSucceedAndSatisfy((importables) => {
+          expect(importables.length).toEqual(0);
+          expect(manager.size).toEqual(3);
+          expect(manager.resources.validating.has('overridden.foo')).toBe(true);
+          expect(manager.resources.validating.has('overridden.bar')).toBe(true);
+          expect(manager.resources.validating.has('overridden.baz')).toBe(true);
+          expect(manager.resources.validating.get('overridden.foo')).toSucceedAndSatisfy((r) => {
+            expect(r.candidates.length).toEqual(1);
+            expect(r.candidates[0].conditions.size).toEqual(1);
+            expect(r.candidates[0].conditions.conditions[0].toKey()).toEqual('language-[en-US]@600');
+          });
+        });
+        expect(importResult.detail).toEqual('consumed');
+      });
+
+      test('imports a resource collection ignoring parent id and conditions even if container context only has conditions', () => {
+        collectionJson = {
+          ...collectionJson,
+          context: {
+            mergeMethod: 'delete',
+            conditions: [{ qualifierName: 'some_thing', value: 'replace' }]
+          }
+        };
+        collection = TsRes.ResourceJson.ResourceDeclCollection.create(collectionJson).orThrow();
+        const importable: TsRes.Import.Importable = { type: 'resourceCollection', collection, context };
+        const importResult = importer.import(importable, manager);
+        expect(importResult).toSucceedAndSatisfy((importables) => {
+          expect(importables.length).toEqual(0);
+          expect(manager.size).toEqual(3);
+          expect(manager.resources.validating.has('foo')).toBe(true);
+          expect(manager.resources.validating.has('bar')).toBe(true);
+          expect(manager.resources.validating.has('baz')).toBe(true);
+          expect(manager.resources.validating.get('foo')).toSucceedAndSatisfy((r) => {
+            expect(r.candidates.length).toEqual(1);
+            expect(r.candidates[0].conditions.size).toEqual(2);
+            expect(r.candidates[0].conditions.conditions[0].toKey()).toEqual('language-[en-US]@600');
+            expect(r.candidates[0].conditions.conditions[1].toKey()).toEqual('some_thing-[replace]@500');
+          });
+        });
+        expect(importResult.detail).toEqual('consumed');
+      });
+
+      test('imports a resource collection ignoring parent id and conditions even if container context only has merge method', () => {
+        collectionJson = {
+          ...collectionJson,
+          context: {
+            mergeMethod: 'delete'
+          }
+        };
+        collection = TsRes.ResourceJson.ResourceDeclCollection.create(collectionJson).orThrow();
+        const importable: TsRes.Import.Importable = { type: 'resourceCollection', collection, context };
+        const importResult = importer.import(importable, manager);
+        expect(importResult).toSucceedAndSatisfy((importables) => {
+          expect(importables.length).toEqual(0);
+          expect(manager.size).toEqual(3);
+          expect(manager.resources.validating.has('foo')).toBe(true);
+          expect(manager.resources.validating.has('bar')).toBe(true);
+          expect(manager.resources.validating.has('baz')).toBe(true);
+          expect(manager.resources.validating.get('foo')).toSucceedAndSatisfy((r) => {
+            expect(r.candidates.length).toEqual(1);
+            expect(r.candidates[0].conditions.size).toEqual(1);
+            expect(r.candidates[0].conditions.conditions[0].toKey()).toEqual('language-[en-US]@600');
+          });
+        });
+        expect(importResult.detail).toEqual('consumed');
+      });
     });
 
     test('fails if the importable is not a resource collection or tree', () => {

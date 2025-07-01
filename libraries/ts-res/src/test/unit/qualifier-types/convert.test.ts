@@ -21,6 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
+import { Converters } from '@fgv/ts-utils';
 import * as TsRes from '../../../index';
 
 describe('qualifierType converter', () => {
@@ -77,5 +78,67 @@ describe('qualifierType converter', () => {
 
   test('fails if no context is supplied', () => {
     expect(TsRes.QualifierTypes.Convert.qualifierType.convert('literal')).toFailWith(/requires a context/);
+  });
+});
+
+describe('literalValueHierarchyCreateParams', () => {
+  const stringConverter = Converters.string;
+  const converter = TsRes.QualifierTypes.Convert.literalValueHierarchyCreateParams(stringConverter);
+
+  test('converts valid hierarchy params', () => {
+    const input = {
+      values: ['a', 'b', 'c'],
+      hierarchy: {
+        a: 'parent',
+        b: 'parent'
+      }
+    };
+    expect(converter.convert(input)).toSucceedWith(input);
+  });
+
+  test('converts params with only values', () => {
+    const input = {
+      values: ['a', 'b', 'c'],
+      hierarchy: {}
+    };
+    expect(converter.convert(input)).toSucceedWith(input);
+  });
+
+  test('fails if values is not an array', () => {
+    const input = {
+      values: 'not-an-array',
+      hierarchy: {}
+    };
+    expect(converter.convert(input)).toFailWith(/array/);
+  });
+
+  test('fails if hierarchy is not a record', () => {
+    const input = {
+      values: ['a', 'b'],
+      hierarchy: 'not-a-record'
+    };
+    expect(converter.convert(input)).toFailWith(/object/);
+  });
+
+  test('succeeds with invalid hierarchy keys (validation happens later)', () => {
+    const input = {
+      values: ['a', 'b'],
+      hierarchy: {
+        'invalid-key': 'a'
+      }
+    };
+    // The converter only validates the structure, not the content
+    expect(converter.convert(input)).toSucceedWith(input);
+  });
+
+  test('succeeds with invalid hierarchy values (validation happens later)', () => {
+    const input = {
+      values: ['a', 'b'],
+      hierarchy: {
+        a: 'invalid-value'
+      }
+    };
+    // The converter only validates the structure, not the content
+    expect(converter.convert(input)).toSucceedWith(input);
   });
 });

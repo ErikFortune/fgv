@@ -63,7 +63,7 @@ const conditionSetDeclFromRecord: Converter<Normalized.ConditionSetDecl> = Conve
 >(
   (
     from: unknown,
-    self: Converter<Normalized.ConditionSetDecl, unknown>,
+    __self: Converter<Normalized.ConditionSetDecl, unknown>,
     context?: unknown
   ): Result<Normalized.ConditionSetDecl> => {
     /* c8 ignore next 3 - this is tested but coverage is confused */
@@ -135,6 +135,17 @@ export const childResourceDecl: Converter<Normalized.IChildResourceDecl> =
   });
 
 /**
+ * `Converter` for a normalized {@link ResourceJson.Normalized.IContainerContextDecl | resource context declaration}.
+ * @public
+ */
+export const containerContextDecl: Converter<Normalized.IContainerContextDecl> =
+  Converters.strictObject<Normalized.IContainerContextDecl>({
+    baseId: Converters.oneOf([CommonConvert.resourceId, Converters.literal('')]).optional(),
+    conditions: conditionSetDecl.optional(),
+    mergeMethod: CommonConvert.resourceValueMergeMethod.optional()
+  });
+
+/**
  * `Converter` for a normalized {@link ResourceJson.Normalized.IResourceTreeChildNodeDecl | resource tree child node declaration}.
  * @public
  */
@@ -160,7 +171,7 @@ export const resourceTreeChildNodeDecl: Converter<Normalized.IResourceTreeChildN
  */
 export const resourceTreeRootDecl: Converter<Normalized.IResourceTreeRootDecl> =
   Converters.strictObject<Normalized.IResourceTreeRootDecl>({
-    baseName: CommonConvert.resourceId.optional(),
+    context: containerContextDecl.optional(),
     resources: Converters.recordOf(childResourceDecl).optional(),
     children: Converters.recordOf(resourceTreeChildNodeDecl).optional()
   });
@@ -179,8 +190,7 @@ export const resourceCollectionDecl: Converter<Normalized.IResourceCollectionDec
     context?: unknown
   ): Result<Normalized.IResourceCollectionDecl> => {
     return Converters.strictObject<Normalized.IResourceCollectionDecl>({
-      baseName: CommonConvert.resourceId.optional(),
-      baseConditions: conditionSetDecl.optional(),
+      context: containerContextDecl.optional(),
       candidates: Converters.arrayOf(looseResourceCandidateDecl).optional(),
       resources: Converters.arrayOf(looseResourceDecl).optional(),
       collections: Converters.arrayOf(self).optional()

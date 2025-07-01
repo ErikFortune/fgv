@@ -268,6 +268,20 @@ Gets the [key](./ts-res.conditionsetkey.md) for a supplied [condition set declar
 </td></tr>
 <tr><td>
 
+[matchesContext(context, options)](./ts-res.conditions.conditionset.matchescontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Determines if this condition set can match a supplied [context](./ts-res.context.ivalidatedcontextdecl.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [setIndex(index)](./ts-res.conditions.conditionset.setindex.md)
 
 

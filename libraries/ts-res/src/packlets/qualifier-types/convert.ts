@@ -23,6 +23,7 @@
 import { Converter, Converters, Result, fail } from '@fgv/ts-utils';
 import { QualifierType } from './qualifierType';
 import { ReadOnlyQualifierTypeCollector } from './qualifierTypeCollector';
+import { ILiteralValueHierarchyCreateParams } from './literalValueHierarchy';
 
 /**
  * Context necessary to convert a qualifier name or number to an
@@ -57,3 +58,20 @@ export const qualifierType = Converters.generic<QualifierType, IQualifierTypeCon
     return fail('qualifierType converter requires a string or number');
   }
 );
+
+/**
+ * Gets a converter for {@link QualifierTypes.ILiteralValueHierarchyCreateParams | ILiteralValueHierarchyCreateParams}
+ * objects with values validated by a supplied value converter.
+ * @param valueConverter - Converter for the literal value type.
+ * @public
+ */
+export function literalValueHierarchyCreateParams<T extends string>(
+  valueConverter: Converter<T>
+): Converter<ILiteralValueHierarchyCreateParams<T>> {
+  return Converters.object<ILiteralValueHierarchyCreateParams<T>>({
+    values: Converters.arrayOf(valueConverter),
+    hierarchy: Converters.recordOf(valueConverter, {
+      keyConverter: valueConverter
+    })
+  });
+}

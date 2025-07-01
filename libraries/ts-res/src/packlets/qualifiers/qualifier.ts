@@ -21,7 +21,15 @@
  */
 
 import { captureResult, Collections, ICollectible, Result } from '@fgv/ts-utils';
-import { ConditionPriority, QualifierIndex, QualifierName, Convert as CommonConvert } from '../common';
+import {
+  ConditionPriority,
+  QualifierIndex,
+  QualifierName,
+  Convert as CommonConvert,
+  QualifierContextValue,
+  QualifierConditionValue,
+  ConditionOperator
+} from '../common';
 import { QualifierType } from '../qualifier-types';
 import { IValidatedQualifierDecl } from './qualifierDecl';
 
@@ -122,5 +130,33 @@ export class Qualifier implements IValidatedQualifierDecl, ICollectible<Qualifie
    */
   public setIndex(index: QualifierIndex): Result<QualifierIndex> {
     return this._collectible.setIndex(index);
+  }
+
+  /**
+   * {@inheritdoc QualifierTypes.QualifierType.isValidContextValue}
+   */
+  public isValidContextValue(value: string): value is QualifierContextValue {
+    return this.type.isValidContextValue(value);
+  }
+
+  /**
+   * {@inheritdoc QualifierTypes.QualifierType.isValidConditionValue}
+   */
+  public isValidConditionValue(value: string): value is QualifierConditionValue {
+    return this.type.isValidConditionValue(value);
+  }
+
+  /**
+   * {@inheritdoc QualifierTypes.QualifierType.validateCondition}
+   */
+  public validateCondition(value: string, operator?: ConditionOperator): Result<QualifierConditionValue> {
+    return this.type.validateCondition(value, operator);
+  }
+
+  /**
+   * {@inheritdoc QualifierTypes.QualifierType.validateContextValue}
+   */
+  public validateContextValue(value: string): Result<QualifierContextValue> {
+    return this.type.validateContextValue(value);
   }
 }

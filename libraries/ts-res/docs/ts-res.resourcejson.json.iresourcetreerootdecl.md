@@ -38,27 +38,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[baseName?](./ts-res.resourcejson.json.iresourcetreerootdecl.basename.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-_(Optional)_
-
-
-</td></tr>
-<tr><td>
-
 [children?](./ts-res.resourcejson.json.iresourcetreerootdecl.children.md)
 
 
@@ -70,6 +49,27 @@ _(Optional)_
 </td><td>
 
 Record&lt;string, [IResourceTreeChildNodeDecl](./ts-res.resourcejson.json.iresourcetreechildnodedecl.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[context?](./ts-res.resourcejson.json.iresourcetreerootdecl.context.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IContainerContextDecl](./ts-res.resourcejson.json.icontainercontextdecl.md)
 
 
 </td><td>

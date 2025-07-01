@@ -416,6 +416,62 @@ Creates a new [ResourceManager](./ts-res.resources.resourcemanager.md) object.
 </td></tr>
 <tr><td>
 
+[getAllBuiltCandidates()](./ts-res.resources.resourcemanager.getallbuiltcandidates.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a read-only array of all [built resources](./ts-res.resources.resource.md) in the manager.
+
+
+</td></tr>
+<tr><td>
+
+[getAllBuiltResources()](./ts-res.resources.resourcemanager.getallbuiltresources.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a read-only array of all [built resources](./ts-res.resources.resource.md) in the manager.
+
+
+</td></tr>
+<tr><td>
+
+[getAllCandidates()](./ts-res.resources.resourcemanager.getallcandidates.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a read-only array of all [resource candidates](./ts-res.resources.resourcecandidate.md) present in the manager.
+
+
+</td></tr>
+<tr><td>
+
+[getAllResources()](./ts-res.resources.resourcemanager.getallresources.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a read-only array of all [resource builders](./ts-res.resources.resourcebuilder.md) present in the manager.
+
+
+</td></tr>
+<tr><td>
+
 [getBuiltResource(id)](./ts-res.resources.resourcemanager.getbuiltresource.md)
 
 

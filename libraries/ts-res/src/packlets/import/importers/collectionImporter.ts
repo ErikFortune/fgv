@@ -75,17 +75,21 @@ export class CollectionImporter implements IImporter {
       return failWithDetail(`${name}: not a valid resource collection importable (${item.type})`, 'skipped');
     }
 
-    const collection = item.type === 'resourceCollection' ? item.collection : item.tree;
+    const container = item.type === 'resourceCollection' ? item.collection : item.tree;
 
-    const errors: MessageAggregator = new MessageAggregator();
-    for (const resource of collection.getLooseResources()) {
-      this._addResource(manager, resource, item.context).aggregateError(errors);
-    }
+    return ImportContext.forContainerImport(container.context, item.context)
+      .onSuccess((context) => {
+        const errors: MessageAggregator = new MessageAggregator();
+        for (const resource of container.getLooseResources()) {
+          this._addResource(manager, resource, context).aggregateError(errors);
+        }
 
-    for (const candidate of collection.getLooseCandidates()) {
-      this._addCandidate(manager, candidate, item.context).aggregateError(errors);
-    }
-    return errors.returnOrReport(succeed([])).withDetail('failed', 'consumed');
+        for (const candidate of container.getLooseCandidates()) {
+          this._addCandidate(manager, candidate, context).aggregateError(errors);
+        }
+        return errors.returnOrReport(succeed([]));
+      })
+      .withDetail('failed', 'consumed');
   }
 
   /**
