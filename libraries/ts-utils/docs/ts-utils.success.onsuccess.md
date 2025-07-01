@@ -47,6 +47,7 @@ The [success continuation](./ts-utils.successcontinuation.md) to be called in th
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;TN&gt;

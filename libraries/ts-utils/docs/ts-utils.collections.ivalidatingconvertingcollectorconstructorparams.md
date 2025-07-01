@@ -92,3 +92,4 @@ The default [factory](./ts-utils.collections.collectiblefactory.md) to create it
 
 </td></tr>
 </tbody></table>
+

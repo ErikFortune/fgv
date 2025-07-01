@@ -168,3 +168,4 @@ Calls a supplied [error formatter](./ts-utils.errorformatter.md) if the operatio
 
 </td></tr>
 </tbody></table>
+

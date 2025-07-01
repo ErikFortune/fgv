@@ -75,3 +75,4 @@ _(Optional)_ Optional additional [ValidatorOptions](./ts-utils.validation.classe
 
 </td></tr>
 </tbody></table>
+

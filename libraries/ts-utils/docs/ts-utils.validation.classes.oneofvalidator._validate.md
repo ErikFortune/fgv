@@ -63,6 +63,7 @@ _(Optional)_ Optional validation context will be propagated to element validator
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 boolean \| [Failure](./ts-utils.failure.md)<!-- -->&lt;T&gt;

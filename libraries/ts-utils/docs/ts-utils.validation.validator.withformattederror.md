@@ -47,6 +47,7 @@ The error message formatter to be applied.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;
