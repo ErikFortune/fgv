@@ -533,4 +533,36 @@ describe('Resource', () => {
       expect(resource2.toLooseResourceDecl()).toEqual({ id: 'id', resourceTypeName: 'json' });
     });
   });
+
+  describe('getCandidatesForContext method', () => {
+    test('returns empty array if no candidates match the context', () => {
+      const resource = TsRes.Resources.Resource.create({ candidates, resourceType: jsonType }).orThrow();
+      const context = { homeTerritory: 'ZZ', language: 'zz' };
+      expect(resource.getCandidatesForContext(context)).toEqual([]);
+    });
+
+    test('returns multiple candidates that match the context', () => {
+      const resource = TsRes.Resources.Resource.create({ candidates, resourceType: jsonType }).orThrow();
+      const context = { language: 'en' };
+      const matches = resource.getCandidatesForContext(context);
+      const expected = resource.candidates.filter((c) => c.canMatchPartialContext(context));
+      expect(matches).toEqual(expected);
+    });
+
+    test('returns all candidates for unconditional context', () => {
+      const resource = TsRes.Resources.Resource.create({ candidates, resourceType: jsonType }).orThrow();
+      const context = {};
+      expect(resource.getCandidatesForContext(context)).toEqual(resource.candidates);
+    });
+
+    test('returns empty array if there are no candidates', () => {
+      const resource = TsRes.Resources.Resource.create({
+        candidates: [],
+        resourceType: jsonType,
+        id: 'empty'
+      }).orThrow();
+      const context = { homeTerritory: 'US' };
+      expect(resource.getCandidatesForContext(context)).toEqual([]);
+    });
+  });
 });
