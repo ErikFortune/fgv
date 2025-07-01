@@ -3,9 +3,9 @@
   "version": "4.5.0-3",
   "description": "Sudoku rules library",
   "main": "lib/index.js",
-  "types": "dist/ts-json.d.ts",
+  "types": "dist/ts-sudoku-lib.d.ts",
   "scripts": {
-    "build": "heft test --clean",
+    "build": "heft build --clean",
     "clean": "heft clean",
     "test": "heft test --clean",
     "build-docs": "api-documenter markdown --input-folder ./temp --output-folder docs",

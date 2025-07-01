@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-sudoku-lib",
+      "comment": "Fix redundant conditional logic in updateCellValue and updateCellNotes methods that called identical functions in both branches of ternary operator",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-sudoku-lib"
+}
