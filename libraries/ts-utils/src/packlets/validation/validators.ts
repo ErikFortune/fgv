@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Failure, fail } from '../base';
+import { Failure, fail, isKeyOf, MessageAggregator } from '../base';
 import { ArrayValidator, ArrayValidatorConstructorParams } from './array';
 import { FieldValidators, ObjectValidator, ObjectValidatorConstructorParams } from './object';
 import { TypeGuardValidator, TypeGuardValidatorConstructorParams } from './typeGuard';
@@ -82,6 +82,85 @@ export function arrayOf<T, TC>(
   params?: Omit<ArrayValidatorConstructorParams<T, TC>, 'validateElement'>
 ): ArrayValidator<T, TC> {
   return new ArrayValidator({ validateElement, ...(params ?? {}) });
+}
+
+/**
+ * Options for {@link Validators.recordOf} helper function.
+ * @public
+ */
+export interface IRecordOfValidatorOptions<TK extends string = string, TC = unknown> {
+  /**
+   * If `onError` is `'fail'` (default), then the entire validation fails if any key or element
+   * cannot be validated. If `onError` is `'ignore'`, failing elements are silently ignored.
+   */
+  onError?: 'fail' | 'ignore';
+  /**
+   * If present, `keyValidator` is used to validate the source object property names.
+   * @remarks
+   * Can be used to validate key names to supported values and/or strong types.
+   */
+  keyValidator?: Validator<TK, TC>;
+}
+
+/**
+ * A helper function to create a {@link Validation.Validator | Validator} which validates the `string`-keyed properties
+ * using a supplied {@link Validation.Validator | Validator<T, TC>} to produce a `Record<TK, T>`.
+ * @remarks
+ * If present, the supplied {@link Validators.IRecordOfValidatorOptions | options} can provide a strongly-typed
+ * validator for keys and/or control the handling of elements that fail validation.
+ * @param validator - {@link Validation.Validator | Validator} used for each item in the source object.
+ * @param options - Optional {@link Validators.IRecordOfValidatorOptions | IRecordOfValidatorOptions<TK, TC>} which
+ * supplies a key validator and/or error-handling options.
+ * @returns A {@link Validation.Validator | Validator} which validates `Record<TK, T>`.
+ * @public
+ */
+export function recordOf<T, TC = unknown, TK extends string = string>(
+  validator: Validator<T, TC>,
+  options?: IRecordOfValidatorOptions<TK, TC>
+): Validator<Record<TK, T>, TC> {
+  const opts: IRecordOfValidatorOptions<TK, TC> = { onError: 'fail', ...options };
+
+  return new GenericValidator({
+    validator: (from: unknown, context?: TC): boolean | Failure<Record<TK, T>> => {
+      if (typeof from !== 'object' || from === null || Array.isArray(from)) {
+        return fail(`Not a string-keyed object: ${JSON.stringify(from)}`);
+      }
+
+      const errors = new MessageAggregator();
+
+      for (const key in from) {
+        if (isKeyOf(key, from)) {
+          // Validate key if keyValidator is provided
+          if (opts.keyValidator) {
+            const keyResult = opts.keyValidator.validate(key, context);
+            if (!keyResult.isSuccess()) {
+              if (opts.onError === 'ignore') {
+                continue;
+              }
+              errors.addMessage(`Key "${key}": ${keyResult.message}`);
+              if (opts.onError === 'fail') {
+                return fail(keyResult.message);
+              }
+            }
+          }
+
+          // Validate value
+          const valueResult = validator.validate(from[key] as unknown, context);
+          if (!valueResult.isSuccess()) {
+            if (opts.onError === 'ignore') {
+              continue;
+            }
+            errors.addMessage(`Property "${key}": ${valueResult.message}`);
+            if (opts.onError === 'fail') {
+              return fail(valueResult.message);
+            }
+          }
+        }
+      }
+
+      return errors.hasMessages ? fail(errors.toString()) : true;
+    }
+  });
 }
 
 /**
