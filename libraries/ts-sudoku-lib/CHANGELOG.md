@@ -1,6 +1,14 @@
 # Change Log - @fgv/ts-sudoku-lib
 
-This log was last generated on Sat, 01 Feb 2025 17:13:10 GMT and should not be manually modified.
+This log was last generated on Tue, 01 Jul 2025 03:26:11 GMT and should not be manually modified.
+
+## 4.5.0
+Tue, 01 Jul 2025 03:26:11 GMT
+
+### Patches
+
+- Fix redundant conditional logic in updateCellValue and updateCellNotes methods that called identical functions in both branches of ternary operator
+- Fix incorrect TypeScript declaration file reference and build script in package.json
 
 ## 4.4.0
 Sat, 01 Feb 2025 17:13:10 GMT
