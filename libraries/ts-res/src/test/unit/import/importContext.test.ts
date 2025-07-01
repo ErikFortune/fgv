@@ -148,7 +148,7 @@ describe('importContext', () => {
     });
     test('succeeds with undefined if importer context is undefined', () => {
       expect(TsRes.Import.ImportContext.forContainerImport()).toSucceedWith(undefined);
-      expect(TsRes.Import.ImportContext.forContainerImport(container, undefined));
+      expect(TsRes.Import.ImportContext.forContainerImport(container, undefined)).toSucceedWith(undefined);
     });
 
     test('succeeds with the importer context if the container context is undefined', () => {
