@@ -152,9 +152,47 @@ describe('LiteralQualifierType', () => {
       const q = TsRes.QualifierTypes.LiteralQualifierType.create(params).orThrow();
 
       // Check hierarchy relationships
-      expect(q.hierarchy!.getAncestors('a')).toEqual(['parent', 'root']);
-      expect(q.hierarchy!.getAncestors('parent')).toEqual(['root']);
-      expect(q.hierarchy!.getRoots()).toEqual(['root']);
+      expect(q.hierarchy!.getAncestors('a')).toSucceedWith(['parent', 'root']);
+      expect(q.hierarchy!.getAncestors('parent')).toSucceedWith(['root']);
+      expect(q.hierarchy!.getRoots()).toSucceedWith(['root']);
+
+      // Test matching using hierarchy
+      expect(
+        q.matches('a' as TsRes.QualifierConditionValue, 'a' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        q.matches('parent' as TsRes.QualifierConditionValue, 'a' as TsRes.QualifierContextValue, 'matches')
+      ).toBeGreaterThan(TsRes.NoMatch);
+      expect(
+        q.matches('root' as TsRes.QualifierConditionValue, 'a' as TsRes.QualifierContextValue, 'matches')
+      ).toBeGreaterThan(TsRes.NoMatch);
+      expect(
+        q.matches('a' as TsRes.QualifierConditionValue, 'parent' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.NoMatch);
+    });
+
+    test('creates hierarchy without enumerated values (uses empty array fallback)', () => {
+      const params: TsRes.QualifierTypes.ILiteralQualifierTypeCreateParams = {
+        name: 'test-no-enum',
+        hierarchy: {
+          a: 'parent',
+          b: 'parent',
+          parent: 'root'
+        }
+        // No enumeratedValues - should use empty array fallback
+      };
+      const q = TsRes.QualifierTypes.LiteralQualifierType.create(params).orThrow();
+
+      expect(q.hierarchy).toBeDefined();
+      expect(q.enumeratedValues).toBeUndefined();
+
+      // Test matching using hierarchy (should work even without enumerated values)
+      expect(
+        q.matches('a' as TsRes.QualifierConditionValue, 'a' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        q.matches('parent' as TsRes.QualifierConditionValue, 'a' as TsRes.QualifierContextValue, 'matches')
+      ).toBeGreaterThan(TsRes.NoMatch);
     });
   });
 
@@ -360,6 +398,44 @@ describe('LiteralQualifierType', () => {
         ).toBe(TsRes.PerfectMatch);
         expect(
           qt.matches('a' as TsRes.QualifierConditionValue, 'A' as TsRes.QualifierContextValue, 'matches')
+        ).toBe(TsRes.NoMatch);
+      });
+    });
+
+    describe('with case-insensitive matching (no enumerated values)', () => {
+      beforeAll(() => {
+        qt = TsRes.QualifierTypes.LiteralQualifierType.create({ caseSensitive: false }).orThrow();
+      });
+
+      test('returns PerfectMatch for matching values (case-insensitive)', () => {
+        expect(
+          qt.matches('a' as TsRes.QualifierConditionValue, 'a' as TsRes.QualifierContextValue, 'matches')
+        ).toBe(TsRes.PerfectMatch);
+        expect(
+          qt.matches('a' as TsRes.QualifierConditionValue, 'A' as TsRes.QualifierContextValue, 'matches')
+        ).toBe(TsRes.PerfectMatch);
+        expect(
+          qt.matches('A' as TsRes.QualifierConditionValue, 'a' as TsRes.QualifierContextValue, 'matches')
+        ).toBe(TsRes.PerfectMatch);
+        expect(
+          qt.matches(
+            'Test' as TsRes.QualifierConditionValue,
+            'test' as TsRes.QualifierContextValue,
+            'matches'
+          )
+        ).toBe(TsRes.PerfectMatch);
+      });
+
+      test('returns NoMatch for non-matching values', () => {
+        expect(
+          qt.matches('a' as TsRes.QualifierConditionValue, 'b' as TsRes.QualifierContextValue, 'matches')
+        ).toBe(TsRes.NoMatch);
+        expect(
+          qt.matches(
+            'Test' as TsRes.QualifierConditionValue,
+            'Other' as TsRes.QualifierContextValue,
+            'matches'
+          )
         ).toBe(TsRes.NoMatch);
       });
     });

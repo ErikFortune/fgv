@@ -256,56 +256,54 @@ describe('LiteralValueHierarchy', () => {
       });
 
       test('returns false for values not in hierarchy', () => {
-        expect(lvh.hasValue('nonexistent' as TestPlatform)).toBe(false);
+        expect(lvh.hasValue('not_in_hierarchy' as TestPlatform)).toBe(false);
       });
     });
 
     describe('getRoots', () => {
       test('returns root values', () => {
-        const roots = lvh.getRoots();
-        expect(roots).toContain('ctv');
-        expect(roots).toContain('mobile');
-        expect(roots).toContain('web');
-        expect(roots).not.toContain('some_stb');
-        expect(roots).not.toContain('stb');
+        expect(lvh.getRoots()).toSucceedWith(['ctv', 'mobile', 'web']);
       });
     });
 
     describe('getAncestors', () => {
-      test('returns ancestors in order from immediate parent to root', () => {
-        expect(lvh.getAncestors('some_stb')).toEqual(['stb', 'ctv']);
-        expect(lvh.getAncestors('stb')).toEqual(['ctv']);
-        expect(lvh.getAncestors('ctv')).toEqual([]);
+      test('returns ancestors for valid values', () => {
+        expect(lvh.getAncestors('some_stb')).toSucceedWith(['stb', 'ctv']);
+        expect(lvh.getAncestors('stb')).toSucceedWith(['ctv']);
+        expect(lvh.getAncestors('ctv')).toSucceedWith([]);
+        expect(lvh.getAncestors('web')).toSucceedWith([]);
       });
 
-      test('returns empty array for root values', () => {
-        expect(lvh.getAncestors('ctv')).toEqual([]);
-        expect(lvh.getAncestors('mobile')).toEqual([]);
-        expect(lvh.getAncestors('web')).toEqual([]);
+      test('fails for invalid values', () => {
+        expect(lvh.getAncestors('not_in_hierarchy' as TestPlatform)).toFailWith(/not found in hierarchy/);
       });
     });
 
     describe('getDescendants', () => {
-      test('returns all descendants', () => {
-        expect(lvh.getDescendants('ctv')).toContain('stb');
-        expect(lvh.getDescendants('ctv')).toContain('some_stb');
-        expect(lvh.getDescendants('ctv')).toContain('other_stb');
-        expect(lvh.getDescendants('ctv')).toContain('ya_stb');
-        expect(lvh.getDescendants('ctv')).toContain('androidtv');
-        expect(lvh.getDescendants('ctv')).toContain('appletv');
-        expect(lvh.getDescendants('ctv')).toContain('firetv');
-        expect(lvh.getDescendants('ctv')).toContain('webOs');
+      test('returns descendants for valid values', () => {
+        expect(lvh.getDescendants('ctv')).toSucceedWith([
+          'stb',
+          'some_stb',
+          'some_stb_variant',
+          'other_stb',
+          'ya_stb',
+          'androidtv',
+          'appletv',
+          'firetv',
+          'webOs'
+        ]);
+        expect(lvh.getDescendants('stb')).toSucceedWith([
+          'some_stb',
+          'some_stb_variant',
+          'other_stb',
+          'ya_stb'
+        ]);
+        expect(lvh.getDescendants('some_stb')).toSucceedWith(['some_stb_variant']);
+        expect(lvh.getDescendants('web')).toSucceedWith([]);
       });
 
-      test('returns empty array for leaf values', () => {
-        expect(lvh.getDescendants('some_stb_variant')).toEqual([]);
-        expect(lvh.getDescendants('web')).toEqual([]);
-      });
-
-      test('returns NoMatch if condition is not an ancestor of context', () => {
-        expect(lvh.match('b' as TsRes.QualifierConditionValue, 'a' as TsRes.QualifierContextValue)).toBe(
-          TsRes.NoMatch
-        );
+      test('fails for invalid values', () => {
+        expect(lvh.getDescendants('not_in_hierarchy' as TestPlatform)).toFailWith(/not found in hierarchy/);
       });
     });
 
@@ -315,7 +313,7 @@ describe('LiteralValueHierarchy', () => {
         hierarchy: { leaf: 'parent' }
       }).orThrow();
 
-      expect(lvh.getDescendants('leaf')).toEqual([]);
+      expect(lvh.getDescendants('leaf')).toSucceedWith([]);
     });
 
     test('_buildValuesFromHierarchy handles existing children array', () => {
@@ -327,7 +325,7 @@ describe('LiteralValueHierarchy', () => {
         }
       }).orThrow();
 
-      expect(lvh.getDescendants('parent')).toEqual(['child1', 'child2']);
+      expect(lvh.getDescendants('parent')).toSucceedWith(['child1', 'child2']);
     });
   });
 });

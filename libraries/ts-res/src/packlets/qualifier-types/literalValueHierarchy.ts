@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { captureResult, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
+import { captureResult, MessageAggregator, Result, succeed, fail } from '@fgv/ts-utils';
 import {
   ConditionOperator,
   NoMatch,
@@ -111,48 +111,62 @@ export class LiteralValueHierarchy<T extends string = string> {
 
   /**
    * Gets all root values (values with no parent) in the hierarchy.
-   * @returns An array of root values.
+   * @returns `Success` with an array of root values.
    */
-  public getRoots(): T[] {
-    return Array.from(this.values.values())
-      .filter((v) => !v.parent)
-      .map((v) => v.name);
+  public getRoots(): Result<T[]> {
+    return succeed(
+      Array.from(this.values.values())
+        .filter((v) => !v.parent)
+        .map((v) => v.name)
+    );
   }
 
   /**
    * Gets all ancestors of a value in the hierarchy.
    * @param value - The value to get ancestors for.
-   * @returns An array of ancestor values, ordered from immediate parent to root.
+   * @returns `Success` with an array of ancestor values, ordered from immediate parent to root,
+   * or `Failure` if the value is not in the hierarchy.
    */
-  public getAncestors(value: T): T[] {
-    const ancestors: T[] = [];
-    let current = this.values.get(value);
-
-    while (current?.parent) {
-      ancestors.push(current.parent.name);
-      current = current.parent;
+  public getAncestors(value: T): Result<T[]> {
+    const current = this.values.get(value);
+    if (!current) {
+      return fail(`${value}: not found in hierarchy`);
     }
 
-    return ancestors;
+    const ancestors: T[] = [];
+    let ancestor = current.parent;
+
+    while (ancestor) {
+      ancestors.push(ancestor.name);
+      ancestor = ancestor.parent;
+    }
+
+    return succeed(ancestors);
   }
 
   /**
    * Gets all descendants of a value in the hierarchy.
    * @param value - The value to get descendants for.
-   * @returns An array of descendant values.
+   * @returns `Success` with an array of descendant values, or `Failure` if the value is not in the hierarchy.
    */
-  public getDescendants(value: T): T[] {
-    const descendants: T[] = [];
+  public getDescendants(value: T): Result<T[]> {
     const current = this.values.get(value);
+    if (!current) {
+      return fail(`${value}: not found in hierarchy`);
+    }
 
-    if (current?.children) {
+    const descendants: T[] = [];
+    if (current.children) {
       for (const childName of current.children) {
         descendants.push(childName);
-        descendants.push(...this.getDescendants(childName));
+        const childDescendants = this.getDescendants(childName);
+        if (childDescendants.isSuccess()) {
+          descendants.push(...childDescendants.value);
+        }
       }
     }
 
-    return descendants;
+    return succeed(descendants);
   }
 
   public match(condition: T, context: T): QualifierMatchScore;
