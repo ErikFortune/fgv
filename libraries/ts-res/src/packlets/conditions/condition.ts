@@ -155,19 +155,27 @@ export class Condition implements IValidatedConditionDecl {
   }
 
   /**
-   * Determines if this condition matches the supplied {@link Context.IValidatedContextDecl | validated context}.
-   * @remarks
-   * A condition matches a context if it is present and the comparison yields a non-zero {@link QualifierMatchScore | match score}.
-   * If the qualifier is not present in the context, this method returns false.
-   * @param context - The {@link Context.IValidatedContextDecl | context} to match against.
-   * @param options - The {@link Context.IContextMatchOptions | options} to use when matching the context.
-   * @returns `true` if the condition matches the context, `false` otherwise.
+   * Determines if this condition can match the supplied context, even if the context is partial.
+   *
+   * Returns true if:
+   * - The qualifier specified in the condition is not present in the context
+   * - The qualifier is present and matches the condition
+   *
+   * Returns false if:
+   * - The qualifier is present in the context and does not match the condition
+   *
+   * @param context - The context to match against.
+   * @param options - Options to use when matching the context.
+   * @returns `true` if the condition can match the (possibly partial) context, `false` otherwise.
    * @public
    */
-  public matchesContext(
+  public canMatchPartialContext(
     context: Context.IValidatedContextDecl,
     options?: Context.IContextMatchOptions
   ): boolean {
+    if (!(this.qualifier.name in context)) {
+      return true;
+    }
     return this.getContextMatch(context, options) !== NoMatch;
   }
 

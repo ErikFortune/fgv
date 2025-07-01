@@ -141,16 +141,18 @@ export class ConditionSet implements IValidatedConditionSetDecl {
   }
 
   /**
-   * Determines if this condition set can match a supplied {@link Context.IValidatedContextDecl | context}.
-   * @param context - The {@link Context.IValidatedContextDecl | context} to match.
-   * @param options - The {@link Context.IContextMatchOptions | options} to use when matching.
-   * @returns
+   * Determines if this condition set can match a supplied context, even if the context is partial.
+   * Returns true if all conditions in the set can match the context (using canMatchPartialContext).
+   * Returns false otherwise.
+   * @param context - The context to match.
+   * @param options - Options to use when matching.
+   * @returns `true` if all conditions can match the context, `false` otherwise.
    */
-  public matchesContext(
+  public canMatchPartialContext(
     context: Context.IValidatedContextDecl,
     options?: Context.IContextMatchOptions
   ): boolean {
-    return this.conditions.every((c) => c.matchesContext(context, options) !== false);
+    return this.conditions.every((c) => c.canMatchPartialContext(context, options));
   }
 
   /**

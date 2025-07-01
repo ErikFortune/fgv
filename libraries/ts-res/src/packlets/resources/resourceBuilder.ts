@@ -142,7 +142,7 @@ export class ResourceBuilder {
     options?: Context.IContextMatchOptions
   ): ReadonlyArray<ResourceCandidate> {
     return Array.from(this._candidates.values()).filter((candidate) =>
-      candidate.matchesContext(context, options)
+      candidate.canMatchPartialContext(context, options)
     );
   }
 

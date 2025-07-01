@@ -112,16 +112,16 @@ export class ResourceCandidate {
   }
 
   /**
-   * Determines if this candidate matches the supplied context.
-   * @param context - The {@link Context.IValidatedContextDecl | context} to match.
-   * @param options - {@link Context.IContextMatchOptions | options} to use when matching.
-   * @returns `true` if the candidate matches the context, `false` otherwise.
+   * Determines if this candidate can match the supplied context (possibly partial).
+   * @param context - The context to match.
+   * @param options - Options to use when matching.
+   * @returns `true` if the candidate can match the context, `false` otherwise.
    */
-  public matchesContext(
+  public canMatchPartialContext(
     context: Context.IValidatedContextDecl,
     options?: Context.IContextMatchOptions
   ): boolean {
-    return this.conditions.matchesContext(context);
+    return this.conditions.canMatchPartialContext(context, options);
   }
 
   /**

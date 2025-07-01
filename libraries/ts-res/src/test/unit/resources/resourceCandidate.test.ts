@@ -274,7 +274,7 @@ describe('ResourceCandidate', () => {
           id: 'some.resource.path',
           conditionSets,
           decl,
-          parentConditions: badParent as any
+          parentConditions: badParent as unknown as ReadonlyArray<TsRes.Conditions.Condition>
         })
       ).toFail();
     });

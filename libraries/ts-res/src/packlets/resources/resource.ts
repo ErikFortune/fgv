@@ -107,7 +107,7 @@ export class Resource {
     context: Context.IValidatedContextDecl,
     options?: Context.IContextMatchOptions
   ): ReadonlyArray<ResourceCandidate> {
-    return this.candidates.filter((c) => c.matchesContext(context, options));
+    return this.candidates.filter((c) => c.canMatchPartialContext(context, options));
   }
 
   /**

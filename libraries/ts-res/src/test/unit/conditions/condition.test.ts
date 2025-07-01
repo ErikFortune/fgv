@@ -573,7 +573,7 @@ describe('Condition', () => {
     });
   });
 
-  describe('matchesContext method', () => {
+  describe('canMatchPartialContext method', () => {
     let condition: TsRes.Conditions.Condition;
     beforeEach(() => {
       const decl = TsRes.Conditions.Convert.validatedConditionDecl
@@ -591,17 +591,17 @@ describe('Condition', () => {
 
     test('returns true when qualifier is present and matches', () => {
       const context = { homeTerritory: 'CA' };
-      expect(condition.matchesContext(context)).toBe(true);
+      expect(condition.canMatchPartialContext(context)).toBe(true);
     });
 
     test('returns false when qualifier is present and does not match', () => {
       const context = { homeTerritory: 'US' };
-      expect(condition.matchesContext(context)).toBe(false);
+      expect(condition.canMatchPartialContext(context)).toBe(false);
     });
 
     test('returns true when qualifier is not present in context', () => {
       const context = { currentTerritory: 'CA' };
-      expect(condition.matchesContext(context)).toBe(true);
+      expect(condition.canMatchPartialContext(context)).toBe(true);
     });
   });
 });

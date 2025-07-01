@@ -221,8 +221,8 @@ describe('ConditionSet', () => {
     });
   });
 
-  describe('matchesContext method', () => {
-    test('returns true when all conditions are satisfied', () => {
+  describe('canMatchPartialContext method', () => {
+    test('returns true when all conditions are satisfied or not present in context', () => {
       const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
       const context = {
         homeTerritory: 'CA',
@@ -231,10 +231,10 @@ describe('ConditionSet', () => {
         some_thing: 'some_value',
         testThing: 'test-value'
       };
-      expect(cs.matchesContext(context)).toBe(true);
+      expect(cs.canMatchPartialContext(context)).toBe(true);
     });
 
-    test('returns false when at least one condition is not satisfied', () => {
+    test('returns false when at least one condition is present and not satisfied', () => {
       const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
       const context = {
         homeTerritory: 'CA',
@@ -243,15 +243,15 @@ describe('ConditionSet', () => {
         some_thing: 'wrong_value', // does not match
         testThing: 'test-value'
       };
-      expect(cs.matchesContext(context)).toBe(false);
+      expect(cs.canMatchPartialContext(context)).toBe(false);
     });
 
-    test('returns false when no matching qualifiers are present in context', () => {
+    test('returns true when no matching qualifiers are present in context', () => {
       const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
       const context = {
         unrelated: 'value'
       };
-      expect(cs.matchesContext(context)).toBe(false);
+      expect(cs.canMatchPartialContext(context)).toBe(true);
     });
   });
 });
