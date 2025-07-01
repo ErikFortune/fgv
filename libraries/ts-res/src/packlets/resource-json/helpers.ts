@@ -52,7 +52,7 @@ export function mergeContextDecl(
   parentConditions?: ReadonlyArray<Json.ILooseConditionDecl>
 ): Result<Normalized.IContainerContextDecl> {
   if (!decl) {
-    return sanitizeJsonObject({ id: parentName, conditions: parentConditions });
+    return sanitizeJsonObject({ baseId: parentName, conditions: parentConditions });
   } else if (!parentName && !parentConditions) {
     return succeed(decl);
   }
