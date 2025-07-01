@@ -575,6 +575,10 @@ describe('ResourceCandidate', () => {
         /resource type mismatch/i
       );
     });
+
+    test('succeeds with undefined if no candidates are supplied', () => {
+      expect(TsRes.Resources.ResourceCandidate.validateResourceTypes([])).toSucceedWith(undefined);
+    });
   });
 
   describe('compare static method', () => {
@@ -808,6 +812,106 @@ describe('ResourceCandidate', () => {
         conditions: { homeTerritory: 'US' },
         resourceTypeName: 'json'
       });
+    });
+  });
+
+  describe('canMatchPartialContext method', () => {
+    let resourceType: TsRes.ResourceTypes.ResourceType;
+    let localConditionSets: typeof conditionSets;
+    beforeEach(() => {
+      resourceType = resourceTypes.validating.get('json').orThrow();
+      localConditionSets = conditionSets;
+    });
+
+    test('returns true when candidate matches context exactly', () => {
+      const decl = {
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US' }
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets: localConditionSets,
+        resourceType,
+        decl
+      }).orThrow();
+      expect(
+        candidate.canMatchPartialContext({
+          homeTerritory: 'US'
+        } as unknown as TsRes.Context.IValidatedContextDecl)
+      ).toBe(true);
+    });
+
+    test('returns true when candidate partially matches context', () => {
+      const decl = {
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US', language: 'en' }
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets: localConditionSets,
+        resourceType,
+        decl
+      }).orThrow();
+      expect(
+        candidate.canMatchPartialContext({
+          homeTerritory: 'US'
+        } as unknown as TsRes.Context.IValidatedContextDecl)
+      ).toBe(true);
+    });
+
+    test('returns true when candidate qualifier is not present in context', () => {
+      const decl = {
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US' }
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets: localConditionSets,
+        resourceType,
+        decl
+      }).orThrow();
+      expect(candidate.canMatchPartialContext({} as unknown as TsRes.Context.IValidatedContextDecl)).toBe(
+        true
+      );
+    });
+
+    test('returns false when candidate qualifier is present in context but does not match', () => {
+      const decl = {
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US' }
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets: localConditionSets,
+        resourceType,
+        decl
+      }).orThrow();
+      expect(
+        candidate.canMatchPartialContext({
+          homeTerritory: 'CA'
+        } as unknown as TsRes.Context.IValidatedContextDecl)
+      ).toBe(false);
+    });
+
+    test('returns true for unconditional candidate (no conditions)', () => {
+      const decl = {
+        json: { a: 1 },
+        conditions: {}
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets: localConditionSets,
+        resourceType,
+        decl
+      }).orThrow();
+      expect(
+        candidate.canMatchPartialContext({
+          homeTerritory: 'US'
+        } as unknown as TsRes.Context.IValidatedContextDecl)
+      ).toBe(true);
+      expect(candidate.canMatchPartialContext({} as unknown as TsRes.Context.IValidatedContextDecl)).toBe(
+        true
+      );
     });
   });
 });
