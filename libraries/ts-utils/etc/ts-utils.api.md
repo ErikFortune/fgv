@@ -1369,6 +1369,14 @@ interface IReadOnlyValidatingResultMap<TK extends string = string, TV = unknown>
     readonly validating: IReadOnlyResultMapValidator<TK, TV>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IRecordOfValidatorOptions<TK extends string = string, TC = unknown> {
+    keyValidator?: Validator<TK, TC>;
+    onError?: 'fail' | 'ignore';
+}
+
 // @public
 export interface IResult<T> {
     aggregateError(errors: IMessageAggregator): this;
@@ -1901,6 +1909,16 @@ function recordOf<T, TC = unknown, TK extends string = string>(converter: Conver
 // @public
 function recordOf<T, TC = unknown, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>, options: KeyedConverterOptions<TK, TC>): Converter<Record<TK, T>, TC>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function recordOf_2<T, TC = unknown, TK extends string = string>(validator: Validator<T, TC>, options?: IRecordOfValidatorOptions<TK, TC>): Validator<Record<TK, T>, TC>;
+
 // @public
 export function recordToMap<TS, TD, TK extends string = string>(src: Record<TK, TS>, factory: KeyedThingFactory<TS, TD, TK>): Result<Map<TK, TD>>;
 
@@ -2343,6 +2361,7 @@ declare namespace Validators {
     export {
         object_2 as object,
         arrayOf_2 as arrayOf,
+        recordOf_2 as recordOf,
         enumeratedValue_2 as enumeratedValue,
         literal_2 as literal,
         oneOf_2 as oneOf,
@@ -2350,7 +2369,8 @@ declare namespace Validators {
         generic_2 as generic,
         string_2 as string,
         number_2 as number,
-        boolean_2 as boolean
+        boolean_2 as boolean,
+        IRecordOfValidatorOptions
     }
 }
 export { Validators }
