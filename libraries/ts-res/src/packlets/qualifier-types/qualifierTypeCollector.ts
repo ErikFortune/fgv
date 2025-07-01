@@ -51,7 +51,8 @@ export interface IQualifierTypeCollectorCreateParams {
 export class QualifierTypeCollector extends ValidatingConvertingCollector<QualifierType, QualifierType> {
   /**
    * Constructor for a {@link QualifierTypes.QualifierTypeCollector | QualifierTypeCollector} object.
-   * @param params - Optional {@link QualifierTypes.IQualifierTypeCollectorCreateParams | parameters} used to construct the collector.
+   * @param params - Optional {@link QualifierTypes.IQualifierTypeCollectorCreateParams | parameters}
+   * used to construct the collector.
    */
   protected constructor({ qualifierTypes }: IQualifierTypeCollectorCreateParams) {
     super({
@@ -94,7 +95,8 @@ export class QualifierTypeCollector extends ValidatingConvertingCollector<Qualif
 }
 
 /**
- * Interface exposing non-mutating members of a {@link QualifierTypes.QualifierTypeCollector | QualifierTypeCollector}.
+ * Interface exposing non-mutating members of a
+ * {@link QualifierTypes.QualifierTypeCollector | QualifierTypeCollector}.
  * @public
  */
 export type ReadOnlyQualifierTypeCollector = Collections.IReadOnlyValidatingCollector<QualifierType>;

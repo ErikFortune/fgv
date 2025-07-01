@@ -36,15 +36,14 @@ import {
  * values are the names of their parents.
  * @remarks
  * The hierarchy is defined as a tree, where each value can have multiple children but
- * only one parent. The root of the tree has no parent. The hierarchy is used to determine
- * the relationship between values when matching conditions and contexts.
+ * only one parent. The root of the tree has no parent. The hierarchy is used to
+ * determine the relationship between values when matching conditions and contexts.
  * @public
  */
 export type LiteralValueHierarchyDecl<T extends string> = Partial<Record<T, T>>;
 
 /**
  * Describes a single valid literal value including optional parent and child values.
- * {@link QualifierTypes.LiteralValueHierarchy | LiteralValueHierarchy}.
  * @public
  */
 export interface ILiteralValue<T extends string> {
@@ -79,8 +78,7 @@ interface ILiteralValueBuilder<T extends string> {
 export class LiteralValueHierarchy<T extends string = string> {
   /**
    * A map of all allowed literal values to the corresponding
-   * {@link QualifierTypes.ILiteralValue | ILiteralValue} validated
-   * definition.
+   * {@link QualifierTypes.ILiteralValue | ILiteralValue} validated definition.
    */
   public readonly values: ReadonlyMap<T, ILiteralValue<T>>;
 
@@ -90,9 +88,9 @@ export class LiteralValueHierarchy<T extends string = string> {
 
   /**
    * Creates a new {@link QualifierTypes.LiteralValueHierarchy | LiteralValueHierarchy} instance.
-   * @param params - The {@link QualifierTypes.ILiteralValueHierarchyCreateParams} used to create the hierarchy.
-   * @returns `Success` with the new {@link QualifierTypes.LiteralValueHierarchy | hierarchy} or `Failure`
-   * with an error message.
+   * @param params - The {@link QualifierTypes.ILiteralValueHierarchyCreateParams | parameters}
+   * used to create the hierarchy.
+   * @returns `Success` with the new hierarchy or `Failure` with an error message.
    */
   public static create<T extends string>(
     params: ILiteralValueHierarchyCreateParams<T>
@@ -124,8 +122,8 @@ export class LiteralValueHierarchy<T extends string = string> {
   /**
    * Gets all ancestors of a value in the hierarchy.
    * @param value - The value to get ancestors for.
-   * @returns `Success` with an array of ancestor values, ordered from immediate parent to root,
-   * or `Failure` if the value is not in the hierarchy.
+   * @returns `Success` with an array of ancestor values, ordered from immediate parent
+   * to root, or `Failure` if the value is not in the hierarchy.
    */
   public getAncestors(value: T): Result<T[]> {
     const current = this.values.get(value);
@@ -147,7 +145,8 @@ export class LiteralValueHierarchy<T extends string = string> {
   /**
    * Gets all descendants of a value in the hierarchy.
    * @param value - The value to get descendants for.
-   * @returns `Success` with an array of descendant values, or `Failure` if the value is not in the hierarchy.
+   * @returns `Success` with an array of descendant values, or `Failure` if the value
+   * is not in the hierarchy.
    */
   public getDescendants(value: T): Result<T[]> {
     const current = this.values.get(value);
@@ -171,13 +170,13 @@ export class LiteralValueHierarchy<T extends string = string> {
 
   public match(condition: T, context: T): QualifierMatchScore;
   /**
-   * Matches a condition value against a context value, where an exact match of the condition and
-   * context returns {@link PerfectMatch | PerfectMatch}, a condition value that does not
-   * match the context value or any of its ancestors returns {@link NoMatch | NoMatch}, and
-   * a condition value that matches the context value or any of its ancestors returns a positive
-   * score that is less than {@link PerfectMatch | PerfectMatch}, with the score decreasing
-   * with each ancestor in the hierarchy.
-   * @remarks
+   * Matches a condition value against a context value, where an exact match of the
+   * condition and context returns {@link PerfectMatch | PerfectMatch}, a condition
+   * value that does not match the context value or any of its ancestors returns
+   * {@link NoMatch | NoMatch}, and a condition value that matches the context value
+   * or any of its ancestors returns a positive score that is less than
+   * {@link PerfectMatch | PerfectMatch}, with the score decreasing with each ancestor
+   * in the hierarchy.
    * @param condition - The condition value to match.
    * @param context - The context value to match against.
    * @param __operator - The operator used for matching (not used in this implementation).

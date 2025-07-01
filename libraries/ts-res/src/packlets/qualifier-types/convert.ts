@@ -26,8 +26,8 @@ import { ReadOnlyQualifierTypeCollector } from './qualifierTypeCollector';
 import { ILiteralValueHierarchyCreateParams } from './literalValueHierarchy';
 
 /**
- * Context necessary to convert a qualifier name or number to an
- * instantiated {@link QualifierTypes.QualifierType}.
+ * Context necessary to convert a qualifier name or number to an instantiated
+ * {@link QualifierTypes.QualifierType}.
  * @public
  */
 export interface IQualifierTypeConvertContext {

@@ -60,7 +60,7 @@ export interface ITerritoryQualifierTypeCreateParams {
 
 /**
  * Qualifier type for territory values. Territories are two-letter ISO-3166-2
- * Alpha-2 country codes.  Canonical territory codes are uppercase, but this
+ * Alpha-2 country codes. Canonical territory codes are uppercase, but this
  * implementation handles incorrect casing.
  * @public
  */
@@ -116,10 +116,10 @@ export class TerritoryQualifierType extends QualifierType {
 
   /**
    * Creates a new {@link QualifierTypes.TerritoryQualifierType | TerritoryQualifierType} instance.
-   * @param params - Optional {@link QualifierTypes.ITerritoryQualifierTypeCreateParams | parameters} to use
-   * when creating the instance.
-   * @returns `Success` with the new {@link QualifierTypes.TerritoryQualifierType | TerritoryQualifierType} if successful,
-   * `Failure` with an error message otherwise.
+   * @param params - Optional {@link QualifierTypes.ITerritoryQualifierTypeCreateParams | parameters}
+   * to use when creating the instance.
+   * @returns `Success` with the new {@link QualifierTypes.TerritoryQualifierType | TerritoryQualifierType}
+   * if successful, `Failure` with an error message otherwise.
    * @public
    */
   public static create(params?: ITerritoryQualifierTypeCreateParams): Result<TerritoryQualifierType> {
@@ -154,7 +154,8 @@ export class TerritoryQualifierType extends QualifierType {
   /**
    * Converts a string value to a territory condition value.
    * @param value - The value to convert.
-   * @returns `Success` with the converted value if successful, `Failure` with an error message otherwise.
+   * @returns `Success` with the converted value if successful, `Failure` with an error
+   * message otherwise.
    * @public
    */
   public static toTerritoryConditionValue(value: string): Result<QualifierConditionValue> {
