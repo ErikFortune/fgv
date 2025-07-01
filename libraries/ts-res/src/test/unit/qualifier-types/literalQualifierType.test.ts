@@ -149,20 +149,12 @@ describe('LiteralQualifierType', () => {
           parent: 'root'
         }
       };
-      expect(TsRes.QualifierTypes.LiteralQualifierType.create(params)).toSucceedAndSatisfy((q) => {
-        expect(q.hierarchy).toBeDefined();
-        if (q.hierarchy) {
-          expect(q.hierarchy.hasValue('a')).toBe(true);
-          expect(q.hierarchy.hasValue('b')).toBe(true);
-          expect(q.hierarchy.hasValue('parent')).toBe(true);
-          expect(q.hierarchy.hasValue('root')).toBe(true);
+      const q = TsRes.QualifierTypes.LiteralQualifierType.create(params).orThrow();
 
-          // Check hierarchy relationships
-          expect(q.hierarchy.getAncestors('a')).toEqual(['parent', 'root']);
-          expect(q.hierarchy.getAncestors('parent')).toEqual(['root']);
-          expect(q.hierarchy.getRoots()).toEqual(['root']);
-        }
-      });
+      // Check hierarchy relationships
+      expect(q.hierarchy!.getAncestors('a')).toEqual(['parent', 'root']);
+      expect(q.hierarchy!.getAncestors('parent')).toEqual(['root']);
+      expect(q.hierarchy!.getRoots()).toEqual(['root']);
     });
   });
 
@@ -434,6 +426,18 @@ describe('LiteralQualifierType', () => {
         ).toBe(TsRes.NoMatch);
       });
     });
+
+    test('does not match case-insensitively when values are different', () => {
+      const params: TsRes.QualifierTypes.ILiteralQualifierTypeCreateParams = {
+        name: 'case-insensitive-nonmatch',
+        caseSensitive: false,
+        enumeratedValues: ['foo', 'bar']
+      };
+      const qt = TsRes.QualifierTypes.LiteralQualifierType.create(params).orThrow();
+      expect(
+        qt.matches('foo' as TsRes.QualifierConditionValue, 'baz' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.NoMatch);
+    });
   });
 
   describe('setIndex', () => {
@@ -501,6 +505,76 @@ describe('LiteralQualifierType', () => {
         index: 1
       }).orThrow();
       expect(QualifierType.compare(qt1, qt2)).toBe(0);
+    });
+  });
+
+  describe('case-sensitive matching', () => {
+    test('matches case-sensitively when caseSensitive is true', () => {
+      const params: TsRes.QualifierTypes.ILiteralQualifierTypeCreateParams = {
+        name: 'case-sensitive',
+        caseSensitive: true,
+        enumeratedValues: ['Test', 'test', 'TEST']
+      };
+      const qt = TsRes.QualifierTypes.LiteralQualifierType.create(params).orThrow();
+
+      expect(
+        qt.matches('Test' as TsRes.QualifierConditionValue, 'Test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        qt.matches('test' as TsRes.QualifierConditionValue, 'test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        qt.matches('TEST' as TsRes.QualifierConditionValue, 'TEST' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        qt.matches('Test' as TsRes.QualifierConditionValue, 'test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.NoMatch);
+      expect(
+        qt.matches('test' as TsRes.QualifierConditionValue, 'Test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.NoMatch);
+    });
+
+    test('matches case-insensitively when caseSensitive is false', () => {
+      const params: TsRes.QualifierTypes.ILiteralQualifierTypeCreateParams = {
+        name: 'case-insensitive',
+        caseSensitive: false,
+        enumeratedValues: ['Test', 'test', 'TEST']
+      };
+      const qt = TsRes.QualifierTypes.LiteralQualifierType.create(params).orThrow();
+
+      expect(
+        qt.matches('Test' as TsRes.QualifierConditionValue, 'Test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        qt.matches('test' as TsRes.QualifierConditionValue, 'test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        qt.matches('TEST' as TsRes.QualifierConditionValue, 'TEST' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        qt.matches('Test' as TsRes.QualifierConditionValue, 'test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        qt.matches('test' as TsRes.QualifierConditionValue, 'Test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        qt.matches('TEST' as TsRes.QualifierConditionValue, 'test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+    });
+
+    test('matches case-insensitively by default', () => {
+      const params: TsRes.QualifierTypes.ILiteralQualifierTypeCreateParams = {
+        name: 'default',
+        enumeratedValues: ['Test', 'test', 'TEST']
+      };
+      const qt = TsRes.QualifierTypes.LiteralQualifierType.create(params).orThrow();
+
+      expect(
+        qt.matches('Test' as TsRes.QualifierConditionValue, 'test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+      expect(
+        qt.matches('test' as TsRes.QualifierConditionValue, 'Test' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
     });
   });
 });

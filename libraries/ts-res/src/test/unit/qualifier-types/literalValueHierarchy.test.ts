@@ -207,6 +207,34 @@ describe('LiteralValueHierarchy', () => {
       expect(ctvScore).toBeLessThan(someStbScore);
       expect(ctvScore).toBeLessThan(TsRes.PerfectMatch);
     });
+
+    describe('NoMatch branches in match', () => {
+      let lvh: TsRes.QualifierTypes.LiteralValueHierarchy<string>;
+      beforeEach(() => {
+        lvh = TsRes.QualifierTypes.LiteralValueHierarchy.create({
+          values: ['a', 'b', 'c', 'parent', 'root'],
+          hierarchy: { a: 'parent', b: 'parent', parent: 'root' }
+        }).orThrow();
+      });
+
+      test('returns NoMatch if condition is not in the hierarchy', () => {
+        expect(lvh.match('not-in-hierarchy', 'a')).toBe(TsRes.NoMatch);
+      });
+
+      test('returns NoMatch if context is not in the hierarchy', () => {
+        expect(lvh.match('a', 'not-in-hierarchy')).toBe(TsRes.NoMatch);
+      });
+
+      test('returns NoMatch if context is a root (no parent) and not equal to condition', () => {
+        expect(lvh.match('a', 'root')).toBe(TsRes.NoMatch);
+      });
+
+      test('returns NoMatch if condition is not an ancestor of context', () => {
+        expect(lvh.match('b' as TsRes.QualifierConditionValue, 'a' as TsRes.QualifierContextValue)).toBe(
+          TsRes.NoMatch
+        );
+      });
+    });
   });
 
   describe('utility methods', () => {
@@ -273,6 +301,33 @@ describe('LiteralValueHierarchy', () => {
         expect(lvh.getDescendants('some_stb_variant')).toEqual([]);
         expect(lvh.getDescendants('web')).toEqual([]);
       });
+
+      test('returns NoMatch if condition is not an ancestor of context', () => {
+        expect(lvh.match('b' as TsRes.QualifierConditionValue, 'a' as TsRes.QualifierContextValue)).toBe(
+          TsRes.NoMatch
+        );
+      });
+    });
+
+    test('getDescendants returns empty array when value has no children', () => {
+      const lvh = TsRes.QualifierTypes.LiteralValueHierarchy.create({
+        values: ['leaf', 'parent'],
+        hierarchy: { leaf: 'parent' }
+      }).orThrow();
+
+      expect(lvh.getDescendants('leaf')).toEqual([]);
+    });
+
+    test('_buildValuesFromHierarchy handles existing children array', () => {
+      const lvh = TsRes.QualifierTypes.LiteralValueHierarchy.create({
+        values: ['child1', 'child2', 'parent'],
+        hierarchy: {
+          child1: 'parent',
+          child2: 'parent' // This will add to existing children array
+        }
+      }).orThrow();
+
+      expect(lvh.getDescendants('parent')).toEqual(['child1', 'child2']);
     });
   });
 });
