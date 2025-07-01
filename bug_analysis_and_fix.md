@@ -128,3 +128,21 @@ The fix maintains the existing API contract while removing the redundant logic:
 **Risk Level**: Low (maintains backward compatibility)
 
 This fix improves code quality, removes performance overhead, and eliminates misleading code patterns that could confuse future maintainers.
+
+## Rush Change Logs
+
+The following Rush change log files have been created to track these changes:
+
+1. **`common/changes/@fgv/ts-sudoku-lib/bug-fix-redundant-conditional_2025-07-01-01-02.json`**
+   - Documents the critical logic bug fix in updateCellValue and updateCellNotes methods
+   - Type: `patch` (bug fix)
+
+2. **`common/changes/@fgv/ts-sudoku-lib/config-fix-package-json_2025-07-01-01-02.json`**
+   - Documents the package.json configuration fixes (types declaration and build script)
+   - Type: `patch` (configuration fix)
+
+3. **`common/changes/@fgv/ts-json/config-fix-build-script_2025-07-01-01-02.json`**
+   - Documents the build script fix in ts-json package.json
+   - Type: `patch` (configuration fix)
+
+These change logs follow the Rush.js format and will be processed during the next release to update package versions and generate changelogs.
