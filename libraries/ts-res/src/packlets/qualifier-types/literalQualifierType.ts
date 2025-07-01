@@ -52,19 +52,20 @@ export interface ILiteralQualifierTypeCreateParams {
   allowContextList?: boolean;
 
   /**
-   * Optional flag indicating whether the match should be case-sensitive. Defaults to false.
+   * Optional flag indicating whether the match should be case-sensitive.
+   * Defaults to `false`.
    */
   caseSensitive?: boolean;
 
   /**
-   * Optional array of enumerated values to further constrain the type. Defaults to no
-   * constraint.
+   * Optional array of enumerated values to further constrain the type.
+   * Defaults to no constraint.
    */
   enumeratedValues?: ReadonlyArray<string>;
 
   /**
-   * Optional {@link QualifierTypes.LiteralValueHierarchyDecl | hierarchy declaration} of literal values to use for matching.
-   * If not provided, no hierarchy will be used.
+   * Optional {@link QualifierTypes.LiteralValueHierarchyDecl | hierarchy declaration}
+   * of literal values to use for matching. If not provided, no hierarchy will be used.
    */
   hierarchy?: LiteralValueHierarchyDecl<string>;
 
@@ -75,8 +76,8 @@ export interface ILiteralQualifierTypeCreateParams {
 }
 
 /**
- * A {@link QualifierTypes.QualifierType | qualifier} that matches a literal value., optionally case-sensitive
- * or matching against an ordered list of values at runtime.
+ * A {@link QualifierTypes.QualifierType | qualifier} that matches a literal value,
+ * optionally case-sensitive or matching against an ordered list of values at runtime.
  * @public
  */
 export class LiteralQualifierType extends QualifierType {
@@ -91,16 +92,18 @@ export class LiteralQualifierType extends QualifierType {
   public readonly enumeratedValues?: ReadonlyArray<QualifierConditionValue>;
 
   /**
-   * Optional {@link QualifierTypes.LiteralValueHierarchy | hierarchy} of literal values to use for matching.
-   * If not provided, no hierarchy will be used.
+   * Optional {@link QualifierTypes.LiteralValueHierarchy | hierarchy} of literal
+   * values to use for matching. If not provided, no hierarchy will be used.
    */
   public readonly hierarchy?: LiteralValueHierarchy<string>;
 
   /**
    * Constructs a new {@link QualifierTypes.LiteralQualifierType | LiteralQualifierType}.
    * @param name - Optional name for the qualifier type. Defaults to 'literal'.
-   * @param caseSensitive - Optional flag indicating whether the match should be case-sensitive. Defaults to false.
-   * @param allowContextList - Optional flag indicating whether the context can be a list of values. Defaults to false.
+   * @param caseSensitive - Optional flag indicating whether the match should be
+   * case-sensitive. Defaults to `false`.
+   * @param allowContextList - Optional flag indicating whether the context can be a
+   * list of values. Defaults to `false`.
    * @public
    */
   protected constructor({
@@ -133,8 +136,8 @@ export class LiteralQualifierType extends QualifierType {
   }
 
   /**
-   * Determines whether a value is a valid condition value for a literal qualifier. The
-   * {@link QualifierTypes.LiteralQualifierType | LiteralQualifierType} accepts
+   * Determines whether a value is a valid condition value for a literal qualifier.
+   * The {@link QualifierTypes.LiteralQualifierType | LiteralQualifierType} accepts
    * any identifier as a valid condition value.
    * @param value - The value to validate.
    * @returns `true` if the value is a valid condition value, `false` otherwise.
@@ -192,8 +195,8 @@ export class LiteralQualifierType extends QualifierType {
   /**
    * Converts a string to a {@link QualifierConditionValue | literal condition value}.
    * @param from - The string to convert.
-   * @returns `Success` with the converted value if valid, or `Failure` with an error message
-   * if not.
+   * @returns `Success` with the converted value if valid, or `Failure` with an error
+   * message if not.
    * @public
    */
   public static toLiteralConditionValue(from: string): Result<QualifierConditionValue> {

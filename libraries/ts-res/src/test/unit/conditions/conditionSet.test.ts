@@ -220,4 +220,38 @@ describe('ConditionSet', () => {
       expect(cs.setIndex(10)).toSucceedWith(10 as TsRes.ConditionSetIndex);
     });
   });
+
+  describe('canMatchPartialContext method', () => {
+    test('returns true when all conditions are satisfied or not present in context', () => {
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+      const context = {
+        homeTerritory: 'CA',
+        currentTerritory: 'US',
+        language: 'en',
+        some_thing: 'some_value',
+        testThing: 'test-value'
+      };
+      expect(cs.canMatchPartialContext(context)).toBe(true);
+    });
+
+    test('returns false when at least one condition is present and not satisfied', () => {
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+      const context = {
+        homeTerritory: 'CA',
+        currentTerritory: 'US',
+        language: 'en',
+        some_thing: 'wrong_value', // does not match
+        testThing: 'test-value'
+      };
+      expect(cs.canMatchPartialContext(context)).toBe(false);
+    });
+
+    test('returns true when no matching qualifiers are present in context', () => {
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+      const context = {
+        unrelated: 'value'
+      };
+      expect(cs.canMatchPartialContext(context)).toBe(true);
+    });
+  });
 });

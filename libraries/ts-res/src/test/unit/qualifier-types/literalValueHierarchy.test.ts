@@ -328,4 +328,142 @@ describe('LiteralValueHierarchy', () => {
       expect(lvh.getDescendants('parent')).toSucceedWith(['child1', 'child2']);
     });
   });
+
+  describe('open values mode', () => {
+    describe('creation with no enumerated values', () => {
+      test('creates hierarchy with values collected from hierarchy', () => {
+        const hierarchy = {
+          a: 'parent',
+          b: 'parent',
+          parent: 'root'
+        };
+
+        const lvh = TsRes.QualifierTypes.LiteralValueHierarchy.create({
+          values: [] as string[],
+          hierarchy
+        }).orThrow();
+
+        expect(lvh.isOpenValues).toBe(true);
+        expect(lvh.hasValue('a')).toBe(true);
+        expect(lvh.hasValue('b')).toBe(true);
+        expect(lvh.hasValue('parent')).toBe(true);
+        expect(lvh.hasValue('root')).toBe(true);
+      });
+
+      test('creates hierarchy with values collected from hierarchy when values is empty array', () => {
+        const hierarchy = {
+          a: 'parent',
+          b: 'parent',
+          parent: 'root'
+        };
+
+        const lvh = TsRes.QualifierTypes.LiteralValueHierarchy.create({
+          values: [],
+          hierarchy
+        }).orThrow();
+
+        expect(lvh.isOpenValues).toBe(true);
+        expect(lvh.hasValue('a')).toBe(true);
+        expect(lvh.hasValue('b')).toBe(true);
+        expect(lvh.hasValue('parent')).toBe(true);
+        expect(lvh.hasValue('root')).toBe(true);
+      });
+
+      test('creates hierarchy with no values when no hierarchy provided', () => {
+        const lvh = TsRes.QualifierTypes.LiteralValueHierarchy.create({
+          values: []
+        }).orThrow();
+
+        expect(lvh.isOpenValues).toBe(true);
+        expect(lvh.values.size).toBe(0);
+      });
+    });
+
+    describe('matching with open values', () => {
+      let lvh: TsRes.QualifierTypes.LiteralValueHierarchy<string>;
+
+      beforeEach(() => {
+        lvh = TsRes.QualifierTypes.LiteralValueHierarchy.create({
+          values: [] as string[],
+          hierarchy: {
+            a: 'parent',
+            b: 'parent',
+            parent: 'root'
+          }
+        }).orThrow();
+      });
+
+      test('returns PerfectMatch for identical values in hierarchy', () => {
+        expect(lvh.match('a', 'a')).toBe(TsRes.PerfectMatch);
+        expect(lvh.match('parent', 'parent')).toBe(TsRes.PerfectMatch);
+      });
+
+      test('returns partial match for related values in hierarchy', () => {
+        const score = lvh.match('parent', 'a');
+        expect(score).toBeGreaterThan(TsRes.NoMatch);
+        expect(score).toBeLessThan(TsRes.PerfectMatch);
+      });
+
+      test('returns NoMatch for values not in hierarchy', () => {
+        expect(lvh.match('unknown', 'a')).toBe(TsRes.NoMatch);
+        expect(lvh.match('a', 'unknown')).toBe(TsRes.NoMatch);
+      });
+
+      test('returns NoMatch for unrelated values in hierarchy', () => {
+        expect(lvh.match('a', 'b')).toBe(TsRes.NoMatch);
+      });
+
+      test('returns NoMatch when context has no parent and not equal to condition', () => {
+        expect(lvh.match('a', 'root')).toBe(TsRes.NoMatch);
+      });
+
+      test('demonstrates hierarchical fallback behavior for values in hierarchy', () => {
+        // Test that hierarchical fallback works for values in the hierarchy
+        const score1 = lvh.match('parent', 'a'); // a -> parent (direct parent)
+        expect(score1).toBeGreaterThan(TsRes.NoMatch);
+        expect(score1).toBeLessThan(TsRes.PerfectMatch);
+
+        const score2 = lvh.match('root', 'a'); // a -> parent -> root (grandparent)
+        expect(score2).toBeGreaterThan(TsRes.NoMatch);
+        expect(score2).toBeLessThan(score1); // Should be lower score than direct parent
+        expect(score2).toBeLessThan(TsRes.PerfectMatch);
+      });
+
+      test('handles unknown values gracefully without validation errors', () => {
+        // Unknown values should return NoMatch but not cause validation errors
+        expect(lvh.match('unknown1', 'unknown2')).toBe(TsRes.NoMatch);
+        expect(lvh.match('unknown1', 'a')).toBe(TsRes.NoMatch);
+        expect(lvh.match('a', 'unknown1')).toBe(TsRes.NoMatch);
+      });
+    });
+
+    describe('isOpenValues property', () => {
+      test('is true when no enumerated values provided', () => {
+        const lvh = TsRes.QualifierTypes.LiteralValueHierarchy.create({
+          values: [] as string[],
+          hierarchy: { a: 'parent' }
+        }).orThrow();
+
+        expect(lvh.isOpenValues).toBe(true);
+      });
+
+      test('is true when values is empty array', () => {
+        const lvh = TsRes.QualifierTypes.LiteralValueHierarchy.create({
+          values: [] as string[],
+          hierarchy: { a: 'parent' }
+        }).orThrow();
+
+        expect(lvh.isOpenValues).toBe(true);
+      });
+
+      test('is false when enumerated values provided', () => {
+        const lvh = TsRes.QualifierTypes.LiteralValueHierarchy.create({
+          values: ['a', 'parent'],
+          hierarchy: { a: 'parent' }
+        }).orThrow();
+
+        expect(lvh.isOpenValues).toBe(false);
+      });
+    });
+  });
 });

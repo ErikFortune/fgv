@@ -22,7 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../index';
-import { mapResults, omit } from '@fgv/ts-utils';
+import { mapResults, omit, fail } from '@fgv/ts-utils';
 
 describe('ResourceCandidate', () => {
   let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
@@ -211,6 +211,72 @@ describe('ResourceCandidate', () => {
           decl
         })
       ).toFailWith(/not a valid qualifier name/i);
+    });
+
+    test('fails if resourceType validation fails', () => {
+      // Create a mock resourceType that always fails validation
+      const resourceType = {
+        key: 'mock',
+        validateDeclaration: () => fail('type validation failed')
+      } as unknown as TsRes.ResourceTypes.ResourceType;
+      const decl: TsRes.ResourceJson.Json.IChildResourceCandidateDecl = {
+        json: { some: 'json' },
+        conditions: { homeTerritory: 'US' }
+      };
+      expect(
+        TsRes.Resources.ResourceCandidate.create({
+          id: 'some.resource.path',
+          conditionSets,
+          resourceType,
+          decl
+        })
+      ).toFailWith(/type validation failed/);
+    });
+
+    test('handles all combinations of isPartial and mergeMethod', () => {
+      const decls: TsRes.ResourceJson.Json.IChildResourceCandidateDecl[] = [
+        { json: {}, conditions: {}, isPartial: true, mergeMethod: 'replace' },
+        { json: {}, conditions: {}, isPartial: false, mergeMethod: 'replace' },
+        { json: {}, conditions: {}, isPartial: true, mergeMethod: 'augment' },
+        { json: {}, conditions: {}, isPartial: false, mergeMethod: 'augment' },
+        { json: {}, conditions: {} } // defaults
+      ];
+      for (const decl of decls) {
+        expect(
+          TsRes.Resources.ResourceCandidate.create({
+            id: 'some.resource.path',
+            conditionSets,
+            decl
+          })
+        ).toSucceedAndSatisfy((c) => {
+          expect(c.isPartial).toBe(decl.isPartial ?? false);
+          expect(c.mergeMethod).toBe(decl.mergeMethod ?? 'augment');
+        });
+      }
+    });
+
+    test('fails if parent conditions are invalid', () => {
+      // Use a parent condition with an unknown qualifier
+      const badParent = [
+        {
+          qualifier: { name: 'unknown', type: { matches: () => 1 }, defaultPriority: 1 },
+          value: 'x',
+          operator: 'matches',
+          priority: 1
+        }
+      ];
+      const decl: TsRes.ResourceJson.Json.IChildResourceCandidateDecl = {
+        json: {},
+        conditions: { homeTerritory: 'US' }
+      };
+      expect(
+        TsRes.Resources.ResourceCandidate.create({
+          id: 'some.resource.path',
+          conditionSets,
+          decl,
+          parentConditions: badParent as unknown as ReadonlyArray<TsRes.Conditions.Condition>
+        })
+      ).toFail();
     });
   });
 
@@ -509,6 +575,10 @@ describe('ResourceCandidate', () => {
         /resource type mismatch/i
       );
     });
+
+    test('succeeds with undefined if no candidates are supplied', () => {
+      expect(TsRes.Resources.ResourceCandidate.validateResourceTypes([])).toSucceedWith(undefined);
+    });
   });
 
   describe('compare static method', () => {
@@ -651,6 +721,197 @@ describe('ResourceCandidate', () => {
         decl: { ...decl, json: { other: 'json' } }
       }).orThrow();
       expect(TsRes.Resources.ResourceCandidate.equal(candidate1, candidate2)).toBe(false);
+    });
+  });
+
+  describe('static equal method', () => {
+    test('returns true for identical candidates', () => {
+      const decl: TsRes.ResourceJson.Json.IChildResourceCandidateDecl = {
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US' },
+        isPartial: true,
+        mergeMethod: 'replace'
+      };
+      const c1 = TsRes.Resources.ResourceCandidate.create({ id: 'id', conditionSets, decl }).orThrow();
+      const c2 = TsRes.Resources.ResourceCandidate.create({ id: 'id', conditionSets, decl }).orThrow();
+      expect(TsRes.Resources.ResourceCandidate.equal(c1, c2)).toBe(true);
+    });
+    test('returns false for different candidates', () => {
+      const decl1: TsRes.ResourceJson.Json.IChildResourceCandidateDecl = {
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US' }
+      };
+      const decl2: TsRes.ResourceJson.Json.IChildResourceCandidateDecl = {
+        json: { a: 2 },
+        conditions: { homeTerritory: 'US' }
+      };
+      const c1 = TsRes.Resources.ResourceCandidate.create({ id: 'id', conditionSets, decl: decl1 }).orThrow();
+      const c2 = TsRes.Resources.ResourceCandidate.create({ id: 'id', conditionSets, decl: decl2 }).orThrow();
+      expect(TsRes.Resources.ResourceCandidate.equal(c1, c2)).toBe(false);
+    });
+  });
+
+  describe('serialization', () => {
+    test('toChildResourceCandidateDecl includes/excludes optional fields as expected', () => {
+      const decl: TsRes.ResourceJson.Json.IChildResourceCandidateDecl = {
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US' },
+        isPartial: true,
+        mergeMethod: 'replace'
+      };
+      const c = TsRes.Resources.ResourceCandidate.create({ id: 'id', conditionSets, decl }).orThrow();
+      expect(c.toChildResourceCandidateDecl()).toEqual({
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US' },
+        isPartial: true,
+        mergeMethod: 'replace'
+      });
+      // Defaults omitted
+      const c2 = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets,
+        decl: { json: { a: 1 }, conditions: { homeTerritory: 'US' } }
+      }).orThrow();
+      expect(c2.toChildResourceCandidateDecl()).toEqual({
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US' }
+      });
+    });
+    test('toLooseResourceCandidateDecl includes/excludes optional fields as expected', () => {
+      const resourceType = resourceTypes.validating.get('json').orThrow();
+      const decl: TsRes.ResourceJson.Json.IChildResourceCandidateDecl = {
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US' },
+        isPartial: true,
+        mergeMethod: 'replace'
+      };
+      const c = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets,
+        decl,
+        resourceType
+      }).orThrow();
+      expect(c.toLooseResourceCandidateDecl()).toEqual({
+        id: 'id',
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US' },
+        isPartial: true,
+        mergeMethod: 'replace',
+        resourceTypeName: 'json'
+      });
+      // Defaults omitted
+      const c2 = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets,
+        decl: { json: { a: 1 }, conditions: { homeTerritory: 'US' } },
+        resourceType
+      }).orThrow();
+      expect(c2.toLooseResourceCandidateDecl()).toEqual({
+        id: 'id',
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US' },
+        resourceTypeName: 'json'
+      });
+    });
+  });
+
+  describe('canMatchPartialContext method', () => {
+    let resourceType: TsRes.ResourceTypes.ResourceType;
+    let localConditionSets: typeof conditionSets;
+    beforeEach(() => {
+      resourceType = resourceTypes.validating.get('json').orThrow();
+      localConditionSets = conditionSets;
+    });
+
+    test('returns true when candidate matches context exactly', () => {
+      const decl = {
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US' }
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets: localConditionSets,
+        resourceType,
+        decl
+      }).orThrow();
+      expect(
+        candidate.canMatchPartialContext({
+          homeTerritory: 'US'
+        } as unknown as TsRes.Context.IValidatedContextDecl)
+      ).toBe(true);
+    });
+
+    test('returns true when candidate partially matches context', () => {
+      const decl = {
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US', language: 'en' }
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets: localConditionSets,
+        resourceType,
+        decl
+      }).orThrow();
+      expect(
+        candidate.canMatchPartialContext({
+          homeTerritory: 'US'
+        } as unknown as TsRes.Context.IValidatedContextDecl)
+      ).toBe(true);
+    });
+
+    test('returns true when candidate qualifier is not present in context', () => {
+      const decl = {
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US' }
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets: localConditionSets,
+        resourceType,
+        decl
+      }).orThrow();
+      expect(candidate.canMatchPartialContext({} as unknown as TsRes.Context.IValidatedContextDecl)).toBe(
+        true
+      );
+    });
+
+    test('returns false when candidate qualifier is present in context but does not match', () => {
+      const decl = {
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US' }
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets: localConditionSets,
+        resourceType,
+        decl
+      }).orThrow();
+      expect(
+        candidate.canMatchPartialContext({
+          homeTerritory: 'CA'
+        } as unknown as TsRes.Context.IValidatedContextDecl)
+      ).toBe(false);
+    });
+
+    test('returns true for unconditional candidate (no conditions)', () => {
+      const decl = {
+        json: { a: 1 },
+        conditions: {}
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets: localConditionSets,
+        resourceType,
+        decl
+      }).orThrow();
+      expect(
+        candidate.canMatchPartialContext({
+          homeTerritory: 'US'
+        } as unknown as TsRes.Context.IValidatedContextDecl)
+      ).toBe(true);
+      expect(candidate.canMatchPartialContext({} as unknown as TsRes.Context.IValidatedContextDecl)).toBe(
+        true
+      );
     });
   });
 });

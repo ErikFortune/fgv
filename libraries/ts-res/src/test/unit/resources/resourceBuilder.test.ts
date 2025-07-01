@@ -21,6 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
+import { JsonObject } from '@fgv/ts-json-base';
 import * as TsRes from '../../../index';
 
 describe('ResourceBuilder', () => {
@@ -212,6 +213,17 @@ describe('ResourceBuilder', () => {
       expect(builder.addLooseCandidate(someDecls[0])).toSucceed();
       expect(builder.candidates.length).toEqual(1);
     });
+
+    test('treats missing conditions field as unconditional (empty conditions)', () => {
+      const decl = {
+        id: 'some.resource.path',
+        json: { a: 1 },
+        resourceTypeName: jsonType.key
+      } as unknown as TsRes.ResourceJson.Json.ILooseResourceCandidateDecl;
+      expect(builder.addLooseCandidate(decl)).toSucceedAndSatisfy((c) => {
+        expect(c.conditions.conditions.length).toBe(0);
+      });
+    });
   });
 
   describe('build method', () => {
@@ -242,6 +254,144 @@ describe('ResourceBuilder', () => {
     test('fails to build a resource with no type', () => {
       expect(builder.addLooseCandidate(someDecls[0])).toSucceed();
       expect(builder.build()).toFailWith(/no resource type/);
+    });
+  });
+
+  describe('edge cases and additional semantics', () => {
+    let builder: TsRes.Resources.ResourceBuilder;
+    beforeEach(() => {
+      builder = TsRes.Resources.ResourceBuilder.create({
+        id: 'some.resource.path',
+        resourceTypes,
+        conditionSets
+      }).orThrow();
+    });
+
+    test('deduplicates candidates with deeply nested JSON', () => {
+      const decl1 = {
+        id: 'some.resource.path',
+        json: { a: { b: { c: [1, 2, { d: 'x' }] } } },
+        conditions: { homeTerritory: 'US' },
+        resourceTypeName: jsonType.key
+      };
+      const decl2 = {
+        id: 'some.resource.path',
+        json: { a: { b: { c: [1, 2, { d: 'x' }] } } }, // structurally identical
+        conditions: { homeTerritory: 'US' },
+        resourceTypeName: jsonType.key
+      };
+      expect(builder.addLooseCandidate(decl1)).toSucceed();
+      expect(builder.addLooseCandidate(decl2)).toSucceed();
+      expect(builder.candidates.length).toBe(1);
+    });
+
+    test('treats structurally different but semantically equivalent condition sets as the same', () => {
+      const decl1 = {
+        id: 'some.resource.path',
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US', language: 'en' },
+        resourceTypeName: jsonType.key
+      };
+      const decl2 = {
+        id: 'some.resource.path',
+        json: { a: 1 },
+        conditions: { language: 'en', homeTerritory: 'US' }, // different order
+        resourceTypeName: jsonType.key
+      };
+      expect(builder.addLooseCandidate(decl1)).toSucceed();
+      expect(builder.addLooseCandidate(decl2)).toSucceed();
+      expect(builder.candidates.length).toBe(1);
+    });
+
+    test('fails to add a candidate with missing json field', () => {
+      const decl = {
+        id: 'some.resource.path',
+        conditions: { homeTerritory: 'US' },
+        resourceTypeName: jsonType.key
+      } as unknown as TsRes.ResourceJson.Json.ILooseResourceCandidateDecl;
+      expect(builder.addLooseCandidate(decl)).toFail();
+    });
+
+    test('fails to add a candidate with an unknown qualifier in conditions', () => {
+      const decl = {
+        id: 'some.resource.path',
+        json: { a: 1 },
+        conditions: { unknownQualifier: 'foo' },
+        resourceTypeName: jsonType.key
+      };
+      expect(builder.addLooseCandidate(decl)).toFail();
+    });
+
+    test('fails to add a candidate with a non-serializable JSON value', () => {
+      const circular: Record<string, unknown> = { a: 1 };
+      circular.self = circular;
+      const decl = {
+        id: 'some.resource.path',
+        json: circular as unknown as JsonObject,
+        conditions: { homeTerritory: 'US' },
+        resourceTypeName: jsonType.key
+      };
+      expect(builder.addLooseCandidate(decl)).toFail();
+    });
+
+    test('build after conflict attempt does not pollute state', () => {
+      const decl1 = {
+        id: 'some.resource.path',
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US' },
+        resourceTypeName: jsonType.key
+      };
+      const decl2 = {
+        id: 'some.resource.path',
+        json: { a: 2 },
+        conditions: { homeTerritory: 'US' },
+        resourceTypeName: jsonType.key
+      };
+      expect(builder.addLooseCandidate(decl1)).toSucceed();
+      expect(builder.addLooseCandidate(decl2)).toFail();
+      // Should still be able to build with the valid candidate
+      expect(builder.build()).toSucceedAndSatisfy((r) => {
+        expect(r.candidates.length).toBe(1);
+        expect(r.candidates[0].json).toEqual({ a: 1 });
+      });
+    });
+  });
+
+  describe('getCandidatesForContext method', () => {
+    let builder: TsRes.Resources.ResourceBuilder;
+    beforeEach(() => {
+      builder = TsRes.Resources.ResourceBuilder.create({
+        id: 'some.resource.path',
+        resourceTypes,
+        conditionSets
+      }).orThrow();
+    });
+
+    test('returns empty array if no candidates match the context', () => {
+      builder.addLooseCandidate({ ...someDecls[0], resourceTypeName: jsonType.key }).orThrow();
+      const context = { homeTerritory: 'ZZ', language: 'zz' };
+      expect(builder.getCandidatesForContext(context)).toEqual([]);
+    });
+
+    test('returns multiple candidates that match the context', () => {
+      builder.addLooseCandidate({ ...someDecls[0], resourceTypeName: jsonType.key }).orThrow();
+      builder.addLooseCandidate({ ...someDecls[1], resourceTypeName: jsonType.key }).orThrow();
+      const context = { language: 'en' };
+      const matches = builder.getCandidatesForContext(context);
+      const expected = builder.candidates.filter((c) => c.canMatchPartialContext(context));
+      expect(matches).toEqual(expected);
+    });
+
+    test('returns all candidates for unconditional context', () => {
+      builder.addLooseCandidate({ ...someDecls[0], resourceTypeName: jsonType.key }).orThrow();
+      builder.addLooseCandidate({ ...someDecls[1], resourceTypeName: jsonType.key }).orThrow();
+      const context = {};
+      expect(builder.getCandidatesForContext(context)).toEqual(builder.candidates);
+    });
+
+    test('returns empty array if there are no candidates', () => {
+      const context = { homeTerritory: 'US' };
+      expect(builder.getCandidatesForContext(context)).toEqual([]);
     });
   });
 });

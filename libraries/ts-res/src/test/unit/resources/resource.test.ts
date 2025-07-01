@@ -248,6 +248,77 @@ describe('Resource', () => {
         expect(r.candidates.length).toBe(candidates.length - 1);
       });
     });
+
+    test('succeeds if all candidates are identical for the same condition set', () => {
+      const decl: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = {
+        id: 'id',
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US' }
+      };
+      const c1 = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets,
+        decl,
+        resourceType: jsonType
+      }).orThrow();
+      const c2 = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets,
+        decl,
+        resourceType: jsonType
+      }).orThrow();
+      const resource = TsRes.Resources.Resource.create({ candidates: [c1, c2] });
+      expect(resource).toSucceedAndSatisfy((r) => {
+        expect(r.candidates.length).toBe(1);
+        expect(r.candidates[0].json).toEqual({ a: 1 });
+      });
+    });
+
+    test('fails if candidates for the same condition set are not equal', () => {
+      const decl1: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = {
+        id: 'id',
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US' }
+      };
+      const decl2: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = {
+        id: 'id',
+        json: { a: 2 },
+        conditions: { homeTerritory: 'US' }
+      };
+      const c1 = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets,
+        decl: decl1,
+        resourceType: jsonType
+      }).orThrow();
+      const c2 = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets,
+        decl: decl2,
+        resourceType: jsonType
+      }).orThrow();
+      const resource = TsRes.Resources.Resource.create({ candidates: [c1, c2] });
+      expect(resource).toFailWith(/duplicate candidates/);
+    });
+
+    test('candidates are sorted and deduplicated as expected', () => {
+      const decls: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl[] = [
+        { id: 'id', json: { a: 1 }, conditions: { homeTerritory: 'US' } },
+        { id: 'id', json: { b: 2 }, conditions: { homeTerritory: 'CA' } },
+        { id: 'id', json: { a: 1 }, conditions: { homeTerritory: 'US' } } // duplicate
+      ];
+      const cs = mapResults(
+        decls.map((decl) =>
+          TsRes.Resources.ResourceCandidate.create({ id: 'id', conditionSets, decl, resourceType: jsonType })
+        )
+      ).orThrow();
+      const resource = TsRes.Resources.Resource.create({ candidates: cs });
+      expect(resource).toSucceedAndSatisfy((r) => {
+        expect(r.candidates.length).toBe(2);
+        // Should be sorted in reverse order by compare
+        expect(r.candidates[0].conditions.toString() >= r.candidates[1].conditions.toString()).toBe(true);
+      });
+    });
   });
 
   describe('toChildResourceDecl method', () => {
@@ -416,6 +487,82 @@ describe('Resource', () => {
           }
         ])
       });
+    });
+  });
+
+  describe('serialization', () => {
+    test('toChildResourceDecl includes/excludes optional fields as expected', () => {
+      const decl: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = {
+        id: 'id',
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US' }
+      };
+      const c = TsRes.Resources.ResourceCandidate.create({ id: 'id', conditionSets, decl }).orThrow();
+      const resource = TsRes.Resources.Resource.create({ candidates: [c], resourceType: jsonType }).orThrow();
+      expect(resource.toChildResourceDecl()).toEqual({
+        resourceTypeName: 'json',
+        candidates: [c.toChildResourceCandidateDecl()]
+      });
+      // No candidates
+      const resource2 = TsRes.Resources.Resource.create({
+        candidates: [],
+        id: 'id',
+        resourceType: jsonType
+      }).orThrow();
+      expect(resource2.toChildResourceDecl()).toEqual({ resourceTypeName: 'json' });
+    });
+    test('toLooseResourceDecl includes/excludes optional fields as expected', () => {
+      const decl: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = {
+        id: 'id',
+        json: { a: 1 },
+        conditions: { homeTerritory: 'US' }
+      };
+      const c = TsRes.Resources.ResourceCandidate.create({ id: 'id', conditionSets, decl }).orThrow();
+      const resource = TsRes.Resources.Resource.create({ candidates: [c], resourceType: jsonType }).orThrow();
+      expect(resource.toLooseResourceDecl()).toEqual({
+        id: 'id',
+        resourceTypeName: 'json',
+        candidates: [c.toChildResourceCandidateDecl()]
+      });
+      // No candidates
+      const resource2 = TsRes.Resources.Resource.create({
+        candidates: [],
+        id: 'id',
+        resourceType: jsonType
+      }).orThrow();
+      expect(resource2.toLooseResourceDecl()).toEqual({ id: 'id', resourceTypeName: 'json' });
+    });
+  });
+
+  describe('getCandidatesForContext method', () => {
+    test('returns empty array if no candidates match the context', () => {
+      const resource = TsRes.Resources.Resource.create({ candidates, resourceType: jsonType }).orThrow();
+      const context = { homeTerritory: 'ZZ', language: 'zz' };
+      expect(resource.getCandidatesForContext(context)).toEqual([]);
+    });
+
+    test('returns multiple candidates that match the context', () => {
+      const resource = TsRes.Resources.Resource.create({ candidates, resourceType: jsonType }).orThrow();
+      const context = { language: 'en' };
+      const matches = resource.getCandidatesForContext(context);
+      const expected = resource.candidates.filter((c) => c.canMatchPartialContext(context));
+      expect(matches).toEqual(expected);
+    });
+
+    test('returns all candidates for unconditional context', () => {
+      const resource = TsRes.Resources.Resource.create({ candidates, resourceType: jsonType }).orThrow();
+      const context = {};
+      expect(resource.getCandidatesForContext(context)).toEqual(resource.candidates);
+    });
+
+    test('returns empty array if there are no candidates', () => {
+      const resource = TsRes.Resources.Resource.create({
+        candidates: [],
+        resourceType: jsonType,
+        id: 'empty'
+      }).orThrow();
+      const context = { homeTerritory: 'US' };
+      expect(resource.getCandidatesForContext(context)).toEqual([]);
     });
   });
 });

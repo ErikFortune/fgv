@@ -60,16 +60,18 @@ export interface IQualifierType extends ICollectible<QualifierTypeName, Qualifie
   /**
    * Validates a condition value for this qualifier type.
    * @param value - The string value to validate.
-   * @returns `Success` with the {@link QualifierConditionValue | validated value} if the value
-   * is valid for use in a condition, `Failure` with error details otherwise.
+   * @returns `Success` with the {@link QualifierConditionValue | validated value}
+   * if the value is valid for use in a condition, `Failure` with error details
+   * otherwise.
    */
   isValidConditionValue(value: string): value is QualifierConditionValue;
 
   /**
    * Validates a context value for this qualifier type.
    * @param value - The string value to validate.
-   * @returns `Success` with the {@link QualifierContextValue | validated value} if the value
-   * is valid for use in a runtime context, `Failure` with error details otherwise.
+   * @returns `Success` with the {@link QualifierContextValue | validated value}
+   * if the value is valid for use in a runtime context, `Failure` with error
+   * details otherwise.
    */
   isValidContextValue(value: string): value is QualifierContextValue;
 
@@ -82,20 +84,23 @@ export interface IQualifierType extends ICollectible<QualifierTypeName, Qualifie
   validateCondition(value: string, operator?: ConditionOperator): Result<QualifierConditionValue>;
 
   /**
-   * Validates that a value is valid for use in a runtime context for qualifiers of this type.
+   * Validates that a value is valid for use in a runtime context for qualifiers
+   * of this type.
    * @param value - The string value to validate.
-   * @returns `Success` with the {@link QualifierContextValue | validated value} if the value
-   * is valid for use in a runtime context, `Failure` with error details otherwise.
+   * @returns `Success` with the {@link QualifierContextValue | validated value}
+   * if the value is valid for use in a runtime context, `Failure` with error
+   * details otherwise.
    */
   validateContextValue(value: string): Result<QualifierContextValue>;
 
   /**
-   * Determines the extent to which a condition matches a context value for this qualifier type.
+   * Determines the extent to which a condition matches a context value for this
+   * qualifier type.
    * @param condition - The condition value to evaluate.
    * @param context - The context value to evaluate.
    * @param operator - The operator to use in evaluating the match.
-   * @returns a {@link QualifierMatchScore | score} indicating the extent to which the condition
-   * matches the context value.
+   * @returns a {@link QualifierMatchScore | score} indicating the extent to which
+   * the condition matches the context value.
    */
   matches(
     condition: QualifierConditionValue,
@@ -104,8 +109,7 @@ export interface IQualifierType extends ICollectible<QualifierTypeName, Qualifie
   ): QualifierMatchScore;
 
   /**
-   * Sets the index for this qualifier type.  Once set, index is
-   * immutable.
+   * Sets the index for this qualifier type. Once set, index is immutable.
    */
   setIndex(index: number): Result<QualifierTypeIndex>;
 }
@@ -280,8 +284,8 @@ export abstract class QualifierType implements IQualifierType {
    * @param condition - The {@link QualifierConditionValue | condition value} to match.
    * @param context - The {@link QualifierContextValue | context value} to match.
    * @param operator - The {@link ConditionOperator | operator} to use in the match.
-   * @returns a {@link QualifierMatchScore | score} indicating the extent to which the condition
-   * matches the context value.
+   * @returns a {@link QualifierMatchScore | score} indicating the extent to which
+   * the condition matches the context value.
    * @public
    */
   protected abstract _matchOne(
@@ -295,8 +299,8 @@ export abstract class QualifierType implements IQualifierType {
    * @param condition - The {@link QualifierConditionValue | condition value} to match.
    * @param context - The comma-separated list of {@link QualifierContextValue | context values} to match.
    * @param operator - The {@link ConditionOperator | operator} to use in the match.
-   * @returns a {@link QualifierMatchScore | score} indicating the extent to which the condition
-   * matches the context value.
+   * @returns a {@link QualifierMatchScore | score} indicating the extent to which
+   * the condition matches the context value.
    * @public
    */
   protected _matchList(
@@ -321,8 +325,8 @@ export abstract class QualifierType implements IQualifierType {
   }
 
   /**
-   * Splits a comma-separated {@link QualifierContextValue | context value} into an array of
-   * individual values.
+   * Splits a comma-separated {@link QualifierContextValue | context value} into an
+   * array of individual values.
    * @param value - The value to split.
    * @returns an array of individual context values.
    * @public

@@ -52,8 +52,8 @@ export interface ILanguageQualifierTypeCreateParams extends Partial<IQualifierTy
 }
 
 /**
- * {@link QualifierTypes.QualifierType | Qualifier type} which matches BCP-47 language tags applying
- * {@link https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47#tag-matching | similarity matching}.
+ * {@link QualifierTypes.QualifierType | Qualifier type} which matches BCP-47 language tags
+ * applying {@link https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47#tag-matching | similarity matching}.
  * Accepts a list of language tags in the context by default.
  * @public
  */
@@ -61,7 +61,8 @@ export class LanguageQualifierType extends QualifierType {
   /**
    * Creates a new instance of a {@link QualifierTypes.LanguageQualifierType | language qualifier type}.
    * @param name - Optional name for the qualifier type. Defaults to 'language'.
-   * @param allowContextList - Optional flag indicating whether the context can be a list of values. Defaults to `true`.
+   * @param allowContextList - Optional flag indicating whether the context can be a
+   * list of values. Defaults to `true`.
    * @public
    */
   protected constructor({ name, allowContextList, index }: ILanguageQualifierTypeCreateParams) {
@@ -79,10 +80,10 @@ export class LanguageQualifierType extends QualifierType {
 
   /**
    * Creates a new instance of a {@link QualifierTypes.LanguageQualifierType | language qualifier type}.
-   * @param params - Optional {@link QualifierTypes.ILanguageQualifierTypeCreateParams | parameters} to use when creating
-   * the new instance.
-   * @returns `Success` with the new {@link QualifierTypes.LanguageQualifierType | language qualifier type} if successful, `Failure`
-   * otherwise.
+   * @param params - Optional {@link QualifierTypes.ILanguageQualifierTypeCreateParams | parameters}
+   * to use when creating the new instance.
+   * @returns `Success` with the new {@link QualifierTypes.LanguageQualifierType | language qualifier type}
+   * if successful, `Failure` otherwise.
    */
   public static create(params?: ILanguageQualifierTypeCreateParams): Result<LanguageQualifierType> {
     /* c8 ignore next 1 - coverage seems to intermittently miss the branch even though it's tested */
@@ -103,7 +104,7 @@ export class LanguageQualifierType extends QualifierType {
    * @param condition - The language condition value to match.
    * @param context - The language context value to match against.
    * @param operator - The operator to use for the match. Must be 'matches'.
-   * @returns - The match score, or `noMatch` if the match fails.
+   * @returns The match score, or `noMatch` if the match fails.
    */
   protected _matchOne(
     condition: QualifierConditionValue,
