@@ -2,6 +2,21 @@
   "name": "@fgv/ts-sudoku-lib",
   "entries": [
     {
+      "version": "4.5.0",
+      "tag": "@fgv/ts-sudoku-lib_v4.5.0",
+      "date": "Tue, 01 Jul 2025 03:26:11 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Fix redundant conditional logic in updateCellValue and updateCellNotes methods that called identical functions in both branches of ternary operator"
+          },
+          {
+            "comment": "Fix incorrect TypeScript declaration file reference and build script in package.json"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.4.0",
       "tag": "@fgv/ts-sudoku-lib_v4.4.0",
       "date": "Sat, 01 Feb 2025 17:13:10 GMT",
