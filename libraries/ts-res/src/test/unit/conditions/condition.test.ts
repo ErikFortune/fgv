@@ -175,6 +175,20 @@ describe('Condition', () => {
       const condition = TsRes.Conditions.Condition.create(decl).orThrow();
       expect(condition.toToken()).toFailWith(/cannot create condition token for non-default priority/i);
     });
+
+    test('uses qualifier name if token is not present (fallback)', () => {
+      const decl = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'currentTerritory', // has no token
+            value: 'CA'
+          },
+          { qualifiers }
+        )
+        .orThrow();
+      const condition = TsRes.Conditions.Condition.create(decl).orThrow();
+      expect(condition.toToken()).toSucceedWith('currentTerritory=CA' as TsRes.ConditionToken);
+    });
   });
 
   describe('toChildConditionDecl method', () => {
@@ -509,6 +523,85 @@ describe('Condition', () => {
       expect(TsRes.Conditions.Condition.getKeyForDecl(decl)).toSucceedWith(
         'testThing-always-[whatevs]@400' as TsRes.ConditionKey
       );
+    });
+  });
+
+  describe('getContextMatch method', () => {
+    let condition: TsRes.Conditions.Condition;
+    beforeEach(() => {
+      const decl = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'homeTerritory',
+            value: 'CA',
+            scoreAsDefault: 0.5
+          },
+          { qualifiers }
+        )
+        .orThrow();
+      condition = TsRes.Conditions.Condition.create(decl).orThrow();
+    });
+
+    test('returns match score when qualifier is present and matches', () => {
+      const context = { homeTerritory: 'CA' };
+      const score = condition.getContextMatch(context);
+      expect(score).toBe(TsRes.PerfectMatch);
+    });
+
+    test('returns scoreAsDefault if match is NoMatch and acceptDefaultScore is true', () => {
+      const context = { homeTerritory: 'US' };
+      const score = condition.getContextMatch(context, { acceptDefaultScore: true });
+      expect(score).toBe(0.5);
+    });
+
+    test('returns NoMatch if match is NoMatch and acceptDefaultScore is false/undefined', () => {
+      const context = { homeTerritory: 'US' };
+      const score = condition.getContextMatch(context);
+      expect(score).toBe(TsRes.NoMatch);
+    });
+
+    test('returns undefined if qualifier is not present and partialContextMatch is true', () => {
+      const context = { currentTerritory: 'CA' };
+      const score = condition.getContextMatch(context, { partialContextMatch: true });
+      expect(score).toBeUndefined();
+    });
+
+    test('returns NoMatch if qualifier is not present and partialContextMatch is false/undefined', () => {
+      const context = { currentTerritory: 'CA' };
+      const score = condition.getContextMatch(context);
+      expect(score).toBe(TsRes.NoMatch);
+    });
+  });
+
+  describe('matchesContext method', () => {
+    let condition: TsRes.Conditions.Condition;
+    beforeEach(() => {
+      const decl = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'homeTerritory',
+            value: 'CA',
+            scoreAsDefault: 0.5
+          },
+          { qualifiers }
+        )
+        .orThrow();
+      condition = TsRes.Conditions.Condition.create(decl).orThrow();
+    });
+
+    test('returns true when qualifier is present and matches', () => {
+      const context = { homeTerritory: 'CA' };
+      expect(condition.matchesContext(context)).toBe(true);
+    });
+
+    test('returns false when qualifier is present and does not match', () => {
+      const context = { homeTerritory: 'US' };
+      expect(condition.matchesContext(context)).toBe(false);
+    });
+
+    test('returns true when qualifier is not present in context', () => {
+      const context = { currentTerritory: 'CA' };
+      expect(condition.matchesContext(context)).toBe(true);
     });
   });
 });

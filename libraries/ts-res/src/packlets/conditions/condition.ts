@@ -79,6 +79,8 @@ export class Condition implements IValidatedConditionDecl {
    * @param value - The value to be matched in this condition.
    * @param operator - The {@link ConditionOperator | operator} used when matching context value to condition value.
    * @param priority - The {@link ConditionPriority | relative priority} of this condition.
+   * @param scoreAsDefault - The {@link QualifierMatchScore | score} to be used when this condition is the default.
+   * @param index - The index of this condition.
    * @public
    */
   protected constructor({
@@ -155,8 +157,8 @@ export class Condition implements IValidatedConditionDecl {
   /**
    * Determines if this condition matches the supplied {@link Context.IValidatedContextDecl | validated context}.
    * @remarks
-   * A condition matches a context if it is present and the comparison yields a non-zero {@link QualifierMatchScore | match score},
-   * *or* if the condition is not present in the context.
+   * A condition matches a context if it is present and the comparison yields a non-zero {@link QualifierMatchScore | match score}.
+   * If the qualifier is not present in the context, this method returns false.
    * @param context - The {@link Context.IValidatedContextDecl | context} to match against.
    * @param options - The {@link Context.IContextMatchOptions | options} to use when matching the context.
    * @returns `true` if the condition matches the context, `false` otherwise.
