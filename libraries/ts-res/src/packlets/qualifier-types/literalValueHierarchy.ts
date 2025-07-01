@@ -62,6 +62,11 @@ export interface ILiteralValueHierarchyCreateParams<T extends string = string> {
   hierarchy?: LiteralValueHierarchyDecl<T>;
 }
 
+/**
+ * Internal interface used during hierarchy construction to build
+ * {@link QualifierTypes.ILiteralValue | ILiteralValue} objects.
+ * @public
+ */
 interface ILiteralValueBuilder<T extends string> {
   readonly name: T;
   parent?: ILiteralValue<T>;
@@ -73,6 +78,14 @@ interface ILiteralValueBuilder<T extends string> {
  * tree, where each value can have multiple children but only one parent. The root of the
  * tree has no parent. The hierarchy is used to determine the relationship between values
  * when matching conditions and contexts.
+ *
+ * @remarks
+ * The hierarchy can be created in two modes:
+ * - **Constrained mode**: When enumerated values are provided, only those values are allowed
+ *   in the hierarchy and matching operations.
+ * - **Open values mode**: When no enumerated values are provided, all values referenced in
+ *   the hierarchy are automatically collected and used. This allows for flexible hierarchies
+ *   where any value can be used in matching operations.
  * @public
  */
 export class LiteralValueHierarchy<T extends string = string> {
