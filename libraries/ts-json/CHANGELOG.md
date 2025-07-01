@@ -1,6 +1,13 @@
 # Change Log - @fgv/ts-json
 
-This log was last generated on Sat, 01 Feb 2025 17:13:10 GMT and should not be manually modified.
+This log was last generated on Tue, 01 Jul 2025 03:26:11 GMT and should not be manually modified.
+
+## 4.5.0
+Tue, 01 Jul 2025 03:26:11 GMT
+
+### Patches
+
+- Fix incorrect build script in package.json that was running tests instead of build
 
 ## 4.4.0
 Sat, 01 Feb 2025 17:13:10 GMT

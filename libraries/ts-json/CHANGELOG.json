@@ -2,6 +2,18 @@
   "name": "@fgv/ts-json",
   "entries": [
     {
+      "version": "4.5.0",
+      "tag": "@fgv/ts-json_v4.5.0",
+      "date": "Tue, 01 Jul 2025 03:26:11 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Fix incorrect build script in package.json that was running tests instead of build"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.4.0",
       "tag": "@fgv/ts-json_v4.4.0",
       "date": "Sat, 01 Feb 2025 17:13:10 GMT",

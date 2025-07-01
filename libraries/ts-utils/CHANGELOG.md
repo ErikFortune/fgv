@@ -1,6 +1,18 @@
 # Change Log - @fgv/ts-utils
 
-This log was last generated on Sat, 01 Feb 2025 17:13:10 GMT and should not be manually modified.
+This log was last generated on Tue, 01 Jul 2025 03:26:11 GMT and should not be manually modified.
+
+## 4.5.0
+Tue, 01 Jul 2025 03:26:11 GMT
+
+### Minor changes
+
+- add recordOf validator for validating Record<string, T> objects
+
+### Updates
+
+- update collectors
+- rework collections for better usability
 
 ## 4.4.0
 Sat, 01 Feb 2025 17:13:10 GMT
