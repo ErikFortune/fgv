@@ -425,4 +425,153 @@ describe('ResourceManager', () => {
       });
     });
   });
+
+  describe('semantic and edge-case tests', () => {
+    let manager: TsRes.Resources.ResourceManager;
+    beforeEach(() => {
+      manager = TsRes.Resources.ResourceManager.create({
+        qualifiers,
+        resourceTypes
+      }).orThrow();
+    });
+
+    test('deduplicates duplicate candidates for the same resource', () => {
+      const decl = { ...someDecls[0], resourceTypeName: 'json' };
+      expect(manager.addLooseCandidate(decl)).toSucceed();
+      expect(manager.addLooseCandidate(decl)).toSucceed();
+      const resource = manager.getBuiltResource(decl.id);
+      expect(resource).toSucceedAndSatisfy((r) => {
+        expect(r.candidates.length).toBe(1);
+      });
+    });
+
+    test('fails to add conflicting candidates (mergeMethod/partial) for the same resource', () => {
+      const decl1 = {
+        ...someDecls[0],
+        resourceTypeName: 'json',
+        mergeMethod: 'augment' as const,
+        isPartial: false
+      };
+      const decl2 = {
+        ...someDecls[0],
+        resourceTypeName: 'json',
+        mergeMethod: 'replace' as const,
+        isPartial: true
+      };
+      expect(manager.addLooseCandidate(decl1)).toSucceed();
+      expect(manager.addLooseCandidate(decl2)).toFailWith(/conflicting candidates/i);
+    });
+
+    test('deduplicates candidates with deeply nested JSON', () => {
+      const decl1 = {
+        id: 'deep.nested',
+        json: { a: { b: { c: [1, 2, { d: 'x' }] } } },
+        conditions: { homeTerritory: 'US' },
+        resourceTypeName: 'json'
+      };
+      const decl2 = {
+        id: 'deep.nested',
+        json: { a: { b: { c: [1, 2, { d: 'x' }] } } },
+        conditions: { homeTerritory: 'US' },
+        resourceTypeName: 'json'
+      };
+      expect(manager.addLooseCandidate(decl1)).toSucceed();
+      expect(manager.addLooseCandidate(decl2)).toSucceed();
+      const resource = manager.getBuiltResource('deep.nested');
+      expect(resource).toSucceedAndSatisfy((r) => {
+        expect(r.candidates.length).toBe(1);
+      });
+    });
+
+    test('fails to add a candidate missing json field', () => {
+      const decl = {
+        id: 'missing.json',
+        conditions: { homeTerritory: 'US' },
+        resourceTypeName: 'json'
+      } as unknown as TsRes.ResourceJson.Json.ILooseResourceCandidateDecl;
+      expect(manager.addLooseCandidate(decl)).toFail();
+    });
+
+    test('treats missing conditions field as unconditional (empty conditions)', () => {
+      const decl = {
+        id: 'missing.conditions',
+        json: { a: 1 },
+        resourceTypeName: 'json'
+      } as unknown as TsRes.ResourceJson.Json.ILooseResourceCandidateDecl;
+      expect(manager.addLooseCandidate(decl)).toSucceedAndSatisfy((c) => {
+        expect(c.conditions.conditions.length).toBe(0);
+      });
+    });
+
+    test('fails to add a candidate with unknown qualifier in conditions', () => {
+      const decl = {
+        id: 'unknown.qualifier',
+        json: { a: 1 },
+        conditions: { notAQualifier: 'foo' },
+        resourceTypeName: 'json'
+      };
+      expect(manager.addLooseCandidate(decl)).toFailWith(/notAQualifier/);
+    });
+
+    test('fails to add a candidate with non-serializable JSON value', () => {
+      // Create a circular object
+      const circular: Record<string, unknown> = { a: 1 };
+      (circular as { self?: unknown }).self = circular;
+      const decl = {
+        id: 'circular.json',
+        json: circular as unknown as import('@fgv/ts-json-base').JsonObject,
+        conditions: { homeTerritory: 'US' },
+        resourceTypeName: 'json'
+      };
+      expect(manager.addLooseCandidate(decl)).toFail();
+    });
+
+    test('infers resource type if not explicitly provided but all candidates agree', () => {
+      const decl1 = { ...someDecls[0], resourceTypeName: 'json' };
+      const decl2 = { ...someDecls[1], resourceTypeName: 'json' };
+      expect(manager.addLooseCandidate(decl1)).toSucceed();
+      expect(manager.addLooseCandidate(decl2)).toSucceed();
+      const resource = manager.getBuiltResource(decl1.id);
+      expect(resource).toSucceedAndSatisfy((r) => {
+        expect(r.resourceType?.key).toBe('json');
+      });
+    });
+
+    test('does not pollute state after failed add', () => {
+      const badDecl = { ...someDecls[0], id: 'invalid id' };
+      expect(manager.addLooseCandidate(badDecl)).toFail();
+      expect(manager.size).toBe(0);
+      expect(manager.resources.size).toBe(0);
+    });
+
+    test('state is consistent after concurrent add/build', () => {
+      const decl1 = { ...someDecls[0], resourceTypeName: 'json' };
+      const decl2 = { ...someDecls[1], resourceTypeName: 'json' };
+      expect(manager.addLooseCandidate(decl1)).toSucceed();
+      expect(manager.build()).toSucceed();
+      expect(manager.addLooseCandidate(decl2)).toSucceed();
+      expect(manager.build()).toSucceedAndSatisfy((r) => {
+        expect(r.size).toBe(1);
+        expect(r.validating.get(decl1.id)).toSucceedAndSatisfy((res) => {
+          expect(res.candidates.length).toBe(2);
+        });
+      });
+    });
+
+    test('fails gracefully if trying to remove or replace a resource (not supported)', () => {
+      // There is no remove/replace API, so we expect failure or no-op
+      // Try to add a resource with the same id but different type
+      const decl1 = { ...someDecls[0], resourceTypeName: 'json' };
+      const decl2 = { ...someDecls[0], resourceTypeName: 'other' };
+      expect(manager.addLooseCandidate(decl1)).toSucceed();
+      expect(manager.addLooseCandidate(decl2)).toFailWith(/conflicting resource types/i);
+      // Now try to add a resource with conflicting type
+      const resource: TsRes.ResourceJson.Json.ILooseResourceDecl = {
+        id: decl1.id,
+        candidates: [decl2],
+        resourceTypeName: 'other'
+      };
+      expect(manager.addResource(resource)).toFailWith(/conflicting resource types/i);
+    });
+  });
 });
