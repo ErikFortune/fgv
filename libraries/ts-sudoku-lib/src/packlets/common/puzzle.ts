@@ -405,7 +405,7 @@ export class Puzzle {
     value: number | undefined,
     state: PuzzleState
   ): Result<IPuzzleUpdate> {
-    const idResult = typeof want === 'string' ? Ids.cellId(want) : Ids.cellId(want);
+    const idResult = Ids.cellId(want);
     const notes: number[] = [];
     return idResult.onSuccess((id) => {
       const update: ICellState = { id, value, notes };
@@ -418,7 +418,7 @@ export class Puzzle {
     notes: number[],
     state: PuzzleState
   ): Result<IPuzzleUpdate> {
-    const idResult = typeof want === 'string' ? Ids.cellId(want) : Ids.cellId(want);
+    const idResult = Ids.cellId(want);
     const value = undefined;
     return idResult.onSuccess((id) => {
       const update: ICellState = { id, value, notes };
