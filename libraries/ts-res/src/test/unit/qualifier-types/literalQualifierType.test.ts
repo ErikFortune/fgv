@@ -71,6 +71,34 @@ describe('LiteralQualifierType', () => {
       });
     });
 
+    test('creates a new LiteralQualifierType with a hierarchy', () => {
+      const params: TsRes.QualifierTypes.ILiteralQualifierTypeCreateParams = {
+        name: 'test',
+        allowContextList: false,
+        hierarchy: {
+          a: 'b',
+          b: 'c'
+        },
+        enumeratedValues: ['a', 'b', 'c', 'd'],
+        index: 11
+      };
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create(params)).toSucceedAndSatisfy((q) => {
+        expect(q.key).toBe('test');
+        expect(q.name).toBe('test');
+        expect(q.allowContextList).toBe(false);
+        expect(q.caseSensitive).toBe(false);
+        expect(q.enumeratedValues).toEqual(['a', 'b', 'c', 'd']);
+        expect(q.index).toBe(11);
+        expect(q.hierarchy).toBeDefined();
+        if (q.hierarchy) {
+          expect(q.hierarchy.values.get('a')).toBeDefined();
+          expect(q.hierarchy.values.get('b')).toBeDefined();
+          expect(q.hierarchy.values.get('c')).toBeDefined();
+          expect(q.hierarchy.values.get('d')).toBeDefined();
+        }
+      });
+    });
+
     test('fails if the name is not a valid qualifier type name', () => {
       const name = 'not a valid name';
       expect(TsRes.QualifierTypes.QualifierType.isValidName(name)).toBe(false);

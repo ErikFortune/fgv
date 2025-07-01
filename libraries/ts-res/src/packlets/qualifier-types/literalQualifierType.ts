@@ -32,6 +32,7 @@ import {
   Validate
 } from '../common';
 import { QualifierType } from './qualifierType';
+import { LiteralValueHierarchy, LiteralValueHierarchyDecl } from './literalValueHierarchy';
 
 /**
  * Interface defining the parameters that can be used to create a new
@@ -62,6 +63,12 @@ export interface ILiteralQualifierTypeCreateParams {
   enumeratedValues?: ReadonlyArray<string>;
 
   /**
+   * Optional {@link QualifierTypes.LiteralValueHierarchyDecl | hierarchy declaration} of literal values to use for matching.
+   * If not provided, no hierarchy will be used.
+   */
+  hierarchy?: LiteralValueHierarchyDecl<string>;
+
+  /**
    * Global index for this qualifier type.
    */
   index?: number;
@@ -84,6 +91,12 @@ export class LiteralQualifierType extends QualifierType {
   public readonly enumeratedValues?: ReadonlyArray<QualifierConditionValue>;
 
   /**
+   * Optional {@link QualifierTypes.LiteralValueHierarchy | hierarchy} of literal values to use for matching.
+   * If not provided, no hierarchy will be used.
+   */
+  public readonly hierarchy?: LiteralValueHierarchy<string>;
+
+  /**
    * Constructs a new {@link QualifierTypes.LiteralQualifierType | LiteralQualifierType}.
    * @param name - Optional name for the qualifier type. Defaults to 'literal'.
    * @param caseSensitive - Optional flag indicating whether the match should be case-sensitive. Defaults to false.
@@ -95,6 +108,7 @@ export class LiteralQualifierType extends QualifierType {
     caseSensitive,
     allowContextList,
     enumeratedValues,
+    hierarchy,
     index
   }: ILiteralQualifierTypeCreateParams) {
     allowContextList = allowContextList !== false;
@@ -107,6 +121,12 @@ export class LiteralQualifierType extends QualifierType {
     this.enumeratedValues = enumeratedValues
       ? mapResults(Array.from(enumeratedValues).map(LiteralQualifierType.toLiteralConditionValue)).orThrow()
       : undefined;
+    if (hierarchy) {
+      this.hierarchy = LiteralValueHierarchy.create({
+        values: enumeratedValues ?? [],
+        hierarchy: hierarchy
+      }).orThrow();
+    }
   }
 
   /**
@@ -134,6 +154,9 @@ export class LiteralQualifierType extends QualifierType {
     context: QualifierContextValue,
     __operator: ConditionOperator
   ): QualifierMatchScore {
+    if (this.hierarchy) {
+      return this.hierarchy.match(condition, context, __operator);
+    }
     if (this.caseSensitive) {
       return condition === (context as string) ? PerfectMatch : NoMatch;
     } else {

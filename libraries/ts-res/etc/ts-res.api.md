@@ -1079,6 +1079,8 @@ interface ILiteralQualifierTypeCreateParams {
     allowContextList?: boolean;
     caseSensitive?: boolean;
     enumeratedValues?: ReadonlyArray<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    hierarchy?: LiteralValueHierarchyDecl<string>;
     index?: number;
     name?: string;
 }
@@ -1102,7 +1104,7 @@ interface ILiteralValueHierarchyCreateParams<T extends string = string> {
     // (undocumented)
     hierarchy?: LiteralValueHierarchyDecl<T>;
     // (undocumented)
-    values: T[];
+    values: ReadonlyArray<T>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1778,13 +1780,15 @@ class LanguageQualifierType extends QualifierType {
 // @public
 class LiteralQualifierType extends QualifierType {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor({ name, caseSensitive, allowContextList, enumeratedValues, index }: ILiteralQualifierTypeCreateParams);
+    protected constructor({ name, caseSensitive, allowContextList, enumeratedValues, hierarchy, index }: ILiteralQualifierTypeCreateParams);
     readonly caseSensitive: boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: ILiteralQualifierTypeCreateParams): Result<LiteralQualifierType>;
     readonly enumeratedValues?: ReadonlyArray<QualifierConditionValue>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly hierarchy?: LiteralValueHierarchy<string>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     isValidConditionValue(value: string): value is QualifierConditionValue;
     static isValidLiteralConditionValue(from: string): from is QualifierConditionValue;

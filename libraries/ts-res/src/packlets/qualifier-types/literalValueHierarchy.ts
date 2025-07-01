@@ -59,7 +59,7 @@ export interface ILiteralValue<T extends string> {
  * @public
  */
 export interface ILiteralValueHierarchyCreateParams<T extends string = string> {
-  values: T[];
+  values: ReadonlyArray<T>;
   hierarchy?: LiteralValueHierarchyDecl<T>;
 }
 
