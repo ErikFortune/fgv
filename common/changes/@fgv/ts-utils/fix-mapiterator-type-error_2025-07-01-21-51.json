@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Fix TypeScript compilation error: replace non-existent MapIterator type with IterableIterator in iterator method return types",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

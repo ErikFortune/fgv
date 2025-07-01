@@ -1,6 +1,13 @@
 # Change Log - @fgv/ts-utils
 
-This log was last generated on Tue, 01 Jul 2025 03:26:11 GMT and should not be manually modified.
+This log was last generated on Mon, 01 Jul 2025 21:51:00 GMT and should not be manually modified.
+
+## 4.5.1
+Mon, 01 Jul 2025 21:51:00 GMT
+
+### Patches
+
+- Fix TypeScript compilation error: replace non-existent MapIterator type with IterableIterator in iterator method return types
 
 ## 4.5.0
 Tue, 01 Jul 2025 03:26:11 GMT
