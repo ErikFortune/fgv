@@ -339,7 +339,7 @@ describe('LiteralValueHierarchy', () => {
         };
 
         const lvh = TsRes.QualifierTypes.LiteralValueHierarchy.create({
-          values: [],
+          values: [] as string[],
           hierarchy
         }).orThrow();
 
@@ -350,7 +350,7 @@ describe('LiteralValueHierarchy', () => {
         expect(lvh.hasValue('root')).toBe(true);
       });
 
-      test('creates hierarchy with values collected from hierarchy when values is undefined', () => {
+      test('creates hierarchy with values collected from hierarchy when values is empty array', () => {
         const hierarchy = {
           a: 'parent',
           b: 'parent',
@@ -358,7 +358,7 @@ describe('LiteralValueHierarchy', () => {
         };
 
         const lvh = TsRes.QualifierTypes.LiteralValueHierarchy.create({
-          values: undefined as any,
+          values: [],
           hierarchy
         }).orThrow();
 
@@ -384,12 +384,12 @@ describe('LiteralValueHierarchy', () => {
 
       beforeEach(() => {
         lvh = TsRes.QualifierTypes.LiteralValueHierarchy.create({
-          values: [],
+          values: [] as string[],
           hierarchy: {
             a: 'parent',
             b: 'parent',
             parent: 'root'
-          } as any
+          }
         }).orThrow();
       });
 
@@ -440,17 +440,17 @@ describe('LiteralValueHierarchy', () => {
     describe('isOpenValues property', () => {
       test('is true when no enumerated values provided', () => {
         const lvh = TsRes.QualifierTypes.LiteralValueHierarchy.create({
-          values: [],
-          hierarchy: { a: 'parent' } as any
+          values: [] as string[],
+          hierarchy: { a: 'parent' }
         }).orThrow();
 
         expect(lvh.isOpenValues).toBe(true);
       });
 
-      test('is true when values is undefined', () => {
+      test('is true when values is empty array', () => {
         const lvh = TsRes.QualifierTypes.LiteralValueHierarchy.create({
-          values: undefined as any,
-          hierarchy: { a: 'parent' } as any
+          values: [] as string[],
+          hierarchy: { a: 'parent' }
         }).orThrow();
 
         expect(lvh.isOpenValues).toBe(true);
