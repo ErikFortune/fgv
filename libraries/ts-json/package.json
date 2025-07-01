@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "types": "dist/ts-json.d.ts",
   "scripts": {
-    "build": "heft test --clean",
+    "build": "heft build --clean",
     "clean": "heft clean",
     "test": "heft test --clean",
     "build-docs": "api-documenter markdown --input-folder ./temp --output-folder docs",
