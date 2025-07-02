@@ -9,5 +9,5 @@ The error detail associated with this [DetailedFailure](./ts-utils.detailedfailu
 **Signature:**
 
 ```typescript
-get detail(): TD;
+get detail(): TD | undefined;
 ```

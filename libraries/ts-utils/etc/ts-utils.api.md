@@ -598,15 +598,16 @@ function delimitedString(delimiter: string, options?: 'filtered' | 'all'): Conve
 
 // @public
 export class DetailedFailure<T, TD> extends Failure<T> {
-    constructor(message: string, detail: TD);
-    get detail(): TD;
+    constructor(message: string, detail?: TD);
+    get detail(): TD | undefined;
     // @internal (undocumented)
-    protected _detail: TD;
+    protected _detail?: TD;
     isFailure(): this is DetailedFailure<T, TD>;
     // Warning: (ae-incompatible-release-tags) The symbol "onFailure" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     onFailure(cb: DetailedFailureContinuation<T, TD>): DetailedResult<T, TD>;
     // Warning: (ae-incompatible-release-tags) The symbol "onSuccess" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     onSuccess<TN>(__cb: DetailedSuccessContinuation<T, TD, TN>): DetailedResult<TN, TD>;
+    static with<T, TD>(message: string, detail?: TD): DetailedFailure<T, TD>;
     // Warning: (ae-incompatible-release-tags) The symbol "withErrorFormat" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withErrorFormat(cb: ErrorFormatter<TD>): DetailedResult<T, TD>;
 }
@@ -614,7 +615,7 @@ export class DetailedFailure<T, TD> extends Failure<T> {
 // Warning: (ae-incompatible-release-tags) The symbol "DetailedFailureContinuation" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
 //
 // @public
-export type DetailedFailureContinuation<T, TD> = (message: string, detail: TD) => DetailedResult<T, TD>;
+export type DetailedFailureContinuation<T, TD> = (message: string, detail?: TD) => DetailedResult<T, TD>;
 
 // @beta
 export type DetailedResult<T, TD> = DetailedSuccess<T, TD> | DetailedFailure<T, TD>;
@@ -630,6 +631,7 @@ export class DetailedSuccess<T, TD> extends Success<T> {
     onFailure(__cb: DetailedFailureContinuation<T, TD>): DetailedResult<T, TD>;
     // Warning: (ae-incompatible-release-tags) The symbol "onSuccess" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     onSuccess<TN>(cb: DetailedSuccessContinuation<T, TD, TN>): DetailedResult<TN, TD>;
+    static with<T, TD>(value: T, detail?: TD): DetailedSuccess<T, TD>;
     // Warning: (ae-incompatible-release-tags) The symbol "withErrorFormat" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withErrorFormat(cb: ErrorFormatter): DetailedResult<T, TD>;
 }
@@ -638,6 +640,32 @@ export class DetailedSuccess<T, TD> extends Success<T> {
 //
 // @public
 export type DetailedSuccessContinuation<T, TD, TN> = (value: T, detail?: TD) => DetailedResult<TN, TD>;
+
+// @public
+class DirectoryItem implements IFileTreeDirectoryItem {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(path: string, hal: IFileTreeAccessors);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly absolutePath: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(path: string, hal: IFileTreeAccessors): Result<DirectoryItem>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getChildren(): Result<ReadonlyArray<FileTreeItem>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected readonly _hal: IFileTreeAccessors;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get name(): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly type: 'directory';
+}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -667,6 +695,12 @@ function fail_2<T>(message: string): Failure<T>;
 export { fail_2 as fail }
 
 // @public
+export function fails<T>(message: string): Failure<T>;
+
+// @public
+export function failsWithDetail<T, TD>(message: string, detail?: TD): DetailedFailure<T, TD>;
+
+// @public
 export class Failure<T> implements IResult<T> {
     constructor(message: string);
     aggregateError(errors: IMessageAggregator): this;
@@ -677,6 +711,8 @@ export class Failure<T> implements IResult<T> {
     isFailure(): this is Failure<T>;
     isSuccess(): this is Success<T>;
     get message(): string;
+    // @internal (undocumented)
+    protected readonly _message: string;
     onFailure(cb: FailureContinuation<T>): Result<T>;
     onSuccess<TN>(__: SuccessContinuation<T, TN>): Result<TN>;
     orDefault(dflt: T): T;
@@ -685,6 +721,7 @@ export class Failure<T> implements IResult<T> {
     readonly success: false;
     toString(): string;
     readonly value: undefined;
+    static with<T>(message: string): Failure<T>;
     // Warning: (ae-incompatible-release-tags) The symbol "withDetail" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withDetail<TD>(detail: TD, __successDetail?: TD): DetailedResult<T, TD>;
     withErrorFormat(cb: ErrorFormatter): Result<T>;
@@ -696,7 +733,7 @@ export class Failure<T> implements IResult<T> {
 export type FailureContinuation<T> = (message: string) => Result<T>;
 
 // @public
-export function failWithDetail<T, TD>(message: string, detail: TD): DetailedFailure<T, TD>;
+export function failWithDetail<T, TD>(message: string, detail?: TD): DetailedFailure<T, TD>;
 
 // @public
 function field<T, TC = unknown>(name: string, converter: Converter<T, TC> | Validator<T, TC>): Converter<T, TC>;
@@ -730,6 +767,138 @@ type FieldTransformers<TSRC, TDEST, TC = unknown> = {
 type FieldValidators<T, TC = unknown> = {
     [key in keyof T]: Validator<T[key], TC>;
 };
+
+// @public
+class FileItem implements IFileTreeFileItem {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(path: string, hal: IFileTreeAccessors);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly absolutePath: string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get baseName(): string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(path: string, hal: IFileTreeAccessors): Result<FileItem>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get extension(): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getContents(): Result<unknown>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getRawContents(): Result<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected readonly _hal: IFileTreeAccessors;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get name(): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly type: 'file';
+}
+
+declare namespace FileTree {
+    export {
+        IInMemoryFile,
+        InMemoryTreeAccessors,
+        DirectoryItem,
+        FileItem,
+        FileTreeItemType,
+        IFileTreeFileItem,
+        IFileTreeDirectoryItem,
+        FileTreeItem,
+        IFileTreeAccessors,
+        FsFileTreeAccessors,
+        forFilesystem,
+        inMemory,
+        FileTree_2 as FileTree
+    }
+}
+export { FileTree }
+
+// @public
+class FileTree_2 {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(hal: IFileTreeAccessors);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(hal: IFileTreeAccessors): Result<FileTree_2>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static forFilesystem(prefix?: string): Result<FileTree_2>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getDirectory(directoryPath: string): Result<IFileTreeDirectoryItem>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getFile(filePath: string): Result<IFileTreeFileItem>;
+    getItem(itemPath: string): Result<FileTreeItem>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    hal: IFileTreeAccessors;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static inMemory(files: IInMemoryFile[], prefix?: string): Result<FileTree_2>;
+}
+
+// @public
+type FileTreeItem = IFileTreeFileItem | IFileTreeDirectoryItem;
+
+// @public
+type FileTreeItemType = 'directory' | 'file';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function forFilesystem(prefix?: string): Result<FileTree_2>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class FsFileTreeAccessors implements IFileTreeAccessors {
+    constructor(prefix?: string);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getBaseName(itemPath: string, suffix?: string): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getChildren(dirPath: string): Result<ReadonlyArray<FileTreeItem>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getExtension(itemPath: string): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getFileContents(filePath: string): Result<string>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getItem(itemPath: string): Result<FileTreeItem>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    joinPaths(...paths: string[]): string;
+    // (undocumented)
+    readonly prefix: string | undefined;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    resolveAbsolutePath(...paths: string[]): string;
+}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -955,6 +1124,49 @@ interface IConvertingCollectorValidatorCreateParams<TITEM extends ICollectible<a
     converters: KeyValueConverters<CollectibleKey<TITEM>, TSRC>;
 }
 
+// @public
+interface IFileTreeAccessors {
+    getBaseName(path: string, suffix?: string): string;
+    getChildren(path: string): Result<ReadonlyArray<FileTreeItem>>;
+    getExtension(path: string): string;
+    getFileContents(path: string): Result<string>;
+    getItem(path: string): Result<FileTreeItem>;
+    joinPaths(...paths: string[]): string;
+    resolveAbsolutePath(...paths: string[]): string;
+}
+
+// @public
+interface IFileTreeDirectoryItem {
+    readonly absolutePath: string;
+    getChildren(): Result<ReadonlyArray<FileTreeItem>>;
+    readonly name: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly type: 'directory';
+}
+
+// @public
+interface IFileTreeFileItem {
+    readonly absolutePath: string;
+    readonly baseName: string;
+    readonly extension: string;
+    getContents(): Result<unknown>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
+    getRawContents(): Result<string>;
+    readonly name: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly type: 'file';
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IInMemoryFile {
+    readonly contents: unknown;
+    readonly path: string;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -980,6 +1192,13 @@ export interface IMessageAggregator {
 // @beta
 type Infer<TCONV> = TCONV extends Converter<infer TTO, unknown> ? InnerInferredType<TTO> : never;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function inMemory(files: IInMemoryFile[], prefix?: string): Result<FileTree_2>;
+
 // @public (undocumented)
 class InMemoryLogger extends LoggerBase {
     constructor(logLevel?: LogLevel);
@@ -997,6 +1216,45 @@ class InMemoryLogger extends LoggerBase {
     get silent(): string[];
     // (undocumented)
     protected _silent: string[];
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class InMemoryTreeAccessors implements IFileTreeAccessors {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(files: IInMemoryFile[], prefix?: string);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(files: IInMemoryFile[], prefix?: string): Result<InMemoryTreeAccessors>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getBaseName(path: string, suffix?: string): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getChildren(path: string): Result<ReadonlyArray<FileTreeItem>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getExtension(path: string): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getFileContents(path: string): Result<string>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getItem(itemPath: string): Result<FileTreeItem>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    joinPaths(...paths: string[]): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    resolveAbsolutePath(...paths: string[]): string;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1450,22 +1708,38 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
     constructor(fields: FieldConverters<T, TC>, options?: ObjectConverterOptions<T>);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @deprecated
     constructor(fields: FieldConverters<T, TC>, optional?: (keyof T)[]);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     addPartial(addOptionalProperties: (keyof T)[]): ObjectConverter<Partial<T>, TC>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    convertPartial(from: unknown, context?: TC): Result<Partial<T>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    convertRequired(from: unknown, context?: TC): Result<Required<T>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly fields: FieldConverters<T, TC>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly options: ObjectConverterOptions<T>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    partial(): ObjectConverter<Partial<T>, TC>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @deprecated
     partial(options: ObjectConverterOptions<T>): ObjectConverter<Partial<T>, TC>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    partial(optional?: (keyof T)[]): ObjectConverter<Partial<T>, TC>;
+    partial(optional: (keyof T)[]): ObjectConverter<Partial<T>, TC>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    required(): ObjectConverter<Required<T>, TC>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1473,6 +1747,7 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
 // @public
 interface ObjectConverterOptions<T> {
     description?: string;
+    modifier?: 'partial' | 'required';
     optionalFields?: (keyof T)[];
     strict?: boolean;
 }
@@ -1869,12 +2144,18 @@ type StringValidatorConstructorParams<T extends string = string, TC = unknown> =
 export function succeed<T>(value: T): Success<T>;
 
 // @public
+export function succeeds<T>(value: T): Success<T>;
+
+// @public
+export function succeedsWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess<T, TD>;
+
+// @public
 export function succeedWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess<T, TD>;
 
 // @public
 export class Success<T> implements IResult<T> {
     constructor(value: T);
-    aggregateError(errors: IMessageAggregator): this;
+    aggregateError(__errors: IMessageAggregator): this;
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
     // @deprecated
@@ -1889,6 +2170,9 @@ export class Success<T> implements IResult<T> {
     orThrow(__logger?: IResultLogger): T;
     readonly success: true;
     get value(): T;
+    // @internal (undocumented)
+    protected readonly _value: T;
+    static with<T>(value: T): Success<T>;
     // Warning: (ae-incompatible-release-tags) The symbol "withDetail" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withDetail<TD>(detail: TD, successDetail?: TD): DetailedResult<T, TD>;
     withErrorFormat(__cb: ErrorFormatter): Result<T>;

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "object converter partial/required helpers",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

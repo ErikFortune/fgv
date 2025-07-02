@@ -238,6 +238,9 @@ function readJsonFileSync(srcPath: string): Result<JsonValue>;
 // @public
 export function sanitizeJson(from: unknown): Result<JsonValue>;
 
+// @public
+export function sanitizeJsonObject<T>(from: T): Result<T>;
+
 declare namespace Validators {
     export {
         IJsonValidatorContext,

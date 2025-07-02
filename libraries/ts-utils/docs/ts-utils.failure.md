@@ -311,6 +311,22 @@ Get a 'friendly' string representation of this object.
 </td></tr>
 <tr><td>
 
+[with(message)](./ts-utils.failure.with.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a [Failure&lt;T&gt;](./ts-utils.failure.md) with the supplied error message.
+
+
+</td></tr>
+<tr><td>
+
 [withDetail(detail, \_\_successDetail)](./ts-utils.failure.withdetail.md)
 
 
