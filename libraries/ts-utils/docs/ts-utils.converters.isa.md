@@ -63,6 +63,7 @@ a [Validation.TypeGuardWithContext](./ts-utils.validation.typeguardwithcontext.m
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;

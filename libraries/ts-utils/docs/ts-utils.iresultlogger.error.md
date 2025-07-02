@@ -47,6 +47,7 @@ The message to be logged.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 void

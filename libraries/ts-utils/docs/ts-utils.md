@@ -770,3 +770,4 @@ Continuation callback to be called in the event that an [Result](./ts-utils.resu
 
 </td></tr>
 </tbody></table>
+

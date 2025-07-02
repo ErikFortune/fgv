@@ -64,7 +64,7 @@ export interface IReadOnlyResultMap<TK extends string = string, TV = unknown> {
   /**
    * {@inheritdoc Collections.ResultMap.entries}
    */
-  entries(): MapIterator<KeyValueEntry<TK, TV>>;
+  entries(): IterableIterator<KeyValueEntry<TK, TV>>;
 
   /**
    * {@inheritdoc Collections.ResultMap.forEach}
@@ -84,12 +84,12 @@ export interface IReadOnlyResultMap<TK extends string = string, TV = unknown> {
   /**
    * {@inheritdoc Collections.ResultMap.keys}
    */
-  keys(): MapIterator<TK>;
+  keys(): IterableIterator<TK>;
 
   /**
    * {@inheritdoc Collections.ResultMap.values}
    */
-  values(): MapIterator<TV>;
+  values(): IterableIterator<TV>;
 
   /**
    * Gets an iterator over the map entries.

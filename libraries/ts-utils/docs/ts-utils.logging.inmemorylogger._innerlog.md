@@ -43,6 +43,7 @@ string
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Success](./ts-utils.success.md)<!-- -->&lt;string \| undefined&gt;

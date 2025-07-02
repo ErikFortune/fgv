@@ -47,6 +47,7 @@ The value to be normalized
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;T&gt;

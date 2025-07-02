@@ -47,6 +47,7 @@ Error message to be returned.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Failure](./ts-utils.failure.md)<!-- -->&lt;T&gt;

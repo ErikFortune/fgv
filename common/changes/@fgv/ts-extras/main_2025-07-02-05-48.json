@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@fgv/ts-extras",
-      "comment": "update rushstack",
+      "comment": "bump version",
       "type": "none"
     }
   ],

@@ -63,6 +63,7 @@ _(Optional)_
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [ArrayValidator](./ts-utils.validation.classes.arrayvalidator.md)<!-- -->&lt;T, TC&gt;

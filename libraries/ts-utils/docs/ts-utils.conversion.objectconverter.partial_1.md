@@ -47,6 +47,7 @@ _(Optional)_ The keys of the source object properties to be made optional.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [ObjectConverter](./ts-utils.objectconverter.md)<!-- -->&lt;Partial&lt;T&gt;, TC&gt;

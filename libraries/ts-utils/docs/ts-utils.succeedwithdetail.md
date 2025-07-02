@@ -63,6 +63,7 @@ _(Optional)_ An optional detail of type `<TD>` to be returned.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [DetailedSuccess](./ts-utils.detailedsuccess.md)<!-- -->&lt;T, TD&gt;

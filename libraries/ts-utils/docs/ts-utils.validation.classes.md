@@ -224,3 +224,4 @@ Parameters used to construct a [StringValidator](./ts-utils.validation.classes.s
 
 </td></tr>
 </tbody></table>
+
