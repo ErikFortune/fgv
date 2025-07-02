@@ -30,7 +30,6 @@ import { Result, fail, succeed } from './result';
  * @returns Returns `true` if the key is present, `false` otherwise.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/ban-types
 export function isKeyOf<T extends object>(key: string | number | symbol, item: T): key is keyof T {
   return item.hasOwnProperty(key);
 }
