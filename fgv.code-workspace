@@ -38,6 +38,10 @@
 			"rush-prettier",
 			"@microsoft+rush@5.96.0",
 			"pnpm-local"
+		],
+		"cSpell.words": [
+			"changefiles",
+			"rtrn"
 		]
 	}
 }

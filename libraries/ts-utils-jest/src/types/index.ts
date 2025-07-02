@@ -1,9 +1,12 @@
 /// <reference types="jest"/>
 
+// eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-explicit-any
+export type Function = (...args: any[]) => any;
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-unused-vars
 import { ResultDetailType, ResultValueType } from '@fgv/ts-utils';
 
-/* eslint-disable @typescript-eslint/no-unused-vars, no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars,no-unused-vars */
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
@@ -69,6 +72,7 @@ declare global {
        * @param message -
        * @param detail -
        */
+      toFailWithDetail<TDetail>(message: string | RegExp, detail: TDetail): R;
       toFailWithDetail(message: string | RegExp | undefined, detail: ResultDetailType<T>): R;
 
       /**
