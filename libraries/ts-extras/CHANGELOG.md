@@ -1,6 +1,13 @@
 # Change Log - @fgv/ts-extras
 
-This log was last generated on Tue, 01 Jul 2025 03:26:11 GMT and should not be manually modified.
+This log was last generated on Wed, 02 Jul 2025 05:47:11 GMT and should not be manually modified.
+
+## 4.5.1
+Wed, 02 Jul 2025 05:47:11 GMT
+
+### Updates
+
+- update rushstack
 
 ## 4.5.0
 Tue, 01 Jul 2025 03:26:11 GMT
