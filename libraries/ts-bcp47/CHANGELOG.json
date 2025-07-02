@@ -2,6 +2,12 @@
   "name": "@fgv/ts-bcp47",
   "entries": [
     {
+      "version": "4.6.0",
+      "tag": "@fgv/ts-bcp47_v4.6.0",
+      "date": "Wed, 02 Jul 2025 05:48:16 GMT",
+      "comments": {}
+    },
+    {
       "version": "4.5.1",
       "tag": "@fgv/ts-bcp47_v4.5.1",
       "date": "Wed, 02 Jul 2025 05:47:11 GMT",
