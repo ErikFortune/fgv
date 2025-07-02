@@ -79,6 +79,7 @@ _(Optional)_
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [TypeGuardValidator](./ts-utils.validation.classes.typeguardvalidator.md)<!-- -->&lt;T, TC&gt;

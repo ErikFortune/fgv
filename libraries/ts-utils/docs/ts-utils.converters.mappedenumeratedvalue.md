@@ -63,6 +63,7 @@ _(Optional)_ An optional error message.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;
