@@ -426,7 +426,9 @@ describe('Converters module', () => {
       }
     };
     expect(s).toBeDefined();
+    expect(narc).toBeDefined();
     expect(narr).toBeDefined();
+    expect(objc).toBeDefined();
     expect(objt).toBeDefined();
     // cSpell: enable
   });

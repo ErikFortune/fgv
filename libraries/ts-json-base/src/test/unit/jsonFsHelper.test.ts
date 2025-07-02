@@ -181,7 +181,9 @@ describe('JsonFsHelper class', () => {
       test('reads JSON files from a folder, ignoring non-JSON by default', () => {
         expect(helper.convertJsonDirectorySync('src/test/unit/data/file/good', options)).toSucceedAndSatisfy(
           (items) => {
-            expect(items.every((item) => item.filename.endsWith('.json'))).toBe(true);
+            expect(
+              (items as Array<{ filename: string }>).every((item) => item.filename.endsWith('.json'))
+            ).toBe(true);
             expect(items).toMatchSnapshot();
           }
         );
@@ -191,7 +193,9 @@ describe('JsonFsHelper class', () => {
         const options2 = { ...options, files: [/.*.txt/] };
         expect(helper.convertJsonDirectorySync('src/test/unit/data/file/good', options2)).toSucceedAndSatisfy(
           (items) => {
-            expect(items.every((item) => item.filename.endsWith('.txt'))).toBe(true);
+            expect(
+              (items as Array<{ filename: string }>).every((item) => item.filename.endsWith('.txt'))
+            ).toBe(true);
             expect(items).toMatchSnapshot();
           }
         );

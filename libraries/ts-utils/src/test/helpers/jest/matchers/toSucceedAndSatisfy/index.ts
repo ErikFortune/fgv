@@ -7,7 +7,7 @@ import { matcherHint } from 'jest-matcher-utils';
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
-    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars, @typescript-eslint/ban-types, @typescript-eslint/naming-convention
+    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars,  @typescript-eslint/naming-convention
     interface Matchers<R, T> {
       /**
        * Use .toSucceedAndSatisfy to verify that a Result<T> is a success

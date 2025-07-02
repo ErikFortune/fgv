@@ -1,13 +1,16 @@
 /// <reference types="jest"/>
 
+// eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-explicit-any
+export type Function = (...args: any[]) => any;
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-unused-vars
 import { ResultDetailType, ResultValueType } from '@fgv/ts-utils';
 
-/* eslint-disable @typescript-eslint/no-unused-vars, no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars,no-unused-vars */
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
-    // eslint-disable-next-line @typescript-eslint/ban-types,@typescript-eslint/naming-convention
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     interface Matchers<R, T> {
       /**
        * Use .toSucceed to verify that a Result\<T\> is a success
@@ -42,7 +45,6 @@ declare global {
        * Use .toSucceedAndMatchInlineSnapshot to verify that a Result\<T\> is a success
        * and that the result value matches an inline snapshot
        */
-      // eslint-disable-next-line @typescript-eslint/ban-types
       toSucceedAndMatchInlineSnapshot(snapshot: string | undefined): R;
 
       /**
@@ -70,6 +72,7 @@ declare global {
        * @param message -
        * @param detail -
        */
+      toFailWithDetail<TDetail>(message: string | RegExp, detail: TDetail): R;
       toFailWithDetail(message: string | RegExp | undefined, detail: ResultDetailType<T>): R;
 
       /**
