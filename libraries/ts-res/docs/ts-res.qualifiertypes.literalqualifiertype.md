@@ -4,7 +4,7 @@
 
 ## QualifierTypes.LiteralQualifierType class
 
-A [qualifier](./ts-res.qualifiertypes.qualifiertype.md) that matches a literal value., optionally case-sensitive or matching against an ordered list of values at runtime.
+A [qualifier](./ts-res.qualifiertypes.qualifiertype.md) that matches a literal value, optionally case-sensitive or matching against an ordered list of values at runtime.
 
 **Signature:**
 
@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)({ name, caseSensitive, allowContextList, enumeratedValues, index })](./ts-res.qualifiertypes.literalqualifiertype._constructor_.md)
+[(constructor)({ name, caseSensitive, allowContextList, enumeratedValues, hierarchy, index })](./ts-res.qualifiertypes.literalqualifiertype._constructor_.md)
 
 
 </td><td>
@@ -111,6 +111,27 @@ ReadonlyArray&lt;[QualifierConditionValue](./ts-res.qualifierconditionvalue.md)<
 </td><td>
 
 _(Optional)_ Optional array of enumerated values to further constrain the type.
+
+
+</td></tr>
+<tr><td>
+
+[hierarchy?](./ts-res.qualifiertypes.literalqualifiertype.hierarchy.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[LiteralValueHierarchy](./ts-res.qualifiertypes.literalvaluehierarchy.md)<!-- -->&lt;string&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional [hierarchy](./ts-res.qualifiertypes.literalvaluehierarchy.md) of literal values to use for matching. If not provided, no hierarchy will be used.
 
 
 </td></tr>
@@ -213,3 +234,4 @@ Converts a string to a [literal condition value](./ts-res.qualifierconditionvalu
 
 </td></tr>
 </tbody></table>
+

@@ -47,6 +47,7 @@ the string to validate
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 name is [QualifierName](./ts-res.qualifiername.md)

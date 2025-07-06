@@ -77,6 +77,7 @@ The [context value](./ts-res.qualifiercontextvalue.md) to match.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [QualifierMatchScore](./ts-res.qualifiermatchscore.md)

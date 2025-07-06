@@ -47,6 +47,7 @@ _(Optional)_ Optional [parameters](./ts-res.qualifiertypes.iterritoryqualifierty
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[TerritoryQualifierType](./ts-res.qualifiertypes.territoryqualifiertype.md)<!-- -->&gt;

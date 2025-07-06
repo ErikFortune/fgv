@@ -47,3 +47,4 @@ The [parameters](./ts-res.decisions.icandidate.md) to use to create the new cand
 
 </td></tr>
 </tbody></table>
+

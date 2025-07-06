@@ -47,6 +47,7 @@ The [parameters](./ts-res.decisions.icandidate.md) to use to create the new cand
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[Candidate](./ts-res.decisions.candidate.md)<!-- -->&lt;TVALUE&gt;&gt;

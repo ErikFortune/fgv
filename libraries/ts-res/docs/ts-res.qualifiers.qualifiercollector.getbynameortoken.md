@@ -47,6 +47,7 @@ The name or token of the qualifier to retrieve.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->&gt;

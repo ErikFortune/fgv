@@ -213,3 +213,4 @@ Gets the [loose resource declaration](./ts-res.resourcejson.json.ilooseresourced
 
 </td></tr>
 </tbody></table>
+

@@ -47,6 +47,7 @@ The string to convert.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->&gt;

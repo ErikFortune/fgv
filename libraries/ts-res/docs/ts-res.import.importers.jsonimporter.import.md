@@ -63,6 +63,7 @@ The [resource manager](./ts-res.resources.resourcemanager.md) to use for the imp
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 DetailedResult&lt;[IImportable](./ts-res.import.iimportable.md)<!-- -->\[\], [ImporterResultDetail](./ts-res.import.importers.importerresultdetail.md)<!-- -->&gt;

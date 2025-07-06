@@ -63,6 +63,7 @@ _(Optional)_ Indicates whether the value is expected to be partial.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;T \| Partial&lt;T&gt;&gt;

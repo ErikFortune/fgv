@@ -47,6 +47,7 @@ Parameters for creating the [dirPathImporter](./ts-res.import.importers.pathimpo
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[PathImporter](./ts-res.import.importers.pathimporter.md)<!-- -->&gt;

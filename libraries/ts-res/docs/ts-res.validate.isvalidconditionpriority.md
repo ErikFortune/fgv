@@ -47,6 +47,7 @@ the number to validate
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 priority is [ConditionPriority](./ts-res.conditionpriority.md)

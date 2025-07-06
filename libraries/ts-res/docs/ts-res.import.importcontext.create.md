@@ -47,6 +47,7 @@ _(Optional)_ The [import context](./ts-res.import.iimportcontext.md) to create t
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ImportContext](./ts-res.import.importcontext.md)<!-- -->&gt;

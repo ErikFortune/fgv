@@ -43,6 +43,7 @@ index
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ConditionIndex](./ts-res.conditionindex.md)<!-- -->&gt;

@@ -47,6 +47,7 @@ _(Optional)_ Optional [parameters](./ts-res.qualifiertypes.iqualifiertypecollect
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[QualifierTypeCollector](./ts-res.qualifiertypes.qualifiertypecollector.md)<!-- -->&gt;

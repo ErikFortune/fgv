@@ -63,3 +63,4 @@ _(Optional)_ Optional index for the new [JsonResourceType](./ts-res.resourcetype
 
 </td></tr>
 </tbody></table>
+

@@ -45,6 +45,7 @@ childDecl
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 DetailedResult&lt;[ResourceCandidate](./ts-res.resources.resourcecandidate.md)<!-- -->, [ResourceBuilderResultDetail](./ts-res.resources.resourcebuilderresultdetail.md)<!-- -->&gt;

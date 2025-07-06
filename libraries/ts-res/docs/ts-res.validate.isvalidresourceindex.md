@@ -47,6 +47,7 @@ The index to validate.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 index is [ResourceIndex](./ts-res.resourceindex.md)

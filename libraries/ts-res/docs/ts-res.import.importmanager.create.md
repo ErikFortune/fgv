@@ -47,6 +47,7 @@ Parameters for creating the [ImportManager](./ts-res.import.importmanager.md)<!-
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ImportManager](./ts-res.import.importmanager.md)<!-- -->&gt;

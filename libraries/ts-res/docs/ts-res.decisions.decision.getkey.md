@@ -45,6 +45,7 @@ ReadonlyArray&lt;[ICandidate](./ts-res.decisions.icandidate.md)<!-- -->&lt;TVALU
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [DecisionKey](./ts-res.decisionkey.md)

@@ -74,3 +74,4 @@ The [qualifier types](./ts-res.qualifiertypes.qualifiertypecollector.md) used to
 
 </td></tr>
 </tbody></table>
+

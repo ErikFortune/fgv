@@ -79,6 +79,7 @@ The [declaration](./ts-res.qualifiers.iqualifierdecl.md) for the qualifier.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->&gt;

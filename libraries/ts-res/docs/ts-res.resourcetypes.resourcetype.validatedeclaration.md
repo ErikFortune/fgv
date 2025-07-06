@@ -47,6 +47,7 @@ The [properties](./ts-res.resourcetypes.iresourcecandidatevalidationproperties.m
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;T \| Partial&lt;T&gt;&gt;

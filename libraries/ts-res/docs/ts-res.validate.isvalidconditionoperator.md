@@ -47,6 +47,7 @@ the string to validate
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 operator is [ConditionOperator](./ts-res.conditionoperator.md)

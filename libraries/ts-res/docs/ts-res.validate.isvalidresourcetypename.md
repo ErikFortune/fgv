@@ -47,6 +47,7 @@ The name to validate.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 name is [ResourceTypeName](./ts-res.resourcetypename.md)

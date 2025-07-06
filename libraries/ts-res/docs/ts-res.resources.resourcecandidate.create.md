@@ -47,6 +47,7 @@ Parameters to create a new [ResourceCandidate](./ts-res.resources.resourcecandid
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ResourceCandidate](./ts-res.resources.resourcecandidate.md)<!-- -->&gt;

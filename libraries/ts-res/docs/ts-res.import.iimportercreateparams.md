@@ -112,3 +112,4 @@ The [resource manager](./ts-res.resources.resourcemanager.md) into which resourc
 
 </td></tr>
 </tbody></table>
+

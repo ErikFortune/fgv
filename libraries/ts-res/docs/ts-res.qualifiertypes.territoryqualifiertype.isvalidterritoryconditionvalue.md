@@ -47,6 +47,7 @@ The value to validate.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 value is [QualifierConditionValue](./ts-res.qualifierconditionvalue.md)

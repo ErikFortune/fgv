@@ -84,3 +84,4 @@ Creates a new [AbstractDecision](./ts-res.decisions.abstractdecision.md) object.
 
 </td></tr>
 </tbody></table>
+

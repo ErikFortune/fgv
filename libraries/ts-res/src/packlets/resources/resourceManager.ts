@@ -47,6 +47,7 @@ import { ResourceBuilder, ResourceBuilderResultDetail } from './resourceBuilder'
 import { Resource } from './resource';
 import { ResourceCandidate } from './resourceCandidate';
 import * as ResourceJson from '../resource-json';
+import * as Context from '../context';
 
 /**
  * Interface for parameters to the {@link Resources.ResourceManager.create | ResourceManager create method}.
@@ -305,5 +306,69 @@ export class ResourceManager {
       this._built = true;
     }
     return succeed(this._builtResources);
+  }
+
+  /**
+   * Gets a read-only array of all {@link Resources.ResourceCandidate | resource candidates} that can match the supplied context.
+   * @param context - The {@link Context.IValidatedContextDecl | context} to match against.
+   * @param options - {@link Context.IContextMatchOptions | options} for the context match.
+   * @returns A read-only array of {@link Resources.ResourceCandidate | candidates} that can match the context.
+   * @public
+   */
+  public getCandidatesForContext(
+    context: Context.IValidatedContextDecl,
+    options?: Context.IContextMatchOptions
+  ): ReadonlyArray<ResourceCandidate> {
+    return this.getAllCandidates().filter((candidate) => candidate.canMatchPartialContext(context, options));
+  }
+
+  /**
+   * Gets a read-only array of all {@link Resources.ResourceBuilder | resource builders} that have at least one candidate
+   * that can match the supplied context.
+   * @param context - The {@link Context.IValidatedContextDecl | context} to match against.
+   * @param options - {@link Context.IContextMatchOptions | options} for the context match.
+   * @returns A read-only array of {@link Resources.ResourceBuilder | resource builders} with matching candidates.
+   * @public
+   */
+  public getResourcesForContext(
+    context: Context.IValidatedContextDecl,
+    options?: Context.IContextMatchOptions
+  ): ReadonlyArray<ResourceBuilder> {
+    return this.getAllResources().filter(
+      (resource) => resource.getCandidatesForContext(context, options).length > 0
+    );
+  }
+
+  /**
+   * Gets a read-only array of all {@link Resources.ResourceCandidate | built resource candidates} that can match the supplied context.
+   * @param context - The {@link Context.IValidatedContextDecl | context} to match against.
+   * @param options - {@link Context.IContextMatchOptions | options} for the context match.
+   * @returns `Success` with an array of {@link Resources.ResourceCandidate | candidates} if successful, or `Failure` with an error message if not.
+   * @public
+   */
+  public getBuiltCandidatesForContext(
+    context: Context.IValidatedContextDecl,
+    options?: Context.IContextMatchOptions
+  ): Result<ReadonlyArray<ResourceCandidate>> {
+    return this.getAllBuiltCandidates().onSuccess((candidates) =>
+      succeed(candidates.filter((candidate) => candidate.canMatchPartialContext(context, options)))
+    );
+  }
+
+  /**
+   * Gets a read-only array of all {@link Resources.Resource | built resources} that have at least one candidate
+   * that can match the supplied context.
+   * @param context - The {@link Context.IValidatedContextDecl | context} to match against.
+   * @param options - {@link Context.IContextMatchOptions | options} for the context match.
+   * @returns `Success` with an array of {@link Resources.Resource | resources} if successful, or `Failure` with an error message if not.
+   * @public
+   */
+  public getBuiltResourcesForContext(
+    context: Context.IValidatedContextDecl,
+    options?: Context.IContextMatchOptions
+  ): Result<ReadonlyArray<Resource>> {
+    return this.getAllBuiltResources().onSuccess((resources) =>
+      succeed(resources.filter((resource) => resource.getCandidatesForContext(context, options).length > 0))
+    );
   }
 }

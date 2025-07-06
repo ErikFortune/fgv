@@ -88,3 +88,4 @@ Converter which constructs a [validated qualifier declaration](./ts-res.qualifie
 
 </td></tr>
 </tbody></table>
+

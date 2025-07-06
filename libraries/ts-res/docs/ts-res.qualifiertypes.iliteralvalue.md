@@ -4,7 +4,7 @@
 
 ## QualifierTypes.ILiteralValue interface
 
-Describes a single valid literal value including optional parent and child values. [LiteralValueHierarchy](./ts-res.qualifiertypes.literalvaluehierarchy.md)<!-- -->.
+Describes a single valid literal value including optional parent and child values.
 
 **Signature:**
 
@@ -97,3 +97,4 @@ _(Optional)_
 
 </td></tr>
 </tbody></table>
+

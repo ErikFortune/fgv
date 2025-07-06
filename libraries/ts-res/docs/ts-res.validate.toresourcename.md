@@ -45,6 +45,7 @@ string
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ResourceName](./ts-res.resourcename.md)<!-- -->&gt;

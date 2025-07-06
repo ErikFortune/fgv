@@ -47,6 +47,7 @@ _(Optional)_ Optional [parameters](./ts-res.qualifiertypes.ilanguagequalifiertyp
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[LanguageQualifierType](./ts-res.qualifiertypes.languagequalifiertype.md)<!-- -->&gt;

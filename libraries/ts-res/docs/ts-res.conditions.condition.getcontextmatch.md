@@ -63,6 +63,7 @@ _(Optional)_ The [options](./ts-res.context.icontextmatchoptions.md) to use when
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [QualifierMatchScore](./ts-res.qualifiermatchscore.md) \| undefined

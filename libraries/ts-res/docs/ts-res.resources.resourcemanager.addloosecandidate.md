@@ -45,6 +45,7 @@ decl
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 DetailedResult&lt;[ResourceCandidate](./ts-res.resources.resourcecandidate.md)<!-- -->, [ResourceManagerResultDetail](./ts-res.resources.resourcemanagerresultdetail.md)<!-- -->&gt;

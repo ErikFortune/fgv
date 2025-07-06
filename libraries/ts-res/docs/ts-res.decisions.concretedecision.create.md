@@ -47,6 +47,7 @@ params
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ConcreteDecision](./ts-res.decisions.concretedecision.md)<!-- -->&lt;TVALUE&gt;&gt;

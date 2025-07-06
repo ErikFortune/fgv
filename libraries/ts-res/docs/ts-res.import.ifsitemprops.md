@@ -99,3 +99,4 @@ The underlying `FileTreeItem` for this item.
 
 </td></tr>
 </tbody></table>
+

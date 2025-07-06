@@ -63,6 +63,7 @@ _(Optional)_ The base [import context](./ts-res.import.importcontext.md) to adju
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ImportContext](./ts-res.import.importcontext.md) \| undefined&gt;

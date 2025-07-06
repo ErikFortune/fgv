@@ -69,7 +69,7 @@ boolean
 
 </td><td>
 
-_(Optional)_ Optional flag indicating whether the match should be case-sensitive. Defaults to false.
+_(Optional)_ Optional flag indicating whether the match should be case-sensitive. Defaults to `false`<!-- -->.
 
 
 </td></tr>
@@ -89,6 +89,25 @@ ReadonlyArray&lt;string&gt;
 </td><td>
 
 _(Optional)_ Optional array of enumerated values to further constrain the type. Defaults to no constraint.
+
+
+</td></tr>
+<tr><td>
+
+[hierarchy?](./ts-res.qualifiertypes.iliteralqualifiertypecreateparams.hierarchy.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[LiteralValueHierarchyDecl](./ts-res.qualifiertypes.literalvaluehierarchydecl.md)<!-- -->&lt;string&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional [hierarchy declaration](./ts-res.qualifiertypes.literalvaluehierarchydecl.md) of literal values to use for matching. If not provided, no hierarchy will be used.
 
 
 </td></tr>
@@ -131,3 +150,4 @@ _(Optional)_ Optional name for the qualifier type. Defaults to 'literal'.
 
 </td></tr>
 </tbody></table>
+

@@ -63,6 +63,7 @@ _(Optional)_ An optional `FileTree` for importing path items.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 ReadonlyArray&lt;[IImporter](./ts-res.import.importers.iimporter.md)<!-- -->&gt;

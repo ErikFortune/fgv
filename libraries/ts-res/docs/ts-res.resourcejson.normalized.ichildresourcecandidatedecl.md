@@ -120,3 +120,4 @@ _(Optional)_ The merge method to be used when merging the resource into the exis
 
 </td></tr>
 </tbody></table>
+

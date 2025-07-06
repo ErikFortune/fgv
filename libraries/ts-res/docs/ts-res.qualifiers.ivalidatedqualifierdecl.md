@@ -150,3 +150,4 @@ The [type](./ts-res.qualifiertypes.qualifiertype.md) of the qualifier.
 
 </td></tr>
 </tbody></table>
+

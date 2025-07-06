@@ -47,6 +47,7 @@ _(Optional)_ Optional for creating the new collector.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ResourceTypeCollector](./ts-res.resourcetypes.resourcetypecollector.md)<!-- -->&gt;

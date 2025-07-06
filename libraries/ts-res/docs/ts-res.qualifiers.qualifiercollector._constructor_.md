@@ -47,3 +47,4 @@ Parameters for creating the collector.
 
 </td></tr>
 </tbody></table>
+

@@ -47,6 +47,7 @@ The ID to validate.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 id is [ResourceId](./ts-res.resourceid.md)

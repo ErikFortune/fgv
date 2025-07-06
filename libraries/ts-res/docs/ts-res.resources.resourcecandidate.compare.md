@@ -63,6 +63,7 @@ The second candidate to compare.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 number

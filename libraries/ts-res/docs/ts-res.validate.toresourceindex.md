@@ -47,6 +47,7 @@ The number to convert.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ResourceIndex](./ts-res.resourceindex.md)<!-- -->&gt;

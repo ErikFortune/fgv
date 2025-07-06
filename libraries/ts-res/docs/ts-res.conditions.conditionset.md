@@ -220,6 +220,20 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[canMatchPartialContext(context, options)](./ts-res.conditions.conditionset.canmatchpartialcontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Determines if this condition set can match a supplied context, even if the context is partial. Returns true if all conditions in the set can match the context (using canMatchPartialContext). Returns false otherwise.
+
+
+</td></tr>
+<tr><td>
+
 [compare(cs1, cs2)](./ts-res.conditions.conditionset.compare.md)
 
 
@@ -263,20 +277,6 @@ Creates a new [ConditionSet](./ts-res.conditions.conditionset.md) object.
 </td><td>
 
 Gets the [key](./ts-res.conditionsetkey.md) for a supplied [condition set declaration](./ts-res.conditions.ivalidatedconditionsetdecl.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[matchesContext(context, options)](./ts-res.conditions.conditionset.matchescontext.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Determines if this condition set can match a supplied [context](./ts-res.context.ivalidatedcontextdecl.md)<!-- -->.
 
 
 </td></tr>
@@ -379,3 +379,4 @@ Gets a [condition set token](./ts-res.conditionsettoken.md) for this condition s
 
 </td></tr>
 </tbody></table>
+

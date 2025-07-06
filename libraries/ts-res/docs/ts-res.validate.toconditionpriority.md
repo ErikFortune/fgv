@@ -47,6 +47,7 @@ the number to convert
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ConditionPriority](./ts-res.conditionpriority.md)<!-- -->&gt;

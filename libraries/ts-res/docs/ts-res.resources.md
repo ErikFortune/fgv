@@ -158,3 +158,4 @@ Error details that can be returned by a [ResourceManager](./ts-res.resources.res
 
 </td></tr>
 </tbody></table>
+

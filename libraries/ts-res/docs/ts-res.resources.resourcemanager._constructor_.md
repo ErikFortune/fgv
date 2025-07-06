@@ -47,3 +47,4 @@ Parameters to create a new [ResourceManager](./ts-res.resources.resourcemanager.
 
 </td></tr>
 </tbody></table>
+

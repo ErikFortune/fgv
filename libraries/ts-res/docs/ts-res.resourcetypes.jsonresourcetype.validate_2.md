@@ -63,6 +63,7 @@ Indicates whether the value is expected to be partial.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;JsonObject&gt;

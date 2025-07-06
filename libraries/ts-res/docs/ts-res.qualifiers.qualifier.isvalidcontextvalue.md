@@ -44,6 +44,7 @@ string
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 value is [QualifierContextValue](./ts-res.qualifiercontextvalue.md)

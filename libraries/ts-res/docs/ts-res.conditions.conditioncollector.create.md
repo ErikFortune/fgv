@@ -47,6 +47,7 @@ Required [parameters](./ts-res.conditions.iconditioncollectorcreateparams.md) fo
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ConditionCollector](./ts-res.conditions.conditioncollector.md)<!-- -->&gt;

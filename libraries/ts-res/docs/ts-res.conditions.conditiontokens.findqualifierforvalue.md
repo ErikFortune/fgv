@@ -63,6 +63,7 @@ the qualifiers to match against.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->&gt;

@@ -79,9 +79,10 @@ The operator to use for the match. Must be 'matches'.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [QualifierMatchScore](./ts-res.qualifiermatchscore.md)
 
-- The match score, or `noMatch` if the match fails.
+The match score, or `noMatch` if the match fails.
 

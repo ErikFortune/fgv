@@ -63,6 +63,7 @@ _(Optional)_ An optional operator to validate. Defaults to 'matches'.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[QualifierConditionValue](./ts-res.qualifierconditionvalue.md)<!-- -->&gt;

@@ -63,6 +63,7 @@ The second qualifier type to compare.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 number

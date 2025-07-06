@@ -188,3 +188,4 @@ Gets a read-only view of this collector.
 
 </td></tr>
 </tbody></table>
+

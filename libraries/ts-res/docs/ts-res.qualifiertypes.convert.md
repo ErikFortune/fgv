@@ -81,3 +81,4 @@ Converter for [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) objects,
 
 </td></tr>
 </tbody></table>
+

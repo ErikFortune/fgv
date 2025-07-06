@@ -55,3 +55,4 @@ _(Optional)_ Optional list of [QualifierTypes](./ts-res.qualifiertypes.qualifier
 
 </td></tr>
 </tbody></table>
+

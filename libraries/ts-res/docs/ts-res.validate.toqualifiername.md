@@ -47,6 +47,7 @@ the string to convert
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[QualifierName](./ts-res.qualifiername.md)<!-- -->&gt;

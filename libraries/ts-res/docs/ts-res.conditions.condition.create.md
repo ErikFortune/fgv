@@ -47,6 +47,7 @@ The [validated condition declaration](./ts-res.conditions.ivalidatedconditiondec
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[Condition](./ts-res.conditions.condition.md)<!-- -->&gt;

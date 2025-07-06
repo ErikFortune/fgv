@@ -47,6 +47,7 @@ _(Optional)_ if `true` and if the qualifier token is optional, the token will be
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ConditionToken](./ts-res.conditiontoken.md)<!-- -->&gt;

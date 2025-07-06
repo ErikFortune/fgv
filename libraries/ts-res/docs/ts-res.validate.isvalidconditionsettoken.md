@@ -47,6 +47,7 @@ the string to validate.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 token is [ConditionSetToken](./ts-res.conditionsettoken.md)

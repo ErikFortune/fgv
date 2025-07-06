@@ -35,7 +35,7 @@ Description
 
 </td><td>
 
-A [qualifier](./ts-res.qualifiertypes.qualifiertype.md) that matches a literal value., optionally case-sensitive or matching against an ordered list of values at runtime.
+A [qualifier](./ts-res.qualifiertypes.qualifiertype.md) that matches a literal value, optionally case-sensitive or matching against an ordered list of values at runtime.
 
 
 </td></tr>
@@ -142,7 +142,7 @@ Interface defining the parameters that can be used to create a new [LiteralQuali
 
 </td><td>
 
-Describes a single valid literal value including optional parent and child values. [LiteralValueHierarchy](./ts-res.qualifiertypes.literalvaluehierarchy.md)<!-- -->.
+Describes a single valid literal value including optional parent and child values.
 
 
 </td></tr>
@@ -263,3 +263,4 @@ Interface exposing non-mutating members of a [QualifierTypeCollector](./ts-res.q
 
 </td></tr>
 </tbody></table>
+

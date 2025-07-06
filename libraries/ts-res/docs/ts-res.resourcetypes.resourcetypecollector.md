@@ -98,3 +98,4 @@ Creates a new [ResourceTypeCollector](./ts-res.resourcetypes.resourcetypecollect
 
 </td></tr>
 </tbody></table>
+

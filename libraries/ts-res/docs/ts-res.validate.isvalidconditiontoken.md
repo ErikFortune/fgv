@@ -45,6 +45,7 @@ string
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 token is [ConditionToken](./ts-res.conditiontoken.md)

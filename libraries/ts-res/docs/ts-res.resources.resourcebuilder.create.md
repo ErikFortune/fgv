@@ -47,6 +47,7 @@ Parameters to create a new [ResourceBuilder](./ts-res.resources.resourcebuilder.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ResourceBuilder](./ts-res.resources.resourcebuilder.md)<!-- -->&gt;

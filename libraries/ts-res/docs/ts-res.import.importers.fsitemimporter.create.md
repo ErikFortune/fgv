@@ -47,6 +47,7 @@ Parameters for creating the [FsItemImporter](./ts-res.import.importers.fsitemimp
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[FsItemImporter](./ts-res.import.importers.fsitemimporter.md)<!-- -->&gt;

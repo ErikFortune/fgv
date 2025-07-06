@@ -4,12 +4,10 @@
 
 ## QualifierTypes.LiteralValueHierarchy.match() method
 
-Matches a condition value against a context value, where an exact match of the condition and context returns [PerfectMatch](./ts-res.perfectmatch.md)<!-- -->, a condition value that does not match the context value or any of its ancestors returns [NoMatch](./ts-res.nomatch.md)<!-- -->, and a condition value that matches the context value or any of its ancestors returns a positive score that is less than [PerfectMatch](./ts-res.perfectmatch.md)<!-- -->, with the score decreasing with each ancestor in the hierarchy.
-
 **Signature:**
 
 ```typescript
-match(condition: QualifierConditionValue, context: QualifierContextValue, __operator: ConditionOperator): QualifierMatchScore;
+match(condition: T, context: T): QualifierMatchScore;
 ```
 
 ## Parameters
@@ -37,12 +35,10 @@ condition
 
 </td><td>
 
-[QualifierConditionValue](./ts-res.qualifierconditionvalue.md)
+T
 
 
 </td><td>
-
-The condition value to match.
 
 
 </td></tr>
@@ -53,38 +49,16 @@ context
 
 </td><td>
 
-[QualifierContextValue](./ts-res.qualifiercontextvalue.md)
+T
 
 
 </td><td>
-
-The context value to match against.
-
-
-</td></tr>
-<tr><td>
-
-\_\_operator
-
-
-</td><td>
-
-[ConditionOperator](./ts-res.conditionoperator.md)
-
-
-</td><td>
-
-The operator used for matching (not used in this implementation).
 
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [QualifierMatchScore](./ts-res.qualifiermatchscore.md)
-
-A [QualifierMatchScore](./ts-res.qualifiermatchscore.md) indicating the match score.
-
-## Remarks
-
 

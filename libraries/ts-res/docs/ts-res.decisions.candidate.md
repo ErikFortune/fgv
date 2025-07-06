@@ -236,3 +236,4 @@ Returns a string representation of the [candidate](./ts-res.decisions.candidate.
 
 </td></tr>
 </tbody></table>
+

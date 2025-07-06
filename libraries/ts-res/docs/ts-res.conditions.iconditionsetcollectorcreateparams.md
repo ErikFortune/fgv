@@ -74,3 +74,4 @@ _(Optional)_ Optional array of [condition set declarations](./ts-res.conditions.
 
 </td></tr>
 </tbody></table>
+

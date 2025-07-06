@@ -47,6 +47,7 @@ The [validated declaration](./ts-res.qualifiers.ivalidatedqualifierdecl.md) for 
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->&gt;

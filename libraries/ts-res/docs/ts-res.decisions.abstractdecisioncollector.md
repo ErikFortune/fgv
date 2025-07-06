@@ -218,3 +218,4 @@ Creates a new instance of [AbstractDecisionCollector](./ts-res.decisions.abstrac
 
 </td></tr>
 </tbody></table>
+

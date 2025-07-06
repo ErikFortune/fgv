@@ -47,6 +47,7 @@ params
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[QualifierCollector](./ts-res.qualifiers.qualifiercollector.md)<!-- -->&gt;

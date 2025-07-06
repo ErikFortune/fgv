@@ -64,7 +64,7 @@ _(Optional)_
 
 </td><td>
 
-T\[\]
+ReadonlyArray&lt;T&gt;
 
 
 </td><td>
@@ -72,3 +72,4 @@ T\[\]
 
 </td></tr>
 </tbody></table>
+

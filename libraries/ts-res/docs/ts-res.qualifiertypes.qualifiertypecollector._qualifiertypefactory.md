@@ -71,6 +71,7 @@ value
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[QualifierType](./ts-res.qualifiertypes.qualifiertype.md)<!-- -->&gt;

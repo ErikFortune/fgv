@@ -47,6 +47,7 @@ The [condition set declaration](./ts-res.conditions.ivalidatedconditionsetdecl.m
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ConditionSetKey](./ts-res.conditionsetkey.md)<!-- -->&gt;

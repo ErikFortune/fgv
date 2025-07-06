@@ -47,6 +47,7 @@ The entity to check.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 i is [Importable](./ts-res.import.importable.md)

@@ -47,6 +47,7 @@ _(Optional)_ [Parameters](./ts-res.resourcetypes.ijsonresourcetypecreateparams.m
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[JsonResourceType](./ts-res.resourcetypes.jsonresourcetype.md)<!-- -->&gt;

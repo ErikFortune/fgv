@@ -47,6 +47,7 @@ The string value to validate.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[QualifierContextValue](./ts-res.qualifiercontextvalue.md)<!-- -->&gt;

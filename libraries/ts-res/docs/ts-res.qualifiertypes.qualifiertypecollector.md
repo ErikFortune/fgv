@@ -116,3 +116,4 @@ Creates a new [QualifierTypeCollector](./ts-res.qualifiertypes.qualifiertypecoll
 
 </td></tr>
 </tbody></table>
+

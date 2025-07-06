@@ -47,3 +47,4 @@ the [qualifier collector](./ts-res.qualifiers.ireadonlyqualifiercollector.md) to
 
 </td></tr>
 </tbody></table>
+

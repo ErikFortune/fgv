@@ -47,3 +47,4 @@ Required [parameters](./ts-res.conditions.iconditioncollectorcreateparams.md) fo
 
 </td></tr>
 </tbody></table>
+

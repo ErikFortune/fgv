@@ -9,7 +9,7 @@ Declares a hierarchy of literal values. The keys are the names of the values, an
 **Signature:**
 
 ```typescript
-export type LiteralValueHierarchyDecl<T extends string> = Record<T, T>;
+export type LiteralValueHierarchyDecl<T extends string> = Partial<Record<T, T>>;
 ```
 
 ## Remarks

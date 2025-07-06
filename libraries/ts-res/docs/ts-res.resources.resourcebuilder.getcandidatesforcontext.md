@@ -63,6 +63,7 @@ _(Optional)_ Optional [context match options](./ts-res.context.icontextmatchopti
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 ReadonlyArray&lt;[ResourceCandidate](./ts-res.resources.resourcecandidate.md)<!-- -->&gt;

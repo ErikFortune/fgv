@@ -47,6 +47,7 @@ The value to split.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [QualifierContextValue](./ts-res.qualifiercontextvalue.md)<!-- -->\[\]

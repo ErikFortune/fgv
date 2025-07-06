@@ -213,3 +213,4 @@ Validates properties of a [resource candidate declaration](./ts-res.resourcejson
 
 </td></tr>
 </tbody></table>
+

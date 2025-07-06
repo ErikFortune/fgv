@@ -163,3 +163,4 @@ _(Optional)_ The type of the resource.
 
 </td></tr>
 </tbody></table>
+

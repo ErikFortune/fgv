@@ -47,6 +47,7 @@ _(Optional)_ If true, the token will be terse, omitting qualifier names where po
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;string&gt;

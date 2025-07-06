@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-values: T[];
+values: ReadonlyArray<T>;
 ```

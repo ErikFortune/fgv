@@ -47,6 +47,7 @@ params
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[Resource](./ts-res.resources.resource.md)<!-- -->&gt;

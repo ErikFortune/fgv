@@ -63,6 +63,7 @@ The second [ConditionSet](./ts-res.conditions.conditionset.md) to compare.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 number

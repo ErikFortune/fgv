@@ -43,6 +43,7 @@ decl
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 DetailedResult&lt;[ResourceBuilder](./ts-res.resources.resourcebuilder.md)<!-- -->, [ResourceManagerResultDetail](./ts-res.resources.resourcemanagerresultdetail.md)<!-- -->&gt;

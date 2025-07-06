@@ -170,3 +170,4 @@ Creates a new [ConditionSetCollector](./ts-res.conditions.conditionsetcollector.
 
 </td></tr>
 </tbody></table>
+

@@ -47,6 +47,7 @@ The index to set for this condition set.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ConditionSetIndex](./ts-res.conditionsetindex.md)<!-- -->&gt;

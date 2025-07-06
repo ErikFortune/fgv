@@ -47,6 +47,7 @@ The name of the resource type to set.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ResourceBuilder](./ts-res.resources.resourcebuilder.md)<!-- -->&gt;

@@ -47,6 +47,7 @@ the token string to parse.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[IConditionTokenParts](./ts-res.helpers.iconditiontokenparts.md)<!-- -->&gt;

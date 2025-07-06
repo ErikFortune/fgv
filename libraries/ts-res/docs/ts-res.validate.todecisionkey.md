@@ -45,6 +45,7 @@ string
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[DecisionKey](./ts-res.decisionkey.md)<!-- -->&gt;

@@ -47,6 +47,7 @@ the number to validate
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 index is [DecisionIndex](./ts-res.decisionindex.md)

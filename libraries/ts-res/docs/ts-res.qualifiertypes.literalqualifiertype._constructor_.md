@@ -9,7 +9,7 @@ Constructs a new [LiteralQualifierType](./ts-res.qualifiertypes.literalqualifier
 **Signature:**
 
 ```typescript
-protected constructor({ name, caseSensitive, allowContextList, enumeratedValues, index }: ILiteralQualifierTypeCreateParams);
+protected constructor({ name, caseSensitive, allowContextList, enumeratedValues, hierarchy, index }: ILiteralQualifierTypeCreateParams);
 ```
 
 ## Parameters
@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-{ name, caseSensitive, allowContextList, enumeratedValues, index }
+{ name, caseSensitive, allowContextList, enumeratedValues, hierarchy, index }
 
 
 </td><td>
@@ -45,3 +45,4 @@ Description
 
 </td></tr>
 </tbody></table>
+

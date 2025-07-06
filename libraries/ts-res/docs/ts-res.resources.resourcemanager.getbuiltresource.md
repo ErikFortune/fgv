@@ -47,6 +47,7 @@ The [id](./ts-res.resourceid.md) of the resource to get.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[Resource](./ts-res.resources.resource.md)<!-- -->&gt;

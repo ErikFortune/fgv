@@ -47,6 +47,7 @@ The index to set.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[QualifierIndex](./ts-res.qualifierindex.md)<!-- -->&gt;

@@ -4,7 +4,7 @@
 
 ## QualifierTypes.ILiteralQualifierTypeCreateParams.caseSensitive property
 
-Optional flag indicating whether the match should be case-sensitive. Defaults to false.
+Optional flag indicating whether the match should be case-sensitive. Defaults to `false`<!-- -->.
 
 **Signature:**
 

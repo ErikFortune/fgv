@@ -79,6 +79,7 @@ _(Optional)_ The base conditions to merge with the resource.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;Normalized.ILooseResourceDecl&gt;

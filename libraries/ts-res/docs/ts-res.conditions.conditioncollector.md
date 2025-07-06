@@ -128,3 +128,4 @@ Creates a new [ConditionCollector](./ts-res.conditions.conditioncollector.md) ob
 
 </td></tr>
 </tbody></table>
+

@@ -256,6 +256,24 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[canMatchPartialContext(context, options)](./ts-res.conditions.condition.canmatchpartialcontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Determines if this condition can match the supplied context, even if the context is partial.
+
+Returns true if: - The qualifier specified in the condition is not present in the context - The qualifier is present and matches the condition
+
+Returns false if: - The qualifier is present in the context and does not match the condition
+
+
+</td></tr>
+<tr><td>
+
 [compare(c1, c2)](./ts-res.conditions.condition.compare.md)
 
 
@@ -313,20 +331,6 @@ Determines if this condition matches the supplied [validated context](./ts-res.c
 </td><td>
 
 Gets the [condition key](./ts-res.conditionkey.md) for a supplied [condition declaration](./ts-res.conditions.ivalidatedconditiondecl.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[matchesContext(context, options)](./ts-res.conditions.condition.matchescontext.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Determines if this condition matches the supplied [validated context](./ts-res.context.ivalidatedcontextdecl.md)<!-- -->.
 
 
 </td></tr>
@@ -427,3 +431,4 @@ Gets the value for this condition, or the [child condition declaration](./ts-res
 
 </td></tr>
 </tbody></table>
+

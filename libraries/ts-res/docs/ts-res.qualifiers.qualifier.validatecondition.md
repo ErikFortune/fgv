@@ -60,6 +60,7 @@ _(Optional)_
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[QualifierConditionValue](./ts-res.qualifierconditionvalue.md)<!-- -->&gt;

@@ -47,3 +47,4 @@ Parameters to construct the new [ResourceBuilder](./ts-res.resources.resourcebui
 
 </td></tr>
 </tbody></table>
+

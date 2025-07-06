@@ -74,3 +74,4 @@ The [ReadOnlyQualifierCollector](./ts-res.qualifiers.ireadonlyqualifiercollector
 
 </td></tr>
 </tbody></table>
+

@@ -23,6 +23,7 @@ This is `@fgv/ts-res`, a TypeScript library for multidimensional resource manage
 ### Documentation
 - `rushx build-docs` - Generate API documentation using api-documenter
 - Documentation is generated in the `docs/` directory
+- **IMPORTANT**: Always run `rushx build-docs` before check-in when making public API changes to regenerate API documentation
 
 ### Testing
 - Uses Jest with ts-jest for TypeScript support
@@ -100,6 +101,15 @@ The library is organized into "packlets" - cohesive modules that group related f
 - Uses Jest with custom matchers from `@fgv/ts-utils-jest`
 - 100% coverage requirement enforced
 - Test files follow `*.test.ts` naming convention
+
+## Development Workflow
+
+### Before Check-in Checklist
+When making changes that affect the public API:
+1. Run `rushx test` to ensure all tests pass
+2. Run `rushx lint` to ensure code quality
+3. **Run `rushx build-docs` to regenerate API documentation**
+4. Commit changes including updated documentation files
 
 ## Code Organization
 

@@ -47,6 +47,7 @@ The [importable](./ts-res.import.iimportable.md) object to import.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ImportManager](./ts-res.import.importmanager.md)<!-- -->&gt;

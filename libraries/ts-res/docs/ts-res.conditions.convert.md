@@ -99,3 +99,4 @@ Converter which constructs a [validated condition set declaration](./ts-res.cond
 
 </td></tr>
 </tbody></table>
+

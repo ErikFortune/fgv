@@ -63,6 +63,7 @@ _(Optional)_ The base conditions to merge with the candidate.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;Normalized.IChildResourceCandidateDecl&gt;

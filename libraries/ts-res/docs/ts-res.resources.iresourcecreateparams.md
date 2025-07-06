@@ -93,3 +93,4 @@ _(Optional)_ Optional [type](./ts-res.resourcetypes.resourcetype.md) of the reso
 
 </td></tr>
 </tbody></table>
+

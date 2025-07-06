@@ -43,6 +43,7 @@ params
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;ReadonlyMap&lt;T, [ILiteralValue](./ts-res.qualifiertypes.iliteralvalue.md)<!-- -->&lt;T&gt;&gt;&gt;

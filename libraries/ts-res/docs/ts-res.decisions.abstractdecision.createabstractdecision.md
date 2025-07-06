@@ -47,6 +47,7 @@ params
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[AbstractDecision](./ts-res.decisions.abstractdecision.md)<!-- -->&gt;

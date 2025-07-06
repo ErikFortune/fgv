@@ -43,6 +43,7 @@ unknown
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ResourceType](./ts-res.resourcetypes.resourcetype.md)<!-- -->&gt;

@@ -45,6 +45,7 @@ string
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ConditionSetHash](./ts-res.conditionsethash.md)<!-- -->&gt;

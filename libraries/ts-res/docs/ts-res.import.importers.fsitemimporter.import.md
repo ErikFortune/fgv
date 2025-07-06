@@ -61,6 +61,7 @@ The [importable](./ts-res.import.iimportable.md) item to import.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 DetailedResult&lt;[IImportable](./ts-res.import.iimportable.md)<!-- -->\[\], [ImporterResultDetail](./ts-res.import.importers.importerresultdetail.md)<!-- -->&gt;

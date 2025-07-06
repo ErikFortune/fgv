@@ -574,4 +574,192 @@ describe('ResourceManager', () => {
       expect(manager.addResource(resource)).toFailWith(/conflicting resource types/i);
     });
   });
+
+  describe('context filtering methods', () => {
+    let manager: TsRes.Resources.ResourceManager;
+
+    beforeEach(() => {
+      manager = TsRes.Resources.ResourceManager.create({
+        qualifiers,
+        resourceTypes
+      }).orThrow();
+
+      // Add candidates with various conditions for testing filtering
+      manager
+        .addLooseCandidate({
+          id: 'filtered.resource',
+          json: { message: 'US English' },
+          conditions: { language: 'en-US', homeTerritory: 'US' },
+          resourceTypeName: 'json'
+        })
+        .orThrow();
+
+      manager
+        .addLooseCandidate({
+          id: 'filtered.resource',
+          json: { message: 'Canadian English' },
+          conditions: { language: 'en-CA', homeTerritory: 'CA' },
+          resourceTypeName: 'json'
+        })
+        .orThrow();
+
+      manager
+        .addLooseCandidate({
+          id: 'filtered.resource',
+          json: { message: 'French' },
+          conditions: { language: 'fr', homeTerritory: 'CA' },
+          resourceTypeName: 'json'
+        })
+        .orThrow();
+
+      manager
+        .addLooseCandidate({
+          id: 'other.resource',
+          json: { data: 'German only' },
+          conditions: { language: 'de-DE' },
+          resourceTypeName: 'json'
+        })
+        .orThrow();
+
+      manager
+        .addLooseCandidate({
+          id: 'universal.resource',
+          json: { universal: 'data' },
+          conditions: {},
+          resourceTypeName: 'json'
+        })
+        .orThrow();
+    });
+
+    test('getCandidatesForContext filters candidates by partial context', () => {
+      const partialContext = TsRes.Context.Convert.validatedContextDecl
+        .convert(
+          {
+            language: 'en-US'
+          },
+          { qualifiers }
+        )
+        .orThrow();
+
+      const candidates = manager.getCandidatesForContext(partialContext, { partialContextMatch: true });
+      expect(candidates.length).toBe(3); // Matches more due to language distance matching
+
+      const ids = candidates.map((c) => c.id);
+      expect(ids).toContain('filtered.resource');
+      expect(ids).toContain('universal.resource');
+
+      const messages = candidates
+        .filter((c) => c.id === 'filtered.resource')
+        .map((c) => (c.json as { message?: string }).message);
+      expect(messages).toContain('US English');
+    });
+
+    test('getCandidatesForContext filters candidates with multiple qualifiers', () => {
+      const partialContext = TsRes.Context.Convert.validatedContextDecl
+        .convert(
+          {
+            language: 'en-CA',
+            homeTerritory: 'CA'
+          },
+          { qualifiers }
+        )
+        .orThrow();
+
+      const candidates = manager.getCandidatesForContext(partialContext, { partialContextMatch: true });
+      expect(candidates.length).toBe(2); // Canadian English + universal
+
+      const messages = candidates
+        .filter((c) => c.id === 'filtered.resource')
+        .map((c) => (c.json as { message?: string }).message);
+      expect(messages).toContain('Canadian English');
+    });
+
+    test('getResourcesForContext filters resources that have matching candidates', () => {
+      const partialContext = TsRes.Context.Convert.validatedContextDecl
+        .convert(
+          {
+            language: 'de-DE'
+          },
+          { qualifiers }
+        )
+        .orThrow();
+
+      const resources = manager.getResourcesForContext(partialContext, { partialContextMatch: true });
+      expect(resources.length).toBe(2); // other.resource + universal.resource
+
+      const ids = resources.map((r) => r.id).sort();
+      expect(ids).toEqual(['other.resource', 'universal.resource']);
+    });
+
+    test('getBuiltCandidatesForContext filters built candidates', () => {
+      manager.build().orThrow();
+
+      const partialContext = TsRes.Context.Convert.validatedContextDecl
+        .convert(
+          {
+            homeTerritory: 'CA'
+          },
+          { qualifiers }
+        )
+        .orThrow();
+
+      const result = manager.getBuiltCandidatesForContext(partialContext, { partialContextMatch: true });
+      expect(result).toSucceedAndSatisfy((candidates) => {
+        expect(candidates.length).toBe(4); // More candidates match due to distance matching
+
+        const ids = candidates.map((c) => c.id);
+        expect(ids.filter((id) => id === 'filtered.resource').length).toBe(2);
+        expect(ids).toContain('universal.resource');
+      });
+    });
+
+    test('getBuiltResourcesForContext filters built resources', () => {
+      manager.build().orThrow();
+
+      const partialContext = TsRes.Context.Convert.validatedContextDecl
+        .convert(
+          {
+            language: 'fr'
+          },
+          { qualifiers }
+        )
+        .orThrow();
+
+      const result = manager.getBuiltResourcesForContext(partialContext, { partialContextMatch: true });
+      expect(result).toSucceedAndSatisfy((resources) => {
+        expect(resources.length).toBe(2); // filtered.resource + universal.resource
+
+        const ids = resources.map((r) => r.id).sort();
+        expect(ids).toEqual(['filtered.resource', 'universal.resource']);
+      });
+    });
+
+    test('context filtering with empty context returns all candidates/resources', () => {
+      const emptyContext = TsRes.Context.Convert.validatedContextDecl.convert({}, { qualifiers }).orThrow();
+
+      const candidates = manager.getCandidatesForContext(emptyContext, { partialContextMatch: true });
+      expect(candidates.length).toBe(5); // All candidates match empty context
+
+      const resources = manager.getResourcesForContext(emptyContext, { partialContextMatch: true });
+      expect(resources.length).toBe(3); // All resources match empty context
+    });
+
+    test('context filtering without partialContextMatch is more restrictive', () => {
+      const partialContext = TsRes.Context.Convert.validatedContextDecl
+        .convert(
+          {
+            language: 'en-US'
+          },
+          { qualifiers }
+        )
+        .orThrow();
+
+      // Without partialContextMatch, candidates with additional qualifiers won't match
+      const candidates = manager.getCandidatesForContext(partialContext, { partialContextMatch: false });
+      expect(candidates.length).toBe(3); // Language matching still allows multiple matches
+
+      const ids = candidates.map((c) => c.id);
+      expect(ids).toContain('universal.resource');
+    });
+  });
 });

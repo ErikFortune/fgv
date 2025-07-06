@@ -79,6 +79,7 @@ The operator to use in evaluating the match.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [QualifierMatchScore](./ts-res.qualifiermatchscore.md)

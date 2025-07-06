@@ -63,6 +63,7 @@ The [qualifiers](./ts-res.qualifiers.ireadonlyqualifiercollector.md) used to par
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;Omit&lt;[IFsItemProps](./ts-res.import.ifsitemprops.md)<!-- -->, 'item'&gt;&gt;

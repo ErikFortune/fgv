@@ -47,6 +47,7 @@ _(Optional)_ Optional [parameters](./ts-res.qualifiertypes.iliteralqualifiertype
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[LiteralQualifierType](./ts-res.qualifiertypes.literalqualifiertype.md)<!-- -->&gt;

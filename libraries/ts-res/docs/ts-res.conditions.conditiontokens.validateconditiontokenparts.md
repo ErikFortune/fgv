@@ -63,6 +63,7 @@ the [qualifier collector](./ts-res.qualifiers.ireadonlyqualifiercollector.md) us
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[IValidatedConditionDecl](./ts-res.conditions.ivalidatedconditiondecl.md)<!-- -->&gt;

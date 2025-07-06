@@ -63,6 +63,7 @@ The [qualifiers](./ts-res.qualifiers.ireadonlyqualifiercollector.md) used to par
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 DetailedResult&lt;[FsItem](./ts-res.import.fsitem.md)<!-- -->, [FsItemResultDetail](./ts-res.import.fsitemresultdetail.md)<!-- -->&gt;

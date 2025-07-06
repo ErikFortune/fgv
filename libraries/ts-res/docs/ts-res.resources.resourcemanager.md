@@ -472,6 +472,20 @@ Gets a read-only array of all [resource builders](./ts-res.resources.resourcebui
 </td></tr>
 <tr><td>
 
+[getBuiltCandidatesForContext(context, options)](./ts-res.resources.resourcemanager.getbuiltcandidatesforcontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a read-only array of all [built resource candidates](./ts-res.resources.resourcecandidate.md) that can match the supplied context.
+
+
+</td></tr>
+<tr><td>
+
 [getBuiltResource(id)](./ts-res.resources.resourcemanager.getbuiltresource.md)
 
 
@@ -484,4 +498,47 @@ Gets an individual [built resource](./ts-res.resources.resource.md) from the man
 
 
 </td></tr>
+<tr><td>
+
+[getBuiltResourcesForContext(context, options)](./ts-res.resources.resourcemanager.getbuiltresourcesforcontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a read-only array of all [built resources](./ts-res.resources.resource.md) that have at least one candidate that can match the supplied context.
+
+
+</td></tr>
+<tr><td>
+
+[getCandidatesForContext(context, options)](./ts-res.resources.resourcemanager.getcandidatesforcontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a read-only array of all [resource candidates](./ts-res.resources.resourcecandidate.md) that can match the supplied context.
+
+
+</td></tr>
+<tr><td>
+
+[getResourcesForContext(context, options)](./ts-res.resources.resourcemanager.getresourcesforcontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a read-only array of all [resource builders](./ts-res.resources.resourcebuilder.md) that have at least one candidate that can match the supplied context.
+
+
+</td></tr>
 </tbody></table>
+

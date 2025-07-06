@@ -47,6 +47,7 @@ the string to validate
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 key is [DecisionKey](./ts-res.decisionkey.md)

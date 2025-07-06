@@ -325,3 +325,4 @@ Sets the resource type for the resource being built. Fails if a resource type ha
 
 </td></tr>
 </tbody></table>
+

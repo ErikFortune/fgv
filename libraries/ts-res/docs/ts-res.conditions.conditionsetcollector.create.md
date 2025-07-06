@@ -47,6 +47,7 @@ params
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ConditionSetCollector](./ts-res.conditions.conditionsetcollector.md)<!-- -->&gt;

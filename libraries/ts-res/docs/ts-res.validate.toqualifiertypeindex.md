@@ -47,6 +47,7 @@ the number to convert
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[QualifierTypeIndex](./ts-res.qualifiertypeindex.md)<!-- -->&gt;

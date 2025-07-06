@@ -94,3 +94,4 @@ Gets a normalized array of [loose resource](./ts-res.resourcejson.normalized.ilo
 
 </td></tr>
 </tbody></table>
+

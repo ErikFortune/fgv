@@ -217,3 +217,4 @@ Gets the loose resources extracted from the collection.
 
 </td></tr>
 </tbody></table>
+

@@ -140,3 +140,4 @@ A read-only version of [ResourceTypeCollector](./ts-res.resourcetypes.resourcety
 
 </td></tr>
 </tbody></table>
+

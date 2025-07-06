@@ -47,6 +47,7 @@ The JSON object to convert.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ResourceDeclCollection](./ts-res.resourcejson.resourcedeclcollection.md)<!-- -->&gt;

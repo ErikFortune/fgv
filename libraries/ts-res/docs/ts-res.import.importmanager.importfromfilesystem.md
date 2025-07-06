@@ -47,6 +47,7 @@ The path to import resources from.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ImportManager](./ts-res.import.importmanager.md)<!-- -->&gt;

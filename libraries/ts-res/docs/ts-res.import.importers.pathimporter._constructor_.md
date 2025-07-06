@@ -47,3 +47,4 @@ Parameters for creating the [PathImporter](./ts-res.import.importers.pathimporte
 
 </td></tr>
 </tbody></table>
+

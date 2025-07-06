@@ -95,6 +95,7 @@ _(Optional)_ The conditions of the parent resource.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;Normalized.ILooseResourceDecl&gt;

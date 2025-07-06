@@ -47,6 +47,7 @@ _(Optional)_ [options](./ts-res.resourcejson.helpers.ideclarationoptions.md) to 
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [ResourceJson.Json.IChildResourceCandidateDecl](./ts-res.resourcejson.json.ichildresourcecandidatedecl.md)

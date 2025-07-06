@@ -47,6 +47,7 @@ The number to convert.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[QualifierMatchScore](./ts-res.qualifiermatchscore.md)<!-- -->&gt;

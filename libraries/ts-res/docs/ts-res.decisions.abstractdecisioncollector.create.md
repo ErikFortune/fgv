@@ -45,6 +45,7 @@ params
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[AbstractDecisionCollector](./ts-res.decisions.abstractdecisioncollector.md)<!-- -->&gt;

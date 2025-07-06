@@ -47,6 +47,7 @@ Converter for the literal value type.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Converter&lt;[ILiteralValueHierarchyCreateParams](./ts-res.qualifiertypes.iliteralvaluehierarchycreateparams.md)<!-- -->&lt;T&gt;&gt;

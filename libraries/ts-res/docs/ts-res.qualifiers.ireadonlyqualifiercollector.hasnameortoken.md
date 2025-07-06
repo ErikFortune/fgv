@@ -47,6 +47,7 @@ The name or token of the qualifier to check.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 boolean

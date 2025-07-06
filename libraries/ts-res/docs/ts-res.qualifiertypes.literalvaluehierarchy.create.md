@@ -42,14 +42,15 @@ params
 
 </td><td>
 
-The [QualifierTypes.ILiteralValueHierarchyCreateParams](./ts-res.qualifiertypes.iliteralvaluehierarchycreateparams.md) used to create the hierarchy.
+The [parameters](./ts-res.qualifiertypes.iliteralvaluehierarchycreateparams.md) used to create the hierarchy.
 
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[LiteralValueHierarchy](./ts-res.qualifiertypes.literalvaluehierarchy.md)<!-- -->&lt;T&gt;&gt;
 
-`Success` with the new [hierarchy](./ts-res.qualifiertypes.literalvaluehierarchy.md) or `Failure` with an error message.
+`Success` with the new hierarchy or `Failure` with an error message.
 

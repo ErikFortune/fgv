@@ -74,3 +74,4 @@ _(Optional)_ Optional key for the new [JsonResourceType](./ts-res.resourcetypes.
 
 </td></tr>
 </tbody></table>
+

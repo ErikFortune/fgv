@@ -47,6 +47,7 @@ _(Optional)_ The [options](./ts-res.resourcejson.helpers.ideclarationoptions.md)
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [ResourceJson.Json.IChildConditionDecl](./ts-res.resourcejson.json.ichildconditiondecl.md)

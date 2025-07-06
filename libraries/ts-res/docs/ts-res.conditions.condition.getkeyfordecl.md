@@ -47,6 +47,7 @@ The [condition declaration](./ts-res.conditions.ivalidatedconditiondecl.md) for 
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ConditionKey](./ts-res.conditionkey.md)<!-- -->&gt;

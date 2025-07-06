@@ -12,6 +12,10 @@ A class that implements a hierarchy of literal values. The hierarchy is defined 
 export declare class LiteralValueHierarchy<T extends string = string> 
 ```
 
+## Remarks
+
+The hierarchy can be created in two modes: - \*\*Constrained mode\*\*: When enumerated values are provided, only those values are allowed in the hierarchy and matching operations. - \*\*Open values mode\*\*: When no enumerated values are provided, all values referenced in the hierarchy are automatically collected and used. This allows for flexible hierarchies where any value can be used in matching operations.
+
 ## Constructors
 
 <table><thead><tr><th>
@@ -72,6 +76,27 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[isOpenValues](./ts-res.qualifiertypes.literalvaluehierarchy.isopenvalues.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+Indicates whether this hierarchy was created with open values (no enumerated values provided), allowing any value to be used in matching operations.
+
+
+</td></tr>
+<tr><td>
 
 [values](./ts-res.qualifiertypes.literalvaluehierarchy.values.md)
 
@@ -146,7 +171,75 @@ Creates a new [LiteralValueHierarchy](./ts-res.qualifiertypes.literalvaluehierar
 </td></tr>
 <tr><td>
 
-[match(condition, context, \_\_operator)](./ts-res.qualifiertypes.literalvaluehierarchy.match.md)
+[getAncestors(value)](./ts-res.qualifiertypes.literalvaluehierarchy.getancestors.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets all ancestors of a value in the hierarchy.
+
+
+</td></tr>
+<tr><td>
+
+[getDescendants(value)](./ts-res.qualifiertypes.literalvaluehierarchy.getdescendants.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets all descendants of a value in the hierarchy.
+
+
+</td></tr>
+<tr><td>
+
+[getRoots()](./ts-res.qualifiertypes.literalvaluehierarchy.getroots.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets all root values (values with no parent) in the hierarchy.
+
+
+</td></tr>
+<tr><td>
+
+[hasValue(value)](./ts-res.qualifiertypes.literalvaluehierarchy.hasvalue.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Checks if a value exists in the hierarchy.
+
+
+</td></tr>
+<tr><td>
+
+[match(condition, context)](./ts-res.qualifiertypes.literalvaluehierarchy.match.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[match(condition, context, \_\_operator)](./ts-res.qualifiertypes.literalvaluehierarchy.match_1.md)
 
 
 </td><td>
@@ -159,3 +252,4 @@ Matches a condition value against a context value, where an exact match of the c
 
 </td></tr>
 </tbody></table>
+
