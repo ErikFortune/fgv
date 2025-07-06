@@ -36,7 +36,7 @@ import { ResourceCandidate } from './resourceCandidate';
 import { ReadOnlyResourceTypeCollector, ResourceType } from '../resource-types';
 import { Resource } from './resource';
 import { ConditionSetCollector } from '../conditions';
-import { AbstractDecisionCollector, ConcreteDecision } from '../decisions';
+import { AbstractDecisionCollector } from '../decisions';
 import * as ResourceJson from '../resource-json';
 import * as Context from '../context';
 
@@ -49,7 +49,7 @@ export interface IResourceBuilderCreateParams {
   typeName?: string;
   conditionSets: ConditionSetCollector;
   resourceTypes: ReadOnlyResourceTypeCollector;
-  decisions?: AbstractDecisionCollector;
+  decisions: AbstractDecisionCollector;
 }
 
 /**
@@ -109,9 +109,9 @@ export class ResourceBuilder {
   protected _conditionSets: ConditionSetCollector;
 
   /**
-   * Optional collector for {@link Decisions.AbstractDecision | abstract decisions}.
+   * Collector for {@link Decisions.AbstractDecision | abstract decisions}.
    */
-  protected _decisions?: AbstractDecisionCollector;
+  protected _decisions: AbstractDecisionCollector;
 
   /**
    * Constructor for a {@link Resources.ResourceBuilder | ResourceBuilder} object.
@@ -256,44 +256,11 @@ export class ResourceBuilder {
       return fail(`${this.id}: no resource type supplied or inferred.`);
     }
 
-    const baseParams = {
+    return Resource.create({
       id: this.id,
       resourceType: this._resourceType,
-      candidates: this.candidates
-    };
-
-    if (this._decisions) {
-      return this._createOptimizedDecision().onSuccess((decision) => {
-        return Resource.create({ ...baseParams, decision });
-      });
-    }
-
-    return Resource.create(baseParams);
-  }
-
-  /**
-   * Creates an optimized decision for this resource.
-   * @returns `Success` with the {@link Decisions.ConcreteDecision | ConcreteDecision} if successful,
-   * or `Failure` with an error message if not.
-   * @internal
-   */
-  private _createOptimizedDecision(): Result<ConcreteDecision> {
-    if (!this._decisions) {
-      return fail(`${this.id}: no decisions collector available for optimization.`);
-    }
-
-    if (this.candidates.length === 0) {
-      return fail(`${this.id}: no candidates available for decision creation.`);
-    }
-
-    const decisionCandidates = this.candidates.map((c) => ({
-      conditionSet: c.conditions,
-      value: c.json
-    }));
-
-    return ConcreteDecision.create({
-      decisions: this._decisions,
-      candidates: decisionCandidates
+      candidates: this.candidates,
+      decisions: this._decisions
     });
   }
 }

@@ -33,6 +33,7 @@ describe('Resource', () => {
   let otherType: TsRes.ResourceTypes.ResourceType;
   let conditions: TsRes.Conditions.ConditionCollector;
   let conditionSets: TsRes.Conditions.ConditionSetCollector;
+  let decisions: TsRes.Decisions.AbstractDecisionCollector;
   let someDecls: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl[];
   let candidates: TsRes.Resources.ResourceCandidate[];
 
@@ -69,6 +70,7 @@ describe('Resource', () => {
   beforeEach(() => {
     conditions = TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow();
     conditionSets = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
+    decisions = TsRes.Decisions.AbstractDecisionCollector.create({ conditionSets }).orThrow();
     someDecls = [
       {
         id: 'some.resource.path',
@@ -123,7 +125,7 @@ describe('Resource', () => {
         }).orThrow()
       );
 
-      const resource = TsRes.Resources.Resource.create({ candidates });
+      const resource = TsRes.Resources.Resource.create({ candidates, decisions });
       expect(resource).toSucceedAndSatisfy((r) => {
         expect(r.id).toBe(candidates[0].id);
         expect(r.resourceType?.key).toBe('json');
@@ -135,7 +137,8 @@ describe('Resource', () => {
       const resource = TsRes.Resources.Resource.create({
         id: candidates[0].id,
         candidates,
-        resourceType: otherType
+        resourceType: otherType,
+        decisions
       });
       expect(resource).toSucceedAndSatisfy((r) => {
         expect(r.id).toBe(candidates[0].id);
@@ -152,7 +155,7 @@ describe('Resource', () => {
           decl: { ...someDecls[0] }
         }).orThrow()
       );
-      const resource = TsRes.Resources.Resource.create({ candidates });
+      const resource = TsRes.Resources.Resource.create({ candidates, decisions });
       expect(resource).toFailWith(/mismatched ids/);
     });
 
@@ -173,13 +176,18 @@ describe('Resource', () => {
           decl: someDecls[1]
         }).orThrow()
       );
-      const resource = TsRes.Resources.Resource.create({ candidates });
+      const resource = TsRes.Resources.Resource.create({ candidates, decisions });
       expect(resource).toFailWith(/type mismatch/);
     });
 
     test('succeeds if an id but no candidates are supplied', () => {
       expect(
-        TsRes.Resources.Resource.create({ candidates: [], id: 'some.resource.id', resourceType: jsonType })
+        TsRes.Resources.Resource.create({
+          decisions,
+          candidates: [],
+          id: 'some.resource.id',
+          resourceType: jsonType
+        })
       ).toSucceedAndSatisfy((r) => {
         expect(r.id).toBe('some.resource.id');
         expect(r.resourceType?.key).toBe('json');
@@ -188,17 +196,21 @@ describe('Resource', () => {
     });
 
     test('fails if no id and no candidates are supplied', () => {
-      const resource = TsRes.Resources.Resource.create({ candidates: [], resourceType: jsonType });
+      const resource = TsRes.Resources.Resource.create({ decisions, candidates: [], resourceType: jsonType });
       expect(resource).toFailWith(/no resource id and no candidates/);
     });
 
     test('fails if no type is supplied and not candidates have types', () => {
-      const resource = TsRes.Resources.Resource.create({ id: candidates[0].id, candidates });
+      const resource = TsRes.Resources.Resource.create({ decisions, id: candidates[0].id, candidates });
       expect(resource).toFailWith(/no type specified/);
     });
 
     test('fails if supplied id does not match candidates', () => {
-      const resource = TsRes.Resources.Resource.create({ id: 'some.other.resource.path', candidates });
+      const resource = TsRes.Resources.Resource.create({
+        decisions,
+        id: 'some.other.resource.path',
+        candidates
+      });
       expect(resource).toFailWith(/mismatched ids/);
     });
 
@@ -214,7 +226,8 @@ describe('Resource', () => {
       const resource = TsRes.Resources.Resource.create({
         id: candidates[0].id,
         candidates,
-        resourceType: otherType
+        resourceType: otherType,
+        decisions
       });
       expect(resource).toFailWith(/type mismatch/);
     });
@@ -228,7 +241,7 @@ describe('Resource', () => {
           decl: { ...someDecls[0], json: { some_other: 'property' } }
         }).orThrow()
       );
-      const resource = TsRes.Resources.Resource.create({ candidates });
+      const resource = TsRes.Resources.Resource.create({ candidates, decisions });
       expect(resource).toFailWith(/duplicate candidates/);
     });
 
@@ -240,7 +253,7 @@ describe('Resource', () => {
           decl: { ...someDecls[0] }
         }).orThrow()
       );
-      const resource = TsRes.Resources.Resource.create({ resourceType: jsonType, candidates });
+      const resource = TsRes.Resources.Resource.create({ decisions, resourceType: jsonType, candidates });
       expect(resource).toSucceedAndSatisfy((r) => {
         expect(r.id).toBe(candidates[0].id);
         expect(r.resourceType?.key).toBe('json');
@@ -267,7 +280,7 @@ describe('Resource', () => {
         decl,
         resourceType: jsonType
       }).orThrow();
-      const resource = TsRes.Resources.Resource.create({ candidates: [c1, c2] });
+      const resource = TsRes.Resources.Resource.create({ decisions, candidates: [c1, c2] });
       expect(resource).toSucceedAndSatisfy((r) => {
         expect(r.candidates.length).toBe(1);
         expect(r.candidates[0].json).toEqual({ a: 1 });
@@ -297,7 +310,7 @@ describe('Resource', () => {
         decl: decl2,
         resourceType: jsonType
       }).orThrow();
-      const resource = TsRes.Resources.Resource.create({ candidates: [c1, c2] });
+      const resource = TsRes.Resources.Resource.create({ decisions, candidates: [c1, c2] });
       expect(resource).toFailWith(/duplicate candidates/);
     });
 
@@ -312,7 +325,7 @@ describe('Resource', () => {
           TsRes.Resources.ResourceCandidate.create({ id: 'id', conditionSets, decl, resourceType: jsonType })
         )
       ).orThrow();
-      const resource = TsRes.Resources.Resource.create({ candidates: cs });
+      const resource = TsRes.Resources.Resource.create({ decisions, candidates: cs });
       expect(resource).toSucceedAndSatisfy((r) => {
         expect(r.candidates.length).toBe(2);
         // Should be sorted in reverse order by compare
@@ -323,7 +336,11 @@ describe('Resource', () => {
 
   describe('toChildResourceDecl method', () => {
     test('returns a child resource declaration for a resource', () => {
-      const resource = TsRes.Resources.Resource.create({ candidates, resourceType: jsonType }).orThrow();
+      const resource = TsRes.Resources.Resource.create({
+        decisions,
+        candidates,
+        resourceType: jsonType
+      }).orThrow();
       expect(resource.toChildResourceDecl()).toEqual({
         resourceTypeName: 'json',
         candidates: expect.arrayContaining(someDecls.map((d) => omit(d, ['id'])))
@@ -334,7 +351,8 @@ describe('Resource', () => {
       const resource = TsRes.Resources.Resource.create({
         id: 'some.resource.id',
         candidates: [],
-        resourceType: jsonType
+        resourceType: jsonType,
+        decisions
       }).orThrow();
       expect(resource.toChildResourceDecl()).toEqual({
         resourceTypeName: 'json'
@@ -342,7 +360,11 @@ describe('Resource', () => {
     });
 
     test('includes properties with default values if showDefaults is true', () => {
-      const resource = TsRes.Resources.Resource.create({ candidates, resourceType: jsonType }).orThrow();
+      const resource = TsRes.Resources.Resource.create({
+        decisions,
+        candidates,
+        resourceType: jsonType
+      }).orThrow();
       expect(resource.toChildResourceDecl({ showDefaults: true })).toEqual({
         resourceTypeName: 'json',
         candidates: expect.arrayContaining([
@@ -406,7 +428,11 @@ describe('Resource', () => {
 
   describe('toLooseResourceDecl method', () => {
     test('returns a loose resource declaration for a resource', () => {
-      const resource = TsRes.Resources.Resource.create({ candidates, resourceType: jsonType }).orThrow();
+      const resource = TsRes.Resources.Resource.create({
+        decisions,
+        candidates,
+        resourceType: jsonType
+      }).orThrow();
       expect(resource.toLooseResourceDecl()).toEqual({
         id: 'some.resource.path',
         resourceTypeName: 'json',
@@ -418,7 +444,8 @@ describe('Resource', () => {
       const resource = TsRes.Resources.Resource.create({
         id: 'some.resource.path',
         candidates: [],
-        resourceType: jsonType
+        resourceType: jsonType,
+        decisions
       }).orThrow();
       expect(resource.toLooseResourceDecl()).toEqual({
         id: 'some.resource.path',
@@ -427,7 +454,11 @@ describe('Resource', () => {
     });
 
     test('includes properties with default values if showDefaults is true', () => {
-      const resource = TsRes.Resources.Resource.create({ candidates, resourceType: jsonType }).orThrow();
+      const resource = TsRes.Resources.Resource.create({
+        decisions,
+        candidates,
+        resourceType: jsonType
+      }).orThrow();
       expect(resource.toLooseResourceDecl({ showDefaults: true })).toEqual({
         id: 'some.resource.path',
         resourceTypeName: 'json',
@@ -498,7 +529,11 @@ describe('Resource', () => {
         conditions: { homeTerritory: 'US' }
       };
       const c = TsRes.Resources.ResourceCandidate.create({ id: 'id', conditionSets, decl }).orThrow();
-      const resource = TsRes.Resources.Resource.create({ candidates: [c], resourceType: jsonType }).orThrow();
+      const resource = TsRes.Resources.Resource.create({
+        decisions,
+        candidates: [c],
+        resourceType: jsonType
+      }).orThrow();
       expect(resource.toChildResourceDecl()).toEqual({
         resourceTypeName: 'json',
         candidates: [c.toChildResourceCandidateDecl()]
@@ -507,7 +542,8 @@ describe('Resource', () => {
       const resource2 = TsRes.Resources.Resource.create({
         candidates: [],
         id: 'id',
-        resourceType: jsonType
+        resourceType: jsonType,
+        decisions
       }).orThrow();
       expect(resource2.toChildResourceDecl()).toEqual({ resourceTypeName: 'json' });
     });
@@ -518,7 +554,11 @@ describe('Resource', () => {
         conditions: { homeTerritory: 'US' }
       };
       const c = TsRes.Resources.ResourceCandidate.create({ id: 'id', conditionSets, decl }).orThrow();
-      const resource = TsRes.Resources.Resource.create({ candidates: [c], resourceType: jsonType }).orThrow();
+      const resource = TsRes.Resources.Resource.create({
+        decisions,
+        candidates: [c],
+        resourceType: jsonType
+      }).orThrow();
       expect(resource.toLooseResourceDecl()).toEqual({
         id: 'id',
         resourceTypeName: 'json',
@@ -528,7 +568,8 @@ describe('Resource', () => {
       const resource2 = TsRes.Resources.Resource.create({
         candidates: [],
         id: 'id',
-        resourceType: jsonType
+        resourceType: jsonType,
+        decisions
       }).orThrow();
       expect(resource2.toLooseResourceDecl()).toEqual({ id: 'id', resourceTypeName: 'json' });
     });
@@ -536,13 +577,21 @@ describe('Resource', () => {
 
   describe('getCandidatesForContext method', () => {
     test('returns empty array if no candidates match the context', () => {
-      const resource = TsRes.Resources.Resource.create({ candidates, resourceType: jsonType }).orThrow();
+      const resource = TsRes.Resources.Resource.create({
+        decisions,
+        candidates,
+        resourceType: jsonType
+      }).orThrow();
       const context = { homeTerritory: 'ZZ', language: 'zz' };
       expect(resource.getCandidatesForContext(context)).toEqual([]);
     });
 
     test('returns multiple candidates that match the context', () => {
-      const resource = TsRes.Resources.Resource.create({ candidates, resourceType: jsonType }).orThrow();
+      const resource = TsRes.Resources.Resource.create({
+        decisions,
+        candidates,
+        resourceType: jsonType
+      }).orThrow();
       const context = { language: 'en' };
       const matches = resource.getCandidatesForContext(context);
       const expected = resource.candidates.filter((c) => c.canMatchPartialContext(context));
@@ -550,7 +599,11 @@ describe('Resource', () => {
     });
 
     test('returns all candidates for unconditional context', () => {
-      const resource = TsRes.Resources.Resource.create({ candidates, resourceType: jsonType }).orThrow();
+      const resource = TsRes.Resources.Resource.create({
+        decisions,
+        candidates,
+        resourceType: jsonType
+      }).orThrow();
       const context = {};
       expect(resource.getCandidatesForContext(context)).toEqual(resource.candidates);
     });
@@ -559,7 +612,8 @@ describe('Resource', () => {
       const resource = TsRes.Resources.Resource.create({
         candidates: [],
         resourceType: jsonType,
-        id: 'empty'
+        id: 'empty',
+        decisions
       }).orThrow();
       const context = { homeTerritory: 'US' };
       expect(resource.getCandidatesForContext(context)).toEqual([]);

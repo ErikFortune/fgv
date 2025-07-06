@@ -33,6 +33,7 @@ describe('ResourceBuilder', () => {
   let otherType: TsRes.ResourceTypes.ResourceType;
   let conditions: TsRes.Conditions.ConditionCollector;
   let conditionSets: TsRes.Conditions.ConditionSetCollector;
+  let decisions: TsRes.Decisions.AbstractDecisionCollector;
   let someDecls: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl[];
 
   beforeAll(() => {
@@ -68,6 +69,7 @@ describe('ResourceBuilder', () => {
   beforeEach(() => {
     conditions = TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow();
     conditionSets = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
+    decisions = TsRes.Decisions.AbstractDecisionCollector.create({ conditionSets }).orThrow();
     someDecls = [
       {
         id: 'some.resource.path',
@@ -107,7 +109,8 @@ describe('ResourceBuilder', () => {
       const builder = TsRes.Resources.ResourceBuilder.create({
         id: 'some.resource.path',
         resourceTypes,
-        conditionSets
+        conditionSets,
+        decisions
       });
       expect(builder).toSucceedAndSatisfy((b) => {
         expect(b.id).toEqual('some.resource.path');
@@ -121,7 +124,8 @@ describe('ResourceBuilder', () => {
         id: 'some.resource.path',
         resourceTypes,
         conditionSets,
-        typeName: 'json'
+        typeName: 'json',
+        decisions
       });
       expect(builder).toSucceedAndSatisfy((b) => {
         expect(b.id).toEqual('some.resource.path');
@@ -135,7 +139,8 @@ describe('ResourceBuilder', () => {
         id: 'some.resource.path',
         resourceTypes,
         conditionSets,
-        typeName: 'unknown'
+        typeName: 'unknown',
+        decisions
       });
       expect(builder).toFailWith(/not found/i);
     });
@@ -148,7 +153,8 @@ describe('ResourceBuilder', () => {
       builder = TsRes.Resources.ResourceBuilder.create({
         id: 'some.resource.path',
         resourceTypes,
-        conditionSets
+        conditionSets,
+        decisions
       }).orThrow();
     });
 
@@ -233,7 +239,8 @@ describe('ResourceBuilder', () => {
       builder = TsRes.Resources.ResourceBuilder.create({
         id: 'some.resource.path',
         resourceTypes,
-        conditionSets
+        conditionSets,
+        decisions
       }).orThrow();
     });
 
@@ -263,7 +270,8 @@ describe('ResourceBuilder', () => {
       builder = TsRes.Resources.ResourceBuilder.create({
         id: 'some.resource.path',
         resourceTypes,
-        conditionSets
+        conditionSets,
+        decisions
       }).orThrow();
     });
 
@@ -363,7 +371,8 @@ describe('ResourceBuilder', () => {
       builder = TsRes.Resources.ResourceBuilder.create({
         id: 'some.resource.path',
         resourceTypes,
-        conditionSets
+        conditionSets,
+        decisions
       }).orThrow();
     });
 

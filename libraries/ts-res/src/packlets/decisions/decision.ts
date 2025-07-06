@@ -161,6 +161,9 @@ export class Decision<TVALUE extends JsonValue = JsonValue> implements IDecision
   public static getKey<TVALUE extends JsonValue = JsonValue>(
     candidates: ReadonlyArray<ICandidate<TVALUE>>
   ): DecisionKey {
+    if (candidates.length === 0) {
+      return Decision.EmptyDecisionKey;
+    }
     const abstractKey = Decision.getAbstractKey(candidates.map((c) => c.conditionSet));
     const valueKey = Hash.Crc32Normalizer.crc32Hash(candidates.map((c) => JSON.stringify(c.value)));
     return CommonConvert.decisionKey.convert(`${abstractKey}|${valueKey}`).orThrow();

@@ -24,7 +24,7 @@ import { MessageAggregator, Result, captureResult, fail, succeed } from '@fgv/ts
 import { ResourceId, Validate, DecisionIndex } from '../common';
 import { ResourceCandidate } from './resourceCandidate';
 import { ResourceType } from '../resource-types';
-import { ConcreteDecision } from '../decisions';
+import { ConcreteDecision, AbstractDecisionCollector } from '../decisions';
 import * as ResourceJson from '../resource-json';
 import * as Context from '../context';
 
@@ -47,10 +47,9 @@ export interface IResourceCreateParams {
    */
   candidates: ReadonlyArray<ResourceCandidate>;
   /**
-   * {@link Decisions.ConcreteDecision | Decision} for optimized resource resolution.
-   * @internal - Temporarily optional to maintain compatibility during transition
+   * {@link Decisions.AbstractDecisionCollector | AbstractDecisionCollector} used to create the optimized decision.
    */
-  decision?: ConcreteDecision;
+  decisions: AbstractDecisionCollector;
 }
 
 /**
@@ -73,22 +72,14 @@ export class Resource {
   public readonly candidates: ReadonlyArray<ResourceCandidate>;
   /**
    * {@link Decisions.ConcreteDecision | Decision} for optimized resource resolution.
-   * @internal - Temporarily optional to maintain compatibility during transition
    */
-  public readonly decision?: ConcreteDecision;
+  public readonly decision: ConcreteDecision;
 
   /**
    * Gets the {@link Decisions.DecisionIndex | decision index} for this resource.
    */
   public get decisionIndex(): DecisionIndex | undefined {
-    return this.decision?.index;
-  }
-
-  /**
-   * Returns true if this resource uses optimized decision-based resolution.
-   */
-  public get hasOptimizedDecision(): boolean {
-    return this.decision !== undefined;
+    return this.decision.index;
   }
 
   /**
@@ -109,7 +100,7 @@ export class Resource {
       .orThrow();
 
     this.candidates = Resource._validateAndNormalizeCandidates(params.candidates).orThrow();
-    this.decision = params.decision;
+    this.decision = Resource._createOptimizedDecision(this.candidates, params.decisions).orThrow();
   }
 
   /**
@@ -189,6 +180,29 @@ export class Resource {
       return fail(`${resourceId}: candidates with mismatched ids ${mismatched.join(', ')}.`);
     }
     return succeed(resourceId);
+  }
+
+  /**
+   * Creates an optimized decision for the given candidates using the decisions collector.
+   * @param candidates - The validated and normalized candidates to create a decision for.
+   * @param decisions - The {@link Decisions.AbstractDecisionCollector | AbstractDecisionCollector} to use.
+   * @returns `Success` with the {@link Decisions.ConcreteDecision | ConcreteDecision} if successful,
+   * `Failure` with an error message otherwise.
+   * @internal
+   */
+  private static _createOptimizedDecision(
+    candidates: ReadonlyArray<ResourceCandidate>,
+    decisions: AbstractDecisionCollector
+  ): Result<ConcreteDecision> {
+    const decisionCandidates = candidates.map((c) => ({
+      conditionSet: c.conditions,
+      value: c.json
+    }));
+
+    return ConcreteDecision.create({
+      decisions,
+      candidates: decisionCandidates
+    });
   }
 
   /**
