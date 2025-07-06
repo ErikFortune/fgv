@@ -1377,6 +1377,8 @@ interface IResourceBuilderCreateParams {
     // (undocumented)
     conditionSets: ConditionSetCollector;
     // (undocumented)
+    decisions?: AbstractDecisionCollector;
+    // (undocumented)
     id: string;
     // (undocumented)
     resourceTypes: ReadOnlyResourceTypeCollector;
@@ -1460,6 +1462,10 @@ interface IResourceCollectorCreateParams {
 interface IResourceCreateParams {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     candidates: ReadonlyArray<ResourceCandidate>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
+    decision?: ConcreteDecision;
     id?: string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resourceType?: ResourceType;
@@ -2193,10 +2199,17 @@ class Resource {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params: IResourceCreateParams): Result<Resource>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
+    readonly decision?: ConcreteDecision;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get decisionIndex(): DecisionIndex | undefined;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getCandidatesForContext(context: Context.IValidatedContextDecl, options?: Context.IContextMatchOptions): ReadonlyArray<ResourceCandidate>;
+    get hasOptimizedDecision(): boolean;
     readonly id: ResourceId;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly resourceType: ResourceType;
@@ -2241,6 +2254,8 @@ class ResourceBuilder {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params: IResourceBuilderCreateParams): Result<ResourceBuilder>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected _decisions?: AbstractDecisionCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2454,6 +2469,8 @@ class ResourceManager {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getResourcesForContext(context: Context.IValidatedContextDecl, options?: Context.IContextMatchOptions): ReadonlyArray<ResourceBuilder>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    optimizeWithDecisions(): Result<void>;
     // (undocumented)
     readonly qualifiers: IReadOnlyQualifierCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2756,7 +2773,8 @@ const validatedQualifierDecl: Converter<IValidatedQualifierDecl, IQualifierDeclC
 // src/packlets/import/importers/collectionImporter.ts:133:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/import/importers/collectionImporter.ts:133:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/import/importers/collectionImporter.ts:133:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resource.ts:176:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resource.ts:203:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resourceBuilder.ts:280:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resourceCandidate.ts:238:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)

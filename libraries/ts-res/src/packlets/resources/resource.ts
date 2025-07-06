@@ -21,9 +21,10 @@
  */
 
 import { MessageAggregator, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
-import { ResourceId, Validate } from '../common';
+import { ResourceId, Validate, DecisionIndex } from '../common';
 import { ResourceCandidate } from './resourceCandidate';
 import { ResourceType } from '../resource-types';
+import { ConcreteDecision } from '../decisions';
 import * as ResourceJson from '../resource-json';
 import * as Context from '../context';
 
@@ -45,6 +46,11 @@ export interface IResourceCreateParams {
    * Array of {@link Resources.ResourceCandidate | candidates} for the resource.
    */
   candidates: ReadonlyArray<ResourceCandidate>;
+  /**
+   * {@link Decisions.ConcreteDecision | Decision} for optimized resource resolution.
+   * @internal - Temporarily optional to maintain compatibility during transition
+   */
+  decision?: ConcreteDecision;
 }
 
 /**
@@ -65,6 +71,25 @@ export class Resource {
    * The array of {@link Resources.ResourceCandidate | candidates} for the resource.
    */
   public readonly candidates: ReadonlyArray<ResourceCandidate>;
+  /**
+   * {@link Decisions.ConcreteDecision | Decision} for optimized resource resolution.
+   * @internal - Temporarily optional to maintain compatibility during transition
+   */
+  public readonly decision?: ConcreteDecision;
+
+  /**
+   * Gets the {@link Decisions.DecisionIndex | decision index} for this resource.
+   */
+  public get decisionIndex(): DecisionIndex | undefined {
+    return this.decision?.index;
+  }
+
+  /**
+   * Returns true if this resource uses optimized decision-based resolution.
+   */
+  public get hasOptimizedDecision(): boolean {
+    return this.decision !== undefined;
+  }
 
   /**
    * Constructor for a {@link Resources.Resource | Resource} object.
@@ -84,6 +109,7 @@ export class Resource {
       .orThrow();
 
     this.candidates = Resource._validateAndNormalizeCandidates(params.candidates).orThrow();
+    this.decision = params.decision;
   }
 
   /**
