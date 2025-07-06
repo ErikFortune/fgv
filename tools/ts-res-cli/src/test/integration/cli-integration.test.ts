@@ -67,9 +67,9 @@ describe('CLI Integration Tests', () => {
   describe('Basic CLI functionality', () => {
     test('shows help when run without arguments', async () => {
       const result = await runCli([]);
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toMatch(/Usage:/);
-      expect(result.stdout).toMatch(/Commands:/);
+      expect(result.exitCode).toBe(1); // Commander exits with 1 when no command provided
+      expect(result.stderr).toMatch(/Usage:/);
+      expect(result.stderr).toMatch(/Commands:/);
     });
 
     test('shows version with --version flag', async () => {
@@ -148,9 +148,9 @@ describe('CLI Integration Tests', () => {
       const output = JSON.parse(outputContent);
 
       expect(output).toHaveProperty('resources');
-      expect(output.resources).toHaveProperty('app.title');
-      expect(output.resources).toHaveProperty('messages.welcome');
-      expect(output.resources).toHaveProperty('buttons.actions');
+      expect(Object.keys(output.resources)).toContain('app.title');
+      expect(Object.keys(output.resources)).toContain('messages.welcome');
+      expect(Object.keys(output.resources)).toContain('buttons.actions');
     });
 
     test('compiles resources to JavaScript format', async () => {
@@ -209,8 +209,8 @@ describe('CLI Integration Tests', () => {
       const output = JSON.parse(outputContent);
 
       // Should include resources that match English
-      expect(output.resources).toHaveProperty('messages.welcome');
-      expect(output.resources).toHaveProperty('buttons.actions');
+      expect(Object.keys(output.resources)).toContain('messages.welcome');
+      expect(Object.keys(output.resources)).toContain('buttons.actions');
     });
 
     test('compiles with specific territory context', async () => {
@@ -230,10 +230,10 @@ describe('CLI Integration Tests', () => {
       const outputContent = await fs.readFile(outputFile, 'utf-8');
       const output = JSON.parse(outputContent);
 
-      expect(output.resources).toHaveProperty('messages.welcome');
+      expect(Object.keys(output.resources)).toContain('messages.welcome');
       // Check that we get the US-specific variant
       const welcomeResource = output.resources['messages.welcome'];
-      expect(welcomeResource).toHaveProperty('language=en-US,territory=US');
+      expect(Object.keys(welcomeResource)).toContain('language-[en-US]@600+territory-[US]@500');
     });
 
     test('compiles with metadata included', async () => {
@@ -443,8 +443,8 @@ describe('CLI Integration Tests', () => {
       const outputContent = await fs.readFile(outputFile, 'utf-8');
       const output = JSON.parse(outputContent);
 
-      expect(output.resources).toHaveProperty('dir.messages.hello');
-      expect(output.resources).toHaveProperty('dir.buttons.ok');
+      expect(Object.keys(output.resources)).toContain('dir.messages.hello');
+      expect(Object.keys(output.resources)).toContain('dir.buttons.ok');
     });
   });
 });

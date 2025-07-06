@@ -63,46 +63,60 @@ describe('TsResCliApp', () => {
 
   describe('command parsing', () => {
     test('handles help command', async () => {
-      const originalConsoleLog = console.log;
-      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      const originalWrite = process.stdout.write;
+      let helpOutput = '';
+      process.stdout.write = jest.fn((chunk: string | Uint8Array) => {
+        helpOutput += chunk.toString();
+        return true;
+      });
 
       try {
         await app.run(['node', 'ts-res-compile', '--help']);
-        expect(consoleLogSpy).toHaveBeenCalled();
-        const helpOutput = consoleLogSpy.mock.calls.join('\n');
-        expect(helpOutput).toMatch(/Compile and optimize ts-res resources/);
+      } catch (error) {
+        // Commander calls process.exit() for help, which our mock prevents
       } finally {
-        console.log = originalConsoleLog;
-        consoleLogSpy.mockRestore();
+        process.stdout.write = originalWrite;
       }
+
+      expect(helpOutput).toMatch(/Compile and optimize ts-res resources/);
     });
 
     test('handles version command', async () => {
-      const originalConsoleLog = console.log;
-      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      const originalWrite = process.stdout.write;
+      let versionOutput = '';
+      process.stdout.write = jest.fn((chunk: string | Uint8Array) => {
+        versionOutput += chunk.toString();
+        return true;
+      });
 
       try {
         await app.run(['node', 'ts-res-compile', '--version']);
-        expect(consoleLogSpy).toHaveBeenCalledWith('1.0.0');
+      } catch (error) {
+        // Commander calls process.exit() for version, which our mock prevents
       } finally {
-        console.log = originalConsoleLog;
-        consoleLogSpy.mockRestore();
+        process.stdout.write = originalWrite;
       }
+
+      expect(versionOutput.trim()).toBe('1.0.0');
     });
 
     test('handles compile command help', async () => {
-      const originalConsoleLog = console.log;
-      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      const originalWrite = process.stdout.write;
+      let helpOutput = '';
+      process.stdout.write = jest.fn((chunk: string | Uint8Array) => {
+        helpOutput += chunk.toString();
+        return true;
+      });
 
       try {
         await app.run(['node', 'ts-res-compile', 'compile', '--help']);
-        expect(consoleLogSpy).toHaveBeenCalled();
-        const helpOutput = consoleLogSpy.mock.calls.join('\n');
-        expect(helpOutput).toMatch(/Compile resources from input to output format/);
+      } catch (error) {
+        // Commander calls process.exit() for help, which our mock prevents
       } finally {
-        console.log = originalConsoleLog;
-        consoleLogSpy.mockRestore();
+        process.stdout.write = originalWrite;
       }
+
+      expect(helpOutput).toMatch(/Compile resources from input to output format/);
     });
   });
 
