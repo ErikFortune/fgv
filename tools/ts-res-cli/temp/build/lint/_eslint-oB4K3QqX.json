@@ -1,0 +1,25 @@
+{
+  "cacheVersion": "8.57.0_v20.18.1",
+  "fileVersions": [
+    [
+      "options.ts",
+      "d5f67a566e8952fc0aee277f0549be36dbacab69103c9cd1a2d8cba740423498_sWO/lbulMR7x55CzlWQEPiHO4O8="
+    ],
+    [
+      "compiler.ts",
+      "697d606fad7659e43dc729d2ecf967fa95426ac7a7df25699a7a3168ca7c5e7e_sWO/lbulMR7x55CzlWQEPiHO4O8="
+    ],
+    [
+      "cli.ts",
+      "08e0d0d8c80e7ee226bec9ec7b08badcc1b11c0783cb70592ce04c690b3e84f7_sWO/lbulMR7x55CzlWQEPiHO4O8="
+    ],
+    [
+      "index.ts",
+      "de910d7aa87ef835b467917c35c274ee442241f662de893ab0409b5198a2e477_sWO/lbulMR7x55CzlWQEPiHO4O8="
+    ],
+    [
+      "test/unit/cli.test.ts",
+      "98d9cde22f31edaa2373d569c51b80d5d51613db5c8e10d396f5a9cecaf13f6c_5QddVVLU52Wqfu8v/vPaWnGCkjc="
+    ]
+  ]
+}

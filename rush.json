@@ -457,6 +457,12 @@
       "shouldPublish": true,
       "versionPolicyName": "base-utils",
       "tags": ["libraries", "test", "jest"]
+    },
+    {
+      "packageName": "@fgv/ts-res-cli",
+      "projectFolder": "tools/ts-res-cli",
+      "shouldPublish": false,
+      "tags": ["tools", "cli"]
     }
   ]
 }
