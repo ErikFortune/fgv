@@ -303,6 +303,7 @@ export class RuntimeResourceResolver {
 
     // Resolve the decision to get candidate indices in priority order
     const decisionResult = this.resolveDecision(abstractDecision);
+    /* c8 ignore next 3 - defense in depth almost impossible to hit */
     if (decisionResult.isFailure()) {
       return fail(`Failed to resolve decision for resource "${resource.id}": ${decisionResult.message}`);
     }
@@ -340,6 +341,7 @@ export class RuntimeResourceResolver {
 
     // Resolve the decision to get candidate indices in priority order
     const decisionResult = this.resolveDecision(abstractDecision);
+    /* c8 ignore next 3 - defense in depth almost impossible to hit */
     if (decisionResult.isFailure()) {
       return fail(`Failed to resolve decision for resource "${resource.id}": ${decisionResult.message}`);
     }
