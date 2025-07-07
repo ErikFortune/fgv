@@ -19,12 +19,56 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ConditionSetResolutionResult](./ts-res.runtime.conditionsetresolutionresult.md)
+
+
+</td><td>
+
+Represents the result of resolving a condition set. Contains either a failure indicator or a list of condition priority/score tuples sorted by priority then score.
+
+
+</td></tr>
+<tr><td>
+
+[ContextQualifierProviderValidator](./ts-res.runtime.contextqualifierprovidervalidator.md)
+
+
+</td><td>
+
+A wrapper for [IContextQualifierProvider](./ts-res.runtime.icontextqualifierprovider.md) that accepts string inputs and converts them to strongly-typed values before calling the wrapped provider. This eliminates the need for type casting in consumer code while maintaining type safety.
+
+
+</td></tr>
+<tr><td>
+
+[RuntimeResourceResolver](./ts-res.runtime.runtimeresourceresolver.md)
+
+
+</td><td>
+
+High-performance runtime resource resolver with O(1) condition caching. Resolves resources for a given context by evaluating conditions against qualifier values and caching results for optimal performance.
+
+
+</td></tr>
+<tr><td>
+
 [SimpleContextQualifierProvider](./ts-res.runtime.simplecontextqualifierprovider.md)
 
 
 </td><td>
 
 Simple concrete implementation of [IContextQualifierProvider](./ts-res.runtime.icontextqualifierprovider.md) using a `ResultMap` for qualifier value storage.
+
+
+</td></tr>
+<tr><td>
+
+[ValidatingSimpleContextQualifierProvider](./ts-res.runtime.validatingsimplecontextqualifierprovider.md)
+
+
+</td><td>
+
+A [SimpleContextQualifierProvider](./ts-res.runtime.simplecontextqualifierprovider.md) with a [validator](./ts-res.runtime.contextqualifierprovidervalidator.md) property that enables validated use of the underlying provider with string keys and values. This eliminates the need for type casting in consumer code.
 
 
 </td></tr>
@@ -71,6 +115,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[IConditionMatchResult](./ts-res.runtime.iconditionmatchresult.md)
+
+
+</td><td>
+
+Represents a single condition match result with priority and score.
+
+
+</td></tr>
+<tr><td>
+
 [IContextQualifierProvider](./ts-res.runtime.icontextqualifierprovider.md)
 
 
@@ -82,12 +137,82 @@ Abstract interface for providing qualifier values in an optimized runtime contex
 </td></tr>
 <tr><td>
 
+[IContextQualifierProviderValidatorCreateParams](./ts-res.runtime.icontextqualifierprovidervalidatorcreateparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [ContextQualifierProviderValidator](./ts-res.runtime.contextqualifierprovidervalidator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyContextQualifierProviderValidator](./ts-res.runtime.ireadonlycontextqualifierprovidervalidator.md)
+
+
+</td><td>
+
+A read-only interface exposing non-mutating methods of a [ContextQualifierProviderValidator](./ts-res.runtime.contextqualifierprovidervalidator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeResourceResolverCreateParams](./ts-res.runtime.iruntimeresourceresolvercreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a [RuntimeResourceResolver](./ts-res.runtime.runtimeresourceresolver.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [ISimpleContextQualifierProviderCreateParams](./ts-res.runtime.isimplecontextqualifierprovidercreateparams.md)
 
 
 </td><td>
 
 Parameters for creating a [SimpleContextQualifierProvider](./ts-res.runtime.simplecontextqualifierprovider.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IValidatingSimpleContextQualifierProviderCreateParams](./ts-res.runtime.ivalidatingsimplecontextqualifierprovidercreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a [ValidatingSimpleContextQualifierProvider](./ts-res.runtime.validatingsimplecontextqualifierprovider.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[DecisionResolutionResult](./ts-res.runtime.decisionresolutionresult.md)
+
+
+</td><td>
+
+Represents the cached result of resolving a decision. Contains either a failure indicator or a list of instance indices for matching condition sets, ordered by condition set priority.
 
 
 </td></tr>

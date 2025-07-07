@@ -181,7 +181,7 @@ export class RuntimeResourceResolver {
    * Resolves a condition set by evaluating all its constituent conditions against the current context.
    * Uses O(1) caching based on the condition set's globally unique sequential index.
    * @param conditionSet - The {@link Conditions.ConditionSet | condition set} to resolve.
-   * @returns `Success` with the {@link ConditionSetResolutionResult | resolution result} if successful,
+   * @returns `Success` with the {@link Runtime.ConditionSetResolutionResult | resolution result} if successful,
    * or `Failure` with an error message if the condition set cannot be resolved.
    * @public
    */
@@ -231,7 +231,7 @@ export class RuntimeResourceResolver {
    * Resolves a decision by evaluating all its constituent condition sets against the current context.
    * Uses O(1) caching based on the decision's globally unique sequential index.
    * @param decision - The {@link Decisions.AbstractDecision | abstract decision} to resolve.
-   * @returns `Success` with the {@link DecisionResolutionResult | resolution result} if successful,
+   * @returns `Success` with the {@link Runtime.DecisionResolutionResult | resolution result} if successful,
    * or `Failure` with an error message if the decision cannot be resolved.
    * @public
    */

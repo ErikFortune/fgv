@@ -2739,10 +2739,10 @@ class RuntimeResourceResolver {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resolveCondition(condition: Condition): Result<QualifierMatchScore>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionSetResolutionResult"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resolveConditionSet(conditionSet: ConditionSet): Result<ConditionSetResolutionResult>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "DecisionResolutionResult"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resolveDecision(decision: AbstractDecision): Result<DecisionResolutionResult>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resolveResource<T extends JsonValue = JsonValue>(resource: Resource): Result<T>;

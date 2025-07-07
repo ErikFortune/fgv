@@ -26,17 +26,17 @@ import { Result, succeed, fail } from '@fgv/ts-utils';
 
 // Mock provider for testing the validator
 class MockContextQualifierProvider implements TsRes.Runtime.IContextQualifierProvider {
-  private _values = new Map<string, string>();
+  private _values: Map<string, string> = new Map<string, string>();
   public qualifiers: TsRes.Qualifiers.QualifierCollector;
 
-  constructor(qualifiers: TsRes.Qualifiers.QualifierCollector) {
+  public constructor(qualifiers: TsRes.Qualifiers.QualifierCollector) {
     this.qualifiers = qualifiers;
     this._values.set('language', 'en-US');
     this._values.set('territory', 'US');
     this._values.set('priority', 'high');
   }
 
-  get(
+  public get(
     nameOrIndexOrQualifier: TsRes.QualifierName | TsRes.QualifierIndex | TsRes.Qualifiers.Qualifier
   ): Result<TsRes.QualifierContextValue> {
     if (typeof nameOrIndexOrQualifier === 'string') {
@@ -62,7 +62,7 @@ class MockContextQualifierProvider implements TsRes.Runtime.IContextQualifierPro
     return fail('Invalid parameter');
   }
 
-  getValidated(
+  public getValidated(
     nameOrIndexOrQualifier: TsRes.QualifierName | TsRes.QualifierIndex | TsRes.Qualifiers.Qualifier
   ): Result<TsRes.QualifierContextValue> {
     return this.get(nameOrIndexOrQualifier).onSuccess((value) => {
@@ -74,20 +74,23 @@ class MockContextQualifierProvider implements TsRes.Runtime.IContextQualifierPro
     });
   }
 
-  has(name: TsRes.QualifierName): Result<boolean> {
+  public has(name: TsRes.QualifierName): Result<boolean> {
     return succeed(this._values.has(name));
   }
 
-  getNames(): Result<ReadonlyArray<TsRes.QualifierName>> {
+  public getNames(): Result<ReadonlyArray<TsRes.QualifierName>> {
     return succeed(Array.from(this._values.keys()) as TsRes.QualifierName[]);
   }
 
-  set(name: TsRes.QualifierName, value: TsRes.QualifierContextValue): Result<TsRes.QualifierContextValue> {
+  public set(
+    name: TsRes.QualifierName,
+    value: TsRes.QualifierContextValue
+  ): Result<TsRes.QualifierContextValue> {
     this._values.set(name, value);
     return succeed(value);
   }
 
-  remove(name: TsRes.QualifierName): Result<TsRes.QualifierContextValue> {
+  public remove(name: TsRes.QualifierName): Result<TsRes.QualifierContextValue> {
     const value = this._values.get(name);
     if (value) {
       this._values.delete(name);

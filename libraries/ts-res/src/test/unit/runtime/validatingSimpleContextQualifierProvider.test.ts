@@ -88,9 +88,8 @@ describe('ValidatingSimpleContextQualifierProvider class', () => {
     });
 
     test('fails with invalid qualifier name in initial values', () => {
-      const invalidValues = {
-        '': 'invalid'
-      };
+      const invalidValues: Record<string, string> = {};
+      invalidValues[''] = 'invalid';
 
       expect(
         TsRes.Runtime.ValidatingSimpleContextQualifierProvider.create({
