@@ -94,6 +94,48 @@ The array of [candidates](./ts-res.resources.resourcecandidate.md) for the resou
 </td></tr>
 <tr><td>
 
+[decision](./ts-res.resources.resource.decision.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ConcreteDecision](./ts-res.decisions.concretedecision.md)
+
+
+</td><td>
+
+[Decision](./ts-res.decisions.concretedecision.md) for optimized resource resolution.
+
+
+</td></tr>
+<tr><td>
+
+[decisionIndex](./ts-res.resources.resource.decisionindex.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[DecisionIndex](./ts-res.decisionindex.md) \| undefined
+
+
+</td><td>
+
+Gets the [decision index](./ts-res.decisionindex.md) for this resource.
+
+
+</td></tr>
+<tr><td>
+
 [id](./ts-res.resources.resource.id.md)
 
 

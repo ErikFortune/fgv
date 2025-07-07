@@ -54,6 +54,23 @@ Description
 </td></tr>
 <tr><td>
 
+[decisions](./ts-res.resources.iresourcebuildercreateparams.decisions.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[AbstractDecisionCollector](./ts-res.decisions.abstractdecisioncollector.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [id](./ts-res.resources.iresourcebuildercreateparams.id.md)
 
 

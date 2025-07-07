@@ -451,6 +451,17 @@ export { Context }
 // @public
 const contextDecl: Converter<Record<string, string>, unknown>;
 
+// @public
+abstract class ContextQualifierProvider implements IContextQualifierProvider {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    abstract get(nameOrIndexOrQualifier: QualifierName | QualifierIndex | Qualifier): Result<QualifierContextValue>;
+    abstract getNames(): Result<ReadonlyArray<QualifierName>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    abstract getValidated(nameOrIndexOrQualifier: QualifierName | QualifierIndex | Qualifier): Result<QualifierContextValue>;
+    abstract has(name: QualifierName): Result<boolean>;
+    abstract readonly qualifiers: IReadOnlyQualifierCollector;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -890,6 +901,17 @@ interface IContextMatchOptions {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     acceptDefaultScore?: boolean;
     partialContextMatch?: boolean;
+}
+
+// @public
+interface IContextQualifierProvider {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get(nameOrIndexOrQualifier: QualifierName | QualifierIndex | Qualifier): Result<QualifierContextValue>;
+    getNames(): Result<ReadonlyArray<QualifierName>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getValidated(nameOrIndexOrQualifier: QualifierName | QualifierIndex | Qualifier): Result<QualifierContextValue>;
+    has(name: QualifierName): Result<boolean>;
+    readonly qualifiers: IReadOnlyQualifierCollector;
 }
 
 // @public
@@ -1531,6 +1553,15 @@ interface IResourceTreeRootDecl_2 extends IResourceTreeChildNodeDecl_2 {
     readonly context?: IContainerContextDecl_2;
     // (undocumented)
     readonly resources?: Record<string, IChildResourceDecl_2>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface ISimpleContextQualifierProviderCreateParams {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    qualifiers: IReadOnlyQualifierCollector;
+    qualifierValues?: Record<string, QualifierContextValue>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2198,7 +2229,6 @@ class Resource {
     static create(params: IResourceCreateParams): Result<Resource>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly decision: ConcreteDecision;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get decisionIndex(): DecisionIndex | undefined;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2571,8 +2601,42 @@ export type ResourceValueMergeMethod = 'augment' | 'delete' | 'replace';
 // @public
 const resourceValueMergeMethod: Converter<ResourceValueMergeMethod, ResourceValueMergeMethod[]>;
 
+declare namespace Runtime {
+    export {
+        IContextQualifierProvider,
+        ContextQualifierProvider,
+        ISimpleContextQualifierProviderCreateParams,
+        SimpleContextQualifierProvider
+    }
+}
+export { Runtime }
+
 // @internal (undocumented)
 const segmentedIdentifier: RegExp;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class SimpleContextQualifierProvider extends ContextQualifierProvider {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(params: ISimpleContextQualifierProviderCreateParams);
+    clear(): void;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params: ISimpleContextQualifierProviderCreateParams): Result<SimpleContextQualifierProvider>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get(nameOrIndexOrQualifier: QualifierName | QualifierIndex | Qualifier): Result<QualifierContextValue>;
+    getNames(): Result<ReadonlyArray<QualifierName>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getValidated(nameOrIndexOrQualifier: QualifierName | QualifierIndex | Qualifier): Result<QualifierContextValue>;
+    has(name: QualifierName): Result<boolean>;
+    readonly qualifiers: IReadOnlyQualifierCollector;
+    remove(name: QualifierName): Result<QualifierContextValue>;
+    set(name: QualifierName, value: QualifierContextValue): Result<QualifierContextValue>;
+    get size(): number;
+}
 
 // @public
 function splitResourceId(id: string | undefined): Result<ResourceName[]>;

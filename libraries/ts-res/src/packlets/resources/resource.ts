@@ -76,7 +76,7 @@ export class Resource {
   public readonly decision: ConcreteDecision;
 
   /**
-   * Gets the {@link Decisions.DecisionIndex | decision index} for this resource.
+   * Gets the {@link DecisionIndex | decision index} for this resource.
    */
   public get decisionIndex(): DecisionIndex | undefined {
     return this.decision.index;

@@ -56,6 +56,25 @@ Array of [candidates](./ts-res.resources.resourcecandidate.md) for the resource.
 </td></tr>
 <tr><td>
 
+[decisions](./ts-res.resources.iresourcecreateparams.decisions.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[AbstractDecisionCollector](./ts-res.decisions.abstractdecisioncollector.md)
+
+
+</td><td>
+
+[AbstractDecisionCollector](./ts-res.decisions.abstractdecisioncollector.md) used to create the optimized decision.
+
+
+</td></tr>
+<tr><td>
+
 [id?](./ts-res.resources.iresourcecreateparams.id.md)
 
 

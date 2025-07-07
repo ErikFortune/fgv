@@ -118,6 +118,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Runtime](./ts-res.runtime.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Validate](./ts-res.validate.md)
 
 

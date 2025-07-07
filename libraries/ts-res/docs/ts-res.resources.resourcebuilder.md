@@ -115,6 +115,27 @@ Common collector for [condition sets](./ts-res.conditions.conditionset.md)<!-- -
 </td></tr>
 <tr><td>
 
+[\_decisions](./ts-res.resources.resourcebuilder._decisions.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+[AbstractDecisionCollector](./ts-res.decisions.abstractdecisioncollector.md)
+
+
+</td><td>
+
+Collector for [abstract decisions](./ts-res.decisions.abstractdecision.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [\_resourceType](./ts-res.resources.resourcebuilder._resourcetype.md)
 
 
