@@ -21,4 +21,8 @@
  */
 
 export * from './contextQualifierProvider';
+export * from './contextQualifierProviderValidator';
 export * from './simpleContextQualifierProvider';
+export * from './validatingSimpleContextQualifierProvider';
+export * from './runtimeResourceResolver';
+export * from './conditionSetResolutionResult';

@@ -383,6 +383,21 @@ export type ConditionSetKey = Brand<string, 'ConditionSetKey'>;
 const conditionSetKey: Converter<ConditionSetKey, unknown>;
 
 // @public
+class ConditionSetResolutionResult {
+    static compare(a: ConditionSetResolutionResult, b: ConditionSetResolutionResult): number;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static createFailure(): ConditionSetResolutionResult;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static createSuccess(matches: ReadonlyArray<IConditionMatchResult>): ConditionSetResolutionResult;
+    // (undocumented)
+    readonly matches: ReadonlyArray<IConditionMatchResult>;
+    get maxPriority(): ConditionPriority;
+    // (undocumented)
+    readonly success: boolean;
+    get totalScore(): QualifierMatchScore;
+}
+
+// @public
 export type ConditionSetToken = Brand<string, 'ConditionSetToken'>;
 
 // @public
@@ -460,6 +475,23 @@ abstract class ContextQualifierProvider implements IContextQualifierProvider {
     abstract getValidated(nameOrIndexOrQualifier: QualifierName | QualifierIndex | Qualifier): Result<QualifierContextValue>;
     abstract has(name: QualifierName): Result<boolean>;
     abstract readonly qualifiers: IReadOnlyQualifierCollector;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ContextQualifierProviderValidator implements IReadOnlyContextQualifierProviderValidator {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(params: IContextQualifierProviderValidatorCreateParams);
+    get(name: string): Result<QualifierContextValue>;
+    getByIndex(index: number): Result<QualifierContextValue>;
+    getValidated(name: string): Result<QualifierContextValue>;
+    getValidatedByIndex(index: number): Result<QualifierContextValue>;
+    has(name: string): Result<boolean>;
+    readonly provider: IContextQualifierProvider;
+    get qualifiers(): IReadOnlyQualifierCollector;
+    remove(name: string): Result<QualifierContextValue>;
+    set(name: string, value: string): Result<QualifierContextValue>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -586,6 +618,14 @@ const decisionKey: Converter<DecisionKey, unknown>;
 
 // @internal (undocumented)
 const decisionKey_2: RegExp;
+
+// @public
+type DecisionResolutionResult = {
+    success: false;
+} | {
+    success: true;
+    instanceIndices: ReadonlyArray<number>;
+};
 
 declare namespace Decisions {
     export {
@@ -825,6 +865,14 @@ interface IConditionDeclConvertContext {
     readonly qualifiers: IReadOnlyQualifierCollector;
 }
 
+// @public
+interface IConditionMatchResult {
+    // (undocumented)
+    readonly priority: ConditionPriority;
+    // (undocumented)
+    readonly score: QualifierMatchScore;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -912,6 +960,14 @@ interface IContextQualifierProvider {
     getValidated(nameOrIndexOrQualifier: QualifierName | QualifierIndex | Qualifier): Result<QualifierContextValue>;
     has(name: QualifierName): Result<boolean>;
     readonly qualifiers: IReadOnlyQualifierCollector;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IContextQualifierProviderValidatorCreateParams {
+    // (undocumented)
+    provider: IContextQualifierProvider;
 }
 
 // @public
@@ -1382,6 +1438,27 @@ interface IQualifierTypeCreateParams {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+interface IReadOnlyContextQualifierProviderValidator {
+    get(name: string): Result<QualifierContextValue>;
+    getByIndex(index: number): Result<QualifierContextValue>;
+    getValidated(name: string): Result<QualifierContextValue>;
+    getValidatedByIndex(index: number): Result<QualifierContextValue>;
+    has(name: string): Result<boolean>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly provider: IContextQualifierProvider;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly qualifiers: IReadOnlyQualifierCollector;
+    remove(name: string): Result<QualifierContextValue>;
+    set(name: string, value: string): Result<QualifierContextValue>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 interface IReadOnlyQualifierCollector extends Collections.IReadOnlyValidatingCollector<Qualifier> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getByNameOrToken(nameOrToken: string): Result<Qualifier>;
@@ -1558,6 +1635,18 @@ interface IResourceTreeRootDecl_2 extends IResourceTreeChildNodeDecl_2 {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+interface IRuntimeResourceResolverCreateParams {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    contextQualifierProvider: IContextQualifierProvider;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    qualifierTypes: ReadOnlyQualifierTypeCollector;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    resourceManager: ResourceManager;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 interface ISimpleContextQualifierProviderCreateParams {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     qualifiers: IReadOnlyQualifierCollector;
@@ -1709,6 +1798,15 @@ interface IValidatedQualifierDecl {
     tokenIsOptional: boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     type: QualifierType;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IValidatingSimpleContextQualifierProviderCreateParams {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    qualifiers: IReadOnlyQualifierCollector;
+    qualifierValues?: Record<string, string>;
 }
 
 // @public
@@ -2605,11 +2703,51 @@ declare namespace Runtime {
     export {
         IContextQualifierProvider,
         ContextQualifierProvider,
+        IReadOnlyContextQualifierProviderValidator,
+        IContextQualifierProviderValidatorCreateParams,
+        ContextQualifierProviderValidator,
         ISimpleContextQualifierProviderCreateParams,
-        SimpleContextQualifierProvider
+        SimpleContextQualifierProvider,
+        IValidatingSimpleContextQualifierProviderCreateParams,
+        ValidatingSimpleContextQualifierProvider,
+        DecisionResolutionResult,
+        IRuntimeResourceResolverCreateParams,
+        RuntimeResourceResolver,
+        IConditionMatchResult,
+        ConditionSetResolutionResult
     }
 }
 export { Runtime }
+
+// @public
+class RuntimeResourceResolver {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(params: IRuntimeResourceResolverCreateParams);
+    clearConditionCache(): void;
+    get conditionCacheSize(): number;
+    get conditionSetCacheSize(): number;
+    readonly contextQualifierProvider: IContextQualifierProvider;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params: IRuntimeResourceResolverCreateParams): Result<RuntimeResourceResolver>;
+    get decisionCacheSize(): number;
+    readonly qualifierTypes: ReadOnlyQualifierTypeCollector;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    resolveAllResourceValues<T extends JsonValue = JsonValue>(resource: Resource): Result<ReadonlyArray<T>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    resolveCondition(condition: Condition): Result<QualifierMatchScore>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionSetResolutionResult"
+    resolveConditionSet(conditionSet: ConditionSet): Result<ConditionSetResolutionResult>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "DecisionResolutionResult"
+    resolveDecision(decision: AbstractDecision): Result<DecisionResolutionResult>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    resolveResource<T extends JsonValue = JsonValue>(resource: Resource): Result<T>;
+    readonly resourceManager: ResourceManager;
+}
 
 // @internal (undocumented)
 const segmentedIdentifier: RegExp;
@@ -2816,6 +2954,22 @@ const validatedContextQualifierValueDecl: Converter<IValidatedContextQualifierVa
 // @public
 const validatedQualifierDecl: Converter<IValidatedQualifierDecl, IQualifierDeclConvertContext>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ValidatingSimpleContextQualifierProvider extends SimpleContextQualifierProvider {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(params: IValidatingSimpleContextQualifierProviderCreateParams);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params: IValidatingSimpleContextQualifierProviderCreateParams): Result<ValidatingSimpleContextQualifierProvider>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly validating: IReadOnlyContextQualifierProviderValidator;
+}
+
 // Warnings were encountered during analysis:
 //
 // src/packlets/import/importers/collectionImporter.ts:108:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2836,6 +2990,7 @@ const validatedQualifierDecl: Converter<IValidatedQualifierDecl, IQualifierDeclC
 // src/packlets/resources/resource.ts:193:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resource.ts:216:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resourceCandidate.ts:238:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/runtime/conditionSetResolutionResult.ts:48:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 
