@@ -540,19 +540,5 @@ Gets a read-only array of all [resource builders](./ts-res.resources.resourcebui
 
 
 </td></tr>
-<tr><td>
-
-[optimizeWithDecisions()](./ts-res.resources.resourcemanager.optimizewithdecisions.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Analyzes collected resources and creates [AbstractDecisions](./ts-res.decisions.abstractdecision.md) for resources with similar condition set structures to enable O(1) resolution optimization.
-
-
-</td></tr>
 </tbody></table>
 

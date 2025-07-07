@@ -39,7 +39,7 @@ import {
   ReadOnlyConditionCollector,
   ReadOnlyConditionSetCollector
 } from '../conditions';
-import { AbstractDecision, AbstractDecisionCollector, ReadOnlyAbstractDecisionCollector } from '../decisions';
+import { AbstractDecisionCollector, ReadOnlyAbstractDecisionCollector } from '../decisions';
 import { IReadOnlyQualifierCollector } from '../qualifiers';
 import { ReadOnlyResourceTypeCollector } from '../resource-types';
 import { Convert, ResourceId, Validate } from '../common';
@@ -290,51 +290,6 @@ export class ResourceManager {
   }
 
   /**
-   * Analyzes collected resources and creates {@link Decisions.AbstractDecision | AbstractDecisions} for
-   * resources with similar condition set structures to enable O(1) resolution optimization.
-   * @returns `Success` if analysis completed successfully, or `Failure` with an error message if not.
-   * @public
-   */
-  public optimizeWithDecisions(): Result<void> {
-    const conditionSetGroups = new Map<string, ResourceBuilder[]>();
-
-    this._resources.forEach((builder) => {
-      if (builder.candidates.length > 0) {
-        const conditionSets = builder.candidates.map((c) => c.conditions);
-        const abstractKey = AbstractDecision.getAbstractKey(conditionSets);
-
-        if (!conditionSetGroups.has(abstractKey)) {
-          conditionSetGroups.set(abstractKey, []);
-        }
-        conditionSetGroups.get(abstractKey)!.push(builder);
-      }
-    });
-
-    const errors = new MessageAggregator();
-
-    conditionSetGroups.forEach((builders, abstractKey) => {
-      if (builders.length > 1) {
-        const firstBuilder = builders[0];
-        const conditionSets = firstBuilder.candidates.map((c) => c.conditions);
-
-        AbstractDecision.createAbstractDecision({ conditionSets })
-          .onSuccess((decision) => {
-            const addResult = this._decisions.add(decision);
-            addResult.aggregateError(errors);
-            return succeed(decision);
-          })
-          .aggregateError(errors);
-      }
-    });
-
-    if (errors.hasMessages) {
-      return fail(`decision optimization failed: ${errors.toString()}`);
-    }
-
-    return succeed(undefined);
-  }
-
-  /**
    * Builds the {@link Resources.Resource | resources} from the collected {@link Resources.ResourceCandidate | candidates}.
    * @returns `Success` with a read-only map of {@link Resources.Resource | resources} if successful,
    * or `Failure` with an error message if not.
@@ -342,8 +297,6 @@ export class ResourceManager {
    */
   public build(): Result<Collections.IReadOnlyValidatingResultMap<ResourceId, Resource>> {
     if (!this._built) {
-      this.optimizeWithDecisions().orThrow();
-
       const errors: MessageAggregator = new MessageAggregator();
       this._resources.forEach((r, id) => {
         this._builtResources.getOrAdd(id, () => r.build()).aggregateError(errors);
