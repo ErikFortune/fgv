@@ -2327,7 +2327,6 @@ class Resource {
     static create(params: IResourceCreateParams): Result<Resource>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly decision: ConcreteDecision;
-    get decisionIndex(): DecisionIndex | undefined;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2984,9 +2983,9 @@ class ValidatingSimpleContextQualifierProvider extends SimpleContextQualifierPro
 // src/packlets/import/importers/collectionImporter.ts:133:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/import/importers/collectionImporter.ts:133:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/import/importers/collectionImporter.ts:133:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resource.ts:193:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resource.ts:193:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resource.ts:216:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resource.ts:186:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resource.ts:186:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resource.ts:209:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resourceCandidate.ts:238:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/conditionSetResolutionResult.ts:48:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 

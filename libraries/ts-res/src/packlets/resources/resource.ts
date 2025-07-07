@@ -21,7 +21,7 @@
  */
 
 import { MessageAggregator, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
-import { ResourceId, Validate, DecisionIndex } from '../common';
+import { ResourceId, Validate } from '../common';
 import { ResourceCandidate } from './resourceCandidate';
 import { ResourceType } from '../resource-types';
 import { ConcreteDecision, AbstractDecisionCollector } from '../decisions';
@@ -74,13 +74,6 @@ export class Resource {
    * {@link Decisions.ConcreteDecision | Decision} for optimized resource resolution.
    */
   public readonly decision: ConcreteDecision;
-
-  /**
-   * Gets the {@link DecisionIndex | decision index} for this resource.
-   */
-  public get decisionIndex(): DecisionIndex | undefined {
-    return this.decision.index;
-  }
 
   /**
    * Constructor for a {@link Resources.Resource | Resource} object.
