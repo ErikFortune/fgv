@@ -191,6 +191,18 @@ describe('RuntimeResourceResolver class', () => {
 
       expect(resolver.resolveResource(resource)).toFail();
     });
+
+    test('fails when invalid candidate index is found', () => {
+      // Create a resource with mocked candidates array that is shorter than expected
+      const resource = resourceManager.getBuiltResource('greeting').orThrow();
+      // Manually corrupt the candidates array to force an invalid index scenario
+      const originalCandidates = resource.candidates;
+      (resource as unknown as { candidates: readonly TsRes.Resources.ResourceCandidate[] }).candidates = []; // Empty candidates array
+      expect(resolver.resolveResource(resource)).toFailWith(/Invalid candidate index/);
+      // Restore original candidates
+      (resource as unknown as { candidates: readonly TsRes.Resources.ResourceCandidate[] }).candidates =
+        originalCandidates;
+    });
   });
 
   describe('resolveAllResourceValues method', () => {
@@ -257,6 +269,18 @@ describe('RuntimeResourceResolver class', () => {
 
       expect(resolver.resolveAllResourceValues(resource)).toFail();
     });
+
+    test('fails when invalid candidate index is found', () => {
+      // Create a resource with mocked candidates array that is shorter than expected
+      const resource = resourceManager.getBuiltResource('greeting').orThrow();
+      // Manually corrupt the candidates array to force an invalid index scenario
+      const originalCandidates = resource.candidates;
+      (resource as unknown as { candidates: readonly TsRes.Resources.ResourceCandidate[] }).candidates = []; // Empty candidates array
+      expect(resolver.resolveAllResourceValues(resource)).toFailWith(/Invalid candidate index/);
+      // Restore original candidates
+      (resource as unknown as { candidates: readonly TsRes.Resources.ResourceCandidate[] }).candidates =
+        originalCandidates;
+    });
   });
 
   describe('caching behavior', () => {
@@ -293,6 +317,35 @@ describe('RuntimeResourceResolver class', () => {
       expect(resolver.conditionCacheSize).toBe(resourceManager.conditions.size);
       expect(resolver.conditionSetCacheSize).toBe(resourceManager.conditionSets.size);
       expect(resolver.decisionCacheSize).toBe(resourceManager.decisions.size);
+    });
+  });
+
+  describe('error handling in condition and decision resolution', () => {
+    test('handles condition without valid index', () => {
+      // Create a condition without a valid index
+      const condition = resourceManager.conditions.getAt(0).orThrow();
+      const mockCondition = { ...condition, index: undefined };
+      expect(resolver.resolveCondition(mockCondition as TsRes.Conditions.Condition)).toFailWith(
+        /does not have a valid index/
+      );
+    });
+
+    test('handles condition set without valid index', () => {
+      // Create a condition set without a valid index
+      const conditionSet = resourceManager.conditionSets.getAt(0).orThrow();
+      const mockConditionSet = { ...conditionSet, index: undefined };
+      expect(resolver.resolveConditionSet(mockConditionSet as TsRes.Conditions.ConditionSet)).toFailWith(
+        /does not have a valid index/
+      );
+    });
+
+    test('handles decision without valid index', () => {
+      // Create a decision without a valid index
+      const decision = resourceManager.decisions.getAt(0).orThrow();
+      const mockDecision = { ...decision, index: undefined };
+      expect(resolver.resolveDecision(mockDecision as TsRes.Decisions.AbstractDecision)).toFailWith(
+        /does not have a valid index/
+      );
     });
   });
 });

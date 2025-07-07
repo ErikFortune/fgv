@@ -210,5 +210,14 @@ describe('ValidatingSimpleContextQualifierProvider class', () => {
       provider.clear();
       expect(provider.size).toBe(0);
     });
+
+    test('covers the rarely-used special case constructor branch', () => {
+      // Force testing of edge case in line 73 by passing undefined qualifierValues
+      const provider = TsRes.Runtime.ValidatingSimpleContextQualifierProvider.create({
+        qualifiers,
+        qualifierValues: undefined as unknown as Record<string, string>
+      });
+      expect(provider).toSucceed();
+    });
   });
 });

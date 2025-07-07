@@ -223,6 +223,14 @@ describe('ContextQualifierProviderValidator class', () => {
       expect(validator.set('', 'value')).toFailWith(/Invalid qualifier name/);
     });
 
+    test('fails with invalid qualifier context value type', () => {
+      // Create a validator and try to set with a non-string value (edge case coverage)
+      const invalidValidator = validator as unknown as {
+        set: (name: string, value: unknown) => Result<TsRes.QualifierContextValue>;
+      };
+      expect(invalidValidator.set('language', 123)).toFailWith(/Invalid qualifier context value/);
+    });
+
     test('fails with provider that does not support setting', () => {
       // Create a provider without set method
       const readOnlyProvider = {
@@ -236,6 +244,27 @@ describe('ContextQualifierProviderValidator class', () => {
         provider: readOnlyProvider
       });
       expect(readOnlyValidator.set('language', 'fr-FR')).toFailWith(
+        /Provider does not support setting values/
+      );
+    });
+
+    test('handles provider that throws during setting', () => {
+      // Create a provider that throws during set operation to test error handling
+      const throwingProvider = {
+        qualifiers,
+        get: mockProvider.get.bind(mockProvider),
+        getValidated: mockProvider.getValidated.bind(mockProvider),
+        has: mockProvider.has.bind(mockProvider),
+        getNames: mockProvider.getNames.bind(mockProvider),
+        set: () => {
+          throw new Error('Set operation failed');
+        }
+      };
+      const throwingValidator = new TsRes.Runtime.ContextQualifierProviderValidator({
+        provider: throwingProvider
+      });
+      // The validator should catch the exception and return a failure
+      expect(throwingValidator.set('language', 'fr-FR')).toFailWith(
         /Provider does not support setting values/
       );
     });
@@ -268,6 +297,25 @@ describe('ContextQualifierProviderValidator class', () => {
         provider: readOnlyProvider
       });
       expect(readOnlyValidator.remove('language')).toFailWith(/Provider does not support removing values/);
+    });
+
+    test('handles provider that throws during removal', () => {
+      // Create a provider that throws during remove operation to test error handling
+      const throwingProvider = {
+        qualifiers,
+        get: mockProvider.get.bind(mockProvider),
+        getValidated: mockProvider.getValidated.bind(mockProvider),
+        has: mockProvider.has.bind(mockProvider),
+        getNames: mockProvider.getNames.bind(mockProvider),
+        remove: () => {
+          throw new Error('Remove operation failed');
+        }
+      };
+      const throwingValidator = new TsRes.Runtime.ContextQualifierProviderValidator({
+        provider: throwingProvider
+      });
+      // The validator should catch the exception and return a failure
+      expect(throwingValidator.remove('language')).toFailWith(/Provider does not support removing values/);
     });
   });
 });

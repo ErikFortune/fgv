@@ -206,12 +206,16 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
       .onSuccess((qualifierValue) => {
         // Check if the provider has a set method (only available on mutable providers)
         if ('set' in this.provider && typeof this.provider.set === 'function') {
-          return (
-            this.provider.set as (
-              name: QualifierName,
-              value: QualifierContextValue
-            ) => Result<QualifierContextValue>
-          )(name as QualifierName, qualifierValue);
+          try {
+            return (
+              this.provider.set as (
+                name: QualifierName,
+                value: QualifierContextValue
+              ) => Result<QualifierContextValue>
+            )(name as QualifierName, qualifierValue);
+          } catch {
+            return fail(`Provider does not support setting values`);
+          }
         }
         return fail(`Provider does not support setting values`);
       });
@@ -227,9 +231,13 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
     return this._validateQualifierName(name).onSuccess((qualifierName) => {
       // Check if the provider has a remove method (only available on mutable providers)
       if ('remove' in this.provider && typeof this.provider.remove === 'function') {
-        return (this.provider.remove as (name: QualifierName) => Result<QualifierContextValue>)(
-          qualifierName
-        );
+        try {
+          return (this.provider.remove as (name: QualifierName) => Result<QualifierContextValue>)(
+            qualifierName
+          );
+        } catch {
+          return fail(`Provider does not support removing values`);
+        }
       }
       return fail(`Provider does not support removing values`);
     });
