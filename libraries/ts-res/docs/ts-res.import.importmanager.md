@@ -161,12 +161,12 @@ The initial [import context](./ts-res.import.importcontext.md) for the import op
 
 </td><td>
 
-[ResourceManager](./ts-res.resources.resourcemanager.md)
+[ResourceManagerBuilder](./ts-res.resources.resourcemanagerbuilder.md)
 
 
 </td><td>
 
-The [resource manager](./ts-res.resources.resourcemanager.md) into which resources will be imported.
+The [resource manager builder](./ts-res.resources.resourcemanagerbuilder.md) into which resources will be imported.
 
 
 </td></tr>

@@ -188,7 +188,7 @@ The readonly qualifier type collector that provides qualifier implementations.
 
 </td><td>
 
-[ResourceManager](./ts-res.resources.resourcemanager.md)
+[IResourceManager](./ts-res.runtime.iresourcemanager.md)
 
 
 </td><td>

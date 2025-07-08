@@ -52,12 +52,12 @@ A [resource candidate](./ts-res.resources.resourcecandidate.md) represents a sin
 </td></tr>
 <tr><td>
 
-[ResourceManager](./ts-res.resources.resourcemanager.md)
+[ResourceManagerBuilder](./ts-res.resources.resourcemanagerbuilder.md)
 
 
 </td><td>
 
-Represents a manager for a collection of [resources](./ts-res.resources.resource.md)<!-- -->. Collects [candidates](./ts-res.resources.resourcecandidate.md) for each resource into a [ResourceBuilder](./ts-res.resources.resourcebuilder.md) per resource, validates them against each other, and builds a collection of [resources](./ts-res.resources.resource.md) once all candidates are collected.
+Builder for a collection of [resources](./ts-res.resources.resource.md)<!-- -->. Collects [candidates](./ts-res.resources.resourcecandidate.md) for each resource into a [ResourceBuilder](./ts-res.resources.resourcebuilder.md) per resource, validates them against each other, and builds a collection of [resources](./ts-res.resources.resource.md) once all candidates are collected.
 
 
 </td></tr>
@@ -111,12 +111,36 @@ Parameters used to create a [Resource](./ts-res.resources.resource.md) object.
 </td></tr>
 <tr><td>
 
-[IResourceManagerCreateParams](./ts-res.resources.iresourcemanagercreateparams.md)
+[IResourceManagerBuilderCreateParams](./ts-res.resources.iresourcemanagerbuildercreateparams.md)
 
 
 </td><td>
 
-Interface for parameters to the [ResourceManager create method](./ts-res.resources.resourcemanager.create.md)<!-- -->.
+Interface for parameters to the [ResourceManagerBuilder create method](./ts-res.resources.resourcemanagerbuilder.create.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
+
+## Variables
+
+<table><thead><tr><th>
+
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ResourceManager](./ts-res.resources.resourcemanager.md)
+
+
+</td><td>
 
 
 </td></tr>
@@ -148,12 +172,21 @@ Possible result details returned by the resource builder [addLooseCandidate](./t
 </td></tr>
 <tr><td>
 
-[ResourceManagerResultDetail](./ts-res.resources.resourcemanagerresultdetail.md)
+[ResourceManager](./ts-res.resources.resourcemanager.md)
 
 
 </td><td>
 
-Error details that can be returned by a [ResourceManager](./ts-res.resources.resourcemanager.md)<!-- -->.
+
+</td></tr>
+<tr><td>
+
+[ResourceManagerBuilderResultDetail](./ts-res.resources.resourcemanagerbuilderresultdetail.md)
+
+
+</td><td>
+
+Error details that can be returned by a [ResourceManagerBuilder](./ts-res.resources.resourcemanagerbuilder.md)<!-- -->.
 
 
 </td></tr>

@@ -28,7 +28,7 @@ import {
   succeedWithDetail,
   FileTree
 } from '@fgv/ts-utils';
-import { ResourceManager } from '../../resources';
+import { ResourceManagerBuilder } from '../../resources';
 import { IImportable } from '../importable';
 import { IImporter, ImporterResultDetail } from './importer';
 import { IReadOnlyQualifierCollector } from '../../qualifiers';
@@ -95,7 +95,7 @@ export class PathImporter implements IImporter {
    */
   public import(
     item: IImportable,
-    __manager: ResourceManager
+    __manager: ResourceManagerBuilder
   ): DetailedResult<IImportable[], ImporterResultDetail> {
     const {
       value: fsItem,

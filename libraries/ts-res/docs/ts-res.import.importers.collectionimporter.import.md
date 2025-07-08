@@ -9,7 +9,7 @@ Imports an item, extracting any resources or candidates from it and returns an o
 **Signature:**
 
 ```typescript
-import(item: IImportable, manager: ResourceManager): DetailedResult<IImportable[], ImporterResultDetail>;
+import(item: IImportable, manager: ResourceManagerBuilder): DetailedResult<IImportable[], ImporterResultDetail>;
 ```
 
 ## Parameters
@@ -53,12 +53,12 @@ manager
 
 </td><td>
 
-[ResourceManager](./ts-res.resources.resourcemanager.md)
+[ResourceManagerBuilder](./ts-res.resources.resourcemanagerbuilder.md)
 
 
 </td><td>
 
-The [resource manager](./ts-res.resources.resourcemanager.md) to use for the import.
+The [resource manager builder](./ts-res.resources.resourcemanagerbuilder.md) to use for the import.
 
 
 </td></tr>

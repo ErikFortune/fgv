@@ -21,7 +21,7 @@
  */
 
 import { captureResult, FileTree, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
-import { ResourceManager } from '../resources';
+import { ResourceManagerBuilder } from '../resources';
 import { ImportContext } from './importContext';
 import { IImportable, IImportablePath } from './importable';
 import { FsItemImporter } from './importers/fsItemImporter';
@@ -34,10 +34,10 @@ import { IReadOnlyQualifierCollector } from '../qualifiers';
  */
 export interface IImporterCreateParams {
   /**
-   * The {@link Resources.ResourceManager | resource manager} into which resources
+   * The {@link Resources.ResourceManagerBuilder | resource manager builder} into which resources
    * will be imported.
    */
-  resources: ResourceManager;
+  resources: ResourceManagerBuilder;
 
   /**
    * An optional initial {@link Import.ImportContext | import context} for the import operation.
@@ -61,10 +61,10 @@ export interface IImporterCreateParams {
  */
 export class ImportManager {
   /**
-   * The {@link Resources.ResourceManager | resource manager} into which resources
+   * The {@link Resources.ResourceManagerBuilder | resource manager builder} into which resources
    * will be imported.
    */
-  public readonly resources: ResourceManager;
+  public readonly resources: ResourceManagerBuilder;
 
   /**
    * The list of {@link Import.Importers.IImporter | importers} to use for the

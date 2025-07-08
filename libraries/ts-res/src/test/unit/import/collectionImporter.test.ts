@@ -22,13 +22,13 @@
 
 import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../index';
-import { ResourceManager } from '../../../packlets/resources';
+import { ResourceManagerBuilder } from '../../../packlets/resources';
 
 describe('CollectionImporter', () => {
   let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
   let qualifiers: TsRes.Qualifiers.QualifierCollector;
   let resourceTypes: TsRes.ResourceTypes.ResourceTypeCollector;
-  let manager: ResourceManager;
+  let manager: ResourceManagerBuilder;
 
   let context: TsRes.Import.ImportContext;
   let collectionJson: TsRes.ResourceJson.Json.IResourceCollectionDecl;
@@ -70,7 +70,7 @@ describe('CollectionImporter', () => {
       ]
     }).orThrow();
 
-    manager = TsRes.Resources.ResourceManager.create({ qualifiers, resourceTypes }).orThrow();
+    manager = TsRes.Resources.ResourceManagerBuilder.create({ qualifiers, resourceTypes }).orThrow();
 
     context = TsRes.Import.ImportContext.create({
       baseId: 'some.resource.id',

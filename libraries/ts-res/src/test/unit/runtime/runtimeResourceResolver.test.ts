@@ -27,7 +27,7 @@ describe('RuntimeResourceResolver class', () => {
   let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
   let qualifiers: TsRes.Qualifiers.QualifierCollector;
   let resourceTypes: TsRes.ResourceTypes.ResourceTypeCollector;
-  let resourceManager: TsRes.Resources.ResourceManager;
+  let resourceManager: TsRes.Resources.ResourceManagerBuilder;
   let contextProvider: TsRes.Runtime.ValidatingSimpleContextQualifierProvider;
   let resolver: TsRes.Runtime.RuntimeResourceResolver;
 
@@ -60,7 +60,7 @@ describe('RuntimeResourceResolver class', () => {
     }).orThrow();
 
     // Set up resource manager
-    resourceManager = TsRes.Resources.ResourceManager.create({
+    resourceManager = TsRes.Resources.ResourceManagerBuilder.create({
       qualifiers,
       resourceTypes
     }).orThrow();

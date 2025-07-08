@@ -4,10 +4,10 @@
 
 ## Runtime.IRuntimeResourceResolverCreateParams.resourceManager property
 
-The [resource manager](./ts-res.resources.resourcemanager.md) that defines the resources available and provides access to qualifiers and conditions.
+The [resource manager](./ts-res.runtime.iresourcemanager.md) that defines the resources available and provides access to qualifiers and conditions.
 
 **Signature:**
 
 ```typescript
-resourceManager: ResourceManager;
+resourceManager: IResourceManager;
 ```

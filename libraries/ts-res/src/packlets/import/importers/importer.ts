@@ -22,7 +22,7 @@
 
 import { DetailedResult } from '@fgv/ts-utils';
 import { IImportable } from '../importable';
-import { ResourceManager } from '../../resources';
+import { ResourceManagerBuilder } from '../../resources';
 
 /**
  * Possible results of an import operation.
@@ -47,9 +47,12 @@ export interface IImporter {
    * Imports an item, extracting any resources or candidates from it and returns an optional
    * list of additional importable items derived from it.
    * @param item - The {@link Import.IImportable | importable} item to import.
-   * @param manager - The {@link Resources.ResourceManager | resource manager} to use for the import.
+   * @param manager - The {@link Resources.ResourceManagerBuilder | resource manager builder} to use for the import.
    * @returns `Success` with a list of additional importable items derived from the original, or
    * `Failure` with an error message and a {@link Import.Importers.ImporterResultDetail | result detail}.
    */
-  import(item: IImportable, manager: ResourceManager): DetailedResult<IImportable[], ImporterResultDetail>;
+  import(
+    item: IImportable,
+    manager: ResourceManagerBuilder
+  ): DetailedResult<IImportable[], ImporterResultDetail>;
 }

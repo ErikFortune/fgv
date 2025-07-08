@@ -22,14 +22,14 @@
 
 import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../index';
-import { ResourceManager } from '../../../packlets/resources';
+import { ResourceManagerBuilder } from '../../../packlets/resources';
 import { JsonValue } from '@fgv/ts-json-base';
 
 describe('jsonImporter', () => {
   let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
   let qualifiers: TsRes.Qualifiers.QualifierCollector;
   let resourceTypes: TsRes.ResourceTypes.ResourceTypeCollector;
-  let manager: ResourceManager;
+  let manager: ResourceManagerBuilder;
 
   let context: TsRes.Import.ImportContext;
   let importable: TsRes.Import.IImportableJson;
@@ -68,7 +68,7 @@ describe('jsonImporter', () => {
       ]
     }).orThrow();
 
-    manager = TsRes.Resources.ResourceManager.create({ qualifiers, resourceTypes }).orThrow();
+    manager = TsRes.Resources.ResourceManagerBuilder.create({ qualifiers, resourceTypes }).orThrow();
 
     context = TsRes.Import.ImportContext.create({
       baseId: 'some.resource.id',

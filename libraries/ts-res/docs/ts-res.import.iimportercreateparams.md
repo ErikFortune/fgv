@@ -102,12 +102,12 @@ _(Optional)_ An optional initial [import context](./ts-res.import.importcontext.
 
 </td><td>
 
-[ResourceManager](./ts-res.resources.resourcemanager.md)
+[ResourceManagerBuilder](./ts-res.resources.resourcemanagerbuilder.md)
 
 
 </td><td>
 
-The [resource manager](./ts-res.resources.resourcemanager.md) into which resources will be imported.
+The [resource manager builder](./ts-res.resources.resourcemanagerbuilder.md) into which resources will be imported.
 
 
 </td></tr>

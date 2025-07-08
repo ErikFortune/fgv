@@ -28,7 +28,7 @@ import {
   Result,
   succeed
 } from '@fgv/ts-utils';
-import { ResourceBuilder, ResourceCandidate, ResourceManager } from '../../resources';
+import { ResourceBuilder, ResourceCandidate, ResourceManagerBuilder } from '../../resources';
 import { IImportable, isImportable } from '../importable';
 import { IImporter, ImporterResultDetail } from './importer';
 import * as ResourceJson from '../../resource-json';
@@ -67,7 +67,7 @@ export class CollectionImporter implements IImporter {
    */
   public import(
     item: IImportable,
-    manager: ResourceManager
+    manager: ResourceManagerBuilder
   ): DetailedResult<IImportable[], ImporterResultDetail> {
     if (!isImportable(item) || (item.type !== 'resourceCollection' && item.type !== 'resourceTree')) {
       /* c8 ignore next 1 - defense in depth */
@@ -94,9 +94,9 @@ export class CollectionImporter implements IImporter {
 
   /**
    * Adds a {@link ResourceJson.Normalized.ILooseResourceDecl | declared resource} to
-   * the supplied {@link Resources.ResourceManager | resource manager}, merging an
+   * the supplied {@link Resources.ResourceManagerBuilder | resource manager builder}, merging an
    * optional {@link Import.ImportContext | import context} if provided.
-   * @param manager - The {@link Resources.ResourceManager | resource manager} to which
+   * @param manager - The {@link Resources.ResourceManagerBuilder | resource manager builder} to which
    * the resource will be added.
    * @param resource - The {@link ResourceJson.Normalized.ILooseResourceDecl | resource}
    * to add.
@@ -106,7 +106,7 @@ export class CollectionImporter implements IImporter {
    * for the resource if successful, `Failure` with an error message if not.
    */
   private _addResource(
-    manager: ResourceManager,
+    manager: ResourceManagerBuilder,
     resource: ResourceJson.Normalized.ILooseResourceDecl,
     context?: ImportContext
   ): Result<ResourceBuilder> {
@@ -120,9 +120,9 @@ export class CollectionImporter implements IImporter {
 
   /**
    * Adds a {@link ResourceJson.Normalized.ILooseResourceCandidateDecl | declared resource candidate}
-   * to the supplied {@link Resources.ResourceManager | resource manager}, merging an optional
+   * to the supplied {@link Resources.ResourceManagerBuilder | resource manager builder}, merging an optional
    * {@link Import.ImportContext | import context} if provided.
-   * @param manager - The {@link Resources.ResourceManager | resource manager} to which the
+   * @param manager - The {@link Resources.ResourceManagerBuilder | resource manager builder} to which the
    * candidate will be added.
    * @param candidate - The {@link ResourceJson.Normalized.ILooseResourceCandidateDecl | candidate}
    * to add.
@@ -131,7 +131,7 @@ export class CollectionImporter implements IImporter {
    * `Failure` with an error message if not.
    */
   private _addCandidate(
-    manager: ResourceManager,
+    manager: ResourceManagerBuilder,
     candidate: ResourceJson.Normalized.ILooseResourceCandidateDecl,
     context?: ImportContext
   ): Result<ResourceCandidate> {

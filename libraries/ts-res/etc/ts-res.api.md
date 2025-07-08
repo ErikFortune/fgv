@@ -119,7 +119,7 @@ class CollectionImporter implements IImporter {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    import(item: IImportable, manager: ResourceManager): DetailedResult<IImportable[], ImporterResultDetail>;
+    import(item: IImportable, manager: ResourceManagerBuilder): DetailedResult<IImportable[], ImporterResultDetail>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -699,7 +699,7 @@ class FsItemImporter implements IImporter {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    import(item: IImportable, __manager: ResourceManager): DetailedResult<IImportable[], ImporterResultDetail>;
+    import(item: IImportable, __manager: ResourceManagerBuilder): DetailedResult<IImportable[], ImporterResultDetail>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly qualifiers: IReadOnlyQualifierCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1108,7 +1108,7 @@ interface IImporter {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    import(item: IImportable, manager: ResourceManager): DetailedResult<IImportable[], ImporterResultDetail>;
+    import(item: IImportable, manager: ResourceManagerBuilder): DetailedResult<IImportable[], ImporterResultDetail>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly types: ReadonlyArray<string>;
 }
@@ -1123,7 +1123,7 @@ interface IImporterCreateParams {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     initialContext?: ImportContext;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    resources: ResourceManager;
+    resources: ResourceManagerBuilder;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1333,7 +1333,7 @@ class ImportManager {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     initialContext: ImportContext;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    readonly resources: ResourceManager;
+    readonly resources: ResourceManagerBuilder;
     // (undocumented)
     protected _stack: IImportable[];
 }
@@ -1578,10 +1578,24 @@ interface IResourceDeclContainer {
     getLooseResources(): ReadonlyArray<Normalized.ILooseResourceDecl>;
 }
 
+// @public
+interface IResourceManager {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly conditions: ReadOnlyConditionCollector;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly conditionSets: ReadOnlyConditionSetCollector;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly decisions: ReadOnlyAbstractDecisionCollector;
+    getBuiltResourceForRuntime(id: string): Result<IRuntimeResource>;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IResourceManagerCreateParams {
+interface IResourceManagerBuilderCreateParams {
     // (undocumented)
     qualifiers: IReadOnlyQualifierCollector;
     // (undocumented)
@@ -1632,6 +1646,18 @@ interface IResourceTreeRootDecl_2 extends IResourceTreeChildNodeDecl_2 {
     readonly resources?: Record<string, IChildResourceDecl_2>;
 }
 
+// @public
+interface IRuntimeResource {
+    readonly candidates: ReadonlyArray<IRuntimeResourceCandidate>;
+    readonly decision: ConcreteDecision;
+    readonly id: string;
+}
+
+// @public
+interface IRuntimeResourceCandidate {
+    readonly json: JsonValue;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -1641,7 +1667,7 @@ interface IRuntimeResourceResolverCreateParams {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     qualifierTypes: ReadOnlyQualifierTypeCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    resourceManager: ResourceManager;
+    resourceManager: IResourceManager;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1845,7 +1871,7 @@ class JsonImporter implements IImporter {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    import(item: IImportable, manager: ResourceManager): DetailedResult<IImportable[], ImporterResultDetail>;
+    import(item: IImportable, manager: ResourceManagerBuilder): DetailedResult<IImportable[], ImporterResultDetail>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -2033,7 +2059,7 @@ class PathImporter implements IImporter {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    import(item: IImportable, __manager: ResourceManager): DetailedResult<IImportable[], ImporterResultDetail>;
+    import(item: IImportable, __manager: ResourceManagerBuilder): DetailedResult<IImportable[], ImporterResultDetail>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly qualifiers: IReadOnlyQualifierCollector;
     readonly tree: FileTree.FileTree;
@@ -2514,22 +2540,28 @@ declare namespace ResourceJson {
 }
 export { ResourceJson }
 
+// @public @deprecated (undocumented)
+const ResourceManager: typeof ResourceManagerBuilder;
+
+// @public @deprecated (undocumented)
+type ResourceManager = ResourceManagerBuilder;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class ResourceManager {
+class ResourceManagerBuilder implements IResourceManager {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor(params: IResourceManagerCreateParams);
+    protected constructor(params: IResourceManagerBuilderCreateParams);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    addLooseCandidate(decl: ResourceJson.Json.ILooseResourceCandidateDecl): DetailedResult<ResourceCandidate, ResourceManagerResultDetail>;
+    addLooseCandidate(decl: ResourceJson.Json.ILooseResourceCandidateDecl): DetailedResult<ResourceCandidate, ResourceBuilderResultDetail>;
     // (undocumented)
-    addResource(decl: ResourceJson.Json.ILooseResourceDecl): DetailedResult<ResourceBuilder, ResourceManagerResultDetail>;
+    addResource(decl: ResourceJson.Json.ILooseResourceDecl): DetailedResult<ResourceBuilder, ResourceBuilderResultDetail>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2553,7 +2585,7 @@ class ResourceManager {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static create(params: IResourceManagerCreateParams): Result<ResourceManager>;
+    static create(params: IResourceManagerBuilderCreateParams): Result<ResourceManagerBuilder>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2576,6 +2608,10 @@ class ResourceManager {
     getBuiltCandidatesForContext(context: Context.IValidatedContextDecl, options?: Context.IContextMatchOptions): Result<ReadonlyArray<ResourceCandidate>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getBuiltResource(id: string): Result<Resource>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getBuiltResourceForRuntime(id: string): Result<IRuntimeResource>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2606,7 +2642,7 @@ class ResourceManager {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ResourceManagerResultDetail = Collections.ResultMapResultDetail | ResourceBuilderResultDetail;
+type ResourceManagerBuilderResultDetail = Collections.ResultMapResultDetail | ResourceBuilderResultDetail;
 
 // @public
 export type ResourceName = Brand<string, 'ResourceName'>;
@@ -2623,8 +2659,9 @@ declare namespace Resources {
         IResourceBuilderCreateParams,
         ResourceBuilderResultDetail,
         ResourceBuilder,
-        IResourceManagerCreateParams,
-        ResourceManagerResultDetail,
+        IResourceManagerBuilderCreateParams,
+        ResourceManagerBuilderResultDetail,
+        ResourceManagerBuilder,
         ResourceManager
     }
 }
@@ -2703,6 +2740,9 @@ declare namespace Runtime {
         IReadOnlyContextQualifierProviderValidator,
         IContextQualifierProviderValidatorCreateParams,
         ContextQualifierProviderValidator,
+        IRuntimeResourceCandidate,
+        IRuntimeResource,
+        IResourceManager,
         ISimpleContextQualifierProviderCreateParams,
         SimpleContextQualifierProvider,
         IValidatingSimpleContextQualifierProviderCreateParams,
@@ -2732,7 +2772,7 @@ class RuntimeResourceResolver {
     get decisionCacheSize(): number;
     readonly qualifierTypes: ReadOnlyQualifierTypeCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    resolveAllResourceValues<T extends JsonValue = JsonValue>(resource: Resource): Result<ReadonlyArray<T>>;
+    resolveAllResourceValues<T extends JsonValue = JsonValue>(resource: IRuntimeResource): Result<ReadonlyArray<T>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resolveCondition(condition: Condition): Result<QualifierMatchScore>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2742,8 +2782,8 @@ class RuntimeResourceResolver {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resolveDecision(decision: AbstractDecision): Result<DecisionResolutionResult>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    resolveResource<T extends JsonValue = JsonValue>(resource: Resource): Result<T>;
-    readonly resourceManager: ResourceManager;
+    resolveResource<T extends JsonValue = JsonValue>(resource: IRuntimeResource): Result<T>;
+    readonly resourceManager: IResourceManager;
 }
 
 // @internal (undocumented)

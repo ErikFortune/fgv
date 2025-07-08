@@ -83,12 +83,12 @@ The [readonly qualifier type collector](./ts-res.qualifiertypes.readonlyqualifie
 
 </td><td>
 
-[ResourceManager](./ts-res.resources.resourcemanager.md)
+[IResourceManager](./ts-res.runtime.iresourcemanager.md)
 
 
 </td><td>
 
-The [resource manager](./ts-res.resources.resourcemanager.md) that defines the resources available and provides access to qualifiers and conditions.
+The [resource manager](./ts-res.runtime.iresourcemanager.md) that defines the resources available and provides access to qualifiers and conditions.
 
 
 </td></tr>

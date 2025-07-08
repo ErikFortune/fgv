@@ -30,7 +30,7 @@ import {
   MessageAggregator
 } from '@fgv/ts-utils';
 import { Converters as JsonConverters } from '@fgv/ts-json-base';
-import { ResourceManager } from '../../resources';
+import { ResourceManagerBuilder } from '../../resources';
 import { IImportable, IImportableJson, Importable } from '../importable';
 import { IImporter, ImporterResultDetail } from './importer';
 import { IReadOnlyQualifierCollector } from '../../qualifiers';
@@ -81,7 +81,7 @@ export class FsItemImporter implements IImporter {
    */
   public import(
     item: IImportable,
-    __manager: ResourceManager
+    __manager: ResourceManagerBuilder
   ): DetailedResult<IImportable[], ImporterResultDetail> {
     const {
       value: fsItem,

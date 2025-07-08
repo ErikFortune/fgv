@@ -4,10 +4,10 @@
 
 ## Import.ImportManager.resources property
 
-The [resource manager](./ts-res.resources.resourcemanager.md) into which resources will be imported.
+The [resource manager builder](./ts-res.resources.resourcemanagerbuilder.md) into which resources will be imported.
 
 **Signature:**
 
 ```typescript
-readonly resources: ResourceManager;
+readonly resources: ResourceManagerBuilder;
 ```

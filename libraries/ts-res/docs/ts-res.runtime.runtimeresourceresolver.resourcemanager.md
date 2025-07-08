@@ -9,5 +9,5 @@ The resource manager that defines available resources and provides condition acc
 **Signature:**
 
 ```typescript
-readonly resourceManager: ResourceManager;
+readonly resourceManager: IResourceManager;
 ```

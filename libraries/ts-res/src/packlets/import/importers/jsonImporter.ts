@@ -23,7 +23,7 @@
 import { captureResult, DetailedResult, failWithDetail, Result, succeed } from '@fgv/ts-utils';
 import { Converters as JsonConverters } from '@fgv/ts-json-base';
 import { IImporter, ImporterResultDetail } from './importer';
-import { ResourceManager } from '../../resources';
+import { ResourceManagerBuilder } from '../../resources';
 import { IImportable, IImportableJson, Importable, isImportable } from '../importable';
 import * as ResourceJson from '../../resource-json';
 
@@ -56,7 +56,7 @@ export class JsonImporter implements IImporter {
    */
   public import(
     item: IImportable,
-    manager: ResourceManager
+    manager: ResourceManagerBuilder
   ): DetailedResult<IImportable[], ImporterResultDetail> {
     if (!isImportable(item) || item.type !== 'json') {
       /* c8 ignore next 1 - defense in depth */
@@ -98,7 +98,7 @@ export class JsonImporter implements IImporter {
 
   private _tryImportResource(
     item: IImportableJson,
-    manager: ResourceManager
+    manager: ResourceManagerBuilder
   ): DetailedResult<IImportable[], ImporterResultDetail> {
     return JsonConverters.jsonObject
       .convert(item.json)

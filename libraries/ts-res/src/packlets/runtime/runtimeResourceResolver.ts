@@ -26,8 +26,8 @@ import { QualifierMatchScore, NoMatch } from '../common';
 import { Condition, ConditionSet } from '../conditions';
 import { AbstractDecision } from '../decisions';
 import { ReadOnlyQualifierTypeCollector } from '../qualifier-types';
-import { ResourceManager, Resource } from '../resources';
 import { IContextQualifierProvider } from './contextQualifierProvider';
+import { IResourceManager, IRuntimeResource } from './iResourceManager';
 import { ConditionSetResolutionResult, IConditionMatchResult } from './conditionSetResolutionResult';
 
 /**
@@ -46,10 +46,10 @@ export type DecisionResolutionResult =
  */
 export interface IRuntimeResourceResolverCreateParams {
   /**
-   * The {@link Resources.ResourceManager | resource manager} that defines the resources available
+   * The {@link Runtime.IResourceManager | resource manager} that defines the resources available
    * and provides access to qualifiers and conditions.
    */
-  resourceManager: ResourceManager;
+  resourceManager: IResourceManager;
 
   /**
    * The {@link QualifierTypes.ReadOnlyQualifierTypeCollector | readonly qualifier type collector}
@@ -74,7 +74,7 @@ export class RuntimeResourceResolver {
   /**
    * The resource manager that defines available resources and provides condition access.
    */
-  public readonly resourceManager: ResourceManager;
+  public readonly resourceManager: IResourceManager;
 
   /**
    * The readonly qualifier type collector that provides qualifier implementations.
@@ -297,7 +297,7 @@ export class RuntimeResourceResolver {
    * or `Failure` with an error message if no candidates match or resolution fails.
    * @public
    */
-  public resolveResource<T extends JsonValue = JsonValue>(resource: Resource): Result<T> {
+  public resolveResource<T extends JsonValue = JsonValue>(resource: IRuntimeResource): Result<T> {
     // Get the abstract decision from the resource's concrete decision
     const abstractDecision = resource.decision.baseDecision;
 
@@ -334,7 +334,7 @@ export class RuntimeResourceResolver {
    * @public
    */
   public resolveAllResourceValues<T extends JsonValue = JsonValue>(
-    resource: Resource
+    resource: IRuntimeResource
   ): Result<ReadonlyArray<T>> {
     // Get the abstract decision from the resource's concrete decision
     const abstractDecision = resource.decision.baseDecision;
