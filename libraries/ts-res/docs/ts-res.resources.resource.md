@@ -168,18 +168,18 @@ The unique [id](./ts-res.resourceid.md) of the resource.
 
 </td><td>
 
-string
+[ResourceType](./ts-res.resourcetypes.resourcetype.md)
 
 
 </td><td>
 
-Gets the resource type name as a string (implements IResource interface).
+Gets the resource type (implements IResource interface).
 
 
 </td></tr>
 <tr><td>
 
-[resourceTypeObject](./ts-res.resources.resource.resourcetypeobject.md)
+[resourceTypeName](./ts-res.resources.resource.resourcetypename.md)
 
 
 </td><td>
@@ -189,12 +189,12 @@ Gets the resource type name as a string (implements IResource interface).
 
 </td><td>
 
-[ResourceType](./ts-res.resourcetypes.resourcetype.md)
+string
 
 
 </td><td>
 
-Gets the full ResourceType object.
+Gets the resource type name as a string.
 
 
 </td></tr>

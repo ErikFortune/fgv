@@ -4,10 +4,10 @@
 
 ## Runtime.IResource.resourceType property
 
-The resource type name
+The resource type
 
 **Signature:**
 
 ```typescript
-readonly resourceType: string;
+readonly resourceType: ResourceType;
 ```

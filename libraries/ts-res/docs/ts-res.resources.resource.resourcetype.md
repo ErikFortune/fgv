@@ -4,10 +4,10 @@
 
 ## Resources.Resource.resourceType property
 
-Gets the resource type name as a string (implements IResource interface).
+Gets the resource type (implements IResource interface).
 
 **Signature:**
 
 ```typescript
-get resourceType(): string;
+get resourceType(): ResourceType;
 ```

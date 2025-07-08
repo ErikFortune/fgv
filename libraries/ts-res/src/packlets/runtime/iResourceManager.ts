@@ -25,6 +25,7 @@ import { JsonValue } from '@fgv/ts-json-base';
 import { ReadOnlyConditionCollector, ReadOnlyConditionSetCollector } from '../conditions';
 import { ReadOnlyAbstractDecisionCollector, ConcreteDecision } from '../decisions';
 import { ResourceId } from '../common';
+import { ResourceType } from '../resource-types';
 
 /**
  * Runtime representation of a resource candidate with the minimal data needed for resolution.
@@ -57,8 +58,8 @@ export interface IRuntimeResource {
 export interface IResource {
   /** The resource identifier */
   readonly id: string;
-  /** The resource type name */
-  readonly resourceType: string;
+  /** The resource type */
+  readonly resourceType: ResourceType;
   /** The decision used to select candidates */
   readonly decision: ConcreteDecision;
   /** The available candidates for this resource */

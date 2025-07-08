@@ -110,12 +110,12 @@ The resource identifier
 
 </td><td>
 
-string
+[ResourceType](./ts-res.resourcetypes.resourcetype.md)
 
 
 </td><td>
 
-The resource type name
+The resource type
 
 
 </td></tr>

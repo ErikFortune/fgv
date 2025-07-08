@@ -249,7 +249,7 @@ describe('ResourceBuilder', () => {
       expect(builder.addLooseCandidate(decl)).toSucceed();
       expect(builder.build()).toSucceedAndSatisfy((r) => {
         expect(r.id).toEqual('some.resource.path');
-        expect(r.resourceTypeObject).toBe(jsonType);
+        expect(r.resourceType).toBe(jsonType);
         expect(r.candidates.length).toEqual(1);
       });
     });

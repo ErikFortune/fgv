@@ -77,17 +77,17 @@ export class Resource implements IResource {
   public readonly decision: ConcreteDecision;
 
   /**
-   * Gets the resource type name as a string (implements IResource interface).
+   * Gets the resource type (implements IResource interface).
    */
-  public get resourceType(): string {
-    return this._resourceType.key;
+  public get resourceType(): ResourceType {
+    return this._resourceType;
   }
 
   /**
-   * Gets the full ResourceType object.
+   * Gets the resource type name as a string.
    */
-  public get resourceTypeObject(): ResourceType {
-    return this._resourceType;
+  public get resourceTypeName(): string {
+    return this._resourceType.key;
   }
 
   /**
@@ -145,7 +145,7 @@ export class Resource implements IResource {
   ): ResourceJson.Json.IChildResourceDecl {
     const candidates = this.candidates.map((c) => c.toChildResourceCandidateDecl(options));
     return {
-      resourceTypeName: this._resourceType.key,
+      resourceTypeName: this.resourceTypeName,
       ...(candidates.length > 0 ? { candidates } : {})
     };
   }
@@ -161,7 +161,7 @@ export class Resource implements IResource {
     const candidates = this.candidates.map((c) => c.toChildResourceCandidateDecl(options));
     return {
       id: this.id,
-      resourceTypeName: this._resourceType.key,
+      resourceTypeName: this.resourceTypeName,
       ...(candidates.length > 0 ? { candidates } : {})
     };
   }

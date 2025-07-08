@@ -1474,7 +1474,7 @@ interface IResource {
     readonly candidates: ReadonlyArray<IRuntimeResourceCandidate>;
     readonly decision: ConcreteDecision;
     readonly id: string;
-    readonly resourceType: string;
+    readonly resourceType: ResourceType;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2368,10 +2368,10 @@ class Resource implements IResource {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getCandidatesForContext(context: Context.IValidatedContextDecl, options?: Context.IContextMatchOptions): ReadonlyArray<ResourceCandidate>;
     readonly id: ResourceId;
-    get resourceType(): string;
+    get resourceType(): ResourceType;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly _resourceType: ResourceType;
-    get resourceTypeObject(): ResourceType;
+    get resourceTypeName(): string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
