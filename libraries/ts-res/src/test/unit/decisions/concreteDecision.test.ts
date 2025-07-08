@@ -126,6 +126,16 @@ describe('ConcreteDecision', () => {
         expect(decisions.size).toBe(3);
       });
     });
+
+    test('fails with invalid index during create', () => {
+      expect(
+        TsRes.Decisions.ConcreteDecision.create({
+          decisions,
+          candidates,
+          index: 'invalid' as unknown as number
+        })
+      ).toFailWith(/Not a number/);
+    });
   });
 
   describe('index methods', () => {

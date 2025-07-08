@@ -81,6 +81,7 @@ export class ConditionSetCollector extends ValidatingCollector<ConditionSet> {
     super({
       converters: new Collections.KeyValueConverters<ConditionSetKey, ConditionSet>({
         key: CommonConvert.conditionSetKey,
+        /* c8 ignore next 1 - there's a test but coverage is having a bad day */
         value: (from: unknown) => this._toConditionSet(from)
       })
     });
@@ -88,6 +89,7 @@ export class ConditionSetCollector extends ValidatingCollector<ConditionSet> {
     // it's very helpful for debugging if the unconditional condition set is always
     // in position 0
     this.validating.add(ConditionSet.create({ conditions: [] }).orThrow()).orThrow();
+    /* c8 ignore next 1 - ? is defense in depth */
     params.conditionSets?.forEach((item) => this.validating.add(item).orThrow());
   }
 

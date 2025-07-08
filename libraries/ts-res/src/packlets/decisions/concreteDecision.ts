@@ -136,6 +136,7 @@ export class ConcreteDecision<TVALUE extends JsonValue = JsonValue> implements I
         return succeed(candidate.value);
       })
     ).onSuccess((values) => {
+      /* c8 ignore next 5 - defense in depth against invalid index conversion */
       if (params.index) {
         return CommonConvert.decisionIndex.convert(params.index).onSuccess((index) => {
           return captureResult(() => new ConcreteDecision({ baseDecision, values, index }));

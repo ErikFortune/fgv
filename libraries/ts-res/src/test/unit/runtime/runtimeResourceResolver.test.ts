@@ -310,6 +310,20 @@ describe('RuntimeResourceResolver class', () => {
       // Should get different result
       expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Bonjour!' });
     });
+
+    test('caches condition set resolution results', () => {
+      // Get a condition set to test with
+      const conditionSet = resourceManager.conditionSets.getAt(0).orThrow();
+
+      // First resolution - populates cache
+      const result1 = resolver.resolveConditionSet(conditionSet);
+      expect(result1).toSucceed();
+
+      // Second resolution - should use cached result (hits lines 198-199)
+      const result2 = resolver.resolveConditionSet(conditionSet);
+      expect(result2).toSucceed();
+      expect(result2.value).toBe(result1.value);
+    });
   });
 
   describe('cache size properties', () => {

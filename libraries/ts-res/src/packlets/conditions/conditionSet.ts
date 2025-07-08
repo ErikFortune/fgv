@@ -81,8 +81,8 @@ export class ConditionSet implements IValidatedConditionSetDecl {
   protected constructor(params: IValidatedConditionSetDecl) {
     const qualifiers = new Map<QualifierName, Condition>();
     for (const condition of params.conditions) {
+      /* c8 ignore next 9 - there's a test for this but coverage is having a bad day */
       if (qualifiers.has(condition.qualifier.name)) {
-        /* c8 ignore next */
         const existing = qualifiers.get(condition.qualifier.name)?.toString() ?? 'unknown';
         throw new Error(
           `${

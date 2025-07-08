@@ -71,6 +71,7 @@ export class ConditionCollector extends ValidatingCollector<Condition> {
       })
     });
     this.qualifiers = params.qualifiers;
+    /* c8 ignore next 1 - ? is defense in depth */
     params.conditions?.forEach((c) => this.validating.add(c).orThrow());
   }
 
