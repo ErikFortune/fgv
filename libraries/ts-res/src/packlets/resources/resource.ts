@@ -25,6 +25,7 @@ import { ResourceId, Validate } from '../common';
 import { ResourceCandidate } from './resourceCandidate';
 import { ResourceType } from '../resource-types';
 import { ConcreteDecision, AbstractDecisionCollector } from '../decisions';
+import { IResource } from '../runtime';
 import * as ResourceJson from '../resource-json';
 import * as Context from '../context';
 
@@ -57,7 +58,7 @@ export interface IResourceCreateParams {
  * candidate instances.
  * @public
  */
-export class Resource {
+export class Resource implements IResource {
   /**
    * The unique {@link ResourceId | id} of the resource.
    */
@@ -65,7 +66,7 @@ export class Resource {
   /**
    * The {@link ResourceTypes.ResourceType | type} of the resource.
    */
-  public readonly resourceType: ResourceType;
+  public readonly _resourceType: ResourceType;
   /**
    * The array of {@link Resources.ResourceCandidate | candidates} for the resource.
    */
@@ -76,6 +77,20 @@ export class Resource {
   public readonly decision: ConcreteDecision;
 
   /**
+   * Gets the resource type name as a string (implements IResource interface).
+   */
+  public get resourceType(): string {
+    return this._resourceType.key;
+  }
+
+  /**
+   * Gets the full ResourceType object.
+   */
+  public get resourceTypeObject(): ResourceType {
+    return this._resourceType;
+  }
+
+  /**
    * Constructor for a {@link Resources.Resource | Resource} object.
    * @param params - {@link Resources.IResourceCreateParams | Parameters} used to create the resource.
    * @public
@@ -83,7 +98,7 @@ export class Resource {
   protected constructor(params: IResourceCreateParams) {
     const id = params.id ? Validate.toResourceId(params.id).orThrow() : undefined;
     this.id = Resource._validateCandidateResourceIds(id, params.candidates).orThrow();
-    this.resourceType = ResourceCandidate.validateResourceTypes(params.candidates, params.resourceType)
+    this._resourceType = ResourceCandidate.validateResourceTypes(params.candidates, params.resourceType)
       .onSuccess((t) => {
         if (t === undefined) {
           return fail<ResourceType>(`${params.id}: no type specified and no candidates with types.`);
@@ -130,7 +145,7 @@ export class Resource {
   ): ResourceJson.Json.IChildResourceDecl {
     const candidates = this.candidates.map((c) => c.toChildResourceCandidateDecl(options));
     return {
-      resourceTypeName: this.resourceType.key,
+      resourceTypeName: this._resourceType.key,
       ...(candidates.length > 0 ? { candidates } : {})
     };
   }
@@ -146,7 +161,7 @@ export class Resource {
     const candidates = this.candidates.map((c) => c.toChildResourceCandidateDecl(options));
     return {
       id: this.id,
-      resourceTypeName: this.resourceType.key,
+      resourceTypeName: this._resourceType.key,
       ...(candidates.length > 0 ? { candidates } : {})
     };
   }

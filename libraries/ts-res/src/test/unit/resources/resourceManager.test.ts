@@ -533,7 +533,7 @@ describe('ResourceManager', () => {
       expect(manager.addLooseCandidate(decl2)).toSucceed();
       const resource = manager.getBuiltResource(decl1.id);
       expect(resource).toSucceedAndSatisfy((r) => {
-        expect(r.resourceType?.key).toBe('json');
+        expect(r.resourceTypeObject?.key).toBe('json');
       });
     });
 

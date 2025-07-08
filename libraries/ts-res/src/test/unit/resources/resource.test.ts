@@ -128,7 +128,7 @@ describe('Resource', () => {
       const resource = TsRes.Resources.Resource.create({ candidates, decisions });
       expect(resource).toSucceedAndSatisfy((r) => {
         expect(r.id).toBe(candidates[0].id);
-        expect(r.resourceType?.key).toBe('json');
+        expect(r.resourceTypeObject?.key).toBe('json');
         expect(r.candidates).toEqual(expect.arrayContaining(candidates));
       });
     });
@@ -142,7 +142,7 @@ describe('Resource', () => {
       });
       expect(resource).toSucceedAndSatisfy((r) => {
         expect(r.id).toBe(candidates[0].id);
-        expect(r.resourceType?.key).toBe('other');
+        expect(r.resourceTypeObject?.key).toBe('other');
         expect(r.candidates).toEqual(expect.arrayContaining(candidates));
       });
     });
@@ -190,7 +190,7 @@ describe('Resource', () => {
         })
       ).toSucceedAndSatisfy((r) => {
         expect(r.id).toBe('some.resource.id');
-        expect(r.resourceType?.key).toBe('json');
+        expect(r.resourceTypeObject?.key).toBe('json');
         expect(r.candidates).toEqual([]);
       });
     });
@@ -256,7 +256,7 @@ describe('Resource', () => {
       const resource = TsRes.Resources.Resource.create({ decisions, resourceType: jsonType, candidates });
       expect(resource).toSucceedAndSatisfy((r) => {
         expect(r.id).toBe(candidates[0].id);
-        expect(r.resourceType?.key).toBe('json');
+        expect(r.resourceTypeObject?.key).toBe('json');
         expect(r.candidates).toEqual(expect.arrayContaining(candidates));
         expect(r.candidates.length).toBe(candidates.length - 1);
       });

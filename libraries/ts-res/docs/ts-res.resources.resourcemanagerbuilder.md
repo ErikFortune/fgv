@@ -98,8 +98,6 @@ boolean
 
 </td><td>
 
-`protected`
-
 `readonly`
 
 
@@ -193,6 +191,27 @@ ValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [ResourceBu
 
 
 </td><td>
+
+
+</td></tr>
+<tr><td>
+
+[builtResources](./ts-res.resources.resourcemanagerbuilder.builtresources.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Collections.IReadOnlyResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [IResource](./ts-res.runtime.iresource.md)<!-- -->&gt;
+
+
+</td><td>
+
+A read-only result map of all built resources, keyed by resource ID. Resources are built on-demand when accessed and returns Results for error handling.
 
 
 </td></tr>

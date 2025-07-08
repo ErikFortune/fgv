@@ -159,6 +159,17 @@ A read-only interface exposing non-mutating methods of a [ContextQualifierProvid
 </td></tr>
 <tr><td>
 
+[IResource](./ts-res.runtime.iresource.md)
+
+
+</td><td>
+
+Interface for a resource that can be used in the runtime layer. This provides the minimal properties needed from a resource without requiring the full Resources layer dependencies.
+
+
+</td></tr>
+<tr><td>
+
 [IResourceManager](./ts-res.runtime.iresourcemanager.md)
 
 

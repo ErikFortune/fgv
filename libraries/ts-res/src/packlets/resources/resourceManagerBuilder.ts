@@ -43,7 +43,7 @@ import { AbstractDecisionCollector, ReadOnlyAbstractDecisionCollector } from '..
 import { IReadOnlyQualifierCollector } from '../qualifiers';
 import { ReadOnlyResourceTypeCollector } from '../resource-types';
 import { Convert, ResourceId, Validate } from '../common';
-import { IResourceManager, IRuntimeResource } from '../runtime';
+import { IResourceManager, IRuntimeResource, IResource } from '../runtime';
 import { ResourceBuilder, ResourceBuilderResultDetail } from './resourceBuilder';
 import { Resource } from './resource';
 import { ResourceCandidate } from './resourceCandidate';
@@ -68,6 +68,92 @@ export type ResourceManagerBuilderResultDetail =
   | ResourceBuilderResultDetail;
 
 /**
+ * A readonly result map wrapper that builds resources on demand and returns Results.
+ * @internal
+ */
+class OnDemandBuiltResourcesMap implements Collections.IReadOnlyResultMap<ResourceId, IResource> {
+  private readonly _resourceManagerBuilder: ResourceManagerBuilder;
+
+  public constructor(resourceManagerBuilder: ResourceManagerBuilder) {
+    this._resourceManagerBuilder = resourceManagerBuilder;
+  }
+
+  public get size(): number {
+    const buildResult = this._resourceManagerBuilder._performBuild();
+    /* c8 ignore next 3 - defense in depth against build failure */
+    if (buildResult.isFailure()) {
+      return 0;
+    }
+    return this._resourceManagerBuilder._builtResources.size;
+  }
+
+  public get(key: ResourceId): DetailedResult<IResource, Collections.ResultMapResultDetail> {
+    const buildResult = this._resourceManagerBuilder._performBuild();
+    /* c8 ignore next 3 - defense in depth against build failure */
+    if (buildResult.isFailure()) {
+      return failWithDetail(`Failed to build resources: ${buildResult.message}`, 'failure');
+    }
+    return this._resourceManagerBuilder._builtResources.validating.get(key);
+  }
+
+  public has(key: ResourceId): boolean {
+    const buildResult = this._resourceManagerBuilder._performBuild();
+    /* c8 ignore next 3 - defense in depth against build failure */
+    if (buildResult.isFailure()) {
+      return false;
+    }
+    return this._resourceManagerBuilder._builtResources.has(key);
+  }
+
+  public forEach(cb: Collections.ResultMapForEachCb<ResourceId, IResource>, arg?: unknown): void {
+    const buildResult = this._resourceManagerBuilder._performBuild();
+    /* c8 ignore next 3 - defense in depth against build failure */
+    if (buildResult.isFailure()) {
+      return;
+    }
+    this._resourceManagerBuilder._builtResources.forEach((value, key) => {
+      cb(value, key, this, arg);
+    });
+  }
+
+  public entries(): MapIterator<Collections.KeyValueEntry<ResourceId, IResource>> {
+    const buildResult = this._resourceManagerBuilder._performBuild();
+    /* c8 ignore next 3 - defense in depth against build failure */
+    if (buildResult.isFailure()) {
+      return new Map<ResourceId, IResource>().entries();
+    }
+    return this._resourceManagerBuilder._builtResources.entries();
+  }
+
+  public keys(): MapIterator<ResourceId> {
+    const buildResult = this._resourceManagerBuilder._performBuild();
+    /* c8 ignore next 3 - defense in depth against build failure */
+    if (buildResult.isFailure()) {
+      return new Map<ResourceId, IResource>().keys();
+    }
+    return this._resourceManagerBuilder._builtResources.keys();
+  }
+
+  public values(): MapIterator<IResource> {
+    const buildResult = this._resourceManagerBuilder._performBuild();
+    /* c8 ignore next 3 - defense in depth against build failure */
+    if (buildResult.isFailure()) {
+      return new Map<ResourceId, IResource>().values();
+    }
+    return this._resourceManagerBuilder._builtResources.values();
+  }
+
+  public [Symbol.iterator](): IterableIterator<Collections.KeyValueEntry<ResourceId, IResource>> {
+    const buildResult = this._resourceManagerBuilder._performBuild();
+    /* c8 ignore next 3 - defense in depth against build failure */
+    if (buildResult.isFailure()) {
+      return new Map<ResourceId, IResource>().entries();
+    }
+    return this._resourceManagerBuilder._builtResources.entries();
+  }
+}
+
+/**
  * Builder for a collection of {@link Resources.Resource | resources}. Collects
  * {@link Resources.ResourceCandidate | candidates} for each resource into a
  * {@link Resources.ResourceBuilder | ResourceBuilder} per resource, validates them against each other,
@@ -82,7 +168,9 @@ export class ResourceManagerBuilder implements IResourceManager {
   protected readonly _conditionSets: ConditionSetCollector;
   protected readonly _decisions: AbstractDecisionCollector;
   protected readonly _resources: ValidatingResultMap<ResourceId, ResourceBuilder>;
-  protected readonly _builtResources: ValidatingResultMap<ResourceId, Resource>;
+  public readonly _builtResources: ValidatingResultMap<ResourceId, Resource>;
+
+  private readonly _onDemandBuiltResources: OnDemandBuiltResourcesMap;
   protected _built: boolean;
 
   /**
@@ -127,6 +215,13 @@ export class ResourceManagerBuilder implements IResourceManager {
   }
 
   /**
+   * {@inheritdoc Runtime.IResourceManager.builtResources}
+   */
+  public get builtResources(): Collections.IReadOnlyResultMap<ResourceId, IResource> {
+    return this._onDemandBuiltResources;
+  }
+
+  /**
    * Constructor for a {@link Resources.ResourceManagerBuilder | ResourceManagerBuilder} object.
    * @param params - Parameters to create a new {@link Resources.ResourceManagerBuilder | ResourceManagerBuilder}.
    * @public
@@ -153,6 +248,7 @@ export class ResourceManagerBuilder implements IResourceManager {
       })
     });
     this._built = false;
+    this._onDemandBuiltResources = new OnDemandBuiltResourcesMap(this);
   }
 
   /**
@@ -293,24 +389,35 @@ export class ResourceManagerBuilder implements IResourceManager {
   }
 
   /**
+   * Internal helper method that performs the actual building of resources.
+   * @returns `Success` with the built resources if all resources were built successfully, `Failure` otherwise.
+   * @internal
+   */
+  public _performBuild(): Result<Collections.IReadOnlyValidatingResultMap<ResourceId, Resource>> {
+    if (this._built) {
+      return succeed(this._builtResources);
+    }
+
+    const errors: MessageAggregator = new MessageAggregator();
+    this._resources.forEach((r, id) => {
+      this._builtResources.getOrAdd(id, () => r.build()).aggregateError(errors);
+    });
+    /* c8 ignore next 3 - defense in depth against internal error */
+    if (errors.hasMessages) {
+      return fail(`build failed: ${errors.toString()}`);
+    }
+    this._built = true;
+    return succeed(this._builtResources);
+  }
+
+  /**
    * Builds the {@link Resources.Resource | resources} from the collected {@link Resources.ResourceCandidate | candidates}.
    * @returns `Success` with a read-only map of {@link Resources.Resource | resources} if successful,
    * or `Failure` with an error message if not.
    * @public
    */
   public build(): Result<Collections.IReadOnlyValidatingResultMap<ResourceId, Resource>> {
-    if (!this._built) {
-      const errors: MessageAggregator = new MessageAggregator();
-      this._resources.forEach((r, id) => {
-        this._builtResources.getOrAdd(id, () => r.build()).aggregateError(errors);
-      });
-      /* c8 ignore next 3 - defense in depth against internal error */
-      if (errors.hasMessages) {
-        return fail(`build failed: ${errors.toString()}`);
-      }
-      this._built = true;
-    }
-    return succeed(this._builtResources);
+    return this._performBuild().onSuccess(() => succeed(this._builtResources));
   }
 
   /**
@@ -398,10 +505,12 @@ export class ResourceManagerBuilder implements IResourceManager {
  * @deprecated Use ResourceManagerBuilder instead
  * @public
  */
+/* c8 ignore next 1 - deprecated export for backward compatibility */
 export const ResourceManager: typeof ResourceManagerBuilder = ResourceManagerBuilder;
 
 /**
  * @deprecated Use ResourceManagerBuilder instead
  * @public
  */
+/* c8 ignore next 1 - deprecated export for backward compatibility */
 export type ResourceManager = ResourceManagerBuilder;

@@ -37,6 +37,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[builtResources](./ts-res.runtime.iresourcemanager.builtresources.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Collections.IReadOnlyResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [IResource](./ts-res.runtime.iresource.md)<!-- -->&gt;
+
+
+</td><td>
+
+A read-only result map of all built resources, keyed by resource ID. Resources are built on-demand when accessed and returns Results for error handling.
+
+
+</td></tr>
+<tr><td>
+
 [conditions](./ts-res.runtime.iresourcemanager.conditions.md)
 
 

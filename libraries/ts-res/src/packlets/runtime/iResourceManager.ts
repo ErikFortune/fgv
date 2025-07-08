@@ -20,10 +20,11 @@
  * SOFTWARE.
  */
 
-import { Result } from '@fgv/ts-utils';
+import { Result, Collections } from '@fgv/ts-utils';
 import { JsonValue } from '@fgv/ts-json-base';
 import { ReadOnlyConditionCollector, ReadOnlyConditionSetCollector } from '../conditions';
 import { ReadOnlyAbstractDecisionCollector, ConcreteDecision } from '../decisions';
+import { ResourceId } from '../common';
 
 /**
  * Runtime representation of a resource candidate with the minimal data needed for resolution.
@@ -41,6 +42,23 @@ export interface IRuntimeResourceCandidate {
 export interface IRuntimeResource {
   /** The resource identifier */
   readonly id: string;
+  /** The decision used to select candidates */
+  readonly decision: ConcreteDecision;
+  /** The available candidates for this resource */
+  readonly candidates: ReadonlyArray<IRuntimeResourceCandidate>;
+}
+
+/**
+ * Interface for a resource that can be used in the runtime layer.
+ * This provides the minimal properties needed from a resource without requiring
+ * the full Resources layer dependencies.
+ * @public
+ */
+export interface IResource {
+  /** The resource identifier */
+  readonly id: string;
+  /** The resource type name */
+  readonly resourceType: string;
   /** The decision used to select candidates */
   readonly decision: ConcreteDecision;
   /** The available candidates for this resource */
@@ -78,4 +96,10 @@ export interface IResourceManager {
    * @returns Success with the runtime resource if found, Failure otherwise
    */
   getBuiltResourceForRuntime(id: string): Result<IRuntimeResource>;
+
+  /**
+   * A read-only result map of all built resources, keyed by resource ID.
+   * Resources are built on-demand when accessed and returns Results for error handling.
+   */
+  readonly builtResources: Collections.IReadOnlyResultMap<ResourceId, IResource>;
 }

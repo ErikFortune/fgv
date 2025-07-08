@@ -9,8 +9,9 @@ Represents a single logical resource, with a unique id and a set of possible can
 **Signature:**
 
 ```typescript
-export declare class Resource 
+export declare class Resource implements IResource 
 ```
+**Implements:** [IResource](./ts-res.runtime.iresource.md)
 
 ## Constructors
 
@@ -72,6 +73,27 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[\_resourceType](./ts-res.resources.resource._resourcetype.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ResourceType](./ts-res.resourcetypes.resourcetype.md)
+
+
+</td><td>
+
+The [type](./ts-res.resourcetypes.resourcetype.md) of the resource.
+
+
+</td></tr>
+<tr><td>
 
 [candidates](./ts-res.resources.resource.candidates.md)
 
@@ -146,12 +168,33 @@ The unique [id](./ts-res.resourceid.md) of the resource.
 
 </td><td>
 
+string
+
+
+</td><td>
+
+Gets the resource type name as a string (implements IResource interface).
+
+
+</td></tr>
+<tr><td>
+
+[resourceTypeObject](./ts-res.resources.resource.resourcetypeobject.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
 [ResourceType](./ts-res.resourcetypes.resourcetype.md)
 
 
 </td><td>
 
-The [type](./ts-res.resourcetypes.resourcetype.md) of the resource.
+Gets the full ResourceType object.
 
 
 </td></tr>
