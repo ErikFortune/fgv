@@ -23,7 +23,7 @@
 import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../index';
 
-describe('ResourceManager', () => {
+describe('ResourceManagerBuilder', () => {
   let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
   let qualifierDecls: TsRes.Qualifiers.IQualifierDecl[];
   let qualifiers: TsRes.Qualifiers.QualifierCollector;
@@ -368,6 +368,7 @@ describe('ResourceManager', () => {
           expect(resource.id).toEqual(otherDecls[0].id);
           expect(resource.candidates.length).toEqual(1);
         });
+        expect(manager.builtResources).toBe(r);
       });
     });
   });

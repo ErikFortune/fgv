@@ -24,7 +24,7 @@ import { Result, Collections } from '@fgv/ts-utils';
 import { JsonValue } from '@fgv/ts-json-base';
 import { ReadOnlyConditionCollector, ReadOnlyConditionSetCollector } from '../conditions';
 import { ReadOnlyAbstractDecisionCollector, ConcreteDecision } from '../decisions';
-import { ResourceId } from '../common';
+import { ResourceId, ResourceValueMergeMethod } from '../common';
 import { ResourceType } from '../resource-types';
 
 /**
@@ -34,6 +34,16 @@ import { ResourceType } from '../resource-types';
 export interface IRuntimeResourceCandidate {
   /** The JSON value for this candidate */
   readonly json: JsonValue;
+
+  /**
+   * Indicates if this candidate is a partial resource.
+   */
+  readonly isPartial: boolean;
+
+  /**
+   * Specifies the resource type of this candidate.
+   */
+  readonly mergeMethod: ResourceValueMergeMethod;
 }
 
 /**
@@ -96,7 +106,7 @@ export interface IResourceManager {
    * @param id - The resource identifier
    * @returns Success with the runtime resource if found, Failure otherwise
    */
-  getBuiltResourceForRuntime(id: string): Result<IRuntimeResource>;
+  getBuiltResource(id: string): Result<IRuntimeResource>;
 
   /**
    * A read-only result map of all built resources, keyed by resource ID.

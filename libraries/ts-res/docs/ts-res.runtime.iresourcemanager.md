@@ -136,7 +136,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[getBuiltResourceForRuntime(id)](./ts-res.runtime.iresourcemanager.getbuiltresourceforruntime.md)
+[getBuiltResource(id)](./ts-res.runtime.iresourcemanager.getbuiltresource.md)
 
 
 </td><td>

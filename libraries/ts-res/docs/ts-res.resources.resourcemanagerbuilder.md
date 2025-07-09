@@ -520,20 +520,6 @@ Gets an individual [built resource](./ts-res.resources.resource.md) from the man
 </td></tr>
 <tr><td>
 
-[getBuiltResourceForRuntime(id)](./ts-res.resources.resourcemanagerbuilder.getbuiltresourceforruntime.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets a built resource by ID for runtime resolution.
-
-
-</td></tr>
-<tr><td>
-
 [getBuiltResourcesForContext(context, options)](./ts-res.resources.resourcemanagerbuilder.getbuiltresourcesforcontext.md)
 
 

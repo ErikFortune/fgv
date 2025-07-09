@@ -25,7 +25,7 @@ import { ResourceId, Validate } from '../common';
 import { ResourceCandidate } from './resourceCandidate';
 import { ResourceType } from '../resource-types';
 import { ConcreteDecision, AbstractDecisionCollector } from '../decisions';
-import { IResource } from '../runtime';
+import { IResource, IRuntimeResource } from '../runtime';
 import * as ResourceJson from '../resource-json';
 import * as Context from '../context';
 
@@ -58,7 +58,7 @@ export interface IResourceCreateParams {
  * candidate instances.
  * @public
  */
-export class Resource implements IResource {
+export class Resource implements IResource, IRuntimeResource {
   /**
    * The unique {@link ResourceId | id} of the resource.
    */

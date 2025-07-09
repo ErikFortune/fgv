@@ -37,6 +37,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[isPartial](./ts-res.runtime.iruntimeresourcecandidate.ispartial.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+Indicates if this candidate is a partial resource.
+
+
+</td></tr>
+<tr><td>
+
 [json](./ts-res.runtime.iruntimeresourcecandidate.json.md)
 
 
@@ -53,6 +74,27 @@ JsonValue
 </td><td>
 
 The JSON value for this candidate
+
+
+</td></tr>
+<tr><td>
+
+[mergeMethod](./ts-res.runtime.iruntimeresourcecandidate.mergemethod.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ResourceValueMergeMethod](./ts-res.resourcevaluemergemethod.md)
+
+
+</td><td>
+
+Specifies the resource type of this candidate.
 
 
 </td></tr>
