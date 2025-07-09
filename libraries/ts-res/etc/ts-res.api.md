@@ -126,6 +126,67 @@ class CollectionImporter implements IImporter {
     readonly types: string[];
 }
 
+declare namespace Compiled {
+    export {
+        Convert_3 as Convert,
+        ICompiledQualifierType,
+        ICompiledQualifier,
+        ICompiledResourceType,
+        ICompiledCondition,
+        ICompiledConditionSet,
+        ICompiledAbstractDecision,
+        ICompiledCandidate,
+        ICompiledResource,
+        ICompiledResourceCollection
+    }
+}
+
+// Warning: (ae-forgotten-export) The symbol "Model" needs to be exported by the entry point index.d.ts
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const compiledAbstractDecision: ObjectConverter<Model.ICompiledAbstractDecision, unknown>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const compiledCandidate: ObjectConverter<Model.ICompiledCandidate, unknown>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const compiledCondition: ObjectConverter<Model.ICompiledCondition, unknown>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const compiledConditionSet: ObjectConverter<Model.ICompiledConditionSet, unknown>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const compiledQualifier: ObjectConverter<Model.ICompiledQualifier, unknown>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const compiledQualifierType: ObjectConverter<Model.ICompiledQualifierType, unknown>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const compiledResource: ObjectConverter<Model.ICompiledResource, unknown>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const compiledResourceCollection: ObjectConverter<Model.ICompiledResourceCollection, unknown>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const compiledResourceType: ObjectConverter<Model.ICompiledResourceType, unknown>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -451,7 +512,7 @@ const containerContextDecl: Converter<Normalized.IContainerContextDecl>;
 
 declare namespace Context {
     export {
-        Convert_4 as Convert,
+        Convert_5 as Convert,
         IContextMatchOptions,
         IContextQualifierValueDecl,
         IContextDecl,
@@ -540,6 +601,20 @@ declare namespace Convert_2 {
 
 declare namespace Convert_3 {
     export {
+        compiledQualifierType,
+        compiledQualifier,
+        compiledResourceType,
+        compiledCondition,
+        compiledConditionSet,
+        compiledAbstractDecision,
+        compiledCandidate,
+        compiledResource,
+        compiledResourceCollection
+    }
+}
+
+declare namespace Convert_4 {
+    export {
         looseConditionDecl,
         childConditionDecl,
         conditionSetDecl_2 as conditionSetDecl,
@@ -554,7 +629,7 @@ declare namespace Convert_3 {
     }
 }
 
-declare namespace Convert_4 {
+declare namespace Convert_5 {
     export {
         contextQualifierValueDecl,
         contextDecl,
@@ -564,7 +639,7 @@ declare namespace Convert_4 {
     }
 }
 
-declare namespace Convert_5 {
+declare namespace Convert_6 {
     export {
         literalValueHierarchyCreateParams,
         IQualifierTypeConvertContext,
@@ -572,7 +647,7 @@ declare namespace Convert_5 {
     }
 }
 
-declare namespace Convert_6 {
+declare namespace Convert_7 {
     export {
         qualifierDecl,
         IQualifierDeclConvertContext,
@@ -812,6 +887,69 @@ interface IChildResourceDecl {
 interface IChildResourceDecl_2 {
     readonly candidates?: ReadonlyArray<IChildResourceCandidateDecl_2>;
     readonly resourceTypeName: string;
+}
+
+// @public
+interface ICompiledAbstractDecision {
+    conditionSets: ReadonlyArray<Common.ConditionSetIndex>;
+}
+
+// @public
+interface ICompiledCandidate {
+    isPartial: boolean;
+    json: JsonValue;
+    mergeMethod: Common.ResourceValueMergeMethod;
+}
+
+// @public
+interface ICompiledCondition {
+    operator?: Common.ConditionOperator;
+    priority: Common.ConditionPriority;
+    qualifierIndex: Common.QualifierIndex;
+    scoreAsDefault?: Common.QualifierMatchScore;
+    value: string;
+}
+
+// @public
+interface ICompiledConditionSet {
+    conditions: ReadonlyArray<Common.ConditionIndex>;
+}
+
+// @public
+interface ICompiledQualifier {
+    defaultPriority: Common.ConditionPriority;
+    name: Common.QualifierName;
+    type: Common.QualifierTypeIndex;
+}
+
+// @public
+interface ICompiledQualifierType {
+    // Warning: (ae-forgotten-export) The symbol "Common" needs to be exported by the entry point index.d.ts
+    name: Common.QualifierTypeName;
+}
+
+// @public
+interface ICompiledResource {
+    candidates: ReadonlyArray<ICompiledCandidate>;
+    decision: Common.DecisionIndex;
+    id: Common.ResourceId;
+    type: Common.ResourceTypeIndex;
+}
+
+// @public
+interface ICompiledResourceCollection {
+    conditions: ReadonlyArray<ICompiledCondition>;
+    conditionSets: ReadonlyArray<ICompiledConditionSet>;
+    decisions: ReadonlyArray<ICompiledAbstractDecision>;
+    qualifiers: ReadonlyArray<ICompiledQualifier>;
+    qualifierTypes: ReadonlyArray<ICompiledQualifierType>;
+    resources: ReadonlyArray<ICompiledResource>;
+    resourceTypes: ReadonlyArray<ICompiledResourceType>;
+}
+
+// @public
+interface ICompiledResourceType {
+    name: Common.ResourceTypeName;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2179,7 +2317,7 @@ const qualifierName: Converter<QualifierName, unknown>;
 
 declare namespace Qualifiers {
     export {
-        Convert_6 as Convert,
+        Convert_7 as Convert,
         Qualifier,
         IQualifierDecl,
         IValidatedQualifierDecl,
@@ -2285,7 +2423,7 @@ const qualifierTypeName: Converter<QualifierTypeName, unknown>;
 
 declare namespace QualifierTypes {
     export {
-        Convert_5 as Convert,
+        Convert_6 as Convert,
         IQualifierType,
         IQualifierTypeCreateParams,
         QualifierType,
@@ -2535,7 +2673,8 @@ const resourceIndex: Converter<ResourceIndex, unknown>;
 
 declare namespace ResourceJson {
     export {
-        Convert_3 as Convert,
+        Compiled,
+        Convert_4 as Convert,
         Helpers_2 as Helpers,
         Json,
         Normalized,

@@ -82,6 +82,15 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[Compiled](./ts-res.resourcejson.compiled.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Convert](./ts-res.resourcejson.convert.md)
 
 
