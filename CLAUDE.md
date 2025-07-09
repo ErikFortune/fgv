@@ -105,6 +105,38 @@ All tests use custom Jest matchers from `@fgv/ts-utils-jest` for `Result<T>` obj
 - **`toSucceedAndSatisfy(callback)`** - Assert success and run assertions on the value
 
 ### Idiomatic Test Patterns
+
+#### Setup vs Test Assertions
+```typescript
+// ✅ Good - Use standard Result methods in setup (beforeEach, etc.)
+beforeEach(() => {
+  const setupResult = SomeClass.create(params);
+  instance = setupResult.orThrow(); // OK in setup
+  
+  // Or use onSuccess for conditional setup
+  manager = Manager.create(params).onSuccess((mgr) => {
+    mgr.addItem(testItem).orThrow(); // OK in setup
+    return mgr;
+  }).orThrow();
+});
+
+// ✅ Good - Use Result matchers in test cases
+test('should work correctly', () => {
+  expect(SomeClass.create(params)).toSucceedAndSatisfy((instance) => {
+    expect(instance.property).toBe(expectedValue);
+    expect(instance.method()).toSucceed();
+  });
+});
+
+// ❌ Bad - Don't use Result matchers in setup
+beforeEach(() => {
+  expect(SomeClass.create(params)).toSucceedAndSatisfy((instance) => {
+    testInstance = instance; // Wrong - this is setup, not a test
+  });
+});
+```
+
+#### Test Assertion Patterns
 ```typescript
 // ✅ Good - Use toSucceedAndSatisfy for complex assertions
 expect(SomeClass.create(params)).toSucceedAndSatisfy((instance) => {
@@ -118,10 +150,10 @@ expect(SomeClass.create(invalidParams)).toFailWith(/expected error pattern/i);
 // ✅ Good - Use toSucceedWith for simple value checks
 expect(converter.convert('input')).toSucceedWith(expectedOutput);
 
-// ❌ Bad - Don't extract with .orThrow() in tests
+// ❌ Bad - Don't extract with .orThrow() in test cases
 const result = SomeClass.create(params);
 expect(result).toSucceed();
-const instance = result.value; // Prefer toSucceedAndSatisfy instead
+const instance = result.value; // Use toSucceedAndSatisfy instead
 ```
 
 ## Development Workflow

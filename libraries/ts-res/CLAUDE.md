@@ -125,7 +125,36 @@ const corruptedData = {
 ```
 
 ### Result Pattern Testing
-Use the custom Jest matchers for consistent Result<T> testing:
+Use the custom Jest matchers for consistent Result<T> testing **in test cases**:
+
+#### Test Setup vs Test Assertions
+```typescript
+// ✅ Good - Use standard Result methods in setup (beforeEach, etc.)
+beforeEach(() => {
+  const qualifierTypesResult = QualifierTypeCollector.create(params);
+  qualifierTypes = qualifierTypesResult.orThrow(); // OK in setup
+  
+  // Or use onSuccess for conditional setup
+  resourceManager = ResourceManager.create(params).onSuccess((manager) => {
+    manager.addResource(testResource).orThrow(); // OK in setup
+    return manager;
+  }).orThrow();
+});
+
+// ✅ Good - Use Result matchers in test cases
+test('should create manager', () => {
+  expect(ResourceManager.create(params)).toSucceedAndSatisfy((manager) => {
+    expect(manager.qualifiers.size).toBe(2);
+  });
+});
+
+// ❌ Avoid - Don't use Result matchers in setup
+beforeEach(() => {
+  expect(ResourceManager.create(params)).toSucceedAndSatisfy((manager) => {
+    resourceManager = manager; // Wrong - this is setup, not a test
+  });
+});
+```
 
 #### Basic Success/Failure Testing
 ```typescript
@@ -147,17 +176,17 @@ expect(validator.validate(badInput)).toFailWith(/validation failed/i);
 
 #### Complex Assertions
 ```typescript
-// ✅ Preferred - Use toSucceedAndSatisfy for multiple assertions
+// ✅ Preferred - Use toSucceedAndSatisfy for multiple assertions in tests
 expect(ResourceManager.create(params)).toSucceedAndSatisfy((manager) => {
   expect(manager.qualifiers.size).toBe(2);
   expect(manager.resourceTypes.size).toBe(1);
   expect(manager.getResource('test')).toSucceed();
 });
 
-// ❌ Avoid - Don't extract values with .orThrow() in tests
+// ❌ Avoid - Don't extract values with .orThrow() in test cases
 const managerResult = ResourceManager.create(params);
 expect(managerResult).toSucceed();
-const manager = managerResult.value; // Less idiomatic
+const manager = managerResult.value; // Less idiomatic for test assertions
 ```
 
 #### Nested Result Testing
@@ -193,17 +222,38 @@ expect(operation()).toFailWith('Invalid parameter: expected string');
 
 ### Anti-Patterns to Avoid
 ```typescript
-// ❌ Don't use .orThrow() for test assertions
-const result = operation();
-expect(result).toSucceed();
-const value = result.value; // Use toSucceedAndSatisfy instead
+// ❌ Don't use .orThrow() for test assertions (use Result matchers instead)
+test('should work', () => {
+  const result = operation();
+  expect(result).toSucceed();
+  const value = result.value; // Use toSucceedAndSatisfy instead
+  expect(value.property).toBe(expected);
+});
+
+// ❌ Don't use Result matchers in setup code
+beforeEach(() => {
+  expect(ResourceManager.create(params)).toSucceedAndSatisfy((manager) => {
+    resourceManager = manager; // Wrong - use .orThrow() or .onSuccess() in setup
+  });
+});
 
 // ❌ Don't use any type even for test data
 const testData = someValue as any; // Use proper typing
 
-// ❌ Don't ignore Result patterns in test setup
-const setup = expensiveOperation().orThrow(); // OK in beforeEach
-expect(setup.property).toBe(value); // But use Result matchers in tests
+// ✅ Correct patterns for setup vs test assertions
+beforeEach(() => {
+  const setup = expensiveOperation().orThrow(); // OK in beforeEach
+  resourceManager = ResourceManager.create(params).onSuccess((manager) => {
+    manager.addResource(testResource).orThrow(); // OK in setup
+    return manager;
+  }).orThrow();
+});
+
+test('should have correct properties', () => {
+  expect(resourceManager.getResource('test')).toSucceedAndSatisfy((resource) => {
+    expect(resource.property).toBe(expected); // Use Result matchers in tests
+  });
+});
 ```
 
 ## Development Workflow

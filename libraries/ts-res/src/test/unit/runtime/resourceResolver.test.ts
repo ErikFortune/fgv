@@ -142,187 +142,185 @@ describe('ResourceResolver class', () => {
 
   describe('resolveResource method', () => {
     test('resolves the best matching candidate value', () => {
-      const resource = resourceManager.getBuiltResource('greeting').orThrow();
-
-      // Should get the best match based on context: en + US + formal tone
-      // The "Hello World!" candidate matches language=en and territory=US (highest specificity)
-      expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Hello World!' });
+      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+        // Should get the best match based on context: en + US + formal tone
+        // The "Hello World!" candidate matches language=en and territory=US (highest specificity)
+        expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Hello World!' });
+      });
     });
 
     test('resolves to formal tone candidate when multiple candidates match partially', () => {
       // Change context to remove territory match - no type casting needed!
-      contextProvider.validating.remove('territory').orThrow();
+      expect(contextProvider.validating.remove('territory')).toSucceed();
 
-      const resource = resourceManager.getBuiltResource('greeting').orThrow();
-
-      // Should get "Hello!" (en + formal tone) over "Hi there!" (en + standard tone)
-      expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Hello!' });
+      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+        // Should get "Hello!" (en + formal tone) over "Hi there!" (en + standard tone)
+        expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Hello!' });
+      });
     });
 
     test('resolves to the only matching candidate', () => {
       // Change context to French - no type casting needed!
-      contextProvider.validating.set('language', 'fr').orThrow();
-      contextProvider.validating.remove('territory').orThrow();
+      expect(contextProvider.validating.set('language', 'fr')).toSucceed();
+      expect(contextProvider.validating.remove('territory')).toSucceed();
 
-      const resource = resourceManager.getBuiltResource('greeting').orThrow();
-
-      // Should get "Bonjour!" (only French candidate)
-      expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Bonjour!' });
+      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+        // Should get "Bonjour!" (only French candidate)
+        expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Bonjour!' });
+      });
     });
 
     test('fails when no candidates match', () => {
       // Change context to a language with no candidates
-      contextProvider.validating.set('language', 'de').orThrow();
+      expect(contextProvider.validating.set('language', 'de')).toSucceed();
 
-      const resource = resourceManager.getBuiltResource('greeting').orThrow();
-
-      expect(resolver.resolveResource(resource)).toFailWith(/No matching candidates found/);
+      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+        expect(resolver.resolveResource(resource)).toFailWith(/No matching candidates found/);
+      });
     });
 
     test('fails when decision resolution fails', () => {
-      // Create a resource with invalid decision index to force failure
-      const resource = resourceManager.getBuiltResource('greeting').orThrow();
+      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+        // Clear the decision cache and manually break the decision system
+        resolver.clearConditionCache();
 
-      // Clear the decision cache and manually break the decision system
-      resolver.clearConditionCache();
+        // Remove required qualifier from context to cause decision failure
+        contextProvider.clear();
 
-      // Remove required qualifier from context to cause decision failure
-      contextProvider.clear();
-
-      expect(resolver.resolveResource(resource)).toFail();
+        expect(resolver.resolveResource(resource)).toFail();
+      });
     });
 
     test('fails when invalid candidate index is found', () => {
       // Create a resource with mocked candidates array that is shorter than expected
-      const resource = resourceManager.getBuiltResource('greeting').orThrow();
-      // Manually corrupt the candidates array to force an invalid index scenario
-      const originalCandidates = resource.candidates;
-      (resource as unknown as { candidates: readonly TsRes.Resources.ResourceCandidate[] }).candidates = []; // Empty candidates array
-      expect(resolver.resolveResource(resource)).toFailWith(/Invalid candidate index/);
-      // Restore original candidates
-      (resource as unknown as { candidates: readonly TsRes.Resources.ResourceCandidate[] }).candidates =
-        originalCandidates;
+      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+        // Manually corrupt the candidates array to force an invalid index scenario
+        const originalCandidates = resource.candidates;
+        (resource as unknown as { candidates: readonly TsRes.Resources.ResourceCandidate[] }).candidates = []; // Empty candidates array
+        expect(resolver.resolveResource(resource)).toFailWith(/Invalid candidate index/);
+        // Restore original candidates
+        (resource as unknown as { candidates: readonly TsRes.Resources.ResourceCandidate[] }).candidates =
+          originalCandidates;
+      });
     });
   });
 
   describe('resolveAllResourceValues method', () => {
     test('resolves all matching candidate values in priority order', () => {
-      const resource = resourceManager.getBuiltResource('greeting').orThrow();
+      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+        expect(resolver.resolveAllResourceValues(resource)).toSucceedAndSatisfy((values) => {
+          expect(values).toBeInstanceOf(Array);
+          expect(values.length).toBeGreaterThan(0);
 
-      expect(resolver.resolveAllResourceValues(resource)).toSucceedAndSatisfy((values) => {
-        expect(values).toBeInstanceOf(Array);
-        expect(values.length).toBeGreaterThan(0);
+          // First value should be the best match
+          expect(values[0]).toEqual({ text: 'Hello World!' });
 
-        // First value should be the best match
-        expect(values[0]).toEqual({ text: 'Hello World!' });
-
-        // Should contain other matching candidates in priority order
-        expect(values).toContainEqual({ text: 'Hello!' });
+          // Should contain other matching candidates in priority order
+          expect(values).toContainEqual({ text: 'Hello!' });
+        });
       });
     });
 
     test('resolves multiple matching candidates for partial context', () => {
       // Remove territory to get multiple matches, but keep en + high priority match
-      contextProvider.validating.remove('territory').orThrow();
+      expect(contextProvider.validating.remove('territory')).toSucceed();
 
-      const resource = resourceManager.getBuiltResource('greeting').orThrow();
+      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+        expect(resolver.resolveAllResourceValues(resource)).toSucceedAndSatisfy((values) => {
+          expect(values).toBeInstanceOf(Array);
+          expect(values.length).toBeGreaterThanOrEqual(1);
 
-      expect(resolver.resolveAllResourceValues(resource)).toSucceedAndSatisfy((values) => {
-        expect(values).toBeInstanceOf(Array);
-        expect(values.length).toBeGreaterThanOrEqual(1);
+          // Should get the best English match (formal tone)
+          expect(values[0]).toEqual({ text: 'Hello!' });
 
-        // Should get the best English match (formal tone)
-        expect(values[0]).toEqual({ text: 'Hello!' });
-
-        // Should not contain French candidate
-        expect(values).not.toContainEqual({ text: 'Bonjour!' });
+          // Should not contain French candidate
+          expect(values).not.toContainEqual({ text: 'Bonjour!' });
+        });
       });
     });
 
     test('resolves single matching candidate', () => {
       // Change context to French - no type casting needed!
-      contextProvider.validating.set('language', 'fr').orThrow();
-      contextProvider.validating.remove('territory').orThrow();
+      expect(contextProvider.validating.set('language', 'fr')).toSucceed();
+      expect(contextProvider.validating.remove('territory')).toSucceed();
 
-      const resource = resourceManager.getBuiltResource('greeting').orThrow();
-
-      expect(resolver.resolveAllResourceValues(resource)).toSucceedAndSatisfy((values) => {
-        expect(values).toHaveLength(1);
-        expect(values[0]).toEqual({ text: 'Bonjour!' });
+      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+        expect(resolver.resolveAllResourceValues(resource)).toSucceedAndSatisfy((values) => {
+          expect(values).toHaveLength(1);
+          expect(values[0]).toEqual({ text: 'Bonjour!' });
+        });
       });
     });
 
     test('fails when no candidates match', () => {
       // Change context to a language with no candidates
-      contextProvider.validating.set('language', 'de').orThrow();
+      expect(contextProvider.validating.set('language', 'de')).toSucceed();
 
-      const resource = resourceManager.getBuiltResource('greeting').orThrow();
-
-      expect(resolver.resolveAllResourceValues(resource)).toFailWith(/No matching candidates found/);
+      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+        expect(resolver.resolveAllResourceValues(resource)).toFailWith(/No matching candidates found/);
+      });
     });
 
     test('fails when decision resolution fails', () => {
-      const resource = resourceManager.getBuiltResource('greeting').orThrow();
+      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+        // Clear context to cause decision failure
+        contextProvider.clear();
 
-      // Clear context to cause decision failure
-      contextProvider.clear();
-
-      expect(resolver.resolveAllResourceValues(resource)).toFail();
+        expect(resolver.resolveAllResourceValues(resource)).toFail();
+      });
     });
 
     test('fails when invalid candidate index is found', () => {
       // Create a resource with mocked candidates array that is shorter than expected
-      const resource = resourceManager.getBuiltResource('greeting').orThrow();
-      // Manually corrupt the candidates array to force an invalid index scenario
-      const originalCandidates = resource.candidates;
-      (resource as unknown as { candidates: readonly TsRes.Resources.ResourceCandidate[] }).candidates = []; // Empty candidates array
-      expect(resolver.resolveAllResourceValues(resource)).toFailWith(/Invalid candidate index/);
-      // Restore original candidates
-      (resource as unknown as { candidates: readonly TsRes.Resources.ResourceCandidate[] }).candidates =
-        originalCandidates;
+      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+        // Manually corrupt the candidates array to force an invalid index scenario
+        const originalCandidates = resource.candidates;
+        (resource as unknown as { candidates: readonly TsRes.Resources.ResourceCandidate[] }).candidates = []; // Empty candidates array
+        expect(resolver.resolveAllResourceValues(resource)).toFailWith(/Invalid candidate index/);
+        // Restore original candidates
+        (resource as unknown as { candidates: readonly TsRes.Resources.ResourceCandidate[] }).candidates =
+          originalCandidates;
+      });
     });
   });
 
   describe('caching behavior', () => {
     test('caches decision resolution results', () => {
-      const resource = resourceManager.getBuiltResource('greeting').orThrow();
+      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+        // First resolution
+        expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Hello World!' });
 
-      // First resolution
-      const result1 = resolver.resolveResource(resource);
-      expect(result1).toSucceedWith({ text: 'Hello World!' });
-
-      // Second resolution should use cached result
-      const result2 = resolver.resolveResource(resource);
-      expect(result2).toSucceedWith({ text: 'Hello World!' });
+        // Second resolution should use cached result
+        expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Hello World!' });
+      });
     });
 
     test('clears cache and re-resolves when context changes', () => {
-      const resource = resourceManager.getBuiltResource('greeting').orThrow();
+      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+        // Initial resolution
+        expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Hello World!' });
 
-      // Initial resolution
-      expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Hello World!' });
+        // Change context and clear cache
+        expect(contextProvider.validating.set('language', 'fr')).toSucceed();
+        expect(contextProvider.validating.remove('territory')).toSucceed();
+        resolver.clearConditionCache();
 
-      // Change context and clear cache
-      contextProvider.validating.set('language', 'fr').orThrow();
-      contextProvider.validating.remove('territory').orThrow();
-      resolver.clearConditionCache();
-
-      // Should get different result
-      expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Bonjour!' });
+        // Should get different result
+        expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Bonjour!' });
+      });
     });
 
     test('caches condition set resolution results', () => {
       // Get a condition set to test with
-      const conditionSet = resourceManager.conditionSets.getAt(0).orThrow();
-
-      // First resolution - populates cache
-      const result1 = resolver.resolveConditionSet(conditionSet);
-      expect(result1).toSucceed();
-
-      // Second resolution - should use cached result (hits lines 198-199)
-      const result2 = resolver.resolveConditionSet(conditionSet);
-      expect(result2).toSucceed();
-      expect(result2.value).toBe(result1.value);
+      expect(resourceManager.conditionSets.getAt(0)).toSucceedAndSatisfy((conditionSet) => {
+        // First resolution - populates cache
+        expect(resolver.resolveConditionSet(conditionSet)).toSucceedAndSatisfy((result1) => {
+          // Second resolution - should use cached result (hits lines 198-199)
+          expect(resolver.resolveConditionSet(conditionSet)).toSucceedAndSatisfy((result2) => {
+            expect(result2).toBe(result1);
+          });
+        });
+      });
     });
   });
 
@@ -337,29 +335,32 @@ describe('ResourceResolver class', () => {
   describe('error handling in condition and decision resolution', () => {
     test('handles condition without valid index', () => {
       // Create a condition without a valid index
-      const condition = resourceManager.conditions.getAt(0).orThrow();
-      const mockCondition = { ...condition, index: undefined };
-      expect(resolver.resolveCondition(mockCondition as TsRes.Conditions.Condition)).toFailWith(
-        /does not have a valid index/
-      );
+      expect(resourceManager.conditions.getAt(0)).toSucceedAndSatisfy((condition) => {
+        const mockCondition = { ...condition, index: undefined };
+        expect(resolver.resolveCondition(mockCondition as unknown as TsRes.Conditions.Condition)).toFailWith(
+          /does not have a valid index/
+        );
+      });
     });
 
     test('handles condition set without valid index', () => {
       // Create a condition set without a valid index
-      const conditionSet = resourceManager.conditionSets.getAt(0).orThrow();
-      const mockConditionSet = { ...conditionSet, index: undefined };
-      expect(resolver.resolveConditionSet(mockConditionSet as TsRes.Conditions.ConditionSet)).toFailWith(
-        /does not have a valid index/
-      );
+      expect(resourceManager.conditionSets.getAt(0)).toSucceedAndSatisfy((conditionSet) => {
+        const mockConditionSet = { ...conditionSet, index: undefined };
+        expect(
+          resolver.resolveConditionSet(mockConditionSet as unknown as TsRes.Conditions.ConditionSet)
+        ).toFailWith(/does not have a valid index/);
+      });
     });
 
     test('handles decision without valid index', () => {
       // Create a decision without a valid index
-      const decision = resourceManager.decisions.getAt(0).orThrow();
-      const mockDecision = { ...decision, index: undefined };
-      expect(resolver.resolveDecision(mockDecision as TsRes.Decisions.AbstractDecision)).toFailWith(
-        /does not have a valid index/
-      );
+      expect(resourceManager.decisions.getAt(0)).toSucceedAndSatisfy((decision) => {
+        const mockDecision = { ...decision, index: undefined };
+        expect(
+          resolver.resolveDecision(mockDecision as unknown as TsRes.Decisions.AbstractDecision)
+        ).toFailWith(/does not have a valid index/);
+      });
     });
   });
 });
