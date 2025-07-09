@@ -91,7 +91,7 @@ describe('ImportManager', () => {
 
   let files: FileTree.IInMemoryFile[];
   let tree: FileTree.FileTree;
-  let resourceManager: TsRes.Resources.ResourceManager;
+  let resourceManager: TsRes.Resources.ResourceManagerBuilder;
   let importers: TsRes.Import.Importers.IImporter[];
   let importManager: TsRes.Import.ImportManager;
 
@@ -132,7 +132,7 @@ describe('ImportManager', () => {
       ]
     }).orThrow();
 
-    resourceManager = TsRes.Resources.ResourceManager.create({ qualifiers, resourceTypes }).orThrow();
+    resourceManager = TsRes.Resources.ResourceManagerBuilder.create({ qualifiers, resourceTypes }).orThrow();
     importManager = TsRes.Import.ImportManager.create({ resources: resourceManager, importers }).orThrow();
   });
 

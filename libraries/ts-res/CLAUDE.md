@@ -80,7 +80,7 @@ The library is organized into "packlets" - cohesive modules that group related f
 
 ### Key Patterns
 
-1. **Result Pattern**: All operations that can fail return `Result<T>` objects from `@fgv/ts-utils`
+1. **Result Pattern**: All operations that can fail return `Result<T>` objects from `@fgv/ts-utils`.  Avoid throwing errors directly as much as possible, preferring to return a Result and use .orThrow() on paths that must throw.
 2. **Collector Pattern**: Used throughout for managing collections with validation
 3. **Builder Pattern**: `ResourceBuilder` for constructing complex resources
 4. **Converter Pattern**: Each major type has convert functions for declaration-to-object transformation

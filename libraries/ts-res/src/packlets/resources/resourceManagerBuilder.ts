@@ -457,17 +457,3 @@ export class ResourceManagerBuilder implements IResourceManager {
     return ResourceJson.Compiled.Convert.compiledResourceCollection.convert(compiledData);
   }
 }
-
-/**
- * @deprecated Use ResourceManagerBuilder instead
- * @public
- */
-/* c8 ignore next 1 - deprecated export for backward compatibility */
-export const ResourceManager: typeof ResourceManagerBuilder = ResourceManagerBuilder;
-
-/**
- * @deprecated Use ResourceManagerBuilder instead
- * @public
- */
-/* c8 ignore next 1 - deprecated export for backward compatibility */
-export type ResourceManager = ResourceManagerBuilder;

@@ -548,6 +548,20 @@ Gets a read-only array of all [resource candidates](./ts-res.resources.resourcec
 </td></tr>
 <tr><td>
 
+[getCompiledResourceCollection()](./ts-res.resources.resourcemanagerbuilder.getcompiledresourcecollection.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a compiled resource collection from the current state of the resource manager builder. This method generates an optimized, index-based representation of all resources, conditions, and decisions that can be used for serialization or efficient runtime processing.
+
+
+</td></tr>
+<tr><td>
+
 [getResourcesForContext(context, options)](./ts-res.resources.resourcemanagerbuilder.getresourcesforcontext.md)
 
 

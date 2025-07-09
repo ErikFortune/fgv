@@ -114,7 +114,7 @@ describe('ResourceManagerBuilder', () => {
 
   describe('static create method', () => {
     test('creates a new empty resource manager', () => {
-      const manager = TsRes.Resources.ResourceManager.create({
+      const manager = TsRes.Resources.ResourceManagerBuilder.create({
         qualifiers,
         resourceTypes
       });
@@ -131,10 +131,10 @@ describe('ResourceManagerBuilder', () => {
   });
 
   describe('addLooseCandidate method', () => {
-    let manager: TsRes.Resources.ResourceManager;
+    let manager: TsRes.Resources.ResourceManagerBuilder;
 
     beforeEach(() => {
-      manager = TsRes.Resources.ResourceManager.create({
+      manager = TsRes.Resources.ResourceManagerBuilder.create({
         qualifiers,
         resourceTypes
       }).orThrow();
@@ -198,10 +198,10 @@ describe('ResourceManagerBuilder', () => {
   });
 
   describe('getBuiltResource method', () => {
-    let manager: TsRes.Resources.ResourceManager;
+    let manager: TsRes.Resources.ResourceManagerBuilder;
 
     beforeEach(() => {
-      manager = TsRes.Resources.ResourceManager.create({
+      manager = TsRes.Resources.ResourceManagerBuilder.create({
         qualifiers,
         resourceTypes
       }).orThrow();
@@ -232,10 +232,10 @@ describe('ResourceManagerBuilder', () => {
   });
 
   describe('addResource method', () => {
-    let manager: TsRes.Resources.ResourceManager;
+    let manager: TsRes.Resources.ResourceManagerBuilder;
 
     beforeEach(() => {
-      manager = TsRes.Resources.ResourceManager.create({
+      manager = TsRes.Resources.ResourceManagerBuilder.create({
         qualifiers,
         resourceTypes
       }).orThrow();
@@ -342,10 +342,10 @@ describe('ResourceManagerBuilder', () => {
   });
 
   describe('build method', () => {
-    let manager: TsRes.Resources.ResourceManager;
+    let manager: TsRes.Resources.ResourceManagerBuilder;
 
     beforeEach(() => {
-      manager = TsRes.Resources.ResourceManager.create({
+      manager = TsRes.Resources.ResourceManagerBuilder.create({
         qualifiers,
         resourceTypes
       }).orThrow();
@@ -374,10 +374,10 @@ describe('ResourceManagerBuilder', () => {
   });
 
   describe('getAll methods', () => {
-    let manager: TsRes.Resources.ResourceManager;
+    let manager: TsRes.Resources.ResourceManagerBuilder;
 
     beforeEach(() => {
-      manager = TsRes.Resources.ResourceManager.create({
+      manager = TsRes.Resources.ResourceManagerBuilder.create({
         qualifiers,
         resourceTypes
       }).orThrow();
@@ -428,9 +428,9 @@ describe('ResourceManagerBuilder', () => {
   });
 
   describe('semantic and edge-case tests', () => {
-    let manager: TsRes.Resources.ResourceManager;
+    let manager: TsRes.Resources.ResourceManagerBuilder;
     beforeEach(() => {
-      manager = TsRes.Resources.ResourceManager.create({
+      manager = TsRes.Resources.ResourceManagerBuilder.create({
         qualifiers,
         resourceTypes
       }).orThrow();
@@ -577,10 +577,10 @@ describe('ResourceManagerBuilder', () => {
   });
 
   describe('context filtering methods', () => {
-    let manager: TsRes.Resources.ResourceManager;
+    let manager: TsRes.Resources.ResourceManagerBuilder;
 
     beforeEach(() => {
-      manager = TsRes.Resources.ResourceManager.create({
+      manager = TsRes.Resources.ResourceManagerBuilder.create({
         qualifiers,
         resourceTypes
       }).orThrow();
@@ -765,10 +765,10 @@ describe('ResourceManagerBuilder', () => {
   });
 
   describe('getCompiledResourceCollection method', () => {
-    let manager: TsRes.Resources.ResourceManager;
+    let manager: TsRes.Resources.ResourceManagerBuilder;
 
     beforeEach(() => {
-      manager = TsRes.Resources.ResourceManager.create({
+      manager = TsRes.Resources.ResourceManagerBuilder.create({
         qualifiers,
         resourceTypes
       }).orThrow();

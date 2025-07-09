@@ -87,7 +87,7 @@ describe('PathImporter', () => {
   let files: FileTree.IInMemoryFile[];
   let tree: FileTree.FileTree;
   let importer: TsRes.Import.Importers.PathImporter;
-  let manager: TsRes.Resources.ResourceManager;
+  let manager: TsRes.Resources.ResourceManagerBuilder;
 
   beforeEach(() => {
     qualifierTypes = TsRes.QualifierTypes.QualifierTypeCollector.create({
@@ -126,7 +126,7 @@ describe('PathImporter', () => {
       ]
     }).orThrow();
 
-    manager = TsRes.Resources.ResourceManager.create({ qualifiers, resourceTypes }).orThrow();
+    manager = TsRes.Resources.ResourceManagerBuilder.create({ qualifiers, resourceTypes }).orThrow();
   });
 
   describe('create static method', () => {

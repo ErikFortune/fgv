@@ -122,30 +122,6 @@ Interface for parameters to the [ResourceManagerBuilder create method](./ts-res.
 </td></tr>
 </tbody></table>
 
-## Variables
-
-<table><thead><tr><th>
-
-Variable
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[ResourceManager](./ts-res.resources.resourcemanager.md)
-
-
-</td><td>
-
-
-</td></tr>
-</tbody></table>
-
 ## Type Aliases
 
 <table><thead><tr><th>
@@ -167,15 +143,6 @@ Description
 </td><td>
 
 Possible result details returned by the resource builder [addLooseCandidate](./ts-res.resources.resourcebuilder.addloosecandidate.md) method.
-
-
-</td></tr>
-<tr><td>
-
-[ResourceManager](./ts-res.resources.resourcemanager.md)
-
-
-</td><td>
 
 
 </td></tr>

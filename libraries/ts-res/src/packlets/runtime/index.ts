@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+export * from './compiledResourceCollection';
 export * from './contextQualifierProvider';
 export * from './contextQualifierProviderValidator';
 export * from './iResourceManager';

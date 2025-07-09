@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[CompiledResourceCollection](./ts-res.runtime.compiledresourcecollection.md)
+
+
+</td><td>
+
+A compiled resource collection implements [IResourceManager](./ts-res.runtime.iresourcemanager.md) by reconstructing runtime objects from compiled data. This provides an efficient way to load and use pre-compiled resource collections without rebuilding them from scratch.
+
+
+</td></tr>
+<tr><td>
+
 [ConditionSetResolutionResult](./ts-res.runtime.conditionsetresolutionresult.md)
 
 
@@ -114,6 +125,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[ICompiledResourceCollectionCreateParams](./ts-res.runtime.icompiledresourcecollectioncreateparams.md)
+
+
+</td><td>
+
+Interface for parameters to create a [CompiledResourceCollection](./ts-res.runtime.compiledresourcecollection.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
 
 [IConditionMatchResult](./ts-res.runtime.iconditionmatchresult.md)
 

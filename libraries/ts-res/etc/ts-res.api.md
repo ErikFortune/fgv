@@ -180,6 +180,44 @@ const compiledResource: ObjectConverter<Model.ICompiledResource, unknown>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+class CompiledResourceCollection implements IResourceManager {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
+    protected constructor(params: ICompiledResourceCollectionCreateParams);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get builtResources(): Collections.IReadOnlyResultMap<ResourceId, IResource>;
+    // (undocumented)
+    readonly conditions: ReadOnlyConditionCollector;
+    // (undocumented)
+    readonly conditionSets: ReadOnlyConditionSetCollector;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params: ICompiledResourceCollectionCreateParams): Result<CompiledResourceCollection>;
+    // (undocumented)
+    readonly decisions: ReadOnlyAbstractDecisionCollector;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getBuiltResource(id: string): Result<IResource>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get qualifiers(): QualifierCollector;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get qualifierTypes(): QualifierTypeCollector;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get resourceTypes(): ResourceTypeCollector;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 const compiledResourceCollection: ObjectConverter<Model.ICompiledResourceCollection, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -945,6 +983,15 @@ interface ICompiledResourceCollection {
     qualifierTypes: ReadonlyArray<ICompiledQualifierType>;
     resources: ReadonlyArray<ICompiledResource>;
     resourceTypes: ReadonlyArray<ICompiledResourceType>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface ICompiledResourceCollectionCreateParams {
+    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
+    qualifierTypes: Collections.IReadOnlyResultMap<string, QualifierType>;
+    resourceTypes: Collections.IReadOnlyResultMap<string, ResourceType>;
 }
 
 // @public
@@ -2685,12 +2732,6 @@ declare namespace ResourceJson {
 }
 export { ResourceJson }
 
-// @public @deprecated (undocumented)
-const ResourceManager: typeof ResourceManagerBuilder;
-
-// @public @deprecated (undocumented)
-type ResourceManager = ResourceManagerBuilder;
-
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2839,8 +2880,7 @@ declare namespace Resources {
         ResourceBuilder,
         IResourceManagerBuilderCreateParams,
         ResourceManagerBuilderResultDetail,
-        ResourceManagerBuilder,
-        ResourceManager
+        ResourceManagerBuilder
     }
 }
 export { Resources }
@@ -2913,6 +2953,8 @@ const resourceValueMergeMethod: Converter<ResourceValueMergeMethod, ResourceValu
 
 declare namespace Runtime {
     export {
+        ICompiledResourceCollectionCreateParams,
+        CompiledResourceCollection,
         IContextQualifierProvider,
         ContextQualifierProvider,
         IReadOnlyContextQualifierProviderValidator,
