@@ -2767,6 +2767,7 @@ class ResourceManagerBuilder implements IResourceManager {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getCandidatesForContext(context: Context.IValidatedContextDecl, options?: Context.IContextMatchOptions): ReadonlyArray<ResourceCandidate>;
+    getCompiledResourceCollection(): Result<ResourceJson.Compiled.ICompiledResourceCollection>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

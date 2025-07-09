@@ -101,6 +101,7 @@ The library is organized into "packlets" - cohesive modules that group related f
 - Uses Jest with custom matchers from `@fgv/ts-utils-jest`
 - 100% coverage requirement enforced
 - Test files follow `*.test.ts` naming convention
+- This repo has strict lint rules against use of 'any' so do not use the any type in tests or code
 
 ## Development Workflow
 

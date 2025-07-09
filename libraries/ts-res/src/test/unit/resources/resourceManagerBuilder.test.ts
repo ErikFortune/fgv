@@ -763,4 +763,92 @@ describe('ResourceManagerBuilder', () => {
       expect(ids).toContain('universal.resource');
     });
   });
+
+  describe('getCompiledResourceCollection method', () => {
+    let manager: TsRes.Resources.ResourceManager;
+
+    beforeEach(() => {
+      manager = TsRes.Resources.ResourceManager.create({
+        qualifiers,
+        resourceTypes
+      }).orThrow();
+    });
+
+    test('returns compiled resource collection for empty manager', () => {
+      const result = manager.getCompiledResourceCollection();
+      expect(result).toSucceedAndSatisfy((collection) => {
+        expect(collection.qualifierTypes.length).toBe(3);
+        expect(collection.qualifiers.length).toBe(4);
+        expect(collection.resourceTypes.length).toBe(2);
+        expect(collection.conditions.length).toBe(0);
+        expect(collection.conditionSets.length).toBe(1);
+        expect(collection.decisions.length).toBe(2);
+        expect(collection.resources.length).toBe(0);
+      });
+    });
+
+    test('returns compiled resource collection with resources', () => {
+      manager.addLooseCandidate({ ...someDecls[0], resourceTypeName: 'json' }).orThrow();
+      manager.addLooseCandidate(someDecls[1]).orThrow();
+      manager.addLooseCandidate({ ...otherDecls[0], resourceTypeName: 'json' }).orThrow();
+
+      const result = manager.getCompiledResourceCollection();
+      expect(result).toSucceedAndSatisfy((collection) => {
+        expect(collection.qualifierTypes.length).toBe(3);
+        expect(collection.qualifiers.length).toBe(4);
+        expect(collection.resourceTypes.length).toBe(2);
+        expect(collection.conditions.length).toBeGreaterThan(0);
+        expect(collection.conditionSets.length).toBeGreaterThan(1);
+        expect(collection.decisions.length).toBeGreaterThan(2);
+        expect(collection.resources.length).toBe(2);
+      });
+    });
+
+    test('compiled collection contains valid structure', () => {
+      manager.addLooseCandidate({ ...someDecls[0], resourceTypeName: 'json' }).orThrow();
+      manager.addLooseCandidate(someDecls[1]).orThrow();
+
+      const result = manager.getCompiledResourceCollection();
+      expect(result).toSucceedAndSatisfy((collection) => {
+        // Verify structure has expected properties
+        expect(collection.qualifierTypes).toEqual(
+          expect.arrayContaining([expect.objectContaining({ name: expect.any(String) })])
+        );
+        expect(collection.qualifiers).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              name: expect.any(String),
+              type: expect.any(Number),
+              defaultPriority: expect.any(Number)
+            })
+          ])
+        );
+        expect(collection.resources).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              id: expect.any(String),
+              type: expect.any(Number),
+              decision: expect.any(Number),
+              candidates: expect.any(Array)
+            })
+          ])
+        );
+      });
+    });
+
+    test('fails if build fails', () => {
+      // Add a resource that will fail to build
+      manager.addLooseCandidate({ ...someDecls[0], resourceTypeName: 'json' }).orThrow();
+
+      // Mock the build to fail
+      const originalBuild = manager._performBuild;
+      manager._performBuild = jest.fn().mockReturnValue({ isFailure: () => true, message: 'Build failed' });
+
+      const result = manager.getCompiledResourceCollection();
+      expect(result).toFailWith(/Failed to build resources/);
+
+      // Restore original method
+      manager._performBuild = originalBuild;
+    });
+  });
 });
