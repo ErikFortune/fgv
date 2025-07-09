@@ -41,7 +41,7 @@ A wrapper for [IContextQualifierProvider](./ts-res.runtime.icontextqualifierprov
 </td></tr>
 <tr><td>
 
-[RuntimeResourceResolver](./ts-res.runtime.runtimeresourceresolver.md)
+[ResourceResolver](./ts-res.runtime.resourceresolver.md)
 
 
 </td><td>
@@ -192,12 +192,12 @@ Interface defining the read-only properties that the runtime resource resolver n
 </td></tr>
 <tr><td>
 
-[IRuntimeResourceResolverCreateParams](./ts-res.runtime.iruntimeresourceresolvercreateparams.md)
+[IResourceResolverCreateParams](./ts-res.runtime.iresourceresolvercreateparams.md)
 
 
 </td><td>
 
-Parameters for creating a [RuntimeResourceResolver](./ts-res.runtime.runtimeresourceresolver.md)<!-- -->.
+Parameters for creating a [ResourceResolver](./ts-res.runtime.resourceresolver.md)<!-- -->.
 
 
 </td></tr>

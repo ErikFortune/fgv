@@ -23,13 +23,13 @@
 import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../index';
 
-describe('RuntimeResourceResolver class', () => {
+describe('ResourceResolver class', () => {
   let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
   let qualifiers: TsRes.Qualifiers.QualifierCollector;
   let resourceTypes: TsRes.ResourceTypes.ResourceTypeCollector;
   let resourceManager: TsRes.Resources.ResourceManagerBuilder;
   let contextProvider: TsRes.Runtime.ValidatingSimpleContextQualifierProvider;
-  let resolver: TsRes.Runtime.RuntimeResourceResolver;
+  let resolver: TsRes.Runtime.ResourceResolver;
 
   beforeEach(() => {
     // Set up qualifier types
@@ -117,7 +117,7 @@ describe('RuntimeResourceResolver class', () => {
     }).orThrow();
 
     // Create resolver
-    resolver = TsRes.Runtime.RuntimeResourceResolver.create({
+    resolver = TsRes.Runtime.ResourceResolver.create({
       resourceManager,
       qualifierTypes,
       contextQualifierProvider: contextProvider
@@ -127,7 +127,7 @@ describe('RuntimeResourceResolver class', () => {
   describe('create static method', () => {
     test('creates a runtime resource resolver', () => {
       expect(
-        TsRes.Runtime.RuntimeResourceResolver.create({
+        TsRes.Runtime.ResourceResolver.create({
           resourceManager,
           qualifierTypes,
           contextQualifierProvider: contextProvider

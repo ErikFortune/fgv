@@ -41,10 +41,10 @@ export type DecisionResolutionResult =
   | { success: true; instanceIndices: ReadonlyArray<number> };
 
 /**
- * Parameters for creating a {@link Runtime.RuntimeResourceResolver | RuntimeResourceResolver}.
+ * Parameters for creating a {@link Runtime.ResourceResolver | ResourceResolver}.
  * @public
  */
-export interface IRuntimeResourceResolverCreateParams {
+export interface IResourceResolverCreateParams {
   /**
    * The {@link Runtime.IResourceManager | resource manager} that defines the resources available
    * and provides access to qualifiers and conditions.
@@ -70,7 +70,7 @@ export interface IRuntimeResourceResolverCreateParams {
  * and caching results for optimal performance.
  * @public
  */
-export class RuntimeResourceResolver {
+export class ResourceResolver {
   /**
    * The resource manager that defines available resources and provides condition access.
    */
@@ -105,10 +105,10 @@ export class RuntimeResourceResolver {
   private readonly _decisionCache: Array<DecisionResolutionResult | undefined>;
 
   /**
-   * Constructor for a {@link Runtime.RuntimeResourceResolver | RuntimeResourceResolver} object.
-   * @param params - {@link Runtime.IRuntimeResourceResolverCreateParams | Parameters} used to create the resolver.
+   * Constructor for a {@link Runtime.ResourceResolver | ResourceResolver} object.
+   * @param params - {@link Runtime.IResourceResolverCreateParams | Parameters} used to create the resolver.
    */
-  protected constructor(params: IRuntimeResourceResolverCreateParams) {
+  protected constructor(params: IResourceResolverCreateParams) {
     this.resourceManager = params.resourceManager;
     this.qualifierTypes = params.qualifierTypes;
     this.contextQualifierProvider = params.contextQualifierProvider;
@@ -127,14 +127,14 @@ export class RuntimeResourceResolver {
   }
 
   /**
-   * Creates a new {@link Runtime.RuntimeResourceResolver | RuntimeResourceResolver} object.
-   * @param params - {@link Runtime.IRuntimeResourceResolverCreateParams | Parameters} used to create the resolver.
-   * @returns `Success` with the new {@link Runtime.RuntimeResourceResolver | RuntimeResourceResolver} object if successful,
+   * Creates a new {@link Runtime.ResourceResolver | ResourceResolver} object.
+   * @param params - {@link Runtime.IResourceResolverCreateParams | Parameters} used to create the resolver.
+   * @returns `Success` with the new {@link Runtime.ResourceResolver | ResourceResolver} object if successful,
    * or `Failure` with an error message if not.
    * @public
    */
-  public static create(params: IRuntimeResourceResolverCreateParams): Result<RuntimeResourceResolver> {
-    return captureResult(() => new RuntimeResourceResolver(params));
+  public static create(params: IResourceResolverCreateParams): Result<ResourceResolver> {
+    return captureResult(() => new ResourceResolver(params));
   }
 
   /**
