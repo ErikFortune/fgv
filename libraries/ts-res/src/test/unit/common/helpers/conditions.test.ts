@@ -29,13 +29,15 @@ describe('Condition helpers', () => {
       const qualifier = 'someQualifier';
       const value = 'someValue';
       expect(TsRes.Helpers.buildConditionToken({ qualifier, value })).toSucceedWith(
-        'someQualifier=someValue' as TsRes.ConditionToken
+        'someQualifier=someValue' as unknown as TsRes.ConditionToken
       );
     });
 
     test('builds a token from just a value', () => {
       const value = 'someValue';
-      expect(TsRes.Helpers.buildConditionToken({ value })).toSucceedWith('someValue' as TsRes.ConditionToken);
+      expect(TsRes.Helpers.buildConditionToken({ value })).toSucceedWith(
+        'someValue' as unknown as TsRes.ConditionToken
+      );
     });
 
     test('fails if qualifier is not a valid qualifier name', () => {
