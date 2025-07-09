@@ -108,10 +108,11 @@ describe('CompiledResourceCollection class', () => {
 
   describe('create method', () => {
     test('should create a CompiledResourceCollection with valid parameters', () => {
-      const result = TsRes.Runtime.CompiledResourceCollection.create(createParams);
-
-      expect(result).toSucceed();
-      expect(result.value).toBeInstanceOf(TsRes.Runtime.CompiledResourceCollection);
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          expect(collection).toBeInstanceOf(TsRes.Runtime.CompiledResourceCollection);
+        }
+      );
     });
 
     test('should fail if constructor throws', () => {
@@ -122,35 +123,39 @@ describe('CompiledResourceCollection class', () => {
         ])
       };
 
-      const result = TsRes.Runtime.CompiledResourceCollection.create(invalidParams);
-
-      expect(result).toFail();
+      expect(TsRes.Runtime.CompiledResourceCollection.create(invalidParams)).toFail();
     });
   });
 
   describe('constructor success cases', () => {
     test('should initialize all properties correctly', () => {
-      const collection = TsRes.Runtime.CompiledResourceCollection.create(createParams).orThrow();
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          expect(collection).toBeInstanceOf(TsRes.Runtime.CompiledResourceCollection);
 
-      expect(collection.qualifierTypes).toBeInstanceOf(TsRes.QualifierTypes.QualifierTypeCollector);
-      expect(collection.qualifiers).toBeInstanceOf(TsRes.Qualifiers.QualifierCollector);
-      expect(collection.resourceTypes).toBeInstanceOf(TsRes.ResourceTypes.ResourceTypeCollector);
-      expect(collection.conditions).toBeInstanceOf(TsRes.Conditions.ConditionCollector);
-      expect(collection.conditionSets).toBeInstanceOf(TsRes.Conditions.ConditionSetCollector);
-      expect(collection.decisions).toBeInstanceOf(TsRes.Decisions.AbstractDecisionCollector);
-      expect(collection.builtResources).toBeInstanceOf(Collections.ValidatingResultMap);
+          expect(collection.qualifierTypes).toBeInstanceOf(TsRes.QualifierTypes.QualifierTypeCollector);
+          expect(collection.qualifiers).toBeInstanceOf(TsRes.Qualifiers.QualifierCollector);
+          expect(collection.resourceTypes).toBeInstanceOf(TsRes.ResourceTypes.ResourceTypeCollector);
+          expect(collection.conditions).toBeInstanceOf(TsRes.Conditions.ConditionCollector);
+          expect(collection.conditionSets).toBeInstanceOf(TsRes.Conditions.ConditionSetCollector);
+          expect(collection.decisions).toBeInstanceOf(TsRes.Decisions.AbstractDecisionCollector);
+          expect(collection.builtResources).toBeInstanceOf(Collections.ValidatingResultMap);
+        }
+      );
     });
 
     test('should create collectors with correct sizes', () => {
-      const collection = TsRes.Runtime.CompiledResourceCollection.create(createParams).orThrow();
-
-      expect(collection.qualifierTypes.size).toBe(2);
-      expect(collection.qualifiers.size).toBe(2);
-      expect(collection.resourceTypes.size).toBe(1);
-      expect(collection.conditions.size).toBeGreaterThan(0);
-      expect(collection.conditionSets.size).toBeGreaterThan(0);
-      expect(collection.decisions.size).toBeGreaterThan(0);
-      expect(collection.builtResources.size).toBe(1);
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          expect(collection.qualifierTypes.size).toBe(2);
+          expect(collection.qualifiers.size).toBe(2);
+          expect(collection.resourceTypes.size).toBe(1);
+          expect(collection.conditions.size).toBeGreaterThan(0);
+          expect(collection.conditionSets.size).toBeGreaterThan(0);
+          expect(collection.decisions.size).toBeGreaterThan(0);
+          expect(collection.builtResources.size).toBe(1);
+        }
+      );
     });
   });
 
@@ -165,10 +170,7 @@ describe('CompiledResourceCollection class', () => {
         qualifierTypes: invalidQualifierTypesMap
       };
 
-      const result = TsRes.Runtime.CompiledResourceCollection.create(invalidParams);
-
-      expect(result).toFail();
-      expect(result.message).toContain('language');
+      expect(TsRes.Runtime.CompiledResourceCollection.create(invalidParams)).toFailWith(/language/i);
     });
 
     test('should fail with invalid resource type reference', () => {
@@ -181,73 +183,314 @@ describe('CompiledResourceCollection class', () => {
         resourceTypes: invalidResourceTypesMap
       };
 
-      const result = TsRes.Runtime.CompiledResourceCollection.create(invalidParams);
+      expect(TsRes.Runtime.CompiledResourceCollection.create(invalidParams)).toFailWith(/json/i);
+    });
 
-      expect(result).toFail();
-      expect(result.message).toContain('json');
+    test('should fail with corrupted compiled data - invalid condition qualifier index', () => {
+      // Create a corrupted collection by manually creating one with invalid qualifier index
+      const corruptedCollection = {
+        ...validCompiledCollection,
+        conditions: [
+          {
+            qualifierIndex: 999 as unknown as TsRes.QualifierIndex,
+            value: 'en',
+            priority: 100 as unknown as TsRes.ConditionPriority,
+            scoreAsDefault: undefined
+          }
+        ]
+      };
+
+      const corruptedParams = {
+        ...createParams,
+        compiledCollection: corruptedCollection
+      };
+
+      expect(TsRes.Runtime.CompiledResourceCollection.create(corruptedParams)).toFailWith(
+        /Invalid qualifier index/
+      );
+    });
+
+    test('should fail with corrupted compiled data - invalid condition set condition index', () => {
+      // Create a corrupted collection by manually creating one with invalid condition index
+      const corruptedCollection = {
+        ...validCompiledCollection,
+        conditionSets: [
+          {
+            conditions: [999 as unknown as TsRes.ConditionIndex]
+          }
+        ]
+      };
+
+      const corruptedParams = {
+        ...createParams,
+        compiledCollection: corruptedCollection
+      };
+
+      expect(TsRes.Runtime.CompiledResourceCollection.create(corruptedParams)).toFailWith(
+        /Failed to resolve conditions/
+      );
+    });
+
+    test('should fail with corrupted compiled data - invalid decision condition set index', () => {
+      // Create a corrupted collection by manually creating one with invalid condition set index
+      const corruptedCollection = {
+        ...validCompiledCollection,
+        decisions: [
+          {
+            conditionSets: [999 as unknown as TsRes.ConditionSetIndex]
+          }
+        ]
+      };
+
+      const corruptedParams = {
+        ...createParams,
+        compiledCollection: corruptedCollection
+      };
+
+      expect(TsRes.Runtime.CompiledResourceCollection.create(corruptedParams)).toFailWith(
+        /Failed to resolve condition sets/
+      );
+    });
+
+    test('should fail with corrupted compiled data - invalid resource type index', () => {
+      // Create a corrupted collection by manually creating one with invalid resource type index
+      const corruptedCollection = {
+        ...validCompiledCollection,
+        resources: [
+          {
+            id: 'test' as unknown as TsRes.ResourceId,
+            type: 999 as unknown as TsRes.ResourceTypeIndex,
+            decision: 0 as unknown as TsRes.DecisionIndex,
+            candidates: []
+          }
+        ]
+      };
+
+      const corruptedParams = {
+        ...createParams,
+        compiledCollection: corruptedCollection
+      };
+
+      expect(TsRes.Runtime.CompiledResourceCollection.create(corruptedParams)).toFailWith(
+        /Invalid resource type index/
+      );
+    });
+
+    test('should fail with corrupted compiled data - invalid resource decision index', () => {
+      // Create a corrupted collection by manually creating one with invalid decision index
+      const corruptedCollection = {
+        ...validCompiledCollection,
+        resources: [
+          {
+            id: 'test' as unknown as TsRes.ResourceId,
+            type: 0 as unknown as TsRes.ResourceTypeIndex,
+            decision: 999 as unknown as TsRes.DecisionIndex,
+            candidates: []
+          }
+        ]
+      };
+
+      const corruptedParams = {
+        ...createParams,
+        compiledCollection: corruptedCollection
+      };
+
+      expect(TsRes.Runtime.CompiledResourceCollection.create(corruptedParams)).toFailWith(
+        /Invalid decision index/
+      );
+    });
+
+    test('should fail with corrupted compiled data - invalid candidate JSON', () => {
+      // Create a corrupted collection by manually creating one with invalid candidate JSON
+      const corruptedCollection = {
+        ...validCompiledCollection,
+        resources: [
+          {
+            id: 'test' as unknown as TsRes.ResourceId,
+            type: 0 as unknown as TsRes.ResourceTypeIndex,
+            decision: 0 as unknown as TsRes.DecisionIndex,
+            candidates: [
+              {
+                json: null, // Invalid JSON (null instead of undefined to satisfy JsonValue type)
+                isPartial: false,
+                mergeMethod: 'replace' as TsRes.ResourceValueMergeMethod
+              }
+            ]
+          }
+        ]
+      };
+
+      const corruptedParams = {
+        ...createParams,
+        compiledCollection: corruptedCollection
+      };
+
+      expect(TsRes.Runtime.CompiledResourceCollection.create(corruptedParams)).toFailWith(
+        /Failed to convert candidate JSON/
+      );
+    });
+
+    test('should fail when condition collector creation fails', () => {
+      // This test is designed to cover the condition collector failure path
+      // Create a collection with no qualifiers to make condition collector fail
+      const emptyQualifierTypesMap = new Collections.ResultMap<string, TsRes.QualifierTypes.QualifierType>(
+        []
+      );
+      const emptyResourceTypesMap = new Collections.ResultMap<string, TsRes.ResourceTypes.ResourceType>([]);
+
+      const emptyParams = {
+        compiledCollection: {
+          ...validCompiledCollection,
+          conditions: []
+        },
+        qualifierTypes: emptyQualifierTypesMap,
+        resourceTypes: emptyResourceTypesMap
+      };
+
+      expect(TsRes.Runtime.CompiledResourceCollection.create(emptyParams)).toFail();
+    });
+
+    test('should fail when condition set collector creation fails', () => {
+      // This test is designed to cover the condition set collector failure path
+      const emptyQualifierTypesMap = new Collections.ResultMap<string, TsRes.QualifierTypes.QualifierType>(
+        []
+      );
+      const emptyResourceTypesMap = new Collections.ResultMap<string, TsRes.ResourceTypes.ResourceType>([]);
+
+      const emptyParams = {
+        compiledCollection: {
+          ...validCompiledCollection,
+          conditions: [],
+          conditionSets: []
+        },
+        qualifierTypes: emptyQualifierTypesMap,
+        resourceTypes: emptyResourceTypesMap
+      };
+
+      expect(TsRes.Runtime.CompiledResourceCollection.create(emptyParams)).toFail();
+    });
+
+    test('should fail when decision collector creation fails', () => {
+      // This test is designed to cover the decision collector failure path
+      const emptyQualifierTypesMap = new Collections.ResultMap<string, TsRes.QualifierTypes.QualifierType>(
+        []
+      );
+      const emptyResourceTypesMap = new Collections.ResultMap<string, TsRes.ResourceTypes.ResourceType>([]);
+
+      const emptyParams = {
+        compiledCollection: {
+          ...validCompiledCollection,
+          conditions: [],
+          conditionSets: [],
+          decisions: []
+        },
+        qualifierTypes: emptyQualifierTypesMap,
+        resourceTypes: emptyResourceTypesMap
+      };
+
+      expect(TsRes.Runtime.CompiledResourceCollection.create(emptyParams)).toFail();
+    });
+
+    test('should succeed when concrete decision creation works', () => {
+      // Create a valid collection to ensure the concrete decision creation works
+      const validCollection = {
+        ...validCompiledCollection,
+        resources: [
+          {
+            id: 'test' as unknown as TsRes.ResourceId,
+            type: 0 as unknown as TsRes.ResourceTypeIndex,
+            decision: 0 as unknown as TsRes.DecisionIndex,
+            candidates: [
+              {
+                json: { test: 'value' },
+                isPartial: false,
+                mergeMethod: 'replace' as TsRes.ResourceValueMergeMethod
+              }
+            ]
+          }
+        ]
+      };
+
+      const validParams = {
+        ...createParams,
+        compiledCollection: validCollection
+      };
+
+      expect(TsRes.Runtime.CompiledResourceCollection.create(validParams)).toSucceed();
     });
   });
 
   describe('getBuiltResource method', () => {
     test('should return existing resource', () => {
-      const collection = TsRes.Runtime.CompiledResourceCollection.create(createParams).orThrow();
-
-      const result = collection.getBuiltResource('greeting');
-
-      expect(result).toSucceed();
-      expect(result.value!.id).toBe(TsRes.Convert.resourceId.convert('greeting').orThrow());
-      expect(result.value!.resourceType).toBe(
-        Array.from(resourceTypes.values()).find((rt) => rt.key === 'json')!
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          expect(collection.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+            expect(resource.id).toBe(TsRes.Convert.resourceId.convert('greeting').orThrow());
+            expect(resource.resourceType).toBe(
+              Array.from(resourceTypes.values()).find((rt) => rt.key === 'json')!
+            );
+          });
+        }
       );
     });
 
     test('should fail for non-existent resource', () => {
-      const collection = TsRes.Runtime.CompiledResourceCollection.create(createParams).orThrow();
-
-      const result = collection.getBuiltResource('nonexistent');
-
-      expect(result).toFail();
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          expect(collection.getBuiltResource('nonexistent')).toFail();
+        }
+      );
     });
   });
 
   describe('property getters', () => {
     test('should return correct qualifierTypes', () => {
-      const collection = TsRes.Runtime.CompiledResourceCollection.create(createParams).orThrow();
-
-      expect(collection.qualifierTypes.size).toBe(2);
-      expect(
-        collection.qualifierTypes.has(TsRes.Convert.qualifierTypeName.convert('language').orThrow())
-      ).toBe(true);
-      expect(
-        collection.qualifierTypes.has(TsRes.Convert.qualifierTypeName.convert('territory').orThrow())
-      ).toBe(true);
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          expect(collection.qualifierTypes.size).toBe(2);
+          expect(
+            collection.qualifierTypes.has(TsRes.Convert.qualifierTypeName.convert('language').orThrow())
+          ).toBe(true);
+          expect(
+            collection.qualifierTypes.has(TsRes.Convert.qualifierTypeName.convert('territory').orThrow())
+          ).toBe(true);
+        }
+      );
     });
 
     test('should return correct qualifiers', () => {
-      const collection = TsRes.Runtime.CompiledResourceCollection.create(createParams).orThrow();
-
-      expect(collection.qualifiers.size).toBe(2);
-      expect(collection.qualifiers.has(TsRes.Convert.qualifierName.convert('language').orThrow())).toBe(true);
-      expect(collection.qualifiers.has(TsRes.Convert.qualifierName.convert('territory').orThrow())).toBe(
-        true
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          expect(collection.qualifiers.size).toBe(2);
+          expect(collection.qualifiers.has(TsRes.Convert.qualifierName.convert('language').orThrow())).toBe(
+            true
+          );
+          expect(collection.qualifiers.has(TsRes.Convert.qualifierName.convert('territory').orThrow())).toBe(
+            true
+          );
+        }
       );
     });
 
     test('should return correct resourceTypes', () => {
-      const collection = TsRes.Runtime.CompiledResourceCollection.create(createParams).orThrow();
-
-      expect(collection.resourceTypes.size).toBe(1);
-      expect(collection.resourceTypes.has(TsRes.Convert.resourceTypeName.convert('json').orThrow())).toBe(
-        true
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          expect(collection.resourceTypes.size).toBe(1);
+          expect(collection.resourceTypes.has(TsRes.Convert.resourceTypeName.convert('json').orThrow())).toBe(
+            true
+          );
+        }
       );
     });
 
     test('should return correct builtResources', () => {
-      const collection = TsRes.Runtime.CompiledResourceCollection.create(createParams).orThrow();
-
-      expect(
-        collection.builtResources.get(TsRes.Convert.resourceId.convert('greeting').orThrow())
-      ).toSucceed();
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          expect(
+            collection.builtResources.get(TsRes.Convert.resourceId.convert('greeting').orThrow())
+          ).toSucceed();
+        }
+      );
     });
   });
 
@@ -291,12 +534,14 @@ describe('CompiledResourceCollection class', () => {
         compiledCollection: complexCompiledCollection
       };
 
-      const collection = TsRes.Runtime.CompiledResourceCollection.create(complexParams).orThrow();
-
-      expect(collection.builtResources.size).toBe(3);
-      expect(collection.getBuiltResource('greeting-en')).toSucceed();
-      expect(collection.getBuiltResource('greeting-us')).toSucceed();
-      expect(collection.getBuiltResource('greeting-en-us')).toSucceed();
+      expect(TsRes.Runtime.CompiledResourceCollection.create(complexParams)).toSucceedAndSatisfy(
+        (collection) => {
+          expect(collection.builtResources.size).toBe(3);
+          expect(collection.getBuiltResource('greeting-en')).toSucceed();
+          expect(collection.getBuiltResource('greeting-us')).toSucceed();
+          expect(collection.getBuiltResource('greeting-en-us')).toSucceed();
+        }
+      );
     });
 
     test('should handle resources with multiple candidates', () => {
@@ -330,20 +575,23 @@ describe('CompiledResourceCollection class', () => {
         compiledCollection: multiCandidateCompiledCollection
       };
 
-      const collection = TsRes.Runtime.CompiledResourceCollection.create(multiCandidateParams).orThrow();
-
-      const resource = collection.getBuiltResource('greeting').orThrow();
-      expect(resource.candidates.length).toBeGreaterThan(1);
-      expect(
-        resource.candidates.some(
-          (c) => c.json && typeof c.json === 'object' && 'text' in c.json && c.json.text === 'Hello'
-        )
-      ).toBe(true);
-      expect(
-        resource.candidates.some(
-          (c) => c.json && typeof c.json === 'object' && 'text' in c.json && c.json.text === 'Hi'
-        )
-      ).toBe(true);
+      expect(TsRes.Runtime.CompiledResourceCollection.create(multiCandidateParams)).toSucceedAndSatisfy(
+        (collection) => {
+          expect(collection.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+            expect(resource.candidates.length).toBeGreaterThan(1);
+            expect(
+              resource.candidates.some(
+                (c) => c.json && typeof c.json === 'object' && 'text' in c.json && c.json.text === 'Hello'
+              )
+            ).toBe(true);
+            expect(
+              resource.candidates.some(
+                (c) => c.json && typeof c.json === 'object' && 'text' in c.json && c.json.text === 'Hi'
+              )
+            ).toBe(true);
+          });
+        }
+      );
     });
 
     test('should handle empty collections', () => {
@@ -358,12 +606,14 @@ describe('CompiledResourceCollection class', () => {
         compiledCollection: emptyCompiledCollection
       };
 
-      const collection = TsRes.Runtime.CompiledResourceCollection.create(emptyParams).orThrow();
-
-      expect(collection.qualifierTypes.size).toBe(2);
-      expect(collection.qualifiers.size).toBe(2);
-      expect(collection.resourceTypes.size).toBe(1);
-      expect(collection.builtResources.size).toBe(0);
+      expect(TsRes.Runtime.CompiledResourceCollection.create(emptyParams)).toSucceedAndSatisfy(
+        (collection) => {
+          expect(collection.qualifierTypes.size).toBe(2);
+          expect(collection.qualifiers.size).toBe(2);
+          expect(collection.resourceTypes.size).toBe(1);
+          expect(collection.builtResources.size).toBe(0);
+        }
+      );
     });
   });
 });

@@ -250,6 +250,7 @@ export class CompiledResourceCollection implements IResourceManager {
     const errors = new MessageAggregator();
 
     const conditionCollectorResult = ConditionCollector.create({ qualifiers });
+    /* c8 ignore next 3 - defensive coding for ConditionCollector creation failure */
     if (conditionCollectorResult.isFailure()) {
       return conditionCollectorResult;
     }
@@ -284,12 +285,14 @@ export class CompiledResourceCollection implements IResourceManager {
 
       // Validate that the assigned index matches our expected index
       const expectedIndexResult = Convert.conditionIndex.convert(index);
+      /* c8 ignore next 4 - defensive coding for invalid condition index conversion */
       if (expectedIndexResult.isFailure()) {
         errors.addMessage(`Invalid condition index ${index}: ${expectedIndexResult.message}`);
         continue;
       }
       const expectedIndex = expectedIndexResult.value;
 
+      /* c8 ignore next 5 - defensive coding for condition index mismatch */
       if (condition.index !== expectedIndex) {
         errors.addMessage(
           `Index mismatch at condition ${index}: expected ${expectedIndex}, got ${condition.index}`
@@ -314,6 +317,7 @@ export class CompiledResourceCollection implements IResourceManager {
     const errors = new MessageAggregator();
 
     const conditionSetCollectorResult = ConditionSetCollector.create({ conditions });
+    /* c8 ignore next 3 - defensive coding for ConditionSetCollector creation failure */
     if (conditionSetCollectorResult.isFailure()) {
       return conditionSetCollectorResult;
     }
@@ -340,12 +344,14 @@ export class CompiledResourceCollection implements IResourceManager {
 
       // Validate that the assigned index matches our expected index
       const expectedIndexResult = Convert.conditionSetIndex.convert(index);
+      /* c8 ignore next 4 - defensive coding for invalid condition set index conversion */
       if (expectedIndexResult.isFailure()) {
         errors.addMessage(`Invalid condition set index ${index}: ${expectedIndexResult.message}`);
         continue;
       }
       const expectedIndex = expectedIndexResult.value;
 
+      /* c8 ignore next 5 - defensive coding for condition set index mismatch */
       if (conditionSet.index !== expectedIndex) {
         errors.addMessage(
           `Index mismatch at condition set ${index}: expected ${expectedIndex}, got ${conditionSet.index}`
@@ -370,6 +376,7 @@ export class CompiledResourceCollection implements IResourceManager {
     const errors = new MessageAggregator();
 
     const decisionCollectorResult = AbstractDecisionCollector.create({ conditionSets });
+    /* c8 ignore next 3 - defensive coding for AbstractDecisionCollector creation failure */
     if (decisionCollectorResult.isFailure()) {
       return decisionCollectorResult;
     }
@@ -396,12 +403,14 @@ export class CompiledResourceCollection implements IResourceManager {
 
       // Validate that the assigned index matches our expected index
       const expectedIndexResult = Convert.decisionIndex.convert(index);
+      /* c8 ignore next 4 - defensive coding for invalid decision index conversion */
       if (expectedIndexResult.isFailure()) {
         errors.addMessage(`Invalid decision index ${index}: ${expectedIndexResult.message}`);
         continue;
       }
       const expectedIndex = expectedIndexResult.value;
 
+      /* c8 ignore next 5 - defensive coding for decision index mismatch */
       if (decision.index !== expectedIndex) {
         errors.addMessage(
           `Index mismatch at decision ${index}: expected ${expectedIndex}, got ${decision.index}`
@@ -502,6 +511,7 @@ export class CompiledResourceCollection implements IResourceManager {
         decisions,
         candidates: candidatesWithConditionSets
       });
+      /* c8 ignore next 5 - defensive coding for ConcreteDecision creation failure */
       if (concreteDecisionResult.isFailure()) {
         errors.addMessage(
           `Failed to create concrete decision for resource ${compiledResource.id}: ${concreteDecisionResult.message}`
@@ -519,6 +529,7 @@ export class CompiledResourceCollection implements IResourceManager {
       };
 
       const setResult = resourceMap.set(compiledResource.id, resource);
+      /* c8 ignore next 3 - defensive coding for resource map set failure */
       if (setResult.isFailure()) {
         errors.addMessage(`Failed to add resource ${compiledResource.id}: ${setResult.message}`);
       }

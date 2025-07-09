@@ -103,6 +103,109 @@ The library is organized into "packlets" - cohesive modules that group related f
 - Test files follow `*.test.ts` naming convention
 - This repo has strict lint rules against use of 'any' so do not use the any type in tests or code
 
+## Idiomatic Testing Patterns
+
+### TypeScript in Tests
+- **NEVER use `any` type** - Will cause lint failures even in tests
+- For corrupted/invalid test data: Use `as unknown as BrandedType` pattern
+- For mock objects: Define proper interfaces or use `Partial<T>`
+- Example:
+```typescript
+// ✅ Good - Proper type assertion for invalid test data
+const corruptedData = {
+  id: 'invalid' as unknown as TsRes.ResourceId,
+  type: 999 as unknown as TsRes.ResourceTypeIndex
+};
+
+// ❌ Bad - Using any
+const corruptedData = {
+  id: 'invalid' as any,
+  type: 999 as any
+};
+```
+
+### Result Pattern Testing
+Use the custom Jest matchers for consistent Result<T> testing:
+
+#### Basic Success/Failure Testing
+```typescript
+// Simple success check
+expect(qualifierCollector.create(validParams)).toSucceed();
+
+// Simple failure check
+expect(qualifierCollector.create(invalidParams)).toFail();
+```
+
+#### Value-Specific Testing
+```typescript
+// Test success with specific value
+expect(converter.convert('input')).toSucceedWith(expectedOutput);
+
+// Test failure with specific error message
+expect(validator.validate(badInput)).toFailWith(/validation failed/i);
+```
+
+#### Complex Assertions
+```typescript
+// ✅ Preferred - Use toSucceedAndSatisfy for multiple assertions
+expect(ResourceManager.create(params)).toSucceedAndSatisfy((manager) => {
+  expect(manager.qualifiers.size).toBe(2);
+  expect(manager.resourceTypes.size).toBe(1);
+  expect(manager.getResource('test')).toSucceed();
+});
+
+// ❌ Avoid - Don't extract values with .orThrow() in tests
+const managerResult = ResourceManager.create(params);
+expect(managerResult).toSucceed();
+const manager = managerResult.value; // Less idiomatic
+```
+
+#### Nested Result Testing
+```typescript
+// Test nested Results within toSucceedAndSatisfy
+expect(collection.create(params)).toSucceedAndSatisfy((collection) => {
+  expect(collection.getItem('id')).toSucceedAndSatisfy((item) => {
+    expect(item.property).toBe(expectedValue);
+  });
+  expect(collection.getItem('missing')).toFailWith(/not found/i);
+});
+```
+
+### Error Testing Best Practices
+```typescript
+// ✅ Good - Use regex patterns for flexible error matching
+expect(operation()).toFailWith(/invalid.*parameter/i);
+
+// ✅ Good - Test specific error conditions
+expect(parser.parse('')).toFailWith(/empty input/i);
+expect(parser.parse('{')).toFailWith(/syntax error/i);
+
+// ❌ Avoid - Brittle exact string matching
+expect(operation()).toFailWith('Invalid parameter: expected string');
+```
+
+### When to Use Each Matcher
+- **`toSucceed()`** - When you only care that the operation succeeded
+- **`toFail()`** - When you only care that the operation failed
+- **`toSucceedWith(value)`** - When testing simple value equality
+- **`toFailWith(pattern)`** - When testing error messages or types
+- **`toSucceedAndSatisfy(callback)`** - When testing complex objects or multiple properties
+
+### Anti-Patterns to Avoid
+```typescript
+// ❌ Don't use .orThrow() for test assertions
+const result = operation();
+expect(result).toSucceed();
+const value = result.value; // Use toSucceedAndSatisfy instead
+
+// ❌ Don't use any type even for test data
+const testData = someValue as any; // Use proper typing
+
+// ❌ Don't ignore Result patterns in test setup
+const setup = expensiveOperation().orThrow(); // OK in beforeEach
+expect(setup.property).toBe(value); // But use Result matchers in tests
+```
+
 ## Development Workflow
 
 ### Before Check-in Checklist

@@ -82,6 +82,48 @@ Projects use `workspace:*` dependency ranges to reference other projects in the 
 - **Prettier** - Automated code formatting (runs on pre-commit)
 - **API Documentation** - Generated from TSDoc comments using API Extractor
 
+## TypeScript Standards
+
+- **NEVER use the `any` type** - This codebase has strict lint rules against `any` that will fail CI/linting
+- Use proper TypeScript types, branded types, or `unknown` with type assertions
+- For branded types, use `as unknown as BrandedType` pattern instead of `as any`
+- Alternative patterns:
+  - `unknown` for truly unknown types
+  - `Record<string, unknown>` for dynamic objects
+  - Proper type assertions with `as unknown as TargetType`
+- **Remember**: `any` defeats TypeScript's purpose and will cause build failures
+
+## Testing Standards
+
+### Result Pattern Test Matchers
+All tests use custom Jest matchers from `@fgv/ts-utils-jest` for `Result<T>` objects:
+
+- **`toSucceed()`** - Assert that a Result is successful
+- **`toFail()`** - Assert that a Result is a failure
+- **`toSucceedWith(value)`** - Assert success with specific value
+- **`toFailWith(pattern)`** - Assert failure with message matching regex/string
+- **`toSucceedAndSatisfy(callback)`** - Assert success and run assertions on the value
+
+### Idiomatic Test Patterns
+```typescript
+// ✅ Good - Use toSucceedAndSatisfy for complex assertions
+expect(SomeClass.create(params)).toSucceedAndSatisfy((instance) => {
+  expect(instance.property).toBe(expectedValue);
+  expect(instance.method()).toSucceed();
+});
+
+// ✅ Good - Use toFailWith for error message testing
+expect(SomeClass.create(invalidParams)).toFailWith(/expected error pattern/i);
+
+// ✅ Good - Use toSucceedWith for simple value checks
+expect(converter.convert('input')).toSucceedWith(expectedOutput);
+
+// ❌ Bad - Don't extract with .orThrow() in tests
+const result = SomeClass.create(params);
+expect(result).toSucceed();
+const instance = result.value; // Prefer toSucceedAndSatisfy instead
+```
+
 ## Development Workflow
 
 1. **Setup**: Run `rush install` to install all dependencies
