@@ -193,6 +193,53 @@ describe('QualifierCollector class', () => {
         expect(qc.size).toBe(1);
       });
     });
+
+    test('fails when adding a qualifier whose token collides with an existing qualifier name', () => {
+      const qc = TsRes.Qualifiers.QualifierCollector.create({ qualifierTypes }).orThrow();
+
+      // Add a qualifier with name 'home'
+      qc.validating
+        .getOrAdd('home', {
+          name: 'home',
+          typeName: 'territory',
+          defaultPriority: 800
+        })
+        .orThrow();
+
+      // Try to add another qualifier with token 'home' (should collide with existing name)
+      expect(
+        qc.validating.getOrAdd('homeTerritory', {
+          name: 'homeTerritory',
+          typeName: 'territory',
+          defaultPriority: 700,
+          token: 'home'
+        })
+      ).toFailWith(/qualifier token.*not unique or collides with name/i);
+    });
+
+    test('fails when adding a qualifier whose name collides with an existing qualifier token', () => {
+      const qc = TsRes.Qualifiers.QualifierCollector.create({ qualifierTypes }).orThrow();
+
+      // Add a qualifier with token 'ht'
+      qc.validating
+        .getOrAdd('homeTerritory', {
+          name: 'homeTerritory',
+          typeName: 'territory',
+          defaultPriority: 800,
+          token: 'ht'
+        })
+        .orThrow();
+
+      // Try to add another qualifier with name 'ht' and different token (should collide with existing token)
+      expect(
+        qc.validating.getOrAdd('ht', {
+          name: 'ht',
+          typeName: 'territory',
+          defaultPriority: 700,
+          token: 'territory'
+        })
+      ).toFailWith(/qualifier name.*not unique or collides with token/i);
+    });
   });
 
   describe('getByNameOrToken method', () => {

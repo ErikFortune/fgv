@@ -277,6 +277,7 @@ export class CompiledResourceCollection implements IResourceManager {
       };
 
       const conditionResult = conditionCollector.validating.add(conditionDecl);
+      /* c8 ignore next 3 - defensive coding for condition addition failure */
       if (conditionResult.isFailure()) {
         errors.addMessage(`Failed to add condition at index ${index}: ${conditionResult.message}`);
         continue;
@@ -336,6 +337,7 @@ export class CompiledResourceCollection implements IResourceManager {
       const referencedConditions = referencedConditionsResult.value;
 
       const conditionSetResult = conditionSetCollector.validating.getOrAdd(referencedConditions);
+      /* c8 ignore next 3 - defensive coding for condition set addition failure */
       if (conditionSetResult.isFailure()) {
         errors.addMessage(`Failed to add condition set at index ${index}: ${conditionSetResult.message}`);
         continue;
@@ -395,6 +397,7 @@ export class CompiledResourceCollection implements IResourceManager {
       const referencedConditionSets = referencedConditionSetsResult.value;
 
       const decisionResult = decisionCollector.validating.getOrAdd(referencedConditionSets);
+      /* c8 ignore next 3 - defensive coding for decision addition failure */
       if (decisionResult.isFailure()) {
         errors.addMessage(`Failed to add decision at index ${index}: ${decisionResult.message}`);
         continue;

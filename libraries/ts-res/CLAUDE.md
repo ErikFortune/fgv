@@ -103,6 +103,51 @@ The library is organized into "packlets" - cohesive modules that group related f
 - Test files follow `*.test.ts` naming convention
 - This repo has strict lint rules against use of 'any' so do not use the any type in tests or code
 
+### Testing Approach: Function-First, Coverage-Second
+
+**Primary: Functional Testing**
+Start by writing tests that "make sense" functionally, focusing on the component's intended behavior:
+
+1. **Success Cases**: Test all main functionality with valid inputs
+2. **Error Cases**: Test expected error conditions and validation failures
+3. **Edge Cases**: Test boundary conditions, empty inputs, and reasonable corner cases
+4. **Integration**: Test how components interact with their dependencies
+
+Write these tests based on the component's public API and expected behavior, not based on implementation details or coverage reports.
+
+**Secondary: Coverage Gap Analysis**
+Only after functional tests are complete and correct, use coverage analysis to identify any missed executable paths.
+
+### Coverage Gap Analysis and Resolution
+
+When addressing coverage gaps, use this systematic approach:
+
+1. **Analyze Coverage Reports**: Run `rushx test` to identify uncovered lines
+2. **Categorize Coverage Gaps**:
+   - **Business Logic** (HIGH priority): Core functionality that can be reached through normal operation
+   - **Validation Logic** (MEDIUM priority): Input validation and error handling that can be tested
+   - **Defensive Coding** (LOW priority): Internal consistency checks and error paths that are very difficult to trigger
+
+3. **Prioritized Resolution Strategy**:
+   - **Step 1**: Test business logic gaps first - these represent important functionality
+   - **Step 2**: Test validation logic gaps - these can usually be tested by providing invalid inputs
+   - **Step 3**: Add `c8 ignore` comments for defensive coding paths that are impractical to test
+
+4. **Documentation**: Create a TODO file to track coverage gaps systematically, including:
+   - Current coverage percentage
+   - Specific file locations and line numbers
+   - Categorization by priority and type
+   - Approach for each gap (test vs ignore)
+   - Progress tracking as gaps are resolved
+
+5. **Examples of Defensive Coding** (candidates for c8 ignore):
+   - Internal collector creation failures that would indicate library bugs
+   - Index validation failures for internally managed collections
+   - Consistency checks between related data structures
+   - Error paths in well-tested internal operations
+
+This approach ensures 100% coverage while maintaining meaningful tests and avoiding brittle tests for defensive code paths.
+
 ## Idiomatic Testing Patterns
 
 ### TypeScript in Tests

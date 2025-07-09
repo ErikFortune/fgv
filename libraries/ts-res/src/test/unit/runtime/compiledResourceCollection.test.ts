@@ -494,6 +494,58 @@ describe('CompiledResourceCollection class', () => {
     });
   });
 
+  describe('resource validation', () => {
+    test('should validate resource objects have required properties', () => {
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          // Access the internal resource map to test the validation logic
+          const resourceMap = collection.builtResources as unknown as {
+            validating: {
+              set: (key: string, value: unknown) => import('@fgv/ts-utils').Result<unknown>;
+            };
+          };
+
+          // Try to add an invalid object that doesn't look like a resource
+          const invalidResource = { notAResource: true };
+          expect(resourceMap.validating.set('invalid', invalidResource)).toFailWith(/not a resource/);
+        }
+      );
+    });
+
+    test('should validate resource objects are not null', () => {
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          // Access the internal resource map to test the validation logic
+          const resourceMap = collection.builtResources as unknown as {
+            validating: {
+              set: (key: string, value: unknown) => import('@fgv/ts-utils').Result<unknown>;
+            };
+          };
+
+          // Try to add null (should fail validation)
+          expect(resourceMap.validating.set('null', null)).toFailWith(/not a resource/);
+        }
+      );
+    });
+
+    test('should validate resource objects have all required properties', () => {
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          // Access the internal resource map to test the validation logic
+          const resourceMap = collection.builtResources as unknown as {
+            validating: {
+              set: (key: string, value: unknown) => import('@fgv/ts-utils').Result<unknown>;
+            };
+          };
+
+          // Try to add an object missing required properties
+          const incompleteResource = { id: 'test', resourceType: 'json' }; // Missing decision and candidates
+          expect(resourceMap.validating.set('incomplete', incompleteResource)).toFailWith(/not a resource/);
+        }
+      );
+    });
+  });
+
   describe('complex scenarios', () => {
     test('should handle multiple resources with different conditions', () => {
       const complexManager = TsRes.Resources.ResourceManagerBuilder.create({
