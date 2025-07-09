@@ -9,9 +9,9 @@ Represents a single logical resource, with a unique id and a set of possible can
 **Signature:**
 
 ```typescript
-export declare class Resource implements IResource, IRuntimeResource 
+export declare class Resource implements IResource 
 ```
-**Implements:** [IResource](./ts-res.runtime.iresource.md)<!-- -->, [IRuntimeResource](./ts-res.runtime.iruntimeresource.md)
+**Implements:** [IResource](./ts-res.runtime.iresource.md)
 
 ## Constructors
 

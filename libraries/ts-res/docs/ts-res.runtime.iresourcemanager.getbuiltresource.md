@@ -9,7 +9,7 @@ Gets a built resource by ID for runtime resolution.
 **Signature:**
 
 ```typescript
-getBuiltResource(id: string): Result<IRuntimeResource>;
+getBuiltResource(id: string): Result<IResource>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The resource identifier
 
 **Returns:**
 
-Result&lt;[IRuntimeResource](./ts-res.runtime.iruntimeresource.md)<!-- -->&gt;
+Result&lt;[IResource](./ts-res.runtime.iresource.md)<!-- -->&gt;
 
 Success with the runtime resource if found, Failure otherwise
 

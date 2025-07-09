@@ -27,7 +27,7 @@ import { Condition, ConditionSet } from '../conditions';
 import { AbstractDecision } from '../decisions';
 import { ReadOnlyQualifierTypeCollector } from '../qualifier-types';
 import { IContextQualifierProvider } from './contextQualifierProvider';
-import { IResourceManager, IRuntimeResource } from './iResourceManager';
+import { IResourceManager, IResource } from './iResourceManager';
 import { ConditionSetResolutionResult, IConditionMatchResult } from './conditionSetResolutionResult';
 
 /**
@@ -297,7 +297,7 @@ export class RuntimeResourceResolver {
    * or `Failure` with an error message if no candidates match or resolution fails.
    * @public
    */
-  public resolveResource<T extends JsonValue = JsonValue>(resource: IRuntimeResource): Result<T> {
+  public resolveResource<T extends JsonValue = JsonValue>(resource: IResource): Result<T> {
     // Get the abstract decision from the resource's concrete decision
     const abstractDecision = resource.decision.baseDecision;
 
@@ -334,7 +334,7 @@ export class RuntimeResourceResolver {
    * @public
    */
   public resolveAllResourceValues<T extends JsonValue = JsonValue>(
-    resource: IRuntimeResource
+    resource: IResource
   ): Result<ReadonlyArray<T>> {
     // Get the abstract decision from the resource's concrete decision
     const abstractDecision = resource.decision.baseDecision;

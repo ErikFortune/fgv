@@ -9,5 +9,5 @@ The available candidates for this resource
 **Signature:**
 
 ```typescript
-readonly candidates: ReadonlyArray<IRuntimeResourceCandidate>;
+readonly candidates: ReadonlyArray<IResourceCandidate>;
 ```

@@ -9,7 +9,7 @@ Resolves a resource by finding the best matching candidate value. Uses the resou
 **Signature:**
 
 ```typescript
-resolveResource<T extends JsonValue = JsonValue>(resource: IRuntimeResource): Result<T>;
+resolveResource<T extends JsonValue = JsonValue>(resource: IResource): Result<T>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ resource
 
 </td><td>
 
-[IRuntimeResource](./ts-res.runtime.iruntimeresource.md)
+[IResource](./ts-res.runtime.iresource.md)
 
 
 </td><td>

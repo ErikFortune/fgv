@@ -27,7 +27,7 @@ import * as ResourceJson from '../resource-json';
 import { ResourceType } from '../resource-types';
 import { captureResult, mapResults, Hash, MessageAggregator, Result, fail, succeed } from '@fgv/ts-utils';
 import * as Context from '../context';
-import { IRuntimeResourceCandidate } from '../runtime';
+import { IResourceCandidate } from '../runtime';
 
 /**
  * Parameters to create a {@link Resources.ResourceCandidate | ResourceCandidate}.
@@ -47,7 +47,7 @@ export interface IResourceCandidateCreateParams {
  * and instructions on how to merge it with other instances.
  * @public
  */
-export class ResourceCandidate implements IRuntimeResourceCandidate {
+export class ResourceCandidate implements IResourceCandidate {
   /**
    * The unique identifier of the resource for which this candidate
    * is a possible instance.

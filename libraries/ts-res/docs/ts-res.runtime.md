@@ -170,34 +170,23 @@ Interface for a resource that can be used in the runtime layer. This provides th
 </td></tr>
 <tr><td>
 
+[IResourceCandidate](./ts-res.runtime.iresourcecandidate.md)
+
+
+</td><td>
+
+Runtime representation of a resource candidate with the minimal data needed for resolution.
+
+
+</td></tr>
+<tr><td>
+
 [IResourceManager](./ts-res.runtime.iresourcemanager.md)
 
 
 </td><td>
 
 Interface defining the read-only properties that the runtime resource resolver needs from a resource manager. This abstraction allows the runtime to work with different implementations without requiring the full ResourceManagerBuilder build mechanics.
-
-
-</td></tr>
-<tr><td>
-
-[IRuntimeResource](./ts-res.runtime.iruntimeresource.md)
-
-
-</td><td>
-
-Runtime representation of a resource with the minimal data needed for resolution.
-
-
-</td></tr>
-<tr><td>
-
-[IRuntimeResourceCandidate](./ts-res.runtime.iruntimeresourcecandidate.md)
-
-
-</td><td>
-
-Runtime representation of a resource candidate with the minimal data needed for resolution.
 
 
 </td></tr>

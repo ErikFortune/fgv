@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;[IRuntimeResourceCandidate](./ts-res.runtime.iruntimeresourcecandidate.md)<!-- -->&gt;
+ReadonlyArray&lt;[IResourceCandidate](./ts-res.runtime.iresourcecandidate.md)<!-- -->&gt;
 
 
 </td><td>

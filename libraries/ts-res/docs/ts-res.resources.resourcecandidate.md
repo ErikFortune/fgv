@@ -9,9 +9,9 @@ A [resource candidate](./ts-res.resources.resourcecandidate.md) represents a sin
 **Signature:**
 
 ```typescript
-export declare class ResourceCandidate implements IRuntimeResourceCandidate 
+export declare class ResourceCandidate implements IResourceCandidate 
 ```
-**Implements:** [IRuntimeResourceCandidate](./ts-res.runtime.iruntimeresourcecandidate.md)
+**Implements:** [IResourceCandidate](./ts-res.runtime.iresourcecandidate.md)
 
 ## Constructors
 

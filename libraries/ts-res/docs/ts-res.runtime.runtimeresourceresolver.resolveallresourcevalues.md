@@ -9,7 +9,7 @@ Resolves all matching resource values in priority order. Uses the resource's ass
 **Signature:**
 
 ```typescript
-resolveAllResourceValues<T extends JsonValue = JsonValue>(resource: IRuntimeResource): Result<ReadonlyArray<T>>;
+resolveAllResourceValues<T extends JsonValue = JsonValue>(resource: IResource): Result<ReadonlyArray<T>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ resource
 
 </td><td>
 
-[IRuntimeResource](./ts-res.runtime.iruntimeresource.md)
+[IResource](./ts-res.runtime.iresource.md)
 
 
 </td><td>

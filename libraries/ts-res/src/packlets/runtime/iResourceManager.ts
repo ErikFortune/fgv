@@ -31,7 +31,7 @@ import { ResourceType } from '../resource-types';
  * Runtime representation of a resource candidate with the minimal data needed for resolution.
  * @public
  */
-export interface IRuntimeResourceCandidate {
+export interface IResourceCandidate {
   /** The JSON value for this candidate */
   readonly json: JsonValue;
 
@@ -44,19 +44,6 @@ export interface IRuntimeResourceCandidate {
    * Specifies the resource type of this candidate.
    */
   readonly mergeMethod: ResourceValueMergeMethod;
-}
-
-/**
- * Runtime representation of a resource with the minimal data needed for resolution.
- * @public
- */
-export interface IRuntimeResource {
-  /** The resource identifier */
-  readonly id: string;
-  /** The decision used to select candidates */
-  readonly decision: ConcreteDecision;
-  /** The available candidates for this resource */
-  readonly candidates: ReadonlyArray<IRuntimeResourceCandidate>;
 }
 
 /**
@@ -73,7 +60,7 @@ export interface IResource {
   /** The decision used to select candidates */
   readonly decision: ConcreteDecision;
   /** The available candidates for this resource */
-  readonly candidates: ReadonlyArray<IRuntimeResourceCandidate>;
+  readonly candidates: ReadonlyArray<IResourceCandidate>;
 }
 
 /**
@@ -106,7 +93,7 @@ export interface IResourceManager {
    * @param id - The resource identifier
    * @returns Success with the runtime resource if found, Failure otherwise
    */
-  getBuiltResource(id: string): Result<IRuntimeResource>;
+  getBuiltResource(id: string): Result<IResource>;
 
   /**
    * A read-only result map of all built resources, keyed by resource ID.
