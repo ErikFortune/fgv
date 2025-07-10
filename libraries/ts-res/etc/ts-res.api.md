@@ -18,6 +18,7 @@ import { ResultMap } from '@fgv/ts-utils';
 import { ValidatingCollector } from '@fgv/ts-utils';
 import { ValidatingConvertingCollector } from '@fgv/ts-utils';
 import { ValidatingResultMap } from '@fgv/ts-utils';
+import { Validator } from '@fgv/ts-utils';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2562,6 +2563,11 @@ class Resource implements IResource {
     toLooseResourceDecl(options?: ResourceJson.Helpers.IDeclarationOptions): ResourceJson.Json.ILooseResourceDecl;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResource"
+//
+// @public
+const resource: Validator<IResource, unknown>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -2652,6 +2658,11 @@ class ResourceCandidate implements IResourceCandidate {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static validateResourceTypes(candidates: ReadonlyArray<ResourceCandidate>, expectedType?: ResourceType): Result<ResourceType | undefined>;
 }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceCandidate"
+//
+// @public
+const resourceCandidate: Validator<IResourceCandidate, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -2953,6 +2964,7 @@ const resourceValueMergeMethod: Converter<ResourceValueMergeMethod, ResourceValu
 
 declare namespace Runtime {
     export {
+        Validate_2 as Validate,
         ICompiledResourceCollectionCreateParams,
         CompiledResourceCollection,
         IContextQualifierProvider,
@@ -3145,6 +3157,13 @@ declare namespace Validate {
     }
 }
 export { Validate }
+
+declare namespace Validate_2 {
+    export {
+        resourceCandidate,
+        resource
+    }
+}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

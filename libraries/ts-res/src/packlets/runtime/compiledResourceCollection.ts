@@ -44,6 +44,7 @@ import { Convert, ResourceId } from '../common';
 import { Converters } from '@fgv/ts-json-base';
 import { IResourceManager, IResource, IResourceCandidate } from './iResourceManager';
 import { ConcreteDecision } from '../decisions';
+import * as Validate from './validate';
 import * as ResourceJson from '../resource-json';
 
 /**
@@ -443,17 +444,7 @@ export class CompiledResourceCollection implements IResourceManager {
       converters: new Collections.KeyValueConverters<ResourceId, IResource>({
         key: Convert.resourceId,
         value: (from: unknown): Result<IResource> => {
-          if (
-            typeof from === 'object' &&
-            from !== null &&
-            'id' in from &&
-            'resourceType' in from &&
-            'decision' in from &&
-            'candidates' in from
-          ) {
-            return succeed(from as IResource);
-          }
-          return fail('not a resource');
+          return Validate.resource.validate(from);
         }
       })
     });

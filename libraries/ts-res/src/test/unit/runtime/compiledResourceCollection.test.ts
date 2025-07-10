@@ -507,7 +507,7 @@ describe('CompiledResourceCollection class', () => {
 
           // Try to add an invalid object that doesn't look like a resource
           const invalidResource = { notAResource: true };
-          expect(resourceMap.validating.set('invalid', invalidResource)).toFailWith(/not a resource/);
+          expect(resourceMap.validating.set('invalid', invalidResource)).toFailWith(/Field not found/);
         }
       );
     });
@@ -523,7 +523,7 @@ describe('CompiledResourceCollection class', () => {
           };
 
           // Try to add null (should fail validation)
-          expect(resourceMap.validating.set('null', null)).toFailWith(/not a resource/);
+          expect(resourceMap.validating.set('null', null)).toFailWith(/source is not an object/);
         }
       );
     });
@@ -540,7 +540,9 @@ describe('CompiledResourceCollection class', () => {
 
           // Try to add an object missing required properties
           const incompleteResource = { id: 'test', resourceType: 'json' }; // Missing decision and candidates
-          expect(resourceMap.validating.set('incomplete', incompleteResource)).toFailWith(/not a resource/);
+          expect(resourceMap.validating.set('incomplete', incompleteResource)).toFailWith(
+            /Field not found|invalid/
+          );
         }
       );
     });

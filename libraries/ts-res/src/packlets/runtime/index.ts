@@ -28,3 +28,6 @@ export * from './simpleContextQualifierProvider';
 export * from './validatingSimpleContextQualifierProvider';
 export * from './resourceResolver';
 export * from './conditionSetResolutionResult';
+
+import * as Validate from './validate';
+export { Validate };

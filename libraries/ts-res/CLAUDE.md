@@ -84,6 +84,56 @@ The library is organized into "packlets" - cohesive modules that group related f
 2. **Collector Pattern**: Used throughout for managing collections with validation
 3. **Builder Pattern**: `ResourceBuilder` for constructing complex resources
 4. **Converter Pattern**: Each major type has convert functions for declaration-to-object transformation
+5. **Type-Safe Validation Pattern**: Always use proper Converter and Validator objects for type validation instead of manual checks and unsafe casts
+
+### Type-Safe Validation Guidelines
+
+**Converters vs Validators**
+- **Converters**: Transform and construct new objects from input data (use for simple types, primitives, plain objects)
+- **Validators**: Validate existing objects in-place without construction (use for complex objects with non-default constructors, class instances)
+
+**Avoid Manual Type Checking and Unsafe Casts**
+```typescript
+// ❌ Bad - Manual property checking with unsafe cast
+if (
+  typeof from === 'object' &&
+  from !== null &&
+  'id' in from &&
+  'resourceType' in from &&
+  'decision' in from &&
+  'candidates' in from
+) {
+  return succeed(from as IResource); // Unsafe - properties could have wrong types
+}
+
+// ✅ Good - Use dedicated validator for objects with complex constructors
+const validator = Validators.object<IResource>({
+  id: Convert.resourceId, // Converter for simple branded type
+  resourceType: Validators.isA((v): v is ResourceType => v instanceof ResourceType),
+  decision: Validators.isA((v): v is ConcreteDecision => v instanceof ConcreteDecision),
+  candidates: Validators.arrayOf(resourceCandidateValidator)
+});
+return validator.validate(from);
+
+// ✅ Alternative - Use converter for plain objects/data structures
+const converter = Converters.object<IResourceData>({
+  id: Convert.resourceId,
+  name: Converters.string,
+  value: Converters.jsonValue
+});
+return converter.convert(from);
+```
+
+**When to Use Each Pattern**
+- **Validators**: Objects with class instances, non-default constructors, existing object validation
+- **Converters**: Plain data transformation, building new objects from primitives/JSON
+- **Both**: Any situation where you would use manual type checking + casting
+
+**Benefits**
+- Type safety: Each property is validated according to its expected type
+- Better error messages: Specific validation failures instead of generic messages
+- Maintainability: Changes to type definitions automatically update validation
+- Consistency: Same validation patterns used throughout the codebase
 
 ### Dependencies
 

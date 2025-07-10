@@ -143,7 +143,7 @@ export class ResourceCompiler {
   /**
    * Loads resources from the input path
    */
-  private async _loadResources(): Promise<Result<TsRes.Resources.ResourceManager>> {
+  private async _loadResources(): Promise<Result<TsRes.Resources.ResourceManagerBuilder>> {
     try {
       // Create standard qualifier types and qualifiers
       const qualifierTypes = TsRes.QualifierTypes.QualifierTypeCollector.create({
@@ -182,7 +182,7 @@ export class ResourceCompiler {
         return fail(`Failed to create resource types: ${resourceTypes.message}`);
       }
 
-      const manager = TsRes.Resources.ResourceManager.create({
+      const manager = TsRes.Resources.ResourceManagerBuilder.create({
         qualifiers: qualifiers.value,
         resourceTypes: resourceTypes.value
       });
@@ -206,7 +206,7 @@ export class ResourceCompiler {
   /**
    * Imports resources from the input path
    */
-  private async _importResources(manager: TsRes.Resources.ResourceManager): Promise<Result<void>> {
+  private async _importResources(manager: TsRes.Resources.ResourceManagerBuilder): Promise<Result<void>> {
     try {
       const inputPath = path.resolve(this._options.input);
       const stat = await fs.stat(inputPath);
@@ -227,7 +227,7 @@ export class ResourceCompiler {
    * Imports resources from a single file
    */
   private async _importFile(
-    manager: TsRes.Resources.ResourceManager,
+    manager: TsRes.Resources.ResourceManagerBuilder,
     filePath: string
   ): Promise<Result<void>> {
     try {
@@ -264,7 +264,7 @@ export class ResourceCompiler {
    * Imports resources from a directory
    */
   private async _importDirectory(
-    manager: TsRes.Resources.ResourceManager,
+    manager: TsRes.Resources.ResourceManagerBuilder,
     dirPath: string
   ): Promise<Result<void>> {
     try {
@@ -295,9 +295,7 @@ export class ResourceCompiler {
   /**
    * Applies context filtering to resources
    */
-  private _applyContextFiltering(
-    manager: TsRes.Resources.ResourceManager
-  ): Result<{
+  private _applyContextFiltering(manager: TsRes.Resources.ResourceManagerBuilder): Result<{
     resources: ReadonlyArray<TsRes.Resources.ResourceBuilder>;
     candidates: ReadonlyArray<TsRes.Resources.ResourceCandidate>;
   }> {
@@ -339,7 +337,7 @@ export class ResourceCompiler {
       resources: ReadonlyArray<TsRes.Resources.ResourceBuilder>;
       candidates: ReadonlyArray<TsRes.Resources.ResourceCandidate>;
     },
-    manager: TsRes.Resources.ResourceManager
+    manager: TsRes.Resources.ResourceManagerBuilder
   ): Promise<Result<IResourceBlob>> {
     try {
       const resources: JsonObject = {};
@@ -393,7 +391,7 @@ export class ResourceCompiler {
       resources: ReadonlyArray<TsRes.Resources.ResourceBuilder>;
       candidates: ReadonlyArray<TsRes.Resources.ResourceCandidate>;
     },
-    manager: TsRes.Resources.ResourceManager
+    manager: TsRes.Resources.ResourceManagerBuilder
   ): IResourceInfo {
     const resourceTypes = Array.from(
       new Set(
