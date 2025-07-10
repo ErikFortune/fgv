@@ -23,6 +23,8 @@
 import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../index';
 
+type IResourceCandidate = TsRes.Runtime.IResourceCandidate;
+
 describe('ResourceResolver class', () => {
   let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
   let qualifiers: TsRes.Qualifiers.QualifierCollector;
@@ -225,144 +227,150 @@ describe('ResourceResolver class', () => {
       });
     });
 
-    test('fails when decision resolution fails', () => {
-      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+    testBothResolvers('fails when decision resolution fails', (resolver, resolverName) => {
+      expect(resolver.resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
         // Clear the decision cache and manually break the decision system
-        builderResolver.clearConditionCache();
+        resolver.clearConditionCache();
 
         // Remove required qualifier from context to cause decision failure
         contextProvider.clear();
 
-        expect(builderResolver.resolveResource(resource)).toFail();
+        expect(resolver.resolveResource(resource)).toFail();
       });
     });
 
-    test('fails when invalid candidate index is found', () => {
+    testBothResolvers('fails when invalid candidate index is found', (resolver, resolverName) => {
       // Create a resource with mocked candidates array that is shorter than expected
-      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+      expect(resolver.resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
         // Manually corrupt the candidates array to force an invalid index scenario
         const originalCandidates = resource.candidates;
-        (resource as unknown as { candidates: readonly TsRes.Resources.ResourceCandidate[] }).candidates = []; // Empty candidates array
-        expect(builderResolver.resolveResource(resource)).toFailWith(/Invalid candidate index/);
+        (resource as unknown as { candidates: ReadonlyArray<IResourceCandidate> }).candidates = []; // Empty candidates array
+        expect(resolver.resolveResource(resource)).toFailWith(/Invalid candidate index/);
         // Restore original candidates
-        (resource as unknown as { candidates: readonly TsRes.Resources.ResourceCandidate[] }).candidates =
+        (resource as unknown as { candidates: ReadonlyArray<IResourceCandidate> }).candidates =
           originalCandidates;
       });
     });
   });
 
   describe('resolveAllResourceValues method', () => {
-    test('resolves all matching candidate values in priority order', () => {
-      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
-        expect(builderResolver.resolveAllResourceValues(resource)).toSucceedAndSatisfy((values) => {
-          expect(values).toBeInstanceOf(Array);
-          expect(values.length).toBeGreaterThan(0);
+    testBothResolvers(
+      'resolves all matching candidate values in priority order',
+      (resolver, resolverName) => {
+        expect(resolver.resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+          expect(resolver.resolveAllResourceValues(resource)).toSucceedAndSatisfy((values) => {
+            expect(values).toBeInstanceOf(Array);
+            expect(values.length).toBeGreaterThan(0);
 
-          // First value should be the best match
-          expect(values[0]).toEqual({ text: 'Hello World!' });
+            // First value should be the best match
+            expect(values[0]).toEqual({ text: 'Hello World!' });
 
-          // Should contain other matching candidates in priority order
-          expect(values).toContainEqual({ text: 'Hello!' });
+            // Should contain other matching candidates in priority order
+            expect(values).toContainEqual({ text: 'Hello!' });
+          });
         });
-      });
-    });
+      }
+    );
 
-    test('resolves multiple matching candidates for partial context', () => {
-      // Remove territory to get multiple matches, but keep en + high priority match
-      expect(contextProvider.validating.remove('territory')).toSucceed();
+    testBothResolvers(
+      'resolves multiple matching candidates for partial context',
+      (resolver, resolverName) => {
+        // Remove territory to get multiple matches, but keep en + high priority match
+        expect(contextProvider.validating.remove('territory')).toSucceed();
 
-      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
-        expect(builderResolver.resolveAllResourceValues(resource)).toSucceedAndSatisfy((values) => {
-          expect(values).toBeInstanceOf(Array);
-          expect(values.length).toBeGreaterThanOrEqual(1);
+        expect(resolver.resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+          expect(resolver.resolveAllResourceValues(resource)).toSucceedAndSatisfy((values) => {
+            expect(values).toBeInstanceOf(Array);
+            expect(values.length).toBeGreaterThanOrEqual(1);
 
-          // Should get the best English match (formal tone)
-          expect(values[0]).toEqual({ text: 'Hello!' });
+            // Should get the best English match (formal tone)
+            expect(values[0]).toEqual({ text: 'Hello!' });
 
-          // Should not contain French candidate
-          expect(values).not.toContainEqual({ text: 'Bonjour!' });
+            // Should not contain French candidate
+            expect(values).not.toContainEqual({ text: 'Bonjour!' });
+          });
         });
-      });
-    });
+      }
+    );
 
-    test('resolves single matching candidate', () => {
+    testBothResolvers('resolves single matching candidate', (resolver, resolverName) => {
       // Change context to French - no type casting needed!
       expect(contextProvider.validating.set('language', 'fr')).toSucceed();
       expect(contextProvider.validating.remove('territory')).toSucceed();
 
-      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
-        expect(builderResolver.resolveAllResourceValues(resource)).toSucceedAndSatisfy((values) => {
+      expect(resolver.resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+        expect(resolver.resolveAllResourceValues(resource)).toSucceedAndSatisfy((values) => {
           expect(values).toHaveLength(1);
           expect(values[0]).toEqual({ text: 'Bonjour!' });
         });
       });
     });
 
-    test('fails when no candidates match', () => {
+    testBothResolvers('fails when no candidates match', (resolver, resolverName) => {
       // Change context to a language with no candidates
       expect(contextProvider.validating.set('language', 'de')).toSucceed();
 
-      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
-        expect(builderResolver.resolveAllResourceValues(resource)).toFailWith(/No matching candidates found/);
+      expect(resolver.resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+        expect(resolver.resolveAllResourceValues(resource)).toFailWith(/No matching candidates found/);
       });
     });
 
-    test('fails when decision resolution fails', () => {
-      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+    testBothResolvers('fails when decision resolution fails', (resolver, resolverName) => {
+      expect(resolver.resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
         // Clear context to cause decision failure
         contextProvider.clear();
 
-        expect(builderResolver.resolveAllResourceValues(resource)).toFail();
+        expect(resolver.resolveAllResourceValues(resource)).toFail();
       });
     });
 
-    test('fails when invalid candidate index is found', () => {
+    testBothResolvers('fails when invalid candidate index is found', (resolver, resolverName) => {
       // Create a resource with mocked candidates array that is shorter than expected
-      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+      expect(resolver.resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
         // Manually corrupt the candidates array to force an invalid index scenario
         const originalCandidates = resource.candidates;
-        (resource as unknown as { candidates: readonly TsRes.Resources.ResourceCandidate[] }).candidates = []; // Empty candidates array
-        expect(builderResolver.resolveAllResourceValues(resource)).toFailWith(/Invalid candidate index/);
+        (resource as unknown as { candidates: ReadonlyArray<IResourceCandidate> }).candidates = []; // Empty candidates array
+        expect(resolver.resolveAllResourceValues(resource)).toFailWith(/Invalid candidate index/);
         // Restore original candidates
-        (resource as unknown as { candidates: readonly TsRes.Resources.ResourceCandidate[] }).candidates =
+        (resource as unknown as { candidates: ReadonlyArray<IResourceCandidate> }).candidates =
           originalCandidates;
       });
     });
   });
 
   describe('caching behavior', () => {
-    test('caches decision resolution results', () => {
-      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+    testBothResolvers('caches decision resolution results', (resolver, resolverName) => {
+      expect(resolver.resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
         // First resolution
-        expect(builderResolver.resolveResource(resource)).toSucceedWith({ text: 'Hello World!' });
+        expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Hello World!' });
 
         // Second resolution should use cached result
-        expect(builderResolver.resolveResource(resource)).toSucceedWith({ text: 'Hello World!' });
+        expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Hello World!' });
       });
     });
 
-    test('clears cache and re-resolves when context changes', () => {
-      expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+    testBothResolvers('clears cache and re-resolves when context changes', (resolver, resolverName) => {
+      expect(resolver.resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
         // Initial resolution
-        expect(builderResolver.resolveResource(resource)).toSucceedWith({ text: 'Hello World!' });
+        expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Hello World!' });
 
         // Change context and clear cache
         expect(contextProvider.validating.set('language', 'fr')).toSucceed();
         expect(contextProvider.validating.remove('territory')).toSucceed();
-        builderResolver.clearConditionCache();
+        resolver.clearConditionCache();
 
         // Should get different result
-        expect(builderResolver.resolveResource(resource)).toSucceedWith({ text: 'Bonjour!' });
+        expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Bonjour!' });
       });
     });
 
-    test('caches condition set resolution results', () => {
+    testBothResolvers('caches condition set resolution results', (resolver, resolverName) => {
       // Get a condition set to test with
-      expect(resourceManager.conditionSets.getAt(0)).toSucceedAndSatisfy((conditionSet) => {
+      expect(resolver.resourceManager.conditionSets.getAt(0)).toSucceedAndSatisfy((conditionSet) => {
         // First resolution - populates cache
-        expect(builderResolver.resolveConditionSet(conditionSet)).toSucceedAndSatisfy((result1) => {
+        expect(resolver.resolveConditionSet(conditionSet)).toSucceedAndSatisfy((result1) => {
           // Second resolution - should use cached result (hits lines 198-199)
-          expect(builderResolver.resolveConditionSet(conditionSet)).toSucceedAndSatisfy((result2) => {
+          expect(resolver.resolveConditionSet(conditionSet)).toSucceedAndSatisfy((result2) => {
             expect(result2).toBe(result1);
           });
         });
@@ -379,32 +387,32 @@ describe('ResourceResolver class', () => {
   });
 
   describe('error handling in condition and decision resolution', () => {
-    test('handles condition without valid index', () => {
+    testBothResolvers('handles condition without valid index', (resolver, resolverName) => {
       // Create a condition without a valid index
-      expect(resourceManager.conditions.getAt(0)).toSucceedAndSatisfy((condition) => {
+      expect(resolver.resourceManager.conditions.getAt(0)).toSucceedAndSatisfy((condition) => {
         const mockCondition = { ...condition, index: undefined };
-        expect(
-          builderResolver.resolveCondition(mockCondition as unknown as TsRes.Conditions.Condition)
-        ).toFailWith(/does not have a valid index/);
+        expect(resolver.resolveCondition(mockCondition as unknown as TsRes.Conditions.Condition)).toFailWith(
+          /does not have a valid index/
+        );
       });
     });
 
-    test('handles condition set without valid index', () => {
+    testBothResolvers('handles condition set without valid index', (resolver, resolverName) => {
       // Create a condition set without a valid index
-      expect(resourceManager.conditionSets.getAt(0)).toSucceedAndSatisfy((conditionSet) => {
+      expect(resolver.resourceManager.conditionSets.getAt(0)).toSucceedAndSatisfy((conditionSet) => {
         const mockConditionSet = { ...conditionSet, index: undefined };
         expect(
-          builderResolver.resolveConditionSet(mockConditionSet as unknown as TsRes.Conditions.ConditionSet)
+          resolver.resolveConditionSet(mockConditionSet as unknown as TsRes.Conditions.ConditionSet)
         ).toFailWith(/does not have a valid index/);
       });
     });
 
-    test('handles decision without valid index', () => {
+    testBothResolvers('handles decision without valid index', (resolver, resolverName) => {
       // Create a decision without a valid index
-      expect(resourceManager.decisions.getAt(0)).toSucceedAndSatisfy((decision) => {
+      expect(resolver.resourceManager.decisions.getAt(0)).toSucceedAndSatisfy((decision) => {
         const mockDecision = { ...decision, index: undefined };
         expect(
-          builderResolver.resolveDecision(mockDecision as unknown as TsRes.Decisions.AbstractDecision)
+          resolver.resolveDecision(mockDecision as unknown as TsRes.Decisions.AbstractDecision)
         ).toFailWith(/does not have a valid index/);
       });
     });
