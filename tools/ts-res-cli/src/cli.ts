@@ -100,7 +100,7 @@ export class TsResCliApp {
       .requiredOption('-i, --input <path>', 'Input file or directory path')
       .requiredOption('-o, --output <path>', 'Output file path')
       .option('-c, --context <json>', 'Context filter for resources (JSON string)')
-      .option('-f, --format <format>', 'Output format', 'json')
+      .option('-f, --format <format>', 'Output format', 'compiled')
       .option('-m, --mode <mode>', 'Compilation mode', 'development')
       .option('--partial-match', 'Enable partial context matching', false)
       .option('--source-maps', 'Include source maps', false)
@@ -169,7 +169,7 @@ export class TsResCliApp {
     const validateOptions: ICompileOptions = {
       input: options.input,
       output: '', // Not used for validation
-      format: 'json',
+      format: 'compiled',
       mode: 'development',
       partialMatch: false,
       sourceMaps: false,
@@ -201,7 +201,7 @@ export class TsResCliApp {
     const infoOptions: ICompileOptions = {
       input: options.input,
       output: '', // Not used for info
-      format: 'json',
+      format: 'compiled',
       mode: 'development',
       partialMatch: options.partialMatch || false,
       sourceMaps: false,
@@ -233,7 +233,7 @@ export class TsResCliApp {
   private _parseCompileOptions(options: ICompileCommandOptions): Result<ICompileOptions> {
     try {
       const format = options.format as OutputFormat;
-      if (!['json', 'js', 'ts', 'binary'].includes(format)) {
+      if (!['compiled', 'source', 'js', 'ts', 'binary'].includes(format)) {
         return fail(`Invalid format: ${format}`);
       }
 

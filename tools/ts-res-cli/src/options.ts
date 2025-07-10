@@ -23,7 +23,7 @@
 /**
  * Output format options for resource compilation
  */
-export type OutputFormat = 'json' | 'js' | 'ts' | 'binary';
+export type OutputFormat = 'compiled' | 'source' | 'js' | 'ts' | 'binary';
 
 /**
  * Compilation mode options

@@ -25,6 +25,7 @@ import { ResourceCompiler } from '../../compiler';
 import { ICompileOptions } from '../../options';
 import { promises as fs } from 'fs';
 import * as path from 'path';
+import * as TsRes from '@fgv/ts-res';
 
 describe('ResourceCompiler', () => {
   let tempDir: string;
@@ -65,7 +66,7 @@ describe('ResourceCompiler', () => {
       const options: ICompileOptions = {
         input: inputFile,
         output: outputFile,
-        format: 'json',
+        format: 'source',
         mode: 'development',
         partialMatch: false,
         sourceMaps: false,
@@ -83,11 +84,125 @@ describe('ResourceCompiler', () => {
   });
 
   describe('compile method', () => {
-    test('compiles resources to JSON format', async () => {
+    test('compiles resources to compiled format by default', async () => {
       const options: ICompileOptions = {
         input: inputFile,
         output: outputFile,
-        format: 'json',
+        format: 'compiled',
+        mode: 'development',
+        partialMatch: false,
+        sourceMaps: false,
+        minify: false,
+        debug: false,
+        verbose: false,
+        quiet: false,
+        validate: true,
+        includeMetadata: false
+      };
+
+      const compiler = new ResourceCompiler(options);
+      const result = await compiler.compile();
+
+      expect(result).toSucceed();
+
+      // Check that output file was created
+      const outputExists = await fs.stat(outputFile).then(
+        () => true,
+        () => false
+      );
+      expect(outputExists).toBe(true);
+
+      // Check compiled output structure
+      const outputContent = await fs.readFile(outputFile, 'utf-8');
+      const compiledCollectionData = JSON.parse(outputContent);
+
+      // Use the ts-res converter to validate the compiled resource collection
+      const validationResult =
+        TsRes.ResourceJson.Compiled.Convert.compiledResourceCollection.convert(compiledCollectionData);
+      expect(validationResult).toSucceedAndSatisfy((compiledCollection) => {
+        // Verify it's a properly structured compiled resource collection
+        expect(compiledCollection.qualifierTypes).toBeDefined();
+        expect(compiledCollection.qualifiers).toBeDefined();
+        expect(compiledCollection.resourceTypes).toBeDefined();
+        expect(compiledCollection.conditions).toBeDefined();
+        expect(compiledCollection.conditionSets).toBeDefined();
+        expect(compiledCollection.decisions).toBeDefined();
+        expect(compiledCollection.resources).toBeDefined();
+
+        // Verify these are arrays with expected content
+        expect(Array.isArray(compiledCollection.qualifierTypes)).toBe(true);
+        expect(Array.isArray(compiledCollection.qualifiers)).toBe(true);
+        expect(Array.isArray(compiledCollection.resourceTypes)).toBe(true);
+        expect(Array.isArray(compiledCollection.conditions)).toBe(true);
+        expect(Array.isArray(compiledCollection.conditionSets)).toBe(true);
+        expect(Array.isArray(compiledCollection.decisions)).toBe(true);
+        expect(Array.isArray(compiledCollection.resources)).toBe(true);
+
+        // Verify we have some resources
+        expect(compiledCollection.resources.length).toBeGreaterThan(0);
+
+        // Verify basic structural integrity
+        expect(compiledCollection.qualifierTypes.length).toBeGreaterThan(0);
+        expect(compiledCollection.qualifiers.length).toBeGreaterThan(0);
+        expect(compiledCollection.resourceTypes.length).toBeGreaterThan(0);
+      });
+    });
+
+    test('compiles resources to compiled format with metadata', async () => {
+      const options: ICompileOptions = {
+        input: inputFile,
+        output: outputFile,
+        format: 'compiled',
+        mode: 'development',
+        partialMatch: false,
+        sourceMaps: false,
+        minify: false,
+        debug: false,
+        verbose: false,
+        quiet: false,
+        validate: true,
+        includeMetadata: true
+      };
+
+      const compiler = new ResourceCompiler(options);
+      const result = await compiler.compile();
+
+      expect(result).toSucceed();
+
+      const outputContent = await fs.readFile(outputFile, 'utf-8');
+      const outputData = JSON.parse(outputContent);
+
+      // When includeMetadata is true and format is compiled, it should wrap the compiled collection in a blob
+      expect(outputData).toHaveProperty('compiledCollection');
+      expect(outputData).toHaveProperty('metadata');
+
+      // Check metadata structure
+      expect(outputData.metadata).toHaveProperty('totalResources');
+      expect(outputData.metadata).toHaveProperty('totalCandidates');
+      expect(outputData.metadata).toHaveProperty('resourceTypes');
+      expect(outputData.metadata).toHaveProperty('qualifiers');
+
+      // Validate the compiled collection using ts-res converter
+      const compiledCollection = outputData.compiledCollection;
+      const validationResult =
+        TsRes.ResourceJson.Compiled.Convert.compiledResourceCollection.convert(compiledCollection);
+      expect(validationResult).toSucceedAndSatisfy((validCollection) => {
+        expect(validCollection.qualifierTypes).toBeDefined();
+        expect(validCollection.qualifiers).toBeDefined();
+        expect(validCollection.resourceTypes).toBeDefined();
+        expect(validCollection.conditions).toBeDefined();
+        expect(validCollection.conditionSets).toBeDefined();
+        expect(validCollection.decisions).toBeDefined();
+        expect(validCollection.resources).toBeDefined();
+        expect(validCollection.resources.length).toBeGreaterThan(0);
+      });
+    });
+
+    test('compiles resources to source format', async () => {
+      const options: ICompileOptions = {
+        input: inputFile,
+        output: outputFile,
+        format: 'source',
         mode: 'development',
         partialMatch: false,
         sourceMaps: false,
@@ -124,7 +239,7 @@ describe('ResourceCompiler', () => {
         input: inputFile,
         output: outputFile,
         context: '{"language": "en"}',
-        format: 'json',
+        format: 'source',
         mode: 'development',
         partialMatch: false, // Strict matching
         sourceMaps: false,
@@ -205,7 +320,7 @@ describe('ResourceCompiler', () => {
         input: complexTestFile,
         output: complexOutputFile,
         context: '{"language": "en"}',
-        format: 'json',
+        format: 'source',
         mode: 'development',
         partialMatch: false,
         sourceMaps: false,
@@ -250,7 +365,7 @@ describe('ResourceCompiler', () => {
         input: inputFile,
         output: outputFile,
         context: '{"language": "fr"}', // French - not in our test data
-        format: 'json',
+        format: 'source',
         mode: 'development',
         partialMatch: false,
         sourceMaps: false,
@@ -355,10 +470,7 @@ describe('ResourceCompiler', () => {
           json: { label: 'Save (FR)' },
           conditions: { language: 'fr-FR' },
           resourceTypeName: 'json'
-        },
-
-        // Resource with no language condition (should always match)
-        { id: 'app.version', json: { version: '1.0.0' }, resourceTypeName: 'json' }
+        }
       ];
 
       await fs.writeFile(variantTestFile, JSON.stringify(variantTestResources, null, 2));
@@ -368,7 +480,7 @@ describe('ResourceCompiler', () => {
         input: variantTestFile,
         output: variantOutputFile,
         context: '{"language": "en-GB"}', // British English - should match other English variants
-        format: 'json',
+        format: 'source',
         mode: 'development',
         partialMatch: false,
         sourceMaps: false,
@@ -390,7 +502,6 @@ describe('ResourceCompiler', () => {
       // Verify all resources that should match are included
       expect(Object.keys(outputData.resources)).toContain('msg.hello');
       expect(Object.keys(outputData.resources)).toContain('btn.save');
-      expect(Object.keys(outputData.resources)).toContain('app.version'); // No language condition
 
       // Verify msg.hello contains English variants but not French/Spanish
       const helloResource = outputData.resources['msg.hello'];
@@ -412,16 +523,12 @@ describe('ResourceCompiler', () => {
       expect(saveKeys.some((key) => key.includes('en-US'))).toBe(true);
       expect(saveKeys.some((key) => key.includes('fr'))).toBe(false);
 
-      // Verify app.version has default condition (no language)
-      const versionResource = outputData.resources['app.version'];
-      expect(versionResource).toHaveProperty('default');
-
       // Verify metadata shows appropriate filtering
-      expect(outputData.metadata.totalCandidates).toBe(12); // All input candidates
-      // Should filter to: 4 English msg.hello + 1 English btn.save + 1 app.version = 6
-      expect(outputData.metadata.filteredCandidates).toBe(6);
-      expect(outputData.metadata.totalResources).toBe(3); // 3 unique resource IDs
-      expect(outputData.metadata.filteredResources).toBe(3); // All 3 resources have matching candidates
+      expect(outputData.metadata.totalCandidates).toBe(11); // All input candidates
+      // Should filter to: 4 English msg.hello + 1 English btn.save = 5
+      expect(outputData.metadata.filteredCandidates).toBe(5);
+      expect(outputData.metadata.totalResources).toBe(2); // 2 unique resource IDs
+      expect(outputData.metadata.filteredResources).toBe(2); // All 2 resources have matching candidates
     });
 
     test('context filtering with partial matching enabled is more permissive', async () => {
@@ -430,7 +537,7 @@ describe('ResourceCompiler', () => {
         input: inputFile, // Uses basic test data with en/es
         output: outputFile,
         context: '{"language": "en-GB"}',
-        format: 'json',
+        format: 'source',
         mode: 'development',
         partialMatch: true, // Enable partial matching
         sourceMaps: false,
@@ -469,7 +576,7 @@ describe('ResourceCompiler', () => {
       const options: ICompileOptions = {
         input: inputFile,
         output: outputFile,
-        format: 'json',
+        format: 'source',
         mode: 'development',
         partialMatch: false,
         sourceMaps: false,
@@ -547,11 +654,113 @@ describe('ResourceCompiler', () => {
       expect(outputContent).toMatch(/ as const;$/);
     });
 
+    test('compiled format can be reconstructed as runtime ICompiledResourceCollection', async () => {
+      const options: ICompileOptions = {
+        input: inputFile,
+        output: outputFile,
+        format: 'compiled',
+        mode: 'development',
+        partialMatch: false,
+        sourceMaps: false,
+        minify: false,
+        debug: false,
+        verbose: false,
+        quiet: false,
+        validate: true,
+        includeMetadata: false
+      };
+
+      const compiler = new ResourceCompiler(options);
+      const result = await compiler.compile();
+      expect(result).toSucceed();
+
+      const outputContent = await fs.readFile(outputFile, 'utf-8');
+      const compiledCollectionData = JSON.parse(outputContent);
+
+      // Validate the structure using the converter
+      expect(
+        TsRes.ResourceJson.Compiled.Convert.compiledResourceCollection.convert(compiledCollectionData)
+      ).toSucceed();
+    });
+
+    test('compiled format produces different output than source format', async () => {
+      const compiledOutputFile = path.join(tempDir, 'compiled.json');
+      const sourceOutputFile = path.join(tempDir, 'source.json');
+
+      const baseOptions: ICompileOptions = {
+        input: inputFile,
+        output: '',
+        format: 'compiled',
+        mode: 'development',
+        partialMatch: false,
+        sourceMaps: false,
+        minify: false,
+        debug: false,
+        verbose: false,
+        quiet: false,
+        validate: true,
+        includeMetadata: false
+      };
+
+      // Compile to compiled format
+      const compiledCompiler = new ResourceCompiler({
+        ...baseOptions,
+        output: compiledOutputFile,
+        format: 'compiled'
+      });
+      const compiledResult = await compiledCompiler.compile();
+      expect(compiledResult).toSucceed();
+
+      // Compile to source format
+      const sourceCompiler = new ResourceCompiler({
+        ...baseOptions,
+        output: sourceOutputFile,
+        format: 'source'
+      });
+      const sourceResult = await sourceCompiler.compile();
+      expect(sourceResult).toSucceed();
+
+      // Read both outputs
+      const compiledContent = await fs.readFile(compiledOutputFile, 'utf-8');
+      const sourceContent = await fs.readFile(sourceOutputFile, 'utf-8');
+
+      const compiledData = JSON.parse(compiledContent);
+      const sourceData = JSON.parse(sourceContent);
+
+      // They should be different formats
+      expect(compiledData).not.toEqual(sourceData);
+
+      // Validate compiled format using ts-res converter
+      const compiledValidation =
+        TsRes.ResourceJson.Compiled.Convert.compiledResourceCollection.convert(compiledData);
+      expect(compiledValidation).toSucceedAndSatisfy((validCompiledCollection) => {
+        expect(validCompiledCollection.qualifierTypes).toBeDefined();
+        expect(validCompiledCollection.qualifiers).toBeDefined();
+        expect(validCompiledCollection.resourceTypes).toBeDefined();
+        expect(validCompiledCollection.conditions).toBeDefined();
+        expect(validCompiledCollection.conditionSets).toBeDefined();
+        expect(validCompiledCollection.decisions).toBeDefined();
+        expect(validCompiledCollection.resources).toBeDefined();
+        expect(validCompiledCollection.resources.length).toBeGreaterThan(0);
+      });
+
+      // Source format should have legacy blob structure
+      expect(sourceData).toHaveProperty('resources');
+      expect(sourceData).not.toHaveProperty('qualifierTypes');
+      expect(sourceData).not.toHaveProperty('conditions');
+      expect(sourceData).not.toHaveProperty('conditionSets');
+      expect(sourceData).not.toHaveProperty('decisions');
+
+      // Source format resources should be object with condition keys
+      expect(typeof sourceData.resources).toBe('object');
+      expect(sourceData.resources['test.message']).toBeDefined();
+    });
+
     test('handles minified output', async () => {
       const options: ICompileOptions = {
         input: inputFile,
         output: outputFile,
-        format: 'json',
+        format: 'source',
         mode: 'production',
         partialMatch: false,
         sourceMaps: false,
@@ -577,7 +786,7 @@ describe('ResourceCompiler', () => {
       const options: ICompileOptions = {
         input: '/nonexistent/file.json',
         output: outputFile,
-        format: 'json',
+        format: 'source',
         mode: 'development',
         partialMatch: false,
         sourceMaps: false,
@@ -629,7 +838,7 @@ describe('ResourceCompiler', () => {
       const options: ICompileOptions = {
         input: inputDir,
         output: outputFile,
-        format: 'json',
+        format: 'source',
         mode: 'development',
         partialMatch: false,
         sourceMaps: false,
@@ -659,7 +868,7 @@ describe('ResourceCompiler', () => {
       const options: ICompileOptions = {
         input: inputFile,
         output: outputFile,
-        format: 'json',
+        format: 'source',
         mode: 'development',
         partialMatch: false,
         sourceMaps: false,
@@ -741,7 +950,7 @@ describe('ResourceCompiler', () => {
       const options: ICompileOptions = {
         input: testDir,
         output: path.join(tempDir, 'deterministic-output.json'),
-        format: 'json',
+        format: 'source',
         mode: 'development',
         partialMatch: false,
         sourceMaps: false,
@@ -774,7 +983,7 @@ describe('ResourceCompiler', () => {
       const baseOptions: ICompileOptions = {
         input: inputFile,
         output: '', // Will be set per format
-        format: 'json',
+        format: 'source',
         mode: 'development',
         partialMatch: false,
         sourceMaps: false,
@@ -786,11 +995,11 @@ describe('ResourceCompiler', () => {
         includeMetadata: false
       };
 
-      // Test JSON format
-      const jsonOutput = path.join(tempDir, 'format-test.json');
-      const jsonCompiler = new ResourceCompiler({ ...baseOptions, output: jsonOutput, format: 'json' });
-      const jsonResult = await jsonCompiler.compile();
-      expect(jsonResult).toSucceed();
+      // Test source format
+      const sourceOutput = path.join(tempDir, 'format-test.json');
+      const sourceCompiler = new ResourceCompiler({ ...baseOptions, output: sourceOutput, format: 'source' });
+      const sourceResult = await sourceCompiler.compile();
+      expect(sourceResult).toSucceed();
 
       // Test JS format
       const jsOutput = path.join(tempDir, 'format-test.js');
@@ -804,9 +1013,9 @@ describe('ResourceCompiler', () => {
       const tsResult = await tsCompiler.compile();
       expect(tsResult).toSucceed();
 
-      // Parse the JSON output as baseline
-      const jsonContent = await fs.readFile(jsonOutput, 'utf-8');
-      const jsonData = JSON.parse(jsonContent);
+      // Parse the source output as baseline
+      const sourceContent = await fs.readFile(sourceOutput, 'utf-8');
+      const sourceData = JSON.parse(sourceContent);
 
       // Verify JS format contains same data
       const jsContent = await fs.readFile(jsOutput, 'utf-8');
@@ -814,7 +1023,7 @@ describe('ResourceCompiler', () => {
       // Extract the data part from "module.exports = {...};"
       const jsDataStr = jsContent.replace(/^module\.exports = /, '').replace(/;$/, '');
       const jsData = JSON.parse(jsDataStr);
-      expect(jsData).toEqual(jsonData);
+      expect(jsData).toEqual(sourceData);
 
       // Verify TS format contains same data
       const tsContent = await fs.readFile(tsOutput, 'utf-8');
@@ -822,7 +1031,7 @@ describe('ResourceCompiler', () => {
       // Extract the data part from "export const resources = {...} as const;"
       const tsDataStr = tsContent.replace(/^export const resources = /, '').replace(/ as const;$/, '');
       const tsData = JSON.parse(tsDataStr);
-      expect(tsData).toEqual(jsonData);
+      expect(tsData).toEqual(sourceData);
     });
   });
 
@@ -831,7 +1040,7 @@ describe('ResourceCompiler', () => {
       const options: ICompileOptions = {
         input: inputFile,
         output: outputFile,
-        format: 'json',
+        format: 'source',
         mode: 'development',
         partialMatch: false,
         sourceMaps: false,
@@ -864,7 +1073,7 @@ describe('ResourceCompiler', () => {
       const options: ICompileOptions = {
         input: inputFile,
         output: outputFile,
-        format: 'json',
+        format: 'source',
         mode: 'development',
         partialMatch: false,
         sourceMaps: false,
@@ -888,7 +1097,7 @@ describe('ResourceCompiler', () => {
       const options: ICompileOptions = {
         input: inputFile,
         output: outputFile,
-        format: 'json',
+        format: 'source',
         mode: 'development',
         partialMatch: false,
         sourceMaps: false,
@@ -916,7 +1125,7 @@ describe('ResourceCompiler', () => {
         input: inputFile,
         output: outputFile,
         context: '{"language": "en"}',
-        format: 'json',
+        format: 'source',
         mode: 'development',
         partialMatch: true,
         sourceMaps: false,

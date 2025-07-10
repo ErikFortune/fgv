@@ -44,7 +44,8 @@ export interface IResourceInfo {
  * Compiled resource blob
  */
 export interface IResourceBlob {
-  resources: JsonObject;
+  resources?: JsonObject;
+  compiledCollection?: TsRes.ResourceJson.Compiled.ICompiledResourceCollection;
   metadata?: IResourceInfo;
 }
 
@@ -340,6 +341,66 @@ export class ResourceCompiler {
     manager: TsRes.Resources.ResourceManagerBuilder
   ): Promise<Result<IResourceBlob>> {
     try {
+      if (this._options.format === 'compiled') {
+        return this._generateCompiledBlob(manager);
+      } else {
+        return this._generateSourceBlob(filtered, manager);
+      }
+    } catch (error) {
+      return fail(`Failed to generate blob: ${error}`);
+    }
+  }
+
+  /**
+   * Generates a compiled resource collection blob
+   */
+  private async _generateCompiledBlob(
+    manager: TsRes.Resources.ResourceManagerBuilder
+  ): Promise<Result<IResourceBlob>> {
+    try {
+      // Build all resources to ensure they're ready for compilation
+      const buildResult = manager.build();
+      if (buildResult.isFailure()) {
+        return fail(`Failed to build resources for compilation: ${buildResult.message}`);
+      }
+
+      // Get the compiled resource collection
+      const compiledResult = manager.getCompiledResourceCollection();
+      if (compiledResult.isFailure()) {
+        return fail(`Failed to get compiled resource collection: ${compiledResult.message}`);
+      }
+
+      const blob: IResourceBlob = {
+        compiledCollection: compiledResult.value
+      };
+
+      if (this._options.includeMetadata) {
+        blob.metadata = this._generateResourceInfo(
+          {
+            resources: manager.getAllResources(),
+            candidates: manager.getAllCandidates()
+          },
+          manager
+        );
+      }
+
+      return succeed(blob);
+    } catch (error) {
+      return fail(`Failed to generate compiled blob: ${error}`);
+    }
+  }
+
+  /**
+   * Generates a source format blob (legacy format)
+   */
+  private async _generateSourceBlob(
+    filtered: {
+      resources: ReadonlyArray<TsRes.Resources.ResourceBuilder>;
+      candidates: ReadonlyArray<TsRes.Resources.ResourceCandidate>;
+    },
+    manager: TsRes.Resources.ResourceManagerBuilder
+  ): Promise<Result<IResourceBlob>> {
+    try {
       const resources: JsonObject = {};
 
       // Build filtered resources
@@ -379,7 +440,7 @@ export class ResourceCompiler {
 
       return succeed(blob);
     } catch (error) {
-      return fail(`Failed to generate blob: ${error}`);
+      return fail(`Failed to generate source blob: ${error}`);
     }
   }
 
@@ -438,15 +499,22 @@ export class ResourceCompiler {
       let content: string;
 
       switch (this._options.format) {
-        case 'json':
+        case 'compiled':
+          // If metadata is included, write the full blob; otherwise, write just the compiled collection
+          const compiledData = this._options.includeMetadata ? blob : blob.compiledCollection;
+          content = JSON.stringify(compiledData, null, this._options.minify ? 0 : 2);
+          break;
+        case 'source':
           content = JSON.stringify(blob, null, this._options.minify ? 0 : 2);
           break;
         case 'js':
-          content = `module.exports = ${JSON.stringify(blob, null, this._options.minify ? 0 : 2)};`;
+          const jsData = blob.compiledCollection || blob;
+          content = `module.exports = ${JSON.stringify(jsData, null, this._options.minify ? 0 : 2)};`;
           break;
         case 'ts':
+          const tsData = blob.compiledCollection || blob;
           content = `export const resources = ${JSON.stringify(
-            blob,
+            tsData,
             null,
             this._options.minify ? 0 : 2
           )} as const;`;
@@ -454,7 +522,8 @@ export class ResourceCompiler {
         case 'binary':
           // For binary format, we could use a more efficient serialization
           // For now, use JSON as a placeholder
-          content = JSON.stringify(blob);
+          const binaryData = blob.compiledCollection || blob;
+          content = JSON.stringify(binaryData);
           break;
         default:
           return fail(`Unsupported output format: ${this._options.format}`);

@@ -129,7 +129,7 @@ describe('CLI Integration Tests', () => {
       await fs.writeFile(inputFile, JSON.stringify(resources, null, 2));
     });
 
-    test('compiles resources to JSON format', async () => {
+    test('compiles resources to source format', async () => {
       const result = await runCli([
         'compile',
         '--input',
@@ -137,7 +137,7 @@ describe('CLI Integration Tests', () => {
         '--output',
         outputFile,
         '--format',
-        'json'
+        'source'
       ]);
 
       expect(result.exitCode).toBe(0);
@@ -200,7 +200,9 @@ describe('CLI Integration Tests', () => {
         outputFile,
         '--context',
         '{"language": "en"}',
-        '--partial-match'
+        '--partial-match',
+        '--format',
+        'source'
       ]);
 
       expect(result.exitCode).toBe(0);
@@ -222,7 +224,9 @@ describe('CLI Integration Tests', () => {
         outputFile,
         '--context',
         '{"language": "en-US", "territory": "US"}',
-        '--partial-match'
+        '--partial-match',
+        '--format',
+        'source'
       ]);
 
       expect(result.exitCode).toBe(0);
@@ -251,7 +255,9 @@ describe('CLI Integration Tests', () => {
       const outputContent = await fs.readFile(outputFile, 'utf-8');
       const output = JSON.parse(outputContent);
 
+      // With compiled format and --include-metadata, output should have metadata and compiledCollection
       expect(output).toHaveProperty('metadata');
+      expect(output).toHaveProperty('compiledCollection');
       expect(output.metadata).toHaveProperty('totalResources');
       expect(output.metadata).toHaveProperty('totalCandidates');
       expect(output.metadata).toHaveProperty('resourceTypes');
@@ -436,7 +442,15 @@ describe('CLI Integration Tests', () => {
       await fs.writeFile(path.join(inputDir, 'buttons.json'), JSON.stringify(buttons));
 
       const outputFile = path.join(tempDir, 'directory-output.json');
-      const result = await runCli(['compile', '--input', inputDir, '--output', outputFile]);
+      const result = await runCli([
+        'compile',
+        '--input',
+        inputDir,
+        '--output',
+        outputFile,
+        '--format',
+        'source'
+      ]);
 
       expect(result.exitCode).toBe(0);
 
