@@ -27,13 +27,29 @@ import {
   IReadOnlyResourceTreeBranch,
   IReadOnlyResourceTreeNode,
   IReadOnlyResourceTreeRoot,
-  IResourceTreeRootInit,
   IReadOnlyResourceTreeChildren
-} from './resourceTreeChildren';
-import { ReadOnlyResourceTreeRoot } from './readOnlyResourceTree';
+} from './common';
+import { IResourceTreeRootInit, ReadOnlyResourceTreeRoot } from './readOnlyResourceTree';
 
 /**
- * A validating wrapper for resource tree collections that validates string inputs.
+ * A validating wrapper for resource tree collections that validates string inputs before
+ * delegating to the underlying tree collection. This interface provides type-safe string-based
+ * access to tree operations that would normally require ResourceId and ResourceName typed parameters.
+ *
+ * All string inputs are validated using the library's Convert utilities before being passed
+ * to the underlying tree collection, ensuring type safety and consistent error handling.
+ *
+ * @example
+ * ```typescript
+ * // Get a validating collection from a tree
+ * const collection: IReadOnlyValidatingResourceTreeCollection<IResource> = tree.children;
+ *
+ * // Use string literals directly - validation happens automatically
+ * const nodeResult = collection.getById('app.messages.welcome');
+ * const resourceResult = collection.getResource('welcome');
+ * const hasResult = collection.hasResource('welcome');
+ * ```
+ *
  * @public
  */
 export interface IReadOnlyValidatingResourceTreeCollection<T> {
@@ -106,6 +122,11 @@ export interface IReadOnlyValidatingResourceTreeCollection<T> {
 
 /**
  * Base interface for validating tree nodes that provide string validation capabilities.
+ *
+ * This interface wraps the underlying tree node and provides access to its properties
+ * while maintaining the validating context. All validating nodes extend this interface
+ * to provide consistent property access.
+ *
  * @public
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -113,7 +134,7 @@ export interface IReadOnlyValidatingResourceTreeNode<T> {
   /**
    * The underlying tree node instance.
    */
-  readonly node: IReadOnlyResourceTreeNode;
+  readonly node: IReadOnlyResourceTreeNode<T>;
 
   /**
    * The name of this node.
@@ -143,6 +164,11 @@ export interface IReadOnlyValidatingResourceTreeNode<T> {
 
 /**
  * Interface for validating leaf nodes that contain resources.
+ *
+ * Leaf nodes represent the terminal nodes in the resource tree that contain actual
+ * resource instances. These nodes do not have children and provide direct access
+ * to the resource they contain.
+ *
  * @public
  */
 export interface IReadOnlyValidatingResourceTreeLeaf<T> extends IReadOnlyValidatingResourceTreeNode<T> {
@@ -163,6 +189,11 @@ export interface IReadOnlyValidatingResourceTreeLeaf<T> extends IReadOnlyValidat
 
 /**
  * Interface for validating branch nodes that contain child collections.
+ *
+ * Branch nodes are intermediate nodes in the resource tree that organize the hierarchical
+ * structure. They do not contain resources directly but provide access to child nodes
+ * through a validating children collection that accepts string inputs.
+ *
  * @public
  */
 export interface IReadOnlyValidatingResourceTreeBranch<T> extends IReadOnlyValidatingResourceTreeNode<T> {
@@ -183,6 +214,33 @@ export interface IReadOnlyValidatingResourceTreeBranch<T> extends IReadOnlyValid
 
 /**
  * A read-only interface for a validating resource tree that accepts string inputs.
+ *
+ * This is the main interface for interacting with a validating resource tree. It provides
+ * the same functionality as the underlying tree but with string-based input validation.
+ * The tree is organized hierarchically based on dot-separated ResourceId strings, where
+ * each segment represents a level in the tree hierarchy.
+ *
+ * The key benefit is that you can navigate the tree using string literals without needing
+ * to convert them to typed ResourceId/ResourceName parameters - the validation happens
+ * automatically and consistently returns Result<T> for all operations.
+ *
+ * @example
+ * ```typescript
+ * // Create a validating tree from resources
+ * const treeResult = ReadOnlyValidatingResourceTreeRoot.create([
+ *   ['app.messages.welcome', welcomeResource],
+ *   ['app.messages.goodbye', goodbyeResource]
+ * ]);
+ *
+ * const tree = treeResult.orThrow().validating;
+ *
+ * // Navigate with strings - validation is automatic
+ * tree.getBranchById('app.messages').onSuccess((branch) => {
+ *   // branch.children also provides string validation
+ *   return branch.children.getResource('welcome');
+ * });
+ * ```
+ *
  * @public
  */
 export interface IReadOnlyValidatingResourceTree<T> {
@@ -254,7 +312,13 @@ export interface IReadOnlyValidatingResourceTree<T> {
 }
 
 /**
- * Implementation of a validating resource tree collection that validates string inputs.
+ * Implementation of a validating resource tree collection that validates string inputs
+ * before delegating to the underlying tree collection.
+ *
+ * This class wraps an {@link IReadOnlyResourceTreeChildren} instance and provides
+ * string-based access to all tree operations. All string inputs are validated using
+ * the library's Convert utilities before being passed to the underlying collection.
+ *
  * @public
  */
 export class ReadOnlyValidatingResourceTreeCollection<T>
@@ -264,7 +328,7 @@ export class ReadOnlyValidatingResourceTreeCollection<T>
 
   /**
    * Creates a new validating tree collection wrapper.
-   * @param tree - The underlying tree collection to wrap
+   * @param tree - The underlying tree collection to wrap with validation
    */
   public constructor(tree: IReadOnlyResourceTreeChildren<T>) {
     this.tree = tree;
@@ -277,6 +341,9 @@ export class ReadOnlyValidatingResourceTreeCollection<T>
     return this.tree.size;
   }
 
+  /**
+   * {@inheritDoc IReadOnlyValidatingResourceTreeCollection.getById}
+   */
   public getById(id: string): Result<IReadOnlyValidatingResourceTreeNode<T>> {
     return Convert.resourceId
       .convert(id)
@@ -284,6 +351,9 @@ export class ReadOnlyValidatingResourceTreeCollection<T>
       .onSuccess((node) => succeed(wrapValidatingNode(node)));
   }
 
+  /**
+   * {@inheritDoc IReadOnlyValidatingResourceTreeCollection.getResourceById}
+   */
   public getResourceById(id: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>> {
     return Convert.resourceId
       .convert(id)
@@ -291,6 +361,9 @@ export class ReadOnlyValidatingResourceTreeCollection<T>
       .onSuccess((leaf) => succeed(wrapValidatingLeaf(leaf)));
   }
 
+  /**
+   * {@inheritDoc IReadOnlyValidatingResourceTreeCollection.getBranchById}
+   */
   public getBranchById(id: string): Result<IReadOnlyValidatingResourceTreeBranch<T>> {
     return Convert.resourceId
       .convert(id)
@@ -298,6 +371,9 @@ export class ReadOnlyValidatingResourceTreeCollection<T>
       .onSuccess((branch) => succeed(wrapValidatingBranch(branch)));
   }
 
+  /**
+   * {@inheritDoc IReadOnlyValidatingResourceTreeCollection.getResource}
+   */
   public getResource(name: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>> {
     return Convert.resourceName
       .convert(name)
@@ -305,6 +381,9 @@ export class ReadOnlyValidatingResourceTreeCollection<T>
       .onSuccess((node) => succeed(wrapValidatingLeaf(node as IReadOnlyResourceTreeLeaf<T>)));
   }
 
+  /**
+   * {@inheritDoc IReadOnlyValidatingResourceTreeCollection.getBranch}
+   */
   public getBranch(name: string): Result<IReadOnlyValidatingResourceTreeBranch<T>> {
     return Convert.resourceName
       .convert(name)
@@ -312,6 +391,9 @@ export class ReadOnlyValidatingResourceTreeCollection<T>
       .onSuccess((node) => succeed(wrapValidatingBranch(node as IReadOnlyResourceTreeBranch<T>)));
   }
 
+  /**
+   * {@inheritDoc IReadOnlyValidatingResourceTreeCollection.has}
+   */
   public has(id: string): Result<boolean> {
     return Convert.resourceId.convert(id).onSuccess((validId: ResourceId) => {
       return this.tree
@@ -321,6 +403,9 @@ export class ReadOnlyValidatingResourceTreeCollection<T>
     });
   }
 
+  /**
+   * {@inheritDoc IReadOnlyValidatingResourceTreeCollection.hasResource}
+   */
   public hasResource(id: string): Result<boolean> {
     return Convert.resourceId.convert(id).onSuccess((validId: ResourceId) => {
       return this.tree
@@ -330,6 +415,9 @@ export class ReadOnlyValidatingResourceTreeCollection<T>
     });
   }
 
+  /**
+   * {@inheritDoc IReadOnlyValidatingResourceTreeCollection.hasBranch}
+   */
   public hasBranch(id: string): Result<boolean> {
     return Convert.resourceId.convert(id).onSuccess((validId: ResourceId) => {
       return this.tree
@@ -342,8 +430,17 @@ export class ReadOnlyValidatingResourceTreeCollection<T>
 
 /**
  * Helper function to wrap a base tree node in a validating node interface.
+ *
+ * This function determines the type of the input node and wraps it in the appropriate
+ * validating interface (leaf or branch). It preserves all the original node properties
+ * while adding the validating context.
+ *
+ * @param node - The base tree node to wrap
+ * @returns A validating node interface wrapping the input node
+ * @throws Error if the node is neither a leaf nor a branch (which should never happen in a well-formed tree)
+ * @internal
  */
-function wrapValidatingNode<T>(node: IReadOnlyResourceTreeNode): IReadOnlyValidatingResourceTreeNode<T> {
+function wrapValidatingNode<T>(node: IReadOnlyResourceTreeNode<T>): IReadOnlyValidatingResourceTreeNode<T> {
   if (node.isLeaf) {
     return wrapValidatingLeaf(node as IReadOnlyResourceTreeLeaf<T>);
   } else if (node.isBranch) {
@@ -356,12 +453,20 @@ function wrapValidatingNode<T>(node: IReadOnlyResourceTreeNode): IReadOnlyValida
 
 /**
  * Helper function to wrap a base leaf node in a validating leaf interface.
+ *
+ * Creates a validating leaf node that provides access to the underlying leaf's
+ * properties and resource while maintaining the validating context. The resulting
+ * interface can be used to access the resource without additional validation.
+ *
+ * @param leaf - The base leaf node to wrap
+ * @returns A validating leaf interface wrapping the input leaf
+ * @internal
  */
 function wrapValidatingLeaf<T>(leaf: IReadOnlyResourceTreeLeaf<T>): IReadOnlyValidatingResourceTreeLeaf<T> {
   return {
     node: leaf,
     name: leaf.name,
-    path: leaf.path,
+    path: leaf.id,
     isRoot: leaf.isRoot,
     isLeaf: leaf.isLeaf,
     isBranch: leaf.isBranch,
@@ -371,6 +476,14 @@ function wrapValidatingLeaf<T>(leaf: IReadOnlyResourceTreeLeaf<T>): IReadOnlyVal
 
 /**
  * Helper function to wrap a base branch node in a validating branch interface.
+ *
+ * Creates a validating branch node that provides access to the underlying branch's
+ * properties and a validating children collection. The children collection accepts
+ * string inputs and provides string-based navigation throughout the subtree.
+ *
+ * @param branch - The base branch node to wrap
+ * @returns A validating branch interface wrapping the input branch
+ * @internal
  */
 function wrapValidatingBranch<T>(
   branch: IReadOnlyResourceTreeBranch<T>
@@ -378,7 +491,7 @@ function wrapValidatingBranch<T>(
   return {
     node: branch,
     name: branch.name,
-    path: branch.path,
+    path: branch.id,
     isRoot: branch.isRoot,
     isLeaf: branch.isLeaf,
     isBranch: branch.isBranch,
@@ -388,6 +501,11 @@ function wrapValidatingBranch<T>(
 
 /**
  * Implementation of a validating resource tree that validates string inputs before delegating to the underlying tree.
+ *
+ * This class provides the main implementation of {@link IReadOnlyValidatingResourceTree}. It wraps
+ * a {@link IReadOnlyResourceTreeRoot} and provides string-based access to all tree operations.
+ * All methods delegate to the wrapped children collection, which handles the validation.
+ *
  * @public
  */
 export class ReadOnlyValidatingResourceTree<T> implements IReadOnlyValidatingResourceTree<T> {
@@ -396,41 +514,65 @@ export class ReadOnlyValidatingResourceTree<T> implements IReadOnlyValidatingRes
 
   /**
    * Creates a new validating resource tree wrapper.
-   * @param tree - The underlying resource tree root to wrap
+   * @param tree - The underlying resource tree root to wrap with validation
    */
   public constructor(tree: IReadOnlyResourceTreeRoot<T>) {
     this.tree = tree;
     this.children = new ReadOnlyValidatingResourceTreeCollection(tree.children);
   }
 
+  /**
+   * {@inheritDoc IReadOnlyValidatingResourceTree.getById}
+   */
   public getById(id: string): Result<IReadOnlyValidatingResourceTreeNode<T>> {
     return this.children.getById(id);
   }
 
+  /**
+   * {@inheritDoc IReadOnlyValidatingResourceTree.getResourceById}
+   */
   public getResourceById(id: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>> {
     return this.children.getResourceById(id);
   }
 
+  /**
+   * {@inheritDoc IReadOnlyValidatingResourceTree.getBranchById}
+   */
   public getBranchById(id: string): Result<IReadOnlyValidatingResourceTreeBranch<T>> {
     return this.children.getBranchById(id);
   }
 
+  /**
+   * {@inheritDoc IReadOnlyValidatingResourceTree.getResource}
+   */
   public getResource(name: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>> {
     return this.children.getResource(name);
   }
 
+  /**
+   * {@inheritDoc IReadOnlyValidatingResourceTree.getBranch}
+   */
   public getBranch(name: string): Result<IReadOnlyValidatingResourceTreeBranch<T>> {
     return this.children.getBranch(name);
   }
 
+  /**
+   * {@inheritDoc IReadOnlyValidatingResourceTree.has}
+   */
   public has(id: string): Result<boolean> {
     return this.children.has(id);
   }
 
+  /**
+   * {@inheritDoc IReadOnlyValidatingResourceTree.hasResource}
+   */
   public hasResource(id: string): Result<boolean> {
     return this.children.hasResource(id);
   }
 
+  /**
+   * {@inheritDoc IReadOnlyValidatingResourceTree.hasBranch}
+   */
   public hasBranch(id: string): Result<boolean> {
     return this.children.hasBranch(id);
   }
@@ -460,18 +602,46 @@ export interface IReadOnlyValidatingResourceTreeCreateFromInitParams<T> {
 
 /**
  * A ReadOnlyResourceTreeRoot with a validating property that enables validated use with string inputs.
- * This eliminates the need for type casting in consumer code.
+ *
+ * This class extends {@link ReadOnlyResourceTreeRoot} to provide both the standard tree interface
+ * and a {@link validating} property that accepts string inputs. This eliminates the need for
+ * manual type conversion in consumer code and provides a clean, type-safe API for string-based
+ * tree navigation.
+ *
+ * The class can be created from either an array of [ResourceId, resource] pairs or from
+ * a tree initialization structure, making it flexible for different use cases.
+ *
+ * @example
+ * ```typescript
+ * // Create from resource pairs
+ * const tree = ReadOnlyValidatingResourceTreeRoot.create([
+ *   ['app.messages.welcome', { id: 'welcome', text: 'Welcome!' }],
+ *   ['app.errors.notFound', { id: 'notFound', text: 'Not Found' }]
+ * ]).orThrow();
+ *
+ * // Use the validating interface with strings
+ * tree.validating.getBranchById('app').onSuccess((appBranch) => {
+ *   // appBranch.children also provides string validation
+ *   return appBranch.children.getBranch('messages');
+ * });
+ * ```
+ *
  * @public
  */
 export class ReadOnlyValidatingResourceTreeRoot<T> extends ReadOnlyResourceTreeRoot<T> {
   /**
    * A validating interface that validates string inputs before passing them to this tree.
+   *
+   * This property provides access to the full string-based API for tree navigation.
+   * All operations through this interface validate string inputs and return Result types
+   * for consistent error handling.
    */
   public readonly validating: IReadOnlyValidatingResourceTree<T>;
 
   /**
    * Creates a new validating resource tree root. Use the static create method instead.
    * @param params - Parameters for creating the validating tree
+   * @internal
    */
   protected constructor(
     params:

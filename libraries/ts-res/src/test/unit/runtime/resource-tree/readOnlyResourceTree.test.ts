@@ -42,7 +42,7 @@ describe('ReadOnlyResourceTreeLeaf', () => {
         )
       ).toSucceedAndSatisfy((leaf) => {
         expect(leaf.name).toBe('testNode');
-        expect(leaf.path).toBe('parent.testNode');
+        expect(leaf.id).toBe('parent.testNode');
         expect(leaf.resource).toBe(resource);
         expect(leaf.isLeaf).toBe(true);
         expect(leaf.isBranch).toBe(false);
@@ -57,7 +57,7 @@ describe('ReadOnlyResourceTreeLeaf', () => {
         ResourceTree.ReadOnlyResourceTreeLeaf.create('testNode' as ResourceName, undefined, resource)
       ).toSucceedAndSatisfy((leaf) => {
         expect(leaf.name).toBe('testNode');
-        expect(leaf.path).toBe('testNode');
+        expect(leaf.id).toBe('testNode');
         expect(leaf.resource).toBe(resource);
       });
     });
@@ -94,7 +94,7 @@ describe('ReadOnlyResourceTreeBranch', () => {
         )
       ).toSucceedAndSatisfy((branch) => {
         expect(branch.name).toBe('branch');
-        expect(branch.path).toBe('parent.branch');
+        expect(branch.id).toBe('parent.branch');
         expect(branch.isLeaf).toBe(false);
         expect(branch.isBranch).toBe(true);
         expect(branch.isRoot).toBe(false);
@@ -126,12 +126,12 @@ describe('ReadOnlyResourceTreeBranch', () => {
 
         expect(branch.children.get('leaf' as ResourceName)).toSucceedAndSatisfy((leafNode) => {
           expect(leafNode.isLeaf).toBe(true);
-          expect(leafNode.path).toBe('branch.leaf');
+          expect(leafNode.id).toBe('branch.leaf');
         });
 
         expect(branch.children.get('nestedBranch' as ResourceName)).toSucceedAndSatisfy((branchNode) => {
           expect(branchNode.isBranch).toBe(true);
-          expect(branchNode.path).toBe('branch.nestedBranch');
+          expect(branchNode.id).toBe('branch.nestedBranch');
         });
       });
     });
@@ -200,7 +200,7 @@ describe('ReadOnlyResourceTreeRoot', () => {
         expect(root.children.getById('app.messages.welcome' as ResourceId)).toSucceedAndSatisfy(
           (welcomeNode) => {
             expect(welcomeNode.isLeaf).toBe(true);
-            expect(welcomeNode.path).toBe('app.messages.welcome');
+            expect(welcomeNode.id).toBe('app.messages.welcome');
           }
         );
       });
@@ -239,7 +239,7 @@ describe('ReadOnlyResourceTreeRoot', () => {
         expect(root.children.getById('level1.level2.level3.level4.deep' as ResourceId)).toSucceedAndSatisfy(
           (deepNode) => {
             expect(deepNode.isLeaf).toBe(true);
-            expect(deepNode.path).toBe('level1.level2.level3.level4.deep');
+            expect(deepNode.id).toBe('level1.level2.level3.level4.deep');
           }
         );
       });
@@ -370,21 +370,21 @@ describe('ReadOnlyResourceTreeRoot', () => {
     test('getById returns correct nodes', () => {
       // Test branch node access
       expect(root.children.getById('app' as ResourceId)).toSucceedAndSatisfy((node) => {
-        expect(node.path).toBe('app');
+        expect(node.id).toBe('app');
         expect(node.isBranch).toBe(true);
         expect(node.isLeaf).toBe(false);
       });
 
       // Test leaf node access
       expect(root.children.getById('app.messages.welcome' as ResourceId)).toSucceedAndSatisfy((node) => {
-        expect(node.path).toBe('app.messages.welcome');
+        expect(node.id).toBe('app.messages.welcome');
         expect(node.isLeaf).toBe(true);
         expect(node.isBranch).toBe(false);
       });
 
       // Test root-level leaf access
       expect(root.children.getById('settings' as ResourceId)).toSucceedAndSatisfy((node) => {
-        expect(node.path).toBe('settings');
+        expect(node.id).toBe('settings');
         expect(node.isLeaf).toBe(true);
         expect(node.isBranch).toBe(false);
       });

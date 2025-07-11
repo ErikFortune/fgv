@@ -27,14 +27,62 @@ import {
   IReadOnlyResourceTreeLeaf,
   IReadOnlyResourceTreeBranch,
   IReadOnlyResourceTreeRoot,
-  IReadOnlyResourceTreeChildren,
-  IResourceTreeRootInit,
-  IResourceTreeLeafInit,
-  IResourceTreeBranchInit,
-  ReadOnlyResourceTreeChildren,
-  isResourceTreeRootOrNodeInit,
-  isResourceTreeLeafInit
-} from './resourceTreeChildren';
+  IReadOnlyResourceTreeChildren
+} from './common';
+import { ReadOnlyResourceTreeChildren } from './resourceTreeChildren';
+
+/**
+ * Interface for initializing a resource tree root with child nodes.
+ * @public
+ */
+export interface IResourceTreeRootInit<T> {
+  readonly children: Record<ResourceName, ResourceTreeNodeInit<T>>;
+}
+
+/**
+ * Interface for initializing a leaf node with a resource value.
+ * @public
+ */
+export interface IResourceTreeLeafInit<T> {
+  readonly resource: T;
+}
+
+/**
+ * Interface for initializing a branch node with child nodes.
+ * @public
+ */
+export interface IResourceTreeBranchInit<T> {
+  readonly children: Record<ResourceName, ResourceTreeNodeInit<T>>;
+}
+
+/**
+ * Union type for tree node initialization data.
+ * @public
+ */
+export type ResourceTreeNodeInit<T> = IResourceTreeLeafInit<T> | IResourceTreeBranchInit<T>;
+
+// Type guards
+/**
+ * Type guard to determine if an init object represents a branch or root with children.
+ * @param init - The initialization object to test
+ * @returns True if the init object has children property
+ * @public
+ */
+export function isResourceTreeRootOrNodeInit<T>(
+  init: ResourceTreeNodeInit<T> | IResourceTreeRootInit<T>
+): init is IResourceTreeBranchInit<T> {
+  return 'children' in init;
+}
+
+/**
+ * Type guard to determine if an init object represents a leaf node with a resource.
+ * @param init - The initialization object to test
+ * @returns True if the init object has a resource but no children
+ * @public
+ */
+export function isResourceTreeLeafInit<T>(init: ResourceTreeNodeInit<T>): init is IResourceTreeLeafInit<T> {
+  return 'resource' in init && !('children' in init);
+}
 
 /**
  * Implementation of a read-only resource tree leaf node that contains a resource value.
@@ -43,7 +91,7 @@ import {
  */
 export class ReadOnlyResourceTreeLeaf<T> implements IReadOnlyResourceTreeLeaf<T> {
   public readonly name: ResourceName;
-  public readonly path: ResourceId;
+  public readonly id: ResourceId;
   public readonly resource: T;
 
   public get isRoot(): false {
@@ -66,7 +114,7 @@ export class ReadOnlyResourceTreeLeaf<T> implements IReadOnlyResourceTreeLeaf<T>
    */
   protected constructor(name: ResourceName, parentPath: ResourceId | undefined, resource: T) {
     this.name = name;
-    this.path = Helpers.joinResourceIds(parentPath, name).orThrow();
+    this.id = Helpers.joinResourceIds(parentPath, name).orThrow();
     this.resource = resource;
   }
 
@@ -94,7 +142,7 @@ export class ReadOnlyResourceTreeLeaf<T> implements IReadOnlyResourceTreeLeaf<T>
 export class ReadOnlyResourceTreeBranch<T> implements IReadOnlyResourceTreeBranch<T> {
   public readonly children: IReadOnlyResourceTreeChildren<T>;
   public readonly name: ResourceName;
-  public readonly path: ResourceId;
+  public readonly id: ResourceId;
 
   public get isRoot(): false {
     return false;
@@ -120,9 +168,9 @@ export class ReadOnlyResourceTreeBranch<T> implements IReadOnlyResourceTreeBranc
     init: IResourceTreeBranchInit<T>
   ) {
     this.name = name;
-    this.path = Helpers.joinResourceIds(parentPath, name).orThrow();
+    this.id = Helpers.joinResourceIds(parentPath, name).orThrow();
 
-    const children = mapResults<IReadOnlyResourceTreeNode>(
+    const children = mapResults<IReadOnlyResourceTreeNode<T>>(
       (
         Array.from(Object.entries(init.children)) as [
           ResourceName,
@@ -130,15 +178,15 @@ export class ReadOnlyResourceTreeBranch<T> implements IReadOnlyResourceTreeBranc
         ][]
       ).map(([childName, childInit]) => {
         if (isResourceTreeLeafInit(childInit)) {
-          return ReadOnlyResourceTreeLeaf.create(childName, this.path, childInit.resource);
+          return ReadOnlyResourceTreeLeaf.create(childName, this.id, childInit.resource);
         }
-        return ReadOnlyResourceTreeBranch.create(childName, this.path, childInit);
+        return ReadOnlyResourceTreeBranch.create(childName, this.id, childInit);
       })
     ).orThrow();
 
     this.children = new ReadOnlyResourceTreeChildren(
-      this.path,
-      children.map((c): [ResourceName, IReadOnlyResourceTreeNode] => [c.name, c])
+      this.id,
+      children.map((c): [ResourceName, IReadOnlyResourceTreeNode<T>] => [c.name, c])
     );
   }
 
@@ -205,7 +253,7 @@ export class ReadOnlyResourceTreeRoot<T> implements IReadOnlyResourceTreeRoot<T>
 
     this.children = new ReadOnlyResourceTreeChildren(
       undefined,
-      children.map((c): [ResourceName, IReadOnlyResourceTreeNode] => [c.name, c])
+      children.map((c): [ResourceName, IReadOnlyResourceTreeNode<T>] => [c.name, c])
     );
   }
 

@@ -1672,28 +1672,34 @@ interface IReadOnlyQualifierCollector extends Collections.IReadOnlyValidatingCol
 }
 
 // @public
-interface IReadOnlyResourceTreeBranch<T> extends IReadOnlyResourceTreeNode {
+interface IReadOnlyResourceTreeBranch<T> {
     // (undocumented)
     readonly children: IReadOnlyResourceTreeChildren<T>;
+    // (undocumented)
+    readonly id: ResourceId;
     // (undocumented)
     readonly isBranch: true;
     // (undocumented)
     readonly isLeaf: false;
     // (undocumented)
     readonly isRoot: false;
+    // (undocumented)
+    readonly name: ResourceName;
 }
 
 // @public
-interface IReadOnlyResourceTreeChildren<T> extends IReadOnlyResultMap<ResourceName, IReadOnlyResourceTreeNode> {
-    getBranch(name: ResourceName): Result<IReadOnlyResourceTreeNode>;
-    getBranchById(id: ResourceId): Result<IReadOnlyResourceTreeBranch<T>>;
-    getById(id: ResourceId): Result<IReadOnlyResourceTreeNode>;
-    getResource(name: ResourceName): Result<IReadOnlyResourceTreeNode>;
-    getResourceById(id: ResourceId): Result<IReadOnlyResourceTreeLeaf<T>>;
+interface IReadOnlyResourceTreeChildren<T, TID extends string = ResourceId, TNAME extends string = ResourceName> extends IReadOnlyResultMap<ResourceName, IReadOnlyResourceTreeNode<T>> {
+    getBranch(name: TNAME): Result<IReadOnlyResourceTreeNode<T>>;
+    getBranchById(id: TID): Result<IReadOnlyResourceTreeBranch<T>>;
+    getById(id: TID): Result<IReadOnlyResourceTreeNode<T>>;
+    getResource(name: TNAME): Result<IReadOnlyResourceTreeNode<T>>;
+    getResourceById(id: TID): Result<IReadOnlyResourceTreeLeaf<T>>;
 }
 
 // @public
-interface IReadOnlyResourceTreeLeaf<T> extends IReadOnlyResourceTreeNode {
+interface IReadOnlyResourceTreeLeaf<T> {
+    // (undocumented)
+    readonly id: ResourceId;
     // (undocumented)
     readonly isBranch: false;
     // (undocumented)
@@ -1701,22 +1707,13 @@ interface IReadOnlyResourceTreeLeaf<T> extends IReadOnlyResourceTreeNode {
     // (undocumented)
     readonly isRoot: false;
     // (undocumented)
+    readonly name: ResourceName;
+    // (undocumented)
     readonly resource: T;
 }
 
 // @public
-interface IReadOnlyResourceTreeNode {
-    // (undocumented)
-    readonly isBranch: boolean;
-    // (undocumented)
-    readonly isLeaf: boolean;
-    // (undocumented)
-    readonly isRoot: boolean;
-    // (undocumented)
-    readonly name: ResourceName;
-    // (undocumented)
-    readonly path: ResourceId;
-}
+type IReadOnlyResourceTreeNode<T> = IReadOnlyResourceTreeLeaf<T> | IReadOnlyResourceTreeBranch<T>;
 
 // @public
 interface IReadOnlyResourceTreeRoot<T> {
@@ -1754,6 +1751,10 @@ interface IReadOnlyValidatingResourceTreeBranch<T> extends IReadOnlyValidatingRe
     // (undocumented)
     readonly isRoot: false;
     readonly node: IReadOnlyResourceTreeBranch<T>;
+}
+
+// @public
+interface IReadOnlyValidatingResourceTreeChildren<T> extends IReadOnlyResourceTreeChildren<T, string, string> {
 }
 
 // @public
@@ -1798,7 +1799,7 @@ interface IReadOnlyValidatingResourceTreeNode<T> {
     readonly isLeaf: boolean;
     readonly isRoot: boolean;
     readonly name: ResourceName;
-    readonly node: IReadOnlyResourceTreeNode;
+    readonly node: IReadOnlyResourceTreeNode<T>;
     readonly path: ResourceId;
 }
 
@@ -2689,6 +2690,8 @@ class ReadOnlyResourceTreeBranch<T> implements IReadOnlyResourceTreeBranch<T> {
     readonly children: IReadOnlyResourceTreeChildren<T>;
     static create<T>(childName: ResourceName, path: ResourceId | undefined, childInit: IResourceTreeBranchInit<T>): Result<ReadOnlyResourceTreeBranch<T>>;
     // (undocumented)
+    readonly id: ResourceId;
+    // (undocumented)
     get isBranch(): true;
     // (undocumented)
     get isLeaf(): false;
@@ -2696,31 +2699,33 @@ class ReadOnlyResourceTreeBranch<T> implements IReadOnlyResourceTreeBranch<T> {
     get isRoot(): false;
     // (undocumented)
     readonly name: ResourceName;
-    // (undocumented)
-    readonly path: ResourceId;
 }
 
 // @public
-class ReadOnlyResourceTreeChildren<T> extends ResultMap<ResourceName, IReadOnlyResourceTreeNode> implements IReadOnlyResourceTreeChildren<T> {
-    constructor(path: ResourceId | undefined, entries: [ResourceName, IReadOnlyResourceTreeNode][]);
+class ReadOnlyResourceTreeChildren<T> extends ResultMap<ResourceName, IReadOnlyResourceTreeNode<T>> implements IReadOnlyResourceTreeChildren<T> {
+    constructor(path: ResourceId | undefined, entries: [ResourceName, IReadOnlyResourceTreeNode<T>][]);
     // (undocumented)
-    getBranch(name: ResourceName): Result<IReadOnlyResourceTreeNode>;
+    getBranch(name: ResourceName): Result<IReadOnlyResourceTreeNode<T>>;
     // (undocumented)
     getBranchById(id: ResourceId): Result<IReadOnlyResourceTreeBranch<T>>;
     // (undocumented)
-    getById(id: ResourceId): Result<IReadOnlyResourceTreeNode>;
+    getById(id: ResourceId): Result<IReadOnlyResourceTreeNode<T>>;
     // (undocumented)
-    getResource(name: ResourceName): Result<IReadOnlyResourceTreeNode>;
+    getResource(name: ResourceName): Result<IReadOnlyResourceTreeNode<T>>;
     // (undocumented)
     getResourceById(id: ResourceId): Result<IReadOnlyResourceTreeLeaf<T>>;
     // (undocumented)
     protected path: ResourceId | undefined;
+    // (undocumented)
+    validating: IReadOnlyValidatingResourceTreeChildren<T>;
 }
 
 // @public
 class ReadOnlyResourceTreeLeaf<T> implements IReadOnlyResourceTreeLeaf<T> {
     protected constructor(name: ResourceName, parentPath: ResourceId | undefined, resource: T);
     static create<T>(name: ResourceName, parentPath: ResourceId | undefined, resource: T): Result<ReadOnlyResourceTreeLeaf<T>>;
+    // (undocumented)
+    readonly id: ResourceId;
     // (undocumented)
     get isBranch(): false;
     // (undocumented)
@@ -2729,8 +2734,6 @@ class ReadOnlyResourceTreeLeaf<T> implements IReadOnlyResourceTreeLeaf<T> {
     get isRoot(): false;
     // (undocumented)
     readonly name: ResourceName;
-    // (undocumented)
-    readonly path: ResourceId;
     // (undocumented)
     readonly resource: T;
 }
@@ -2759,48 +2762,85 @@ class ReadOnlyResourceTreeRoot<T> implements IReadOnlyResourceTreeRoot<T> {
 // @public
 type ReadOnlyResourceTypeCollector = Collections.IReadOnlyValidatingCollector<ResourceType>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTree"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyResourceTreeRoot"
+//
 // @public
 class ReadOnlyValidatingResourceTree<T> implements IReadOnlyValidatingResourceTree<T> {
     constructor(tree: IReadOnlyResourceTreeRoot<T>);
     // (undocumented)
     readonly children: IReadOnlyValidatingResourceTreeCollection<T>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTree"
+    //
     // (undocumented)
     getBranch(name: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTree"
+    //
     // (undocumented)
     getBranchById(id: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTree"
+    //
     // (undocumented)
     getById(id: string): Result<IReadOnlyValidatingResourceTreeNode<T>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTree"
+    //
     // (undocumented)
     getResource(name: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTree"
+    //
     // (undocumented)
     getResourceById(id: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTree"
+    //
     // (undocumented)
     has(id: string): Result<boolean>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTree"
+    //
     // (undocumented)
     hasBranch(id: string): Result<boolean>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTree"
+    //
     // (undocumented)
     hasResource(id: string): Result<boolean>;
     // (undocumented)
     readonly tree: IReadOnlyResourceTreeRoot<T>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyResourceTreeChildren"
+//
 // @public
 class ReadOnlyValidatingResourceTreeCollection<T> implements IReadOnlyValidatingResourceTreeCollection<T> {
     constructor(tree: IReadOnlyResourceTreeChildren<T>);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTreeCollection"
+    //
     // (undocumented)
     getBranch(name: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTreeCollection"
+    //
     // (undocumented)
     getBranchById(id: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTreeCollection"
+    //
     // (undocumented)
     getById(id: string): Result<IReadOnlyValidatingResourceTreeNode<T>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTreeCollection"
+    //
     // (undocumented)
     getResource(name: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTreeCollection"
+    //
     // (undocumented)
     getResourceById(id: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTreeCollection"
+    //
     // (undocumented)
     has(id: string): Result<boolean>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTreeCollection"
+    //
     // (undocumented)
     hasBranch(id: string): Result<boolean>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTreeCollection"
+    //
     // (undocumented)
     hasResource(id: string): Result<boolean>;
     get size(): number;
@@ -2808,8 +2848,12 @@ class ReadOnlyValidatingResourceTreeCollection<T> implements IReadOnlyValidating
     readonly tree: IReadOnlyResourceTreeChildren<T>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ReadOnlyResourceTreeRoot"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "validating"
+//
 // @public
 class ReadOnlyValidatingResourceTreeRoot<T> extends ReadOnlyResourceTreeRoot<T> {
+    // @internal
     protected constructor(params: IReadOnlyValidatingResourceTreeCreateParams<T> | IReadOnlyValidatingResourceTreeCreateFromInitParams<T>);
     static create<T>(resources: [ResourceId, T][]): Result<ReadOnlyValidatingResourceTreeRoot<T>>;
     static create<T>(init: IResourceTreeRootInit<T>): Result<ReadOnlyValidatingResourceTreeRoot<T>>;
@@ -3197,18 +3241,19 @@ export { Resources }
 
 declare namespace ResourceTree {
     export {
-        isResourceTreeRootOrNodeInit,
-        isResourceTreeLeafInit,
-        IReadOnlyResourceTreeNode,
         IReadOnlyResourceTreeLeaf,
         IReadOnlyResourceTreeBranch,
         IReadOnlyResourceTreeRoot,
+        IReadOnlyResourceTreeNode,
+        IReadOnlyResourceTreeChildren,
+        IReadOnlyValidatingResourceTreeChildren,
+        ReadOnlyResourceTreeChildren,
+        isResourceTreeRootOrNodeInit,
+        isResourceTreeLeafInit,
         IResourceTreeRootInit,
         IResourceTreeLeafInit,
         IResourceTreeBranchInit,
         ResourceTreeNodeInit,
-        IReadOnlyResourceTreeChildren,
-        ReadOnlyResourceTreeChildren,
         ReadOnlyResourceTreeLeaf,
         ReadOnlyResourceTreeBranch,
         ReadOnlyResourceTreeNode,
