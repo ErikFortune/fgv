@@ -27,7 +27,7 @@ import {
   IReadOnlyResourceTreeLeaf,
   IReadOnlyResourceTreeBranch,
   IReadOnlyResourceTreeRoot,
-  IReadOnlyResourceTreeChildren
+  IReadOnlyValidatingResourceTreeChildren
 } from './common';
 import { ReadOnlyResourceTreeChildren } from './resourceTreeChildren';
 
@@ -140,7 +140,7 @@ export class ReadOnlyResourceTreeLeaf<T> implements IReadOnlyResourceTreeLeaf<T>
  * @public
  */
 export class ReadOnlyResourceTreeBranch<T> implements IReadOnlyResourceTreeBranch<T> {
-  public readonly children: IReadOnlyResourceTreeChildren<T>;
+  public readonly children: IReadOnlyValidatingResourceTreeChildren<T>;
   public readonly name: ResourceName;
   public readonly id: ResourceId;
 
@@ -218,7 +218,7 @@ export type ReadOnlyResourceTreeNode<T> = ReadOnlyResourceTreeBranch<T> | ReadOn
  * @public
  */
 export class ReadOnlyResourceTreeRoot<T> implements IReadOnlyResourceTreeRoot<T> {
-  public readonly children: IReadOnlyResourceTreeChildren<T>;
+  public readonly children: IReadOnlyValidatingResourceTreeChildren<T>;
 
   public get isRoot(): true {
     return true;

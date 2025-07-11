@@ -84,7 +84,7 @@ Description
 
 </td><td>
 
-[IReadOnlyResourceTreeChildren](./ts-res.runtime.resourcetree.ireadonlyresourcetreechildren.md)<!-- -->&lt;T&gt;
+[IReadOnlyValidatingResourceTreeChildren](./ts-res.runtime.resourcetree.ireadonlyvalidatingresourcetreechildren.md)<!-- -->&lt;T&gt;
 
 
 </td><td>

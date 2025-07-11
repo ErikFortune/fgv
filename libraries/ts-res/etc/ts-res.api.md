@@ -1674,7 +1674,7 @@ interface IReadOnlyQualifierCollector extends Collections.IReadOnlyValidatingCol
 // @public
 interface IReadOnlyResourceTreeBranch<T> {
     // (undocumented)
-    readonly children: IReadOnlyResourceTreeChildren<T>;
+    readonly children: IReadOnlyValidatingResourceTreeChildren<T>;
     // (undocumented)
     readonly id: ResourceId;
     // (undocumented)
@@ -1718,7 +1718,7 @@ type IReadOnlyResourceTreeNode<T> = IReadOnlyResourceTreeLeaf<T> | IReadOnlyReso
 // @public
 interface IReadOnlyResourceTreeRoot<T> {
     // (undocumented)
-    readonly children: IReadOnlyResourceTreeChildren<T>;
+    readonly children: IReadOnlyValidatingResourceTreeChildren<T>;
     // (undocumented)
     readonly isBranch: false;
     // (undocumented)
@@ -2689,7 +2689,7 @@ type ReadOnlyQualifierTypeCollector = Collections.IReadOnlyValidatingCollector<Q
 // @public
 class ReadOnlyResourceTreeBranch<T> implements IReadOnlyResourceTreeBranch<T> {
     // (undocumented)
-    readonly children: IReadOnlyResourceTreeChildren<T>;
+    readonly children: IReadOnlyValidatingResourceTreeChildren<T>;
     static create<T>(childName: ResourceName, path: ResourceId | undefined, childInit: IResourceTreeBranchInit<T>): Result<ReadOnlyResourceTreeBranch<T>>;
     // (undocumented)
     readonly id: ResourceId;
@@ -2747,7 +2747,7 @@ type ReadOnlyResourceTreeNode<T> = ReadOnlyResourceTreeBranch<T> | ReadOnlyResou
 class ReadOnlyResourceTreeRoot<T> implements IReadOnlyResourceTreeRoot<T> {
     protected constructor(init: IResourceTreeRootInit<T>);
     // (undocumented)
-    readonly children: IReadOnlyResourceTreeChildren<T>;
+    readonly children: IReadOnlyValidatingResourceTreeChildren<T>;
     static create<T>(resources: [ResourceId, T][]): Result<ReadOnlyResourceTreeRoot<T>>;
     static create<T>(init: IResourceTreeRootInit<T>): Result<ReadOnlyResourceTreeRoot<T>>;
     static createResourceTreeInit<T>(resources: [ResourceId, T][]): Result<IResourceTreeRootInit<T>>;

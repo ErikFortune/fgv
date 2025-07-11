@@ -48,7 +48,7 @@ export interface IReadOnlyResourceTreeLeaf<T> {
 export interface IReadOnlyResourceTreeBranch<T> {
   readonly id: ResourceId;
   readonly name: ResourceName;
-  readonly children: IReadOnlyResourceTreeChildren<T>;
+  readonly children: IReadOnlyValidatingResourceTreeChildren<T>;
   readonly isLeaf: false;
   readonly isBranch: true;
   readonly isRoot: false;
@@ -59,7 +59,7 @@ export interface IReadOnlyResourceTreeBranch<T> {
  * @public
  */
 export interface IReadOnlyResourceTreeRoot<T> {
-  readonly children: IReadOnlyResourceTreeChildren<T>;
+  readonly children: IReadOnlyValidatingResourceTreeChildren<T>;
   readonly isRoot: true;
   readonly isLeaf: false;
   readonly isBranch: false;
