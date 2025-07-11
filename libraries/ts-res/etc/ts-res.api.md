@@ -206,7 +206,7 @@ class CompiledResourceCollection implements IResourceManager {
     //
     // (undocumented)
     getBuiltResource(id: string): Result<IResource>;
-    getBuiltResourceTree(): Result<IReadOnlyValidatingResourceTree<IResource>>;
+    getBuiltResourceTree(): Result<IReadOnlyResourceTreeRoot<IResource>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get qualifiers(): QualifierCollector;
@@ -1728,81 +1728,9 @@ interface IReadOnlyResourceTreeRoot<T> {
 }
 
 // @public
-interface IReadOnlyValidatingResourceTree<T> {
-    readonly children: IReadOnlyValidatingResourceTreeCollection<T>;
-    getBranch(name: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
-    getBranchById(id: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
-    getById(id: string): Result<IReadOnlyValidatingResourceTreeNode<T>>;
-    getResource(name: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
-    getResourceById(id: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
-    has(id: string): Result<boolean>;
-    hasBranch(id: string): Result<boolean>;
-    hasResource(id: string): Result<boolean>;
-    readonly tree: IReadOnlyResourceTreeRoot<T>;
-}
-
-// @public
-interface IReadOnlyValidatingResourceTreeBranch<T> extends IReadOnlyValidatingResourceTreeNode<T> {
-    readonly children: IReadOnlyValidatingResourceTreeCollection<T>;
-    // (undocumented)
-    readonly isBranch: true;
-    // (undocumented)
-    readonly isLeaf: false;
-    // (undocumented)
-    readonly isRoot: false;
-    readonly node: IReadOnlyResourceTreeBranch<T>;
-}
-
-// @public
 interface IReadOnlyValidatingResourceTreeChildren<T> extends IReadOnlyResourceTreeChildren<T> {
     // (undocumented)
     readonly validating: IReadOnlyResourceTreeChildren<T, string, string>;
-}
-
-// @public
-interface IReadOnlyValidatingResourceTreeCollection<T> {
-    getBranch(name: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
-    getBranchById(id: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
-    getById(id: string): Result<IReadOnlyValidatingResourceTreeNode<T>>;
-    getResource(name: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
-    getResourceById(id: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
-    has(id: string): Result<boolean>;
-    hasBranch(id: string): Result<boolean>;
-    hasResource(id: string): Result<boolean>;
-    readonly size: number;
-    readonly tree: IReadOnlyResourceTreeChildren<T>;
-}
-
-// @public
-interface IReadOnlyValidatingResourceTreeCreateFromInitParams<T> {
-    init: IResourceTreeRootInit<T>;
-}
-
-// @public
-interface IReadOnlyValidatingResourceTreeCreateParams<T> {
-    resources: [ResourceId, T][];
-}
-
-// @public
-interface IReadOnlyValidatingResourceTreeLeaf<T> extends IReadOnlyValidatingResourceTreeNode<T> {
-    // (undocumented)
-    readonly isBranch: false;
-    // (undocumented)
-    readonly isLeaf: true;
-    // (undocumented)
-    readonly isRoot: false;
-    readonly node: IReadOnlyResourceTreeLeaf<T>;
-    readonly resource: T;
-}
-
-// @public
-interface IReadOnlyValidatingResourceTreeNode<T> {
-    readonly isBranch: boolean;
-    readonly isLeaf: boolean;
-    readonly isRoot: boolean;
-    readonly name: ResourceName;
-    readonly node: IReadOnlyResourceTreeNode<T>;
-    readonly path: ResourceId;
 }
 
 // @public
@@ -2764,103 +2692,6 @@ class ReadOnlyResourceTreeRoot<T> implements IReadOnlyResourceTreeRoot<T> {
 // @public
 type ReadOnlyResourceTypeCollector = Collections.IReadOnlyValidatingCollector<ResourceType>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-class ReadOnlyValidatingResourceTree<T> implements IReadOnlyValidatingResourceTree<T> {
-    constructor(tree: IReadOnlyResourceTreeRoot<T>);
-    // (undocumented)
-    readonly children: IReadOnlyValidatingResourceTreeCollection<T>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    getBranch(name: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    getBranchById(id: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    getById(id: string): Result<IReadOnlyValidatingResourceTreeNode<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    getResource(name: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    getResourceById(id: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    has(id: string): Result<boolean>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    hasBranch(id: string): Result<boolean>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    hasResource(id: string): Result<boolean>;
-    // (undocumented)
-    readonly tree: IReadOnlyResourceTreeRoot<T>;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-class ReadOnlyValidatingResourceTreeCollection<T> implements IReadOnlyValidatingResourceTreeCollection<T> {
-    constructor(tree: IReadOnlyResourceTreeChildren<T>);
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    getBranch(name: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    getBranchById(id: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    getById(id: string): Result<IReadOnlyValidatingResourceTreeNode<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    getResource(name: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    getResourceById(id: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    has(id: string): Result<boolean>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    hasBranch(id: string): Result<boolean>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    hasResource(id: string): Result<boolean>;
-    get size(): number;
-    // (undocumented)
-    readonly tree: IReadOnlyResourceTreeChildren<T>;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-class ReadOnlyValidatingResourceTreeRoot<T> extends ReadOnlyResourceTreeRoot<T> {
-    // @internal
-    protected constructor(params: IReadOnlyValidatingResourceTreeCreateParams<T> | IReadOnlyValidatingResourceTreeCreateFromInitParams<T>);
-    static create<T>(resources: [ResourceId, T][]): Result<ReadOnlyValidatingResourceTreeRoot<T>>;
-    static create<T>(init: IResourceTreeRootInit<T>): Result<ReadOnlyValidatingResourceTreeRoot<T>>;
-    readonly validating: IReadOnlyValidatingResourceTree<T>;
-}
-
 declare namespace RegularExpressions {
     export {
         identifier,
@@ -3258,17 +3089,7 @@ declare namespace ResourceTree {
         ReadOnlyResourceTreeLeaf,
         ReadOnlyResourceTreeBranch,
         ReadOnlyResourceTreeNode,
-        ReadOnlyResourceTreeRoot,
-        IReadOnlyValidatingResourceTreeCollection,
-        IReadOnlyValidatingResourceTreeNode,
-        IReadOnlyValidatingResourceTreeLeaf,
-        IReadOnlyValidatingResourceTreeBranch,
-        IReadOnlyValidatingResourceTree,
-        ReadOnlyValidatingResourceTreeCollection,
-        ReadOnlyValidatingResourceTree,
-        IReadOnlyValidatingResourceTreeCreateParams,
-        IReadOnlyValidatingResourceTreeCreateFromInitParams,
-        ReadOnlyValidatingResourceTreeRoot
+        ReadOnlyResourceTreeRoot
     }
 }
 

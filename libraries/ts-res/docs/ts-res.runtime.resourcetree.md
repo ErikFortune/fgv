@@ -61,47 +61,6 @@ Implementation of a read-only resource tree root that organizes resources hierar
 
 
 </td></tr>
-<tr><td>
-
-[ReadOnlyValidatingResourceTree](./ts-res.runtime.resourcetree.readonlyvalidatingresourcetree.md)
-
-
-</td><td>
-
-Implementation of a validating resource tree that validates string inputs before delegating to the underlying tree.
-
-This class provides the main implementation of [IReadOnlyValidatingResourceTree](./ts-res.runtime.resourcetree.ireadonlyvalidatingresourcetree.md)<!-- -->. It wraps a [IReadOnlyResourceTreeRoot](./ts-res.runtime.resourcetree.ireadonlyresourcetreeroot.md) and provides string-based access to all tree operations. All methods delegate to the wrapped children collection, which handles the validation.
-
-
-</td></tr>
-<tr><td>
-
-[ReadOnlyValidatingResourceTreeCollection](./ts-res.runtime.resourcetree.readonlyvalidatingresourcetreecollection.md)
-
-
-</td><td>
-
-Implementation of a validating resource tree collection that validates string inputs before delegating to the underlying tree collection.
-
-This class wraps an [Runtime.ResourceTree.IReadOnlyResourceTreeChildren](./ts-res.runtime.resourcetree.ireadonlyresourcetreechildren.md) instance and provides string-based access to all tree operations. All string inputs are validated using the library's Convert utilities before being passed to the underlying collection.
-
-
-</td></tr>
-<tr><td>
-
-[ReadOnlyValidatingResourceTreeRoot](./ts-res.runtime.resourcetree.readonlyvalidatingresourcetreeroot.md)
-
-
-</td><td>
-
-A ReadOnlyResourceTreeRoot with a validating property that enables validated use with string inputs.
-
-This class extends [ReadOnlyResourceTreeRoot](./ts-res.runtime.resourcetree.readonlyresourcetreeroot.md) to provide both the standard tree interface and a validating property that accepts string inputs. This eliminates the need for manual type conversion in consumer code and provides a clean, type-safe API for string-based tree navigation.
-
-The class can be created from either an array of \[ResourceId, resource\] pairs or from a tree initialization structure, making it flexible for different use cases.
-
-
-</td></tr>
 </tbody></table>
 
 ## Functions
@@ -200,101 +159,12 @@ Interface for the root node of a resource tree.
 </td></tr>
 <tr><td>
 
-[IReadOnlyValidatingResourceTree](./ts-res.runtime.resourcetree.ireadonlyvalidatingresourcetree.md)
-
-
-</td><td>
-
-A read-only interface for a validating resource tree that accepts string inputs.
-
-This is the main interface for interacting with a validating resource tree. It provides the same functionality as the underlying tree but with string-based input validation. The tree is organized hierarchically based on dot-separated ResourceId strings, where each segment represents a level in the tree hierarchy.
-
-The key benefit is that you can navigate the tree using string literals without needing to convert them to typed ResourceId/ResourceName parameters - the validation happens automatically and consistently returns Result<T> for all operations.
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyValidatingResourceTreeBranch](./ts-res.runtime.resourcetree.ireadonlyvalidatingresourcetreebranch.md)
-
-
-</td><td>
-
-Interface for validating branch nodes that contain child collections.
-
-Branch nodes are intermediate nodes in the resource tree that organize the hierarchical structure. They do not contain resources directly but provide access to child nodes through a validating children collection that accepts string inputs.
-
-
-</td></tr>
-<tr><td>
-
 [IReadOnlyValidatingResourceTreeChildren](./ts-res.runtime.resourcetree.ireadonlyvalidatingresourcetreechildren.md)
 
 
 </td><td>
 
 A read-only interface for accessing resource tree children using weakly-typed string keys.
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyValidatingResourceTreeCollection](./ts-res.runtime.resourcetree.ireadonlyvalidatingresourcetreecollection.md)
-
-
-</td><td>
-
-A validating wrapper for resource tree collections that validates string inputs before delegating to the underlying tree collection. This interface provides type-safe string-based access to tree operations that would normally require ResourceId and ResourceName typed parameters.
-
-All string inputs are validated using the library's Convert utilities before being passed to the underlying tree collection, ensuring type safety and consistent error handling.
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyValidatingResourceTreeCreateFromInitParams](./ts-res.runtime.resourcetree.ireadonlyvalidatingresourcetreecreatefrominitparams.md)
-
-
-</td><td>
-
-Alternative parameters for creating a ReadOnlyValidatingResourceTree from initialization data.
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyValidatingResourceTreeCreateParams](./ts-res.runtime.resourcetree.ireadonlyvalidatingresourcetreecreateparams.md)
-
-
-</td><td>
-
-Parameters for creating a ReadOnlyValidatingResourceTree.
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyValidatingResourceTreeLeaf](./ts-res.runtime.resourcetree.ireadonlyvalidatingresourcetreeleaf.md)
-
-
-</td><td>
-
-Interface for validating leaf nodes that contain resources.
-
-Leaf nodes represent the terminal nodes in the resource tree that contain actual resource instances. These nodes do not have children and provide direct access to the resource they contain.
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyValidatingResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyvalidatingresourcetreenode.md)
-
-
-</td><td>
-
-Base interface for validating tree nodes that provide string validation capabilities.
-
-This interface wraps the underlying tree node and provides access to its properties while maintaining the validating context. All validating nodes extend this interface to provide consistent property access.
 
 
 </td></tr>

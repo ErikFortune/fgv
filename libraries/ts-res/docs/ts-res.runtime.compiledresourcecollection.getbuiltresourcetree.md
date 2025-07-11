@@ -4,16 +4,20 @@
 
 ## Runtime.CompiledResourceCollection.getBuiltResourceTree() method
 
-Gets a validating resource tree built from the resources in this collection. The tree provides hierarchical access to resources based on their ResourceId structure. Uses lazy initialization with caching for performance.
+Gets a resource tree built from the resources in this collection. The tree provides hierarchical access to resources based on their ResourceId structure. For example, resources with IDs like "app.messages.welcome" create a tree structure where "app" and "messages" are branch nodes, and "welcome" is a leaf containing the resource.
+
+String-based validation is available through the `children.validating` property, allowing callers to use `tree.children.validating.getById(stringId)` for validated access.
+
+Uses lazy initialization with caching for performance.
 
 **Signature:**
 
 ```typescript
-getBuiltResourceTree(): Result<IReadOnlyValidatingResourceTree<IResource>>;
+getBuiltResourceTree(): Result<IReadOnlyResourceTreeRoot<IResource>>;
 ```
 **Returns:**
 
-Result&lt;[IReadOnlyValidatingResourceTree](./ts-res.runtime.resourcetree.ireadonlyvalidatingresourcetree.md)<!-- -->&lt;[IResource](./ts-res.runtime.iresource.md)<!-- -->&gt;&gt;
+Result&lt;[IReadOnlyResourceTreeRoot](./ts-res.runtime.resourcetree.ireadonlyresourcetreeroot.md)<!-- -->&lt;[IResource](./ts-res.runtime.iresource.md)<!-- -->&gt;&gt;
 
-Result containing the validating resource tree root, or failure if tree construction fails
+Result containing the resource tree root, or failure if tree construction fails
 

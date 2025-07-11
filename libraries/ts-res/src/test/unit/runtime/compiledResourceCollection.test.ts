@@ -677,26 +677,26 @@ describe('CompiledResourceCollection class', () => {
         (collection) => {
           expect(collection.getBuiltResourceTree()).toSucceedAndSatisfy((tree) => {
             // Test basic tree functionality
-            expect(tree.tree).toBeDefined();
-            expect(tree.tree.isRoot).toBe(true);
+            expect(tree.children).toBeDefined();
+            expect(tree.isRoot).toBe(true);
 
-            // Test string-based access works with actual test resource
-            expect(tree.getById('greeting')).toSucceedAndSatisfy((node) => {
+            // Test string-based access works with actual test resource via validating interface
+            expect(tree.children.validating.getById('greeting')).toSucceedAndSatisfy((node) => {
               expect(node.isLeaf).toBe(true);
-              expect(node.path).toBe('greeting');
+              expect(node.id).toBe('greeting');
             });
 
             // Test validation works
-            expect(tree.getById('invalid..id')).toFail();
+            expect(tree.children.validating.getById('invalid..id')).toFail();
 
             // Test resource access with actual test resource
-            expect(tree.getResourceById('greeting')).toSucceedAndSatisfy((leaf) => {
+            expect(tree.children.validating.getResourceById('greeting')).toSucceedAndSatisfy((leaf) => {
               expect(leaf.resource).toBeDefined();
               expect(leaf.resource.id).toBe('greeting' as TsRes.ResourceId);
             });
 
             // Test nonexistent resource access fails
-            expect(tree.getResourceById('nonexistent')).toFail();
+            expect(tree.children.validating.getResourceById('nonexistent')).toFail();
           });
         }
       );
@@ -715,8 +715,8 @@ describe('CompiledResourceCollection class', () => {
           expect(secondTreeResult).toSucceed();
           const secondTree = secondTreeResult.orThrow();
 
-          // Should be the same validating interface from the same cached root
-          expect(firstTree.tree).toBe(secondTree.tree);
+          // Should be the same cached root instance
+          expect(firstTree).toBe(secondTree);
         }
       );
     });
@@ -736,9 +736,9 @@ describe('CompiledResourceCollection class', () => {
       expect(TsRes.Runtime.CompiledResourceCollection.create(emptyParams)).toSucceedAndSatisfy(
         (collection) => {
           expect(collection.getBuiltResourceTree()).toSucceedAndSatisfy((tree) => {
-            expect(tree.tree.children.size).toBe(0);
-            expect(tree.has('anything')).toSucceedWith(false);
-            expect(tree.has('nonexistent')).toSucceedWith(false);
+            expect(tree.children.size).toBe(0);
+            expect(tree.children.has('anything' as TsRes.ResourceName)).toBe(false);
+            expect(tree.children.has('nonexistent' as TsRes.ResourceName)).toBe(false);
           });
         }
       );
@@ -778,25 +778,27 @@ describe('CompiledResourceCollection class', () => {
       expect(TsRes.Runtime.CompiledResourceCollection.create(hierarchicalParams)).toSucceedAndSatisfy(
         (collection) => {
           expect(collection.getBuiltResourceTree()).toSucceedAndSatisfy((tree) => {
-            // Test that we can navigate the hierarchy built from flat resource ids
-            expect(tree.hasBranch('app')).toSucceedWith(true);
-            expect(tree.hasBranch('app.messages')).toSucceedWith(true);
-            expect(tree.hasResource('app.messages.welcome')).toSucceedWith(true);
+            // Test that we can navigate the hierarchy built from flat resource ids via validating interface
+            expect(tree.children.validating.getBranchById('app')).toSucceed();
+            expect(tree.children.validating.getBranchById('app.messages')).toSucceed();
+            expect(tree.children.validating.getResourceById('app.messages.welcome')).toSucceed();
 
             // Test that branches don't have resources (following tree semantics)
-            expect(tree.hasResource('app')).toSucceedWith(false);
-            expect(tree.hasResource('app.messages')).toSucceedWith(false);
+            expect(tree.children.validating.getResourceById('app')).toFail();
+            expect(tree.children.validating.getResourceById('app.messages')).toFail();
 
             // Test branch children access
-            expect(tree.getBranchById('app.messages')).toSucceedAndSatisfy((messagesNode) => {
-              expect(messagesNode.children.hasResource('welcome')).toSucceedWith(true);
-              expect(messagesNode.children.getResource('welcome')).toSucceed();
-            });
+            expect(tree.children.validating.getBranchById('app.messages')).toSucceedAndSatisfy(
+              (messagesNode) => {
+                expect(messagesNode.children.validating.getResource('welcome')).toSucceed();
+                expect(messagesNode.children.validating.getResource('welcome')).toSucceed();
+              }
+            );
 
             // Test errors branch access
-            expect(tree.getBranchById('app.errors')).toSucceedAndSatisfy((errorsNode) => {
-              expect(errorsNode.children.hasResource('notFound')).toSucceedWith(true);
-              expect(errorsNode.children.getResource('notFound')).toSucceed();
+            expect(tree.children.validating.getBranchById('app.errors')).toSucceedAndSatisfy((errorsNode) => {
+              expect(errorsNode.children.validating.getResource('notFound')).toSucceed();
+              expect(errorsNode.children.validating.getResource('notFound')).toSucceed();
             });
           });
         }

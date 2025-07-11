@@ -46,7 +46,7 @@ import { IResourceManager, IResource, IResourceCandidate } from './iResourceMana
 import { ConcreteDecision } from '../decisions';
 import * as Validate from './validate';
 import * as ResourceJson from '../resource-json';
-import { ReadOnlyValidatingResourceTreeRoot, IReadOnlyValidatingResourceTree } from './resource-tree';
+import { ReadOnlyResourceTreeRoot, IReadOnlyResourceTreeRoot } from './resource-tree';
 
 /**
  * Interface for parameters to create a {@link Runtime.CompiledResourceCollection | CompiledResourceCollection}.
@@ -82,7 +82,7 @@ export class CompiledResourceCollection implements IResourceManager {
   private readonly _qualifiers: QualifierCollector;
   private readonly _resourceTypes: ResourceTypeCollector;
   private readonly _builtResources: ValidatingResultMap<ResourceId, IResource>;
-  private _cachedResourceTree?: ReadOnlyValidatingResourceTreeRoot<IResource>;
+  private _cachedResourceTree?: ReadOnlyResourceTreeRoot<IResource>;
 
   /**
    * A {@link QualifierTypes.QualifierTypeCollector | QualifierTypeCollector} which
@@ -171,15 +171,21 @@ export class CompiledResourceCollection implements IResourceManager {
   }
 
   /**
-   * Gets a validating resource tree built from the resources in this collection.
+   * Gets a resource tree built from the resources in this collection.
    * The tree provides hierarchical access to resources based on their ResourceId structure.
+   * For example, resources with IDs like "app.messages.welcome" create a tree structure
+   * where "app" and "messages" are branch nodes, and "welcome" is a leaf containing the resource.
+   *
+   * String-based validation is available through the `children.validating` property,
+   * allowing callers to use `tree.children.validating.getById(stringId)` for validated access.
+   *
    * Uses lazy initialization with caching for performance.
-   * @returns Result containing the validating resource tree root, or failure if tree construction fails
+   * @returns Result containing the resource tree root, or failure if tree construction fails
    * @public
    */
-  public getBuiltResourceTree(): Result<IReadOnlyValidatingResourceTree<IResource>> {
+  public getBuiltResourceTree(): Result<IReadOnlyResourceTreeRoot<IResource>> {
     if (this._cachedResourceTree) {
-      return succeed(this._cachedResourceTree.validating);
+      return succeed(this._cachedResourceTree);
     }
 
     // Convert all built resources to [ResourceId, IResource] pairs
@@ -188,10 +194,10 @@ export class CompiledResourceCollection implements IResourceManager {
       resources.push([id, resource]);
     }
 
-    // Create the validating tree with lazy initialization
-    return ReadOnlyValidatingResourceTreeRoot.create(resources).onSuccess((tree) => {
+    // Create the resource tree with lazy initialization
+    return ReadOnlyResourceTreeRoot.create(resources).onSuccess((tree) => {
       this._cachedResourceTree = tree;
-      return succeed(tree.validating);
+      return succeed(tree);
     });
   }
 
@@ -227,7 +233,7 @@ export class CompiledResourceCollection implements IResourceManager {
     qualifierTypes: QualifierTypeCollector
   ): Result<QualifierCollector> {
     return mapResults(
-      compiled.qualifiers.map((compiledQualifier, index) => {
+      compiled.qualifiers.map((compiledQualifier) => {
         return qualifierTypes.getAt(compiledQualifier.type).onSuccess((qualifierType) => {
           return succeed({
             name: compiledQualifier.name,

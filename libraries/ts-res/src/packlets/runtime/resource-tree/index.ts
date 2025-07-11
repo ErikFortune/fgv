@@ -23,4 +23,3 @@
 export * from './common';
 export * from './resourceTreeChildren';
 export * from './readOnlyResourceTree';
-export * from './readOnlyValidatingResourceTree';
