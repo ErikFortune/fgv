@@ -789,14 +789,14 @@ describe('CompiledResourceCollection class', () => {
 
             // Test branch children access
             expect(tree.getBranchById('app.messages')).toSucceedAndSatisfy((messagesNode) => {
-              expect(messagesNode.children.has('welcome' as TsRes.ResourceName)).toBe(true);
-              expect(messagesNode.children.getResource('welcome' as TsRes.ResourceName)).toSucceed();
+              expect(messagesNode.children.hasResource('welcome')).toSucceedWith(true);
+              expect(messagesNode.children.getResource('welcome')).toSucceed();
             });
 
             // Test errors branch access
             expect(tree.getBranchById('app.errors')).toSucceedAndSatisfy((errorsNode) => {
-              expect(errorsNode.children.has('notFound' as TsRes.ResourceName)).toBe(true);
-              expect(errorsNode.children.getResource('notFound' as TsRes.ResourceName)).toSucceed();
+              expect(errorsNode.children.hasResource('notFound')).toSucceedWith(true);
+              expect(errorsNode.children.getResource('notFound')).toSucceed();
             });
           });
         }

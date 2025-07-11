@@ -328,5 +328,36 @@ describe('ReadOnlyValidatingResourceTreeRoot', () => {
       expect(root.validating.getById('invalid..id')).toFail();
       expect(root.validating.getResource('invalid.name.with.dots')).toFail();
     });
+
+    test('should provide validation at every level of tree navigation', () => {
+      const resources: [ResourceId, ITestResource][] = [
+        ['app.messages.welcome' as ResourceId, { id: 'welcome', value: 'Welcome!' }],
+        ['app.messages.goodbye' as ResourceId, { id: 'goodbye', value: 'Goodbye!' }],
+        ['app.errors.notFound' as ResourceId, { id: 'notFound', value: 'Not Found' }]
+      ];
+
+      expect(ReadOnlyValidatingResourceTreeRoot.create(resources)).toSucceedAndSatisfy((root) => {
+        // Get a branch using string validation
+        expect(root.validating.getBranchById('app.messages')).toSucceedAndSatisfy((messagesNode) => {
+          // This branch node should also provide string validation through its children
+          expect(messagesNode.children.hasResource('welcome')).toSucceedWith(true);
+          expect(messagesNode.children.getResource('welcome')).toSucceedAndSatisfy((welcomeNode) => {
+            expect(welcomeNode.resource.value).toBe('Welcome!');
+          });
+
+          // Test validation at the branch level
+          expect(messagesNode.children.hasResource('invalid..id')).toFail();
+          expect(messagesNode.children.getResource('nonexistent')).toFail();
+        });
+
+        // Navigate deeper - get app branch then navigate to messages
+        expect(root.validating.getBranchById('app')).toSucceedAndSatisfy((appNode) => {
+          expect(appNode.children.getBranch('messages')).toSucceedAndSatisfy((messagesNode) => {
+            expect(messagesNode.children.size).toBe(2); // welcome and goodbye
+            expect(messagesNode.children.hasResource('goodbye')).toSucceedWith(true);
+          });
+        });
+      });
+    });
   });
 });

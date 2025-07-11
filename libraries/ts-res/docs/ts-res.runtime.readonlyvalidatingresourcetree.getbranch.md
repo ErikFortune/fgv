@@ -7,7 +7,7 @@
 **Signature:**
 
 ```typescript
-getBranch(name: string): Result<IReadOnlyResourceTreeNode>;
+getBranch(name: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
 ```
 
 ## Parameters
@@ -46,5 +46,5 @@ string
 
 **Returns:**
 
-Result&lt;[IReadOnlyResourceTreeNode](./ts-res.runtime.ireadonlyresourcetreenode.md)<!-- -->&gt;
+Result&lt;[IReadOnlyValidatingResourceTreeBranch](./ts-res.runtime.ireadonlyvalidatingresourcetreebranch.md)<!-- -->&lt;T&gt;&gt;
 

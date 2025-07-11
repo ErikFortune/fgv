@@ -1718,15 +1718,42 @@ interface IReadOnlyResultResourceTree<T> extends IReadOnlyResultMap<ResourceName
 
 // @public
 interface IReadOnlyValidatingResourceTree<T> {
-    getBranch(name: string): Result<IReadOnlyResourceTreeNode>;
-    getBranchById(id: string): Result<IReadOnlyResourceTreeBranch<T>>;
-    getById(id: string): Result<IReadOnlyResourceTreeNode>;
-    getResource(name: string): Result<IReadOnlyResourceTreeNode>;
-    getResourceById(id: string): Result<IReadOnlyResourceTreeLeaf<T>>;
+    readonly children: IReadOnlyValidatingResourceTreeCollection<T>;
+    getBranch(name: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
+    getBranchById(id: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
+    getById(id: string): Result<IReadOnlyValidatingResourceTreeNode<T>>;
+    getResource(name: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
+    getResourceById(id: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
     has(id: string): Result<boolean>;
     hasBranch(id: string): Result<boolean>;
     hasResource(id: string): Result<boolean>;
     readonly tree: IReadOnlyResourceTreeRoot<T>;
+}
+
+// @public
+interface IReadOnlyValidatingResourceTreeBranch<T> extends IReadOnlyValidatingResourceTreeNode<T> {
+    readonly children: IReadOnlyValidatingResourceTreeCollection<T>;
+    // (undocumented)
+    readonly isBranch: true;
+    // (undocumented)
+    readonly isLeaf: false;
+    // (undocumented)
+    readonly isRoot: false;
+    readonly node: IReadOnlyResourceTreeBranch<T>;
+}
+
+// @public
+interface IReadOnlyValidatingResourceTreeCollection<T> {
+    getBranch(name: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
+    getBranchById(id: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
+    getById(id: string): Result<IReadOnlyValidatingResourceTreeNode<T>>;
+    getResource(name: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
+    getResourceById(id: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
+    has(id: string): Result<boolean>;
+    hasBranch(id: string): Result<boolean>;
+    hasResource(id: string): Result<boolean>;
+    readonly size: number;
+    readonly tree: IReadOnlyResultResourceTree<T>;
 }
 
 // @public
@@ -1737,6 +1764,28 @@ interface IReadOnlyValidatingResourceTreeCreateFromInitParams<T> {
 // @public
 interface IReadOnlyValidatingResourceTreeCreateParams<T> {
     resources: [ResourceId, T][];
+}
+
+// @public
+interface IReadOnlyValidatingResourceTreeLeaf<T> extends IReadOnlyValidatingResourceTreeNode<T> {
+    // (undocumented)
+    readonly isBranch: false;
+    // (undocumented)
+    readonly isLeaf: true;
+    // (undocumented)
+    readonly isRoot: false;
+    readonly node: IReadOnlyResourceTreeLeaf<T>;
+    readonly resource: T;
+}
+
+// @public
+interface IReadOnlyValidatingResourceTreeNode<T> {
+    readonly isBranch: boolean;
+    readonly isLeaf: boolean;
+    readonly isRoot: boolean;
+    readonly name: ResourceName;
+    readonly node: IReadOnlyResourceTreeNode;
+    readonly path: ResourceId;
 }
 
 // @public
@@ -2683,15 +2732,17 @@ type ReadOnlyResourceTypeCollector = Collections.IReadOnlyValidatingCollector<Re
 class ReadOnlyValidatingResourceTree<T> implements IReadOnlyValidatingResourceTree<T> {
     constructor(tree: IReadOnlyResourceTreeRoot<T>);
     // (undocumented)
-    getBranch(name: string): Result<IReadOnlyResourceTreeNode>;
+    readonly children: IReadOnlyValidatingResourceTreeCollection<T>;
     // (undocumented)
-    getBranchById(id: string): Result<IReadOnlyResourceTreeBranch<T>>;
+    getBranch(name: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
     // (undocumented)
-    getById(id: string): Result<IReadOnlyResourceTreeNode>;
+    getBranchById(id: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
     // (undocumented)
-    getResource(name: string): Result<IReadOnlyResourceTreeNode>;
+    getById(id: string): Result<IReadOnlyValidatingResourceTreeNode<T>>;
     // (undocumented)
-    getResourceById(id: string): Result<IReadOnlyResourceTreeLeaf<T>>;
+    getResource(name: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
+    // (undocumented)
+    getResourceById(id: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
     // (undocumented)
     has(id: string): Result<boolean>;
     // (undocumented)
@@ -2700,6 +2751,30 @@ class ReadOnlyValidatingResourceTree<T> implements IReadOnlyValidatingResourceTr
     hasResource(id: string): Result<boolean>;
     // (undocumented)
     readonly tree: IReadOnlyResourceTreeRoot<T>;
+}
+
+// @public
+class ReadOnlyValidatingResourceTreeCollection<T> implements IReadOnlyValidatingResourceTreeCollection<T> {
+    constructor(tree: IReadOnlyResultResourceTree<T>);
+    // (undocumented)
+    getBranch(name: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
+    // (undocumented)
+    getBranchById(id: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
+    // (undocumented)
+    getById(id: string): Result<IReadOnlyValidatingResourceTreeNode<T>>;
+    // (undocumented)
+    getResource(name: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
+    // (undocumented)
+    getResourceById(id: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
+    // (undocumented)
+    has(id: string): Result<boolean>;
+    // (undocumented)
+    hasBranch(id: string): Result<boolean>;
+    // (undocumented)
+    hasResource(id: string): Result<boolean>;
+    get size(): number;
+    // (undocumented)
+    readonly tree: IReadOnlyResultResourceTree<T>;
 }
 
 // @public
@@ -3192,7 +3267,12 @@ declare namespace Runtime {
         ReadOnlyResourceTreeBranch,
         ReadOnlyResourceTreeNode,
         ReadOnlyResourceTreeRoot,
+        IReadOnlyValidatingResourceTreeCollection,
+        IReadOnlyValidatingResourceTreeNode,
+        IReadOnlyValidatingResourceTreeLeaf,
+        IReadOnlyValidatingResourceTreeBranch,
         IReadOnlyValidatingResourceTree,
+        ReadOnlyValidatingResourceTreeCollection,
         ReadOnlyValidatingResourceTree,
         IReadOnlyValidatingResourceTreeCreateParams,
         IReadOnlyValidatingResourceTreeCreateFromInitParams,

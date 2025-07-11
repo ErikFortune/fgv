@@ -96,6 +96,17 @@ Implementation of a validating resource tree that validates string inputs before
 </td></tr>
 <tr><td>
 
+[ReadOnlyValidatingResourceTreeCollection](./ts-res.runtime.readonlyvalidatingresourcetreecollection.md)
+
+
+</td><td>
+
+Implementation of a validating resource tree collection that validates string inputs.
+
+
+</td></tr>
+<tr><td>
+
 [ReadOnlyValidatingResourceTreeRoot](./ts-res.runtime.readonlyvalidatingresourcetreeroot.md)
 
 
@@ -350,6 +361,28 @@ A read-only interface for a validating resource tree that accepts string inputs.
 </td></tr>
 <tr><td>
 
+[IReadOnlyValidatingResourceTreeBranch](./ts-res.runtime.ireadonlyvalidatingresourcetreebranch.md)
+
+
+</td><td>
+
+Interface for validating branch nodes that contain child collections.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyValidatingResourceTreeCollection](./ts-res.runtime.ireadonlyvalidatingresourcetreecollection.md)
+
+
+</td><td>
+
+A validating wrapper for resource tree collections that validates string inputs.
+
+
+</td></tr>
+<tr><td>
+
 [IReadOnlyValidatingResourceTreeCreateFromInitParams](./ts-res.runtime.ireadonlyvalidatingresourcetreecreatefrominitparams.md)
 
 
@@ -367,6 +400,28 @@ Alternative parameters for creating a ReadOnlyValidatingResourceTree from initia
 </td><td>
 
 Parameters for creating a ReadOnlyValidatingResourceTree.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyValidatingResourceTreeLeaf](./ts-res.runtime.ireadonlyvalidatingresourcetreeleaf.md)
+
+
+</td><td>
+
+Interface for validating leaf nodes that contain resources.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyValidatingResourceTreeNode](./ts-res.runtime.ireadonlyvalidatingresourcetreenode.md)
+
+
+</td><td>
+
+Base interface for validating tree nodes that provide string validation capabilities.
 
 
 </td></tr>

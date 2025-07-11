@@ -72,6 +72,25 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[children](./ts-res.runtime.readonlyvalidatingresourcetree.children.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IReadOnlyValidatingResourceTreeCollection](./ts-res.runtime.ireadonlyvalidatingresourcetreecollection.md)<!-- -->&lt;T&gt;
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [tree](./ts-res.runtime.readonlyvalidatingresourcetree.tree.md)
 
 
