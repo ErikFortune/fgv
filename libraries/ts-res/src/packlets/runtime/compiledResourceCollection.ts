@@ -46,10 +46,7 @@ import { IResourceManager, IResource, IResourceCandidate } from './iResourceMana
 import { ConcreteDecision } from '../decisions';
 import * as Validate from './validate';
 import * as ResourceJson from '../resource-json';
-import {
-  ReadOnlyValidatingResourceTreeRoot,
-  IReadOnlyValidatingResourceTree
-} from './readOnlyValidatingResourceTree';
+import { ReadOnlyValidatingResourceTreeRoot, IReadOnlyValidatingResourceTree } from './resource-tree';
 
 /**
  * Interface for parameters to create a {@link Runtime.CompiledResourceCollection | CompiledResourceCollection}.

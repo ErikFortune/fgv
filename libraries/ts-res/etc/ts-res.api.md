@@ -3164,6 +3164,37 @@ declare namespace Resources {
 }
 export { Resources }
 
+declare namespace ResourceTree {
+    export {
+        isResourceTreeRootOrNodeInit,
+        isResourceTreeLeafInit,
+        IReadOnlyResourceTreeNode,
+        IReadOnlyResourceTreeLeaf,
+        IReadOnlyResourceTreeBranch,
+        IReadOnlyResourceTreeRoot,
+        IResourceTreeRootInit,
+        IResourceTreeLeafInit,
+        IResourceTreeBranchInit,
+        ResourceTreeNodeInit,
+        IReadOnlyResultResourceTree,
+        ResultResourceTree,
+        ReadOnlyResourceTreeLeaf,
+        ReadOnlyResourceTreeBranch,
+        ReadOnlyResourceTreeNode,
+        ReadOnlyResourceTreeRoot,
+        IReadOnlyValidatingResourceTreeCollection,
+        IReadOnlyValidatingResourceTreeNode,
+        IReadOnlyValidatingResourceTreeLeaf,
+        IReadOnlyValidatingResourceTreeBranch,
+        IReadOnlyValidatingResourceTree,
+        ReadOnlyValidatingResourceTreeCollection,
+        ReadOnlyValidatingResourceTree,
+        IReadOnlyValidatingResourceTreeCreateParams,
+        IReadOnlyValidatingResourceTreeCreateFromInitParams,
+        ReadOnlyValidatingResourceTreeRoot
+    }
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -3252,6 +3283,7 @@ class ResultResourceTree<T> extends ResultMap<ResourceName, IReadOnlyResourceTre
 
 declare namespace Runtime {
     export {
+        ResourceTree,
         Validate_2 as Validate,
         ICompiledResourceCollectionCreateParams,
         CompiledResourceCollection,
@@ -3263,32 +3295,6 @@ declare namespace Runtime {
         IResourceCandidate,
         IResource,
         IResourceManager,
-        ReadOnlyResourceTreeLeaf,
-        ReadOnlyResourceTreeBranch,
-        ReadOnlyResourceTreeNode,
-        ReadOnlyResourceTreeRoot,
-        IReadOnlyValidatingResourceTreeCollection,
-        IReadOnlyValidatingResourceTreeNode,
-        IReadOnlyValidatingResourceTreeLeaf,
-        IReadOnlyValidatingResourceTreeBranch,
-        IReadOnlyValidatingResourceTree,
-        ReadOnlyValidatingResourceTreeCollection,
-        ReadOnlyValidatingResourceTree,
-        IReadOnlyValidatingResourceTreeCreateParams,
-        IReadOnlyValidatingResourceTreeCreateFromInitParams,
-        ReadOnlyValidatingResourceTreeRoot,
-        isResourceTreeRootOrNodeInit,
-        isResourceTreeLeafInit,
-        IReadOnlyResourceTreeNode,
-        IReadOnlyResourceTreeLeaf,
-        IReadOnlyResourceTreeBranch,
-        IReadOnlyResourceTreeRoot,
-        IResourceTreeRootInit,
-        IResourceTreeLeafInit,
-        IResourceTreeBranchInit,
-        ResourceTreeNodeInit,
-        IReadOnlyResultResourceTree,
-        ResultResourceTree,
         ISimpleContextQualifierProviderCreateParams,
         SimpleContextQualifierProvider,
         IValidatingSimpleContextQualifierProviderCreateParams,

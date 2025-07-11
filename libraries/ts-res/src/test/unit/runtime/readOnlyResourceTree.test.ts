@@ -21,11 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import {
-  ReadOnlyResourceTreeRoot,
-  ReadOnlyResourceTreeLeaf,
-  ReadOnlyResourceTreeBranch
-} from '../../../packlets/runtime';
+import { ResourceTree } from '../../../packlets/runtime';
 import { ResourceId, ResourceName } from '../../../packlets/common';
 
 interface ITestResource {
@@ -39,7 +35,11 @@ describe('ReadOnlyResourceTreeLeaf', () => {
       const resource: ITestResource = { id: 'test', value: 'Test Value' };
 
       expect(
-        ReadOnlyResourceTreeLeaf.create('testNode' as ResourceName, 'parent' as ResourceId, resource)
+        ResourceTree.ReadOnlyResourceTreeLeaf.create(
+          'testNode' as ResourceName,
+          'parent' as ResourceId,
+          resource
+        )
       ).toSucceedAndSatisfy((leaf) => {
         expect(leaf.name).toBe('testNode');
         expect(leaf.path).toBe('parent.testNode');
@@ -54,7 +54,7 @@ describe('ReadOnlyResourceTreeLeaf', () => {
       const resource: ITestResource = { id: 'test', value: 'Test Value' };
 
       expect(
-        ReadOnlyResourceTreeLeaf.create('testNode' as ResourceName, undefined, resource)
+        ResourceTree.ReadOnlyResourceTreeLeaf.create('testNode' as ResourceName, undefined, resource)
       ).toSucceedAndSatisfy((leaf) => {
         expect(leaf.name).toBe('testNode');
         expect(leaf.path).toBe('testNode');
@@ -66,7 +66,11 @@ describe('ReadOnlyResourceTreeLeaf', () => {
       const resource: ITestResource = { id: 'test', value: 'Test Value' };
 
       expect(
-        ReadOnlyResourceTreeLeaf.create('invalid..name' as unknown as ResourceName, undefined, resource)
+        ResourceTree.ReadOnlyResourceTreeLeaf.create(
+          'invalid..name' as unknown as ResourceName,
+          undefined,
+          resource
+        )
       ).toFail();
     });
   });
@@ -83,7 +87,11 @@ describe('ReadOnlyResourceTreeBranch', () => {
       };
 
       expect(
-        ReadOnlyResourceTreeBranch.create('branch' as ResourceName, 'parent' as ResourceId, branchInit)
+        ResourceTree.ReadOnlyResourceTreeBranch.create(
+          'branch' as ResourceName,
+          'parent' as ResourceId,
+          branchInit
+        )
       ).toSucceedAndSatisfy((branch) => {
         expect(branch.name).toBe('branch');
         expect(branch.path).toBe('parent.branch');
@@ -112,7 +120,7 @@ describe('ReadOnlyResourceTreeBranch', () => {
       };
 
       expect(
-        ReadOnlyResourceTreeBranch.create('branch' as ResourceName, undefined, branchInit)
+        ResourceTree.ReadOnlyResourceTreeBranch.create('branch' as ResourceName, undefined, branchInit)
       ).toSucceedAndSatisfy((branch) => {
         expect(branch.children.size).toBe(2);
 
@@ -132,7 +140,7 @@ describe('ReadOnlyResourceTreeBranch', () => {
       const branchInit = { children: {} };
 
       expect(
-        ReadOnlyResourceTreeBranch.create('empty' as ResourceName, undefined, branchInit)
+        ResourceTree.ReadOnlyResourceTreeBranch.create('empty' as ResourceName, undefined, branchInit)
       ).toSucceedAndSatisfy((branch) => {
         expect(branch.children.size).toBe(0);
         expect(branch.isBranch).toBe(true);
@@ -149,7 +157,7 @@ describe('ReadOnlyResourceTreeRoot', () => {
         ['greeting' as ResourceId, { id: 'greeting', value: 'Hello' }]
       ];
 
-      expect(ReadOnlyResourceTreeRoot.create(resources)).toSucceedAndSatisfy((root) => {
+      expect(ResourceTree.ReadOnlyResourceTreeRoot.create(resources)).toSucceedAndSatisfy((root) => {
         expect(root.isRoot).toBe(true);
         expect(root.isLeaf).toBe(false);
         expect(root.isBranch).toBe(false);
@@ -167,7 +175,7 @@ describe('ReadOnlyResourceTreeRoot', () => {
         ['settings' as ResourceId, { id: 'settings', value: 'Settings' }]
       ];
 
-      expect(ReadOnlyResourceTreeRoot.create(resources)).toSucceedAndSatisfy((root) => {
+      expect(ResourceTree.ReadOnlyResourceTreeRoot.create(resources)).toSucceedAndSatisfy((root) => {
         expect(root.children.size).toBe(3); // app, user, and settings
 
         // Check app branch (no resource, only children)
@@ -204,7 +212,9 @@ describe('ReadOnlyResourceTreeRoot', () => {
         ['app' as ResourceId, { id: 'app2', value: 'Second' }]
       ];
 
-      expect(ReadOnlyResourceTreeRoot.create(resources)).toFailWith(/Duplicate resource at path/);
+      expect(ResourceTree.ReadOnlyResourceTreeRoot.create(resources)).toFailWith(
+        /Duplicate resource at path/
+      );
     });
 
     test('fails with conflicting leaf/branch structure', () => {
@@ -214,7 +224,9 @@ describe('ReadOnlyResourceTreeRoot', () => {
       ];
 
       // This should fail because 'app' cannot be both a resource and have children
-      expect(ReadOnlyResourceTreeRoot.create(resources)).toFailWith(/Expected a branch but found a leaf/);
+      expect(ResourceTree.ReadOnlyResourceTreeRoot.create(resources)).toFailWith(
+        /Expected a branch but found a leaf/
+      );
     });
 
     test('handles deep nesting', () => {
@@ -222,7 +234,7 @@ describe('ReadOnlyResourceTreeRoot', () => {
         ['level1.level2.level3.level4.deep' as ResourceId, { id: 'deep', value: 'Deep Resource' }]
       ];
 
-      expect(ReadOnlyResourceTreeRoot.create(resources)).toSucceedAndSatisfy((root) => {
+      expect(ResourceTree.ReadOnlyResourceTreeRoot.create(resources)).toSucceedAndSatisfy((root) => {
         expect(root.children.size).toBe(1);
         expect(root.children.getById('level1.level2.level3.level4.deep' as ResourceId)).toSucceedAndSatisfy(
           (deepNode) => {
@@ -234,7 +246,7 @@ describe('ReadOnlyResourceTreeRoot', () => {
     });
 
     test('handles empty resource array', () => {
-      expect(ReadOnlyResourceTreeRoot.create([])).toSucceedAndSatisfy((root) => {
+      expect(ResourceTree.ReadOnlyResourceTreeRoot.create([])).toSucceedAndSatisfy((root) => {
         expect(root.children.size).toBe(0);
         expect(root.isRoot).toBe(true);
       });
@@ -257,7 +269,7 @@ describe('ReadOnlyResourceTreeRoot', () => {
         >
       };
 
-      expect(ReadOnlyResourceTreeRoot.create(init)).toSucceedAndSatisfy((root) => {
+      expect(ResourceTree.ReadOnlyResourceTreeRoot.create(init)).toSucceedAndSatisfy((root) => {
         expect(root.children.size).toBe(2);
         expect(root.children.has('app' as ResourceName)).toBe(true);
         expect(root.children.has('messages' as ResourceName)).toBe(true);
@@ -267,7 +279,7 @@ describe('ReadOnlyResourceTreeRoot', () => {
     test('creates empty root from empty init', () => {
       const init = { children: {} };
 
-      expect(ReadOnlyResourceTreeRoot.create(init)).toSucceedAndSatisfy((root) => {
+      expect(ResourceTree.ReadOnlyResourceTreeRoot.create(init)).toSucceedAndSatisfy((root) => {
         expect(root.children.size).toBe(0);
       });
     });
@@ -280,13 +292,15 @@ describe('ReadOnlyResourceTreeRoot', () => {
         ['greeting' as ResourceId, { id: 'greeting', value: 'Hello' }]
       ];
 
-      expect(ReadOnlyResourceTreeRoot.createResourceTreeInit(resources)).toSucceedAndSatisfy((init) => {
-        expect('app' in init.children).toBe(true);
-        expect('greeting' in init.children).toBe(true);
-        expect((init.children as Record<string, { resource: ITestResource }>).app).toEqual({
-          resource: { id: 'app', value: 'Application' }
-        });
-      });
+      expect(ResourceTree.ReadOnlyResourceTreeRoot.createResourceTreeInit(resources)).toSucceedAndSatisfy(
+        (init) => {
+          expect('app' in init.children).toBe(true);
+          expect('greeting' in init.children).toBe(true);
+          expect((init.children as Record<string, { resource: ITestResource }>).app).toEqual({
+            resource: { id: 'app', value: 'Application' }
+          });
+        }
+      );
     });
 
     test('converts hierarchical resources to nested init structure', () => {
@@ -294,29 +308,31 @@ describe('ReadOnlyResourceTreeRoot', () => {
         ['app.messages.welcome' as ResourceId, { id: 'welcome', value: 'Welcome!' }]
       ];
 
-      expect(ReadOnlyResourceTreeRoot.createResourceTreeInit(resources)).toSucceedAndSatisfy((init) => {
-        expect('app' in init.children).toBe(true);
-        const appChild = (
-          init.children as Record<
-            string,
-            { children: Record<string, { children: Record<string, { resource: ITestResource }> }> }
-          >
-        ).app;
-        expect('children' in appChild).toBe(true);
+      expect(ResourceTree.ReadOnlyResourceTreeRoot.createResourceTreeInit(resources)).toSucceedAndSatisfy(
+        (init) => {
+          expect('app' in init.children).toBe(true);
+          const appChild = (
+            init.children as Record<
+              string,
+              { children: Record<string, { children: Record<string, { resource: ITestResource }> }> }
+            >
+          ).app;
+          expect('children' in appChild).toBe(true);
 
-        if ('children' in appChild) {
-          expect('messages' in appChild.children).toBe(true);
-          const messagesChild = appChild.children.messages;
-          expect('children' in messagesChild).toBe(true);
+          if ('children' in appChild) {
+            expect('messages' in appChild.children).toBe(true);
+            const messagesChild = appChild.children.messages;
+            expect('children' in messagesChild).toBe(true);
 
-          if ('children' in messagesChild) {
-            expect('welcome' in messagesChild.children).toBe(true);
-            expect(messagesChild.children.welcome).toEqual({
-              resource: { id: 'welcome', value: 'Welcome!' }
-            });
+            if ('children' in messagesChild) {
+              expect('welcome' in messagesChild.children).toBe(true);
+              expect(messagesChild.children.welcome).toEqual({
+                resource: { id: 'welcome', value: 'Welcome!' }
+              });
+            }
           }
         }
-      });
+      );
     });
 
     test('fails with duplicate resources', () => {
@@ -325,7 +341,7 @@ describe('ReadOnlyResourceTreeRoot', () => {
         ['app' as ResourceId, { id: 'app2', value: 'Second' }]
       ];
 
-      expect(ReadOnlyResourceTreeRoot.createResourceTreeInit(resources)).toFailWith(
+      expect(ResourceTree.ReadOnlyResourceTreeRoot.createResourceTreeInit(resources)).toFailWith(
         /Duplicate resource at path/
       );
     });
@@ -335,12 +351,12 @@ describe('ReadOnlyResourceTreeRoot', () => {
         ['invalid..id' as ResourceId, { id: 'invalid', value: 'Invalid' }]
       ];
 
-      expect(ReadOnlyResourceTreeRoot.createResourceTreeInit(resources)).toFail();
+      expect(ResourceTree.ReadOnlyResourceTreeRoot.createResourceTreeInit(resources)).toFail();
     });
   });
 
   describe('resource access methods', () => {
-    let root: ReadOnlyResourceTreeRoot<ITestResource>;
+    let root: ResourceTree.ReadOnlyResourceTreeRoot<ITestResource>;
 
     beforeEach(() => {
       const resources: [ResourceId, ITestResource][] = [
@@ -348,7 +364,7 @@ describe('ReadOnlyResourceTreeRoot', () => {
         ['user.profile' as ResourceId, { id: 'profile', value: 'Profile' }],
         ['settings' as ResourceId, { id: 'settings', value: 'Settings' }]
       ];
-      root = ReadOnlyResourceTreeRoot.create(resources).orThrow();
+      root = ResourceTree.ReadOnlyResourceTreeRoot.create(resources).orThrow();
     });
 
     test('getById returns correct nodes', () => {

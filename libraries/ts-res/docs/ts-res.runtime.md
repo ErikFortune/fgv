@@ -52,89 +52,12 @@ A wrapper for [IContextQualifierProvider](./ts-res.runtime.icontextqualifierprov
 </td></tr>
 <tr><td>
 
-[ReadOnlyResourceTreeBranch](./ts-res.runtime.readonlyresourcetreebranch.md)
-
-
-</td><td>
-
-Implementation of a read-only resource tree branch node that contains child nodes. Branch nodes organize other nodes in a hierarchical structure and may optionally contain a resource value.
-
-
-</td></tr>
-<tr><td>
-
-[ReadOnlyResourceTreeLeaf](./ts-res.runtime.readonlyresourcetreeleaf.md)
-
-
-</td><td>
-
-Implementation of a read-only resource tree leaf node that contains a resource value. Leaf nodes represent the actual resources in the tree and cannot have children.
-
-
-</td></tr>
-<tr><td>
-
-[ReadOnlyResourceTreeRoot](./ts-res.runtime.readonlyresourcetreeroot.md)
-
-
-</td><td>
-
-Implementation of a read-only resource tree root that organizes resources hierarchically. The root provides the entry point for tree navigation and resource access by ResourceId paths.
-
-
-</td></tr>
-<tr><td>
-
-[ReadOnlyValidatingResourceTree](./ts-res.runtime.readonlyvalidatingresourcetree.md)
-
-
-</td><td>
-
-Implementation of a validating resource tree that validates string inputs before delegating to the underlying tree.
-
-
-</td></tr>
-<tr><td>
-
-[ReadOnlyValidatingResourceTreeCollection](./ts-res.runtime.readonlyvalidatingresourcetreecollection.md)
-
-
-</td><td>
-
-Implementation of a validating resource tree collection that validates string inputs.
-
-
-</td></tr>
-<tr><td>
-
-[ReadOnlyValidatingResourceTreeRoot](./ts-res.runtime.readonlyvalidatingresourcetreeroot.md)
-
-
-</td><td>
-
-A ReadOnlyResourceTreeRoot with a validating property that enables validated use with string inputs. This eliminates the need for type casting in consumer code.
-
-
-</td></tr>
-<tr><td>
-
 [ResourceResolver](./ts-res.runtime.resourceresolver.md)
 
 
 </td><td>
 
 High-performance runtime resource resolver with O(1) condition caching. Resolves resources for a given context by evaluating conditions against qualifier values and caching results for optimal performance.
-
-
-</td></tr>
-<tr><td>
-
-[ResultResourceTree](./ts-res.runtime.resultresourcetree.md)
-
-
-</td><td>
-
-Implementation of a result-based resource tree that provides hierarchical access to resources. Extends ResultMap to provide collection-like access while adding tree-specific navigation methods.
 
 
 </td></tr>
@@ -183,43 +106,6 @@ Description
 </td><td>
 
 Abstract base class for implementing context qualifier providers. Provides common functionality and enforces the contract for derived classes.
-
-
-</td></tr>
-</tbody></table>
-
-## Functions
-
-<table><thead><tr><th>
-
-Function
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[isResourceTreeLeafInit(init)](./ts-res.runtime.isresourcetreeleafinit.md)
-
-
-</td><td>
-
-Type guard to determine if an init object represents a leaf node with a resource.
-
-
-</td></tr>
-<tr><td>
-
-[isResourceTreeRootOrNodeInit(init)](./ts-res.runtime.isresourcetreerootornodeinit.md)
-
-
-</td><td>
-
-Type guard to determine if an init object represents a branch or root with children.
 
 
 </td></tr>
@@ -295,138 +181,6 @@ A read-only interface exposing non-mutating methods of a [ContextQualifierProvid
 </td></tr>
 <tr><td>
 
-[IReadOnlyResourceTreeBranch](./ts-res.runtime.ireadonlyresourcetreebranch.md)
-
-
-</td><td>
-
-Interface for branch nodes in a resource tree that contain child nodes. Branch nodes organize the tree structure and cannot have resource values. If a path has child resources, it must be a branch and cannot itself be a resource.
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyResourceTreeLeaf](./ts-res.runtime.ireadonlyresourcetreeleaf.md)
-
-
-</td><td>
-
-Interface for leaf nodes in a resource tree. Leaf nodes contain resource values and cannot have child nodes. In a valid resource tree, if a path has child resources (e.g., 'app.messages.welcome'), then that path cannot itself be a resource (i.e., 'app' cannot be both a resource and have children).
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyResourceTreeNode](./ts-res.runtime.ireadonlyresourcetreenode.md)
-
-
-</td><td>
-
-Base interface for resource tree nodes.
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyResourceTreeRoot](./ts-res.runtime.ireadonlyresourcetreeroot.md)
-
-
-</td><td>
-
-Interface for the root node of a resource tree.
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyResultResourceTree](./ts-res.runtime.ireadonlyresultresourcetree.md)
-
-
-</td><td>
-
-Interface for a read-only result-based resource tree with navigation methods.
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyValidatingResourceTree](./ts-res.runtime.ireadonlyvalidatingresourcetree.md)
-
-
-</td><td>
-
-A read-only interface for a validating resource tree that accepts string inputs.
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyValidatingResourceTreeBranch](./ts-res.runtime.ireadonlyvalidatingresourcetreebranch.md)
-
-
-</td><td>
-
-Interface for validating branch nodes that contain child collections.
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyValidatingResourceTreeCollection](./ts-res.runtime.ireadonlyvalidatingresourcetreecollection.md)
-
-
-</td><td>
-
-A validating wrapper for resource tree collections that validates string inputs.
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyValidatingResourceTreeCreateFromInitParams](./ts-res.runtime.ireadonlyvalidatingresourcetreecreatefrominitparams.md)
-
-
-</td><td>
-
-Alternative parameters for creating a ReadOnlyValidatingResourceTree from initialization data.
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyValidatingResourceTreeCreateParams](./ts-res.runtime.ireadonlyvalidatingresourcetreecreateparams.md)
-
-
-</td><td>
-
-Parameters for creating a ReadOnlyValidatingResourceTree.
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyValidatingResourceTreeLeaf](./ts-res.runtime.ireadonlyvalidatingresourcetreeleaf.md)
-
-
-</td><td>
-
-Interface for validating leaf nodes that contain resources.
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyValidatingResourceTreeNode](./ts-res.runtime.ireadonlyvalidatingresourcetreenode.md)
-
-
-</td><td>
-
-Base interface for validating tree nodes that provide string validation capabilities.
-
-
-</td></tr>
-<tr><td>
-
 [IResource](./ts-res.runtime.iresource.md)
 
 
@@ -471,39 +225,6 @@ Parameters for creating a [ResourceResolver](./ts-res.runtime.resourceresolver.m
 </td></tr>
 <tr><td>
 
-[IResourceTreeBranchInit](./ts-res.runtime.iresourcetreebranchinit.md)
-
-
-</td><td>
-
-Interface for initializing a branch node with child nodes.
-
-
-</td></tr>
-<tr><td>
-
-[IResourceTreeLeafInit](./ts-res.runtime.iresourcetreeleafinit.md)
-
-
-</td><td>
-
-Interface for initializing a leaf node with a resource value.
-
-
-</td></tr>
-<tr><td>
-
-[IResourceTreeRootInit](./ts-res.runtime.iresourcetreerootinit.md)
-
-
-</td><td>
-
-Interface for initializing a resource tree root with child nodes.
-
-
-</td></tr>
-<tr><td>
-
 [ISimpleContextQualifierProviderCreateParams](./ts-res.runtime.isimplecontextqualifierprovidercreateparams.md)
 
 
@@ -541,6 +262,15 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ResourceTree](./ts-res.runtime.resourcetree.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Validate](./ts-res.runtime.validate.md)
 
 
@@ -571,28 +301,6 @@ Description
 </td><td>
 
 Represents the cached result of resolving a decision. Contains either a failure indicator or a list of instance indices for matching condition sets, ordered by condition set priority.
-
-
-</td></tr>
-<tr><td>
-
-[ReadOnlyResourceTreeNode](./ts-res.runtime.readonlyresourcetreenode.md)
-
-
-</td><td>
-
-Union type representing any node in a read-only resource tree.
-
-
-</td></tr>
-<tr><td>
-
-[ResourceTreeNodeInit](./ts-res.runtime.resourcetreenodeinit.md)
-
-
-</td><td>
-
-Union type for tree node initialization data.
 
 
 </td></tr>

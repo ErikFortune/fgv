@@ -13,7 +13,7 @@ getBuiltResourceTree(): Result<IReadOnlyValidatingResourceTree<IResource>>;
 ```
 **Returns:**
 
-Result&lt;[IReadOnlyValidatingResourceTree](./ts-res.runtime.ireadonlyvalidatingresourcetree.md)<!-- -->&lt;[IResource](./ts-res.runtime.iresource.md)<!-- -->&gt;&gt;
+Result&lt;[IReadOnlyValidatingResourceTree](./ts-res.runtime.resourcetree.ireadonlyvalidatingresourcetree.md)<!-- -->&lt;[IResource](./ts-res.runtime.iresource.md)<!-- -->&gt;&gt;
 
 Result containing the validating resource tree root, or failure if tree construction fails
 

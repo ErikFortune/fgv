@@ -20,17 +20,16 @@
  * SOFTWARE.
  */
 
+import * as ResourceTree from './resource-tree';
+
 export * from './compiledResourceCollection';
 export * from './contextQualifierProvider';
 export * from './contextQualifierProviderValidator';
 export * from './iResourceManager';
-export * from './readOnlyResourceTree';
-export * from './readOnlyValidatingResourceTree';
-export * from './resultResourceTree';
 export * from './simpleContextQualifierProvider';
 export * from './validatingSimpleContextQualifierProvider';
 export * from './resourceResolver';
 export * from './conditionSetResolutionResult';
 
 import * as Validate from './validate';
-export { Validate };
+export { ResourceTree, Validate };

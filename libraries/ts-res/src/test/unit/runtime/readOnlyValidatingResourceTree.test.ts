@@ -21,10 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import {
-  ReadOnlyValidatingResourceTreeRoot,
-  ReadOnlyValidatingResourceTree
-} from '../../../packlets/runtime';
+import { ResourceTree } from '../../../packlets/runtime';
 import { ResourceId } from '../../../packlets/common';
 
 interface ITestResource {
@@ -33,7 +30,7 @@ interface ITestResource {
 }
 
 describe('ReadOnlyValidatingResourceTree', () => {
-  let tree: ReadOnlyValidatingResourceTree<ITestResource>;
+  let tree: ResourceTree.ReadOnlyValidatingResourceTree<ITestResource>;
 
   beforeEach(() => {
     const resources: [ResourceId, ITestResource][] = [
@@ -43,7 +40,7 @@ describe('ReadOnlyValidatingResourceTree', () => {
       ['settings' as ResourceId, { id: 'settings', value: 'Settings' }]
     ];
 
-    const root = ReadOnlyValidatingResourceTreeRoot.create(resources).orThrow();
+    const root = ResourceTree.ReadOnlyValidatingResourceTreeRoot.create(resources).orThrow();
     tree = root.validating;
   });
 
@@ -243,16 +240,18 @@ describe('ReadOnlyValidatingResourceTreeRoot', () => {
         ['settings' as ResourceId, { id: 'settings', value: 'Settings' }]
       ];
 
-      expect(ReadOnlyValidatingResourceTreeRoot.create(resources)).toSucceedAndSatisfy((root) => {
-        expect(root.isRoot).toBe(true);
-        expect(root.children.size).toBe(2); // app and settings
-        expect(root.validating).toBeDefined();
+      expect(ResourceTree.ReadOnlyValidatingResourceTreeRoot.create(resources)).toSucceedAndSatisfy(
+        (root) => {
+          expect(root.isRoot).toBe(true);
+          expect(root.children.size).toBe(2); // app and settings
+          expect(root.validating).toBeDefined();
 
-        // Test that validating property works
-        expect(root.validating.getById('app')).toSucceed();
-        expect(root.validating.getById('settings')).toSucceed();
-        expect(root.validating.getResourceById('app.messages.welcome')).toSucceed();
-      });
+          // Test that validating property works
+          expect(root.validating.getById('app')).toSucceed();
+          expect(root.validating.getById('settings')).toSucceed();
+          expect(root.validating.getResourceById('app.messages.welcome')).toSucceed();
+        }
+      );
     });
 
     test('fails with invalid resource structure', () => {
@@ -261,13 +260,13 @@ describe('ReadOnlyValidatingResourceTreeRoot', () => {
         ['app.child' as ResourceId, { id: 'child', value: 'Child' }]
       ];
 
-      expect(ReadOnlyValidatingResourceTreeRoot.create(resources)).toFailWith(
+      expect(ResourceTree.ReadOnlyValidatingResourceTreeRoot.create(resources)).toFailWith(
         /Expected a branch but found a leaf/
       );
     });
 
     test('handles empty resource array', () => {
-      expect(ReadOnlyValidatingResourceTreeRoot.create([])).toSucceedAndSatisfy((root) => {
+      expect(ResourceTree.ReadOnlyValidatingResourceTreeRoot.create([])).toSucceedAndSatisfy((root) => {
         expect(root.children.size).toBe(0);
         expect(root.validating).toBeDefined();
         expect(root.validating.has('anything')).toSucceedWith(false);
@@ -288,7 +287,7 @@ describe('ReadOnlyValidatingResourceTreeRoot', () => {
         }
       };
 
-      expect(ReadOnlyValidatingResourceTreeRoot.create(init)).toSucceedAndSatisfy((root) => {
+      expect(ResourceTree.ReadOnlyValidatingResourceTreeRoot.create(init)).toSucceedAndSatisfy((root) => {
         expect(root.children.size).toBe(2);
         expect(root.validating).toBeDefined();
 
@@ -302,7 +301,7 @@ describe('ReadOnlyValidatingResourceTreeRoot', () => {
     test('creates empty tree from empty init', () => {
       const init = { children: {} };
 
-      expect(ReadOnlyValidatingResourceTreeRoot.create(init)).toSucceedAndSatisfy((root) => {
+      expect(ResourceTree.ReadOnlyValidatingResourceTreeRoot.create(init)).toSucceedAndSatisfy((root) => {
         expect(root.children.size).toBe(0);
         expect(root.validating).toBeDefined();
       });
@@ -316,7 +315,7 @@ describe('ReadOnlyValidatingResourceTreeRoot', () => {
         ['user.profile' as ResourceId, { id: 'profile', value: 'Profile' }]
       ];
 
-      const root = ReadOnlyValidatingResourceTreeRoot.create(resources).orThrow();
+      const root = ResourceTree.ReadOnlyValidatingResourceTreeRoot.create(resources).orThrow();
 
       // Test that we can use string literals without type casting
       expect(root.validating.getById('app')).toSucceed();
@@ -336,28 +335,30 @@ describe('ReadOnlyValidatingResourceTreeRoot', () => {
         ['app.errors.notFound' as ResourceId, { id: 'notFound', value: 'Not Found' }]
       ];
 
-      expect(ReadOnlyValidatingResourceTreeRoot.create(resources)).toSucceedAndSatisfy((root) => {
-        // Get a branch using string validation
-        expect(root.validating.getBranchById('app.messages')).toSucceedAndSatisfy((messagesNode) => {
-          // This branch node should also provide string validation through its children
-          expect(messagesNode.children.hasResource('welcome')).toSucceedWith(true);
-          expect(messagesNode.children.getResource('welcome')).toSucceedAndSatisfy((welcomeNode) => {
-            expect(welcomeNode.resource.value).toBe('Welcome!');
+      expect(ResourceTree.ReadOnlyValidatingResourceTreeRoot.create(resources)).toSucceedAndSatisfy(
+        (root) => {
+          // Get a branch using string validation
+          expect(root.validating.getBranchById('app.messages')).toSucceedAndSatisfy((messagesNode) => {
+            // This branch node should also provide string validation through its children
+            expect(messagesNode.children.hasResource('welcome')).toSucceedWith(true);
+            expect(messagesNode.children.getResource('welcome')).toSucceedAndSatisfy((welcomeNode) => {
+              expect(welcomeNode.resource.value).toBe('Welcome!');
+            });
+
+            // Test validation at the branch level
+            expect(messagesNode.children.hasResource('invalid..id')).toFail();
+            expect(messagesNode.children.getResource('nonexistent')).toFail();
           });
 
-          // Test validation at the branch level
-          expect(messagesNode.children.hasResource('invalid..id')).toFail();
-          expect(messagesNode.children.getResource('nonexistent')).toFail();
-        });
-
-        // Navigate deeper - get app branch then navigate to messages
-        expect(root.validating.getBranchById('app')).toSucceedAndSatisfy((appNode) => {
-          expect(appNode.children.getBranch('messages')).toSucceedAndSatisfy((messagesNode) => {
-            expect(messagesNode.children.size).toBe(2); // welcome and goodbye
-            expect(messagesNode.children.hasResource('goodbye')).toSucceedWith(true);
+          // Navigate deeper - get app branch then navigate to messages
+          expect(root.validating.getBranchById('app')).toSucceedAndSatisfy((appNode) => {
+            expect(appNode.children.getBranch('messages')).toSucceedAndSatisfy((messagesNode) => {
+              expect(messagesNode.children.size).toBe(2); // welcome and goodbye
+              expect(messagesNode.children.hasResource('goodbye')).toSucceedWith(true);
+            });
           });
-        });
-      });
+        }
+      );
     });
   });
 });
