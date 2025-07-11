@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[IValidatingSimpleContextQualifierProviderCreateParams](./ts-res.runtime.ivalidatingsimplecontextqualifierprovidercreateparams.md)
+IValidatingSimpleContextQualifierProviderCreateParams
 
 
 </td><td>

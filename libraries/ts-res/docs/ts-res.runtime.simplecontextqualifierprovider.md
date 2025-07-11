@@ -4,14 +4,14 @@
 
 ## Runtime.SimpleContextQualifierProvider class
 
-Simple concrete implementation of [IContextQualifierProvider](./ts-res.runtime.icontextqualifierprovider.md) using a `ResultMap` for qualifier value storage.
+Simple concrete implementation of [IContextQualifierProvider](./ts-res.runtime.context.icontextqualifierprovider.md) using a `ResultMap` for qualifier value storage.
 
 **Signature:**
 
 ```typescript
 export declare class SimpleContextQualifierProvider extends ContextQualifierProvider 
 ```
-**Extends:** [ContextQualifierProvider](./ts-res.runtime.contextqualifierprovider.md)
+**Extends:** ContextQualifierProvider
 
 ## Constructors
 

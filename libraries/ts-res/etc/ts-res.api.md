@@ -563,6 +563,20 @@ declare namespace Context {
 }
 export { Context }
 
+declare namespace Context_2 {
+    export {
+        IContextQualifierProvider,
+        ContextQualifierProvider,
+        IReadOnlyContextQualifierProviderValidator,
+        IContextQualifierProviderValidatorCreateParams,
+        ContextQualifierProviderValidator,
+        ISimpleContextQualifierProviderCreateParams,
+        SimpleContextQualifierProvider,
+        IValidatingSimpleContextQualifierProviderCreateParams,
+        ValidatingSimpleContextQualifierProvider
+    }
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -3283,15 +3297,11 @@ class ResultResourceTree<T> extends ResultMap<ResourceName, IReadOnlyResourceTre
 
 declare namespace Runtime {
     export {
+        Context_2 as Context,
         ResourceTree,
         Validate_2 as Validate,
         ICompiledResourceCollectionCreateParams,
         CompiledResourceCollection,
-        IContextQualifierProvider,
-        ContextQualifierProvider,
-        IReadOnlyContextQualifierProviderValidator,
-        IContextQualifierProviderValidatorCreateParams,
-        ContextQualifierProviderValidator,
         IResourceCandidate,
         IResource,
         IResourceManager,

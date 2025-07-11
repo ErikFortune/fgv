@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[IValidatingSimpleContextQualifierProviderCreateParams](./ts-res.runtime.ivalidatingsimplecontextqualifierprovidercreateparams.md)
+IValidatingSimpleContextQualifierProviderCreateParams
 
 
 </td><td>
@@ -50,7 +50,7 @@ params
 
 **Returns:**
 
-Result&lt;[ValidatingSimpleContextQualifierProvider](./ts-res.runtime.validatingsimplecontextqualifierprovider.md)<!-- -->&gt;
+Result&lt;ValidatingSimpleContextQualifierProvider&gt;
 
 `Success` with the new [ValidatingSimpleContextQualifierProvider](./ts-res.runtime.validatingsimplecontextqualifierprovider.md) object if successful, or `Failure` with an error message if not.
 

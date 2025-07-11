@@ -4,7 +4,7 @@
 
 ## Runtime.ValidatingSimpleContextQualifierProvider.validating property
 
-A [ContextQualifierProviderValidator](./ts-res.runtime.contextqualifierprovidervalidator.md) which validates string inputs before passing them to this provider.
+A [ContextQualifierProviderValidator](./ts-res.runtime.context.contextqualifierprovidervalidator.md) which validates string inputs before passing them to this provider.
 
 **Signature:**
 

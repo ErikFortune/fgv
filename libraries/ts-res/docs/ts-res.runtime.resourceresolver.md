@@ -125,7 +125,7 @@ Gets the current size of the condition set cache array.
 
 </td><td>
 
-[IContextQualifierProvider](./ts-res.runtime.icontextqualifierprovider.md)
+IContextQualifierProvider
 
 
 </td><td>

@@ -4,7 +4,7 @@
 
 ## Runtime.IResourceResolverCreateParams.contextQualifierProvider property
 
-The [context qualifier provider](./ts-res.runtime.icontextqualifierprovider.md) that resolves qualifier values for the current context.
+The [context qualifier provider](./ts-res.runtime.context.icontextqualifierprovider.md) that resolves qualifier values for the current context.
 
 **Signature:**
 

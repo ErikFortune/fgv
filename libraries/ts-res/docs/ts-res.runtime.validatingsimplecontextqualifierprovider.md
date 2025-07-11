@@ -4,14 +4,14 @@
 
 ## Runtime.ValidatingSimpleContextQualifierProvider class
 
-A [SimpleContextQualifierProvider](./ts-res.runtime.simplecontextqualifierprovider.md) with a [validator](./ts-res.runtime.contextqualifierprovidervalidator.md) property that enables validated use of the underlying provider with string keys and values. This eliminates the need for type casting in consumer code.
+A [SimpleContextQualifierProvider](./ts-res.runtime.simplecontextqualifierprovider.md) with a [validator](./ts-res.runtime.context.contextqualifierprovidervalidator.md) property that enables validated use of the underlying provider with string keys and values. This eliminates the need for type casting in consumer code.
 
 **Signature:**
 
 ```typescript
 export declare class ValidatingSimpleContextQualifierProvider extends SimpleContextQualifierProvider 
 ```
-**Extends:** [SimpleContextQualifierProvider](./ts-res.runtime.simplecontextqualifierprovider.md)
+**Extends:** SimpleContextQualifierProvider
 
 ## Constructors
 
@@ -84,12 +84,12 @@ Description
 
 </td><td>
 
-[IReadOnlyContextQualifierProviderValidator](./ts-res.runtime.ireadonlycontextqualifierprovidervalidator.md)
+IReadOnlyContextQualifierProviderValidator
 
 
 </td><td>
 
-A [ContextQualifierProviderValidator](./ts-res.runtime.contextqualifierprovidervalidator.md) which validates string inputs before passing them to this provider.
+A [ContextQualifierProviderValidator](./ts-res.runtime.context.contextqualifierprovidervalidator.md) which validates string inputs before passing them to this provider.
 
 
 </td></tr>

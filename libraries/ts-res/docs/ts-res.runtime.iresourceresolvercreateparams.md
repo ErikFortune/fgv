@@ -45,12 +45,12 @@ Description
 
 </td><td>
 
-[IContextQualifierProvider](./ts-res.runtime.icontextqualifierprovider.md)
+IContextQualifierProvider
 
 
 </td><td>
 
-The [context qualifier provider](./ts-res.runtime.icontextqualifierprovider.md) that resolves qualifier values for the current context.
+The [context qualifier provider](./ts-res.runtime.context.icontextqualifierprovider.md) that resolves qualifier values for the current context.
 
 
 </td></tr>

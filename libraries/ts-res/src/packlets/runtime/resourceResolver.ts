@@ -26,7 +26,7 @@ import { QualifierMatchScore, NoMatch } from '../common';
 import { Condition, ConditionSet } from '../conditions';
 import { AbstractDecision } from '../decisions';
 import { ReadOnlyQualifierTypeCollector } from '../qualifier-types';
-import { IContextQualifierProvider } from './contextQualifierProvider';
+import { IContextQualifierProvider } from './context';
 import { IResourceManager, IResource } from './iResourceManager';
 import { ConditionSetResolutionResult, IConditionMatchResult } from './conditionSetResolutionResult';
 
@@ -58,7 +58,7 @@ export interface IResourceResolverCreateParams {
   qualifierTypes: ReadOnlyQualifierTypeCollector;
 
   /**
-   * The {@link Runtime.IContextQualifierProvider | context qualifier provider} that resolves
+   * The {@link Runtime.Context.IContextQualifierProvider | context qualifier provider} that resolves
    * qualifier values for the current context.
    */
   contextQualifierProvider: IContextQualifierProvider;
