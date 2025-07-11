@@ -231,5 +231,19 @@ Gets a built resource by ID for runtime resolution.
 
 
 </td></tr>
+<tr><td>
+
+[getBuiltResourceTree()](./ts-res.runtime.compiledresourcecollection.getbuiltresourcetree.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a validating resource tree built from the resources in this collection. The tree provides hierarchical access to resources based on their ResourceId structure. Uses lazy initialization with caching for performance.
+
+
+</td></tr>
 </tbody></table>
 

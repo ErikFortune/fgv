@@ -206,6 +206,7 @@ class CompiledResourceCollection implements IResourceManager {
     //
     // (undocumented)
     getBuiltResource(id: string): Result<IResource>;
+    getBuiltResourceTree(): Result<IReadOnlyValidatingResourceTree<IResource>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get qualifiers(): QualifierCollector;

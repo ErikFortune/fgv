@@ -670,4 +670,137 @@ describe('CompiledResourceCollection class', () => {
       );
     });
   });
+
+  describe('getBuiltResourceTree', () => {
+    test('should create validating resource tree from built resources', () => {
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          expect(collection.getBuiltResourceTree()).toSucceedAndSatisfy((tree) => {
+            // Test basic tree functionality
+            expect(tree.tree).toBeDefined();
+            expect(tree.tree.isRoot).toBe(true);
+
+            // Test string-based access works with actual test resource
+            expect(tree.getById('greeting')).toSucceedAndSatisfy((node) => {
+              expect(node.isLeaf).toBe(true);
+              expect(node.path).toBe('greeting');
+            });
+
+            // Test validation works
+            expect(tree.getById('invalid..id')).toFail();
+
+            // Test resource access with actual test resource
+            expect(tree.getResourceById('greeting')).toSucceedAndSatisfy((leaf) => {
+              expect(leaf.resource).toBeDefined();
+              expect(leaf.resource.id).toBe('greeting' as TsRes.ResourceId);
+            });
+
+            // Test nonexistent resource access fails
+            expect(tree.getResourceById('nonexistent')).toFail();
+          });
+        }
+      );
+    });
+
+    test('should cache tree after first creation', () => {
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          // First call creates the tree
+          const firstTreeResult = collection.getBuiltResourceTree();
+          expect(firstTreeResult).toSucceed();
+          const firstTree = firstTreeResult.orThrow();
+
+          // Second call should return the same cached tree
+          const secondTreeResult = collection.getBuiltResourceTree();
+          expect(secondTreeResult).toSucceed();
+          const secondTree = secondTreeResult.orThrow();
+
+          // Should be the same validating interface from the same cached root
+          expect(firstTree.tree).toBe(secondTree.tree);
+        }
+      );
+    });
+
+    test('should handle empty resource collection tree', () => {
+      const emptyManager = TsRes.Resources.ResourceManagerBuilder.create({
+        qualifiers,
+        resourceTypes
+      }).orThrow();
+
+      const emptyCompiledCollection = emptyManager.getCompiledResourceCollection().orThrow();
+      const emptyParams = {
+        ...createParams,
+        compiledCollection: emptyCompiledCollection
+      };
+
+      expect(TsRes.Runtime.CompiledResourceCollection.create(emptyParams)).toSucceedAndSatisfy(
+        (collection) => {
+          expect(collection.getBuiltResourceTree()).toSucceedAndSatisfy((tree) => {
+            expect(tree.tree.children.size).toBe(0);
+            expect(tree.has('anything')).toSucceedWith(false);
+            expect(tree.has('nonexistent')).toSucceedWith(false);
+          });
+        }
+      );
+    });
+
+    test('should provide hierarchical access to flat resource structure', () => {
+      // Create a test setup with hierarchical resources
+      const hierarchicalManager = TsRes.Resources.ResourceManagerBuilder.create({
+        qualifiers,
+        resourceTypes
+      }).orThrow();
+
+      hierarchicalManager
+        .addLooseCandidate({
+          id: 'app.messages.welcome',
+          json: { text: 'Welcome!' },
+          conditions: { language: 'en' },
+          resourceTypeName: 'json'
+        })
+        .orThrow();
+
+      hierarchicalManager
+        .addLooseCandidate({
+          id: 'app.errors.notFound',
+          json: { text: 'Not Found' },
+          conditions: { language: 'en' },
+          resourceTypeName: 'json'
+        })
+        .orThrow();
+
+      const hierarchicalCompiledCollection = hierarchicalManager.getCompiledResourceCollection().orThrow();
+      const hierarchicalParams = {
+        ...createParams,
+        compiledCollection: hierarchicalCompiledCollection
+      };
+
+      expect(TsRes.Runtime.CompiledResourceCollection.create(hierarchicalParams)).toSucceedAndSatisfy(
+        (collection) => {
+          expect(collection.getBuiltResourceTree()).toSucceedAndSatisfy((tree) => {
+            // Test that we can navigate the hierarchy built from flat resource ids
+            expect(tree.hasBranch('app')).toSucceedWith(true);
+            expect(tree.hasBranch('app.messages')).toSucceedWith(true);
+            expect(tree.hasResource('app.messages.welcome')).toSucceedWith(true);
+
+            // Test that branches don't have resources (following tree semantics)
+            expect(tree.hasResource('app')).toSucceedWith(false);
+            expect(tree.hasResource('app.messages')).toSucceedWith(false);
+
+            // Test branch children access
+            expect(tree.getBranchById('app.messages')).toSucceedAndSatisfy((messagesNode) => {
+              expect(messagesNode.children.has('welcome' as TsRes.ResourceName)).toBe(true);
+              expect(messagesNode.children.getResource('welcome' as TsRes.ResourceName)).toSucceed();
+            });
+
+            // Test errors branch access
+            expect(tree.getBranchById('app.errors')).toSucceedAndSatisfy((errorsNode) => {
+              expect(errorsNode.children.has('notFound' as TsRes.ResourceName)).toBe(true);
+              expect(errorsNode.children.getResource('notFound' as TsRes.ResourceName)).toSucceed();
+            });
+          });
+        }
+      );
+    });
+  });
 });

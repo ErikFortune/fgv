@@ -85,6 +85,28 @@ Implementation of a read-only resource tree root that organizes resources hierar
 </td></tr>
 <tr><td>
 
+[ReadOnlyValidatingResourceTree](./ts-res.runtime.readonlyvalidatingresourcetree.md)
+
+
+</td><td>
+
+Implementation of a validating resource tree that validates string inputs before delegating to the underlying tree.
+
+
+</td></tr>
+<tr><td>
+
+[ReadOnlyValidatingResourceTreeRoot](./ts-res.runtime.readonlyvalidatingresourcetreeroot.md)
+
+
+</td><td>
+
+A ReadOnlyResourceTreeRoot with a validating property that enables validated use with string inputs. This eliminates the need for type casting in consumer code.
+
+
+</td></tr>
+<tr><td>
+
 [ResourceResolver](./ts-res.runtime.resourceresolver.md)
 
 
@@ -312,6 +334,39 @@ Interface for the root node of a resource tree.
 </td><td>
 
 Interface for a read-only result-based resource tree with navigation methods.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyValidatingResourceTree](./ts-res.runtime.ireadonlyvalidatingresourcetree.md)
+
+
+</td><td>
+
+A read-only interface for a validating resource tree that accepts string inputs.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyValidatingResourceTreeCreateFromInitParams](./ts-res.runtime.ireadonlyvalidatingresourcetreecreatefrominitparams.md)
+
+
+</td><td>
+
+Alternative parameters for creating a ReadOnlyValidatingResourceTree from initialization data.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyValidatingResourceTreeCreateParams](./ts-res.runtime.ireadonlyvalidatingresourcetreecreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a ReadOnlyValidatingResourceTree.
 
 
 </td></tr>

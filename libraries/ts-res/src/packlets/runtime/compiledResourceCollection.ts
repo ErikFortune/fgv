@@ -46,6 +46,10 @@ import { IResourceManager, IResource, IResourceCandidate } from './iResourceMana
 import { ConcreteDecision } from '../decisions';
 import * as Validate from './validate';
 import * as ResourceJson from '../resource-json';
+import {
+  ReadOnlyValidatingResourceTreeRoot,
+  IReadOnlyValidatingResourceTree
+} from './readOnlyValidatingResourceTree';
 
 /**
  * Interface for parameters to create a {@link Runtime.CompiledResourceCollection | CompiledResourceCollection}.
@@ -81,6 +85,7 @@ export class CompiledResourceCollection implements IResourceManager {
   private readonly _qualifiers: QualifierCollector;
   private readonly _resourceTypes: ResourceTypeCollector;
   private readonly _builtResources: ValidatingResultMap<ResourceId, IResource>;
+  private _cachedResourceTree?: ReadOnlyValidatingResourceTreeRoot<IResource>;
 
   /**
    * A {@link QualifierTypes.QualifierTypeCollector | QualifierTypeCollector} which
@@ -166,6 +171,31 @@ export class CompiledResourceCollection implements IResourceManager {
    */
   public getBuiltResource(id: string): Result<IResource> {
     return this._builtResources.validating.get(id);
+  }
+
+  /**
+   * Gets a validating resource tree built from the resources in this collection.
+   * The tree provides hierarchical access to resources based on their ResourceId structure.
+   * Uses lazy initialization with caching for performance.
+   * @returns Result containing the validating resource tree root, or failure if tree construction fails
+   * @public
+   */
+  public getBuiltResourceTree(): Result<IReadOnlyValidatingResourceTree<IResource>> {
+    if (this._cachedResourceTree) {
+      return succeed(this._cachedResourceTree.validating);
+    }
+
+    // Convert all built resources to [ResourceId, IResource] pairs
+    const resources: [ResourceId, IResource][] = [];
+    for (const [id, resource] of this._builtResources.entries()) {
+      resources.push([id, resource]);
+    }
+
+    // Create the validating tree with lazy initialization
+    return ReadOnlyValidatingResourceTreeRoot.create(resources).onSuccess((tree) => {
+      this._cachedResourceTree = tree;
+      return succeed(tree.validating);
+    });
   }
 
   /**
