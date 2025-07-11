@@ -7,7 +7,7 @@
 **Signature:**
 
 ```typescript
-getById(id: ResourceId): Result<IReadOnlyResourceTreeNode>;
+getById(id: ResourceId): Result<IReadOnlyResourceTreeNode<T>>;
 ```
 
 ## Parameters
@@ -46,5 +46,5 @@ id
 
 **Returns:**
 
-Result&lt;[IReadOnlyResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.md)<!-- -->&gt;
+Result&lt;[IReadOnlyResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.md)<!-- -->&lt;T&gt;&gt;
 

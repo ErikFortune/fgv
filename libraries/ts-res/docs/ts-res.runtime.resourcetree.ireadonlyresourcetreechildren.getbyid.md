@@ -9,7 +9,7 @@ Gets a tree node by its full ResourceId path.
 **Signature:**
 
 ```typescript
-getById(id: ResourceId): Result<IReadOnlyResourceTreeNode>;
+getById(id: TID): Result<IReadOnlyResourceTreeNode<T>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ id
 
 </td><td>
 
-[ResourceId](./ts-res.resourceid.md)
+TID
 
 
 </td><td>
@@ -50,7 +50,7 @@ The ResourceId path to look up
 
 **Returns:**
 
-Result&lt;[IReadOnlyResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.md)<!-- -->&gt;
+Result&lt;[IReadOnlyResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.md)<!-- -->&lt;T&gt;&gt;
 
 Result containing the node if found, or failure if not found
 

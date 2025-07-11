@@ -4,7 +4,9 @@
 
 ## Runtime.ResourceTree.ReadOnlyValidatingResourceTreeCollection class
 
-Implementation of a validating resource tree collection that validates string inputs.
+Implementation of a validating resource tree collection that validates string inputs before delegating to the underlying tree collection.
+
+This class wraps an [Runtime.ResourceTree.IReadOnlyResourceTreeChildren](./ts-res.runtime.resourcetree.ireadonlyresourcetreechildren.md) instance and provides string-based access to all tree operations. All string inputs are validated using the library's Convert utilities before being passed to the underlying collection.
 
 **Signature:**
 
@@ -140,6 +142,8 @@ Description
 
 </td><td>
 
+Gets a branch node by its string name (single component), validating the input.
+
 
 </td></tr>
 <tr><td>
@@ -151,6 +155,8 @@ Description
 
 
 </td><td>
+
+Gets a branch node by its string ResourceId path, validating the input.
 
 
 </td></tr>
@@ -164,6 +170,8 @@ Description
 
 </td><td>
 
+Gets a tree node by its string ResourceId path, validating the input.
+
 
 </td></tr>
 <tr><td>
@@ -175,6 +183,8 @@ Description
 
 
 </td><td>
+
+Gets a resource node by its string name (single component), validating the input.
 
 
 </td></tr>
@@ -188,6 +198,8 @@ Description
 
 </td><td>
 
+Gets a resource leaf node by its string ResourceId path, validating the input.
+
 
 </td></tr>
 <tr><td>
@@ -199,6 +211,8 @@ Description
 
 
 </td><td>
+
+Checks if a node exists at the given string ResourceId path.
 
 
 </td></tr>
@@ -212,6 +226,8 @@ Description
 
 </td><td>
 
+Checks if a branch exists at the given string ResourceId path.
+
 
 </td></tr>
 <tr><td>
@@ -223,6 +239,8 @@ Description
 
 
 </td><td>
+
+Checks if a resource exists at the given string ResourceId path.
 
 
 </td></tr>

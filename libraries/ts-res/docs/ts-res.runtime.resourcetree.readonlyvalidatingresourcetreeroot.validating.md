@@ -6,6 +6,8 @@
 
 A validating interface that validates string inputs before passing them to this tree.
 
+This property provides access to the full string-based API for tree navigation. All operations through this interface validate string inputs and return Result types for consistent error handling.
+
 **Signature:**
 
 ```typescript

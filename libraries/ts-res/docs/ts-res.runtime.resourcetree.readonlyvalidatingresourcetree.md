@@ -6,6 +6,8 @@
 
 Implementation of a validating resource tree that validates string inputs before delegating to the underlying tree.
 
+This class provides the main implementation of [IReadOnlyValidatingResourceTree](./ts-res.runtime.resourcetree.ireadonlyvalidatingresourcetree.md)<!-- -->. It wraps a [IReadOnlyResourceTreeRoot](./ts-res.runtime.resourcetree.ireadonlyresourcetreeroot.md) and provides string-based access to all tree operations. All methods delegate to the wrapped children collection, which handles the validation.
+
 **Signature:**
 
 ```typescript
@@ -138,6 +140,8 @@ Description
 
 </td><td>
 
+Gets a branch node by its string name (single component), validating the input.
+
 
 </td></tr>
 <tr><td>
@@ -149,6 +153,8 @@ Description
 
 
 </td><td>
+
+Gets a branch node by its string ResourceId path, validating the input.
 
 
 </td></tr>
@@ -162,6 +168,8 @@ Description
 
 </td><td>
 
+Gets a tree node by its string ResourceId path, validating the input.
+
 
 </td></tr>
 <tr><td>
@@ -173,6 +181,8 @@ Description
 
 
 </td><td>
+
+Gets a resource node by its string name (single component), validating the input.
 
 
 </td></tr>
@@ -186,6 +196,8 @@ Description
 
 </td><td>
 
+Gets a resource leaf node by its string ResourceId path, validating the input.
+
 
 </td></tr>
 <tr><td>
@@ -197,6 +209,8 @@ Description
 
 
 </td><td>
+
+Checks if a node exists at the given string ResourceId path.
 
 
 </td></tr>
@@ -210,6 +224,8 @@ Description
 
 </td><td>
 
+Checks if a branch exists at the given string ResourceId path.
+
 
 </td></tr>
 <tr><td>
@@ -221,6 +237,8 @@ Description
 
 
 </td><td>
+
+Checks if a resource exists at the given string ResourceId path.
 
 
 </td></tr>

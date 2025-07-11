@@ -4,12 +4,27 @@
 
 ## Runtime.ResourceTree.IReadOnlyValidatingResourceTreeCollection interface
 
-A validating wrapper for resource tree collections that validates string inputs.
+A validating wrapper for resource tree collections that validates string inputs before delegating to the underlying tree collection. This interface provides type-safe string-based access to tree operations that would normally require ResourceId and ResourceName typed parameters.
+
+All string inputs are validated using the library's Convert utilities before being passed to the underlying tree collection, ensuring type safety and consistent error handling.
 
 **Signature:**
 
 ```typescript
 export interface IReadOnlyValidatingResourceTreeCollection<T> 
+```
+
+## Example
+
+
+```typescript
+// Get a validating collection from a tree
+const collection: IReadOnlyValidatingResourceTreeCollection<IResource> = tree.children;
+
+// Use string literals directly - validation happens automatically
+const nodeResult = collection.getById('app.messages.welcome');
+const resourceResult = collection.getResource('welcome');
+const hasResult = collection.hasResource('welcome');
 ```
 
 ## Properties

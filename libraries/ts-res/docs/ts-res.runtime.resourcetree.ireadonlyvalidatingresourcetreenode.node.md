@@ -9,5 +9,5 @@ The underlying tree node instance.
 **Signature:**
 
 ```typescript
-readonly node: IReadOnlyResourceTreeNode;
+readonly node: IReadOnlyResourceTreeNode<T>;
 ```

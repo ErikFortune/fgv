@@ -42,7 +42,7 @@ tree
 
 </td><td>
 
-The underlying tree collection to wrap
+The underlying tree collection to wrap with validation
 
 
 </td></tr>

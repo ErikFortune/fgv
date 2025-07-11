@@ -42,7 +42,7 @@ tree
 
 </td><td>
 
-The underlying resource tree root to wrap
+The underlying resource tree root to wrap with validation
 
 
 </td></tr>

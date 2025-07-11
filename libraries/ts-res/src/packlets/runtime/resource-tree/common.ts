@@ -121,5 +121,6 @@ export interface IReadOnlyResourceTreeChildren<
  * A read-only interface for accessing resource tree children using weakly-typed string keys.
  * @public
  */
-export interface IReadOnlyValidatingResourceTreeChildren<T>
-  extends IReadOnlyResourceTreeChildren<T, string, string> {}
+export interface IReadOnlyValidatingResourceTreeChildren<T> extends IReadOnlyResourceTreeChildren<T> {
+  readonly validating: IReadOnlyResourceTreeChildren<T, string, string>;
+}

@@ -6,10 +6,33 @@
 
 A read-only interface for a validating resource tree that accepts string inputs.
 
+This is the main interface for interacting with a validating resource tree. It provides the same functionality as the underlying tree but with string-based input validation. The tree is organized hierarchically based on dot-separated ResourceId strings, where each segment represents a level in the tree hierarchy.
+
+The key benefit is that you can navigate the tree using string literals without needing to convert them to typed ResourceId/ResourceName parameters - the validation happens automatically and consistently returns Result<T> for all operations.
+
 **Signature:**
 
 ```typescript
 export interface IReadOnlyValidatingResourceTree<T> 
+```
+
+## Example
+
+
+```typescript
+// Create a validating tree from resources
+const treeResult = ReadOnlyValidatingResourceTreeRoot.create([
+  ['app.messages.welcome', welcomeResource],
+  ['app.messages.goodbye', goodbyeResource]
+]);
+
+const tree = treeResult.orThrow().validating;
+
+// Navigate with strings - validation is automatic
+tree.getBranchById('app.messages').onSuccess((branch) => {
+  // branch.children also provides string validation
+  return branch.children.getResource('welcome');
+});
 ```
 
 ## Properties

@@ -9,9 +9,8 @@ Interface for branch nodes in a resource tree that contain child nodes. Branch n
 **Signature:**
 
 ```typescript
-export interface IReadOnlyResourceTreeBranch<T> extends IReadOnlyResourceTreeNode 
+export interface IReadOnlyResourceTreeBranch<T> 
 ```
-**Extends:** [IReadOnlyResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.md)
 
 ## Properties
 
@@ -49,6 +48,25 @@ Description
 </td><td>
 
 [IReadOnlyResourceTreeChildren](./ts-res.runtime.resourcetree.ireadonlyresourcetreechildren.md)<!-- -->&lt;T&gt;
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[id](./ts-res.runtime.resourcetree.ireadonlyresourcetreebranch.id.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ResourceId](./ts-res.resourceid.md)
 
 
 </td><td>
@@ -106,6 +124,25 @@ false
 </td><td>
 
 false
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[name](./ts-res.runtime.resourcetree.ireadonlyresourcetreebranch.name.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ResourceName](./ts-res.resourcename.md)
 
 
 </td><td>

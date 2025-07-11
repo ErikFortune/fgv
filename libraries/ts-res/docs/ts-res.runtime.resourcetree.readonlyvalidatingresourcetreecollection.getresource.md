@@ -4,6 +4,8 @@
 
 ## Runtime.ResourceTree.ReadOnlyValidatingResourceTreeCollection.getResource() method
 
+Gets a resource node by its string name (single component), validating the input.
+
 **Signature:**
 
 ```typescript
@@ -40,6 +42,8 @@ string
 
 </td><td>
 
+The string ResourceName to validate and look up
+
 
 </td></tr>
 </tbody></table>
@@ -47,4 +51,6 @@ string
 **Returns:**
 
 Result&lt;[IReadOnlyValidatingResourceTreeLeaf](./ts-res.runtime.resourcetree.ireadonlyvalidatingresourcetreeleaf.md)<!-- -->&lt;T&gt;&gt;
+
+Result containing the validating node if it's a resource, or failure if validation fails or not found
 

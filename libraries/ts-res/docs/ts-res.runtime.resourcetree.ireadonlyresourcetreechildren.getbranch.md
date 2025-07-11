@@ -9,7 +9,7 @@ Gets a branch node by its direct name (single component).
 **Signature:**
 
 ```typescript
-getBranch(name: ResourceName): Result<IReadOnlyResourceTreeNode>;
+getBranch(name: TNAME): Result<IReadOnlyResourceTreeNode<T>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ name
 
 </td><td>
 
-[ResourceName](./ts-res.resourcename.md)
+TNAME
 
 
 </td><td>
@@ -50,7 +50,7 @@ The ResourceName to look up
 
 **Returns:**
 
-Result&lt;[IReadOnlyResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.md)<!-- -->&gt;
+Result&lt;[IReadOnlyResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.md)<!-- -->&lt;T&gt;&gt;
 
 Result containing the node if it's a branch, or failure if not found or not a branch
 

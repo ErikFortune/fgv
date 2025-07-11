@@ -315,7 +315,7 @@ export interface IReadOnlyValidatingResourceTree<T> {
  * Implementation of a validating resource tree collection that validates string inputs
  * before delegating to the underlying tree collection.
  *
- * This class wraps an {@link IReadOnlyResourceTreeChildren} instance and provides
+ * This class wraps an {@link Runtime.ResourceTree.IReadOnlyResourceTreeChildren} instance and provides
  * string-based access to all tree operations. All string inputs are validated using
  * the library's Convert utilities before being passed to the underlying collection.
  *
@@ -342,7 +342,7 @@ export class ReadOnlyValidatingResourceTreeCollection<T>
   }
 
   /**
-   * {@inheritDoc IReadOnlyValidatingResourceTreeCollection.getById}
+   * {@inheritDoc Runtime.ResourceTree.IReadOnlyValidatingResourceTreeCollection.getById}
    */
   public getById(id: string): Result<IReadOnlyValidatingResourceTreeNode<T>> {
     return Convert.resourceId
@@ -352,7 +352,7 @@ export class ReadOnlyValidatingResourceTreeCollection<T>
   }
 
   /**
-   * {@inheritDoc IReadOnlyValidatingResourceTreeCollection.getResourceById}
+   * {@inheritDoc Runtime.ResourceTree.IReadOnlyValidatingResourceTreeCollection.getResourceById}
    */
   public getResourceById(id: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>> {
     return Convert.resourceId
@@ -362,7 +362,7 @@ export class ReadOnlyValidatingResourceTreeCollection<T>
   }
 
   /**
-   * {@inheritDoc IReadOnlyValidatingResourceTreeCollection.getBranchById}
+   * {@inheritDoc Runtime.ResourceTree.IReadOnlyValidatingResourceTreeCollection.getBranchById}
    */
   public getBranchById(id: string): Result<IReadOnlyValidatingResourceTreeBranch<T>> {
     return Convert.resourceId
@@ -372,7 +372,7 @@ export class ReadOnlyValidatingResourceTreeCollection<T>
   }
 
   /**
-   * {@inheritDoc IReadOnlyValidatingResourceTreeCollection.getResource}
+   * {@inheritDoc Runtime.ResourceTree.IReadOnlyValidatingResourceTreeCollection.getResource}
    */
   public getResource(name: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>> {
     return Convert.resourceName
@@ -382,7 +382,7 @@ export class ReadOnlyValidatingResourceTreeCollection<T>
   }
 
   /**
-   * {@inheritDoc IReadOnlyValidatingResourceTreeCollection.getBranch}
+   * {@inheritDoc Runtime.ResourceTree.IReadOnlyValidatingResourceTreeCollection.getBranch}
    */
   public getBranch(name: string): Result<IReadOnlyValidatingResourceTreeBranch<T>> {
     return Convert.resourceName
@@ -392,7 +392,7 @@ export class ReadOnlyValidatingResourceTreeCollection<T>
   }
 
   /**
-   * {@inheritDoc IReadOnlyValidatingResourceTreeCollection.has}
+   * {@inheritDoc Runtime.ResourceTree.IReadOnlyValidatingResourceTreeCollection.has}
    */
   public has(id: string): Result<boolean> {
     return Convert.resourceId.convert(id).onSuccess((validId: ResourceId) => {
@@ -404,7 +404,7 @@ export class ReadOnlyValidatingResourceTreeCollection<T>
   }
 
   /**
-   * {@inheritDoc IReadOnlyValidatingResourceTreeCollection.hasResource}
+   * {@inheritDoc Runtime.ResourceTree.IReadOnlyValidatingResourceTreeCollection.hasResource}
    */
   public hasResource(id: string): Result<boolean> {
     return Convert.resourceId.convert(id).onSuccess((validId: ResourceId) => {
@@ -416,7 +416,7 @@ export class ReadOnlyValidatingResourceTreeCollection<T>
   }
 
   /**
-   * {@inheritDoc IReadOnlyValidatingResourceTreeCollection.hasBranch}
+   * {@inheritDoc Runtime.ResourceTree.IReadOnlyValidatingResourceTreeCollection.hasBranch}
    */
   public hasBranch(id: string): Result<boolean> {
     return Convert.resourceId.convert(id).onSuccess((validId: ResourceId) => {
@@ -502,9 +502,9 @@ function wrapValidatingBranch<T>(
 /**
  * Implementation of a validating resource tree that validates string inputs before delegating to the underlying tree.
  *
- * This class provides the main implementation of {@link IReadOnlyValidatingResourceTree}. It wraps
- * a {@link IReadOnlyResourceTreeRoot} and provides string-based access to all tree operations.
- * All methods delegate to the wrapped children collection, which handles the validation.
+ * This class provides the main implementation of {@link Runtime.ResourceTree.IReadOnlyValidatingResourceTree | IReadOnlyValidatingResourceTree}.
+ * It wraps a {@link Runtime.ResourceTree.IReadOnlyResourceTreeRoot | IReadOnlyResourceTreeRoot} and provides string-based
+ * access to all tree operations. All methods delegate to the wrapped children collection, which handles the validation.
  *
  * @public
  */
@@ -522,56 +522,56 @@ export class ReadOnlyValidatingResourceTree<T> implements IReadOnlyValidatingRes
   }
 
   /**
-   * {@inheritDoc IReadOnlyValidatingResourceTree.getById}
+   * {@inheritDoc Runtime.ResourceTree.IReadOnlyValidatingResourceTree.getById}
    */
   public getById(id: string): Result<IReadOnlyValidatingResourceTreeNode<T>> {
     return this.children.getById(id);
   }
 
   /**
-   * {@inheritDoc IReadOnlyValidatingResourceTree.getResourceById}
+   * {@inheritDoc Runtime.ResourceTree.IReadOnlyValidatingResourceTree.getResourceById}
    */
   public getResourceById(id: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>> {
     return this.children.getResourceById(id);
   }
 
   /**
-   * {@inheritDoc IReadOnlyValidatingResourceTree.getBranchById}
+   * {@inheritDoc Runtime.ResourceTree.IReadOnlyValidatingResourceTree.getBranchById}
    */
   public getBranchById(id: string): Result<IReadOnlyValidatingResourceTreeBranch<T>> {
     return this.children.getBranchById(id);
   }
 
   /**
-   * {@inheritDoc IReadOnlyValidatingResourceTree.getResource}
+   * {@inheritDoc Runtime.ResourceTree.IReadOnlyValidatingResourceTree.getResource}
    */
   public getResource(name: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>> {
     return this.children.getResource(name);
   }
 
   /**
-   * {@inheritDoc IReadOnlyValidatingResourceTree.getBranch}
+   * {@inheritDoc Runtime.ResourceTree.IReadOnlyValidatingResourceTree.getBranch}
    */
   public getBranch(name: string): Result<IReadOnlyValidatingResourceTreeBranch<T>> {
     return this.children.getBranch(name);
   }
 
   /**
-   * {@inheritDoc IReadOnlyValidatingResourceTree.has}
+   * {@inheritDoc Runtime.ResourceTree.IReadOnlyValidatingResourceTree.has}
    */
   public has(id: string): Result<boolean> {
     return this.children.has(id);
   }
 
   /**
-   * {@inheritDoc IReadOnlyValidatingResourceTree.hasResource}
+   * {@inheritDoc Runtime.ResourceTree.IReadOnlyValidatingResourceTree.hasResource}
    */
   public hasResource(id: string): Result<boolean> {
     return this.children.hasResource(id);
   }
 
   /**
-   * {@inheritDoc IReadOnlyValidatingResourceTree.hasBranch}
+   * {@inheritDoc Runtime.ResourceTree.IReadOnlyValidatingResourceTree.hasBranch}
    */
   public hasBranch(id: string): Result<boolean> {
     return this.children.hasBranch(id);
@@ -603,8 +603,8 @@ export interface IReadOnlyValidatingResourceTreeCreateFromInitParams<T> {
 /**
  * A ReadOnlyResourceTreeRoot with a validating property that enables validated use with string inputs.
  *
- * This class extends {@link ReadOnlyResourceTreeRoot} to provide both the standard tree interface
- * and a {@link validating} property that accepts string inputs. This eliminates the need for
+ * This class extends {@link Runtime.ResourceTree.ReadOnlyResourceTreeRoot | ReadOnlyResourceTreeRoot} to provide
+ * both the standard tree interface and a validating property that accepts string inputs. This eliminates the need for
  * manual type conversion in consumer code and provides a clean, type-safe API for string-based
  * tree navigation.
  *

@@ -9,7 +9,7 @@ Gets a branch node by its full ResourceId path.
 **Signature:**
 
 ```typescript
-getBranchById(id: ResourceId): Result<IReadOnlyResourceTreeBranch<T>>;
+getBranchById(id: TID): Result<IReadOnlyResourceTreeBranch<T>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ id
 
 </td><td>
 
-[ResourceId](./ts-res.resourceid.md)
+TID
 
 
 </td><td>

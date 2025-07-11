@@ -1754,7 +1754,9 @@ interface IReadOnlyValidatingResourceTreeBranch<T> extends IReadOnlyValidatingRe
 }
 
 // @public
-interface IReadOnlyValidatingResourceTreeChildren<T> extends IReadOnlyResourceTreeChildren<T, string, string> {
+interface IReadOnlyValidatingResourceTreeChildren<T> extends IReadOnlyResourceTreeChildren<T> {
+    // (undocumented)
+    readonly validating: IReadOnlyResourceTreeChildren<T, string, string>;
 }
 
 // @public
@@ -2702,7 +2704,7 @@ class ReadOnlyResourceTreeBranch<T> implements IReadOnlyResourceTreeBranch<T> {
 }
 
 // @public
-class ReadOnlyResourceTreeChildren<T> extends ResultMap<ResourceName, IReadOnlyResourceTreeNode<T>> implements IReadOnlyResourceTreeChildren<T> {
+class ReadOnlyResourceTreeChildren<T> extends ResultMap<ResourceName, IReadOnlyResourceTreeNode<T>> implements IReadOnlyValidatingResourceTreeChildren<T> {
     constructor(path: ResourceId | undefined, entries: [ResourceName, IReadOnlyResourceTreeNode<T>][]);
     // (undocumented)
     getBranch(name: ResourceName): Result<IReadOnlyResourceTreeNode<T>>;
@@ -2717,7 +2719,7 @@ class ReadOnlyResourceTreeChildren<T> extends ResultMap<ResourceName, IReadOnlyR
     // (undocumented)
     protected path: ResourceId | undefined;
     // (undocumented)
-    validating: IReadOnlyValidatingResourceTreeChildren<T>;
+    validating: IReadOnlyResourceTreeChildren<T, string, string>;
 }
 
 // @public
@@ -2762,43 +2764,43 @@ class ReadOnlyResourceTreeRoot<T> implements IReadOnlyResourceTreeRoot<T> {
 // @public
 type ReadOnlyResourceTypeCollector = Collections.IReadOnlyValidatingCollector<ResourceType>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTree"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyResourceTreeRoot"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 class ReadOnlyValidatingResourceTree<T> implements IReadOnlyValidatingResourceTree<T> {
     constructor(tree: IReadOnlyResourceTreeRoot<T>);
     // (undocumented)
     readonly children: IReadOnlyValidatingResourceTreeCollection<T>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTree"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     getBranch(name: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTree"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     getBranchById(id: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTree"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     getById(id: string): Result<IReadOnlyValidatingResourceTreeNode<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTree"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     getResource(name: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTree"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     getResourceById(id: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTree"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     has(id: string): Result<boolean>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTree"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     hasBranch(id: string): Result<boolean>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTree"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     hasResource(id: string): Result<boolean>;
@@ -2806,40 +2808,40 @@ class ReadOnlyValidatingResourceTree<T> implements IReadOnlyValidatingResourceTr
     readonly tree: IReadOnlyResourceTreeRoot<T>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyResourceTreeChildren"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 class ReadOnlyValidatingResourceTreeCollection<T> implements IReadOnlyValidatingResourceTreeCollection<T> {
     constructor(tree: IReadOnlyResourceTreeChildren<T>);
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTreeCollection"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     getBranch(name: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTreeCollection"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     getBranchById(id: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTreeCollection"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     getById(id: string): Result<IReadOnlyValidatingResourceTreeNode<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTreeCollection"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     getResource(name: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTreeCollection"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     getResourceById(id: string): Result<IReadOnlyValidatingResourceTreeLeaf<T>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTreeCollection"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     has(id: string): Result<boolean>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTreeCollection"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     hasBranch(id: string): Result<boolean>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res" does not have an export "IReadOnlyValidatingResourceTreeCollection"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     hasResource(id: string): Result<boolean>;
@@ -2848,8 +2850,7 @@ class ReadOnlyValidatingResourceTreeCollection<T> implements IReadOnlyValidating
     readonly tree: IReadOnlyResourceTreeChildren<T>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ReadOnlyResourceTreeRoot"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "validating"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 class ReadOnlyValidatingResourceTreeRoot<T> extends ReadOnlyResourceTreeRoot<T> {

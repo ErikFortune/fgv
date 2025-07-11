@@ -4,6 +4,8 @@
 
 ## Runtime.ResourceTree.ReadOnlyValidatingResourceTree.hasBranch() method
 
+Checks if a branch exists at the given string ResourceId path.
+
 **Signature:**
 
 ```typescript
@@ -40,6 +42,8 @@ string
 
 </td><td>
 
+The string ResourceId path to validate and check
+
 
 </td></tr>
 </tbody></table>
@@ -47,4 +51,6 @@ string
 **Returns:**
 
 Result&lt;boolean&gt;
+
+Result containing true if branch exists, false if not, or failure if validation fails
 

@@ -7,7 +7,7 @@
 **Signature:**
 
 ```typescript
-getResource(name: ResourceName): Result<IReadOnlyResourceTreeNode>;
+getResource(name: ResourceName): Result<IReadOnlyResourceTreeNode<T>>;
 ```
 
 ## Parameters
@@ -46,5 +46,5 @@ name
 
 **Returns:**
 
-Result&lt;[IReadOnlyResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.md)<!-- -->&gt;
+Result&lt;[IReadOnlyResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.md)<!-- -->&lt;T&gt;&gt;
 

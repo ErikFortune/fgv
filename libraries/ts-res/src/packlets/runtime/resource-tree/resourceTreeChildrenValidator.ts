@@ -27,55 +27,110 @@ import {
   IReadOnlyResourceTreeBranch,
   IReadOnlyResourceTreeChildren,
   IReadOnlyResourceTreeLeaf,
-  IReadOnlyResourceTreeNode,
-  IReadOnlyValidatingResourceTreeChildren
+  IReadOnlyResourceTreeNode
 } from './common';
 
-export class ResourceTreeChildrenValidator<T> implements IReadOnlyValidatingResourceTreeChildren<T> {
+/**
+ * A validator wrapper for resource tree children that validates string inputs before
+ * delegating to the underlying tree children collection.
+ *
+ * This class implements {@link Runtime.ResourceTree.IReadOnlyValidatingResourceTreeChildren | IReadOnlyValidatingResourceTreeChildren}
+ * by wrapping an {@link Runtime.ResourceTree.IReadOnlyResourceTreeChildren | IReadOnlyResourceTreeChildren} instance and
+ * providing string-based access to all tree operations. All string inputs are validated using the library's
+ * validation utilities before being passed to the underlying collection.
+ *
+ * The validator acts as a bridge between string-based external APIs and the
+ * strongly-typed internal tree operations, ensuring type safety and consistent
+ * error handling throughout the resource tree navigation.
+ *
+ * @internal
+ */
+export class ResourceTreeChildrenValidator<T> implements IReadOnlyResourceTreeChildren<T, string, string> {
   private readonly _inner: IReadOnlyResourceTreeChildren<T>;
 
+  /**
+   * Creates a new validator wrapper for resource tree children.
+   * @param inner - The underlying resource tree children collection to wrap with validation
+   */
   public constructor(inner: IReadOnlyResourceTreeChildren<T>) {
     this._inner = inner;
   }
 
+  /**
+   * Gets a tree node by its string ResourceId path, validating the input.
+   * @param id - The string ResourceId path to validate and look up
+   * @returns Result containing the node if found, or failure if validation fails or not found
+   */
   public getById(id: string): Result<IReadOnlyResourceTreeNode<T>> {
     return Validate.toResourceId(id).onSuccess((resourceId) => {
       return this._inner.getById(resourceId);
     });
   }
 
+  /**
+   * Gets a resource node by its string name (single component), validating the input.
+   * @param name - The string ResourceName to validate and look up
+   * @returns Result containing the node if it's a resource, or failure if validation fails or not found
+   */
   public getResource(name: string): Result<IReadOnlyResourceTreeNode<T>> {
     return Validate.toResourceName(name).onSuccess((resourceName) => {
       return this._inner.getResource(resourceName);
     });
   }
 
+  /**
+   * Gets a branch node by its string name (single component), validating the input.
+   * @param name - The string ResourceName to validate and look up
+   * @returns Result containing the node if it's a branch, or failure if validation fails or not found
+   */
   public getBranch(name: string): Result<IReadOnlyResourceTreeNode<T>> {
     return Validate.toResourceName(name).onSuccess((resourceName) => {
       return this._inner.getBranch(resourceName);
     });
   }
 
+  /**
+   * Gets a resource leaf node by its string ResourceId path, validating the input.
+   * @param id - The string ResourceId path to validate and look up
+   * @returns Result containing the leaf if found and is a resource, or failure otherwise
+   */
   public getResourceById(id: string): Result<IReadOnlyResourceTreeLeaf<T>> {
     return Validate.toResourceId(id).onSuccess((resourceId) => {
       return this._inner.getResourceById(resourceId);
     });
   }
 
+  /**
+   * Gets a branch node by its string ResourceId path, validating the input.
+   * @param id - The string ResourceId path to validate and look up
+   * @returns Result containing the branch if found and has children, or failure otherwise
+   */
   public getBranchById(id: string): Result<IReadOnlyResourceTreeBranch<T>> {
     return Validate.toResourceId(id).onSuccess((resourceId) => {
       return this._inner.getBranchById(resourceId);
     });
   }
 
+  /**
+   * The number of direct child nodes in this collection.
+   */
   public get size(): number {
     return this._inner.size;
   }
 
+  /**
+   * Returns an iterator of [ResourceName, node] pairs for all child nodes.
+   * @returns Map iterator for all child nodes
+   */
   public entries(): MapIterator<[ResourceName, IReadOnlyResourceTreeNode<T>]> {
     return this._inner.entries();
   }
 
+  /**
+   * Executes a callback function for each child node in the collection.
+   * @param cb - The callback function to execute for each child node
+   * @param arg - Optional argument to pass to the callback
+   */
   public forEach(
     cb: (value: unknown, key: string, map: IReadOnlyResultMap<string, unknown>, thisArg?: unknown) => void,
     arg?: unknown
@@ -85,6 +140,11 @@ export class ResourceTreeChildrenValidator<T> implements IReadOnlyValidatingReso
     }
   }
 
+  /**
+   * Gets a child node by its ResourceName key with detailed error information.
+   * @param key - The ResourceName key to look up
+   * @returns DetailedResult containing the node if found, or failure with details
+   */
   public get(
     key: ResourceName
   ): DetailedResult<IReadOnlyResourceTreeNode<T>, Collections.ResultMapResultDetail> {
@@ -94,18 +154,35 @@ export class ResourceTreeChildrenValidator<T> implements IReadOnlyValidatingReso
     return failWithDetail(`${key}: invalid resource name.`, 'invalid-key');
   }
 
+  /**
+   * Checks if a child node exists at the given ResourceName key.
+   * @param key - The ResourceName key to check
+   * @returns True if a child node exists at the key, false otherwise
+   */
   public has(key: ResourceName): boolean {
     return this._inner.has(key as ResourceName);
   }
 
+  /**
+   * Returns an iterator of ResourceName keys for all child nodes.
+   * @returns Map iterator for all child node keys
+   */
   public keys(): MapIterator<ResourceName> {
     return this._inner.keys();
   }
 
+  /**
+   * Returns an iterator of child node values.
+   * @returns Map iterator for all child node values
+   */
   public values(): MapIterator<IReadOnlyResourceTreeNode<T>> {
     return this._inner.values();
   }
 
+  /**
+   * Returns an iterator for [ResourceName, node] pairs, enabling for...of iteration.
+   * @returns Iterable iterator for all child nodes
+   */
   public [Symbol.iterator](): IterableIterator<[ResourceName, IReadOnlyResourceTreeNode<T>]> {
     return this._inner[Symbol.iterator]();
   }

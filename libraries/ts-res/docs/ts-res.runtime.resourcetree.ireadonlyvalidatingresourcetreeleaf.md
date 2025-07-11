@@ -6,6 +6,8 @@
 
 Interface for validating leaf nodes that contain resources.
 
+Leaf nodes represent the terminal nodes in the resource tree that contain actual resource instances. These nodes do not have children and provide direct access to the resource they contain.
+
 **Signature:**
 
 ```typescript

@@ -2,133 +2,14 @@
 
 [Home](./index.md) &gt; [@fgv/ts-res](./ts-res.md) &gt; [Runtime](./ts-res.runtime.md) &gt; [ResourceTree](./ts-res.runtime.resourcetree.md) &gt; [IReadOnlyResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.md)
 
-## Runtime.ResourceTree.IReadOnlyResourceTreeNode interface
+## Runtime.ResourceTree.IReadOnlyResourceTreeNode type
 
-Base interface for resource tree nodes.
+Union type representing any node in the resource tree, which can be a leaf or a branch. This allows for flexible handling of different node types in the tree structure.
 
 **Signature:**
 
 ```typescript
-export interface IReadOnlyResourceTreeNode 
+export type IReadOnlyResourceTreeNode<T> = IReadOnlyResourceTreeLeaf<T> | IReadOnlyResourceTreeBranch<T>;
 ```
-
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[isBranch](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.isbranch.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-boolean
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[isLeaf](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.isleaf.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-boolean
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[isRoot](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.isroot.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-boolean
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[name](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.name.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[ResourceName](./ts-res.resourcename.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[path](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.path.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[ResourceId](./ts-res.resourceid.md)
-
-
-</td><td>
-
-
-</td></tr>
-</tbody></table>
+**References:** [IReadOnlyResourceTreeLeaf](./ts-res.runtime.resourcetree.ireadonlyresourcetreeleaf.md)<!-- -->, [IReadOnlyResourceTreeBranch](./ts-res.runtime.resourcetree.ireadonlyresourcetreebranch.md)
 

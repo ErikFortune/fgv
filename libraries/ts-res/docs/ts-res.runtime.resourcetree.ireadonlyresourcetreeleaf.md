@@ -9,9 +9,8 @@ Interface for leaf nodes in a resource tree. Leaf nodes contain resource values 
 **Signature:**
 
 ```typescript
-export interface IReadOnlyResourceTreeLeaf<T> extends IReadOnlyResourceTreeNode 
+export interface IReadOnlyResourceTreeLeaf<T> 
 ```
-**Extends:** [IReadOnlyResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.md)
 
 ## Properties
 
@@ -37,6 +36,25 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[id](./ts-res.runtime.resourcetree.ireadonlyresourcetreeleaf.id.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ResourceId](./ts-res.resourceid.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
 
 [isBranch](./ts-res.runtime.resourcetree.ireadonlyresourcetreeleaf.isbranch.md)
 
@@ -87,6 +105,25 @@ true
 </td><td>
 
 false
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[name](./ts-res.runtime.resourcetree.ireadonlyresourcetreeleaf.name.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ResourceName](./ts-res.resourcename.md)
 
 
 </td><td>

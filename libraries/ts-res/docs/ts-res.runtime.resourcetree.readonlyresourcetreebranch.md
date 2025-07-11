@@ -57,6 +57,25 @@ Description
 </td></tr>
 <tr><td>
 
+[id](./ts-res.runtime.resourcetree.readonlyresourcetreebranch.id.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ResourceId](./ts-res.resourceid.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [isBranch](./ts-res.runtime.resourcetree.readonlyresourcetreebranch.isbranch.md)
 
 
@@ -125,25 +144,6 @@ false
 </td><td>
 
 [ResourceName](./ts-res.resourcename.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[path](./ts-res.runtime.resourcetree.readonlyresourcetreebranch.path.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[ResourceId](./ts-res.resourceid.md)
 
 
 </td><td>

@@ -9,7 +9,7 @@ Gets a resource leaf node by its full ResourceId path.
 **Signature:**
 
 ```typescript
-getResourceById(id: ResourceId): Result<IReadOnlyResourceTreeLeaf<T>>;
+getResourceById(id: TID): Result<IReadOnlyResourceTreeLeaf<T>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ id
 
 </td><td>
 
-[ResourceId](./ts-res.resourceid.md)
+TID
 
 
 </td><td>

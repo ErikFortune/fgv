@@ -9,7 +9,7 @@ Creates a new ReadOnlyResourceTreeChildren instance.
 **Signature:**
 
 ```typescript
-constructor(path: ResourceId | undefined, entries: [ResourceName, IReadOnlyResourceTreeNode][]);
+constructor(path: ResourceId | undefined, entries: [ResourceName, IReadOnlyResourceTreeNode<T>][]);
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ entries
 
 </td><td>
 
-\[[ResourceName](./ts-res.resourcename.md)<!-- -->, [IReadOnlyResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.md)<!-- -->\]\[\]
+\[[ResourceName](./ts-res.resourcename.md)<!-- -->, [IReadOnlyResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.md)<!-- -->&lt;T&gt;\]\[\]
 
 
 </td><td>

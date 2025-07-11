@@ -4,7 +4,11 @@
 
 ## Runtime.ResourceTree.ReadOnlyValidatingResourceTreeRoot class
 
-A ReadOnlyResourceTreeRoot with a validating property that enables validated use with string inputs. This eliminates the need for type casting in consumer code.
+A ReadOnlyResourceTreeRoot with a validating property that enables validated use with string inputs.
+
+This class extends [ReadOnlyResourceTreeRoot](./ts-res.runtime.resourcetree.readonlyresourcetreeroot.md) to provide both the standard tree interface and a validating property that accepts string inputs. This eliminates the need for manual type conversion in consumer code and provides a clean, type-safe API for string-based tree navigation.
+
+The class can be created from either an array of \[ResourceId, resource\] pairs or from a tree initialization structure, making it flexible for different use cases.
 
 **Signature:**
 
@@ -13,41 +17,26 @@ export declare class ReadOnlyValidatingResourceTreeRoot<T> extends ReadOnlyResou
 ```
 **Extends:** [ReadOnlyResourceTreeRoot](./ts-res.runtime.resourcetree.readonlyresourcetreeroot.md)<!-- -->&lt;T&gt;
 
-## Constructors
+## Remarks
 
-<table><thead><tr><th>
+The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `ReadOnlyValidatingResourceTreeRoot` class.
 
-Constructor
-
-
-</th><th>
-
-Modifiers
+## Example
 
 
-</th><th>
+```typescript
+// Create from resource pairs
+const tree = ReadOnlyValidatingResourceTreeRoot.create([
+  ['app.messages.welcome', { id: 'welcome', text: 'Welcome!' }],
+  ['app.errors.notFound', { id: 'notFound', text: 'Not Found' }]
+]).orThrow();
 
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[(constructor)(params)](./ts-res.runtime.resourcetree.readonlyvalidatingresourcetreeroot._constructor_.md)
-
-
-</td><td>
-
-`protected`
-
-
-</td><td>
-
-Creates a new validating resource tree root. Use the static create method instead.
-
-
-</td></tr>
-</tbody></table>
+// Use the validating interface with strings
+tree.validating.getBranchById('app').onSuccess((appBranch) => {
+  // appBranch.children also provides string validation
+  return appBranch.children.getBranch('messages');
+});
+```
 
 ## Properties
 
@@ -90,6 +79,8 @@ Description
 </td><td>
 
 A validating interface that validates string inputs before passing them to this tree.
+
+This property provides access to the full string-based API for tree navigation. All operations through this interface validate string inputs and return Result types for consistent error handling.
 
 
 </td></tr>

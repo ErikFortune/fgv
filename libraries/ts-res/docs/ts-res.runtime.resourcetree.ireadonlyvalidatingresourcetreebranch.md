@@ -6,6 +6,8 @@
 
 Interface for validating branch nodes that contain child collections.
 
+Branch nodes are intermediate nodes in the resource tree that organize the hierarchical structure. They do not contain resources directly but provide access to child nodes through a validating children collection that accepts string inputs.
+
 **Signature:**
 
 ```typescript

@@ -38,10 +38,10 @@ import { ResourceTreeChildrenValidator } from './resourceTreeChildrenValidator';
  */
 export class ReadOnlyResourceTreeChildren<T>
   extends ResultMap<ResourceName, IReadOnlyResourceTreeNode<T>>
-  implements IReadOnlyResourceTreeChildren<T>
+  implements IReadOnlyValidatingResourceTreeChildren<T>
 {
   protected path: ResourceId | undefined;
-  public validating: IReadOnlyValidatingResourceTreeChildren<T>;
+  public validating: IReadOnlyResourceTreeChildren<T, string, string>;
 
   /**
    * Creates a new ReadOnlyResourceTreeChildren instance.

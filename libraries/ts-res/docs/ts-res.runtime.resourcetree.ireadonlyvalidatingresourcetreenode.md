@@ -6,6 +6,8 @@
 
 Base interface for validating tree nodes that provide string validation capabilities.
 
+This interface wraps the underlying tree node and provides access to its properties while maintaining the validating context. All validating nodes extend this interface to provide consistent property access.
+
 **Signature:**
 
 ```typescript
@@ -131,7 +133,7 @@ The name of this node.
 
 </td><td>
 
-[IReadOnlyResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.md)
+[IReadOnlyResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.md)<!-- -->&lt;T&gt;
 
 
 </td><td>

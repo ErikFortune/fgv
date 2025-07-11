@@ -9,11 +9,11 @@ Implementation of a result-based resource tree that provides hierarchical access
 **Signature:**
 
 ```typescript
-export declare class ReadOnlyResourceTreeChildren<T> extends ResultMap<ResourceName, IReadOnlyResourceTreeNode> implements IReadOnlyResourceTreeChildren<T> 
+export declare class ReadOnlyResourceTreeChildren<T> extends ResultMap<ResourceName, IReadOnlyResourceTreeNode<T>> implements IReadOnlyValidatingResourceTreeChildren<T> 
 ```
-**Extends:** ResultMap&lt;[ResourceName](./ts-res.resourcename.md)<!-- -->, [IReadOnlyResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.md)<!-- -->&gt;
+**Extends:** ResultMap&lt;[ResourceName](./ts-res.resourcename.md)<!-- -->, [IReadOnlyResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.md)<!-- -->&lt;T&gt;&gt;
 
-**Implements:** [IReadOnlyResourceTreeChildren](./ts-res.runtime.resourcetree.ireadonlyresourcetreechildren.md)<!-- -->&lt;T&gt;
+**Implements:** [IReadOnlyValidatingResourceTreeChildren](./ts-res.runtime.resourcetree.ireadonlyvalidatingresourcetreechildren.md)<!-- -->&lt;T&gt;
 
 ## Constructors
 
@@ -85,6 +85,23 @@ Description
 </td><td>
 
 [ResourceId](./ts-res.resourceid.md) \| undefined
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[validating](./ts-res.runtime.resourcetree.readonlyresourcetreechildren.validating.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[IReadOnlyResourceTreeChildren](./ts-res.runtime.resourcetree.ireadonlyresourcetreechildren.md)<!-- -->&lt;T, string, string&gt;
 
 
 </td><td>

@@ -4,6 +4,8 @@
 
 ## Runtime.ResourceTree.ReadOnlyValidatingResourceTree.getById() method
 
+Gets a tree node by its string ResourceId path, validating the input.
+
 **Signature:**
 
 ```typescript
@@ -40,6 +42,8 @@ string
 
 </td><td>
 
+The string ResourceId path to validate and look up
+
 
 </td></tr>
 </tbody></table>
@@ -47,4 +51,6 @@ string
 **Returns:**
 
 Result&lt;[IReadOnlyValidatingResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyvalidatingresourcetreenode.md)<!-- -->&lt;T&gt;&gt;
+
+Result containing the validating node if found, or failure if validation fails or not found
 
