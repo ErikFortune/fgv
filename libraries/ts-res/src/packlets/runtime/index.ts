@@ -25,6 +25,7 @@ export * from './contextQualifierProvider';
 export * from './contextQualifierProviderValidator';
 export * from './iResourceManager';
 export * from './readOnlyResourceTree';
+export * from './readOnlyValidatingResourceTree';
 export * from './resultResourceTree';
 export * from './simpleContextQualifierProvider';
 export * from './validatingSimpleContextQualifierProvider';

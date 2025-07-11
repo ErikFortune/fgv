@@ -1716,6 +1716,29 @@ interface IReadOnlyResultResourceTree<T> extends IReadOnlyResultMap<ResourceName
 }
 
 // @public
+interface IReadOnlyValidatingResourceTree<T> {
+    getBranch(name: string): Result<IReadOnlyResourceTreeNode>;
+    getBranchById(id: string): Result<IReadOnlyResourceTreeBranch<T>>;
+    getById(id: string): Result<IReadOnlyResourceTreeNode>;
+    getResource(name: string): Result<IReadOnlyResourceTreeNode>;
+    getResourceById(id: string): Result<IReadOnlyResourceTreeLeaf<T>>;
+    has(id: string): Result<boolean>;
+    hasBranch(id: string): Result<boolean>;
+    hasResource(id: string): Result<boolean>;
+    readonly tree: IReadOnlyResourceTreeRoot<T>;
+}
+
+// @public
+interface IReadOnlyValidatingResourceTreeCreateFromInitParams<T> {
+    init: IResourceTreeRootInit<T>;
+}
+
+// @public
+interface IReadOnlyValidatingResourceTreeCreateParams<T> {
+    resources: [ResourceId, T][];
+}
+
+// @public
 interface IResource {
     readonly candidates: ReadonlyArray<IResourceCandidate>;
     readonly decision: ConcreteDecision;
@@ -2655,6 +2678,37 @@ class ReadOnlyResourceTreeRoot<T> implements IReadOnlyResourceTreeRoot<T> {
 // @public
 type ReadOnlyResourceTypeCollector = Collections.IReadOnlyValidatingCollector<ResourceType>;
 
+// @public
+class ReadOnlyValidatingResourceTree<T> implements IReadOnlyValidatingResourceTree<T> {
+    constructor(tree: IReadOnlyResourceTreeRoot<T>);
+    // (undocumented)
+    getBranch(name: string): Result<IReadOnlyResourceTreeNode>;
+    // (undocumented)
+    getBranchById(id: string): Result<IReadOnlyResourceTreeBranch<T>>;
+    // (undocumented)
+    getById(id: string): Result<IReadOnlyResourceTreeNode>;
+    // (undocumented)
+    getResource(name: string): Result<IReadOnlyResourceTreeNode>;
+    // (undocumented)
+    getResourceById(id: string): Result<IReadOnlyResourceTreeLeaf<T>>;
+    // (undocumented)
+    has(id: string): Result<boolean>;
+    // (undocumented)
+    hasBranch(id: string): Result<boolean>;
+    // (undocumented)
+    hasResource(id: string): Result<boolean>;
+    // (undocumented)
+    readonly tree: IReadOnlyResourceTreeRoot<T>;
+}
+
+// @public
+class ReadOnlyValidatingResourceTreeRoot<T> extends ReadOnlyResourceTreeRoot<T> {
+    protected constructor(params: IReadOnlyValidatingResourceTreeCreateParams<T> | IReadOnlyValidatingResourceTreeCreateFromInitParams<T>);
+    static create<T>(resources: [ResourceId, T][]): Result<ReadOnlyValidatingResourceTreeRoot<T>>;
+    static create<T>(init: IResourceTreeRootInit<T>): Result<ReadOnlyValidatingResourceTreeRoot<T>>;
+    readonly validating: IReadOnlyValidatingResourceTree<T>;
+}
+
 declare namespace RegularExpressions {
     export {
         identifier,
@@ -3137,6 +3191,11 @@ declare namespace Runtime {
         ReadOnlyResourceTreeBranch,
         ReadOnlyResourceTreeNode,
         ReadOnlyResourceTreeRoot,
+        IReadOnlyValidatingResourceTree,
+        ReadOnlyValidatingResourceTree,
+        IReadOnlyValidatingResourceTreeCreateParams,
+        IReadOnlyValidatingResourceTreeCreateFromInitParams,
+        ReadOnlyValidatingResourceTreeRoot,
         isResourceTreeRootOrNodeInit,
         isResourceTreeLeafInit,
         IReadOnlyResourceTreeNode,
