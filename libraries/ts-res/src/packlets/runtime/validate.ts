@@ -28,7 +28,7 @@ import { ConcreteDecision } from '../decisions';
 import { IResource, IResourceCandidate } from './iResourceManager';
 
 /**
- * Validates an {@link IResourceCandidate | IResourceCandidate} object.
+ * Validates an {@link Runtime.IResourceCandidate | IResourceCandidate} object.
  * @public
  */
 export const resourceCandidate: Validator<IResourceCandidate, unknown> =
@@ -42,7 +42,7 @@ export const resourceCandidate: Validator<IResourceCandidate, unknown> =
   });
 
 /**
- * Validates an {@link IResource | IResource} object.
+ * Validates an {@link Runtime.IResource | IResource} object.
  * @public
  */
 export const resource: Validator<IResource, unknown> = Validators.object<IResource>({

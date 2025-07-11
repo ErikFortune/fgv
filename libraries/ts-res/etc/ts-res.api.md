@@ -10,6 +10,7 @@ import { Converter } from '@fgv/ts-utils';
 import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-utils';
 import { ICollectible } from '@fgv/ts-utils';
+import { IReadOnlyResultMap } from '@fgv/ts-utils';
 import { JsonObject } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
 import { ObjectConverter } from '@fgv/ts-utils';
@@ -1656,6 +1657,65 @@ interface IReadOnlyQualifierCollector extends Collections.IReadOnlyValidatingCol
 }
 
 // @public
+interface IReadOnlyResourceTreeBranch<T> extends IReadOnlyResourceTreeNode {
+    // (undocumented)
+    readonly children: IReadOnlyResultResourceTree<T>;
+    // (undocumented)
+    readonly isBranch: true;
+    // (undocumented)
+    readonly isLeaf: false;
+    // (undocumented)
+    readonly isRoot: false;
+}
+
+// @public
+interface IReadOnlyResourceTreeLeaf<T> extends IReadOnlyResourceTreeNode {
+    // (undocumented)
+    readonly isBranch: false;
+    // (undocumented)
+    readonly isLeaf: true;
+    // (undocumented)
+    readonly isRoot: false;
+    // (undocumented)
+    readonly resource: T;
+}
+
+// @public
+interface IReadOnlyResourceTreeNode {
+    // (undocumented)
+    readonly isBranch: boolean;
+    // (undocumented)
+    readonly isLeaf: boolean;
+    // (undocumented)
+    readonly isRoot: boolean;
+    // (undocumented)
+    readonly name: ResourceName;
+    // (undocumented)
+    readonly path: ResourceId;
+}
+
+// @public
+interface IReadOnlyResourceTreeRoot<T> {
+    // (undocumented)
+    readonly children: IReadOnlyResultResourceTree<T>;
+    // (undocumented)
+    readonly isBranch: false;
+    // (undocumented)
+    readonly isLeaf: false;
+    // (undocumented)
+    readonly isRoot: true;
+}
+
+// @public
+interface IReadOnlyResultResourceTree<T> extends IReadOnlyResultMap<ResourceName, IReadOnlyResourceTreeNode> {
+    getBranch(name: ResourceName): Result<IReadOnlyResourceTreeNode>;
+    getBranchById(id: ResourceId): Result<IReadOnlyResourceTreeBranch<T>>;
+    getById(id: ResourceId): Result<IReadOnlyResourceTreeNode>;
+    getResource(name: ResourceName): Result<IReadOnlyResourceTreeNode>;
+    getResourceById(id: ResourceId): Result<IReadOnlyResourceTreeLeaf<T>>;
+}
+
+// @public
 interface IResource {
     readonly candidates: ReadonlyArray<IResourceCandidate>;
     readonly decision: ConcreteDecision;
@@ -1816,6 +1876,12 @@ interface IResourceResolverCreateParams {
     resourceManager: IResourceManager;
 }
 
+// @public
+interface IResourceTreeBranchInit<T> {
+    // (undocumented)
+    readonly children: Record<ResourceName, ResourceTreeNodeInit<T>>;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -1834,6 +1900,12 @@ interface IResourceTreeChildNodeDecl_2 {
     readonly children?: Record<string, IResourceTreeChildNodeDecl_2>;
     // (undocumented)
     readonly resources?: Record<string, IChildResourceDecl_2>;
+}
+
+// @public
+interface IResourceTreeLeafInit<T> {
+    // (undocumented)
+    readonly resource: T;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1860,6 +1932,12 @@ interface IResourceTreeRootDecl_2 extends IResourceTreeChildNodeDecl_2 {
     readonly resources?: Record<string, IChildResourceDecl_2>;
 }
 
+// @public
+interface IResourceTreeRootInit<T> {
+    // (undocumented)
+    readonly children: Record<ResourceName, ResourceTreeNodeInit<T>>;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -1875,6 +1953,12 @@ interface ISimpleContextQualifierProviderCreateParams {
 //
 // @public
 function isImportable(i: IImportable): i is Importable;
+
+// @public
+function isResourceTreeLeafInit<T>(init: ResourceTreeNodeInit<T>): init is IResourceTreeLeafInit<T>;
+
+// @public
+function isResourceTreeRootOrNodeInit<T>(init: ResourceTreeNodeInit<T> | IResourceTreeRootInit<T>): init is IResourceTreeBranchInit<T>;
 
 // @public
 function isValidConditionIndex(index: number): index is ConditionIndex;
@@ -2512,6 +2596,60 @@ type ReadOnlyConditionSetCollector = Collections.IReadOnlyValidatingCollector<Co
 // @public
 type ReadOnlyQualifierTypeCollector = Collections.IReadOnlyValidatingCollector<QualifierType>;
 
+// @public
+class ReadOnlyResourceTreeBranch<T> implements IReadOnlyResourceTreeBranch<T> {
+    // (undocumented)
+    readonly children: IReadOnlyResultResourceTree<T>;
+    static create<T>(childName: ResourceName, path: ResourceId | undefined, childInit: IResourceTreeBranchInit<T>): Result<ReadOnlyResourceTreeBranch<T>>;
+    // (undocumented)
+    get isBranch(): true;
+    // (undocumented)
+    get isLeaf(): false;
+    // (undocumented)
+    get isRoot(): false;
+    // (undocumented)
+    readonly name: ResourceName;
+    // (undocumented)
+    readonly path: ResourceId;
+}
+
+// @public
+class ReadOnlyResourceTreeLeaf<T> implements IReadOnlyResourceTreeLeaf<T> {
+    protected constructor(name: ResourceName, parentPath: ResourceId | undefined, resource: T);
+    static create<T>(name: ResourceName, parentPath: ResourceId | undefined, resource: T): Result<ReadOnlyResourceTreeLeaf<T>>;
+    // (undocumented)
+    get isBranch(): false;
+    // (undocumented)
+    get isLeaf(): true;
+    // (undocumented)
+    get isRoot(): false;
+    // (undocumented)
+    readonly name: ResourceName;
+    // (undocumented)
+    readonly path: ResourceId;
+    // (undocumented)
+    readonly resource: T;
+}
+
+// @public
+type ReadOnlyResourceTreeNode<T> = ReadOnlyResourceTreeBranch<T> | ReadOnlyResourceTreeLeaf<T>;
+
+// @public
+class ReadOnlyResourceTreeRoot<T> implements IReadOnlyResourceTreeRoot<T> {
+    protected constructor(init: IResourceTreeRootInit<T>);
+    // (undocumented)
+    readonly children: IReadOnlyResultResourceTree<T>;
+    static create<T>(resources: [ResourceId, T][]): Result<ReadOnlyResourceTreeRoot<T>>;
+    static create<T>(init: IResourceTreeRootInit<T>): Result<ReadOnlyResourceTreeRoot<T>>;
+    static createResourceTreeInit<T>(resources: [ResourceId, T][]): Result<IResourceTreeRootInit<T>>;
+    // (undocumented)
+    get isBranch(): false;
+    // (undocumented)
+    get isLeaf(): false;
+    // (undocumented)
+    get isRoot(): true;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -2563,7 +2701,7 @@ class Resource implements IResource {
     toLooseResourceDecl(options?: ResourceJson.Helpers.IDeclarationOptions): ResourceJson.Json.ILooseResourceDecl;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResource"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const resource: Validator<IResource, unknown>;
@@ -2659,7 +2797,7 @@ class ResourceCandidate implements IResourceCandidate {
     static validateResourceTypes(candidates: ReadonlyArray<ResourceCandidate>, expectedType?: ResourceType): Result<ResourceType | undefined>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceCandidate"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const resourceCandidate: Validator<IResourceCandidate, unknown>;
@@ -2901,6 +3039,9 @@ export { Resources }
 // @public
 const resourceTreeChildNodeDecl: Converter<Normalized.IResourceTreeChildNodeDecl>;
 
+// @public
+type ResourceTreeNodeInit<T> = IResourceTreeLeafInit<T> | IResourceTreeBranchInit<T>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -2962,6 +3103,23 @@ export type ResourceValueMergeMethod = 'augment' | 'delete' | 'replace';
 // @public
 const resourceValueMergeMethod: Converter<ResourceValueMergeMethod, ResourceValueMergeMethod[]>;
 
+// @public
+class ResultResourceTree<T> extends ResultMap<ResourceName, IReadOnlyResourceTreeNode> implements IReadOnlyResultResourceTree<T> {
+    constructor(path: ResourceId | undefined, entries: [ResourceName, IReadOnlyResourceTreeNode][]);
+    // (undocumented)
+    getBranch(name: ResourceName): Result<IReadOnlyResourceTreeNode>;
+    // (undocumented)
+    getBranchById(id: ResourceId): Result<IReadOnlyResourceTreeBranch<T>>;
+    // (undocumented)
+    getById(id: ResourceId): Result<IReadOnlyResourceTreeNode>;
+    // (undocumented)
+    getResource(name: ResourceName): Result<IReadOnlyResourceTreeNode>;
+    // (undocumented)
+    getResourceById(id: ResourceId): Result<IReadOnlyResourceTreeLeaf<T>>;
+    // (undocumented)
+    protected path: ResourceId | undefined;
+}
+
 declare namespace Runtime {
     export {
         Validate_2 as Validate,
@@ -2975,6 +3133,22 @@ declare namespace Runtime {
         IResourceCandidate,
         IResource,
         IResourceManager,
+        ReadOnlyResourceTreeLeaf,
+        ReadOnlyResourceTreeBranch,
+        ReadOnlyResourceTreeNode,
+        ReadOnlyResourceTreeRoot,
+        isResourceTreeRootOrNodeInit,
+        isResourceTreeLeafInit,
+        IReadOnlyResourceTreeNode,
+        IReadOnlyResourceTreeLeaf,
+        IReadOnlyResourceTreeBranch,
+        IReadOnlyResourceTreeRoot,
+        IResourceTreeRootInit,
+        IResourceTreeLeafInit,
+        IResourceTreeBranchInit,
+        ResourceTreeNodeInit,
+        IReadOnlyResultResourceTree,
+        ResultResourceTree,
         ISimpleContextQualifierProviderCreateParams,
         SimpleContextQualifierProvider,
         IValidatingSimpleContextQualifierProviderCreateParams,
