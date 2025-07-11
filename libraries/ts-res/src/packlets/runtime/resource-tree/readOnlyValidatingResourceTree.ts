@@ -28,8 +28,8 @@ import {
   IReadOnlyResourceTreeNode,
   IReadOnlyResourceTreeRoot,
   IResourceTreeRootInit,
-  IReadOnlyResultResourceTree
-} from './resultResourceTree';
+  IReadOnlyResourceTreeChildren
+} from './resourceTreeChildren';
 import { ReadOnlyResourceTreeRoot } from './readOnlyResourceTree';
 
 /**
@@ -40,7 +40,7 @@ export interface IReadOnlyValidatingResourceTreeCollection<T> {
   /**
    * The underlying resource tree collection instance.
    */
-  readonly tree: IReadOnlyResultResourceTree<T>;
+  readonly tree: IReadOnlyResourceTreeChildren<T>;
 
   /**
    * The number of direct child nodes in this collection.
@@ -260,13 +260,13 @@ export interface IReadOnlyValidatingResourceTree<T> {
 export class ReadOnlyValidatingResourceTreeCollection<T>
   implements IReadOnlyValidatingResourceTreeCollection<T>
 {
-  public readonly tree: IReadOnlyResultResourceTree<T>;
+  public readonly tree: IReadOnlyResourceTreeChildren<T>;
 
   /**
    * Creates a new validating tree collection wrapper.
    * @param tree - The underlying tree collection to wrap
    */
-  public constructor(tree: IReadOnlyResultResourceTree<T>) {
+  public constructor(tree: IReadOnlyResourceTreeChildren<T>) {
     this.tree = tree;
   }
 

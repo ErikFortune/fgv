@@ -30,6 +30,17 @@ Implementation of a read-only resource tree branch node that contains child node
 </td></tr>
 <tr><td>
 
+[ReadOnlyResourceTreeChildren](./ts-res.runtime.resourcetree.readonlyresourcetreechildren.md)
+
+
+</td><td>
+
+Implementation of a result-based resource tree that provides hierarchical access to resources. Extends ResultMap to provide collection-like access while adding tree-specific navigation methods.
+
+
+</td></tr>
+<tr><td>
+
 [ReadOnlyResourceTreeLeaf](./ts-res.runtime.resourcetree.readonlyresourcetreeleaf.md)
 
 
@@ -80,17 +91,6 @@ Implementation of a validating resource tree collection that validates string in
 </td><td>
 
 A ReadOnlyResourceTreeRoot with a validating property that enables validated use with string inputs. This eliminates the need for type casting in consumer code.
-
-
-</td></tr>
-<tr><td>
-
-[ResultResourceTree](./ts-res.runtime.resourcetree.resultresourcetree.md)
-
-
-</td><td>
-
-Implementation of a result-based resource tree that provides hierarchical access to resources. Extends ResultMap to provide collection-like access while adding tree-specific navigation methods.
 
 
 </td></tr>
@@ -159,6 +159,17 @@ Interface for branch nodes in a resource tree that contain child nodes. Branch n
 </td></tr>
 <tr><td>
 
+[IReadOnlyResourceTreeChildren](./ts-res.runtime.resourcetree.ireadonlyresourcetreechildren.md)
+
+
+</td><td>
+
+Interface for a read-only result-based resource tree with navigation methods.
+
+
+</td></tr>
+<tr><td>
+
 [IReadOnlyResourceTreeLeaf](./ts-res.runtime.resourcetree.ireadonlyresourcetreeleaf.md)
 
 
@@ -187,17 +198,6 @@ Base interface for resource tree nodes.
 </td><td>
 
 Interface for the root node of a resource tree.
-
-
-</td></tr>
-<tr><td>
-
-[IReadOnlyResultResourceTree](./ts-res.runtime.resourcetree.ireadonlyresultresourcetree.md)
-
-
-</td><td>
-
-Interface for a read-only result-based resource tree with navigation methods.
 
 
 </td></tr>

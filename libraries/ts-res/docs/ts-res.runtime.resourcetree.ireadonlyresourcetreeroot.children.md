@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly children: IReadOnlyResultResourceTree<T>;
+readonly children: IReadOnlyResourceTreeChildren<T>;
 ```

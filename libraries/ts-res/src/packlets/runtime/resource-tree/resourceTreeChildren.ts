@@ -57,7 +57,7 @@ export interface IReadOnlyResourceTreeLeaf<T> extends IReadOnlyResourceTreeNode 
  * @public
  */
 export interface IReadOnlyResourceTreeBranch<T> extends IReadOnlyResourceTreeNode {
-  readonly children: IReadOnlyResultResourceTree<T>;
+  readonly children: IReadOnlyResourceTreeChildren<T>;
   readonly isLeaf: false;
   readonly isBranch: true;
   readonly isRoot: false;
@@ -68,7 +68,7 @@ export interface IReadOnlyResourceTreeBranch<T> extends IReadOnlyResourceTreeNod
  * @public
  */
 export interface IReadOnlyResourceTreeRoot<T> {
-  readonly children: IReadOnlyResultResourceTree<T>;
+  readonly children: IReadOnlyResourceTreeChildren<T>;
   readonly isRoot: true;
   readonly isLeaf: false;
   readonly isBranch: false;
@@ -128,12 +128,11 @@ export function isResourceTreeLeafInit<T>(init: ResourceTreeNodeInit<T>): init i
   return 'resource' in init && !('children' in init);
 }
 
-// ResultResourceTree interface and implementation
 /**
  * Interface for a read-only result-based resource tree with navigation methods.
  * @public
  */
-export interface IReadOnlyResultResourceTree<T>
+export interface IReadOnlyResourceTreeChildren<T>
   extends IReadOnlyResultMap<ResourceName, IReadOnlyResourceTreeNode> {
   /**
    * Gets a tree node by its full ResourceId path.
@@ -176,14 +175,14 @@ export interface IReadOnlyResultResourceTree<T>
  * Extends ResultMap to provide collection-like access while adding tree-specific navigation methods.
  * @public
  */
-export class ResultResourceTree<T>
+export class ReadOnlyResourceTreeChildren<T>
   extends ResultMap<ResourceName, IReadOnlyResourceTreeNode>
-  implements IReadOnlyResultResourceTree<T>
+  implements IReadOnlyResourceTreeChildren<T>
 {
   protected path: ResourceId | undefined;
 
   /**
-   * Creates a new ResultResourceTree instance.
+   * Creates a new ReadOnlyResourceTreeChildren instance.
    * @param path - The path to this tree node (undefined for root)
    * @param entries - Array of [name, node] tuples to populate the tree
    */

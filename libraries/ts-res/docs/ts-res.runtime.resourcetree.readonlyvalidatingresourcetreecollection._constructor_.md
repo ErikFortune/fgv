@@ -9,7 +9,7 @@ Creates a new validating tree collection wrapper.
 **Signature:**
 
 ```typescript
-constructor(tree: IReadOnlyResultResourceTree<T>);
+constructor(tree: IReadOnlyResourceTreeChildren<T>);
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ tree
 
 </td><td>
 
-[IReadOnlyResultResourceTree](./ts-res.runtime.resourcetree.ireadonlyresultresourcetree.md)<!-- -->&lt;T&gt;
+[IReadOnlyResourceTreeChildren](./ts-res.runtime.resourcetree.ireadonlyresourcetreechildren.md)<!-- -->&lt;T&gt;
 
 
 </td><td>

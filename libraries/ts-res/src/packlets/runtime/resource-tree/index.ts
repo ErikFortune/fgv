@@ -20,6 +20,6 @@
  * SOFTWARE.
  */
 
-export * from './resultResourceTree';
+export * from './resourceTreeChildren';
 export * from './readOnlyResourceTree';
 export * from './readOnlyValidatingResourceTree';

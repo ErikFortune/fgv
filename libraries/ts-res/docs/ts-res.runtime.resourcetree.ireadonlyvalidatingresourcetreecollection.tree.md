@@ -9,5 +9,5 @@ The underlying resource tree collection instance.
 **Signature:**
 
 ```typescript
-readonly tree: IReadOnlyResultResourceTree<T>;
+readonly tree: IReadOnlyResourceTreeChildren<T>;
 ```

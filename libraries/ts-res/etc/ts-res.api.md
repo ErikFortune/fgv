@@ -1674,13 +1674,22 @@ interface IReadOnlyQualifierCollector extends Collections.IReadOnlyValidatingCol
 // @public
 interface IReadOnlyResourceTreeBranch<T> extends IReadOnlyResourceTreeNode {
     // (undocumented)
-    readonly children: IReadOnlyResultResourceTree<T>;
+    readonly children: IReadOnlyResourceTreeChildren<T>;
     // (undocumented)
     readonly isBranch: true;
     // (undocumented)
     readonly isLeaf: false;
     // (undocumented)
     readonly isRoot: false;
+}
+
+// @public
+interface IReadOnlyResourceTreeChildren<T> extends IReadOnlyResultMap<ResourceName, IReadOnlyResourceTreeNode> {
+    getBranch(name: ResourceName): Result<IReadOnlyResourceTreeNode>;
+    getBranchById(id: ResourceId): Result<IReadOnlyResourceTreeBranch<T>>;
+    getById(id: ResourceId): Result<IReadOnlyResourceTreeNode>;
+    getResource(name: ResourceName): Result<IReadOnlyResourceTreeNode>;
+    getResourceById(id: ResourceId): Result<IReadOnlyResourceTreeLeaf<T>>;
 }
 
 // @public
@@ -1712,22 +1721,13 @@ interface IReadOnlyResourceTreeNode {
 // @public
 interface IReadOnlyResourceTreeRoot<T> {
     // (undocumented)
-    readonly children: IReadOnlyResultResourceTree<T>;
+    readonly children: IReadOnlyResourceTreeChildren<T>;
     // (undocumented)
     readonly isBranch: false;
     // (undocumented)
     readonly isLeaf: false;
     // (undocumented)
     readonly isRoot: true;
-}
-
-// @public
-interface IReadOnlyResultResourceTree<T> extends IReadOnlyResultMap<ResourceName, IReadOnlyResourceTreeNode> {
-    getBranch(name: ResourceName): Result<IReadOnlyResourceTreeNode>;
-    getBranchById(id: ResourceId): Result<IReadOnlyResourceTreeBranch<T>>;
-    getById(id: ResourceId): Result<IReadOnlyResourceTreeNode>;
-    getResource(name: ResourceName): Result<IReadOnlyResourceTreeNode>;
-    getResourceById(id: ResourceId): Result<IReadOnlyResourceTreeLeaf<T>>;
 }
 
 // @public
@@ -1767,7 +1767,7 @@ interface IReadOnlyValidatingResourceTreeCollection<T> {
     hasBranch(id: string): Result<boolean>;
     hasResource(id: string): Result<boolean>;
     readonly size: number;
-    readonly tree: IReadOnlyResultResourceTree<T>;
+    readonly tree: IReadOnlyResourceTreeChildren<T>;
 }
 
 // @public
@@ -2686,7 +2686,7 @@ type ReadOnlyQualifierTypeCollector = Collections.IReadOnlyValidatingCollector<Q
 // @public
 class ReadOnlyResourceTreeBranch<T> implements IReadOnlyResourceTreeBranch<T> {
     // (undocumented)
-    readonly children: IReadOnlyResultResourceTree<T>;
+    readonly children: IReadOnlyResourceTreeChildren<T>;
     static create<T>(childName: ResourceName, path: ResourceId | undefined, childInit: IResourceTreeBranchInit<T>): Result<ReadOnlyResourceTreeBranch<T>>;
     // (undocumented)
     get isBranch(): true;
@@ -2698,6 +2698,23 @@ class ReadOnlyResourceTreeBranch<T> implements IReadOnlyResourceTreeBranch<T> {
     readonly name: ResourceName;
     // (undocumented)
     readonly path: ResourceId;
+}
+
+// @public
+class ReadOnlyResourceTreeChildren<T> extends ResultMap<ResourceName, IReadOnlyResourceTreeNode> implements IReadOnlyResourceTreeChildren<T> {
+    constructor(path: ResourceId | undefined, entries: [ResourceName, IReadOnlyResourceTreeNode][]);
+    // (undocumented)
+    getBranch(name: ResourceName): Result<IReadOnlyResourceTreeNode>;
+    // (undocumented)
+    getBranchById(id: ResourceId): Result<IReadOnlyResourceTreeBranch<T>>;
+    // (undocumented)
+    getById(id: ResourceId): Result<IReadOnlyResourceTreeNode>;
+    // (undocumented)
+    getResource(name: ResourceName): Result<IReadOnlyResourceTreeNode>;
+    // (undocumented)
+    getResourceById(id: ResourceId): Result<IReadOnlyResourceTreeLeaf<T>>;
+    // (undocumented)
+    protected path: ResourceId | undefined;
 }
 
 // @public
@@ -2725,7 +2742,7 @@ type ReadOnlyResourceTreeNode<T> = ReadOnlyResourceTreeBranch<T> | ReadOnlyResou
 class ReadOnlyResourceTreeRoot<T> implements IReadOnlyResourceTreeRoot<T> {
     protected constructor(init: IResourceTreeRootInit<T>);
     // (undocumented)
-    readonly children: IReadOnlyResultResourceTree<T>;
+    readonly children: IReadOnlyResourceTreeChildren<T>;
     static create<T>(resources: [ResourceId, T][]): Result<ReadOnlyResourceTreeRoot<T>>;
     static create<T>(init: IResourceTreeRootInit<T>): Result<ReadOnlyResourceTreeRoot<T>>;
     static createResourceTreeInit<T>(resources: [ResourceId, T][]): Result<IResourceTreeRootInit<T>>;
@@ -2769,7 +2786,7 @@ class ReadOnlyValidatingResourceTree<T> implements IReadOnlyValidatingResourceTr
 
 // @public
 class ReadOnlyValidatingResourceTreeCollection<T> implements IReadOnlyValidatingResourceTreeCollection<T> {
-    constructor(tree: IReadOnlyResultResourceTree<T>);
+    constructor(tree: IReadOnlyResourceTreeChildren<T>);
     // (undocumented)
     getBranch(name: string): Result<IReadOnlyValidatingResourceTreeBranch<T>>;
     // (undocumented)
@@ -2788,7 +2805,7 @@ class ReadOnlyValidatingResourceTreeCollection<T> implements IReadOnlyValidating
     hasResource(id: string): Result<boolean>;
     get size(): number;
     // (undocumented)
-    readonly tree: IReadOnlyResultResourceTree<T>;
+    readonly tree: IReadOnlyResourceTreeChildren<T>;
 }
 
 // @public
@@ -3190,8 +3207,8 @@ declare namespace ResourceTree {
         IResourceTreeLeafInit,
         IResourceTreeBranchInit,
         ResourceTreeNodeInit,
-        IReadOnlyResultResourceTree,
-        ResultResourceTree,
+        IReadOnlyResourceTreeChildren,
+        ReadOnlyResourceTreeChildren,
         ReadOnlyResourceTreeLeaf,
         ReadOnlyResourceTreeBranch,
         ReadOnlyResourceTreeNode,
@@ -3277,23 +3294,6 @@ export type ResourceValueMergeMethod = 'augment' | 'delete' | 'replace';
 
 // @public
 const resourceValueMergeMethod: Converter<ResourceValueMergeMethod, ResourceValueMergeMethod[]>;
-
-// @public
-class ResultResourceTree<T> extends ResultMap<ResourceName, IReadOnlyResourceTreeNode> implements IReadOnlyResultResourceTree<T> {
-    constructor(path: ResourceId | undefined, entries: [ResourceName, IReadOnlyResourceTreeNode][]);
-    // (undocumented)
-    getBranch(name: ResourceName): Result<IReadOnlyResourceTreeNode>;
-    // (undocumented)
-    getBranchById(id: ResourceId): Result<IReadOnlyResourceTreeBranch<T>>;
-    // (undocumented)
-    getById(id: ResourceId): Result<IReadOnlyResourceTreeNode>;
-    // (undocumented)
-    getResource(name: ResourceName): Result<IReadOnlyResourceTreeNode>;
-    // (undocumented)
-    getResourceById(id: ResourceId): Result<IReadOnlyResourceTreeLeaf<T>>;
-    // (undocumented)
-    protected path: ResourceId | undefined;
-}
 
 declare namespace Runtime {
     export {

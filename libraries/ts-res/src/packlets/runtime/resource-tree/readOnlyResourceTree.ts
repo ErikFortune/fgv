@@ -27,14 +27,14 @@ import {
   IReadOnlyResourceTreeLeaf,
   IReadOnlyResourceTreeBranch,
   IReadOnlyResourceTreeRoot,
-  IReadOnlyResultResourceTree,
+  IReadOnlyResourceTreeChildren,
   IResourceTreeRootInit,
   IResourceTreeLeafInit,
   IResourceTreeBranchInit,
-  ResultResourceTree,
+  ReadOnlyResourceTreeChildren,
   isResourceTreeRootOrNodeInit,
   isResourceTreeLeafInit
-} from './resultResourceTree';
+} from './resourceTreeChildren';
 
 /**
  * Implementation of a read-only resource tree leaf node that contains a resource value.
@@ -92,7 +92,7 @@ export class ReadOnlyResourceTreeLeaf<T> implements IReadOnlyResourceTreeLeaf<T>
  * @public
  */
 export class ReadOnlyResourceTreeBranch<T> implements IReadOnlyResourceTreeBranch<T> {
-  public readonly children: IReadOnlyResultResourceTree<T>;
+  public readonly children: IReadOnlyResourceTreeChildren<T>;
   public readonly name: ResourceName;
   public readonly path: ResourceId;
 
@@ -136,7 +136,7 @@ export class ReadOnlyResourceTreeBranch<T> implements IReadOnlyResourceTreeBranc
       })
     ).orThrow();
 
-    this.children = new ResultResourceTree(
+    this.children = new ReadOnlyResourceTreeChildren(
       this.path,
       children.map((c): [ResourceName, IReadOnlyResourceTreeNode] => [c.name, c])
     );
@@ -170,7 +170,7 @@ export type ReadOnlyResourceTreeNode<T> = ReadOnlyResourceTreeBranch<T> | ReadOn
  * @public
  */
 export class ReadOnlyResourceTreeRoot<T> implements IReadOnlyResourceTreeRoot<T> {
-  public readonly children: IReadOnlyResultResourceTree<T>;
+  public readonly children: IReadOnlyResourceTreeChildren<T>;
 
   public get isRoot(): true {
     return true;
@@ -203,7 +203,7 @@ export class ReadOnlyResourceTreeRoot<T> implements IReadOnlyResourceTreeRoot<T>
       })
     ).orThrow();
 
-    this.children = new ResultResourceTree(
+    this.children = new ReadOnlyResourceTreeChildren(
       undefined,
       children.map((c): [ResourceName, IReadOnlyResourceTreeNode] => [c.name, c])
     );

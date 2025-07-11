@@ -68,7 +68,7 @@ The number of direct child nodes in this collection.
 
 </td><td>
 
-[IReadOnlyResultResourceTree](./ts-res.runtime.resourcetree.ireadonlyresultresourcetree.md)<!-- -->&lt;T&gt;
+[IReadOnlyResourceTreeChildren](./ts-res.runtime.resourcetree.ireadonlyresourcetreechildren.md)<!-- -->&lt;T&gt;
 
 
 </td><td>
