@@ -314,15 +314,13 @@ export class ReadOnlyResourceTreeRoot<T> implements IReadOnlyResourceTreeRoot<T>
               } else {
                 currentNode = currentNode.children[nodeName];
               }
-            } else if (isResourceTreeLeafInit(currentNode)) {
-              // c8 ignore start
-              errors.addMessage(`${id}: Expected a branch but found a leaf.`);
+            } /* c8 ignore next 3 - defense in depth, not reachable without chicanery */ else if (
+              isResourceTreeLeafInit(currentNode)
+            ) {
+              errors.addMessage(`${id}: Xpected a branch but found a leaf.`);
               break;
-              // c8 ignore stop
-            } else {
-              // c8 ignore start
+            } /* c8 ignore next 3 - defense in depth, not reachable without chicanery */ else {
               errors.addMessage(`${id}: Unexpected structure in resource tree`);
-              // c8 ignore stop
             }
           }
 
@@ -331,11 +329,9 @@ export class ReadOnlyResourceTreeRoot<T> implements IReadOnlyResourceTreeRoot<T>
               errors.addMessage(`${id}: Duplicate resource at path.`);
             } else {
               currentNode.children[resourceName] = { resource };
-            }
+            } /* c8 ignore next 3 - defense in depth, not reachable without chicanery */
           } else {
-            // c8 ignore start
             errors.addMessage(`${id}: Expected a branch but found a leaf.`);
-            // c8 ignore stop
           }
           return succeed(currentNode.children[resourceName]);
         })

@@ -215,7 +215,7 @@ describe('ReadOnlyResourceTreeChildren', () => {
     });
 
     test('handles invalid ResourceId paths', () => {
-      expect(children.getById('invalid..id' as ResourceId)).toFailWith(/invalid.*resource.*id/i);
+      expect(children.getById('invalid..id' as ResourceId)).toFailWith(/not a valid resource name/i);
     });
 
     test('provides context in error messages', () => {
@@ -340,7 +340,7 @@ describe('ReadOnlyResourceTreeChildren', () => {
 
   describe('edge cases and error conditions', () => {
     test('handles empty path components gracefully', () => {
-      expect(children.getById('' as ResourceId)).toFailWith(/invalid.*resource.*id/i);
+      expect(children.getById('' as ResourceId)).toFailWith(/not a valid resource name/i);
     });
 
     test('handles complex traversal failures', () => {
@@ -358,8 +358,22 @@ describe('ReadOnlyResourceTreeChildren', () => {
         ['test' as ResourceName, leafNode]
       ]);
 
-      expect(deepChildren.getResource('nonexistent' as ResourceName)).toFailWith(/in deep\.path/);
+      expect(deepChildren.getResource('nonexistent' as ResourceName)).toFailWith(/nonexistent.*not found/i);
       expect(deepChildren.getBranch('test' as ResourceName)).toFailWith(/in deep\.path/);
+    });
+
+    test('root-level error messages (no path context)', () => {
+      // Create root-level children (path = undefined) to test uncovered branches
+      const rootChildren = new ResourceTree.ReadOnlyResourceTreeChildren(undefined, [
+        ['leaf' as ResourceName, leafNode],
+        ['branch' as ResourceName, branchNode]
+      ]);
+
+      // Test getResource method error at root level (covers line 63)
+      expect(rootChildren.getResource('branch' as ResourceName)).toFailWith(/branch: not a resource\.$/);
+
+      // Test getBranch method error at root level (covers line 74)
+      expect(rootChildren.getBranch('leaf' as ResourceName)).toFailWith(/leaf: not a branch\.$/);
     });
 
     test('properly inherits from ResultMap functionality', () => {

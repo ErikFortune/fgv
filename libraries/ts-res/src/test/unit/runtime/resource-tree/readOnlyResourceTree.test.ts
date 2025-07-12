@@ -353,6 +353,58 @@ describe('ReadOnlyResourceTreeRoot', () => {
 
       expect(ResourceTree.ReadOnlyResourceTreeRoot.createResourceTreeInit(resources)).toFail();
     });
+
+    test('handles defensive error conditions', () => {
+      // Test scenario that would trigger leaf-vs-branch conflict
+      // This tests the defensive error handling paths (lines 318-326, 336-339)
+      const resources: [ResourceId, ITestResource][] = [
+        ['app' as ResourceId, { id: 'app', value: 'Application' }], // app is a leaf
+        ['app.messages.welcome.deep' as ResourceId, { id: 'messages', value: 'Messages' }] // trying to add child to leaf
+      ];
+
+      expect(ResourceTree.ReadOnlyResourceTreeRoot.createResourceTreeInit(resources)).toFailWith(
+        /Expected a branch but found a leaf/
+      );
+    });
+
+    test('handles specific defensive error conditions for malformed tree structures', () => {
+      // Test Line 313: Resource ID below an already specified leaf that is not the immediate parent
+      // Create: 'app.messages' as leaf, then try to add 'app.messages.welcome.deep'
+      const conflictResources: [ResourceId, ITestResource][] = [
+        ['app.messages' as ResourceId, { id: 'messages', value: 'Messages' }], // messages is a leaf
+        ['app.messages.welcome.deep' as ResourceId, { id: 'deep', value: 'Deep' }] // trying to traverse through leaf
+      ];
+
+      expect(ResourceTree.ReadOnlyResourceTreeRoot.createResourceTreeInit(conflictResources)).toFailWith(
+        /Expected a branch but found a leaf at messages/
+      );
+
+      // Test Line 332: Resource ID where immediate parent is a leaf
+      // Create: 'app' as leaf, then try to add 'app.child'
+      const immediateParentResources: [ResourceId, ITestResource][] = [
+        ['app' as ResourceId, { id: 'app', value: 'Application' }], // app is a leaf
+        ['app.child' as ResourceId, { id: 'child', value: 'Child' }] // trying to add child to leaf
+      ];
+
+      expect(
+        ResourceTree.ReadOnlyResourceTreeRoot.createResourceTreeInit(immediateParentResources)
+      ).toFailWith(/Expected a branch but found a leaf at app/);
+    });
+
+    test('handles remaining defensive error paths for complete coverage', () => {
+      // Try to create a scenario that hits the remaining uncovered lines
+      // Lines 318-322 and 332-333 are defensive paths that might be difficult to trigger
+
+      // Test with resources that create potential conflicts at different tree levels
+      const multiLevelConflictResources: [ResourceId, ITestResource][] = [
+        ['root' as ResourceId, { id: 'root', value: 'Root' }], // root is a leaf
+        ['root.branch.leaf' as ResourceId, { id: 'leaf', value: 'Leaf' }] // trying deep nesting under leaf
+      ];
+
+      expect(
+        ResourceTree.ReadOnlyResourceTreeRoot.createResourceTreeInit(multiLevelConflictResources)
+      ).toFailWith(/Expected a branch but found a leaf/);
+    });
   });
 
   describe('resource access methods', () => {

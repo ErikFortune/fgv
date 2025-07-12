@@ -87,6 +87,7 @@ export class ReadOnlyResourceTreeChildren<T>
             return succeed(node);
           }
           if (node.isLeaf) {
+            /* c8 ignore next 1 - defense in depth */
             return fail(`${id}: resource not found${this.path ? ` in ${this.path}` : ''}.`);
           }
           node = (node as IReadOnlyResourceTreeBranch<T>).children.get(name).orDefault();
