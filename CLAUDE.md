@@ -93,7 +93,130 @@ Projects use `workspace:*` dependency ranges to reference other projects in the 
   - Proper type assertions with `as unknown as TargetType`
 - **Remember**: `any` defeats TypeScript's purpose and will cause build failures
 
+## Type-Safe Validation Guidelines
+
+### Converters vs Validators
+- **Converters**: Transform and construct new objects from input data (use for simple types, primitives, plain objects)
+- **Validators**: Validate existing objects in-place without construction (use for complex objects with non-default constructors, class instances)
+
+### Avoid Manual Type Checking and Unsafe Casts
+```typescript
+// ❌ Bad - Manual property checking with unsafe cast
+if (
+  typeof from === 'object' &&
+  from !== null &&
+  'id' in from &&
+  'resourceType' in from &&
+  'decision' in from &&
+  'candidates' in from
+) {
+  return succeed(from as IResource); // Unsafe - properties could have wrong types
+}
+
+// ✅ Good - Use dedicated validator for objects with complex constructors
+const validator = Validators.object<IResource>({
+  id: Convert.resourceId, // Converter for simple branded type
+  resourceType: Validators.isA((v): v is ResourceType => v instanceof ResourceType),
+  decision: Validators.isA((v): v is ConcreteDecision => v instanceof ConcreteDecision),
+  candidates: Validators.arrayOf(resourceCandidateValidator)
+});
+return validator.validate(from);
+
+// ✅ Alternative - Use converter for plain objects/data structures
+const converter = Converters.object<IResourceData>({
+  id: Convert.resourceId,
+  name: Converters.string,
+  value: Converters.jsonValue
+});
+return converter.convert(from);
+```
+
+### When to Use Each Pattern
+- **Validators**: Objects with class instances, non-default constructors, existing object validation
+- **Converters**: Plain data transformation, building new objects from primitives/JSON
+- **Both**: Any situation where you would use manual type checking + casting
+
+### Benefits
+- Type safety: Each property is validated according to its expected type
+- Better error messages: Specific validation failures instead of generic messages
+- Maintainability: Changes to type definitions automatically update validation
+- Consistency: Same validation patterns used throughout the codebase
+
 ## Testing Standards
+
+### Testing Philosophy: Function-First, Coverage-Second
+
+**Primary: Functional Testing**
+Start by writing tests that "make sense" functionally, focusing on the component's intended behavior:
+
+1. **Success Cases**: Test all main functionality with valid inputs
+2. **Error Cases**: Test expected error conditions and validation failures
+3. **Edge Cases**: Test boundary conditions, empty inputs, and reasonable corner cases
+4. **Integration**: Test how components interact with their dependencies
+
+Write these tests based on the component's public API and expected behavior, not based on implementation details or coverage reports.
+
+**Secondary: Coverage Gap Analysis**
+Only after functional tests are complete and correct, use coverage analysis to identify any missed executable paths.
+
+### Coverage Gap Analysis and Resolution
+
+When addressing coverage gaps, use this systematic approach:
+
+1. **Analyze Coverage Reports**: Run `rushx coverage` to identify uncovered lines
+2. **Categorize Coverage Gaps**:
+   - **Business Logic** (HIGH priority): Core functionality that can be reached through normal operation
+   - **Validation Logic** (MEDIUM priority): Input validation and error handling that can be tested
+   - **Defensive Coding** (LOW priority): Internal consistency checks and error paths that are very difficult to trigger
+
+3. **Prioritized Resolution Strategy**:
+   - **Step 1**: Test business logic gaps first - these represent important functionality
+   - **Step 2**: Test validation logic gaps - these can usually be tested by providing invalid inputs
+   - **Step 3**: Add `c8 ignore` comments for defensive coding paths that are impractical to test
+
+4. **Documentation**: Create a TODO file to track coverage gaps systematically, including:
+   - Current coverage percentage
+   - Specific file locations and line numbers
+   - Categorization by priority and type
+   - Approach for each gap (test vs ignore)
+   - Progress tracking as gaps are resolved
+
+5. **Examples of Defensive Coding** (candidates for c8 ignore):
+   - Internal collector creation failures that would indicate library bugs
+   - Index validation failures for internally managed collections
+   - Consistency checks between related data structures
+   - Error paths in well-tested internal operations
+
+This approach ensures 100% coverage while maintaining meaningful tests and avoiding brittle tests for defensive code paths.
+
+### Unit Testing Principles
+
+**Core Testing Guidelines:**
+1. **Always ask before changing non-test code** - Test code should not drive changes to production exports or APIs
+2. **Prefer testing via exported functionality** - Test through public APIs rather than creating mocks when possible
+3. **Test interfaces via concrete implementations** - It's perfectly acceptable to test interface contracts using real implementations
+4. **Test internal functionality via exported classes** - Use exported classes, interfaces, objects, or functions that utilize internal functionality
+5. **Don't change exports to make internal functionality testable** - When it's difficult to test internal functionality via exports, import the specific module directly in the test file and disable lint warnings as needed
+
+**Testing Through Public APIs:**
+```typescript
+// ✅ Good - Test internal functionality through exported APIs
+expect(SomeLibrary.Runtime.validator.validate(data)).toSucceed();
+
+// ✅ Good - Test interface through concrete implementation
+const instance: IInterface = ConcreteClass.create(...).orThrow();
+expect(instance.method()).toSucceed();
+
+// ✅ Good - Import module directly when needed, disable lint warnings
+// eslint-disable-next-line import/no-internal-modules
+import { InternalClass } from '../../../packlets/internal/internalModule';
+
+// ❌ Avoid - Adding exports just for testing
+export { InternalValidator }; // Don't add this just for tests
+
+// ❌ Avoid - Excessive mocking when real implementations work
+const mockValidator = jest.fn(); // Use real validator when possible
+```
 
 ### Result Pattern Test Matchers
 All tests use custom Jest matchers from `@fgv/ts-utils-jest` for `Result<T>` objects:
@@ -156,6 +279,56 @@ expect(result).toSucceed();
 const instance = result.value; // Use toSucceedAndSatisfy instead
 ```
 
+#### Nested Result Testing
+```typescript
+// Test nested Results within toSucceedAndSatisfy
+expect(collection.create(params)).toSucceedAndSatisfy((collection) => {
+  expect(collection.getItem('id')).toSucceedAndSatisfy((item) => {
+    expect(item.property).toBe(expectedValue);
+  });
+  expect(collection.getItem('missing')).toFailWith(/not found/i);
+});
+```
+
+#### Error Testing Best Practices
+```typescript
+// ✅ Good - Use regex patterns for flexible error matching
+expect(operation()).toFailWith(/invalid.*parameter/i);
+
+// ✅ Good - Test specific error conditions
+expect(parser.parse('')).toFailWith(/empty input/i);
+expect(parser.parse('{')).toFailWith(/syntax error/i);
+
+// ❌ Avoid - Brittle exact string matching
+expect(operation()).toFailWith('Invalid parameter: expected string');
+```
+
+#### When to Use Each Matcher
+- **`toSucceed()`** - When you only care that the operation succeeded
+- **`toFail()`** - When you only care that the operation failed
+- **`toSucceedWith(value)`** - When testing simple value equality
+- **`toFailWith(pattern)`** - When testing error messages or types
+- **`toSucceedAndSatisfy(callback)`** - When testing complex objects or multiple properties
+
+#### TypeScript in Tests
+- **NEVER use `any` type** - Will cause lint failures even in tests
+- For corrupted/invalid test data: Use `as unknown as BrandedType` pattern
+- For mock objects: Define proper interfaces or use `Partial<T>`
+- Example:
+```typescript
+// ✅ Good - Proper type assertion for invalid test data
+const corruptedData = {
+  id: 'invalid' as unknown as SomeId,
+  type: 999 as unknown as SomeTypeIndex
+};
+
+// ❌ Bad - Using any
+const corruptedData = {
+  id: 'invalid' as any,
+  type: 999 as any
+};
+```
+
 ## Development Workflow
 
 1. **Setup**: Run `rush install` to install all dependencies
@@ -166,7 +339,7 @@ const instance = result.value; // Use toSucceedAndSatisfy instead
 
 ## Important Notes
 
-- The ts-res library has its own detailed CLAUDE.md file in `libraries/ts-res/`
+- The ts-res library has its own detailed CLAUDE.md file in `libraries/ts-res/` with project-specific architecture details
 - All projects use TypeScript 5.7.3 with strict type checking
 - Tests are located in `src/test/unit/` mirroring source structure
 - Documentation is auto-generated and should not be manually edited
