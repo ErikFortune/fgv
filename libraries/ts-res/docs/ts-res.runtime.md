@@ -208,15 +208,6 @@ Description
 
 
 </td></tr>
-<tr><td>
-
-[Validate](./ts-res.runtime.validate.md)
-
-
-</td><td>
-
-
-</td></tr>
 </tbody></table>
 
 ## Type Aliases

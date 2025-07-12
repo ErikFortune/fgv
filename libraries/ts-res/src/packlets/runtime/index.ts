@@ -29,6 +29,5 @@ export * from './conditionSetResolutionResult';
 
 import * as Context from './context';
 import * as ResourceTree from './resource-tree';
-import * as Validate from './validate';
 
-export { Context, ResourceTree, Validate };
+export { Context, ResourceTree };

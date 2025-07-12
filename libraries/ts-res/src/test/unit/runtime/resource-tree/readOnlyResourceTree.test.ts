@@ -410,5 +410,89 @@ describe('ReadOnlyResourceTreeRoot', () => {
       expect(root.children.getBranchById('app.messages.welcome' as ResourceId)).toFailWith(/not a branch/);
       expect(root.children.getBranchById('settings' as ResourceId)).toFailWith(/not a branch/);
     });
+
+    test('handles nonexistent resource access', () => {
+      // Test access to completely nonexistent resources
+      expect(root.children.getById('nonexistent' as ResourceId)).toFailWith(/resource not found/);
+      expect(root.children.getResourceById('nonexistent' as ResourceId)).toFailWith(/resource not found/);
+      expect(root.children.getBranchById('nonexistent' as ResourceId)).toFailWith(/resource not found/);
+
+      // Test access to nonexistent nested resources
+      expect(root.children.getById('app.nonexistent' as ResourceId)).toFailWith(/resource not found/);
+      expect(root.children.getById('app.messages.nonexistent' as ResourceId)).toFailWith(
+        /resource not found/
+      );
+
+      // Test partial path that tries to traverse through a leaf
+      expect(root.children.getById('settings.nonexistent' as ResourceId)).toFailWith(/resource not found/);
+    });
+
+    test('string-based validation with children.validating', () => {
+      // Test that string validation works correctly
+      expect(root.children.validating.getById('app.messages.welcome')).toSucceedAndSatisfy((node) => {
+        expect(node.id).toBe('app.messages.welcome');
+        expect(node.isLeaf).toBe(true);
+      });
+
+      // Test validation failures with invalid string inputs
+      expect(root.children.validating.getById('invalid..id')).toFailWith(/invalid/i);
+      expect(root.children.validating.getResourceById('invalid..id')).toFailWith(/invalid/i);
+      expect(root.children.validating.getBranchById('invalid..id')).toFailWith(/invalid/i);
+
+      // Test string-based access to nonexistent resources
+      expect(root.children.validating.getById('nonexistent')).toFailWith(/not found/);
+      expect(root.children.validating.getResource('nonexistent')).toFailWith(/not found/);
+      expect(root.children.validating.getBranch('nonexistent')).toFailWith(/not found/);
+
+      // Test comprehensive validator method coverage
+      expect(root.children.validating.getResourceById('app.messages.welcome')).toSucceedAndSatisfy((leaf) => {
+        expect(leaf.isLeaf).toBe(true);
+        expect(leaf.resource).toBeDefined();
+      });
+      expect(root.children.validating.getBranchById('app.messages')).toSucceedAndSatisfy((branch) => {
+        expect(branch.isBranch).toBe(true);
+        expect(branch.children).toBeDefined();
+      });
+
+      // Test validator error cases with invalid inputs
+      expect(root.children.validating.getResourceById('invalid..resource')).toFailWith(/invalid/i);
+      expect(root.children.validating.getBranchById('invalid..branch')).toFailWith(/invalid/i);
+      expect(root.children.validating.getResource('invalid..name')).toFailWith(/invalid/i);
+      expect(root.children.validating.getBranch('invalid..name')).toFailWith(/invalid/i);
+    });
+
+    test('comprehensive validator interface coverage', () => {
+      // Test all validator interface methods that may not be covered elsewhere
+      const validator = root.children.validating;
+
+      // Test size property
+      expect(validator.size).toBeGreaterThan(0);
+
+      // Test iteration methods
+      expect(Array.from(validator.keys())).toEqual(expect.arrayContaining(['app', 'user', 'settings']));
+      expect(Array.from(validator.values()).length).toBe(validator.size);
+      expect(Array.from(validator.entries()).length).toBe(validator.size);
+
+      // Test has method with valid and invalid keys
+      expect(validator.has('app' as ResourceName)).toBe(true);
+      expect(validator.has('nonexistent' as ResourceName)).toBe(false);
+
+      // Test get method for direct access
+      expect(validator.get('app' as ResourceName)).toSucceedAndSatisfy((node) => {
+        expect(node.id).toBe('app');
+      });
+      expect(validator.get('nonexistent' as ResourceName)).toFailWith(/not found/);
+
+      // Test forEach method
+      let iteratedCount = 0;
+      validator.forEach(() => {
+        iteratedCount++;
+      });
+      expect(iteratedCount).toBe(validator.size);
+
+      // Test Symbol.iterator
+      const iteratedNodes = Array.from(validator);
+      expect(iteratedNodes.length).toBe(validator.size);
+    });
   });
 });

@@ -22,4 +22,5 @@
 
 export * from './common';
 export * from './resourceTreeChildren';
+export * from './resourceTreeChildrenValidator';
 export * from './readOnlyResourceTree';

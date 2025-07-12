@@ -19,7 +19,6 @@ import { ResultMap } from '@fgv/ts-utils';
 import { ValidatingCollector } from '@fgv/ts-utils';
 import { ValidatingConvertingCollector } from '@fgv/ts-utils';
 import { ValidatingResultMap } from '@fgv/ts-utils';
-import { Validator } from '@fgv/ts-utils';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2739,11 +2738,6 @@ class Resource implements IResource {
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const resource: Validator<IResource, unknown>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -2833,11 +2827,6 @@ class ResourceCandidate implements IResourceCandidate {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static validateResourceTypes(candidates: ReadonlyArray<ResourceCandidate>, expectedType?: ResourceType): Result<ResourceType | undefined>;
 }
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const resourceCandidate: Validator<IResourceCandidate, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -3080,6 +3069,7 @@ declare namespace ResourceTree {
         IReadOnlyResourceTreeChildren,
         IReadOnlyValidatingResourceTreeChildren,
         ReadOnlyResourceTreeChildren,
+        ResourceTreeChildrenValidator,
         isResourceTreeRootOrNodeInit,
         isResourceTreeLeafInit,
         IResourceTreeRootInit,
@@ -3097,6 +3087,27 @@ declare namespace ResourceTree {
 //
 // @public
 const resourceTreeChildNodeDecl: Converter<Normalized.IResourceTreeChildNodeDecl>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @internal
+class ResourceTreeChildrenValidator<T> implements IReadOnlyResourceTreeChildren<T, string, string> {
+    [Symbol.iterator](): IterableIterator<[ResourceName, IReadOnlyResourceTreeNode<T>]>;
+    constructor(inner: IReadOnlyResourceTreeChildren<T>);
+    entries(): MapIterator<[ResourceName, IReadOnlyResourceTreeNode<T>]>;
+    forEach(cb: (value: unknown, key: string, map: IReadOnlyResultMap<string, unknown>, thisArg?: unknown) => void, arg?: unknown): void;
+    get(key: ResourceName): DetailedResult<IReadOnlyResourceTreeNode<T>, Collections.ResultMapResultDetail>;
+    getBranch(name: string): Result<IReadOnlyResourceTreeNode<T>>;
+    getBranchById(id: string): Result<IReadOnlyResourceTreeBranch<T>>;
+    getById(id: string): Result<IReadOnlyResourceTreeNode<T>>;
+    getResource(name: string): Result<IReadOnlyResourceTreeNode<T>>;
+    getResourceById(id: string): Result<IReadOnlyResourceTreeLeaf<T>>;
+    has(key: ResourceName): boolean;
+    keys(): MapIterator<ResourceName>;
+    get size(): number;
+    values(): MapIterator<IReadOnlyResourceTreeNode<T>>;
+}
 
 // @public
 type ResourceTreeNodeInit<T> = IResourceTreeLeafInit<T> | IResourceTreeBranchInit<T>;
@@ -3166,7 +3177,6 @@ declare namespace Runtime {
     export {
         Context_2 as Context,
         ResourceTree,
-        Validate_2 as Validate,
         ICompiledResourceCollectionCreateParams,
         CompiledResourceCollection,
         IResourceCandidate,
@@ -3354,13 +3364,6 @@ declare namespace Validate {
     }
 }
 export { Validate }
-
-declare namespace Validate_2 {
-    export {
-        resourceCandidate,
-        resource
-    }
-}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

@@ -200,6 +200,35 @@ This approach ensures 100% coverage while maintaining meaningful tests and avoid
 
 ## Idiomatic Testing Patterns
 
+### Unit Testing Principles
+
+**Core Testing Guidelines:**
+1. **Always ask before changing non-test code** - Test code should not drive changes to production exports or APIs
+2. **Prefer testing via exported functionality** - Test through public APIs rather than creating mocks when possible
+3. **Test interfaces via concrete implementations** - It's perfectly acceptable to test interface contracts using real implementations
+4. **Test internal functionality via exported classes** - Use exported classes, interfaces, objects, or functions that utilize internal functionality
+5. **Don't change exports to make internal functionality testable** - When it's difficult to test internal functionality via exports, import the specific module directly in the test file and disable lint warnings as needed
+
+**Testing Through Public APIs:**
+```typescript
+// ✅ Good - Test internal validator through exported Runtime functions
+expect(TsRes.Runtime.resourceCandidate.validate(data)).toSucceed();
+
+// ✅ Good - Test interface through concrete implementation
+const leafNode: IReadOnlyResourceTreeLeaf<T> = ResourceTreeLeaf.create(...).orThrow();
+expect(leafNode.isLeaf).toBe(true);
+
+// ✅ Good - Import module directly when needed, disable lint warnings
+// eslint-disable-next-line import/no-internal-modules
+import { InternalClass } from '../../../packlets/internal/internalModule';
+
+// ❌ Avoid - Adding exports just for testing
+export { InternalValidator }; // Don't add this just for tests
+
+// ❌ Avoid - Excessive mocking when real implementations work
+const mockValidator = jest.fn(); // Use real validator when possible
+```
+
 ### TypeScript in Tests
 - **NEVER use `any` type** - Will cause lint failures even in tests
 - For corrupted/invalid test data: Use `as unknown as BrandedType` pattern

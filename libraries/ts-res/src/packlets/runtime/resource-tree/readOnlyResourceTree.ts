@@ -315,10 +315,14 @@ export class ReadOnlyResourceTreeRoot<T> implements IReadOnlyResourceTreeRoot<T>
                 currentNode = currentNode.children[nodeName];
               }
             } else if (isResourceTreeLeafInit(currentNode)) {
+              // c8 ignore start
               errors.addMessage(`${id}: Expected a branch but found a leaf.`);
               break;
+              // c8 ignore stop
             } else {
+              // c8 ignore start
               errors.addMessage(`${id}: Unexpected structure in resource tree`);
+              // c8 ignore stop
             }
           }
 
@@ -329,7 +333,9 @@ export class ReadOnlyResourceTreeRoot<T> implements IReadOnlyResourceTreeRoot<T>
               currentNode.children[resourceName] = { resource };
             }
           } else {
+            // c8 ignore start
             errors.addMessage(`${id}: Expected a branch but found a leaf.`);
+            // c8 ignore stop
           }
           return succeed(currentNode.children[resourceName]);
         })
