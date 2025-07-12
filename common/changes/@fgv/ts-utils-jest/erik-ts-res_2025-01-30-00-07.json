@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils-jest",
+      "comment": "minor fixes",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils-jest"
+}

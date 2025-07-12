@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json",
+      "comment": "upgrade dependencies",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-json"
+}

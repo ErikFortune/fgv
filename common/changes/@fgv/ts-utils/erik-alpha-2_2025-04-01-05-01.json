@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "add result helpers, clean up object converter",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

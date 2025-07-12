@@ -23,7 +23,9 @@ import 'jest-extended';
 import '../helpers/jest';
 
 import {
+  DetailedFailure,
   DetailedResult,
+  DetailedSuccess,
   Failure,
   Logging,
   MessageAggregator,
@@ -32,9 +34,13 @@ import {
   captureResult,
   fail,
   failWithDetail,
+  fails,
+  failsWithDetail,
   propagateWithDetail,
   succeed,
-  succeedWithDetail
+  succeedWithDetail,
+  succeeds,
+  succeedsWithDetail
 } from '../../packlets/base';
 
 describe('Result module', () => {
@@ -598,6 +604,26 @@ describe('Result module', () => {
       if (result.isFailure()) {
         expect(result.message).toBe(failedReturn);
       }
+    });
+  });
+
+  describe('helpers', () => {
+    test('success helpers return expected Success result', () => {
+      expect(succeed('hello')).toSucceedWith('hello');
+      expect(succeeds('hello')).toSucceedWith('hello');
+      expect(Success.with('hello')).toSucceedWith('hello');
+      expect(succeedWithDetail('hello', 'detail')).toSucceedWithDetail('hello', 'detail');
+      expect(succeedsWithDetail('hello', 'detail')).toSucceedWithDetail('hello', 'detail');
+      expect(DetailedSuccess.with('hello', 'detail')).toSucceedWithDetail('hello', 'detail');
+    });
+
+    test('failure helpers return expected Failure result', () => {
+      expect(fail('oops')).toFailWith('oops');
+      expect(fails('oops')).toFailWith('oops');
+      expect(Failure.with('oops')).toFailWith('oops');
+      expect(failWithDetail('oops', 'detail')).toFailWithDetail('oops', 'detail');
+      expect(failsWithDetail('oops', 'detail')).toFailWithDetail('oops', 'detail');
+      expect(DetailedFailure.with('oops', 'detail')).toFailWithDetail('oops', 'detail');
     });
   });
 });

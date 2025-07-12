@@ -4,7 +4,7 @@
 
 ## DetailedFailure class
 
-A [DetailedFailure](./ts-utils.detailedfailure.md) extends [Failure](./ts-utils.failure.md) to report optional failure details in addition to the error message.
+A [DetailedFailure&lt;T, TD&gt;](./ts-utils.detailedfailure.md) extends [Failure&lt;T&gt;](./ts-utils.failure.md) to report optional failure details in addition to the error message.
 
 **Signature:**
 
@@ -82,7 +82,7 @@ Description
 
 </td><td>
 
-TD
+TD \| undefined
 
 
 </td><td>
@@ -150,6 +150,22 @@ Invokes the supplied [failure callback](./ts-utils.detailedfailurecontinuation.m
 </td><td>
 
 Propagates the error message and detail from this result.
+
+
+</td></tr>
+<tr><td>
+
+[with(message, detail)](./ts-utils.detailedfailure.with.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a [DetailedFailure&lt;T, TD&gt;](./ts-utils.detailedfailure.md) with the supplied error message and optional detail.
 
 
 </td></tr>
