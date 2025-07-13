@@ -54,5 +54,24 @@ Array of indices referencing the condition sets for this decision.
 
 
 </td></tr>
+<tr><td>
+
+[metadata?](./ts-res.resourcejson.compiled.icompiledabstractdecision.metadata.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[ICompiledDecisionMetadata](./ts-res.resourcejson.compiled.icompileddecisionmetadata.md)
+
+
+</td><td>
+
+_(Optional)_ Optional metadata containing human-readable information about this decision.
+
+
+</td></tr>
 </tbody></table>
 

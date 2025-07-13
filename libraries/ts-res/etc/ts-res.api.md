@@ -130,6 +130,9 @@ class CollectionImporter implements IImporter {
 declare namespace Compiled {
     export {
         Convert_3 as Convert,
+        ICompiledConditionMetadata,
+        ICompiledConditionSetMetadata,
+        ICompiledDecisionMetadata,
         ICompiledQualifierType,
         ICompiledQualifier,
         ICompiledResourceType,
@@ -161,7 +164,22 @@ const compiledCondition: ObjectConverter<Model.ICompiledCondition, unknown>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+const compiledConditionMetadata: ObjectConverter<Model.ICompiledConditionMetadata, unknown>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 const compiledConditionSet: ObjectConverter<Model.ICompiledConditionSet, unknown>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const compiledConditionSetMetadata: ObjectConverter<Model.ICompiledConditionSetMetadata, unknown>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const compiledDecisionMetadata: ObjectConverter<Model.ICompiledDecisionMetadata, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -655,6 +673,9 @@ declare namespace Convert_2 {
 
 declare namespace Convert_3 {
     export {
+        compiledConditionMetadata,
+        compiledConditionSetMetadata,
+        compiledDecisionMetadata,
         compiledQualifierType,
         compiledQualifier,
         compiledResourceType,
@@ -946,6 +967,7 @@ interface IChildResourceDecl_2 {
 // @public
 interface ICompiledAbstractDecision {
     conditionSets: ReadonlyArray<Common.ConditionSetIndex>;
+    metadata?: ICompiledDecisionMetadata;
 }
 
 // @public
@@ -957,6 +979,7 @@ interface ICompiledCandidate {
 
 // @public
 interface ICompiledCondition {
+    metadata?: ICompiledConditionMetadata;
     operator?: Common.ConditionOperator;
     priority: Common.ConditionPriority;
     qualifierIndex: Common.QualifierIndex;
@@ -965,8 +988,25 @@ interface ICompiledCondition {
 }
 
 // @public
+interface ICompiledConditionMetadata {
+    // Warning: (ae-forgotten-export) The symbol "Common" needs to be exported by the entry point index.d.ts
+    key: Common.ConditionKey;
+}
+
+// @public
 interface ICompiledConditionSet {
     conditions: ReadonlyArray<Common.ConditionIndex>;
+    metadata?: ICompiledConditionSetMetadata;
+}
+
+// @public
+interface ICompiledConditionSetMetadata {
+    key: Common.ConditionSetKey;
+}
+
+// @public
+interface ICompiledDecisionMetadata {
+    key: Common.DecisionKey;
 }
 
 // @public
@@ -978,7 +1018,6 @@ interface ICompiledQualifier {
 
 // @public
 interface ICompiledQualifierType {
-    // Warning: (ae-forgotten-export) The symbol "Common" needs to be exported by the entry point index.d.ts
     name: Common.QualifierTypeName;
 }
 

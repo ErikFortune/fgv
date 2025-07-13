@@ -29,6 +29,69 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({ onMessage, resourceMa
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['root', 'resources']));
 
+  // Helper functions to resolve indices to meaningful keys
+  const getConditionKey = (
+    condition: ResourceJson.Compiled.ICompiledCondition,
+    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
+  ): string => {
+    try {
+      const qualifier = compiledCollection.qualifiers[condition.qualifierIndex];
+      if (!qualifier) return `unknown-qualifier`;
+
+      // Create a meaningful key like "language=en-US" or "territory=US"
+      const key = `${qualifier.name}=${condition.value}`;
+      return key;
+    } catch (error) {
+      return `condition-${condition.qualifierIndex}`;
+    }
+  };
+
+  const getConditionSetKey = (
+    conditionSet: ResourceJson.Compiled.ICompiledConditionSet,
+    conditionSetIndex: number,
+    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
+  ): string => {
+    try {
+      if (!conditionSet.conditions || conditionSet.conditions.length === 0) {
+        return `condition-set-${conditionSetIndex}`;
+      }
+
+      // Build a composite key from all conditions in the set
+      const conditionKeys = conditionSet.conditions.map((conditionIndex) => {
+        const condition = compiledCollection.conditions[conditionIndex];
+        if (!condition) return `unknown-${conditionIndex}`;
+        return getConditionKey(condition, compiledCollection);
+      });
+
+      return conditionKeys.join(',');
+    } catch (error) {
+      return `condition-set-${conditionSetIndex}`;
+    }
+  };
+
+  const getDecisionKey = (
+    decision: ResourceJson.Compiled.ICompiledAbstractDecision,
+    decisionIndex: number,
+    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
+  ): string => {
+    try {
+      if (!decision.conditionSets || decision.conditionSets.length === 0) {
+        return `decision-${decisionIndex}`;
+      }
+
+      // Build a composite key from all condition sets in the decision
+      const conditionSetKeys = decision.conditionSets.map((conditionSetIndex) => {
+        const conditionSet = compiledCollection.conditionSets[conditionSetIndex];
+        if (!conditionSet) return `unknown-${conditionSetIndex}`;
+        return getConditionSetKey(conditionSet, conditionSetIndex, compiledCollection);
+      });
+
+      return conditionSetKeys.join(' OR ');
+    } catch (error) {
+      return `decision-${decisionIndex}`;
+    }
+  };
+
   // Build tree structure from compiled resources
   const treeData = useMemo(() => {
     if (!resourceState.processedResources?.compiledCollection) {
@@ -403,21 +466,52 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, onMessage }) => {
                 <h5 className="font-medium text-gray-700 mb-2">Decision Details</h5>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {collection.map(
-                    (decision: ResourceJson.Compiled.ICompiledAbstractDecision, index: number) => (
-                      <div key={index} className="bg-white p-3 rounded border">
-                        <div className="text-sm">
-                          <strong>Decision {index}</strong>
+                    (decision: ResourceJson.Compiled.ICompiledAbstractDecision, index: number) => {
+                      const decisionKey = getDecisionKey(
+                        decision,
+                        index,
+                        resourceState.processedResources!.compiledCollection
+                      );
+                      return (
+                        <div key={index} className="bg-white p-3 rounded border">
+                          <div className="text-sm">
+                            <strong>
+                              Decision {index} ({decisionKey})
+                            </strong>
+                          </div>
+                          <div className="text-xs text-gray-600 mt-1">
+                            Condition Sets: {decision.conditionSets?.length || 0}
+                          </div>
+                          {decision.conditionSets && decision.conditionSets.length > 0 && (
+                            <div className="mt-2">
+                              <div className="text-xs font-medium text-gray-700 mb-1">
+                                Referenced Condition Sets:
+                              </div>
+                              <div className="space-y-1">
+                                {decision.conditionSets.map((conditionSetIndex, idx) => {
+                                  const conditionSet =
+                                    resourceState.processedResources!.compiledCollection.conditionSets[
+                                      conditionSetIndex
+                                    ];
+                                  if (!conditionSet)
+                                    return <div key={idx}>Unknown condition set {conditionSetIndex}</div>;
+                                  const conditionSetKey = getConditionSetKey(
+                                    conditionSet,
+                                    conditionSetIndex,
+                                    resourceState.processedResources!.compiledCollection
+                                  );
+                                  return (
+                                    <div key={idx} className="text-xs bg-gray-50 p-1 rounded">
+                                      [{conditionSetKey}({conditionSetIndex})]
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <div className="text-xs text-gray-600 mt-1">
-                          Condition Sets: {decision.conditionSets?.length || 0}
-                        </div>
-                        {decision.conditionSets && decision.conditionSets.length > 0 && (
-                          <pre className="text-xs bg-gray-50 p-2 rounded mt-2 overflow-x-auto">
-                            {JSON.stringify(decision.conditionSets, null, 2)}
-                          </pre>
-                        )}
-                      </div>
-                    )
+                      );
+                    }
                   )}
                 </div>
               </div>
@@ -442,21 +536,51 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, onMessage }) => {
                 <h5 className="font-medium text-gray-700 mb-2">Condition Set Details</h5>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {collection.map(
-                    (conditionSet: ResourceJson.Compiled.ICompiledConditionSet, index: number) => (
-                      <div key={index} className="bg-white p-3 rounded border">
-                        <div className="text-sm">
-                          <strong>Condition Set {index}</strong>
+                    (conditionSet: ResourceJson.Compiled.ICompiledConditionSet, index: number) => {
+                      const conditionSetKey = getConditionSetKey(
+                        conditionSet,
+                        index,
+                        resourceState.processedResources!.compiledCollection
+                      );
+                      return (
+                        <div key={index} className="bg-white p-3 rounded border">
+                          <div className="text-sm">
+                            <strong>
+                              Condition Set {index} ({conditionSetKey})
+                            </strong>
+                          </div>
+                          <div className="text-xs text-gray-600 mt-1">
+                            Conditions: {conditionSet.conditions?.length || 0}
+                          </div>
+                          {conditionSet.conditions && conditionSet.conditions.length > 0 && (
+                            <div className="mt-2">
+                              <div className="text-xs font-medium text-gray-700 mb-1">
+                                Referenced Conditions:
+                              </div>
+                              <div className="space-y-1">
+                                {conditionSet.conditions.map((conditionIndex, idx) => {
+                                  const condition =
+                                    resourceState.processedResources!.compiledCollection.conditions[
+                                      conditionIndex
+                                    ];
+                                  if (!condition)
+                                    return <div key={idx}>Unknown condition {conditionIndex}</div>;
+                                  const conditionKey = getConditionKey(
+                                    condition,
+                                    resourceState.processedResources!.compiledCollection
+                                  );
+                                  return (
+                                    <div key={idx} className="text-xs bg-gray-50 p-1 rounded">
+                                      [{conditionKey}({conditionIndex})]
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <div className="text-xs text-gray-600 mt-1">
-                          Conditions: {conditionSet.conditions?.length || 0}
-                        </div>
-                        {conditionSet.conditions && conditionSet.conditions.length > 0 && (
-                          <pre className="text-xs bg-gray-50 p-2 rounded mt-2 overflow-x-auto">
-                            {JSON.stringify(conditionSet.conditions, null, 2)}
-                          </pre>
-                        )}
-                      </div>
-                    )
+                      );
+                    }
                   )}
                 </div>
               </div>
@@ -480,20 +604,30 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, onMessage }) => {
               <div className="mt-4">
                 <h5 className="font-medium text-gray-700 mb-2">Condition Details</h5>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {collection.map((condition: ResourceJson.Compiled.ICompiledCondition, index: number) => (
-                    <div key={index} className="bg-white p-3 rounded border">
-                      <div className="text-sm">
-                        <strong>Condition {index}</strong>
+                  {collection.map((condition: ResourceJson.Compiled.ICompiledCondition, index: number) => {
+                    const conditionKey = getConditionKey(
+                      condition,
+                      resourceState.processedResources!.compiledCollection
+                    );
+                    return (
+                      <div key={index} className="bg-white p-3 rounded border">
+                        <div className="text-sm">
+                          <strong>
+                            Condition {index} ({conditionKey})
+                          </strong>
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          <div>Qualifier Index: {condition.qualifierIndex}</div>
+                          <div>Value: {condition.value}</div>
+                          <div>Priority: {condition.priority}</div>
+                          {condition.operator && <div>Operator: {condition.operator}</div>}
+                          {condition.scoreAsDefault && (
+                            <div>Score as Default: {condition.scoreAsDefault}</div>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        <div>Qualifier Index: {condition.qualifierIndex}</div>
-                        <div>Value: {condition.value}</div>
-                        <div>Priority: {condition.priority}</div>
-                        {condition.operator && <div>Operator: {condition.operator}</div>}
-                        {condition.scoreAsDefault && <div>Score as Default: {condition.scoreAsDefault}</div>}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

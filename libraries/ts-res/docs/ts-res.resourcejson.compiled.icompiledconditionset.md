@@ -54,5 +54,24 @@ Array of indices referencing the conditions in this set.
 
 
 </td></tr>
+<tr><td>
+
+[metadata?](./ts-res.resourcejson.compiled.icompiledconditionset.metadata.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[ICompiledConditionSetMetadata](./ts-res.resourcejson.compiled.icompiledconditionsetmetadata.md)
+
+
+</td><td>
+
+_(Optional)_ Optional metadata containing human-readable information about this condition set.
+
+
+</td></tr>
 </tbody></table>
 
