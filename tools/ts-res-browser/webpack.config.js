@@ -18,7 +18,8 @@ module.exports = {
       stream: require.resolve('stream-browserify'),
       util: require.resolve('util'),
       buffer: require.resolve('buffer'),
-      process: require.resolve('process/browser')
+      process: require.resolve('process/browser'),
+      vm: false
     }
   },
   module: {

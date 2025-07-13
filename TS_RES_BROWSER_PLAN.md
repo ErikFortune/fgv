@@ -107,17 +107,18 @@ tools/ts-res-browser/
 - [x] Set up build tooling for npx execution
 
 ### Phase 2: File Import & Resource Loading
-- [ ] Implement file/folder selection using File System Access API
-- [ ] Integrate ts-res ImportManager for resource loading
-- [ ] Build resources with ResourceManagerBuilder
-- [ ] Generate compiled resources with getCompiledResourceCollection
-- [ ] Initialize ResourceResolver with compiled collection
+- [x] Implement file/folder selection using File System Access API
+- [x] Integrate ts-res ImportManager for resource loading
+- [x] Build resources with ResourceManagerBuilder
+- [x] Generate compiled resources with getCompiledResourceCollection
+- [x] Initialize ResourceResolver with compiled collection
 
 ### Phase 3: Core Application Layout
-- [ ] Create main app layout with sidebar and content areas
+- [x] Create main app layout with sidebar and content areas (in progress)
+- [ ] Fix icon sizing and improve visual hierarchy (PRIORITY)
+- [ ] Implement responsive design for mobile and desktop
 - [ ] Implement tool navigation and state management
 - [ ] Add messages window for status and error display
-- [ ] Create responsive design for various screen sizes
 
 ### Phase 4: Tool Implementation
 
