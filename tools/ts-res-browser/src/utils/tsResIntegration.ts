@@ -1,5 +1,13 @@
 import { Result, succeed, fail, FileTree } from '@fgv/ts-utils';
-import { QualifierTypes, Qualifiers, ResourceTypes, Resources, Import, Runtime } from '@fgv/ts-res';
+import {
+  QualifierTypes,
+  Qualifiers,
+  ResourceTypes,
+  Resources,
+  Import,
+  Runtime,
+  ResourceJson
+} from '@fgv/ts-res';
 import { ImportedDirectory, ImportedFile } from './fileImport';
 import { BrowserFileTreeAccessors } from './browserFileTreeAccessors';
 
@@ -29,7 +37,7 @@ export interface TsResSystem {
  */
 export interface ProcessedResources {
   system: TsResSystem;
-  compiledCollection: any; // TODO: Fix type later
+  compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
   resolver: Runtime.ResourceResolver;
   resourceCount: number;
   summary: {
@@ -225,9 +233,20 @@ export function processImportedDirectory(
  * Finalizes processing and creates compiled resources
  */
 function finalizeProcessing(system: TsResSystem): Result<ProcessedResources> {
+  console.log('=== FINALIZING PROCESSING ===');
+  console.log('Resource manager resources:', system.resourceManager.resources.size);
+  console.log('Resource manager resource keys:', Array.from(system.resourceManager.resources.keys()));
+
   return system.resourceManager
     .getCompiledResourceCollection()
-    .onSuccess((compiledCollection) => {
+    .onSuccess((compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection) => {
+      console.log('=== COMPILED COLLECTION CREATED ===');
+      console.log('Compiled collection data:', compiledCollection);
+      console.log('Decisions length:', compiledCollection.decisions?.length);
+      console.log('ConditionSets length:', compiledCollection.conditionSets?.length);
+      console.log('Conditions length:', compiledCollection.conditions?.length);
+      console.log('Resources length:', compiledCollection.resources?.length);
+
       return Runtime.ResourceResolver.create({
         resourceManager: system.resourceManager,
         qualifierTypes: system.qualifierTypes,
@@ -242,6 +261,10 @@ function finalizeProcessing(system: TsResSystem): Result<ProcessedResources> {
           warnings: [] // TODO: Collect warnings during processing
         };
 
+        console.log('=== FINALIZATION COMPLETE ===');
+        console.log('Resource count:', resourceIds.length);
+        console.log('Resource IDs:', resourceIds);
+
         return succeed({
           system,
           compiledCollection,
@@ -251,7 +274,7 @@ function finalizeProcessing(system: TsResSystem): Result<ProcessedResources> {
         });
       });
     })
-    .withErrorFormat((message) => `Failed to finalize processing: ${message}`);
+    .withErrorFormat((message: string) => `Failed to finalize processing: ${message}`);
 }
 
 /**

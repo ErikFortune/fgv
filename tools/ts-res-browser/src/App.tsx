@@ -26,7 +26,7 @@ const App: React.FC = () => {
       case 'source':
         return <SourceBrowser onMessage={actions.addMessage} resourceManager={resourceManager} />;
       case 'compiled':
-        return <CompiledBrowser />;
+        return <CompiledBrowser onMessage={actions.addMessage} resourceManager={resourceManager} />;
       case 'resolution':
         return <ResolutionViewer />;
       default:

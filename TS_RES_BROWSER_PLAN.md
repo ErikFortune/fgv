@@ -124,15 +124,19 @@ tools/ts-res-browser/
 
 #### Source Browser Tool
 - [x] Display built resources as alphabetically sorted list
-- [ ] Implement resource selector pane
-- [ ] Create resource viewer pane with detailed information
-- [ ] Show fully qualified resource IDs
+- [x] Implement resource selector pane
+- [x] Create resource viewer pane with detailed information
+- [x] Show fully qualified resource IDs
 
 #### Compiled Resource Browser Tool
-- [ ] Create tree view for compiled resources
-- [ ] Implement tree navigation and selection
-- [ ] Display resource details in viewer pane
-- [ ] Show full ID in viewer, short name in tree
+- [x] Create tree view with 4 main sections: Resources, Decisions, Condition Sets, Conditions
+- [x] Display compiled resources with proper type safety and structure
+- [x] Implement flat array displays for Decisions, Condition Sets, and Conditions
+- [x] Create left browser panel for tree navigation and right details panel
+- [x] Display comprehensive details when items are selected
+- [x] Show counts in section headers and full details on selection
+- [x] Integrate with existing message system for status updates
+- [x] Fix React object rendering issues for robust candidate display
 
 #### Resource Resolution Viewer Tool
 - [ ] Create context panel for qualifier input
@@ -147,6 +151,13 @@ tools/ts-res-browser/
 - [ ] Implement performance optimizations for large datasets
 - [ ] Add loading states and progress indicators
 - [ ] Create comprehensive documentation
+
+### Phase 6: Bugs and Features
+- [ ] Configuration tool
+- [ ] Infer ID of loose candidate or resource during import
+- [ ] Add filtering of resources by context 
+- [ ] Add composition support
+- [ ] Complete support for resolution of default values
 
 ## Technical Specifications
 
