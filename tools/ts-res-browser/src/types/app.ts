@@ -1,16 +1,22 @@
 // Application state types
-export interface AppState {
-  selectedTool: 'source' | 'compiled' | 'resolution';
-  messages: Message[];
-  loading: boolean;
-  error: string | null;
-}
-
 export interface Message {
   id: string;
   type: 'info' | 'warning' | 'error' | 'success';
-  text: string;
+  message: string;
   timestamp: Date;
+}
+
+export type Tool = 'import' | 'source' | 'compiled' | 'resolution';
+
+export interface AppState {
+  selectedTool: Tool;
+  messages: Message[];
+}
+
+export interface AppActions {
+  setSelectedTool: (tool: Tool) => void;
+  addMessage: (type: Message['type'], message: string) => void;
+  clearMessages: () => void;
 }
 
 // Tool-specific types

@@ -114,11 +114,11 @@ tools/ts-res-browser/
 - [x] Initialize ResourceResolver with compiled collection
 
 ### Phase 3: Core Application Layout
-- [x] Create main app layout with sidebar and content areas (in progress)
-- [ ] Fix icon sizing and improve visual hierarchy (PRIORITY)
-- [ ] Implement responsive design for mobile and desktop
-- [ ] Implement tool navigation and state management
-- [ ] Add messages window for status and error display
+- [x] Create main app layout with sidebar and content areas
+- [x] Fix icon sizing and improve visual hierarchy  
+- [x] Resolve Tailwind CSS v4 configuration issues
+- [x] Implement tool navigation and state management
+- [x] Add messages window for status and error display
 
 ### Phase 4: Tool Implementation
 
@@ -142,6 +142,7 @@ tools/ts-res-browser/
 - [ ] Support "best candidate" and "all candidates" views
 
 ### Phase 5: Polish & Optimization
+- [ ] Implement responsive design for mobile and desktop
 - [ ] Add comprehensive error handling
 - [ ] Implement performance optimizations for large datasets
 - [ ] Add loading states and progress indicators
