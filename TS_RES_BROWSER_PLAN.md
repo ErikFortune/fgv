@@ -98,13 +98,13 @@ tools/ts-res-browser/
 
 ### Phase 1: Project Setup & Core Infrastructure
 - [x] Research architecture decision
-- [ ] Create new branch: `ts-res-browser` off `alpha`
-- [ ] Initialize project structure with Rush integration
-- [ ] Configure Webpack + React + TypeScript
-- [ ] Add dependencies using `rush add`
-- [ ] Set up Tailwind CSS and Heroicons
-- [ ] Create comprehensive test data for manual verification
-- [ ] Set up build tooling for npx execution
+- [x] Create new branch: `ts-res-browser` off `alpha`
+- [x] Initialize project structure with Rush integration
+- [x] Configure Webpack + React + TypeScript
+- [x] Add dependencies using `rush add`
+- [x] Set up Tailwind CSS and Heroicons
+- [x] Create comprehensive test data for manual verification
+- [x] Set up build tooling for npx execution
 
 ### Phase 2: File Import & Resource Loading
 - [ ] Implement file/folder selection using File System Access API

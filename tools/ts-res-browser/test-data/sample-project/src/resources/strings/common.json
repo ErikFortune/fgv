@@ -1,0 +1,12 @@
+{
+  "welcome": "Welcome to the application",
+  "hello": "Hello",
+  "goodbye": "Goodbye",
+  "yes": "Yes",
+  "no": "No",
+  "cancel": "Cancel",
+  "ok": "OK",
+  "loading": "Loading...",
+  "error": "An error occurred",
+  "retry": "Retry"
+}

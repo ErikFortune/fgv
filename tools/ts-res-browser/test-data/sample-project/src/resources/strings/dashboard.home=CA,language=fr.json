@@ -1,0 +1,12 @@
+{
+  "title": "Tableau de bord",
+  "overview": "Aperçu",
+  "stats": "Statistiques",
+  "recent_activity": "Activité récente",
+  "notifications": "Notifications",
+  "settings": "Paramètres",
+  "profile": "Profil",
+  "logout": "Déconnexion",
+  "currency": "CAD",
+  "timezone": "America/Toronto"
+}

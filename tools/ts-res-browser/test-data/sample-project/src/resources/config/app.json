@@ -1,0 +1,13 @@
+{
+  "app_name": "Sample Application",
+  "version": "1.0.0",
+  "api_url": "https://api.example.com",
+  "timeout": 30000,
+  "max_retries": 3,
+  "debug": false,
+  "features": {
+    "authentication": true,
+    "notifications": true,
+    "analytics": true
+  }
+}

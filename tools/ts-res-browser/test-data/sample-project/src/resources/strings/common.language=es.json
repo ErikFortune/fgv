@@ -1,0 +1,12 @@
+{
+  "welcome": "Bienvenido a la aplicación",
+  "hello": "Hola",
+  "goodbye": "Adiós",
+  "yes": "Sí",
+  "no": "No",
+  "cancel": "Cancelar",
+  "ok": "Aceptar",
+  "loading": "Cargando...",
+  "error": "Ocurrió un error",
+  "retry": "Reintentar"
+}

@@ -1,0 +1,61 @@
+{
+  "qualifierTypes": [
+    {
+      "name": "language",
+      "typeName": "language"
+    },
+    {
+      "name": "territory",
+      "typeName": "territory"
+    },
+    {
+      "name": "literal",
+      "typeName": "literal"
+    }
+  ],
+  "qualifiers": [
+    {
+      "name": "language",
+      "typeName": "language",
+      "defaultPriority": 600
+    },
+    {
+      "name": "homeTerritory",
+      "typeName": "territory",
+      "defaultPriority": 800,
+      "token": "home",
+      "tokenIsOptional": true
+    },
+    {
+      "name": "currentTerritory",
+      "typeName": "territory",
+      "defaultPriority": 700
+    },
+    {
+      "name": "role",
+      "typeName": "literal",
+      "defaultPriority": 500
+    },
+    {
+      "name": "env",
+      "typeName": "literal",
+      "defaultPriority": 400
+    },
+    {
+      "name": "platform",
+      "typeName": "literal",
+      "defaultPriority": 300
+    },
+    {
+      "name": "density",
+      "typeName": "literal",
+      "defaultPriority": 200
+    }
+  ],
+  "resourceTypes": [
+    {
+      "name": "json",
+      "typeName": "json"
+    }
+  ]
+}

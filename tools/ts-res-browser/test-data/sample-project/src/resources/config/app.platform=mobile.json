@@ -1,0 +1,15 @@
+{
+  "app_name": "Sample Mobile App",
+  "version": "1.0.0",
+  "api_url": "https://mobile-api.example.com",
+  "timeout": 15000,
+  "max_retries": 2,
+  "debug": false,
+  "features": {
+    "authentication": true,
+    "notifications": true,
+    "analytics": true,
+    "offline_mode": true,
+    "push_notifications": true
+  }
+}
