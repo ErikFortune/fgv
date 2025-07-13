@@ -21,7 +21,6 @@
  */
 
 import { captureResult, DetailedResult, failWithDetail, Result, succeed } from '@fgv/ts-utils';
-import { Converters as JsonConverters } from '@fgv/ts-json-base';
 import { IImporter, ImporterResultDetail } from './importer';
 import { ResourceManagerBuilder } from '../../resources';
 import { IImportable, IImportableJson, Importable, isImportable } from '../importable';
@@ -63,9 +62,18 @@ export class JsonImporter implements IImporter {
       const name = item.context?.baseId ?? 'unknown';
       return failWithDetail(`${name}: not a valid JSON importable (${item.type})`, 'skipped');
     }
-    return this._tryImportResourceCollection(item)
-      .onFailure(() => this._tryImportResourceTree(item))
-      .onFailure(() => this._tryImportResource(item, manager));
+    return (
+      this._tryImportResourceCollection(item)
+        .onFailure(() => this._tryImportResourceTree(item))
+        // experimenting with this, accepting any JSON object here makes it
+        // very hard to distinguish a collection or tree with a typo from a
+        // legitimate single loose resource, which yields extremely confusing
+        // error messages. Disabled until/unless we come up with a better plan.
+        //.onFailure(() => this._tryImportResource(item, manager));
+        .onFailure(() =>
+          failWithDetail(`${item.context?.baseId ?? 'unknown'}: unrecognized JSON format.`, 'failed')
+        )
+    );
   }
 
   private _tryImportResourceCollection(
@@ -96,6 +104,11 @@ export class JsonImporter implements IImporter {
       .withDetail('skipped', 'consumed');
   }
 
+  /* 
+   * This is disabled for now because it's too easy to accidentally import
+   * a single loose resource as a collection or tree, which yields extremely
+   * confusing error messages.
+
   private _tryImportResource(
     item: IImportableJson,
     manager: ResourceManagerBuilder
@@ -103,7 +116,7 @@ export class JsonImporter implements IImporter {
     return JsonConverters.jsonObject
       .convert(item.json)
       .onSuccess((json) => {
-        /* c8 ignore next 2 - defense in depth */
+        // c8 ignore next 2 - defense in depth
         const id = item.context?.baseId ?? '';
         const conditions = item.context?.conditions;
         const candidate: ResourceJson.Json.ILooseResourceCandidateDecl = { id, conditions, json };
@@ -114,4 +127,5 @@ export class JsonImporter implements IImporter {
       })
       .withDetail('failed', 'consumed');
   }
+  */
 }

@@ -28,43 +28,79 @@ import { ImportManager } from '../../../packlets/import';
 const resourceFiles: FileTree.IInMemoryFile[] = [
   {
     path: 'resources.json',
-    contents: { helloMyNameIs: 'default resources' }
+    contents: {
+      candidates: [
+        { id: 'resources', resourceTypeName: 'json', json: { helloMyNameIs: 'default resources' } }
+      ]
+    }
   },
   {
     path: '/US/resources.json',
-    contents: { helloMyNameIs: 'resources for US' }
+    contents: {
+      candidates: [{ id: 'resources', resourceTypeName: 'json', json: { helloMyNameIs: 'US resources' } }]
+    }
   },
   {
     path: '/home=CA/resources.json',
-    contents: { helloMyNameIs: 'resources for CA' }
+    contents: {
+      candidates: [
+        { id: 'resources', resourceTypeName: 'json', json: { helloMyNameIs: 'home=CA resources' } }
+      ]
+    }
   },
   {
     path: '/resources.home=PR/language=es-419.json',
-    contents: { helloMyNameIs: 'resources for PR in es-419' }
+    contents: {
+      candidates: [
+        {
+          id: 'resources',
+          resourceTypeName: 'json',
+          json: { helloMyNameIs: 'latin american spanish resources for PR' }
+        }
+      ]
+    }
   },
   {
     path: '/resources.home=PR/language=en.json',
-    contents: { helloMyNameIs: 'resources for PR in English' }
+    contents: {
+      candidates: [
+        { id: 'resources', resourceTypeName: 'json', json: { helloMyNameIs: 'english resources for PR' } }
+      ]
+    }
   },
   {
     path: '/resources.home=MX.json',
-    contents: { helloMyNameIs: 'resources for MX' }
+    contents: {
+      candidates: [{ id: 'resources', resourceTypeName: 'json', json: { helloMyNameIs: 'MX resources' } }]
+    }
   },
   {
     path: '/US/resources.language=en-US.json',
-    contents: { helloMyNameIs: 'resources for en-US in US' }
+    contents: {
+      candidates: [
+        { id: 'resources', resourceTypeName: 'json', json: { helloMyNameIs: 'US resources for en-US in US' } }
+      ]
+    }
   },
   {
     path: '/resources/AQ.json',
-    contents: { helloMyNameIs: 'resources for AQ' }
+    contents: {
+      candidates: [
+        { id: 'resources', resourceTypeName: 'json', json: { helloMyNameIs: "brr it's chilly down here" } }
+      ]
+    }
   },
   {
     path: '/resources/language=fr.json',
-    contents: { helloMyNameIs: 'resources for fr' }
+    contents: {
+      candidates: [{ id: 'resources', resourceTypeName: 'json', json: { helloMyNameIs: 'Oh Gomez!' } }]
+    }
   },
   {
     path: '/resources/home=CA,language=fr.json',
-    contents: { helloMyNameIs: 'resources for CA in fr' }
+    contents: {
+      candidates: [{ id: 'resources', resourceTypeName: 'json', json: { helloMyNameIs: 'française, eh?' } }]
+    }
   },
   {
     path: '/broken/resources.home=Antarctica/language=en-US.json',
@@ -210,29 +246,33 @@ describe('ImportManager', () => {
   describe('importFromFileSystem method', () => {
     test('imports a file that exists', () => {
       expect(importManager.importFromFileSystem('resources.json')).toSucceedAndSatisfy(() => {
-        expect(resourceManager.resources.validating.has('resources')).toBe(true);
-        expect(resourceManager.resources.validating.get('resources')).toSucceedAndSatisfy((resource) => {
-          expect(resource.id).toEqual('resources');
-          expect(resource.candidates.length).toEqual(1);
-          expect(resource.candidates[0].json).toEqual({ helloMyNameIs: 'default resources' });
-          expect(resource.candidates[0].conditions.conditions.length).toEqual(0);
-        });
+        expect(resourceManager.resources.validating.has('resources.resources')).toBe(true);
+        expect(resourceManager.resources.validating.get('resources.resources')).toSucceedAndSatisfy(
+          (resource) => {
+            expect(resource.id).toEqual('resources.resources');
+            expect(resource.candidates.length).toEqual(1);
+            expect(resource.candidates[0].json).toEqual({ helloMyNameIs: 'default resources' });
+            expect(resource.candidates[0].conditions.conditions.length).toEqual(0);
+          }
+        );
       });
     });
 
     test('imports a directory that exists', () => {
       expect(importManager.importFromFileSystem('resources')).toSucceedAndSatisfy(() => {
-        expect(resourceManager.resources.validating.has('resources')).toBe(true);
-        expect(resourceManager.resources.validating.get('resources')).toSucceedAndSatisfy((resource) => {
-          expect(resource.id).toEqual('resources');
-          expect(resource.candidates.length).toEqual(3);
-          expect(resource.candidates[0].json).toEqual({ helloMyNameIs: 'resources for CA in fr' });
-          expect(resource.candidates[0].conditions.conditions.length).toEqual(2);
-          expect(resource.candidates[1].json).toEqual({ helloMyNameIs: 'resources for AQ' });
-          expect(resource.candidates[1].conditions.conditions.length).toEqual(1);
-          expect(resource.candidates[2].json).toEqual({ helloMyNameIs: 'resources for fr' });
-          expect(resource.candidates[2].conditions.conditions.length).toEqual(1);
-        });
+        expect(resourceManager.resources.validating.has('resources.resources')).toBe(true);
+        expect(resourceManager.resources.validating.get('resources.resources')).toSucceedAndSatisfy(
+          (resource) => {
+            expect(resource.id).toEqual('resources.resources');
+            expect(resource.candidates.length).toEqual(3);
+            expect(resource.candidates[0].json).toEqual({ helloMyNameIs: 'française, eh?' });
+            expect(resource.candidates[0].conditions.conditions.length).toEqual(2);
+            expect(resource.candidates[1].json).toEqual({ helloMyNameIs: "brr it's chilly down here" });
+            expect(resource.candidates[1].conditions.conditions.length).toEqual(1);
+            expect(resource.candidates[2].json).toEqual({ helloMyNameIs: 'Oh Gomez!' });
+            expect(resource.candidates[2].conditions.conditions.length).toEqual(1);
+          }
+        );
       });
     });
 
@@ -256,7 +296,7 @@ describe('ImportManager', () => {
 
     test('fails for an malformed file', () => {
       expect(importManager.importFromFileSystem('/broken/US/resources.json')).toFailWith(
-        /not a valid json object/i
+        /unrecognized JSON format/i
       );
     });
   });

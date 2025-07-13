@@ -88,7 +88,7 @@ describe('jsonImporter', () => {
   });
 
   describe('import', () => {
-    test('imports a valid JSON object with name and conditions from context', () => {
+    xtest('imports a valid JSON object with name and conditions from context', () => {
       expect(manager.resources.has(context.baseId!)).toBe(false);
       expect(importer.import(importable, manager)).toSucceedWithDetail([], 'consumed');
       expect(manager.resources.get(context.baseId!)).toSucceedAndSatisfy((resource) => {
@@ -171,7 +171,13 @@ describe('jsonImporter', () => {
       expect(importResult.detail).toEqual('consumed');
     });
 
-    test('fails for an item with an invalid id', () => {
+    test('fails for an item with an unrecognized JSON format', () => {
+      const badIdContext = TsRes.Import.ImportContext.create({}).orThrow();
+      const badImportable = { type: 'json', json: { helloMyNameIs: 'importable' }, context: badIdContext };
+      expect(importer.import(badImportable, manager)).toFailWithDetail(/unrecognized JSON format/i, 'failed');
+    });
+
+    xtest('fails for an item with an invalid id', () => {
       const badIdContext = TsRes.Import.ImportContext.create({}).orThrow();
       const badImportable = { type: 'json', json: { helloMyNameIs: 'importable' }, context: badIdContext };
       expect(importer.import(badImportable, manager)).toFailWithDetail(/invalid id/i, 'failed');
@@ -195,7 +201,7 @@ describe('jsonImporter', () => {
 
     test('fails for JSON importable with a non-object payload', () => {
       const badImportable = { type: 'json', json: 'not an object', context };
-      expect(importer.import(badImportable, manager)).toFailWithDetail(/not a valid json object/i, 'failed');
+      expect(importer.import(badImportable, manager)).toFailWithDetail(/unrecognized JSON format/i, 'failed');
     });
   });
 });

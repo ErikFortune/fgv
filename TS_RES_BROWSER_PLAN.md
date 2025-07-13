@@ -123,7 +123,7 @@ tools/ts-res-browser/
 ### Phase 4: Tool Implementation
 
 #### Source Browser Tool
-- [ ] Display built resources as alphabetically sorted list
+- [x] Display built resources as alphabetically sorted list
 - [ ] Implement resource selector pane
 - [ ] Create resource viewer pane with detailed information
 - [ ] Show fully qualified resource IDs

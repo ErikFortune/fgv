@@ -1,6 +1,7 @@
 import { Result, succeed, fail, FileTree } from '@fgv/ts-utils';
 import { QualifierTypes, Qualifiers, ResourceTypes, Resources, Import, Runtime } from '@fgv/ts-res';
 import { ImportedDirectory, ImportedFile } from './fileImport';
+import { BrowserFileTreeAccessors } from './browserFileTreeAccessors';
 
 /**
  * Configuration for setting up ts-res system
@@ -47,8 +48,7 @@ export const DEFAULT_QUALIFIER_DECLARATIONS: Qualifiers.IQualifierDecl[] = [
     name: 'homeTerritory',
     typeName: 'territory',
     defaultPriority: 800,
-    token: 'home',
-    tokenIsOptional: true
+    token: 'home'
   },
   {
     name: 'currentTerritory',
@@ -58,7 +58,8 @@ export const DEFAULT_QUALIFIER_DECLARATIONS: Qualifiers.IQualifierDecl[] = [
   {
     name: 'language',
     typeName: 'language',
-    defaultPriority: 600
+    defaultPriority: 600,
+    tokenIsOptional: true
   },
   {
     name: 'role',
@@ -185,41 +186,16 @@ export function processImportedFiles(
   });
 }
 
-/**
- * Processes individual imported files through ts-res ImportManager using fsTree
- */
-/**
- * Recursively collects all files from an ImportedDirectory structure
- */
-function collectFilesFromDirectory(directory: ImportedDirectory): ImportedFile[] {
-  const files: ImportedFile[] = [];
-
-  // Add files from current directory
-  files.push(...directory.files);
-
-  // Recursively add files from subdirectories
-  for (const subDirectory of directory.directories) {
-    files.push(...collectFilesFromDirectory(subDirectory));
-  }
-
-  return files;
-}
-
 export function processImportedDirectory(
   directory: ImportedDirectory,
   system?: TsResSystem
 ): Result<ProcessedResources> {
-  // Convert ImportedDirectory to ImportedFile[] format
-  const files = collectFilesFromDirectory(directory);
-
   return (system ? succeed(system) : createTsResSystem()).onSuccess((tsResSystem) => {
-    // Convert ImportedFile[] to IInMemoryFile[] format
-    const inMemoryFiles = files.map((file) => ({
-      path: file.path,
-      contents: file.content
-    }));
-
-    return FileTree.inMemory(inMemoryFiles)
+    // Create custom FileTree that preserves directory structure
+    return BrowserFileTreeAccessors.create(directory)
+      .onSuccess((accessors) => {
+        return FileTree.FileTree.create(accessors);
+      })
       .onSuccess((fileTree) => {
         return Import.ImportManager.create({
           fileTree,
@@ -227,13 +203,13 @@ export function processImportedDirectory(
         });
       })
       .onSuccess<ProcessedResources>((importManager) => {
-        // Import each file using its filesystem path
-        for (const file of files) {
-          const importResult = importManager.importFromFileSystem(file.path);
-          if (importResult.isFailure()) {
-            return fail(`Failed to import file ${file.path}: ${importResult.message}`);
-          }
+        // Import from root path since we set the imported directory as the FileTree root
+        // The importer will traverse the tree structure and extract qualifiers from directory names
+        const importResult = importManager.importFromFileSystem('/');
+        if (importResult.isFailure()) {
+          return fail(`Failed to import directory ${directory.name}: ${importResult.message}`);
         }
+
         // Update the system with the new ImportManager
         const updatedSystem = {
           ...tsResSystem,
@@ -243,111 +219,6 @@ export function processImportedDirectory(
       })
       .withErrorFormat((message) => `processImportedDirectory failed: ${message}`);
   });
-}
-
-/**
- * Find common directory from a list of file paths
- */
-function findCommonDirectory(paths: string[]): string {
-  if (paths.length === 0) return '.';
-  if (paths.length === 1) {
-    // For a single file, use its directory
-    const lastSlash = paths[0].lastIndexOf('/');
-    return lastSlash > 0 ? paths[0].substring(0, lastSlash) : '.';
-  }
-
-  // Find common prefix
-  let commonPath = paths[0];
-  for (let i = 1; i < paths.length; i++) {
-    const path = paths[i];
-    let j = 0;
-    while (j < commonPath.length && j < path.length && commonPath[j] === path[j]) {
-      j++;
-    }
-    commonPath = commonPath.substring(0, j);
-  }
-
-  // Ensure we end at a directory boundary
-  const lastSlash = commonPath.lastIndexOf('/');
-  return lastSlash > 0 ? commonPath.substring(0, lastSlash) : '.';
-}
-
-/**
- * Creates an fsTree from an ImportedDirectory structure
- */
-function createFsTreeFromDirectory(directory: ImportedDirectory): Result<FsTree.FsTree> {
-  try {
-    // Create root fsTree
-    const fsTree = FsTree.FsTree.createEmpty().orThrow();
-
-    // Add directory structure to fsTree
-    addDirectoryToFsTree(fsTree, directory, directory.path).orThrow();
-
-    return succeed(fsTree);
-  } catch (error) {
-    return fail(
-      `Failed to create fsTree from directory: ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
-}
-
-/**
- * Creates an fsTree from an array of ImportedFile
- */
-function createFsTreeFromFiles(files: ImportedFile[]): Result<FsTree.FsTree> {
-  try {
-    // Create root fsTree
-    const fsTree = FsTree.FsTree.createEmpty().orThrow();
-
-    // Add each file to fsTree
-    for (const file of files) {
-      const addResult = fsTree.addFile(file.path, file.content);
-      if (addResult.isFailure()) {
-        return fail(`Failed to add file ${file.path}: ${addResult.error}`);
-      }
-    }
-
-    return succeed(fsTree);
-  } catch (error) {
-    return fail(
-      `Failed to create fsTree from files: ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
-}
-
-/**
- * Recursively adds directory structure to fsTree
- */
-function addDirectoryToFsTree(
-  fsTree: FsTree.FsTree,
-  directory: ImportedDirectory,
-  basePath: string
-): Result<void> {
-  try {
-    // Add all files in this directory
-    for (const file of directory.files) {
-      const filePath = `${basePath}/${file.name}`;
-      const addResult = fsTree.addFile(filePath, file.content);
-      if (addResult.isFailure()) {
-        return fail(`Failed to add file ${filePath}: ${addResult.error}`);
-      }
-    }
-
-    // Recursively add subdirectories
-    for (const subDirectory of directory.directories) {
-      const subPath = `${basePath}/${subDirectory.name}`;
-      const addResult = addDirectoryToFsTree(fsTree, subDirectory, subPath);
-      if (addResult.isFailure()) {
-        return addResult;
-      }
-    }
-
-    return succeed(undefined);
-  } catch (error) {
-    return fail(
-      `Failed to add directory to fsTree: ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
 }
 
 /**
