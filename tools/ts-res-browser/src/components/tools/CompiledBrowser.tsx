@@ -35,6 +35,12 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({ onMessage, resourceMa
     compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
   ): string => {
     try {
+      // Use metadata if available
+      if (condition.metadata?.key) {
+        return condition.metadata.key;
+      }
+
+      // Fall back to manual construction
       const qualifier = compiledCollection.qualifiers[condition.qualifierIndex];
       if (!qualifier) return `unknown-qualifier`;
 
@@ -52,6 +58,16 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({ onMessage, resourceMa
     compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
   ): string => {
     try {
+      // Use metadata if available
+      if (conditionSet.metadata?.key) {
+        return conditionSet.metadata.key;
+      }
+
+      if (conditionSetIndex === 0) {
+        return 'unconditional';
+      }
+
+      // Fall back to manual construction
       if (!conditionSet.conditions || conditionSet.conditions.length === 0) {
         return `condition-set-${conditionSetIndex}`;
       }
@@ -75,6 +91,12 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({ onMessage, resourceMa
     compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
   ): string => {
     try {
+      // Use metadata if available
+      if (decision.metadata?.key) {
+        return decision.metadata.key;
+      }
+
+      // Fall back to manual construction
       if (!decision.conditionSets || decision.conditionSets.length === 0) {
         return `decision-${decisionIndex}`;
       }
@@ -89,6 +111,59 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({ onMessage, resourceMa
       return conditionSetKeys.join(' OR ');
     } catch (error) {
       return `decision-${decisionIndex}`;
+    }
+  };
+
+  // Helper function to format display name as "key (index)" or just "index"
+  const formatDisplayName = (key: string, index: number): string => {
+    // If key looks like it's just "condition-X", "condition-set-X", or "decision-X", just show the index
+    if (key.match(/^(condition|condition-set|decision)-\d+$/)) {
+      return `${index}`;
+    }
+    return `${key} (${index})`;
+  };
+
+  // Helper function to get condition set key for a candidate
+  const getCandidateConditionSetKey = (
+    candidateIndex: number,
+    resource: ResourceJson.Compiled.ICompiledResource,
+    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
+  ): string | null => {
+    try {
+      // Get the decision for this resource
+      const decision = compiledCollection.decisions[resource.decision];
+      if (!decision || !decision.conditionSets) {
+        return null;
+      }
+
+      // Map candidate index to condition set index
+      // Assuming candidates correspond to condition sets in order
+      if (candidateIndex >= decision.conditionSets.length) {
+        return null;
+      }
+
+      const conditionSetIndex = decision.conditionSets[candidateIndex];
+      const conditionSet = compiledCollection.conditionSets[conditionSetIndex];
+      if (!conditionSet) {
+        return null;
+      }
+
+      return getConditionSetKey(conditionSet, conditionSetIndex, compiledCollection);
+    } catch (error) {
+      return null;
+    }
+  };
+
+  // Helper function to get resource type name
+  const getResourceTypeName = (
+    resourceTypeIndex: number,
+    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
+  ): string => {
+    try {
+      const resourceType = compiledCollection.resourceTypes[resourceTypeIndex];
+      return resourceType?.name || `resource-type-${resourceTypeIndex}`;
+    } catch (error) {
+      return `resource-type-${resourceTypeIndex}`;
     }
   };
 
@@ -303,7 +378,17 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({ onMessage, resourceMa
           {/* Right side: Details Panel */}
           <div className="lg:w-1/2 flex flex-col">
             {selectedNode ? (
-              <NodeDetail node={selectedNode} onMessage={onMessage} />
+              <NodeDetail
+                node={selectedNode}
+                onMessage={onMessage}
+                resourceState={resourceState}
+                getConditionKey={getConditionKey}
+                getConditionSetKey={getConditionSetKey}
+                getDecisionKey={getDecisionKey}
+                formatDisplayName={formatDisplayName}
+                getCandidateConditionSetKey={getCandidateConditionSetKey}
+                getResourceTypeName={getResourceTypeName}
+              />
             ) : (
               <div className="flex-1 flex items-center justify-center border border-gray-200 rounded-lg bg-gray-50">
                 <div className="text-center">
@@ -335,9 +420,44 @@ const findNodeById = (tree: TreeNode, id: string): TreeNode | null => {
 interface NodeDetailProps {
   node: TreeNode;
   onMessage?: (type: Message['type'], message: string) => void;
+  resourceState: any; // UseResourceManagerReturn['state']
+  getConditionKey: (
+    condition: ResourceJson.Compiled.ICompiledCondition,
+    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
+  ) => string;
+  getConditionSetKey: (
+    conditionSet: ResourceJson.Compiled.ICompiledConditionSet,
+    conditionSetIndex: number,
+    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
+  ) => string;
+  getDecisionKey: (
+    decision: ResourceJson.Compiled.ICompiledAbstractDecision,
+    decisionIndex: number,
+    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
+  ) => string;
+  formatDisplayName: (key: string, index: number) => string;
+  getCandidateConditionSetKey: (
+    candidateIndex: number,
+    resource: ResourceJson.Compiled.ICompiledResource,
+    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
+  ) => string | null;
+  getResourceTypeName: (
+    resourceTypeIndex: number,
+    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
+  ) => string;
 }
 
-const NodeDetail: React.FC<NodeDetailProps> = ({ node, onMessage }) => {
+const NodeDetail: React.FC<NodeDetailProps> = ({
+  node,
+  onMessage,
+  resourceState,
+  getConditionKey,
+  getConditionSetKey,
+  getDecisionKey,
+  formatDisplayName,
+  getCandidateConditionSetKey,
+  getResourceTypeName
+}) => {
   const renderNodeDetails = () => {
     if (!node.data) {
       return (
@@ -363,10 +483,32 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, onMessage }) => {
                   <strong>ID:</strong> {resource?.id || 'Unknown'}
                 </div>
                 <div>
-                  <strong>Resource Type Index:</strong> {resource?.resourceTypeIndex ?? 'Unknown'}
+                  <strong>Resource Type:</strong>{' '}
+                  {(() => {
+                    const resourceTypeIndex = resource?.type;
+                    if (resourceTypeIndex === undefined) return 'Unknown';
+                    const resourceTypeName = getResourceTypeName(
+                      resourceTypeIndex,
+                      resourceState.processedResources!.compiledCollection
+                    );
+                    return formatDisplayName(resourceTypeName, resourceTypeIndex);
+                  })()}
                 </div>
                 <div>
-                  <strong>Decision Index:</strong> {resource?.decisionIndex ?? 'Unknown'}
+                  <strong>Decision:</strong>{' '}
+                  {(() => {
+                    const decisionIndex = resource?.decision;
+                    if (decisionIndex === undefined) return 'Unknown';
+                    const decision =
+                      resourceState.processedResources!.compiledCollection.decisions[decisionIndex];
+                    if (!decision) return `${decisionIndex}`;
+                    const decisionKey = getDecisionKey(
+                      decision,
+                      decisionIndex,
+                      resourceState.processedResources!.compiledCollection
+                    );
+                    return formatDisplayName(decisionKey, decisionIndex);
+                  })()}
                 </div>
               </div>
             </div>
@@ -375,22 +517,33 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, onMessage }) => {
               <div>
                 <h4 className="font-medium text-gray-700 mb-2">Candidates</h4>
                 <div className="space-y-2">
-                  {resource.candidates.map((candidateItem: any, index: number) => (
-                    <div key={index} className="bg-white p-3 rounded border">
-                      <div className="text-sm">
-                        <strong>Candidate {index + 1}</strong>
+                  {resource.candidates.map((candidateItem: any, index: number) => {
+                    const conditionSetKey = getCandidateConditionSetKey(
+                      index,
+                      resource,
+                      resourceState.processedResources!.compiledCollection
+                    );
+
+                    return (
+                      <div key={index} className="bg-white p-3 rounded border">
+                        <div className="text-sm">
+                          <strong>
+                            Candidate {index + 1}
+                            {conditionSetKey && ` (${conditionSetKey})`}
+                          </strong>
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          {typeof candidateItem === 'object' && candidateItem ? (
+                            <pre className="text-xs bg-gray-50 p-2 rounded mt-2 overflow-x-auto">
+                              {JSON.stringify(candidateItem, null, 2)}
+                            </pre>
+                          ) : (
+                            <div>Candidate Index: {candidateItem}</div>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        {typeof candidateItem === 'object' && candidateItem ? (
-                          <pre className="text-xs bg-gray-50 p-2 rounded mt-2 overflow-x-auto">
-                            {JSON.stringify(candidateItem, null, 2)}
-                          </pre>
-                        ) : (
-                          <div>Candidate Index: {candidateItem}</div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -475,9 +628,7 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, onMessage }) => {
                       return (
                         <div key={index} className="bg-white p-3 rounded border">
                           <div className="text-sm">
-                            <strong>
-                              Decision {index} ({decisionKey})
-                            </strong>
+                            <strong>Decision {formatDisplayName(decisionKey, index)}</strong>
                           </div>
                           <div className="text-xs text-gray-600 mt-1">
                             Condition Sets: {decision.conditionSets?.length || 0}
@@ -502,7 +653,7 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, onMessage }) => {
                                   );
                                   return (
                                     <div key={idx} className="text-xs bg-gray-50 p-1 rounded">
-                                      [{conditionSetKey}({conditionSetIndex})]
+                                      [{formatDisplayName(conditionSetKey, conditionSetIndex)}]
                                     </div>
                                   );
                                 })}
@@ -545,9 +696,7 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, onMessage }) => {
                       return (
                         <div key={index} className="bg-white p-3 rounded border">
                           <div className="text-sm">
-                            <strong>
-                              Condition Set {index} ({conditionSetKey})
-                            </strong>
+                            <strong>Condition Set {formatDisplayName(conditionSetKey, index)}</strong>
                           </div>
                           <div className="text-xs text-gray-600 mt-1">
                             Conditions: {conditionSet.conditions?.length || 0}
@@ -571,7 +720,7 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, onMessage }) => {
                                   );
                                   return (
                                     <div key={idx} className="text-xs bg-gray-50 p-1 rounded">
-                                      [{conditionKey}({conditionIndex})]
+                                      [{formatDisplayName(conditionKey, conditionIndex)}]
                                     </div>
                                   );
                                 })}
@@ -612,9 +761,7 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, onMessage }) => {
                     return (
                       <div key={index} className="bg-white p-3 rounded border">
                         <div className="text-sm">
-                          <strong>
-                            Condition {index} ({conditionKey})
-                          </strong>
+                          <strong>Condition {formatDisplayName(conditionKey, index)}</strong>
                         </div>
                         <div className="text-xs text-gray-600 mt-1">
                           <div>Qualifier Index: {condition.qualifierIndex}</div>

@@ -238,7 +238,7 @@ function finalizeProcessing(system: TsResSystem): Result<ProcessedResources> {
   console.log('Resource manager resource keys:', Array.from(system.resourceManager.resources.keys()));
 
   return system.resourceManager
-    .getCompiledResourceCollection()
+    .getCompiledResourceCollection({ includeMetadata: true })
     .onSuccess((compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection) => {
       console.log('=== COMPILED COLLECTION CREATED ===');
       console.log('Compiled collection data:', compiledCollection);
