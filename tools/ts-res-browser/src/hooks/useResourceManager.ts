@@ -2,8 +2,6 @@ import { useState, useCallback } from 'react';
 import { Result, succeed, fail } from '@fgv/ts-utils';
 import {
   ProcessedResources,
-  TsResSystem,
-  createTsResSystem,
   processImportedDirectory,
   processImportedFiles,
   createSimpleContext
@@ -69,13 +67,13 @@ export const useResourceManager = (): UseResourceManagerReturn => {
               console.log('5. State updated successfully');
               resolve();
             } else {
-              console.error('4. Processing failed with error:', result.error);
+              console.error('4. Processing failed with error:', result.message);
               setState((prev) => ({
                 ...prev,
                 isProcessing: false,
-                error: result.error
+                error: result.message
               }));
-              reject(new Error(result.error));
+              reject(new Error(result.message));
             }
           } catch (innerError) {
             console.error('4. Exception in setTimeout:', innerError);
@@ -138,13 +136,13 @@ export const useResourceManager = (): UseResourceManagerReturn => {
               console.log('5. State updated successfully');
               resolve();
             } else {
-              console.error('4. Processing failed with error:', result.error);
+              console.error('4. Processing failed with error:', result.message);
               setState((prev) => ({
                 ...prev,
                 isProcessing: false,
-                error: result.error
+                error: result.message
               }));
-              reject(new Error(result.error));
+              reject(new Error(result.message));
             }
           } catch (innerError) {
             console.error('4. Exception in setTimeout:', innerError);

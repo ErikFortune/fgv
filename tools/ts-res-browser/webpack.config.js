@@ -12,13 +12,15 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     fallback: {
-      path: require.resolve('path-browserify'),
-      fs: false,
+      // Only keep the polyfills we actually need
       crypto: require.resolve('crypto-browserify'),
       stream: require.resolve('stream-browserify'),
       util: require.resolve('util'),
       buffer: require.resolve('buffer'),
       process: require.resolve('process/browser'),
+      // Remove fs and path since we're using in-memory FileTree
+      fs: false,
+      path: false,
       vm: false
     }
   },

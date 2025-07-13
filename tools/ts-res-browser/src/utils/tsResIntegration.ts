@@ -1,5 +1,4 @@
-import { Result, succeed, fail } from '@fgv/ts-utils';
-import { FsTree } from '@fgv/ts-utils';
+import { Result, succeed, fail, FileTree } from '@fgv/ts-utils';
 import { QualifierTypes, Qualifiers, ResourceTypes, Resources, Import, Runtime } from '@fgv/ts-res';
 import { ImportedDirectory, ImportedFile } from './fileImport';
 
@@ -21,6 +20,7 @@ export interface TsResSystem {
   resourceTypes: ResourceTypes.ResourceTypeCollector;
   resourceManager: Resources.ResourceManagerBuilder;
   importManager: Import.ImportManager;
+  contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
 }
 
 /**
@@ -28,7 +28,7 @@ export interface TsResSystem {
  */
 export interface ProcessedResources {
   system: TsResSystem;
-  compiledCollection: Runtime.CompiledResourceCollection;
+  compiledCollection: any; // TODO: Fix type later
   resolver: Runtime.ResourceResolver;
   resourceCount: number;
   summary: {
@@ -123,12 +123,18 @@ export function createTsResSystem(config: TsResConfig = {}): Result<TsResSystem>
       resources: resourceManager
     }).orThrow();
 
+    // Set up context qualifier provider
+    const contextQualifierProvider = Runtime.ValidatingSimpleContextQualifierProvider.create({
+      qualifiers
+    }).orThrow();
+
     return succeed({
       qualifierTypes,
       qualifiers,
       resourceTypes,
       resourceManager,
-      importManager
+      importManager,
+      contextQualifierProvider
     });
   } catch (error) {
     return fail(`Failed to create ts-res system: ${error instanceof Error ? error.message : String(error)}`);
@@ -138,51 +144,132 @@ export function createTsResSystem(config: TsResConfig = {}): Result<TsResSystem>
 /**
  * Processes imported directory through ts-res ImportManager using fsTree
  */
-export function processImportedDirectory(
-  directory: ImportedDirectory,
+export function processImportedFiles(
+  files: ImportedFile[],
   system?: TsResSystem
 ): Result<ProcessedResources> {
-  try {
-    const tsResSystem = system ?? createTsResSystem().orThrow();
-
-    // Create fsTree from imported directory structure
-    const fsTree = createFsTreeFromDirectory(directory).orThrow();
-
-    // Import using the ts-res ImportManager with fsTree
-    const importResult = tsResSystem.importManager.importFromFsTree(fsTree);
-    if (importResult.isFailure()) {
-      return fail(`Failed to import from fsTree: ${importResult.error}`);
-    }
-
-    return finalizeProcessing(tsResSystem);
-  } catch (error) {
-    return fail(`Failed to process directory: ${error instanceof Error ? error.message : String(error)}`);
+  if (files.length === 0) {
+    return fail('No files provided for processing');
   }
+
+  return (system ? succeed(system) : createTsResSystem()).onSuccess((tsResSystem) => {
+    // Convert ImportedFile[] to IInMemoryFile[] format
+    const inMemoryFiles = files.map((file) => ({
+      path: file.path,
+      contents: file.content
+    }));
+
+    return FileTree.inMemory(inMemoryFiles)
+      .onSuccess((fileTree) => {
+        return Import.ImportManager.create({
+          fileTree,
+          resources: tsResSystem.resourceManager
+        });
+      })
+      .onSuccess<ProcessedResources>((importManager) => {
+        // Import each file using its filesystem path
+        for (const file of files) {
+          const importResult = importManager.importFromFileSystem(file.path);
+          if (importResult.isFailure()) {
+            return fail(`Failed to import file ${file.path}: ${importResult.message}`);
+          }
+        }
+        // Update the system with the new ImportManager
+        const updatedSystem = {
+          ...tsResSystem,
+          importManager
+        };
+        return finalizeProcessing(updatedSystem);
+      })
+      .withErrorFormat((message) => `processImportedFiles failed: ${message}`);
+  });
 }
 
 /**
  * Processes individual imported files through ts-res ImportManager using fsTree
  */
-export function processImportedFiles(
-  files: ImportedFile[],
+/**
+ * Recursively collects all files from an ImportedDirectory structure
+ */
+function collectFilesFromDirectory(directory: ImportedDirectory): ImportedFile[] {
+  const files: ImportedFile[] = [];
+
+  // Add files from current directory
+  files.push(...directory.files);
+
+  // Recursively add files from subdirectories
+  for (const subDirectory of directory.directories) {
+    files.push(...collectFilesFromDirectory(subDirectory));
+  }
+
+  return files;
+}
+
+export function processImportedDirectory(
+  directory: ImportedDirectory,
   system?: TsResSystem
 ): Result<ProcessedResources> {
-  try {
-    const tsResSystem = system ?? createTsResSystem().orThrow();
+  // Convert ImportedDirectory to ImportedFile[] format
+  const files = collectFilesFromDirectory(directory);
 
-    // Create fsTree from imported files
-    const fsTree = createFsTreeFromFiles(files).orThrow();
+  return (system ? succeed(system) : createTsResSystem()).onSuccess((tsResSystem) => {
+    // Convert ImportedFile[] to IInMemoryFile[] format
+    const inMemoryFiles = files.map((file) => ({
+      path: file.path,
+      contents: file.content
+    }));
 
-    // Import using the ts-res ImportManager with fsTree
-    const importResult = tsResSystem.importManager.importFromFsTree(fsTree);
-    if (importResult.isFailure()) {
-      return fail(`Failed to import from fsTree: ${importResult.error}`);
-    }
+    return FileTree.inMemory(inMemoryFiles)
+      .onSuccess((fileTree) => {
+        return Import.ImportManager.create({
+          fileTree,
+          resources: tsResSystem.resourceManager
+        });
+      })
+      .onSuccess<ProcessedResources>((importManager) => {
+        // Import each file using its filesystem path
+        for (const file of files) {
+          const importResult = importManager.importFromFileSystem(file.path);
+          if (importResult.isFailure()) {
+            return fail(`Failed to import file ${file.path}: ${importResult.message}`);
+          }
+        }
+        // Update the system with the new ImportManager
+        const updatedSystem = {
+          ...tsResSystem,
+          importManager
+        };
+        return finalizeProcessing(updatedSystem);
+      })
+      .withErrorFormat((message) => `processImportedDirectory failed: ${message}`);
+  });
+}
 
-    return finalizeProcessing(tsResSystem);
-  } catch (error) {
-    return fail(`Failed to process files: ${error instanceof Error ? error.message : String(error)}`);
+/**
+ * Find common directory from a list of file paths
+ */
+function findCommonDirectory(paths: string[]): string {
+  if (paths.length === 0) return '.';
+  if (paths.length === 1) {
+    // For a single file, use its directory
+    const lastSlash = paths[0].lastIndexOf('/');
+    return lastSlash > 0 ? paths[0].substring(0, lastSlash) : '.';
   }
+
+  // Find common prefix
+  let commonPath = paths[0];
+  for (let i = 1; i < paths.length; i++) {
+    const path = paths[i];
+    let j = 0;
+    while (j < commonPath.length && j < path.length && commonPath[j] === path[j]) {
+      j++;
+    }
+    commonPath = commonPath.substring(0, j);
+  }
+
+  // Ensure we end at a directory boundary
+  const lastSlash = commonPath.lastIndexOf('/');
+  return lastSlash > 0 ? commonPath.substring(0, lastSlash) : '.';
 }
 
 /**
@@ -267,32 +354,33 @@ function addDirectoryToFsTree(
  * Finalizes processing and creates compiled resources
  */
 function finalizeProcessing(system: TsResSystem): Result<ProcessedResources> {
-  try {
-    // Build and compile resources
-    const compiledCollection = system.resourceManager.getCompiledResourceCollection().orThrow();
+  return system.resourceManager
+    .getCompiledResourceCollection()
+    .onSuccess((compiledCollection) => {
+      return Runtime.ResourceResolver.create({
+        resourceManager: system.resourceManager,
+        qualifierTypes: system.qualifierTypes,
+        contextQualifierProvider: system.contextQualifierProvider
+      }).onSuccess((resolver) => {
+        // Create summary
+        const resourceIds = Array.from(system.resourceManager.resources.keys());
+        const summary = {
+          totalResources: resourceIds.length,
+          resourceIds,
+          errorCount: 0, // TODO: Track errors during processing
+          warnings: [] // TODO: Collect warnings during processing
+        };
 
-    // Create resource resolver
-    const resolver = Runtime.ResourceResolver.create({ resources: compiledCollection }).orThrow();
-
-    // Create summary
-    const resourceIds = Array.from(system.resourceManager.resources.keys());
-    const summary = {
-      totalResources: resourceIds.length,
-      resourceIds,
-      errorCount: 0, // TODO: Track errors during processing
-      warnings: [] // TODO: Collect warnings during processing
-    };
-
-    return succeed({
-      system,
-      compiledCollection,
-      resolver,
-      resourceCount: resourceIds.length,
-      summary
-    });
-  } catch (error) {
-    return fail(`Failed to finalize processing: ${error instanceof Error ? error.message : String(error)}`);
-  }
+        return succeed({
+          system,
+          compiledCollection,
+          resolver,
+          resourceCount: resourceIds.length,
+          summary
+        });
+      });
+    })
+    .withErrorFormat((message) => `Failed to finalize processing: ${message}`);
 }
 
 /**
@@ -302,21 +390,24 @@ export function createSimpleContext(
   contextValues: Record<string, string>,
   system: TsResSystem
 ): Result<Runtime.ValidatingSimpleContextQualifierProvider> {
-  try {
-    const provider = Runtime.ValidatingSimpleContextQualifierProvider.create({
-      qualifiers: system.qualifiers
-    }).orThrow();
-
-    // Set context values
-    for (const [qualifierName, value] of Object.entries(contextValues)) {
-      const setResult = provider.setValue(qualifierName as any, value as any);
-      if (setResult.isFailure()) {
-        return fail(`Failed to set context value ${qualifierName}=${value}: ${setResult.error}`);
+  return Runtime.ValidatingSimpleContextQualifierProvider.create({
+    qualifiers: system.qualifiers
+  })
+    .onSuccess((provider): Result<Runtime.ValidatingSimpleContextQualifierProvider> => {
+      // Set context values
+      for (const [qualifierName, value] of Object.entries(contextValues)) {
+        try {
+          provider.set(qualifierName as any, value as any);
+        } catch (error) {
+          return fail(
+            `Failed to set context value ${qualifierName}=${value}: ${
+              error instanceof Error ? error.message : String(error)
+            }`
+          );
+        }
       }
-    }
 
-    return succeed(provider);
-  } catch (error) {
-    return fail(`Failed to create context: ${error instanceof Error ? error.message : String(error)}`);
-  }
+      return succeed(provider);
+    })
+    .withErrorFormat((message) => `Failed to create context: ${message}`);
 }
