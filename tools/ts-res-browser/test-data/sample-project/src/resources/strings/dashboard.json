@@ -1,10 +1,18 @@
 {
-  "title": "Dashboard",
-  "overview": "Overview",
-  "stats": "Statistics",
-  "recent_activity": "Recent Activity",
-  "notifications": "Notifications",
-  "settings": "Settings",
-  "profile": "Profile",
-  "logout": "Logout"
+  "candidates": [
+    {
+      "id": "dashboard",
+      "resourceTypeName": "json",
+      "json": {
+        "title": "Dashboard",
+        "overview": "Overview",
+        "stats": "Statistics",
+        "recent_activity": "Recent Activity",
+        "notifications": "Notifications",
+        "settings": "Settings",
+        "profile": "Profile",
+        "logout": "Logout"
+      }
+    }
+  ]
 }

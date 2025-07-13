@@ -1,21 +1,21 @@
 {
   "resources": [
     {
-      "id": "home",
+      "id": "notification",
       "resourceTypeName": "json",
       "candidates": [
         {
           "json": {
-            "path": "/assets/icons/home.svg",
-            "alt": "Home icon",
+            "path": "/assets/icons/notification.svg",
+            "alt": "Notification icon",
             "width": 24,
             "height": 24
           }
         },
         {
           "json": {
-            "path": "/assets/icons/home@2x.svg",
-            "alt": "Home icon",
+            "path": "/assets/icons/notification@2x.svg",
+            "alt": "Notification icon",
             "width": 48,
             "height": 48
           },

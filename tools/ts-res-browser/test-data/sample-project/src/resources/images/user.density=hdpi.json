@@ -1,6 +1,14 @@
 {
-  "path": "/assets/icons/user@2x.svg",
-  "alt": "User icon",
-  "width": 48,
-  "height": 48
+  "candidates": [
+    {
+      "id": "user",
+      "resourceTypeName": "json",
+      "json": {
+        "path": "/assets/icons/user@2x.svg",
+        "alt": "User icon",
+        "width": 48,
+        "height": 48
+      }
+    }
+  ]
 }

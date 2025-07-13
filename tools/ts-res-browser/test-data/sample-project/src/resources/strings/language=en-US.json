@@ -1,8 +1,16 @@
 {
-  "welcome": "Welcome to the app",
-  "hello": "Hello",
-  "goodbye": "Goodbye",
-  "date_format": "MM/DD/YYYY",
-  "currency": "USD",
-  "phone_format": "(XXX) XXX-XXXX"
+  "candidates": [
+    {
+      "id": "strings",
+      "resourceTypeName": "json",
+      "json": {
+        "welcome": "Welcome to the app",
+        "hello": "Hello",
+        "goodbye": "Goodbye",
+        "date_format": "MM/DD/YYYY",
+        "currency": "USD",
+        "phone_format": "(XXX) XXX-XXXX"
+      }
+    }
+  ]
 }

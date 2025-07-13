@@ -159,93 +159,204 @@ interface ResourceDetailProps {
   onMessage?: (type: Message['type'], message: string) => void;
 }
 
-const ResourceDetail: React.FC<ResourceDetailProps> = ({ resourceId, processedResources, onMessage }) => {
-  const [resolvedResource, setResolvedResource] = useState<any>(null);
-  const [isResolving, setIsResolving] = useState(false);
+interface ResourceDetailData {
+  id: string;
+  resourceType: string;
+  candidateCount: number;
+  candidates: Array<{
+    json: any;
+    conditions: Array<{
+      qualifier: string;
+      operator: string;
+      value: string;
+      priority: number;
+    }>;
+    isPartial: boolean;
+    mergeMethod: string;
+  }>;
+}
 
-  const handleResolve = async () => {
-    setIsResolving(true);
-    try {
-      const resolver = processedResources.resolver;
-      if (resolver) {
-        const result = await resolver.resolve(resourceId);
-        if (result.isSuccess()) {
-          setResolvedResource(result.value);
-          onMessage?.('success', `Resource resolved: ${resourceId}`);
+const ResourceDetail: React.FC<ResourceDetailProps> = ({ resourceId, processedResources, onMessage }) => {
+  const [resourceDetail, setResourceDetail] = useState<ResourceDetailData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    const loadResourceDetail = () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const resourceManager = processedResources.system.resourceManager;
+        const resourceResult = resourceManager.getBuiltResource(resourceId);
+
+        if (resourceResult.isSuccess()) {
+          const resource = resourceResult.value;
+
+          const detail: ResourceDetailData = {
+            id: resource.id,
+            resourceType: resource.resourceType.key,
+            candidateCount: resource.candidates.length,
+            candidates: resource.candidates.map((candidate: any) => ({
+              json: candidate.json,
+              conditions: candidate.conditions.conditions.map((condition: any) => ({
+                qualifier: condition.qualifier.name,
+                operator: condition.operator,
+                value: condition.value,
+                priority: condition.priority
+              })),
+              isPartial: candidate.isPartial,
+              mergeMethod: candidate.mergeMethod
+            }))
+          };
+
+          setResourceDetail(detail);
+          onMessage?.('info', `Loaded details for resource: ${resourceId}`);
         } else {
-          onMessage?.('error', `Failed to resolve resource: ${result.error}`);
+          setError(`Failed to load resource details: ${resourceResult.message}`);
+          onMessage?.('error', `Failed to load resource details: ${resourceResult.message}`);
         }
+      } catch (err) {
+        const errorMsg = `Error loading resource details: ${
+          err instanceof Error ? err.message : String(err)
+        }`;
+        setError(errorMsg);
+        onMessage?.('error', errorMsg);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      onMessage?.(
-        'error',
-        `Error resolving resource: ${error instanceof Error ? error.message : String(error)}`
-      );
-    } finally {
-      setIsResolving(false);
-    }
-  };
+    };
+
+    loadResourceDetail();
+  }, [resourceId, processedResources, onMessage]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Resource Details</h3>
+        <div className="flex-1 flex items-center justify-center border border-gray-200 rounded-lg bg-gray-50">
+          <div className="text-center">
+            <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-gray-500">Loading resource details...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col h-full">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Resource Details</h3>
+        <div className="flex-1 border border-gray-200 rounded-lg p-4 bg-red-50">
+          <div className="text-center">
+            <p className="text-red-600 font-medium mb-2">Error Loading Resource</p>
+            <p className="text-red-500 text-sm">{error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!resourceDetail) {
+    return (
+      <div className="flex flex-col h-full">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Resource Details</h3>
+        <div className="flex-1 flex items-center justify-center border border-gray-200 rounded-lg bg-gray-50">
+          <p className="text-gray-500">No resource details available</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Resource Details</h3>
-        <button
-          onClick={handleResolve}
-          disabled={isResolving}
-          className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isResolving ? 'Resolving...' : 'Resolve'}
-        </button>
-      </div>
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Resource Details</h3>
 
       <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50">
-        <div className="space-y-4">
+        <div className="space-y-6">
+          {/* Resource Overview */}
           <div>
-            <h4 className="font-medium text-gray-700 mb-2">Resource ID</h4>
-            <code className="text-sm bg-white p-2 rounded border block break-all">{resourceId}</code>
-          </div>
-
-          <div>
-            <h4 className="font-medium text-gray-700 mb-2">System Information</h4>
-            <div className="bg-white p-3 rounded border space-y-2 text-sm">
+            <h4 className="font-medium text-gray-700 mb-3">Resource Overview</h4>
+            <div className="bg-white p-4 rounded-lg border space-y-3">
               <div>
-                <strong>Resource Count:</strong> {processedResources.summary.totalResources}
+                <span className="text-sm font-medium text-gray-600">Fully Qualified ID:</span>
+                <code className="text-sm bg-gray-100 px-2 py-1 rounded ml-2 break-all">
+                  {resourceDetail.id}
+                </code>
               </div>
               <div>
-                <strong>Resource IDs:</strong> {processedResources.summary.resourceIds.length}
+                <span className="text-sm font-medium text-gray-600">Resource Type:</span>
+                <span className="ml-2 text-sm">{resourceDetail.resourceType}</span>
               </div>
-              {processedResources.summary.warnings.length > 0 && (
-                <div>
-                  <strong>Warnings:</strong>{' '}
-                  <span className="text-yellow-600">{processedResources.summary.warnings.length}</span>
-                </div>
-              )}
-              {processedResources.summary.errorCount > 0 && (
-                <div>
-                  <strong>Errors:</strong>{' '}
-                  <span className="text-red-600">{processedResources.summary.errorCount}</span>
-                </div>
-              )}
+              <div>
+                <span className="text-sm font-medium text-gray-600">Candidate Count:</span>
+                <span className="ml-2 text-sm font-medium text-blue-600">
+                  {resourceDetail.candidateCount}
+                </span>
+              </div>
             </div>
           </div>
 
-          {resolvedResource && (
-            <div>
-              <h4 className="font-medium text-gray-700 mb-2">Resolved Value</h4>
-              <pre className="text-sm bg-white p-3 rounded border overflow-x-auto">
-                {JSON.stringify(resolvedResource, null, 2)}
-              </pre>
-            </div>
-          )}
+          {/* Candidates */}
+          <div>
+            <h4 className="font-medium text-gray-700 mb-3">
+              Candidates ({resourceDetail.candidates.length})
+            </h4>
+            <div className="space-y-4">
+              {resourceDetail.candidates.map((candidate, index) => (
+                <div key={index} className="bg-white p-4 rounded-lg border">
+                  <div className="flex items-center justify-between mb-3">
+                    <h5 className="font-medium text-gray-800">Candidate {index + 1}</h5>
+                    <div className="flex items-center space-x-2 text-xs">
+                      {candidate.isPartial && (
+                        <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Partial</span>
+                      )}
+                      <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                        {candidate.mergeMethod}
+                      </span>
+                    </div>
+                  </div>
 
-          {!resolvedResource && (
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>Click "Resolve"</strong> to load the actual resource value with the current context.
-              </p>
+                  {/* Conditions */}
+                  {candidate.conditions.length > 0 && (
+                    <div className="mb-3">
+                      <h6 className="text-sm font-medium text-gray-600 mb-2">Conditions:</h6>
+                      <div className="space-y-1">
+                        {candidate.conditions.map((condition, condIndex) => (
+                          <div
+                            key={condIndex}
+                            className="flex items-center text-xs bg-blue-50 px-2 py-1 rounded"
+                          >
+                            <span className="font-medium text-blue-800">{condition.qualifier}</span>
+                            <span className="mx-1 text-blue-600">{condition.operator}</span>
+                            <span className="text-blue-700">{condition.value}</span>
+                            <span className="ml-auto text-blue-500">priority: {condition.priority}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {candidate.conditions.length === 0 && (
+                    <div className="mb-3">
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        No conditions (default candidate)
+                      </span>
+                    </div>
+                  )}
+
+                  {/* JSON Content */}
+                  <div>
+                    <h6 className="text-sm font-medium text-gray-600 mb-2">Content:</h6>
+                    <pre className="text-xs bg-gray-50 p-3 rounded border overflow-x-auto max-h-40">
+                      {JSON.stringify(candidate.json, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+              ))}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

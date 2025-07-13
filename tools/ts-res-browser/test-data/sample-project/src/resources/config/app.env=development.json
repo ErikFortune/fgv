@@ -1,13 +1,21 @@
 {
-  "app_name": "Sample Application (DEV)",
-  "version": "1.0.0-dev",
-  "api_url": "https://dev-api.example.com",
-  "timeout": 10000,
-  "max_retries": 1,
-  "debug": true,
-  "features": {
-    "authentication": true,
-    "notifications": false,
-    "analytics": false
-  }
+  "candidates": [
+    {
+      "id": "app",
+      "resourceTypeName": "json",
+      "json": {
+        "app_name": "Sample Application (DEV)",
+        "version": "1.0.0-dev",
+        "api_url": "https://dev-api.example.com",
+        "timeout": 10000,
+        "max_retries": 1,
+        "debug": true,
+        "features": {
+          "authentication": true,
+          "notifications": false,
+          "analytics": false
+        }
+      }
+    }
+  ]
 }
