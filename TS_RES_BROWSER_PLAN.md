@@ -16,9 +16,10 @@ Based on 2024 best practices research:
 
 **Technology Stack**:
 - **Framework**: React 18+ with TypeScript
-- **Build Tool**: Vite (modern, fast, excellent TypeScript support)
+- **Build Tool**: Webpack 
 - **File Access**: File System Access API with fallback to file input
-- **Styling**: CSS Modules or Tailwind CSS
+- **Styling**: Tailwind CSS for utility-first styling
+- **Icons**: Heroicons for consistent iconography
 - **State Management**: React Context + useReducer for complex state
 
 ## Rush Monorepo Requirements
@@ -31,6 +32,11 @@ Based on 2024 best practices research:
 - Can install multiple packages at once: `rush add -p package1 package2 package3`
 - Rush automatically uses consistent versions across monorepo or 'latest' for new packages
 - **Work in a branch and ask for help when dealing with dependency conflicts**
+
+**Git Workflow**:
+- **NEVER commit changes without user review** - staging files is fine
+- Always confirm commit message and timing with user before executing `git commit`
+- Work in feature branches and get approval before merging
 
 **Runtime Requirements**:
 - **Node Version**: v20 (monorepo standard)
@@ -92,10 +98,12 @@ tools/ts-res-browser/
 
 ### Phase 1: Project Setup & Core Infrastructure
 - [x] Research architecture decision
-- [ ] Create new branch: `res-browser` off `alpha`
+- [ ] Create new branch: `ts-res-browser` off `alpha`
 - [ ] Initialize project structure with Rush integration
-- [ ] Configure Vite + React + TypeScript
+- [ ] Configure Webpack + React + TypeScript
 - [ ] Add dependencies using `rush add`
+- [ ] Set up Tailwind CSS and Heroicons
+- [ ] Create comprehensive test data for manual verification
 - [ ] Set up build tooling for npx execution
 
 ### Phase 2: File Import & Resource Loading
@@ -149,13 +157,28 @@ rush init
 rush add -p @fgv/ts-utils @fgv/ts-json-base @fgv/ts-json @fgv/ts-res
 rush add -p react react-dom
 rush add --dev -p @fgv/ts-utils-jest @types/react @types/react-dom
-rush add --dev -p vite @vitejs/plugin-react typescript
+rush add --dev -p webpack webpack-cli webpack-dev-server
+rush add --dev -p @babel/core @babel/preset-react @babel/preset-typescript
+rush add --dev -p babel-loader css-loader style-loader html-webpack-plugin
+rush add --dev -p tailwindcss postcss postcss-loader autoprefixer
+rush add -p @heroicons/react
+
+# Polyfills for browser compatibility
+rush add -p core-js whatwg-fetch
+
+# Alternative: Rspack for better performance (webpack-compatible)
+rush add --dev -p @rspack/core @rspack/cli @rspack/dev-server
 
 # Build and test
 rushx build
 rushx test
 rushx dev
 ```
+
+**⚠️ Build Tool Selection**:
+- **Webpack**: Mature, excellent CommonJS support, extensive ecosystem
+- **Rspack**: Rust-based webpack-compatible alternative, significantly faster
+- Both work well with CommonJS monorepos without requiring infrastructure upgrades
 
 ### ⚠️ Dependency Management Warning
 - Rush automatically uses consistent versions across the monorepo or 'latest' for new packages
@@ -176,6 +199,11 @@ interface FileImportOptions {
   excludeAcceptAllOption: boolean;
 }
 ```
+
+**⚠️ Browser Compatibility Note**:
+- Will need to polyfill `File` API and potentially other modern web APIs
+- Consider polyfills for older browsers or environments lacking full ES6+ support
+- May need polyfills for: File System Access API, FileReader, Blob, etc.
 
 ### Resource Management Integration
 ```typescript
@@ -204,7 +232,7 @@ interface AppState {
 }
 ```
 
-## NPX Execution Setup
+### NPX Execution Setup
 
 ### package.json Configuration
 ```json
@@ -214,14 +242,62 @@ interface AppState {
     "ts-res-browser": "./dist/cli.js"
   },
   "scripts": {
-    "build": "vite build",
-    "dev": "vite",
-    "preview": "vite preview"
+    "build": "webpack --mode production",
+    "dev": "webpack serve --mode development",
+    "test": "jest"
   },
   "engines": {
     "node": ">=20.0.0"
   }
 }
+```
+
+### Webpack Configuration
+```javascript
+// webpack.config.js
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+
+module.exports = {
+  entry: './src/main.tsx',
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'bundle.js'
+  },
+  resolve: {
+    extensions: ['.ts', '.tsx', '.js', '.jsx']
+  },
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/,
+        use: 'babel-loader',
+        exclude: /node_modules/
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader', 'postcss-loader']
+      }
+    ]
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: './public/index.html'
+    })
+  ]
+};
+```
+
+### Tailwind CSS Configuration
+```javascript
+// tailwind.config.js
+module.exports = {
+  content: ['./src/**/*.{js,jsx,ts,tsx}'],
+  theme: {
+    extend: {}
+  },
+  plugins: []
+};
 ```
 
 ### CLI Entry Point
@@ -263,17 +339,19 @@ interface AppState {
 
 ## Development Workflow
 
-1. **Branch Strategy**: Work in `res-browser` branch off `alpha`
+1. **Branch Strategy**: Work in `ts-res-browser` branch off `alpha`
 2. **Package Management**: Use `rush add` for all dependencies
-3. **Incremental Development**: Complete each phase before moving to next
-4. **Testing**: Test with real ts-res projects throughout development
-5. **Documentation**: Update README and inline docs as features are added
-6. **Integration**: Ensure compatibility with existing ts-res ecosystem
+3. **Git Workflow**: **NEVER commit without user review** - staging is fine
+4. **Incremental Development**: Complete each phase before moving to next
+5. **Testing**: Test with real ts-res projects throughout development
+6. **Documentation**: Update README and inline docs as features are added
+7. **Integration**: Ensure compatibility with existing ts-res ecosystem
 
 ## Risk Mitigation
 
 ### Technical Risks
 - **File System Access**: Implement robust fallbacks for browser compatibility
+- **Browser Compatibility**: Need polyfills for File API and other modern web APIs
 - **Large Resource Collections**: Use virtualization and lazy loading
 - **Complex Resource Hierarchies**: Implement efficient tree rendering
 - **Rush Integration**: Follow monorepo patterns to avoid dependency conflicts
