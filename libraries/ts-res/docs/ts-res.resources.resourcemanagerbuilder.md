@@ -548,7 +548,7 @@ Gets a read-only array of all [resource candidates](./ts-res.resources.resourcec
 </td></tr>
 <tr><td>
 
-[getCompiledResourceCollection()](./ts-res.resources.resourcemanagerbuilder.getcompiledresourcecollection.md)
+[getCompiledResourceCollection(options)](./ts-res.resources.resourcemanagerbuilder.getcompiledresourcecollection.md)
 
 
 </td><td>

@@ -140,6 +140,17 @@ Represents a complete compiled collection of resources with their associated qua
 </td></tr>
 <tr><td>
 
+[ICompiledResourceOptions](./ts-res.resourcejson.compiled.icompiledresourceoptions.md)
+
+
+</td><td>
+
+Options for controlling the compilation of resource objects.
+
+
+</td></tr>
+<tr><td>
+
 [ICompiledResourceType](./ts-res.resourcejson.compiled.icompiledresourcetype.md)
 
 

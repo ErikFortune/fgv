@@ -83,5 +83,19 @@ Creates a new [AbstractDecision](./ts-res.decisions.abstractdecision.md) object.
 
 
 </td></tr>
+<tr><td>
+
+[toCompiled(options)](./ts-res.decisions.abstractdecision.tocompiled.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Converts this abstract decision to a compiled abstract decision representation.
+
+
+</td></tr>
 </tbody></table>
 

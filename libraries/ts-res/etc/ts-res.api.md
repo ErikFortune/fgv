@@ -32,6 +32,7 @@ class AbstractDecision extends Decision<number> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createAbstractDecision(params: IAbstractDecisionCreateParams): Result<AbstractDecision>;
+    toCompiled(options?: ResourceJson.Compiled.ICompiledResourceOptions): ResourceJson.Compiled.ICompiledAbstractDecision;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -130,6 +131,7 @@ class CollectionImporter implements IImporter {
 declare namespace Compiled {
     export {
         Convert_3 as Convert,
+        ICompiledResourceOptions,
         ICompiledConditionMetadata,
         ICompiledConditionSetMetadata,
         ICompiledDecisionMetadata,
@@ -307,6 +309,7 @@ class Condition implements IValidatedConditionDecl {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     toChildConditionDecl(options?: ResourceJson.Helpers.IDeclarationOptions): ResourceJson.Json.IChildConditionDecl;
+    toCompiled(options?: ResourceJson.Compiled.ICompiledResourceOptions): ResourceJson.Compiled.ICompiledCondition;
     toKey(): ConditionKey;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -416,6 +419,7 @@ class ConditionSet implements IValidatedConditionSetDecl {
     get key(): ConditionSetKey;
     setIndex(index: number): Result<ConditionSetIndex>;
     get size(): number;
+    toCompiled(options?: ResourceJson.Compiled.ICompiledResourceOptions): ResourceJson.Compiled.ICompiledConditionSet;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1047,6 +1051,11 @@ interface ICompiledResourceCollectionCreateParams {
     compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
     qualifierTypes: Collections.IReadOnlyResultMap<string, QualifierType>;
     resourceTypes: Collections.IReadOnlyResultMap<string, ResourceType>;
+}
+
+// @public
+interface ICompiledResourceOptions {
+    includeMetadata?: boolean;
 }
 
 // @public
@@ -2770,6 +2779,7 @@ class Resource implements IResource {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     toChildResourceDecl(options?: ResourceJson.Helpers.IDeclarationOptions): ResourceJson.Json.IChildResourceDecl;
+    toCompiled(options?: ResourceJson.Compiled.ICompiledResourceOptions): ResourceJson.Compiled.ICompiledResource;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3022,7 +3032,7 @@ class ResourceManagerBuilder implements IResourceManager {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getCandidatesForContext(context: Context.IValidatedContextDecl, options?: Context.IContextMatchOptions): ReadonlyArray<ResourceCandidate>;
-    getCompiledResourceCollection(): Result<ResourceJson.Compiled.ICompiledResourceCollection>;
+    getCompiledResourceCollection(options?: ResourceJson.Compiled.ICompiledResourceOptions): Result<ResourceJson.Compiled.ICompiledResourceCollection>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3471,9 +3481,9 @@ class ValidatingSimpleContextQualifierProvider extends SimpleContextQualifierPro
 // src/packlets/import/importers/collectionImporter.ts:133:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/import/importers/collectionImporter.ts:133:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/import/importers/collectionImporter.ts:133:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resource.ts:201:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resource.ts:201:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resource.ts:224:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resource.ts:220:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resource.ts:220:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resource.ts:243:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resourceCandidate.ts:239:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/conditionSetResolutionResult.ts:48:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 

@@ -573,6 +573,82 @@ describe('Condition', () => {
     });
   });
 
+  describe('toCompiled method', () => {
+    test('converts condition to compiled representation without metadata by default', () => {
+      const qualifier = qualifiers.validating.get('language').orThrow();
+      const validatedValue = qualifier.validateCondition('en', 'matches').orThrow();
+      const condition = TsRes.Conditions.Condition.create({
+        qualifier,
+        value: validatedValue,
+        operator: 'matches',
+        priority: qualifier.defaultPriority,
+        index: 1 as TsRes.ConditionIndex
+      }).orThrow();
+
+      const compiled = condition.toCompiled();
+      expect(compiled).toEqual({
+        qualifierIndex: qualifier.index!,
+        value: 'en',
+        priority: qualifier.defaultPriority,
+        scoreAsDefault: undefined
+      });
+      expect(compiled.metadata).toBeUndefined();
+    });
+
+    test('converts condition to compiled representation with metadata when requested', () => {
+      const qualifier = qualifiers.validating.get('language').orThrow();
+      const validatedValue = qualifier.validateCondition('en', 'matches').orThrow();
+      const condition = TsRes.Conditions.Condition.create({
+        qualifier,
+        value: validatedValue,
+        operator: 'matches',
+        priority: qualifier.defaultPriority,
+        index: 1 as TsRes.ConditionIndex
+      }).orThrow();
+
+      const compiled = condition.toCompiled({ includeMetadata: true });
+      expect(compiled).toEqual({
+        qualifierIndex: qualifier.index!,
+        value: 'en',
+        priority: qualifier.defaultPriority,
+        scoreAsDefault: undefined,
+        metadata: {
+          key: condition.key
+        }
+      });
+    });
+
+    test('excludes metadata when explicitly disabled', () => {
+      const qualifier = qualifiers.validating.get('language').orThrow();
+      const validatedValue = qualifier.validateCondition('en', 'matches').orThrow();
+      const condition = TsRes.Conditions.Condition.create({
+        qualifier,
+        value: validatedValue,
+        operator: 'matches',
+        priority: qualifier.defaultPriority,
+        index: 1 as TsRes.ConditionIndex
+      }).orThrow();
+
+      const compiled = condition.toCompiled({ includeMetadata: false });
+      expect(compiled.metadata).toBeUndefined();
+    });
+
+    test('excludes operator when it is "matches"', () => {
+      const qualifier = qualifiers.validating.get('language').orThrow();
+      const validatedValue = qualifier.validateCondition('en', 'matches').orThrow();
+      const condition = TsRes.Conditions.Condition.create({
+        qualifier,
+        value: validatedValue,
+        operator: 'matches',
+        priority: qualifier.defaultPriority,
+        index: 1 as TsRes.ConditionIndex
+      }).orThrow();
+
+      const compiled = condition.toCompiled();
+      expect(compiled.operator).toBeUndefined();
+    });
+  });
+
   describe('canMatchPartialContext method', () => {
     let condition: TsRes.Conditions.Condition;
     beforeEach(() => {

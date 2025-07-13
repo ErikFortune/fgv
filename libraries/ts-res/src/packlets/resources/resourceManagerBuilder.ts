@@ -400,17 +400,20 @@ export class ResourceManagerBuilder implements IResourceManager {
    * Gets a compiled resource collection from the current state of the resource manager builder.
    * This method generates an optimized, index-based representation of all resources, conditions,
    * and decisions that can be used for serialization or efficient runtime processing.
+   * @param options - Optional compilation options controlling the output format.
    * @returns Success with the compiled resource collection if successful, Failure otherwise.
    * @public
    */
-  public getCompiledResourceCollection(): Result<ResourceJson.Compiled.ICompiledResourceCollection> {
+  public getCompiledResourceCollection(
+    options?: ResourceJson.Compiled.ICompiledResourceOptions
+  ): Result<ResourceJson.Compiled.ICompiledResourceCollection> {
     // Build resources first to ensure all data is available
     const buildResult = this._performBuild();
     if (buildResult.isFailure()) {
       return fail(`Failed to build resources: ${buildResult.message}`);
     }
 
-    // Generate compiled data from internal collections
+    // Generate compiled data from internal collections using the new toCompiled methods
     // Note: All objects have a defined index property due to the collector pattern - indices are assigned during collection building
     const compiledData = {
       qualifierTypes: Array.from(this.qualifiers.qualifierTypes.values()).map((qt) => ({
@@ -424,33 +427,10 @@ export class ResourceManagerBuilder implements IResourceManager {
       resourceTypes: Array.from(this.resourceTypes.values()).map((rt) => ({
         name: rt.key
       })),
-      conditions: Array.from(this._conditions.values()).map((c) => {
-        /* c8 ignore next 1 - not really testable rn because "matches" is the only supported operator */
-        const operator = c.operator === 'matches' ? undefined : c.operator;
-        return {
-          qualifierIndex: c.qualifier.index!,
-          operator,
-          value: c.value,
-          priority: c.priority,
-          scoreAsDefault: c.scoreAsDefault
-        };
-      }),
-      conditionSets: Array.from(this._conditionSets.values()).map((cs) => ({
-        conditions: cs.conditions.map((c) => c.index!)
-      })),
-      decisions: Array.from(this._decisions.values()).map((d) => ({
-        conditionSets: d.candidates.map((c) => c.conditionSet.index!)
-      })),
-      resources: Array.from(this._builtResources.values()).map((r) => ({
-        id: r.id,
-        type: r.resourceType.index!,
-        decision: r.decision.baseDecision.index!,
-        candidates: r.candidates.map((c) => ({
-          json: c.json,
-          isPartial: c.isPartial,
-          mergeMethod: c.mergeMethod
-        }))
-      }))
+      conditions: Array.from(this._conditions.values()).map((c) => c.toCompiled(options)),
+      conditionSets: Array.from(this._conditionSets.values()).map((cs) => cs.toCompiled(options)),
+      decisions: Array.from(this._decisions.values()).map((d) => d.toCompiled(options)),
+      resources: Array.from(this._builtResources.values()).map((r) => r.toCompiled(options))
     };
 
     // Apply validation through the converter

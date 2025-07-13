@@ -231,4 +231,19 @@ export class ConditionSet implements IValidatedConditionSetDecl {
   ): ResourceJson.Json.ConditionSetDeclAsArray {
     return this.conditions.map((c) => c.toLooseConditionDecl(options));
   }
+
+  /**
+   * Converts this condition set to a compiled condition set representation.
+   * @param options - Optional compilation options controlling the output format.
+   * @returns A compiled condition set object that can be used for serialization or runtime processing.
+   * @public
+   */
+  public toCompiled(
+    options?: ResourceJson.Compiled.ICompiledResourceOptions
+  ): ResourceJson.Compiled.ICompiledConditionSet {
+    return {
+      conditions: this.conditions.map((c) => c.index!),
+      ...(options?.includeMetadata === true ? { metadata: { key: this.key } } : {})
+    };
+  }
 }

@@ -9,8 +9,45 @@ Gets a compiled resource collection from the current state of the resource manag
 **Signature:**
 
 ```typescript
-getCompiledResourceCollection(): Result<ResourceJson.Compiled.ICompiledResourceCollection>;
+getCompiledResourceCollection(options?: ResourceJson.Compiled.ICompiledResourceOptions): Result<ResourceJson.Compiled.ICompiledResourceCollection>;
 ```
+
+## Parameters
+
+<table><thead><tr><th>
+
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+options
+
+
+</td><td>
+
+[ResourceJson.Compiled.ICompiledResourceOptions](./ts-res.resourcejson.compiled.icompiledresourceoptions.md)
+
+
+</td><td>
+
+_(Optional)_ Optional compilation options controlling the output format.
+
+
+</td></tr>
+</tbody></table>
+
 **Returns:**
 
 Result&lt;[ResourceJson.Compiled.ICompiledResourceCollection](./ts-res.resourcejson.compiled.icompiledresourcecollection.md)<!-- -->&gt;

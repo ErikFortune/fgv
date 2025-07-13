@@ -296,6 +296,20 @@ Sets the global index for this condition set. Once set, the index cannot be chan
 </td></tr>
 <tr><td>
 
+[toCompiled(options)](./ts-res.conditions.conditionset.tocompiled.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Converts this condition set to a compiled condition set representation.
+
+
+</td></tr>
+<tr><td>
+
 [toConditionSetArrayDecl(options)](./ts-res.conditions.conditionset.toconditionsetarraydecl.md)
 
 

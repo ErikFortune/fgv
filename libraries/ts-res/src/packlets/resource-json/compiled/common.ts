@@ -20,8 +20,16 @@
  * SOFTWARE.
  */
 
-import * as Convert from './convert';
-
-export * from './common';
-export * from './json';
-export { Convert };
+/**
+ * Options for controlling the compilation of resource objects.
+ * @public
+ */
+export interface ICompiledResourceOptions {
+  /**
+   * Whether to include metadata in the compiled objects.
+   * Metadata includes human-readable information like semantic keys
+   * that can be useful for debugging or tooling.
+   * @defaultValue false
+   */
+  includeMetadata?: boolean;
+}

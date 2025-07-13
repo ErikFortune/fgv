@@ -221,6 +221,58 @@ describe('ConditionSet', () => {
     });
   });
 
+  describe('toCompiled method', () => {
+    test('converts condition set to compiled representation without metadata by default', () => {
+      const conditionSet = TsRes.Conditions.ConditionSet.create({
+        conditions: [allConditions[0], allConditions[1]],
+        index: 1 as TsRes.ConditionSetIndex
+      }).orThrow();
+
+      const compiled = conditionSet.toCompiled();
+      expect(compiled).toEqual({
+        conditions: conditionSet.conditions.map((c) => c.index!)
+      });
+      expect(compiled.metadata).toBeUndefined();
+    });
+
+    test('converts condition set to compiled representation with metadata when requested', () => {
+      const conditionSet = TsRes.Conditions.ConditionSet.create({
+        conditions: [allConditions[0], allConditions[1]],
+        index: 1 as TsRes.ConditionSetIndex
+      }).orThrow();
+
+      const compiled = conditionSet.toCompiled({ includeMetadata: true });
+      expect(compiled).toEqual({
+        conditions: conditionSet.conditions.map((c) => c.index!),
+        metadata: {
+          key: conditionSet.key
+        }
+      });
+    });
+
+    test('excludes metadata when explicitly disabled', () => {
+      const conditionSet = TsRes.Conditions.ConditionSet.create({
+        conditions: [allConditions[0]],
+        index: 1 as TsRes.ConditionSetIndex
+      }).orThrow();
+
+      const compiled = conditionSet.toCompiled({ includeMetadata: false });
+      expect(compiled.metadata).toBeUndefined();
+    });
+
+    test('handles empty condition set', () => {
+      const conditionSet = TsRes.Conditions.ConditionSet.create({
+        conditions: [],
+        index: 1 as TsRes.ConditionSetIndex
+      }).orThrow();
+
+      const compiled = conditionSet.toCompiled();
+      expect(compiled).toEqual({
+        conditions: []
+      });
+    });
+  });
+
   describe('canMatchPartialContext method', () => {
     test('returns true when all conditions are satisfied or not present in context', () => {
       const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();

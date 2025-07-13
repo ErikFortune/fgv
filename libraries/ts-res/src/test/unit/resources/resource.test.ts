@@ -575,6 +575,73 @@ describe('Resource', () => {
     });
   });
 
+  describe('toCompiled method', () => {
+    test('converts resource to compiled representation', () => {
+      const resource = TsRes.Resources.Resource.create({
+        decisions,
+        candidates: [candidates[0]],
+        resourceType: jsonType
+      }).orThrow();
+
+      const compiled = resource.toCompiled();
+      expect(compiled).toEqual({
+        id: resource.id,
+        type: resource.resourceType.index!,
+        decision: resource.decision.baseDecision.index!,
+        candidates: [
+          {
+            json: candidates[0].json,
+            isPartial: candidates[0].isPartial,
+            mergeMethod: candidates[0].mergeMethod
+          }
+        ]
+      });
+    });
+
+    test('handles resource with multiple candidates', () => {
+      const resource = TsRes.Resources.Resource.create({
+        decisions,
+        candidates,
+        resourceType: jsonType
+      }).orThrow();
+
+      const compiled = resource.toCompiled();
+      expect(compiled.candidates).toHaveLength(candidates.length);
+      // Note: candidates may be reordered by the Resource constructor, so we compare against the resource's actual candidates
+      compiled.candidates.forEach((compiledCandidate, index) => {
+        expect(compiledCandidate).toEqual({
+          json: resource.candidates[index].json,
+          isPartial: resource.candidates[index].isPartial,
+          mergeMethod: resource.candidates[index].mergeMethod
+        });
+      });
+    });
+
+    test('handles resource with no candidates', () => {
+      const resource = TsRes.Resources.Resource.create({
+        candidates: [],
+        resourceType: jsonType,
+        id: 'empty',
+        decisions
+      }).orThrow();
+
+      const compiled = resource.toCompiled();
+      expect(compiled.candidates).toEqual([]);
+    });
+
+    test('compilation options parameter is accepted but not used for Resource', () => {
+      const resource = TsRes.Resources.Resource.create({
+        decisions,
+        candidates: [candidates[0]],
+        resourceType: jsonType
+      }).orThrow();
+
+      const compiledWithOptions = resource.toCompiled({ includeMetadata: true });
+      const compiledWithoutOptions = resource.toCompiled();
+      expect(compiledWithOptions).toEqual(compiledWithoutOptions);
+    });
+  });
+
   describe('getCandidatesForContext method', () => {
     test('returns empty array if no candidates match the context', () => {
       const resource = TsRes.Resources.Resource.create({

@@ -113,4 +113,56 @@ describe('AbstractDecision', () => {
       });
     });
   });
+
+  describe('toCompiled method', () => {
+    test('converts abstract decision to compiled representation without metadata by default', () => {
+      const decision = TsRes.Decisions.AbstractDecision.createAbstractDecision({
+        conditionSets,
+        index: 1 as TsRes.DecisionIndex
+      }).orThrow();
+
+      const compiled = decision.toCompiled();
+      expect(compiled).toEqual({
+        conditionSets: decision.candidates.map((c) => c.conditionSet.index!)
+      });
+      expect(compiled.metadata).toBeUndefined();
+    });
+
+    test('converts abstract decision to compiled representation with metadata when requested', () => {
+      const decision = TsRes.Decisions.AbstractDecision.createAbstractDecision({
+        conditionSets,
+        index: 1 as TsRes.DecisionIndex
+      }).orThrow();
+
+      const compiled = decision.toCompiled({ includeMetadata: true });
+      expect(compiled).toEqual({
+        conditionSets: decision.candidates.map((c) => c.conditionSet.index!),
+        metadata: {
+          key: decision.key
+        }
+      });
+    });
+
+    test('excludes metadata when explicitly disabled', () => {
+      const decision = TsRes.Decisions.AbstractDecision.createAbstractDecision({
+        conditionSets: [conditionSets[0]],
+        index: 1 as TsRes.DecisionIndex
+      }).orThrow();
+
+      const compiled = decision.toCompiled({ includeMetadata: false });
+      expect(compiled.metadata).toBeUndefined();
+    });
+
+    test('handles empty abstract decision', () => {
+      const decision = TsRes.Decisions.AbstractDecision.createAbstractDecision({
+        conditionSets: [],
+        index: 1 as TsRes.DecisionIndex
+      }).orThrow();
+
+      const compiled = decision.toCompiled();
+      expect(compiled).toEqual({
+        conditionSets: []
+      });
+    });
+  });
 });

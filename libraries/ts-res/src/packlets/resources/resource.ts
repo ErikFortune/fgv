@@ -167,6 +167,27 @@ export class Resource implements IResource {
   }
 
   /**
+   * Converts this resource to a compiled resource representation.
+   * @param options - Optional compilation options controlling the output format.
+   * @returns A compiled resource object that can be used for serialization or runtime processing.
+   * @public
+   */
+  public toCompiled(
+    options?: ResourceJson.Compiled.ICompiledResourceOptions
+  ): ResourceJson.Compiled.ICompiledResource {
+    return {
+      id: this.id,
+      type: this.resourceType.index!,
+      decision: this.decision.baseDecision.index!,
+      candidates: this.candidates.map((c) => ({
+        json: c.json,
+        isPartial: c.isPartial,
+        mergeMethod: c.mergeMethod
+      }))
+    };
+  }
+
+  /**
    * Validates that all candidates have the same id as the resource.
    * @param resourceId - The expected id of the resource.
    * @param candidates - The array of candidates to validate.

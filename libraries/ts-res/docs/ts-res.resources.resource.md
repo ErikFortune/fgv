@@ -264,6 +264,20 @@ Gets the [child resource declaration](./ts-res.resourcejson.json.ichildresourced
 </td></tr>
 <tr><td>
 
+[toCompiled(options)](./ts-res.resources.resource.tocompiled.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Converts this resource to a compiled resource representation.
+
+
+</td></tr>
+<tr><td>
+
 [toLooseResourceDecl(options)](./ts-res.resources.resource.tolooseresourcedecl.md)
 
 

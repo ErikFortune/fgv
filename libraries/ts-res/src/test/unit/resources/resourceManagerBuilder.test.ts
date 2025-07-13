@@ -850,5 +850,70 @@ describe('ResourceManagerBuilder', () => {
       // Restore original method
       manager._performBuild = originalBuild;
     });
+
+    test('accepts ICompiledResourceOptions parameter', () => {
+      manager.addLooseCandidate({ ...someDecls[0], resourceTypeName: 'json' }).orThrow();
+      manager.addLooseCandidate(someDecls[1]).orThrow();
+
+      const resultWithMetadata = manager.getCompiledResourceCollection({ includeMetadata: true });
+      expect(resultWithMetadata).toSucceedAndSatisfy((collection) => {
+        // Verify metadata is included when requested
+        expect(collection.conditions).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              metadata: expect.objectContaining({
+                key: expect.any(String)
+              })
+            })
+          ])
+        );
+        expect(collection.conditionSets).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              metadata: expect.objectContaining({
+                key: expect.any(String)
+              })
+            })
+          ])
+        );
+        expect(collection.decisions).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              metadata: expect.objectContaining({
+                key: expect.any(String)
+              })
+            })
+          ])
+        );
+      });
+
+      const resultWithoutMetadata = manager.getCompiledResourceCollection({ includeMetadata: false });
+      expect(resultWithoutMetadata).toSucceedAndSatisfy((collection) => {
+        // Verify metadata is not included when explicitly disabled
+        collection.conditions.forEach((condition) => {
+          expect(condition.metadata).toBeUndefined();
+        });
+        collection.conditionSets.forEach((conditionSet) => {
+          expect(conditionSet.metadata).toBeUndefined();
+        });
+        collection.decisions.forEach((decision) => {
+          expect(decision.metadata).toBeUndefined();
+        });
+      });
+
+      const resultDefault = manager.getCompiledResourceCollection();
+      expect(resultDefault).toSucceedAndSatisfy((collection) => {
+        // Verify metadata is not included by default
+        collection.conditions.forEach((condition) => {
+          expect(condition.metadata).toBeUndefined();
+        });
+        collection.conditionSets.forEach((conditionSet) => {
+          expect(conditionSet.metadata).toBeUndefined();
+        });
+        collection.decisions.forEach((decision) => {
+          expect(decision.metadata).toBeUndefined();
+        });
+      });
+    });
   });
 });

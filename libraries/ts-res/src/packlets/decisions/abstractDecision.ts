@@ -24,6 +24,7 @@ import { captureResult, Result } from '@fgv/ts-utils';
 import { ConditionSet } from '../conditions';
 import { Candidate } from './candidate';
 import { Decision } from './decision';
+import * as ResourceJson from '../resource-json';
 
 /**
  * Parameters to create an {@link Decisions.AbstractDecision | AbstractDecision}.
@@ -67,5 +68,20 @@ export class AbstractDecision extends Decision<number> {
    */
   public static createAbstractDecision(params: IAbstractDecisionCreateParams): Result<AbstractDecision> {
     return captureResult(() => new AbstractDecision(params));
+  }
+
+  /**
+   * Converts this abstract decision to a compiled abstract decision representation.
+   * @param options - Optional compilation options controlling the output format.
+   * @returns A compiled abstract decision object that can be used for serialization or runtime processing.
+   * @public
+   */
+  public toCompiled(
+    options?: ResourceJson.Compiled.ICompiledResourceOptions
+  ): ResourceJson.Compiled.ICompiledAbstractDecision {
+    return {
+      conditionSets: this.candidates.map((c) => c.conditionSet.index!),
+      ...(options?.includeMetadata === true ? { metadata: { key: this.key } } : {})
+    };
   }
 }
