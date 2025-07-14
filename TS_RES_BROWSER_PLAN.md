@@ -70,7 +70,8 @@ tools/ts-res-browser/
 │   │   ├── tools/
 │   │   │   ├── SourceBrowser.tsx
 │   │   │   ├── CompiledBrowser.tsx
-│   │   │   └── ResolutionViewer.tsx
+│   │   │   ├── ResolutionViewer.tsx
+│   │   │   └── ConfigurationTool.tsx
 │   │   └── common/
 │   │       ├── FileImporter.tsx
 │   │       ├── ResourceTree.tsx
@@ -139,11 +140,39 @@ tools/ts-res-browser/
 - [x] Fix React object rendering issues for robust candidate display
 
 #### Resource Resolution Viewer Tool
-- [ ] Create context panel for qualifier input
-- [ ] Implement qualifier validation
-- [ ] Add resource browser for selection
-- [ ] Create candidate display with view selector
-- [ ] Support "best candidate" and "all candidates" views
+- [x] Create context panel for qualifier input with table format (one entry per qualifier)
+- [x] Implement qualifier validation and dynamic context loading
+- [x] Add resource browser for selection with search capability
+- [x] Create candidate display with view selector (best/all/raw modes)
+- [x] Support "best candidate" and "all candidates" views with condition set keys
+- [x] Separate matching and non-matching candidates with subtle visual distinction
+- [x] Add comprehensive default context values (homeTerritory=US, currentTerritory=US, language=en-US, platform=web, environment=production, role=user, density=standard)
+- [x] Implement metadata-first approach with graceful fallbacks for condition set keys
+- [x] Add visual badges for condition set keys with color coding
+
+#### Configuration Tool
+*This tool enables users to define and manage the fundamental building blocks of the ts-res system - the qualifiers and types that drive resource resolution.*
+
+- [ ] Create three-panel vertical layout for system configuration
+- [ ] **Qualifier Types Panel**: Display and edit qualifier type configurations
+  - [ ] Support editing existing built-in types (language, territory, literal)
+  - [ ] Allow adding new qualifier types by configuring one of the three base types
+  - [ ] Handle complex literal qualifier type configuration with validation patterns
+  - [ ] Support configuration options like `allowContextList` for territory types
+  - [ ] Example: Create "territory-list" from TerritoryQualifierType with allowContextList=2
+- [ ] **Qualifiers Panel**: Display and edit qualifier configurations
+  - [ ] Support adding new qualifiers freely with validation
+  - [ ] Allow editing existing qualifier configurations
+  - [ ] Link qualifiers to their corresponding qualifier types
+  - [ ] Show qualifier usage across resources and provide impact analysis
+- [ ] **Resource Types Panel**: Display resource types (read-only for now)
+  - [ ] Show built-in resource types (json, text, etc.)
+  - [ ] Display resource type properties and configurations
+  - [ ] Show statistics on resource type usage
+- [ ] **Integration**: Ensure Resolution Viewer context panel reflects actual configuration
+  - [ ] Dynamic context loading based on configured qualifiers
+  - [ ] Update default values based on qualifier configurations
+  - [ ] Real-time updates when configuration changes
 
 ### Phase 5: Polish & Optimization
 - [ ] Implement responsive design for mobile and desktop
@@ -152,14 +181,50 @@ tools/ts-res-browser/
 - [ ] Add loading states and progress indicators
 - [ ] Create comprehensive documentation
 
-### Phase 6: Bugs and Features
-- [ ] Configuration tool
+### Phase 5: Advanced Features & Bug Fixes
 - [ ] Infer ID of loose candidate or resource during import
 - [ ] Add filtering of resources by context 
 - [ ] Add composition support
 - [ ] Complete support for resolution of default values
 
+### Phase 6: Extended Configuration Support
+- [ ] Support for custom resource type definitions
+- [ ] Advanced qualifier type configuration options
+- [ ] Import/export of system configurations
+- [ ] Configuration validation and error handling
+
 ## Technical Specifications
+
+### Configuration Tool Architecture
+
+The Configuration Tool provides a comprehensive interface for managing the ts-res system configuration:
+
+**Qualifier Types Configuration**:
+- **Built-in Base Types**: Three fundamental types that cannot be created/deleted:
+  - `LanguageQualifierType`: Handles language-related qualifiers (e.g., "en-US", "fr-CA")
+  - `TerritoryQualifierType`: Handles territory/region qualifiers (e.g., "US", "CA", "GB")
+  - `LiteralQualifierType`: Complex type for literal string matching with various options
+- **Configuration Options**: Each type has configurable properties:
+  - `allowContextList`: Controls if qualifier can accept list contexts (e.g., 0=false, 1=true, 2=multiple)
+  - `defaultPriority`: Sets default priority for conditions using this type
+  - Type-specific options (e.g., validation patterns for literals)
+- **New Types**: Can be created by configuring one of the three base types with different settings
+
+**Qualifiers Configuration**:
+- **Full CRUD Operations**: Create, read, update, delete qualifiers freely
+- **Type Association**: Each qualifier must be linked to a qualifier type
+- **Properties**: Configure name, type, default priority, validation rules
+- **Usage Tracking**: Show where qualifiers are used in resources
+
+**Resource Types Display**:
+- **Read-Only**: Built-in resource types cannot be edited (future enhancement)
+- **Properties**: Show name, validation rules, supported operations
+- **Usage Statistics**: Display how many resources use each type
+
+**Integration Requirements**:
+- **Dynamic Context Loading**: Resolution Viewer must reflect actual configured qualifiers
+- **Validation**: Ensure configuration changes don't break existing resources
+- **Real-time Updates**: Changes should be immediately reflected in other tools
 
 ### Rush Integration
 ```bash
@@ -322,13 +387,6 @@ module.exports = {
 
 ## Future Phases (Post-MVP)
 
-### Phase 6: Advanced Features
-- [ ] Filtered resource views
-- [ ] Flattened resource displays
-- [ ] Composed candidate resolution
-- [ ] Attribution and debugging metadata
-- [ ] Export/import functionality for configurations
-
 ### Phase 7: Enhanced UX
 - [ ] Keyboard shortcuts
 - [ ] Drag & drop file import
@@ -336,7 +394,14 @@ module.exports = {
 - [ ] Resource comparison views
 - [ ] Custom theme support
 
-### Phase 8: Developer Tools
+### Phase 8: Advanced Resource Features
+- [ ] Filtered resource views
+- [ ] Flattened resource displays
+- [ ] Composed candidate resolution
+- [ ] Attribution and debugging metadata
+- [ ] Export/import functionality for configurations
+
+### Phase 9: Developer Tools
 - [ ] Resource validation tools
 - [ ] Performance profiling
 - [ ] Resource optimization suggestions

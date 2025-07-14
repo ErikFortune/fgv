@@ -67,7 +67,7 @@ export const DEFAULT_QUALIFIER_DECLARATIONS: Qualifiers.IQualifierDecl[] = [
     name: 'language',
     typeName: 'language',
     defaultPriority: 600,
-    tokenIsOptional: true
+    token: 'lang'
   },
   {
     name: 'role',
