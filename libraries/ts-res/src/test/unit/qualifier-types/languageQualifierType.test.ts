@@ -142,4 +142,88 @@ describe('LanguageQualifierType', () => {
       });
     });
   });
+
+  describe('createFromConfig static method', () => {
+    test('creates a new LanguageQualifierType with minimal config', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ILanguageQualifierTypeConfig> =
+        {
+          name: 'language',
+          systemType: 'language'
+        };
+
+      expect(TsRes.QualifierTypes.LanguageQualifierType.createFromConfig(config)).toSucceedAndSatisfy((q) => {
+        expect(q).toBeInstanceOf(TsRes.QualifierTypes.LanguageQualifierType);
+        expect(q.key).toBe('language');
+        expect(q.name).toBe('language');
+        expect(q.allowContextList).toBe(false);
+        expect(q.index).toBeUndefined();
+      });
+    });
+
+    test('creates a new LanguageQualifierType with custom name', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ILanguageQualifierTypeConfig> =
+        {
+          name: 'lang',
+          systemType: 'language'
+        };
+
+      expect(TsRes.QualifierTypes.LanguageQualifierType.createFromConfig(config)).toSucceedAndSatisfy((q) => {
+        expect(q).toBeInstanceOf(TsRes.QualifierTypes.LanguageQualifierType);
+        expect(q.key).toBe('lang');
+        expect(q.name).toBe('lang');
+        expect(q.allowContextList).toBe(false);
+        expect(q.index).toBeUndefined();
+      });
+    });
+
+    test('creates a new LanguageQualifierType with allowContextList enabled', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ILanguageQualifierTypeConfig> =
+        {
+          name: 'language',
+          systemType: 'language',
+          configuration: {
+            allowContextList: true
+          }
+        };
+
+      expect(TsRes.QualifierTypes.LanguageQualifierType.createFromConfig(config)).toSucceedAndSatisfy((q) => {
+        expect(q).toBeInstanceOf(TsRes.QualifierTypes.LanguageQualifierType);
+        expect(q.key).toBe('language');
+        expect(q.name).toBe('language');
+        expect(q.allowContextList).toBe(true);
+        expect(q.index).toBeUndefined();
+      });
+    });
+
+    test('creates a new LanguageQualifierType with allowContextList disabled', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ILanguageQualifierTypeConfig> =
+        {
+          name: 'language',
+          systemType: 'language',
+          configuration: {
+            allowContextList: false
+          }
+        };
+
+      expect(TsRes.QualifierTypes.LanguageQualifierType.createFromConfig(config)).toSucceedAndSatisfy((q) => {
+        expect(q).toBeInstanceOf(TsRes.QualifierTypes.LanguageQualifierType);
+        expect(q.key).toBe('language');
+        expect(q.name).toBe('language');
+        expect(q.allowContextList).toBe(false);
+        expect(q.index).toBeUndefined();
+      });
+    });
+
+    test('fails if the name is not a valid qualifier type name', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ILanguageQualifierTypeConfig> =
+        {
+          name: 'not a valid name',
+          systemType: 'language'
+        };
+
+      expect(TsRes.QualifierTypes.LanguageQualifierType.createFromConfig(config)).toFailWith(
+        /not a valid qualifier type name/i
+      );
+    });
+  });
 });

@@ -189,6 +189,22 @@ Creates a new [LiteralQualifierType](./ts-res.qualifiertypes.literalqualifiertyp
 </td></tr>
 <tr><td>
 
+[createFromConfig(config)](./ts-res.qualifiertypes.literalqualifiertype.createfromconfig.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [LiteralQualifierType](./ts-res.qualifiertypes.literalqualifiertype.md) from a configuration object.
+
+
+</td></tr>
+<tr><td>
+
 [isValidConditionValue(value)](./ts-res.qualifiertypes.literalqualifiertype.isvalidconditionvalue.md)
 
 

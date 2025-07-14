@@ -31,6 +31,8 @@ import {
   Validate
 } from '../common';
 import { QualifierType } from './qualifierType';
+import * as Config from './config';
+import { sanitizeJsonObject } from '@fgv/ts-json-base';
 
 /**
  * Parameters used to create a new {@link QualifierTypes.TerritoryQualifierType | TerritoryQualifierType} instance.
@@ -126,6 +128,25 @@ export class TerritoryQualifierType extends QualifierType {
     /* c8 ignore next 1 - coverage having problems with conditional branches */
     params = params ?? {};
     return captureResult(() => new TerritoryQualifierType(params));
+  }
+
+  /**
+   * Creates a new {@link QualifierTypes.TerritoryQualifierType | TerritoryQualifierType} from a configuration object.
+   * @param config - The {@link QualifierTypes.Config.IQualifierTypeConfig | configuration object} containing
+   * the name, systemType, and optional territory-specific configuration including allowed territories.
+   * @returns `Success` with the new {@link QualifierTypes.TerritoryQualifierType | TerritoryQualifierType}
+   * if successful, `Failure` with an error message otherwise.
+   * @public
+   */
+  public static createFromConfig(
+    config: Config.IQualifierTypeConfig<Config.ITerritoryQualifierTypeConfig>
+  ): Result<TerritoryQualifierType> {
+    const territoryConfig = config.configuration ?? {};
+    return sanitizeJsonObject<ITerritoryQualifierTypeCreateParams>({
+      name: config.name,
+      allowContextList: territoryConfig.allowContextList === true,
+      allowedTerritories: territoryConfig.allowedTerritories
+    }).onSuccess(TerritoryQualifierType.create);
   }
 
   /**

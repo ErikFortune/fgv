@@ -643,4 +643,213 @@ describe('LiteralQualifierType', () => {
       ).toBe(TsRes.PerfectMatch);
     });
   });
+
+  describe('createFromConfig static method', () => {
+    test('creates a new LiteralQualifierType with minimal config', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ILiteralQualifierTypeConfig> =
+        {
+          name: 'literal',
+          systemType: 'literal'
+        };
+
+      expect(TsRes.QualifierTypes.LiteralQualifierType.createFromConfig(config)).toSucceedAndSatisfy((q) => {
+        expect(q).toBeInstanceOf(TsRes.QualifierTypes.LiteralQualifierType);
+        expect(q.key).toBe('literal');
+        expect(q.name).toBe('literal');
+        expect(q.allowContextList).toBe(false);
+        expect(q.caseSensitive).toBe(false);
+        expect(q.index).toBeUndefined();
+        expect(q.enumeratedValues).toBeUndefined();
+        expect(q.hierarchy).toBeUndefined();
+      });
+    });
+
+    test('creates a new LiteralQualifierType with custom name', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ILiteralQualifierTypeConfig> =
+        {
+          name: 'category',
+          systemType: 'literal'
+        };
+
+      expect(TsRes.QualifierTypes.LiteralQualifierType.createFromConfig(config)).toSucceedAndSatisfy((q) => {
+        expect(q).toBeInstanceOf(TsRes.QualifierTypes.LiteralQualifierType);
+        expect(q.key).toBe('category');
+        expect(q.name).toBe('category');
+        expect(q.allowContextList).toBe(false);
+        expect(q.caseSensitive).toBe(false);
+        expect(q.index).toBeUndefined();
+        expect(q.enumeratedValues).toBeUndefined();
+        expect(q.hierarchy).toBeUndefined();
+      });
+    });
+
+    test('creates a new LiteralQualifierType with allowContextList enabled', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ILiteralQualifierTypeConfig> =
+        {
+          name: 'literal',
+          systemType: 'literal',
+          configuration: {
+            allowContextList: true
+          }
+        };
+
+      expect(TsRes.QualifierTypes.LiteralQualifierType.createFromConfig(config)).toSucceedAndSatisfy((q) => {
+        expect(q).toBeInstanceOf(TsRes.QualifierTypes.LiteralQualifierType);
+        expect(q.key).toBe('literal');
+        expect(q.name).toBe('literal');
+        expect(q.allowContextList).toBe(true);
+        expect(q.caseSensitive).toBe(false);
+        expect(q.index).toBeUndefined();
+        expect(q.enumeratedValues).toBeUndefined();
+        expect(q.hierarchy).toBeUndefined();
+      });
+    });
+
+    test('creates a new LiteralQualifierType with case sensitivity enabled', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ILiteralQualifierTypeConfig> =
+        {
+          name: 'literal',
+          systemType: 'literal',
+          configuration: {
+            caseSensitive: true
+          }
+        };
+
+      expect(TsRes.QualifierTypes.LiteralQualifierType.createFromConfig(config)).toSucceedAndSatisfy((q) => {
+        expect(q).toBeInstanceOf(TsRes.QualifierTypes.LiteralQualifierType);
+        expect(q.key).toBe('literal');
+        expect(q.name).toBe('literal');
+        expect(q.allowContextList).toBe(false);
+        expect(q.caseSensitive).toBe(true);
+        expect(q.index).toBeUndefined();
+        expect(q.enumeratedValues).toBeUndefined();
+        expect(q.hierarchy).toBeUndefined();
+      });
+    });
+
+    test('creates a new LiteralQualifierType with enumerated values', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ILiteralQualifierTypeConfig> =
+        {
+          name: 'literal',
+          systemType: 'literal',
+          configuration: {
+            enumeratedValues: ['value1', 'value2', 'value3']
+          }
+        };
+
+      expect(TsRes.QualifierTypes.LiteralQualifierType.createFromConfig(config)).toSucceedAndSatisfy((q) => {
+        expect(q).toBeInstanceOf(TsRes.QualifierTypes.LiteralQualifierType);
+        expect(q.key).toBe('literal');
+        expect(q.name).toBe('literal');
+        expect(q.allowContextList).toBe(false);
+        expect(q.caseSensitive).toBe(false);
+        expect(q.index).toBeUndefined();
+        expect(q.enumeratedValues).toEqual(['value1', 'value2', 'value3']);
+        expect(q.hierarchy).toBeUndefined();
+      });
+    });
+
+    test('creates a new LiteralQualifierType with hierarchy', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ILiteralQualifierTypeConfig> =
+        {
+          name: 'literal',
+          systemType: 'literal',
+          configuration: {
+            hierarchy: {
+              child: 'parent',
+              parent: 'grandparent'
+            }
+          }
+        };
+
+      expect(TsRes.QualifierTypes.LiteralQualifierType.createFromConfig(config)).toSucceedAndSatisfy((q) => {
+        expect(q).toBeInstanceOf(TsRes.QualifierTypes.LiteralQualifierType);
+        expect(q.key).toBe('literal');
+        expect(q.name).toBe('literal');
+        expect(q.allowContextList).toBe(false);
+        expect(q.caseSensitive).toBe(false);
+        expect(q.index).toBeUndefined();
+        expect(q.enumeratedValues).toBeUndefined();
+        expect(q.hierarchy).toBeDefined();
+        expect(q.hierarchy?.values.get('child')).toBeDefined();
+        expect(q.hierarchy?.values.get('parent')).toBeDefined();
+      });
+    });
+
+    test('creates a new LiteralQualifierType with all configuration options', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ILiteralQualifierTypeConfig> =
+        {
+          name: 'category',
+          systemType: 'literal',
+          configuration: {
+            allowContextList: true,
+            caseSensitive: true,
+            enumeratedValues: ['value1', 'value2', 'value3', 'child', 'parent', 'grandparent'],
+            hierarchy: {
+              child: 'parent',
+              parent: 'grandparent'
+            }
+          }
+        };
+
+      expect(TsRes.QualifierTypes.LiteralQualifierType.createFromConfig(config)).toSucceedAndSatisfy((q) => {
+        expect(q).toBeInstanceOf(TsRes.QualifierTypes.LiteralQualifierType);
+        expect(q.key).toBe('category');
+        expect(q.name).toBe('category');
+        expect(q.allowContextList).toBe(true);
+        expect(q.caseSensitive).toBe(true);
+        expect(q.index).toBeUndefined();
+        expect(q.enumeratedValues).toEqual(['value1', 'value2', 'value3', 'child', 'parent', 'grandparent']);
+        expect(q.hierarchy).toBeDefined();
+        expect(q.hierarchy?.values.get('child')).toBeDefined();
+        expect(q.hierarchy?.values.get('parent')).toBeDefined();
+      });
+    });
+
+    test('fails if the name is not a valid qualifier type name', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ILiteralQualifierTypeConfig> =
+        {
+          name: 'not a valid name',
+          systemType: 'literal'
+        };
+
+      expect(TsRes.QualifierTypes.LiteralQualifierType.createFromConfig(config)).toFailWith(
+        /not a valid qualifier type name/i
+      );
+    });
+
+    test('fails if enumerated values contain invalid values', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ILiteralQualifierTypeConfig> =
+        {
+          name: 'literal',
+          systemType: 'literal',
+          configuration: {
+            enumeratedValues: ['valid', '']
+          }
+        };
+
+      expect(TsRes.QualifierTypes.LiteralQualifierType.createFromConfig(config)).toFailWith(
+        /not a valid literal condition value/i
+      );
+    });
+
+    test('fails if hierarchy contains invalid values', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ILiteralQualifierTypeConfig> =
+        {
+          name: 'literal',
+          systemType: 'literal',
+          configuration: {
+            enumeratedValues: ['valid', ''],
+            hierarchy: {
+              valid: '',
+              child: 'parent'
+            }
+          }
+        };
+
+      expect(TsRes.QualifierTypes.LiteralQualifierType.createFromConfig(config)).toFailWith(
+        /not a valid literal condition value/i
+      );
+    });
+  });
 });

@@ -101,6 +101,22 @@ Creates a new instance of a [language qualifier type](./ts-res.qualifiertypes.la
 </td></tr>
 <tr><td>
 
+[createFromConfig(config)](./ts-res.qualifiertypes.languagequalifiertype.createfromconfig.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [LanguageQualifierType](./ts-res.qualifiertypes.languagequalifiertype.md) from a configuration object.
+
+
+</td></tr>
+<tr><td>
+
 [isValidConditionValue(value)](./ts-res.qualifiertypes.languagequalifiertype.isvalidconditionvalue.md)
 
 

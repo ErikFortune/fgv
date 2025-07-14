@@ -23,6 +23,7 @@
 import * as QualifierTypes from './packlets/qualifier-types';
 import * as Qualifiers from './packlets/qualifiers';
 import * as Conditions from './packlets/conditions';
+import * as Config from './packlets/config';
 import * as Context from './packlets/context';
 import * as Decisions from './packlets/decisions';
 import * as ResourceJson from './packlets/resource-json';
@@ -36,6 +37,7 @@ export * from './packlets/common';
 
 export {
   Conditions,
+  Config,
   Context,
   Decisions,
   Import,

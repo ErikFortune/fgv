@@ -67,6 +67,32 @@ Abstract base class for resource types which are responsible for validating and 
 </td></tr>
 </tbody></table>
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[createResourceTypeFromConfig(config)](./ts-res.resourcetypes.createresourcetypefromconfig.md)
+
+
+</td><td>
+
+Creates a [ResourceType](./ts-res.resourcetypes.resourcetype.md) from a configuration object.
+
+
+</td></tr>
+</tbody></table>
+
 ## Interfaces
 
 <table><thead><tr><th>
@@ -110,6 +136,30 @@ Parameters used to validate a [resource candidate declaration](./ts-res.resource
 </td><td>
 
 Parameters for creating a [ResourceTypeCollector](./ts-res.resourcetypes.resourcetypecollector.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
+
+## Namespaces
+
+<table><thead><tr><th>
+
+Namespace
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Config](./ts-res.resourcetypes.config.md)
+
+
+</td><td>
 
 
 </td></tr>

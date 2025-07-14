@@ -20,6 +20,11 @@
  * SOFTWARE.
  */
 
+import * as Config from './config';
+
 export * from './resourceType';
 export * from './resourceTypeCollector';
 export * from './jsonResourceType';
+export * from './helpers';
+
+export { Config };

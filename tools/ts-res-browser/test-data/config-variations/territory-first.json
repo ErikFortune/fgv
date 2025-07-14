@@ -1,0 +1,68 @@
+{
+  "name": "Territory-First Configuration",
+  "description": "Configuration that prioritizes territory/region over language, useful for region-specific applications",
+  "qualifierTypes": [
+    {
+      "name": "language",
+      "systemType": "language"
+    },
+    {
+      "name": "territory",
+      "systemType": "territory",
+      "configuration": {
+        "allowContextList": true
+      }
+    },
+    {
+      "name": "role",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": true,
+        "enumeratedValues": ["ADMIN", "USER", "GUEST", "MODERATOR"]
+      }
+    },
+    {
+      "name": "environment",
+      "systemType": "literal",
+      "configuration": {
+        "enumeratedValues": ["development", "staging", "production"]
+      }
+    }
+  ],
+  "qualifiers": [
+    {
+      "name": "homeTerritory",
+      "typeName": "territory",
+      "defaultPriority": 950,
+      "token": "home",
+      "tokenIsOptional": false
+    },
+    {
+      "name": "currentTerritory",
+      "typeName": "territory",
+      "defaultPriority": 900
+    },
+    {
+      "name": "language",
+      "typeName": "language",
+      "defaultPriority": 700
+    },
+    {
+      "name": "role",
+      "typeName": "role",
+      "defaultPriority": 600
+    },
+    {
+      "name": "env",
+      "typeName": "environment",
+      "defaultPriority": 500
+    }
+  ],
+  "resourceTypes": [
+    {
+      "name": "json",
+      "typeName": "json"
+    }
+  ]
+}

@@ -3,7 +3,7 @@ import { MagnifyingGlassIcon, CubeIcon, DocumentTextIcon } from '@heroicons/reac
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message } from '../../types/app';
 import { Runtime } from '@fgv/ts-res';
-import { createSimpleContext } from '../../utils/tsResIntegration';
+import { createSimpleContext, DEFAULT_SYSTEM_CONFIGURATION } from '../../utils/tsResIntegration';
 import { Result } from '@fgv/ts-utils';
 import { JsonValue } from '@fgv/ts-json-base';
 
@@ -39,11 +39,13 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
 
   // Available qualifiers
   const availableQualifiers = useMemo(() => {
-    if (!resourceState.processedResources?.compiledCollection.qualifiers) {
-      return [];
+    if (resourceState.processedResources?.compiledCollection.qualifiers) {
+      // Get qualifier names from the compiled collection
+      return resourceState.processedResources.compiledCollection.qualifiers.map((q) => q.name);
     }
-    // Get qualifier names from the compiled collection
-    return resourceState.processedResources.compiledCollection.qualifiers.map((q) => q.name);
+
+    // Fallback to default system configuration when no resources are loaded
+    return DEFAULT_SYSTEM_CONFIGURATION.qualifiers.map((q) => q.name);
   }, [resourceState.processedResources?.compiledCollection.qualifiers]);
 
   // Initialize context with default values for available qualifiers
@@ -58,7 +60,17 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
       platform: 'web',
       environment: 'production',
       role: 'user',
-      density: 'standard'
+      density: 'standard',
+      // Additional defaults for various configurations
+      env: 'production',
+      device: 'desktop',
+      graphics: 'medium',
+      playerLevel: 'intermediate',
+      gameMode: 'single',
+      tenant: 'corp',
+      securityLevel: 'internal',
+      department: 'engineering',
+      featureFlag: 'enabled'
     };
 
     availableQualifiers.forEach((qualifierName) => {

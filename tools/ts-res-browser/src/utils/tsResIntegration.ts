@@ -6,7 +6,8 @@ import {
   Resources,
   Import,
   Runtime,
-  ResourceJson
+  ResourceJson,
+  Config
 } from '@fgv/ts-res';
 import { ImportedDirectory, ImportedFile } from './fileImport';
 import { BrowserFileTreeAccessors } from './browserFileTreeAccessors';
@@ -24,9 +25,9 @@ export interface TsResConfig {
  * Complete ts-res system setup
  */
 export interface TsResSystem {
-  qualifierTypes: QualifierTypes.QualifierTypeCollector;
-  qualifiers: Qualifiers.QualifierCollector;
-  resourceTypes: ResourceTypes.ResourceTypeCollector;
+  qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
+  qualifiers: Qualifiers.IReadOnlyQualifierCollector;
+  resourceTypes: ResourceTypes.ReadOnlyResourceTypeCollector;
   resourceManager: Resources.ResourceManagerBuilder;
   importManager: Import.ImportManager;
   contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
@@ -49,7 +50,101 @@ export interface ProcessedResources {
 }
 
 /**
- * Default qualifier declarations for ts-res browser tool
+ * Default system configuration for ts-res browser tool
+ * Matches the sample resources-config.json in test-data
+ */
+export const DEFAULT_SYSTEM_CONFIGURATION: Config.Model.ISystemConfiguration = {
+  qualifierTypes: [
+    {
+      name: 'language',
+      systemType: 'language'
+    },
+    {
+      name: 'territory',
+      systemType: 'territory'
+    },
+    {
+      name: 'role',
+      systemType: 'literal',
+      configuration: {
+        allowContextList: false,
+        caseSensitive: false,
+        enumeratedValues: ['admin', 'user', 'guest', 'anonymous']
+      }
+    },
+    {
+      name: 'environment',
+      systemType: 'literal',
+      configuration: {
+        enumeratedValues: ['development', 'integration', 'production', 'test']
+      }
+    },
+    {
+      name: 'platform',
+      systemType: 'literal',
+      configuration: {
+        enumeratedValues: ['ios', 'android', 'web', 'mobile', 'tv', 'desktop']
+      }
+    },
+    {
+      name: 'density',
+      systemType: 'literal',
+      configuration: {
+        allowContextList: false,
+        caseSensitive: false,
+        enumeratedValues: ['hdpi', 'mdpi', 'ldpi']
+      }
+    }
+  ],
+  qualifiers: [
+    {
+      name: 'language',
+      typeName: 'language',
+      defaultPriority: 600
+    },
+    {
+      name: 'homeTerritory',
+      typeName: 'territory',
+      defaultPriority: 800,
+      token: 'home',
+      tokenIsOptional: true
+    },
+    {
+      name: 'currentTerritory',
+      typeName: 'territory',
+      defaultPriority: 700
+    },
+    {
+      name: 'role',
+      typeName: 'role',
+      defaultPriority: 500
+    },
+    {
+      name: 'env',
+      typeName: 'environment',
+      defaultPriority: 400
+    },
+    {
+      name: 'platform',
+      typeName: 'platform',
+      defaultPriority: 300
+    },
+    {
+      name: 'density',
+      typeName: 'density',
+      defaultPriority: 200
+    }
+  ],
+  resourceTypes: [
+    {
+      name: 'json',
+      typeName: 'json'
+    }
+  ]
+};
+
+/**
+ * Legacy default qualifier declarations for backward compatibility
  */
 export const DEFAULT_QUALIFIER_DECLARATIONS: Qualifiers.IQualifierDecl[] = [
   {
@@ -92,7 +187,50 @@ export const DEFAULT_QUALIFIER_DECLARATIONS: Qualifiers.IQualifierDecl[] = [
 ];
 
 /**
- * Creates a complete ts-res system setup
+ * Creates a complete ts-res system setup using SystemConfiguration
+ */
+export function createTsResSystemFromConfig(
+  systemConfig?: Config.Model.ISystemConfiguration
+): Result<TsResSystem> {
+  const configToUse = systemConfig ?? DEFAULT_SYSTEM_CONFIGURATION;
+
+  return Config.SystemConfiguration.create(configToUse).onSuccess((systemConfiguration) => {
+    try {
+      // Set up resource manager
+      const resourceManager = Resources.ResourceManagerBuilder.create({
+        qualifiers: systemConfiguration.qualifiers,
+        resourceTypes: systemConfiguration.resourceTypes
+      }).orThrow();
+
+      // Set up import manager
+      const importManager = Import.ImportManager.create({
+        resources: resourceManager
+      }).orThrow();
+
+      // Set up context qualifier provider
+      const contextQualifierProvider = Runtime.ValidatingSimpleContextQualifierProvider.create({
+        qualifiers: systemConfiguration.qualifiers
+      }).orThrow();
+
+      return succeed({
+        qualifierTypes: systemConfiguration.qualifierTypes,
+        qualifiers: systemConfiguration.qualifiers,
+        resourceTypes: systemConfiguration.resourceTypes,
+        resourceManager,
+        importManager,
+        contextQualifierProvider
+      });
+    } catch (error) {
+      return fail(
+        `Failed to create ts-res system: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  });
+}
+
+/**
+ * Legacy function - creates a complete ts-res system setup using manual construction
+ * @deprecated Use createTsResSystemFromConfig instead
  */
 export function createTsResSystem(config: TsResConfig = {}): Result<TsResSystem> {
   try {
@@ -151,17 +289,25 @@ export function createTsResSystem(config: TsResConfig = {}): Result<TsResSystem>
 }
 
 /**
- * Processes imported directory through ts-res ImportManager using fsTree
+ * Processes imported files through ts-res ImportManager
  */
 export function processImportedFiles(
   files: ImportedFile[],
-  system?: TsResSystem
+  systemConfigOrSystem?: Config.Model.ISystemConfiguration | TsResSystem
 ): Result<ProcessedResources> {
   if (files.length === 0) {
     return fail('No files provided for processing');
   }
 
-  return (system ? succeed(system) : createTsResSystem()).onSuccess((tsResSystem) => {
+  // Determine if we have a system or a config
+  const systemResult =
+    systemConfigOrSystem &&
+    'qualifierTypes' in systemConfigOrSystem &&
+    'resourceManager' in systemConfigOrSystem
+      ? succeed(systemConfigOrSystem as TsResSystem)
+      : createTsResSystemFromConfig(systemConfigOrSystem as Config.Model.ISystemConfiguration);
+
+  return systemResult.onSuccess((tsResSystem) => {
     // Convert ImportedFile[] to IInMemoryFile[] format
     const inMemoryFiles = files.map((file) => ({
       path: file.path,
@@ -196,9 +342,17 @@ export function processImportedFiles(
 
 export function processImportedDirectory(
   directory: ImportedDirectory,
-  system?: TsResSystem
+  systemConfigOrSystem?: Config.Model.ISystemConfiguration | TsResSystem
 ): Result<ProcessedResources> {
-  return (system ? succeed(system) : createTsResSystem()).onSuccess((tsResSystem) => {
+  // Determine if we have a system or a config
+  const systemResult =
+    systemConfigOrSystem &&
+    'qualifierTypes' in systemConfigOrSystem &&
+    'resourceManager' in systemConfigOrSystem
+      ? succeed(systemConfigOrSystem as TsResSystem)
+      : createTsResSystemFromConfig(systemConfigOrSystem as Config.Model.ISystemConfiguration);
+
+  return systemResult.onSuccess((tsResSystem) => {
     // Create custom FileTree that preserves directory structure
     return BrowserFileTreeAccessors.create(directory)
       .onSuccess((accessors) => {
