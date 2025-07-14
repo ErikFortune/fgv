@@ -28,7 +28,7 @@ const App: React.FC = () => {
       case 'compiled':
         return <CompiledBrowser onMessage={actions.addMessage} resourceManager={resourceManager} />;
       case 'resolution':
-        return <ResolutionViewer />;
+        return <ResolutionViewer onMessage={actions.addMessage} resourceManager={resourceManager} />;
       default:
         return (
           <ImportTool
