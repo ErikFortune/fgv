@@ -1,0 +1,93 @@
+{
+  "qualifierTypes": [
+    {
+      "name": "language",
+      "systemType": "language"
+    },
+    {
+      "name": "territory",
+      "systemType": "territory"
+    },
+    {
+      "name": "role",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": false,
+        "enumeratedValues": ["admin", "user", "guest", "anonymous"]
+      }
+    },
+    {
+      "name": "environment",
+      "systemType": "literal",
+      "configuration": {
+        "enumeratedValues": ["development", "integration", "production", "test"]
+      }
+    },
+    {
+      "name": "platform",
+      "systemType": "literal",
+      "configuration": {
+        "enumeratedValues": ["ios", "android", "web", "mobile", "tv", "desktop"]
+      },
+      "hierarchy": {
+        "ios": "mobile",
+        "android": "mobile"
+      }
+    },
+    {
+      "name": "density",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": false,
+        "enumeratedValues": ["hdpi", "mdpi", "ldpi"]
+      }
+    }
+  ],
+  "qualifiers": [
+    {
+      "name": "language",
+      "typeName": "language",
+      "defaultPriority": 600
+    },
+    {
+      "name": "homeTerritory",
+      "typeName": "territory",
+      "defaultPriority": 800,
+      "token": "home",
+      "tokenIsOptional": true
+    },
+    {
+      "name": "currentTerritory",
+      "typeName": "territory",
+      "defaultPriority": 700
+    },
+    {
+      "name": "role",
+      "typeName": "role",
+      "defaultPriority": 500
+    },
+    {
+      "name": "env",
+      "typeName": "environment",
+      "defaultPriority": 400
+    },
+    {
+      "name": "platform",
+      "typeName": "platform",
+      "defaultPriority": 300
+    },
+    {
+      "name": "density",
+      "typeName": "density",
+      "defaultPriority": 200
+    }
+  ],
+  "resourceTypes": [
+    {
+      "name": "json",
+      "typeName": "json"
+    }
+  ]
+}

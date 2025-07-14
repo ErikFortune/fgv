@@ -3,7 +3,8 @@ import {
   DocumentArrowUpIcon,
   DocumentTextIcon,
   CubeIcon,
-  MagnifyingGlassIcon
+  MagnifyingGlassIcon,
+  CogIcon
 } from '@heroicons/react/24/outline';
 import { Tool } from '../../types/app';
 
@@ -36,6 +37,12 @@ const tools = [
     name: 'Resolution Viewer',
     icon: MagnifyingGlassIcon,
     description: 'View resource resolution with qualifiers'
+  },
+  {
+    id: 'configuration',
+    name: 'Configuration',
+    icon: CogIcon,
+    description: 'Manage qualifier types, qualifiers, and resource types'
   }
 ];
 

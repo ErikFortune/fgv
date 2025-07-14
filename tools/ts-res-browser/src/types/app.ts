@@ -6,7 +6,7 @@ export interface Message {
   timestamp: Date;
 }
 
-export type Tool = 'import' | 'source' | 'compiled' | 'resolution';
+export type Tool = 'import' | 'source' | 'compiled' | 'resolution' | 'configuration';
 
 export interface AppState {
   selectedTool: Tool;

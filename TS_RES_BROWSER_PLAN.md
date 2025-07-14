@@ -159,20 +159,18 @@ tools/ts-res-browser/
   - [ ] Allow adding new qualifier types by configuring one of the three base types
   - [ ] Handle complex literal qualifier type configuration with validation patterns
   - [ ] Support configuration options like `allowContextList` for territory types
-  - [ ] Example: Create "territory-list" from TerritoryQualifierType with allowContextList=2
+  - [ ] Example: Create "territory-list" from TerritoryQualifierType with allowContextList=true
 - [ ] **Qualifiers Panel**: Display and edit qualifier configurations
   - [ ] Support adding new qualifiers freely with validation
-  - [ ] Allow editing existing qualifier configurations
+  - [ ] Allow editing or removing existing qualifier configurations
   - [ ] Link qualifiers to their corresponding qualifier types
-  - [ ] Show qualifier usage across resources and provide impact analysis
 - [ ] **Resource Types Panel**: Display resource types (read-only for now)
   - [ ] Show built-in resource types (json, text, etc.)
   - [ ] Display resource type properties and configurations
-  - [ ] Show statistics on resource type usage
 - [ ] **Integration**: Ensure Resolution Viewer context panel reflects actual configuration
   - [ ] Dynamic context loading based on configured qualifiers
   - [ ] Update default values based on qualifier configurations
-  - [ ] Real-time updates when configuration changes
+  - [ ] Real-time updates when configuration changes. changing configuration should clear the any loaded resources or files, as the configuration changes how the loader works.
 
 ### Phase 5: Polish & Optimization
 - [ ] Implement responsive design for mobile and desktop

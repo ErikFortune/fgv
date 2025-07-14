@@ -4,6 +4,7 @@ import ImportTool from './components/tools/ImportTool';
 import SourceBrowser from './components/tools/SourceBrowser';
 import CompiledBrowser from './components/tools/CompiledBrowser';
 import ResolutionViewer from './components/tools/ResolutionViewer';
+import ConfigurationTool from './components/tools/ConfigurationTool';
 import { useAppState } from './hooks/useAppState';
 import { useFileImport } from './hooks/useFileImport';
 import { useResourceManager } from './hooks/useResourceManager';
@@ -29,6 +30,8 @@ const App: React.FC = () => {
         return <CompiledBrowser onMessage={actions.addMessage} resourceManager={resourceManager} />;
       case 'resolution':
         return <ResolutionViewer onMessage={actions.addMessage} resourceManager={resourceManager} />;
+      case 'configuration':
+        return <ConfigurationTool onMessage={actions.addMessage} resourceManager={resourceManager} />;
       default:
         return (
           <ImportTool
