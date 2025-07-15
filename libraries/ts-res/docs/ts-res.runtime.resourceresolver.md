@@ -73,6 +73,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[conditionCache](./ts-res.runtime.resourceresolver.conditioncache.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[QualifierMatchScore](./ts-res.qualifiermatchscore.md) \| undefined&gt;
+
+
+</td><td>
+
+The cache array for resolved conditions, indexed by condition index for O(1) lookup. Each entry stores the resolved QualifierMatchScore for the corresponding condition.
+
+
+</td></tr>
+<tr><td>
+
 [conditionCacheSize](./ts-res.runtime.resourceresolver.conditioncachesize.md)
 
 
@@ -89,6 +110,27 @@ number
 </td><td>
 
 Gets the current size of the condition cache array.
+
+
+</td></tr>
+<tr><td>
+
+[conditionSetCache](./ts-res.runtime.resourceresolver.conditionsetcache.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[ConditionSetResolutionResult](./ts-res.runtime.conditionsetresolutionresult.md) \| undefined&gt;
+
+
+</td><td>
+
+The cache array for resolved condition sets, indexed by condition set index for O(1) lookup. Each entry stores the resolved ConditionSetResolutionResult for the corresponding condition set.
 
 
 </td></tr>
@@ -131,6 +173,27 @@ IContextQualifierProvider
 </td><td>
 
 The context qualifier provider that resolves qualifier values.
+
+
+</td></tr>
+<tr><td>
+
+[decisionCache](./ts-res.runtime.resourceresolver.decisioncache.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[DecisionResolutionResult](./ts-res.runtime.decisionresolutionresult.md) \| undefined&gt;
+
+
+</td><td>
+
+The cache array for resolved decisions, indexed by decision index for O(1) lookup. Each entry stores the resolved DecisionResolutionResult for the corresponding decision.
 
 
 </td></tr>

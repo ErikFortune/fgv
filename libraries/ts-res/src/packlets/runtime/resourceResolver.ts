@@ -30,6 +30,7 @@ import { ReadOnlyQualifierTypeCollector } from '../qualifier-types';
 import { IContextQualifierProvider } from './context';
 import { IResourceManager, IResource, IResourceCandidate } from './iResourceManager';
 import { ConditionSetResolutionResult, IConditionMatchResult } from './conditionSetResolutionResult';
+import { IResourceResolverCacheListener } from './cacheListener';
 
 /**
  * Represents the cached result of resolving a decision.
@@ -63,6 +64,11 @@ export interface IResourceResolverCreateParams {
    * qualifier values for the current context.
    */
   contextQualifierProvider: IContextQualifierProvider;
+
+  /**
+   * An optional listener for {@link Runtime.ResourceResolver | ResourceResolver} cache activity.
+   */
+  listener?: IResourceResolverCacheListener;
 }
 
 /**
@@ -88,6 +94,30 @@ export class ResourceResolver {
   public readonly contextQualifierProvider: IContextQualifierProvider;
 
   /**
+   * The cache array for resolved conditions, indexed by condition index for O(1) lookup.
+   * Each entry stores the resolved QualifierMatchScore for the corresponding condition.
+   */
+  public get conditionCache(): ReadonlyArray<QualifierMatchScore | undefined> {
+    return this._conditionCache;
+  }
+
+  /**
+   * The cache array for resolved condition sets, indexed by condition set index for O(1) lookup.
+   * Each entry stores the resolved ConditionSetResolutionResult for the corresponding condition set.
+   */
+  public get conditionSetCache(): ReadonlyArray<ConditionSetResolutionResult | undefined> {
+    return this._conditionSetCache;
+  }
+
+  /**
+   * The cache array for resolved decisions, indexed by decision index for O(1) lookup.
+   * Each entry stores the resolved DecisionResolutionResult for the corresponding decision.
+   */
+  public get decisionCache(): ReadonlyArray<DecisionResolutionResult | undefined> {
+    return this._decisionCache;
+  }
+
+  /**
    * Cache array for resolved conditions, indexed by condition index for O(1) lookup.
    * Each entry stores the resolved QualifierMatchScore for the corresponding condition.
    */
@@ -104,6 +134,11 @@ export class ResourceResolver {
    * Each entry stores the resolved DecisionResolutionResult for the corresponding decision.
    */
   private readonly _decisionCache: Array<DecisionResolutionResult | undefined>;
+
+  /**
+   * The listener for {@link Runtime.ResourceResolver | ResourceResolver} cache activity.
+   */
+  private readonly _listener?: IResourceResolverCacheListener;
 
   /**
    * Constructor for a {@link Runtime.ResourceResolver | ResourceResolver} object.
@@ -125,6 +160,8 @@ export class ResourceResolver {
     // Initialize decision cache array with size matching the decision collector
     const decisionCollectorSize = this.resourceManager.decisions.size;
     this._decisionCache = new Array<DecisionResolutionResult | undefined>(decisionCollectorSize);
+
+    this._listener = params.listener;
   }
 
   /**
@@ -156,12 +193,14 @@ export class ResourceResolver {
     // Check cache first for O(1) lookup
     const cachedResult = this._conditionCache[conditionIndex];
     if (cachedResult !== undefined) {
+      this._listener?.onCacheHit('condition', conditionIndex);
       return succeed(cachedResult);
     }
 
     // Resolve the condition by getting qualifier value and evaluating with qualifier type
     const qualifierValueResult = this.contextQualifierProvider.get(condition.qualifier);
     if (qualifierValueResult.isFailure()) {
+      this._listener?.onCacheError('condition', conditionIndex);
       return fail(
         `Failed to get qualifier value for "${condition.qualifier.name}": ${qualifierValueResult.message}`
       );
@@ -174,6 +213,7 @@ export class ResourceResolver {
 
     // Cache the resolved value for future O(1) lookup
     this._conditionCache[conditionIndex] = matchScore;
+    this._listener?.onCacheMiss('condition', conditionIndex);
 
     return succeed(matchScore);
   }
@@ -196,6 +236,7 @@ export class ResourceResolver {
     // Check cache first for O(1) lookup
     const cachedResult = this._conditionSetCache[conditionSetIndex];
     if (cachedResult !== undefined) {
+      this._listener?.onCacheHit('conditionSet', conditionSetIndex);
       return succeed(cachedResult);
     }
 
@@ -206,6 +247,7 @@ export class ResourceResolver {
       const scoreResult = this.resolveCondition(condition);
 
       if (scoreResult.isFailure()) {
+        this._listener?.onCacheError('conditionSet', conditionSetIndex);
         return fail(`Failed to resolve condition "${condition.key}": ${scoreResult.message}`);
       }
 
@@ -215,6 +257,7 @@ export class ResourceResolver {
         // Cache the failure result
         const failureResult = ConditionSetResolutionResult.createFailure();
         this._conditionSetCache[conditionSetIndex] = failureResult;
+        this._listener?.onCacheMiss('conditionSet', conditionSetIndex);
         return succeed(failureResult);
       }
 
@@ -224,6 +267,7 @@ export class ResourceResolver {
     // Cache the successful result
     const successResult = ConditionSetResolutionResult.createSuccess(matches);
     this._conditionSetCache[conditionSetIndex] = successResult;
+    this._listener?.onCacheMiss('conditionSet', conditionSetIndex);
 
     return succeed(successResult);
   }
@@ -246,6 +290,7 @@ export class ResourceResolver {
     // Check cache first for O(1) lookup
     const cachedResult = this._decisionCache[decisionIndex];
     if (cachedResult !== undefined) {
+      this._listener?.onCacheHit('decision', decisionIndex);
       return succeed(cachedResult);
     }
 
@@ -257,9 +302,8 @@ export class ResourceResolver {
       const conditionSetResult = this.resolveConditionSet(candidate.conditionSet);
 
       if (conditionSetResult.isFailure()) {
-        // For decisions, if a condition set fails to resolve, we skip it and continue
-        // (unlike condition sets where if any condition fails, the whole set fails)
-        continue;
+        this._listener?.onCacheError('decision', decisionIndex);
+        return fail(`${decision.key}: Failed to resolve condition set": ${conditionSetResult.message}`);
       }
 
       const resolution = conditionSetResult.value;
@@ -286,6 +330,7 @@ export class ResourceResolver {
       instanceIndices: instanceIndices
     };
     this._decisionCache[decisionIndex] = successResult;
+    this._listener?.onCacheMiss('decision', decisionIndex);
 
     return succeed(successResult);
   }
@@ -433,6 +478,10 @@ export class ResourceResolver {
     this._conditionCache.fill(undefined);
     this._conditionSetCache.fill(undefined);
     this._decisionCache.fill(undefined);
+
+    this._listener?.onCacheClear('condition');
+    this._listener?.onCacheClear('conditionSet');
+    this._listener?.onCacheClear('decision');
   }
 
   /**

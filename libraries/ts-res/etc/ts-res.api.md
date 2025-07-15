@@ -2050,6 +2050,9 @@ interface IResourceManagerBuilderCreateParams {
 interface IResourceResolverCreateParams {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     contextQualifierProvider: IContextQualifierProvider;
+    // Warning: (ae-forgotten-export) The symbol "IResourceResolverCacheListener" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    listener?: IResourceResolverCacheListener;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     qualifierTypes: ReadOnlyQualifierTypeCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3285,13 +3288,16 @@ class ResourceResolver {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(params: IResourceResolverCreateParams);
     clearConditionCache(): void;
+    get conditionCache(): ReadonlyArray<QualifierMatchScore | undefined>;
     get conditionCacheSize(): number;
+    get conditionSetCache(): ReadonlyArray<ConditionSetResolutionResult | undefined>;
     get conditionSetCacheSize(): number;
     readonly contextQualifierProvider: IContextQualifierProvider;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params: IResourceResolverCreateParams): Result<ResourceResolver>;
+    get decisionCache(): ReadonlyArray<DecisionResolutionResult | undefined>;
     get decisionCacheSize(): number;
     readonly qualifierTypes: ReadOnlyQualifierTypeCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3773,6 +3779,7 @@ class ValidatingSimpleContextQualifierProvider extends SimpleContextQualifierPro
 // src/packlets/resources/resource.ts:245:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resourceCandidate.ts:239:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/conditionSetResolutionResult.ts:48:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/runtime/resourceResolver.ts:141:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 
