@@ -54,6 +54,8 @@ export interface ProcessedResources {
  * Matches the sample resources-config.json in test-data
  */
 export const DEFAULT_SYSTEM_CONFIGURATION: Config.Model.ISystemConfiguration = {
+  name: 'Default Configuration',
+  description: 'Built-in default configuration for ts-res browser tool',
   qualifierTypes: [
     {
       name: 'language',

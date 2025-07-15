@@ -4,6 +4,8 @@
 
 ## Config.Model.ISystemConfiguration.qualifiers property
 
+Qualifier declarations that define the available qualifiers in the system.
+
 **Signature:**
 
 ```typescript

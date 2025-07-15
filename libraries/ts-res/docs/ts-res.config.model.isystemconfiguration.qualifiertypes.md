@@ -4,6 +4,8 @@
 
 ## Config.Model.ISystemConfiguration.qualifierTypes property
 
+Qualifier type configurations that define the available qualifier types in the system.
+
 **Signature:**
 
 ```typescript

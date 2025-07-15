@@ -2210,11 +2210,10 @@ function isValidResourceTypeName(name: string): name is ResourceTypeName;
 
 // @public
 interface ISystemConfiguration {
-    // (undocumented)
+    description?: string;
+    name?: string;
     qualifiers: Qualifiers.IQualifierDecl[];
-    // (undocumented)
     qualifierTypes: QualifierTypes.Config.ISystemQualifierTypeConfig[];
-    // (undocumented)
     resourceTypes: ResourceTypes.Config.IResourceTypeConfig[];
 }
 
@@ -3498,6 +3497,8 @@ class SystemConfiguration {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(config: ISystemConfiguration): Result<SystemConfiguration>;
+    readonly description?: string;
+    readonly name?: string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly qualifiers: IReadOnlyQualifierCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

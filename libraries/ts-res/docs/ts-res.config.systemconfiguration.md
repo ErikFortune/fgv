@@ -73,6 +73,48 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[description?](./ts-res.config.systemconfiguration.description.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ The description of this system configuration.
+
+
+</td></tr>
+<tr><td>
+
+[name?](./ts-res.config.systemconfiguration.name.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ The name of this system configuration.
+
+
+</td></tr>
+<tr><td>
+
 [qualifiers](./ts-res.config.systemconfiguration.qualifiers.md)
 
 

@@ -1,5 +1,15 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { CogIcon, PlusIcon, PencilIcon, TrashIcon, FolderOpenIcon } from '@heroicons/react/24/outline';
+import {
+  CogIcon,
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  FolderOpenIcon,
+  DocumentArrowDownIcon,
+  CodeBracketIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
+} from '@heroicons/react/24/outline';
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message } from '../../types/app';
 import { Config } from '@fgv/ts-res';
@@ -34,17 +44,38 @@ const ConfigurationTool: React.FC<ConfigurationToolProps> = ({ onMessage, resour
   // Check if we have processed resources
   const hasProcessedResources = !!resourceState.processedResources;
 
+  // Check if we have an active configuration
+  const hasActiveConfiguration = !!resourceState.activeConfiguration;
+
   // Get current system configuration
   const systemConfiguration = useMemo(() => {
-    return getCurrentSystemConfiguration(hasProcessedResources);
-  }, [hasProcessedResources]);
+    if (hasProcessedResources) {
+      return getCurrentSystemConfiguration(hasProcessedResources);
+    }
+    // Use active configuration if available, otherwise fall back to default
+    return resourceState.activeConfiguration || DEFAULT_SYSTEM_CONFIGURATION;
+  }, [hasProcessedResources, resourceState.activeConfiguration]);
 
   // State for configuration edits
   const [currentConfig, setCurrentConfig] = useState<Config.Model.ISystemConfiguration>(systemConfiguration);
 
+  // Update currentConfig when systemConfiguration changes
+  React.useEffect(() => {
+    setCurrentConfig(systemConfiguration);
+  }, [systemConfiguration]);
+
   // State for editing items
   const [editingQualifierType, setEditingQualifierType] = useState<string | null>(null);
   const [editingQualifier, setEditingQualifier] = useState<string | null>(null);
+  const [editingMetadata, setEditingMetadata] = useState(false);
+
+  // Check if current config has changes compared to system configuration
+  const hasChanges = useMemo(() => {
+    return JSON.stringify(currentConfig) !== JSON.stringify(systemConfiguration);
+  }, [currentConfig, systemConfiguration]);
+
+  // State for JSON view
+  const [showJsonView, setShowJsonView] = useState(false);
 
   // Load configuration from file
   const handleLoadConfiguration = useCallback(async () => {
@@ -89,18 +120,13 @@ const ConfigurationTool: React.FC<ConfigurationToolProps> = ({ onMessage, resour
         return;
       }
 
-      // If configuration was loaded from files, clear existing resources first
-      if (hasProcessedResources) {
-        resourceManager.actions.reset();
-        onMessage?.('info', 'Cleared existing resources due to configuration change');
-      }
-
+      // Update the local config state for preview
       setCurrentConfig(parsedConfig);
       onMessage?.(
         'success',
         `Configuration loaded successfully from ${file.name}${
           parsedConfig.name ? ` (${parsedConfig.name})` : ''
-        }`
+        }. Click "Apply Configuration" to activate it.`
       );
     } catch (error) {
       onMessage?.(
@@ -113,13 +139,90 @@ const ConfigurationTool: React.FC<ConfigurationToolProps> = ({ onMessage, resour
   // Apply configuration handler
   const handleApplyConfiguration = useCallback(
     (newConfig: Config.Model.ISystemConfiguration) => {
-      // TODO: Implement configuration application
-      // This should reinitialize the system with the new configuration
-      onMessage?.('info', 'Configuration application not yet implemented');
-      setCurrentConfig(newConfig);
+      try {
+        // Apply the configuration through the resource manager
+        resourceManager.actions.applyConfiguration(newConfig);
+
+        // Update local state
+        setCurrentConfig(newConfig);
+
+        // Provide user feedback
+        const configName = newConfig.name || 'Unnamed configuration';
+        onMessage?.(
+          'success',
+          `Configuration "${configName}" applied successfully. Resources will use this configuration when loaded.`
+        );
+      } catch (error) {
+        onMessage?.(
+          'error',
+          `Failed to apply configuration: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
     },
-    [onMessage]
+    [resourceManager.actions, onMessage]
   );
+
+  // Restore defaults handler
+  const handleRestoreDefaults = useCallback(() => {
+    try {
+      // Apply the default configuration
+      resourceManager.actions.applyConfiguration(DEFAULT_SYSTEM_CONFIGURATION);
+
+      // Update local state
+      setCurrentConfig(DEFAULT_SYSTEM_CONFIGURATION);
+
+      // Provide user feedback
+      onMessage?.('success', 'Default configuration restored successfully.');
+    } catch (error) {
+      onMessage?.(
+        'error',
+        `Failed to restore defaults: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }, [resourceManager.actions, onMessage]);
+
+  // Handle metadata editing
+  const handleSaveMetadata = useCallback(
+    (name: string, description: string) => {
+      const updatedConfig = {
+        ...currentConfig,
+        name: name || undefined,
+        description: description || undefined
+      };
+      setCurrentConfig(updatedConfig);
+      setEditingMetadata(false);
+      onMessage?.('info', 'Configuration metadata updated');
+    },
+    [currentConfig, onMessage]
+  );
+
+  const handleCancelMetadataEdit = useCallback(() => {
+    setEditingMetadata(false);
+  }, []);
+
+  // Export configuration to JSON file
+  const handleExportConfiguration = useCallback(() => {
+    try {
+      const configJson = JSON.stringify(currentConfig, null, 2);
+      const blob = new Blob([configJson], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${currentConfig.name || 'configuration'}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      onMessage?.('success', 'Configuration exported successfully');
+    } catch (error) {
+      onMessage?.(
+        'error',
+        `Failed to export configuration: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }, [currentConfig, onMessage]);
 
   const handleAddQualifierType = useCallback(() => {
     const newQualifierType: Config.Model.ISystemConfiguration['qualifierTypes'][0] = {
@@ -443,9 +546,27 @@ const ConfigurationTool: React.FC<ConfigurationToolProps> = ({ onMessage, resour
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <CogIcon className="h-6 w-6 text-gray-400" />
-            <h1 className="text-xl font-semibold text-gray-900">Configuration</h1>
+            <div className="flex flex-col">
+              <h1 className="text-xl font-semibold text-gray-900">Configuration</h1>
+              {(currentConfig.name || currentConfig.description) && (
+                <div className="text-sm text-gray-600">
+                  {currentConfig.name && <span className="font-medium">{currentConfig.name}</span>}
+                  {currentConfig.name && currentConfig.description && (
+                    <span className="text-gray-400 mx-1">•</span>
+                  )}
+                  {currentConfig.description && <span>{currentConfig.description}</span>}
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setEditingMetadata(true)}
+              className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <PencilIcon className="h-4 w-4 mr-1" />
+              Edit Metadata
+            </button>
             <button
               onClick={handleLoadConfiguration}
               className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -454,26 +575,110 @@ const ConfigurationTool: React.FC<ConfigurationToolProps> = ({ onMessage, resour
               Load Configuration
             </button>
             <button
+              onClick={handleRestoreDefaults}
+              className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Restore Defaults
+            </button>
+            <button
+              onClick={handleExportConfiguration}
+              className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <DocumentArrowDownIcon className="h-4 w-4 mr-1" />
+              Export JSON
+            </button>
+            <button
               onClick={() => handleApplyConfiguration(currentConfig)}
-              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={!hasChanges}
+              className={`inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                hasChanges
+                  ? 'text-white bg-blue-600 hover:bg-blue-700'
+                  : 'text-gray-400 bg-gray-300 cursor-not-allowed'
+              }`}
             >
               Apply Configuration
             </button>
             <span
               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                hasProcessedResources ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                hasProcessedResources
+                  ? 'bg-green-100 text-green-800'
+                  : hasActiveConfiguration
+                  ? 'bg-blue-100 text-blue-800'
+                  : 'bg-yellow-100 text-yellow-800'
               }`}
             >
-              {hasProcessedResources ? 'Loaded Configuration' : 'Default Configuration'}
+              {hasProcessedResources
+                ? 'Loaded Configuration'
+                : hasActiveConfiguration
+                ? 'Active Configuration'
+                : 'Default Configuration'}
             </span>
           </div>
         </div>
         <p className="mt-1 text-sm text-gray-600">
           {hasProcessedResources
             ? 'Configuration from loaded resources - editing will clear loaded data'
-            : 'Default configuration - will be used when importing resources'}
+            : hasActiveConfiguration
+            ? `Custom configuration is active - resources will use this configuration when loaded${
+                hasChanges ? ' (unsaved changes)' : ''
+              }`
+            : `Default configuration - will be used when importing resources${
+                hasChanges ? ' (unsaved changes)' : ''
+              }`}
         </p>
       </div>
+
+      {/* Metadata Edit Modal */}
+      {editingMetadata && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Configuration Metadata</h3>
+            <MetadataEditForm
+              name={currentConfig.name || ''}
+              description={currentConfig.description || ''}
+              onSave={handleSaveMetadata}
+              onCancel={handleCancelMetadataEdit}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* JSON View Toggle */}
+      <div className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-2">
+        <button
+          onClick={() => setShowJsonView(!showJsonView)}
+          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          <CodeBracketIcon className="h-4 w-4 mr-2" />
+          {showJsonView ? 'Hide' : 'Show'} JSON Configuration
+          {showJsonView ? (
+            <ChevronUpIcon className="h-4 w-4 ml-2" />
+          ) : (
+            <ChevronDownIcon className="h-4 w-4 ml-2" />
+          )}
+        </button>
+      </div>
+
+      {/* JSON View */}
+      {showJsonView && (
+        <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200 px-6 py-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-gray-900">Current Configuration (JSON)</h3>
+              <button
+                onClick={handleExportConfiguration}
+                className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <DocumentArrowDownIcon className="h-3 w-3 mr-1" />
+                Export
+              </button>
+            </div>
+            <pre className="text-xs text-gray-800 bg-gray-50 p-3 rounded border overflow-x-auto max-h-64 overflow-y-auto">
+              {JSON.stringify(currentConfig, null, 2)}
+            </pre>
+          </div>
+        </div>
+      )}
 
       {/* Panel Navigation */}
       <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200">
@@ -689,7 +894,7 @@ const QualifierEditForm: React.FC<QualifierEditFormProps> = ({
           >
             {qualifierTypes.map((type) => (
               <option key={type.name} value={type.name}>
-                {type.name}
+                {type.name} ({type.systemType})
               </option>
             ))}
           </select>
@@ -731,6 +936,62 @@ const QualifierEditForm: React.FC<QualifierEditFormProps> = ({
         </div>
       )}
 
+      <div className="flex justify-end space-x-2">
+        <button
+          onClick={onCancel}
+          className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSave}
+          className="px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Metadata edit form component
+interface MetadataEditFormProps {
+  name: string;
+  description: string;
+  onSave: (name: string, description: string) => void;
+  onCancel: () => void;
+}
+
+const MetadataEditForm: React.FC<MetadataEditFormProps> = ({ name, description, onSave, onCancel }) => {
+  const [localName, setLocalName] = useState(name);
+  const [localDescription, setLocalDescription] = useState(description);
+
+  const handleSave = () => {
+    onSave(localName.trim(), localDescription.trim());
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+        <input
+          type="text"
+          value={localName}
+          onChange={(e) => setLocalName(e.target.value)}
+          placeholder="Enter configuration name"
+          className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <textarea
+          value={localDescription}
+          onChange={(e) => setLocalDescription(e.target.value)}
+          placeholder="Enter configuration description"
+          rows={3}
+          className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+        />
+      </div>
       <div className="flex justify-end space-x-2">
         <button
           onClick={onCancel}

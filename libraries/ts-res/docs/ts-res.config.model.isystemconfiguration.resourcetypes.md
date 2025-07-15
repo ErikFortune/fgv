@@ -4,6 +4,8 @@
 
 ## Config.Model.ISystemConfiguration.resourceTypes property
 
+Resource type configurations that define the available resource types in the system.
+
 **Signature:**
 
 ```typescript

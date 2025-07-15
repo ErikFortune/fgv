@@ -44,9 +44,10 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
       return resourceState.processedResources.compiledCollection.qualifiers.map((q) => q.name);
     }
 
-    // Fallback to default system configuration when no resources are loaded
-    return DEFAULT_SYSTEM_CONFIGURATION.qualifiers.map((q) => q.name);
-  }, [resourceState.processedResources?.compiledCollection.qualifiers]);
+    // Use active configuration if available, otherwise fall back to default
+    const config = resourceState.activeConfiguration || DEFAULT_SYSTEM_CONFIGURATION;
+    return config.qualifiers.map((q) => q.name);
+  }, [resourceState.processedResources?.compiledCollection.qualifiers, resourceState.activeConfiguration]);
 
   // Initialize context with default values for available qualifiers
   const defaultContextValues = useMemo(() => {

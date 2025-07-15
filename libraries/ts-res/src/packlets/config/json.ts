@@ -29,7 +29,14 @@ import * as ResourceTypes from '../resource-types';
  * @public
  */
 export interface ISystemConfiguration {
+  /** Optional human-readable name for the configuration. */
+  name?: string;
+  /** Optional description explaining the purpose and use case of the configuration. */
+  description?: string;
+  /** Qualifier type configurations that define the available qualifier types in the system. */
   qualifierTypes: QualifierTypes.Config.ISystemQualifierTypeConfig[];
+  /** Qualifier declarations that define the available qualifiers in the system. */
   qualifiers: Qualifiers.IQualifierDecl[];
+  /** Resource type configurations that define the available resource types in the system. */
   resourceTypes: ResourceTypes.Config.IResourceTypeConfig[];
 }

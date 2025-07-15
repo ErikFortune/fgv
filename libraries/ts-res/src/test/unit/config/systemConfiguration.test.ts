@@ -31,7 +31,8 @@ describe('SystemConfiguration', () => {
         qualifierTypes: [
           {
             name: 'language',
-            systemType: 'language'
+            systemType: 'language',
+            configuration: {}
           }
         ],
         qualifiers: [
@@ -53,6 +54,126 @@ describe('SystemConfiguration', () => {
         expect(systemConfig.qualifierTypes).toBeDefined();
         expect(systemConfig.qualifiers).toBeDefined();
         expect(systemConfig.resourceTypes).toBeDefined();
+        expect(systemConfig.name).toBeUndefined();
+        expect(systemConfig.description).toBeUndefined();
+
+        // Check that collections have expected items
+        expect(systemConfig.qualifierTypes.size).toBe(1);
+        expect(systemConfig.qualifiers.size).toBe(1);
+        expect(systemConfig.resourceTypes.size).toBe(1);
+      });
+    });
+
+    test('should create SystemConfiguration with optional name and description', () => {
+      const config: Model.ISystemConfiguration = {
+        name: 'Test Configuration',
+        description: 'A test configuration for unit testing',
+        qualifierTypes: [
+          {
+            name: 'language',
+            systemType: 'language',
+            configuration: {}
+          }
+        ],
+        qualifiers: [
+          {
+            name: 'language',
+            typeName: 'language',
+            defaultPriority: 100
+          }
+        ],
+        resourceTypes: [
+          {
+            name: 'json',
+            typeName: 'json'
+          }
+        ]
+      };
+
+      expect(SystemConfiguration.create(config)).toSucceedAndSatisfy((systemConfig) => {
+        expect(systemConfig.qualifierTypes).toBeDefined();
+        expect(systemConfig.qualifiers).toBeDefined();
+        expect(systemConfig.resourceTypes).toBeDefined();
+        expect(systemConfig.name).toBe('Test Configuration');
+        expect(systemConfig.description).toBe('A test configuration for unit testing');
+
+        // Check that collections have expected items
+        expect(systemConfig.qualifierTypes.size).toBe(1);
+        expect(systemConfig.qualifiers.size).toBe(1);
+        expect(systemConfig.resourceTypes.size).toBe(1);
+      });
+    });
+
+    test('should create SystemConfiguration with only name', () => {
+      const config: Model.ISystemConfiguration = {
+        name: 'Named Configuration',
+        qualifierTypes: [
+          {
+            name: 'language',
+            systemType: 'language',
+            configuration: {}
+          }
+        ],
+        qualifiers: [
+          {
+            name: 'language',
+            typeName: 'language',
+            defaultPriority: 100
+          }
+        ],
+        resourceTypes: [
+          {
+            name: 'json',
+            typeName: 'json'
+          }
+        ]
+      };
+
+      expect(SystemConfiguration.create(config)).toSucceedAndSatisfy((systemConfig) => {
+        expect(systemConfig.qualifierTypes).toBeDefined();
+        expect(systemConfig.qualifiers).toBeDefined();
+        expect(systemConfig.resourceTypes).toBeDefined();
+        expect(systemConfig.name).toBe('Named Configuration');
+        expect(systemConfig.description).toBeUndefined();
+
+        // Check that collections have expected items
+        expect(systemConfig.qualifierTypes.size).toBe(1);
+        expect(systemConfig.qualifiers.size).toBe(1);
+        expect(systemConfig.resourceTypes.size).toBe(1);
+      });
+    });
+
+    test('should create SystemConfiguration with only description', () => {
+      const config: Model.ISystemConfiguration = {
+        description: 'A configuration with only description',
+        qualifierTypes: [
+          {
+            name: 'language',
+            systemType: 'language',
+            configuration: {}
+          }
+        ],
+        qualifiers: [
+          {
+            name: 'language',
+            typeName: 'language',
+            defaultPriority: 100
+          }
+        ],
+        resourceTypes: [
+          {
+            name: 'json',
+            typeName: 'json'
+          }
+        ]
+      };
+
+      expect(SystemConfiguration.create(config)).toSucceedAndSatisfy((systemConfig) => {
+        expect(systemConfig.qualifierTypes).toBeDefined();
+        expect(systemConfig.qualifiers).toBeDefined();
+        expect(systemConfig.resourceTypes).toBeDefined();
+        expect(systemConfig.name).toBeUndefined();
+        expect(systemConfig.description).toBe('A configuration with only description');
 
         // Check that collections have expected items
         expect(systemConfig.qualifierTypes.size).toBe(1);
@@ -66,11 +187,16 @@ describe('SystemConfiguration', () => {
         qualifierTypes: [
           {
             name: 'language',
-            systemType: 'language'
+            systemType: 'language',
+            configuration: {}
           },
           {
             name: 'territory',
-            systemType: 'territory'
+            systemType: 'territory',
+            configuration: {
+              allowContextList: false,
+              allowedTerritories: ['US', 'CA', 'GB', 'AU']
+            }
           },
           {
             name: 'role',
@@ -172,7 +298,8 @@ describe('SystemConfiguration', () => {
         qualifierTypes: [
           {
             name: 'language',
-            systemType: 'language'
+            systemType: 'language',
+            configuration: {}
           }
         ],
         qualifiers: [
@@ -232,7 +359,8 @@ describe('SystemConfiguration', () => {
         qualifierTypes: [
           {
             name: 'language',
-            systemType: 'language'
+            systemType: 'language',
+            configuration: {}
           }
         ],
         qualifiers: [

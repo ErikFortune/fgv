@@ -34,6 +34,8 @@ import * as ResourceTypes from '../resource-types';
  * @public
  */
 export const systemConfiguration = Converters.strictObject<ISystemConfiguration>({
+  name: Converters.optionalString,
+  description: Converters.optionalString,
   qualifierTypes: Converters.arrayOf(QualifierTypes.Config.Convert.systemQualifierTypeConfig),
   qualifiers: Converters.arrayOf(Qualifiers.Convert.qualifierDecl),
   resourceTypes: Converters.arrayOf(ResourceTypes.Config.Convert.resourceTypeConfig)

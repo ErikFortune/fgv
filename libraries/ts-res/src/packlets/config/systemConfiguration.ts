@@ -34,6 +34,16 @@ import { ISystemConfiguration } from './json';
  */
 export class SystemConfiguration {
   /**
+   * The name of this system configuration.
+   */
+  public readonly name?: string;
+
+  /**
+   * The description of this system configuration.
+   */
+  public readonly description?: string;
+
+  /**
    * The {@link QualifierTypes.QualifierTypeCollector | qualifier types} that this system configuration uses.
    */
   public readonly qualifierTypes: ReadOnlyQualifierTypeCollector;
@@ -56,6 +66,9 @@ export class SystemConfiguration {
    * @public
    */
   protected constructor(config: ISystemConfiguration) {
+    this.name = config.name;
+    this.description = config.description;
+
     this.qualifierTypes = QualifierTypeCollector.create({
       qualifierTypes: mapResults(
         config.qualifierTypes.map(QualifierTypes.createQualifierTypeFromSystemConfig)

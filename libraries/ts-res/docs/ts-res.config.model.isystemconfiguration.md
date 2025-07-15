@@ -37,6 +37,44 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[description?](./ts-res.config.model.isystemconfiguration.description.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ Optional description explaining the purpose and use case of the configuration.
+
+
+</td></tr>
+<tr><td>
+
+[name?](./ts-res.config.model.isystemconfiguration.name.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ Optional human-readable name for the configuration.
+
+
+</td></tr>
+<tr><td>
+
 [qualifiers](./ts-res.config.model.isystemconfiguration.qualifiers.md)
 
 
@@ -49,6 +87,8 @@ Description
 
 
 </td><td>
+
+Qualifier declarations that define the available qualifiers in the system.
 
 
 </td></tr>
@@ -67,6 +107,8 @@ QualifierTypes.Config.ISystemQualifierTypeConfig\[\]
 
 </td><td>
 
+Qualifier type configurations that define the available qualifier types in the system.
+
 
 </td></tr>
 <tr><td>
@@ -83,6 +125,8 @@ ResourceTypes.Config.IResourceTypeConfig\[\]
 
 
 </td><td>
+
+Resource type configurations that define the available resource types in the system.
 
 
 </td></tr>
