@@ -1,5 +1,12 @@
-import React, { useState, useMemo } from 'react';
-import { DocumentTextIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import React, { useState, useMemo, useCallback } from 'react';
+import {
+  DocumentTextIcon,
+  MagnifyingGlassIcon,
+  DocumentArrowDownIcon,
+  CodeBracketIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
+} from '@heroicons/react/24/outline';
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message } from '../../types/app';
 
@@ -12,6 +19,7 @@ const SourceBrowser: React.FC<SourceBrowserProps> = ({ onMessage, resourceManage
   const { state: resourceState } = resourceManager;
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showJsonView, setShowJsonView] = useState(false);
 
   // Sort and filter resource IDs
   const filteredResourceIds = useMemo(() => {
@@ -40,6 +48,67 @@ const SourceBrowser: React.FC<SourceBrowserProps> = ({ onMessage, resourceManage
     setSelectedResourceId(null); // Clear selection when searching
   };
 
+  // Get full resource collection data using the new method
+  const getResourceCollectionData = useCallback(() => {
+    if (!resourceState.processedResources?.system.resourceManager) {
+      return null;
+    }
+
+    try {
+      const collectionResult =
+        resourceState.processedResources.system.resourceManager.getResourceCollectionDecl();
+      if (collectionResult.isSuccess()) {
+        return {
+          ...collectionResult.value,
+          metadata: {
+            exportedAt: new Date().toISOString(),
+            totalResources: resourceState.processedResources.summary.totalResources,
+            type: 'ts-res-resource-collection'
+          }
+        };
+      } else {
+        onMessage?.('error', `Failed to get resource collection: ${collectionResult.message}`);
+        return null;
+      }
+    } catch (error) {
+      onMessage?.(
+        'error',
+        `Error getting resource collection: ${error instanceof Error ? error.message : String(error)}`
+      );
+      return null;
+    }
+  }, [resourceState.processedResources, onMessage]);
+
+  // Export source data to JSON file
+  const handleExportSourceData = useCallback(() => {
+    try {
+      const collectionData = getResourceCollectionData();
+      if (!collectionData) {
+        onMessage?.('error', 'No source collection data available to export');
+        return;
+      }
+
+      const sourceJson = JSON.stringify(collectionData, null, 2);
+      const blob = new Blob([sourceJson], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'resource-collection.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      onMessage?.('success', 'Resource collection exported successfully');
+    } catch (error) {
+      onMessage?.(
+        'error',
+        `Failed to export resource collection: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }, [getResourceCollectionData, onMessage]);
+
   if (!resourceState.processedResources) {
     return (
       <div className="p-6">
@@ -66,10 +135,62 @@ const SourceBrowser: React.FC<SourceBrowserProps> = ({ onMessage, resourceManage
 
   return (
     <div className="p-6">
-      <div className="flex items-center space-x-3 mb-6">
-        <DocumentTextIcon className="h-8 w-8 text-blue-600" />
-        <h2 className="text-2xl font-bold text-gray-900">Source Browser</h2>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <DocumentTextIcon className="h-8 w-8 text-blue-600" />
+          <h2 className="text-2xl font-bold text-gray-900">Source Browser</h2>
+        </div>
+        {resourceState.processedResources && (
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleExportSourceData}
+              className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <DocumentArrowDownIcon className="h-4 w-4 mr-1" />
+              Export JSON
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* JSON View Toggle */}
+      {resourceState.processedResources && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+          <button
+            onClick={() => setShowJsonView(!showJsonView)}
+            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <CodeBracketIcon className="h-4 w-4 mr-2" />
+            {showJsonView ? 'Hide' : 'Show'} JSON Resource Collection
+            {showJsonView ? (
+              <ChevronUpIcon className="h-4 w-4 ml-2" />
+            ) : (
+              <ChevronDownIcon className="h-4 w-4 ml-2" />
+            )}
+          </button>
+
+          {/* JSON View */}
+          {showJsonView && (
+            <div className="mt-4">
+              <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-900">Resource Collection (JSON)</h3>
+                  <button
+                    onClick={handleExportSourceData}
+                    className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <DocumentArrowDownIcon className="h-3 w-3 mr-1" />
+                    Export
+                  </button>
+                </div>
+                <pre className="text-xs text-gray-800 bg-white p-3 rounded border overflow-x-auto max-h-64 overflow-y-auto">
+                  {JSON.stringify(getResourceCollectionData(), null, 2)}
+                </pre>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex flex-col lg:flex-row gap-6 h-[600px]">

@@ -102,6 +102,7 @@ export const DEFAULT_SYSTEM_CONFIGURATION: Config.Model.ISystemConfiguration = {
     {
       name: 'language',
       typeName: 'language',
+      token: 'lang',
       defaultPriority: 600
     },
     {

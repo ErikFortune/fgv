@@ -100,6 +100,27 @@ _(Optional)_
 </td></tr>
 <tr><td>
 
+[metadata?](./ts-res.resourcejson.json.iresourcecollectiondecl.metadata.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+JsonObject
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
 [resources?](./ts-res.resourcejson.json.iresourcecollectiondecl.resources.md)
 
 

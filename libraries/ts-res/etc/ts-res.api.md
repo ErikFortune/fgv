@@ -1336,6 +1336,7 @@ interface IDecisionCreateParams<TVALUE extends JsonValue = JsonValue> {
 
 // @public
 interface IDeclarationOptions {
+    normalized?: boolean;
     showDefaults?: boolean;
 }
 
@@ -1968,6 +1969,8 @@ interface IResourceCollectionDecl {
     // (undocumented)
     readonly context?: IContainerContextDecl;
     // (undocumented)
+    readonly metadata?: JsonObject;
+    // (undocumented)
     readonly resources?: ReadonlyArray<ILooseResourceDecl>;
 }
 
@@ -1979,6 +1982,8 @@ interface IResourceCollectionDecl_2 {
     readonly collections?: ReadonlyArray<IResourceCollectionDecl_2>;
     // (undocumented)
     readonly context?: IContainerContextDecl_2;
+    // (undocumented)
+    readonly metadata?: JsonObject;
     // (undocumented)
     readonly resources?: ReadonlyArray<ILooseResourceDecl_2>;
 }
@@ -2092,6 +2097,8 @@ interface IResourceTreeRootDecl extends IResourceTreeChildNodeDecl {
     // (undocumented)
     readonly context?: IContainerContextDecl;
     // (undocumented)
+    readonly metadata?: JsonObject;
+    // (undocumented)
     readonly resources?: Record<string, IChildResourceDecl>;
 }
 
@@ -2103,6 +2110,8 @@ interface IResourceTreeRootDecl_2 extends IResourceTreeChildNodeDecl_2 {
     readonly children?: Record<string, IResourceTreeChildNodeDecl_2>;
     // (undocumented)
     readonly context?: IContainerContextDecl_2;
+    // (undocumented)
+    readonly metadata?: JsonObject;
     // (undocumented)
     readonly resources?: Record<string, IChildResourceDecl_2>;
 }
@@ -3237,6 +3246,9 @@ class ResourceManagerBuilder implements IResourceManager {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getCandidatesForContext(context: Context.IValidatedContextDecl, options?: Context.IContextMatchOptions): ReadonlyArray<ResourceCandidate>;
     getCompiledResourceCollection(options?: ResourceJson.Compiled.ICompiledResourceOptions): Result<ResourceJson.Compiled.ICompiledResourceCollection>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getResourceCollectionDecl(options?: ResourceJson.Helpers.IDeclarationOptions): Result<ResourceJson.Normalized.IResourceCollectionDecl>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

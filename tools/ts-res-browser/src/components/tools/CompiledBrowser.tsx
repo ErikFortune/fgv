@@ -1,11 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   CubeIcon,
   FolderIcon,
   FolderOpenIcon,
   DocumentTextIcon,
   ChevronRightIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  DocumentArrowDownIcon,
+  CodeBracketIcon,
+  ChevronUpIcon
 } from '@heroicons/react/24/outline';
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message } from '../../types/app';
@@ -28,6 +31,7 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({ onMessage, resourceMa
   const { state: resourceState } = resourceManager;
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['root', 'resources']));
+  const [showJsonView, setShowJsonView] = useState(false);
 
   // Helper functions to resolve indices to meaningful keys
   const getConditionKey = (
@@ -240,6 +244,43 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({ onMessage, resourceMa
     return tree;
   }, [resourceState.processedResources?.compiledCollection, onMessage]);
 
+  // Export compiled collection to JSON file
+  const handleExportCompiledData = useCallback(() => {
+    try {
+      if (!resourceState.processedResources?.compiledCollection) {
+        onMessage?.('error', 'No compiled data available to export');
+        return;
+      }
+
+      const compiledData = {
+        ...resourceState.processedResources.compiledCollection,
+        metadata: {
+          exportedAt: new Date().toISOString(),
+          type: 'ts-res-compiled-collection'
+        }
+      };
+
+      const compiledJson = JSON.stringify(compiledData, null, 2);
+      const blob = new Blob([compiledJson], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'compiled-collection.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      onMessage?.('success', 'Compiled collection exported successfully');
+    } catch (error) {
+      onMessage?.(
+        'error',
+        `Failed to export compiled data: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }, [resourceState.processedResources?.compiledCollection, onMessage]);
+
   const handleNodeClick = (node: TreeNode) => {
     setSelectedNodeId(node.id);
     onMessage?.('info', `Selected: ${node.name}`);
@@ -357,10 +398,72 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({ onMessage, resourceMa
 
   return (
     <div className="p-6">
-      <div className="flex items-center space-x-3 mb-6">
-        <CubeIcon className="h-8 w-8 text-blue-600" />
-        <h2 className="text-2xl font-bold text-gray-900">Compiled Browser</h2>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <CubeIcon className="h-8 w-8 text-blue-600" />
+          <h2 className="text-2xl font-bold text-gray-900">Compiled Browser</h2>
+        </div>
+        {resourceState.processedResources && (
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleExportCompiledData}
+              className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <DocumentArrowDownIcon className="h-4 w-4 mr-1" />
+              Export JSON
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* JSON View Toggle */}
+      {resourceState.processedResources && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+          <button
+            onClick={() => setShowJsonView(!showJsonView)}
+            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <CodeBracketIcon className="h-4 w-4 mr-2" />
+            {showJsonView ? 'Hide' : 'Show'} JSON Compiled Collection
+            {showJsonView ? (
+              <ChevronUpIcon className="h-4 w-4 ml-2" />
+            ) : (
+              <ChevronDownIcon className="h-4 w-4 ml-2" />
+            )}
+          </button>
+
+          {/* JSON View */}
+          {showJsonView && (
+            <div className="mt-4">
+              <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-900">Compiled Collection (JSON)</h3>
+                  <button
+                    onClick={handleExportCompiledData}
+                    className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <DocumentArrowDownIcon className="h-3 w-3 mr-1" />
+                    Export
+                  </button>
+                </div>
+                <pre className="text-xs text-gray-800 bg-white p-3 rounded border overflow-x-auto max-h-64 overflow-y-auto">
+                  {JSON.stringify(
+                    {
+                      ...resourceState.processedResources.compiledCollection,
+                      metadata: {
+                        exportedAt: new Date().toISOString(),
+                        type: 'ts-res-compiled-collection'
+                      }
+                    },
+                    null,
+                    2
+                  )}
+                </pre>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex flex-col lg:flex-row gap-6 h-[600px]">

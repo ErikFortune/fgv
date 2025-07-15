@@ -36,6 +36,12 @@ export interface IDeclarationOptions {
    * output. IF omitted or `false`, properties with default values will be omitted.
    */
   showDefaults?: boolean;
+
+  /**
+   * If `true`, the output will be normalized using hash-based ordering for consistent structure.
+   * If omitted or `false`, no normalization will be applied. Defaults to `false`.
+   */
+  normalized?: boolean;
 }
 
 /**

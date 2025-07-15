@@ -26,6 +26,7 @@ import {
   DetailedResult,
   fail,
   failWithDetail,
+  Hash,
   mapResults,
   MessageAggregator,
   Result,
@@ -435,5 +436,51 @@ export class ResourceManagerBuilder implements IResourceManager {
 
     // Apply validation through the converter
     return ResourceJson.Compiled.Convert.compiledResourceCollection.convert(compiledData);
+  }
+
+  /**
+   * Gets a resource collection declaration containing all built resources in a flat array structure.
+   * This method returns all built resources as an {@link ResourceJson.Normalized.IResourceCollectionDecl | IResourceCollectionDecl}
+   * that can be used for serialization, export, or re-import. Resources are sorted by ID for consistent ordering.
+   * @param options - Optional {@link ResourceJson.Helpers.IDeclarationOptions | declaration options} controlling the output format.
+   * If `options.normalized` is `true`, applies hash-based normalization for additional consistency guarantees.
+   * @returns Success with the resource collection declaration if successful, Failure otherwise.
+   * @public
+   */
+  public getResourceCollectionDecl(
+    options?: ResourceJson.Helpers.IDeclarationOptions
+  ): Result<ResourceJson.Normalized.IResourceCollectionDecl> {
+    // Build resources first to ensure all data is available
+    const buildResult = this._performBuild();
+    if (buildResult.isFailure()) {
+      return fail(`Failed to build resources: ${buildResult.message}`);
+    }
+
+    // Get all built resources and convert to loose resource declarations
+    const resources = Array.from(this._builtResources.values()).map((resource) =>
+      resource.toLooseResourceDecl(options)
+    );
+
+    // Sort resources by ID for consistent ordering
+    resources.sort((a, b) => a.id.localeCompare(b.id));
+
+    // Create the collection declaration structure
+    const collectionData = {
+      resources
+    };
+
+    // Convert and validate using the normalized converter
+    return ResourceJson.Convert.resourceCollectionDecl
+      .convert(collectionData)
+      .onSuccess((compiledCollection) => {
+        // Apply hash-based normalization only if requested
+        if (options?.normalized === true) {
+          const normalizer = new Hash.Crc32Normalizer();
+          return normalizer
+            .normalize(compiledCollection)
+            .withErrorFormat((e) => `Failed to normalize resource collection: ${e}`);
+        }
+        return succeed(compiledCollection);
+      });
   }
 }

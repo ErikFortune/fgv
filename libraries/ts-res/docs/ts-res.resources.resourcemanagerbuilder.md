@@ -562,6 +562,20 @@ Gets a compiled resource collection from the current state of the resource manag
 </td></tr>
 <tr><td>
 
+[getResourceCollectionDecl(options)](./ts-res.resources.resourcemanagerbuilder.getresourcecollectiondecl.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a resource collection declaration containing all built resources in a flat array structure. This method returns all built resources as an [IResourceCollectionDecl](./ts-res.resourcejson.normalized.iresourcecollectiondecl.md) that can be used for serialization, export, or re-import. Resources are sorted by ID for consistent ordering.
+
+
+</td></tr>
+<tr><td>
+
 [getResourcesForContext(context, options)](./ts-res.resources.resourcemanagerbuilder.getresourcesforcontext.md)
 
 
