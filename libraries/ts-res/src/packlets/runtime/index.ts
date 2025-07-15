@@ -26,6 +26,8 @@ export * from './context/simpleContextQualifierProvider';
 export * from './context/validatingSimpleContextQualifierProvider';
 export * from './resourceResolver';
 export * from './conditionSetResolutionResult';
+export * from './cacheListener';
+export * from './cacheMetrics';
 
 import * as Context from './context';
 import * as ResourceTree from './resource-tree';

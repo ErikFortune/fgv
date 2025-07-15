@@ -52,6 +52,35 @@ class AbstractDecisionCollector extends ValidatingCollector<AbstractDecision> {
 }
 
 // @public
+class AggregateCacheMetrics implements ICacheMetrics {
+    constructor();
+    // (undocumented)
+    get clears(): number;
+    // (undocumented)
+    get errorRate(): number;
+    // (undocumented)
+    get errors(): number;
+    // (undocumented)
+    get hitRate(): number;
+    // (undocumented)
+    get hits(): number;
+    // (undocumented)
+    get misses(): number;
+    // (undocumented)
+    onClear(): void;
+    // (undocumented)
+    onError(__index: number): void;
+    // (undocumented)
+    onHit(__index: number): void;
+    // (undocumented)
+    onMiss(__index: number): void;
+    // (undocumented)
+    reset(): void;
+    // (undocumented)
+    get totalAccesses(): number;
+}
+
+// @public
 export const allConditionOperators: ConditionOperator[];
 
 // @public
@@ -982,6 +1011,32 @@ interface IAbstractDecisionCreateParams {
     conditionSets: ConditionSet[];
     // (undocumented)
     index?: number;
+}
+
+// @public
+interface ICacheMetrics {
+    // (undocumented)
+    clears: number;
+    // (undocumented)
+    errors: number;
+    // (undocumented)
+    hitRate: number;
+    // (undocumented)
+    hits: number;
+    // (undocumented)
+    misses: number;
+    // (undocumented)
+    onClear(): void;
+    // (undocumented)
+    onError(index: number): void;
+    // (undocumented)
+    onHit(index: number): void;
+    // (undocumented)
+    onMiss(index: number): void;
+    // (undocumented)
+    reset(): void;
+    // (undocumented)
+    totalAccesses: number;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2047,10 +2102,19 @@ interface IResourceManagerBuilderCreateParams {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+interface IResourceResolverCacheListener {
+    onCacheClear(cache: ResourceResolverCacheType): void;
+    onCacheError(cache: ResourceResolverCacheType, index: number): void;
+    onCacheHit(cache: ResourceResolverCacheType, index: number): void;
+    onCacheMiss(cache: ResourceResolverCacheType, index: number): void;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 interface IResourceResolverCreateParams {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     contextQualifierProvider: IContextQualifierProvider;
-    // Warning: (ae-forgotten-export) The symbol "IResourceResolverCacheListener" needs to be exported by the entry point index.d.ts
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     listener?: IResourceResolverCacheListener;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2562,6 +2626,28 @@ declare namespace Model_2 {
 // @public
 export const NoMatch: QualifierMatchScore;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceResolverCacheListener"
+//
+// @public
+class NoOpResourceResolverCacheListener implements IResourceResolverCacheListener {
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    onCacheClear(cache: ResourceResolverCacheType): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    onCacheError(cache: ResourceResolverCacheType, index: number): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    onCacheHit(cache: ResourceResolverCacheType, index: number): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    onCacheMiss(cache: ResourceResolverCacheType, index: number): void;
+}
+
 declare namespace Normalized {
     export {
         ConditionSetDecl_2 as ConditionSetDecl,
@@ -2575,6 +2661,9 @@ declare namespace Normalized {
         IResourceCollectionDecl_2 as IResourceCollectionDecl
     }
 }
+
+// @public
+type OverallCacheMetrics<TM extends ICacheMetrics = ICacheMetrics> = Record<ResourceResolverCacheType, TM>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -3317,6 +3406,42 @@ class ResourceResolver {
     readonly resourceManager: IResourceManager;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type ResourceResolverCacheActivity = 'hit' | 'miss' | 'error' | 'clear';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceResolverCacheListener"
+//
+// @public
+class ResourceResolverCacheMetricsListener<TM extends ICacheMetrics> implements IResourceResolverCacheListener {
+    constructor(factory: () => TM);
+    constructor(metrics: OverallCacheMetrics<TM>);
+    get metrics(): Readonly<OverallCacheMetrics>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    onCacheClear(cache: ResourceResolverCacheType): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    onCacheError(cache: ResourceResolverCacheType, index: number): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    onCacheHit(cache: ResourceResolverCacheType, index: number): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    onCacheMiss(cache: ResourceResolverCacheType, index: number): void;
+    reset(): void;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type ResourceResolverCacheType = 'condition' | 'conditionSet' | 'decision';
+
 declare namespace Resources {
     export {
         IResourceCandidateCreateParams,
@@ -3471,7 +3596,15 @@ declare namespace Runtime {
         IResourceResolverCreateParams,
         ResourceResolver,
         IConditionMatchResult,
-        ConditionSetResolutionResult
+        ConditionSetResolutionResult,
+        ResourceResolverCacheType,
+        ResourceResolverCacheActivity,
+        IResourceResolverCacheListener,
+        NoOpResourceResolverCacheListener,
+        ICacheMetrics,
+        AggregateCacheMetrics,
+        OverallCacheMetrics,
+        ResourceResolverCacheMetricsListener
     }
 }
 export { Runtime }

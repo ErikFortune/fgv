@@ -22,6 +22,10 @@
 
 import { IResourceResolverCacheListener, ResourceResolverCacheType } from './cacheListener';
 
+/**
+ * Cache metrics interface for tracking cache performance.
+ * @public
+ */
 export interface ICacheMetrics {
   hits: number;
   misses: number;
