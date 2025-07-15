@@ -1,0 +1,25 @@
+{
+  "resources": {
+    "app-config": {
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "currency": "EUR",
+            "dateFormat": "DD/MM/YYYY",
+            "timeFormat": "24h",
+            "numberFormat": "nl-NL",
+            "measurement": "metric",
+            "phoneFormat": "+31 ## ### ####",
+            "supportEmail": "support@example.nl",
+            "supportPhone": "+31-800-555-0127",
+            "legalEntity": "Example Netherlands BV",
+            "privacyPolicy": "https://example.nl/privacy",
+            "termsOfService": "https://example.nl/terms"
+          },
+          "isPartial": true
+        }
+      ]
+    }
+  }
+}

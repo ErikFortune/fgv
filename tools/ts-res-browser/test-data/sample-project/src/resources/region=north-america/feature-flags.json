@@ -1,0 +1,18 @@
+{
+  "resources": {
+    "feature-flags": {
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "betaFeatures": true,
+            "darkMode": true,
+            "adminPanel": true,
+            "apiAccess": true
+          },
+          "isPartial": true
+        }
+      ]
+    }
+  }
+}

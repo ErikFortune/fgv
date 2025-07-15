@@ -1,7 +1,4 @@
 {
-  "context": {
-    "baseId": "app"
-  },
   "resources": {
     "config": {
       "resourceTypeName": "json",

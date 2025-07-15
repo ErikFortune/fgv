@@ -29,6 +29,13 @@ This directory contains various system configuration files for testing the ts-re
 - **Priority**: Tenant (1000) > Environment (950) > Security (900) > Territory (850/800) > Language (750) > Role (700) > Department (650) > Feature Flags (600)
 - **Features**: Multi-tenant support, security levels, department-based access, feature flags, complex role hierarchies
 
+### composition-terminology.json
+- **Use Case**: Demonstrating resource composition with international terminology variations plus full application context
+- **Priority**: Home Territory (850) > Language (800) > Territory (700) > Region (600) > Role (500) > Environment (400) > Platform (300) > Density (200)
+- **Features**: Comprehensive terminology resources showing composition with partial candidates for regional variations, plus full application qualifiers for testing existing resources
+- **Resources**: UI terms with base English/French/Dutch candidates and partial variants for Canadian English, British English, Canadian French, Belgian Dutch; App configuration with territory-specific settings; Feature flags with regional overrides; Plus supports existing sample project resources
+- **Demonstrates**: How partial candidates compose with base candidates to create localized terminology sets while maintaining compatibility with existing test resources
+
 ## Usage
 
 These configurations can be loaded into the Configuration Tool to test different system setups and see how they affect resource resolution behavior.

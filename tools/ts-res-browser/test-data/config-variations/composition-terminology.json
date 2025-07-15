@@ -1,4 +1,6 @@
 {
+  "name": "Composition Terminology Configuration",
+  "description": "Configuration demonstrating composition with international terminology variations plus full application context",
   "qualifierTypes": [
     {
       "name": "language",
@@ -61,8 +63,7 @@
     {
       "name": "language",
       "typeName": "language",
-      "defaultPriority": 800,
-      "token": "lang"
+      "defaultPriority": 800
     },
     {
       "name": "homeTerritory",

@@ -21,6 +21,8 @@
  */
 
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import { JsonValue, JsonObject, isJsonObject } from '@fgv/ts-json-base';
+import { JsonEditor } from '@fgv/ts-json';
 import { QualifierMatchScore, NoMatch } from '../common';
 import { Condition, ConditionSet } from '../conditions';
 import { AbstractDecision } from '../decisions';
@@ -362,6 +364,63 @@ export class ResourceResolver {
     }
 
     return succeed(candidates);
+  }
+
+  /**
+   * Resolves a resource to a composed value by merging matching candidates according to their merge methods.
+   * Starting from the highest priority candidates, finds the first "full" candidate and merges all higher
+   * priority "partial" candidates into it in ascending order of priority.
+   * @param resource - The {@link Resources.Resource | resource} to resolve.
+   * @returns `Success` with the composed JsonValue if successful,
+   * or `Failure` with an error message if no candidates match or resolution fails.
+   * @public
+   */
+  public resolveComposedResourceValue(resource: IResource): Result<JsonValue> {
+    return this.resolveAllResourceCandidates(resource).onSuccess((candidates) => {
+      /* c8 ignore next 3 - defense in depth should never occur */
+      if (candidates.length === 0) {
+        return fail(`${resource.id}: No matching candidates found.`);
+      }
+
+      // Find the first full candidate and collect all partial candidates above it
+      let fullCandidateIndex = -1;
+      const partialCandidates: IResourceCandidate[] = [];
+
+      for (let i = 0; i < candidates.length; i++) {
+        const candidate = candidates[i];
+        if (!candidate.isPartial) {
+          // Found the first full candidate
+          fullCandidateIndex = i;
+          break;
+        } else {
+          // Collect partial candidates (these are in ascending priority order)
+          partialCandidates.unshift(candidate);
+        }
+      }
+
+      // If no full candidate found, use the last candidate as the base
+      const baseCandidateIndex = fullCandidateIndex >= 0 ? fullCandidateIndex : candidates.length - 1;
+      const baseCandidate = candidates[baseCandidateIndex];
+
+      // If there are no partial candidates to merge, return the base candidate's value
+      if (partialCandidates.length === 0) {
+        return succeed(baseCandidate.json);
+      }
+
+      const allCandidates = [
+        baseCandidate.json,
+        ...partialCandidates.map((candidate) => candidate.json)
+      ].filter((v): v is JsonObject => isJsonObject(v));
+
+      /* c8 ignore next 3 - defensive check: non-object values in resource candidates should be prevented at validation time */
+      if (allCandidates.length !== partialCandidates.length + 1) {
+        return fail(`${resource.id}: Unable to compose non-object candidate values.`);
+      }
+
+      return JsonEditor.default
+        .mergeObjectsInPlace({}, allCandidates)
+        .withErrorFormat((err) => `${resource.id}: Composition failed: ${err}`);
+    });
   }
 
   /**

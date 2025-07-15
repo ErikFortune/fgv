@@ -27,10 +27,11 @@ interface ResolutionResult {
   bestCandidate?: Runtime.IResourceCandidate;
   allCandidates?: readonly Runtime.IResourceCandidate[];
   candidateDetails?: CandidateInfo[];
+  composedValue?: any;
   error?: string;
 }
 
-type ViewMode = 'best' | 'all' | 'raw';
+type ViewMode = 'best' | 'all' | 'raw' | 'composed';
 
 const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resourceManager }) => {
   const { state: resourceState } = resourceManager;
@@ -270,6 +271,9 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
       // Resolve all candidates
       const allResult = resolver.resolveAllResourceCandidates(resource);
 
+      // Resolve composed value
+      const composedResult = resolver.resolveComposedResourceValue(resource);
+
       // Build detailed candidate information
       const candidateDetails: CandidateInfo[] = [];
       const matchedCandidates = allResult.isSuccess() ? allResult.value : [];
@@ -302,6 +306,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
         bestCandidate: bestResult.isSuccess() ? bestResult.value : undefined,
         allCandidates: allResult.isSuccess() ? allResult.value : undefined,
         candidateDetails,
+        composedValue: composedResult.isSuccess() ? composedResult.value : undefined,
         error: bestResult.isFailure() ? bestResult.message : undefined
       });
     },
@@ -494,6 +499,14 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
                   >
                     Raw
                   </button>
+                  <button
+                    onClick={() => setViewMode('composed')}
+                    className={`px-3 py-1 text-xs rounded ${
+                      viewMode === 'composed' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    Composed
+                  </button>
                 </div>
               )}
             </div>
@@ -563,6 +576,7 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
                   : null,
                 bestCandidate: result.bestCandidate?.json,
                 allCandidates: result.allCandidates?.map((c) => c.json),
+                composedValue: result.composedValue,
                 error: result.error
               },
               null,
@@ -570,6 +584,48 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
             )}
           </pre>
         </div>
+      </div>
+    );
+  }
+
+  if (viewMode === 'composed') {
+    return (
+      <div className="space-y-4">
+        <div>
+          <h4 className="font-medium text-gray-800 mb-2">Composed Resource Value</h4>
+          {result.composedValue ? (
+            <div className="bg-white p-3 rounded border">
+              <div className="text-sm font-medium text-gray-700 mb-2">
+                Composed value from all matching candidates
+              </div>
+              <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
+                {JSON.stringify(result.composedValue, null, 2)}
+              </pre>
+            </div>
+          ) : (
+            <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+              <p className="text-sm text-yellow-800">No composed value available for the current context.</p>
+              {result.error && <p className="text-xs text-yellow-600 mt-1">{result.error}</p>}
+            </div>
+          )}
+        </div>
+
+        {result.resource && (
+          <div>
+            <h4 className="font-medium text-gray-800 mb-2">Resource Info</h4>
+            <div className="bg-white p-3 rounded border text-sm">
+              <div>
+                <strong>ID:</strong> {result.resource.id}
+              </div>
+              <div>
+                <strong>Type:</strong> {result.resource.resourceType.key}
+              </div>
+              <div>
+                <strong>Total Candidates:</strong> {result.resource.candidates.length}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -586,13 +642,25 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
             <div className="space-y-2">
               {matchingCandidates.map((candidateInfo, index) => (
                 <div key={candidateInfo.candidateIndex} className="bg-white p-3 rounded border">
-                  <div className="text-sm font-medium text-gray-700 mb-1">
-                    Candidate {candidateInfo.candidateIndex + 1} {index === 0 ? '(Best Match)' : ''}
-                    {candidateInfo.conditionSetKey && (
-                      <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                        {candidateInfo.conditionSetKey}
-                      </span>
-                    )}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-medium text-gray-700">
+                      Candidate {candidateInfo.candidateIndex + 1} {index === 0 ? '(Best Match)' : ''}
+                      {candidateInfo.conditionSetKey && (
+                        <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                          {candidateInfo.conditionSetKey}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2 text-xs">
+                      {candidateInfo.candidate.isPartial && (
+                        <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Partial</span>
+                      )}
+                      {candidateInfo.candidate.mergeMethod && (
+                        <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                          {candidateInfo.candidate.mergeMethod}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
                     {JSON.stringify(candidateInfo.candidate.json, null, 2)}
@@ -614,13 +682,25 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
                   key={candidateInfo.candidateIndex}
                   className="bg-gray-50 p-3 rounded border border-gray-200 opacity-75"
                 >
-                  <div className="text-sm font-medium text-gray-500 mb-1">
-                    Candidate {candidateInfo.candidateIndex + 1}
-                    {candidateInfo.conditionSetKey && (
-                      <span className="ml-2 text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
-                        {candidateInfo.conditionSetKey}
-                      </span>
-                    )}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-medium text-gray-500">
+                      Candidate {candidateInfo.candidateIndex + 1}
+                      {candidateInfo.conditionSetKey && (
+                        <span className="ml-2 text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
+                          {candidateInfo.conditionSetKey}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2 text-xs">
+                      {candidateInfo.candidate.isPartial && (
+                        <span className="bg-yellow-200 text-yellow-700 px-2 py-1 rounded">Partial</span>
+                      )}
+                      {candidateInfo.candidate.mergeMethod && (
+                        <span className="bg-gray-200 text-gray-600 px-2 py-1 rounded">
+                          {candidateInfo.candidate.mergeMethod}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto text-gray-600">
                     {JSON.stringify(candidateInfo.candidate.json, null, 2)}
@@ -643,13 +723,25 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
         <h4 className="font-medium text-gray-800 mb-2">Best Match</h4>
         {result.bestCandidate ? (
           <div className="bg-white p-3 rounded border">
-            <div className="text-sm font-medium text-gray-700 mb-2">
-              Selected candidate for current context
-              {bestCandidateInfo?.conditionSetKey && (
-                <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                  {bestCandidateInfo.conditionSetKey}
-                </span>
-              )}
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-medium text-gray-700">
+                Selected candidate for current context
+                {bestCandidateInfo?.conditionSetKey && (
+                  <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                    {bestCandidateInfo.conditionSetKey}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center space-x-2 text-xs">
+                {result.bestCandidate.isPartial && (
+                  <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Partial</span>
+                )}
+                {result.bestCandidate.mergeMethod && (
+                  <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                    {result.bestCandidate.mergeMethod}
+                  </span>
+                )}
+              </div>
             </div>
             <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
               {JSON.stringify(result.bestCandidate.json, null, 2)}

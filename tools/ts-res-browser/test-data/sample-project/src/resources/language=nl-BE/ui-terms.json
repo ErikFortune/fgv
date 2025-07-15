@@ -1,0 +1,17 @@
+{
+  "resources": {
+    "ui-terms": {
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "MobilePhone": "GSM",
+            "Email": "E-post",
+            "Settings": "Parameters"
+          },
+          "isPartial": true
+        }
+      ]
+    }
+  }
+}

@@ -107,6 +107,88 @@ describe('ResourceResolver class', () => {
       })
       .orThrow();
 
+    // Add a resource with multiple candidates including partial ones for composition testing
+    resourceManager
+      .addResource({
+        id: 'composition-test',
+        resourceTypeName: 'json',
+        candidates: [
+          {
+            json: { name: 'John', age: 30 },
+            conditions: {
+              language: 'en',
+              territory: 'US'
+            },
+            isPartial: true
+          },
+          {
+            json: { name: 'John Doe', email: 'john@example.com' },
+            conditions: {
+              language: 'en'
+            },
+            isPartial: false // This is the full candidate
+          },
+          {
+            json: { department: 'Engineering', role: 'Senior' },
+            conditions: {
+              language: 'en',
+              tone: 'formal'
+            },
+            isPartial: true
+          },
+          {
+            json: { greeting: 'Hello' },
+            conditions: {
+              // No conditions - lowest priority fallback
+            },
+            isPartial: false
+          }
+        ]
+      })
+      .orThrow();
+
+    // Add another resource for testing non-object values
+    resourceManager
+      .addResource({
+        id: 'simple-value',
+        resourceTypeName: 'json',
+        candidates: [
+          {
+            json: { text: 'Simple string value' },
+            conditions: {
+              language: 'en'
+            },
+            isPartial: false
+          }
+        ]
+      })
+      .orThrow();
+
+    // Add resource with only partial candidates
+    resourceManager
+      .addResource({
+        id: 'all-partial',
+        resourceTypeName: 'json',
+        candidates: [
+          {
+            json: { partial1: 'value1' },
+            conditions: {
+              language: 'en',
+              territory: 'US'
+            },
+            isPartial: true
+          },
+          {
+            json: { partial2: 'value2' },
+            conditions: {
+              language: 'en'
+            },
+            isPartial: true
+          }
+        ]
+      })
+      .orThrow();
+
     // Build resources to create decisions
     resourceManager.build().orThrow();
 
@@ -406,6 +488,123 @@ describe('ResourceResolver class', () => {
       expect(resolver.conditionCacheSize).toBe(resourceManager.conditions.size);
       expect(resolver.conditionSetCacheSize).toBe(resourceManager.conditionSets.size);
       expect(resolver.decisionCacheSize).toBe(resourceManager.decisions.size);
+    });
+  });
+
+  describe('error handling in condition and decision resolution', () => {
+    testBothResolvers('handles condition without valid index', (resolver, resolverName) => {
+      // Create a condition without a valid index
+      expect(resolver.resourceManager.conditions.getAt(0)).toSucceedAndSatisfy((condition) => {
+        const mockCondition = { ...condition, index: undefined };
+        expect(resolver.resolveCondition(mockCondition as unknown as TsRes.Conditions.Condition)).toFailWith(
+          /does not have a valid index/
+        );
+      });
+    });
+
+    testBothResolvers('handles condition set without valid index', (resolver, resolverName) => {
+      // Create a condition set without a valid index
+      expect(resolver.resourceManager.conditionSets.getAt(0)).toSucceedAndSatisfy((conditionSet) => {
+        const mockConditionSet = { ...conditionSet, index: undefined };
+        expect(
+          resolver.resolveConditionSet(mockConditionSet as unknown as TsRes.Conditions.ConditionSet)
+        ).toFailWith(/does not have a valid index/);
+      });
+    });
+
+    testBothResolvers('handles decision without valid index', (resolver, resolverName) => {
+      // Create a decision without a valid index
+      expect(resolver.resourceManager.decisions.getAt(0)).toSucceedAndSatisfy((decision) => {
+        const mockDecision = { ...decision, index: undefined };
+        expect(
+          resolver.resolveDecision(mockDecision as unknown as TsRes.Decisions.AbstractDecision)
+        ).toFailWith(/does not have a valid index/);
+      });
+    });
+  });
+
+  describe('resolveComposedResourceValue method', () => {
+    testBothResolvers('composes value from partial and full candidates', (resolver, resolverName) => {
+      expect(resolver.resourceManager.getBuiltResource('composition-test')).toSucceedAndSatisfy(
+        (resource) => {
+          expect(resolver.resolveComposedResourceValue(resource)).toSucceedAndSatisfy((composedValue) => {
+            // Should merge: base full candidate + higher priority partials
+            // Base: { name: 'John Doe', email: 'john@example.com' }
+            // + Partial (higher priority): { name: 'John', age: 30 }
+            // + Partial (higher priority): { department: 'Engineering', role: 'Senior' }
+            expect(composedValue).toEqual({
+              name: 'John', // Overridden by partial candidate with higher priority
+              age: 30, // Added by partial candidate
+              email: 'john@example.com', // From full candidate
+              department: 'Engineering', // Added by partial candidate
+              role: 'Senior' // Added by partial candidate
+            });
+          });
+        }
+      );
+    });
+
+    testBothResolvers('returns simple value when no merging needed', (resolver, resolverName) => {
+      expect(resolver.resourceManager.getBuiltResource('simple-value')).toSucceedAndSatisfy((resource) => {
+        expect(resolver.resolveComposedResourceValue(resource)).toSucceedAndSatisfy((composedValue) => {
+          expect(composedValue).toEqual({ text: 'Simple string value' });
+        });
+      });
+    });
+
+    testBothResolvers('handles all partial candidates by using last as base', (resolver, resolverName) => {
+      expect(resolver.resourceManager.getBuiltResource('all-partial')).toSucceedAndSatisfy((resource) => {
+        expect(resolver.resolveComposedResourceValue(resource)).toSucceedAndSatisfy((composedValue) => {
+          // Should use last candidate as base and merge higher priority partials
+          // Base: { partial2: 'value2' }
+          // + Partial (higher priority): { partial1: 'value1' }
+          expect(composedValue).toEqual({
+            partial1: 'value1',
+            partial2: 'value2'
+          });
+        });
+      });
+    });
+
+    testBothResolvers('returns single candidate when only one matches', (resolver, resolverName) => {
+      // Change context to French to only match fallback candidate
+      expect(contextProvider.validating.set('language', 'fr')).toSucceed();
+
+      expect(resolver.resourceManager.getBuiltResource('composition-test')).toSucceedAndSatisfy(
+        (resource) => {
+          expect(resolver.resolveComposedResourceValue(resource)).toSucceedAndSatisfy((composedValue) => {
+            expect(composedValue).toEqual({ greeting: 'Hello' });
+          });
+        }
+      );
+    });
+
+    testBothResolvers('fails when no candidates match', (resolver, resolverName) => {
+      // Change context to a language with no candidates (composition-test has an unconditional fallback,
+      // so use a resource that doesn't)
+      expect(contextProvider.validating.set('language', 'de')).toSucceed();
+
+      expect(resolver.resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+        expect(resolver.resolveComposedResourceValue(resource)).toFailWith(/No matching candidates found/);
+      });
+    });
+
+    testBothResolvers('fails when candidate resolution fails', (resolver, resolverName) => {
+      expect(resolver.resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+        // Clear context to cause resolution failure (greeting has no unconditional fallback)
+        contextProvider.clear();
+
+        expect(resolver.resolveComposedResourceValue(resource)).toFailWith(/No matching candidates found/);
+      });
+    });
+
+    testBothResolvers('handles non-object base candidate gracefully', (resolver, resolverName) => {
+      // For object values, should return the value directly when no merging needed
+      expect(resolver.resourceManager.getBuiltResource('simple-value')).toSucceedAndSatisfy((resource) => {
+        expect(resolver.resolveComposedResourceValue(resource)).toSucceedAndSatisfy((composedValue) => {
+          expect(composedValue).toEqual({ text: 'Simple string value' });
+        });
+      });
     });
   });
 

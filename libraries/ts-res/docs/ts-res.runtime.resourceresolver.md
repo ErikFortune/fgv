@@ -263,6 +263,20 @@ Resolves all matching resource candidates in priority order. Uses the resource's
 </td></tr>
 <tr><td>
 
+[resolveComposedResourceValue(resource)](./ts-res.runtime.resourceresolver.resolvecomposedresourcevalue.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Resolves a resource to a composed value by merging matching candidates according to their merge methods. Starting from the highest priority candidates, finds the first "full" candidate and merges all higher priority "partial" candidates into it in ascending order of priority.
+
+
+</td></tr>
+<tr><td>
+
 [resolveCondition(condition)](./ts-res.runtime.resourceresolver.resolvecondition.md)
 
 
