@@ -20,24 +20,18 @@ import { Result } from '@fgv/ts-utils';
 interface ConfigurationToolProps {
   onMessage?: (type: Message['type'], message: string) => void;
   resourceManager: UseResourceManagerReturn;
+  onUnsavedChanges?: (hasChanges: boolean) => void;
+  onSaveHandlerRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 type ActivePanel = 'qualifier-types' | 'qualifiers' | 'resource-types';
 
-/**
- * Get current system configuration
- */
-function getCurrentSystemConfiguration(hasProcessedResources: boolean): Config.Model.ISystemConfiguration {
-  if (!hasProcessedResources) {
-    return DEFAULT_SYSTEM_CONFIGURATION;
-  }
-
-  // TODO: Extract actual configuration from loaded resources
-  // For now, return the default configuration
-  return DEFAULT_SYSTEM_CONFIGURATION;
-}
-
-const ConfigurationTool: React.FC<ConfigurationToolProps> = ({ onMessage, resourceManager }) => {
+const ConfigurationTool: React.FC<ConfigurationToolProps> = ({
+  onMessage,
+  resourceManager,
+  onUnsavedChanges,
+  onSaveHandlerRef
+}) => {
   const { state: resourceState } = resourceManager;
   const [activePanel, setActivePanel] = useState<ActivePanel>('qualifier-types');
 
@@ -49,12 +43,10 @@ const ConfigurationTool: React.FC<ConfigurationToolProps> = ({ onMessage, resour
 
   // Get current system configuration
   const systemConfiguration = useMemo(() => {
-    if (hasProcessedResources) {
-      return getCurrentSystemConfiguration(hasProcessedResources);
-    }
-    // Use active configuration if available, otherwise fall back to default
+    // Always use active configuration if available, regardless of processed resources
+    // This preserves the user's configuration context even after importing resources
     return resourceState.activeConfiguration || DEFAULT_SYSTEM_CONFIGURATION;
-  }, [hasProcessedResources, resourceState.activeConfiguration]);
+  }, [resourceState.activeConfiguration]);
 
   // State for configuration edits
   const [currentConfig, setCurrentConfig] = useState<Config.Model.ISystemConfiguration>(systemConfiguration);
@@ -73,6 +65,11 @@ const ConfigurationTool: React.FC<ConfigurationToolProps> = ({ onMessage, resour
   const hasChanges = useMemo(() => {
     return JSON.stringify(currentConfig) !== JSON.stringify(systemConfiguration);
   }, [currentConfig, systemConfiguration]);
+
+  // Notify parent about unsaved changes
+  React.useEffect(() => {
+    onUnsavedChanges?.(hasChanges);
+  }, [hasChanges, onUnsavedChanges]);
 
   // State for JSON view
   const [showJsonView, setShowJsonView] = useState(false);
@@ -134,7 +131,7 @@ const ConfigurationTool: React.FC<ConfigurationToolProps> = ({ onMessage, resour
         `Unexpected error loading configuration: ${error instanceof Error ? error.message : String(error)}`
       );
     }
-  }, [hasProcessedResources, resourceManager.actions, onMessage]);
+  }, [resourceManager.actions, onMessage]);
 
   // Apply configuration handler
   const handleApplyConfiguration = useCallback(
@@ -161,6 +158,25 @@ const ConfigurationTool: React.FC<ConfigurationToolProps> = ({ onMessage, resour
     },
     [resourceManager.actions, onMessage]
   );
+
+  // Handle save and navigate (called from navigation warning modal)
+  const handleSaveAndNavigate = useCallback(() => {
+    if (hasChanges) {
+      handleApplyConfiguration(currentConfig);
+    }
+  }, [hasChanges, currentConfig, handleApplyConfiguration]);
+
+  // Set the save handler reference for the parent component
+  React.useEffect(() => {
+    if (onSaveHandlerRef) {
+      onSaveHandlerRef.current = handleSaveAndNavigate;
+    }
+    return () => {
+      if (onSaveHandlerRef) {
+        onSaveHandlerRef.current = null;
+      }
+    };
+  }, [handleSaveAndNavigate, onSaveHandlerRef]);
 
   // Restore defaults handler
   const handleRestoreDefaults = useCallback(() => {

@@ -7,7 +7,7 @@ export const useAppState = (): { state: AppState; actions: AppActions } => {
     messages: []
   });
 
-  const setSelectedTool = useCallback((tool: Tool) => {
+  const setSelectedTool = useCallback((tool: Tool, force?: boolean) => {
     setState((prev) => ({ ...prev, selectedTool: tool }));
   }, []);
 

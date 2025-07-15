@@ -14,7 +14,7 @@ export interface AppState {
 }
 
 export interface AppActions {
-  setSelectedTool: (tool: Tool) => void;
+  setSelectedTool: (tool: Tool, force?: boolean) => void;
   addMessage: (type: Message['type'], message: string) => void;
   clearMessages: () => void;
 }
