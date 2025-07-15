@@ -33,6 +33,151 @@ interface ResolutionResult {
 
 type ViewMode = 'best' | 'all' | 'raw' | 'composed';
 
+interface TooltipProps {
+  content: string;
+  children: React.ReactNode;
+}
+
+const Tooltip: React.FC<TooltipProps> = ({ content, children }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  return (
+    <div
+      className="relative inline-block"
+      onMouseEnter={() => setIsVisible(true)}
+      onMouseLeave={() => setIsVisible(false)}
+    >
+      {children}
+      {isVisible && (
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-10">
+          <div className="bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+            {content}
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface CacheDashboardProps {
+  cacheMetrics: Runtime.ResourceResolverCacheMetricsListener<Runtime.AggregateCacheMetrics> | null;
+  resolver: Runtime.ResourceResolver | null;
+  onReset: () => void;
+}
+
+const CacheDashboard: React.FC<CacheDashboardProps> = ({ cacheMetrics, resolver, onReset }) => {
+  if (!cacheMetrics || !resolver) {
+    return (
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-500">📊 Cache: Not active</span>
+          <button
+            onClick={onReset}
+            disabled={true}
+            className="text-xs px-2 py-1 bg-gray-200 text-gray-400 rounded cursor-not-allowed"
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const metrics = cacheMetrics.metrics;
+
+  // Helper function to get cache display info
+  const getCacheDisplay = (cacheType: Runtime.ResourceResolverCacheType) => {
+    const cacheMetric = metrics[cacheType];
+    const hitRate = cacheMetric.hitRate;
+    const totalAccesses = cacheMetric.totalAccesses;
+    const hits = cacheMetric.hits;
+    const misses = cacheMetric.misses;
+    const errors = cacheMetric.errors;
+
+    // Get actual filled cache slots by looking at the cache arrays
+    const cacheArray =
+      cacheType === 'condition'
+        ? resolver.conditionCache
+        : cacheType === 'conditionSet'
+        ? resolver.conditionSetCache
+        : resolver.decisionCache;
+    const filledSlots = cacheArray.filter((slot) => slot !== undefined).length;
+
+    const totalSlots =
+      cacheType === 'condition'
+        ? resolver.conditionCacheSize
+        : cacheType === 'conditionSet'
+        ? resolver.conditionSetCacheSize
+        : resolver.decisionCacheSize;
+
+    // Color based on hit rate
+    const getColor = (rate: number) => {
+      if (rate === 0) return 'text-gray-500';
+      if (rate >= 80) return 'text-green-600';
+      if (rate >= 50) return 'text-yellow-600';
+      return 'text-red-600';
+    };
+
+    return {
+      filledSlots,
+      totalSlots,
+      totalAccesses,
+      hits,
+      misses,
+      errors,
+      hitRate: Math.round(hitRate),
+      color: getColor(hitRate)
+    };
+  };
+
+  const conditionDisplay = getCacheDisplay('condition');
+  const conditionSetDisplay = getCacheDisplay('conditionSet');
+  const decisionDisplay = getCacheDisplay('decision');
+
+  return (
+    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4 text-sm">
+          <span className="text-gray-700">📊 Cache:</span>
+          <Tooltip
+            content={`Condition Cache: ${conditionDisplay.filledSlots} filled out of ${conditionDisplay.totalSlots} slots, ${conditionDisplay.totalAccesses} total accesses (${conditionDisplay.hits} hits, ${conditionDisplay.misses} misses, ${conditionDisplay.errors} errors), ${conditionDisplay.hitRate}% hit rate`}
+          >
+            <span className={`font-mono ${conditionDisplay.color} cursor-help`}>
+              Cond: {conditionDisplay.filledSlots}/{conditionDisplay.totalSlots} ({conditionDisplay.hitRate}%)
+            </span>
+          </Tooltip>
+          <span className="text-gray-400">|</span>
+          <Tooltip
+            content={`ConditionSet Cache: ${conditionSetDisplay.filledSlots} filled out of ${conditionSetDisplay.totalSlots} slots, ${conditionSetDisplay.totalAccesses} total accesses (${conditionSetDisplay.hits} hits, ${conditionSetDisplay.misses} misses, ${conditionSetDisplay.errors} errors), ${conditionSetDisplay.hitRate}% hit rate`}
+          >
+            <span className={`font-mono ${conditionSetDisplay.color} cursor-help`}>
+              CondSet: {conditionSetDisplay.filledSlots}/{conditionSetDisplay.totalSlots} (
+              {conditionSetDisplay.hitRate}%)
+            </span>
+          </Tooltip>
+          <span className="text-gray-400">|</span>
+          <Tooltip
+            content={`Decision Cache: ${decisionDisplay.filledSlots} filled out of ${decisionDisplay.totalSlots} slots, ${decisionDisplay.totalAccesses} total accesses (${decisionDisplay.hits} hits, ${decisionDisplay.misses} misses, ${decisionDisplay.errors} errors), ${decisionDisplay.hitRate}% hit rate`}
+          >
+            <span className={`font-mono ${decisionDisplay.color} cursor-help`}>
+              Dec: {decisionDisplay.filledSlots}/{decisionDisplay.totalSlots} ({decisionDisplay.hitRate}%)
+            </span>
+          </Tooltip>
+        </div>
+        <Tooltip content="Clear all caches and reset metrics">
+          <button
+            onClick={onReset}
+            className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+          >
+            Reset
+          </button>
+        </Tooltip>
+      </div>
+    </div>
+  );
+};
+
 const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resourceManager }) => {
   const { state: resourceState } = resourceManager;
 
@@ -98,6 +243,10 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
   // Resolution state
   const [currentResolver, setCurrentResolver] = useState<Runtime.ResourceResolver | null>(null);
   const [resolutionResult, setResolutionResult] = useState<ResolutionResult | null>(null);
+
+  // Cache metrics state
+  const [cacheMetrics, setCacheMetrics] =
+    useState<Runtime.ResourceResolverCacheMetricsListener<Runtime.AggregateCacheMetrics> | null>(null);
 
   // Available resources
   const availableResources = useMemo(() => {
@@ -207,11 +356,24 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
       return;
     }
 
+    // Reset existing cache and metrics when context changes
+    if (currentResolver && cacheMetrics) {
+      currentResolver.clearConditionCache();
+      cacheMetrics.reset();
+    }
+
+    // Create cache metrics listener
+    const metricsListener = new Runtime.ResourceResolverCacheMetricsListener(
+      () => new Runtime.AggregateCacheMetrics()
+    );
+    setCacheMetrics(metricsListener);
+
     // Create new resource resolver
     const resolverResult = Runtime.ResourceResolver.create({
       resourceManager: resourceState.processedResources.system.resourceManager,
       qualifierTypes: resourceState.processedResources.system.qualifierTypes,
-      contextQualifierProvider: contextResult.value
+      contextQualifierProvider: contextResult.value,
+      listener: metricsListener
     });
 
     if (resolverResult.isFailure()) {
@@ -340,6 +502,15 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
     }));
   }, []);
 
+  // Handle cache reset
+  const handleCacheReset = useCallback(() => {
+    if (currentResolver && cacheMetrics) {
+      currentResolver.clearConditionCache();
+      cacheMetrics.reset();
+      onMessage?.('info', 'Cache cleared and metrics reset');
+    }
+  }, [currentResolver, cacheMetrics, onMessage]);
+
   // Auto-apply default context when resources are loaded
   React.useEffect(() => {
     if (
@@ -437,6 +608,9 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
             </div>
           </div>
         </div>
+
+        {/* Cache Dashboard */}
+        <CacheDashboard cacheMetrics={cacheMetrics} resolver={currentResolver} onReset={handleCacheReset} />
 
         {/* Main Browser/Details Layout */}
         <div className="flex flex-col lg:flex-row gap-6 h-[600px]">
