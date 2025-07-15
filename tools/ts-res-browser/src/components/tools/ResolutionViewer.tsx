@@ -446,38 +446,78 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
     return config.qualifiers.map((q) => q.name);
   }, [resourceState.processedResources?.compiledCollection.qualifiers, resourceState.activeConfiguration]);
 
-  // Initialize context with default values for available qualifiers
+  // Initialize context with smart default values based on qualifier types
   const defaultContextValues = useMemo(() => {
     const defaults: ContextState = {};
 
-    // Predefined default values
-    const predefinedDefaults: Record<string, string> = {
-      homeTerritory: 'US',
-      currentTerritory: 'US',
-      language: 'en-US',
-      platform: 'web',
-      environment: 'production',
-      role: 'user',
-      density: 'standard',
-      // Additional defaults for various configurations
-      env: 'production',
-      device: 'desktop',
-      graphics: 'medium',
-      playerLevel: 'intermediate',
-      gameMode: 'single',
-      tenant: 'corp',
-      securityLevel: 'internal',
-      department: 'engineering',
-      featureFlag: 'enabled'
-    };
+    // Get the active configuration to access qualifier types
+    const config = resourceState.activeConfiguration || DEFAULT_SYSTEM_CONFIGURATION;
 
+    // Create a map of qualifier name to qualifier type for quick lookup
+    const qualifierTypeMap: Record<string, Config.Model.ISystemConfiguration['qualifierTypes'][0]> = {};
+
+    // First, create a mapping of qualifiers to their types
+    config.qualifiers.forEach((qualifier) => {
+      const qualifierType = config.qualifierTypes.find((qt) => qt.name === qualifier.typeName);
+      if (qualifierType) {
+        qualifierTypeMap[qualifier.name] = qualifierType;
+      }
+    });
+
+    // Compute intelligent defaults based on qualifier types
     availableQualifiers.forEach((qualifierName) => {
-      // Use predefined default if available, otherwise empty string
-      defaults[qualifierName] = predefinedDefaults[qualifierName] || '';
+      const qualifierType = qualifierTypeMap[qualifierName];
+
+      if (!qualifierType) {
+        // No type info available, use empty string
+        defaults[qualifierName] = '';
+        return;
+      }
+
+      // Compute default based on system type
+      switch (qualifierType.systemType) {
+        case 'language':
+          // Language qualifiers default to en-US
+          defaults[qualifierName] = 'en-US';
+          break;
+
+        case 'territory':
+          // Territory qualifiers: use first allowed territory if constrained, otherwise US
+          if (
+            qualifierType.configuration &&
+            typeof qualifierType.configuration === 'object' &&
+            'allowedTerritories' in qualifierType.configuration &&
+            Array.isArray(qualifierType.configuration.allowedTerritories) &&
+            qualifierType.configuration.allowedTerritories.length > 0
+          ) {
+            defaults[qualifierName] = qualifierType.configuration.allowedTerritories[0];
+          } else {
+            defaults[qualifierName] = 'US';
+          }
+          break;
+
+        case 'literal':
+          // Literal qualifiers: use first enumerated value if constrained, otherwise "unknown"
+          if (
+            qualifierType.configuration &&
+            typeof qualifierType.configuration === 'object' &&
+            'enumeratedValues' in qualifierType.configuration &&
+            Array.isArray(qualifierType.configuration.enumeratedValues) &&
+            qualifierType.configuration.enumeratedValues.length > 0
+          ) {
+            defaults[qualifierName] = qualifierType.configuration.enumeratedValues[0];
+          } else {
+            defaults[qualifierName] = 'unknown';
+          }
+          break;
+
+        default:
+          defaults[qualifierName] = '';
+      }
     });
 
     return defaults;
-  }, [availableQualifiers]);
+  }, [availableQualifiers, resourceState.activeConfiguration]);
 
   // Context state
   const [contextValues, setContextValues] = useState<ContextState>({});
@@ -496,6 +536,9 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
   // Resolution state
   const [currentResolver, setCurrentResolver] = useState<Runtime.ResourceResolver | null>(null);
   const [resolutionResult, setResolutionResult] = useState<ResolutionResult | null>(null);
+
+  // Track if we've auto-applied defaults for the current configuration
+  const [hasAutoApplied, setHasAutoApplied] = useState(false);
 
   // Cache metrics state
   const [cacheMetrics, setCacheMetrics] =
@@ -829,17 +872,23 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
     }
   }, [currentResolver, cacheMetrics, onMessage]);
 
-  // Auto-apply default context when resources are loaded
+  // Reset auto-apply flag when defaults change
+  React.useEffect(() => {
+    setHasAutoApplied(false);
+  }, [defaultContextValues]);
+
+  // Auto-apply default context when resources are loaded or defaults change
   React.useEffect(() => {
     if (
       resourceState.processedResources?.system &&
       Object.keys(defaultContextValues).length > 0 &&
-      !currentResolver
+      !hasAutoApplied
     ) {
       // Apply the default context automatically
       applyContext();
+      setHasAutoApplied(true);
     }
-  }, [resourceState.processedResources?.system, defaultContextValues, currentResolver, applyContext]);
+  }, [resourceState.processedResources?.system, defaultContextValues, hasAutoApplied, applyContext]);
 
   if (!resourceState.processedResources) {
     return (
