@@ -4,8 +4,6 @@ import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message } from '../../types/app';
 import { Runtime } from '@fgv/ts-res';
 import { createSimpleContext, DEFAULT_SYSTEM_CONFIGURATION } from '../../utils/tsResIntegration';
-import { Result } from '@fgv/ts-utils';
-import { JsonValue } from '@fgv/ts-json-base';
 
 interface ResolutionViewerProps {
   onMessage?: (type: Message['type'], message: string) => void;
@@ -17,7 +15,7 @@ interface ContextState {
 }
 
 interface CandidateInfo {
-  candidate: JsonValue;
+  candidate: Runtime.IResourceCandidate;
   conditionSetKey: string | null;
   candidateIndex: number;
   matched: boolean;
@@ -26,8 +24,8 @@ interface CandidateInfo {
 interface ResolutionResult {
   success: boolean;
   resource?: Runtime.IResource;
-  bestCandidate?: JsonValue;
-  allCandidates?: readonly JsonValue[];
+  bestCandidate?: Runtime.IResourceCandidate;
+  allCandidates?: readonly Runtime.IResourceCandidate[];
   candidateDetails?: CandidateInfo[];
   error?: string;
 }
@@ -270,7 +268,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
       const bestResult = resolver.resolveResource(resource);
 
       // Resolve all candidates
-      const allResult = resolver.resolveAllResourceValues(resource);
+      const allResult = resolver.resolveAllResourceCandidates(resource);
 
       // Build detailed candidate information
       const candidateDetails: CandidateInfo[] = [];
@@ -278,10 +276,10 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
 
       resource.candidates.forEach((candidate, index) => {
         const conditionSetKey = getCandidateConditionSetKey(index, compiledResource, compiledCollection);
-        const matched = matchedCandidates.includes(candidate.json);
+        const matched = matchedCandidates.some((mc) => mc === candidate);
 
         candidateDetails.push({
-          candidate: candidate.json,
+          candidate,
           conditionSetKey,
           candidateIndex: index,
           matched
@@ -336,6 +334,18 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
       [qualifierName]: value
     }));
   }, []);
+
+  // Auto-apply default context when resources are loaded
+  React.useEffect(() => {
+    if (
+      resourceState.processedResources?.system &&
+      Object.keys(defaultContextValues).length > 0 &&
+      !currentResolver
+    ) {
+      // Apply the default context automatically
+      applyContext();
+    }
+  }, [resourceState.processedResources?.system, defaultContextValues, currentResolver, applyContext]);
 
   if (!resourceState.processedResources) {
     return (
@@ -417,7 +427,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                Apply Context
+                {hasPendingChanges ? 'Apply Changes' : currentResolver ? 'Context Applied' : 'Apply Context'}
               </button>
             </div>
           </div>
@@ -551,8 +561,8 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
                       candidateCount: result.resource.candidates.length
                     }
                   : null,
-                bestCandidate: result.bestCandidate,
-                allCandidates: result.allCandidates,
+                bestCandidate: result.bestCandidate?.json,
+                allCandidates: result.allCandidates?.map((c) => c.json),
                 error: result.error
               },
               null,
@@ -585,7 +595,7 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
                     )}
                   </div>
                   <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
-                    {JSON.stringify(candidateInfo.candidate, null, 2)}
+                    {JSON.stringify(candidateInfo.candidate.json, null, 2)}
                   </pre>
                 </div>
               ))}
@@ -613,7 +623,7 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
                     )}
                   </div>
                   <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto text-gray-600">
-                    {JSON.stringify(candidateInfo.candidate, null, 2)}
+                    {JSON.stringify(candidateInfo.candidate.json, null, 2)}
                   </pre>
                 </div>
               ))}
@@ -642,7 +652,7 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
               )}
             </div>
             <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
-              {JSON.stringify(result.bestCandidate, null, 2)}
+              {JSON.stringify(result.bestCandidate.json, null, 2)}
             </pre>
           </div>
         ) : (

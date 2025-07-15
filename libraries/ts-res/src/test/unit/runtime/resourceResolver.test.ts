@@ -189,11 +189,15 @@ describe('ResourceResolver class', () => {
   });
 
   describe('resolveResource method', () => {
-    test('resolves the best matching candidate value', () => {
+    test('resolves the best matching candidate', () => {
       expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
         // Should get the best match based on context: en + US + formal tone
         // The "Hello World!" candidate matches language=en and territory=US (highest specificity)
-        expect(builderResolver.resolveResource(resource)).toSucceedWith({ text: 'Hello World!' });
+        expect(builderResolver.resolveResource(resource)).toSucceedAndSatisfy((candidate) => {
+          expect(candidate.json).toEqual({ text: 'Hello World!' });
+          expect(candidate.isPartial).toBe(false);
+          expect(candidate.mergeMethod).toBe('augment');
+        });
       });
     });
 
@@ -203,7 +207,11 @@ describe('ResourceResolver class', () => {
 
       expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
         // Should get "Hello!" (en + formal tone) over "Hi there!" (en + standard tone)
-        expect(builderResolver.resolveResource(resource)).toSucceedWith({ text: 'Hello!' });
+        expect(builderResolver.resolveResource(resource)).toSucceedAndSatisfy((candidate) => {
+          expect(candidate.json).toEqual({ text: 'Hello!' });
+          expect(candidate.isPartial).toBe(false);
+          expect(candidate.mergeMethod).toBe('augment');
+        });
       });
     });
 
@@ -214,7 +222,11 @@ describe('ResourceResolver class', () => {
 
       expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
         // Should get "Bonjour!" (only French candidate)
-        expect(builderResolver.resolveResource(resource)).toSucceedWith({ text: 'Bonjour!' });
+        expect(builderResolver.resolveResource(resource)).toSucceedAndSatisfy((candidate) => {
+          expect(candidate.json).toEqual({ text: 'Bonjour!' });
+          expect(candidate.isPartial).toBe(false);
+          expect(candidate.mergeMethod).toBe('augment');
+        });
       });
     });
 
@@ -253,24 +265,24 @@ describe('ResourceResolver class', () => {
     });
   });
 
-  describe('resolveAllResourceValues method', () => {
-    testBothResolvers(
-      'resolves all matching candidate values in priority order',
-      (resolver, resolverName) => {
-        expect(resolver.resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
-          expect(resolver.resolveAllResourceValues(resource)).toSucceedAndSatisfy((values) => {
-            expect(values).toBeInstanceOf(Array);
-            expect(values.length).toBeGreaterThan(0);
+  describe('resolveAllResourceCandidates method', () => {
+    testBothResolvers('resolves all matching candidates in priority order', (resolver, resolverName) => {
+      expect(resolver.resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+        expect(resolver.resolveAllResourceCandidates(resource)).toSucceedAndSatisfy((candidates) => {
+          expect(candidates).toBeInstanceOf(Array);
+          expect(candidates.length).toBeGreaterThan(0);
 
-            // First value should be the best match
-            expect(values[0]).toEqual({ text: 'Hello World!' });
+          // First candidate should be the best match
+          expect(candidates[0].json).toEqual({ text: 'Hello World!' });
+          expect(candidates[0].isPartial).toBe(false);
+          expect(candidates[0].mergeMethod).toBe('augment');
 
-            // Should contain other matching candidates in priority order
-            expect(values).toContainEqual({ text: 'Hello!' });
-          });
+          // Should contain other matching candidates in priority order
+          const candidateValues = candidates.map((c) => c.json);
+          expect(candidateValues).toContainEqual({ text: 'Hello!' });
         });
-      }
-    );
+      });
+    });
 
     testBothResolvers(
       'resolves multiple matching candidates for partial context',
@@ -279,15 +291,16 @@ describe('ResourceResolver class', () => {
         expect(contextProvider.validating.remove('territory')).toSucceed();
 
         expect(resolver.resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
-          expect(resolver.resolveAllResourceValues(resource)).toSucceedAndSatisfy((values) => {
-            expect(values).toBeInstanceOf(Array);
-            expect(values.length).toBeGreaterThanOrEqual(1);
+          expect(resolver.resolveAllResourceCandidates(resource)).toSucceedAndSatisfy((candidates) => {
+            expect(candidates).toBeInstanceOf(Array);
+            expect(candidates.length).toBeGreaterThanOrEqual(1);
 
             // Should get the best English match (formal tone)
-            expect(values[0]).toEqual({ text: 'Hello!' });
+            expect(candidates[0].json).toEqual({ text: 'Hello!' });
 
             // Should not contain French candidate
-            expect(values).not.toContainEqual({ text: 'Bonjour!' });
+            const candidateValues = candidates.map((c) => c.json);
+            expect(candidateValues).not.toContainEqual({ text: 'Bonjour!' });
           });
         });
       }
@@ -299,9 +312,11 @@ describe('ResourceResolver class', () => {
       expect(contextProvider.validating.remove('territory')).toSucceed();
 
       expect(resolver.resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
-        expect(resolver.resolveAllResourceValues(resource)).toSucceedAndSatisfy((values) => {
-          expect(values).toHaveLength(1);
-          expect(values[0]).toEqual({ text: 'Bonjour!' });
+        expect(resolver.resolveAllResourceCandidates(resource)).toSucceedAndSatisfy((candidates) => {
+          expect(candidates).toHaveLength(1);
+          expect(candidates[0].json).toEqual({ text: 'Bonjour!' });
+          expect(candidates[0].isPartial).toBe(false);
+          expect(candidates[0].mergeMethod).toBe('augment');
         });
       });
     });
@@ -311,7 +326,7 @@ describe('ResourceResolver class', () => {
       expect(contextProvider.validating.set('language', 'de')).toSucceed();
 
       expect(resolver.resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
-        expect(resolver.resolveAllResourceValues(resource)).toFailWith(/No matching candidates found/);
+        expect(resolver.resolveAllResourceCandidates(resource)).toFailWith(/No matching candidates found/);
       });
     });
 
@@ -320,7 +335,7 @@ describe('ResourceResolver class', () => {
         // Clear context to cause decision failure
         contextProvider.clear();
 
-        expect(resolver.resolveAllResourceValues(resource)).toFail();
+        expect(resolver.resolveAllResourceCandidates(resource)).toFail();
       });
     });
 
@@ -330,7 +345,7 @@ describe('ResourceResolver class', () => {
         // Manually corrupt the candidates array to force an invalid index scenario
         const originalCandidates = resource.candidates;
         (resource as unknown as { candidates: ReadonlyArray<IResourceCandidate> }).candidates = []; // Empty candidates array
-        expect(resolver.resolveAllResourceValues(resource)).toFailWith(/Invalid candidate index/);
+        expect(resolver.resolveAllResourceCandidates(resource)).toFailWith(/Invalid candidate index/);
         // Restore original candidates
         (resource as unknown as { candidates: ReadonlyArray<IResourceCandidate> }).candidates =
           originalCandidates;
@@ -342,17 +357,23 @@ describe('ResourceResolver class', () => {
     testBothResolvers('caches decision resolution results', (resolver, resolverName) => {
       expect(resolver.resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
         // First resolution
-        expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Hello World!' });
+        expect(resolver.resolveResource(resource)).toSucceedAndSatisfy((candidate) => {
+          expect(candidate.json).toEqual({ text: 'Hello World!' });
+        });
 
         // Second resolution should use cached result
-        expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Hello World!' });
+        expect(resolver.resolveResource(resource)).toSucceedAndSatisfy((candidate) => {
+          expect(candidate.json).toEqual({ text: 'Hello World!' });
+        });
       });
     });
 
     testBothResolvers('clears cache and re-resolves when context changes', (resolver, resolverName) => {
       expect(resolver.resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
         // Initial resolution
-        expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Hello World!' });
+        expect(resolver.resolveResource(resource)).toSucceedAndSatisfy((candidate) => {
+          expect(candidate.json).toEqual({ text: 'Hello World!' });
+        });
 
         // Change context and clear cache
         expect(contextProvider.validating.set('language', 'fr')).toSucceed();
@@ -360,7 +381,9 @@ describe('ResourceResolver class', () => {
         resolver.clearConditionCache();
 
         // Should get different result
-        expect(resolver.resolveResource(resource)).toSucceedWith({ text: 'Bonjour!' });
+        expect(resolver.resolveResource(resource)).toSucceedAndSatisfy((candidate) => {
+          expect(candidate.json).toEqual({ text: 'Bonjour!' });
+        });
       });
     });
 

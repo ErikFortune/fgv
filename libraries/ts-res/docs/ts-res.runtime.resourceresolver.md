@@ -249,7 +249,7 @@ Creates a new [ResourceResolver](./ts-res.runtime.resourceresolver.md) object.
 </td></tr>
 <tr><td>
 
-[resolveAllResourceValues(resource)](./ts-res.runtime.resourceresolver.resolveallresourcevalues.md)
+[resolveAllResourceCandidates(resource)](./ts-res.runtime.resourceresolver.resolveallresourcecandidates.md)
 
 
 </td><td>
@@ -257,7 +257,7 @@ Creates a new [ResourceResolver](./ts-res.runtime.resourceresolver.md) object.
 
 </td><td>
 
-Resolves all matching resource values in priority order. Uses the resource's associated decision to determine all matching candidates based on the current context.
+Resolves all matching resource candidates in priority order. Uses the resource's associated decision to determine all matching candidates based on the current context.
 
 
 </td></tr>
@@ -313,7 +313,7 @@ Resolves a decision by evaluating all its constituent condition sets against the
 
 </td><td>
 
-Resolves a resource by finding the best matching candidate value. Uses the resource's associated decision to determine the best match based on the current context.
+Resolves a resource by finding the best matching candidate. Uses the resource's associated decision to determine the best match based on the current context.
 
 
 </td></tr>

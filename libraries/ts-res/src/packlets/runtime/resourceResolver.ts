@@ -21,13 +21,12 @@
  */
 
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
-import { JsonValue } from '@fgv/ts-json-base';
 import { QualifierMatchScore, NoMatch } from '../common';
 import { Condition, ConditionSet } from '../conditions';
 import { AbstractDecision } from '../decisions';
 import { ReadOnlyQualifierTypeCollector } from '../qualifier-types';
 import { IContextQualifierProvider } from './context';
-import { IResourceManager, IResource } from './iResourceManager';
+import { IResourceManager, IResource, IResourceCandidate } from './iResourceManager';
 import { ConditionSetResolutionResult, IConditionMatchResult } from './conditionSetResolutionResult';
 
 /**
@@ -290,14 +289,14 @@ export class ResourceResolver {
   }
 
   /**
-   * Resolves a resource by finding the best matching candidate value.
+   * Resolves a resource by finding the best matching candidate.
    * Uses the resource's associated decision to determine the best match based on the current context.
    * @param resource - The {@link Resources.Resource | resource} to resolve.
-   * @returns `Success` with the value of the best matching candidate if successful,
+   * @returns `Success` with the best matching candidate if successful,
    * or `Failure` with an error message if no candidates match or resolution fails.
    * @public
    */
-  public resolveResource<T extends JsonValue = JsonValue>(resource: IResource): Result<T> {
+  public resolveResource(resource: IResource): Result<IResourceCandidate> {
     // Get the abstract decision from the resource's concrete decision
     const abstractDecision = resource.decision.baseDecision;
 
@@ -322,20 +321,18 @@ export class ResourceResolver {
     }
 
     const bestCandidate = resource.candidates[bestCandidateIndex];
-    return succeed(bestCandidate.json as T);
+    return succeed(bestCandidate);
   }
 
   /**
-   * Resolves all matching resource values in priority order.
+   * Resolves all matching resource candidates in priority order.
    * Uses the resource's associated decision to determine all matching candidates based on the current context.
    * @param resource - The {@link Resources.Resource | resource} to resolve.
-   * @returns `Success` with an array of values from all matching candidates in priority order if successful,
+   * @returns `Success` with an array of all matching candidates in priority order if successful,
    * or `Failure` with an error message if no candidates match or resolution fails.
    * @public
    */
-  public resolveAllResourceValues<T extends JsonValue = JsonValue>(
-    resource: IResource
-  ): Result<ReadonlyArray<T>> {
+  public resolveAllResourceCandidates(resource: IResource): Result<ReadonlyArray<IResourceCandidate>> {
     // Get the abstract decision from the resource's concrete decision
     const abstractDecision = resource.decision.baseDecision;
 
@@ -353,18 +350,18 @@ export class ResourceResolver {
       return fail(`No matching candidates found for resource "${resource.id}"`);
     }
 
-    // Get all matching candidate values in priority order
-    const values: T[] = [];
+    // Get all matching candidates in priority order
+    const candidates: IResourceCandidate[] = [];
     for (const candidateIndex of resolution.instanceIndices) {
       if (candidateIndex >= resource.candidates.length) {
         return fail(`Invalid candidate index ${candidateIndex} for resource "${resource.id}"`);
       }
 
       const candidate = resource.candidates[candidateIndex];
-      values.push(candidate.json as T);
+      candidates.push(candidate);
     }
 
-    return succeed(values);
+    return succeed(candidates);
   }
 
   /**

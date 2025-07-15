@@ -3295,7 +3295,7 @@ class ResourceResolver {
     get decisionCacheSize(): number;
     readonly qualifierTypes: ReadOnlyQualifierTypeCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    resolveAllResourceValues<T extends JsonValue = JsonValue>(resource: IResource): Result<ReadonlyArray<T>>;
+    resolveAllResourceCandidates(resource: IResource): Result<ReadonlyArray<IResourceCandidate>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resolveCondition(condition: Condition): Result<QualifierMatchScore>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3305,7 +3305,7 @@ class ResourceResolver {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resolveDecision(decision: AbstractDecision): Result<DecisionResolutionResult>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    resolveResource<T extends JsonValue = JsonValue>(resource: IResource): Result<T>;
+    resolveResource(resource: IResource): Result<IResourceCandidate>;
     readonly resourceManager: IResourceManager;
 }
 
