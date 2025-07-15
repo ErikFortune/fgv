@@ -14,11 +14,22 @@ interface ContextState {
   [qualifierName: string]: string;
 }
 
+interface ConditionEvaluationResult {
+  qualifierName: string;
+  qualifierValue: any;
+  conditionValue: any;
+  operator: string;
+  score: number;
+  matched: boolean;
+  conditionIndex: number;
+}
+
 interface CandidateInfo {
   candidate: Runtime.IResourceCandidate;
   conditionSetKey: string | null;
   candidateIndex: number;
   matched: boolean;
+  conditionEvaluations?: ConditionEvaluationResult[];
 }
 
 interface ResolutionResult {
@@ -174,6 +185,248 @@ const CacheDashboard: React.FC<CacheDashboardProps> = ({ cacheMetrics, resolver,
           </button>
         </Tooltip>
       </div>
+    </div>
+  );
+};
+
+// Component to display condition evaluation results
+interface ConditionEvaluationDisplayProps {
+  evaluations: ConditionEvaluationResult[];
+}
+
+const ConditionEvaluationDisplay: React.FC<ConditionEvaluationDisplayProps> = ({ evaluations }) => {
+  if (!evaluations || evaluations.length === 0) {
+    return <span className="text-xs text-gray-500">No conditions</span>;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1 mt-1">
+      {evaluations.map((evaluation, index) => {
+        const displayText = `${evaluation.qualifierName}=${
+          evaluation.conditionValue
+        } (${evaluation.score.toFixed(1)})`;
+
+        return (
+          <Tooltip
+            key={index}
+            content={`${evaluation.qualifierName}: context="${evaluation.qualifierValue}" ${
+              evaluation.operator
+            } condition="${evaluation.conditionValue}" → score=${evaluation.score} (${
+              evaluation.matched ? 'matched' : 'no match'
+            }) [condition index: ${evaluation.conditionIndex}]`}
+          >
+            <span
+              className={`text-xs px-2 py-1 rounded ${
+                evaluation.matched ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              }`}
+            >
+              {evaluation.matched ? '✓' : '✗'} {displayText}
+            </span>
+          </Tooltip>
+        );
+      })}
+    </div>
+  );
+};
+
+// Cache Contents Display Component
+interface CacheContentsDisplayProps {
+  resolver: Runtime.ResourceResolver | null;
+}
+
+const CacheContentsDisplay: React.FC<CacheContentsDisplayProps> = ({ resolver }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  if (!resolver) {
+    return (
+      <div className="border border-gray-200 rounded-lg bg-gray-50 p-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-500">🗄️ Cache Contents</span>
+          <span className="text-xs text-gray-400">Not available</span>
+        </div>
+      </div>
+    );
+  }
+
+  const conditionCache = resolver.conditionCache;
+  const conditionSetCache = resolver.conditionSetCache;
+  const decisionCache = resolver.decisionCache;
+
+  const conditionHits = conditionCache.filter((c) => c !== undefined).length;
+  const conditionSetHits = conditionSetCache.filter((cs) => cs !== undefined).length;
+  const decisionHits = decisionCache.filter((d) => d !== undefined).length;
+
+  const totalCacheEntries = conditionHits + conditionSetHits + decisionHits;
+
+  return (
+    <div className="border border-gray-200 rounded-lg bg-gray-50">
+      <div
+        className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-100"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-gray-700">🗄️ Cache Contents</span>
+          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+            {totalCacheEntries} cached
+          </span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="text-xs text-gray-500">
+            C:{conditionHits} CS:{conditionSetHits} D:{decisionHits}
+          </span>
+          <span className="text-xs text-gray-400">{expanded ? '▼' : '▶'}</span>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="border-t border-gray-200 p-3 space-y-3 max-h-64 overflow-y-auto">
+          {/* Condition Cache */}
+          {conditionHits > 0 && (
+            <div>
+              <h4 className="text-xs font-medium text-gray-700 mb-2">Conditions ({conditionHits})</h4>
+              <div className="space-y-1">
+                {conditionCache.map((score, index) => {
+                  if (score === undefined) return null;
+
+                  try {
+                    const condition = resolver.resourceManager.conditions.getAt(index);
+                    if (condition.isFailure()) return null;
+
+                    const conditionObj = condition.value;
+                    const qualifierName = conditionObj.qualifier.name;
+
+                    return (
+                      <div key={index} className="flex items-center justify-between text-xs">
+                        <span className="text-gray-600 truncate max-w-24">
+                          {index}: {qualifierName}={JSON.stringify(conditionObj.value)}
+                        </span>
+                        <span
+                          className={`px-2 py-1 rounded ${
+                            score > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {qualifierName}={JSON.stringify(conditionObj.value)} ({score.toFixed(2)})
+                        </span>
+                      </div>
+                    );
+                  } catch (error) {
+                    return (
+                      <div key={index} className="flex items-center justify-between text-xs">
+                        <span className="text-gray-400">
+                          {index}: condition-{index}
+                        </span>
+                        <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                          condition-{index} ({score.toFixed(2)})
+                        </span>
+                      </div>
+                    );
+                  }
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Condition Set Cache */}
+          {conditionSetHits > 0 && (
+            <div>
+              <h4 className="text-xs font-medium text-gray-700 mb-2">Condition Sets ({conditionSetHits})</h4>
+              <div className="space-y-1">
+                {conditionSetCache.map((result, index) => {
+                  if (result === undefined) return null;
+
+                  try {
+                    const conditionSet = resolver.resourceManager.conditionSets.getAt(index);
+                    const key = conditionSet.isSuccess() ? conditionSet.value.key : `cs-${index}`;
+
+                    return (
+                      <div key={index} className="flex items-center justify-between text-xs">
+                        <span className="text-gray-600 truncate max-w-24">
+                          {index}: {key}
+                        </span>
+                        <span
+                          className={`px-2 py-1 rounded ${
+                            result.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {key} ({result.success ? '✓' : '✗'})
+                        </span>
+                      </div>
+                    );
+                  } catch (error) {
+                    return (
+                      <div key={index} className="flex items-center justify-between text-xs">
+                        <span className="text-gray-400">
+                          {index}: cs-{index}
+                        </span>
+                        <span
+                          className={`px-2 py-1 rounded ${
+                            result.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          cs-{index} ({result.success ? '✓' : '✗'})
+                        </span>
+                      </div>
+                    );
+                  }
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Decision Cache */}
+          {decisionHits > 0 && (
+            <div>
+              <h4 className="text-xs font-medium text-gray-700 mb-2">Decisions ({decisionHits})</h4>
+              <div className="space-y-1">
+                {decisionCache.map((result, index) => {
+                  if (result === undefined) return null;
+
+                  try {
+                    const decision = resolver.resourceManager.decisions.getAt(index);
+                    const key = decision.isSuccess() ? decision.value.key : `decision-${index}`;
+
+                    return (
+                      <div key={index} className="flex items-center justify-between text-xs">
+                        <span className="text-gray-600 truncate max-w-24">
+                          {index}: {key}
+                        </span>
+                        <span
+                          className={`px-2 py-1 rounded ${
+                            result.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {key} ({result.success ? result.instanceIndices.length : '0'})
+                        </span>
+                      </div>
+                    );
+                  } catch (error) {
+                    return (
+                      <div key={index} className="flex items-center justify-between text-xs">
+                        <span className="text-gray-400">
+                          {index}: decision-{index}
+                        </span>
+                        <span
+                          className={`px-2 py-1 rounded ${
+                            result.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          decision-{index} ({result.success ? result.instanceIndices.length : '0'})
+                        </span>
+                      </div>
+                    );
+                  }
+                })}
+              </div>
+            </div>
+          )}
+
+          {totalCacheEntries === 0 && (
+            <div className="text-center text-xs text-gray-500 py-4">
+              No cache entries. Resolve a resource to populate the cache.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
@@ -393,6 +646,63 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
     onMessage?.('success', 'Context applied successfully');
   }, [pendingContextValues, resourceState.processedResources?.system, selectedResourceId, onMessage]);
 
+  // Helper function to evaluate conditions for a candidate
+  const evaluateConditionsForCandidate = useCallback(
+    (
+      resolver: Runtime.ResourceResolver,
+      candidateIndex: number,
+      compiledResource: any,
+      compiledCollection: any
+    ): ConditionEvaluationResult[] => {
+      try {
+        const decision = compiledCollection.decisions[compiledResource.decision];
+        if (!decision || !decision.conditionSets || candidateIndex >= decision.conditionSets.length) {
+          return [];
+        }
+
+        const conditionSetIndex = decision.conditionSets[candidateIndex];
+        const conditionSet = compiledCollection.conditionSets[conditionSetIndex];
+        if (!conditionSet || !conditionSet.conditions) {
+          return [];
+        }
+
+        const evaluations: ConditionEvaluationResult[] = [];
+
+        for (const conditionIndex of conditionSet.conditions) {
+          const condition = compiledCollection.conditions[conditionIndex];
+          if (!condition) continue;
+
+          const qualifier = compiledCollection.qualifiers[condition.qualifierIndex];
+          if (!qualifier) continue;
+
+          // Get the qualifier value from context
+          const qualifierValueResult = resolver.contextQualifierProvider.get(qualifier);
+          const qualifierValue = qualifierValueResult.isSuccess() ? qualifierValueResult.value : null;
+
+          // Get the cached condition score from resolver
+          const score = resolver.conditionCache[conditionIndex] || 0;
+          const matched = score > 0;
+
+          evaluations.push({
+            qualifierName: qualifier.name,
+            qualifierValue,
+            conditionValue: condition.value,
+            operator: condition.operator || 'eq',
+            score,
+            matched,
+            conditionIndex
+          });
+        }
+
+        return evaluations;
+      } catch (error) {
+        console.warn('Error evaluating conditions for candidate:', error);
+        return [];
+      }
+    },
+    []
+  );
+
   // Resolve the currently selected resource
   const resolveSelectedResource = useCallback(
     (resolver: Runtime.ResourceResolver, resourceId: string) => {
@@ -443,12 +753,19 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
       resource.candidates.forEach((candidate, index) => {
         const conditionSetKey = getCandidateConditionSetKey(index, compiledResource, compiledCollection);
         const matched = matchedCandidates.some((mc) => mc === candidate);
+        const conditionEvaluations = evaluateConditionsForCandidate(
+          resolver,
+          index,
+          compiledResource,
+          compiledCollection
+        );
 
         candidateDetails.push({
           candidate,
           conditionSetKey,
           candidateIndex: index,
-          matched
+          matched,
+          conditionEvaluations
         });
       });
 
@@ -475,7 +792,8 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
     [
       resourceState.processedResources?.system.resourceManager,
       resourceState.processedResources?.compiledCollection,
-      getCandidateConditionSetKey
+      getCandidateConditionSetKey,
+      evaluateConditionsForCandidate
     ]
   );
 
@@ -614,14 +932,14 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
 
         {/* Main Browser/Details Layout */}
         <div className="flex flex-col lg:flex-row gap-6 h-[600px]">
-          {/* Left side: Resource Selection */}
+          {/* Left side: Resource Selection and Cache Contents */}
           <div className="lg:w-1/2 flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Resources</h3>
               <div className="text-sm text-gray-500">{availableResources.length} available</div>
             </div>
 
-            <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg bg-gray-50">
+            <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg bg-gray-50 mb-4">
               {availableResources.map((resourceId) => (
                 <div
                   key={resourceId}
@@ -641,6 +959,9 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
                 </div>
               ))}
             </div>
+
+            {/* Cache Contents Section */}
+            <CacheContentsDisplay resolver={currentResolver} />
           </div>
 
           {/* Right side: Resolution Results */}
@@ -836,9 +1157,12 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
                       )}
                     </div>
                   </div>
-                  <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
+                  <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto mt-2">
                     {JSON.stringify(candidateInfo.candidate.json, null, 2)}
                   </pre>
+                  {candidateInfo.conditionEvaluations && (
+                    <ConditionEvaluationDisplay evaluations={candidateInfo.conditionEvaluations} />
+                  )}
                 </div>
               ))}
             </div>
@@ -879,6 +1203,9 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
                   <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto text-gray-600">
                     {JSON.stringify(candidateInfo.candidate.json, null, 2)}
                   </pre>
+                  {candidateInfo.conditionEvaluations && (
+                    <ConditionEvaluationDisplay evaluations={candidateInfo.conditionEvaluations} />
+                  )}
                 </div>
               ))}
             </div>
@@ -920,6 +1247,9 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
             <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
               {JSON.stringify(result.bestCandidate.json, null, 2)}
             </pre>
+            {bestCandidateInfo?.conditionEvaluations && (
+              <ConditionEvaluationDisplay evaluations={bestCandidateInfo.conditionEvaluations} />
+            )}
           </div>
         ) : (
           <div className="bg-yellow-50 border border-yellow-200 rounded p-3">

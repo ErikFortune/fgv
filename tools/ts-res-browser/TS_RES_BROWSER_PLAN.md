@@ -37,13 +37,21 @@
 
 ## Phase 3: Enhanced Resolution View
 
-### 3.1 Candidate Resolution Details (Stage 1) ✅ CURRENT
+### 3.1 Candidate Resolution Details (Stage 1) ✅ COMPLETED
 - **Condition Results**: Show individual condition evaluation results in candidate view
   - Format: `lang=en-GB(0.9), home=US(1.0)` etc. for each candidate
 - **Condition Set Results**: Display condition set evaluation outcomes
 - **Decision Results**: Show decision resolution details
+- **Implementation**: Added ConditionEvaluationDisplay component with tooltips showing detailed condition matching logic
+- **Views**: Integrated condition evaluation display into 'all' view (matching and non-matching candidates) and 'best' view
 
-### 3.2 Resource Structure View (Stage 2)
+### 3.2 Resource Structure View (Stage 2) ✅ COMPLETED
+- **Cache Contents Display**: Added expandable cache contents section in left pane showing:
+  - **Condition Cache**: Shows cached condition scores with qualifier names and values
+  - **Condition Set Cache**: Shows cached condition set results with success/failure status  
+  - **Decision Cache**: Shows cached decision results with matching candidate counts
+  - **Interactive Design**: Expandable/collapsible with hover tooltips for detailed information
+  - **Real-time Updates**: Updates as resources are resolved and cache is populated
 - **Parallel Structure Display**: Extend resource view to show condition/condition set/decision results
 - **Similar to Compiled View**: Mirror the internal structure display from compiled browser
 - **Hierarchical Display**: Show the resolution hierarchy (conditions → condition sets → decisions)
