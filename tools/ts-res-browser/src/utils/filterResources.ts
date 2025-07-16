@@ -1,15 +1,10 @@
-import { Result, succeed } from '@fgv/ts-utils';
-import { Config, Context, ResourceJson, Runtime, Import } from '@fgv/ts-res';
-import { ResourceManagerBuilder } from '@fgv/ts-res/src/packlets/resources/resourceManagerBuilder';
-import {
-  ProcessedResources,
-  TsResSystem,
-  createSimpleContext,
-  createTsResSystemFromConfig
-} from './tsResIntegration';
+import { Result, succeed, fail } from '@fgv/ts-utils';
+import { Context, ResourceJson, Runtime, Import, Resources } from '@fgv/ts-res';
+import { ProcessedResources, TsResSystem, createTsResSystemFromConfig } from './tsResIntegration';
 
 export interface FilterOptions {
   partialContextMatch?: boolean;
+  enableDebugLogging?: boolean;
 }
 
 export interface FilteredResource {
@@ -30,140 +25,262 @@ export interface FilterResult {
 /**
  * Creates a filtered resource manager based on partial context matching
  */
+// Helper function for conditional debug logging
+const debugLog = (enableDebug: boolean, ...args: any[]) => {
+  if (enableDebug) {
+    console.log(...args);
+  }
+};
+
 export const createFilteredResourceManager = async (
   originalSystem: TsResSystem,
   partialContext: Record<string, string>,
   options: FilterOptions = { partialContextMatch: true }
 ): Promise<Result<ProcessedResources>> => {
   try {
-    console.log('=== FILTER CREATION DEBUG ===');
-    console.log('Original system:', originalSystem);
-    console.log('Partial context:', partialContext);
-    console.log('Options:', options);
+    const enableDebug = options.enableDebugLogging === true;
+
+    debugLog(enableDebug, '=== FILTER CREATION DEBUG ===');
+    debugLog(enableDebug, 'Original system:', originalSystem);
+    debugLog(enableDebug, 'Partial context:', partialContext);
+    debugLog(enableDebug, 'Options:', options);
 
     // Validate the original system has required components
     if (!originalSystem) {
-      return Result.failure('Original system is undefined - ensure resources are loaded before filtering');
+      return fail('Original system is undefined - ensure resources are loaded before filtering');
     }
 
-    console.log('System validation - qualifiers:', originalSystem.qualifiers);
-    console.log('System validation - resourceTypes:', originalSystem.resourceTypes);
-    console.log('System validation - resourceManager:', originalSystem.resourceManager);
+    debugLog(enableDebug, 'System validation - qualifiers:', originalSystem.qualifiers);
+    debugLog(enableDebug, 'System validation - resourceTypes:', originalSystem.resourceTypes);
+    debugLog(enableDebug, 'System validation - resourceManager:', originalSystem.resourceManager);
 
     if (!originalSystem.qualifiers) {
-      return Result.failure(
-        'Original system qualifiers are undefined - system may not be properly initialized'
-      );
+      return fail('Original system qualifiers are undefined - system may not be properly initialized');
     }
 
     if (!originalSystem.resourceTypes) {
-      return Result.failure(
-        'Original system resourceTypes are undefined - system may not be properly initialized'
-      );
+      return fail('Original system resourceTypes are undefined - system may not be properly initialized');
     }
 
     if (!originalSystem.resourceManager) {
-      return Result.failure(
-        'Original system resourceManager is undefined - system may not be properly initialized'
-      );
+      return fail('Original system resourceManager is undefined - system may not be properly initialized');
     }
 
     // Additional validation for the objects themselves
     if (typeof originalSystem.qualifiers !== 'object') {
-      return Result.failure(
-        `Original system qualifiers has invalid type: ${typeof originalSystem.qualifiers}`
-      );
+      return fail(`Original system qualifiers has invalid type: ${typeof originalSystem.qualifiers}`);
     }
 
     if (typeof originalSystem.resourceTypes !== 'object') {
-      return Result.failure(
-        `Original system resourceTypes has invalid type: ${typeof originalSystem.resourceTypes}`
-      );
+      return fail(`Original system resourceTypes has invalid type: ${typeof originalSystem.resourceTypes}`);
     }
 
     // Create validated context from user input
-    console.log('Creating validated context...');
-    console.log('Partial context (raw):', partialContext);
+    debugLog(enableDebug, 'Creating validated context...');
+    debugLog(enableDebug, 'Partial context (raw):', partialContext);
 
     // Filter out empty string values - only include qualifiers with actual values
     const cleanedContext = Object.fromEntries(
       Object.entries(partialContext).filter(([, value]) => value.trim() !== '')
     );
 
-    console.log('Cleaned context (empty strings removed):', cleanedContext);
-    console.log('Available qualifiers:', originalSystem.qualifiers);
+    debugLog(enableDebug, 'Cleaned context (empty strings removed):', cleanedContext);
+    debugLog(enableDebug, 'Available qualifiers:', originalSystem.qualifiers);
 
     const contextResult = Context.Convert.validatedContextDecl.convert(cleanedContext, {
       qualifiers: originalSystem.qualifiers
     });
 
     if (contextResult.isFailure()) {
-      console.error('Context creation failed:', contextResult.message);
-      return Result.failure(`Failed to create context: ${contextResult.message}`);
+      debugLog(enableDebug, 'Context creation failed:', contextResult.message);
+      return fail(`Failed to create context: ${contextResult.message}`);
     }
 
     const validatedContext = contextResult.value;
-    console.log('Validated context created:', validatedContext);
+    debugLog(enableDebug, 'Validated context created:', validatedContext);
 
     // Get filtered resource builders that match the context
-    console.log('Getting resources for context...');
-    console.log('Validated context:', validatedContext);
-    console.log('Filter options:', options);
+    debugLog(enableDebug, 'Getting resources for context...');
+    debugLog(enableDebug, 'Validated context:', validatedContext);
+    debugLog(enableDebug, 'Filter options:', options);
 
     const filteredResourceBuilders = originalSystem.resourceManager.getResourcesForContext(
       validatedContext,
       options
     );
 
-    console.log('Filtered resource builders count:', filteredResourceBuilders.length);
-    console.log('Filtered resource builders:', filteredResourceBuilders);
+    debugLog(enableDebug, 'Filtered resource builders count:', filteredResourceBuilders.length);
+    debugLog(enableDebug, 'Filtered resource builders:', filteredResourceBuilders);
 
-    // Convert filtered resources to declarations
+    // Debug: Show detailed condition evaluation for each resource
+    if (enableDebug) {
+      debugLog(enableDebug, '=== DETAILED CANDIDATE FILTERING DEBUG ===');
+      const allResourceBuilders = originalSystem.resourceManager.getAllResources();
+      for (const resourceBuilder of allResourceBuilders) {
+        const builtResult = resourceBuilder.build();
+        if (builtResult.isSuccess()) {
+          const resource = builtResult.value;
+          debugLog(enableDebug, `\n--- Resource: ${resource.id} ---`);
+          debugLog(enableDebug, `Candidates: ${resource.candidates.length}`);
+
+          resource.candidates.forEach((candidate, index) => {
+            debugLog(enableDebug, `  Candidate ${index}:`);
+            if (candidate.conditions && candidate.conditions.conditions) {
+              candidate.conditions.conditions.forEach((condition, condIndex) => {
+                const canMatch = condition.canMatchPartialContext(validatedContext, options);
+                const contextMatch = condition.getContextMatch(validatedContext, options);
+                debugLog(
+                  enableDebug,
+                  `    Condition ${condIndex}: ${condition.qualifier.name}=${condition.value} (operator: ${condition.operator})`
+                );
+                debugLog(enableDebug, `      canMatchPartialContext: ${canMatch}`);
+                debugLog(enableDebug, `      contextMatch: ${contextMatch}`);
+                debugLog(
+                  enableDebug,
+                  `      qualifier in context: ${condition.qualifier.name in validatedContext}`
+                );
+                if (condition.qualifier.name in validatedContext) {
+                  debugLog(enableDebug, `      context value: ${validatedContext[condition.qualifier.name]}`);
+                }
+              });
+            } else {
+              debugLog(enableDebug, `    No conditions (default candidate)`);
+            }
+
+            const candidateCanMatch = candidate.canMatchPartialContext(validatedContext, options);
+            debugLog(enableDebug, `  -> Candidate ${index} canMatchPartialContext: ${candidateCanMatch}`);
+          });
+
+          const resourceCandidatesForContext = resourceBuilder.getCandidatesForContext(
+            validatedContext,
+            options
+          );
+          debugLog(
+            enableDebug,
+            `  -> Resource has ${resourceCandidatesForContext.length} matching candidates`
+          );
+          debugLog(
+            enableDebug,
+            `  -> Resource included in filter: ${filteredResourceBuilders.includes(resourceBuilder)}`
+          );
+        }
+      }
+    }
+
+    // Convert filtered resources to declarations with only matching candidates
     const resourceDeclarations: ResourceJson.Json.ILooseResourceDecl[] = [];
 
+    debugLog(enableDebug, '=== CONVERTING FILTERED RESOURCES TO DECLARATIONS ===');
     for (const resourceBuilder of filteredResourceBuilders) {
       const builtResourceResult = resourceBuilder.build();
       if (builtResourceResult.isFailure()) {
-        console.warn(`Failed to build resource: ${builtResourceResult.message}`);
+        debugLog(enableDebug, `Failed to build resource: ${builtResourceResult.message}`);
         continue;
       }
 
       const builtResource = builtResourceResult.value;
-      const declaration = builtResource.toLooseResourceDecl();
-      resourceDeclarations.push(declaration);
+      debugLog(enableDebug, `\n--- Converting Resource: ${builtResource.id} ---`);
+      debugLog(enableDebug, `Original candidates: ${builtResource.candidates.length}`);
+
+      // Filter candidates to only include those that match the context
+      const matchingCandidates = builtResource.candidates.filter((candidate) => {
+        const canMatch = candidate.canMatchPartialContext(validatedContext, options);
+        debugLog(
+          enableDebug,
+          `  Candidate with conditions ${
+            candidate.conditions?.conditions.map((c) => `${c.qualifier.name}=${c.value}`).join(', ') || 'none'
+          }: canMatch = ${canMatch}`
+        );
+        return canMatch;
+      });
+
+      debugLog(enableDebug, `Filtered to ${matchingCandidates.length} matching candidates`);
+
+      // Create a new resource declaration with only the matching candidates
+      const originalDeclaration = builtResource.toLooseResourceDecl();
+      const filteredDeclaration: ResourceJson.Json.ILooseResourceDecl = {
+        ...originalDeclaration,
+        candidates: matchingCandidates.map((candidate) => candidate.toLooseResourceCandidateDecl())
+      };
+
+      debugLog(enableDebug, `Final declaration candidates: ${filteredDeclaration.candidates?.length || 0}`);
+
+      // Debug: Check what candidates are in the final declaration
+      if (enableDebug) {
+        filteredDeclaration.candidates?.forEach((candidate, index) => {
+          debugLog(enableDebug, `  Final Declaration Candidate ${index}:`);
+          if (candidate.conditions) {
+            Object.entries(candidate.conditions).forEach(([qualifier, value]) => {
+              debugLog(enableDebug, `    Condition: ${qualifier}=${value}`);
+            });
+          } else {
+            debugLog(enableDebug, `    No conditions (default candidate)`);
+          }
+        });
+      }
+
+      resourceDeclarations.push(filteredDeclaration);
     }
 
     // Validate system components before creating new manager
     if (!originalSystem.qualifiers) {
-      return Result.failure('Original system qualifiers is undefined');
+      return fail('Original system qualifiers is undefined');
     }
     if (!originalSystem.resourceTypes) {
-      return Result.failure('Original system resourceTypes is undefined');
+      return fail('Original system resourceTypes is undefined');
     }
 
     // Create new ResourceManagerBuilder with same configuration
-    console.log('Creating new resource manager...');
-    console.log('Qualifiers for new manager:', originalSystem.qualifiers);
-    console.log('ResourceTypes for new manager:', originalSystem.resourceTypes);
+    debugLog(enableDebug, 'Creating new resource manager...');
+    debugLog(enableDebug, 'Qualifiers for new manager:', originalSystem.qualifiers);
+    debugLog(enableDebug, 'ResourceTypes for new manager:', originalSystem.resourceTypes);
 
-    const newManagerResult = ResourceManagerBuilder.create({
+    const newManagerResult = Resources.ResourceManagerBuilder.create({
       qualifiers: originalSystem.qualifiers,
       resourceTypes: originalSystem.resourceTypes
     });
 
     if (newManagerResult.isFailure()) {
-      console.error('New manager creation failed:', newManagerResult.message, newManagerResult);
-      return Result.failure(`Failed to create new manager: ${newManagerResult.message}`);
+      debugLog(enableDebug, 'New manager creation failed:', newManagerResult.message, newManagerResult);
+      return fail(`Failed to create new manager: ${newManagerResult.message}`);
     }
 
     const newManager = newManagerResult.value;
-    console.log('New manager created successfully:', newManager);
+    debugLog(enableDebug, 'New manager created successfully:', newManager);
 
     // Add each filtered resource to the new manager
+    debugLog(enableDebug, '=== ADDING RESOURCES TO NEW FILTERED MANAGER ===');
     for (const declaration of resourceDeclarations) {
+      debugLog(
+        enableDebug,
+        `Adding resource: ${declaration.id} with ${declaration.candidates?.length || 0} candidates`
+      );
       const addResult = newManager.addResource(declaration);
       if (addResult.isFailure()) {
-        console.warn(`Failed to add resource ${declaration.id}: ${addResult.message}`);
+        debugLog(enableDebug, `Failed to add resource ${declaration.id}: ${addResult.message}`);
+      } else if (enableDebug) {
+        // Verify what actually got added to the manager
+        const retrievedResult = newManager.getBuiltResource(declaration.id);
+        if (retrievedResult.isSuccess()) {
+          const retrievedResource = retrievedResult.value;
+          debugLog(
+            enableDebug,
+            `  -> Resource added successfully with ${retrievedResource.candidates.length} candidates:`
+          );
+          retrievedResource.candidates.forEach((candidate, index) => {
+            debugLog(enableDebug, `    Final Candidate ${index}:`);
+            if (candidate.conditions && candidate.conditions.conditions) {
+              candidate.conditions.conditions.forEach((condition, condIndex) => {
+                debugLog(
+                  enableDebug,
+                  `      Condition ${condIndex}: ${condition.qualifier.name}=${condition.value}`
+                );
+              });
+            } else {
+              debugLog(enableDebug, `      No conditions (default candidate)`);
+            }
+          });
+        }
       }
     }
 
@@ -173,13 +290,13 @@ export const createFilteredResourceManager = async (
     });
 
     if (newImportManagerResult.isFailure()) {
-      return Result.failure(`Failed to create filtered import manager: ${newImportManagerResult.message}`);
+      return fail(`Failed to create filtered import manager: ${newImportManagerResult.message}`);
     }
 
     // Create new ContextQualifierProvider for the filtered system
     // Validate qualifiers again before using them
     if (!originalSystem.qualifiers) {
-      return Result.failure('Original system qualifiers became undefined during processing');
+      return fail('Original system qualifiers became undefined during processing');
     }
 
     const newContextQualifierProviderResult = Runtime.ValidatingSimpleContextQualifierProvider.create({
@@ -187,9 +304,7 @@ export const createFilteredResourceManager = async (
     });
 
     if (newContextQualifierProviderResult.isFailure()) {
-      return Result.failure(
-        `Failed to create filtered context provider: ${newContextQualifierProviderResult.message}`
-      );
+      return fail(`Failed to create filtered context provider: ${newContextQualifierProviderResult.message}`);
     }
 
     // Create TsResSystem for the filtered manager
@@ -207,7 +322,7 @@ export const createFilteredResourceManager = async (
       includeMetadata: true
     });
     if (compiledResult.isFailure()) {
-      return Result.failure(`Failed to compile filtered resources: ${compiledResult.message}`);
+      return fail(`Failed to compile filtered resources: ${compiledResult.message}`);
     }
 
     const resolverResult = Runtime.ResourceResolver.create({
@@ -217,7 +332,7 @@ export const createFilteredResourceManager = async (
     });
 
     if (resolverResult.isFailure()) {
-      return Result.failure(`Failed to create filtered resolver: ${resolverResult.message}`);
+      return fail(`Failed to create filtered resolver: ${resolverResult.message}`);
     }
 
     // Create resource summary
@@ -239,7 +354,7 @@ export const createFilteredResourceManager = async (
 
     return succeed(processedResources);
   } catch (error) {
-    return Result.failure(
+    return fail(
       `Unexpected error during filtering: ${error instanceof Error ? error.message : String(error)}`
     );
   }
@@ -346,17 +461,18 @@ export const createFilteredResourceManagerAlternative = async (
   partialContext: Record<string, string>,
   options: FilterOptions = { partialContextMatch: true }
 ): Promise<Result<ProcessedResources>> => {
+  const enableDebug = options.enableDebugLogging === true;
   try {
     // Validate inputs first
     if (!originalSystem?.qualifiers || !originalSystem?.resourceTypes || !originalSystem?.resourceManager) {
-      return Result.failure('Original system is missing required components');
+      return fail('Original system is missing required components');
     }
 
     // Create a fresh system using the original system's configuration
     const freshSystemResult = createTsResSystemFromConfig();
 
     if (freshSystemResult.isFailure()) {
-      return Result.failure(`Failed to create fresh system: ${freshSystemResult.message}`);
+      return fail(`Failed to create fresh system: ${freshSystemResult.message}`);
     }
 
     const freshSystem = freshSystemResult.value;
@@ -372,7 +488,7 @@ export const createFilteredResourceManagerAlternative = async (
     });
 
     if (contextResult.isFailure()) {
-      return Result.failure(`Failed to create context: ${contextResult.message}`);
+      return fail(`Failed to create context: ${contextResult.message}`);
     }
 
     const validatedContext = contextResult.value;
@@ -385,7 +501,7 @@ export const createFilteredResourceManagerAlternative = async (
     for (const resourceBuilder of filteredResourceBuilders) {
       const builtResourceResult = resourceBuilder.build();
       if (builtResourceResult.isFailure()) {
-        console.warn(`Failed to build resource: ${builtResourceResult.message}`);
+        debugLog(enableDebug, `Failed to build resource: ${builtResourceResult.message}`);
         continue;
       }
 
@@ -394,7 +510,7 @@ export const createFilteredResourceManagerAlternative = async (
 
       const addResult = freshSystem.resourceManager.addResource(declaration);
       if (addResult.isFailure()) {
-        console.warn(`Failed to add resource ${declaration.id}: ${addResult.message}`);
+        debugLog(enableDebug, `Failed to add resource ${declaration.id}: ${addResult.message}`);
       }
     }
 
@@ -403,7 +519,7 @@ export const createFilteredResourceManagerAlternative = async (
       includeMetadata: true
     });
     if (compiledResult.isFailure()) {
-      return Result.failure(`Failed to compile filtered resources: ${compiledResult.message}`);
+      return fail(`Failed to compile filtered resources: ${compiledResult.message}`);
     }
 
     const resolverResult = Runtime.ResourceResolver.create({
@@ -413,7 +529,7 @@ export const createFilteredResourceManagerAlternative = async (
     });
 
     if (resolverResult.isFailure()) {
-      return Result.failure(`Failed to create filtered resolver: ${resolverResult.message}`);
+      return fail(`Failed to create filtered resolver: ${resolverResult.message}`);
     }
 
     // Create resource summary
@@ -435,7 +551,7 @@ export const createFilteredResourceManagerAlternative = async (
 
     return succeed(processedResources);
   } catch (error) {
-    return Result.failure(
+    return fail(
       `Unexpected error during alternative filtering: ${
         error instanceof Error ? error.message : String(error)
       }`

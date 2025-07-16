@@ -77,7 +77,8 @@ const FilterTool: React.FC<FilterToolProps> = ({
         // Create filtered resource manager using applied values
         let filteredResult = await createFilteredResourceManager(
           resourceState.processedResources!.system,
-          filterState.appliedValues
+          filterState.appliedValues,
+          { partialContextMatch: true, enableDebugLogging: false }
         );
 
         // If the primary method fails, try the alternative approach
@@ -89,7 +90,8 @@ const FilterTool: React.FC<FilterToolProps> = ({
 
           filteredResult = await createFilteredResourceManagerAlternative(
             resourceState.processedResources!.system,
-            filterState.appliedValues
+            filterState.appliedValues,
+            { partialContextMatch: true, enableDebugLogging: false }
           );
 
           if (filteredResult.isFailure()) {

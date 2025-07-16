@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { MagnifyingGlassIcon, CubeIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message } from '../../types/app';
-import { Runtime } from '@fgv/ts-res';
+import { Runtime, Config } from '@fgv/ts-res';
 import { createSimpleContext, DEFAULT_SYSTEM_CONFIGURATION } from '../../utils/tsResIntegration';
 
 interface ResolutionViewerProps {

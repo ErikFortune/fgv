@@ -228,7 +228,7 @@ The Configuration Tool implementation is now complete with:
 
 ### Phase 5: Advanced Features & Filter Tool
 - [ ] Infer ID of loose candidate or resource during import
-- [x] Add filtering of resources by context - **Filter Tool Implementation**
+- [x] Add filtering of resources by context - **Filter Tool Implementation** ✅ COMPLETED
 - [ ] Add composition support
 - [ ] Complete support for resolution of default values
 
@@ -610,6 +610,106 @@ module.exports = {
 - **Learning Curve**: Provide clear documentation and examples
 - **Performance**: Optimize for common use cases first
 - **Browser Compatibility**: Target modern browsers, document requirements
+
+## 🎉 Filter Tool Implementation - COMPLETED (January 2025)
+
+### ✅ Major Breakthrough: Candidate-Level Filtering
+**Problem Solved**: The initial filtering implementation only filtered resources (include/exclude entire resources) but didn't filter candidates within resources. This meant that if a resource had at least one matching candidate, ALL candidates were included in the filtered result.
+
+**Root Cause**: `ResourceManager.getResourcesForContext()` is designed for **resource resolution** (finding resources that could match a context), not for **candidate filtering** (creating resources with only matching candidates).
+
+**Solution Implemented**: Enhanced the filtering logic to:
+1. Use `getResourcesForContext()` to find resources with at least one matching candidate
+2. **Filter candidates within each resource** using `candidate.canMatchPartialContext()`
+3. Create new resource declarations containing only the matching candidates
+4. Build a new filtered resource manager with the filtered declarations
+
+### 🔧 Technical Implementation Details
+
+**File**: `/tools/ts-res-browser/src/utils/filterResources.ts`
+
+**Key Changes**:
+```typescript
+// Before: Include all candidates from matching resources
+const declaration = builtResource.toLooseResourceDecl();
+
+// After: Filter candidates to only include matching ones
+const matchingCandidates = builtResource.candidates.filter((candidate) => {
+  return candidate.canMatchPartialContext(validatedContext, options);
+});
+
+const filteredDeclaration = {
+  ...originalDeclaration,
+  candidates: matchingCandidates.map((candidate) => candidate.toLooseResourceCandidateDecl())
+};
+```
+
+**Debug Logging**: Added comprehensive debug logging system controlled by `FilterOptions.enableDebugLogging` flag.
+
+### 🐛 Bug Fixed: TypeScript Import Issues
+- Fixed `Result.failure()` calls to use `fail()` import
+- Updated `ResourceManagerBuilder` import to use public API: `Resources.ResourceManagerBuilder`
+- Resolved type compatibility issues with internal packlet imports
+
+### 🎯 Validation & Testing
+**Test Case**: Feature-flags resource with region-based filtering
+- **Context**: `{ region: "north-america" }`
+- **Before**: 3 candidates (default, north-america, europe)
+- **After**: 2 candidates (default, north-america) ✅
+
+The europe candidate correctly shows `canMatchPartialContext: false` and is properly filtered out.
+
+### 🚀 Future Refactoring Opportunities
+
+**Priority 1: Move Filtering Logic to ts-res Library**
+The current filtering logic is implemented entirely in the browser tool, but could benefit the broader ts-res ecosystem:
+
+```typescript
+// Proposed API for ts-res library
+class ResourceManagerBuilder {
+  // Current: Only filters resources (all-or-nothing)
+  getResourcesForContext(context, options): ResourceBuilder[]
+  
+  // Proposed: Create filtered manager with only matching candidates
+  createFilteredManager(context, options): Result<ResourceManagerBuilder>
+  
+  // Proposed: Get candidates that match context across all resources
+  getCandidatesForContext(context, options): ResourceCandidate[]
+}
+```
+
+**Benefits**:
+- Reusable across other tools and applications
+- Better tested and validated in the core library
+- Consistent filtering behavior across ts-res ecosystem
+- Performance optimizations can benefit all users
+
+**Priority 2: Enhanced Filtering Options**
+```typescript
+interface FilterOptions {
+  partialContextMatch?: boolean;           // ✅ Implemented
+  enableDebugLogging?: boolean;           // ✅ Implemented  
+  includeResourcesWithNoCandidates?: boolean; // 🔮 Future
+  minimumCandidateCount?: number;         // 🔮 Future
+  filterByResourceType?: string[];        // 🔮 Future
+  filterByPriority?: number[];           // 🔮 Future
+}
+```
+
+**Priority 3: Filter Result Analysis**
+- Enhanced candidate count analysis
+- Resource coverage metrics
+- Condition effectiveness reporting
+- Filter performance statistics
+
+### 📊 Current State Summary
+- ✅ **Filter Tool**: Fully functional with candidate-level filtering
+- ✅ **Debug Logging**: Comprehensive logging system with toggle control
+- ✅ **TypeScript**: All compilation errors resolved
+- ✅ **Testing**: Validated with real test data (feature-flags + region filtering)
+- ✅ **Code Quality**: Clean separation of concerns and proper error handling
+
+The Filter Tool is now ready for production use and provides a solid foundation for future filtering enhancements.
 
 ## Getting Started
 
