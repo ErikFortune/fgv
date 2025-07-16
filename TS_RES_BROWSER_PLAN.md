@@ -226,11 +226,138 @@ The Configuration Tool implementation is now complete with:
 - [ ] Add loading states and progress indicators
 - [ ] Create comprehensive documentation
 
-### Phase 5: Advanced Features & Bug Fixes
+### Phase 5: Advanced Features & Filter Tool
 - [ ] Infer ID of loose candidate or resource during import
-- [ ] Add filtering of resources by context 
+- [x] Add filtering of resources by context - **Filter Tool Implementation**
 - [ ] Add composition support
 - [ ] Complete support for resolution of default values
+
+#### Filter Tool Architecture & Implementation
+
+**Overview**: The Filter Tool provides context-based filtering of resources, sitting between the Source Browser and Compiled Browser in the workflow. It enables users to create filtered subsets of resources based on partial context matching, allowing for focused analysis and testing of specific resource scenarios.
+
+**Position in Workflow**: `Source → Filter → Compiled → Resolution`
+
+**Core Features**:
+
+1. **Qualifier Selection Panel** (Top Section)
+   - Horizontal layout similar to Resolution Viewer's context panel
+   - All qualifier inputs initialize to `undefined` (empty state)
+   - Same responsive grid layout: 1 column (mobile) → 2 columns (medium) → 3 columns (large)
+   - Clear visual indication when qualifiers have values vs empty state
+
+2. **Resource Browser & Details** (Bottom Section)  
+   - Identical layout to Source Browser: left browser panel + right details panel
+   - Shows either original resources (when filtering disabled) or filtered resources
+   - Validation indicators for resources with 0 candidates after filtering
+
+3. **Filter Controls** (Top-level toggles and future controls)
+   - **"Enable Filtering" Toggle**: Master control that disables all other filter controls
+   - Reserved space for future filter controls (e.g., candidate count thresholds, validation levels)
+   - When disabled: tool shows original unfiltered resources, compiled/resolution views use original data
+
+**Technical Implementation**:
+
+**1. Resource Filtering Logic**:
+```typescript
+// Core filtering method using ResourceManager.getResourcesForContext()
+const filterResources = (
+  resourceManager: ResourceManagerBuilder,
+  partialContext: Record<string, string>,
+  options: { partialContextMatch: true }
+) => {
+  // Convert user input to validated context
+  const context = Context.Convert.validatedContextDecl.convert(
+    partialContext, 
+    { qualifiers }
+  ).orThrow();
+  
+  // Get filtered resources
+  const filteredResources = resourceManager.getResourcesForContext(context, options);
+  
+  // Convert back to declarations for new manager
+  const resourceDecls = filteredResources.map(resource => 
+    resource.build().orThrow().toLooseResourceDecl()
+  );
+  
+  return resourceDecls;
+};
+```
+
+**2. Filtered Resource Manager Creation**:
+```typescript
+// Create new ResourceManagerBuilder with same configuration
+const createFilteredManager = (
+  originalManager: ResourceManagerBuilder,
+  filteredDeclarations: ILooseResourceDecl[]
+) => {
+  const newManager = ResourceManagerBuilder.create({
+    qualifiers: originalManager.qualifiers,
+    resourceTypes: originalManager.resourceTypes,
+    qualifierTypes: originalManager.qualifierTypes
+  }).orThrow();
+  
+  // Add each filtered resource
+  for (const decl of filteredDeclarations) {
+    newManager.addResource(decl).orThrow();
+  }
+  
+  return newManager;
+};
+```
+
+**3. Integration with Compiled & Resolution Views**:
+- **State Management**: Filter tool updates global `ProcessedResources` state when filtering is active
+- **Conditional Data Source**: Compiled and Resolution tools check if filtering is enabled:
+  - **Enabled + has filter values**: Use filtered `ProcessedResources`
+  - **Disabled or no filter values**: Use original `ProcessedResources`  
+- **Real-time Updates**: Changes to filter context immediately update downstream views
+
+**4. Validation & User Feedback**:
+```typescript
+// Validation for filtered resources
+const validateFilteredResources = (resources: IResource[]) => {
+  const warnings: string[] = [];
+  
+  resources.forEach(resource => {
+    if (resource.candidates.length === 0) {
+      warnings.push(`Resource "${resource.id}" has no matching candidates`);
+    }
+  });
+  
+  return warnings;
+};
+```
+
+**Component Structure**:
+```
+FilterTool.tsx
+├── FilterControls (Enable toggle + future controls)
+├── QualifierPanel (Context input grid - reuse from ResolutionViewer)
+├── FilteredResourceBrowser (Left: resource list, validation indicators) 
+└── FilteredResourceDetails (Right: resource details + filter statistics)
+```
+
+**UI States & Behavior**:
+
+1. **Initial State**: Filtering disabled, shows original resources
+2. **Filter Enabled, No Values**: Shows original resources, ready for input
+3. **Filter Active**: Shows filtered resources, validation warnings, filter statistics
+4. **No Results**: Clear messaging when filter criteria match no resources
+5. **Error State**: Graceful handling of filtering failures with fallback to original data
+
+**Integration Points**:
+
+- **useResourceManager Hook**: Extended to support filtered state management
+- **Navigation**: Added to main tool navigation between Source and Compiled
+- **Message System**: Filter results, warnings, and errors displayed in message window
+- **Configuration Integration**: Respects current configuration for available qualifiers
+
+**Future Extensions**:
+- **Advanced Filters**: Candidate count thresholds, resource type filters
+- **Filter Presets**: Save/load common filter configurations  
+- **Batch Operations**: Apply filters to multiple resource sets
+- **Performance Optimization**: Incremental filtering for large resource collections
 
 ### Phase 6: Extended Configuration Support
 - [ ] Support for custom resource type definitions
