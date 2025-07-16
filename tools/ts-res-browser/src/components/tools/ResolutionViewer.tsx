@@ -789,27 +789,53 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
       // Resolve composed value
       const composedResult = resolver.resolveComposedResourceValue(resource);
 
-      // Build detailed candidate information
+      // Build detailed candidate information, preserving priority order for matched candidates
       const candidateDetails: CandidateInfo[] = [];
       const matchedCandidates = allResult.isSuccess() ? allResult.value : [];
 
-      resource.candidates.forEach((candidate, index) => {
-        const conditionSetKey = getCandidateConditionSetKey(index, compiledResource, compiledCollection);
-        const matched = matchedCandidates.some((mc) => mc === candidate);
-        const conditionEvaluations = evaluateConditionsForCandidate(
-          resolver,
-          index,
-          compiledResource,
-          compiledCollection
-        );
+      // First, add matched candidates in priority order
+      matchedCandidates.forEach((matchedCandidate) => {
+        // Find the index by comparing candidate objects
+        const index = resource.candidates.findIndex((candidate) => candidate === matchedCandidate);
+        if (index !== -1) {
+          const conditionSetKey = getCandidateConditionSetKey(index, compiledResource, compiledCollection);
+          const conditionEvaluations = evaluateConditionsForCandidate(
+            resolver,
+            index,
+            compiledResource,
+            compiledCollection
+          );
 
-        candidateDetails.push({
-          candidate,
-          conditionSetKey,
-          candidateIndex: index,
-          matched,
-          conditionEvaluations
-        });
+          candidateDetails.push({
+            candidate: resource.candidates[index],
+            conditionSetKey,
+            candidateIndex: index,
+            matched: true,
+            conditionEvaluations
+          });
+        }
+      });
+
+      // Then, add non-matching candidates in their original order
+      resource.candidates.forEach((candidate, index) => {
+        const isMatched = matchedCandidates.some((mc) => mc === candidate);
+        if (!isMatched) {
+          const conditionSetKey = getCandidateConditionSetKey(index, compiledResource, compiledCollection);
+          const conditionEvaluations = evaluateConditionsForCandidate(
+            resolver,
+            index,
+            compiledResource,
+            compiledCollection
+          );
+
+          candidateDetails.push({
+            candidate,
+            conditionSetKey,
+            candidateIndex: index,
+            matched: false,
+            conditionEvaluations
+          });
+        }
       });
 
       if (bestResult.isFailure() && allResult.isFailure()) {
@@ -929,30 +955,24 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Context Configuration</h3>
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="mb-4">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b border-gray-300">
-                    <th className="text-left py-2 px-3 text-sm font-medium text-gray-700">Qualifier</th>
-                    <th className="text-left py-2 px-3 text-sm font-medium text-gray-700">Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {availableQualifiers.map((qualifierName) => (
-                    <tr key={qualifierName} className="border-b border-gray-200">
-                      <td className="py-2 px-3 text-sm text-gray-700 font-medium w-32">{qualifierName}</td>
-                      <td className="py-2 px-3">
-                        <input
-                          type="text"
-                          value={pendingContextValues[qualifierName] || ''}
-                          onChange={(e) => handleContextChange(qualifierName, e.target.value)}
-                          className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                          placeholder={`Enter ${qualifierName} value`}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {availableQualifiers.map((qualifierName) => (
+                  <div key={qualifierName} className="bg-white rounded border border-gray-200 p-2">
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm font-medium text-gray-700 min-w-0 flex-shrink-0">
+                        {qualifierName}:
+                      </label>
+                      <input
+                        type="text"
+                        value={pendingContextValues[qualifierName] || ''}
+                        onChange={(e) => handleContextChange(qualifierName, e.target.value)}
+                        className="flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm min-w-0"
+                        placeholder={`Enter ${qualifierName} value`}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
@@ -1036,20 +1056,20 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
                     All
                   </button>
                   <button
-                    onClick={() => setViewMode('raw')}
-                    className={`px-3 py-1 text-xs rounded ${
-                      viewMode === 'raw' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
-                    }`}
-                  >
-                    Raw
-                  </button>
-                  <button
                     onClick={() => setViewMode('composed')}
                     className={`px-3 py-1 text-xs rounded ${
                       viewMode === 'composed' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
                     }`}
                   >
                     Composed
+                  </button>
+                  <button
+                    onClick={() => setViewMode('raw')}
+                    className={`px-3 py-1 text-xs rounded ${
+                      viewMode === 'raw' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    Raw
                   </button>
                 </div>
               )}

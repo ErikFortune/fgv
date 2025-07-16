@@ -3377,7 +3377,6 @@ class ResourceResolver {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(params: IResourceResolverCreateParams);
     clearConditionCache(): void;
-    compareResolvedConditions(c1Index: number, c2Index: number): number;
     get conditionCache(): ReadonlyArray<QualifierMatchScore | undefined>;
     get conditionCacheSize(): number;
     get conditionSetCache(): ReadonlyArray<ConditionSetResolutionResult | undefined>;
