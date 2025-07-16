@@ -9,7 +9,7 @@ Converts this resource to a compiled resource representation.
 **Signature:**
 
 ```typescript
-toCompiled(options?: ResourceJson.Compiled.ICompiledResourceOptions): ResourceJson.Compiled.ICompiledResource;
+toCompiled(options?: IResourceDeclarationOptions | ICompiledResourceOptionsWithFilter): ResourceJson.Compiled.ICompiledResource;
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ options
 
 </td><td>
 
-[ResourceJson.Compiled.ICompiledResourceOptions](./ts-res.resourcejson.compiled.icompiledresourceoptions.md)
+[IResourceDeclarationOptions](./ts-res.resources.iresourcedeclarationoptions.md) \| [ICompiledResourceOptionsWithFilter](./ts-res.resources.icompiledresourceoptionswithfilter.md)
 
 
 </td><td>
 
-_(Optional)_ Optional compilation options controlling the output format.
+_(Optional)_ Optional compilation options controlling the output format and filtering.
 
 
 </td></tr>

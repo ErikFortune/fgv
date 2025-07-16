@@ -9,7 +9,7 @@ Gets a resource collection declaration containing all built resources in a flat 
 **Signature:**
 
 ```typescript
-getResourceCollectionDecl(options?: ResourceJson.Helpers.IDeclarationOptions): Result<ResourceJson.Normalized.IResourceCollectionDecl>;
+getResourceCollectionDecl(options?: IResourceDeclarationOptions): Result<ResourceJson.Normalized.IResourceCollectionDecl>;
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ options
 
 </td><td>
 
-ResourceJson.Helpers.IDeclarationOptions
+[IResourceDeclarationOptions](./ts-res.resources.iresourcedeclarationoptions.md)
 
 
 </td><td>
 
-_(Optional)_ Optional [declaration options](./ts-res.resourcejson.helpers.ideclarationoptions.md) controlling the output format. If `options.normalized` is `true`<!-- -->, applies hash-based normalization for additional consistency guarantees.
+_(Optional)_ Optional [declaration options](./ts-res.resources.iresourcedeclarationoptions.md) controlling the output format. If `options.normalized` is `true`<!-- -->, applies hash-based normalization for additional consistency guarantees.
 
 
 </td></tr>

@@ -1,5 +1,5 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
-import { Context, ResourceJson, Runtime, Import, Resources } from '@fgv/ts-res';
+import { Context, Runtime, Import, Resources } from '@fgv/ts-res';
 import { ProcessedResources, TsResSystem, createTsResSystemFromConfig } from './tsResIntegration';
 
 export interface FilterOptions {
@@ -29,6 +29,121 @@ export interface FilterResult {
 const debugLog = (enableDebug: boolean, ...args: any[]) => {
   if (enableDebug) {
     console.log(...args);
+  }
+};
+
+/**
+ * Creates a filtered resource manager using the new base library filtering functionality.
+ * This is a much simpler implementation that leverages the ResourceManagerBuilder.clone() method.
+ */
+export const createFilteredResourceManagerSimple = async (
+  originalSystem: TsResSystem,
+  partialContext: Record<string, string>,
+  options: FilterOptions = { partialContextMatch: true }
+): Promise<Result<ProcessedResources>> => {
+  try {
+    const enableDebug = options.enableDebugLogging === true;
+
+    debugLog(enableDebug, '=== SIMPLE FILTER CREATION ===');
+    debugLog(enableDebug, 'Original system:', originalSystem);
+    debugLog(enableDebug, 'Partial context:', partialContext);
+
+    // Validate the original system
+    if (!originalSystem?.resourceManager) {
+      return fail('Original system or resourceManager is undefined');
+    }
+
+    // Use Result pattern chaining as recommended
+    debugLog(enableDebug, 'Validating context and cloning manager:', partialContext);
+    const cloneResult = originalSystem.resourceManager
+      .validateContext(partialContext)
+      .onSuccess((validatedContext) => {
+        debugLog(enableDebug, 'Context validated, creating clone with context:', validatedContext);
+        return originalSystem.resourceManager.clone({
+          validatedFilterContext: validatedContext
+        });
+      })
+      .onFailure((error) => {
+        debugLog(enableDebug, 'Failed to validate context or clone:', error);
+        return fail(error);
+      });
+
+    if (cloneResult.isFailure()) {
+      return fail(`Failed to create filtered resource manager: ${cloneResult.message}`);
+    }
+
+    const filteredManager = cloneResult.value;
+    debugLog(enableDebug, 'Filtered manager created:', filteredManager);
+
+    // Create new ImportManager for the filtered system
+    const newImportManagerResult = Import.ImportManager.create({
+      resources: filteredManager
+    });
+
+    if (newImportManagerResult.isFailure()) {
+      return fail(`Failed to create filtered import manager: ${newImportManagerResult.message}`);
+    }
+
+    // Create new ContextQualifierProvider for the filtered system
+    const newContextQualifierProviderResult = Runtime.ValidatingSimpleContextQualifierProvider.create({
+      qualifiers: originalSystem.qualifiers
+    });
+
+    if (newContextQualifierProviderResult.isFailure()) {
+      return fail(`Failed to create filtered context provider: ${newContextQualifierProviderResult.message}`);
+    }
+
+    // Create TsResSystem for the filtered manager
+    const filteredSystem: TsResSystem = {
+      qualifierTypes: originalSystem.qualifierTypes,
+      qualifiers: originalSystem.qualifiers,
+      resourceTypes: originalSystem.resourceTypes,
+      resourceManager: filteredManager,
+      importManager: newImportManagerResult.value,
+      contextQualifierProvider: newContextQualifierProviderResult.value
+    };
+
+    // Process the filtered system into ProcessedResources
+    const compiledResult = filteredSystem.resourceManager.getCompiledResourceCollection({
+      includeMetadata: true
+    });
+    if (compiledResult.isFailure()) {
+      return fail(`Failed to compile filtered resources: ${compiledResult.message}`);
+    }
+
+    const resolverResult = Runtime.ResourceResolver.create({
+      resourceManager: filteredSystem.resourceManager,
+      qualifierTypes: filteredSystem.qualifierTypes,
+      contextQualifierProvider: filteredSystem.contextQualifierProvider
+    });
+
+    if (resolverResult.isFailure()) {
+      return fail(`Failed to create filtered resolver: ${resolverResult.message}`);
+    }
+
+    // Create resource summary
+    const resourceIds = Array.from(filteredSystem.resourceManager.resources.keys());
+    const summary = {
+      totalResources: resourceIds.length,
+      resourceIds,
+      errorCount: 0,
+      warnings: []
+    };
+
+    const processedResources: ProcessedResources = {
+      system: filteredSystem,
+      compiledCollection: compiledResult.value,
+      resolver: resolverResult.value,
+      resourceCount: resourceIds.length,
+      summary
+    };
+
+    debugLog(enableDebug, 'Simple filtering completed successfully');
+    return succeed(processedResources);
+  } catch (error) {
+    return fail(
+      `Unexpected error during simple filtering: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 };
 

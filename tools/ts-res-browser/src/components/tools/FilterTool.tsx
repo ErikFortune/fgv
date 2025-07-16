@@ -5,7 +5,11 @@ import {
   ExclamationTriangleIcon,
   ArrowPathIcon,
   CheckIcon,
-  XMarkIcon
+  XMarkIcon,
+  DocumentArrowDownIcon,
+  CodeBracketIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
 } from '@heroicons/react/24/outline';
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message, FilterState } from '../../types/app';
@@ -13,6 +17,7 @@ import { DEFAULT_SYSTEM_CONFIGURATION } from '../../utils/tsResIntegration';
 import {
   createFilteredResourceManager,
   createFilteredResourceManagerAlternative,
+  createFilteredResourceManagerSimple,
   analyzeFilteredResources,
   hasFilterValues,
   getFilterSummary,
@@ -44,6 +49,7 @@ const FilterTool: React.FC<FilterToolProps> = ({
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [filterResult, setFilterResult] = useState<FilterResult | null>(null);
   const [isFiltering, setIsFiltering] = useState(false);
+  const [showFilteredJsonView, setShowFilteredJsonView] = useState(false);
 
   // Available qualifiers (same logic as ResolutionViewer)
   const availableQualifiers = useMemo(() => {
@@ -63,6 +69,73 @@ const FilterTool: React.FC<FilterToolProps> = ({
   // Determine if filtering is active (enabled AND has applied values)
   const isFilteringActive = filterState.enabled && hasAppliedFilterValues;
 
+  // Get filtered resource collection data
+  const getFilteredResourceCollectionData = useCallback(() => {
+    if (!filterResult?.processedResources?.system.resourceManager) {
+      return null;
+    }
+
+    try {
+      const collectionResult =
+        filterResult.processedResources.system.resourceManager.getResourceCollectionDecl();
+      if (collectionResult.isSuccess()) {
+        return {
+          ...collectionResult.value,
+          metadata: {
+            exportedAt: new Date().toISOString(),
+            totalResources: filterResult.processedResources.resourceCount,
+            type: 'ts-res-filtered-resource-collection',
+            filterContext: filterState.appliedValues
+          }
+        };
+      } else {
+        onMessage?.('error', `Failed to get filtered resource collection: ${collectionResult.message}`);
+        return null;
+      }
+    } catch (error) {
+      onMessage?.(
+        'error',
+        `Error getting filtered resource collection: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      return null;
+    }
+  }, [filterResult, onMessage, filterState.appliedValues]);
+
+  // Export filtered resource collection data
+  const handleExportFilteredData = useCallback(() => {
+    try {
+      const collectionData = getFilteredResourceCollectionData();
+      if (!collectionData) {
+        onMessage?.('error', 'No filtered collection data available to export');
+        return;
+      }
+
+      const filterSummary = getFilterSummary(filterState.appliedValues);
+      const sourceJson = JSON.stringify(collectionData, null, 2);
+      const blob = new Blob([sourceJson], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `filtered-resource-collection-${filterSummary.replace(/[^a-z0-9]/gi, '-')}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      onMessage?.('success', 'Filtered resource collection exported successfully');
+    } catch (error) {
+      onMessage?.(
+        'error',
+        `Failed to export filtered resource collection: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }, [getFilteredResourceCollectionData, onMessage, filterState.appliedValues]);
+
   // Apply filtering when applied filter values change
   useEffect(() => {
     if (!resourceState.processedResources || !isFilteringActive) {
@@ -74,38 +147,56 @@ const FilterTool: React.FC<FilterToolProps> = ({
       setIsFiltering(true);
 
       try {
-        // Create filtered resource manager using applied values
-        let filteredResult = await createFilteredResourceManager(
+        // Try the new simple filtering approach first
+        let filteredResult = await createFilteredResourceManagerSimple(
           resourceState.processedResources!.system,
           filterState.appliedValues,
           { partialContextMatch: true, enableDebugLogging: false }
         );
 
-        // If the primary method fails, try the alternative approach
         if (filteredResult.isFailure()) {
           onMessage?.(
             'warning',
-            `Primary filtering failed, trying alternative approach: ${filteredResult.message}`
+            `Simple filtering failed, trying legacy approach: ${filteredResult.message}`
           );
 
-          filteredResult = await createFilteredResourceManagerAlternative(
+          // Fall back to the original complex implementation
+          filteredResult = await createFilteredResourceManager(
             resourceState.processedResources!.system,
             filterState.appliedValues,
             { partialContextMatch: true, enableDebugLogging: false }
           );
 
           if (filteredResult.isFailure()) {
-            setFilterResult({
-              success: false,
-              filteredResources: [],
-              error: `Both filtering approaches failed. Primary: ${filteredResult.message}`,
-              warnings: []
-            });
-            onMessage?.('error', `Filtering failed: ${filteredResult.message}`);
-            return;
+            onMessage?.(
+              'warning',
+              `Legacy filtering failed, trying alternative approach: ${filteredResult.message}`
+            );
+
+            // Last resort: try the alternative approach
+            filteredResult = await createFilteredResourceManagerAlternative(
+              resourceState.processedResources!.system,
+              filterState.appliedValues,
+              { partialContextMatch: true, enableDebugLogging: false }
+            );
+
+            if (filteredResult.isFailure()) {
+              setFilterResult({
+                success: false,
+                filteredResources: [],
+                error: `All filtering approaches failed. Simple: ${filteredResult.message}`,
+                warnings: []
+              });
+              onMessage?.('error', `Filtering failed: ${filteredResult.message}`);
+              return;
+            } else {
+              onMessage?.('success', 'Alternative filtering approach succeeded');
+            }
           } else {
-            onMessage?.('success', 'Alternative filtering approach succeeded');
+            onMessage?.('success', 'Legacy filtering approach succeeded');
           }
+        } else {
+          onMessage?.('success', 'Simple filtering approach succeeded');
         }
 
         // Analyze filtered resources
@@ -144,23 +235,28 @@ const FilterTool: React.FC<FilterToolProps> = ({
   const displayResources = useMemo(() => {
     if (!resourceState.processedResources) return [];
 
+    let resources: FilteredResource[] = [];
+
     if (isFilteringActive && filterResult?.success) {
-      return filterResult.filteredResources;
+      resources = filterResult.filteredResources;
+    } else {
+      // Return original resources
+      const originalResources = resourceState.processedResources.summary.resourceIds || [];
+      resources = originalResources.map((id) => {
+        const resourceResult = resourceState.processedResources!.system.resourceManager.getBuiltResource(id);
+        const candidateCount = resourceResult.isSuccess() ? resourceResult.value.candidates.length : 0;
+
+        return {
+          id,
+          originalCandidateCount: candidateCount,
+          filteredCandidateCount: candidateCount,
+          hasWarning: false
+        } as FilteredResource;
+      });
     }
 
-    // Return original resources
-    const originalResources = resourceState.processedResources.summary.resourceIds || [];
-    return originalResources.map((id) => {
-      const resourceResult = resourceState.processedResources!.system.resourceManager.getBuiltResource(id);
-      const candidateCount = resourceResult.isSuccess() ? resourceResult.value.candidates.length : 0;
-
-      return {
-        id,
-        originalCandidateCount: candidateCount,
-        filteredCandidateCount: candidateCount,
-        hasWarning: false
-      } as FilteredResource;
-    });
+    // Sort resources alphabetically by id
+    return resources.sort((a, b) => a.id.localeCompare(b.id));
   }, [resourceState.processedResources, isFilteringActive, filterResult]);
 
   // Handle filter value changes
@@ -228,14 +324,76 @@ const FilterTool: React.FC<FilterToolProps> = ({
     );
   }
 
-  const selectedResource =
-    selectedResourceId && resourceState.processedResources
-      ? (() => {
-          const resourceResult =
-            resourceState.processedResources.system.resourceManager.getBuiltResource(selectedResourceId);
-          return resourceResult.isSuccess() ? resourceResult.value : null;
-        })()
-      : null;
+  // Get both original and filtered resources for the selected resource
+  const selectedResourceData = useMemo(() => {
+    if (!selectedResourceId || !resourceState.processedResources) {
+      return null;
+    }
+
+    const originalResourceResult =
+      resourceState.processedResources.system.resourceManager.getBuiltResource(selectedResourceId);
+    const originalResource = originalResourceResult.isSuccess() ? originalResourceResult.value : null;
+
+    let filteredResource = null;
+    if (isFilteringActive && filterResult?.processedResources) {
+      const filteredResourceResult =
+        filterResult.processedResources.system.resourceManager.getBuiltResource(selectedResourceId);
+      filteredResource = filteredResourceResult.isSuccess() ? filteredResourceResult.value : null;
+    }
+
+    return {
+      original: originalResource,
+      filtered: filteredResource
+    };
+  }, [selectedResourceId, resourceState.processedResources, filterResult, isFilteringActive]);
+
+  // Categorize candidates when filtering is active
+  const categorizedCandidates = useMemo(() => {
+    if (!selectedResourceData?.original || !isFilteringActive) {
+      return { matching: [], filteredOut: [] };
+    }
+
+    const originalCandidates = selectedResourceData.original.candidates;
+    const filteredCandidates = selectedResourceData.filtered?.candidates || [];
+
+    // Create a lookup for filtered candidates by comparing JSON content and conditions
+    const filteredCandidatesSet = new Set(
+      filteredCandidates.map((candidate) =>
+        JSON.stringify({
+          json: candidate.json,
+          conditions:
+            candidate.conditions?.conditions?.map((c) => ({
+              qualifier: c.qualifier.name,
+              operator: c.operator,
+              value: c.value
+            })) || []
+        })
+      )
+    );
+
+    const matching = [];
+    const filteredOut = [];
+
+    for (const candidate of originalCandidates) {
+      const candidateKey = JSON.stringify({
+        json: candidate.json,
+        conditions:
+          candidate.conditions?.conditions?.map((c) => ({
+            qualifier: c.qualifier.name,
+            operator: c.operator,
+            value: c.value
+          })) || []
+      });
+
+      if (filteredCandidatesSet.has(candidateKey)) {
+        matching.push(candidate);
+      } else {
+        filteredOut.push(candidate);
+      }
+    }
+
+    return { matching, filteredOut };
+  }, [selectedResourceData, isFilteringActive]);
 
   return (
     <div className="p-6">
@@ -358,6 +516,57 @@ const FilterTool: React.FC<FilterToolProps> = ({
           </div>
         </div>
 
+        {/* Filtered Resource Collection JSON View */}
+        {isFilteringActive && filterResult?.success && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <button
+                onClick={() => setShowFilteredJsonView(!showFilteredJsonView)}
+                className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              >
+                <CodeBracketIcon className="h-4 w-4 mr-2" />
+                {showFilteredJsonView ? 'Hide' : 'Show'} Filtered JSON Resource Collection
+                {showFilteredJsonView ? (
+                  <ChevronUpIcon className="h-4 w-4 ml-2" />
+                ) : (
+                  <ChevronDownIcon className="h-4 w-4 ml-2" />
+                )}
+              </button>
+
+              <button
+                onClick={handleExportFilteredData}
+                className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              >
+                <DocumentArrowDownIcon className="h-4 w-4 mr-1" />
+                Export Filtered JSON
+              </button>
+            </div>
+
+            {/* JSON View */}
+            {showFilteredJsonView && (
+              <div className="mt-4">
+                <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium text-gray-900">
+                      Filtered Resource Collection ({getFilterSummary(filterState.appliedValues)})
+                    </h3>
+                    <button
+                      onClick={handleExportFilteredData}
+                      className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                    >
+                      <DocumentArrowDownIcon className="h-3 w-3 mr-1" />
+                      Export
+                    </button>
+                  </div>
+                  <pre className="text-xs text-gray-800 bg-white p-3 rounded border overflow-x-auto max-h-64 overflow-y-auto">
+                    {JSON.stringify(getFilteredResourceCollectionData(), null, 2)}
+                  </pre>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Main Browser/Details Layout */}
         <div className="flex flex-col lg:flex-row gap-6 h-[600px]">
           {/* Left side: Resource List */}
@@ -453,23 +662,23 @@ const FilterTool: React.FC<FilterToolProps> = ({
                     )}
                   </div>
                 </div>
-              ) : selectedResource ? (
+              ) : selectedResourceData?.original ? (
                 <div className="space-y-4">
                   <div>
                     <h4 className="font-medium text-gray-800 mb-2">Resource Information</h4>
                     <div className="bg-white p-3 rounded border text-sm">
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <strong>ID:</strong> {selectedResource.id}
+                          <strong>ID:</strong> {selectedResourceData.original.id}
                         </div>
                         <div>
-                          <strong>Type:</strong> {selectedResource.resourceType.key}
+                          <strong>Type:</strong> {selectedResourceData.original.resourceType.key}
                         </div>
                         <div>
-                          <strong>Candidates:</strong> {selectedResource.candidates.length}
+                          <strong>Candidates:</strong> {selectedResourceData.original.candidates.length}
                         </div>
                         <div>
-                          <strong>Decision:</strong> {selectedResource.decision.key}
+                          <strong>Decision:</strong> {selectedResourceData.original.decision.key}
                         </div>
                       </div>
                     </div>
@@ -480,7 +689,7 @@ const FilterTool: React.FC<FilterToolProps> = ({
                       <h4 className="font-medium text-gray-800 mb-2">Filter Impact</h4>
                       <div className="bg-white p-3 rounded border text-sm">
                         <div className="space-y-1">
-                          <div>Original candidates: {selectedResource.candidates.length}</div>
+                          <div>Original candidates: {selectedResourceData.original.candidates.length}</div>
                           <div className="text-purple-600">
                             Filtered candidates:{' '}
                             {displayResources.find((r) => r.id === selectedResourceId)
@@ -499,19 +708,170 @@ const FilterTool: React.FC<FilterToolProps> = ({
 
                   <div>
                     <h4 className="font-medium text-gray-800 mb-2">
-                      Candidates ({selectedResource.candidates.length})
+                      Candidates ({selectedResourceData.original.candidates.length})
                     </h4>
                     <div className="bg-white rounded border max-h-64 overflow-y-auto">
-                      {selectedResource.candidates.length > 0 ? (
+                      {selectedResourceData.original.candidates.length > 0 ? (
                         <div className="space-y-4 p-4">
-                          {selectedResource.candidates.map((candidate, index) => {
-                            const isFiltered =
-                              isFilteringActive &&
-                              filterResult?.filteredResources.find((r) => r.id === selectedResourceId)
-                                ?.filteredCandidateCount === 0;
+                          {/* Show matching candidates first when filtering is active */}
+                          {isFilteringActive && categorizedCandidates.matching.length > 0 && (
+                            <div className="space-y-4">
+                              <div className="border-b border-green-200 pb-2">
+                                <h5 className="text-sm font-semibold text-green-700 flex items-center">
+                                  <CheckIcon className="h-4 w-4 mr-1" />
+                                  Matching Candidates ({categorizedCandidates.matching.length})
+                                </h5>
+                              </div>
+                              {categorizedCandidates.matching.map((candidate, index) => (
+                                <div key={`matching-${index}`} className="border-l-4 border-green-500 pl-4">
+                                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                                    <div className="flex items-center justify-between mb-3">
+                                      <h6 className="font-medium text-gray-800">
+                                        Matching Candidate {index + 1}
+                                      </h6>
+                                      <div className="flex items-center space-x-2 text-xs">
+                                        {candidate.isPartial && (
+                                          <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                                            Partial
+                                          </span>
+                                        )}
+                                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded">
+                                          {candidate.mergeMethod}
+                                        </span>
+                                      </div>
+                                    </div>
 
-                            return (
-                              <div key={index} className={`${isFiltered ? 'opacity-50' : ''}`}>
+                                    {/* Conditions */}
+                                    {candidate.conditions &&
+                                    candidate.conditions.conditions &&
+                                    candidate.conditions.conditions.length > 0 ? (
+                                      <div className="mb-3">
+                                        <h6 className="text-sm font-medium text-gray-600 mb-2">
+                                          Conditions:
+                                        </h6>
+                                        <div className="space-y-1">
+                                          {candidate.conditions.conditions.map((condition, condIndex) => (
+                                            <div
+                                              key={condIndex}
+                                              className="flex items-center text-xs bg-green-100 px-2 py-1 rounded"
+                                            >
+                                              <span className="font-medium text-green-800">
+                                                {condition.qualifier.name}
+                                              </span>
+                                              <span className="mx-1 text-green-600">
+                                                {condition.operator}
+                                              </span>
+                                              <span className="text-green-700">{condition.value}</span>
+                                              <span className="ml-auto text-green-500">
+                                                priority: {condition.priority}
+                                              </span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="mb-3">
+                                        <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                                          No conditions (default candidate)
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    {/* JSON Content */}
+                                    <div>
+                                      <h6 className="text-sm font-medium text-gray-600 mb-2">Content:</h6>
+                                      <pre className="text-xs bg-white p-3 rounded border overflow-x-auto max-h-40">
+                                        {JSON.stringify(candidate.json, null, 2)}
+                                      </pre>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Show filtered out candidates when filtering is active */}
+                          {isFilteringActive && categorizedCandidates.filteredOut.length > 0 && (
+                            <div className="space-y-4">
+                              <div className="border-b border-gray-300 pb-2">
+                                <h5 className="text-sm font-semibold text-gray-600 flex items-center">
+                                  <XMarkIcon className="h-4 w-4 mr-1" />
+                                  Filtered Out Candidates ({categorizedCandidates.filteredOut.length})
+                                </h5>
+                              </div>
+                              {categorizedCandidates.filteredOut.map((candidate, index) => (
+                                <div
+                                  key={`filtered-${index}`}
+                                  className="border-l-4 border-gray-400 pl-4 opacity-60"
+                                >
+                                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-300">
+                                    <div className="flex items-center justify-between mb-3">
+                                      <h6 className="font-medium text-gray-600">
+                                        Filtered Out Candidate {index + 1}
+                                      </h6>
+                                      <div className="flex items-center space-x-2 text-xs">
+                                        {candidate.isPartial && (
+                                          <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                                            Partial
+                                          </span>
+                                        )}
+                                        <span className="bg-gray-200 text-gray-600 px-2 py-1 rounded">
+                                          {candidate.mergeMethod}
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    {/* Conditions */}
+                                    {candidate.conditions &&
+                                    candidate.conditions.conditions &&
+                                    candidate.conditions.conditions.length > 0 ? (
+                                      <div className="mb-3">
+                                        <h6 className="text-sm font-medium text-gray-500 mb-2">
+                                          Conditions:
+                                        </h6>
+                                        <div className="space-y-1">
+                                          {candidate.conditions.conditions.map((condition, condIndex) => (
+                                            <div
+                                              key={condIndex}
+                                              className="flex items-center text-xs bg-gray-200 px-2 py-1 rounded"
+                                            >
+                                              <span className="font-medium text-gray-700">
+                                                {condition.qualifier.name}
+                                              </span>
+                                              <span className="mx-1 text-gray-500">{condition.operator}</span>
+                                              <span className="text-gray-600">{condition.value}</span>
+                                              <span className="ml-auto text-gray-400">
+                                                priority: {condition.priority}
+                                              </span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="mb-3">
+                                        <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
+                                          No conditions (default candidate)
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    {/* JSON Content */}
+                                    <div>
+                                      <h6 className="text-sm font-medium text-gray-500 mb-2">Content:</h6>
+                                      <pre className="text-xs bg-gray-100 p-3 rounded border overflow-x-auto max-h-40">
+                                        {JSON.stringify(candidate.json, null, 2)}
+                                      </pre>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Show all candidates when filtering is not active */}
+                          {!isFilteringActive &&
+                            selectedResourceData.original.candidates.map((candidate, index) => (
+                              <div key={index}>
                                 <div className="bg-white p-4 rounded-lg border">
                                   <div className="flex items-center justify-between mb-3">
                                     <h5 className="font-medium text-gray-800">Candidate {index + 1}</h5>
@@ -568,8 +928,7 @@ const FilterTool: React.FC<FilterToolProps> = ({
                                   </div>
                                 </div>
                               </div>
-                            );
-                          })}
+                            ))}
                         </div>
                       ) : (
                         <div className="p-4 text-center text-gray-500 text-sm">No candidates available</div>
@@ -582,10 +941,10 @@ const FilterTool: React.FC<FilterToolProps> = ({
                     <pre className="text-xs bg-white p-3 rounded border overflow-x-auto max-h-32 overflow-y-auto">
                       {JSON.stringify(
                         {
-                          id: selectedResource.id,
-                          resourceType: selectedResource.resourceType.key,
-                          decision: selectedResource.decision.key,
-                          candidateCount: selectedResource.candidates.length
+                          id: selectedResourceData.original.id,
+                          resourceType: selectedResourceData.original.resourceType.key,
+                          decision: selectedResourceData.original.decision.key,
+                          candidateCount: selectedResourceData.original.candidates.length
                         },
                         null,
                         2

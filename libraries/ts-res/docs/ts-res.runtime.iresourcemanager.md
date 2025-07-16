@@ -145,5 +145,16 @@ Gets a built resource by ID for runtime resolution.
 
 
 </td></tr>
+<tr><td>
+
+[validateContext(context)](./ts-res.runtime.iresourcemanager.validatecontext.md)
+
+
+</td><td>
+
+Validates a context declaration against the qualifiers managed by this resource manager.
+
+
+</td></tr>
 </tbody></table>
 

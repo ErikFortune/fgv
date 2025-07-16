@@ -420,6 +420,20 @@ Builds the [resources](./ts-res.resources.resource.md) from the collected [candi
 </td></tr>
 <tr><td>
 
+[clone(options)](./ts-res.resources.resourcemanagerbuilder.clone.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a filtered clone of this ResourceManagerBuilder using the specified context. This is a convenience method that creates a new ResourceManagerBuilder with the same configuration but filtered to include only candidates that match the provided context.
+
+
+</td></tr>
+<tr><td>
+
 [create(params)](./ts-res.resources.resourcemanagerbuilder.create.md)
 
 
@@ -585,6 +599,20 @@ Gets a resource collection declaration containing all built resources in a flat 
 </td><td>
 
 Gets a read-only array of all [resource builders](./ts-res.resources.resourcebuilder.md) that have at least one candidate that can match the supplied context.
+
+
+</td></tr>
+<tr><td>
+
+[validateContext(context)](./ts-res.resources.resourcemanagerbuilder.validatecontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Validates a context declaration against the qualifiers managed by this resource manager.
 
 
 </td></tr>

@@ -78,6 +78,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ICompiledResourceOptionsWithFilter](./ts-res.resources.icompiledresourceoptionswithfilter.md)
+
+
+</td><td>
+
+Extended compiled resource options that includes context filtering capabilities. This interface combines the standard compilation options with strongly-typed context filtering for resource candidates.
+
+
+</td></tr>
+<tr><td>
+
 [IResourceBuilderCreateParams](./ts-res.resources.iresourcebuildercreateparams.md)
 
 
@@ -106,6 +117,17 @@ Parameters to create a [ResourceCandidate](./ts-res.resources.resourcecandidate.
 </td><td>
 
 Parameters used to create a [Resource](./ts-res.resources.resource.md) object.
+
+
+</td></tr>
+<tr><td>
+
+[IResourceDeclarationOptions](./ts-res.resources.iresourcedeclarationoptions.md)
+
+
+</td><td>
+
+Options for resource declaration operations with strongly-typed context filtering. Extends the base IDeclarationOptions with proper type safety for context filtering.
 
 
 </td></tr>
