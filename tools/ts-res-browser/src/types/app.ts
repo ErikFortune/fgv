@@ -6,17 +6,29 @@ export interface Message {
   timestamp: Date;
 }
 
-export type Tool = 'import' | 'source' | 'compiled' | 'resolution' | 'configuration';
+export type Tool = 'import' | 'source' | 'filter' | 'compiled' | 'resolution' | 'configuration';
+
+export interface FilterState {
+  enabled: boolean;
+  values: Record<string, string>;
+  appliedValues: Record<string, string>;
+  hasPendingChanges: boolean;
+}
 
 export interface AppState {
   selectedTool: Tool;
   messages: Message[];
+  filterState: FilterState;
 }
 
 export interface AppActions {
   setSelectedTool: (tool: Tool, force?: boolean) => void;
   addMessage: (type: Message['type'], message: string) => void;
   clearMessages: () => void;
+  updateFilterEnabled: (enabled: boolean) => void;
+  updateFilterValues: (values: Record<string, string>) => void;
+  applyFilterValues: () => void;
+  resetFilterValues: () => void;
 }
 
 // Tool-specific types

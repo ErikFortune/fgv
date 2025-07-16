@@ -1,10 +1,16 @@
 import { useState, useCallback } from 'react';
-import { AppState, AppActions, Tool, Message } from '../types/app';
+import { AppState, AppActions, Tool, Message, FilterState } from '../types/app';
 
 export const useAppState = (): { state: AppState; actions: AppActions } => {
   const [state, setState] = useState<AppState>({
     selectedTool: 'import',
-    messages: []
+    messages: [],
+    filterState: {
+      enabled: false,
+      values: {},
+      appliedValues: {},
+      hasPendingChanges: false
+    }
   });
 
   const setSelectedTool = useCallback((tool: Tool, force?: boolean) => {
@@ -28,10 +34,61 @@ export const useAppState = (): { state: AppState; actions: AppActions } => {
     setState((prev) => ({ ...prev, messages: [] }));
   }, []);
 
+  const updateFilterEnabled = useCallback((enabled: boolean) => {
+    setState((prev) => ({
+      ...prev,
+      filterState: {
+        ...prev.filterState,
+        enabled,
+        // Reset applied values when disabling
+        appliedValues: enabled ? prev.filterState.appliedValues : {},
+        hasPendingChanges: false
+      }
+    }));
+  }, []);
+
+  const updateFilterValues = useCallback((values: Record<string, string>) => {
+    setState((prev) => ({
+      ...prev,
+      filterState: {
+        ...prev.filterState,
+        values,
+        hasPendingChanges: JSON.stringify(values) !== JSON.stringify(prev.filterState.appliedValues)
+      }
+    }));
+  }, []);
+
+  const applyFilterValues = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      filterState: {
+        ...prev.filterState,
+        appliedValues: { ...prev.filterState.values },
+        hasPendingChanges: false
+      }
+    }));
+  }, []);
+
+  const resetFilterValues = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      filterState: {
+        ...prev.filterState,
+        values: {},
+        appliedValues: {},
+        hasPendingChanges: false
+      }
+    }));
+  }, []);
+
   const actions: AppActions = {
     setSelectedTool,
     addMessage,
-    clearMessages
+    clearMessages,
+    updateFilterEnabled,
+    updateFilterValues,
+    applyFilterValues,
+    resetFilterValues
   };
 
   return { state, actions };

@@ -2,6 +2,7 @@ import React from 'react';
 import {
   DocumentArrowUpIcon,
   DocumentTextIcon,
+  FunnelIcon,
   CubeIcon,
   MagnifyingGlassIcon,
   CogIcon
@@ -25,6 +26,12 @@ const tools = [
     name: 'Source Browser',
     icon: DocumentTextIcon,
     description: 'Browse built resources in alphabetical order'
+  },
+  {
+    id: 'filter',
+    name: 'Filter Tool',
+    icon: FunnelIcon,
+    description: 'Filter resources by context for focused analysis'
   },
   {
     id: 'compiled',

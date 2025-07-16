@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import AppLayout from './components/layout/AppLayout';
 import ImportTool from './components/tools/ImportTool';
 import SourceBrowser from './components/tools/SourceBrowser';
+import FilterTool from './components/tools/FilterTool';
 import CompiledBrowser from './components/tools/CompiledBrowser';
 import ResolutionViewer from './components/tools/ResolutionViewer';
 import ConfigurationTool from './components/tools/ConfigurationTool';
@@ -69,6 +70,20 @@ const App: React.FC = () => {
         );
       case 'source':
         return <SourceBrowser onMessage={actions.addMessage} resourceManager={resourceManager} />;
+      case 'filter':
+        return (
+          <FilterTool
+            onMessage={actions.addMessage}
+            resourceManager={resourceManager}
+            filterState={state.filterState}
+            filterActions={{
+              updateFilterEnabled: actions.updateFilterEnabled,
+              updateFilterValues: actions.updateFilterValues,
+              applyFilterValues: actions.applyFilterValues,
+              resetFilterValues: actions.resetFilterValues
+            }}
+          />
+        );
       case 'compiled':
         return <CompiledBrowser onMessage={actions.addMessage} resourceManager={resourceManager} />;
       case 'resolution':
