@@ -122,7 +122,7 @@ export type OverallCacheMetrics<TM extends ICacheMetrics = ICacheMetrics> = Reco
 >;
 
 /**
- * A metrics implementation of {@link IResourceResolverCacheListener} that tracks
+ * A metrics implementation of {@link Runtime.IResourceResolverCacheListener} that tracks
  * hit counts and rates across all cache types.
  * @public
  */

@@ -2626,7 +2626,7 @@ declare namespace Model_2 {
 // @public
 export const NoMatch: QualifierMatchScore;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceResolverCacheListener"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 class NoOpResourceResolverCacheListener implements IResourceResolverCacheListener {
@@ -3377,6 +3377,7 @@ class ResourceResolver {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(params: IResourceResolverCreateParams);
     clearConditionCache(): void;
+    compareResolvedConditions(c1Index: number, c2Index: number): number;
     get conditionCache(): ReadonlyArray<QualifierMatchScore | undefined>;
     get conditionCacheSize(): number;
     get conditionSetCache(): ReadonlyArray<ConditionSetResolutionResult | undefined>;
@@ -3411,7 +3412,7 @@ class ResourceResolver {
 // @public
 type ResourceResolverCacheActivity = 'hit' | 'miss' | 'error' | 'clear';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "IResourceResolverCacheListener"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 class ResourceResolverCacheMetricsListener<TM extends ICacheMetrics> implements IResourceResolverCacheListener {

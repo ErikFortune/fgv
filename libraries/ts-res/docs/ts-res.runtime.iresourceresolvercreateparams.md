@@ -64,7 +64,7 @@ The [context qualifier provider](./ts-res.runtime.context.icontextqualifierprovi
 
 </td><td>
 
-IResourceResolverCacheListener
+[IResourceResolverCacheListener](./ts-res.runtime.iresourceresolvercachelistener.md)
 
 
 </td><td>

@@ -296,6 +296,20 @@ Clears all caches (condition, condition set, and decision), forcing all cached i
 </td></tr>
 <tr><td>
 
+[compareResolvedConditions(c1Index, c2Index)](./ts-res.runtime.resourceresolver.compareresolvedconditions.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Compares two resolved conditions by their index.
+
+
+</td></tr>
+<tr><td>
+
 [create(params)](./ts-res.runtime.resourceresolver.create.md)
 
 

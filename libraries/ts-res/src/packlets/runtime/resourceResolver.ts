@@ -510,4 +510,46 @@ export class ResourceResolver {
   public get decisionCacheSize(): number {
     return this._decisionCache.length;
   }
+
+  /**
+   * Compares two resolved conditions by their index.
+   * @param c1Index - The index of the first condition.
+   * @param c2Index - The index of the second condition.
+   * @returns The comparison result.
+   * @throws An error if either condition has an invalid index or has not been resolved.
+   * @public
+   */
+  public compareResolvedConditions(c1Index: number, c2Index: number): number {
+    const c1 = this.resourceManager.conditions.getAt(c1Index).orThrow();
+    const c2 = this.resourceManager.conditions.getAt(c2Index).orThrow();
+    const c1Score = this._conditionCache[c1Index];
+    const c2Score = this._conditionCache[c2Index];
+
+    if (c1Score === undefined) {
+      throw new Error(`${c1Index}: cannot compare - condition has not been resolved.`);
+    }
+
+    if (c2Score === undefined) {
+      throw new Error(`${c2Index}: cannot compare - condition has not been resolved.`);
+    }
+
+    if (c1 === c2) {
+      return 0;
+    }
+
+    if (c1Score === NoMatch) {
+      if (c2Score === NoMatch) {
+        return 0;
+      }
+      return 1;
+    } else if (c2Score === NoMatch) {
+      return -1;
+    }
+
+    if (c1.priority === c2.priority) {
+      return c2Score - c1Score;
+    }
+
+    return c2.priority - c1.priority;
+  }
 }

@@ -66,7 +66,7 @@ export interface IResourceResolverCacheListener {
 }
 
 /**
- * A no-op implementation of {@link IResourceResolverCacheListener}.
+ * A no-op implementation of {@link Runtime.IResourceResolverCacheListener}.
  * @public
  */
 export class NoOpResourceResolverCacheListener implements IResourceResolverCacheListener {
