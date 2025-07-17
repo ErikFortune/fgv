@@ -47,3 +47,4 @@ Optional [init params](./ts-utils.validation.classes.typeguardvalidatorconstruct
 
 </td></tr>
 </tbody></table>
+

@@ -225,6 +225,7 @@ export interface IResourceTreeRootDecl extends IResourceTreeChildNodeDecl {
   readonly context?: IContainerContextDecl;
   readonly resources?: Record<string, IChildResourceDecl>;
   readonly children?: Record<string, IResourceTreeChildNodeDecl>;
+  readonly metadata?: JsonObject;
 }
 
 /**
@@ -236,4 +237,5 @@ export interface IResourceCollectionDecl {
   readonly candidates?: ReadonlyArray<ILooseResourceCandidateDecl>;
   readonly resources?: ReadonlyArray<ILooseResourceDecl>;
   readonly collections?: ReadonlyArray<IResourceCollectionDecl>;
+  readonly metadata?: JsonObject;
 }

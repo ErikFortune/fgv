@@ -47,6 +47,7 @@ import { ConcreteDecision } from '../decisions';
 import * as Validate from './validate';
 import * as ResourceJson from '../resource-json';
 import { ReadOnlyResourceTreeRoot, IReadOnlyResourceTreeRoot } from './resource-tree';
+import * as Context from '../context';
 
 /**
  * Interface for parameters to create a {@link Runtime.CompiledResourceCollection | CompiledResourceCollection}.
@@ -168,6 +169,15 @@ export class CompiledResourceCollection implements IResourceManager {
    */
   public getBuiltResource(id: string): Result<IResource> {
     return this._builtResources.validating.get(id);
+  }
+
+  /**
+   * {@inheritdoc Runtime.IResourceManager.validateContext}
+   */
+  public validateContext(context: Context.IContextDecl): Result<Context.IValidatedContextDecl> {
+    return Context.Convert.validatedContextDecl.convert(context, {
+      qualifiers: this._qualifiers
+    });
   }
 
   /**

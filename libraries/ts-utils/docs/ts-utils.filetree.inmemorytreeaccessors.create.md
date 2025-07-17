@@ -63,6 +63,7 @@ _(Optional)_ Optional prefix for the tree.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;[InMemoryTreeAccessors](./ts-utils.filetree.inmemorytreeaccessors.md)<!-- -->&gt;

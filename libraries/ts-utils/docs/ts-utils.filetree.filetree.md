@@ -201,3 +201,4 @@ Creates a new [FileTree](./ts-utils.filetree.filetree.md) instance with accessor
 
 </td></tr>
 </tbody></table>
+

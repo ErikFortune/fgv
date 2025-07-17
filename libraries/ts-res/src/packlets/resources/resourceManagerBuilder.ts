@@ -26,6 +26,7 @@ import {
   DetailedResult,
   fail,
   failWithDetail,
+  Hash,
   mapResults,
   MessageAggregator,
   Result,
@@ -47,6 +48,7 @@ import { IResourceManager, IResource } from '../runtime';
 import { ResourceBuilder, ResourceBuilderResultDetail } from './resourceBuilder';
 import { Resource } from './resource';
 import { ResourceCandidate } from './resourceCandidate';
+import { IResourceDeclarationOptions } from './common';
 import * as ResourceJson from '../resource-json';
 import * as Context from '../context';
 
@@ -281,6 +283,18 @@ export class ResourceManagerBuilder implements IResourceManager {
   }
 
   /**
+   * Validates a context declaration against the qualifiers managed by this resource manager.
+   * @param context - The context declaration to validate
+   * @returns Success with the validated context if successful, Failure otherwise
+   * @public
+   */
+  public validateContext(context: Context.IContextDecl): Result<Context.IValidatedContextDecl> {
+    return Context.Convert.validatedContextDecl.convert(context, {
+      qualifiers: this.qualifiers
+    });
+  }
+
+  /**
    * Gets a read-only array of all {@link Resources.Resource | built resources} in the manager.
    * @returns `Success` with an array of resources if successful, or `Failure` with an error message if not.
    * @public
@@ -400,17 +414,20 @@ export class ResourceManagerBuilder implements IResourceManager {
    * Gets a compiled resource collection from the current state of the resource manager builder.
    * This method generates an optimized, index-based representation of all resources, conditions,
    * and decisions that can be used for serialization or efficient runtime processing.
+   * @param options - Optional compilation options controlling the output format.
    * @returns Success with the compiled resource collection if successful, Failure otherwise.
    * @public
    */
-  public getCompiledResourceCollection(): Result<ResourceJson.Compiled.ICompiledResourceCollection> {
+  public getCompiledResourceCollection(
+    options?: ResourceJson.Compiled.ICompiledResourceOptions
+  ): Result<ResourceJson.Compiled.ICompiledResourceCollection> {
     // Build resources first to ensure all data is available
     const buildResult = this._performBuild();
     if (buildResult.isFailure()) {
       return fail(`Failed to build resources: ${buildResult.message}`);
     }
 
-    // Generate compiled data from internal collections
+    // Generate compiled data from internal collections using the new toCompiled methods
     // Note: All objects have a defined index property due to the collector pattern - indices are assigned during collection building
     const compiledData = {
       qualifierTypes: Array.from(this.qualifiers.qualifierTypes.values()).map((qt) => ({
@@ -424,36 +441,85 @@ export class ResourceManagerBuilder implements IResourceManager {
       resourceTypes: Array.from(this.resourceTypes.values()).map((rt) => ({
         name: rt.key
       })),
-      conditions: Array.from(this._conditions.values()).map((c) => {
-        /* c8 ignore next 1 - not really testable rn because "matches" is the only supported operator */
-        const operator = c.operator === 'matches' ? undefined : c.operator;
-        return {
-          qualifierIndex: c.qualifier.index!,
-          operator,
-          value: c.value,
-          priority: c.priority,
-          scoreAsDefault: c.scoreAsDefault
-        };
-      }),
-      conditionSets: Array.from(this._conditionSets.values()).map((cs) => ({
-        conditions: cs.conditions.map((c) => c.index!)
-      })),
-      decisions: Array.from(this._decisions.values()).map((d) => ({
-        conditionSets: d.candidates.map((c) => c.conditionSet.index!)
-      })),
-      resources: Array.from(this._builtResources.values()).map((r) => ({
-        id: r.id,
-        type: r.resourceType.index!,
-        decision: r.decision.baseDecision.index!,
-        candidates: r.candidates.map((c) => ({
-          json: c.json,
-          isPartial: c.isPartial,
-          mergeMethod: c.mergeMethod
-        }))
-      }))
+      conditions: Array.from(this._conditions.values()).map((c) => c.toCompiled(options)),
+      conditionSets: Array.from(this._conditionSets.values()).map((cs) => cs.toCompiled(options)),
+      decisions: Array.from(this._decisions.values()).map((d) => d.toCompiled(options)),
+      resources: Array.from(this._builtResources.values()).map((r) => r.toCompiled(options))
     };
 
     // Apply validation through the converter
     return ResourceJson.Compiled.Convert.compiledResourceCollection.convert(compiledData);
+  }
+
+  /**
+   * Gets a resource collection declaration containing all built resources in a flat array structure.
+   * This method returns all built resources as an {@link ResourceJson.Normalized.IResourceCollectionDecl | IResourceCollectionDecl}
+   * that can be used for serialization, export, or re-import. Resources are sorted by ID for consistent ordering.
+   * @param options - Optional {@link Resources.IResourceDeclarationOptions | declaration options} controlling the output format.
+   * If `options.normalized` is `true`, applies hash-based normalization for additional consistency guarantees.
+   * @returns Success with the resource collection declaration if successful, Failure otherwise.
+   * @public
+   */
+  public getResourceCollectionDecl(
+    options?: IResourceDeclarationOptions
+  ): Result<ResourceJson.Normalized.IResourceCollectionDecl> {
+    return this._performBuild().onSuccess(() => {
+      // Get all built resources and convert to loose resource declarations
+      const resources = Array.from(this._builtResources.values()).map((resource) =>
+        resource.toLooseResourceDecl(options)
+      );
+
+      // Sort resources by ID for consistent ordering
+      resources.sort((a, b) => a.id.localeCompare(b.id));
+
+      // Create the collection declaration structure
+      const collectionData = {
+        resources
+      };
+
+      // Convert and validate using the normalized converter
+      return ResourceJson.Convert.resourceCollectionDecl
+        .convert(collectionData)
+        .onSuccess((compiledCollection) => {
+          // Apply hash-based normalization only if requested
+          if (options?.normalized === true) {
+            const normalizer = new Hash.Crc32Normalizer();
+            return normalizer
+              .normalize(compiledCollection)
+              .withErrorFormat((e) => `Failed to normalize resource collection: ${e}`);
+          }
+          return succeed(compiledCollection);
+        });
+    });
+  }
+
+  /**
+   * Creates a filtered clone of this ResourceManagerBuilder using the specified context.
+   * This is a convenience method that creates a new ResourceManagerBuilder with the same
+   * configuration but filtered to include only candidates that match the provided context.
+   * @param options - Options for the cloning operation, including the strongly-typed validatedFilterContext property.
+   * @returns A Result containing the new filtered ResourceManagerBuilder.
+   * @public
+   */
+  public clone(options?: IResourceDeclarationOptions): Result<ResourceManagerBuilder> {
+    return this.getResourceCollectionDecl(options).onSuccess((collection) => {
+      return ResourceManagerBuilder.create({
+        qualifiers: this.qualifiers,
+        resourceTypes: this.resourceTypes
+      }).onSuccess((newManager) => {
+        // Add each resource from the filtered collection to the new manager
+        if (collection.resources) {
+          for (const resourceDecl of collection.resources) {
+            const addResult = newManager.addResource(resourceDecl);
+            if (addResult.isFailure()) {
+              return fail(
+                `${resourceDecl.id}: Failed to add resource to cloned manager: ${addResult.message}`
+              );
+            }
+          }
+        }
+        return succeed(newManager);
+      });
+    });
   }
 }

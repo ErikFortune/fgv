@@ -249,3 +249,4 @@ Creates a new [ObjectConverter](./ts-utils.conversion.objectconverter.md) derive
 
 </td></tr>
 </tbody></table>
+

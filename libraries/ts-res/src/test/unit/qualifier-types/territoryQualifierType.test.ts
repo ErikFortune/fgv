@@ -173,4 +173,160 @@ describe('TerritoryQualifierType', () => {
       });
     });
   });
+
+  describe('createFromConfig static method', () => {
+    test('creates a new TerritoryQualifierType with minimal config', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ITerritoryQualifierTypeConfig> =
+        {
+          name: 'territory',
+          systemType: 'territory'
+        };
+
+      expect(TsRes.QualifierTypes.TerritoryQualifierType.createFromConfig(config)).toSucceedAndSatisfy(
+        (q) => {
+          expect(q).toBeInstanceOf(TsRes.QualifierTypes.TerritoryQualifierType);
+          expect(q.key).toBe('territory');
+          expect(q.name).toBe('territory');
+          expect(q.allowContextList).toBe(false);
+          expect(q.index).toBeUndefined();
+          expect(q.allowedTerritories).toBeUndefined();
+        }
+      );
+    });
+
+    test('creates a new TerritoryQualifierType with custom name', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ITerritoryQualifierTypeConfig> =
+        {
+          name: 'region',
+          systemType: 'territory'
+        };
+
+      expect(TsRes.QualifierTypes.TerritoryQualifierType.createFromConfig(config)).toSucceedAndSatisfy(
+        (q) => {
+          expect(q).toBeInstanceOf(TsRes.QualifierTypes.TerritoryQualifierType);
+          expect(q.key).toBe('region');
+          expect(q.name).toBe('region');
+          expect(q.allowContextList).toBe(false);
+          expect(q.index).toBeUndefined();
+          expect(q.allowedTerritories).toBeUndefined();
+        }
+      );
+    });
+
+    test('creates a new TerritoryQualifierType with allowContextList enabled', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ITerritoryQualifierTypeConfig> =
+        {
+          name: 'territory',
+          systemType: 'territory',
+          configuration: {
+            allowContextList: true
+          }
+        };
+
+      expect(TsRes.QualifierTypes.TerritoryQualifierType.createFromConfig(config)).toSucceedAndSatisfy(
+        (q) => {
+          expect(q).toBeInstanceOf(TsRes.QualifierTypes.TerritoryQualifierType);
+          expect(q.key).toBe('territory');
+          expect(q.name).toBe('territory');
+          expect(q.allowContextList).toBe(true);
+          expect(q.index).toBeUndefined();
+          expect(q.allowedTerritories).toBeUndefined();
+        }
+      );
+    });
+
+    test('creates a new TerritoryQualifierType with allowContextList disabled', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ITerritoryQualifierTypeConfig> =
+        {
+          name: 'territory',
+          systemType: 'territory',
+          configuration: {
+            allowContextList: false
+          }
+        };
+
+      expect(TsRes.QualifierTypes.TerritoryQualifierType.createFromConfig(config)).toSucceedAndSatisfy(
+        (q) => {
+          expect(q).toBeInstanceOf(TsRes.QualifierTypes.TerritoryQualifierType);
+          expect(q.key).toBe('territory');
+          expect(q.name).toBe('territory');
+          expect(q.allowContextList).toBe(false);
+          expect(q.index).toBeUndefined();
+          expect(q.allowedTerritories).toBeUndefined();
+        }
+      );
+    });
+
+    test('creates a new TerritoryQualifierType with allowed territories', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ITerritoryQualifierTypeConfig> =
+        {
+          name: 'territory',
+          systemType: 'territory',
+          configuration: {
+            allowedTerritories: ['US', 'CA', 'GB']
+          }
+        };
+
+      expect(TsRes.QualifierTypes.TerritoryQualifierType.createFromConfig(config)).toSucceedAndSatisfy(
+        (q) => {
+          expect(q).toBeInstanceOf(TsRes.QualifierTypes.TerritoryQualifierType);
+          expect(q.key).toBe('territory');
+          expect(q.name).toBe('territory');
+          expect(q.allowContextList).toBe(false);
+          expect(q.index).toBeUndefined();
+          expect(q.allowedTerritories).toEqual(['US', 'CA', 'GB']);
+        }
+      );
+    });
+
+    test('creates a new TerritoryQualifierType with all configuration options', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ITerritoryQualifierTypeConfig> =
+        {
+          name: 'region',
+          systemType: 'territory',
+          configuration: {
+            allowContextList: true,
+            allowedTerritories: ['US', 'CA', 'GB']
+          }
+        };
+
+      expect(TsRes.QualifierTypes.TerritoryQualifierType.createFromConfig(config)).toSucceedAndSatisfy(
+        (q) => {
+          expect(q).toBeInstanceOf(TsRes.QualifierTypes.TerritoryQualifierType);
+          expect(q.key).toBe('region');
+          expect(q.name).toBe('region');
+          expect(q.allowContextList).toBe(true);
+          expect(q.index).toBeUndefined();
+          expect(q.allowedTerritories).toEqual(['US', 'CA', 'GB']);
+        }
+      );
+    });
+
+    test('fails if the name is not a valid qualifier type name', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ITerritoryQualifierTypeConfig> =
+        {
+          name: 'not a valid name',
+          systemType: 'territory'
+        };
+
+      expect(TsRes.QualifierTypes.TerritoryQualifierType.createFromConfig(config)).toFailWith(
+        /not a valid qualifier type name/i
+      );
+    });
+
+    test('fails if allowed territories contain invalid territory codes', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ITerritoryQualifierTypeConfig> =
+        {
+          name: 'territory',
+          systemType: 'territory',
+          configuration: {
+            allowedTerritories: ['us', 'invalid-code']
+          }
+        };
+
+      expect(TsRes.QualifierTypes.TerritoryQualifierType.createFromConfig(config)).toFailWith(
+        /not a valid territory code/i
+      );
+    });
+  });
 });

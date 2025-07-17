@@ -37,6 +37,25 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[metadata?](./ts-res.resourcejson.compiled.icompiledcondition.metadata.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[ICompiledConditionMetadata](./ts-res.resourcejson.compiled.icompiledconditionmetadata.md)
+
+
+</td><td>
+
+_(Optional)_ Optional metadata containing human-readable information about this condition.
+
+
+</td></tr>
+<tr><td>
+
 [operator?](./ts-res.resourcejson.compiled.icompiledcondition.operator.md)
 
 

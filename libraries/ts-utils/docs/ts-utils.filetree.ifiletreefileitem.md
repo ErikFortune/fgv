@@ -189,3 +189,4 @@ Gets the raw contents of the file as a string.
 
 </td></tr>
 </tbody></table>
+

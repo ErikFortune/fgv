@@ -147,6 +147,22 @@ Creates a new [TerritoryQualifierType](./ts-res.qualifiertypes.territoryqualifie
 </td></tr>
 <tr><td>
 
+[createFromConfig(config)](./ts-res.qualifiertypes.territoryqualifiertype.createfromconfig.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [TerritoryQualifierType](./ts-res.qualifiertypes.territoryqualifiertype.md) from a configuration object.
+
+
+</td></tr>
+<tr><td>
+
 [isValidConditionValue(value)](./ts-res.qualifiertypes.territoryqualifiertype.isvalidconditionvalue.md)
 
 

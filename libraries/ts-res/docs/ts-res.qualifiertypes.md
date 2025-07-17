@@ -100,6 +100,43 @@ Abstract base class for qualifier types. Provides default implementations for th
 </td></tr>
 </tbody></table>
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[createQualifierTypeFromConfig(typeConfig)](./ts-res.qualifiertypes.createqualifiertypefromconfig.md)
+
+
+</td><td>
+
+Creates a [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) from a configuration object. This factory function determines the appropriate qualifier type based on the systemType and delegates to the appropriate type-specific createFromConfig method.
+
+
+</td></tr>
+<tr><td>
+
+[createQualifierTypeFromSystemConfig(typeConfig)](./ts-res.qualifiertypes.createqualifiertypefromsystemconfig.md)
+
+
+</td><td>
+
+Creates a [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) from a system configuration object. This factory function determines the appropriate qualifier type based on the systemType and delegates to the appropriate type-specific createFromConfig method.
+
+
+</td></tr>
+</tbody></table>
+
 ## Interfaces
 
 <table><thead><tr><th>
@@ -217,6 +254,15 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[Config](./ts-res.qualifiertypes.config.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
 
 [Convert](./ts-res.qualifiertypes.convert.md)
 

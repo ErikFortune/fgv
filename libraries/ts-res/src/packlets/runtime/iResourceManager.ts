@@ -26,6 +26,7 @@ import { ReadOnlyConditionCollector, ReadOnlyConditionSetCollector } from '../co
 import { ReadOnlyAbstractDecisionCollector, ConcreteDecision } from '../decisions';
 import { ResourceId, ResourceValueMergeMethod } from '../common';
 import { ResourceType } from '../resource-types';
+import { IContextDecl, IValidatedContextDecl } from '../context';
 
 /**
  * Runtime representation of a resource candidate with the minimal data needed for resolution.
@@ -100,4 +101,11 @@ export interface IResourceManager {
    * Resources are built on-demand when accessed and returns Results for error handling.
    */
   readonly builtResources: Collections.IReadOnlyResultMap<ResourceId, IResource>;
+
+  /**
+   * Validates a context declaration against the qualifiers managed by this resource manager.
+   * @param context - The context declaration to validate
+   * @returns Success with the validated context if successful, Failure otherwise
+   */
+  validateContext(context: IContextDecl): Result<IValidatedContextDecl>;
 }

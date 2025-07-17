@@ -305,6 +305,26 @@ export class Condition implements IValidatedConditionDecl {
   }
 
   /**
+   * Converts this condition to a compiled condition representation.
+   * @param options - Optional compilation options controlling the output format.
+   * @returns A compiled condition object that can be used for serialization or runtime processing.
+   * @public
+   */
+  public toCompiled(
+    options?: ResourceJson.Compiled.ICompiledResourceOptions
+  ): ResourceJson.Compiled.ICompiledCondition {
+    const operator = this.operator === 'matches' ? undefined : this.operator;
+    return {
+      qualifierIndex: this.qualifier.index!,
+      operator,
+      value: this.value,
+      priority: this.priority,
+      scoreAsDefault: this.scoreAsDefault,
+      ...(options?.includeMetadata === true ? { metadata: { key: this.key } } : {})
+    };
+  }
+
+  /**
    * Gets the {@link ConditionKey | condition key} for a supplied {@link Conditions.IValidatedConditionDecl | condition declaration}.
    * @param decl - The {@link Conditions.IValidatedConditionDecl | condition declaration} for which to get the key.
    * @returns `Success` with the condition key if successful, `Failure` otherwise.

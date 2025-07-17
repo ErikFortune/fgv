@@ -47,6 +47,7 @@ _(Optional)_ Optional [initialization parameters](./ts-utils.collections.icollec
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;[Collector](./ts-utils.collector.md)<!-- -->&lt;TITEM&gt;&gt;

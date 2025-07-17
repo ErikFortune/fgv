@@ -1,6 +1,29 @@
 # Change Log - @fgv/ts-utils
 
-This log was last generated on Tue, 01 Jul 2025 03:26:11 GMT and should not be manually modified.
+This log was last generated on Thu, 17 Jul 2025 00:13:24 GMT and should not be manually modified.
+
+## 5.0.0
+Thu, 17 Jul 2025 00:13:24 GMT
+
+### Updates
+
+- add result helpers, clean up object converter
+- object converter partial/required helpers
+- add Result.withErrorFormat
+- bump version
+
+## 4.6.0
+Wed, 02 Jul 2025 05:48:16 GMT
+
+_Version update only_
+
+## 4.5.1
+Wed, 02 Jul 2025 05:47:11 GMT
+
+### Updates
+
+- use IterableIterator instead of MapIterator
+- update rushstack
 
 ## 4.5.0
 Tue, 01 Jul 2025 03:26:11 GMT

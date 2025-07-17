@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+import * as Config from './config';
 import * as Convert from './convert';
 
 export * from './qualifierType';
@@ -28,5 +29,6 @@ export * from './literalQualifierType';
 export * from './literalValueHierarchy';
 export * from './territoryQualifierType';
 export * from './qualifierTypeCollector';
+export * from './helpers';
 
-export { Convert };
+export { Config, Convert };

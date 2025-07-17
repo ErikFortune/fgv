@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[AggregateCacheMetrics](./ts-res.runtime.aggregatecachemetrics.md)
+
+
+</td><td>
+
+Aggregate cache metrics for a specific cache type.
+
+
+</td></tr>
+<tr><td>
+
 [CompiledResourceCollection](./ts-res.runtime.compiledresourcecollection.md)
 
 
@@ -41,12 +52,34 @@ Represents the result of resolving a condition set. Contains either a failure in
 </td></tr>
 <tr><td>
 
+[NoOpResourceResolverCacheListener](./ts-res.runtime.noopresourceresolvercachelistener.md)
+
+
+</td><td>
+
+A no-op implementation of [Runtime.IResourceResolverCacheListener](./ts-res.runtime.iresourceresolvercachelistener.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [ResourceResolver](./ts-res.runtime.resourceresolver.md)
 
 
 </td><td>
 
 High-performance runtime resource resolver with O(1) condition caching. Resolves resources for a given context by evaluating conditions against qualifier values and caching results for optimal performance.
+
+
+</td></tr>
+<tr><td>
+
+[ResourceResolverCacheMetricsListener](./ts-res.runtime.resourceresolvercachemetricslistener.md)
+
+
+</td><td>
+
+A metrics implementation of [Runtime.IResourceResolverCacheListener](./ts-res.runtime.iresourceresolvercachelistener.md) that tracks hit counts and rates across all cache types.
 
 
 </td></tr>
@@ -88,6 +121,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[ICacheMetrics](./ts-res.runtime.icachemetrics.md)
+
+
+</td><td>
+
+Cache metrics interface for tracking cache performance.
+
+
+</td></tr>
+<tr><td>
 
 [ICompiledResourceCollectionCreateParams](./ts-res.runtime.icompiledresourcecollectioncreateparams.md)
 
@@ -139,6 +183,17 @@ Runtime representation of a resource candidate with the minimal data needed for 
 </td><td>
 
 Interface defining the read-only properties that the runtime resource resolver needs from a resource manager. This abstraction allows the runtime to work with different implementations without requiring the full ResourceManagerBuilder build mechanics.
+
+
+</td></tr>
+<tr><td>
+
+[IResourceResolverCacheListener](./ts-res.runtime.iresourceresolvercachelistener.md)
+
+
+</td><td>
+
+A listener for [ResourceResolver](./ts-res.runtime.resourceresolver.md) cache activity.
 
 
 </td></tr>
@@ -231,6 +286,39 @@ Description
 </td><td>
 
 Represents the cached result of resolving a decision. Contains either a failure indicator or a list of instance indices for matching condition sets, ordered by condition set priority.
+
+
+</td></tr>
+<tr><td>
+
+[OverallCacheMetrics](./ts-res.runtime.overallcachemetrics.md)
+
+
+</td><td>
+
+Overall cache metrics across all cache types.
+
+
+</td></tr>
+<tr><td>
+
+[ResourceResolverCacheActivity](./ts-res.runtime.resourceresolvercacheactivity.md)
+
+
+</td><td>
+
+Type indicating the action performed on a [ResourceResolver](./ts-res.runtime.resourceresolver.md) cache.
+
+
+</td></tr>
+<tr><td>
+
+[ResourceResolverCacheType](./ts-res.runtime.resourceresolvercachetype.md)
+
+
+</td><td>
+
+Type indicating which [ResourceResolver](./ts-res.runtime.resourceresolver.md) cache is affected.
 
 
 </td></tr>

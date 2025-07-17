@@ -47,6 +47,7 @@ _(Optional)_ An optional default [IJsonContext](./ts-json.ijsoncontext.md) to us
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [IJsonReferenceMap](./ts-json.ijsonreferencemap.md) \| undefined

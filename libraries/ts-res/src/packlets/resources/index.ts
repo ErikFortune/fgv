@@ -24,3 +24,4 @@ export * from './resourceCandidate';
 export * from './resource';
 export * from './resourceBuilder';
 export * from './resourceManagerBuilder';
+export * from './common';

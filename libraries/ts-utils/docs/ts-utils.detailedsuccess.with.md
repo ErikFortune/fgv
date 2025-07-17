@@ -61,6 +61,7 @@ _(Optional)_
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [DetailedSuccess](./ts-utils.detailedsuccess.md)<!-- -->&lt;T, TD&gt;

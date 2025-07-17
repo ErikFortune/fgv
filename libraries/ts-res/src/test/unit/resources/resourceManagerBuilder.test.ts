@@ -86,7 +86,7 @@ describe('ResourceManagerBuilder', () => {
       },
       {
         id: 'some.resource.path',
-        json: { speaks: 'Español' },
+        json: { speaks: 'Spanish' },
         conditions: {
           language: 'es'
         }
@@ -849,6 +849,234 @@ describe('ResourceManagerBuilder', () => {
 
       // Restore original method
       manager._performBuild = originalBuild;
+    });
+
+    test('accepts ICompiledResourceOptions parameter', () => {
+      manager.addLooseCandidate({ ...someDecls[0], resourceTypeName: 'json' }).orThrow();
+      manager.addLooseCandidate(someDecls[1]).orThrow();
+
+      const resultWithMetadata = manager.getCompiledResourceCollection({ includeMetadata: true });
+      expect(resultWithMetadata).toSucceedAndSatisfy((collection) => {
+        // Verify metadata is included when requested
+        expect(collection.conditions).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              metadata: expect.objectContaining({
+                key: expect.any(String)
+              })
+            })
+          ])
+        );
+        expect(collection.conditionSets).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              metadata: expect.objectContaining({
+                key: expect.any(String)
+              })
+            })
+          ])
+        );
+        expect(collection.decisions).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              metadata: expect.objectContaining({
+                key: expect.any(String)
+              })
+            })
+          ])
+        );
+      });
+
+      const resultWithoutMetadata = manager.getCompiledResourceCollection({ includeMetadata: false });
+      expect(resultWithoutMetadata).toSucceedAndSatisfy((collection) => {
+        // Verify metadata is not included when explicitly disabled
+        collection.conditions.forEach((condition) => {
+          expect(condition.metadata).toBeUndefined();
+        });
+        collection.conditionSets.forEach((conditionSet) => {
+          expect(conditionSet.metadata).toBeUndefined();
+        });
+        collection.decisions.forEach((decision) => {
+          expect(decision.metadata).toBeUndefined();
+        });
+      });
+
+      const resultDefault = manager.getCompiledResourceCollection();
+      expect(resultDefault).toSucceedAndSatisfy((collection) => {
+        // Verify metadata is not included by default
+        collection.conditions.forEach((condition) => {
+          expect(condition.metadata).toBeUndefined();
+        });
+        collection.conditionSets.forEach((conditionSet) => {
+          expect(conditionSet.metadata).toBeUndefined();
+        });
+        collection.decisions.forEach((decision) => {
+          expect(decision.metadata).toBeUndefined();
+        });
+      });
+    });
+  });
+
+  describe('getResourceCollectionDecl', () => {
+    let builder: TsRes.Resources.ResourceManagerBuilder;
+
+    beforeEach(() => {
+      builder = TsRes.Resources.ResourceManagerBuilder.create({
+        qualifiers,
+        resourceTypes
+      }).orThrow();
+
+      // Add test resources to the builder using addResource with proper resource type names
+      const someResource: TsRes.ResourceJson.Json.ILooseResourceDecl = {
+        id: 'some.resource.path',
+        candidates: [someDecls[0], someDecls[1], someDecls[2]],
+        resourceTypeName: 'json'
+      };
+
+      const otherResource: TsRes.ResourceJson.Json.ILooseResourceDecl = {
+        id: 'other.resource.path',
+        candidates: [otherDecls[0]],
+        resourceTypeName: 'other'
+      };
+
+      builder.addResource(someResource).orThrow();
+      builder.addResource(otherResource).orThrow();
+    });
+
+    test('should return resource collection declaration with all built resources', () => {
+      expect(builder.getResourceCollectionDecl()).toSucceedAndSatisfy((collection) => {
+        expect(collection.resources).toBeDefined();
+        expect(collection.resources!.length).toBe(2); // some.resource.path and other.resource.path
+
+        // Should include the main resource
+        const someResource = collection.resources!.find((r) => r.id === 'some.resource.path');
+        expect(someResource).toBeDefined();
+        expect(someResource!.resourceTypeName).toBe('json');
+        expect(someResource!.candidates).toBeDefined();
+        expect(someResource!.candidates!.length).toBe(3); // Three candidates for some.resource.path
+
+        // Should include the other resource
+        const otherResource = collection.resources!.find((r) => r.id === 'other.resource.path');
+        expect(otherResource).toBeDefined();
+        expect(otherResource!.resourceTypeName).toBe('other');
+        expect(otherResource!.candidates).toBeDefined();
+        expect(otherResource!.candidates!.length).toBe(1);
+      });
+    });
+
+    test('should sort resources by ID for consistent ordering', () => {
+      expect(builder.getResourceCollectionDecl()).toSucceedAndSatisfy((collection) => {
+        expect(collection.resources).toBeDefined();
+        const resourceIds = collection.resources!.map((r) => r.id);
+        expect(resourceIds).toEqual(['other.resource.path', 'some.resource.path']);
+      });
+    });
+
+    test('should include proper candidate data in resource declarations', () => {
+      expect(builder.getResourceCollectionDecl()).toSucceedAndSatisfy((collection) => {
+        const someResource = collection.resources!.find((r) => r.id === 'some.resource.path');
+        expect(someResource).toBeDefined();
+
+        const candidates = someResource!.candidates!;
+        expect(candidates.length).toBe(3);
+
+        // Check that candidates have the expected structure
+        candidates.forEach((candidate) => {
+          expect(candidate.json).toBeDefined();
+          expect(typeof candidate.json).toBe('object');
+          if (candidate.conditions) {
+            expect(Array.isArray(candidate.conditions)).toBe(true);
+          }
+        });
+      });
+    });
+
+    test('should return empty collection for builder with no resources', () => {
+      const emptyBuilder = TsRes.Resources.ResourceManagerBuilder.create({
+        qualifiers,
+        resourceTypes
+      }).orThrow();
+
+      expect(emptyBuilder.getResourceCollectionDecl()).toSucceedAndSatisfy((collection) => {
+        expect(collection.resources).toBeDefined();
+        expect(collection.resources!.length).toBe(0);
+      });
+    });
+
+    test('should pass through declaration options', () => {
+      const options = { showDefaults: false };
+      expect(builder.getResourceCollectionDecl(options)).toSucceed();
+      // Note: The actual effect of options would be tested at the Resource level
+      // Here we just verify the method accepts and passes through the options
+    });
+
+    test('should apply normalization only when explicitly requested', () => {
+      // Test that normalization is NOT applied by default
+      const defaultResult = builder.getResourceCollectionDecl().orThrow();
+      const nonNormalizedResult = builder.getResourceCollectionDecl({ normalized: false }).orThrow();
+
+      // Both should be identical since normalization is disabled by default
+      expect(JSON.stringify(defaultResult)).toBe(JSON.stringify(nonNormalizedResult));
+
+      // Test that normalization IS applied when requested
+      const normalizedResult = builder.getResourceCollectionDecl({ normalized: true }).orThrow();
+
+      // Normalized result should also be consistent
+      const normalizedResult2 = builder.getResourceCollectionDecl({ normalized: true }).orThrow();
+      expect(JSON.stringify(normalizedResult)).toBe(JSON.stringify(normalizedResult2));
+
+      // Both normalized and non-normalized should have the same basic structure
+      expect(normalizedResult.resources).toBeDefined();
+      expect(normalizedResult.resources!.length).toBe(defaultResult.resources!.length);
+    });
+
+    test('should produce consistent output without normalization', () => {
+      // Test that the same data produces the same output when normalization is disabled
+      const result1 = builder.getResourceCollectionDecl().orThrow();
+      const result2 = builder.getResourceCollectionDecl().orThrow();
+
+      expect(JSON.stringify(result1)).toBe(JSON.stringify(result2));
+    });
+
+    test('should validate converted collection structure', () => {
+      expect(builder.getResourceCollectionDecl()).toSucceedAndSatisfy((collection) => {
+        // Verify the collection has the expected normalized structure
+        expect(collection).toHaveProperty('resources');
+        expect(Array.isArray(collection.resources)).toBe(true);
+
+        if (collection.resources!.length > 0) {
+          const resource = collection.resources![0];
+          expect(resource).toHaveProperty('id');
+          expect(resource).toHaveProperty('resourceTypeName');
+          expect(typeof resource.id).toBe('string');
+          expect(typeof resource.resourceTypeName).toBe('string');
+        }
+      });
+    });
+
+    test('should handle resources with different candidate configurations', () => {
+      // Add a resource with no conditions (default candidate)
+      const defaultResource: TsRes.ResourceJson.Json.ILooseResourceDecl = {
+        id: 'default.resource',
+        candidates: [{ json: { value: 'default' } }],
+        resourceTypeName: 'json'
+      };
+      builder.addResource(defaultResource).orThrow();
+
+      expect(builder.getResourceCollectionDecl()).toSucceedAndSatisfy((collection) => {
+        const foundResource = collection.resources!.find((r) => r.id === 'default.resource');
+        expect(foundResource).toBeDefined();
+        expect(foundResource!.candidates).toBeDefined();
+        expect(foundResource!.candidates!.length).toBe(1);
+
+        const candidate = foundResource!.candidates![0];
+        expect(candidate.json).toEqual({ value: 'default' });
+        // No conditions or empty conditions array for default candidate
+        expect(
+          candidate.conditions === undefined ||
+            (Array.isArray(candidate.conditions) && candidate.conditions.length === 0)
+        ).toBe(true);
+      });
     });
   });
 });

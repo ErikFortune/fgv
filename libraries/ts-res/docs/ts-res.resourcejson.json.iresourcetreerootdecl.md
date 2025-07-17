@@ -80,6 +80,27 @@ _(Optional)_
 </td></tr>
 <tr><td>
 
+[metadata?](./ts-res.resourcejson.json.iresourcetreerootdecl.metadata.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+JsonObject
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
 [resources?](./ts-res.resourcejson.json.iresourcetreerootdecl.resources.md)
 
 

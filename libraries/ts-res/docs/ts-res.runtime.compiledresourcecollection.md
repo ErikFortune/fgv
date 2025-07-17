@@ -249,5 +249,19 @@ Uses lazy initialization with caching for performance.
 
 
 </td></tr>
+<tr><td>
+
+[validateContext(context)](./ts-res.runtime.compiledresourcecollection.validatecontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Validates a context declaration against the qualifiers managed by this resource manager.
+
+
+</td></tr>
 </tbody></table>
 

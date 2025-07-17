@@ -63,6 +63,7 @@ _(Optional)_ An optional context object passed to the field converters.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;Partial&lt;T&gt;&gt;

@@ -47,6 +47,7 @@ Required parameters for constructing the collector.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;[ValidatingCollector](./ts-utils.validatingcollector.md)<!-- -->&lt;TITEM&gt;&gt;

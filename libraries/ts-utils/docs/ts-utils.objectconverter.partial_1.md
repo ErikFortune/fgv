@@ -52,6 +52,7 @@ The [options](./ts-utils.conversion.objectconverteroptions.md) to be applied to 
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [ObjectConverter](./ts-utils.objectconverter.md)<!-- -->&lt;Partial&lt;T&gt;, TC&gt;

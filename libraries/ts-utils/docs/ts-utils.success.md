@@ -354,3 +354,4 @@ Converts a [IResult&lt;T&gt;](./ts-utils.iresult.md) to a [DetailedResult&lt;T, 
 
 </td></tr>
 </tbody></table>
+

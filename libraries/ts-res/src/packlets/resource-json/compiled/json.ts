@@ -23,6 +23,39 @@ import * as Common from '../../common';
 import { JsonValue } from '@fgv/ts-json-base';
 
 /**
+ * Metadata for a compiled condition, containing human-readable information.
+ * @public
+ */
+export interface ICompiledConditionMetadata {
+  /**
+   * The semantic key of the condition (e.g., "language=en-US").
+   */
+  key: Common.ConditionKey;
+}
+
+/**
+ * Metadata for a compiled condition set, containing human-readable information.
+ * @public
+ */
+export interface ICompiledConditionSetMetadata {
+  /**
+   * The semantic key of the condition set (e.g., "language=en-US,territory=US").
+   */
+  key: Common.ConditionSetKey;
+}
+
+/**
+ * Metadata for a compiled decision, containing human-readable information.
+ * @public
+ */
+export interface ICompiledDecisionMetadata {
+  /**
+   * The semantic key of the decision (e.g., "language=en-US,territory=US OR language=fr,territory=CA").
+   */
+  key: Common.DecisionKey;
+}
+
+/**
  * Represents a compiled qualifier type with a name.
  * @public
  */
@@ -89,6 +122,10 @@ export interface ICompiledCondition {
    * Optional score to use when treating this condition as a default.
    */
   scoreAsDefault?: Common.QualifierMatchScore;
+  /**
+   * Optional metadata containing human-readable information about this condition.
+   */
+  metadata?: ICompiledConditionMetadata;
 }
 
 /**
@@ -100,6 +137,10 @@ export interface ICompiledConditionSet {
    * Array of indices referencing the conditions in this set.
    */
   conditions: ReadonlyArray<Common.ConditionIndex>;
+  /**
+   * Optional metadata containing human-readable information about this condition set.
+   */
+  metadata?: ICompiledConditionSetMetadata;
 }
 
 /**
@@ -111,6 +152,10 @@ export interface ICompiledAbstractDecision {
    * Array of indices referencing the condition sets for this decision.
    */
   conditionSets: ReadonlyArray<Common.ConditionSetIndex>;
+  /**
+   * Optional metadata containing human-readable information about this decision.
+   */
+  metadata?: ICompiledDecisionMetadata;
 }
 
 /**

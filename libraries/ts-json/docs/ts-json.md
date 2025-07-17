@@ -492,3 +492,4 @@ Describes one value in a [TemplateVars](./ts-json.templatevars.md) collection of
 
 </td></tr>
 </tbody></table>
+

@@ -26,6 +26,7 @@ import { ResourceCandidate } from './resourceCandidate';
 import { ResourceType } from '../resource-types';
 import { ConcreteDecision, AbstractDecisionCollector } from '../decisions';
 import { IResource } from '../runtime';
+import { IResourceDeclarationOptions, ICompiledResourceOptionsWithFilter } from './common';
 import * as ResourceJson from '../resource-json';
 import * as Context from '../context';
 
@@ -152,17 +153,43 @@ export class Resource implements IResource {
 
   /**
    * Gets the {@link ResourceJson.Json.ILooseResourceDecl | loose resource declaration} for this resource.
-   * @param options - {@link ResourceJson.Helpers.IDeclarationOptions | options} for the declaration.
+   * @param options - {@link Resources.IResourceDeclarationOptions | options} for the declaration.
    * @returns The {@link ResourceJson.Json.ILooseResourceDecl | loose resource declaration}.
    */
-  public toLooseResourceDecl(
-    options?: ResourceJson.Helpers.IDeclarationOptions
-  ): ResourceJson.Json.ILooseResourceDecl {
-    const candidates = this.candidates.map((c) => c.toChildResourceCandidateDecl(options));
+  public toLooseResourceDecl(options?: IResourceDeclarationOptions): ResourceJson.Json.ILooseResourceDecl {
+    const candidates = this._getMatchingCandidates(options).map((c) =>
+      c.toChildResourceCandidateDecl(options)
+    );
+
     return {
       id: this.id,
       resourceTypeName: this.resourceTypeName,
       ...(candidates.length > 0 ? { candidates } : {})
+    };
+  }
+
+  /**
+   * Converts this resource to a compiled resource representation.
+   * @param options - Optional compilation options controlling the output format and filtering.
+   * @returns A compiled resource object that can be used for serialization or runtime processing.
+   * @public
+   */
+  public toCompiled(
+    options?: IResourceDeclarationOptions | ICompiledResourceOptionsWithFilter
+  ): ResourceJson.Compiled.ICompiledResource {
+    const candidates: ResourceJson.Compiled.ICompiledCandidate[] = this._getMatchingCandidates(options).map(
+      (c) => ({
+        json: c.json,
+        isPartial: c.isPartial,
+        mergeMethod: c.mergeMethod
+      })
+    );
+
+    return {
+      id: this.id,
+      type: this.resourceType.index!,
+      decision: this.decision.baseDecision.index!,
+      candidates
     };
   }
 
@@ -241,5 +268,24 @@ export class Resource implements IResource {
     return errors.returnOrReport(
       succeed(Array.from(validated.values()).sort(ResourceCandidate.compare).reverse())
     );
+  }
+
+  /**
+   * Gets the appropriate candidates based on filtering options.
+   * If a validated filter context is provided, returns only matching candidates.
+   * Otherwise returns all candidates.
+   * @param options - Options that may contain a validated filter context
+   * @returns The filtered array of candidates
+   * @internal
+   */
+  protected _getMatchingCandidates(
+    options?: IResourceDeclarationOptions | ICompiledResourceOptionsWithFilter
+  ): ReadonlyArray<ResourceCandidate> {
+    if (options?.validatedFilterContext) {
+      return this.candidates.filter((candidate) =>
+        candidate.canMatchPartialContext(options.validatedFilterContext!, { partialContextMatch: true })
+      );
+    }
+    return this.candidates;
   }
 }

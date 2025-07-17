@@ -193,7 +193,8 @@ export const resourceCollectionDecl: Converter<Normalized.IResourceCollectionDec
       context: containerContextDecl.optional(),
       candidates: Converters.arrayOf(looseResourceCandidateDecl).optional(),
       resources: Converters.arrayOf(looseResourceDecl).optional(),
-      collections: Converters.arrayOf(self).optional()
+      collections: Converters.arrayOf(self).optional(),
+      metadata: JsonConverters.jsonObject.optional()
     }).convert(from, context);
   }
 );

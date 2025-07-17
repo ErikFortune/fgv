@@ -1,0 +1,78 @@
+{
+  "name": "@fgv/ts-res-browser",
+  "version": "1.0.0",
+  "description": "Visual browser tool for ts-res resources",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "bin": {
+    "ts-res-browser": "./lib/cli.js"
+  },
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "webpack serve --mode development",
+    "clean": "rimraf lib dist",
+    "test": "jest"
+  },
+  "keywords": [
+    "ts-res",
+    "browser",
+    "tool",
+    "resource",
+    "visualization"
+  ],
+  "author": "Erik Fortune",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@fgv/ts-res": "workspace:*",
+    "@fgv/ts-utils": "workspace:*",
+    "@fgv/ts-json-base": "workspace:*",
+    "@fgv/ts-json": "workspace:*",
+    "react": "~19.1.0",
+    "react-dom": "~19.1.0",
+    "@heroicons/react": "~2.2.0",
+    "core-js": "~3.44.0",
+    "whatwg-fetch": "~3.6.20",
+    "@rushstack/heft-web-rig": "~0.29.0"
+  },
+  "devDependencies": {
+    "@fgv/ts-utils-jest": "workspace:*",
+    "@types/react": "~19.1.8",
+    "@types/react-dom": "~19.1.6",
+    "@types/node": "^20.14.9",
+    "typescript": "^5.7.3",
+    "webpack": "~5.100.1",
+    "webpack-cli": "~6.0.1",
+    "webpack-dev-server": "~5.2.2",
+    "@babel/core": "~7.28.0",
+    "@babel/preset-env": "~7.28.0",
+    "@babel/preset-react": "~7.27.1",
+    "@babel/preset-typescript": "~7.27.1",
+    "babel-loader": "~10.0.0",
+    "css-loader": "~7.1.2",
+    "style-loader": "~4.0.0",
+    "postcss-loader": "~8.1.1",
+    "postcss": "~8.5.6",
+    "autoprefixer": "~10.4.21",
+    "tailwindcss": "~4.1.11",
+    "html-webpack-plugin": "~5.6.3",
+    "jest": "^29.7.0",
+    "rimraf": "^5.0.7",
+    "@tailwindcss/postcss": "~4.1.11",
+    "path-browserify": "~1.0.1",
+    "crypto-browserify": "~3.12.1",
+    "stream-browserify": "~3.0.0",
+    "util": "~0.12.5",
+    "buffer": "~6.0.3",
+    "process": "~0.11.10",
+    "@rushstack/heft-web-rig": "~0.29.0",
+    "@rushstack/heft": "~0.74.0",
+    "@rushstack/heft-api-extractor-plugin": "~0.4.8",
+    "@rushstack/heft-jest-plugin": "~0.16.9",
+    "@rushstack/heft-lint-plugin": "~0.7.0",
+    "@rushstack/heft-sass-plugin": "~0.17.8",
+    "@rushstack/heft-webpack5-plugin": "~0.11.34"
+  }
+}

@@ -362,6 +362,20 @@ Gets the [child condition declaration](./ts-res.resourcejson.json.ichildconditio
 </td></tr>
 <tr><td>
 
+[toCompiled(options)](./ts-res.conditions.condition.tocompiled.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Converts this condition to a compiled condition representation.
+
+
+</td></tr>
+<tr><td>
+
 [toKey()](./ts-res.conditions.condition.tokey.md)
 
 

@@ -147,7 +147,7 @@ export class Collector<
   /**
    * {@inheritdoc Collections.ResultMap.entries}
    */
-  public entries(): MapIterator<KeyValueEntry<CollectibleKey<TITEM>, TITEM>> {
+  public entries(): IterableIterator<KeyValueEntry<CollectibleKey<TITEM>, TITEM>> {
     return this._byKey.entries();
   }
 

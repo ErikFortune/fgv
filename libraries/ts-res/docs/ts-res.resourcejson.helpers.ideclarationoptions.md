@@ -37,6 +37,25 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[normalized?](./ts-res.resourcejson.helpers.ideclarationoptions.normalized.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_ If `true`<!-- -->, the output will be normalized using hash-based ordering for consistent structure. If omitted or `false`<!-- -->, no normalization will be applied. Defaults to `false`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [showDefaults?](./ts-res.resourcejson.helpers.ideclarationoptions.showdefaults.md)
 
 

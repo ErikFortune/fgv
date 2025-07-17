@@ -52,12 +52,45 @@ Converter for a [compiled condition](./ts-res.resourcejson.compiled.icompiledcon
 </td></tr>
 <tr><td>
 
+[compiledConditionMetadata](./ts-res.resourcejson.compiled.convert.compiledconditionmetadata.md)
+
+
+</td><td>
+
+Converter for a [compiled condition metadata](./ts-res.resourcejson.compiled.icompiledconditionmetadata.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [compiledConditionSet](./ts-res.resourcejson.compiled.convert.compiledconditionset.md)
 
 
 </td><td>
 
 Converter for a [compiled condition set](./ts-res.resourcejson.compiled.icompiledconditionset.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[compiledConditionSetMetadata](./ts-res.resourcejson.compiled.convert.compiledconditionsetmetadata.md)
+
+
+</td><td>
+
+Converter for a [compiled condition set metadata](./ts-res.resourcejson.compiled.icompiledconditionsetmetadata.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[compiledDecisionMetadata](./ts-res.resourcejson.compiled.convert.compileddecisionmetadata.md)
+
+
+</td><td>
+
+Converter for a [compiled decision metadata](./ts-res.resourcejson.compiled.icompileddecisionmetadata.md)<!-- -->.
 
 
 </td></tr>

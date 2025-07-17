@@ -22,5 +22,6 @@
 
 import * as Convert from './convert';
 
+export * from './common';
 export * from './json';
 export { Convert };

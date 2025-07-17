@@ -4,12 +4,12 @@
 
 ## Runtime.ResourceResolver.resolveResource() method
 
-Resolves a resource by finding the best matching candidate value. Uses the resource's associated decision to determine the best match based on the current context.
+Resolves a resource by finding the best matching candidate. Uses the resource's associated decision to determine the best match based on the current context.
 
 **Signature:**
 
 ```typescript
-resolveResource<T extends JsonValue = JsonValue>(resource: IResource): Result<T>;
+resolveResource(resource: IResource): Result<IResourceCandidate>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The [resource](./ts-res.resources.resource.md) to resolve.
 
 **Returns:**
 
-Result&lt;T&gt;
+Result&lt;[IResourceCandidate](./ts-res.runtime.iresourcecandidate.md)<!-- -->&gt;
 
-`Success` with the value of the best matching candidate if successful, or `Failure` with an error message if no candidates match or resolution fails.
+`Success` with the best matching candidate if successful, or `Failure` with an error message if no candidates match or resolution fails.
 

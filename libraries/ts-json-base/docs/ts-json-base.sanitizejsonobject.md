@@ -47,6 +47,7 @@ The value to be sanitized.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;T&gt;

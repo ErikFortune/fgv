@@ -1,0 +1,26 @@
+{
+  "name": "@fgv/ts-res",
+  "entries": [
+    {
+      "version": "5.0.0",
+      "tag": "@fgv/ts-res_v5.0.0",
+      "date": "Thu, 17 Jul 2025 00:13:24 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "add decl generators"
+          },
+          {
+            "comment": "fix merge errors"
+          },
+          {
+            "comment": "flesh out tests"
+          },
+          {
+            "comment": "initial checkin"
+          }
+        ]
+      }
+    }
+  ]
+}

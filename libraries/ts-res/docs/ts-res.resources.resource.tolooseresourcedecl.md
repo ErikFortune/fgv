@@ -9,7 +9,7 @@ Gets the [loose resource declaration](./ts-res.resourcejson.json.ilooseresourced
 **Signature:**
 
 ```typescript
-toLooseResourceDecl(options?: ResourceJson.Helpers.IDeclarationOptions): ResourceJson.Json.ILooseResourceDecl;
+toLooseResourceDecl(options?: IResourceDeclarationOptions): ResourceJson.Json.ILooseResourceDecl;
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ options
 
 </td><td>
 
-ResourceJson.Helpers.IDeclarationOptions
+[IResourceDeclarationOptions](./ts-res.resources.iresourcedeclarationoptions.md)
 
 
 </td><td>
 
-_(Optional)_ [options](./ts-res.resourcejson.helpers.ideclarationoptions.md) for the declaration.
+_(Optional)_ [options](./ts-res.resources.iresourcedeclarationoptions.md) for the declaration.
 
 
 </td></tr>

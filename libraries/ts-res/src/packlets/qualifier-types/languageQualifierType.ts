@@ -32,6 +32,8 @@ import {
   Validate
 } from '../common';
 import { IQualifierTypeCreateParams, QualifierType } from './qualifierType';
+import * as Config from './config';
+import { sanitizeJsonObject } from '@fgv/ts-json-base';
 
 /**
  * Interface defining the parameters that can be used to create a new
@@ -89,6 +91,23 @@ export class LanguageQualifierType extends QualifierType {
     /* c8 ignore next 1 - coverage seems to intermittently miss the branch even though it's tested */
     params = params ?? {};
     return captureResult(() => new LanguageQualifierType(params));
+  }
+
+  /**
+   * Creates a new {@link QualifierTypes.LanguageQualifierType | LanguageQualifierType} from a configuration object.
+   * @param config - The {@link QualifierTypes.Config.IQualifierTypeConfig | configuration object} containing
+   * the name, systemType, and optional language-specific configuration.
+   * @returns `Success` with the new {@link QualifierTypes.LanguageQualifierType | LanguageQualifierType}
+   * if successful, `Failure` with an error message otherwise.
+   * @public
+   */
+  public static createFromConfig(
+    config: Config.IQualifierTypeConfig<Config.ILanguageQualifierTypeConfig>
+  ): Result<LanguageQualifierType> {
+    return sanitizeJsonObject<ILanguageQualifierTypeCreateParams>({
+      name: config.name,
+      allowContextList: config.configuration?.allowContextList === true
+    }).onSuccess(LanguageQualifierType.create);
   }
 
   /**

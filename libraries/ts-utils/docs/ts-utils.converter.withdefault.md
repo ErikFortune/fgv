@@ -45,6 +45,7 @@ TD
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [DefaultingConverter](./ts-utils.conversion.defaultingconverter.md)<!-- -->&lt;T, TD, TC&gt;

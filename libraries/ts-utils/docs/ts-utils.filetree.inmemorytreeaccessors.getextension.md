@@ -47,6 +47,7 @@ Path to get the extension of.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 string

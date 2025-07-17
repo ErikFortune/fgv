@@ -33,6 +33,8 @@ import {
 } from '../common';
 import { QualifierType } from './qualifierType';
 import { LiteralValueHierarchy, LiteralValueHierarchyDecl } from './literalValueHierarchy';
+import * as Config from './config';
+import { sanitizeJsonObject } from '@fgv/ts-json-base';
 
 /**
  * Interface defining the parameters that can be used to create a new
@@ -180,6 +182,28 @@ export class LiteralQualifierType extends QualifierType {
    */
   public static create(params?: ILiteralQualifierTypeCreateParams): Result<LiteralQualifierType> {
     return captureResult(() => new LiteralQualifierType(params ?? {}));
+  }
+
+  /**
+   * Creates a new {@link QualifierTypes.LiteralQualifierType | LiteralQualifierType} from a configuration object.
+   * @param config - The {@link QualifierTypes.Config.IQualifierTypeConfig | configuration object} containing
+   * the name, systemType, and optional literal-specific configuration including case sensitivity,
+   * enumerated values, and hierarchy information.
+   * @returns `Success` with the new {@link QualifierTypes.LiteralQualifierType | LiteralQualifierType}
+   * if successful, `Failure` with an error message otherwise.
+   * @public
+   */
+  public static createFromConfig(
+    config: Config.IQualifierTypeConfig<Config.ILiteralQualifierTypeConfig>
+  ): Result<LiteralQualifierType> {
+    const literalConfig = config.configuration ?? {};
+    return sanitizeJsonObject<ILiteralQualifierTypeCreateParams>({
+      name: config.name,
+      allowContextList: literalConfig.allowContextList === true,
+      caseSensitive: literalConfig.caseSensitive,
+      enumeratedValues: literalConfig.enumeratedValues,
+      hierarchy: literalConfig.hierarchy
+    }).onSuccess(LiteralQualifierType.create);
   }
 
   /**

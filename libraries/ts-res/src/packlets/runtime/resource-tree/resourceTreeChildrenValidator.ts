@@ -122,7 +122,7 @@ export class ResourceTreeChildrenValidator<T> implements IReadOnlyResourceTreeCh
    * Returns an iterator of [ResourceName, node] pairs for all child nodes.
    * @returns Map iterator for all child nodes
    */
-  public entries(): MapIterator<[ResourceName, IReadOnlyResourceTreeNode<T>]> {
+  public entries(): IterableIterator<[ResourceName, IReadOnlyResourceTreeNode<T>]> {
     return this._inner.entries();
   }
 
@@ -167,7 +167,7 @@ export class ResourceTreeChildrenValidator<T> implements IReadOnlyResourceTreeCh
    * Returns an iterator of ResourceName keys for all child nodes.
    * @returns Map iterator for all child node keys
    */
-  public keys(): MapIterator<ResourceName> {
+  public keys(): IterableIterator<ResourceName> {
     return this._inner.keys();
   }
 
@@ -175,7 +175,7 @@ export class ResourceTreeChildrenValidator<T> implements IReadOnlyResourceTreeCh
    * Returns an iterator of child node values.
    * @returns Map iterator for all child node values
    */
-  public values(): MapIterator<IReadOnlyResourceTreeNode<T>> {
+  public values(): IterableIterator<IReadOnlyResourceTreeNode<T>> {
     return this._inner.values();
   }
 

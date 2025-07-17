@@ -52,12 +52,45 @@ Represents a compiled condition used for resource selection.
 </td></tr>
 <tr><td>
 
+[ICompiledConditionMetadata](./ts-res.resourcejson.compiled.icompiledconditionmetadata.md)
+
+
+</td><td>
+
+Metadata for a compiled condition, containing human-readable information.
+
+
+</td></tr>
+<tr><td>
+
 [ICompiledConditionSet](./ts-res.resourcejson.compiled.icompiledconditionset.md)
 
 
 </td><td>
 
 Represents a compiled set of conditions that must be satisfied together.
+
+
+</td></tr>
+<tr><td>
+
+[ICompiledConditionSetMetadata](./ts-res.resourcejson.compiled.icompiledconditionsetmetadata.md)
+
+
+</td><td>
+
+Metadata for a compiled condition set, containing human-readable information.
+
+
+</td></tr>
+<tr><td>
+
+[ICompiledDecisionMetadata](./ts-res.resourcejson.compiled.icompileddecisionmetadata.md)
+
+
+</td><td>
+
+Metadata for a compiled decision, containing human-readable information.
 
 
 </td></tr>
@@ -102,6 +135,17 @@ Represents a compiled resource with an identifier and associated candidates.
 </td><td>
 
 Represents a complete compiled collection of resources with their associated qualifiers, types, conditions, and decisions.
+
+
+</td></tr>
+<tr><td>
+
+[ICompiledResourceOptions](./ts-res.resourcejson.compiled.icompiledresourceoptions.md)
+
+
+</td><td>
+
+Options for controlling the compilation of resource objects.
 
 
 </td></tr>

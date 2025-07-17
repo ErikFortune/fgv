@@ -73,6 +73,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[conditionCache](./ts-res.runtime.resourceresolver.conditioncache.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[QualifierMatchScore](./ts-res.qualifiermatchscore.md) \| undefined&gt;
+
+
+</td><td>
+
+The cache array for resolved conditions, indexed by condition index for O(1) lookup. Each entry stores the resolved QualifierMatchScore for the corresponding condition.
+
+
+</td></tr>
+<tr><td>
+
 [conditionCacheSize](./ts-res.runtime.resourceresolver.conditioncachesize.md)
 
 
@@ -89,6 +110,27 @@ number
 </td><td>
 
 Gets the current size of the condition cache array.
+
+
+</td></tr>
+<tr><td>
+
+[conditionSetCache](./ts-res.runtime.resourceresolver.conditionsetcache.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[ConditionSetResolutionResult](./ts-res.runtime.conditionsetresolutionresult.md) \| undefined&gt;
+
+
+</td><td>
+
+The cache array for resolved condition sets, indexed by condition set index for O(1) lookup. Each entry stores the resolved ConditionSetResolutionResult for the corresponding condition set.
 
 
 </td></tr>
@@ -131,6 +173,27 @@ IContextQualifierProvider
 </td><td>
 
 The context qualifier provider that resolves qualifier values.
+
+
+</td></tr>
+<tr><td>
+
+[decisionCache](./ts-res.runtime.resourceresolver.decisioncache.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[DecisionResolutionResult](./ts-res.runtime.decisionresolutionresult.md) \| undefined&gt;
+
+
+</td><td>
+
+The cache array for resolved decisions, indexed by decision index for O(1) lookup. Each entry stores the resolved DecisionResolutionResult for the corresponding decision.
 
 
 </td></tr>
@@ -249,7 +312,7 @@ Creates a new [ResourceResolver](./ts-res.runtime.resourceresolver.md) object.
 </td></tr>
 <tr><td>
 
-[resolveAllResourceValues(resource)](./ts-res.runtime.resourceresolver.resolveallresourcevalues.md)
+[resolveAllResourceCandidates(resource)](./ts-res.runtime.resourceresolver.resolveallresourcecandidates.md)
 
 
 </td><td>
@@ -257,7 +320,21 @@ Creates a new [ResourceResolver](./ts-res.runtime.resourceresolver.md) object.
 
 </td><td>
 
-Resolves all matching resource values in priority order. Uses the resource's associated decision to determine all matching candidates based on the current context.
+Resolves all matching resource candidates in priority order. Uses the resource's associated decision to determine all matching candidates based on the current context.
+
+
+</td></tr>
+<tr><td>
+
+[resolveComposedResourceValue(resource)](./ts-res.runtime.resourceresolver.resolvecomposedresourcevalue.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Resolves a resource to a composed value by merging matching candidates according to their merge methods. Starting from the highest priority candidates, finds the first "full" candidate and merges all higher priority "partial" candidates into it in ascending order of priority.
 
 
 </td></tr>
@@ -313,7 +390,7 @@ Resolves a decision by evaluating all its constituent condition sets against the
 
 </td><td>
 
-Resolves a resource by finding the best matching candidate value. Uses the resource's associated decision to determine the best match based on the current context.
+Resolves a resource by finding the best matching candidate. Uses the resource's associated decision to determine the best match based on the current context.
 
 
 </td></tr>

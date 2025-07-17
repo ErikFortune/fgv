@@ -56,6 +56,25 @@ The [context qualifier provider](./ts-res.runtime.context.icontextqualifierprovi
 </td></tr>
 <tr><td>
 
+[listener?](./ts-res.runtime.iresourceresolvercreateparams.listener.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[IResourceResolverCacheListener](./ts-res.runtime.iresourceresolvercachelistener.md)
+
+
+</td><td>
+
+_(Optional)_ An optional listener for [ResourceResolver](./ts-res.runtime.resourceresolver.md) cache activity.
+
+
+</td></tr>
+<tr><td>
+
 [qualifierTypes](./ts-res.runtime.iresourceresolvercreateparams.qualifiertypes.md)
 
 

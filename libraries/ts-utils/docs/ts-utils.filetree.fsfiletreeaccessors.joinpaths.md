@@ -47,6 +47,7 @@ Paths to join.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 string

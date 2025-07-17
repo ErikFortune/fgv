@@ -47,6 +47,7 @@ Absolute path of the file.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;string&gt;

@@ -28,6 +28,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Config](./ts-res.config.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Context](./ts-res.context.md)
 
 

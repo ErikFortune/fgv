@@ -47,6 +47,7 @@ The path to the directory.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;[IFileTreeDirectoryItem](./ts-utils.filetree.ifiletreedirectoryitem.md)<!-- -->&gt;

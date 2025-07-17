@@ -27,6 +27,30 @@ import * as Model from './json';
 /* eslint-disable @rushstack/typedef-var */
 
 /**
+ * Converter for a {@link ResourceJson.Compiled.ICompiledConditionMetadata | compiled condition metadata}.
+ * @public
+ */
+export const compiledConditionMetadata = Converters.strictObject<Model.ICompiledConditionMetadata>({
+  key: Common.Convert.conditionKey
+});
+
+/**
+ * Converter for a {@link ResourceJson.Compiled.ICompiledConditionSetMetadata | compiled condition set metadata}.
+ * @public
+ */
+export const compiledConditionSetMetadata = Converters.strictObject<Model.ICompiledConditionSetMetadata>({
+  key: Common.Convert.conditionSetKey
+});
+
+/**
+ * Converter for a {@link ResourceJson.Compiled.ICompiledDecisionMetadata | compiled decision metadata}.
+ * @public
+ */
+export const compiledDecisionMetadata = Converters.strictObject<Model.ICompiledDecisionMetadata>({
+  key: Common.Convert.decisionKey
+});
+
+/**
  * Converter for a {@link ResourceJson.Compiled.ICompiledQualifierType | compiled qualifier type}.
  * @public
  */
@@ -61,7 +85,8 @@ export const compiledCondition = Converters.strictObject<Model.ICompiledConditio
   operator: Common.Convert.conditionOperator.optional(),
   value: Converters.string,
   priority: Common.Convert.conditionPriority,
-  scoreAsDefault: Common.Convert.qualifierMatchScore.optional()
+  scoreAsDefault: Common.Convert.qualifierMatchScore.optional(),
+  metadata: compiledConditionMetadata.optional()
 });
 
 /**
@@ -69,14 +94,16 @@ export const compiledCondition = Converters.strictObject<Model.ICompiledConditio
  * @public
  */
 export const compiledConditionSet = Converters.strictObject<Model.ICompiledConditionSet>({
-  conditions: Converters.arrayOf(Common.Convert.conditionIndex)
+  conditions: Converters.arrayOf(Common.Convert.conditionIndex),
+  metadata: compiledConditionSetMetadata.optional()
 });
 /**
  * Converter for a {@link ResourceJson.Compiled.ICompiledAbstractDecision | compiled abstract decision}.
  * @public
  */
 export const compiledAbstractDecision = Converters.strictObject<Model.ICompiledAbstractDecision>({
-  conditionSets: Converters.arrayOf(Common.Convert.conditionSetIndex)
+  conditionSets: Converters.arrayOf(Common.Convert.conditionSetIndex),
+  metadata: compiledDecisionMetadata.optional()
 });
 
 /**

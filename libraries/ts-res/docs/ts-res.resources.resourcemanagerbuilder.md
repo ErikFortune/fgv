@@ -420,6 +420,20 @@ Builds the [resources](./ts-res.resources.resource.md) from the collected [candi
 </td></tr>
 <tr><td>
 
+[clone(options)](./ts-res.resources.resourcemanagerbuilder.clone.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a filtered clone of this ResourceManagerBuilder using the specified context. This is a convenience method that creates a new ResourceManagerBuilder with the same configuration but filtered to include only candidates that match the provided context.
+
+
+</td></tr>
+<tr><td>
+
 [create(params)](./ts-res.resources.resourcemanagerbuilder.create.md)
 
 
@@ -548,7 +562,7 @@ Gets a read-only array of all [resource candidates](./ts-res.resources.resourcec
 </td></tr>
 <tr><td>
 
-[getCompiledResourceCollection()](./ts-res.resources.resourcemanagerbuilder.getcompiledresourcecollection.md)
+[getCompiledResourceCollection(options)](./ts-res.resources.resourcemanagerbuilder.getcompiledresourcecollection.md)
 
 
 </td><td>
@@ -557,6 +571,20 @@ Gets a read-only array of all [resource candidates](./ts-res.resources.resourcec
 </td><td>
 
 Gets a compiled resource collection from the current state of the resource manager builder. This method generates an optimized, index-based representation of all resources, conditions, and decisions that can be used for serialization or efficient runtime processing.
+
+
+</td></tr>
+<tr><td>
+
+[getResourceCollectionDecl(options)](./ts-res.resources.resourcemanagerbuilder.getresourcecollectiondecl.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a resource collection declaration containing all built resources in a flat array structure. This method returns all built resources as an [IResourceCollectionDecl](./ts-res.resourcejson.normalized.iresourcecollectiondecl.md) that can be used for serialization, export, or re-import. Resources are sorted by ID for consistent ordering.
 
 
 </td></tr>
@@ -571,6 +599,20 @@ Gets a compiled resource collection from the current state of the resource manag
 </td><td>
 
 Gets a read-only array of all [resource builders](./ts-res.resources.resourcebuilder.md) that have at least one candidate that can match the supplied context.
+
+
+</td></tr>
+<tr><td>
+
+[validateContext(context)](./ts-res.resources.resourcemanagerbuilder.validatecontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Validates a context declaration against the qualifiers managed by this resource manager.
 
 
 </td></tr>

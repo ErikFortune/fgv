@@ -50,7 +50,27 @@ Use `rushx` to run commands within individual project folders:
 ## Key Architecture Patterns
 
 ### Result Pattern
-All operations that can fail return `Result<T>` objects from `@fgv/ts-utils`. This provides consistent error handling across the codebase.
+All operations that can fail return `Result<T>` objects from `@fgv/ts-utils`. This provides consistent error handling across the codebase.  Avoid throwing errors as much as possible, preferring to return a Result and use .orThrow() only on paths that must throw.
+
+#### Result Pattern Examples
+- Avoid intermediate result variables when possible
+- Consider chaining operations with `.onSuccess()` or `.onFailure()`.
+  - this is a guideline, not a rule and the priority is understandable and maintainable code.  Chaining with `.onSuccess` is often but not always cleaner, so if it seems more complex to try to chain, it is acceptable to use intermediate result variables.
+- If an `undefined` value is an acceptable value in an error condition, use `.orDefault()` instead of an intermediate result variable.
+- If some other default value is an acceptable value to use in
+an error condition, use `.orDefault(value)` instead of an intermediate result variable.
+- Error return is preferred to throwing an error but on paths that must throw (such as constructors), use `.toThrow()`
+- use `captureResult` around code that might throw (such as constructors) to convert thrown errors to `Failure` results.
+```typescript
+// ✅ Good - Setup uses standard Result methods
+beforeEach(() => {
+  const qualifierTypes = QualifierTypeCollector.create(params).orThrow();  
+  // Or use onSuccess for conditional setup
+  resourceManager = ResourceManager.create(params).onSuccess((manager) => {
+    manager.addResource(testResource).orThrow(); // OK in setup
+    return manager;
+  }).orThrow();
+});
 
 ### Collector Pattern
 Used throughout for managing collections with validation (QualifierCollector, ConditionCollector, etc.).
