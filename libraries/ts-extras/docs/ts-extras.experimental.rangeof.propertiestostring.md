@@ -79,6 +79,7 @@ _(Optional)_ Value which represents unbounded minimum or maximum for this range.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 string \| undefined

@@ -61,6 +61,7 @@ _(Optional)_ Optional suffix to remove from the base name.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 string

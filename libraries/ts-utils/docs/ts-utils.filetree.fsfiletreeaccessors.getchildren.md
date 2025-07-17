@@ -45,6 +45,7 @@ string
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;ReadonlyArray&lt;[FileTreeItem](./ts-utils.filetree.filetreeitem.md)<!-- -->&gt;&gt;

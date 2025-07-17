@@ -163,3 +163,4 @@ Gets a read-only version of this collector as a [read-only map](./ts-utils.colle
 
 </td></tr>
 </tbody></table>
+

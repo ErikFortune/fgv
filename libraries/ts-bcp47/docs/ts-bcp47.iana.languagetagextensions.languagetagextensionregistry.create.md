@@ -43,6 +43,7 @@ Model.LanguageTagExtensions
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;LanguageTagExtensionRegistry&gt;

@@ -47,6 +47,7 @@ A [Validator](./ts-utils.validation.validator.md) or [Converter](./ts-utils.conv
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;T&gt;

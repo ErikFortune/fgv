@@ -63,6 +63,7 @@ _(Optional)_ The event detail to be returned.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [DetailedFailure](./ts-utils.detailedfailure.md)<!-- -->&lt;T, TD&gt;

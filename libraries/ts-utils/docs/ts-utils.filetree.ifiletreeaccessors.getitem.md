@@ -47,6 +47,7 @@ Path of the item to get.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;[FileTreeItem](./ts-utils.filetree.filetreeitem.md)<!-- -->&gt;

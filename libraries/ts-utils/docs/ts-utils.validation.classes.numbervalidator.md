@@ -82,3 +82,4 @@ Static method which validates that a supplied `unknown` value is a `number`<!-- 
 
 </td></tr>
 </tbody></table>
+

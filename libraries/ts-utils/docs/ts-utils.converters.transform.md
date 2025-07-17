@@ -47,6 +47,7 @@ An object with key names that correspond to the target object and an appropriate
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;

@@ -63,6 +63,7 @@ The [accessors](./ts-utils.filetree.ifiletreeaccessors.md) to use for file syste
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;[DirectoryItem](./ts-utils.filetree.directoryitem.md)<!-- -->&gt;

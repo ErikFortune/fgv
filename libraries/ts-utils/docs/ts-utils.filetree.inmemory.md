@@ -63,6 +63,7 @@ _(Optional)_ An optional prefix to add to the paths of all files in the tree.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;FileTree&gt;

@@ -47,6 +47,7 @@ _(Optional)_ Specifies handling of values that cannot be converted (default `ign
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T \| TD \| undefined, TC&gt;

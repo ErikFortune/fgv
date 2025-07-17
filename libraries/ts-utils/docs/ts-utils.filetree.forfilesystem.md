@@ -47,6 +47,7 @@ _(Optional)_ An optional prefix to prepended to supplied relative paths.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;FileTree&gt;

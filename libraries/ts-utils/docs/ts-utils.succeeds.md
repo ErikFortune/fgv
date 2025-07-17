@@ -47,6 +47,7 @@ The successful result value to be returned
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Success](./ts-utils.success.md)<!-- -->&lt;T&gt;

@@ -262,7 +262,7 @@ export class Collector<TITEM extends ICollectible<any, any>> implements IReadOnl
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    entries(): MapIterator<KeyValueEntry<CollectibleKey<TITEM>, TITEM>>;
+    entries(): IterableIterator<KeyValueEntry<CollectibleKey<TITEM>, TITEM>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -1296,7 +1296,7 @@ export interface IReadOnlyResultMap<TK extends string = string, TV = unknown> {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    entries(): MapIterator<KeyValueEntry<TK, TV>>;
+    entries(): IterableIterator<KeyValueEntry<TK, TV>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -1314,7 +1314,7 @@ export interface IReadOnlyResultMap<TK extends string = string, TV = unknown> {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    keys(): MapIterator<TK>;
+    keys(): IterableIterator<TK>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -1322,7 +1322,7 @@ export interface IReadOnlyResultMap<TK extends string = string, TV = unknown> {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    values(): MapIterator<TV>;
+    values(): IterableIterator<TV>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1948,7 +1948,7 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
     // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     delete(key: TK): DetailedResult<TV, ResultMapResultDetail>;
-    entries(): MapIterator<KeyValueEntry<TK, TV>>;
+    entries(): IterableIterator<KeyValueEntry<TK, TV>>;
     forEach(cb: ResultMapForEachCb<TK, TV>, arg?: unknown): void;
     // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
@@ -1965,7 +1965,7 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected _isResultMapValueFactory<TK extends string, TV>(value: TV | ResultMapValueFactory<TK, TV>): value is ResultMapValueFactory<TK, TV>;
-    keys(): MapIterator<TK>;
+    keys(): IterableIterator<TK>;
     // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     set(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
@@ -1974,7 +1974,7 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
     // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     update(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
-    values(): MapIterator<TV>;
+    values(): IterableIterator<TV>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

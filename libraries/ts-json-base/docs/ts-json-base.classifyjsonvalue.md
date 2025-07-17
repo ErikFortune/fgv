@@ -47,6 +47,7 @@ The `unknown` value to be tested
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[JsonValueType](./ts-json-base.jsonvaluetype.md)<!-- -->&gt;

@@ -47,6 +47,7 @@ The [subtags](./ts-bcp47.bcp47.subtags.md) to be converted.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 string

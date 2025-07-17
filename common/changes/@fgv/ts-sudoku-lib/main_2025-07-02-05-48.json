@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@fgv/ts-sudoku-lib",
-      "comment": "update rushstack",
+      "comment": "bump version",
       "type": "none"
     }
   ],

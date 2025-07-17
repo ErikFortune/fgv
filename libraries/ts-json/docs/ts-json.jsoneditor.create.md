@@ -63,6 +63,7 @@ _(Optional)_ Optional set of [editor rules](./ts-json.ijsoneditorrule.md) to be 
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[JsonEditor](./ts-json.jsoneditor.md)<!-- -->&gt;

@@ -47,6 +47,7 @@ the literal value to be validated
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Validator](./ts-utils.validator.md)<!-- -->&lt;T&gt;
