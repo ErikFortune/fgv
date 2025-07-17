@@ -42,12 +42,15 @@ import {
   ConditionOperator,
   allConditionOperators,
   ConditionToken,
-  ConditionSetToken
+  ConditionSetToken,
+  ContextQualifierToken,
+  ContextToken
 } from '../conditions';
 import {
   conditionKey,
   conditionSetHash,
   conditionToken,
+  contextToken,
   decisionKey,
   identifier
 } from './regularExpressions';
@@ -460,4 +463,63 @@ export function toDecisionIndex(index: number): Result<DecisionIndex> {
     return fail(`${index}: not a valid decision index`);
   }
   return succeed(index);
+}
+
+/**
+ * Determines whether a string is a valid {@link ContextQualifierToken | context qualifier token}.
+ * A context qualifier token has the format:
+ * `<qualifierName>=<value>` or `<value>`
+ * Context qualifier tokens allow broader character set including commas for comma-separated values.
+ * @param token - the string to validate
+ * @returns `true` if the string is a valid context qualifier token, `false` otherwise.
+ * @public
+ */
+export function isValidContextQualifierToken(token: string): token is ContextQualifierToken {
+  if (token === '') {
+    return true;
+  }
+  return contextToken.test(token);
+}
+
+/**
+ * Determines whether a string is a valid context token.
+ * Context tokens are pipe-separated lists of context qualifier tokens.
+ * @param token - the string to validate.
+ * @returns `true` if the string is a valid context token, `false` otherwise.
+ * @public
+ */
+export function isValidContextToken(token: string): token is ContextToken {
+  if (token === '') {
+    return true;
+  }
+  const parts = token.split('|').map((part) => part.trim());
+  return parts.every((part) => part !== '' && isValidContextQualifierToken(part));
+}
+
+/**
+ * Converts a string to a {@link ContextQualifierToken} if it is a valid context qualifier token.
+ * @param token - the string to convert
+ * @returns `Success` with the converted {@link ContextQualifierToken} if successful, or `Failure` with an
+ * error message if not.
+ * @public
+ */
+export function toContextQualifierToken(token: string): Result<ContextQualifierToken> {
+  if (!isValidContextQualifierToken(token)) {
+    return fail(`${token}: not a valid context qualifier token`);
+  }
+  return succeed(token);
+}
+
+/**
+ * Converts a string to a {@link ContextToken} if it is a valid context token.
+ * @param token - the string to convert
+ * @returns `Success` with the converted {@link ContextToken} if successful, or `Failure` with an
+ * error message if not.
+ * @public
+ */
+export function toContextToken(token: string): Result<ContextToken> {
+  if (!isValidContextToken(token)) {
+    return fail(`${token}: not a valid context token`);
+  }
+  return succeed(token);
 }

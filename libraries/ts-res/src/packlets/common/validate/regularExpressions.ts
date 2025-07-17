@@ -53,6 +53,13 @@ export const conditionKey: RegExp =
 export const conditionToken: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(?:=[a-zA-Z0-9_\-]+)?$/;
 
 /**
+ * A {@link ContextToken | context token} has the form `<qualifierName>=<value>` or `<value>`.
+ * Context tokens allow broader character set including commas for comma-separated values.
+ * @internal
+ */
+export const contextToken: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(?:=[a-zA-Z0-9_\-,\s]+)?$/;
+
+/**
  * @internal
  */
 export const conditionSetHash: RegExp = /^[a-zA-Z0-9]{8}$/;

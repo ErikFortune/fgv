@@ -319,34 +319,84 @@ export class ResourceCompiler {
     candidates: ReadonlyArray<TsRes.Resources.ResourceCandidate>;
   }> {
     try {
-      if (!this._options.context) {
+      // If no context filtering, return all resources
+      if (!this._options.context && !this._options.contextFilter) {
         return succeed({
           resources: manager.getAllResources(),
           candidates: manager.getAllCandidates()
         });
       }
 
-      const contextData = JSON.parse(this._options.context);
-      const context = TsRes.Context.Convert.validatedContextDecl.convert(contextData, {
-        qualifiers: manager.qualifiers
-      });
+      // Determine the context to use for filtering
+      let validatedFilterContext: TsRes.Context.IValidatedContextDecl | undefined;
 
-      if (context.isFailure()) {
-        return fail(`Invalid context: ${context.message}`);
+      // Apply context filtering (JSON format)
+      if (this._options.context) {
+        const contextData = JSON.parse(this._options.context);
+        const context = TsRes.Context.Convert.validatedContextDecl.convert(contextData, {
+          qualifiers: manager.qualifiers
+        });
+
+        if (context.isFailure()) {
+          return fail(`Invalid context: ${context.message}`);
+        }
+
+        validatedFilterContext = context.value;
       }
 
-      const contextOptions: TsRes.Context.IContextMatchOptions = {
-        partialContextMatch: this._options.partialMatch
-      };
+      // Apply context filter token (pipe-separated format)
+      if (this._options.contextFilter) {
+        const contextResult = this._parseContextFilterToken(manager);
+        if (contextResult.isFailure()) {
+          return fail(`Failed to parse context filter: ${contextResult.message}`);
+        }
 
-      const resources = manager.getResourcesForContext(context.value, contextOptions);
-      const candidates = manager.getCandidatesForContext(context.value, contextOptions);
+        validatedFilterContext = contextResult.value;
+      }
 
-      return succeed({ resources, candidates });
+      // Clone the manager with the validated filter context
+      const clonedManagerResult = manager.clone({ validatedFilterContext });
+      if (clonedManagerResult.isFailure()) {
+        return fail(`Failed to clone manager: ${clonedManagerResult.message}`);
+      }
+
+      const clonedManager = clonedManagerResult.value;
+
+      // TODO: Restore resource ID filtering with proper filename prefix handling
+      // TODO: Restore path filtering functionality
+
+      return succeed({
+        resources: clonedManager.getAllResources(),
+        candidates: clonedManager.getAllCandidates()
+      });
     } catch (error) {
       return fail(`Failed to apply context filtering: ${error}`);
     }
   }
+
+  /**
+   * Parses context filter token into validated partial context
+   */
+  private _parseContextFilterToken(
+    manager: TsRes.Resources.ResourceManagerBuilder
+  ): Result<TsRes.Context.IValidatedContextDecl> {
+    try {
+      if (!this._options.contextFilter) {
+        return fail('No context filter provided');
+      }
+
+      // Create ContextTokens instance for parsing
+      const contextTokens = new TsRes.Context.ContextTokens(manager.qualifiers);
+
+      // Parse the context filter token into a validated partial context
+      return contextTokens.contextTokenToPartialContext(this._options.contextFilter);
+    } catch (error) {
+      return fail(`Failed to parse context filter token: ${error}`);
+    }
+  }
+
+  // TODO: Add back resource ID filtering helper
+  // TODO: Add back path filtering helper
 
   /**
    * Generates the output blob

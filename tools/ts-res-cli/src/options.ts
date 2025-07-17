@@ -55,6 +55,31 @@ export interface ICompileOptions {
   context?: string;
 
   /**
+   * Context filter token (pipe-separated qualifier=value pairs, e.g., 'language=en-US|territory=US')
+   */
+  contextFilter?: string;
+
+  /**
+   * Include only resources matching these IDs (comma-separated list)
+   */
+  includeResources?: string;
+
+  /**
+   * Exclude resources matching these IDs (comma-separated list)
+   */
+  excludeResources?: string;
+
+  /**
+   * Include only resources from these paths (comma-separated list)
+   */
+  includePaths?: string;
+
+  /**
+   * Exclude resources from these paths (comma-separated list)
+   */
+  excludePaths?: string;
+
+  /**
    * Output format
    */
   format: OutputFormat;

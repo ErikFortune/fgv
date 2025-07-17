@@ -22,5 +22,6 @@
 
 import * as Convert from './convert';
 export * from './contextDecls';
+export * from './contextToken';
 
 export { Convert };

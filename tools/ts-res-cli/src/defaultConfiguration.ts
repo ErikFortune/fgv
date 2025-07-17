@@ -39,6 +39,13 @@ export const DEFAULT_SYSTEM_CONFIGURATION: TsRes.Config.Model.ISystemConfigurati
       name: 'territory',
       systemType: 'territory',
       configuration: {}
+    },
+    {
+      name: 'role',
+      systemType: 'literal',
+      configuration: {
+        enumeratedValues: ['admin', 'user', 'guest']
+      }
     }
   ],
   qualifiers: [
@@ -53,6 +60,13 @@ export const DEFAULT_SYSTEM_CONFIGURATION: TsRes.Config.Model.ISystemConfigurati
       typeName: 'territory',
       token: 'territory',
       defaultPriority: 500
+    },
+    {
+      name: 'role',
+      typeName: 'role',
+      token: 'role',
+      tokenIsOptional: true,
+      defaultPriority: 400
     }
   ],
   resourceTypes: [

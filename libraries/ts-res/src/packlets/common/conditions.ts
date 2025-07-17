@@ -192,18 +192,18 @@ export type DecisionKey = Brand<string, 'DecisionKey'>;
 export type DecisionIndex = Brand<number, 'DecisionIndex'>;
 
 /**
- * A string representing a validated context token. Context tokens are used
- * for filtering resources by context criteria. A context token has the form
+ * A string representing a validated context qualifier token. Context qualifier tokens are used
+ * for filtering resources by context criteria. A context qualifier token has the form
  * `<qualifierName>=<value>` or `<value>`.
  * @public
  */
-export type ContextToken = Brand<string, 'ContextToken'>;
+export type ContextQualifierToken = Brand<string, 'ContextQualifierToken'>;
 
 /**
- * A string representing a validated context set token. Context set tokens are
- * pipe-separated lists of one or more context tokens. Uses "|" as separator
+ * A string representing a validated context token. Context tokens are
+ * pipe-separated lists of one or more context qualifier tokens. Uses "|" as separator
  * to avoid conflicts with comma-separated values within context values.
  * Example: "language=en-US,de-DE|territory=US|role=admin"
  * @public
  */
-export type ContextSetToken = Brand<string, 'ContextSetToken'>;
+export type ContextToken = Brand<string, 'ContextToken'>;

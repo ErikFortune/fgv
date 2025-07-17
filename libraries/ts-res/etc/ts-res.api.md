@@ -99,6 +99,16 @@ function buildConditionToken({ qualifier, value }: IConditionTokenParts): Result
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+function buildContextQualifierToken({ qualifier, value }: IContextTokenParts): Result<ContextQualifierToken>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function buildContextToken(parts: ReadonlyArray<IContextTokenParts>): Result<ContextToken>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 class Candidate<TVALUE extends JsonValue = JsonValue> implements ICandidate<TVALUE> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -642,7 +652,8 @@ declare namespace Context {
         IContextQualifierValueDecl,
         IContextDecl,
         IValidatedContextQualifierValueDecl,
-        IValidatedContextDecl
+        IValidatedContextDecl,
+        ContextTokens
     }
 }
 export { Context }
@@ -694,10 +705,62 @@ class ContextQualifierProviderValidator implements IReadOnlyContextQualifierProv
     set(name: string, value: string): Result<QualifierContextValue>;
 }
 
+// @public
+export type ContextQualifierToken = Brand<string, 'ContextQualifierToken'>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const contextQualifierValueDecl: ObjectConverter<IContextQualifierValueDecl, unknown>;
+
+// @public
+export type ContextToken = Brand<string, 'ContextToken'>;
+
+// @internal
+const contextToken: RegExp;
+
+// @public
+class ContextTokens {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(qualifiers: IReadOnlyQualifierCollector);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ContextSetToken"
+    contextTokenToPartialContext(token: string): Result<IValidatedContextDecl>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ContextSetToken"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static contextTokenToPartialContext(token: string, qualifiers: IReadOnlyQualifierCollector): Result<IValidatedContextDecl>;
+    findQualifierForValue(value: string): Result<Qualifier>;
+    static findQualifierForValue(value: string, qualifiers: IReadOnlyQualifierCollector): Result<Qualifier>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    parseContextQualifierToken(token: string): Result<IValidatedContextQualifierValueDecl>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static parseContextQualifierToken(token: string, qualifiers: IReadOnlyQualifierCollector): Result<IValidatedContextQualifierValueDecl>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ContextSetToken"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    parseContextToken(token: string): Result<IValidatedContextQualifierValueDecl[]>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ContextSetToken"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static parseContextToken(token: string, qualifiers: IReadOnlyQualifierCollector): Result<IValidatedContextQualifierValueDecl[]>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ContextSetToken"
+    partialContextToContextToken(context: IValidatedContextDecl): Result<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ContextSetToken"
+    static partialContextToContextToken(context: IValidatedContextDecl): Result<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly qualifiers: IReadOnlyQualifierCollector;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    validateContextTokenParts(parts: Helpers.IContextTokenParts): Result<IValidatedContextQualifierValueDecl>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static validateContextTokenParts(parts: Helpers.IContextTokenParts, qualifiers: IReadOnlyQualifierCollector): Result<IValidatedContextQualifierValueDecl>;
+}
 
 declare namespace Convert {
     export {
@@ -981,6 +1044,11 @@ declare namespace Helpers {
         parseConditionTokenParts,
         parseConditionSetTokenParts,
         IConditionTokenParts,
+        buildContextQualifierToken,
+        buildContextToken,
+        parseContextQualifierTokenParts,
+        parseContextTokenParts,
+        IContextTokenParts,
         splitResourceId,
         joinResourceIds,
         joinOptionalResourceIds
@@ -1363,6 +1431,14 @@ interface IContextQualifierProviderValidatorCreateParams {
 interface IContextQualifierValueDecl {
     // (undocumented)
     qualifier: string;
+    // (undocumented)
+    value: string;
+}
+
+// @public
+interface IContextTokenParts {
+    // (undocumented)
+    qualifier?: string;
     // (undocumented)
     value: string;
 }
@@ -2265,6 +2341,12 @@ function isValidConditionSetToken(token: string): token is ConditionSetToken;
 function isValidConditionToken(token: string): token is ConditionToken;
 
 // @public
+function isValidContextQualifierToken(token: string): token is ContextQualifierToken;
+
+// @public
+function isValidContextToken(token: string): token is ContextToken;
+
+// @public
 function isValidDecisionIndex(index: number): index is DecisionIndex;
 
 // @public
@@ -2694,6 +2776,16 @@ function parseConditionTokenParts(token: string): Result<IConditionTokenParts>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+function parseContextQualifierTokenParts(token: string): Result<IContextTokenParts>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function parseContextTokenParts(token: string): Result<IContextTokenParts[]>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 class PathImporter implements IImporter {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3067,6 +3159,7 @@ declare namespace RegularExpressions {
         identifierList,
         conditionKey_2 as conditionKey,
         conditionToken_2 as conditionToken,
+        contextToken,
         conditionSetHash_2 as conditionSetHash,
         decisionKey_2 as decisionKey,
         territoryCode
@@ -3774,6 +3867,12 @@ function toConditionSetToken(token: string): Result<ConditionSetToken>;
 function toConditionToken(token: string): Result<ConditionToken>;
 
 // @public
+function toContextQualifierToken(token: string): Result<ContextQualifierToken>;
+
+// @public
+function toContextToken(token: string): Result<ContextToken>;
+
+// @public
 function toDecisionIndex(index: number): Result<DecisionIndex>;
 
 // @public
@@ -3847,6 +3946,10 @@ declare namespace Validate {
         toConditionSetHash,
         toDecisionKey,
         toDecisionIndex,
+        isValidContextQualifierToken,
+        isValidContextToken,
+        toContextQualifierToken,
+        toContextToken,
         isValidResourceName,
         isValidResourceId,
         isValidResourceIndex,

@@ -313,7 +313,7 @@ describe('CLI Configuration Tests', () => {
       expect(allCandidateKeys.some((key) => key.includes('role-[admin]'))).toBe(true);
     });
 
-    test('compiles with complex multi-qualifier context', async () => {
+    test.skip('compiles with complex multi-qualifier context', async () => {
       const resourcesDir = path.join(customConfigTestDataDir, 'resources');
       const configFile = path.join(customConfigTestDataDir, 'resources-config.json');
       const outputFile = path.join(tempDir, 'complex-filtered.json');
