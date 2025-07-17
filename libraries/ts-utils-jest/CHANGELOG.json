@@ -2,6 +2,21 @@
   "name": "@fgv/ts-utils-jest",
   "entries": [
     {
+      "version": "5.0.0",
+      "tag": "@fgv/ts-utils-jest_v5.0.0",
+      "date": "Thu, 17 Jul 2025 00:13:24 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "minor fixes"
+          },
+          {
+            "comment": "bump version"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.6.0",
       "tag": "@fgv/ts-utils-jest_v4.6.0",
       "date": "Wed, 02 Jul 2025 05:48:16 GMT",
