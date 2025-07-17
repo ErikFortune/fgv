@@ -340,6 +340,28 @@ A string representing a validated condition token. Condition tokens are typicall
 </td></tr>
 <tr><td>
 
+[ContextQualifierToken](./ts-res.contextqualifiertoken.md)
+
+
+</td><td>
+
+A string representing a validated context qualifier token. Context qualifier tokens are used for filtering resources by context criteria. A context qualifier token has the form `<qualifierName>=<value>` or `<value>`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ContextToken](./ts-res.contexttoken.md)
+
+
+</td><td>
+
+A string representing a validated context token. Context tokens are pipe-separated lists of one or more context qualifier tokens. Uses "\|" as separator to avoid conflicts with comma-separated values within context values. Example: "language=en-US,de-DE\|territory=US\|role=admin"
+
+
+</td></tr>
+<tr><td>
+
 [DecisionIndex](./ts-res.decisionindex.md)
 
 

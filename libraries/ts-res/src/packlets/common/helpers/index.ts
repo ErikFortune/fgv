@@ -21,5 +21,5 @@
  */
 
 export * from './conditions';
-export * from './contexts';
+export * from './context';
 export * from './resources';

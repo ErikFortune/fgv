@@ -45,7 +45,7 @@ export class ContextTokens {
   }
 
   /**
-   * Parses a {@link ContextToken | context qualifier token} string and validates the parts
+   * Parses a {@link ContextQualifierToken | context qualifier token} string and validates the parts
    * against the qualifiers present in the {@link Context.ContextTokens.qualifiers | qualifier collector}.
    * @param token - the token string to parse.
    * @returns `Success` with the {@link Context.IValidatedContextQualifierValueDecl | validated context qualifier value declaration}
@@ -56,7 +56,7 @@ export class ContextTokens {
   }
 
   /**
-   * Parses a {@link ContextSetToken | context token} string and validates the parts
+   * Parses a {@link ContextToken | context token} string and validates the parts
    * against the qualifiers present in the {@link Context.ContextTokens.qualifiers | qualifier collector}.
    * @param token - the token string to parse.
    * @returns `Success` with the array of {@link Context.IValidatedContextQualifierValueDecl | validated context qualifier value declarations}
@@ -88,7 +88,7 @@ export class ContextTokens {
   }
 
   /**
-   * Converts a {@link ContextSetToken | context token} to a validated partial context.
+   * Converts a {@link ContextToken | context token} to a validated partial context.
    * @param token - the context token to convert
    * @returns `Success` with the validated partial context if successful, `Failure` with an error message if not.
    */
@@ -97,7 +97,7 @@ export class ContextTokens {
   }
 
   /**
-   * Converts a validated partial context to a {@link ContextSetToken | context token}.
+   * Converts a validated partial context to a {@link ContextToken | context token}.
    * @param context - the validated partial context to convert
    * @returns `Success` with the context token if successful, `Failure` with an error message if not.
    */
@@ -106,7 +106,7 @@ export class ContextTokens {
   }
 
   /**
-   * Parses a {@link ContextToken | context qualifier token} and validates it against the qualifiers
+   * Parses a {@link ContextQualifierToken | context qualifier token} and validates it against the qualifiers
    * present in the supplied {@link Qualifiers.IReadOnlyQualifierCollector | qualifier collector}.
    * @param token - the token string to parse.
    * @param qualifiers - the {@link Qualifiers.IReadOnlyQualifierCollector | qualifier collector} to use
@@ -123,7 +123,7 @@ export class ContextTokens {
   }
 
   /**
-   * Parses a {@link ContextSetToken | context token} and validates it against the qualifiers
+   * Parses a {@link ContextToken | context token} and validates it against the qualifiers
    * present in the supplied {@link Qualifiers.IReadOnlyQualifierCollector | qualifier collector}.
    * @param token - the token string to parse.
    * @param qualifiers - the {@link Qualifiers.IReadOnlyQualifierCollector | qualifier collector} to use
@@ -194,7 +194,7 @@ export class ContextTokens {
   }
 
   /**
-   * Converts a {@link ContextSetToken | context token} to a validated partial context.
+   * Converts a {@link ContextToken | context token} to a validated partial context.
    * @param token - the context token to convert
    * @param qualifiers - the {@link Qualifiers.IReadOnlyQualifierCollector | qualifier collector} to use
    * @returns `Success` with the validated partial context if successful, `Failure` with an error message if not.
@@ -223,7 +223,7 @@ export class ContextTokens {
   }
 
   /**
-   * Converts a validated partial context to a {@link ContextSetToken | context token}.
+   * Converts a validated partial context to a {@link ContextToken | context token}.
    * @param context - the validated partial context to convert
    * @returns `Success` with the context token if successful, `Failure` with an error message if not.
    */
