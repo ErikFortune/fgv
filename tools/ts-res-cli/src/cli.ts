@@ -33,10 +33,6 @@ interface ICompileCommandOptions {
   config?: string;
   context?: string;
   contextFilter?: string;
-  includeResources?: string;
-  excludeResources?: string;
-  includePaths?: string;
-  excludePaths?: string;
   format: string;
   mode: string;
   partialMatch?: boolean;
@@ -69,10 +65,6 @@ interface IInfoCommandOptions {
   config?: string;
   context?: string;
   contextFilter?: string;
-  includeResources?: string;
-  excludeResources?: string;
-  includePaths?: string;
-  excludePaths?: string;
   partialMatch?: boolean;
   resourceTypes?: string;
   maxDistance?: number;
@@ -118,10 +110,6 @@ export class TsResCliApp {
         '--context-filter <token>',
         'Context filter token (pipe-separated, e.g., "language=en-US|territory=US")'
       )
-      .option('--include-resources <ids>', 'Include only resources with these IDs (comma-separated)')
-      .option('--exclude-resources <ids>', 'Exclude resources with these IDs (comma-separated)')
-      .option('--include-paths <paths>', 'Include only resources from these paths (comma-separated)')
-      .option('--exclude-paths <paths>', 'Exclude resources from these paths (comma-separated)')
       .option('-f, --format <format>', 'Output format', 'compiled')
       .option('-m, --mode <mode>', 'Compilation mode', 'development')
       .option('--partial-match', 'Enable partial context matching', false)
@@ -159,10 +147,6 @@ export class TsResCliApp {
         '--context-filter <token>',
         'Context filter token (pipe-separated, e.g., "language=en-US|territory=US")'
       )
-      .option('--include-resources <ids>', 'Include only resources with these IDs (comma-separated)')
-      .option('--exclude-resources <ids>', 'Exclude resources with these IDs (comma-separated)')
-      .option('--include-paths <paths>', 'Include only resources from these paths (comma-separated)')
-      .option('--exclude-paths <paths>', 'Exclude resources from these paths (comma-separated)')
       .option('--partial-match', 'Enable partial context matching', false)
       .option('--resource-types <types>', 'Resource type filter (comma-separated)')
       .option('--max-distance <number>', 'Maximum distance for language matching', parseInt)
@@ -247,10 +231,6 @@ export class TsResCliApp {
       includeMetadata: true,
       context: options.context,
       contextFilter: options.contextFilter,
-      includeResources: options.includeResources,
-      excludeResources: options.excludeResources,
-      includePaths: options.includePaths,
-      excludePaths: options.excludePaths,
       resourceTypes: options.resourceTypes,
       maxDistance: options.maxDistance
     };
@@ -287,10 +267,6 @@ export class TsResCliApp {
         config: options.config,
         context: options.context,
         contextFilter: options.contextFilter,
-        includeResources: options.includeResources,
-        excludeResources: options.excludeResources,
-        includePaths: options.includePaths,
-        excludePaths: options.excludePaths,
         format,
         mode,
         partialMatch: options.partialMatch || false,
