@@ -35,13 +35,15 @@ interface FilterToolProps {
     applyFilterValues: () => void;
     resetFilterValues: () => void;
   };
+  onFilterResult?: (result: FilterResult | null) => void;
 }
 
 const FilterTool: React.FC<FilterToolProps> = ({
   onMessage,
   resourceManager,
   filterState,
-  filterActions
+  filterActions,
+  onFilterResult
 }) => {
   const { state: resourceState } = resourceManager;
 
@@ -140,6 +142,7 @@ const FilterTool: React.FC<FilterToolProps> = ({
   useEffect(() => {
     if (!resourceState.processedResources || !isFilteringActive) {
       setFilterResult(null);
+      onFilterResult?.(null);
       return;
     }
 
@@ -208,6 +211,7 @@ const FilterTool: React.FC<FilterToolProps> = ({
         );
 
         setFilterResult(analysis);
+        onFilterResult?.(analysis);
 
         if (analysis.warnings.length > 0) {
           onMessage?.('warning', `Filtering completed with ${analysis.warnings.length} warning(s)`);
@@ -216,12 +220,14 @@ const FilterTool: React.FC<FilterToolProps> = ({
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        setFilterResult({
+        const errorResult = {
           success: false,
           filteredResources: [],
           error: errorMessage,
           warnings: []
-        });
+        };
+        setFilterResult(errorResult);
+        onFilterResult?.(errorResult);
         onMessage?.('error', `Filtering error: ${errorMessage}`);
       } finally {
         setIsFiltering(false);

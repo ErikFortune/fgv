@@ -1,13 +1,16 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { MagnifyingGlassIcon, CubeIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
-import { Message } from '../../types/app';
+import { Message, FilterState } from '../../types/app';
+import { FilterResult } from '../../utils/filterResources';
 import { Runtime, Config } from '@fgv/ts-res';
 import { createSimpleContext, DEFAULT_SYSTEM_CONFIGURATION } from '../../utils/tsResIntegration';
 
 interface ResolutionViewerProps {
   onMessage?: (type: Message['type'], message: string) => void;
   resourceManager: UseResourceManagerReturn;
+  filterState: FilterState;
+  filterResult?: FilterResult | null;
 }
 
 interface ContextState {
@@ -431,20 +434,31 @@ const CacheContentsDisplay: React.FC<CacheContentsDisplayProps> = ({ resolver })
   );
 };
 
-const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resourceManager }) => {
+const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
+  onMessage,
+  resourceManager,
+  filterState,
+  filterResult
+}) => {
   const { state: resourceState } = resourceManager;
+
+  // Use filtered resources when filtering is active and successful
+  const isFilteringActive = filterState.enabled && filterResult?.success === true;
+  const activeProcessedResources = isFilteringActive
+    ? filterResult?.processedResources
+    : resourceState.processedResources;
 
   // Available qualifiers
   const availableQualifiers = useMemo(() => {
-    if (resourceState.processedResources?.compiledCollection.qualifiers) {
+    if (activeProcessedResources?.compiledCollection.qualifiers) {
       // Get qualifier names from the compiled collection
-      return resourceState.processedResources.compiledCollection.qualifiers.map((q) => q.name);
+      return activeProcessedResources.compiledCollection.qualifiers.map((q) => q.name);
     }
 
     // Use active configuration if available, otherwise fall back to default
     const config = resourceState.activeConfiguration || DEFAULT_SYSTEM_CONFIGURATION;
     return config.qualifiers.map((q) => q.name);
-  }, [resourceState.processedResources?.compiledCollection.qualifiers, resourceState.activeConfiguration]);
+  }, [activeProcessedResources?.compiledCollection.qualifiers, resourceState.activeConfiguration]);
 
   // Initialize context with smart default values based on qualifier types
   const defaultContextValues = useMemo(() => {
@@ -546,11 +560,11 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
 
   // Available resources
   const availableResources = useMemo(() => {
-    if (!resourceState.processedResources?.summary.resourceIds) {
+    if (!activeProcessedResources?.summary?.resourceIds) {
       return [];
     }
-    return resourceState.processedResources.summary.resourceIds.sort();
-  }, [resourceState.processedResources?.summary.resourceIds]);
+    return activeProcessedResources.summary.resourceIds.sort();
+  }, [activeProcessedResources?.summary?.resourceIds]);
 
   // Check if there are pending context changes
   const hasPendingChanges = useMemo(() => {
@@ -640,13 +654,13 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
 
   // Apply context changes
   const applyContext = useCallback(() => {
-    if (!resourceState.processedResources?.system) {
+    if (!activeProcessedResources?.system) {
       onMessage?.('error', 'No resources loaded');
       return;
     }
 
     // Create new context provider
-    const contextResult = createSimpleContext(pendingContextValues, resourceState.processedResources.system);
+    const contextResult = createSimpleContext(pendingContextValues, activeProcessedResources.system);
     if (contextResult.isFailure()) {
       onMessage?.('error', `Failed to create context: ${contextResult.message}`);
       return;
@@ -666,8 +680,8 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
 
     // Create new resource resolver
     const resolverResult = Runtime.ResourceResolver.create({
-      resourceManager: resourceState.processedResources.system.resourceManager,
-      qualifierTypes: resourceState.processedResources.system.qualifierTypes,
+      resourceManager: activeProcessedResources.system.resourceManager,
+      qualifierTypes: activeProcessedResources.system.qualifierTypes,
       contextQualifierProvider: contextResult.value,
       listener: metricsListener
     });
@@ -687,7 +701,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
     }
 
     onMessage?.('success', 'Context applied successfully');
-  }, [pendingContextValues, resourceState.processedResources?.system, selectedResourceId, onMessage]);
+  }, [pendingContextValues, activeProcessedResources?.system, selectedResourceId, onMessage]);
 
   // Helper function to evaluate conditions for a candidate
   const evaluateConditionsForCandidate = useCallback(
@@ -750,15 +764,14 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
   const resolveSelectedResource = useCallback(
     (resolver: Runtime.ResourceResolver, resourceId: string) => {
       if (
-        !resourceState.processedResources?.system.resourceManager ||
-        !resourceState.processedResources?.compiledCollection
+        !activeProcessedResources?.system.resourceManager ||
+        !activeProcessedResources?.compiledCollection
       ) {
         setResolutionResult({ success: false, error: 'No resource manager available' });
         return;
       }
 
-      const resourceResult =
-        resourceState.processedResources.system.resourceManager.getBuiltResource(resourceId);
+      const resourceResult = activeProcessedResources.system.resourceManager.getBuiltResource(resourceId);
       if (resourceResult.isFailure()) {
         setResolutionResult({
           success: false,
@@ -768,7 +781,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
       }
 
       const resource = resourceResult.value;
-      const compiledCollection = resourceState.processedResources.compiledCollection;
+      const compiledCollection = activeProcessedResources.compiledCollection;
 
       // Find the compiled resource for condition set keys
       const compiledResource = compiledCollection.resources.find((r) => r.id === resourceId);
@@ -859,8 +872,8 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
       });
     },
     [
-      resourceState.processedResources?.system.resourceManager,
-      resourceState.processedResources?.compiledCollection,
+      activeProcessedResources?.system.resourceManager,
+      activeProcessedResources?.compiledCollection,
       getCandidateConditionSetKey,
       evaluateConditionsForCandidate
     ]
@@ -905,16 +918,12 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
 
   // Auto-apply default context when resources are loaded or defaults change
   React.useEffect(() => {
-    if (
-      resourceState.processedResources?.system &&
-      Object.keys(defaultContextValues).length > 0 &&
-      !hasAutoApplied
-    ) {
+    if (activeProcessedResources?.system && Object.keys(defaultContextValues).length > 0 && !hasAutoApplied) {
       // Apply the default context automatically
       applyContext();
       setHasAutoApplied(true);
     }
-  }, [resourceState.processedResources?.system, defaultContextValues, hasAutoApplied, applyContext]);
+  }, [activeProcessedResources?.system, defaultContextValues, hasAutoApplied, applyContext]);
 
   if (!resourceState.processedResources) {
     return (
@@ -947,6 +956,11 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({ onMessage, resource
       <div className="flex items-center space-x-3 mb-6">
         <MagnifyingGlassIcon className="h-8 w-8 text-blue-600" />
         <h2 className="text-2xl font-bold text-gray-900">Resolution Viewer</h2>
+        {isFilteringActive && (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+            Filtered
+          </span>
+        )}
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

@@ -11,12 +11,21 @@ import {
   ChevronUpIcon
 } from '@heroicons/react/24/outline';
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
-import { Message } from '../../types/app';
+import { Message, FilterState } from '../../types/app';
 import { ResourceJson } from '@fgv/ts-res';
 
 interface CompiledBrowserProps {
   onMessage?: (type: Message['type'], message: string) => void;
   resourceManager: UseResourceManagerReturn;
+  filterState: FilterState;
+  filterResult?: {
+    success: boolean;
+    processedResources?: {
+      system: any;
+      compiledCollection: any;
+      summary: { resourceIds?: string[] };
+    };
+  } | null;
 }
 
 interface TreeNode {
@@ -27,8 +36,19 @@ interface TreeNode {
   data?: any;
 }
 
-const CompiledBrowser: React.FC<CompiledBrowserProps> = ({ onMessage, resourceManager }) => {
+const CompiledBrowser: React.FC<CompiledBrowserProps> = ({
+  onMessage,
+  resourceManager,
+  filterState,
+  filterResult
+}) => {
   const { state: resourceState } = resourceManager;
+
+  // Use filtered resources when filtering is active and successful
+  const isFilteringActive = filterState.enabled && filterResult?.success === true;
+  const activeProcessedResources = isFilteringActive
+    ? filterResult?.processedResources
+    : resourceState.processedResources;
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['root', 'resources']));
   const [showJsonView, setShowJsonView] = useState(false);
@@ -173,11 +193,11 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({ onMessage, resourceMa
 
   // Build tree structure from compiled resources
   const treeData = useMemo(() => {
-    if (!resourceState.processedResources?.compiledCollection) {
+    if (!activeProcessedResources?.compiledCollection) {
       return null;
     }
 
-    const compiledCollection = resourceState.processedResources.compiledCollection;
+    const compiledCollection = activeProcessedResources.compiledCollection;
 
     const tree: TreeNode = {
       id: 'root',
@@ -242,21 +262,22 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({ onMessage, resourceMa
     }
 
     return tree;
-  }, [resourceState.processedResources?.compiledCollection, onMessage]);
+  }, [activeProcessedResources?.compiledCollection, onMessage, isFilteringActive]);
 
   // Export compiled collection to JSON file
   const handleExportCompiledData = useCallback(() => {
     try {
-      if (!resourceState.processedResources?.compiledCollection) {
+      if (!activeProcessedResources?.compiledCollection) {
         onMessage?.('error', 'No compiled data available to export');
         return;
       }
 
       const compiledData = {
-        ...resourceState.processedResources.compiledCollection,
+        ...activeProcessedResources.compiledCollection,
         metadata: {
           exportedAt: new Date().toISOString(),
-          type: 'ts-res-compiled-collection'
+          type: isFilteringActive ? 'ts-res-filtered-compiled-collection' : 'ts-res-compiled-collection',
+          ...(isFilteringActive && { filterContext: filterState.appliedValues })
         }
       };
 
@@ -266,20 +287,23 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({ onMessage, resourceMa
 
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'compiled-collection.json';
+      a.download = isFilteringActive ? 'filtered-compiled-collection.json' : 'compiled-collection.json';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      onMessage?.('success', 'Compiled collection exported successfully');
+      onMessage?.(
+        'success',
+        `${isFilteringActive ? 'Filtered c' : 'C'}ompiled collection exported successfully`
+      );
     } catch (error) {
       onMessage?.(
         'error',
         `Failed to export compiled data: ${error instanceof Error ? error.message : String(error)}`
       );
     }
-  }, [resourceState.processedResources?.compiledCollection, onMessage]);
+  }, [activeProcessedResources?.compiledCollection, onMessage, isFilteringActive, filterState.appliedValues]);
 
   const handleNodeClick = (node: TreeNode) => {
     setSelectedNodeId(node.id);
@@ -402,8 +426,13 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({ onMessage, resourceMa
         <div className="flex items-center space-x-3">
           <CubeIcon className="h-8 w-8 text-blue-600" />
           <h2 className="text-2xl font-bold text-gray-900">Compiled Browser</h2>
+          {isFilteringActive && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+              Filtered
+            </span>
+          )}
         </div>
-        {resourceState.processedResources && (
+        {activeProcessedResources && (
           <div className="flex items-center space-x-2">
             <button
               onClick={handleExportCompiledData}
@@ -417,7 +446,7 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({ onMessage, resourceMa
       </div>
 
       {/* JSON View Toggle */}
-      {resourceState.processedResources && (
+      {activeProcessedResources && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
           <button
             onClick={() => setShowJsonView(!showJsonView)}
@@ -449,10 +478,13 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({ onMessage, resourceMa
                 <pre className="text-xs text-gray-800 bg-white p-3 rounded border overflow-x-auto max-h-64 overflow-y-auto">
                   {JSON.stringify(
                     {
-                      ...resourceState.processedResources.compiledCollection,
+                      ...activeProcessedResources.compiledCollection,
                       metadata: {
                         exportedAt: new Date().toISOString(),
-                        type: 'ts-res-compiled-collection'
+                        type: isFilteringActive
+                          ? 'ts-res-filtered-compiled-collection'
+                          : 'ts-res-compiled-collection',
+                        ...(isFilteringActive && { filterContext: filterState.appliedValues })
                       }
                     },
                     null,
@@ -485,6 +517,8 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({ onMessage, resourceMa
                 node={selectedNode}
                 onMessage={onMessage}
                 resourceState={resourceState}
+                activeProcessedResources={activeProcessedResources}
+                isFilteringActive={isFilteringActive}
                 getConditionKey={getConditionKey}
                 getConditionSetKey={getConditionSetKey}
                 getDecisionKey={getDecisionKey}
@@ -524,6 +558,8 @@ interface NodeDetailProps {
   node: TreeNode;
   onMessage?: (type: Message['type'], message: string) => void;
   resourceState: any; // UseResourceManagerReturn['state']
+  activeProcessedResources: any;
+  isFilteringActive: boolean;
   getConditionKey: (
     condition: ResourceJson.Compiled.ICompiledCondition,
     compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
@@ -554,6 +590,8 @@ const NodeDetail: React.FC<NodeDetailProps> = ({
   node,
   onMessage,
   resourceState,
+  activeProcessedResources,
+  isFilteringActive,
   getConditionKey,
   getConditionSetKey,
   getDecisionKey,
@@ -592,7 +630,7 @@ const NodeDetail: React.FC<NodeDetailProps> = ({
                     if (resourceTypeIndex === undefined) return 'Unknown';
                     const resourceTypeName = getResourceTypeName(
                       resourceTypeIndex,
-                      resourceState.processedResources!.compiledCollection
+                      activeProcessedResources!.compiledCollection
                     );
                     return formatDisplayName(resourceTypeName, resourceTypeIndex);
                   })()}
@@ -602,13 +640,12 @@ const NodeDetail: React.FC<NodeDetailProps> = ({
                   {(() => {
                     const decisionIndex = resource?.decision;
                     if (decisionIndex === undefined) return 'Unknown';
-                    const decision =
-                      resourceState.processedResources!.compiledCollection.decisions[decisionIndex];
+                    const decision = activeProcessedResources!.compiledCollection.decisions[decisionIndex];
                     if (!decision) return `${decisionIndex}`;
                     const decisionKey = getDecisionKey(
                       decision,
                       decisionIndex,
-                      resourceState.processedResources!.compiledCollection
+                      activeProcessedResources!.compiledCollection
                     );
                     return formatDisplayName(decisionKey, decisionIndex);
                   })()}
@@ -624,7 +661,7 @@ const NodeDetail: React.FC<NodeDetailProps> = ({
                     const conditionSetKey = getCandidateConditionSetKey(
                       index,
                       resource,
-                      resourceState.processedResources!.compiledCollection
+                      activeProcessedResources!.compiledCollection
                     );
 
                     return (
@@ -726,7 +763,7 @@ const NodeDetail: React.FC<NodeDetailProps> = ({
                       const decisionKey = getDecisionKey(
                         decision,
                         index,
-                        resourceState.processedResources!.compiledCollection
+                        activeProcessedResources!.compiledCollection
                       );
                       return (
                         <div key={index} className="bg-white p-3 rounded border">
@@ -744,7 +781,7 @@ const NodeDetail: React.FC<NodeDetailProps> = ({
                               <div className="space-y-1">
                                 {decision.conditionSets.map((conditionSetIndex, idx) => {
                                   const conditionSet =
-                                    resourceState.processedResources!.compiledCollection.conditionSets[
+                                    activeProcessedResources!.compiledCollection.conditionSets[
                                       conditionSetIndex
                                     ];
                                   if (!conditionSet)
@@ -752,7 +789,7 @@ const NodeDetail: React.FC<NodeDetailProps> = ({
                                   const conditionSetKey = getConditionSetKey(
                                     conditionSet,
                                     conditionSetIndex,
-                                    resourceState.processedResources!.compiledCollection
+                                    activeProcessedResources!.compiledCollection
                                   );
                                   return (
                                     <div key={idx} className="text-xs bg-gray-50 p-1 rounded">
@@ -794,7 +831,7 @@ const NodeDetail: React.FC<NodeDetailProps> = ({
                       const conditionSetKey = getConditionSetKey(
                         conditionSet,
                         index,
-                        resourceState.processedResources!.compiledCollection
+                        activeProcessedResources!.compiledCollection
                       );
                       return (
                         <div key={index} className="bg-white p-3 rounded border">
@@ -812,14 +849,12 @@ const NodeDetail: React.FC<NodeDetailProps> = ({
                               <div className="space-y-1">
                                 {conditionSet.conditions.map((conditionIndex, idx) => {
                                   const condition =
-                                    resourceState.processedResources!.compiledCollection.conditions[
-                                      conditionIndex
-                                    ];
+                                    activeProcessedResources!.compiledCollection.conditions[conditionIndex];
                                   if (!condition)
                                     return <div key={idx}>Unknown condition {conditionIndex}</div>;
                                   const conditionKey = getConditionKey(
                                     condition,
-                                    resourceState.processedResources!.compiledCollection
+                                    activeProcessedResources!.compiledCollection
                                   );
                                   return (
                                     <div key={idx} className="text-xs bg-gray-50 p-1 rounded">
@@ -859,7 +894,7 @@ const NodeDetail: React.FC<NodeDetailProps> = ({
                   {collection.map((condition: ResourceJson.Compiled.ICompiledCondition, index: number) => {
                     const conditionKey = getConditionKey(
                       condition,
-                      resourceState.processedResources!.compiledCollection
+                      activeProcessedResources!.compiledCollection
                     );
                     return (
                       <div key={index} className="bg-white p-3 rounded border">

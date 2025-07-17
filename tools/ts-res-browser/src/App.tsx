@@ -11,6 +11,7 @@ import { useAppState } from './hooks/useAppState';
 import { useFileImport } from './hooks/useFileImport';
 import { useResourceManager } from './hooks/useResourceManager';
 import { useNavigationWarning } from './hooks/useNavigationWarning';
+import { FilterResult } from './utils/filterResources';
 import { Tool } from './types/app';
 
 const App: React.FC = () => {
@@ -18,6 +19,9 @@ const App: React.FC = () => {
   const fileImport = useFileImport();
   const resourceManager = useResourceManager();
   const navigationWarning = useNavigationWarning();
+
+  // State to share filter result between components
+  const [filterResult, setFilterResult] = React.useState<FilterResult | null>(null);
 
   // Ref to store the configuration tool's save handler
   const configSaveHandlerRef = React.useRef<(() => void) | null>(null);
@@ -82,12 +86,27 @@ const App: React.FC = () => {
               applyFilterValues: actions.applyFilterValues,
               resetFilterValues: actions.resetFilterValues
             }}
+            onFilterResult={setFilterResult}
           />
         );
       case 'compiled':
-        return <CompiledBrowser onMessage={actions.addMessage} resourceManager={resourceManager} />;
+        return (
+          <CompiledBrowser
+            onMessage={actions.addMessage}
+            resourceManager={resourceManager}
+            filterState={state.filterState}
+            filterResult={filterResult}
+          />
+        );
       case 'resolution':
-        return <ResolutionViewer onMessage={actions.addMessage} resourceManager={resourceManager} />;
+        return (
+          <ResolutionViewer
+            onMessage={actions.addMessage}
+            resourceManager={resourceManager}
+            filterState={state.filterState}
+            filterResult={filterResult}
+          />
+        );
       case 'configuration':
         return (
           <ConfigurationTool
