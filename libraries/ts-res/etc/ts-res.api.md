@@ -3515,7 +3515,7 @@ const resourceTreeChildNodeDecl: Converter<Normalized.IResourceTreeChildNodeDecl
 class ResourceTreeChildrenValidator<T> implements IReadOnlyResourceTreeChildren<T, string, string> {
     [Symbol.iterator](): IterableIterator<[ResourceName, IReadOnlyResourceTreeNode<T>]>;
     constructor(inner: IReadOnlyResourceTreeChildren<T>);
-    entries(): MapIterator<[ResourceName, IReadOnlyResourceTreeNode<T>]>;
+    entries(): IterableIterator<[ResourceName, IReadOnlyResourceTreeNode<T>]>;
     forEach(cb: (value: unknown, key: string, map: IReadOnlyResultMap<string, unknown>, thisArg?: unknown) => void, arg?: unknown): void;
     get(key: ResourceName): DetailedResult<IReadOnlyResourceTreeNode<T>, Collections.ResultMapResultDetail>;
     getBranch(name: string): Result<IReadOnlyResourceTreeNode<T>>;
@@ -3524,9 +3524,9 @@ class ResourceTreeChildrenValidator<T> implements IReadOnlyResourceTreeChildren<
     getResource(name: string): Result<IReadOnlyResourceTreeNode<T>>;
     getResourceById(id: string): Result<IReadOnlyResourceTreeLeaf<T>>;
     has(key: ResourceName): boolean;
-    keys(): MapIterator<ResourceName>;
+    keys(): IterableIterator<ResourceName>;
     get size(): number;
-    values(): MapIterator<IReadOnlyResourceTreeNode<T>>;
+    values(): IterableIterator<IReadOnlyResourceTreeNode<T>>;
 }
 
 // @public
