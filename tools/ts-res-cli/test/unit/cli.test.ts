@@ -21,7 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { TsResCliApp } from '../../cli';
+import { TsResCliApp } from '../../src/cli';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 
@@ -29,18 +29,22 @@ describe('TsResCliApp', () => {
   let app: TsResCliApp;
   let originalConsoleError: typeof console.error;
   let originalProcessExit: typeof process.exit;
+  let originalStderrWrite: typeof process.stderr.write;
   let consoleErrorSpy: jest.SpyInstance;
   let processExitSpy: jest.SpyInstance;
+  let stderrWriteSpy: jest.SpyInstance;
   let tempDir: string;
 
   beforeEach(async () => {
     app = new TsResCliApp();
 
-    // Mock console.error and process.exit to prevent test failures
+    // Mock console.error, process.exit, and stderr.write to prevent test output
     originalConsoleError = console.error;
     originalProcessExit = process.exit;
+    originalStderrWrite = process.stderr.write;
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     processExitSpy = jest.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+    stderrWriteSpy = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
 
     // Create temporary directory for test files
     tempDir = await fs.mkdtemp(path.join(__dirname, '../../test-temp-cli-'));
@@ -50,8 +54,10 @@ describe('TsResCliApp', () => {
     // Restore original functions
     console.error = originalConsoleError;
     process.exit = originalProcessExit;
+    process.stderr.write = originalStderrWrite;
     consoleErrorSpy.mockRestore();
     processExitSpy.mockRestore();
+    stderrWriteSpy.mockRestore();
 
     // Clean up temporary directory
     await fs.rm(tempDir, { recursive: true, force: true });
@@ -128,15 +134,21 @@ describe('TsResCliApp', () => {
       inputFile = path.join(tempDir, 'input.json');
       outputFile = path.join(tempDir, 'output.json');
 
-      // Create test input file
-      const testResources = [
-        {
-          id: 'test.message',
-          json: { text: 'Hello' },
-          conditions: { language: 'en' },
-          resourceTypeName: 'json'
-        }
-      ];
+      // Create test input file in ResourceCollection format
+      const testResources = {
+        resources: [
+          {
+            id: 'test.message',
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { text: 'Hello' },
+                conditions: { language: 'en' }
+              }
+            ]
+          }
+        ]
+      };
       await fs.writeFile(inputFile, JSON.stringify(testResources, null, 2));
     });
 
@@ -208,7 +220,8 @@ describe('TsResCliApp', () => {
         '--input',
         '/nonexistent/file.json',
         '--output',
-        outputFile
+        outputFile,
+        '--quiet'
       ]);
 
       expect(processExitSpy).toHaveBeenCalledWith(1);
@@ -225,7 +238,8 @@ describe('TsResCliApp', () => {
         '--output',
         outputFile,
         '--format',
-        'invalid'
+        'invalid',
+        '--quiet'
       ]);
 
       expect(processExitSpy).toHaveBeenCalledWith(1);
@@ -247,7 +261,8 @@ describe('TsResCliApp', () => {
           outputFile,
           '--context',
           '{"language": "en"}',
-          '--partial-match'
+          '--partial-match',
+          '--quiet'
         ]);
 
         expect(processExitSpy).not.toHaveBeenCalledWith(1);
@@ -264,15 +279,21 @@ describe('TsResCliApp', () => {
     beforeEach(async () => {
       inputFile = path.join(tempDir, 'input.json');
 
-      // Create test input file
-      const testResources = [
-        {
-          id: 'test.message',
-          json: { text: 'Hello' },
-          conditions: { language: 'en' },
-          resourceTypeName: 'json'
-        }
-      ];
+      // Create test input file in ResourceCollection format
+      const testResources = {
+        resources: [
+          {
+            id: 'test.message',
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { text: 'Hello' },
+                conditions: { language: 'en' }
+              }
+            ]
+          }
+        ]
+      };
       await fs.writeFile(inputFile, JSON.stringify(testResources, null, 2));
     });
 
@@ -303,7 +324,7 @@ describe('TsResCliApp', () => {
       ];
       await fs.writeFile(inputFile, JSON.stringify(invalidResources));
 
-      await app.run(['node', 'ts-res-compile', 'validate', '--input', inputFile]);
+      await app.run(['node', 'ts-res-compile', 'validate', '--input', inputFile, '--quiet']);
 
       expect(processExitSpy).toHaveBeenCalledWith(1);
       expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Validation failed'));
@@ -316,21 +337,25 @@ describe('TsResCliApp', () => {
     beforeEach(async () => {
       inputFile = path.join(tempDir, 'input.json');
 
-      // Create test input file with multiple resources
-      const testResources = [
-        {
-          id: 'test.message',
-          json: { text: 'Hello' },
-          conditions: { language: 'en' },
-          resourceTypeName: 'json'
-        },
-        {
-          id: 'test.message',
-          json: { text: 'Hola' },
-          conditions: { language: 'es' },
-          resourceTypeName: 'json'
-        }
-      ];
+      // Create test input file with multiple resources in ResourceCollection format
+      const testResources = {
+        resources: [
+          {
+            id: 'test.message',
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { text: 'Hello' },
+                conditions: { language: 'en' }
+              },
+              {
+                json: { text: 'Hola' },
+                conditions: { language: 'es' }
+              }
+            ]
+          }
+        ]
+      };
       await fs.writeFile(inputFile, JSON.stringify(testResources, null, 2));
     });
 

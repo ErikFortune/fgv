@@ -31,7 +31,7 @@ describe('CLI Integration Tests', () => {
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(__dirname, '../../test-temp-integration-'));
-    cliBin = path.resolve(__dirname, '../../../bin/ts-res-compile.js');
+    cliBin = path.resolve(__dirname, '../../bin/ts-res-compile.js');
   });
 
   afterEach(async () => {
@@ -93,38 +93,48 @@ describe('CLI Integration Tests', () => {
       inputFile = path.join(tempDir, 'resources.json');
       outputFile = path.join(tempDir, 'compiled.json');
 
-      // Create comprehensive test resources
-      const resources = [
-        {
-          id: 'app.title',
-          json: { title: 'My Application' },
-          resourceTypeName: 'json'
-        },
-        {
-          id: 'messages.welcome',
-          json: { text: 'Welcome!', subtitle: 'Please log in' },
-          conditions: { language: 'en' },
-          resourceTypeName: 'json'
-        },
-        {
-          id: 'messages.welcome',
-          json: { text: '¡Bienvenido!', subtitle: 'Por favor inicie sesión' },
-          conditions: { language: 'es' },
-          resourceTypeName: 'json'
-        },
-        {
-          id: 'messages.welcome',
-          json: { text: 'Welcome to the USA!', subtitle: 'Please log in to continue' },
-          conditions: { language: 'en-US', territory: 'US' },
-          resourceTypeName: 'json'
-        },
-        {
-          id: 'buttons.actions',
-          json: { submit: 'Submit', cancel: 'Cancel', save: 'Save' },
-          conditions: { language: 'en' },
-          resourceTypeName: 'json'
-        }
-      ];
+      // Create comprehensive test resources in ResourceCollection format
+      const resources = {
+        resources: [
+          {
+            id: 'app.title',
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { title: 'My Application' }
+              }
+            ]
+          },
+          {
+            id: 'messages.welcome',
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { text: 'Welcome!', subtitle: 'Please log in' },
+                conditions: { language: 'en' }
+              },
+              {
+                json: { text: '¡Bienvenido!', subtitle: 'Por favor inicie sesión' },
+                conditions: { language: 'es' }
+              },
+              {
+                json: { text: 'Welcome to the USA!', subtitle: 'Please log in to continue' },
+                conditions: { language: 'en-US', territory: 'US' }
+              }
+            ]
+          },
+          {
+            id: 'buttons.actions',
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { submit: 'Submit', cancel: 'Cancel', save: 'Save' },
+                conditions: { language: 'en' }
+              }
+            ]
+          }
+        ]
+      };
 
       await fs.writeFile(inputFile, JSON.stringify(resources, null, 2));
     });
@@ -148,9 +158,9 @@ describe('CLI Integration Tests', () => {
       const output = JSON.parse(outputContent);
 
       expect(output).toHaveProperty('resources');
-      expect(Object.keys(output.resources)).toContain('app.title');
-      expect(Object.keys(output.resources)).toContain('messages.welcome');
-      expect(Object.keys(output.resources)).toContain('buttons.actions');
+      expect(Object.keys(output.resources)).toContain('resources.app.title');
+      expect(Object.keys(output.resources)).toContain('resources.messages.welcome');
+      expect(Object.keys(output.resources)).toContain('resources.buttons.actions');
     });
 
     test('compiles resources to JavaScript format', async () => {
@@ -211,8 +221,8 @@ describe('CLI Integration Tests', () => {
       const output = JSON.parse(outputContent);
 
       // Should include resources that match English
-      expect(Object.keys(output.resources)).toContain('messages.welcome');
-      expect(Object.keys(output.resources)).toContain('buttons.actions');
+      expect(Object.keys(output.resources)).toContain('resources.messages.welcome');
+      expect(Object.keys(output.resources)).toContain('resources.buttons.actions');
     });
 
     test('compiles with specific territory context', async () => {
@@ -234,9 +244,9 @@ describe('CLI Integration Tests', () => {
       const outputContent = await fs.readFile(outputFile, 'utf-8');
       const output = JSON.parse(outputContent);
 
-      expect(Object.keys(output.resources)).toContain('messages.welcome');
+      expect(Object.keys(output.resources)).toContain('resources.messages.welcome');
       // Check that we get the US-specific variant
-      const welcomeResource = output.resources['messages.welcome'];
+      const welcomeResource = output.resources['resources.messages.welcome'];
       expect(Object.keys(welcomeResource)).toContain('language-[en-US]@600+territory-[US]@500');
     });
 
@@ -309,14 +319,20 @@ describe('CLI Integration Tests', () => {
   describe('Validate command integration', () => {
     test('validates correct resources', async () => {
       const inputFile = path.join(tempDir, 'valid-resources.json');
-      const resources = [
-        {
-          id: 'test.resource',
-          json: { message: 'Hello' },
-          conditions: { language: 'en' },
-          resourceTypeName: 'json'
-        }
-      ];
+      const resources = {
+        resources: [
+          {
+            id: 'test.resource',
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { message: 'Hello' },
+                conditions: { language: 'en' }
+              }
+            ]
+          }
+        ]
+      };
       await fs.writeFile(inputFile, JSON.stringify(resources));
 
       const result = await runCli(['validate', '--input', inputFile]);
@@ -327,14 +343,20 @@ describe('CLI Integration Tests', () => {
 
     test('detects invalid resources', async () => {
       const inputFile = path.join(tempDir, 'invalid-resources.json');
-      const resources = [
-        {
-          id: 'invalid resource id', // Invalid ID with spaces
-          json: { message: 'Hello' },
-          conditions: { language: 'en' },
-          resourceTypeName: 'json'
-        }
-      ];
+      const resources = {
+        resources: [
+          {
+            id: 'invalid resource id', // Invalid ID with spaces
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { message: 'Hello' },
+                conditions: { language: 'en' }
+              }
+            ]
+          }
+        ]
+      };
       await fs.writeFile(inputFile, JSON.stringify(resources));
 
       const result = await runCli(['validate', '--input', inputFile]);
@@ -347,20 +369,30 @@ describe('CLI Integration Tests', () => {
   describe('Info command integration', () => {
     test('displays resource information', async () => {
       const inputFile = path.join(tempDir, 'info-resources.json');
-      const resources = [
-        {
-          id: 'info.test1',
-          json: { message: 'Hello' },
-          conditions: { language: 'en' },
-          resourceTypeName: 'json'
-        },
-        {
-          id: 'info.test2',
-          json: { message: 'Hola' },
-          conditions: { language: 'es' },
-          resourceTypeName: 'json'
-        }
-      ];
+      const resources = {
+        resources: [
+          {
+            id: 'info.test1',
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { message: 'Hello' },
+                conditions: { language: 'en' }
+              }
+            ]
+          },
+          {
+            id: 'info.test2',
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { message: 'Hola' },
+                conditions: { language: 'es' }
+              }
+            ]
+          }
+        ]
+      };
       await fs.writeFile(inputFile, JSON.stringify(resources));
 
       const result = await runCli(['info', '--input', inputFile]);
@@ -379,20 +411,30 @@ describe('CLI Integration Tests', () => {
 
     test('displays filtered resource information', async () => {
       const inputFile = path.join(tempDir, 'filter-resources.json');
-      const resources = [
-        {
-          id: 'filter.test1',
-          json: { message: 'Hello' },
-          conditions: { language: 'en' },
-          resourceTypeName: 'json'
-        },
-        {
-          id: 'filter.test2',
-          json: { message: 'Hola' },
-          conditions: { language: 'es' },
-          resourceTypeName: 'json'
-        }
-      ];
+      const resources = {
+        resources: [
+          {
+            id: 'filter.test1',
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { message: 'Hello' },
+                conditions: { language: 'en' }
+              }
+            ]
+          },
+          {
+            id: 'filter.test2',
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { message: 'Hola' },
+                conditions: { language: 'es' }
+              }
+            ]
+          }
+        ]
+      };
       await fs.writeFile(inputFile, JSON.stringify(resources));
 
       const result = await runCli([
@@ -420,23 +462,35 @@ describe('CLI Integration Tests', () => {
       await fs.mkdir(inputDir);
 
       // Create multiple resource files
-      const messages = [
-        {
-          id: 'dir.messages.hello',
-          json: { text: 'Hello' },
-          conditions: { language: 'en' },
-          resourceTypeName: 'json'
-        }
-      ];
+      const messages = {
+        resources: [
+          {
+            id: 'dir.messages.hello',
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { text: 'Hello' },
+                conditions: { language: 'en' }
+              }
+            ]
+          }
+        ]
+      };
 
-      const buttons = [
-        {
-          id: 'dir.buttons.ok',
-          json: { label: 'OK' },
-          conditions: { language: 'en' },
-          resourceTypeName: 'json'
-        }
-      ];
+      const buttons = {
+        resources: [
+          {
+            id: 'dir.buttons.ok',
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { label: 'OK' },
+                conditions: { language: 'en' }
+              }
+            ]
+          }
+        ]
+      };
 
       await fs.writeFile(path.join(inputDir, 'messages.json'), JSON.stringify(messages));
       await fs.writeFile(path.join(inputDir, 'buttons.json'), JSON.stringify(buttons));
@@ -457,8 +511,8 @@ describe('CLI Integration Tests', () => {
       const outputContent = await fs.readFile(outputFile, 'utf-8');
       const output = JSON.parse(outputContent);
 
-      expect(Object.keys(output.resources)).toContain('dir.messages.hello');
-      expect(Object.keys(output.resources)).toContain('dir.buttons.ok');
+      expect(Object.keys(output.resources)).toContain('resources.messages.dir.messages.hello');
+      expect(Object.keys(output.resources)).toContain('resources.buttons.dir.buttons.ok');
     });
   });
 });

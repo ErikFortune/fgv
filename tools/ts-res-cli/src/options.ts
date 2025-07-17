@@ -45,6 +45,11 @@ export interface ICompileOptions {
   output: string;
 
   /**
+   * System configuration file path (JSON file in ISystemConfiguration format)
+   */
+  config?: string;
+
+  /**
    * Context filter for resources (e.g., '{"language": "en-US"}')
    */
   context?: string;

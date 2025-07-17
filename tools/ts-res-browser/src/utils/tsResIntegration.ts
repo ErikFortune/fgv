@@ -115,6 +115,7 @@ export const DEFAULT_SYSTEM_CONFIGURATION: Config.Model.ISystemConfiguration = {
     {
       name: 'currentTerritory',
       typeName: 'territory',
+      token: 'geo',
       defaultPriority: 700
     },
     {

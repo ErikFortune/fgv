@@ -57,7 +57,7 @@ export const languageQualifierTypeConfig = Converters.strictObject<Model.ILangua
  */
 export const territoryQualifierTypeConfig = Converters.strictObject<Model.ITerritoryQualifierTypeConfig>({
   allowContextList: Converters.boolean,
-  allowedTerritories: Converters.arrayOf(Converters.string)
+  allowedTerritories: Converters.arrayOf(Converters.string).optional()
 });
 
 /**
@@ -81,7 +81,7 @@ export const systemLanguageQualifierTypeConfig =
   Converters.strictObject<Model.ISystemLanguageQualifierTypeConfig>({
     name: Converters.string,
     systemType: Converters.literal('language'),
-    configuration: languageQualifierTypeConfig
+    configuration: languageQualifierTypeConfig.optional()
   });
 
 /**
@@ -93,7 +93,7 @@ export const systemTerritoryQualifierTypeConfig =
   Converters.strictObject<Model.ISystemTerritoryQualifierTypeConfig>({
     name: Converters.string,
     systemType: Converters.literal('territory'),
-    configuration: territoryQualifierTypeConfig
+    configuration: territoryQualifierTypeConfig.optional()
   });
 
 /**
@@ -105,7 +105,7 @@ export const systemLiteralQualifierTypeConfig =
   Converters.strictObject<Model.ISystemLiteralQualifierTypeConfig>({
     name: Converters.string,
     systemType: Converters.literal('literal'),
-    configuration: literalQualifierTypeConfig
+    configuration: literalQualifierTypeConfig.optional()
   });
 
 /**

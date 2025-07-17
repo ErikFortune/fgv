@@ -15,8 +15,8 @@
     "lint": "eslint src --ext .ts",
     "fixlint": "eslint src --ext .ts --fix",
     "build-docs": "api-documenter markdown --input-folder ./temp --output-folder ./docs",
-    "test-handles": "jest --detectOpenHandles",
-    "clean-jest": "jest --clearCache",
+    "test-handles": "rushx test --detectOpenHandles",
+    "clean-jest": "rushx test --clearCache",
     "build-samples": "node bin/ts-res-compile.js compile -i src/test/data/sample-resources.json -o temp/sample-output.json --include-metadata",
     "build-samples-all": "npm run build-samples && node bin/ts-res-compile.js compile -i src/test/data/resource-collection.json -o temp/collection-output.json --include-metadata && node bin/ts-res-compile.js compile -i src/test/data/sample-resources.json -o temp/sample-output.js -f js && node bin/ts-res-compile.js compile -i src/test/data/sample-resources.json -o temp/sample-output.ts -f ts"
   },
