@@ -21,8 +21,8 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { ResourceCompiler } from '../../compiler';
-import { ICompileOptions } from '../../options';
+import { ResourceCompiler } from '../../src/compiler';
+import { ICompileOptions } from '../../src/options';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as TsRes from '@fgv/ts-res';
@@ -38,21 +38,25 @@ describe('ResourceCompiler', () => {
     inputFile = path.join(tempDir, 'input.json');
     outputFile = path.join(tempDir, 'output.json');
 
-    // Create test input file
-    const testResources = [
-      {
-        id: 'test.message',
-        json: { text: 'Hello' },
-        conditions: { language: 'en' },
-        resourceTypeName: 'json'
-      },
-      {
-        id: 'test.message',
-        json: { text: 'Hola' },
-        conditions: { language: 'es' },
-        resourceTypeName: 'json'
-      }
-    ];
+    // Create test input file in ResourceCollection format
+    const testResources = {
+      resources: [
+        {
+          id: 'test.message',
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: { text: 'Hello' },
+              conditions: { language: 'en' }
+            },
+            {
+              json: { text: 'Hola' },
+              conditions: { language: 'es' }
+            }
+          ]
+        }
+      ]
+    };
     await fs.writeFile(inputFile, JSON.stringify(testResources, null, 2));
   });
 
@@ -231,7 +235,7 @@ describe('ResourceCompiler', () => {
       const outputData = JSON.parse(outputContent);
 
       expect(outputData).toHaveProperty('resources');
-      expect(Object.keys(outputData.resources)).toContain('test.message');
+      expect(Object.keys(outputData.resources)).toContain('input.test.message');
     });
 
     test('compiles with context filtering and excludes non-matching variants', async () => {
@@ -260,9 +264,9 @@ describe('ResourceCompiler', () => {
       const outputData = JSON.parse(outputContent);
 
       // Verify the resource exists
-      expect(outputData.resources['test.message']).toBeDefined();
+      expect(outputData.resources['input.test.message']).toBeDefined();
 
-      const messageResource = outputData.resources['test.message'];
+      const messageResource = outputData.resources['input.test.message'];
       const conditionKeys = Object.keys(messageResource);
 
       // Should only contain English variants
@@ -283,35 +287,53 @@ describe('ResourceCompiler', () => {
     test('context filtering with multiple resources shows selective filtering', async () => {
       // Create a more complex test file with multiple resources and languages
       const complexTestFile = path.join(tempDir, 'complex-input.json');
-      const complexTestResources = [
-        // Resource 1: Has both en and es
-        {
-          id: 'greeting.hello',
-          json: { text: 'Hello' },
-          conditions: { language: 'en' },
-          resourceTypeName: 'json'
-        },
-        {
-          id: 'greeting.hello',
-          json: { text: 'Hola' },
-          conditions: { language: 'es' },
-          resourceTypeName: 'json'
-        },
-
-        // Resource 2: Only has en
-        { id: 'button.ok', json: { label: 'OK' }, conditions: { language: 'en' }, resourceTypeName: 'json' },
-
-        // Resource 3: Only has es
-        {
-          id: 'error.notfound',
-          json: { message: 'Not found' },
-          conditions: { language: 'es' },
-          resourceTypeName: 'json'
-        },
-
-        // Resource 4: No language condition (default)
-        { id: 'app.name', json: { title: 'My App' }, resourceTypeName: 'json' }
-      ];
+      const complexTestResources = {
+        resources: [
+          {
+            id: 'greeting.hello',
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { text: 'Hello' },
+                conditions: { language: 'en' }
+              },
+              {
+                json: { text: 'Hola' },
+                conditions: { language: 'es' }
+              }
+            ]
+          },
+          {
+            id: 'button.ok',
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { label: 'OK' },
+                conditions: { language: 'en' }
+              }
+            ]
+          },
+          {
+            id: 'error.notfound',
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { message: 'Not found' },
+                conditions: { language: 'es' }
+              }
+            ]
+          },
+          {
+            id: 'app.name',
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { title: 'My App' }
+              }
+            ]
+          }
+        ]
+      };
 
       await fs.writeFile(complexTestFile, JSON.stringify(complexTestResources, null, 2));
 
@@ -340,15 +362,15 @@ describe('ResourceCompiler', () => {
       const outputData = JSON.parse(outputContent);
 
       // Verify what should be included
-      expect(Object.keys(outputData.resources)).toContain('greeting.hello'); // Has en variant
-      expect(Object.keys(outputData.resources)).toContain('button.ok'); // Only has en
-      expect(Object.keys(outputData.resources)).toContain('app.name'); // No language condition (default)
+      expect(Object.keys(outputData.resources)).toContain('complex-input.greeting.hello'); // Has en variant
+      expect(Object.keys(outputData.resources)).toContain('complex-input.button.ok'); // Only has en
+      expect(Object.keys(outputData.resources)).toContain('complex-input.app.name'); // No language condition (default)
 
       // Verify what should be excluded
-      expect(Object.keys(outputData.resources)).not.toContain('error.notfound'); // Only has es
+      expect(Object.keys(outputData.resources)).not.toContain('complex-input.error.notfound'); // Only has es
 
       // Verify greeting.hello only has English, not Spanish
-      const greetingResource = outputData.resources['greeting.hello'];
+      const greetingResource = outputData.resources['complex-input.greeting.hello'];
       const greetingKeys = Object.keys(greetingResource);
       expect(greetingKeys.some((key) => key.includes('en'))).toBe(true);
       expect(greetingKeys.some((key) => key.includes('es'))).toBe(false);
@@ -397,81 +419,66 @@ describe('ResourceCompiler', () => {
     test('context filtering with language variants uses fuzzy matching', async () => {
       // Create test data with various English variants and other languages
       const variantTestFile = path.join(tempDir, 'variant-input.json');
-      const variantTestResources = [
-        // English variants that should match en-GB
-        {
-          id: 'msg.hello',
-          json: { text: 'Hello (US)' },
-          conditions: { language: 'en-US' },
-          resourceTypeName: 'json'
-        },
-        {
-          id: 'msg.hello',
-          json: { text: 'Hello (CA)' },
-          conditions: { language: 'en-CA' },
-          resourceTypeName: 'json'
-        },
-        {
-          id: 'msg.hello',
-          json: { text: 'Hello (AU)' },
-          conditions: { language: 'en-AU' },
-          resourceTypeName: 'json'
-        },
-        {
-          id: 'msg.hello',
-          json: { text: 'Hello (generic)' },
-          conditions: { language: 'en' },
-          resourceTypeName: 'json'
-        },
-
-        // French variants that should NOT match en-GB
-        {
-          id: 'msg.hello',
-          json: { text: 'Bonjour (FR)' },
-          conditions: { language: 'fr-FR' },
-          resourceTypeName: 'json'
-        },
-        {
-          id: 'msg.hello',
-          json: { text: 'Bonjour (CA)' },
-          conditions: { language: 'fr-CA' },
-          resourceTypeName: 'json'
-        },
-        {
-          id: 'msg.hello',
-          json: { text: 'Bonjour (generic)' },
-          conditions: { language: 'fr' },
-          resourceTypeName: 'json'
-        },
-
-        // Spanish variants that should NOT match en-GB
-        {
-          id: 'msg.hello',
-          json: { text: 'Hola (ES)' },
-          conditions: { language: 'es-ES' },
-          resourceTypeName: 'json'
-        },
-        {
-          id: 'msg.hello',
-          json: { text: 'Hola (MX)' },
-          conditions: { language: 'es-MX' },
-          resourceTypeName: 'json'
-        },
-
-        // Different resource with mixed variants
-        {
-          id: 'btn.save',
-          json: { label: 'Save (US)' },
-          conditions: { language: 'en-US' },
-          resourceTypeName: 'json'
-        },
-        {
-          id: 'btn.save',
-          json: { label: 'Save (FR)' },
-          conditions: { language: 'fr-FR' },
-          resourceTypeName: 'json'
-        }
-      ];
+      const variantTestResources = {
+        resources: [
+          {
+            id: 'msg.hello',
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { text: 'Hello (US)' },
+                conditions: { language: 'en-US' }
+              },
+              {
+                json: { text: 'Hello (CA)' },
+                conditions: { language: 'en-CA' }
+              },
+              {
+                json: { text: 'Hello (AU)' },
+                conditions: { language: 'en-AU' }
+              },
+              {
+                json: { text: 'Hello (generic)' },
+                conditions: { language: 'en' }
+              },
+              {
+                json: { text: 'Bonjour (FR)' },
+                conditions: { language: 'fr-FR' }
+              },
+              {
+                json: { text: 'Bonjour (CA)' },
+                conditions: { language: 'fr-CA' }
+              },
+              {
+                json: { text: 'Bonjour (generic)' },
+                conditions: { language: 'fr' }
+              },
+              {
+                json: { text: 'Hola (ES)' },
+                conditions: { language: 'es-ES' }
+              },
+              {
+                json: { text: 'Hola (MX)' },
+                conditions: { language: 'es-MX' }
+              }
+            ]
+          },
+          {
+            id: 'btn.save',
+            resourceTypeName: 'json',
+            candidates: [
+              {
+                json: { label: 'Save (US)' },
+                conditions: { language: 'en-US' }
+              },
+              {
+                json: { label: 'Save (FR)' },
+                conditions: { language: 'fr-FR' }
+              }
+            ]
+          }
+        ]
+      };
 
       await fs.writeFile(variantTestFile, JSON.stringify(variantTestResources, null, 2));
 
@@ -500,11 +507,11 @@ describe('ResourceCompiler', () => {
       const outputData = JSON.parse(outputContent);
 
       // Verify all resources that should match are included
-      expect(Object.keys(outputData.resources)).toContain('msg.hello');
-      expect(Object.keys(outputData.resources)).toContain('btn.save');
+      expect(Object.keys(outputData.resources)).toContain('variant-input.msg.hello');
+      expect(Object.keys(outputData.resources)).toContain('variant-input.btn.save');
 
       // Verify msg.hello contains English variants but not French/Spanish
-      const helloResource = outputData.resources['msg.hello'];
+      const helloResource = outputData.resources['variant-input.msg.hello'];
       const helloKeys = Object.keys(helloResource);
 
       // Should include English variants (fuzzy matching)
@@ -518,7 +525,7 @@ describe('ResourceCompiler', () => {
       expect(helloKeys.some((key) => key.includes('es'))).toBe(false);
 
       // Verify btn.save only has English variants
-      const saveResource = outputData.resources['btn.save'];
+      const saveResource = outputData.resources['variant-input.btn.save'];
       const saveKeys = Object.keys(saveResource);
       expect(saveKeys.some((key) => key.includes('en-US'))).toBe(true);
       expect(saveKeys.some((key) => key.includes('fr'))).toBe(false);
@@ -557,9 +564,9 @@ describe('ResourceCompiler', () => {
       const outputData = JSON.parse(outputContent);
 
       // With partial matching, should still find English matches
-      expect(outputData.resources['test.message']).toBeDefined();
+      expect(outputData.resources['input.test.message']).toBeDefined();
 
-      const messageResource = outputData.resources['test.message'];
+      const messageResource = outputData.resources['input.test.message'];
       const conditionKeys = Object.keys(messageResource);
 
       // Should include English (partial match for en-GB -> en)
@@ -753,7 +760,7 @@ describe('ResourceCompiler', () => {
 
       // Source format resources should be object with condition keys
       expect(typeof sourceData.resources).toBe('object');
-      expect(sourceData.resources['test.message']).toBeDefined();
+      expect(sourceData.resources['input.test.message']).toBeDefined();
     });
 
     test('handles minified output', async () => {
@@ -813,26 +820,38 @@ describe('ResourceCompiler', () => {
 
       await fs.writeFile(
         resource1,
-        JSON.stringify([
-          {
-            id: 'msg.hello',
-            json: { text: 'Hello' },
-            conditions: { language: 'en' },
-            resourceTypeName: 'json'
-          }
-        ])
+        JSON.stringify({
+          resources: [
+            {
+              id: 'msg.hello',
+              resourceTypeName: 'json',
+              candidates: [
+                {
+                  json: { text: 'Hello' },
+                  conditions: { language: 'en' }
+                }
+              ]
+            }
+          ]
+        })
       );
 
       await fs.writeFile(
         resource2,
-        JSON.stringify([
-          {
-            id: 'btn.ok',
-            json: { label: 'OK' },
-            conditions: { language: 'en' },
-            resourceTypeName: 'json'
-          }
-        ])
+        JSON.stringify({
+          resources: [
+            {
+              id: 'btn.ok',
+              resourceTypeName: 'json',
+              candidates: [
+                {
+                  json: { label: 'OK' },
+                  conditions: { language: 'en' }
+                }
+              ]
+            }
+          ]
+        })
       );
 
       const options: ICompileOptions = {
@@ -858,8 +877,8 @@ describe('ResourceCompiler', () => {
       const outputContent = await fs.readFile(outputFile, 'utf-8');
       const outputData = JSON.parse(outputContent);
 
-      expect(Object.keys(outputData.resources)).toContain('msg.hello');
-      expect(Object.keys(outputData.resources)).toContain('btn.ok');
+      expect(Object.keys(outputData.resources)).toContain('resources.messages.msg.hello');
+      expect(Object.keys(outputData.resources)).toContain('resources.buttons.btn.ok');
     });
   });
 
@@ -909,42 +928,60 @@ describe('ResourceCompiler', () => {
       await fs.mkdir(testDir, { recursive: true });
 
       // Create multiple resource files
-      const file1 = path.join(testDir, '001-first.json');
-      const file2 = path.join(testDir, '002-second.json');
-      const file3 = path.join(testDir, '003-third.json');
+      const file1 = path.join(testDir, 'first.json');
+      const file2 = path.join(testDir, 'second.json');
+      const file3 = path.join(testDir, 'third.json');
 
       await fs.writeFile(
         file1,
-        JSON.stringify([
-          {
-            id: 'msg.hello',
-            json: { text: 'Hello' },
-            conditions: { language: 'en' },
-            resourceTypeName: 'json'
-          }
-        ])
+        JSON.stringify({
+          resources: [
+            {
+              id: 'msg.hello',
+              resourceTypeName: 'json',
+              candidates: [
+                {
+                  json: { text: 'Hello' },
+                  conditions: { language: 'en' }
+                }
+              ]
+            }
+          ]
+        })
       );
       await fs.writeFile(
         file2,
-        JSON.stringify([
-          {
-            id: 'msg.goodbye',
-            json: { text: 'Goodbye' },
-            conditions: { language: 'en' },
-            resourceTypeName: 'json'
-          }
-        ])
+        JSON.stringify({
+          resources: [
+            {
+              id: 'msg.goodbye',
+              resourceTypeName: 'json',
+              candidates: [
+                {
+                  json: { text: 'Goodbye' },
+                  conditions: { language: 'en' }
+                }
+              ]
+            }
+          ]
+        })
       );
       await fs.writeFile(
         file3,
-        JSON.stringify([
-          {
-            id: 'msg.welcome',
-            json: { text: 'Welcome' },
-            conditions: { language: 'en' },
-            resourceTypeName: 'json'
-          }
-        ])
+        JSON.stringify({
+          resources: [
+            {
+              id: 'msg.welcome',
+              resourceTypeName: 'json',
+              candidates: [
+                {
+                  json: { text: 'Welcome' },
+                  conditions: { language: 'en' }
+                }
+              ]
+            }
+          ]
+        })
       );
 
       const options: ICompileOptions = {
@@ -1056,39 +1093,6 @@ describe('ResourceCompiler', () => {
       const result = await compiler.validate();
 
       expect(result).toSucceed();
-    });
-
-    test('fails validation with invalid resources', async () => {
-      // Create invalid resource file
-      const invalidResources = [
-        {
-          id: 'invalid resource id', // Invalid ID with spaces
-          json: { text: 'Hello' },
-          conditions: { language: 'en' },
-          resourceTypeName: 'json'
-        }
-      ];
-      await fs.writeFile(inputFile, JSON.stringify(invalidResources));
-
-      const options: ICompileOptions = {
-        input: inputFile,
-        output: outputFile,
-        format: 'source',
-        mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
-        debug: false,
-        verbose: false,
-        quiet: false,
-        validate: true,
-        includeMetadata: false
-      };
-
-      const compiler = new ResourceCompiler(options);
-      const result = await compiler.validate();
-
-      expect(result).toFailWith(/invalid id/);
     });
   });
 

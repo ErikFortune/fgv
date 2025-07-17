@@ -30,6 +30,7 @@ import { ICompileOptions, OutputFormat, CompilationMode } from './options';
 interface ICompileCommandOptions {
   input: string;
   output: string;
+  config?: string;
   context?: string;
   format: string;
   mode: string;
@@ -50,6 +51,7 @@ interface ICompileCommandOptions {
  */
 interface IValidateCommandOptions {
   input: string;
+  config?: string;
   verbose?: boolean;
   quiet?: boolean;
 }
@@ -59,6 +61,7 @@ interface IValidateCommandOptions {
  */
 interface IInfoCommandOptions {
   input: string;
+  config?: string;
   context?: string;
   partialMatch?: boolean;
   resourceTypes?: string;
@@ -99,6 +102,7 @@ export class TsResCliApp {
       .description('Compile resources from input to output format')
       .requiredOption('-i, --input <path>', 'Input file or directory path')
       .requiredOption('-o, --output <path>', 'Output file path')
+      .option('--config <path>', 'System configuration file (JSON, ISystemConfiguration format)')
       .option('-c, --context <json>', 'Context filter for resources (JSON string)')
       .option('-f, --format <format>', 'Output format', 'compiled')
       .option('-m, --mode <mode>', 'Compilation mode', 'development')
@@ -120,6 +124,7 @@ export class TsResCliApp {
       .command('validate')
       .description('Validate resources without compilation')
       .requiredOption('-i, --input <path>', 'Input file or directory path')
+      .option('--config <path>', 'System configuration file (JSON, ISystemConfiguration format)')
       .option('-v, --verbose', 'Verbose output', false)
       .option('-q, --quiet', 'Quiet output', false)
       .action(async (options) => {
@@ -130,6 +135,7 @@ export class TsResCliApp {
       .command('info')
       .description('Show information about resources')
       .requiredOption('-i, --input <path>', 'Input file or directory path')
+      .option('--config <path>', 'System configuration file (JSON, ISystemConfiguration format)')
       .option('-c, --context <json>', 'Context filter for resources (JSON string)')
       .option('--partial-match', 'Enable partial context matching', false)
       .option('--resource-types <types>', 'Resource type filter (comma-separated)')
@@ -157,7 +163,7 @@ export class TsResCliApp {
       process.exit(1);
     }
 
-    if (!options.quiet) {
+    if (!options.quiet && options.output) {
       console.log(`Successfully compiled resources to ${options.output}`);
     }
   }
@@ -169,6 +175,7 @@ export class TsResCliApp {
     const validateOptions: ICompileOptions = {
       input: options.input,
       output: '', // Not used for validation
+      config: options.config,
       format: 'compiled',
       mode: 'development',
       partialMatch: false,
@@ -201,13 +208,14 @@ export class TsResCliApp {
     const infoOptions: ICompileOptions = {
       input: options.input,
       output: '', // Not used for info
+      config: options.config,
       format: 'compiled',
       mode: 'development',
       partialMatch: options.partialMatch || false,
       sourceMaps: false,
       minify: false,
       debug: false,
-      verbose: true,
+      verbose: false,
       quiet: false,
       validate: false,
       includeMetadata: true,
@@ -245,6 +253,7 @@ export class TsResCliApp {
       const compileOptions: ICompileOptions = {
         input: options.input,
         output: options.output,
+        config: options.config,
         context: options.context,
         format,
         mode,
