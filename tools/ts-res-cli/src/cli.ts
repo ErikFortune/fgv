@@ -35,9 +35,6 @@ interface ICompileCommandOptions {
   contextFilter?: string;
   format: string;
   mode: string;
-  partialMatch?: boolean;
-  sourceMaps?: boolean;
-  minify?: boolean;
   debug?: boolean;
   verbose?: boolean;
   quiet?: boolean;
@@ -65,7 +62,6 @@ interface IInfoCommandOptions {
   config?: string;
   context?: string;
   contextFilter?: string;
-  partialMatch?: boolean;
   resourceTypes?: string;
   maxDistance?: number;
 }
@@ -112,9 +108,6 @@ export class TsResCliApp {
       )
       .option('-f, --format <format>', 'Output format', 'compiled')
       .option('-m, --mode <mode>', 'Compilation mode', 'development')
-      .option('--partial-match', 'Enable partial context matching', false)
-      .option('--source-maps', 'Include source maps', false)
-      .option('--minify', 'Minify output', false)
       .option('--debug', 'Include debug information', false)
       .option('-v, --verbose', 'Verbose output', false)
       .option('-q, --quiet', 'Quiet output', false)
@@ -147,7 +140,6 @@ export class TsResCliApp {
         '--context-filter <token>',
         'Context filter token (pipe-separated, e.g., "language=en-US|territory=US")'
       )
-      .option('--partial-match', 'Enable partial context matching', false)
       .option('--resource-types <types>', 'Resource type filter (comma-separated)')
       .option('--max-distance <number>', 'Maximum distance for language matching', parseInt)
       .action(async (options) => {
@@ -188,9 +180,6 @@ export class TsResCliApp {
       config: options.config,
       format: 'compiled',
       mode: 'development',
-      partialMatch: false,
-      sourceMaps: false,
-      minify: false,
       debug: false,
       verbose: options.verbose || false,
       quiet: options.quiet || false,
@@ -237,9 +226,6 @@ export class TsResCliApp {
       config: options.config,
       format: 'compiled',
       mode: 'development',
-      partialMatch: options.partialMatch || false,
-      sourceMaps: false,
-      minify: false,
       debug: false,
       verbose: false,
       quiet: false,
@@ -298,9 +284,6 @@ export class TsResCliApp {
         contextFilter,
         format,
         mode,
-        partialMatch: options.partialMatch || false,
-        sourceMaps: options.sourceMaps || false,
-        minify: options.minify || false,
         debug: options.debug || false,
         verbose: options.verbose || false,
         quiet: options.quiet || false,

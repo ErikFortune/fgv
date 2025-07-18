@@ -81,7 +81,6 @@ describe('CLI Context Filter Working Tests', () => {
       outputFile,
       '--context-filter',
       'language=en',
-      '--partial-match',
       '--format',
       'source'
     ]);
@@ -142,7 +141,6 @@ describe('CLI Context Filter Working Tests', () => {
       outputFile,
       '--context-filter',
       'territory=US',
-      '--partial-match',
       '--format',
       'source'
     ]);
@@ -206,7 +204,6 @@ describe('CLI Context Filter Working Tests', () => {
       outputFile,
       '--context-filter',
       'language=en|territory=US',
-      '--partial-match',
       '--format',
       'source'
     ]);
@@ -267,7 +264,6 @@ describe('CLI Context Filter Working Tests', () => {
       outputFile,
       '--context',
       '{"language": "en"}',
-      '--partial-match',
       '--format',
       'source'
     ]);
@@ -326,14 +322,7 @@ describe('CLI Context Filter Working Tests', () => {
 
     await fs.writeFile(inputFile, JSON.stringify(resources, null, 2));
 
-    const result = await runCli([
-      'info',
-      '--input',
-      inputFile,
-      '--context-filter',
-      'language=en',
-      '--partial-match'
-    ]);
+    const result = await runCli(['info', '--input', inputFile, '--context-filter', 'language=en']);
 
     expect(result.exitCode).toBe(0);
 

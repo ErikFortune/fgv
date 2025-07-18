@@ -72,9 +72,6 @@ describe('ResourceCompiler', () => {
         output: outputFile,
         format: 'source',
         mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,
@@ -94,9 +91,6 @@ describe('ResourceCompiler', () => {
         output: outputFile,
         format: 'compiled',
         mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,
@@ -158,9 +152,6 @@ describe('ResourceCompiler', () => {
         output: outputFile,
         format: 'compiled',
         mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,
@@ -208,9 +199,6 @@ describe('ResourceCompiler', () => {
         output: outputFile,
         format: 'source',
         mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,
@@ -251,9 +239,6 @@ describe('ResourceCompiler', () => {
         contextFilter: 'language=en-US',
         format: 'source',
         mode: 'development',
-        partialMatch: false, // Strict matching
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,
@@ -360,9 +345,6 @@ describe('ResourceCompiler', () => {
         contextFilter: 'language=en',
         format: 'source',
         mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,
@@ -418,9 +400,6 @@ describe('ResourceCompiler', () => {
         contextFilter: 'language=fr', // French - not in our test data
         format: 'source',
         mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,
@@ -523,9 +502,6 @@ describe('ResourceCompiler', () => {
         contextFilter: 'language=en-GB', // British English - should match other English variants
         format: 'source',
         mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,
@@ -608,68 +584,12 @@ describe('ResourceCompiler', () => {
       expect(outputData.metadata.totalResources).toBe(2); // 2 unique resource IDs
       expect(outputData.metadata.filteredResources).toBe(2); // All 2 resources have matching candidates
     });
-
-    test('context filtering with partial matching enabled is more permissive', async () => {
-      // Test that partial matching allows broader matches
-      const options: ICompileOptions = {
-        input: inputFile, // Uses basic test data with en/es
-        output: outputFile,
-        contextFilter: 'language=en-GB',
-        format: 'source',
-        mode: 'development',
-        partialMatch: true, // Enable partial matching
-        sourceMaps: false,
-        minify: false,
-        debug: false,
-        verbose: false,
-        quiet: false,
-        validate: true,
-        includeMetadata: true
-      };
-
-      const compiler = new ResourceCompiler(options);
-      const result = await compiler.compile();
-      expect(result).toSucceed();
-
-      const outputContent = await fs.readFile(outputFile, 'utf-8');
-      const outputData = JSON.parse(outputContent);
-
-      // With partial matching, should still find English matches using ResourceCollectionDecl format
-      expect(
-        TsRes.ResourceJson.Convert.resourceCollectionDecl.convert(outputData.resources)
-      ).toSucceedAndSatisfy((resources) => {
-        const messageResource = resources?.resources?.find((r) => r.id === 'input.test.message');
-        expect(messageResource).toBeDefined();
-
-        // Should include English (partial match for en-GB -> en)
-        const hasEnglish = messageResource?.candidates?.some((c) =>
-          c.conditions?.some((cond) => cond.qualifierName === 'language' && cond.value.includes('en'))
-        );
-        expect(hasEnglish).toBe(true);
-
-        // Should still exclude Spanish
-        const hasSpanish = messageResource?.candidates?.some((c) =>
-          c.conditions?.some((cond) => cond.qualifierName === 'language' && cond.value.includes('es'))
-        );
-        expect(hasSpanish).toBe(false);
-
-        return true;
-      });
-
-      // Verify metadata
-      expect(outputData.metadata.totalCandidates).toBe(2);
-      expect(outputData.metadata.filteredCandidates).toBe(1); // Only English matches
-    });
-
     test('compiles with metadata included', async () => {
       const options: ICompileOptions = {
         input: inputFile,
         output: outputFile,
         format: 'source',
         mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,
@@ -697,9 +617,6 @@ describe('ResourceCompiler', () => {
         output: jsOutputFile,
         format: 'js',
         mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,
@@ -723,9 +640,7 @@ describe('ResourceCompiler', () => {
         output: tsOutputFile,
         format: 'ts',
         mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
+
         debug: false,
         verbose: false,
         quiet: false,
@@ -749,9 +664,6 @@ describe('ResourceCompiler', () => {
         output: outputFile,
         format: 'compiled',
         mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,
@@ -781,9 +693,6 @@ describe('ResourceCompiler', () => {
         output: '',
         format: 'compiled',
         mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,
@@ -849,42 +758,12 @@ describe('ResourceCompiler', () => {
         return true;
       });
     });
-
-    test('handles minified output', async () => {
-      const options: ICompileOptions = {
-        input: inputFile,
-        output: outputFile,
-        format: 'source',
-        mode: 'production',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: true,
-        debug: false,
-        verbose: false,
-        quiet: false,
-        validate: true,
-        includeMetadata: false
-      };
-
-      const compiler = new ResourceCompiler(options);
-      const result = await compiler.compile();
-
-      expect(result).toSucceed();
-
-      const outputContent = await fs.readFile(outputFile, 'utf-8');
-      // Minified JSON should not have pretty formatting
-      expect(outputContent).not.toMatch(/\n\s+/);
-    });
-
     test('fails with invalid input file', async () => {
       const options: ICompileOptions = {
         input: '/nonexistent/file.json',
         output: outputFile,
         format: 'source',
         mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,
@@ -946,9 +825,6 @@ describe('ResourceCompiler', () => {
         output: outputFile,
         format: 'source',
         mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,
@@ -982,9 +858,6 @@ describe('ResourceCompiler', () => {
         output: outputFile,
         format: 'source',
         mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,
@@ -1082,9 +955,6 @@ describe('ResourceCompiler', () => {
         output: path.join(tempDir, 'deterministic-output.json'),
         format: 'source',
         mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,
@@ -1115,9 +985,6 @@ describe('ResourceCompiler', () => {
         output: '', // Will be set per format
         format: 'source',
         mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,
@@ -1172,9 +1039,6 @@ describe('ResourceCompiler', () => {
         output: outputFile,
         format: 'source',
         mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,
@@ -1196,9 +1060,6 @@ describe('ResourceCompiler', () => {
         output: outputFile,
         format: 'source',
         mode: 'development',
-        partialMatch: false,
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,
@@ -1224,9 +1085,6 @@ describe('ResourceCompiler', () => {
         contextFilter: 'language=en',
         format: 'source',
         mode: 'development',
-        partialMatch: true,
-        sourceMaps: false,
-        minify: false,
         debug: false,
         verbose: false,
         quiet: false,

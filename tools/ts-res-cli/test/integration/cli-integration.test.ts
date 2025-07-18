@@ -218,7 +218,6 @@ describe('CLI Integration Tests', () => {
         outputFile,
         '--context',
         '{"language": "en"}',
-        '--partial-match',
         '--format',
         'source'
       ]);
@@ -248,7 +247,6 @@ describe('CLI Integration Tests', () => {
         outputFile,
         '--context',
         '{"language": "en-US", "territory": "US"}',
-        '--partial-match',
         '--format',
         'source'
       ]);
@@ -301,16 +299,6 @@ describe('CLI Integration Tests', () => {
       expect(output.metadata).toHaveProperty('qualifiers');
       expect(output.metadata.totalResources).toBeGreaterThan(0);
       expect(output.metadata.resourceTypes).toContain('json');
-    });
-
-    test('compiles with minification', async () => {
-      const result = await runCli(['compile', '--input', inputFile, '--output', outputFile, '--minify']);
-
-      expect(result.exitCode).toBe(0);
-
-      const outputContent = await fs.readFile(outputFile, 'utf-8');
-      // Minified output should not have pretty formatting
-      expect(outputContent).not.toMatch(/\n\s+/);
     });
 
     test('handles quiet mode', async () => {
@@ -464,14 +452,7 @@ describe('CLI Integration Tests', () => {
       };
       await fs.writeFile(inputFile, JSON.stringify(resources));
 
-      const result = await runCli([
-        'info',
-        '--input',
-        inputFile,
-        '--context',
-        '{"language": "en"}',
-        '--partial-match'
-      ]);
+      const result = await runCli(['info', '--input', inputFile, '--context', '{"language": "en"}']);
 
       expect(result.exitCode).toBe(0);
 

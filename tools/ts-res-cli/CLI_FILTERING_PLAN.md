@@ -171,7 +171,6 @@ Update relevant index files to export the new context token functionality.
 
 The CLI already has some filtering options:
 - `--context <json>` - JSON context filter
-- `--partial-match` - Enable partial context matching
 - `--resource-types <types>` - Resource type filter (comma-separated)
 
 ### Proposed CLI Filtering Enhancements

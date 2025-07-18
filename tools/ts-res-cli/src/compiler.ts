@@ -412,22 +412,18 @@ export class ResourceCompiler {
         case 'compiled':
           // If metadata is included, write the full blob; otherwise, write just the compiled collection
           const compiledData = this._options.includeMetadata ? blob : blob.compiledCollection;
-          content = JSON.stringify(compiledData, null, this._options.minify ? 0 : 2);
+          content = JSON.stringify(compiledData, null, 2);
           break;
         case 'source':
-          content = JSON.stringify(blob, null, this._options.minify ? 0 : 2);
+          content = JSON.stringify(blob, null, 2);
           break;
         case 'js':
           const jsData = blob.compiledCollection || blob;
-          content = `module.exports = ${JSON.stringify(jsData, null, this._options.minify ? 0 : 2)};`;
+          content = `module.exports = ${JSON.stringify(jsData, null, 2)};`;
           break;
         case 'ts':
           const tsData = blob.compiledCollection || blob;
-          content = `export const resources = ${JSON.stringify(
-            tsData,
-            null,
-            this._options.minify ? 0 : 2
-          )} as const;`;
+          content = `export const resources = ${JSON.stringify(tsData, null, 2)} as const;`;
           break;
         case 'binary':
           // For binary format, we could use a more efficient serialization

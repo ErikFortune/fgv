@@ -261,7 +261,6 @@ describe('TsResCliApp', () => {
           outputFile,
           '--context',
           '{"language": "en"}',
-          '--partial-match',
           '--quiet'
         ]);
 
@@ -394,8 +393,7 @@ describe('TsResCliApp', () => {
           '--input',
           inputFile,
           '--context-filter',
-          'language=en',
-          '--partial-match'
+          'language=en'
         ]);
 
         expect(processExitSpy).not.toHaveBeenCalledWith(1);

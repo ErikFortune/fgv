@@ -55,26 +55,6 @@ export interface ICompileOptions {
   contextFilter?: string;
 
   /**
-   * Include only resources matching these IDs (comma-separated list)
-   */
-  includeResources?: string;
-
-  /**
-   * Exclude resources matching these IDs (comma-separated list)
-   */
-  excludeResources?: string;
-
-  /**
-   * Include only resources from these paths (comma-separated list)
-   */
-  includePaths?: string;
-
-  /**
-   * Exclude resources from these paths (comma-separated list)
-   */
-  excludePaths?: string;
-
-  /**
    * Output format
    */
   format: OutputFormat;
@@ -83,21 +63,6 @@ export interface ICompileOptions {
    * Compilation mode
    */
   mode: CompilationMode;
-
-  /**
-   * Whether to enable partial context matching
-   */
-  partialMatch: boolean;
-
-  /**
-   * Whether to include source maps
-   */
-  sourceMaps: boolean;
-
-  /**
-   * Whether to minify output
-   */
-  minify: boolean;
 
   /**
    * Whether to include debug information

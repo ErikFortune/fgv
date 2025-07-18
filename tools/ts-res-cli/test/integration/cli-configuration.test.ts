@@ -268,7 +268,6 @@ describe('CLI Configuration Tests', () => {
         configFile,
         '--context',
         '{"territory": "CA"}',
-        '--partial-match',
         '--format',
         'source'
       ]);
@@ -311,7 +310,6 @@ describe('CLI Configuration Tests', () => {
         configFile,
         '--context',
         '{"role": "admin"}',
-        '--partial-match',
         '--format',
         'source'
       ]);
@@ -354,7 +352,6 @@ describe('CLI Configuration Tests', () => {
         configFile,
         '--context',
         '{"language": "fr-CA", "territory": "CA", "role": "user"}',
-        '--partial-match',
         '--format',
         'source'
       ]);
