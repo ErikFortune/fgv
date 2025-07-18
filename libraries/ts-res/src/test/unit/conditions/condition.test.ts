@@ -307,6 +307,26 @@ describe('Condition', () => {
         .orThrow();
       expect(condition.toValueOrChildConditionDecl()).toEqual(decl);
     });
+
+    test('returns child condition declaration when condition has non-default priority', () => {
+      const decl: TsRes.ResourceJson.Json.IChildConditionDecl = {
+        value: 'CA',
+        priority: 700 // Non-default priority (homeTerritory default is 800)
+      };
+      const condition = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'homeTerritory',
+            ...decl
+          },
+          { qualifiers }
+        )
+        .onSuccess(TsRes.Conditions.Condition.create)
+        .orThrow();
+
+      const result = condition.toValueOrChildConditionDecl();
+      expect(result).toEqual(decl);
+    });
   });
 
   describe('toLooseConditionDecl method', () => {
@@ -549,8 +569,20 @@ describe('Condition', () => {
     });
 
     test('returns scoreAsDefault if match is NoMatch and acceptDefaultScore is true', () => {
+      // Create a condition that will definitely not match any territory
+      const qualifier = qualifiers.validating.get('homeTerritory').orThrow();
+      const validatedValue = qualifier.validateCondition('ZZ', 'matches').orThrow(); // Invalid territory code
+      const nonMatchingCondition = TsRes.Conditions.Condition.create({
+        qualifier,
+        value: validatedValue,
+        operator: 'matches',
+        priority: 800 as TsRes.ConditionPriority,
+        scoreAsDefault: 0.5 as TsRes.QualifierMatchScore,
+        index: 1 as TsRes.ConditionIndex
+      }).orThrow();
+
       const context = { homeTerritory: 'US' };
-      const score = condition.getContextMatch(context, { acceptDefaultScore: true });
+      const score = nonMatchingCondition.getContextMatch(context, { acceptDefaultScore: true });
       expect(score).toBe(0.5);
     });
 

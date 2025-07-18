@@ -550,6 +550,29 @@ describe('ResourceResolver class', () => {
     });
   });
 
+  describe('cache getter properties', () => {
+    testBothResolvers('returns condition cache array', (resolver, resolverName) => {
+      const conditionCache = resolver.conditionCache;
+      expect(conditionCache).toBeDefined();
+      expect(Array.isArray(conditionCache)).toBe(true);
+      expect(conditionCache.length).toBe(resolver.conditionCacheSize);
+    });
+
+    testBothResolvers('returns condition set cache array', (resolver, resolverName) => {
+      const conditionSetCache = resolver.conditionSetCache;
+      expect(conditionSetCache).toBeDefined();
+      expect(Array.isArray(conditionSetCache)).toBe(true);
+      expect(conditionSetCache.length).toBe(resolver.conditionSetCacheSize);
+    });
+
+    testBothResolvers('returns decision cache array', (resolver, resolverName) => {
+      const decisionCache = resolver.decisionCache;
+      expect(decisionCache).toBeDefined();
+      expect(Array.isArray(decisionCache)).toBe(true);
+      expect(decisionCache.length).toBe(resolver.decisionCacheSize);
+    });
+  });
+
   describe('error handling in condition and decision resolution', () => {
     testBothResolvers('handles condition without valid index', (resolver, resolverName) => {
       // Create a condition without a valid index

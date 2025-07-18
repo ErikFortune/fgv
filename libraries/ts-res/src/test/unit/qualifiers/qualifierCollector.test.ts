@@ -240,6 +240,29 @@ describe('QualifierCollector class', () => {
         })
       ).toFailWith(/qualifier name.*not unique or collides with token/i);
     });
+
+    test('fails when adding a qualifier whose token collides with an existing qualifier name (no token case)', () => {
+      const qc = TsRes.Qualifiers.QualifierCollector.create({ qualifierTypes }).orThrow();
+
+      // Add a qualifier with name 'territory' and no token
+      qc.validating
+        .getOrAdd('territory', {
+          name: 'territory',
+          typeName: 'territory',
+          defaultPriority: 800
+        })
+        .orThrow();
+
+      // Try to add another qualifier with token 'territory' (should collide with existing name)
+      expect(
+        qc.validating.getOrAdd('homeTerritory', {
+          name: 'homeTerritory',
+          typeName: 'territory',
+          defaultPriority: 700,
+          token: 'territory'
+        })
+      ).toFailWith(/qualifier token.*not unique or collides with name/i);
+    });
   });
 
   describe('getByNameOrToken method', () => {
@@ -296,6 +319,14 @@ describe('QualifierCollector class', () => {
     });
 
     test('returns true if a qualifier with the specified token exists', () => {
+      expect(collector.hasNameOrToken('home')).toBe(true);
+    });
+
+    test('returns true for qualifier name that exists (covering early return)', () => {
+      expect(collector.hasNameOrToken('language')).toBe(true);
+    });
+
+    test('returns true for qualifier token that exists (covering loop return)', () => {
       expect(collector.hasNameOrToken('home')).toBe(true);
     });
 

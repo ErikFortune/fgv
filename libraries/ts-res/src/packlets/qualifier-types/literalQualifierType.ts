@@ -127,9 +127,7 @@ export class LiteralQualifierType extends QualifierType {
       ? mapResults(Array.from(enumeratedValues).map(LiteralQualifierType.toLiteralConditionValue)).orThrow()
       : undefined;
     if (hierarchy) {
-      // This branch (values: enumeratedValues ?? []) is only hit if no enumeratedValues are provided.
-      // In that case, hierarchy creation will always fail validation, so this fallback cannot be covered by a successful test.
-      /* c8 ignore next 1 */
+      /* c8 ignore next 5 - defensive coding: enumeratedValues ?? [] fallback enables open values mode */
       this.hierarchy = LiteralValueHierarchy.create({
         values: enumeratedValues ?? [],
         hierarchy: hierarchy

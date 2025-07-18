@@ -159,6 +159,19 @@ describe('LiteralValueHierarchy', () => {
         /circular reference detected/i
       );
     });
+
+    test('fails if the hierarchy contains a circular reference via ancestor chain', () => {
+      const init: TsRes.QualifierTypes.ILiteralValueHierarchyCreateParams<TestPlatform> = {
+        values,
+        hierarchy: {
+          ...hierarchy,
+          ctv: 'some_stb' // This creates a circular reference through the ancestor chain
+        }
+      };
+      expect(TsRes.QualifierTypes.LiteralValueHierarchy.create(init)).toFailWith(
+        /circular reference detected.*stb/i
+      );
+    });
   });
 
   describe('match method', () => {
@@ -235,6 +248,24 @@ describe('LiteralValueHierarchy', () => {
         );
       });
     });
+
+    describe('constrained hierarchy validation', () => {
+      let constrainedLvh: TsRes.QualifierTypes.LiteralValueHierarchy<TestPlatform>;
+      beforeEach(() => {
+        constrainedLvh = TsRes.QualifierTypes.LiteralValueHierarchy.create({
+          values,
+          hierarchy
+        }).orThrow();
+      });
+
+      test('returns NoMatch for condition not in constrained hierarchy', () => {
+        expect(constrainedLvh.match('not_in_hierarchy' as TestPlatform, 'stb')).toBe(TsRes.NoMatch);
+      });
+
+      test('returns NoMatch for context not in constrained hierarchy', () => {
+        expect(constrainedLvh.match('stb', 'not_in_hierarchy' as TestPlatform)).toBe(TsRes.NoMatch);
+      });
+    });
   });
 
   describe('utility methods', () => {
@@ -276,6 +307,12 @@ describe('LiteralValueHierarchy', () => {
 
       test('fails for invalid values', () => {
         expect(lvh.getAncestors('not_in_hierarchy' as TestPlatform)).toFailWith(/not found in hierarchy/);
+      });
+
+      test('fails for invalid values with proper error message', () => {
+        expect(lvh.getAncestors('missing_value' as TestPlatform)).toFailWith(
+          /missing_value: not found in hierarchy/
+        );
       });
     });
 
