@@ -26,11 +26,6 @@
 export type OutputFormat = 'compiled' | 'source' | 'js' | 'ts' | 'binary';
 
 /**
- * Compilation mode options
- */
-export type CompilationMode = 'development' | 'production';
-
-/**
  * Options for resource compilation
  */
 export interface ICompileOptions {
@@ -58,11 +53,6 @@ export interface ICompileOptions {
    * Output format
    */
   format: OutputFormat;
-
-  /**
-   * Compilation mode
-   */
-  mode: CompilationMode;
 
   /**
    * Whether to include debug information

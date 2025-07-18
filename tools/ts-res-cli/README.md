@@ -32,7 +32,6 @@ ts-res-compile compile \
   -i ./resources \
   -o ./dist/resources.ts \
   --format ts \
-  --mode production \
   --include-metadata
 ```
 
@@ -68,7 +67,6 @@ Compiles resources from input to output format.
 **Optional Options:**
 - `-c, --context <json>` - Context filter for resources (JSON string)
 - `-f, --format <format>` - Output format (json, js, ts, binary) [default: json]
-- `-m, --mode <mode>` - Compilation mode (development, production) [default: development]
 - `--debug` - Include debug information [default: false]
 - `-v, --verbose` - Verbose output [default: false]
 - `-q, --quiet` - Quiet output [default: false]

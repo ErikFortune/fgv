@@ -22,7 +22,7 @@
 
 import { Command } from 'commander';
 import { Result, succeed, fail } from '@fgv/ts-utils';
-import { ICompileOptions, OutputFormat, CompilationMode } from './options';
+import { ICompileOptions, OutputFormat } from './options';
 
 /**
  * Command-line options for the compile command
@@ -34,7 +34,6 @@ interface ICompileCommandOptions {
   context?: string;
   contextFilter?: string;
   format: string;
-  mode: string;
   debug?: boolean;
   verbose?: boolean;
   quiet?: boolean;
@@ -107,7 +106,6 @@ export class TsResCliApp {
         'Context filter token (pipe-separated, e.g., "language=en-US|territory=US")'
       )
       .option('-f, --format <format>', 'Output format', 'compiled')
-      .option('-m, --mode <mode>', 'Compilation mode', 'development')
       .option('--debug', 'Include debug information', false)
       .option('-v, --verbose', 'Verbose output', false)
       .option('-q, --quiet', 'Quiet output', false)
@@ -179,7 +177,6 @@ export class TsResCliApp {
       output: '', // Not used for validation
       config: options.config,
       format: 'compiled',
-      mode: 'development',
       debug: false,
       verbose: options.verbose || false,
       quiet: options.quiet || false,
@@ -225,7 +222,6 @@ export class TsResCliApp {
       output: '', // Not used for info
       config: options.config,
       format: 'compiled',
-      mode: 'development',
       debug: false,
       verbose: false,
       quiet: false,
@@ -257,11 +253,6 @@ export class TsResCliApp {
         return fail(`Invalid format: ${format}`);
       }
 
-      const mode = options.mode as CompilationMode;
-      if (!['development', 'production'].includes(mode)) {
-        return fail(`Invalid mode: ${mode}`);
-      }
-
       // Convert JSON context to contextFilter if provided
       let contextFilter = options.contextFilter;
       if (options.context && !contextFilter) {
@@ -283,7 +274,6 @@ export class TsResCliApp {
         config: options.config,
         contextFilter,
         format,
-        mode,
         debug: options.debug || false,
         verbose: options.verbose || false,
         quiet: options.quiet || false,
