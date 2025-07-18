@@ -37,6 +37,25 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[acceptLowercase?](./ts-res.qualifiertypes.config.iterritoryqualifiertypeconfig.acceptlowercase.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
 [allowContextList?](./ts-res.qualifiertypes.config.iterritoryqualifiertypeconfig.allowcontextlist.md)
 
 

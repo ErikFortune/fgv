@@ -7,7 +7,7 @@
 **Signature:**
 
 ```typescript
-orThrow(logOrFormat?: IResultLogger<TD> | ErrorFormatter): never;
+orThrow(logOrFormat?: IResultLogger<TD> | ErrorFormatter<TD>): never;
 ```
 
 ## Parameters
@@ -35,7 +35,7 @@ logOrFormat
 
 </td><td>
 
-[IResultLogger](./ts-utils.iresultlogger.md)<!-- -->&lt;TD&gt; \| [ErrorFormatter](./ts-utils.errorformatter.md)
+[IResultLogger](./ts-utils.iresultlogger.md)<!-- -->&lt;TD&gt; \| [ErrorFormatter](./ts-utils.errorformatter.md)<!-- -->&lt;TD&gt;
 
 
 </td><td>

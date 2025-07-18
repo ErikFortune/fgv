@@ -58,6 +58,12 @@ export interface ITerritoryQualifierTypeCreateParams {
    * Optional array enumerating allowed territories to further constrain the type.
    */
   allowedTerritories?: string[];
+
+  /**
+   * Flag indicating whether the qualifier type should accept lowercase territory codes.
+   * Defaults to `false`.
+   */
+  acceptLowercase?: boolean;
 }
 
 /**
@@ -73,10 +79,17 @@ export class TerritoryQualifierType extends QualifierType {
   public readonly allowedTerritories?: ReadonlyArray<QualifierConditionValue>;
 
   /**
+   * Flag indicating whether the qualifier type should accept lowercase territory codes.
+   * Defaults to `false`.
+   */
+  public readonly acceptLowercase: boolean;
+
+  /**
    * Creates a new {@link QualifierTypes.TerritoryQualifierType | TerritoryQualifierType} instance.
    * @public
    */
   protected constructor({
+    acceptLowercase,
     allowedTerritories,
     allowContextList,
     name,
@@ -88,7 +101,7 @@ export class TerritoryQualifierType extends QualifierType {
     const validTerritories =
       allowedTerritories !== undefined
         ? mapResults(
-            allowedTerritories.map((t) => TerritoryQualifierType.toTerritoryConditionValue(t))
+            allowedTerritories.map((t) => TerritoryQualifierType.toTerritoryConditionValue(t.toUpperCase()))
           ).orThrow()
         : undefined;
 
@@ -99,14 +112,15 @@ export class TerritoryQualifierType extends QualifierType {
       index: validIndex
     });
     this.allowedTerritories = validTerritories;
+    this.acceptLowercase = acceptLowercase === true;
   }
 
   /**
    * {@inheritdoc QualifierTypes.QualifierType.isValidConditionValue}
    */
   public isValidConditionValue(value: string): value is QualifierConditionValue {
-    const normalized = value.toUpperCase();
-    /* c8 ignore next 6 - definitely tested but coverage is missing it */
+    const normalized = this.acceptLowercase ? value.toUpperCase() : value;
+
     if (!TerritoryQualifierType.isValidTerritoryConditionValue(normalized)) {
       return false;
     }
@@ -145,7 +159,8 @@ export class TerritoryQualifierType extends QualifierType {
     return sanitizeJsonObject<ITerritoryQualifierTypeCreateParams>({
       name: config.name,
       allowContextList: territoryConfig.allowContextList === true,
-      allowedTerritories: territoryConfig.allowedTerritories
+      allowedTerritories: territoryConfig.allowedTerritories,
+      acceptLowercase: territoryConfig.acceptLowercase === true
     }).onSuccess(TerritoryQualifierType.create);
   }
 
@@ -165,23 +180,36 @@ export class TerritoryQualifierType extends QualifierType {
   /**
    * Determines whether a value is a valid condition value for a territory qualifier.
    * @param value - The value to validate.
+   * @param acceptLowercase - Flag indicating whether the qualifier type should accept lowercase territory codes.
+   * Defaults to `false`.
    * @returns `true` if the value is a valid condition value, `false` otherwise.
    * @public
    */
-  public static isValidTerritoryConditionValue(value: string): value is QualifierConditionValue {
-    return Validate.RegularExpressions.territoryCode.test(value);
+  public static isValidTerritoryConditionValue(
+    value: string,
+    acceptLowercase?: boolean
+  ): value is QualifierConditionValue {
+    if (acceptLowercase !== true && value !== value.toUpperCase()) {
+      return false;
+    }
+    return Validate.RegularExpressions.territoryCode.test(value.toUpperCase());
   }
 
   /**
    * Converts a string value to a territory condition value.
    * @param value - The value to convert.
+   * @param acceptLowercase - Flag indicating whether the qualifier type should accept lowercase territory codes.
+   * Defaults to `false`.
    * @returns `Success` with the converted value if successful, `Failure` with an error
    * message otherwise.
    * @public
    */
-  public static toTerritoryConditionValue(value: string): Result<QualifierConditionValue> {
+  public static toTerritoryConditionValue(
+    value: string,
+    acceptLowercase?: boolean
+  ): Result<QualifierConditionValue> {
     const normalized = value.toUpperCase();
-    return TerritoryQualifierType.isValidTerritoryConditionValue(normalized)
+    return TerritoryQualifierType.isValidTerritoryConditionValue(normalized, acceptLowercase)
       ? succeed(normalized)
       : fail(`${value}: not a valid territory code`);
   }

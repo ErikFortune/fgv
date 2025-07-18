@@ -9,7 +9,7 @@ Converts a string value to a territory condition value.
 **Signature:**
 
 ```typescript
-static toTerritoryConditionValue(value: string): Result<QualifierConditionValue>;
+static toTerritoryConditionValue(value: string, acceptLowercase?: boolean): Result<QualifierConditionValue>;
 ```
 
 ## Parameters
@@ -43,6 +43,22 @@ string
 </td><td>
 
 The value to convert.
+
+
+</td></tr>
+<tr><td>
+
+acceptLowercase
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_ Flag indicating whether the qualifier type should accept lowercase territory codes. Defaults to `false`<!-- -->.
 
 
 </td></tr>

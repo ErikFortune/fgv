@@ -84,6 +84,9 @@ class AggregateCacheMetrics implements ICacheMetrics {
 export const allConditionOperators: ConditionOperator[];
 
 // @public
+const allPredefinedSystemConfigurations: ReadonlyArray<PredefinedSystemConfiguration>;
+
+// @public
 export const allResourceValueMergeMethods: ResourceValueMergeMethod[];
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -417,7 +420,7 @@ const conditionKey_2: RegExp;
 export type ConditionOperator = 'always' | 'never' | 'matches';
 
 // @public
-const conditionOperator: Converter<ConditionOperator, ConditionOperator[]>;
+const conditionOperator: Converter<ConditionOperator, readonly ConditionOperator[]>;
 
 // @public
 export type ConditionPriority = Brand<number, 'ConditionPriority'>;
@@ -625,13 +628,12 @@ declare namespace Config {
         Model_2 as Model,
         Convert_10 as Convert,
         SystemConfiguration,
-        DefaultQualifierTypes,
-        TerritoryPriorityQualifiers,
-        LanguagePriorityQualifiers,
-        DefaultResourceTypes,
-        TerritoryPrioritySystemConfiguration,
-        LanguagePrioritySystemConfiguration,
-        DefaultSystemConfiguration
+        getPredefinedDeclaration,
+        getPredefinedSystemConfiguration,
+        PredefinedSystemConfiguration,
+        allPredefinedSystemConfigurations,
+        Default,
+        Example
     }
 }
 export { Config }
@@ -803,7 +805,8 @@ export { Convert }
 
 declare namespace Convert_10 {
     export {
-        systemConfiguration
+        systemConfiguration,
+        predefinedSystemConfiguration
     }
 }
 
@@ -983,6 +986,18 @@ declare namespace Decisions {
 }
 export { Decisions }
 
+declare namespace Default {
+    export {
+        DefaultQualifierTypes,
+        TerritoryPriorityQualifiers,
+        LanguagePriorityQualifiers,
+        DefaultResourceTypes,
+        TerritoryPrioritySystemConfiguration,
+        LanguagePrioritySystemConfiguration,
+        DefaultSystemConfiguration
+    }
+}
+
 // @public
 const DefaultQualifierTypes: ReadonlyArray<QualifierTypes.Config.ISystemQualifierTypeConfig>;
 
@@ -991,6 +1006,27 @@ const DefaultResourceTypes: ReadonlyArray<ResourceTypes.Config.IResourceTypeConf
 
 // @public
 const DefaultSystemConfiguration: ISystemConfiguration;
+
+declare namespace Example {
+    export {
+        ExtendedQualifierTypes,
+        ExtendedQualifiers,
+        ExtendedResourceTypes,
+        ExtendedSystemConfiguration
+    }
+}
+
+// @public
+const ExtendedQualifiers: ReadonlyArray<Qualifiers.IQualifierDecl>;
+
+// @public
+const ExtendedQualifierTypes: ReadonlyArray<QualifierTypes.Config.ISystemQualifierTypeConfig>;
+
+// @public
+const ExtendedResourceTypes: ReadonlyArray<ResourceTypes.Config.IResourceTypeConfig>;
+
+// @public
+const ExtendedSystemConfiguration: ISystemConfiguration;
 
 // @public
 class FsItem implements IFsItemProps {
@@ -1055,6 +1091,18 @@ class FsItemImporter implements IImporter {
 //
 // @public
 type FsItemResultDetail = 'failed' | 'skipped' | 'succeeded';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function getPredefinedDeclaration(name: PredefinedSystemConfiguration): Result<ISystemConfiguration>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function getPredefinedSystemConfiguration(name: PredefinedSystemConfiguration): Result<SystemConfiguration>;
 
 declare namespace Helpers {
     export {
@@ -2446,6 +2494,8 @@ interface ISystemTerritoryQualifierTypeConfig extends IQualifierTypeConfig<ITerr
 // @public
 interface ITerritoryQualifierTypeConfig {
     // (undocumented)
+    acceptLowercase?: boolean;
+    // (undocumented)
     allowContextList?: boolean;
     // (undocumented)
     allowedTerritories?: string[];
@@ -2455,6 +2505,7 @@ interface ITerritoryQualifierTypeConfig {
 //
 // @public
 interface ITerritoryQualifierTypeCreateParams {
+    acceptLowercase?: boolean;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -2839,6 +2890,15 @@ class PathImporter implements IImporter {
 
 // @public
 export const PerfectMatch: QualifierMatchScore;
+
+// @public
+type PredefinedSystemConfiguration = 'default' | 'language-priority' | 'territory-priority' | 'extended-example';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const predefinedSystemConfiguration: Converter<PredefinedSystemConfiguration, readonly PredefinedSystemConfiguration[]>;
 
 // @public
 class Qualifier implements IValidatedQualifierDecl, ICollectible<QualifierName, QualifierIndex> {
@@ -3722,7 +3782,7 @@ export { ResourceTypes }
 export type ResourceValueMergeMethod = 'augment' | 'delete' | 'replace';
 
 // @public
-const resourceValueMergeMethod: Converter<ResourceValueMergeMethod, ResourceValueMergeMethod[]>;
+const resourceValueMergeMethod: Converter<ResourceValueMergeMethod, readonly ResourceValueMergeMethod[]>;
 
 declare namespace Runtime {
     export {
@@ -3795,8 +3855,12 @@ class SystemConfiguration {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(config: ISystemConfiguration): Result<SystemConfiguration>;
-    readonly description?: string;
-    readonly name?: string;
+    get description(): string | undefined;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getConfig(): Result<ISystemConfiguration>;
+    get name(): string | undefined;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly qualifiers: IReadOnlyQualifierCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3847,7 +3911,8 @@ const TerritoryPrioritySystemConfiguration: ISystemConfiguration;
 // @public
 class TerritoryQualifierType extends QualifierType {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor({ allowedTerritories, allowContextList, name, index }: ITerritoryQualifierTypeCreateParams);
+    protected constructor({ acceptLowercase, allowedTerritories, allowContextList, name, index }: ITerritoryQualifierTypeCreateParams);
+    readonly acceptLowercase: boolean;
     readonly allowedTerritories?: ReadonlyArray<QualifierConditionValue>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3861,12 +3926,12 @@ class TerritoryQualifierType extends QualifierType {
     //
     // (undocumented)
     isValidConditionValue(value: string): value is QualifierConditionValue;
-    static isValidTerritoryConditionValue(value: string): value is QualifierConditionValue;
+    static isValidTerritoryConditionValue(value: string, acceptLowercase?: boolean): value is QualifierConditionValue;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     protected _matchOne(condition: QualifierConditionValue, context: QualifierContextValue): QualifierMatchScore;
-    static toTerritoryConditionValue(value: string): Result<QualifierConditionValue>;
+    static toTerritoryConditionValue(value: string, acceptLowercase?: boolean): Result<QualifierConditionValue>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

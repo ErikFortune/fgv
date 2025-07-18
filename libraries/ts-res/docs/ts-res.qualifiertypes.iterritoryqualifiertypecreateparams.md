@@ -37,6 +37,25 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[acceptLowercase?](./ts-res.qualifiertypes.iterritoryqualifiertypecreateparams.acceptlowercase.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_ Flag indicating whether the qualifier type should accept lowercase territory codes. Defaults to `false`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [allowContextList?](./ts-res.qualifiertypes.iterritoryqualifiertypecreateparams.allowcontextlist.md)
 
 

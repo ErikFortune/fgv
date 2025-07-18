@@ -9,5 +9,5 @@
 **Signature:**
 
 ```typescript
-resourceValueMergeMethod: import("@fgv/ts-utils").Converter<import("./resources").ResourceValueMergeMethod, import("./resources").ResourceValueMergeMethod[]>
+resourceValueMergeMethod: import("@fgv/ts-utils").Converter<import("./resources").ResourceValueMergeMethod, readonly import("./resources").ResourceValueMergeMethod[]>
 ```

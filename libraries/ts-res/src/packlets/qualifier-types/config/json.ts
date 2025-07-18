@@ -48,6 +48,7 @@ export interface ILanguageQualifierTypeConfig {
 export interface ITerritoryQualifierTypeConfig {
   allowContextList?: boolean;
 
+  acceptLowercase?: boolean;
   allowedTerritories?: string[];
 }
 

@@ -54,6 +54,24 @@ Description
 </td></tr>
 <tr><td>
 
+[Default](./ts-res.config.default.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Example](./ts-res.config.example.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Model](./ts-res.config.model.md)
 
 

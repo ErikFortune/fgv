@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult } from '@fgv/ts-utils';
+import { Result, captureResult, succeed } from '@fgv/ts-utils';
 import { Bcp47 } from '@fgv/ts-bcp47';
 import {
   ConditionOperator,
@@ -114,7 +114,9 @@ export class LanguageQualifierType extends QualifierType {
    * {@inheritdoc QualifierTypes.IQualifierType.isValidConditionValue}
    */
   public isValidConditionValue(value: string): value is QualifierConditionValue {
-    return Bcp47.tag(value).isSuccess();
+    return Bcp47.tag(value)
+      .onSuccess((tag) => succeed(tag.isValid))
+      .orDefault(false);
   }
 
   /**

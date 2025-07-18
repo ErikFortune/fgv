@@ -27,6 +27,7 @@ import { QualifierTypeCollector, ReadOnlyQualifierTypeCollector } from '../quali
 import { IReadOnlyQualifierCollector, QualifierCollector } from '../qualifiers';
 import { ReadOnlyResourceTypeCollector, ResourceTypeCollector } from '../resource-types';
 import { ISystemConfiguration } from './json';
+import { systemConfiguration } from './convert';
 
 /**
  * A system configuration for both runtime or build.
@@ -36,12 +37,16 @@ export class SystemConfiguration {
   /**
    * The name of this system configuration.
    */
-  public readonly name?: string;
+  public get name(): string | undefined {
+    return this._config.name;
+  }
 
   /**
    * The description of this system configuration.
    */
-  public readonly description?: string;
+  public get description(): string | undefined {
+    return this._config.description;
+  }
 
   /**
    * The {@link QualifierTypes.QualifierTypeCollector | qualifier types} that this system configuration uses.
@@ -59,6 +64,8 @@ export class SystemConfiguration {
    */
   public readonly resourceTypes: ReadOnlyResourceTypeCollector;
 
+  private readonly _config: ISystemConfiguration;
+
   /**
    * Constructs a new instance of a {@link Config.SystemConfiguration | SystemConfiguration} from the
    * supplied {@link Config.Model.ISystemConfiguration | system configuration}.
@@ -66,8 +73,7 @@ export class SystemConfiguration {
    * @public
    */
   protected constructor(config: ISystemConfiguration) {
-    this.name = config.name;
-    this.description = config.description;
+    this._config = config;
 
     this.qualifierTypes = QualifierTypeCollector.create({
       qualifierTypes: mapResults(
@@ -97,5 +103,16 @@ export class SystemConfiguration {
    */
   public static create(config: ISystemConfiguration): Result<SystemConfiguration> {
     return captureResult(() => new SystemConfiguration(config));
+  }
+
+  /**
+   * Returns the {@link Config.Model.ISystemConfiguration | system configuration} that this
+   * {@link Config.SystemConfiguration | SystemConfiguration} was created from.
+   * @returns `Success` with the {@link Config.Model.ISystemConfiguration | system configuration}
+   * if successful, `Failure` with an error message otherwise.
+   * @public
+   */
+  public getConfig(): Result<ISystemConfiguration> {
+    return systemConfiguration.convert(this._config);
   }
 }

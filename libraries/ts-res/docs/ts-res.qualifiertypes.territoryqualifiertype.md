@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)({ allowedTerritories, allowContextList, name, index })](./ts-res.qualifiertypes.territoryqualifiertype._constructor_.md)
+[(constructor)({ acceptLowercase, allowedTerritories, allowContextList, name, index })](./ts-res.qualifiertypes.territoryqualifiertype._constructor_.md)
 
 
 </td><td>
@@ -73,6 +73,27 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[acceptLowercase](./ts-res.qualifiertypes.territoryqualifiertype.acceptlowercase.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+Flag indicating whether the qualifier type should accept lowercase territory codes. Defaults to `false`<!-- -->.
+
+
+</td></tr>
+<tr><td>
 
 [allowedTerritories?](./ts-res.qualifiertypes.territoryqualifiertype.allowedterritories.md)
 
@@ -177,7 +198,7 @@ Validates a condition value for this qualifier type.
 </td></tr>
 <tr><td>
 
-[isValidTerritoryConditionValue(value)](./ts-res.qualifiertypes.territoryqualifiertype.isvalidterritoryconditionvalue.md)
+[isValidTerritoryConditionValue(value, acceptLowercase)](./ts-res.qualifiertypes.territoryqualifiertype.isvalidterritoryconditionvalue.md)
 
 
 </td><td>
@@ -193,7 +214,7 @@ Determines whether a value is a valid condition value for a territory qualifier.
 </td></tr>
 <tr><td>
 
-[toTerritoryConditionValue(value)](./ts-res.qualifiertypes.territoryqualifiertype.toterritoryconditionvalue.md)
+[toTerritoryConditionValue(value, acceptLowercase)](./ts-res.qualifiertypes.territoryqualifiertype.toterritoryconditionvalue.md)
 
 
 </td><td>

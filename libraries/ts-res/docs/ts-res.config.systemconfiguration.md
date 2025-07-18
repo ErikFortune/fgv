@@ -73,7 +73,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[description?](./ts-res.config.systemconfiguration.description.md)
+[description](./ts-res.config.systemconfiguration.description.md)
 
 
 </td><td>
@@ -83,18 +83,18 @@ Description
 
 </td><td>
 
-string
+string \| undefined
 
 
 </td><td>
 
-_(Optional)_ The description of this system configuration.
+The description of this system configuration.
 
 
 </td></tr>
 <tr><td>
 
-[name?](./ts-res.config.systemconfiguration.name.md)
+[name](./ts-res.config.systemconfiguration.name.md)
 
 
 </td><td>
@@ -104,12 +104,12 @@ _(Optional)_ The description of this system configuration.
 
 </td><td>
 
-string
+string \| undefined
 
 
 </td><td>
 
-_(Optional)_ The name of this system configuration.
+The name of this system configuration.
 
 
 </td></tr>
@@ -209,6 +209,20 @@ Description
 </td><td>
 
 Creates a new [SystemConfiguration](./ts-res.config.systemconfiguration.md) from the supplied [system configuration](./ts-res.config.model.isystemconfiguration.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[getConfig()](./ts-res.config.systemconfiguration.getconfig.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Returns the [system configuration](./ts-res.config.model.isystemconfiguration.md) that this [SystemConfiguration](./ts-res.config.systemconfiguration.md) was created from.
 
 
 </td></tr>

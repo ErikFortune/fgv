@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[predefinedSystemConfiguration](./ts-res.config.convert.predefinedsystemconfiguration.md)
+
+
+</td><td>
+
+A `Converter` for  values.
+
+
+</td></tr>
+<tr><td>
+
 [systemConfiguration](./ts-res.config.convert.systemconfiguration.md)
 
 

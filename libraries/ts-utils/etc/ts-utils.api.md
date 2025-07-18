@@ -20,7 +20,7 @@ function arrayOf_2<T, TC>(validateElement: Validator<T, TC>, params?: Omit<Array
 // Warning: (ae-forgotten-export) The symbol "ValidatorBase" needs to be exported by the entry point index.d.ts
 //
 // @public
-class ArrayValidator<T, TC = unknown> extends ValidatorBase<T[], TC> {
+class ArrayValidator<T, TC = unknown> extends ValidatorBase<ReadonlyArray<T>, TC> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -684,12 +684,12 @@ type DiscriminatedObjectConverters<T, TD extends string = string, TC = unknown> 
 function element<T, TC = unknown>(index: number, converter: Converter<T, TC> | Validator<T, TC>): Converter<T, TC>;
 
 // @public
-function enumeratedValue<T>(values: T[]): Converter<T, T[]>;
+function enumeratedValue<T>(values: ReadonlyArray<T>): Converter<T, ReadonlyArray<T>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function enumeratedValue_2<T extends string>(values: T[]): Validator<T, T[]>;
+function enumeratedValue_2<T extends string>(values: ReadonlyArray<T>): Validator<T, ReadonlyArray<T>>;
 
 // @public
 export type ErrorFormatter<TD = unknown> = (message: string, detail?: TD) => string;
@@ -1605,7 +1605,7 @@ function mapOf<T, TC = unknown, TK extends string = string>(converter: Converter
 function mapOf<T, TC = unknown, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>, options: KeyedConverterOptions<TK, TC>): Converter<Map<TK, T>, TC>;
 
 // @public
-function mappedEnumeratedValue<T, TC = unknown>(map: [T, unknown[]][], message?: string): Converter<T, TC>;
+function mappedEnumeratedValue<T, TC = unknown>(map: ReadonlyArray<[T, ReadonlyArray<TC>]>, message?: string): Converter<T, ReadonlyArray<TC>>;
 
 // @public
 export function mapResults<T>(results: Iterable<Result<T>>, aggregatedErrors?: IMessageAggregator): Result<T[]>;

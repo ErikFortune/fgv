@@ -27,6 +27,7 @@ import { ISystemConfiguration } from './json';
 import * as QualifierTypes from '../qualifier-types';
 import * as Qualifiers from '../qualifiers';
 import * as ResourceTypes from '../resource-types';
+import { allPredefinedSystemConfigurations } from './common';
 
 /**
  * A `Converter` for {@link Config.Model.ISystemConfiguration | ISystemConfiguration} objects.
@@ -40,3 +41,10 @@ export const systemConfiguration = Converters.strictObject<ISystemConfiguration>
   qualifiers: Converters.arrayOf(Qualifiers.Convert.qualifierDecl),
   resourceTypes: Converters.arrayOf(ResourceTypes.Config.Convert.resourceTypeConfig)
 });
+
+/**
+ * A `Converter` for {@link Config.PredefinedSystemConfiguration | PredefinedSystemConfiguration} values.
+ * @returns A `Converter` for {@link Config.PredefinedSystemConfiguration | PredefinedSystemConfiguration} values.
+ * @public
+ */
+export const predefinedSystemConfiguration = Converters.enumeratedValue(allPredefinedSystemConfigurations);

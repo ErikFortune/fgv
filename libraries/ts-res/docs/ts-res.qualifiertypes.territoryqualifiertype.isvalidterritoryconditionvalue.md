@@ -9,7 +9,7 @@ Determines whether a value is a valid condition value for a territory qualifier.
 **Signature:**
 
 ```typescript
-static isValidTerritoryConditionValue(value: string): value is QualifierConditionValue;
+static isValidTerritoryConditionValue(value: string, acceptLowercase?: boolean): value is QualifierConditionValue;
 ```
 
 ## Parameters
@@ -43,6 +43,22 @@ string
 </td><td>
 
 The value to validate.
+
+
+</td></tr>
+<tr><td>
+
+acceptLowercase
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_ Flag indicating whether the qualifier type should accept lowercase territory codes. Defaults to `false`<!-- -->.
 
 
 </td></tr>

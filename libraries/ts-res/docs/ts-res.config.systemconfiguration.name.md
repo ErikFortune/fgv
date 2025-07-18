@@ -9,5 +9,5 @@ The name of this system configuration.
 **Signature:**
 
 ```typescript
-readonly name?: string;
+get name(): string | undefined;
 ```

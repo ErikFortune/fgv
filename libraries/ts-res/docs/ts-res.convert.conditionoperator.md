@@ -9,5 +9,5 @@
 **Signature:**
 
 ```typescript
-conditionOperator: import("@fgv/ts-utils").Converter<import("./conditions").ConditionOperator, import("./conditions").ConditionOperator[]>
+conditionOperator: import("@fgv/ts-utils").Converter<import("./conditions").ConditionOperator, readonly import("./conditions").ConditionOperator[]>
 ```

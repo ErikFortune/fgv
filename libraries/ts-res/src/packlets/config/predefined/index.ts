@@ -20,10 +20,7 @@
  * SOFTWARE.
  */
 
-import * as Model from './json';
-import * as Convert from './convert';
+import * as Default from './default';
+import * as Example from './extended';
 
-export * from './systemConfiguration';
-export * from './common';
-
-export { Model, Convert };
+export { Default, Example };

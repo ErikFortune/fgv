@@ -9,9 +9,9 @@ An in-place [Validator](./ts-utils.validator.md) for arrays of validated values 
 **Signature:**
 
 ```typescript
-export declare class ArrayValidator<T, TC = unknown> extends ValidatorBase<T[], TC> 
+export declare class ArrayValidator<T, TC = unknown> extends ValidatorBase<ReadonlyArray<T>, TC> 
 ```
-**Extends:** ValidatorBase&lt;T\[\], TC&gt;
+**Extends:** ValidatorBase&lt;ReadonlyArray&lt;T&gt;, TC&gt;
 
 ## Constructors
 

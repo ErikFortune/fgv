@@ -9,7 +9,7 @@ Helper function to create a [Converter](./ts-utils.converter.md) which converts 
 **Signature:**
 
 ```typescript
-export declare function mappedEnumeratedValue<T, TC = unknown>(map: [T, unknown[]][], message?: string): Converter<T, TC>;
+export declare function mappedEnumeratedValue<T, TC = unknown>(map: ReadonlyArray<[T, ReadonlyArray<TC>]>, message?: string): Converter<T, ReadonlyArray<TC>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ map
 
 </td><td>
 
-\[T, unknown\[\]\]\[\]
+ReadonlyArray&lt;\[T, ReadonlyArray&lt;TC&gt;\]&gt;
 
 
 </td><td>
@@ -66,7 +66,7 @@ _(Optional)_ An optional error message.
 
 **Returns:**
 
-[Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;
+[Converter](./ts-utils.converter.md)<!-- -->&lt;T, ReadonlyArray&lt;TC&gt;&gt;
 
 A [Converter](./ts-utils.converter.md) which applies the mapping and yields `<T>` on success.
 

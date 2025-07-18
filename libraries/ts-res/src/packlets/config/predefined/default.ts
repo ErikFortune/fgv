@@ -20,11 +20,11 @@
  * SOFTWARE.
  */
 
-import { ISystemConfiguration } from './json';
+import { ISystemConfiguration } from '../json';
 
-import * as QualifierTypes from '../qualifier-types';
-import * as Qualifiers from '../qualifiers';
-import * as ResourceTypes from '../resource-types';
+import * as QualifierTypes from '../../qualifier-types';
+import * as Qualifiers from '../../qualifiers';
+import * as ResourceTypes from '../../resource-types';
 
 /**
  * Default qualifier types.

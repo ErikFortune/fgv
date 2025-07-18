@@ -41,6 +41,7 @@ export const languageQualifierTypeConfig = Converters.strictObject<Model.ILangua
  */
 export const territoryQualifierTypeConfig = Converters.strictObject<Model.ITerritoryQualifierTypeConfig>({
   allowContextList: Converters.boolean,
+  acceptLowercase: Converters.boolean.optional(),
   allowedTerritories: Converters.arrayOf(Converters.string).optional()
 });
 

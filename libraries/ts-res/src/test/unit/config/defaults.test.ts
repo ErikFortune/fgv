@@ -26,18 +26,18 @@ import * as TsRes from '../../../index';
 describe('Default Configurations', () => {
   describe('DefaultQualifierTypes', () => {
     test('exports default qualifier types array', () => {
-      expect(TsRes.Config.DefaultQualifierTypes).toBeDefined();
-      expect(Array.isArray(TsRes.Config.DefaultQualifierTypes)).toBe(true);
-      expect(TsRes.Config.DefaultQualifierTypes).toHaveLength(2);
+      expect(TsRes.Config.Default.DefaultQualifierTypes).toBeDefined();
+      expect(Array.isArray(TsRes.Config.Default.DefaultQualifierTypes)).toBe(true);
+      expect(TsRes.Config.Default.DefaultQualifierTypes).toHaveLength(2);
     });
     test('can be used to create a working system configuration', () => {
       // This validates the structure is correct by attempting to use it
       const config: TsRes.Config.Model.ISystemConfiguration = {
         name: 'test',
         description: 'Test configuration',
-        qualifierTypes: [...TsRes.Config.DefaultQualifierTypes],
-        qualifiers: [...TsRes.Config.TerritoryPriorityQualifiers],
-        resourceTypes: [...TsRes.Config.DefaultResourceTypes]
+        qualifierTypes: [...TsRes.Config.Default.DefaultQualifierTypes],
+        qualifiers: [...TsRes.Config.Default.TerritoryPriorityQualifiers],
+        resourceTypes: [...TsRes.Config.Default.DefaultResourceTypes]
       };
 
       expect(TsRes.Config.SystemConfiguration.create(config)).toSucceedAndSatisfy((sysConfig) => {
@@ -75,9 +75,9 @@ describe('Default Configurations', () => {
 
   describe('TerritoryPriorityQualifiers', () => {
     test('exports territory priority qualifiers array', () => {
-      expect(TsRes.Config.TerritoryPriorityQualifiers).toBeDefined();
-      expect(Array.isArray(TsRes.Config.TerritoryPriorityQualifiers)).toBe(true);
-      expect(TsRes.Config.TerritoryPriorityQualifiers).toHaveLength(2);
+      expect(TsRes.Config.Default.TerritoryPriorityQualifiers).toBeDefined();
+      expect(Array.isArray(TsRes.Config.Default.TerritoryPriorityQualifiers)).toBe(true);
+      expect(TsRes.Config.Default.TerritoryPriorityQualifiers).toHaveLength(2);
     });
 
     test('can be used to create a working system configuration with territory priority', () => {
@@ -85,9 +85,9 @@ describe('Default Configurations', () => {
       const config: TsRes.Config.Model.ISystemConfiguration = {
         name: 'test-territory',
         description: 'Test territory priority configuration',
-        qualifierTypes: [...TsRes.Config.DefaultQualifierTypes],
-        qualifiers: [...TsRes.Config.TerritoryPriorityQualifiers],
-        resourceTypes: [...TsRes.Config.DefaultResourceTypes]
+        qualifierTypes: [...TsRes.Config.Default.DefaultQualifierTypes],
+        qualifiers: [...TsRes.Config.Default.TerritoryPriorityQualifiers],
+        resourceTypes: [...TsRes.Config.Default.DefaultResourceTypes]
       };
 
       expect(TsRes.Config.SystemConfiguration.create(config)).toSucceedAndSatisfy((sysConfig) => {
@@ -115,9 +115,9 @@ describe('Default Configurations', () => {
 
   describe('LanguagePriorityQualifiers', () => {
     test('exports language priority qualifiers array', () => {
-      expect(TsRes.Config.LanguagePriorityQualifiers).toBeDefined();
-      expect(Array.isArray(TsRes.Config.LanguagePriorityQualifiers)).toBe(true);
-      expect(TsRes.Config.LanguagePriorityQualifiers).toHaveLength(2);
+      expect(TsRes.Config.Default.LanguagePriorityQualifiers).toBeDefined();
+      expect(Array.isArray(TsRes.Config.Default.LanguagePriorityQualifiers)).toBe(true);
+      expect(TsRes.Config.Default.LanguagePriorityQualifiers).toHaveLength(2);
     });
 
     test('can be used to create a working system configuration with language priority', () => {
@@ -125,9 +125,9 @@ describe('Default Configurations', () => {
       const config: TsRes.Config.Model.ISystemConfiguration = {
         name: 'test-language',
         description: 'Test language priority configuration',
-        qualifierTypes: [...TsRes.Config.DefaultQualifierTypes],
-        qualifiers: [...TsRes.Config.LanguagePriorityQualifiers],
-        resourceTypes: [...TsRes.Config.DefaultResourceTypes]
+        qualifierTypes: [...TsRes.Config.Default.DefaultQualifierTypes],
+        qualifiers: [...TsRes.Config.Default.LanguagePriorityQualifiers],
+        resourceTypes: [...TsRes.Config.Default.DefaultResourceTypes]
       };
 
       expect(TsRes.Config.SystemConfiguration.create(config)).toSucceedAndSatisfy((sysConfig) => {
@@ -155,9 +155,9 @@ describe('Default Configurations', () => {
 
   describe('DefaultResourceTypes', () => {
     test('exports default resource types array', () => {
-      expect(TsRes.Config.DefaultResourceTypes).toBeDefined();
-      expect(Array.isArray(TsRes.Config.DefaultResourceTypes)).toBe(true);
-      expect(TsRes.Config.DefaultResourceTypes).toHaveLength(1);
+      expect(TsRes.Config.Default.DefaultResourceTypes).toBeDefined();
+      expect(Array.isArray(TsRes.Config.Default.DefaultResourceTypes)).toBe(true);
+      expect(TsRes.Config.Default.DefaultResourceTypes).toHaveLength(1);
     });
 
     test('can be used to create a working system configuration', () => {
@@ -165,9 +165,9 @@ describe('Default Configurations', () => {
       const config: TsRes.Config.Model.ISystemConfiguration = {
         name: 'test-resource-types',
         description: 'Test resource types configuration',
-        qualifierTypes: [...TsRes.Config.DefaultQualifierTypes],
-        qualifiers: [...TsRes.Config.TerritoryPriorityQualifiers],
-        resourceTypes: [...TsRes.Config.DefaultResourceTypes]
+        qualifierTypes: [...TsRes.Config.Default.DefaultQualifierTypes],
+        qualifiers: [...TsRes.Config.Default.TerritoryPriorityQualifiers],
+        resourceTypes: [...TsRes.Config.Default.DefaultResourceTypes]
       };
 
       expect(TsRes.Config.SystemConfiguration.create(config)).toSucceedAndSatisfy((sysConfig) => {
@@ -181,13 +181,13 @@ describe('Default Configurations', () => {
 
   describe('TerritoryPrioritySystemConfiguration', () => {
     test('exports territory priority system configuration', () => {
-      expect(TsRes.Config.TerritoryPrioritySystemConfiguration).toBeDefined();
-      expect(typeof TsRes.Config.TerritoryPrioritySystemConfiguration).toBe('object');
+      expect(TsRes.Config.Default.TerritoryPrioritySystemConfiguration).toBeDefined();
+      expect(typeof TsRes.Config.Default.TerritoryPrioritySystemConfiguration).toBe('object');
     });
 
     test('can be used to create a SystemConfiguration with territory priority', () => {
       expect(
-        TsRes.Config.SystemConfiguration.create(TsRes.Config.TerritoryPrioritySystemConfiguration)
+        TsRes.Config.SystemConfiguration.create(TsRes.Config.Default.TerritoryPrioritySystemConfiguration)
       ).toSucceedAndSatisfy((sysConfig) => {
         expect(sysConfig.name).toBe('default');
         expect(sysConfig.description).toBe('Default system configuration');
@@ -205,13 +205,13 @@ describe('Default Configurations', () => {
 
   describe('LanguagePrioritySystemConfiguration', () => {
     test('exports language priority system configuration', () => {
-      expect(TsRes.Config.LanguagePrioritySystemConfiguration).toBeDefined();
-      expect(typeof TsRes.Config.LanguagePrioritySystemConfiguration).toBe('object');
+      expect(TsRes.Config.Default.LanguagePrioritySystemConfiguration).toBeDefined();
+      expect(typeof TsRes.Config.Default.LanguagePrioritySystemConfiguration).toBe('object');
     });
 
     test('can be used to create a SystemConfiguration with language priority', () => {
       expect(
-        TsRes.Config.SystemConfiguration.create(TsRes.Config.LanguagePrioritySystemConfiguration)
+        TsRes.Config.SystemConfiguration.create(TsRes.Config.Default.LanguagePrioritySystemConfiguration)
       ).toSucceedAndSatisfy((sysConfig) => {
         expect(sysConfig.name).toBe('default');
         expect(sysConfig.description).toBe('Default system configuration');
@@ -229,17 +229,19 @@ describe('Default Configurations', () => {
 
   describe('DefaultSystemConfiguration', () => {
     test('exports default system configuration', () => {
-      expect(TsRes.Config.DefaultSystemConfiguration).toBeDefined();
-      expect(typeof TsRes.Config.DefaultSystemConfiguration).toBe('object');
+      expect(TsRes.Config.Default.DefaultSystemConfiguration).toBeDefined();
+      expect(typeof TsRes.Config.Default.DefaultSystemConfiguration).toBe('object');
     });
 
     test('is identical to TerritoryPrioritySystemConfiguration', () => {
-      expect(TsRes.Config.DefaultSystemConfiguration).toBe(TsRes.Config.TerritoryPrioritySystemConfiguration);
+      expect(TsRes.Config.Default.DefaultSystemConfiguration).toBe(
+        TsRes.Config.Default.TerritoryPrioritySystemConfiguration
+      );
     });
 
     test('gives priority to territory over language', () => {
       expect(
-        TsRes.Config.SystemConfiguration.create(TsRes.Config.DefaultSystemConfiguration)
+        TsRes.Config.SystemConfiguration.create(TsRes.Config.Default.DefaultSystemConfiguration)
       ).toSucceedAndSatisfy((sysConfig) => {
         const territoryQ = sysConfig.qualifiers.validating.get('currentTerritory').orThrow();
         const languageQ = sysConfig.qualifiers.validating.get('language').orThrow();
@@ -249,7 +251,7 @@ describe('Default Configurations', () => {
 
     test('can be used to create a complete working system', () => {
       expect(
-        TsRes.Config.SystemConfiguration.create(TsRes.Config.DefaultSystemConfiguration)
+        TsRes.Config.SystemConfiguration.create(TsRes.Config.Default.DefaultSystemConfiguration)
       ).toSucceedAndSatisfy((sysConfig) => {
         // Create a resource manager using the default configuration
         expect(
@@ -312,29 +314,29 @@ describe('Default Configurations', () => {
 
   describe('Configuration Consistency', () => {
     test('basic array structure is consistent', () => {
-      expect(TsRes.Config.DefaultQualifierTypes).toHaveLength(2);
-      expect(TsRes.Config.TerritoryPriorityQualifiers).toHaveLength(2);
-      expect(TsRes.Config.LanguagePriorityQualifiers).toHaveLength(2);
-      expect(TsRes.Config.DefaultResourceTypes).toHaveLength(1);
+      expect(TsRes.Config.Default.DefaultQualifierTypes).toHaveLength(2);
+      expect(TsRes.Config.Default.TerritoryPriorityQualifiers).toHaveLength(2);
+      expect(TsRes.Config.Default.LanguagePriorityQualifiers).toHaveLength(2);
+      expect(TsRes.Config.Default.DefaultResourceTypes).toHaveLength(1);
     });
 
     test('all default configurations can be used together', () => {
       // Test that both priority systems work
       expect(
-        TsRes.Config.SystemConfiguration.create(TsRes.Config.TerritoryPrioritySystemConfiguration)
+        TsRes.Config.SystemConfiguration.create(TsRes.Config.Default.TerritoryPrioritySystemConfiguration)
       ).toSucceed();
 
       expect(
-        TsRes.Config.SystemConfiguration.create(TsRes.Config.LanguagePrioritySystemConfiguration)
+        TsRes.Config.SystemConfiguration.create(TsRes.Config.Default.LanguagePrioritySystemConfiguration)
       ).toSucceed();
 
       // Test that components are reusable
       const customConfig: TsRes.Config.Model.ISystemConfiguration = {
         name: 'custom',
         description: 'Custom configuration using default components',
-        qualifierTypes: [...TsRes.Config.DefaultQualifierTypes],
-        qualifiers: [...TsRes.Config.TerritoryPriorityQualifiers],
-        resourceTypes: [...TsRes.Config.DefaultResourceTypes]
+        qualifierTypes: [...TsRes.Config.Default.DefaultQualifierTypes],
+        qualifiers: [...TsRes.Config.Default.TerritoryPriorityQualifiers],
+        resourceTypes: [...TsRes.Config.Default.DefaultResourceTypes]
       };
 
       expect(TsRes.Config.SystemConfiguration.create(customConfig)).toSucceed();

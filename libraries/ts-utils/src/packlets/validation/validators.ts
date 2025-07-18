@@ -169,9 +169,9 @@ export function recordOf<T, TC = unknown, TK extends string = string>(
  * value in place.
  * @public
  */
-export function enumeratedValue<T extends string>(values: T[]): Validator<T, T[]> {
+export function enumeratedValue<T extends string>(values: ReadonlyArray<T>): Validator<T, ReadonlyArray<T>> {
   return new GenericValidator({
-    validator: (from: unknown, context?: T[]): boolean | Failure<T> => {
+    validator: (from: unknown, context?: ReadonlyArray<T>): boolean | Failure<T> => {
       if (typeof from === 'string') {
         const v = context ?? values;
         const index = v.indexOf(from as T);

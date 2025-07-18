@@ -9,5 +9,5 @@ The description of this system configuration.
 **Signature:**
 
 ```typescript
-readonly description?: string;
+get description(): string | undefined;
 ```
