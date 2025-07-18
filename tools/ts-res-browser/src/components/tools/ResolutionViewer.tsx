@@ -460,9 +460,15 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
     return config.qualifiers.map((q) => q.name);
   }, [activeProcessedResources?.compiledCollection.qualifiers, resourceState.activeConfiguration]);
 
-  // Initialize context with smart default values based on qualifier types
-  const defaultContextValues = useMemo(() => {
-    const defaults: ContextState = {};
+  // Get qualifier type information for UI decisions
+  const qualifierTypeInfo = useMemo(() => {
+    const info: Record<
+      string,
+      {
+        type: Config.Model.ISystemConfiguration['qualifierTypes'][0];
+        enumeratedValues?: string[];
+      }
+    > = {};
 
     // Get the active configuration to access qualifier types
     const config = resourceState.activeConfiguration || DEFAULT_SYSTEM_CONFIGURATION;
@@ -478,15 +484,43 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
       }
     });
 
-    // Compute intelligent defaults based on qualifier types
+    // Build info for each qualifier
     availableQualifiers.forEach((qualifierName) => {
       const qualifierType = qualifierTypeMap[qualifierName];
+      if (qualifierType) {
+        info[qualifierName] = { type: qualifierType };
 
-      if (!qualifierType) {
+        // Extract enumerated values for literal types
+        if (
+          qualifierType.systemType === 'literal' &&
+          qualifierType.configuration &&
+          typeof qualifierType.configuration === 'object' &&
+          'enumeratedValues' in qualifierType.configuration &&
+          Array.isArray(qualifierType.configuration.enumeratedValues)
+        ) {
+          info[qualifierName].enumeratedValues = qualifierType.configuration.enumeratedValues;
+        }
+      }
+    });
+
+    return info;
+  }, [availableQualifiers, resourceState.activeConfiguration]);
+
+  // Initialize context with smart default values based on qualifier types
+  const defaultContextValues = useMemo(() => {
+    const defaults: ContextState = {};
+
+    // Compute intelligent defaults based on qualifier types
+    availableQualifiers.forEach((qualifierName) => {
+      const typeInfo = qualifierTypeInfo[qualifierName];
+
+      if (!typeInfo) {
         // No type info available, use empty string
         defaults[qualifierName] = '';
         return;
       }
+
+      const qualifierType = typeInfo.type;
 
       // Compute default based on system type
       switch (qualifierType.systemType) {
@@ -512,14 +546,8 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
 
         case 'literal':
           // Literal qualifiers: use first enumerated value if constrained, otherwise "unknown"
-          if (
-            qualifierType.configuration &&
-            typeof qualifierType.configuration === 'object' &&
-            'enumeratedValues' in qualifierType.configuration &&
-            Array.isArray(qualifierType.configuration.enumeratedValues) &&
-            qualifierType.configuration.enumeratedValues.length > 0
-          ) {
-            defaults[qualifierName] = qualifierType.configuration.enumeratedValues[0];
+          if (typeInfo.enumeratedValues && typeInfo.enumeratedValues.length > 0) {
+            defaults[qualifierName] = typeInfo.enumeratedValues[0];
           } else {
             defaults[qualifierName] = 'unknown';
           }
@@ -531,7 +559,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
     });
 
     return defaults;
-  }, [availableQualifiers, resourceState.activeConfiguration]);
+  }, [availableQualifiers, qualifierTypeInfo]);
 
   // Context state
   const [contextValues, setContextValues] = useState<ContextState>({});
@@ -970,22 +998,45 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="mb-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {availableQualifiers.map((qualifierName) => (
-                  <div key={qualifierName} className="bg-white rounded border border-gray-200 p-2">
-                    <div className="flex items-center gap-2">
-                      <label className="text-sm font-medium text-gray-700 min-w-0 flex-shrink-0">
-                        {qualifierName}:
-                      </label>
-                      <input
-                        type="text"
-                        value={pendingContextValues[qualifierName] || ''}
-                        onChange={(e) => handleContextChange(qualifierName, e.target.value)}
-                        className="flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm min-w-0"
-                        placeholder={`Enter ${qualifierName} value`}
-                      />
+                {availableQualifiers.map((qualifierName) => {
+                  const typeInfo = qualifierTypeInfo[qualifierName];
+                  const hasEnumeratedValues =
+                    typeInfo?.enumeratedValues && typeInfo.enumeratedValues.length > 0;
+
+                  return (
+                    <div key={qualifierName} className="bg-white rounded border border-gray-200 p-2">
+                      <div className="flex items-center gap-2">
+                        <label className="text-sm font-medium text-gray-700 min-w-0 flex-shrink-0">
+                          {qualifierName}:
+                        </label>
+                        {hasEnumeratedValues ? (
+                          <select
+                            value={pendingContextValues[qualifierName] || ''}
+                            onChange={(e) => handleContextChange(qualifierName, e.target.value)}
+                            className="flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm min-w-0 bg-white"
+                          >
+                            <option value="" disabled>
+                              Select {qualifierName}...
+                            </option>
+                            {typeInfo!.enumeratedValues!.map((value) => (
+                              <option key={value} value={value}>
+                                {value}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            value={pendingContextValues[qualifierName] || ''}
+                            onChange={(e) => handleContextChange(qualifierName, e.target.value)}
+                            className="flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm min-w-0"
+                            placeholder={`Enter ${qualifierName} value`}
+                          />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
             <div className="flex items-center justify-between">
