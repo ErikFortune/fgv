@@ -183,7 +183,7 @@ describe('Extended Example Configuration', () => {
       expect(
         TsRes.Config.SystemConfiguration.create(TsRes.Config.Example.ExtendedSystemConfiguration)
       ).toSucceedAndSatisfy((sysConfig) => {
-        expect(sysConfig.name).toBe('example');
+        expect(sysConfig.name).toBe('extended-example');
         expect(sysConfig.description).toBe(
           'An example system configuration demonstrating various configuration options'
         );

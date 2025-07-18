@@ -189,8 +189,8 @@ describe('Default Configurations', () => {
       expect(
         TsRes.Config.SystemConfiguration.create(TsRes.Config.Default.TerritoryPrioritySystemConfiguration)
       ).toSucceedAndSatisfy((sysConfig) => {
-        expect(sysConfig.name).toBe('default');
-        expect(sysConfig.description).toBe('Default system configuration');
+        expect(sysConfig.name).toBe('territory-priority');
+        expect(sysConfig.description).toBe('Territory priority system configuration');
         expect(sysConfig.qualifierTypes.size).toBe(2);
         expect(sysConfig.qualifiers.size).toBe(2);
         expect(sysConfig.resourceTypes.size).toBe(1);
@@ -213,8 +213,8 @@ describe('Default Configurations', () => {
       expect(
         TsRes.Config.SystemConfiguration.create(TsRes.Config.Default.LanguagePrioritySystemConfiguration)
       ).toSucceedAndSatisfy((sysConfig) => {
-        expect(sysConfig.name).toBe('default');
-        expect(sysConfig.description).toBe('Default system configuration');
+        expect(sysConfig.name).toBe('language-priority');
+        expect(sysConfig.description).toBe('Language priority system configuration');
         expect(sysConfig.qualifierTypes.size).toBe(2);
         expect(sysConfig.qualifiers.size).toBe(2);
         expect(sysConfig.resourceTypes.size).toBe(1);
@@ -233,9 +233,9 @@ describe('Default Configurations', () => {
       expect(typeof TsRes.Config.Default.DefaultSystemConfiguration).toBe('object');
     });
 
-    test('is identical to TerritoryPrioritySystemConfiguration', () => {
-      expect(TsRes.Config.Default.DefaultSystemConfiguration).toBe(
-        TsRes.Config.Default.TerritoryPrioritySystemConfiguration
+    test('qualifiers are identical to TerritoryPrioritySystemConfiguration', () => {
+      expect(TsRes.Config.Default.DefaultSystemConfiguration.qualifiers).toEqual(
+        TsRes.Config.Default.TerritoryPrioritySystemConfiguration.qualifiers
       );
     });
 

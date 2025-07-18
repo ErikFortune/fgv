@@ -50,6 +50,12 @@ export interface ITerritoryQualifierTypeConfig {
 
   acceptLowercase?: boolean;
   allowedTerritories?: string[];
+
+  /**
+   * Optional {@link QualifierTypes.LiteralValueHierarchyDecl | hierarchy declaration}
+   * of territory values to use for matching. If not provided, no hierarchy will be used.
+   */
+  hierarchy?: LiteralValueHierarchyDecl<string>;
 }
 
 /**

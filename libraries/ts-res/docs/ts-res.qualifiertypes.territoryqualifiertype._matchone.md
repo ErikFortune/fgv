@@ -9,7 +9,7 @@ Matches a single condition value against a single context value.
 **Signature:**
 
 ```typescript
-protected _matchOne(condition: QualifierConditionValue, context: QualifierContextValue): QualifierMatchScore;
+protected _matchOne(condition: QualifierConditionValue, context: QualifierContextValue, __operator?: ConditionOperator): QualifierMatchScore;
 ```
 
 ## Parameters
@@ -59,6 +59,22 @@ context
 </td><td>
 
 The [context value](./ts-res.qualifiercontextvalue.md) to match.
+
+
+</td></tr>
+<tr><td>
+
+\_\_operator
+
+
+</td><td>
+
+[ConditionOperator](./ts-res.conditionoperator.md)
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>

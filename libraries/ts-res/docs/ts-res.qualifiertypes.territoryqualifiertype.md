@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)({ acceptLowercase, allowedTerritories, allowContextList, name, index })](./ts-res.qualifiertypes.territoryqualifiertype._constructor_.md)
+[(constructor)({ acceptLowercase, allowedTerritories, allowContextList, name, index, hierarchy })](./ts-res.qualifiertypes.territoryqualifiertype._constructor_.md)
 
 
 </td><td>
@@ -114,6 +114,27 @@ _(Optional)_ Optional array enumerating allowed territories to further constrain
 
 
 </td></tr>
+<tr><td>
+
+[hierarchy?](./ts-res.qualifiertypes.territoryqualifiertype.hierarchy.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[LiteralValueHierarchy](./ts-res.qualifiertypes.literalvaluehierarchy.md)<!-- -->&lt;string&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional [hierarchy](./ts-res.qualifiertypes.literalvaluehierarchy.md) of territory values to use for matching. If not provided, no hierarchy will be used.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods
@@ -136,7 +157,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_matchOne(condition, context)](./ts-res.qualifiertypes.territoryqualifiertype._matchone.md)
+[\_matchOne(condition, context, \_\_operator)](./ts-res.qualifiertypes.territoryqualifiertype._matchone.md)
 
 
 </td><td>

@@ -24,7 +24,7 @@ Description
 
 </td><td>
 
-A `Converter` for  values.
+A `Converter` for [PredefinedSystemConfiguration](./ts-res.config.predefinedsystemconfiguration.md) values.
 
 
 </td></tr>

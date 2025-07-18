@@ -94,6 +94,25 @@ _(Optional)_ Optional array enumerating allowed territories to further constrain
 </td></tr>
 <tr><td>
 
+[hierarchy?](./ts-res.qualifiertypes.iterritoryqualifiertypecreateparams.hierarchy.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[LiteralValueHierarchyDecl](./ts-res.qualifiertypes.literalvaluehierarchydecl.md)<!-- -->&lt;string&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional [hierarchy declaration](./ts-res.qualifiertypes.literalvaluehierarchydecl.md) of territory values to use for matching. If not provided, no hierarchy will be used.
+
+
+</td></tr>
+<tr><td>
+
 [index?](./ts-res.qualifiertypes.iterritoryqualifiertypecreateparams.index.md)
 
 

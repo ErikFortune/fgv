@@ -2499,6 +2499,8 @@ interface ITerritoryQualifierTypeConfig {
     allowContextList?: boolean;
     // (undocumented)
     allowedTerritories?: string[];
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    hierarchy?: LiteralValueHierarchyDecl<string>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2511,6 +2513,8 @@ interface ITerritoryQualifierTypeCreateParams {
     // (undocumented)
     allowContextList?: boolean;
     allowedTerritories?: string[];
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    hierarchy?: LiteralValueHierarchyDecl<string>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -3911,7 +3915,7 @@ const TerritoryPrioritySystemConfiguration: ISystemConfiguration;
 // @public
 class TerritoryQualifierType extends QualifierType {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor({ acceptLowercase, allowedTerritories, allowContextList, name, index }: ITerritoryQualifierTypeCreateParams);
+    protected constructor({ acceptLowercase, allowedTerritories, allowContextList, name, index, hierarchy }: ITerritoryQualifierTypeCreateParams);
     readonly acceptLowercase: boolean;
     readonly allowedTerritories?: ReadonlyArray<QualifierConditionValue>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3922,6 +3926,8 @@ class TerritoryQualifierType extends QualifierType {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createFromConfig(config: Config_2.IQualifierTypeConfig<Config_2.ITerritoryQualifierTypeConfig>): Result<TerritoryQualifierType>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly hierarchy?: LiteralValueHierarchy<string>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -3930,7 +3936,7 @@ class TerritoryQualifierType extends QualifierType {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    protected _matchOne(condition: QualifierConditionValue, context: QualifierContextValue): QualifierMatchScore;
+    protected _matchOne(condition: QualifierConditionValue, context: QualifierContextValue, __operator?: ConditionOperator): QualifierMatchScore;
     static toTerritoryConditionValue(value: string, acceptLowercase?: boolean): Result<QualifierConditionValue>;
 }
 

@@ -51,8 +51,8 @@ describe('Config Helper Functions', () => {
 
     test('returns declaration for language-priority configuration', () => {
       expect(TsRes.Config.getPredefinedDeclaration('language-priority')).toSucceedAndSatisfy((decl) => {
-        expect(decl.name).toBe('default');
-        expect(decl.description).toBe('Default system configuration');
+        expect(decl.name).toBe('language-priority');
+        expect(decl.description).toBe('Language priority system configuration');
         expect(decl.qualifierTypes).toHaveLength(2);
         expect(decl.qualifiers).toHaveLength(2);
         expect(decl.resourceTypes).toHaveLength(1);
@@ -67,8 +67,8 @@ describe('Config Helper Functions', () => {
 
     test('returns declaration for territory-priority configuration', () => {
       expect(TsRes.Config.getPredefinedDeclaration('territory-priority')).toSucceedAndSatisfy((decl) => {
-        expect(decl.name).toBe('default');
-        expect(decl.description).toBe('Default system configuration');
+        expect(decl.name).toBe('territory-priority');
+        expect(decl.description).toBe('Territory priority system configuration');
         expect(decl.qualifierTypes).toHaveLength(2);
         expect(decl.qualifiers).toHaveLength(2);
         expect(decl.resourceTypes).toHaveLength(1);
@@ -83,7 +83,7 @@ describe('Config Helper Functions', () => {
 
     test('returns declaration for extended-example configuration', () => {
       expect(TsRes.Config.getPredefinedDeclaration('extended-example')).toSucceedAndSatisfy((decl) => {
-        expect(decl.name).toBe('example');
+        expect(decl.name).toBe('extended-example');
         expect(decl.description).toBe(
           'An example system configuration demonstrating various configuration options'
         );
@@ -118,8 +118,8 @@ describe('Config Helper Functions', () => {
     test('returns SystemConfiguration for language-priority configuration', () => {
       expect(TsRes.Config.getPredefinedSystemConfiguration('language-priority')).toSucceedAndSatisfy(
         (sysConfig) => {
-          expect(sysConfig.name).toBe('default');
-          expect(sysConfig.description).toBe('Default system configuration');
+          expect(sysConfig.name).toBe('language-priority');
+          expect(sysConfig.description).toBe('Language priority system configuration');
           expect(sysConfig.qualifierTypes.size).toBe(2);
           expect(sysConfig.qualifiers.size).toBe(2);
           expect(sysConfig.resourceTypes.size).toBe(1);
@@ -139,8 +139,8 @@ describe('Config Helper Functions', () => {
     test('returns SystemConfiguration for territory-priority configuration', () => {
       expect(TsRes.Config.getPredefinedSystemConfiguration('territory-priority')).toSucceedAndSatisfy(
         (sysConfig) => {
-          expect(sysConfig.name).toBe('default');
-          expect(sysConfig.description).toBe('Default system configuration');
+          expect(sysConfig.name).toBe('territory-priority');
+          expect(sysConfig.description).toBe('Territory priority system configuration');
           expect(sysConfig.qualifierTypes.size).toBe(2);
           expect(sysConfig.qualifiers.size).toBe(2);
           expect(sysConfig.resourceTypes.size).toBe(1);
@@ -160,7 +160,7 @@ describe('Config Helper Functions', () => {
     test('returns SystemConfiguration for extended-example configuration', () => {
       expect(TsRes.Config.getPredefinedSystemConfiguration('extended-example')).toSucceedAndSatisfy(
         (sysConfig) => {
-          expect(sysConfig.name).toBe('example');
+          expect(sysConfig.name).toBe('extended-example');
           expect(sysConfig.description).toBe(
             'An example system configuration demonstrating various configuration options'
           );

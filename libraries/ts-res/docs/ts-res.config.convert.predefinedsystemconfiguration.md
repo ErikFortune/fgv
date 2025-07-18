@@ -4,7 +4,7 @@
 
 ## Config.Convert.predefinedSystemConfiguration variable
 
-A `Converter` for  values.
+A `Converter` for [PredefinedSystemConfiguration](./ts-res.config.predefinedsystemconfiguration.md) values.
 
 **Signature:**
 

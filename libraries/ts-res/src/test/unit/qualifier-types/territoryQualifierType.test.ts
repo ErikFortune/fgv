@@ -224,9 +224,6 @@ describe('TerritoryQualifierType', () => {
         expect(
           qt.matches('US' as TsRes.QualifierConditionValue, 'US' as TsRes.QualifierContextValue, 'matches')
         ).toBe(TsRes.PerfectMatch);
-        expect(
-          qt.matches('US' as TsRes.QualifierConditionValue, 'us' as TsRes.QualifierContextValue, 'matches')
-        ).toBe(TsRes.PerfectMatch);
       });
 
       test('returns no match for lowercase condition values', () => {
@@ -236,6 +233,9 @@ describe('TerritoryQualifierType', () => {
         ).toBe(TsRes.NoMatch);
         expect(
           qt.matches('us' as TsRes.QualifierConditionValue, 'us' as TsRes.QualifierContextValue, 'matches')
+        ).toBe(TsRes.NoMatch);
+        expect(
+          qt.matches('US' as TsRes.QualifierConditionValue, 'us' as TsRes.QualifierContextValue, 'matches')
         ).toBe(TsRes.NoMatch);
       });
 
@@ -291,12 +291,6 @@ describe('TerritoryQualifierType', () => {
         expect(
           qt.matches('US' as TsRes.QualifierConditionValue, 'US' as TsRes.QualifierContextValue, 'matches')
         ).toBe(TsRes.PerfectMatch);
-        expect(
-          qt.matches('DE' as TsRes.QualifierConditionValue, 'de' as TsRes.QualifierContextValue, 'matches')
-        ).toBe(TsRes.PerfectMatch);
-        expect(
-          qt.matches('CN' as TsRes.QualifierConditionValue, 'cn' as TsRes.QualifierContextValue, 'matches')
-        ).toBe(TsRes.PerfectMatch);
       });
 
       test('returns no match for lowercase condition values', () => {
@@ -305,6 +299,12 @@ describe('TerritoryQualifierType', () => {
         ).toBe(TsRes.NoMatch);
         expect(
           qt.matches('de' as TsRes.QualifierConditionValue, 'DE' as TsRes.QualifierContextValue, 'matches')
+        ).toBe(TsRes.NoMatch);
+        expect(
+          qt.matches('DE' as TsRes.QualifierConditionValue, 'de' as TsRes.QualifierContextValue, 'matches')
+        ).toBe(TsRes.NoMatch);
+        expect(
+          qt.matches('CN' as TsRes.QualifierConditionValue, 'cn' as TsRes.QualifierContextValue, 'matches')
         ).toBe(TsRes.NoMatch);
       });
 
@@ -679,6 +679,213 @@ describe('TerritoryQualifierType', () => {
           expect(q.acceptLowercase).toBe(true);
         }
       );
+    });
+  });
+
+  describe('hierarchy support', () => {
+    test('creates a TerritoryQualifierType with hierarchy using valid ISO-3166 codes', () => {
+      const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ITerritoryQualifierTypeConfig> =
+        {
+          name: 'territory',
+          systemType: 'territory',
+          configuration: {
+            allowedTerritories: ['US', 'PR', 'VI'],
+            hierarchy: {
+              PR: 'US', // Puerto Rico is a US territory
+              VI: 'US' // US Virgin Islands is a US territory
+            }
+          }
+        };
+
+      expect(TsRes.QualifierTypes.TerritoryQualifierType.createFromConfig(config)).toSucceedAndSatisfy(
+        (q) => {
+          expect(q).toBeInstanceOf(TsRes.QualifierTypes.TerritoryQualifierType);
+          expect(q.hierarchy).toBeDefined();
+          expect(q.hierarchy?.hasValue('US')).toBe(true);
+          expect(q.hierarchy?.hasValue('PR')).toBe(true);
+          expect(q.hierarchy?.hasValue('VI')).toBe(true);
+        }
+      );
+    });
+
+    test('uses hierarchy for matching when configured with allowedTerritories', () => {
+      const qt = TsRes.QualifierTypes.TerritoryQualifierType.create({
+        allowedTerritories: ['US', 'PR', 'VI'],
+        hierarchy: {
+          PR: 'US', // Puerto Rico is a US territory
+          VI: 'US' // US Virgin Islands is a US territory
+        }
+      }).orThrow();
+
+      // Perfect match - same territory
+      expect(
+        qt.matches('US' as TsRes.QualifierConditionValue, 'US' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+
+      // Hierarchical match - context is child of condition
+      const usToPrScore = qt.matches(
+        'US' as TsRes.QualifierConditionValue,
+        'PR' as TsRes.QualifierContextValue,
+        'matches'
+      );
+      expect(usToPrScore).toBeGreaterThan(TsRes.NoMatch);
+      expect(usToPrScore).toBeLessThan(TsRes.PerfectMatch);
+
+      // Hierarchical match - context is child of condition
+      const usToViScore = qt.matches(
+        'US' as TsRes.QualifierConditionValue,
+        'VI' as TsRes.QualifierContextValue,
+        'matches'
+      );
+      expect(usToViScore).toBeGreaterThan(TsRes.NoMatch);
+      expect(usToViScore).toBeLessThan(TsRes.PerfectMatch);
+
+      // No match - reverse hierarchy (parent cannot match child)
+      expect(
+        qt.matches('PR' as TsRes.QualifierConditionValue, 'US' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.NoMatch);
+
+      // No match - unrelated territories
+      expect(
+        qt.matches('PR' as TsRes.QualifierConditionValue, 'VI' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.NoMatch);
+    });
+
+    test('normalizes territory codes for hierarchy matching', () => {
+      const qt = TsRes.QualifierTypes.TerritoryQualifierType.create({
+        allowedTerritories: ['US', 'PR', 'VI'],
+        acceptLowercase: true,
+        hierarchy: {
+          PR: 'US',
+          VI: 'US'
+        }
+      }).orThrow();
+
+      // Should work with mixed case
+      const score = qt.matches(
+        'us' as TsRes.QualifierConditionValue,
+        'pr' as TsRes.QualifierContextValue,
+        'matches'
+      );
+      expect(score).toBeGreaterThan(TsRes.NoMatch);
+      expect(score).toBeLessThan(TsRes.PerfectMatch);
+    });
+
+    test('falls back to regular matching when no hierarchy is configured', () => {
+      const qt = TsRes.QualifierTypes.TerritoryQualifierType.create({
+        allowedTerritories: ['US', 'PR', 'VI']
+        // No hierarchy configured
+      }).orThrow();
+
+      // Perfect match works
+      expect(
+        qt.matches('US' as TsRes.QualifierConditionValue, 'US' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.PerfectMatch);
+
+      // No hierarchical matching
+      expect(
+        qt.matches('US' as TsRes.QualifierConditionValue, 'PR' as TsRes.QualifierContextValue, 'matches')
+      ).toBe(TsRes.NoMatch);
+    });
+
+    describe('hierarchy without allowedTerritories', () => {
+      test('creates a hierarchy with open values mode', () => {
+        const qt = TsRes.QualifierTypes.TerritoryQualifierType.create({
+          hierarchy: {
+            PR: 'US', // Puerto Rico is a US territory
+            VI: 'US' // US Virgin Islands is a US territory
+          }
+          // No allowedTerritories - open values mode
+        }).orThrow();
+
+        expect(qt.hierarchy).toBeDefined();
+        expect(qt.allowedTerritories).toBeUndefined();
+        expect(qt.hierarchy?.hasValue('US')).toBe(true);
+        expect(qt.hierarchy?.hasValue('PR')).toBe(true);
+        expect(qt.hierarchy?.hasValue('VI')).toBe(true);
+      });
+
+      test('uses hierarchy matching for territories in hierarchy', () => {
+        const qt = TsRes.QualifierTypes.TerritoryQualifierType.create({
+          hierarchy: {
+            PR: 'US',
+            VI: 'US'
+          }
+        }).orThrow();
+
+        // Perfect matches for territories in hierarchy
+        expect(
+          qt.matches('US' as TsRes.QualifierConditionValue, 'US' as TsRes.QualifierContextValue, 'matches')
+        ).toBe(TsRes.PerfectMatch);
+        expect(
+          qt.matches('PR' as TsRes.QualifierConditionValue, 'PR' as TsRes.QualifierContextValue, 'matches')
+        ).toBe(TsRes.PerfectMatch);
+
+        // Hierarchical matches
+        const usToPrScore = qt.matches(
+          'US' as TsRes.QualifierConditionValue,
+          'PR' as TsRes.QualifierContextValue,
+          'matches'
+        );
+        expect(usToPrScore).toBeGreaterThan(TsRes.NoMatch);
+        expect(usToPrScore).toBeLessThan(TsRes.PerfectMatch);
+
+        const usToViScore = qt.matches(
+          'US' as TsRes.QualifierConditionValue,
+          'VI' as TsRes.QualifierContextValue,
+          'matches'
+        );
+        expect(usToViScore).toBeGreaterThan(TsRes.NoMatch);
+        expect(usToViScore).toBeLessThan(TsRes.PerfectMatch);
+      });
+
+      test('uses regular matching for territories not in hierarchy', () => {
+        const qt = TsRes.QualifierTypes.TerritoryQualifierType.create({
+          hierarchy: {
+            PR: 'US',
+            VI: 'US'
+          }
+        }).orThrow();
+
+        // Perfect match for territories not in hierarchy
+        expect(
+          qt.matches('CA' as TsRes.QualifierConditionValue, 'CA' as TsRes.QualifierContextValue, 'matches')
+        ).toBe(TsRes.PerfectMatch);
+
+        // No match for unrelated territories not in hierarchy
+        expect(
+          qt.matches('CA' as TsRes.QualifierConditionValue, 'GB' as TsRes.QualifierContextValue, 'matches')
+        ).toBe(TsRes.NoMatch);
+
+        // No match between hierarchy and non-hierarchy territories
+        expect(
+          qt.matches('US' as TsRes.QualifierConditionValue, 'CA' as TsRes.QualifierContextValue, 'matches')
+        ).toBe(TsRes.NoMatch);
+        expect(
+          qt.matches('CA' as TsRes.QualifierConditionValue, 'PR' as TsRes.QualifierContextValue, 'matches')
+        ).toBe(TsRes.NoMatch);
+      });
+
+      test('validates condition values correctly with hierarchy only', () => {
+        const qt = TsRes.QualifierTypes.TerritoryQualifierType.create({
+          hierarchy: {
+            PR: 'US',
+            VI: 'US'
+          }
+        }).orThrow();
+
+        // All valid ISO-3166 codes should be accepted (no allowedTerritories constraint)
+        expect(qt.isValidConditionValue('US')).toBe(true);
+        expect(qt.isValidConditionValue('PR')).toBe(true);
+        expect(qt.isValidConditionValue('VI')).toBe(true);
+        expect(qt.isValidConditionValue('CA')).toBe(true);
+        expect(qt.isValidConditionValue('GB')).toBe(true);
+
+        // Invalid codes should still be rejected
+        expect(qt.isValidConditionValue('USA')).toBe(false);
+        expect(qt.isValidConditionValue('123')).toBe(false);
+        expect(qt.isValidConditionValue('invalid')).toBe(false);
+      });
     });
   });
 });

@@ -30,6 +30,43 @@ A system configuration for both runtime or build.
 </td></tr>
 </tbody></table>
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[getPredefinedDeclaration(name)](./ts-res.config.getpredefineddeclaration.md)
+
+
+</td><td>
+
+Returns the [system configuration](./ts-res.config.model.isystemconfiguration.md) declaration for the specified predefined system configuration.
+
+
+</td></tr>
+<tr><td>
+
+[getPredefinedSystemConfiguration(name)](./ts-res.config.getpredefinedsystemconfiguration.md)
+
+
+</td><td>
+
+Returns the [SystemConfiguration](./ts-res.config.systemconfiguration.md) for the specified predefined system configuration.
+
+
+</td></tr>
+</tbody></table>
+
 ## Namespaces
 
 <table><thead><tr><th>
@@ -76,6 +113,58 @@ Description
 
 
 </td><td>
+
+
+</td></tr>
+</tbody></table>
+
+## Variables
+
+<table><thead><tr><th>
+
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[allPredefinedSystemConfigurations](./ts-res.config.allpredefinedsystemconfigurations.md)
+
+
+</td><td>
+
+An array of all well-known predefined system configurations.
+
+
+</td></tr>
+</tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[PredefinedSystemConfiguration](./ts-res.config.predefinedsystemconfiguration.md)
+
+
+</td><td>
+
+A `string` literal type representing a well-known predefined system configuration.
 
 
 </td></tr>

@@ -28,9 +28,11 @@ import {
   QualifierConditionValue,
   QualifierContextValue,
   QualifierMatchScore,
-  Validate
+  Validate,
+  ConditionOperator
 } from '../common';
 import { QualifierType } from './qualifierType';
+import { LiteralValueHierarchy, LiteralValueHierarchyDecl } from './literalValueHierarchy';
 import * as Config from './config';
 import { sanitizeJsonObject } from '@fgv/ts-json-base';
 
@@ -64,6 +66,12 @@ export interface ITerritoryQualifierTypeCreateParams {
    * Defaults to `false`.
    */
   acceptLowercase?: boolean;
+
+  /**
+   * Optional {@link QualifierTypes.LiteralValueHierarchyDecl | hierarchy declaration}
+   * of territory values to use for matching. If not provided, no hierarchy will be used.
+   */
+  hierarchy?: LiteralValueHierarchyDecl<string>;
 }
 
 /**
@@ -85,6 +93,12 @@ export class TerritoryQualifierType extends QualifierType {
   public readonly acceptLowercase: boolean;
 
   /**
+   * Optional {@link QualifierTypes.LiteralValueHierarchy | hierarchy} of territory
+   * values to use for matching. If not provided, no hierarchy will be used.
+   */
+  public readonly hierarchy?: LiteralValueHierarchy<string>;
+
+  /**
    * Creates a new {@link QualifierTypes.TerritoryQualifierType | TerritoryQualifierType} instance.
    * @public
    */
@@ -93,7 +107,8 @@ export class TerritoryQualifierType extends QualifierType {
     allowedTerritories,
     allowContextList,
     name,
-    index
+    index,
+    hierarchy
   }: ITerritoryQualifierTypeCreateParams) {
     /* c8 ignore next 7 - coverage seems to be missing coalescing branches */
     name = name ?? 'territory';
@@ -113,6 +128,14 @@ export class TerritoryQualifierType extends QualifierType {
     });
     this.allowedTerritories = validTerritories;
     this.acceptLowercase = acceptLowercase === true;
+
+    if (hierarchy) {
+      /* c8 ignore next 5 - defensive coding: allowedTerritories ?? [] fallback enables open values mode */
+      this.hierarchy = LiteralValueHierarchy.create({
+        values: allowedTerritories ?? [],
+        hierarchy: hierarchy
+      }).orThrow();
+    }
   }
 
   /**
@@ -147,7 +170,7 @@ export class TerritoryQualifierType extends QualifierType {
   /**
    * Creates a new {@link QualifierTypes.TerritoryQualifierType | TerritoryQualifierType} from a configuration object.
    * @param config - The {@link QualifierTypes.Config.IQualifierTypeConfig | configuration object} containing
-   * the name, systemType, and optional territory-specific configuration including allowed territories.
+   * the name, systemType, and optional territory-specific configuration including allowed territories and hierarchy.
    * @returns `Success` with the new {@link QualifierTypes.TerritoryQualifierType | TerritoryQualifierType}
    * if successful, `Failure` with an error message otherwise.
    * @public
@@ -160,7 +183,8 @@ export class TerritoryQualifierType extends QualifierType {
       name: config.name,
       allowContextList: territoryConfig.allowContextList === true,
       allowedTerritories: territoryConfig.allowedTerritories,
-      acceptLowercase: territoryConfig.acceptLowercase === true
+      acceptLowercase: territoryConfig.acceptLowercase === true,
+      hierarchy: territoryConfig.hierarchy
     }).onSuccess(TerritoryQualifierType.create);
   }
 
@@ -169,10 +193,25 @@ export class TerritoryQualifierType extends QualifierType {
    */
   protected _matchOne(
     condition: QualifierConditionValue,
-    context: QualifierContextValue
+    context: QualifierContextValue,
+    __operator?: ConditionOperator
   ): QualifierMatchScore {
-    if (this.isValidConditionValue(condition) && condition.toUpperCase() === context.toUpperCase()) {
-      return PerfectMatch;
+    if (this.isValidConditionValue(condition) && this.isValidContextValue(context)) {
+      // Normalize to uppercase for territory codes
+      const normalizedCondition = condition.toUpperCase();
+      const normalizedContext = context.toUpperCase() as QualifierContextValue;
+
+      if (normalizedCondition === normalizedContext) {
+        return PerfectMatch;
+      }
+
+      if (this.hierarchy) {
+        return this.hierarchy.match(
+          normalizedCondition as QualifierConditionValue,
+          normalizedContext as QualifierContextValue,
+          __operator
+        );
+      }
     }
     return NoMatch;
   }

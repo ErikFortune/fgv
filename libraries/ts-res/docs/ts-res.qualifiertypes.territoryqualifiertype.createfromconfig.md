@@ -42,7 +42,7 @@ Config.IQualifierTypeConfig&lt;Config.ITerritoryQualifierTypeConfig&gt;
 
 </td><td>
 
-The [configuration object](./ts-res.qualifiertypes.config.iqualifiertypeconfig.md) containing the name, systemType, and optional territory-specific configuration including allowed territories.
+The [configuration object](./ts-res.qualifiertypes.config.iqualifiertypeconfig.md) containing the name, systemType, and optional territory-specific configuration including allowed territories and hierarchy.
 
 
 </td></tr>
