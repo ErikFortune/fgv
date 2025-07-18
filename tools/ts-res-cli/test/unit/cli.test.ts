@@ -393,8 +393,8 @@ describe('TsResCliApp', () => {
           'info',
           '--input',
           inputFile,
-          '--context',
-          '{"language": "en"}',
+          '--context-filter',
+          'language=en',
           '--partial-match'
         ]);
 

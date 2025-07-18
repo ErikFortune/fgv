@@ -50,11 +50,6 @@ export interface ICompileOptions {
   config?: string;
 
   /**
-   * Context filter for resources (e.g., '{"language": "en-US"}')
-   */
-  context?: string;
-
-  /**
    * Context filter token (pipe-separated qualifier=value pairs, e.g., 'language=en-US|territory=US')
    */
   contextFilter?: string;

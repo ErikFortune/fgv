@@ -24,6 +24,7 @@ import '@fgv/ts-utils-jest';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { spawn } from 'child_process';
+import * as TsRes from '@fgv/ts-res';
 
 describe('CLI Integration Tests', () => {
   let tempDir: string;
@@ -158,9 +159,16 @@ describe('CLI Integration Tests', () => {
       const output = JSON.parse(outputContent);
 
       expect(output).toHaveProperty('resources');
-      expect(Object.keys(output.resources)).toContain('resources.app.title');
-      expect(Object.keys(output.resources)).toContain('resources.messages.welcome');
-      expect(Object.keys(output.resources)).toContain('resources.buttons.actions');
+      expect(TsRes.ResourceJson.Convert.resourceCollectionDecl.convert(output.resources)).toSucceedAndSatisfy(
+        (resources) => {
+          expect(resources?.resources?.length).toBeGreaterThan(0);
+          const resourceIds = resources?.resources?.map((r) => r.id) || [];
+          expect(resourceIds).toContain('resources.app.title');
+          expect(resourceIds).toContain('resources.messages.welcome');
+          expect(resourceIds).toContain('resources.buttons.actions');
+          return true;
+        }
+      );
     });
 
     test('compiles resources to JavaScript format', async () => {
@@ -221,8 +229,14 @@ describe('CLI Integration Tests', () => {
       const output = JSON.parse(outputContent);
 
       // Should include resources that match English
-      expect(Object.keys(output.resources)).toContain('resources.messages.welcome');
-      expect(Object.keys(output.resources)).toContain('resources.buttons.actions');
+      expect(TsRes.ResourceJson.Convert.resourceCollectionDecl.convert(output.resources)).toSucceedAndSatisfy(
+        (resources) => {
+          const resourceIds = resources?.resources?.map((r) => r.id) || [];
+          expect(resourceIds).toContain('resources.messages.welcome');
+          expect(resourceIds).toContain('resources.buttons.actions');
+          return true;
+        }
+      );
     });
 
     test('compiles with specific territory context', async () => {
@@ -244,10 +258,23 @@ describe('CLI Integration Tests', () => {
       const outputContent = await fs.readFile(outputFile, 'utf-8');
       const output = JSON.parse(outputContent);
 
-      expect(Object.keys(output.resources)).toContain('resources.messages.welcome');
-      // Check that we get the US-specific variant
-      const welcomeResource = output.resources['resources.messages.welcome'];
-      expect(Object.keys(welcomeResource)).toContain('language-[en-US]@600+territory-[US]@500');
+      expect(TsRes.ResourceJson.Convert.resourceCollectionDecl.convert(output.resources)).toSucceedAndSatisfy(
+        (resources) => {
+          const resourceIds = resources?.resources?.map((r) => r.id) || [];
+          expect(resourceIds).toContain('resources.messages.welcome');
+
+          // Check that we get the US-specific variant
+          const welcomeResource = resources?.resources?.find((r) => r.id === 'resources.messages.welcome');
+          expect(welcomeResource).toBeDefined();
+          const hasUSVariant = welcomeResource?.candidates?.some(
+            (c) =>
+              c.conditions?.some((cond) => cond.qualifierName === 'language' && cond.value === 'en-US') &&
+              c.conditions?.some((cond) => cond.qualifierName === 'territory' && cond.value === 'US')
+          );
+          expect(hasUSVariant).toBe(true);
+          return true;
+        }
+      );
     });
 
     test('compiles with metadata included', async () => {
@@ -511,8 +538,15 @@ describe('CLI Integration Tests', () => {
       const outputContent = await fs.readFile(outputFile, 'utf-8');
       const output = JSON.parse(outputContent);
 
-      expect(Object.keys(output.resources)).toContain('resources.messages.dir.messages.hello');
-      expect(Object.keys(output.resources)).toContain('resources.buttons.dir.buttons.ok');
+      expect(TsRes.ResourceJson.Convert.resourceCollectionDecl.convert(output.resources)).toSucceedAndSatisfy(
+        (resources) => {
+          expect(resources?.resources?.length).toBe(2);
+          const resourceIds = resources?.resources?.map((r) => r.id) || [];
+          expect(resourceIds).toContain('resources.messages.dir.messages.hello');
+          expect(resourceIds).toContain('resources.buttons.dir.buttons.ok');
+          return true;
+        }
+      );
     });
   });
 });

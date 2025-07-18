@@ -41,11 +41,17 @@ export interface IResourceInfo {
   context?: JsonObject;
 }
 
+export interface IFilteredManager {
+  original: TsRes.Resources.ResourceManagerBuilder;
+  manager: TsRes.Resources.ResourceManagerBuilder;
+  context?: JsonObject;
+}
+
 /**
  * Compiled resource blob
  */
 export interface IResourceBlob {
-  resources?: JsonObject;
+  resources?: TsRes.ResourceJson.Json.IResourceCollectionDecl;
   compiledCollection?: TsRes.ResourceJson.Compiled.ICompiledResourceCollection;
   metadata?: IResourceInfo;
 }
@@ -103,9 +109,11 @@ export class ResourceCompiler {
         return fail(`Failed to apply context filtering: ${filteredResult.message}`);
       }
 
-      if (this._options.verbose && this._options.context) {
+      if (this._options.verbose && this._options.contextFilter) {
         console.error(
-          `After context filtering: ${filteredResult.value.resources.length} resources, ${filteredResult.value.candidates.length} candidates`
+          `After context filtering: ${filteredResult.value.manager.getAllResources().length} resources, ${
+            filteredResult.value.manager.getAllCandidates().length
+          } candidates`
         );
       }
 
@@ -314,103 +322,30 @@ export class ResourceCompiler {
   /**
    * Applies context filtering to resources
    */
-  private _applyContextFiltering(manager: TsRes.Resources.ResourceManagerBuilder): Result<{
-    resources: ReadonlyArray<TsRes.Resources.ResourceBuilder>;
-    candidates: ReadonlyArray<TsRes.Resources.ResourceCandidate>;
-  }> {
-    try {
-      // If no context filtering, return all resources
-      if (!this._options.context && !this._options.contextFilter) {
-        return succeed({
-          resources: manager.getAllResources(),
-          candidates: manager.getAllCandidates()
+  private _applyContextFiltering(manager: TsRes.Resources.ResourceManagerBuilder): Result<IFilteredManager> {
+    if (this._options.contextFilter) {
+      const tokens = new TsRes.Context.ContextTokens(manager.qualifiers);
+      return tokens
+        .contextTokenToPartialContext(this._options.contextFilter)
+        .onSuccess((validatedFilterContext) => {
+          return manager.clone({ validatedFilterContext }).onSuccess((filteredManager) => {
+            return succeed({ original: manager, manager: filteredManager, context: validatedFilterContext });
+          });
         });
-      }
-
-      // Determine the context to use for filtering
-      let validatedFilterContext: TsRes.Context.IValidatedContextDecl | undefined;
-
-      // Apply context filtering (JSON format)
-      if (this._options.context) {
-        const contextData = JSON.parse(this._options.context);
-        const context = TsRes.Context.Convert.validatedContextDecl.convert(contextData, {
-          qualifiers: manager.qualifiers
-        });
-
-        if (context.isFailure()) {
-          return fail(`Invalid context: ${context.message}`);
-        }
-
-        validatedFilterContext = context.value;
-      }
-
-      // Apply context filter token (pipe-separated format)
-      if (this._options.contextFilter) {
-        const contextResult = this._parseContextFilterToken(manager);
-        if (contextResult.isFailure()) {
-          return fail(`Failed to parse context filter: ${contextResult.message}`);
-        }
-
-        validatedFilterContext = contextResult.value;
-      }
-
-      // Clone the manager with the validated filter context
-      const clonedManagerResult = manager.clone({ validatedFilterContext });
-      if (clonedManagerResult.isFailure()) {
-        return fail(`Failed to clone manager: ${clonedManagerResult.message}`);
-      }
-
-      const clonedManager = clonedManagerResult.value;
-
-      // TODO: Restore resource ID filtering with proper filename prefix handling
-      // TODO: Restore path filtering functionality
-
-      return succeed({
-        resources: clonedManager.getAllResources(),
-        candidates: clonedManager.getAllCandidates()
-      });
-    } catch (error) {
-      return fail(`Failed to apply context filtering: ${error}`);
     }
+    return succeed({ original: manager, manager: manager });
   }
-
-  /**
-   * Parses context filter token into validated partial context
-   */
-  private _parseContextFilterToken(
-    manager: TsRes.Resources.ResourceManagerBuilder
-  ): Result<TsRes.Context.IValidatedContextDecl> {
-    try {
-      if (!this._options.contextFilter) {
-        return fail('No context filter provided');
-      }
-
-      // Create ContextTokens instance for parsing
-      const contextTokens = new TsRes.Context.ContextTokens(manager.qualifiers);
-
-      // Parse the context filter token into a validated partial context
-      return contextTokens.contextTokenToPartialContext(this._options.contextFilter);
-    } catch (error) {
-      return fail(`Failed to parse context filter token: ${error}`);
-    }
-  }
-
-  // TODO: Add back resource ID filtering helper
-  // TODO: Add back path filtering helper
 
   /**
    * Generates the output blob
    */
   private async _generateBlob(
-    filtered: {
-      resources: ReadonlyArray<TsRes.Resources.ResourceBuilder>;
-      candidates: ReadonlyArray<TsRes.Resources.ResourceCandidate>;
-    },
+    filtered: IFilteredManager,
     manager: TsRes.Resources.ResourceManagerBuilder
   ): Promise<Result<IResourceBlob>> {
     try {
       if (this._options.format === 'compiled') {
-        return this._generateCompiledBlob(manager);
+        return this._generateCompiledBlob(filtered, manager);
       } else {
         return this._generateSourceBlob(filtered, manager);
       }
@@ -422,84 +357,31 @@ export class ResourceCompiler {
   /**
    * Generates a compiled resource collection blob
    */
-  private async _generateCompiledBlob(
+  private _generateCompiledBlob(
+    filtered: IFilteredManager,
     manager: TsRes.Resources.ResourceManagerBuilder
-  ): Promise<Result<IResourceBlob>> {
-    try {
-      // Build all resources to ensure they're ready for compilation
-      const buildResult = manager.build();
-      if (buildResult.isFailure()) {
-        return fail(`Failed to build resources for compilation: ${buildResult.message}`);
-      }
-
-      // Get the compiled resource collection
-      const compiledResult = manager.getCompiledResourceCollection();
-      if (compiledResult.isFailure()) {
-        return fail(`Failed to get compiled resource collection: ${compiledResult.message}`);
-      }
-
+  ): Result<IResourceBlob> {
+    // Build all resources to ensure they're ready for compilation
+    return filtered.manager.getCompiledResourceCollection().onSuccess((compiled) => {
       const blob: IResourceBlob = {
-        compiledCollection: compiledResult.value
+        compiledCollection: compiled
       };
 
       if (this._options.includeMetadata) {
-        blob.metadata = this._generateResourceInfo(
-          {
-            resources: manager.getAllResources(),
-            candidates: manager.getAllCandidates()
-          },
-          manager
-        );
+        blob.metadata = this._generateResourceInfo(filtered, manager);
       }
-
       return succeed(blob);
-    } catch (error) {
-      return fail(`Failed to generate compiled blob: ${error}`);
-    }
+    });
   }
 
   /**
    * Generates a source format blob (legacy format)
    */
-  private async _generateSourceBlob(
-    filtered: {
-      resources: ReadonlyArray<TsRes.Resources.ResourceBuilder>;
-      candidates: ReadonlyArray<TsRes.Resources.ResourceCandidate>;
-    },
+  private _generateSourceBlob(
+    filtered: IFilteredManager,
     manager: TsRes.Resources.ResourceManagerBuilder
-  ): Promise<Result<IResourceBlob>> {
-    try {
-      const resources: JsonObject = {};
-
-      // Build filtered resources
-      for (const resourceBuilder of filtered.resources) {
-        const built = resourceBuilder.build();
-        if (built.isFailure()) {
-          return fail(`Failed to build resource ${resourceBuilder.id}: ${built.message}`);
-        }
-
-        const resource = built.value;
-        const resourceData: JsonObject = {};
-
-        // Filter candidates based on context if specified
-        const candidatesToInclude = this._options.context
-          ? resource.getCandidatesForContext(
-              TsRes.Context.Convert.validatedContextDecl
-                .convert(JSON.parse(this._options.context), { qualifiers: manager.qualifiers })
-                .orThrow(),
-              { partialContextMatch: this._options.partialMatch }
-            )
-          : resource.candidates;
-
-        for (const candidate of candidatesToInclude) {
-          const conditionKey =
-            candidate.conditions.conditions.length > 0 ? candidate.conditions.toString() : 'default';
-          resourceData[conditionKey] = candidate.json;
-        }
-
-        resources[resource.id] = resourceData;
-      }
-
+  ): Result<IResourceBlob> {
+    return filtered.manager.getResourceCollectionDecl().onSuccess((resources) => {
       const blob: IResourceBlob = { resources };
 
       if (this._options.includeMetadata) {
@@ -507,19 +389,14 @@ export class ResourceCompiler {
       }
 
       return succeed(blob);
-    } catch (error) {
-      return fail(`Failed to generate source blob: ${error}`);
-    }
+    });
   }
 
   /**
    * Generates resource information
    */
   private _generateResourceInfo(
-    filtered: {
-      resources: ReadonlyArray<TsRes.Resources.ResourceBuilder>;
-      candidates: ReadonlyArray<TsRes.Resources.ResourceCandidate>;
-    },
+    filtered: IFilteredManager,
     manager: TsRes.Resources.ResourceManagerBuilder
   ): IResourceInfo {
     const resourceTypes = Array.from(
@@ -536,19 +413,12 @@ export class ResourceCompiler {
     const info: IResourceInfo = {
       totalResources: manager.getAllResources().length,
       totalCandidates: manager.getAllCandidates().length,
-      filteredResources: filtered.resources.length,
-      filteredCandidates: filtered.candidates.length,
+      filteredResources: filtered.manager.getAllResources().length,
+      filteredCandidates: filtered.manager.getAllCandidates().length,
       resourceTypes,
-      qualifiers
+      qualifiers,
+      ...(filtered.context ? { context: filtered.context } : undefined)
     };
-
-    if (this._options.context) {
-      try {
-        info.context = JSON.parse(this._options.context);
-      } catch {
-        // Ignore parsing errors for metadata
-      }
-    }
 
     return info;
   }

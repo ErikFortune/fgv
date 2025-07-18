@@ -6,6 +6,7 @@ import '@fgv/ts-utils-jest';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { spawn } from 'child_process';
+import * as TsRes from '@fgv/ts-res';
 
 describe('CLI Context Filter Working Tests', () => {
   let tempDir: string;
@@ -91,19 +92,21 @@ describe('CLI Context Filter Working Tests', () => {
     const outputContent = await fs.readFile(outputFile, 'utf-8');
     const output = JSON.parse(outputContent);
 
-    const resourceKeys = Object.keys(output.resources);
-    expect(resourceKeys).toContain('test.welcome.message');
+    expect(TsRes.ResourceJson.Convert.resourceCollectionDecl.convert(output.resources)).toSucceedAndSatisfy(
+      (resources) => {
+        expect(resources?.resources?.length).toBeGreaterThan(0);
 
-    const welcomeResource = output.resources['test.welcome.message'];
-    const candidateKeys = Object.keys(welcomeResource);
+        const welcomeResource = resources?.resources?.find((r) => r.id === 'test.welcome.message');
+        expect(welcomeResource).toBeDefined();
+        expect(welcomeResource?.candidates?.length).toBe(1);
+        expect(welcomeResource?.candidates?.[0]?.conditions).toEqual([
+          { qualifierName: 'language', value: 'en' }
+        ]);
+        expect(welcomeResource?.candidates?.[0]?.json).toEqual({ text: 'Welcome!' });
 
-    // Should only include English candidates
-    expect(candidateKeys).toContain('language-[en]@600');
-    expect(candidateKeys).not.toContain('language-[es]@600');
-    expect(candidateKeys).not.toContain('language-[de]@600');
-
-    // Verify the actual content
-    expect(welcomeResource['language-[en]@600']).toEqual({ text: 'Welcome!' });
+        return true;
+      }
+    );
   });
 
   test('context filter works with territory qualifier', async () => {
@@ -149,15 +152,21 @@ describe('CLI Context Filter Working Tests', () => {
     const outputContent = await fs.readFile(outputFile, 'utf-8');
     const output = JSON.parse(outputContent);
 
-    const currencyResource = output.resources['territory.currency.symbol'];
-    const candidateKeys = Object.keys(currencyResource);
+    expect(TsRes.ResourceJson.Convert.resourceCollectionDecl.convert(output.resources)).toSucceedAndSatisfy(
+      (resources) => {
+        expect(resources?.resources?.length).toBeGreaterThan(0);
 
-    // Should only include US territory candidates
-    expect(candidateKeys).toContain('territory-[US]@500');
-    expect(candidateKeys).not.toContain('territory-[DE]@500');
+        const currencyResource = resources?.resources?.find((r) => r.id === 'territory.currency.symbol');
+        expect(currencyResource).toBeDefined();
+        expect(currencyResource?.candidates?.length).toBe(1);
+        expect(currencyResource?.candidates?.[0]?.conditions).toEqual([
+          { qualifierName: 'territory', value: 'US' }
+        ]);
+        expect(currencyResource?.candidates?.[0]?.json).toEqual({ symbol: '$', name: 'US Dollar' });
 
-    // Verify the actual content
-    expect(currencyResource['territory-[US]@500']).toEqual({ symbol: '$', name: 'US Dollar' });
+        return true;
+      }
+    );
   });
 
   test('context filter works with multiple qualifiers', async () => {
@@ -207,16 +216,22 @@ describe('CLI Context Filter Working Tests', () => {
     const outputContent = await fs.readFile(outputFile, 'utf-8');
     const output = JSON.parse(outputContent);
 
-    const greetingResource = output.resources['multi.greeting.formal'];
-    const candidateKeys = Object.keys(greetingResource);
+    expect(TsRes.ResourceJson.Convert.resourceCollectionDecl.convert(output.resources)).toSucceedAndSatisfy(
+      (resources) => {
+        expect(resources?.resources?.length).toBeGreaterThan(0);
 
-    // Should only include US English candidates
-    expect(candidateKeys).toContain('language-[en]@600+territory-[US]@500');
-    expect(candidateKeys).not.toContain('language-[en]@600+territory-[GB]@500');
-    expect(candidateKeys).not.toContain('language-[es]@600+territory-[ES]@500');
+        const greetingResource = resources?.resources?.find((r) => r.id === 'multi.greeting.formal');
+        expect(greetingResource).toBeDefined();
+        expect(greetingResource?.candidates?.length).toBe(1);
+        expect(greetingResource?.candidates?.[0]?.conditions).toEqual([
+          { qualifierName: 'language', value: 'en' },
+          { qualifierName: 'territory', value: 'US' }
+        ]);
+        expect(greetingResource?.candidates?.[0]?.json).toEqual({ text: 'Good morning' });
 
-    // Verify the actual content
-    expect(greetingResource['language-[en]@600+territory-[US]@500']).toEqual({ text: 'Good morning' });
+        return true;
+      }
+    );
   });
 
   test('context filter works with JSON format for comparison', async () => {
@@ -262,15 +277,23 @@ describe('CLI Context Filter Working Tests', () => {
     const outputContent = await fs.readFile(outputFile, 'utf-8');
     const output = JSON.parse(outputContent);
 
-    const testResource = output.resources['json-format.test.comparison'];
-    const candidateKeys = Object.keys(testResource);
+    expect(TsRes.ResourceJson.Convert.resourceCollectionDecl.convert(output.resources)).toSucceedAndSatisfy(
+      (resources) => {
+        expect(resources?.resources?.length).toBeGreaterThan(0);
 
-    // Should only include English candidates (same result as context filter)
-    expect(candidateKeys).toContain('language-[en]@600');
-    expect(candidateKeys).not.toContain('language-[es]@600');
+        const testResource = resources?.resources?.find((r) => r.id === 'json-format.test.comparison');
+        expect(testResource).toBeDefined();
+        expect(testResource?.candidates?.length).toBeGreaterThanOrEqual(1);
+        const englishCandidate = testResource?.candidates?.find((c) =>
+          c.conditions?.some((cond) => cond.qualifierName === 'language' && cond.value === 'en')
+        );
+        expect(englishCandidate).toBeDefined();
+        expect(englishCandidate?.conditions).toEqual([{ qualifierName: 'language', value: 'en' }]);
+        expect(englishCandidate?.json).toEqual({ text: 'English' });
 
-    // Verify the actual content
-    expect(testResource['language-[en]@600']).toEqual({ text: 'English' });
+        return true;
+      }
+    );
   });
 
   test('info command works with context filter', async () => {

@@ -215,6 +215,22 @@ export class TsResCliApp {
    * Handles the info command
    */
   private async _handleInfoCommand(options: IInfoCommandOptions): Promise<void> {
+    // Convert JSON context to contextFilter if provided
+    let contextFilter = options.contextFilter;
+    if (options.context && !contextFilter) {
+      try {
+        const contextObj = JSON.parse(options.context);
+        const tokens: string[] = [];
+        for (const [key, value] of Object.entries(contextObj)) {
+          tokens.push(`${key}=${value}`);
+        }
+        contextFilter = tokens.join('|');
+      } catch (error) {
+        console.error(`Error: Invalid context JSON: ${error}`);
+        process.exit(1);
+      }
+    }
+
     const infoOptions: ICompileOptions = {
       input: options.input,
       output: '', // Not used for info
@@ -229,8 +245,7 @@ export class TsResCliApp {
       quiet: false,
       validate: false,
       includeMetadata: true,
-      context: options.context,
-      contextFilter: options.contextFilter,
+      contextFilter,
       resourceTypes: options.resourceTypes,
       maxDistance: options.maxDistance
     };
@@ -261,12 +276,26 @@ export class TsResCliApp {
         return fail(`Invalid mode: ${mode}`);
       }
 
+      // Convert JSON context to contextFilter if provided
+      let contextFilter = options.contextFilter;
+      if (options.context && !contextFilter) {
+        try {
+          const contextObj = JSON.parse(options.context);
+          const tokens: string[] = [];
+          for (const [key, value] of Object.entries(contextObj)) {
+            tokens.push(`${key}=${value}`);
+          }
+          contextFilter = tokens.join('|');
+        } catch (error) {
+          return fail(`Invalid context JSON: ${error}`);
+        }
+      }
+
       const compileOptions: ICompileOptions = {
         input: options.input,
         output: options.output,
         config: options.config,
-        context: options.context,
-        contextFilter: options.contextFilter,
+        contextFilter,
         format,
         mode,
         partialMatch: options.partialMatch || false,
