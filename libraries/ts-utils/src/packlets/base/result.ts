@@ -810,9 +810,9 @@ export class DetailedFailure<T, TD> extends Failure<T> {
     return failWithDetail(cb(this._message, this._detail), this._detail);
   }
 
-  public orThrow(logOrFormat?: IResultLogger<TD> | ErrorFormatter): never;
+  public orThrow(logOrFormat?: IResultLogger<TD> | ErrorFormatter<TD>): never;
   public orThrow(cb: ErrorFormatter): never;
-  public orThrow(logOrFormat?: IResultLogger<TD> | ErrorFormatter): never {
+  public orThrow(logOrFormat?: IResultLogger<TD> | ErrorFormatter<TD>): never {
     if (logOrFormat !== undefined) {
       if (typeof logOrFormat === 'function') {
         throw new Error(logOrFormat(this._message, this._detail));

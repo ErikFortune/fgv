@@ -89,6 +89,12 @@ describe('Converters module', () => {
       expect(pie.convert('apple', ['cherry'])).toFailWith(/invalid enumerated/i);
       expect(pie.convert('apple', ['apple'])).toSucceedWith('apple');
     });
+
+    test('fails for non-string values', () => {
+      [1, true, {}, (): string => 'hello', ['true']].forEach((v) => {
+        expect(pie.convert(v)).toFailWith(/invalid enumerated/i);
+      });
+    });
   });
 
   describe('mapped enumerated values converter', () => {

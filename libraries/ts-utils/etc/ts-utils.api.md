@@ -608,7 +608,7 @@ export class DetailedFailure<T, TD> extends Failure<T> {
     // Warning: (ae-incompatible-release-tags) The symbol "onSuccess" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     onSuccess<TN>(__cb: DetailedSuccessContinuation<T, TD, TN>): DetailedResult<TN, TD>;
     // (undocumented)
-    orThrow(logOrFormat?: IResultLogger<TD> | ErrorFormatter): never;
+    orThrow(logOrFormat?: IResultLogger<TD> | ErrorFormatter<TD>): never;
     // (undocumented)
     orThrow(cb: ErrorFormatter): never;
     static with<T, TD>(message: string, detail?: TD): DetailedFailure<T, TD>;

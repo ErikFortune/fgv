@@ -147,6 +147,15 @@ describe('Result module', () => {
         }).not.toThrow();
         expect(logger.error).not.toHaveBeenCalled();
       });
+
+      test('does not invoke a callback if supplied', () => {
+        const cb = jest.fn();
+        const s = new Success('hello');
+        expect(() => {
+          s.orThrow(cb);
+        }).not.toThrow();
+        expect(cb).not.toHaveBeenCalled();
+      });
     });
 
     describe('orDefault method', () => {
@@ -305,6 +314,14 @@ describe('Result module', () => {
 
         expect(() => f.orThrow(logger)).toThrowError(errorMessage);
         expect(logger.error).toHaveBeenCalledWith(errorMessage);
+      });
+
+      test('calls callback if supplied', () => {
+        const cb = jest.fn((s) => `got: ${s}`);
+        const errorMessage = 'this is an error message';
+        const f = new Failure(errorMessage);
+        expect(() => f.orThrow(cb)).toThrow(`got: ${errorMessage}`);
+        expect(cb).toHaveBeenCalledWith(errorMessage);
       });
 
       test('getValueOrThrow calls logger if supplied', () => {
@@ -562,6 +579,32 @@ describe('Result module', () => {
       test('reports failure with the default detail, overriding any original detail, even if success detail is supplied', () => {
         expect(failWithDetail('oops', 10).withDetail('fred', 'wilma')).toFailWithDetail('oops', 'fred');
       });
+    });
+  });
+
+  describe('orThrow method', () => {
+    test('throws the message', () => {
+      const errorMessage = 'this is an error message';
+      const f = failWithDetail(errorMessage, 'detail');
+
+      expect(() => f.orThrow()).toThrow(errorMessage);
+    });
+
+    test('calls logger with detail if supplied', () => {
+      const logger = { error: jest.fn((m, d) => `${d}: ${m}`) };
+      const errorMessage = 'this is an error message';
+      const f = failWithDetail(errorMessage, 'detail');
+
+      expect(() => f.orThrow(logger)).toThrow(errorMessage);
+      expect(logger.error).toHaveBeenCalledWith(errorMessage, 'detail');
+    });
+
+    test('calls callback if supplied', () => {
+      const cb = jest.fn((s, d) => `${d}: ${s}`);
+      const errorMessage = 'this is an error message';
+      const f = failWithDetail(errorMessage, 'detail');
+      expect(() => f.orThrow(cb)).toThrow(`detail: ${errorMessage}`);
+      expect(cb).toHaveBeenCalledWith(errorMessage, 'detail');
     });
   });
 

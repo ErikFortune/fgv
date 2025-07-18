@@ -158,6 +158,7 @@ export function recordOf<T, TC = unknown, TK extends string = string>(
         }
       }
 
+      /* c8 ignore next 1 - defense in depth */
       return errors.hasMessages ? fail(errors.toString()) : true;
     }
   });
