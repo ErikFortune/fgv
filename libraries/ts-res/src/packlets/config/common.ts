@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Result } from '@fgv/ts-utils';
+import { Result, fail } from '@fgv/ts-utils';
 import { ISystemConfiguration } from './json';
 import { SystemConfiguration } from './systemConfiguration';
 import { sanitizeJsonObject } from '@fgv/ts-json-base';
