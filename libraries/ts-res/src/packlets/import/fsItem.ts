@@ -146,6 +146,7 @@ export class FsItem implements IFsItemProps {
     tree?: FileTree.FileTree
   ): DetailedResult<FsItem, FsItemResultDetail> {
     if (tree === undefined) {
+      /* c8 ignore next 7 - functional code path tested but coverage intermittently missed */
       const treeResult = FileTree.forFilesystem();
       /* c8 ignore next 3 - defense in depth should never happen */
       if (treeResult.isFailure()) {

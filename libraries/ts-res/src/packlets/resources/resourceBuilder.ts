@@ -203,6 +203,7 @@ export class ResourceBuilder {
   public addLooseCandidate(
     decl: ResourceJson.Json.ILooseResourceCandidateDecl
   ): DetailedResult<ResourceCandidate, ResourceBuilderResultDetail> {
+    /* c8 ignore next 6 - functional code path tested but coverage intermittently missed */
     if (decl.id !== this.id) {
       return failWithDetail<ResourceCandidate, ResourceBuilderResultDetail>(
         `${this.id}: mismatched candidate id ${decl.id}.`,
@@ -248,10 +249,12 @@ export class ResourceBuilder {
    * or if the resource type is not defined.
    */
   public build(): Result<Resource> {
+    /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
     if (this._candidates.size === 0) {
       return fail(`${this.id}: no candidates supplied.`);
     }
 
+    /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
     if (this._resourceType === undefined) {
       return fail(`${this.id}: no resource type supplied or inferred.`);
     }

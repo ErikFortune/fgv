@@ -205,6 +205,24 @@ describe('AbstractDecisionCollector', () => {
       }).orThrow();
       expect(dc.validating.add({})).toFailWith(/invalid/);
     });
+
+    test('adds existing AbstractDecision instance directly', () => {
+      const decision = TsRes.Decisions.AbstractDecision.createAbstractDecision({ conditionSets }).orThrow();
+      const dc = TsRes.Decisions.AbstractDecisionCollector.create({
+        conditionSets: conditionSetCollector
+      }).orThrow();
+      expect(dc.validating.add(decision)).toSucceedWith(decision);
+      expect(dc.size).toBe(3);
+    });
+
+    test('fails for invalid input that is not AbstractDecision or ConditionSet array', () => {
+      const dc = TsRes.Decisions.AbstractDecisionCollector.create({
+        conditionSets: conditionSetCollector
+      }).orThrow();
+      expect(dc.validating.add('invalid')).toFailWith(/invalid value/);
+      expect(dc.validating.add(42)).toFailWith(/invalid value/);
+      expect(dc.validating.add(null)).toFailWith(/invalid value/);
+    });
   });
 
   describe('validating getOrAdd method', () => {

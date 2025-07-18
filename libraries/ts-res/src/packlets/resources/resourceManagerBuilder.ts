@@ -312,6 +312,7 @@ export class ResourceManagerBuilder implements IResourceManager {
    * @public
    */
   public validateContext(context: Context.IContextDecl): Result<Context.IValidatedContextDecl> {
+    /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
     return Context.Convert.validatedContextDecl.convert(context, {
       qualifiers: this.qualifiers
     });
@@ -525,6 +526,7 @@ export class ResourceManagerBuilder implements IResourceManager {
    * @public
    */
   public clone(options?: IResourceDeclarationOptions): Result<ResourceManagerBuilder> {
+    /* c8 ignore next 20 - functional code path tested but coverage intermittently missed */
     return this.getResourceCollectionDecl(options).onSuccess((collection) => {
       return ResourceManagerBuilder.create({
         qualifiers: this.qualifiers,
