@@ -386,11 +386,20 @@ const ConfigurationTool: React.FC<ConfigurationToolProps> = ({
                     {type.systemType === 'literal' && type.configuration?.enumeratedValues && (
                       <div className="mt-1">Values: {type.configuration.enumeratedValues.join(', ')}</div>
                     )}
-                    {type.systemType === 'literal' && type.configuration?.hierarchy && (
+                    {type.systemType === 'territory' && type.configuration?.allowedTerritories && (
                       <div className="mt-1">
-                        Hierarchy: {Object.keys(type.configuration.hierarchy).length} relationship(s)
+                        Territories: {type.configuration.allowedTerritories.join(', ')}
                       </div>
                     )}
+                    {type.systemType === 'territory' && type.configuration?.acceptLowercase && (
+                      <div className="mt-1">Accepts lowercase codes</div>
+                    )}
+                    {(type.systemType === 'literal' || type.systemType === 'territory') &&
+                      type.configuration?.hierarchy && (
+                        <div className="mt-1">
+                          Hierarchy: {Object.keys(type.configuration.hierarchy).length} relationship(s)
+                        </div>
+                      )}
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -869,18 +878,28 @@ const HierarchyEditor: React.FC<HierarchyEditorProps> = ({ hierarchy, onChange, 
           <div className="grid grid-cols-3 gap-2 items-end">
             <div>
               <label className="block text-xs text-gray-600">Child Value</label>
-              <select
-                value={newChild}
-                onChange={(e) => setNewChild(e.target.value)}
-                className="w-full text-sm rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-              >
-                <option value="">Select child...</option>
-                {availableValues.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
+              {availableValues.length > 0 ? (
+                <select
+                  value={newChild}
+                  onChange={(e) => setNewChild(e.target.value)}
+                  className="w-full text-sm rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                >
+                  <option value="">Select child...</option>
+                  {availableValues.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={newChild}
+                  onChange={(e) => setNewChild(e.target.value)}
+                  placeholder="Enter child value"
+                  className="w-full text-sm rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                />
+              )}
             </div>
             <div>
               <label className="block text-xs text-gray-600">Parent Value</label>
@@ -903,8 +922,9 @@ const HierarchyEditor: React.FC<HierarchyEditorProps> = ({ hierarchy, onChange, 
             </div>
           </div>
           <div className="text-xs text-gray-500 mt-1">
-            Define which values are children of other values. The parent doesn't need to be in the enumerated
-            values list.
+            {availableValues.length > 0
+              ? "Define which values are children of other values. The parent doesn't need to be in the enumerated values list."
+              : 'Define which values are children of other values. Enter any valid values for this qualifier type.'}
           </div>
         </div>
 
@@ -974,8 +994,17 @@ const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({ qualifier
       ? qualifierType.configuration.enumeratedValues.join(', ')
       : ''
   );
+  const [allowedTerritories, setAllowedTerritories] = useState(
+    qualifierType.systemType === 'territory' && qualifierType.configuration?.allowedTerritories
+      ? qualifierType.configuration.allowedTerritories.join(', ')
+      : ''
+  );
+  const [acceptLowercase, setAcceptLowercase] = useState(
+    qualifierType.systemType === 'territory' && qualifierType.configuration?.acceptLowercase === true
+  );
   const [hierarchy, setHierarchy] = useState<Record<string, string>>(
-    qualifierType.systemType === 'literal' && qualifierType.configuration?.hierarchy
+    (qualifierType.systemType === 'literal' || qualifierType.systemType === 'territory') &&
+      qualifierType.configuration?.hierarchy
       ? (qualifierType.configuration.hierarchy as Record<string, string>)
       : {}
   );
@@ -1001,6 +1030,31 @@ const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({ qualifier
       updatedType = {
         name,
         systemType: 'literal',
+        configuration
+      };
+    } else if (systemType === 'territory') {
+      const configuration: any = {
+        allowContextList,
+        acceptLowercase
+      };
+
+      // Add allowedTerritories if specified
+      const territoryValues = allowedTerritories
+        .split(',')
+        .map((v) => v.trim().toUpperCase())
+        .filter((v) => v);
+      if (territoryValues.length > 0) {
+        configuration.allowedTerritories = territoryValues;
+      }
+
+      // Add hierarchy if it has entries
+      if (Object.keys(hierarchy).length > 0) {
+        configuration.hierarchy = hierarchy;
+      }
+
+      updatedType = {
+        name,
+        systemType: 'territory',
         configuration
       };
     } else {
@@ -1081,6 +1135,39 @@ const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({ qualifier
         </div>
       )}
 
+      {systemType === 'territory' && (
+        <div>
+          <label className="flex items-center mb-4">
+            <input
+              type="checkbox"
+              checked={acceptLowercase}
+              onChange={(e) => setAcceptLowercase(e.target.checked)}
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="ml-2 text-sm text-gray-700">Accept Lowercase Territory Codes</span>
+          </label>
+        </div>
+      )}
+
+      {systemType === 'territory' && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Allowed Territories (comma-separated, optional)
+          </label>
+          <input
+            type="text"
+            value={allowedTerritories}
+            onChange={(e) => setAllowedTerritories(e.target.value)}
+            placeholder="US, CA, GB, DE (leave empty to allow all valid territory codes)"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Territory codes will be automatically converted to uppercase. Leave empty to allow any valid
+            ISO-3166-2 Alpha-2 codes.
+          </p>
+        </div>
+      )}
+
       {systemType === 'literal' && (
         <HierarchyEditor
           hierarchy={hierarchy}
@@ -1088,6 +1175,17 @@ const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({ qualifier
           availableValues={enumeratedValues
             .split(',')
             .map((v) => v.trim())
+            .filter((v) => v)}
+        />
+      )}
+
+      {systemType === 'territory' && (
+        <HierarchyEditor
+          hierarchy={hierarchy}
+          onChange={setHierarchy}
+          availableValues={allowedTerritories
+            .split(',')
+            .map((v) => v.trim().toUpperCase())
             .filter((v) => v)}
         />
       )}
