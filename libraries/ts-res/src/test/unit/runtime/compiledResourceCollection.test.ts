@@ -786,6 +786,133 @@ describe('CompiledResourceCollection class', () => {
     });
   });
 
+  describe('validateContext method', () => {
+    test('should validate a context with valid qualifier values', () => {
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          const context = { language: 'en', territory: 'US' };
+          expect(collection.validateContext(context)).toSucceedAndSatisfy((validatedContext) => {
+            expect(validatedContext['language' as TsRes.QualifierName]).toBe('en');
+            expect(validatedContext['territory' as TsRes.QualifierName]).toBe('US');
+          });
+        }
+      );
+    });
+
+    test('should validate a context with only some qualifiers', () => {
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          const context = { language: 'en' };
+          expect(collection.validateContext(context)).toSucceedAndSatisfy((validatedContext) => {
+            expect(validatedContext['language' as TsRes.QualifierName]).toBe('en');
+            expect(validatedContext['territory' as TsRes.QualifierName]).toBeUndefined();
+          });
+        }
+      );
+    });
+
+    test('should validate a context with BCP47 language tags', () => {
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          const context = { language: 'en-US' };
+          expect(collection.validateContext(context)).toSucceedAndSatisfy((validatedContext) => {
+            expect(validatedContext['language' as TsRes.QualifierName]).toBe('en-US');
+          });
+        }
+      );
+    });
+
+    test('should validate an empty context', () => {
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          const context = {};
+          expect(collection.validateContext(context)).toSucceedAndSatisfy((validatedContext) => {
+            expect(Object.keys(validatedContext)).toHaveLength(0);
+          });
+        }
+      );
+    });
+
+    test('should fail with unknown qualifier name', () => {
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          const context = { language: 'en', unknown: 'value' };
+          expect(collection.validateContext(context)).toFailWith(/not found/i);
+        }
+      );
+    });
+
+    test('should fail with invalid language value', () => {
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          const context = { language: 'invalid-language-tag' };
+          expect(collection.validateContext(context)).toFailWith(/invalid/i);
+        }
+      );
+    });
+
+    test('should fail with invalid territory value', () => {
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          const context = { territory: 'INVALID' };
+          expect(collection.validateContext(context)).toFailWith(/invalid/i);
+        }
+      );
+    });
+
+    test('should aggregate multiple validation errors', () => {
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          const context = { language: 'invalid-lang', territory: 'INVALID', unknown: 'value' };
+          expect(collection.validateContext(context)).toFailWith(/invalid|not found/i);
+        }
+      );
+    });
+
+    test('should fail with null context', () => {
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          expect(collection.validateContext(null as unknown as TsRes.Context.IContextDecl)).toFailWith(
+            /not a string-keyed object/i
+          );
+        }
+      );
+    });
+
+    test('should fail with non-object context', () => {
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          expect(
+            collection.validateContext('not an object' as unknown as TsRes.Context.IContextDecl)
+          ).toFailWith(/not a string-keyed object/i);
+        }
+      );
+    });
+
+    test('should handle complex territory values', () => {
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          const context = { territory: 'GB' };
+          expect(collection.validateContext(context)).toSucceedAndSatisfy((validatedContext) => {
+            expect(validatedContext['territory' as TsRes.QualifierName]).toBe('GB');
+          });
+        }
+      );
+    });
+
+    test('should handle multiple valid qualifiers', () => {
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          const context = { language: 'es-ES', territory: 'ES' };
+          expect(collection.validateContext(context)).toSucceedAndSatisfy((validatedContext) => {
+            expect(validatedContext['language' as TsRes.QualifierName]).toBe('es-ES');
+            expect(validatedContext['territory' as TsRes.QualifierName]).toBe('ES');
+          });
+        }
+      );
+    });
+  });
+
   describe('getBuiltResourceTree', () => {
     test('should create validating resource tree from built resources', () => {
       expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(

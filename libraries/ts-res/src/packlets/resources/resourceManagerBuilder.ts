@@ -312,7 +312,7 @@ export class ResourceManagerBuilder implements IResourceManager {
    * @public
    */
   public validateContext(context: Context.IContextDecl): Result<Context.IValidatedContextDecl> {
-    /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
+    /* c8 ignore next 4 - functional code path tested but coverage intermittently missed */
     return Context.Convert.validatedContextDecl.convert(context, {
       qualifiers: this.qualifiers
     });
