@@ -13,7 +13,12 @@ import {
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message } from '../../types/app';
 import { Config } from '@fgv/ts-res';
-import { DEFAULT_SYSTEM_CONFIGURATION } from '../../utils/tsResIntegration';
+import {
+  DEFAULT_SYSTEM_CONFIGURATION,
+  getDefaultSystemConfiguration,
+  getAvailablePredefinedConfigurations,
+  getPredefinedConfiguration
+} from '../../utils/tsResIntegration';
 import { fileImporter } from '../../utils/fileImport';
 import { Result } from '@fgv/ts-utils';
 
@@ -24,7 +29,7 @@ interface ConfigurationToolProps {
   onSaveHandlerRef?: React.MutableRefObject<(() => void) | null>;
 }
 
-type ActivePanel = 'qualifier-types' | 'qualifiers' | 'resource-types';
+type ActivePanel = 'qualifiers' | 'qualifier-types' | 'resource-types';
 
 const ConfigurationTool: React.FC<ConfigurationToolProps> = ({
   onMessage,
@@ -33,7 +38,7 @@ const ConfigurationTool: React.FC<ConfigurationToolProps> = ({
   onSaveHandlerRef
 }) => {
   const { state: resourceState } = resourceManager;
-  const [activePanel, setActivePanel] = useState<ActivePanel>('qualifier-types');
+  const [activePanel, setActivePanel] = useState<ActivePanel>('qualifiers');
 
   // Check if we have processed resources
   const hasProcessedResources = !!resourceState.processedResources;
@@ -133,6 +138,40 @@ const ConfigurationTool: React.FC<ConfigurationToolProps> = ({
     }
   }, [resourceManager.actions, onMessage]);
 
+  // Load predefined configuration
+  const handleLoadPredefinedConfiguration = useCallback(
+    async (configName: Config.PredefinedSystemConfiguration) => {
+      try {
+        const configResult = getPredefinedConfiguration(configName);
+
+        if (configResult.isFailure()) {
+          onMessage?.(
+            'error',
+            `Failed to load predefined configuration '${configName}': ${configResult.message}`
+          );
+          return;
+        }
+
+        const config = configResult.value;
+
+        // Update the local config state for preview
+        setCurrentConfig(config);
+        onMessage?.(
+          'success',
+          `Predefined configuration "${config.name}" loaded successfully. Click "Apply Configuration" to activate it.`
+        );
+      } catch (error) {
+        onMessage?.(
+          'error',
+          `Unexpected error loading predefined configuration: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      }
+    },
+    [onMessage]
+  );
+
   // Apply configuration handler
   const handleApplyConfiguration = useCallback(
     (newConfig: Config.Model.ISystemConfiguration) => {
@@ -181,11 +220,14 @@ const ConfigurationTool: React.FC<ConfigurationToolProps> = ({
   // Restore defaults handler
   const handleRestoreDefaults = useCallback(() => {
     try {
+      // Get the latest default configuration
+      const defaultConfig = getDefaultSystemConfiguration();
+
       // Apply the default configuration
-      resourceManager.actions.applyConfiguration(DEFAULT_SYSTEM_CONFIGURATION);
+      resourceManager.actions.applyConfiguration(defaultConfig);
 
       // Update local state
-      setCurrentConfig(DEFAULT_SYSTEM_CONFIGURATION);
+      setCurrentConfig(defaultConfig);
 
       // Provide user feedback
       onMessage?.('success', 'Default configuration restored successfully.');
@@ -555,8 +597,8 @@ const ConfigurationTool: React.FC<ConfigurationToolProps> = ({
   };
 
   const panels = [
-    { id: 'qualifier-types', name: 'Qualifier Types', component: renderQualifierTypesPanel },
     { id: 'qualifiers', name: 'Qualifiers', component: renderQualifiersPanel },
+    { id: 'qualifier-types', name: 'Qualifier Types', component: renderQualifierTypesPanel },
     { id: 'resource-types', name: 'Resource Types', component: renderResourceTypesPanel }
   ];
 
@@ -588,12 +630,33 @@ const ConfigurationTool: React.FC<ConfigurationToolProps> = ({
               <PencilIcon className="h-4 w-4 mr-1" />
               Edit Metadata
             </button>
+            <div className="relative">
+              <select
+                onChange={(e) => {
+                  if (e.target.value) {
+                    handleLoadPredefinedConfiguration(e.target.value as Config.PredefinedSystemConfiguration);
+                    e.target.value = ''; // Reset selection
+                  }
+                }}
+                className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 pr-8"
+                defaultValue=""
+              >
+                <option value="" disabled>
+                  Load Predefined...
+                </option>
+                {getAvailablePredefinedConfigurations().map((config) => (
+                  <option key={config.name} value={config.name}>
+                    {config.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <button
               onClick={handleLoadConfiguration}
               className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <FolderOpenIcon className="h-4 w-4 mr-1" />
-              Load Configuration
+              Load from File
             </button>
             <button
               onClick={handleRestoreDefaults}

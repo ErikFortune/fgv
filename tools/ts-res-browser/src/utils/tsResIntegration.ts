@@ -50,102 +50,104 @@ export interface ProcessedResources {
 }
 
 /**
- * Default system configuration for ts-res browser tool
- * Matches the sample resources-config.json in test-data
+ * Get the default system configuration from ts-res library
  */
-export const DEFAULT_SYSTEM_CONFIGURATION: Config.Model.ISystemConfiguration = {
-  name: 'Default Configuration',
-  description: 'Built-in default configuration for ts-res browser tool',
-  qualifierTypes: [
-    {
-      name: 'language',
-      systemType: 'language'
-    },
-    {
-      name: 'territory',
-      systemType: 'territory'
-    },
-    {
-      name: 'role',
-      systemType: 'literal',
-      configuration: {
-        allowContextList: false,
-        caseSensitive: false,
-        enumeratedValues: ['admin', 'user', 'guest', 'anonymous']
+export function getDefaultSystemConfiguration(): Config.Model.ISystemConfiguration {
+  const defaultResult = Config.getPredefinedDeclaration('default');
+  if (defaultResult.isSuccess()) {
+    return defaultResult.value;
+  }
+
+  // Fallback configuration if predefined default is not available
+  return {
+    name: 'Browser Default Configuration',
+    description: 'Fallback default configuration for ts-res browser tool',
+    qualifierTypes: [
+      {
+        name: 'language',
+        systemType: 'language',
+        configuration: {
+          allowContextList: true
+        }
+      },
+      {
+        name: 'territory',
+        systemType: 'territory',
+        configuration: {
+          allowContextList: false
+        }
       }
+    ],
+    qualifiers: [
+      {
+        name: 'currentTerritory',
+        token: 'geo',
+        typeName: 'territory',
+        defaultPriority: 850
+      },
+      {
+        name: 'language',
+        token: 'lang',
+        typeName: 'language',
+        defaultPriority: 800
+      }
+    ],
+    resourceTypes: [
+      {
+        name: 'json',
+        typeName: 'json'
+      }
+    ]
+  };
+}
+
+/**
+ * Default system configuration for ts-res browser tool
+ * Now uses the predefined default from ts-res library
+ */
+export const DEFAULT_SYSTEM_CONFIGURATION: Config.Model.ISystemConfiguration =
+  getDefaultSystemConfiguration();
+
+/**
+ * Get all available predefined configuration options
+ */
+export function getAvailablePredefinedConfigurations(): {
+  name: Config.PredefinedSystemConfiguration;
+  label: string;
+  description: string;
+}[] {
+  return [
+    {
+      name: 'default',
+      label: 'Default',
+      description: 'Default system configuration'
     },
     {
-      name: 'environment',
-      systemType: 'literal',
-      configuration: {
-        enumeratedValues: ['development', 'integration', 'production', 'test']
-      }
+      name: 'language-priority',
+      label: 'Language Priority',
+      description: 'Language priority system configuration'
     },
     {
-      name: 'platform',
-      systemType: 'literal',
-      configuration: {
-        enumeratedValues: ['ios', 'android', 'web', 'mobile', 'tv', 'desktop']
-      }
+      name: 'territory-priority',
+      label: 'Territory Priority',
+      description: 'Territory priority system configuration'
     },
     {
-      name: 'density',
-      systemType: 'literal',
-      configuration: {
-        allowContextList: false,
-        caseSensitive: false,
-        enumeratedValues: ['hdpi', 'mdpi', 'ldpi']
-      }
+      name: 'extended-example',
+      label: 'Extended Example',
+      description: 'Extended example configuration with market, role, environment, and currency qualifiers'
     }
-  ],
-  qualifiers: [
-    {
-      name: 'language',
-      typeName: 'language',
-      token: 'lang',
-      defaultPriority: 600
-    },
-    {
-      name: 'homeTerritory',
-      typeName: 'territory',
-      defaultPriority: 800,
-      token: 'home',
-      tokenIsOptional: true
-    },
-    {
-      name: 'currentTerritory',
-      typeName: 'territory',
-      token: 'geo',
-      defaultPriority: 700
-    },
-    {
-      name: 'role',
-      typeName: 'role',
-      defaultPriority: 500
-    },
-    {
-      name: 'env',
-      typeName: 'environment',
-      defaultPriority: 400
-    },
-    {
-      name: 'platform',
-      typeName: 'platform',
-      defaultPriority: 300
-    },
-    {
-      name: 'density',
-      typeName: 'density',
-      defaultPriority: 200
-    }
-  ],
-  resourceTypes: [
-    {
-      name: 'json',
-      typeName: 'json'
-    }
-  ]
-};
+  ];
+}
+
+/**
+ * Get a predefined configuration by name
+ */
+export function getPredefinedConfiguration(
+  name: Config.PredefinedSystemConfiguration
+): Result<Config.Model.ISystemConfiguration> {
+  return Config.getPredefinedDeclaration(name);
+}
 
 /**
  * Legacy default qualifier declarations for backward compatibility
