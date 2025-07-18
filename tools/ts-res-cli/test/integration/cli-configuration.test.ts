@@ -44,7 +44,7 @@ describe('CLI Configuration Tests', () => {
   });
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(path.join(__dirname, '../../test-temp-config-'));
+    tempDir = await fs.mkdtemp(path.join(__dirname, '../../temp/test-temp-config-'));
   });
 
   afterEach(async () => {

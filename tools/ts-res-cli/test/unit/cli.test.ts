@@ -47,7 +47,7 @@ describe('TsResCliApp', () => {
     stderrWriteSpy = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
 
     // Create temporary directory for test files
-    tempDir = await fs.mkdtemp(path.join(__dirname, '../../test-temp-cli-'));
+    tempDir = await fs.mkdtemp(path.join(__dirname, '../../temp/test-temp-cli-'));
   });
 
   afterEach(async () => {

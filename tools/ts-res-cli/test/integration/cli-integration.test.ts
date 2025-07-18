@@ -31,7 +31,7 @@ describe('CLI Integration Tests', () => {
   let cliBin: string;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(path.join(__dirname, '../../test-temp-integration-'));
+    tempDir = await fs.mkdtemp(path.join(__dirname, '../../temp/test-temp-integration-'));
     cliBin = path.resolve(__dirname, '../../bin/ts-res-compile.js');
   });
 

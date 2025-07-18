@@ -34,7 +34,7 @@ describe('ResourceCompiler', () => {
 
   beforeEach(async () => {
     // Create temporary directory for test files
-    tempDir = await fs.mkdtemp(path.join(__dirname, '../../test-temp-'));
+    tempDir = await fs.mkdtemp(path.join(__dirname, '../../temp/test-temp-'));
     inputFile = path.join(tempDir, 'input.json');
     outputFile = path.join(tempDir, 'output.json');
 

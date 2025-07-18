@@ -13,7 +13,7 @@ describe('CLI Context Filter Working Tests', () => {
   let cliBin: string;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(path.join(__dirname, '../../test-temp-working-'));
+    tempDir = await fs.mkdtemp(path.join(__dirname, '../../temp/test-temp-working-'));
     cliBin = path.resolve(__dirname, '../../bin/ts-res-compile.js');
   });
 
