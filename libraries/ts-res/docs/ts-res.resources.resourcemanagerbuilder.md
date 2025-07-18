@@ -175,6 +175,27 @@ ValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [Resource](
 </td></tr>
 <tr><td>
 
+[\_numCandidates?](./ts-res.resources.resourcemanagerbuilder._numcandidates.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+_(Optional)_ The number of candidates in this resource manager.
+
+
+</td></tr>
+<tr><td>
+
 [\_resources](./ts-res.resources.resourcemanagerbuilder._resources.md)
 
 
@@ -206,7 +227,7 @@ ValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [ResourceBu
 
 </td><td>
 
-Collections.IReadOnlyResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [IResource](./ts-res.runtime.iresource.md)<!-- -->&gt;
+Collections.IReadOnlyValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [Resource](./ts-res.resources.resource.md)<!-- -->&gt;
 
 
 </td><td>
@@ -275,6 +296,48 @@ A [ConditionSetCollector](./ts-res.conditions.conditionsetcollector.md) which co
 </td><td>
 
 A [AbstractDecisionCollector](./ts-res.decisions.abstractdecisioncollector.md) which contains the [abstract decisions](./ts-res.decisions.decision.md) used so far by the [resource candidates](./ts-res.resources.resourcecandidate.md) in this manager.
+
+
+</td></tr>
+<tr><td>
+
+[numCandidates](./ts-res.resources.resourcemanagerbuilder.numcandidates.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+The number of candidates in this resource manager.
+
+
+</td></tr>
+<tr><td>
+
+[numResources](./ts-res.resources.resourcemanagerbuilder.numresources.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+The number of resources in this resource manager.
 
 
 </td></tr>

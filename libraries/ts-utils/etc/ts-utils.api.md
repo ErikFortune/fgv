@@ -607,6 +607,10 @@ export class DetailedFailure<T, TD> extends Failure<T> {
     onFailure(cb: DetailedFailureContinuation<T, TD>): DetailedResult<T, TD>;
     // Warning: (ae-incompatible-release-tags) The symbol "onSuccess" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     onSuccess<TN>(__cb: DetailedSuccessContinuation<T, TD, TN>): DetailedResult<TN, TD>;
+    // (undocumented)
+    orThrow(logOrFormat?: IResultLogger<TD> | ErrorFormatter): never;
+    // (undocumented)
+    orThrow(cb: ErrorFormatter): never;
     static with<T, TD>(message: string, detail?: TD): DetailedFailure<T, TD>;
     // Warning: (ae-incompatible-release-tags) The symbol "withErrorFormat" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withErrorFormat(cb: ErrorFormatter<TD>): DetailedResult<T, TD>;
@@ -718,6 +722,7 @@ export class Failure<T> implements IResult<T> {
     orDefault(dflt: T): T;
     orDefault(): T | undefined;
     orThrow(logger?: IResultLogger): never;
+    orThrow(cb: ErrorFormatter): never;
     readonly success: false;
     toString(): string;
     readonly value: undefined;
@@ -1392,6 +1397,7 @@ export interface IResult<T> {
     orDefault(dflt: T): T;
     orDefault(): T | undefined;
     orThrow(logger?: IResultLogger): T;
+    orThrow(cb: ErrorFormatter): T;
     readonly success: boolean;
     readonly value: T | undefined;
     // Warning: (ae-incompatible-release-tags) The symbol "withDetail" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
@@ -1402,8 +1408,8 @@ export interface IResult<T> {
 }
 
 // @public
-export interface IResultLogger {
-    error(message: string): void;
+export interface IResultLogger<TD = unknown> {
+    error(message: string, detail?: TD): void;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2167,7 +2173,8 @@ export class Success<T> implements IResult<T> {
     onSuccess<TN>(cb: SuccessContinuation<T, TN>): Result<TN>;
     orDefault(dflt: T): T;
     orDefault(): T | undefined;
-    orThrow(__logger?: IResultLogger): T;
+    orThrow(logger?: IResultLogger): T;
+    orThrow(cb: ErrorFormatter): T;
     readonly success: true;
     get value(): T;
     // @internal (undocumented)

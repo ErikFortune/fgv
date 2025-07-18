@@ -9,7 +9,7 @@ Log an error message.
 **Signature:**
 
 ```typescript
-error(message: string): void;
+error(message: string, detail?: TD): void;
 ```
 
 ## Parameters
@@ -43,6 +43,22 @@ string
 </td><td>
 
 The message to be logged.
+
+
+</td></tr>
+<tr><td>
+
+detail
+
+
+</td><td>
+
+TD
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>

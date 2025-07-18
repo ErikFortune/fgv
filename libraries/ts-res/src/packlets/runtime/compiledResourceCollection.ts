@@ -112,8 +112,30 @@ export class CompiledResourceCollection implements IResourceManager {
   /**
    * {@inheritdoc Runtime.IResourceManager.builtResources}
    */
-  public get builtResources(): Collections.IReadOnlyResultMap<ResourceId, IResource> {
+  public get builtResources(): Collections.IReadOnlyValidatingResultMap<ResourceId, IResource> {
     return this._builtResources;
+  }
+
+  /**
+   * {@inheritdoc Runtime.IResourceManager.numResources}
+   */
+  public get numResources(): number {
+    return this._builtResources.size;
+  }
+
+  protected _numCandidates?: number;
+
+  /**
+   * {@inheritdoc Runtime.IResourceManager.numCandidates}
+   */
+  public get numCandidates(): number {
+    if (this._numCandidates === undefined) {
+      this._numCandidates = [...this._builtResources.values()].reduce(
+        (acc, resource) => acc + resource.candidates.length,
+        0
+      );
+    }
+    return this._numCandidates;
   }
 
   /**

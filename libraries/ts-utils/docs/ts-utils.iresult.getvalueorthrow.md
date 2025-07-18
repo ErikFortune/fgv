@@ -6,7 +6,7 @@
 
 > Warning: This API is now obsolete.
 > 
-> Use [orThrow](./ts-utils.iresult.orthrow.md) instead.
+> Use [orThrow(logger)](./ts-utils.iresult.orthrow.md) or [orThrow(formatter)](./ts-utils.iresult.orthrow_1.md) instead.
 > 
 
 Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or throws the error message if the corresponding operation failed.

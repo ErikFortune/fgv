@@ -358,7 +358,8 @@ describe('ResourceManagerBuilder', () => {
       manager.addLooseCandidate(someDecls[3]).orThrow();
       manager.addLooseCandidate({ ...otherDecls[0], resourceTypeName: 'json' }).orThrow();
 
-      expect(manager.build()).toSucceedAndSatisfy((r) => {
+      expect(manager.build()).toSucceedAndSatisfy((m) => {
+        const r = m.builtResources;
         expect(r.size).toEqual(2);
         expect(r.validating.get(someDecls[0].id)).toSucceedAndSatisfy((resource) => {
           expect(resource.id).toEqual(someDecls[0].id);
@@ -424,6 +425,68 @@ describe('ResourceManagerBuilder', () => {
         expect(builtCandidates[3].id).toEqual('some.resource.path');
         expect(builtCandidates[4].id).toEqual('some.resource.path');
       });
+    });
+
+    test('numResources property returns correct count', () => {
+      expect(manager.numResources).toBe(2);
+    });
+
+    test('numCandidates property returns correct count', () => {
+      expect(manager.numCandidates).toBe(5);
+    });
+
+    test('numResources and numCandidates return zero for empty manager', () => {
+      const emptyManager = TsRes.Resources.ResourceManagerBuilder.create({
+        qualifiers,
+        resourceTypes
+      }).orThrow();
+
+      expect(emptyManager.numResources).toBe(0);
+      expect(emptyManager.numCandidates).toBe(0);
+    });
+
+    test('numCandidates stays accurate as candidates are added', () => {
+      const mutableManager = TsRes.Resources.ResourceManagerBuilder.create({
+        qualifiers,
+        resourceTypes
+      }).orThrow();
+
+      // Initially empty
+      expect(mutableManager.numCandidates).toBe(0);
+      expect(mutableManager.numResources).toBe(0);
+
+      // Add first candidate
+      mutableManager
+        .addLooseCandidate({
+          id: 'test.resource',
+          json: { value: 'first' },
+          resourceTypeName: 'json'
+        })
+        .orThrow();
+      expect(mutableManager.numCandidates).toBe(1);
+      expect(mutableManager.numResources).toBe(1);
+
+      // Add candidate to same resource
+      mutableManager
+        .addLooseCandidate({
+          id: 'test.resource',
+          json: { value: 'second' },
+          conditions: { language: 'en' }
+        })
+        .orThrow();
+      expect(mutableManager.numCandidates).toBe(2);
+      expect(mutableManager.numResources).toBe(1); // Same resource
+
+      // Add candidate to different resource
+      mutableManager
+        .addLooseCandidate({
+          id: 'test.other',
+          json: { value: 'third' },
+          resourceTypeName: 'json'
+        })
+        .orThrow();
+      expect(mutableManager.numCandidates).toBe(3);
+      expect(mutableManager.numResources).toBe(2); // New resource
     });
   });
 
@@ -551,7 +614,8 @@ describe('ResourceManagerBuilder', () => {
       expect(manager.addLooseCandidate(decl1)).toSucceed();
       expect(manager.build()).toSucceed();
       expect(manager.addLooseCandidate(decl2)).toSucceed();
-      expect(manager.build()).toSucceedAndSatisfy((r) => {
+      expect(manager.build()).toSucceedAndSatisfy((m) => {
+        const r = m.builtResources;
         expect(r.size).toBe(1);
         expect(r.validating.get(decl1.id)).toSucceedAndSatisfy((res) => {
           expect(res.candidates.length).toBe(2);

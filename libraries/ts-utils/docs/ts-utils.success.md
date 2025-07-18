@@ -283,7 +283,21 @@ Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- 
 </td></tr>
 <tr><td>
 
-[orThrow(\_\_logger)](./ts-utils.success.orthrow.md)
+[orThrow(logger)](./ts-utils.success.orthrow.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or throws the error message if the corresponding operation failed.
+
+
+</td></tr>
+<tr><td>
+
+[orThrow(cb)](./ts-utils.success.orthrow_1.md)
 
 
 </td><td>

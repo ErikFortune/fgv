@@ -100,7 +100,17 @@ export interface IResourceManager {
    * A read-only result map of all built resources, keyed by resource ID.
    * Resources are built on-demand when accessed and returns Results for error handling.
    */
-  readonly builtResources: Collections.IReadOnlyResultMap<ResourceId, IResource>;
+  readonly builtResources: Collections.IReadOnlyValidatingResultMap<ResourceId, IResource>;
+
+  /**
+   * The number of resources in this resource manager.
+   */
+  readonly numResources: number;
+
+  /**
+   * The number of candidates in this resource manager.
+   */
+  readonly numCandidates: number;
 
   /**
    * Validates a context declaration against the qualifiers managed by this resource manager.

@@ -155,6 +155,30 @@ Propagates the error message and detail from this result.
 </td></tr>
 <tr><td>
 
+[orThrow(logOrFormat)](./ts-utils.detailedfailure.orthrow.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[orThrow(cb)](./ts-utils.detailedfailure.orthrow_1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [with(message, detail)](./ts-utils.detailedfailure.with.md)
 
 

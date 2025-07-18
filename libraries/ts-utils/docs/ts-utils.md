@@ -573,7 +573,7 @@ Represents the result of some operation of sequence of operations.
 
 </td><td>
 
-Simple logger interface used by [IResult.orThrow()](./ts-utils.iresult.orthrow.md)<!-- -->.
+Simple logger interface used by [orThrow(logger)](./ts-utils.iresult.orthrow.md) and [orThrow(formatter)](./ts-utils.iresult.orthrow_1.md)<!-- -->.
 
 
 </td></tr>

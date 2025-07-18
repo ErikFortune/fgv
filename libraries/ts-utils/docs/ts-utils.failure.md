@@ -297,6 +297,20 @@ Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- 
 </td></tr>
 <tr><td>
 
+[orThrow(cb)](./ts-utils.failure.orthrow_1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or throws the error message if the corresponding operation failed.
+
+
+</td></tr>
+<tr><td>
+
 [toString()](./ts-utils.failure.tostring.md)
 
 
