@@ -856,7 +856,6 @@ declare namespace Convert_5 {
 
 declare namespace Convert_6 {
     export {
-        qualifierTypeConfig,
         languageQualifierTypeConfig,
         territoryQualifierTypeConfig,
         literalQualifierTypeConfig,
@@ -2617,6 +2616,7 @@ class LanguageQualifierType extends QualifierType {
     protected _matchOne(condition: QualifierConditionValue, context: QualifierContextValue, operator: ConditionOperator): QualifierMatchScore;
 }
 
+// Warning: (ae-forgotten-export) The symbol "Model_3" needs to be exported by the entry point index.d.ts
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -3014,13 +3014,6 @@ class QualifierTypeCollector extends ValidatingConvertingCollector<QualifierType
     // (undocumented)
     protected static _toQualifierType(from: unknown): Result<QualifierType>;
 }
-
-// Warning: (ae-forgotten-export) The symbol "Model_3" needs to be exported by the entry point index.d.ts
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-function qualifierTypeConfig<T, TC = unknown>(configConverter: Converter<T, TC>): Converter<Model_3.IQualifierTypeConfig<T>, TC>;
 
 // @public
 export type QualifierTypeIndex = Brand<number, 'QualifierTypeIndex'>;

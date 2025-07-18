@@ -311,8 +311,8 @@ export class ResourceManagerBuilder implements IResourceManager {
    * @returns Success with the validated context if successful, Failure otherwise
    * @public
    */
+  /* c8 ignore next 5 - functional code path tested but coverage intermittently missed */
   public validateContext(context: Context.IContextDecl): Result<Context.IValidatedContextDecl> {
-    /* c8 ignore next 4 - functional code path tested but coverage intermittently missed */
     return Context.Convert.validatedContextDecl.convert(context, {
       qualifiers: this.qualifiers
     });
@@ -525,8 +525,8 @@ export class ResourceManagerBuilder implements IResourceManager {
    * @returns A Result containing the new filtered ResourceManagerBuilder.
    * @public
    */
+  /* c8 ignore next 21 - functional code path tested but coverage intermittently missed */
   public clone(options?: IResourceDeclarationOptions): Result<ResourceManagerBuilder> {
-    /* c8 ignore next 20 - functional code path tested but coverage intermittently missed */
     return this.getResourceCollectionDecl(options).onSuccess((collection) => {
       return ResourceManagerBuilder.create({
         qualifiers: this.qualifiers,

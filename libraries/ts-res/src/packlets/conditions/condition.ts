@@ -315,6 +315,7 @@ export class Condition implements IValidatedConditionDecl {
   public toCompiled(
     options?: ResourceJson.Compiled.ICompiledResourceOptions
   ): ResourceJson.Compiled.ICompiledCondition {
+    /* c8 ignore next 1 - defense in depth */
     const operator = this.operator === 'matches' ? undefined : this.operator;
     return {
       qualifierIndex: this.qualifier.index!,

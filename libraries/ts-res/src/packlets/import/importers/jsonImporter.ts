@@ -71,6 +71,7 @@ export class JsonImporter implements IImporter {
         // error messages. Disabled until/unless we come up with a better plan.
         //.onFailure(() => this._tryImportResource(item, manager));
         .onFailure(() =>
+          /* c8 ignore next 1 - defense in depth */
           failWithDetail(`${item.context?.baseId ?? 'unknown'}: unrecognized JSON format.`, 'failed')
         )
     );

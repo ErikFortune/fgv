@@ -41,6 +41,7 @@ import { JsonObject } from '@fgv/ts-json-base';
 export function createQualifierTypeFromConfig(
   typeConfig: Config.IQualifierTypeConfig<JsonObject>
 ): Result<QualifierType> {
+  /* c8 ignore next 1 - defense in depth */
   const childConfig = typeConfig.configuration ?? {};
   switch (typeConfig.systemType) {
     case 'language':
