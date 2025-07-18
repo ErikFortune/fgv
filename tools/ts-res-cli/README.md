@@ -26,17 +26,12 @@ ts-res-compile compile \
   -i ./resources \
   -o ./dist/resources.json \
   --context '{"language": "en-US", "territory": "US"}' \
-  --partial-match \
-  --format json \
-  --minify
-
+  --format json
 # Compile for production with TypeScript output
 ts-res-compile compile \
   -i ./resources \
   -o ./dist/resources.ts \
   --format ts \
-  --mode production \
-  --minify \
   --include-metadata
 ```
 
@@ -57,7 +52,6 @@ ts-res-compile info -i ./resources
 ts-res-compile info \
   -i ./resources \
   --context '{"language": "en"}' \
-  --partial-match
 ```
 
 ## Commands
@@ -73,10 +67,6 @@ Compiles resources from input to output format.
 **Optional Options:**
 - `-c, --context <json>` - Context filter for resources (JSON string)
 - `-f, --format <format>` - Output format (json, js, ts, binary) [default: json]
-- `-m, --mode <mode>` - Compilation mode (development, production) [default: development]
-- `--partial-match` - Enable partial context matching [default: false]
-- `--source-maps` - Include source maps [default: false]
-- `--minify` - Minify output [default: false]
 - `--debug` - Include debug information [default: false]
 - `-v, --verbose` - Verbose output [default: false]
 - `-q, --quiet` - Quiet output [default: false]
@@ -105,7 +95,6 @@ Shows information about resources.
 
 **Optional Options:**
 - `-c, --context <json>` - Context filter for resources (JSON string)
-- `--partial-match` - Enable partial context matching [default: false]
 - `--resource-types <types>` - Resource type filter (comma-separated)
 - `--max-distance <number>` - Maximum distance for language matching
 
@@ -186,12 +175,6 @@ Context filtering allows you to compile only resources that match specific condi
 # Only resources for English language
 ts-res-compile compile -i ./resources -o ./en.json \
   --context '{"language": "en"}'
-
-# Resources for US English with partial matching
-ts-res-compile compile -i ./resources -o ./en-us.json \
-  --context '{"language": "en-US", "territory": "US"}' \
-  --partial-match
-```
 
 ## Examples
 

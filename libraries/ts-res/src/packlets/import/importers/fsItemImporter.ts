@@ -96,7 +96,7 @@ export class FsItemImporter implements IImporter {
       return item.context ? item.context.extend(fsItemContext) : succeed(fsItemContext);
     });
 
-    /* c8 ignore next 3 - defense in depth nearly impossible to reproduce */
+    /* c8 ignore next 3 - defensive coding: getContext failure is extremely rare in practice */
     if (getContextMessage) {
       return failWithDetail(getContextMessage, 'failed');
     }
@@ -133,7 +133,7 @@ export class FsItemImporter implements IImporter {
           .withDetail('failed', 'processed');
       }
     }
-    /* c8 ignore next 2 - defense in depth near impossible to reproduce */
+    /* c8 ignore next 2 - defensive coding: fallback case for unsupported file types */
     return succeedWithDetail([], 'skipped');
   }
 

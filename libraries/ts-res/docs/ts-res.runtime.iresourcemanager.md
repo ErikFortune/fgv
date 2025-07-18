@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-Collections.IReadOnlyResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [IResource](./ts-res.runtime.iresource.md)<!-- -->&gt;
+Collections.IReadOnlyValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [IResource](./ts-res.runtime.iresource.md)<!-- -->&gt;
 
 
 </td><td>
@@ -116,6 +116,48 @@ A [ReadOnlyConditionSetCollector](./ts-res.conditions.readonlyconditionsetcollec
 </td><td>
 
 A [ReadOnlyAbstractDecisionCollector](./ts-res.decisions.readonlyabstractdecisioncollector.md) which contains the [abstract decisions](./ts-res.decisions.decision.md) used by resource candidates.
+
+
+</td></tr>
+<tr><td>
+
+[numCandidates](./ts-res.runtime.iresourcemanager.numcandidates.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+The number of candidates in this resource manager.
+
+
+</td></tr>
+<tr><td>
+
+[numResources](./ts-res.runtime.iresourcemanager.numresources.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+The number of resources in this resource manager.
 
 
 </td></tr>

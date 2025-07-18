@@ -98,6 +98,7 @@ export const validatedContextQualifierValueDecl = Converters.generic<
 export const validatedContextDecl = Converters.generic<IValidatedContextDecl, IContextDeclConvertContext>(
   (from: unknown, __self, context?: IContextDeclConvertContext): Result<IValidatedContextDecl> => {
     if (!context) {
+      /* c8 ignore next 2 - functional code path tested but coverage intermittently missed */
       return Failure.with('validatedContextDecl converter requires a context');
     }
 

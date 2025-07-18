@@ -190,3 +190,20 @@ export type DecisionKey = Brand<string, 'DecisionKey'>;
  * @public
  */
 export type DecisionIndex = Brand<number, 'DecisionIndex'>;
+
+/**
+ * A string representing a validated context qualifier token. Context qualifier tokens are used
+ * for filtering resources by context criteria. A context qualifier token has the form
+ * `<qualifierName>=<value>` or `<value>`.
+ * @public
+ */
+export type ContextQualifierToken = Brand<string, 'ContextQualifierToken'>;
+
+/**
+ * A string representing a validated context token. Context tokens are
+ * pipe-separated lists of one or more context qualifier tokens. Uses "|" as separator
+ * to avoid conflicts with comma-separated values within context values.
+ * Example: "language=en-US,de-DE|territory=US|role=admin"
+ * @public
+ */
+export type ContextToken = Brand<string, 'ContextToken'>;

@@ -270,5 +270,46 @@ describe('FsItemImporter', () => {
       const importable: TsRes.Import.IImportable = { type: 'unknown' };
       expect(importer.import(importable, manager)).toFailWithDetail(/invalid importable type/i, 'skipped');
     });
+
+    test('fails when _getFileTreeItemFromImportable returns a failed result', () => {
+      const invalidImportable = {
+        type: 'fsItem',
+        item: { not: 'a FsItem' } as unknown as TsRes.Import.FsItem
+      } as unknown as TsRes.Import.IImportable;
+      expect(importer.import(invalidImportable, manager)).toFailWithDetail(
+        /malformed fsItem importable/i,
+        'failed'
+      );
+    });
+
+    test('aggregates errors when child items fail to create with non-skipped detail', () => {
+      // Create a directory that will contain files that can't be parsed
+      const invalidFiles: FileTree.IInMemoryFile[] = [
+        {
+          path: '/invalid-dir/invalid-file.json',
+          contents: { helloMyNameIs: 'valid content' }
+        }
+      ];
+
+      const invalidTree = FileTree.inMemory(invalidFiles).orThrow();
+
+      // Create an FsItem that will fail during child processing
+      const fsItem = TsRes.Import.FsItem.createForPath('/invalid-dir', qualifiers, invalidTree).orThrow();
+
+      // Mock the FsItem.createForItem to return a failed result for the child
+      const originalCreateForItem = TsRes.Import.FsItem.createForItem;
+      TsRes.Import.FsItem.createForItem = jest.fn().mockReturnValue({
+        value: undefined,
+        message: 'Mock error for child item',
+        detail: 'failed'
+      });
+
+      const importable: IImportableFsItem = { type: 'fsItem', item: fsItem };
+
+      expect(importer.import(importable, manager)).toFailWithDetail(/mock error for child item/i, 'failed');
+
+      // Restore the original function
+      TsRes.Import.FsItem.createForItem = originalCreateForItem;
+    });
   });
 });

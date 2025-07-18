@@ -318,4 +318,28 @@ describe('ContextQualifierProviderValidator class', () => {
       expect(throwingValidator.remove('language')).toFailWith(/Provider does not support removing values/);
     });
   });
+
+  describe('private validation methods coverage', () => {
+    test('covers _validateQualifierName with non-string input', () => {
+      // Test with non-string input to cover validation failure (lines 253-254)
+      expect(validator.get(123 as unknown as string)).toFailWith(/Invalid qualifier name/);
+    });
+
+    test('covers _validateQualifierIndex with invalid numbers', () => {
+      // Test with invalid number inputs to cover validation failure (lines 265-266)
+      expect(validator.getByIndex(-1 as TsRes.QualifierIndex)).toFailWith(/Invalid qualifier index/);
+      expect(validator.getByIndex(1.5 as TsRes.QualifierIndex)).toFailWith(/Invalid qualifier index/);
+      expect(validator.getByIndex(NaN as TsRes.QualifierIndex)).toFailWith(/Invalid qualifier index/);
+    });
+
+    test('covers _validateQualifierContextValue with non-string input', () => {
+      // Test with non-string input to cover validation failure (lines 277-278)
+      const invalidValidator = validator as unknown as {
+        set: (name: string, value: unknown) => Result<TsRes.QualifierContextValue>;
+      };
+      expect(invalidValidator.set('language', null)).toFailWith(/Invalid qualifier context value/);
+      expect(invalidValidator.set('language', undefined)).toFailWith(/Invalid qualifier context value/);
+      expect(invalidValidator.set('language', 123)).toFailWith(/Invalid qualifier context value/);
+    });
+  });
 });

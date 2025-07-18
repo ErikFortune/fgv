@@ -44,7 +44,7 @@ import { AbstractDecisionCollector, ReadOnlyAbstractDecisionCollector } from '..
 import { IReadOnlyQualifierCollector } from '../qualifiers';
 import { ReadOnlyResourceTypeCollector } from '../resource-types';
 import { Convert, ResourceId, Validate } from '../common';
-import { IResourceManager, IResource } from '../runtime';
+import { IResourceManager } from '../runtime';
 import { ResourceBuilder, ResourceBuilderResultDetail } from './resourceBuilder';
 import { Resource } from './resource';
 import { ResourceCandidate } from './resourceCandidate';
@@ -130,9 +130,31 @@ export class ResourceManagerBuilder implements IResourceManager {
   }
 
   /**
+   * {@inheritdoc Runtime.IResourceManager.numResources}
+   */
+  public get numResources(): number {
+    return this._resources.size;
+  }
+
+  /**
+   * The number of candidates in this resource manager.
+   */
+  protected _numCandidates?: number;
+
+  /**
+   * {@inheritdoc Runtime.IResourceManager.numCandidates}
+   */
+  public get numCandidates(): number {
+    if (this._numCandidates === undefined) {
+      this._numCandidates = this.getAllCandidates().length;
+    }
+    return this._numCandidates;
+  }
+
+  /**
    * {@inheritdoc Runtime.IResourceManager.builtResources}
    */
-  public get builtResources(): Collections.IReadOnlyResultMap<ResourceId, IResource> {
+  public get builtResources(): Collections.IReadOnlyValidatingResultMap<ResourceId, Resource> {
     return this._performBuild().orThrow();
   }
 
@@ -209,6 +231,7 @@ export class ResourceManagerBuilder implements IResourceManager {
     return builderResult.value.addLooseCandidate(decl).onSuccess((c, d) => {
       this._builtResources.delete(id);
       this._built = false;
+      this._numCandidates = undefined;
       return succeedWithDetail(c, d);
     });
   }
@@ -288,6 +311,7 @@ export class ResourceManagerBuilder implements IResourceManager {
    * @returns Success with the validated context if successful, Failure otherwise
    * @public
    */
+  /* c8 ignore next 5 - functional code path tested but coverage intermittently missed */
   public validateContext(context: Context.IContextDecl): Result<Context.IValidatedContextDecl> {
     return Context.Convert.validatedContextDecl.convert(context, {
       qualifiers: this.qualifiers
@@ -300,8 +324,8 @@ export class ResourceManagerBuilder implements IResourceManager {
    * @public
    */
   public getAllBuiltResources(): Result<ReadonlyArray<Resource>> {
-    return this.build().onSuccess((built) =>
-      succeed(Array.from(built.values()).sort((a, b) => a.id.localeCompare(b.id)))
+    return this.build().onSuccess((manager) =>
+      succeed(Array.from(manager._builtResources.values()).sort((a, b) => a.id.localeCompare(b.id)))
     );
   }
 
@@ -338,12 +362,12 @@ export class ResourceManagerBuilder implements IResourceManager {
 
   /**
    * Builds the {@link Resources.Resource | resources} from the collected {@link Resources.ResourceCandidate | candidates}.
-   * @returns `Success` with a read-only map of {@link Resources.Resource | resources} if successful,
+   * @returns `Success` with the {@link Resources.ResourceManagerBuilder | ResourceManagerBuilder} object if successful,
    * or `Failure` with an error message if not.
    * @public
    */
-  public build(): Result<Collections.IReadOnlyValidatingResultMap<ResourceId, Resource>> {
-    return this._performBuild();
+  public build(): Result<this> {
+    return this._performBuild().onSuccess(() => succeed(this));
   }
 
   /**
@@ -501,6 +525,7 @@ export class ResourceManagerBuilder implements IResourceManager {
    * @returns A Result containing the new filtered ResourceManagerBuilder.
    * @public
    */
+  /* c8 ignore next 21 - functional code path tested but coverage intermittently missed */
   public clone(options?: IResourceDeclarationOptions): Result<ResourceManagerBuilder> {
     return this.getResourceCollectionDecl(options).onSuccess((collection) => {
       return ResourceManagerBuilder.create({

@@ -42,6 +42,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[\_numCandidates?](./ts-res.runtime.compiledresourcecollection._numcandidates.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
 [builtResources](./ts-res.runtime.compiledresourcecollection.builtresources.md)
 
 
@@ -52,7 +73,7 @@ Description
 
 </td><td>
 
-Collections.IReadOnlyResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [IResource](./ts-res.runtime.iresource.md)<!-- -->&gt;
+Collections.IReadOnlyValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [IResource](./ts-res.runtime.iresource.md)<!-- -->&gt;
 
 
 </td><td>
@@ -115,6 +136,48 @@ A read-only result map of all built resources, keyed by resource ID. Resources a
 
 
 </td><td>
+
+
+</td></tr>
+<tr><td>
+
+[numCandidates](./ts-res.runtime.compiledresourcecollection.numcandidates.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+The number of candidates in this resource manager.
+
+
+</td></tr>
+<tr><td>
+
+[numResources](./ts-res.runtime.compiledresourcecollection.numresources.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+The number of resources in this resource manager.
 
 
 </td></tr>

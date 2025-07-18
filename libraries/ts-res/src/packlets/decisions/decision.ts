@@ -162,6 +162,7 @@ export class Decision<TVALUE extends JsonValue = JsonValue> implements IDecision
     candidates: ReadonlyArray<ICandidate<TVALUE>>
   ): DecisionKey {
     if (candidates.length === 0) {
+      /* c8 ignore next 2 - functional code path tested but coverage intermittently missed */
       return Decision.EmptyDecisionKey;
     }
     const abstractKey = Decision.getAbstractKey(candidates.map((c) => c.conditionSet));

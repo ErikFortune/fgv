@@ -41,6 +41,28 @@ Converts a [the parts that make up a condition token](./ts-res.helpers.iconditio
 </td></tr>
 <tr><td>
 
+[buildContextQualifierToken({ qualifier, value })](./ts-res.helpers.buildcontextqualifiertoken.md)
+
+
+</td><td>
+
+Converts a [the parts that make up a context qualifier token](./ts-res.helpers.icontexttokenparts.md) into a syntactically validated [context qualifier token](./ts-res.contextqualifiertoken.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[buildContextToken(parts)](./ts-res.helpers.buildcontexttoken.md)
+
+
+</td><td>
+
+Converts an array of [context qualifier token parts](./ts-res.helpers.icontexttokenparts.md) into a syntactically validated [context token](./ts-res.contexttoken.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [joinOptionalResourceIds(ids)](./ts-res.helpers.joinoptionalresourceids.md)
 
 
@@ -85,6 +107,28 @@ Parses a condition token string into its [parts](./ts-res.helpers.iconditiontoke
 </td></tr>
 <tr><td>
 
+[parseContextQualifierTokenParts(token)](./ts-res.helpers.parsecontextqualifiertokenparts.md)
+
+
+</td><td>
+
+Parses a context qualifier token string into its [parts](./ts-res.helpers.icontexttokenparts.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[parseContextTokenParts(token)](./ts-res.helpers.parsecontexttokenparts.md)
+
+
+</td><td>
+
+Parses a context token string into an array of [context qualifier token parts](./ts-res.helpers.icontexttokenparts.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [splitResourceId(id)](./ts-res.helpers.splitresourceid.md)
 
 
@@ -117,6 +161,17 @@ Description
 </td><td>
 
 The values needed to create a [condition token](./ts-res.conditiontoken.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IContextTokenParts](./ts-res.helpers.icontexttokenparts.md)
+
+
+</td><td>
+
+The values needed to create a [context qualifier token](./ts-res.contextqualifiertoken.md)<!-- -->.
 
 
 </td></tr>

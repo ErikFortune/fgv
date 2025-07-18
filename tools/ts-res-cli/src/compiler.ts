@@ -41,11 +41,17 @@ export interface IResourceInfo {
   context?: JsonObject;
 }
 
+export interface IFilteredManager {
+  original: TsRes.Resources.ResourceManagerBuilder;
+  manager: TsRes.Resources.ResourceManagerBuilder;
+  context?: JsonObject;
+}
+
 /**
  * Compiled resource blob
  */
 export interface IResourceBlob {
-  resources?: JsonObject;
+  resources?: TsRes.ResourceJson.Json.IResourceCollectionDecl;
   compiledCollection?: TsRes.ResourceJson.Compiled.ICompiledResourceCollection;
   metadata?: IResourceInfo;
 }
@@ -64,7 +70,7 @@ export class ResourceCompiler {
   /**
    * Compiles resources according to the configured options
    */
-  public async compile(): Promise<Result<void>> {
+  public async compile(): Promise<Result<IResourceBlob>> {
     try {
       if (this._options.debug) {
         console.error('Starting resource compilation...');
@@ -72,64 +78,51 @@ export class ResourceCompiler {
       }
 
       // Load and validate configuration
-      const configResult = await this._loadConfiguration();
-      if (configResult.isFailure()) {
-        return fail(`Failed to load configuration: ${configResult.message}`);
-      }
+      const config = (await this._loadConfiguration()).orThrow(
+        (err) => `Failed to load configuration: ${err}`
+      );
 
       if (this._options.debug) {
         console.error('Configuration loaded successfully');
       }
 
       // Load resources from input
-      const loadResult = await this._loadResources();
-      if (loadResult.isFailure()) {
-        return fail(`Failed to load resources: ${loadResult.message}`);
-      }
-
-      const manager = loadResult.value;
+      const original = (await this._loadResources(config)).orThrow(
+        (err) => `Failed to load resources: ${err}`
+      );
 
       if (this._options.verbose) {
-        console.error(
-          `Loaded ${manager.getAllResources().length} resources with ${
-            manager.getAllCandidates().length
-          } candidates`
-        );
+        console.error(`Loaded ${original.numResources} resources with ${original.numCandidates} candidates`);
       }
 
       // Apply context filtering if specified
-      const filteredResult = this._applyContextFiltering(manager);
-      if (filteredResult.isFailure()) {
-        return fail(`Failed to apply context filtering: ${filteredResult.message}`);
-      }
+      const filtered = this._applyFilters(original).orThrow(
+        (err) => `Failed to apply context filtering: ${err}`
+      );
 
-      if (this._options.verbose && this._options.context) {
+      if (this._options.verbose && filtered.manager !== filtered.original) {
         console.error(
-          `After context filtering: ${filteredResult.value.resources.length} resources, ${filteredResult.value.candidates.length} candidates`
+          `After context filtering: ${filtered.manager.numResources} resources, ${filtered.manager.numCandidates} candidates`
         );
       }
 
       // Generate output blob
-      const blobResult = await this._generateBlob(filteredResult.value, manager);
-      if (blobResult.isFailure()) {
-        return fail(`Failed to generate output blob: ${blobResult.message}`);
-      }
+      const blob = (await this._generateBlob(filtered)).orThrow(
+        (err) => `Failed to generate output blob: ${err}`
+      );
 
       if (this._options.debug) {
         console.error(`Generated ${this._options.format} format output blob`);
       }
 
       // Write output
-      const writeResult = await this._writeOutput(blobResult.value);
-      if (writeResult.isFailure()) {
-        return fail(`Failed to write output: ${writeResult.message}`);
-      }
+      (await this._writeOutput(blob)).orThrow((err) => `Failed to write output: ${err}`);
 
       if (this._options.debug) {
         console.error(`Output written to: ${this._options.output}`);
       }
 
-      return succeed(undefined);
+      return succeed(blob);
     } catch (error) {
       return fail(`Compilation failed: ${error}`);
     }
@@ -138,26 +131,30 @@ export class ResourceCompiler {
   /**
    * Validates resources without compilation
    */
-  public async validate(): Promise<Result<void>> {
+  public async validate(): Promise<Result<TsRes.Resources.ResourceManagerBuilder>> {
     try {
       // Load and validate configuration
-      const configResult = await this._loadConfiguration();
-      if (configResult.isFailure()) {
-        return fail(`Failed to load configuration: ${configResult.message}`);
-      }
+      const config = (await this._loadConfiguration()).orThrow(
+        (err) => `Failed to load configuration: ${err}`
+      );
 
-      const loadResult = await this._loadResources();
-      if (loadResult.isFailure()) {
-        return fail(`Validation failed: ${loadResult.message}`);
-      }
+      const manager = (await this._loadResources(config)).orThrow(
+        (err) => `Failed to load resources: ${err}`
+      );
+
+      const filtered = this._applyFilters(manager).orThrow(
+        (err) => `Failed to apply context filtering: ${err}`
+      );
 
       // Build all resources to trigger validation
-      const buildResult = loadResult.value.build();
-      if (buildResult.isFailure()) {
-        return fail(`Resource validation failed: ${buildResult.message}`);
-      }
-
-      return succeed(undefined);
+      return filtered.manager.build().onSuccess((manager) => {
+        if (this._options.verbose) {
+          console.error(
+            `Resource validation successful with ${manager.numResources} resources and ${manager.numCandidates} candidates`
+          );
+        }
+        return succeed(manager);
+      });
     } catch (error) {
       return fail(`Validation failed: ${error}`);
     }
@@ -169,24 +166,19 @@ export class ResourceCompiler {
   public async getInfo(): Promise<Result<IResourceInfo>> {
     try {
       // Load and validate configuration
-      const configResult = await this._loadConfiguration();
-      if (configResult.isFailure()) {
-        return fail(`Failed to load configuration: ${configResult.message}`);
-      }
+      const config = (await this._loadConfiguration()).orThrow(
+        (err) => `Failed to load configuration: ${err}`
+      );
 
-      const loadResult = await this._loadResources();
-      if (loadResult.isFailure()) {
-        return fail(`Failed to load resources: ${loadResult.message}`);
-      }
+      const manager = (await this._loadResources(config)).orThrow(
+        (err) => `Failed to load resources: ${err}`
+      );
 
-      const manager = loadResult.value;
-      const filteredResult = this._applyContextFiltering(manager);
-      if (filteredResult.isFailure()) {
-        return fail(`Failed to apply context filtering: ${filteredResult.message}`);
-      }
+      const filtered = this._applyFilters(manager).orThrow(
+        (err) => `Failed to apply context filtering: ${err}`
+      );
 
-      const info = this._generateResourceInfo(filteredResult.value, manager);
-      return succeed(info);
+      return succeed(this._generateResourceInfo(filtered));
     } catch (error) {
       return fail(`Failed to get resource info: ${error}`);
     }
@@ -195,7 +187,7 @@ export class ResourceCompiler {
   /**
    * Loads and validates the system configuration
    */
-  private async _loadConfiguration(): Promise<Result<void>> {
+  private async _loadConfiguration(): Promise<Result<TsRes.Config.Model.ISystemConfiguration>> {
     try {
       if (this._options.config) {
         // Load custom configuration from file
@@ -224,7 +216,7 @@ export class ResourceCompiler {
         }
       }
 
-      return succeed(undefined);
+      return succeed(this._systemConfiguration);
     } catch (error) {
       return fail(`Failed to load configuration: ${error}`);
     }
@@ -233,7 +225,9 @@ export class ResourceCompiler {
   /**
    * Loads resources from the input path using the configured system
    */
-  private async _loadResources(): Promise<Result<TsRes.Resources.ResourceManagerBuilder>> {
+  private async _loadResources(
+    config: TsRes.Config.Model.ISystemConfiguration
+  ): Promise<Result<TsRes.Resources.ResourceManagerBuilder>> {
     try {
       if (!this._systemConfiguration) {
         return fail('System configuration not loaded');
@@ -312,57 +306,29 @@ export class ResourceCompiler {
   }
 
   /**
-   * Applies context filtering to resources
+   * Applies filters to imported resources
    */
-  private _applyContextFiltering(manager: TsRes.Resources.ResourceManagerBuilder): Result<{
-    resources: ReadonlyArray<TsRes.Resources.ResourceBuilder>;
-    candidates: ReadonlyArray<TsRes.Resources.ResourceCandidate>;
-  }> {
-    try {
-      if (!this._options.context) {
-        return succeed({
-          resources: manager.getAllResources(),
-          candidates: manager.getAllCandidates()
+  private _applyFilters(original: TsRes.Resources.ResourceManagerBuilder): Result<IFilteredManager> {
+    if (this._options.contextFilter) {
+      const tokens = new TsRes.Context.ContextTokens(original.qualifiers);
+      return tokens.contextTokenToPartialContext(this._options.contextFilter).onSuccess((context) => {
+        return original.clone({ validatedFilterContext: context }).onSuccess((manager) => {
+          return succeed({ original, manager, context });
         });
-      }
-
-      const contextData = JSON.parse(this._options.context);
-      const context = TsRes.Context.Convert.validatedContextDecl.convert(contextData, {
-        qualifiers: manager.qualifiers
       });
-
-      if (context.isFailure()) {
-        return fail(`Invalid context: ${context.message}`);
-      }
-
-      const contextOptions: TsRes.Context.IContextMatchOptions = {
-        partialContextMatch: this._options.partialMatch
-      };
-
-      const resources = manager.getResourcesForContext(context.value, contextOptions);
-      const candidates = manager.getCandidatesForContext(context.value, contextOptions);
-
-      return succeed({ resources, candidates });
-    } catch (error) {
-      return fail(`Failed to apply context filtering: ${error}`);
     }
+    return succeed({ original, manager: original });
   }
 
   /**
    * Generates the output blob
    */
-  private async _generateBlob(
-    filtered: {
-      resources: ReadonlyArray<TsRes.Resources.ResourceBuilder>;
-      candidates: ReadonlyArray<TsRes.Resources.ResourceCandidate>;
-    },
-    manager: TsRes.Resources.ResourceManagerBuilder
-  ): Promise<Result<IResourceBlob>> {
+  private async _generateBlob(filtered: IFilteredManager): Promise<Result<IResourceBlob>> {
     try {
       if (this._options.format === 'compiled') {
-        return this._generateCompiledBlob(manager);
+        return this._generateCompiledBlob(filtered);
       } else {
-        return this._generateSourceBlob(filtered, manager);
+        return this._generateSourceBlob(filtered);
       }
     } catch (error) {
       return fail(`Failed to generate blob: ${error}`);
@@ -372,133 +338,59 @@ export class ResourceCompiler {
   /**
    * Generates a compiled resource collection blob
    */
-  private async _generateCompiledBlob(
-    manager: TsRes.Resources.ResourceManagerBuilder
-  ): Promise<Result<IResourceBlob>> {
-    try {
-      // Build all resources to ensure they're ready for compilation
-      const buildResult = manager.build();
-      if (buildResult.isFailure()) {
-        return fail(`Failed to build resources for compilation: ${buildResult.message}`);
-      }
-
-      // Get the compiled resource collection
-      const compiledResult = manager.getCompiledResourceCollection();
-      if (compiledResult.isFailure()) {
-        return fail(`Failed to get compiled resource collection: ${compiledResult.message}`);
-      }
-
+  private _generateCompiledBlob(filtered: IFilteredManager): Result<IResourceBlob> {
+    // Build all resources to ensure they're ready for compilation
+    return filtered.manager.getCompiledResourceCollection().onSuccess((compiled) => {
       const blob: IResourceBlob = {
-        compiledCollection: compiledResult.value
+        compiledCollection: compiled
       };
 
       if (this._options.includeMetadata) {
-        blob.metadata = this._generateResourceInfo(
-          {
-            resources: manager.getAllResources(),
-            candidates: manager.getAllCandidates()
-          },
-          manager
-        );
+        blob.metadata = this._generateResourceInfo(filtered);
       }
-
       return succeed(blob);
-    } catch (error) {
-      return fail(`Failed to generate compiled blob: ${error}`);
-    }
+    });
   }
 
   /**
    * Generates a source format blob (legacy format)
    */
-  private async _generateSourceBlob(
-    filtered: {
-      resources: ReadonlyArray<TsRes.Resources.ResourceBuilder>;
-      candidates: ReadonlyArray<TsRes.Resources.ResourceCandidate>;
-    },
-    manager: TsRes.Resources.ResourceManagerBuilder
-  ): Promise<Result<IResourceBlob>> {
-    try {
-      const resources: JsonObject = {};
-
-      // Build filtered resources
-      for (const resourceBuilder of filtered.resources) {
-        const built = resourceBuilder.build();
-        if (built.isFailure()) {
-          return fail(`Failed to build resource ${resourceBuilder.id}: ${built.message}`);
-        }
-
-        const resource = built.value;
-        const resourceData: JsonObject = {};
-
-        // Filter candidates based on context if specified
-        const candidatesToInclude = this._options.context
-          ? resource.getCandidatesForContext(
-              TsRes.Context.Convert.validatedContextDecl
-                .convert(JSON.parse(this._options.context), { qualifiers: manager.qualifiers })
-                .orThrow(),
-              { partialContextMatch: this._options.partialMatch }
-            )
-          : resource.candidates;
-
-        for (const candidate of candidatesToInclude) {
-          const conditionKey =
-            candidate.conditions.conditions.length > 0 ? candidate.conditions.toString() : 'default';
-          resourceData[conditionKey] = candidate.json;
-        }
-
-        resources[resource.id] = resourceData;
-      }
-
+  private _generateSourceBlob(filtered: IFilteredManager): Result<IResourceBlob> {
+    return filtered.manager.getResourceCollectionDecl().onSuccess((resources) => {
       const blob: IResourceBlob = { resources };
 
       if (this._options.includeMetadata) {
-        blob.metadata = this._generateResourceInfo(filtered, manager);
+        blob.metadata = this._generateResourceInfo(filtered);
       }
 
       return succeed(blob);
-    } catch (error) {
-      return fail(`Failed to generate source blob: ${error}`);
-    }
+    });
   }
 
   /**
    * Generates resource information
    */
-  private _generateResourceInfo(
-    filtered: {
-      resources: ReadonlyArray<TsRes.Resources.ResourceBuilder>;
-      candidates: ReadonlyArray<TsRes.Resources.ResourceCandidate>;
-    },
-    manager: TsRes.Resources.ResourceManagerBuilder
-  ): IResourceInfo {
+  private _generateResourceInfo(filtered: IFilteredManager): IResourceInfo {
     const resourceTypes = Array.from(
       new Set(
-        manager
+        filtered.manager
           .getAllCandidates()
           .map((c) => c.resourceType?.key)
           .filter(Boolean)
       )
     ) as string[];
 
-    const qualifiers = Array.from(manager.qualifiers.keys());
+    const qualifiers = Array.from(filtered.manager.qualifiers.keys());
 
     const info: IResourceInfo = {
-      totalResources: manager.getAllResources().length,
-      totalCandidates: manager.getAllCandidates().length,
-      filteredResources: filtered.resources.length,
-      filteredCandidates: filtered.candidates.length,
+      totalResources: filtered.original.numResources,
+      totalCandidates: filtered.original.numCandidates,
+      filteredResources: filtered.manager.numResources,
+      filteredCandidates: filtered.manager.numCandidates,
       resourceTypes,
-      qualifiers
+      qualifiers,
+      ...(filtered.context ? { context: filtered.context } : undefined)
     };
-
-    if (this._options.context) {
-      try {
-        info.context = JSON.parse(this._options.context);
-      } catch {
-        // Ignore parsing errors for metadata
-      }
-    }
 
     return info;
   }
@@ -520,22 +412,18 @@ export class ResourceCompiler {
         case 'compiled':
           // If metadata is included, write the full blob; otherwise, write just the compiled collection
           const compiledData = this._options.includeMetadata ? blob : blob.compiledCollection;
-          content = JSON.stringify(compiledData, null, this._options.minify ? 0 : 2);
+          content = JSON.stringify(compiledData, null, 2);
           break;
         case 'source':
-          content = JSON.stringify(blob, null, this._options.minify ? 0 : 2);
+          content = JSON.stringify(blob, null, 2);
           break;
         case 'js':
           const jsData = blob.compiledCollection || blob;
-          content = `module.exports = ${JSON.stringify(jsData, null, this._options.minify ? 0 : 2)};`;
+          content = `module.exports = ${JSON.stringify(jsData, null, 2)};`;
           break;
         case 'ts':
           const tsData = blob.compiledCollection || blob;
-          content = `export const resources = ${JSON.stringify(
-            tsData,
-            null,
-            this._options.minify ? 0 : 2
-          )} as const;`;
+          content = `export const resources = ${JSON.stringify(tsData, null, 2)} as const;`;
           break;
         case 'binary':
           // For binary format, we could use a more efficient serialization

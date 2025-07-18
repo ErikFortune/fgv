@@ -118,6 +118,28 @@ Determines whether a string is a valid [condition token](./ts-res.conditiontoken
 </td></tr>
 <tr><td>
 
+[isValidContextQualifierToken(token)](./ts-res.validate.isvalidcontextqualifiertoken.md)
+
+
+</td><td>
+
+Determines whether a string is a valid [context qualifier token](./ts-res.contextqualifiertoken.md)<!-- -->. A context qualifier token has the format: `<qualifierName>=<value>` or `<value>` Context qualifier tokens allow broader character set including commas for comma-separated values.
+
+
+</td></tr>
+<tr><td>
+
+[isValidContextToken(token)](./ts-res.validate.isvalidcontexttoken.md)
+
+
+</td><td>
+
+Determines whether a string is a valid context token. Context tokens are pipe-separated lists of context qualifier tokens.
+
+
+</td></tr>
+<tr><td>
+
 [isValidDecisionIndex(index)](./ts-res.validate.isvaliddecisionindex.md)
 
 
@@ -344,6 +366,28 @@ Converts a string to a [ConditionSetToken](./ts-res.conditionsettoken.md) if it 
 </td><td>
 
 Converts a string to a [ConditionToken](./ts-res.conditiontoken.md) if it is a valid condition token.
+
+
+</td></tr>
+<tr><td>
+
+[toContextQualifierToken(token)](./ts-res.validate.tocontextqualifiertoken.md)
+
+
+</td><td>
+
+Converts a string to a [ContextQualifierToken](./ts-res.contextqualifiertoken.md) if it is a valid context qualifier token.
+
+
+</td></tr>
+<tr><td>
+
+[toContextToken(token)](./ts-res.validate.tocontexttoken.md)
+
+
+</td><td>
+
+Converts a string to a [ContextToken](./ts-res.contexttoken.md) if it is a valid context token.
 
 
 </td></tr>

@@ -314,10 +314,10 @@ export class ReadOnlyResourceTreeRoot<T> implements IReadOnlyResourceTreeRoot<T>
               } else {
                 currentNode = currentNode.children[nodeName];
               }
-            } /* c8 ignore next 3 - defense in depth, not reachable without chicanery */ else if (
+            } /* c8 ignore next 4 - defense in depth, not reachable without chicanery */ else if (
               isResourceTreeLeafInit(currentNode)
             ) {
-              errors.addMessage(`${id}: Xpected a branch but found a leaf.`);
+              errors.addMessage(`${id}: Expected a branch but found a leaf.`);
               break;
             } /* c8 ignore next 3 - defense in depth, not reachable without chicanery */ else {
               errors.addMessage(`${id}: Unexpected structure in resource tree`);

@@ -9,5 +9,5 @@ A read-only result map of all built resources, keyed by resource ID. Resources a
 **Signature:**
 
 ```typescript
-readonly builtResources: Collections.IReadOnlyResultMap<ResourceId, IResource>;
+readonly builtResources: Collections.IReadOnlyValidatingResultMap<ResourceId, IResource>;
 ```

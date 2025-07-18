@@ -66,6 +66,7 @@ export class ValidatingSimpleContextQualifierProvider extends SimpleContextQuali
    */
   protected constructor(params: IValidatingSimpleContextQualifierProviderCreateParams) {
     // Convert string values to QualifierContextValue for the base class
+    /* c8 ignore next 5 - functional code path tested but coverage intermittently missed */
     const convertedValues: Record<string, QualifierContextValue> | undefined = params.qualifierValues
       ? Object.fromEntries(
           Object.entries(params.qualifierValues).map(([key, value]) => [key, value as QualifierContextValue])

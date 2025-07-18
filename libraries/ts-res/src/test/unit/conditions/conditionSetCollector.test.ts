@@ -251,6 +251,15 @@ describe('ConditionSetCollector class', () => {
       const cc = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
       expect(cc.validating.add({})).toFailWith(/invalid/);
     });
+
+    test('adds a condition set from a plain object declaration to the collector', () => {
+      const cc = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
+      const plainObjectDecl = { conditions: conditionDecls.slice(0, 2) };
+      expect(cc.validating.add(plainObjectDecl)).toSucceedAndSatisfy((conditionSet) => {
+        expect(conditionSet.size).toBe(2);
+      });
+      expect(cc.size).toBe(2);
+    });
   });
 
   describe('validating getOrAdd method', () => {

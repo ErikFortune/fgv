@@ -213,4 +213,46 @@ describe('common conditions', () => {
       expect(TsRes.Validate.toDecisionKey(key)).toFailWith(/not a valid decision key/i);
     }
   );
+
+  // Context Token tests
+  test.each(['language=en-US', 'language=en-US, de-DE', 'territory=US', 'role=admin', 'en-US', 'admin', ''])(
+    '%s is a valid context qualifier token',
+    (token) => {
+      expect(TsRes.Validate.isValidContextQualifierToken(token)).toBe(true);
+      expect(TsRes.Validate.toContextQualifierToken(token)).toSucceedWith(
+        token as TsRes.ContextQualifierToken
+      );
+    }
+  );
+
+  test.each(['language=', 'bad qualifier=value', 'language:en-US', '123invalid', 'language=value|another'])(
+    '%s is not a valid context qualifier token',
+    (token) => {
+      expect(TsRes.Validate.isValidContextQualifierToken(token)).toBe(false);
+      expect(TsRes.Validate.toContextQualifierToken(token)).toFailWith(
+        /not a valid context qualifier token/i
+      );
+    }
+  );
+
+  test.each([
+    'language=en-US|territory=US',
+    'language=en-US, de-DE|territory=US|role=admin',
+    'en-US|admin',
+    'language=en-US',
+    ''
+  ])('%s is a valid context token', (token) => {
+    expect(TsRes.Validate.isValidContextToken(token)).toBe(true);
+    expect(TsRes.Validate.toContextToken(token)).toSucceedWith(token as TsRes.ContextToken);
+  });
+
+  test.each([
+    'language=en-US|bad qualifier=value',
+    'language=en-US|',
+    'language=|territory=US',
+    'language=en-US,territory=US' // comma separator instead of pipe
+  ])('%s is not a valid context token', (token) => {
+    expect(TsRes.Validate.isValidContextToken(token)).toBe(false);
+    expect(TsRes.Validate.toContextToken(token)).toFailWith(/not a valid context token/i);
+  });
 });

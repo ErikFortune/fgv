@@ -119,6 +119,33 @@ describe('Decision', () => {
         expect(d.index).toBeUndefined();
       });
     });
+
+    test('creates a Decision from empty candidates array', () => {
+      expect(TsRes.Decisions.Decision.createDecision({ candidates: [] })).toSucceedAndSatisfy((d) => {
+        expect(d.candidates.length).toBe(0);
+        expect(d.key).toBe(TsRes.Decisions.Decision.EmptyDecisionKey);
+        expect(d.index).toBeUndefined();
+      });
+    });
+  });
+
+  describe('getKey static method', () => {
+    test('returns EmptyDecisionKey for empty candidates array', () => {
+      const key = TsRes.Decisions.Decision.getKey([]);
+      expect(key).toBe(TsRes.Decisions.Decision.EmptyDecisionKey);
+    });
+
+    test('returns correct key for candidates with values', () => {
+      const key = TsRes.Decisions.Decision.getKey(candidates);
+      const expectedAbstractKey = Array.from(candidates)
+        .sort(TsRes.Decisions.Candidate.compare)
+        .reverse()
+        .map((c) => c.conditionSet.toHash())
+        .join('+');
+      const expectedValueKey = Hash.Crc32Normalizer.crc32Hash(candidates.map((c) => JSON.stringify(c.value)));
+      const expectedKey = `${expectedAbstractKey}|${expectedValueKey}`;
+      expect(key).toBe(expectedKey);
+    });
   });
 
   describe('index methods', () => {

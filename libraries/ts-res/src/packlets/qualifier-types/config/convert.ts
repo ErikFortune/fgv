@@ -22,24 +22,8 @@
 
 /* eslint-disable @rushstack/typedef-var */
 
-import { Converter, Converters } from '@fgv/ts-utils';
+import { Converters } from '@fgv/ts-utils';
 import * as Model from './json';
-
-/**
- * Creates a `Converter` for {@link QualifierTypes.Config.IQualifierTypeConfig | QualifierTypeConfig} objects.
- * @param configConverter - A `Converter` for the configuration object.
- * @returns A `Converter` for {@link QualifierTypes.Config.IQualifierTypeConfig | QualifierTypeConfig} objects.
- * @public
- */
-export function qualifierTypeConfig<T, TC = unknown>(
-  configConverter: Converter<T, TC>
-): Converter<Model.IQualifierTypeConfig<T>, TC> {
-  return Converters.strictObject<Model.IQualifierTypeConfig<T>, TC>({
-    name: Converters.string,
-    systemType: Converters.string,
-    configuration: configConverter.optional()
-  });
-}
 
 /**
  * A `Converter` for {@link QualifierTypes.Config.ILanguageQualifierTypeConfig | LanguageQualifierTypeConfig} objects.

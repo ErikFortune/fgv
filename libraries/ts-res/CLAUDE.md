@@ -101,6 +101,8 @@ The library is organized into "packlets" - cohesive modules that group related f
 
 **This library follows the repository-wide testing philosophy outlined in the [root CLAUDE.md](../../CLAUDE.md).**
 
+**For comprehensive coverage guidelines and systematic approaches to achieving 100% test coverage, see [COVERAGE_GUIDELINES.md](../../COVERAGE_GUIDELINES.md).**
+
 ### ts-res-Specific Testing Patterns
 
 #### Testing ts-res Components

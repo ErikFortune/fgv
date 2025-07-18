@@ -22,7 +22,7 @@
 
 import { Command } from 'commander';
 import { Result, succeed, fail } from '@fgv/ts-utils';
-import { ICompileOptions, OutputFormat, CompilationMode } from './options';
+import { ICompileOptions, OutputFormat } from './options';
 
 /**
  * Command-line options for the compile command
@@ -32,11 +32,8 @@ interface ICompileCommandOptions {
   output: string;
   config?: string;
   context?: string;
+  contextFilter?: string;
   format: string;
-  mode: string;
-  partialMatch?: boolean;
-  sourceMaps?: boolean;
-  minify?: boolean;
   debug?: boolean;
   verbose?: boolean;
   quiet?: boolean;
@@ -63,7 +60,7 @@ interface IInfoCommandOptions {
   input: string;
   config?: string;
   context?: string;
-  partialMatch?: boolean;
+  contextFilter?: string;
   resourceTypes?: string;
   maxDistance?: number;
 }
@@ -104,11 +101,11 @@ export class TsResCliApp {
       .requiredOption('-o, --output <path>', 'Output file path')
       .option('--config <path>', 'System configuration file (JSON, ISystemConfiguration format)')
       .option('-c, --context <json>', 'Context filter for resources (JSON string)')
+      .option(
+        '--context-filter <token>',
+        'Context filter token (pipe-separated, e.g., "language=en-US|territory=US")'
+      )
       .option('-f, --format <format>', 'Output format', 'compiled')
-      .option('-m, --mode <mode>', 'Compilation mode', 'development')
-      .option('--partial-match', 'Enable partial context matching', false)
-      .option('--source-maps', 'Include source maps', false)
-      .option('--minify', 'Minify output', false)
       .option('--debug', 'Include debug information', false)
       .option('-v, --verbose', 'Verbose output', false)
       .option('-q, --quiet', 'Quiet output', false)
@@ -137,7 +134,10 @@ export class TsResCliApp {
       .requiredOption('-i, --input <path>', 'Input file or directory path')
       .option('--config <path>', 'System configuration file (JSON, ISystemConfiguration format)')
       .option('-c, --context <json>', 'Context filter for resources (JSON string)')
-      .option('--partial-match', 'Enable partial context matching', false)
+      .option(
+        '--context-filter <token>',
+        'Context filter token (pipe-separated, e.g., "language=en-US|territory=US")'
+      )
       .option('--resource-types <types>', 'Resource type filter (comma-separated)')
       .option('--max-distance <number>', 'Maximum distance for language matching', parseInt)
       .action(async (options) => {
@@ -177,10 +177,6 @@ export class TsResCliApp {
       output: '', // Not used for validation
       config: options.config,
       format: 'compiled',
-      mode: 'development',
-      partialMatch: false,
-      sourceMaps: false,
-      minify: false,
       debug: false,
       verbose: options.verbose || false,
       quiet: options.quiet || false,
@@ -205,21 +201,33 @@ export class TsResCliApp {
    * Handles the info command
    */
   private async _handleInfoCommand(options: IInfoCommandOptions): Promise<void> {
+    // Convert JSON context to contextFilter if provided
+    let contextFilter = options.contextFilter;
+    if (options.context && !contextFilter) {
+      try {
+        const contextObj = JSON.parse(options.context);
+        const tokens: string[] = [];
+        for (const [key, value] of Object.entries(contextObj)) {
+          tokens.push(`${key}=${value}`);
+        }
+        contextFilter = tokens.join('|');
+      } catch (error) {
+        console.error(`Error: Invalid context JSON: ${error}`);
+        process.exit(1);
+      }
+    }
+
     const infoOptions: ICompileOptions = {
       input: options.input,
       output: '', // Not used for info
       config: options.config,
       format: 'compiled',
-      mode: 'development',
-      partialMatch: options.partialMatch || false,
-      sourceMaps: false,
-      minify: false,
       debug: false,
       verbose: false,
       quiet: false,
       validate: false,
       includeMetadata: true,
-      context: options.context,
+      contextFilter,
       resourceTypes: options.resourceTypes,
       maxDistance: options.maxDistance
     };
@@ -245,21 +253,27 @@ export class TsResCliApp {
         return fail(`Invalid format: ${format}`);
       }
 
-      const mode = options.mode as CompilationMode;
-      if (!['development', 'production'].includes(mode)) {
-        return fail(`Invalid mode: ${mode}`);
+      // Convert JSON context to contextFilter if provided
+      let contextFilter = options.contextFilter;
+      if (options.context && !contextFilter) {
+        try {
+          const contextObj = JSON.parse(options.context);
+          const tokens: string[] = [];
+          for (const [key, value] of Object.entries(contextObj)) {
+            tokens.push(`${key}=${value}`);
+          }
+          contextFilter = tokens.join('|');
+        } catch (error) {
+          return fail(`Invalid context JSON: ${error}`);
+        }
       }
 
       const compileOptions: ICompileOptions = {
         input: options.input,
         output: options.output,
         config: options.config,
-        context: options.context,
+        contextFilter,
         format,
-        mode,
-        partialMatch: options.partialMatch || false,
-        sourceMaps: options.sourceMaps || false,
-        minify: options.minify || false,
         debug: options.debug || false,
         verbose: options.verbose || false,
         quiet: options.quiet || false,

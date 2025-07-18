@@ -59,6 +59,19 @@ describe('SimpleContextQualifierProvider class', () => {
       );
     });
 
+    test('handles constructor failures gracefully', () => {
+      // Test with invalid qualifier values to trigger constructor failure
+      const invalidValues: Record<string, TsRes.QualifierContextValue> = {};
+      invalidValues['invalid-name!'] = 'invalid' as TsRes.QualifierContextValue;
+
+      expect(
+        TsRes.Runtime.SimpleContextQualifierProvider.create({
+          qualifiers,
+          qualifierValues: invalidValues
+        })
+      ).toFail();
+    });
+
     test('creates a SimpleContextQualifierProvider with initial qualifier values', () => {
       const initialValues = {
         language: 'en-US' as TsRes.QualifierContextValue,
@@ -151,9 +164,15 @@ describe('SimpleContextQualifierProvider class', () => {
       expect(provider.get([] as unknown as TsRes.QualifierName)).toFailWith(/Invalid qualifier parameter/);
     });
 
+    test('handles _resolveQualifierName failure in get method', () => {
+      // Test with a mock object that has name but causes resolution failure
+      const mockQualifier = { name: 'nonexistent' as TsRes.QualifierName };
+      expect(provider.get(mockQualifier as unknown as TsRes.Qualifiers.Qualifier)).toFailWith(/not found/);
+    });
+
     test('fails with object that looks like qualifier but is not', () => {
       const fakeQualifier = { name: 'fake' };
-      expect(provider.get(fakeQualifier as unknown as TsRes.Qualifiers.Qualifier)).toFail();
+      expect(provider.get(fakeQualifier as unknown as TsRes.Qualifiers.Qualifier)).toFailWith(/not found/);
     });
   });
 
@@ -190,6 +209,14 @@ describe('SimpleContextQualifierProvider class', () => {
         /Invalid qualifier parameter/
       );
       expect(provider.getValidated(99 as TsRes.QualifierIndex)).toFailWith(/Qualifier not found at index/);
+    });
+
+    test('handles _resolveQualifierName failure in getValidated method', () => {
+      // Test with a mock object that has name but causes resolution failure
+      const mockQualifier = { name: 'nonexistent' as TsRes.QualifierName };
+      expect(provider.getValidated(mockQualifier as unknown as TsRes.Qualifiers.Qualifier)).toFailWith(
+        /getValidated not yet implemented/
+      );
     });
   });
 
@@ -352,6 +379,149 @@ describe('SimpleContextQualifierProvider class', () => {
       const provider = TsRes.Runtime.SimpleContextQualifierProvider.create({ qualifiers }).orThrow();
       expect(provider.qualifiers).toBe(qualifiers);
       expect(provider.qualifiers.size).toBe(3);
+    });
+  });
+
+  describe('_resolveQualifierName method coverage', () => {
+    let provider: TsRes.Runtime.SimpleContextQualifierProvider;
+
+    beforeEach(() => {
+      provider = TsRes.Runtime.SimpleContextQualifierProvider.create({
+        qualifiers,
+        qualifierValues: {
+          language: 'en-US' as TsRes.QualifierContextValue,
+          territory: 'US' as TsRes.QualifierContextValue
+        }
+      }).orThrow();
+    });
+
+    test('resolves string parameter type correctly', () => {
+      // This tests the string branch in _resolveQualifierName (lines 199-200)
+      expect(provider.get('language' as TsRes.QualifierName)).toSucceedWith(
+        'en-US' as TsRes.QualifierContextValue
+      );
+    });
+
+    test('resolves number parameter type correctly', () => {
+      // This tests the number branch in _resolveQualifierName (lines 212-217)
+      expect(provider.get(0 as TsRes.QualifierIndex)).toSucceedWith('en-US' as TsRes.QualifierContextValue);
+    });
+
+    test('resolves object parameter type correctly', () => {
+      // This tests the object branch in _resolveQualifierName (lines 203-208)
+      const languageQualifier = qualifiers.getByNameOrToken('language').orThrow();
+      expect(provider.get(languageQualifier)).toSucceedWith('en-US' as TsRes.QualifierContextValue);
+    });
+
+    test('fails with invalid parameter that falls through to final error', () => {
+      // This tests the final error case in _resolveQualifierName (line 220)
+      expect(provider.get(true as unknown as TsRes.QualifierName)).toFailWith(/Invalid qualifier parameter/);
+      expect(provider.get(function () {} as unknown as TsRes.QualifierName)).toFailWith(
+        /Invalid qualifier parameter/
+      );
+    });
+
+    test('fails with number parameter for non-existent index', () => {
+      // This tests the number branch failure case in _resolveQualifierName (line 217)
+      expect(provider.get(999 as TsRes.QualifierIndex)).toFailWith(/Qualifier not found at index/);
+    });
+
+    test('covers successful paths in _resolveQualifierName', () => {
+      // Test successful string resolution (line 199)
+      expect(provider.get('language' as TsRes.QualifierName)).toSucceedWith(
+        'en-US' as TsRes.QualifierContextValue
+      );
+
+      // Test successful object resolution (line 208)
+      const languageQualifier = qualifiers.getByNameOrToken('language').orThrow();
+      expect(provider.get(languageQualifier)).toSucceedWith('en-US' as TsRes.QualifierContextValue);
+
+      // Test successful number resolution (line 215)
+      expect(provider.get(0 as TsRes.QualifierIndex)).toSucceedWith('en-US' as TsRes.QualifierContextValue);
+    });
+  });
+
+  describe('comprehensive get method parameter testing', () => {
+    let provider: TsRes.Runtime.SimpleContextQualifierProvider;
+
+    beforeEach(() => {
+      provider = TsRes.Runtime.SimpleContextQualifierProvider.create({
+        qualifiers,
+        qualifierValues: {
+          language: 'en-US' as TsRes.QualifierContextValue,
+          territory: 'US' as TsRes.QualifierContextValue
+        }
+      }).orThrow();
+    });
+
+    test('handles string parameter (QualifierName) - covers lines 199-200', () => {
+      // Test successful string parameter resolution
+      expect(provider.get('language' as TsRes.QualifierName)).toSucceedWith(
+        'en-US' as TsRes.QualifierContextValue
+      );
+      expect(provider.get('territory' as TsRes.QualifierName)).toSucceedWith(
+        'US' as TsRes.QualifierContextValue
+      );
+    });
+
+    test('handles number parameter (QualifierIndex) - covers lines 212-217', () => {
+      // Test successful number parameter resolution
+      expect(provider.get(0 as TsRes.QualifierIndex)).toSucceedWith('en-US' as TsRes.QualifierContextValue);
+      expect(provider.get(1 as TsRes.QualifierIndex)).toSucceedWith('US' as TsRes.QualifierContextValue);
+
+      // Test failed number parameter resolution - covers lines 101-102 via line 217
+      expect(provider.get(999 as TsRes.QualifierIndex)).toFailWith(/Qualifier not found at index/);
+    });
+
+    test('handles object parameter (Qualifier) - covers lines 203-208', () => {
+      // Test successful object parameter resolution
+      const languageQualifier = qualifiers.getByNameOrToken('language').orThrow();
+      expect(provider.get(languageQualifier)).toSucceedWith('en-US' as TsRes.QualifierContextValue);
+    });
+
+    test('handles invalid parameter types - covers lines 101-102 via line 220', () => {
+      // Test with invalid parameter types that cause _resolveQualifierName to fail
+      expect(provider.get(true as unknown as TsRes.QualifierName)).toFailWith(/Invalid qualifier parameter/);
+      expect(provider.get(null as unknown as TsRes.QualifierName)).toFailWith(/Invalid qualifier parameter/);
+      expect(provider.get(undefined as unknown as TsRes.QualifierName)).toFailWith(
+        /Invalid qualifier parameter/
+      );
+      expect(provider.get([] as unknown as TsRes.QualifierName)).toFailWith(/Invalid qualifier parameter/);
+    });
+  });
+
+  describe('edge cases for complete coverage', () => {
+    test('covers all branches in has method', () => {
+      const provider = TsRes.Runtime.SimpleContextQualifierProvider.create({ qualifiers }).orThrow();
+      // Test the succeed return path (line 131)
+      expect(provider.has('nonexistent' as TsRes.QualifierName)).toSucceedWith(false);
+    });
+
+    test('covers all branches in getNames method', () => {
+      const provider = TsRes.Runtime.SimpleContextQualifierProvider.create({ qualifiers }).orThrow();
+      // Test the succeed return path (line 140)
+      expect(provider.getNames()).toSucceedWith([]);
+    });
+
+    test('covers all branches in remove method', () => {
+      const provider = TsRes.Runtime.SimpleContextQualifierProvider.create({
+        qualifiers,
+        qualifierValues: {
+          language: 'en-US' as TsRes.QualifierContextValue
+        }
+      }).orThrow();
+
+      // Test the onSuccess callback path (lines 164-167)
+      expect(provider.remove('language' as TsRes.QualifierName)).toSucceedWith(
+        'en-US' as TsRes.QualifierContextValue
+      );
+      expect(provider.size).toBe(0);
+    });
+
+    test('covers size property getter', () => {
+      const provider = TsRes.Runtime.SimpleContextQualifierProvider.create({ qualifiers }).orThrow();
+      // Test the size getter (line 176)
+      expect(provider.size).toBe(0);
     });
   });
 });

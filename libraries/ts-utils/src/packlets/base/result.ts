@@ -58,15 +58,15 @@ export type ResultValueType<T> = T extends Result<infer TV> ? TV : never;
 export type ErrorFormatter<TD = unknown> = (message: string, detail?: TD) => string;
 
 /**
- * Simple logger interface used by {@link IResult.orThrow}.
+ * Simple logger interface used by {@link IResult.(orThrow:1) | orThrow(logger)} and {@link IResult.(orThrow:2) | orThrow(formatter)}.
  * @public
  */
-export interface IResultLogger {
+export interface IResultLogger<TD = unknown> {
   /**
    * Log an error message.
    * @param message - The message to be logged.
    */
-  error(message: string): void;
+  error(message: string, detail?: TD): void;
 }
 
 /**
@@ -161,7 +161,7 @@ export interface IResult<T> {
    * error will also be reported.
    * @returns The return value, if the operation was successful.
    * @throws The error message if the operation failed.
-   * @deprecated Use {@link IResult.orThrow | orThrow} instead.
+   * @deprecated Use {@link IResult.(orThrow:1) | orThrow(logger)} or {@link IResult.(orThrow:2) | orThrow(formatter)} instead.
    */
   getValueOrThrow(logger?: IResultLogger): T;
 
@@ -187,8 +187,19 @@ export interface IResult<T> {
    * error will also be reported.
    * @returns The return value, if the operation was successful.
    * @throws The error message if the operation failed.
+   * {@label logger}
    */
   orThrow(logger?: IResultLogger): T;
+
+  /**
+   * Gets the value associated with a successful {@link IResult | result},
+   * or throws the error message if the corresponding operation failed.
+   * @param cb - The {@link ErrorFormatter | error formatter} to be called in the event of failure.
+   * @returns The return value, if the operation was successful.
+   * @throws The error message if the operation failed.
+   * {@label formatter}
+   */
+  orThrow(cb: ErrorFormatter): T;
 
   /**
    * Gets the value associated with a successful {@link IResult | result},
@@ -329,9 +340,15 @@ export class Success<T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.orThrow}
+   * {@inheritdoc IResult.(orThrow:1)}
    */
-  public orThrow(__logger?: IResultLogger): T {
+  public orThrow(logger?: IResultLogger): T;
+
+  /**
+   * {@inheritdoc IResult.(orThrow:2)}
+   */
+  public orThrow(cb: ErrorFormatter): T;
+  public orThrow(__logger?: IResultLogger | ErrorFormatter): T {
     return this._value;
   }
 
@@ -349,7 +366,7 @@ export class Success<T> implements IResult<T> {
 
   /**
    * {@inheritdoc IResult.getValueOrThrow}
-   * @deprecated Use {@link Success.orThrow | orThrow} instead.
+   * @deprecated Use {@link Success.(orThrow:1) | orThrow(logger)} or {@link Success.(orThrow:2) | orThrow(formatter)} instead.
    */
   public getValueOrThrow(__logger?: IResultLogger): T {
     return this._value;
@@ -465,11 +482,21 @@ export class Failure<T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.orThrow}
+   * {@inheritdoc IResult.(orThrow:1)}
    */
-  public orThrow(logger?: IResultLogger): never {
-    if (logger !== undefined) {
-      logger.error(this._message);
+  public orThrow(logger?: IResultLogger): never;
+
+  /**
+   * {@inheritdoc IResult.(orThrow:2)}
+   */
+  public orThrow(cb: ErrorFormatter): never;
+  public orThrow(logOrFormat?: IResultLogger | ErrorFormatter): never {
+    if (logOrFormat !== undefined) {
+      if (typeof logOrFormat === 'function') {
+        throw new Error(logOrFormat(this._message));
+      } else {
+        logOrFormat.error(this._message);
+      }
     }
     throw new Error(this._message);
   }
@@ -488,7 +515,7 @@ export class Failure<T> implements IResult<T> {
 
   /**
    * {@inheritdoc IResult.getValueOrThrow}
-   * @deprecated Use {@link Failure.orThrow | orThrow} instead.
+   * @deprecated Use {@link Failure.(orThrow:1) | orThrow(logger)} or {@link Failure.(orThrow:2) | orThrow(formatter)} instead.
    */
   public getValueOrThrow(logger?: IResultLogger): never {
     if (logger !== undefined) {
@@ -781,6 +808,19 @@ export class DetailedFailure<T, TD> extends Failure<T> {
    */
   public withErrorFormat(cb: ErrorFormatter<TD>): DetailedResult<T, TD> {
     return failWithDetail(cb(this._message, this._detail), this._detail);
+  }
+
+  public orThrow(logOrFormat?: IResultLogger<TD> | ErrorFormatter<TD>): never;
+  public orThrow(cb: ErrorFormatter): never;
+  public orThrow(logOrFormat?: IResultLogger<TD> | ErrorFormatter<TD>): never {
+    if (logOrFormat !== undefined) {
+      if (typeof logOrFormat === 'function') {
+        throw new Error(logOrFormat(this._message, this._detail));
+      } else {
+        logOrFormat.error(this._message, this._detail);
+      }
+    }
+    throw new Error(this._message);
   }
 
   /**

@@ -34,8 +34,17 @@ describe('ResourceResolver class', () => {
   let contextProvider: TsRes.Runtime.ValidatingSimpleContextQualifierProvider;
   let builderResolver: TsRes.Runtime.ResourceResolver;
   let collectionResolver: TsRes.Runtime.ResourceResolver;
+  let mockListener: jest.MockedObjectDeep<TsRes.Runtime.IResourceResolverCacheListener>;
 
   beforeEach(() => {
+    // Set up mock listener
+    mockListener = {
+      onCacheHit: jest.fn(),
+      onCacheMiss: jest.fn(),
+      onCacheError: jest.fn(),
+      onCacheClear: jest.fn()
+    };
+
     // Set up qualifier types
     qualifierTypes = TsRes.QualifierTypes.QualifierTypeCollector.create({
       qualifierTypes: [
@@ -334,6 +343,278 @@ describe('ResourceResolver class', () => {
         expect(resolver.contextQualifierProvider).toBe(contextProvider);
       });
     });
+
+    test('creates a runtime resource resolver with listener', () => {
+      expect(
+        TsRes.Runtime.ResourceResolver.create({
+          resourceManager,
+          qualifierTypes,
+          contextQualifierProvider: contextProvider,
+          listener: mockListener
+        })
+      ).toSucceedAndSatisfy((resolver) => {
+        expect(resolver.resourceManager).toBe(resourceManager);
+        expect(resolver.qualifierTypes).toBe(qualifierTypes);
+        expect(resolver.contextQualifierProvider).toBe(contextProvider);
+      });
+    });
+
+    test('creates a runtime resource resolver with NoOpResourceResolverCacheListener', () => {
+      const noOpListener = new TsRes.Runtime.NoOpResourceResolverCacheListener();
+      expect(
+        TsRes.Runtime.ResourceResolver.create({
+          resourceManager,
+          qualifierTypes,
+          contextQualifierProvider: contextProvider,
+          listener: noOpListener
+        })
+      ).toSucceedAndSatisfy((resolver) => {
+        expect(resolver.resourceManager).toBe(resourceManager);
+        expect(resolver.qualifierTypes).toBe(qualifierTypes);
+        expect(resolver.contextQualifierProvider).toBe(contextProvider);
+      });
+    });
+  });
+
+  describe('cache listener functionality', () => {
+    let resolverWithListener: TsRes.Runtime.ResourceResolver;
+
+    beforeEach(() => {
+      // Create a resolver with the mock listener
+      resolverWithListener = TsRes.Runtime.ResourceResolver.create({
+        resourceManager,
+        qualifierTypes,
+        contextQualifierProvider: contextProvider,
+        listener: mockListener
+      }).orThrow();
+    });
+
+    describe('onCacheMiss callbacks', () => {
+      test('calls onCacheMiss for condition cache miss', () => {
+        expect(resourceManager.conditions.getAt(0)).toSucceedAndSatisfy((condition) => {
+          expect(resolverWithListener.resolveCondition(condition)).toSucceed();
+          expect(mockListener.onCacheMiss).toHaveBeenCalledWith('condition', condition.index);
+        });
+      });
+
+      test('calls onCacheMiss for condition set cache miss', () => {
+        expect(resourceManager.conditionSets.getAt(0)).toSucceedAndSatisfy((conditionSet) => {
+          expect(resolverWithListener.resolveConditionSet(conditionSet)).toSucceed();
+          expect(mockListener.onCacheMiss).toHaveBeenCalledWith('conditionSet', conditionSet.index);
+        });
+      });
+
+      test('calls onCacheMiss for decision cache miss', () => {
+        expect(resourceManager.decisions.getAt(0)).toSucceedAndSatisfy((decision) => {
+          expect(resolverWithListener.resolveDecision(decision)).toSucceed();
+          expect(mockListener.onCacheMiss).toHaveBeenCalledWith('decision', decision.index);
+        });
+      });
+
+      test('calls onCacheMiss for condition set when condition NoMatch causes failure', () => {
+        // Change context to cause condition NoMatch
+        expect(contextProvider.validating.set('language', 'de')).toSucceed();
+
+        expect(resourceManager.conditionSets.getAt(0)).toSucceedAndSatisfy((conditionSet) => {
+          expect(resolverWithListener.resolveConditionSet(conditionSet)).toSucceed();
+          expect(mockListener.onCacheMiss).toHaveBeenCalledWith('conditionSet', conditionSet.index);
+        });
+      });
+    });
+
+    describe('onCacheHit callbacks', () => {
+      test('calls onCacheHit for condition cache hit', () => {
+        expect(resourceManager.conditions.getAt(0)).toSucceedAndSatisfy((condition) => {
+          // First call - cache miss
+          expect(resolverWithListener.resolveCondition(condition)).toSucceed();
+          expect(mockListener.onCacheMiss).toHaveBeenCalledWith('condition', condition.index);
+
+          // Reset mock
+          mockListener.onCacheMiss.mockClear();
+
+          // Second call - cache hit
+          expect(resolverWithListener.resolveCondition(condition)).toSucceed();
+          expect(mockListener.onCacheHit).toHaveBeenCalledWith('condition', condition.index);
+          expect(mockListener.onCacheMiss).not.toHaveBeenCalled();
+        });
+      });
+
+      test('calls onCacheHit for condition set cache hit', () => {
+        expect(resourceManager.conditionSets.getAt(0)).toSucceedAndSatisfy((conditionSet) => {
+          // First call - cache miss
+          expect(resolverWithListener.resolveConditionSet(conditionSet)).toSucceed();
+          expect(mockListener.onCacheMiss).toHaveBeenCalledWith('conditionSet', conditionSet.index);
+
+          // Reset mock
+          mockListener.onCacheMiss.mockClear();
+
+          // Second call - cache hit
+          expect(resolverWithListener.resolveConditionSet(conditionSet)).toSucceed();
+          expect(mockListener.onCacheHit).toHaveBeenCalledWith('conditionSet', conditionSet.index);
+          expect(mockListener.onCacheMiss).not.toHaveBeenCalled();
+        });
+      });
+
+      test('calls onCacheHit for decision cache hit', () => {
+        expect(resourceManager.decisions.getAt(0)).toSucceedAndSatisfy((decision) => {
+          // First call - cache miss
+          expect(resolverWithListener.resolveDecision(decision)).toSucceed();
+          expect(mockListener.onCacheMiss).toHaveBeenCalledWith('decision', decision.index);
+
+          // Reset mock
+          mockListener.onCacheMiss.mockClear();
+
+          // Second call - cache hit
+          expect(resolverWithListener.resolveDecision(decision)).toSucceed();
+          expect(mockListener.onCacheHit).toHaveBeenCalledWith('decision', decision.index);
+          expect(mockListener.onCacheMiss).not.toHaveBeenCalled();
+        });
+      });
+    });
+
+    describe('onCacheError callbacks', () => {
+      test('calls onCacheError for condition cache error', () => {
+        expect(resourceManager.conditions.getAt(0)).toSucceedAndSatisfy((condition) => {
+          // Clear context to cause qualifier lookup failure
+          contextProvider.clear();
+
+          expect(resolverWithListener.resolveCondition(condition)).toFail();
+          expect(mockListener.onCacheError).toHaveBeenCalledWith('condition', condition.index);
+        });
+      });
+
+      test('demonstrates that condition set gracefully handles condition resolution failure', () => {
+        // Create a fresh resolver with listener for this specific test
+        const testResolver = TsRes.Runtime.ResourceResolver.create({
+          resourceManager,
+          qualifierTypes,
+          contextQualifierProvider: contextProvider,
+          listener: mockListener
+        }).orThrow();
+
+        // Reset the mock to ensure clean state
+        mockListener.onCacheError.mockClear();
+
+        expect(resourceManager.conditionSets.getAt(0)).toSucceedAndSatisfy((conditionSet) => {
+          // Clear context to cause condition resolution failure
+          contextProvider.clear();
+
+          // Note: The condition set resolves successfully but with no matches when conditions fail
+          // This means the error path on line 250 is only triggered in very specific edge cases
+          // that are difficult to reproduce in normal testing scenarios
+          expect(testResolver.resolveConditionSet(conditionSet)).toSucceedAndSatisfy((result) => {
+            expect(result.success).toBe(true);
+            expect(result.matches).toEqual([]);
+          });
+        });
+      });
+
+      test('demonstrates that decision gracefully handles condition set resolution failure', () => {
+        // Create a fresh resolver with listener for this specific test
+        const testResolver = TsRes.Runtime.ResourceResolver.create({
+          resourceManager,
+          qualifierTypes,
+          contextQualifierProvider: contextProvider,
+          listener: mockListener
+        }).orThrow();
+
+        // Reset the mock to ensure clean state
+        mockListener.onCacheError.mockClear();
+
+        expect(resourceManager.decisions.getAt(0)).toSucceedAndSatisfy((decision) => {
+          // Clear context to cause condition set resolution failure
+          contextProvider.clear();
+
+          // Note: The decision resolves successfully but with no instance indices when condition sets fail
+          // This means the error path on line 305 is only triggered in very specific edge cases
+          // that are difficult to reproduce in normal testing scenarios
+          expect(testResolver.resolveDecision(decision)).toSucceedAndSatisfy((result) => {
+            expect(result.success).toBe(true);
+            if (result.success) {
+              expect(result.instanceIndices).toEqual([]);
+            }
+          });
+        });
+      });
+    });
+
+    describe('onCacheClear callbacks', () => {
+      test('calls onCacheClear for all cache types when clearing cache', () => {
+        resolverWithListener.clearConditionCache();
+
+        expect(mockListener.onCacheClear).toHaveBeenCalledWith('condition');
+        expect(mockListener.onCacheClear).toHaveBeenCalledWith('conditionSet');
+        expect(mockListener.onCacheClear).toHaveBeenCalledWith('decision');
+        expect(mockListener.onCacheClear).toHaveBeenCalledTimes(3);
+      });
+    });
+
+    describe('no listener scenarios', () => {
+      test('resolver works without listener (undefined)', () => {
+        const resolverWithoutListener = TsRes.Runtime.ResourceResolver.create({
+          resourceManager,
+          qualifierTypes,
+          contextQualifierProvider: contextProvider
+          // No listener property
+        }).orThrow();
+
+        expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+          expect(resolverWithoutListener.resolveResource(resource)).toSucceed();
+        });
+      });
+
+      test('resolver works with NoOpResourceResolverCacheListener', () => {
+        const noOpListener = new TsRes.Runtime.NoOpResourceResolverCacheListener();
+        const resolverWithNoOpListener = TsRes.Runtime.ResourceResolver.create({
+          resourceManager,
+          qualifierTypes,
+          contextQualifierProvider: contextProvider,
+          listener: noOpListener
+        }).orThrow();
+
+        expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+          expect(resolverWithNoOpListener.resolveResource(resource)).toSucceed();
+        });
+      });
+    });
+
+    describe('listener integration with resource resolution', () => {
+      test('listener receives callbacks during resource resolution', () => {
+        expect(resourceManager.getBuiltResource('greeting')).toSucceedAndSatisfy((resource) => {
+          // First resolution should generate cache misses
+          expect(resolverWithListener.resolveResource(resource)).toSucceed();
+
+          // Should have multiple cache miss calls due to condition, condition set, and decision resolution
+          expect(mockListener.onCacheMiss).toHaveBeenCalledWith('condition', expect.any(Number));
+          expect(mockListener.onCacheMiss).toHaveBeenCalledWith('conditionSet', expect.any(Number));
+          expect(mockListener.onCacheMiss).toHaveBeenCalledWith('decision', expect.any(Number));
+
+          // Reset mock
+          mockListener.onCacheMiss.mockClear();
+
+          // Second resolution should generate cache hits
+          expect(resolverWithListener.resolveResource(resource)).toSucceed();
+          expect(mockListener.onCacheHit).toHaveBeenCalledWith('decision', expect.any(Number));
+        });
+      });
+
+      test('listener receives callbacks during composed resource resolution', () => {
+        expect(resourceManager.getBuiltResource('composition-test')).toSucceedAndSatisfy((resource) => {
+          // First resolution should generate cache misses
+          expect(resolverWithListener.resolveComposedResourceValue(resource)).toSucceed();
+
+          // Should have cache miss calls
+          expect(mockListener.onCacheMiss).toHaveBeenCalled();
+
+          // Reset mock
+          mockListener.onCacheMiss.mockClear();
+
+          // Second resolution should generate cache hits
+          expect(resolverWithListener.resolveComposedResourceValue(resource)).toSucceed();
+          expect(mockListener.onCacheHit).toHaveBeenCalled();
+        });
+      });
+    });
   });
 
   describe('resolveResource method', () => {
@@ -547,6 +828,29 @@ describe('ResourceResolver class', () => {
       expect(resolver.conditionCacheSize).toBe(resourceManager.conditions.size);
       expect(resolver.conditionSetCacheSize).toBe(resourceManager.conditionSets.size);
       expect(resolver.decisionCacheSize).toBe(resourceManager.decisions.size);
+    });
+  });
+
+  describe('cache getter properties', () => {
+    testBothResolvers('returns condition cache array', (resolver, resolverName) => {
+      const conditionCache = resolver.conditionCache;
+      expect(conditionCache).toBeDefined();
+      expect(Array.isArray(conditionCache)).toBe(true);
+      expect(conditionCache.length).toBe(resolver.conditionCacheSize);
+    });
+
+    testBothResolvers('returns condition set cache array', (resolver, resolverName) => {
+      const conditionSetCache = resolver.conditionSetCache;
+      expect(conditionSetCache).toBeDefined();
+      expect(Array.isArray(conditionSetCache)).toBe(true);
+      expect(conditionSetCache.length).toBe(resolver.conditionSetCacheSize);
+    });
+
+    testBothResolvers('returns decision cache array', (resolver, resolverName) => {
+      const decisionCache = resolver.decisionCache;
+      expect(decisionCache).toBeDefined();
+      expect(Array.isArray(decisionCache)).toBe(true);
+      expect(decisionCache.length).toBe(resolver.decisionCacheSize);
     });
   });
 

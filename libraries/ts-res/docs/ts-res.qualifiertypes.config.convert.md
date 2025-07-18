@@ -4,32 +4,6 @@
 
 ## QualifierTypes.Config.Convert namespace
 
-## Functions
-
-<table><thead><tr><th>
-
-Function
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[qualifierTypeConfig(configConverter)](./ts-res.qualifiertypes.config.convert.qualifiertypeconfig.md)
-
-
-</td><td>
-
-Creates a `Converter` for [QualifierTypeConfig](./ts-res.qualifiertypes.config.iqualifiertypeconfig.md) objects.
-
-
-</td></tr>
-</tbody></table>
-
 ## Variables
 
 <table><thead><tr><th>

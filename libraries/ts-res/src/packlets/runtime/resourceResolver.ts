@@ -247,6 +247,7 @@ export class ResourceResolver {
       const scoreResult = this.resolveCondition(condition);
 
       if (scoreResult.isFailure()) {
+        /* c8 ignore next 2 - defensive coding: extreme internal error scenario not reachable in normal operation */
         this._listener?.onCacheError('conditionSet', conditionSetIndex);
         return fail(`Failed to resolve condition "${condition.key}": ${scoreResult.message}`);
       }
@@ -302,6 +303,7 @@ export class ResourceResolver {
       const conditionSetResult = this.resolveConditionSet(candidate.conditionSet);
 
       if (conditionSetResult.isFailure()) {
+        /* c8 ignore next 2 - defensive coding: extreme internal error scenario not reachable in normal operation */
         this._listener?.onCacheError('decision', decisionIndex);
         return fail(`${decision.key}: Failed to resolve condition set": ${conditionSetResult.message}`);
       }

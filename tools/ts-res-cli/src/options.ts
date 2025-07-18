@@ -26,11 +26,6 @@
 export type OutputFormat = 'compiled' | 'source' | 'js' | 'ts' | 'binary';
 
 /**
- * Compilation mode options
- */
-export type CompilationMode = 'development' | 'production';
-
-/**
  * Options for resource compilation
  */
 export interface ICompileOptions {
@@ -50,34 +45,14 @@ export interface ICompileOptions {
   config?: string;
 
   /**
-   * Context filter for resources (e.g., '{"language": "en-US"}')
+   * Context filter token (pipe-separated qualifier=value pairs, e.g., 'language=en-US|territory=US')
    */
-  context?: string;
+  contextFilter?: string;
 
   /**
    * Output format
    */
   format: OutputFormat;
-
-  /**
-   * Compilation mode
-   */
-  mode: CompilationMode;
-
-  /**
-   * Whether to enable partial context matching
-   */
-  partialMatch: boolean;
-
-  /**
-   * Whether to include source maps
-   */
-  sourceMaps: boolean;
-
-  /**
-   * Whether to minify output
-   */
-  minify: boolean;
 
   /**
    * Whether to include debug information

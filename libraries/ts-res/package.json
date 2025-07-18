@@ -10,9 +10,9 @@
     "test": "heft test --clean",
     "build-docs": "api-documenter markdown --input-folder ./temp --output-folder docs",
     "build-all": "rushx build; rushx build-docs",
-    "test-handles": "jest --runInBand --detectOpenHandles",
-    "clean-jest": "jest --clear-cache",
-    "coverage": "jest --coverage",
+    "test-handles": "rushx --detect-open-handles",
+    "clean-jest": "rushx test --clean",
+    "coverage": "rushx test --clean --max-workers 1 --detect-open-handles",
     "lint": "eslint src --ext .ts",
     "fixlint": "eslint src --ext .ts --fix"
   },
