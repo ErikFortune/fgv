@@ -624,7 +624,14 @@ declare namespace Config {
     export {
         Model_2 as Model,
         Convert_10 as Convert,
-        SystemConfiguration
+        SystemConfiguration,
+        DefaultQualifierTypes,
+        TerritoryPriorityQualifiers,
+        LanguagePriorityQualifiers,
+        DefaultResourceTypes,
+        TerritoryPrioritySystemConfiguration,
+        LanguagePrioritySystemConfiguration,
+        DefaultSystemConfiguration
     }
 }
 export { Config }
@@ -975,6 +982,15 @@ declare namespace Decisions {
     }
 }
 export { Decisions }
+
+// @public
+const DefaultQualifierTypes: ReadonlyArray<QualifierTypes.Config.ISystemQualifierTypeConfig>;
+
+// @public
+const DefaultResourceTypes: ReadonlyArray<ResourceTypes.Config.IResourceTypeConfig>;
+
+// @public
+const DefaultSystemConfiguration: ISystemConfiguration;
 
 // @public
 class FsItem implements IFsItemProps {
@@ -2595,6 +2611,12 @@ class JsonResourceType extends ResourceType<JsonObject> {
     validateDeclaration(props: IResourceCandidateValidationProperties): Result<JsonObject>;
 }
 
+// @public
+const LanguagePriorityQualifiers: ReadonlyArray<Qualifiers.IQualifierDecl>;
+
+// @public
+const LanguagePrioritySystemConfiguration: ISystemConfiguration;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -3815,6 +3837,12 @@ const systemTerritoryQualifierTypeConfig: ObjectConverter<Model_3.ISystemTerrito
 
 // @internal (undocumented)
 const territoryCode: RegExp;
+
+// @public
+const TerritoryPriorityQualifiers: ReadonlyArray<Qualifiers.IQualifierDecl>;
+
+// @public
+const TerritoryPrioritySystemConfiguration: ISystemConfiguration;
 
 // @public
 class TerritoryQualifierType extends QualifierType {

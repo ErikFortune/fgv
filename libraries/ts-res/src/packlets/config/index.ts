@@ -24,5 +24,6 @@ import * as Model from './json';
 import * as Convert from './convert';
 
 export * from './systemConfiguration';
+export * from './defaults';
 
 export { Model, Convert };

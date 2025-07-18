@@ -30,6 +30,7 @@ import * as ResourceTypes from '../resource-types';
  */
 export interface ISystemConfiguration {
   /** Optional human-readable name for the configuration. */
+
   name?: string;
   /** Optional description explaining the purpose and use case of the configuration. */
   description?: string;
