@@ -1,0 +1,90 @@
+{
+  "resources": {
+    "regional-features": {
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "marketName": "🌍 GLOBAL (DEFAULT)",
+            "availablePaymentMethods": ["💳 credit-card", "💳 debit-card"],
+            "supportedLanguages": ["🇺🇸 en"],
+            "regulatoryCompliance": "📋 standard global",
+            "marketingBudget": "💰 global budget",
+            "customerSupportHours": "🕐 24/7 global",
+            "selectedBy": "DEFAULT - no market specified"
+          }
+        },
+        {
+          "json": {
+            "marketName": "🌎 AMERICAS Regional",
+            "availablePaymentMethods": ["💳 credit-card", "💳 debit-card", "🏦 ach", "💸 wire-transfer"],
+            "supportedLanguages": ["🇺🇸 en", "🇪🇸 es", "🇫🇷 fr"],
+            "regulatoryCompliance": "📋 NAFTA regional",
+            "marketingBudget": "💰 Americas regional budget",
+            "customerSupportHours": "🕐 Americas business hours",
+            "selectedBy": "MARKET: Americas selected"
+          },
+          "conditions": {
+            "market": "americas"
+          }
+        },
+        {
+          "json": {
+            "marketName": "🇺🇸🇨🇦 NORTH AMERICA Specific",
+            "availablePaymentMethods": ["💳 credit-card", "💳 debit-card", "🏦 ACH North America"],
+            "supportedLanguages": ["🇺🇸 en", "🇪🇸 es"],
+            "regulatoryCompliance": "📋 US/Canada federal",
+            "marketingBudget": "💰 North America focused",
+            "customerSupportHours": "🕐 North America extended",
+            "selectedBy": "MARKET: North America (sub-region)"
+          },
+          "conditions": {
+            "market": "north-america"
+          }
+        },
+        {
+          "json": {
+            "marketName": "🇪🇺 EUROPE Regional",
+            "availablePaymentMethods": ["💳 credit-card", "🏦 SEPA", "💸 bank-transfer EU"],
+            "supportedLanguages": ["🇬🇧 en", "🇩🇪 de", "🇫🇷 fr", "🇪🇸 es", "🇮🇹 it"],
+            "regulatoryCompliance": "📋 EU GDPR compliance",
+            "marketingBudget": "💰 European regional",
+            "customerSupportHours": "🕐 EU business hours",
+            "selectedBy": "MARKET: Europe selected"
+          },
+          "conditions": {
+            "market": "europe"
+          }
+        },
+        {
+          "json": {
+            "marketName": "🇩🇪🇫🇷🇬🇧 WESTERN EUROPE Specific",
+            "availablePaymentMethods": ["💳 credit-card", "🏦 SEPA Western", "💸 bank-transfer Western EU"],
+            "supportedLanguages": ["🇬🇧 en", "🇩🇪 de", "🇫🇷 fr"],
+            "regulatoryCompliance": "📋 Western EU GDPR strict",
+            "marketingBudget": "💰 Western Europe premium",
+            "customerSupportHours": "🕐 Western EU extended",
+            "selectedBy": "MARKET: Western Europe (sub-region)"
+          },
+          "conditions": {
+            "market": "western-europe"
+          }
+        },
+        {
+          "json": {
+            "marketName": "🌏 ASIA Regional",
+            "availablePaymentMethods": ["💳 credit-card", "🏦 bank-transfer Asia", "📱 mobile-payment"],
+            "supportedLanguages": ["🇬🇧 en", "🇨🇳 zh", "🇯🇵 ja", "🇰🇷 ko"],
+            "regulatoryCompliance": "📋 Asia-Pacific standards",
+            "marketingBudget": "💰 Asian regional",
+            "customerSupportHours": "🕐 Asia 24/7",
+            "selectedBy": "MARKET: Asia selected"
+          },
+          "conditions": {
+            "market": "asia"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "resources": [
+    {
+      "id": "greeting",
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "hello": "Hello (DEFAULT)",
+            "goodbye": "Goodbye (DEFAULT)",
+            "thankyou": "Thank you (DEFAULT)",
+            "priority": "DEFAULT - no conditions"
+          }
+        },
+        {
+          "json": {
+            "hello": "Howdy (USA TERRITORY)",
+            "goodbye": "See ya later (USA)",
+            "thankyou": "Much appreciated (USA)",
+            "priority": "TERRITORY: United States"
+          },
+          "conditions": {
+            "currentTerritory": "US"
+          }
+        },
+        {
+          "json": {
+            "hello": "Hello there (CANADA TERRITORY)",
+            "goodbye": "Take care, eh (CANADA)",
+            "thankyou": "Thanks a bunch (CANADA)",
+            "priority": "TERRITORY: Canada"
+          },
+          "conditions": {
+            "currentTerritory": "CA"
+          }
+        },
+        {
+          "json": {
+            "hello": "Good day (BRITAIN TERRITORY)",
+            "goodbye": "Cheerio (BRITAIN)",
+            "thankyou": "Cheers mate (BRITAIN)",
+            "priority": "TERRITORY: Great Britain"
+          },
+          "conditions": {
+            "currentTerritory": "GB"
+          }
+        },
+        {
+          "json": {
+            "hello": "Bonjour (FRENCH LANGUAGE)",
+            "goodbye": "Au revoir (FRANÇAIS)",
+            "thankyou": "Merci (FRANÇAIS)",
+            "priority": "LANGUAGE: French"
+          },
+          "conditions": {
+            "language": "fr"
+          }
+        },
+        {
+          "json": {
+            "hello": "Salut mon ami (FRENCH + CANADA)",
+            "goodbye": "À bientôt, là (QUÉBÉCOIS)",
+            "thankyou": "Merci bien (QUÉBÉCOIS)",
+            "priority": "BOTH: French + Canada Territory"
+          },
+          "conditions": {
+            "language": "fr",
+            "currentTerritory": "CA"
+          }
+        },
+        {
+          "json": {
+            "hello": "Bonjour monsieur/madame (FRENCH + FRANCE)",
+            "goodbye": "Au revoir et bonne journée (FRANCE)",
+            "thankyou": "Merci beaucoup (FRANCE)",
+            "priority": "BOTH: French + France Territory"
+          },
+          "conditions": {
+            "language": "fr",
+            "currentTerritory": "FR"
+          }
+        }
+      ]
+    }
+  ]
+}
