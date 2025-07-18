@@ -164,6 +164,8 @@ return converter.convert(from);
 
 ## Testing Standards
 
+**For comprehensive coverage guidelines, systematic approaches to achieving 100% test coverage, and detailed testing methodologies, see [COVERAGE_GUIDELINES.md](./COVERAGE_GUIDELINES.md).**
+
 ### Testing Philosophy: Function-First, Coverage-Second
 
 **Primary: Functional Testing**
@@ -179,17 +181,41 @@ Write these tests based on the component's public API and expected behavior, not
 **Secondary: Coverage Gap Analysis**
 Only after functional tests are complete and correct, use coverage analysis to identify any missed executable paths.
 
+### Coverage Directive Detection Strategy
+
+**Before adding coverage directives, use this test to determine if directives are needed:**
+
+1. **Run Individual File Test**: Test the specific file in isolation
+   ```bash
+   rushx test --test-path-pattern=filename.test
+   ```
+
+2. **Check Individual File Coverage**: If the individual file shows 100% coverage but the full test suite shows gaps, this indicates:
+   - The code paths are functionally tested and working
+   - Coverage tool is having intermittent issues or timing problems
+   - Coverage directives are appropriate for these lines
+
+3. **Apply Coverage Directives**: For lines that are tested individually but missed in full suite, use directives like:
+   ```typescript
+   /* c8 ignore next 2 - functional code tested but coverage intermittently missed */
+   if (someCondition) {
+     return someResult;
+   }
+   ```
+
 ### Coverage Gap Analysis and Resolution
 
 When addressing coverage gaps, use this systematic approach:
 
 1. **Analyze Coverage Reports**: Run `rushx coverage` to identify uncovered lines
-2. **Categorize Coverage Gaps**:
+2. **Test Individual Files**: Run `rushx test --test-path-pattern=filename.test` to check isolated coverage
+3. **Categorize Coverage Gaps**:
    - **Business Logic** (HIGH priority): Core functionality that can be reached through normal operation
    - **Validation Logic** (MEDIUM priority): Input validation and error handling that can be tested
    - **Defensive Coding** (LOW priority): Internal consistency checks and error paths that are very difficult to trigger
+   - **Intermittent Coverage Issues**: Functional code that tests correctly in isolation but is missed in full suite
 
-3. **Prioritized Resolution Strategy**:
+4. **Prioritized Resolution Strategy**:
    - **Step 1**: Test business logic gaps first - these represent important functionality
    - **Step 2**: Test validation logic gaps - these can usually be tested by providing invalid inputs
    - **Step 3**: Add `c8 ignore` comments for defensive coding paths that are impractical to test
