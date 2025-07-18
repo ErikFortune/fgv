@@ -190,27 +190,59 @@ export class ResourceCompiler {
   private async _loadConfiguration(): Promise<Result<TsRes.Config.Model.ISystemConfiguration>> {
     try {
       if (this._options.config) {
-        // Load custom configuration from file
-        const configPath = path.resolve(this._options.config);
-        if (this._options.debug) {
-          console.error(`Loading configuration from: ${configPath}`);
+        // Check if it's a predefined configuration name
+        const predefinedNames: TsRes.Config.PredefinedSystemConfiguration[] = [
+          'default',
+          'language-priority',
+          'territory-priority',
+          'extended-example'
+        ];
+        if (predefinedNames.includes(this._options.config as TsRes.Config.PredefinedSystemConfiguration)) {
+          const predefinedResult = TsRes.Config.getPredefinedDeclaration(
+            this._options.config as TsRes.Config.PredefinedSystemConfiguration
+          );
+          if (predefinedResult.isSuccess()) {
+            this._systemConfiguration = predefinedResult.value;
+            if (this._options.verbose) {
+              console.error(`Using predefined configuration: ${this._systemConfiguration.name}`);
+            }
+            return succeed(this._systemConfiguration);
+          }
         }
-        const configContent = await fs.readFile(configPath, 'utf-8');
-        const configData = JSON.parse(configContent);
 
-        // Validate the configuration using ts-res converter
-        const configResult = TsRes.Config.Convert.systemConfiguration.convert(configData);
-        if (configResult.isFailure()) {
-          return fail(`Invalid configuration file: ${configResult.message}`);
-        }
+        // If not a predefined config, try to load as file path
+        try {
+          const configPath = path.resolve(this._options.config);
+          if (this._options.debug) {
+            console.error(`Loading configuration from: ${configPath}`);
+          }
+          const configContent = await fs.readFile(configPath, 'utf-8');
+          const configData = JSON.parse(configContent);
 
-        this._systemConfiguration = configResult.value;
-        if (this._options.verbose) {
-          console.error(`Using custom configuration: ${this._systemConfiguration.name}`);
+          // Validate the configuration using ts-res converter
+          const configResult = TsRes.Config.Convert.systemConfiguration.convert(configData);
+          if (configResult.isFailure()) {
+            return fail(`Invalid configuration file: ${configResult.message}`);
+          }
+
+          this._systemConfiguration = configResult.value;
+          if (this._options.verbose) {
+            console.error(`Using custom configuration: ${this._systemConfiguration.name}`);
+          }
+        } catch (fileError) {
+          return fail(
+            `Configuration '${this._options.config}' is not a predefined configuration name and failed to load as file: ${fileError}`
+          );
         }
       } else {
-        // Use default configuration
-        this._systemConfiguration = DEFAULT_SYSTEM_CONFIGURATION;
+        // Use default predefined configuration
+        const defaultResult = TsRes.Config.getPredefinedDeclaration('default');
+        if (defaultResult.isSuccess()) {
+          this._systemConfiguration = defaultResult.value;
+        } else {
+          // Fallback to hardcoded default if predefined default is not available
+          this._systemConfiguration = DEFAULT_SYSTEM_CONFIGURATION;
+        }
         if (this._options.verbose) {
           console.error(`Using default configuration: ${this._systemConfiguration.name}`);
         }

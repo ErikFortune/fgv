@@ -190,7 +190,7 @@ export const ExtendedResourceTypes: ReadonlyArray<ResourceTypes.Config.IResource
  * @public
  */
 export const ExtendedSystemConfiguration: ISystemConfiguration = {
-  name: 'example',
+  name: 'extended-example',
   description: 'An example system configuration demonstrating various configuration options',
   qualifierTypes: [...ExtendedQualifierTypes],
   qualifiers: [...ExtendedQualifiers],

@@ -23,6 +23,7 @@
 import { Command } from 'commander';
 import { Result, succeed, fail } from '@fgv/ts-utils';
 import { ICompileOptions, OutputFormat } from './options';
+import * as TsRes from '@fgv/ts-res';
 
 /**
  * Command-line options for the compile command
@@ -65,6 +66,17 @@ interface IInfoCommandOptions {
   maxDistance?: number;
 }
 
+/**
+ * Command-line options for the config command
+ */
+interface IConfigCommandOptions {
+  name?: string;
+  output?: string;
+  validate?: string;
+  normalize?: string;
+  list?: boolean;
+}
+
 import { ResourceCompiler } from './compiler';
 
 /**
@@ -99,7 +111,10 @@ export class TsResCliApp {
       .description('Compile resources from input to output format')
       .requiredOption('-i, --input <path>', 'Input file or directory path')
       .requiredOption('-o, --output <path>', 'Output file path')
-      .option('--config <path>', 'System configuration file (JSON, ISystemConfiguration format)')
+      .option(
+        '--config <name|path>',
+        'Predefined configuration name or system configuration file path (JSON, ISystemConfiguration format)'
+      )
       .option('-c, --context <json>', 'Context filter for resources (JSON string)')
       .option(
         '--context-filter <token>',
@@ -121,7 +136,10 @@ export class TsResCliApp {
       .command('validate')
       .description('Validate resources without compilation')
       .requiredOption('-i, --input <path>', 'Input file or directory path')
-      .option('--config <path>', 'System configuration file (JSON, ISystemConfiguration format)')
+      .option(
+        '--config <name|path>',
+        'Predefined configuration name or system configuration file path (JSON, ISystemConfiguration format)'
+      )
       .option('-v, --verbose', 'Verbose output', false)
       .option('-q, --quiet', 'Quiet output', false)
       .action(async (options) => {
@@ -132,7 +150,10 @@ export class TsResCliApp {
       .command('info')
       .description('Show information about resources')
       .requiredOption('-i, --input <path>', 'Input file or directory path')
-      .option('--config <path>', 'System configuration file (JSON, ISystemConfiguration format)')
+      .option(
+        '--config <name|path>',
+        'Predefined configuration name or system configuration file path (JSON, ISystemConfiguration format)'
+      )
       .option('-c, --context <json>', 'Context filter for resources (JSON string)')
       .option(
         '--context-filter <token>',
@@ -142,6 +163,18 @@ export class TsResCliApp {
       .option('--max-distance <number>', 'Maximum distance for language matching', parseInt)
       .action(async (options) => {
         await this._handleInfoCommand(options);
+      });
+
+    this._program
+      .command('config')
+      .description('Manage system configurations')
+      .option('-n, --name <name>', 'Predefined configuration name to print')
+      .option('-o, --output <path>', 'Output file path to save configuration')
+      .option('--validate <path>', 'Validate a configuration file')
+      .option('--normalize <path>', 'Normalize and validate a configuration file')
+      .option('-l, --list', 'List all available predefined configurations')
+      .action(async (options) => {
+        await this._handleConfigCommand(options);
       });
   }
 
@@ -241,6 +274,130 @@ export class TsResCliApp {
     }
 
     console.log(JSON.stringify(result.value, null, 2));
+  }
+
+  /**
+   * Handles the config command
+   */
+  private async _handleConfigCommand(options: IConfigCommandOptions): Promise<void> {
+    try {
+      // List all predefined configurations
+      if (options.list) {
+        console.log('Available predefined configurations:');
+        console.log('- default');
+        console.log('- language-priority');
+        console.log('- territory-priority');
+        console.log('- extended-example');
+        return;
+      }
+
+      // Print a specific predefined configuration
+      if (options.name) {
+        const predefinedNames: TsRes.Config.PredefinedSystemConfiguration[] = [
+          'default',
+          'language-priority',
+          'territory-priority',
+          'extended-example'
+        ];
+
+        if (!predefinedNames.includes(options.name as TsRes.Config.PredefinedSystemConfiguration)) {
+          console.error(`Error: Predefined configuration '${options.name}' not found`);
+          console.error(
+            'Available configurations: default, language-priority, territory-priority, extended-example'
+          );
+          process.exit(1);
+        }
+
+        const configResult = TsRes.Config.getPredefinedDeclaration(
+          options.name as TsRes.Config.PredefinedSystemConfiguration
+        );
+        if (configResult.isFailure()) {
+          console.error(
+            `Error: Failed to load predefined configuration '${options.name}': ${configResult.message}`
+          );
+          process.exit(1);
+        }
+
+        const config = configResult.value;
+        const output = JSON.stringify(config, null, 2);
+
+        if (options.output) {
+          const fs = await import('fs').then((m) => m.promises);
+          const path = await import('path');
+          const outputPath = path.resolve(options.output);
+          const outputDir = path.dirname(outputPath);
+
+          await fs.mkdir(outputDir, { recursive: true });
+          await fs.writeFile(outputPath, output, 'utf-8');
+          console.log(`Configuration saved to: ${outputPath}`);
+        } else {
+          console.log(output);
+        }
+        return;
+      }
+
+      // Validate a configuration file
+      if (options.validate) {
+        const fs = await import('fs').then((m) => m.promises);
+        const path = await import('path');
+
+        const configPath = path.resolve(options.validate);
+        const configContent = await fs.readFile(configPath, 'utf-8');
+        const configData = JSON.parse(configContent);
+
+        const configResult = TsRes.Config.Convert.systemConfiguration.convert(configData);
+        if (configResult.isFailure()) {
+          console.error(`Validation failed: ${configResult.message}`);
+          process.exit(1);
+        }
+
+        console.log(`Configuration file '${configPath}' is valid`);
+        return;
+      }
+
+      // Normalize a configuration file
+      if (options.normalize) {
+        const fs = await import('fs').then((m) => m.promises);
+        const path = await import('path');
+
+        const configPath = path.resolve(options.normalize);
+        const configContent = await fs.readFile(configPath, 'utf-8');
+        const configData = JSON.parse(configContent);
+
+        const configResult = TsRes.Config.Convert.systemConfiguration.convert(configData);
+        if (configResult.isFailure()) {
+          console.error(`Normalization failed: ${configResult.message}`);
+          process.exit(1);
+        }
+
+        const normalizedConfig = configResult.value;
+        const output = JSON.stringify(normalizedConfig, null, 2);
+
+        if (options.output) {
+          const outputPath = path.resolve(options.output);
+          const outputDir = path.dirname(outputPath);
+
+          await fs.mkdir(outputDir, { recursive: true });
+          await fs.writeFile(outputPath, output, 'utf-8');
+          console.log(`Normalized configuration saved to: ${outputPath}`);
+        } else {
+          console.log(output);
+        }
+        return;
+      }
+
+      // If no specific action, print default configuration
+      const defaultResult = TsRes.Config.getPredefinedDeclaration('default');
+      if (defaultResult.isFailure()) {
+        console.error(`Error: Default configuration not available`);
+        process.exit(1);
+      }
+
+      console.log(JSON.stringify(defaultResult.value, null, 2));
+    } catch (error) {
+      console.error(`Error: ${error}`);
+      process.exit(1);
+    }
   }
 
   /**

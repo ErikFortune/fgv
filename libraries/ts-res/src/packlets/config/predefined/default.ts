@@ -116,8 +116,8 @@ export const DefaultResourceTypes: ReadonlyArray<ResourceTypes.Config.IResourceT
  * @public
  */
 export const TerritoryPrioritySystemConfiguration: ISystemConfiguration = {
-  name: 'default',
-  description: 'Default system configuration',
+  name: 'territory-priority',
+  description: 'Territory priority system configuration',
   qualifierTypes: [...DefaultQualifierTypes],
   qualifiers: [...TerritoryPriorityQualifiers],
   resourceTypes: [...DefaultResourceTypes]
@@ -129,8 +129,8 @@ export const TerritoryPrioritySystemConfiguration: ISystemConfiguration = {
  * @public
  */
 export const LanguagePrioritySystemConfiguration: ISystemConfiguration = {
-  name: 'default',
-  description: 'Default system configuration',
+  name: 'language-priority',
+  description: 'Language priority system configuration',
   qualifierTypes: [...DefaultQualifierTypes],
   qualifiers: [...LanguagePriorityQualifiers],
   resourceTypes: [...DefaultResourceTypes]
@@ -141,4 +141,10 @@ export const LanguagePrioritySystemConfiguration: ISystemConfiguration = {
  * with language as a secondary qualifier.
  * @public
  */
-export const DefaultSystemConfiguration: ISystemConfiguration = TerritoryPrioritySystemConfiguration;
+export const DefaultSystemConfiguration: ISystemConfiguration = {
+  name: 'default',
+  description: 'Default system configuration',
+  qualifierTypes: [...DefaultQualifierTypes],
+  qualifiers: [...TerritoryPriorityQualifiers],
+  resourceTypes: [...DefaultResourceTypes]
+};
