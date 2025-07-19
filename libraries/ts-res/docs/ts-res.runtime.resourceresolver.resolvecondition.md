@@ -9,7 +9,7 @@ Resolves a condition by evaluating it against the current context. Uses O(1) cac
 **Signature:**
 
 ```typescript
-resolveCondition(condition: Condition): Result<QualifierMatchScore>;
+resolveCondition(condition: Condition): Result<IConditionMatchResult>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The [condition](./ts-res.conditions.condition.md) to resolve.
 
 **Returns:**
 
-Result&lt;[QualifierMatchScore](./ts-res.qualifiermatchscore.md)<!-- -->&gt;
+Result&lt;[IConditionMatchResult](./ts-res.runtime.iconditionmatchresult.md)<!-- -->&gt;
 
 `Success` with the [match score](./ts-res.qualifiermatchscore.md) if successful, or `Failure` with an error message if the condition cannot be resolved.
 

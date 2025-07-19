@@ -4,10 +4,10 @@
 
 ## Runtime.ResourceResolver.conditionCache property
 
-The cache array for resolved conditions, indexed by condition index for O(1) lookup. Each entry stores the resolved QualifierMatchScore for the corresponding condition.
+The cache array for resolved conditions, indexed by condition index for O(1) lookup. Each entry stores the resolved [condition match result](./ts-res.runtime.iconditionmatchresult.md) for the corresponding condition.
 
 **Signature:**
 
 ```typescript
-get conditionCache(): ReadonlyArray<QualifierMatchScore | undefined>;
+get conditionCache(): ReadonlyArray<IConditionMatchResult | undefined>;
 ```

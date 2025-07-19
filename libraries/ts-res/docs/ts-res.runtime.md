@@ -149,7 +149,7 @@ Interface for parameters to create a [CompiledResourceCollection](./ts-res.runti
 
 </td><td>
 
-Represents a single condition match result with priority and score.
+Represents a single condition match result with priority and outcome.
 
 
 </td></tr>
@@ -279,6 +279,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[ConditionMatchType](./ts-res.runtime.conditionmatchtype.md)
+
+
+</td><td>
+
+The outcome of a condition match.
+
+
+</td></tr>
+<tr><td>
 
 [DecisionResolutionResult](./ts-res.runtime.decisionresolutionresult.md)
 

@@ -14,5 +14,6 @@ export type DecisionResolutionResult = {
 } | {
     success: true;
     instanceIndices: ReadonlyArray<number>;
+    defaultInstanceIndices: ReadonlyArray<number>;
 };
 ```

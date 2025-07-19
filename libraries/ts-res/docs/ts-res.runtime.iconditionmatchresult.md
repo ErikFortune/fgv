@@ -4,7 +4,7 @@
 
 ## Runtime.IConditionMatchResult interface
 
-Represents a single condition match result with priority and score.
+Represents a single condition match result with priority and outcome.
 
 **Signature:**
 
@@ -36,6 +36,25 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[matchType](./ts-res.runtime.iconditionmatchresult.matchtype.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ConditionMatchType](./ts-res.runtime.conditionmatchtype.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
 
 [priority](./ts-res.runtime.iconditionmatchresult.priority.md)
 

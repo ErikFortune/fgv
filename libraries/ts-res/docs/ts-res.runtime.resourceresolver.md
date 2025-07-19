@@ -83,12 +83,12 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;[QualifierMatchScore](./ts-res.qualifiermatchscore.md) \| undefined&gt;
+ReadonlyArray&lt;[IConditionMatchResult](./ts-res.runtime.iconditionmatchresult.md) \| undefined&gt;
 
 
 </td><td>
 
-The cache array for resolved conditions, indexed by condition index for O(1) lookup. Each entry stores the resolved QualifierMatchScore for the corresponding condition.
+The cache array for resolved conditions, indexed by condition index for O(1) lookup. Each entry stores the resolved [condition match result](./ts-res.runtime.iconditionmatchresult.md) for the corresponding condition.
 
 
 </td></tr>

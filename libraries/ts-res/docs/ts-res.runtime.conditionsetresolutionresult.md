@@ -56,6 +56,25 @@ ReadonlyArray&lt;[IConditionMatchResult](./ts-res.runtime.iconditionmatchresult.
 </td></tr>
 <tr><td>
 
+[matchType](./ts-res.runtime.conditionsetresolutionresult.matchtype.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ConditionMatchType](./ts-res.runtime.conditionmatchtype.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [maxPriority](./ts-res.runtime.conditionsetresolutionresult.maxpriority.md)
 
 
@@ -72,25 +91,6 @@ ReadonlyArray&lt;[IConditionMatchResult](./ts-res.runtime.iconditionmatchresult.
 </td><td>
 
 Gets the highest priority among all condition matches.
-
-
-</td></tr>
-<tr><td>
-
-[success](./ts-res.runtime.conditionsetresolutionresult.success.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-boolean
-
-
-</td><td>
 
 
 </td></tr>
@@ -155,7 +155,7 @@ Comparison logic: - If priority differs, return the higher priority - If priorit
 </td></tr>
 <tr><td>
 
-[createFailure()](./ts-res.runtime.conditionsetresolutionresult.createfailure.md)
+[create(matchType, matches)](./ts-res.runtime.conditionsetresolutionresult.create.md)
 
 
 </td><td>
@@ -165,23 +165,7 @@ Comparison logic: - If priority differs, return the higher priority - If priorit
 
 </td><td>
 
-Creates a new failed condition set resolution result.
-
-
-</td></tr>
-<tr><td>
-
-[createSuccess(matches)](./ts-res.runtime.conditionsetresolutionresult.createsuccess.md)
-
-
-</td><td>
-
-`static`
-
-
-</td><td>
-
-Creates a new successful condition set resolution result.
+Creates a new condition set resolution result.
 
 
 </td></tr>
