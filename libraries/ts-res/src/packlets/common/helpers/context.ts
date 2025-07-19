@@ -22,12 +22,7 @@
 
 import { mapResults, Result, succeed } from '@fgv/ts-utils';
 import * as Validate from '../validate';
-import {
-  ContextToken,
-  ContextQualifierToken,
-  QualifierDefaultValueToken,
-  QualifierDefaultValuesToken
-} from '../conditions';
+import { ContextToken, ContextQualifierToken } from '../conditions';
 
 /**
  * The values needed to create a {@link ContextQualifierToken | context qualifier token}.
@@ -90,73 +85,4 @@ export function parseContextTokenParts(token: string): Result<IContextTokenParts
     return succeed([]);
   }
   return mapResults(token.split('|').map((part) => parseContextQualifierTokenParts(part.trim())));
-}
-
-/**
- * The values needed to create a {@link QualifierDefaultValueToken | qualifier default value token}.
- * @public
- */
-export interface IQualifierDefaultValueTokenParts {
-  qualifier: string;
-  value: string;
-}
-
-/**
- * Converts a {@link Helpers.IQualifierDefaultValueTokenParts | the parts that make up a qualifier default value token} into
- * a syntactically validated {@link QualifierDefaultValueToken | qualifier default value token}.
- * @param parts - the parts to convert
- * @public
- */
-export function buildQualifierDefaultValueToken({
-  qualifier,
-  value
-}: IQualifierDefaultValueTokenParts): Result<QualifierDefaultValueToken> {
-  return Validate.toQualifierDefaultValueToken(`${qualifier}=${value}`);
-}
-
-/**
- * Converts an array of {@link Helpers.IQualifierDefaultValueTokenParts | qualifier default value token parts} into a
- * syntactically validated {@link QualifierDefaultValuesToken | qualifier default values token}.
- * @param parts - the parts to convert
- * @public
- */
-export function buildQualifierDefaultValuesToken(
-  parts: ReadonlyArray<IQualifierDefaultValueTokenParts>
-): Result<QualifierDefaultValuesToken> {
-  return mapResults(parts.map(buildQualifierDefaultValueToken)).onSuccess((tokens) =>
-    Validate.toQualifierDefaultValuesToken(tokens.join('|'))
-  );
-}
-
-/**
- * Parses a qualifier default value token string into its {@link Helpers.IQualifierDefaultValueTokenParts | parts}.
- * @param token - the token string to parse.
- * @returns `Success` with the parts if successful, `Failure` with an error message if not.
- * @public
- */
-export function parseQualifierDefaultValueTokenParts(
-  token: string
-): Result<IQualifierDefaultValueTokenParts> {
-  return Validate.toQualifierDefaultValueToken(token).onSuccess((t) => {
-    const parts = t.split('=');
-    if (parts.length !== 2) {
-      return succeed({ qualifier: parts[0], value: '' });
-    }
-    return succeed({ qualifier: parts[0], value: parts[1] });
-  });
-}
-
-/**
- * Parses a qualifier default values token string into an array of {@link Helpers.IQualifierDefaultValueTokenParts | qualifier default value token parts}.
- * @param token - the qualifier default values token string to parse.
- * @returns `Success` with the parts if successful, `Failure` with an error message if not.
- * @public
- */
-export function parseQualifierDefaultValuesTokenParts(
-  token: string
-): Result<IQualifierDefaultValueTokenParts[]> {
-  if (token === '') {
-    return succeed([]);
-  }
-  return mapResults(token.split('|').map((part) => parseQualifierDefaultValueTokenParts(part.trim())));
 }

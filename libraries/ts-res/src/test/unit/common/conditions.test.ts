@@ -255,4 +255,71 @@ describe('common conditions', () => {
     expect(TsRes.Validate.isValidContextToken(token)).toBe(false);
     expect(TsRes.Validate.toContextToken(token)).toFailWith(/not a valid context token/i);
   });
+
+  // Qualifier Default Value Token tests
+  test.each([
+    'language=en-US',
+    'territory=US',
+    'environment=production',
+    'language=en-US,fr-CA',
+    'region=US,CA,GB',
+    'language=',
+    'qualifier_name=value',
+    'my-qualifier=value-with-hyphens',
+    '_qualifier=value',
+    'q1=value_123-test'
+  ])('%s is a valid qualifier default value token', (token) => {
+    expect(TsRes.Validate.isValidQualifierDefaultValueToken(token)).toBe(true);
+    expect(TsRes.Validate.toQualifierDefaultValueToken(token)).toSucceedWith(
+      token as TsRes.QualifierDefaultValueToken
+    );
+  });
+
+  test.each([
+    'language', // missing equals
+    'language=en=US', // multiple equals
+    '=en-US', // empty qualifier name
+    'bad qualifier=value', // space in qualifier name
+    '1language=en-US', // qualifier starts with number
+    'language@name=value', // invalid character in qualifier
+    '', // empty token
+    '   ', // whitespace only
+    'language:en-US', // colon instead of equals
+    'language|en-US' // pipe instead of equals
+  ])('%s is not a valid qualifier default value token', (token) => {
+    expect(TsRes.Validate.isValidQualifierDefaultValueToken(token)).toBe(false);
+    expect(TsRes.Validate.toQualifierDefaultValueToken(token)).toFailWith(
+      /not a valid qualifier default value token/i
+    );
+  });
+
+  test.each([
+    'language=en-US|territory=US',
+    'language=en-US,fr-CA|territory=US|environment=production',
+    'region=US,CA,GB|environment=staging',
+    'language=|territory=US',
+    'language=en-US',
+    'qualifier_1=value1|qualifier_2=value2',
+    ''
+  ])('%s is a valid qualifier default values token', (token) => {
+    expect(TsRes.Validate.isValidQualifierDefaultValuesToken(token)).toBe(true);
+    expect(TsRes.Validate.toQualifierDefaultValuesToken(token)).toSucceedWith(
+      token as TsRes.QualifierDefaultValuesToken
+    );
+  });
+
+  test.each([
+    'language=en-US|bad qualifier=value', // invalid qualifier name
+    'language=en-US|', // empty token after pipe
+    'language=en-US||territory=US', // double pipe
+    'language=en-US|territory', // missing equals in second token
+    '|language=en-US', // leading pipe
+    'language=en-US|   ', // whitespace token
+    'language=en-US|1invalid=value' // qualifier starting with number
+  ])('%s is not a valid qualifier default values token', (token) => {
+    expect(TsRes.Validate.isValidQualifierDefaultValuesToken(token)).toBe(false);
+    expect(TsRes.Validate.toQualifierDefaultValuesToken(token)).toFailWith(
+      /not a valid qualifier default value/i
+    );
+  });
 });

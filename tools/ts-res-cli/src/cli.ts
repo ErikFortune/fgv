@@ -51,6 +51,7 @@ interface ICompileCommandOptions {
 interface IValidateCommandOptions {
   input: string;
   config?: string;
+  qualifierDefaults?: string;
   verbose?: boolean;
   quiet?: boolean;
 }
@@ -76,6 +77,7 @@ interface IConfigCommandOptions {
   output?: string;
   validate?: string;
   normalize?: string;
+  qualifierDefaults?: string;
   list?: boolean;
 }
 
@@ -146,6 +148,10 @@ export class TsResCliApp {
         '--config <name|path>',
         'Predefined configuration name or system configuration file path (JSON, ISystemConfiguration format)'
       )
+      .option(
+        '--qualifier-defaults <token>',
+        'Qualifier default values token (pipe-separated, e.g., "language=en-US,en-CA|territory=US")'
+      )
       .option('-v, --verbose', 'Verbose output', false)
       .option('-q, --quiet', 'Quiet output', false)
       .action(async (options) => {
@@ -182,6 +188,10 @@ export class TsResCliApp {
       .option('-o, --output <path>', 'Output file path to save configuration')
       .option('--validate <path>', 'Validate a configuration file')
       .option('--normalize <path>', 'Normalize and validate a configuration file')
+      .option(
+        '--qualifier-defaults <token>',
+        'Qualifier default values token (pipe-separated, e.g., "language=en-US,en-CA|territory=US")'
+      )
       .option('-l, --list', 'List all available predefined configurations')
       .action(async (options) => {
         await this._handleConfigCommand(options);
@@ -219,6 +229,7 @@ export class TsResCliApp {
       input: options.input,
       output: '', // Not used for validation
       config: options.config,
+      qualifierDefaults: options.qualifierDefaults,
       format: 'compiled',
       debug: false,
       verbose: options.verbose || false,
@@ -329,7 +340,37 @@ export class TsResCliApp {
           process.exit(1);
         }
 
-        const config = configResult.value;
+        let config = configResult.value;
+
+        // Apply qualifier defaults if provided
+        if (options.qualifierDefaults) {
+          const tempSystemConfigResult = TsRes.Config.SystemConfiguration.create(config);
+          if (tempSystemConfigResult.isFailure()) {
+            console.error(`Error: Failed to create system configuration: ${tempSystemConfigResult.message}`);
+            process.exit(1);
+          }
+
+          const tokens = new TsRes.Qualifiers.QualifierDefaultValueTokens(
+            tempSystemConfigResult.value.qualifiers
+          );
+          const defaultsResult = tokens.qualifierDefaultValuesTokenToDecl(options.qualifierDefaults);
+          if (defaultsResult.isFailure()) {
+            console.error(`Error: Failed to parse qualifier defaults: ${defaultsResult.message}`);
+            process.exit(1);
+          }
+
+          const updatedConfigResult = TsRes.Config.updateSystemConfigurationQualifierDefaultValues(
+            config,
+            defaultsResult.value
+          );
+          if (updatedConfigResult.isFailure()) {
+            console.error(`Error: Failed to apply qualifier defaults: ${updatedConfigResult.message}`);
+            process.exit(1);
+          }
+
+          config = updatedConfigResult.value;
+        }
+
         const output = JSON.stringify(config, null, 2);
 
         if (options.output) {
@@ -381,7 +422,37 @@ export class TsResCliApp {
           process.exit(1);
         }
 
-        const normalizedConfig = configResult.value;
+        let normalizedConfig = configResult.value;
+
+        // Apply qualifier defaults if provided
+        if (options.qualifierDefaults) {
+          const tempSystemConfigResult = TsRes.Config.SystemConfiguration.create(normalizedConfig);
+          if (tempSystemConfigResult.isFailure()) {
+            console.error(`Error: Failed to create system configuration: ${tempSystemConfigResult.message}`);
+            process.exit(1);
+          }
+
+          const tokens = new TsRes.Qualifiers.QualifierDefaultValueTokens(
+            tempSystemConfigResult.value.qualifiers
+          );
+          const defaultsResult = tokens.qualifierDefaultValuesTokenToDecl(options.qualifierDefaults);
+          if (defaultsResult.isFailure()) {
+            console.error(`Error: Failed to parse qualifier defaults: ${defaultsResult.message}`);
+            process.exit(1);
+          }
+
+          const updatedConfigResult = TsRes.Config.updateSystemConfigurationQualifierDefaultValues(
+            normalizedConfig,
+            defaultsResult.value
+          );
+          if (updatedConfigResult.isFailure()) {
+            console.error(`Error: Failed to apply qualifier defaults: ${updatedConfigResult.message}`);
+            process.exit(1);
+          }
+
+          normalizedConfig = updatedConfigResult.value;
+        }
+
         const output = JSON.stringify(normalizedConfig, null, 2);
 
         if (options.output) {
@@ -404,7 +475,38 @@ export class TsResCliApp {
         process.exit(1);
       }
 
-      console.log(JSON.stringify(defaultResult.value, null, 2));
+      let defaultConfig = defaultResult.value;
+
+      // Apply qualifier defaults if provided
+      if (options.qualifierDefaults) {
+        const tempSystemConfigResult = TsRes.Config.SystemConfiguration.create(defaultConfig);
+        if (tempSystemConfigResult.isFailure()) {
+          console.error(`Error: Failed to create system configuration: ${tempSystemConfigResult.message}`);
+          process.exit(1);
+        }
+
+        const tokens = new TsRes.Qualifiers.QualifierDefaultValueTokens(
+          tempSystemConfigResult.value.qualifiers
+        );
+        const defaultsResult = tokens.qualifierDefaultValuesTokenToDecl(options.qualifierDefaults);
+        if (defaultsResult.isFailure()) {
+          console.error(`Error: Failed to parse qualifier defaults: ${defaultsResult.message}`);
+          process.exit(1);
+        }
+
+        const updatedConfigResult = TsRes.Config.updateSystemConfigurationQualifierDefaultValues(
+          defaultConfig,
+          defaultsResult.value
+        );
+        if (updatedConfigResult.isFailure()) {
+          console.error(`Error: Failed to apply qualifier defaults: ${updatedConfigResult.message}`);
+          process.exit(1);
+        }
+
+        defaultConfig = updatedConfigResult.value;
+      }
+
+      console.log(JSON.stringify(defaultConfig, null, 2));
     } catch (error) {
       console.error(`Error: ${error}`);
       process.exit(1);
