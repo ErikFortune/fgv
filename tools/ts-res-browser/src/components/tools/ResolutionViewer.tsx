@@ -6,6 +6,19 @@ import { FilterResult } from '../../utils/filterResources';
 import { Runtime, Config, NoMatch } from '@fgv/ts-res';
 import { createSimpleContext, DEFAULT_SYSTEM_CONFIGURATION } from '../../utils/tsResIntegration';
 
+// Updated types for default resolution support
+type ConditionMatchType = 'match' | 'matchAsDefault' | 'noMatch';
+
+interface IConditionMatchResult {
+  score: number;
+  priority: number;
+  matchType: ConditionMatchType;
+}
+
+type DecisionResolutionResult =
+  | { success: false }
+  | { success: true; instanceIndices: ReadonlyArray<number>; defaultInstanceIndices: ReadonlyArray<number> };
+
 interface ResolutionViewerProps {
   onMessage?: (type: Message['type'], message: string) => void;
   resourceManager: UseResourceManagerReturn;
@@ -24,6 +37,8 @@ interface ConditionEvaluationResult {
   operator: string;
   score: number;
   matched: boolean;
+  matchType: ConditionMatchType;
+  scoreAsDefault?: number;
   conditionIndex: number;
 }
 
@@ -32,6 +47,8 @@ interface CandidateInfo {
   conditionSetKey: string | null;
   candidateIndex: number;
   matched: boolean;
+  matchType: ConditionMatchType;
+  isDefaultMatch: boolean;
   conditionEvaluations?: ConditionEvaluationResult[];
 }
 
@@ -202,6 +219,32 @@ const ConditionEvaluationDisplay: React.FC<ConditionEvaluationDisplayProps> = ({
     return <span className="text-xs text-gray-500">No conditions</span>;
   }
 
+  const getMatchTypeColor = (type: ConditionMatchType) => {
+    switch (type) {
+      case 'match':
+        return 'bg-green-100 text-green-800';
+      case 'matchAsDefault':
+        return 'bg-amber-100 text-amber-800';
+      case 'noMatch':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getMatchTypeIcon = (type: ConditionMatchType) => {
+    switch (type) {
+      case 'match':
+        return '✓';
+      case 'matchAsDefault':
+        return '≈';
+      case 'noMatch':
+        return '✗';
+      default:
+        return '?';
+    }
+  };
+
   return (
     <div className="flex flex-wrap gap-1 mt-1">
       {evaluations.map((evaluation, index) => {
@@ -209,21 +252,19 @@ const ConditionEvaluationDisplay: React.FC<ConditionEvaluationDisplayProps> = ({
           evaluation.conditionValue
         } (${evaluation.score.toFixed(1)})`;
 
+        const tooltipContent = [
+          `${evaluation.qualifierName}: context="${evaluation.qualifierValue}" ${evaluation.operator} condition="${evaluation.conditionValue}"`,
+          `→ score=${evaluation.score} (${evaluation.matchType})`,
+          evaluation.scoreAsDefault !== undefined ? `default score: ${evaluation.scoreAsDefault}` : null,
+          `[condition index: ${evaluation.conditionIndex}]`
+        ]
+          .filter(Boolean)
+          .join(' ');
+
         return (
-          <Tooltip
-            key={index}
-            content={`${evaluation.qualifierName}: context="${evaluation.qualifierValue}" ${
-              evaluation.operator
-            } condition="${evaluation.conditionValue}" → score=${evaluation.score} (${
-              evaluation.matched ? 'matched' : 'no match'
-            }) [condition index: ${evaluation.conditionIndex}]`}
-          >
-            <span
-              className={`text-xs px-2 py-1 rounded ${
-                evaluation.matched ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-              }`}
-            >
-              {evaluation.matched ? '✓' : '✗'} {displayText}
+          <Tooltip key={index} content={tooltipContent}>
+            <span className={`text-xs px-2 py-1 rounded ${getMatchTypeColor(evaluation.matchType)}`}>
+              {getMatchTypeIcon(evaluation.matchType)} {displayText}
             </span>
           </Tooltip>
         );
@@ -298,6 +339,38 @@ const CacheContentsDisplay: React.FC<CacheContentsDisplayProps> = ({ resolver })
                     const conditionObj = condition.value;
                     const qualifierName = conditionObj.qualifier.name;
 
+                    // Determine match type from cached result
+                    const cachedResult = score as unknown as IConditionMatchResult;
+                    const matchType =
+                      cachedResult?.matchType || (cachedResult?.score > 0 ? 'match' : 'noMatch');
+                    const displayScore = cachedResult?.score || 0;
+
+                    const getMatchTypeColor = (type: ConditionMatchType) => {
+                      switch (type) {
+                        case 'match':
+                          return 'bg-green-100 text-green-800';
+                        case 'matchAsDefault':
+                          return 'bg-amber-100 text-amber-800';
+                        case 'noMatch':
+                          return 'bg-red-100 text-red-800';
+                        default:
+                          return 'bg-gray-100 text-gray-800';
+                      }
+                    };
+
+                    const getMatchTypeIcon = (type: ConditionMatchType) => {
+                      switch (type) {
+                        case 'match':
+                          return '✓';
+                        case 'matchAsDefault':
+                          return '≈';
+                        case 'noMatch':
+                          return '✗';
+                        default:
+                          return '?';
+                      }
+                    };
+
                     return (
                       <div key={index} className="flex items-center justify-between text-xs">
                         <div className="text-gray-600 truncate max-w-24">
@@ -310,13 +383,12 @@ const CacheContentsDisplay: React.FC<CacheContentsDisplayProps> = ({ resolver })
                             </div>
                           )}
                         </div>
-                        <span
-                          className={`px-2 py-1 rounded ${
-                            score > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {qualifierName}={JSON.stringify(conditionObj.value)} ({score.toFixed(2)})
-                        </span>
+                        <div className="flex items-center space-x-1">
+                          <span className={`px-2 py-1 rounded ${getMatchTypeColor(matchType)}`}>
+                            {getMatchTypeIcon(matchType)} {matchType}
+                          </span>
+                          <span className="text-xs text-gray-500">({displayScore.toFixed(2)})</span>
+                        </div>
                       </div>
                     );
                   } catch (error) {
@@ -394,19 +466,28 @@ const CacheContentsDisplay: React.FC<CacheContentsDisplayProps> = ({ resolver })
                   try {
                     const decision = resolver.resourceManager.decisions.getAt(index);
                     const key = decision.isSuccess() ? decision.value.key : `decision-${index}`;
+                    const regularMatches = result.success ? result.instanceIndices.length : 0;
+                    const defaultMatches = result.success ? result.defaultInstanceIndices.length : 0;
 
                     return (
                       <div key={index} className="flex items-center justify-between text-xs">
                         <span className="text-gray-600 truncate max-w-24">
                           {index}: {key}
                         </span>
-                        <span
-                          className={`px-2 py-1 rounded ${
-                            result.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {key} ({result.success ? result.instanceIndices.length : '0'})
-                        </span>
+                        <div className="flex items-center space-x-1">
+                          <span
+                            className={`px-2 py-1 rounded ${
+                              result.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {regularMatches} regular
+                          </span>
+                          {defaultMatches > 0 && (
+                            <span className="px-2 py-1 rounded bg-amber-100 text-amber-800">
+                              {defaultMatches} default
+                            </span>
+                          )}
+                        </div>
                       </div>
                     );
                   } catch (error) {
@@ -771,9 +852,11 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
           const qualifierValueResult = resolver.contextQualifierProvider.get(qualifier);
           const qualifierValue = qualifierValueResult.isSuccess() ? qualifierValueResult.value : null;
 
-          // Get the cached condition score from resolver
-          const score = resolver.conditionCache[conditionIndex] || 0;
-          const matched = score > 0;
+          // Get the cached condition result from resolver
+          const cachedResult = resolver.conditionCache[conditionIndex] as IConditionMatchResult;
+          const score = cachedResult?.score || 0;
+          const matchType = cachedResult?.matchType || 'noMatch';
+          const matched = matchType !== 'noMatch';
 
           evaluations.push({
             qualifierName: qualifier.name,
@@ -782,6 +865,8 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
             operator: condition.operator || 'eq',
             score,
             matched,
+            matchType,
+            scoreAsDefault: condition.scoreAsDefault,
             conditionIndex
           });
         }
@@ -837,11 +922,19 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
       // Resolve composed value
       const composedResult = resolver.resolveComposedResourceValue(resource);
 
+      // Get decision resolution result to understand which candidates are regular vs default matches
+      const decisionResult = resolver.resolveDecision(resource.decision.baseDecision);
+      const decision = decisionResult.isSuccess() ? decisionResult.value : null;
+
       // Build detailed candidate information, preserving priority order for matched candidates
       const candidateDetails: CandidateInfo[] = [];
       const matchedCandidates = allResult.isSuccess() ? allResult.value : [];
 
-      // First, add matched candidates in priority order
+      // Create lookup sets for regular and default matches
+      const regularMatchIndices = new Set(decision?.success ? decision.instanceIndices : []);
+      const defaultMatchIndices = new Set(decision?.success ? decision.defaultInstanceIndices : []);
+
+      // First, add matched candidates in priority order (regular matches first, then defaults)
       matchedCandidates.forEach((matchedCandidate) => {
         // Find the index by comparing candidate objects
         const index = resource.candidates.findIndex((candidate) => candidate === matchedCandidate);
@@ -854,11 +947,23 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
             compiledCollection
           );
 
+          const isDefaultMatch = defaultMatchIndices.has(index);
+          const isRegularMatch = regularMatchIndices.has(index);
+
+          // Determine overall match type for this candidate
+          const candidateMatchType: ConditionMatchType = isRegularMatch
+            ? 'match'
+            : isDefaultMatch
+            ? 'matchAsDefault'
+            : 'noMatch';
+
           candidateDetails.push({
             candidate: resource.candidates[index],
             conditionSetKey,
             candidateIndex: index,
             matched: true,
+            matchType: candidateMatchType,
+            isDefaultMatch,
             conditionEvaluations
           });
         }
@@ -881,6 +986,8 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
             conditionSetKey,
             candidateIndex: index,
             matched: false,
+            matchType: 'noMatch',
+            isDefaultMatch: false,
             conditionEvaluations
           });
         }
@@ -1267,25 +1374,65 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
   }
 
   if (viewMode === 'all') {
-    const matchingCandidates = result.candidateDetails?.filter((c) => c.matched) || [];
+    const regularMatchingCandidates =
+      result.candidateDetails?.filter((c) => c.matched && !c.isDefaultMatch) || [];
+    const defaultMatchingCandidates =
+      result.candidateDetails?.filter((c) => c.matched && c.isDefaultMatch) || [];
     const nonMatchingCandidates = result.candidateDetails?.filter((c) => !c.matched) || [];
+
+    const getMatchTypeColor = (type: ConditionMatchType) => {
+      switch (type) {
+        case 'match':
+          return 'bg-green-100 text-green-800';
+        case 'matchAsDefault':
+          return 'bg-amber-100 text-amber-800';
+        case 'noMatch':
+          return 'bg-red-100 text-red-800';
+        default:
+          return 'bg-gray-100 text-gray-800';
+      }
+    };
+
+    const getMatchTypeIcon = (type: ConditionMatchType) => {
+      switch (type) {
+        case 'match':
+          return '✓';
+        case 'matchAsDefault':
+          return '≈';
+        case 'noMatch':
+          return '✗';
+        default:
+          return '?';
+      }
+    };
 
     return (
       <div className="space-y-4">
-        <div>
-          <h4 className="font-medium text-gray-800 mb-2">Matching Candidates</h4>
-          {matchingCandidates.length > 0 ? (
+        {/* Regular Matching Candidates */}
+        {regularMatchingCandidates.length > 0 && (
+          <div>
+            <h4 className="font-medium text-gray-800 mb-2">Regular Matches</h4>
             <div className="space-y-2">
-              {matchingCandidates.map((candidateInfo, index) => (
-                <div key={candidateInfo.candidateIndex} className="bg-white p-3 rounded border">
+              {regularMatchingCandidates.map((candidateInfo, index) => (
+                <div
+                  key={candidateInfo.candidateIndex}
+                  className="bg-white p-3 rounded border border-green-200"
+                >
                   <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm font-medium text-gray-700">
-                      Candidate {candidateInfo.candidateIndex + 1} {index === 0 ? '(Best Match)' : ''}
+                    <div className="text-sm font-medium text-gray-700 flex items-center space-x-2">
+                      <span>
+                        Candidate {candidateInfo.candidateIndex + 1} {index === 0 ? '(Best Match)' : ''}
+                      </span>
                       {candidateInfo.conditionSetKey && (
-                        <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
                           {candidateInfo.conditionSetKey}
                         </span>
                       )}
+                      <span
+                        className={`px-2 py-1 rounded text-xs ${getMatchTypeColor(candidateInfo.matchType)}`}
+                      >
+                        {getMatchTypeIcon(candidateInfo.matchType)} {candidateInfo.matchType}
+                      </span>
                     </div>
                     <div className="flex items-center space-x-2 text-xs">
                       {candidateInfo.candidate.isPartial && (
@@ -1307,10 +1454,65 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
                 </div>
               ))}
             </div>
-          ) : (
+          </div>
+        )}
+
+        {/* Default Matching Candidates */}
+        {defaultMatchingCandidates.length > 0 && (
+          <div>
+            <h4 className="font-medium text-gray-800 mb-2">Default Matches</h4>
+            <div className="space-y-2">
+              {defaultMatchingCandidates.map((candidateInfo, index) => (
+                <div
+                  key={candidateInfo.candidateIndex}
+                  className="bg-white p-3 rounded border border-amber-200"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-medium text-gray-700 flex items-center space-x-2">
+                      <span>Candidate {candidateInfo.candidateIndex + 1}</span>
+                      {candidateInfo.conditionSetKey && (
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                          {candidateInfo.conditionSetKey}
+                        </span>
+                      )}
+                      <span
+                        className={`px-2 py-1 rounded text-xs ${getMatchTypeColor(candidateInfo.matchType)}`}
+                      >
+                        {getMatchTypeIcon(candidateInfo.matchType)} {candidateInfo.matchType}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-xs">
+                      {candidateInfo.candidate.isPartial && (
+                        <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Partial</span>
+                      )}
+                      {candidateInfo.candidate.mergeMethod && (
+                        <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                          {candidateInfo.candidate.mergeMethod}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto mt-2">
+                    {JSON.stringify(candidateInfo.candidate.json, null, 2)}
+                  </pre>
+                  {candidateInfo.conditionEvaluations && (
+                    <ConditionEvaluationDisplay evaluations={candidateInfo.conditionEvaluations} />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Show message when no matches */}
+        {regularMatchingCandidates.length === 0 && defaultMatchingCandidates.length === 0 && (
+          <div>
+            <h4 className="font-medium text-gray-800 mb-2">Matching Candidates</h4>
             <p className="text-sm text-gray-600">No candidates matched the current context.</p>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Non-matching Candidates */}
 
         {nonMatchingCandidates.length > 0 && (
           <div>
@@ -1359,18 +1561,65 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
   // Best candidate view
   const bestCandidateInfo = result.candidateDetails?.find((c) => c.matched);
 
+  const getMatchTypeColor = (type: ConditionMatchType) => {
+    switch (type) {
+      case 'match':
+        return 'bg-green-100 text-green-800';
+      case 'matchAsDefault':
+        return 'bg-amber-100 text-amber-800';
+      case 'noMatch':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getMatchTypeIcon = (type: ConditionMatchType) => {
+    switch (type) {
+      case 'match':
+        return '✓';
+      case 'matchAsDefault':
+        return '≈';
+      case 'noMatch':
+        return '✗';
+      default:
+        return '?';
+    }
+  };
+
+  const getMatchDescription = (candidateInfo: CandidateInfo | undefined) => {
+    if (!candidateInfo) return 'Selected candidate for current context';
+
+    if (candidateInfo.isDefaultMatch) {
+      return 'Selected candidate (matched via default values)';
+    } else {
+      return 'Selected candidate (direct match)';
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div>
         <h4 className="font-medium text-gray-800 mb-2">Best Match</h4>
         {result.bestCandidate ? (
-          <div className="bg-white p-3 rounded border">
+          <div
+            className={`bg-white p-3 rounded border ${
+              bestCandidateInfo?.isDefaultMatch ? 'border-amber-200' : 'border-green-200'
+            }`}
+          >
             <div className="flex items-center justify-between mb-2">
-              <div className="text-sm font-medium text-gray-700">
-                Selected candidate for current context
+              <div className="text-sm font-medium text-gray-700 flex items-center space-x-2">
+                <span>{getMatchDescription(bestCandidateInfo)}</span>
                 {bestCandidateInfo?.conditionSetKey && (
-                  <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
                     {bestCandidateInfo.conditionSetKey}
+                  </span>
+                )}
+                {bestCandidateInfo && (
+                  <span
+                    className={`px-2 py-1 rounded text-xs ${getMatchTypeColor(bestCandidateInfo.matchType)}`}
+                  >
+                    {getMatchTypeIcon(bestCandidateInfo.matchType)} {bestCandidateInfo.matchType}
                   </span>
                 )}
               </div>
