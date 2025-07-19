@@ -56,12 +56,49 @@ Returns the [system configuration](./ts-res.config.model.isystemconfiguration.md
 </td></tr>
 <tr><td>
 
-[getPredefinedSystemConfiguration(name)](./ts-res.config.getpredefinedsystemconfiguration.md)
+[getPredefinedSystemConfiguration(name, initParams)](./ts-res.config.getpredefinedsystemconfiguration.md)
 
 
 </td><td>
 
 Returns the [SystemConfiguration](./ts-res.config.systemconfiguration.md) for the specified predefined system configuration.
+
+
+</td></tr>
+<tr><td>
+
+[updateSystemConfigurationQualifierDefaultValues(config, qualifierDefaultValues)](./ts-res.config.updatesystemconfigurationqualifierdefaultvalues.md)
+
+
+</td><td>
+
+Creates a copy of the provided [system configuration](./ts-res.config.model.isystemconfiguration.md) with updated qualifier default values.
+
+
+</td></tr>
+</tbody></table>
+
+## Interfaces
+
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ISystemConfigurationInitParams](./ts-res.config.isystemconfigurationinitparams.md)
+
+
+</td><td>
+
+Parameters used to initialize a [SystemConfiguration](./ts-res.config.systemconfiguration.md)<!-- -->.
 
 
 </td></tr>

@@ -198,7 +198,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[create(config)](./ts-res.config.systemconfiguration.create.md)
+[create(config, initParams)](./ts-res.config.systemconfiguration.create.md)
 
 
 </td><td>

@@ -627,6 +627,8 @@ declare namespace Config {
     export {
         Model_2 as Model,
         Convert_10 as Convert,
+        updateSystemConfigurationQualifierDefaultValues,
+        ISystemConfigurationInitParams,
         SystemConfiguration,
         getPredefinedDeclaration,
         getPredefinedSystemConfiguration,
@@ -1102,9 +1104,10 @@ function getPredefinedDeclaration(name: PredefinedSystemConfiguration): Result<I
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function getPredefinedSystemConfiguration(name: PredefinedSystemConfiguration): Result<SystemConfiguration>;
+function getPredefinedSystemConfiguration(name: PredefinedSystemConfiguration, initParams?: ISystemConfigurationInitParams): Result<SystemConfiguration>;
 
 declare namespace Helpers {
     export {
@@ -2531,6 +2534,13 @@ interface ISystemConfiguration {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+interface ISystemConfigurationInitParams {
+    qualifierDefaultValues?: Record<string, string | null>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 interface ISystemLanguageQualifierTypeConfig extends IQualifierTypeConfig<ILanguageQualifierTypeConfig> {
     // (undocumented)
     systemType: 'language';
@@ -3942,7 +3952,8 @@ class SystemConfiguration {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static create(config: ISystemConfiguration): Result<SystemConfiguration>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(config: ISystemConfiguration, initParams?: ISystemConfigurationInitParams): Result<SystemConfiguration>;
     get description(): string | undefined;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -4101,6 +4112,13 @@ function toResourceTypeIndex(index: number): Result<ResourceTypeIndex>;
 
 // @public
 function toResourceTypeName(name: string): Result<ResourceTypeName>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function updateSystemConfigurationQualifierDefaultValues(config: ISystemConfiguration, qualifierDefaultValues: Record<string, string | null>): Result<ISystemConfiguration>;
 
 declare namespace Validate {
     export {

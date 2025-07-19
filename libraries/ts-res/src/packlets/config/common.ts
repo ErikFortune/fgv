@@ -22,7 +22,7 @@
 
 import { Result, fail } from '@fgv/ts-utils';
 import { ISystemConfiguration } from './json';
-import { SystemConfiguration } from './systemConfiguration';
+import { SystemConfiguration, ISystemConfigurationInitParams } from './systemConfiguration';
 import { sanitizeJsonObject } from '@fgv/ts-json-base';
 import { Default, Example } from './predefined';
 
@@ -76,15 +76,17 @@ export function getPredefinedDeclaration(name: PredefinedSystemConfiguration): R
  * Returns the {@link Config.SystemConfiguration | SystemConfiguration} for the specified
  * predefined system configuration.
  * @param name - The name of the predefined system configuration.
+ * @param initParams - Optional {@link Config.ISystemConfigurationInitParams | initialization parameters}.
  * @returns `Success` with the {@link Config.SystemConfiguration | SystemConfiguration}
  * if successful, `Failure` with an error message otherwise.
  * @public
  */
 export function getPredefinedSystemConfiguration(
-  name: PredefinedSystemConfiguration
+  name: PredefinedSystemConfiguration,
+  initParams?: ISystemConfigurationInitParams
 ): Result<SystemConfiguration> {
   if (name in predefinedDecls) {
-    return SystemConfiguration.create(predefinedDecls[name]);
+    return SystemConfiguration.create(predefinedDecls[name], initParams);
   }
 
   return fail(`Unknown predefined system configuration: ${name}`);

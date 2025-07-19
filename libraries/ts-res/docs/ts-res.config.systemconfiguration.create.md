@@ -9,7 +9,7 @@ Creates a new [SystemConfiguration](./ts-res.config.systemconfiguration.md) from
 **Signature:**
 
 ```typescript
-static create(config: ISystemConfiguration): Result<SystemConfiguration>;
+static create(config: ISystemConfiguration, initParams?: ISystemConfigurationInitParams): Result<SystemConfiguration>;
 ```
 
 ## Parameters
@@ -43,6 +43,22 @@ ISystemConfiguration
 </td><td>
 
 The [system configuration](./ts-res.config.model.isystemconfiguration.md) to use.
+
+
+</td></tr>
+<tr><td>
+
+initParams
+
+
+</td><td>
+
+[ISystemConfigurationInitParams](./ts-res.config.isystemconfigurationinitparams.md)
+
+
+</td><td>
+
+_(Optional)_ Optional [initialization parameters](./ts-res.config.isystemconfigurationinitparams.md)<!-- -->.
 
 
 </td></tr>
