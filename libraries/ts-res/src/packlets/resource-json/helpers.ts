@@ -144,7 +144,9 @@ export function mergeImporterCandidate(
       return succeed({ ...candidate, id, conditions });
     });
   } else {
-    return succeed({ ...candidate, conditions: baseConditions });
+    /* c8 ignore next 1 - defense in depth */
+    const conditions = [...(baseConditions ?? []), ...(candidate.conditions ?? [])];
+    return succeed({ ...candidate, conditions });
   }
 }
 
@@ -177,6 +179,7 @@ export function mergeLooseResource(
   baseName?: string,
   baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>
 ): Result<Normalized.ILooseResourceDecl> {
+  /* c8 ignore next 1 - defense in depth */
   const resourceId = Json.isLooseResourceDecl(resource) ? resource.id : '';
   if (!baseName && !Json.isLooseResourceDecl(resource)) {
     return fail('id is required in mergeLooseResource');

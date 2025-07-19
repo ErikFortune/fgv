@@ -246,6 +246,26 @@ describe('Name Inheritance in Resource Collections', () => {
       );
     });
 
+    test('handles child candidate with no ID and no base name', () => {
+      const candidate: TsRes.ResourceJson.Normalized.IChildResourceCandidateDecl = {
+        json: { config: 'Some configuration' },
+        conditions: [{ qualifierName: 'env', value: 'production' }]
+      };
+
+      expect(
+        TsRes.ResourceJson.Helpers.mergeImporterCandidate(candidate, undefined, [
+          { qualifierName: 'platform', value: 'web' }
+        ])
+      ).toSucceedAndSatisfy((merged) => {
+        expect('id' in merged).toBe(false);
+        expect(merged.json).toEqual({ config: 'Some configuration' });
+        expect(merged.conditions).toEqual([
+          { qualifierName: 'platform', value: 'web' },
+          { qualifierName: 'env', value: 'production' }
+        ]);
+      });
+    });
+
     describe('error cases', () => {
       test('fails when child candidate has no ID and no base name', () => {
         const candidate: TsRes.ResourceJson.Normalized.IChildResourceCandidateDecl = {
@@ -279,6 +299,50 @@ describe('Name Inheritance in Resource Collections', () => {
   });
 
   describe('Integration with ResourceDeclCollection', () => {
+    test('handles resource collection with candidates that have no ID and no context', () => {
+      const collectionJson = {
+        candidates: [
+          {
+            json: {
+              app_name: 'Sample Application',
+              version: '1.0.0',
+              api_url: 'https://api.example.com',
+              timeout: 30000,
+              max_retries: 3,
+              debug: false,
+              features: {
+                authentication: true,
+                notifications: true,
+                analytics: true
+              }
+            }
+          }
+        ]
+      };
+
+      expect(TsRes.ResourceJson.ResourceDeclCollection.create(collectionJson)).toSucceedAndSatisfy(
+        (collection) => {
+          const candidates = collection.getImporterCandidates();
+          expect(candidates).toHaveLength(1);
+          // Candidate should remain as child candidate without ID
+          expect('id' in candidates[0]).toBe(false);
+          expect(candidates[0].json).toEqual({
+            app_name: 'Sample Application',
+            version: '1.0.0',
+            api_url: 'https://api.example.com',
+            timeout: 30000,
+            max_retries: 3,
+            debug: false,
+            features: {
+              authentication: true,
+              notifications: true,
+              analytics: true
+            }
+          });
+        }
+      );
+    });
+
     test('creates collection with name inheritance from context', () => {
       const collectionJson = {
         context: {
