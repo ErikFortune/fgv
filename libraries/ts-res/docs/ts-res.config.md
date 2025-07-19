@@ -45,7 +45,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[getPredefinedDeclaration(name)](./ts-res.config.getpredefineddeclaration.md)
+[getPredefinedDeclaration(name, initParams)](./ts-res.config.getpredefineddeclaration.md)
 
 
 </td><td>

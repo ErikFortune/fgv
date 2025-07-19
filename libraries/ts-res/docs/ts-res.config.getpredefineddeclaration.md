@@ -9,7 +9,7 @@ Returns the [system configuration](./ts-res.config.model.isystemconfiguration.md
 **Signature:**
 
 ```typescript
-export declare function getPredefinedDeclaration(name: PredefinedSystemConfiguration): Result<ISystemConfiguration>;
+export declare function getPredefinedDeclaration(name: PredefinedSystemConfiguration, initParams?: ISystemConfigurationInitParams): Result<ISystemConfiguration>;
 ```
 
 ## Parameters
@@ -43,6 +43,22 @@ name
 </td><td>
 
 The name of the predefined system configuration.
+
+
+</td></tr>
+<tr><td>
+
+initParams
+
+
+</td><td>
+
+[ISystemConfigurationInitParams](./ts-res.config.isystemconfigurationinitparams.md)
+
+
+</td><td>
+
+_(Optional)_ Optional [initialization parameters](./ts-res.config.isystemconfigurationinitparams.md)<!-- -->.
 
 
 </td></tr>

@@ -22,7 +22,11 @@
 
 import { Result, fail } from '@fgv/ts-utils';
 import { ISystemConfiguration } from './json';
-import { SystemConfiguration, ISystemConfigurationInitParams } from './systemConfiguration';
+import {
+  SystemConfiguration,
+  ISystemConfigurationInitParams,
+  updateSystemConfigurationQualifierDefaultValues
+} from './systemConfiguration';
 import { sanitizeJsonObject } from '@fgv/ts-json-base';
 import { Default, Example } from './predefined';
 
@@ -60,13 +64,23 @@ const predefinedDecls: Record<PredefinedSystemConfiguration, ISystemConfiguratio
  * Returns the {@link Config.Model.ISystemConfiguration | system configuration} declaration for the
  * specified predefined system configuration.
  * @param name - The name of the predefined system configuration.
+ * @param initParams - Optional {@link Config.ISystemConfigurationInitParams | initialization parameters}.
  * @returns `Success` with the {@link Config.Model.ISystemConfiguration | system configuration}
  * declaration if successful, `Failure` with an error message otherwise.
  * @public
  */
-export function getPredefinedDeclaration(name: PredefinedSystemConfiguration): Result<ISystemConfiguration> {
+export function getPredefinedDeclaration(
+  name: PredefinedSystemConfiguration,
+  initParams?: ISystemConfigurationInitParams
+): Result<ISystemConfiguration> {
   if (name in predefinedDecls) {
-    return sanitizeJsonObject(predefinedDecls[name]);
+    const baseConfig = sanitizeJsonObject(predefinedDecls[name]);
+    if (initParams?.qualifierDefaultValues) {
+      return baseConfig.onSuccess((config) =>
+        updateSystemConfigurationQualifierDefaultValues(config, initParams.qualifierDefaultValues!)
+      );
+    }
+    return baseConfig;
   }
 
   return fail(`Unknown predefined system configuration: ${name}`);

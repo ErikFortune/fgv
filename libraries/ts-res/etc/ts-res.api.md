@@ -1098,9 +1098,10 @@ type FsItemResultDetail = 'failed' | 'skipped' | 'succeeded';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function getPredefinedDeclaration(name: PredefinedSystemConfiguration): Result<ISystemConfiguration>;
+function getPredefinedDeclaration(name: PredefinedSystemConfiguration, initParams?: ISystemConfigurationInitParams): Result<ISystemConfiguration>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

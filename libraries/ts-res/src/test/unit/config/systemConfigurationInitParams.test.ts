@@ -267,6 +267,44 @@ describe('SystemConfiguration InitParams', () => {
     });
   });
 
+  describe('getPredefinedDeclaration with init params', () => {
+    test('applies qualifier default values to predefined declaration', () => {
+      const initParams: TsRes.Config.ISystemConfigurationInitParams = {
+        qualifierDefaultValues: {
+          language: 'fr-FR',
+          currentTerritory: 'FR'
+        }
+      };
+
+      expect(TsRes.Config.getPredefinedDeclaration('default', initParams)).toSucceedAndSatisfy((config) => {
+        const languageQualifier = config.qualifiers.find((q) => q.name === 'language');
+        const territoryQualifier = config.qualifiers.find((q) => q.name === 'currentTerritory');
+
+        expect(languageQualifier?.defaultValue).toBe('fr-FR');
+        expect(territoryQualifier?.defaultValue).toBe('FR');
+      });
+    });
+
+    test('works without init params for backward compatibility', () => {
+      expect(TsRes.Config.getPredefinedDeclaration('default')).toSucceedAndSatisfy((config) => {
+        expect(config.name).toBeDefined();
+        expect(config.qualifiers.length).toBeGreaterThan(0);
+      });
+    });
+
+    test('fails with invalid qualifier name', () => {
+      const initParams: TsRes.Config.ISystemConfigurationInitParams = {
+        qualifierDefaultValues: {
+          nonexistent: 'value'
+        }
+      };
+
+      expect(TsRes.Config.getPredefinedDeclaration('default', initParams)).toFailWith(
+        /Qualifier 'nonexistent' not found in system configuration/i
+      );
+    });
+  });
+
   describe('Integration with qualifier validation', () => {
     test('validates language qualifier default values during system configuration creation', () => {
       const initParams: TsRes.Config.ISystemConfigurationInitParams = {
