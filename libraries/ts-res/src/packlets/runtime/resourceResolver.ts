@@ -23,13 +23,17 @@
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { JsonValue, JsonObject, isJsonObject } from '@fgv/ts-json-base';
 import { JsonEditor } from '@fgv/ts-json';
-import { QualifierMatchScore, NoMatch } from '../common';
+import { NoMatch } from '../common';
 import { Condition, ConditionSet } from '../conditions';
 import { AbstractDecision } from '../decisions';
 import { ReadOnlyQualifierTypeCollector } from '../qualifier-types';
 import { IContextQualifierProvider } from './context';
 import { IResourceManager, IResource, IResourceCandidate } from './iResourceManager';
-import { ConditionSetResolutionResult, IConditionMatchResult } from './conditionSetResolutionResult';
+import {
+  ConditionMatchType,
+  ConditionSetResolutionResult,
+  IConditionMatchResult
+} from './conditionSetResolutionResult';
 import { IResourceResolverCacheListener } from './cacheListener';
 
 /**
@@ -40,7 +44,7 @@ import { IResourceResolverCacheListener } from './cacheListener';
  */
 export type DecisionResolutionResult =
   | { success: false }
-  | { success: true; instanceIndices: ReadonlyArray<number> };
+  | { success: true; instanceIndices: ReadonlyArray<number>; defaultInstanceIndices: ReadonlyArray<number> };
 
 /**
  * Parameters for creating a {@link Runtime.ResourceResolver | ResourceResolver}.
@@ -95,9 +99,10 @@ export class ResourceResolver {
 
   /**
    * The cache array for resolved conditions, indexed by condition index for O(1) lookup.
-   * Each entry stores the resolved QualifierMatchScore for the corresponding condition.
+   * Each entry stores the resolved {@link Runtime.IConditionMatchResult | condition match result} for
+   * the corresponding condition.
    */
-  public get conditionCache(): ReadonlyArray<QualifierMatchScore | undefined> {
+  public get conditionCache(): ReadonlyArray<IConditionMatchResult | undefined> {
     return this._conditionCache;
   }
 
@@ -121,7 +126,7 @@ export class ResourceResolver {
    * Cache array for resolved conditions, indexed by condition index for O(1) lookup.
    * Each entry stores the resolved QualifierMatchScore for the corresponding condition.
    */
-  private readonly _conditionCache: Array<QualifierMatchScore | undefined>;
+  private readonly _conditionCache: Array<IConditionMatchResult | undefined>;
 
   /**
    * Cache array for resolved condition sets, indexed by condition set index for O(1) lookup.
@@ -151,7 +156,7 @@ export class ResourceResolver {
 
     // Initialize condition cache array with size matching the condition collector
     const conditionCollectorSize = this.resourceManager.conditions.size;
-    this._conditionCache = new Array<QualifierMatchScore | undefined>(conditionCollectorSize);
+    this._conditionCache = new Array<IConditionMatchResult | undefined>(conditionCollectorSize);
 
     // Initialize condition set cache array with size matching the condition set collector
     const conditionSetCollectorSize = this.resourceManager.conditionSets.size;
@@ -183,7 +188,7 @@ export class ResourceResolver {
    * or `Failure` with an error message if the condition cannot be resolved.
    * @public
    */
-  public resolveCondition(condition: Condition): Result<QualifierMatchScore> {
+  public resolveCondition(condition: Condition): Result<IConditionMatchResult> {
     // Get the condition's index for cache lookup
     const conditionIndex = condition.index;
     if (conditionIndex === undefined) {
@@ -209,13 +214,21 @@ export class ResourceResolver {
     const qualifierValue = qualifierValueResult.value;
 
     // Evaluate the condition using the qualifier type's matching logic
-    const matchScore = condition.qualifier.type.matches(condition.value, qualifierValue, condition.operator);
+    const score = condition.qualifier.type.matches(condition.value, qualifierValue, condition.operator);
+    const priority = condition.priority;
+    const scoreAsDefault = condition.scoreAsDefault ?? NoMatch;
+    const matchResult: IConditionMatchResult =
+      score > NoMatch
+        ? { score, priority, matchType: 'match' }
+        : scoreAsDefault > NoMatch
+        ? { score: scoreAsDefault, priority, matchType: 'matchAsDefault' }
+        : { score: NoMatch, priority, matchType: 'noMatch' };
 
     // Cache the resolved value for future O(1) lookup
-    this._conditionCache[conditionIndex] = matchScore;
+    this._conditionCache[conditionIndex] = matchResult;
     this._listener?.onCacheMiss('condition', conditionIndex);
 
-    return succeed(matchScore);
+    return succeed(matchResult);
   }
 
   /**
@@ -241,36 +254,54 @@ export class ResourceResolver {
     }
 
     // Resolve all conditions in the condition set
-    const matches: Array<IConditionMatchResult> = [];
+    const conditions: Array<IConditionMatchResult> = [];
+    let matchType: ConditionMatchType = 'match';
 
     for (const condition of conditionSet.conditions) {
-      const scoreResult = this.resolveCondition(condition);
+      const { value: conditionResult, message: conditionMessage } = this.resolveCondition(condition);
 
-      if (scoreResult.isFailure()) {
+      if (conditionMessage !== undefined) {
         /* c8 ignore next 2 - defensive coding: extreme internal error scenario not reachable in normal operation */
         this._listener?.onCacheError('conditionSet', conditionSetIndex);
-        return fail(`Failed to resolve condition "${condition.key}": ${scoreResult.message}`);
+        return fail(`Failed to resolve condition "${condition.key}": ${conditionMessage}`);
       }
 
-      const score = scoreResult.value;
-      const priority = condition.priority;
-      if (score === NoMatch) {
+      conditions.push(conditionResult);
+
+      if (conditionResult.matchType === 'noMatch') {
         // Cache the failure result
-        const failureResult = ConditionSetResolutionResult.createFailure();
-        this._conditionSetCache[conditionSetIndex] = failureResult;
-        this._listener?.onCacheMiss('conditionSet', conditionSetIndex);
-        return succeed(failureResult);
+        return ConditionSetResolutionResult.create('noMatch', conditions)
+          .onSuccess((result) => {
+            this._conditionSetCache[conditionSetIndex] = result;
+            this._listener?.onCacheMiss('conditionSet', conditionSetIndex);
+            return succeed(result);
+          })
+          .onFailure((err) => {
+            /* c8 ignore next 4 - defensive coding: extreme internal error scenario not reachable in normal operation */
+            this._conditionSetCache[conditionSetIndex] = undefined;
+            this._listener?.onCacheError('conditionSet', conditionSetIndex);
+            return fail(`${conditionSetIndex}: error creating condition set resolution result: ${err}`);
+          });
       }
 
-      matches.push({ priority, score });
+      if (conditionResult.matchType === 'matchAsDefault') {
+        matchType = 'matchAsDefault';
+      }
     }
 
     // Cache the successful result
-    const successResult = ConditionSetResolutionResult.createSuccess(matches);
-    this._conditionSetCache[conditionSetIndex] = successResult;
-    this._listener?.onCacheMiss('conditionSet', conditionSetIndex);
-
-    return succeed(successResult);
+    return ConditionSetResolutionResult.create(matchType, conditions)
+      .onSuccess((result) => {
+        this._conditionSetCache[conditionSetIndex] = result;
+        this._listener?.onCacheMiss('conditionSet', conditionSetIndex);
+        return succeed(result);
+      })
+      .onFailure((err) => {
+        /* c8 ignore next 4 - defensive coding: extreme internal error scenario not reachable in normal operation */
+        this._conditionSetCache[conditionSetIndex] = undefined;
+        this._listener?.onCacheError('conditionSet', conditionSetIndex);
+        return fail(`${conditionSetIndex}: error creating condition set resolution result: ${err}`);
+      });
   }
 
   /**
@@ -297,6 +328,7 @@ export class ResourceResolver {
 
     // Resolve all condition sets in the decision
     const matchingInstanceResults: Array<{ index: number; result: ConditionSetResolutionResult }> = [];
+    const matchingDefaultInstanceResults: Array<{ index: number; result: ConditionSetResolutionResult }> = [];
 
     for (let instanceIndex = 0; instanceIndex < decision.candidates.length; instanceIndex++) {
       const candidate = decision.candidates[instanceIndex];
@@ -311,8 +343,13 @@ export class ResourceResolver {
       const resolution = conditionSetResult.value;
 
       // Only include condition sets that match
-      if (resolution.success) {
+      if (resolution.matchType === 'match') {
         matchingInstanceResults.push({
+          index: instanceIndex,
+          result: resolution
+        });
+      } else if (resolution.matchType === 'matchAsDefault') {
+        matchingDefaultInstanceResults.push({
           index: instanceIndex,
           result: resolution
         });
@@ -322,14 +359,17 @@ export class ResourceResolver {
 
     // Sort by condition set resolution priority using the proper comparison logic
     matchingInstanceResults.sort((a, b) => ConditionSetResolutionResult.compare(a.result, b.result));
+    matchingDefaultInstanceResults.sort((a, b) => ConditionSetResolutionResult.compare(a.result, b.result));
 
     // Extract just the instance indices in priority order
     const instanceIndices = matchingInstanceResults.map((item) => item.index);
+    const defaultInstanceIndices = matchingDefaultInstanceResults.map((item) => item.index);
 
     // Cache the successful result
     const successResult: DecisionResolutionResult = {
       success: true,
-      instanceIndices: instanceIndices
+      instanceIndices,
+      defaultInstanceIndices
     };
     this._decisionCache[decisionIndex] = successResult;
     this._listener?.onCacheMiss('decision', decisionIndex);
@@ -358,18 +398,25 @@ export class ResourceResolver {
 
     const resolution = decisionResult.value;
 
-    // Check if any candidates matched
-    if (!resolution.success || resolution.instanceIndices.length === 0) {
+    // Check if any candidates matched (regular or default)
+    if (
+      !resolution.success ||
+      (resolution.instanceIndices.length === 0 && resolution.defaultInstanceIndices.length === 0)
+    ) {
       return fail(`No matching candidates found for resource "${resource.id}"`);
     }
 
-    // Get the best matching candidate (first in the ordered list)
-    const bestCandidateIndex = resolution.instanceIndices[0];
-    if (bestCandidateIndex >= resource.candidates.length) {
-      return fail(`Invalid candidate index ${bestCandidateIndex} for resource "${resource.id}"`);
+    // Prefer regular matches over default matches
+    const candidateIndex =
+      resolution.instanceIndices.length > 0
+        ? resolution.instanceIndices[0] // Best regular match
+        : resolution.defaultInstanceIndices[0]; // Best default match
+
+    if (candidateIndex >= resource.candidates.length) {
+      return fail(`Invalid candidate index ${candidateIndex} for resource "${resource.id}"`);
     }
 
-    const bestCandidate = resource.candidates[bestCandidateIndex];
+    const bestCandidate = resource.candidates[candidateIndex];
     return succeed(bestCandidate);
   }
 
@@ -394,18 +441,32 @@ export class ResourceResolver {
 
     const resolution = decisionResult.value;
 
-    // Check if any candidates matched
-    if (!resolution.success || resolution.instanceIndices.length === 0) {
+    // Check if any candidates matched (regular or default)
+    if (
+      !resolution.success ||
+      (resolution.instanceIndices.length === 0 && resolution.defaultInstanceIndices.length === 0)
+    ) {
       return fail(`No matching candidates found for resource "${resource.id}"`);
     }
 
-    // Get all matching candidates in priority order
+    // Get all matching candidates: regular matches first, then default matches
     const candidates: IResourceCandidate[] = [];
+
+    // Add all regular matches first (already sorted by priority)
     for (const candidateIndex of resolution.instanceIndices) {
       if (candidateIndex >= resource.candidates.length) {
         return fail(`Invalid candidate index ${candidateIndex} for resource "${resource.id}"`);
       }
+      const candidate = resource.candidates[candidateIndex];
+      candidates.push(candidate);
+    }
 
+    // Add all default matches after regular matches (already sorted by priority)
+    for (const candidateIndex of resolution.defaultInstanceIndices) {
+      /* c8 ignore next 3 - defensive coding: extreme internal error scenario not reachable in normal operation */
+      if (candidateIndex >= resource.candidates.length) {
+        return fail(`Invalid candidate index ${candidateIndex} for resource "${resource.id}"`);
+      }
       const candidate = resource.candidates[candidateIndex];
       candidates.push(candidate);
     }

@@ -427,6 +427,9 @@ const conditionKey: Converter<ConditionKey, unknown>;
 const conditionKey_2: RegExp;
 
 // @public
+type ConditionMatchType = 'match' | 'matchAsDefault' | 'noMatch';
+
+// @public
 export type ConditionOperator = 'always' | 'never' | 'matches';
 
 // @public
@@ -575,14 +578,12 @@ const conditionSetKey: Converter<ConditionSetKey, unknown>;
 class ConditionSetResolutionResult {
     static compare(a: ConditionSetResolutionResult, b: ConditionSetResolutionResult): number;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static createFailure(): ConditionSetResolutionResult;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static createSuccess(matches: ReadonlyArray<IConditionMatchResult>): ConditionSetResolutionResult;
+    static create(matchType: ConditionMatchType, matches: ReadonlyArray<IConditionMatchResult>): Result<ConditionSetResolutionResult>;
     // (undocumented)
     readonly matches: ReadonlyArray<IConditionMatchResult>;
-    get maxPriority(): ConditionPriority;
     // (undocumented)
-    readonly success: boolean;
+    readonly matchType: ConditionMatchType;
+    get maxPriority(): ConditionPriority;
     get totalScore(): QualifierMatchScore;
 }
 
@@ -988,6 +989,7 @@ type DecisionResolutionResult = {
 } | {
     success: true;
     instanceIndices: ReadonlyArray<number>;
+    defaultInstanceIndices: ReadonlyArray<number>;
 };
 
 declare namespace Decisions {
@@ -1424,6 +1426,8 @@ interface IConditionDeclConvertContext {
 
 // @public
 interface IConditionMatchResult {
+    // (undocumented)
+    readonly matchType: ConditionMatchType;
     // (undocumented)
     readonly priority: ConditionPriority;
     // (undocumented)
@@ -3810,7 +3814,8 @@ class ResourceResolver {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(params: IResourceResolverCreateParams);
     clearConditionCache(): void;
-    get conditionCache(): ReadonlyArray<QualifierMatchScore | undefined>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get conditionCache(): ReadonlyArray<IConditionMatchResult | undefined>;
     get conditionCacheSize(): number;
     get conditionSetCache(): ReadonlyArray<ConditionSetResolutionResult | undefined>;
     get conditionSetCacheSize(): number;
@@ -3827,7 +3832,7 @@ class ResourceResolver {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resolveComposedResourceValue(resource: IResource): Result<JsonValue>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    resolveCondition(condition: Condition): Result<QualifierMatchScore>;
+    resolveCondition(condition: Condition): Result<IConditionMatchResult>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resolveConditionSet(conditionSet: ConditionSet): Result<ConditionSetResolutionResult>;
@@ -4030,6 +4035,7 @@ declare namespace Runtime {
         DecisionResolutionResult,
         IResourceResolverCreateParams,
         ResourceResolver,
+        ConditionMatchType,
         IConditionMatchResult,
         ConditionSetResolutionResult,
         ResourceResolverCacheType,
@@ -4387,8 +4393,8 @@ class ValidatingSimpleContextQualifierProvider extends SimpleContextQualifierPro
 // src/packlets/resources/resource.ts:231:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resource.ts:254:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resourceCandidate.ts:242:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/runtime/conditionSetResolutionResult.ts:48:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/runtime/resourceResolver.ts:141:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/runtime/conditionSetResolutionResult.ts:56:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/runtime/resourceResolver.ts:142:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 

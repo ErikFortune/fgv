@@ -20,14 +20,22 @@
  * SOFTWARE.
  */
 
+import { captureResult, Result } from '@fgv/ts-utils';
 import { QualifierMatchScore, ConditionPriority } from '../common';
 
 /**
- * Represents a single condition match result with priority and score.
+ * The outcome of a condition match.
+ * @public
+ */
+export type ConditionMatchType = 'match' | 'matchAsDefault' | 'noMatch';
+
+/**
+ * Represents a single condition match result with priority and outcome.
  * @public
  */
 export interface IConditionMatchResult {
   readonly priority: ConditionPriority;
+  readonly matchType: ConditionMatchType;
   readonly score: QualifierMatchScore;
 }
 
@@ -37,7 +45,7 @@ export interface IConditionMatchResult {
  * @public
  */
 export class ConditionSetResolutionResult {
-  public readonly success: boolean;
+  public readonly matchType: ConditionMatchType;
   public readonly matches: ReadonlyArray<IConditionMatchResult>;
 
   /**
@@ -45,34 +53,23 @@ export class ConditionSetResolutionResult {
    * @param success - Whether the condition set resolution was successful.
    * @param matches - Array of condition match results, if successful.
    */
-  private constructor(success: boolean, matches: ReadonlyArray<IConditionMatchResult>) {
-    this.success = success;
-    this.matches = matches;
+  private constructor(matchType: ConditionMatchType, matches: ReadonlyArray<IConditionMatchResult>) {
+    this.matchType = matchType;
+    this.matches = [...matches];
   }
 
   /**
-   * Creates a new failed condition set resolution result.
-   * @returns A new failed {@link Runtime.ConditionSetResolutionResult | ConditionSetResolutionResult}.
-   * @public
-   */
-  public static createFailure(): ConditionSetResolutionResult {
-    return new ConditionSetResolutionResult(false, []);
-  }
-
-  /**
-   * Creates a new successful condition set resolution result.
+   * Creates a new condition set resolution result.
+   * @param matchType - The type of match.
    * @param matches - Array of condition match results.
-   * @returns A new successful {@link Runtime.ConditionSetResolutionResult | ConditionSetResolutionResult}.
+   * @returns A new {@link Runtime.ConditionSetResolutionResult | ConditionSetResolutionResult}.
    * @public
    */
-  public static createSuccess(matches: ReadonlyArray<IConditionMatchResult>): ConditionSetResolutionResult {
-    // Sort by priority (descending), then by score (descending)
-    const sortedMatches = [...matches].sort((a, b) => {
-      const priorityDiff = b.priority - a.priority;
-      return priorityDiff !== 0 ? priorityDiff : b.score - a.score;
-    });
-
-    return new ConditionSetResolutionResult(true, sortedMatches);
+  public static create(
+    matchType: ConditionMatchType,
+    matches: ReadonlyArray<IConditionMatchResult>
+  ): Result<ConditionSetResolutionResult> {
+    return captureResult(() => new ConditionSetResolutionResult(matchType, matches));
   }
 
   /**
@@ -93,12 +90,25 @@ export class ConditionSetResolutionResult {
    * @public
    */
   public static compare(a: ConditionSetResolutionResult, b: ConditionSetResolutionResult): number {
-    // Failed results are always lower priority than successful results
-    if (!a.success && !b.success) return 0;
-    if (!a.success) return 1; // a comes after b
-    if (!b.success) return -1; // a comes before b
+    // Failed results are always lower priority than default match which are lower than match
+    if (a.matchType === 'match') {
+      if (b.matchType !== 'match') return -1;
+    } else if (a.matchType === 'matchAsDefault') {
+      if (b.matchType === 'match') {
+        return 1;
+      } else if (b.matchType === 'noMatch') {
+        return -1;
+      }
+    } else {
+      // a.matchType === 'noMatch'
+      if (b.matchType === 'noMatch') {
+        return 0;
+      } else {
+        return 1; // noMatch comes after any other match type
+      }
+    }
 
-    // Both are successful - compare condition by condition
+    // Both are successful with the same match type - compare condition by condition
     const minLength = Math.min(a.matches.length, b.matches.length);
 
     for (let i = 0; i < minLength; i++) {
@@ -130,7 +140,7 @@ export class ConditionSetResolutionResult {
    * @public
    */
   public get maxPriority(): ConditionPriority {
-    if (!this.success || this.matches.length === 0) {
+    if (this.matchType === 'noMatch' || this.matches.length === 0) {
       return 0 as ConditionPriority;
     }
     return Math.max(...this.matches.map((m) => m.priority)) as ConditionPriority;
@@ -142,7 +152,7 @@ export class ConditionSetResolutionResult {
    * @public
    */
   public get totalScore(): QualifierMatchScore {
-    if (!this.success || this.matches.length === 0) {
+    if (this.matchType === 'noMatch' || this.matches.length === 0) {
       return 0 as QualifierMatchScore;
     }
     return this.matches.reduce((sum, match) => sum + match.score, 0) as QualifierMatchScore;
