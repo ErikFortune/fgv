@@ -50,6 +50,11 @@ export interface ICompileOptions {
   contextFilter?: string;
 
   /**
+   * Qualifier default values token (pipe-separated qualifier=value pairs, e.g., 'language=en-US,en-CA|territory=US')
+   */
+  qualifierDefaults?: string;
+
+  /**
    * Output format
    */
   format: OutputFormat;

@@ -112,6 +112,16 @@ function buildContextToken(parts: ReadonlyArray<IContextTokenParts>): Result<Con
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+function buildQualifierDefaultValuesToken(parts: ReadonlyArray<IQualifierDefaultValueTokenParts>): Result<QualifierDefaultValuesToken>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function buildQualifierDefaultValueToken({ qualifier, value }: IQualifierDefaultValueTokenParts): Result<QualifierDefaultValueToken>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 class Candidate<TVALUE extends JsonValue = JsonValue> implements ICandidate<TVALUE> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -729,6 +739,9 @@ class ContextQualifierProviderValidator implements IReadOnlyContextQualifierProv
 // @public
 export type ContextQualifierToken = Brand<string, 'ContextQualifierToken'>;
 
+// @public
+const contextQualifierToken: Converter<ContextQualifierToken, unknown>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -737,8 +750,11 @@ const contextQualifierValueDecl: ObjectConverter<IContextQualifierValueDecl, unk
 // @public
 export type ContextToken = Brand<string, 'ContextToken'>;
 
+// @public
+const contextToken: Converter<ContextToken, unknown>;
+
 // @internal
-const contextToken: RegExp;
+const contextToken_2: RegExp;
 
 // @public
 class ContextTokens {
@@ -800,7 +816,11 @@ declare namespace Convert {
         resourceIndex,
         resourceTypeName,
         resourceTypeIndex,
-        resourceValueMergeMethod
+        resourceValueMergeMethod,
+        contextQualifierToken,
+        contextToken,
+        qualifierDefaultValueToken,
+        qualifierDefaultValuesToken
     }
 }
 export { Convert }
@@ -1121,7 +1141,12 @@ declare namespace Helpers {
         buildContextToken,
         parseContextQualifierTokenParts,
         parseContextTokenParts,
+        buildQualifierDefaultValueToken,
+        buildQualifierDefaultValuesToken,
+        parseQualifierDefaultValueTokenParts,
+        parseQualifierDefaultValuesTokenParts,
         IContextTokenParts,
+        IQualifierDefaultValueTokenParts,
         splitResourceId,
         joinResourceIds,
         joinOptionalResourceIds
@@ -2018,6 +2043,25 @@ interface IQualifierDeclConvertContext {
 }
 
 // @public
+interface IQualifierDefaultValueDecl {
+    // (undocumented)
+    qualifier: string;
+    // (undocumented)
+    value: string;
+}
+
+// @public
+type IQualifierDefaultValuesDecl = Record<string, string>;
+
+// @public
+interface IQualifierDefaultValueTokenParts {
+    // (undocumented)
+    qualifier: string;
+    // (undocumented)
+    value: string;
+}
+
+// @public
 interface IQualifierType extends ICollectible<QualifierTypeName, QualifierTypeIndex> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly index: QualifierTypeIndex | undefined;
@@ -2494,6 +2538,12 @@ function isValidDecisionIndex(index: number): index is DecisionIndex;
 function isValidDecisionKey(key: string): key is DecisionKey;
 
 // @public
+function isValidQualifierDefaultValuesToken(token: string): token is QualifierDefaultValuesToken;
+
+// @public
+function isValidQualifierDefaultValueToken(token: string): token is QualifierDefaultValueToken;
+
+// @public
 function isValidQualifierIndex(index: number): index is QualifierIndex;
 
 // @public
@@ -2662,6 +2712,17 @@ interface IValidatedQualifierDecl {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     type: QualifierType;
 }
+
+// @public
+interface IValidatedQualifierDefaultValueDecl {
+    // (undocumented)
+    qualifier: Qualifier;
+    // (undocumented)
+    value: QualifierContextValue;
+}
+
+// @public
+type IValidatedQualifierDefaultValuesDecl = Record<QualifierName, QualifierContextValue>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -2963,6 +3024,16 @@ function parseContextTokenParts(token: string): Result<IContextTokenParts[]>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+function parseQualifierDefaultValuesTokenParts(token: string): Result<IQualifierDefaultValueTokenParts[]>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function parseQualifierDefaultValueTokenParts(token: string): Result<IQualifierDefaultValueTokenParts>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 class PathImporter implements IImporter {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3085,6 +3156,59 @@ export type QualifierContextValue = Brand<string, 'QualifierContextValue'>;
 const qualifierDecl: ObjectConverter<IQualifierDecl, unknown>;
 
 // @public
+export type QualifierDefaultValuesToken = Brand<string, 'QualifierDefaultValuesToken'>;
+
+// @public
+const qualifierDefaultValuesToken: Converter<QualifierDefaultValuesToken, unknown>;
+
+// @internal
+const qualifierDefaultValuesToken_2: RegExp;
+
+// @public
+export type QualifierDefaultValueToken = Brand<string, 'QualifierDefaultValueToken'>;
+
+// @public
+const qualifierDefaultValueToken: Converter<QualifierDefaultValueToken, unknown>;
+
+// @internal
+const qualifierDefaultValueToken_2: RegExp;
+
+// @public
+class QualifierDefaultValueTokens {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(qualifiers: IReadOnlyQualifierCollector);
+    declToQualifierDefaultValuesToken(decl: IValidatedQualifierDefaultValuesDecl): Result<string>;
+    static declToQualifierDefaultValuesToken(decl: IValidatedQualifierDefaultValuesDecl): Result<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    parseQualifierDefaultValuesToken(token: string): Result<IValidatedQualifierDefaultValueDecl[]>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static parseQualifierDefaultValuesToken(token: string, qualifiers: IReadOnlyQualifierCollector): Result<IValidatedQualifierDefaultValueDecl[]>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    parseQualifierDefaultValueToken(token: string): Result<IValidatedQualifierDefaultValueDecl>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static parseQualifierDefaultValueToken(token: string, qualifiers: IReadOnlyQualifierCollector): Result<IValidatedQualifierDefaultValueDecl>;
+    qualifierDefaultValuesTokenToDecl(token: string): Result<IValidatedQualifierDefaultValuesDecl>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static qualifierDefaultValuesTokenToDecl(token: string, qualifiers: IReadOnlyQualifierCollector): Result<IValidatedQualifierDefaultValuesDecl>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly qualifiers: IReadOnlyQualifierCollector;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    validateQualifierDefaultValueTokenParts(parts: Helpers.IQualifierDefaultValueTokenParts): Result<IValidatedQualifierDefaultValueDecl>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static validateQualifierDefaultValueTokenParts(parts: Helpers.IQualifierDefaultValueTokenParts, qualifiers: IReadOnlyQualifierCollector): Result<IValidatedQualifierDefaultValueDecl>;
+}
+
+// @public
 export type QualifierIndex = Brand<number, 'QualifierIndex'>;
 
 // @public
@@ -3110,7 +3234,12 @@ declare namespace Qualifiers {
         IValidatedQualifierDecl,
         IReadOnlyQualifierCollector,
         IQualifierCollectorCreateParams,
-        QualifierCollector
+        QualifierCollector,
+        IQualifierDefaultValueDecl,
+        IQualifierDefaultValuesDecl,
+        IValidatedQualifierDefaultValueDecl,
+        IValidatedQualifierDefaultValuesDecl,
+        QualifierDefaultValueTokens
     }
 }
 export { Qualifiers }
@@ -3339,9 +3468,11 @@ declare namespace RegularExpressions {
         identifierList,
         conditionKey_2 as conditionKey,
         conditionToken_2 as conditionToken,
-        contextToken,
+        contextToken_2 as contextToken,
         conditionSetHash_2 as conditionSetHash,
         decisionKey_2 as decisionKey,
+        qualifierDefaultValueToken_2 as qualifierDefaultValueToken,
+        qualifierDefaultValuesToken_2 as qualifierDefaultValuesToken,
         territoryCode
     }
 }
@@ -4085,6 +4216,12 @@ function toDecisionKey(key: string): Result<DecisionKey>;
 function toOptionalResourceId(id?: string): Result<ResourceId | undefined>;
 
 // @public
+function toQualifierDefaultValuesToken(token: string): Result<QualifierDefaultValuesToken>;
+
+// @public
+function toQualifierDefaultValueToken(token: string): Result<QualifierDefaultValueToken>;
+
+// @public
 function toQualifierIndex(index: number): Result<QualifierIndex>;
 
 // @public
@@ -4160,6 +4297,10 @@ declare namespace Validate {
         isValidContextToken,
         toContextQualifierToken,
         toContextToken,
+        isValidQualifierDefaultValueToken,
+        isValidQualifierDefaultValuesToken,
+        toQualifierDefaultValueToken,
+        toQualifierDefaultValuesToken,
         isValidResourceName,
         isValidResourceId,
         isValidResourceIndex,

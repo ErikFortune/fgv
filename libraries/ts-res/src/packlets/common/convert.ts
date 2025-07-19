@@ -158,3 +158,27 @@ export const resourceTypeIndex = Converters.number.map(Validate.toResourceTypeIn
  * @public
  */
 export const resourceValueMergeMethod = Converters.enumeratedValue(allResourceValueMergeMethods);
+
+/**
+ * `Converter` which validates an `unknown` value as a {@link ContextQualifierToken | ContextQualifierToken}.
+ * @public
+ */
+export const contextQualifierToken = Converters.string.map(Validate.toContextQualifierToken);
+
+/**
+ * `Converter` which validates an `unknown` value as a {@link ContextToken | ContextToken}.
+ * @public
+ */
+export const contextToken = Converters.string.map(Validate.toContextToken);
+
+/**
+ * `Converter` which validates an `unknown` value as a {@link QualifierDefaultValueToken | QualifierDefaultValueToken}.
+ * @public
+ */
+export const qualifierDefaultValueToken = Converters.string.map(Validate.toQualifierDefaultValueToken);
+
+/**
+ * `Converter` which validates an `unknown` value as a {@link QualifierDefaultValuesToken | QualifierDefaultValuesToken}.
+ * @public
+ */
+export const qualifierDefaultValuesToken = Converters.string.map(Validate.toQualifierDefaultValuesToken);

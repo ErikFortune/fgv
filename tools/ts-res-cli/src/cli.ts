@@ -34,6 +34,7 @@ interface ICompileCommandOptions {
   config?: string;
   context?: string;
   contextFilter?: string;
+  qualifierDefaults?: string;
   format: string;
   debug?: boolean;
   verbose?: boolean;
@@ -62,6 +63,7 @@ interface IInfoCommandOptions {
   config?: string;
   context?: string;
   contextFilter?: string;
+  qualifierDefaults?: string;
   resourceTypes?: string;
   maxDistance?: number;
 }
@@ -120,6 +122,10 @@ export class TsResCliApp {
         '--context-filter <token>',
         'Context filter token (pipe-separated, e.g., "language=en-US|territory=US")'
       )
+      .option(
+        '--qualifier-defaults <token>',
+        'Qualifier default values token (pipe-separated, e.g., "language=en-US,en-CA|territory=US")'
+      )
       .option('-f, --format <format>', 'Output format', 'compiled')
       .option('--debug', 'Include debug information', false)
       .option('-v, --verbose', 'Verbose output', false)
@@ -158,6 +164,10 @@ export class TsResCliApp {
       .option(
         '--context-filter <token>',
         'Context filter token (pipe-separated, e.g., "language=en-US|territory=US")'
+      )
+      .option(
+        '--qualifier-defaults <token>',
+        'Qualifier default values token (pipe-separated, e.g., "language=en-US,en-CA|territory=US")'
       )
       .option('--resource-types <types>', 'Resource type filter (comma-separated)')
       .option('--max-distance <number>', 'Maximum distance for language matching', parseInt)
@@ -261,6 +271,7 @@ export class TsResCliApp {
       validate: false,
       includeMetadata: true,
       contextFilter,
+      qualifierDefaults: options.qualifierDefaults,
       resourceTypes: options.resourceTypes,
       maxDistance: options.maxDistance
     };
@@ -430,6 +441,7 @@ export class TsResCliApp {
         output: options.output,
         config: options.config,
         contextFilter,
+        qualifierDefaults: options.qualifierDefaults,
         format,
         debug: options.debug || false,
         verbose: options.verbose || false,

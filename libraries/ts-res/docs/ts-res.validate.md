@@ -162,6 +162,28 @@ Determines whether a string is a valid decision key.
 </td></tr>
 <tr><td>
 
+[isValidQualifierDefaultValuesToken(token)](./ts-res.validate.isvalidqualifierdefaultvaluestoken.md)
+
+
+</td><td>
+
+Determines whether a string is a valid qualifier default values token. Qualifier default values tokens are pipe-separated lists of qualifier default value tokens.
+
+
+</td></tr>
+<tr><td>
+
+[isValidQualifierDefaultValueToken(token)](./ts-res.validate.isvalidqualifierdefaultvaluetoken.md)
+
+
+</td><td>
+
+Determines whether a string is a valid [qualifier default value token](./ts-res.qualifierdefaultvaluetoken.md)<!-- -->. A qualifier default value token has the format: `<qualifierName>=<value>` or `<qualifierName>=` (to remove default) Default values allow broader character set including commas for comma-separated values.
+
+
+</td></tr>
+<tr><td>
+
 [isValidQualifierIndex(index)](./ts-res.validate.isvalidqualifierindex.md)
 
 
@@ -421,6 +443,28 @@ Converts a number to a [DecisionIndex](./ts-res.decisionindex.md) if it is a val
 </td><td>
 
 Converts an optional string to an optional [resource ID](./ts-res.resourceid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[toQualifierDefaultValuesToken(token)](./ts-res.validate.toqualifierdefaultvaluestoken.md)
+
+
+</td><td>
+
+Converts a string to a [QualifierDefaultValuesToken](./ts-res.qualifierdefaultvaluestoken.md) if it is a valid qualifier default values token.
+
+
+</td></tr>
+<tr><td>
+
+[toQualifierDefaultValueToken(token)](./ts-res.validate.toqualifierdefaultvaluetoken.md)
+
+
+</td><td>
+
+Converts a string to a [QualifierDefaultValueToken](./ts-res.qualifierdefaultvaluetoken.md) if it is a valid qualifier default value token.
 
 
 </td></tr>

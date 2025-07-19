@@ -44,7 +44,9 @@ import {
   ConditionToken,
   ConditionSetToken,
   ContextQualifierToken,
-  ContextToken
+  ContextToken,
+  QualifierDefaultValueToken,
+  QualifierDefaultValuesToken
 } from '../conditions';
 import {
   conditionKey,
@@ -52,7 +54,9 @@ import {
   conditionToken,
   contextToken,
   decisionKey,
-  identifier
+  identifier,
+  qualifierDefaultValueToken,
+  qualifierDefaultValuesToken
 } from './regularExpressions';
 
 /**
@@ -528,6 +532,64 @@ export function toContextToken(token: string): Result<ContextToken> {
   /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
   if (!isValidContextToken(token)) {
     return fail(`${token}: not a valid context token`);
+  }
+  return succeed(token);
+}
+
+/**
+ * Determines whether a string is a valid {@link QualifierDefaultValueToken | qualifier default value token}.
+ * A qualifier default value token has the format:
+ * `<qualifierName>=<value>` or `<qualifierName>=` (to remove default)
+ * Default values allow broader character set including commas for comma-separated values.
+ * @param token - the string to validate
+ * @returns `true` if the string is a valid qualifier default value token, `false` otherwise.
+ * @public
+ */
+export function isValidQualifierDefaultValueToken(token: string): token is QualifierDefaultValueToken {
+  return qualifierDefaultValueToken.test(token);
+}
+
+/**
+ * Determines whether a string is a valid qualifier default values token.
+ * Qualifier default values tokens are pipe-separated lists of qualifier default value tokens.
+ * @param token - the string to validate.
+ * @returns `true` if the string is a valid qualifier default values token, `false` otherwise.
+ * @public
+ */
+export function isValidQualifierDefaultValuesToken(token: string): token is QualifierDefaultValuesToken {
+  /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
+  if (token === '') {
+    return true;
+  }
+  return qualifierDefaultValuesToken.test(token);
+}
+
+/**
+ * Converts a string to a {@link QualifierDefaultValueToken} if it is a valid qualifier default value token.
+ * @param token - the string to convert
+ * @returns `Success` with the converted {@link QualifierDefaultValueToken} if successful, or `Failure` with an
+ * error message if not.
+ * @public
+ */
+export function toQualifierDefaultValueToken(token: string): Result<QualifierDefaultValueToken> {
+  /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
+  if (!isValidQualifierDefaultValueToken(token)) {
+    return fail(`${token}: not a valid qualifier default value token`);
+  }
+  return succeed(token);
+}
+
+/**
+ * Converts a string to a {@link QualifierDefaultValuesToken} if it is a valid qualifier default values token.
+ * @param token - the string to convert
+ * @returns `Success` with the converted {@link QualifierDefaultValuesToken} if successful, or `Failure` with an
+ * error message if not.
+ * @public
+ */
+export function toQualifierDefaultValuesToken(token: string): Result<QualifierDefaultValuesToken> {
+  /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
+  if (!isValidQualifierDefaultValuesToken(token)) {
+    return fail(`${token}: not a valid qualifier default values token`);
   }
   return succeed(token);
 }

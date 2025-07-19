@@ -406,6 +406,28 @@ Branded type for a validated qualifier context value - i.e. a value that has bee
 </td></tr>
 <tr><td>
 
+[QualifierDefaultValuesToken](./ts-res.qualifierdefaultvaluestoken.md)
+
+
+</td><td>
+
+A string representing a validated qualifier default values token. Default value tokens are pipe-separated lists of one or more qualifier default value tokens. Uses "\|" as separator to avoid conflicts with comma-separated values within default values. Example: "language=en-US,en-CA\|territory=US\|device=desktop,tablet"
+
+
+</td></tr>
+<tr><td>
+
+[QualifierDefaultValueToken](./ts-res.qualifierdefaultvaluetoken.md)
+
+
+</td><td>
+
+A string representing a single qualifier default value assignment. Format: "qualifierName=defaultValue" or "qualifierName=" (to remove default) Example: "language=en-US,en-CA" or "territory=US"
+
+
+</td></tr>
+<tr><td>
+
 [QualifierIndex](./ts-res.qualifierindex.md)
 
 

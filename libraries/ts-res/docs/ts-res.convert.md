@@ -118,6 +118,28 @@ Description
 </td></tr>
 <tr><td>
 
+[contextQualifierToken](./ts-res.convert.contextqualifiertoken.md)
+
+
+</td><td>
+
+`Converter` which validates an `unknown` value as a [ContextQualifierToken](./ts-res.contextqualifiertoken.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[contextToken](./ts-res.convert.contexttoken.md)
+
+
+</td><td>
+
+`Converter` which validates an `unknown` value as a [ContextToken](./ts-res.contexttoken.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [decisionIndex](./ts-res.convert.decisionindex.md)
 
 
@@ -135,6 +157,28 @@ Description
 </td><td>
 
 `Converter` which validates an `unknown` value as a [DecisionKey](./ts-res.decisionkey.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[qualifierDefaultValuesToken](./ts-res.convert.qualifierdefaultvaluestoken.md)
+
+
+</td><td>
+
+`Converter` which validates an `unknown` value as a [QualifierDefaultValuesToken](./ts-res.qualifierdefaultvaluestoken.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[qualifierDefaultValueToken](./ts-res.convert.qualifierdefaultvaluetoken.md)
+
+
+</td><td>
+
+`Converter` which validates an `unknown` value as a [QualifierDefaultValueToken](./ts-res.qualifierdefaultvaluetoken.md)<!-- -->.
 
 
 </td></tr>

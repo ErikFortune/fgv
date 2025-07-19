@@ -63,6 +63,28 @@ Converts an array of [context qualifier token parts](./ts-res.helpers.icontextto
 </td></tr>
 <tr><td>
 
+[buildQualifierDefaultValuesToken(parts)](./ts-res.helpers.buildqualifierdefaultvaluestoken.md)
+
+
+</td><td>
+
+Converts an array of [qualifier default value token parts](./ts-res.helpers.iqualifierdefaultvaluetokenparts.md) into a syntactically validated [qualifier default values token](./ts-res.qualifierdefaultvaluestoken.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[buildQualifierDefaultValueToken({ qualifier, value })](./ts-res.helpers.buildqualifierdefaultvaluetoken.md)
+
+
+</td><td>
+
+Converts a [the parts that make up a qualifier default value token](./ts-res.helpers.iqualifierdefaultvaluetokenparts.md) into a syntactically validated [qualifier default value token](./ts-res.qualifierdefaultvaluetoken.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [joinOptionalResourceIds(ids)](./ts-res.helpers.joinoptionalresourceids.md)
 
 
@@ -129,6 +151,28 @@ Parses a context token string into an array of [context qualifier token parts](.
 </td></tr>
 <tr><td>
 
+[parseQualifierDefaultValuesTokenParts(token)](./ts-res.helpers.parsequalifierdefaultvaluestokenparts.md)
+
+
+</td><td>
+
+Parses a qualifier default values token string into an array of [qualifier default value token parts](./ts-res.helpers.iqualifierdefaultvaluetokenparts.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[parseQualifierDefaultValueTokenParts(token)](./ts-res.helpers.parsequalifierdefaultvaluetokenparts.md)
+
+
+</td><td>
+
+Parses a qualifier default value token string into its [parts](./ts-res.helpers.iqualifierdefaultvaluetokenparts.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [splitResourceId(id)](./ts-res.helpers.splitresourceid.md)
 
 
@@ -172,6 +216,17 @@ The values needed to create a [condition token](./ts-res.conditiontoken.md)<!-- 
 </td><td>
 
 The values needed to create a [context qualifier token](./ts-res.contextqualifiertoken.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IQualifierDefaultValueTokenParts](./ts-res.helpers.iqualifierdefaultvaluetokenparts.md)
+
+
+</td><td>
+
+The values needed to create a [qualifier default value token](./ts-res.qualifierdefaultvaluetoken.md)<!-- -->.
 
 
 </td></tr>

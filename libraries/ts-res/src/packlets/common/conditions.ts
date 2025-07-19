@@ -207,3 +207,20 @@ export type ContextQualifierToken = Brand<string, 'ContextQualifierToken'>;
  * @public
  */
 export type ContextToken = Brand<string, 'ContextToken'>;
+
+/**
+ * A string representing a single qualifier default value assignment.
+ * Format: "qualifierName=defaultValue" or "qualifierName=" (to remove default)
+ * Example: "language=en-US,en-CA" or "territory=US"
+ * @public
+ */
+export type QualifierDefaultValueToken = Brand<string, 'QualifierDefaultValueToken'>;
+
+/**
+ * A string representing a validated qualifier default values token. Default value tokens are
+ * pipe-separated lists of one or more qualifier default value tokens. Uses "|" as separator
+ * to avoid conflicts with comma-separated values within default values.
+ * Example: "language=en-US,en-CA|territory=US|device=desktop,tablet"
+ * @public
+ */
+export type QualifierDefaultValuesToken = Brand<string, 'QualifierDefaultValuesToken'>;

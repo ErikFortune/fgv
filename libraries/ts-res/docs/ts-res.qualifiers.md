@@ -39,6 +39,17 @@ Collects [Qualifiers](./ts-res.qualifiers.qualifier.md) from [declarations](./ts
 
 
 </td></tr>
+<tr><td>
+
+[QualifierDefaultValueTokens](./ts-res.qualifiers.qualifierdefaultvaluetokens.md)
+
+
+</td><td>
+
+Helper class to parse and validate qualifier default value tokens.
+
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -78,6 +89,17 @@ Simple declaration for a [Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->.
 </td></tr>
 <tr><td>
 
+[IQualifierDefaultValueDecl](./ts-res.qualifiers.iqualifierdefaultvaluedecl.md)
+
+
+</td><td>
+
+Non-validated declaration of a single qualifier default value.
+
+
+</td></tr>
+<tr><td>
+
 [IReadOnlyQualifierCollector](./ts-res.qualifiers.ireadonlyqualifiercollector.md)
 
 
@@ -95,6 +117,17 @@ Readonly version of [QualifierCollector](./ts-res.qualifiers.qualifiercollector.
 </td><td>
 
 Validated declaration for a [Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IValidatedQualifierDefaultValueDecl](./ts-res.qualifiers.ivalidatedqualifierdefaultvaluedecl.md)
+
+
+</td><td>
+
+Validated declaration of a single qualifier default value.
 
 
 </td></tr>
@@ -119,6 +152,43 @@ Description
 
 
 </td><td>
+
+
+</td></tr>
+</tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[IQualifierDefaultValuesDecl](./ts-res.qualifiers.iqualifierdefaultvaluesdecl.md)
+
+
+</td><td>
+
+Non-validated declaration of qualifier default values, consisting of named default values.
+
+
+</td></tr>
+<tr><td>
+
+[IValidatedQualifierDefaultValuesDecl](./ts-res.qualifiers.ivalidatedqualifierdefaultvaluesdecl.md)
+
+
+</td><td>
+
+Validated declaration of qualifier default values, a record with strongly-typed [qualifier names](./ts-res.qualifiername.md) as keys and [qualifier context values](./ts-res.qualifiercontextvalue.md) as values.
 
 
 </td></tr>

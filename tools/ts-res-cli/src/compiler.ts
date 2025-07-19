@@ -265,8 +265,31 @@ export class ResourceCompiler {
         return fail('System configuration not loaded');
       }
 
+      // Parse qualifier defaults if provided
+      let qualifierDefaultValues: Record<string, string | null> | undefined;
+      if (this._options.qualifierDefaults) {
+        // We need to create a temporary system configuration first to parse defaults
+        const tempSystemConfigResult = TsRes.Config.SystemConfiguration.create(this._systemConfiguration);
+        if (tempSystemConfigResult.isFailure()) {
+          return fail(`Failed to create temporary system configuration: ${tempSystemConfigResult.message}`);
+        }
+
+        const tokens = new TsRes.Qualifiers.QualifierDefaultValueTokens(
+          tempSystemConfigResult.value.qualifiers
+        );
+        const defaultsResult = tokens.qualifierDefaultValuesTokenToDecl(this._options.qualifierDefaults);
+        if (defaultsResult.isFailure()) {
+          return fail(`Failed to parse qualifier defaults: ${defaultsResult.message}`);
+        }
+
+        qualifierDefaultValues = defaultsResult.value;
+      }
+
       // Create system configuration and ts-res system
-      const systemConfigResult = TsRes.Config.SystemConfiguration.create(this._systemConfiguration);
+      const systemConfigResult = TsRes.Config.SystemConfiguration.create(
+        this._systemConfiguration,
+        qualifierDefaultValues ? { qualifierDefaultValues } : undefined
+      );
       if (systemConfigResult.isFailure()) {
         return fail(`Failed to create system configuration: ${systemConfigResult.message}`);
       }

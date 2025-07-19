@@ -70,6 +70,23 @@ export const conditionSetHash: RegExp = /^[a-zA-Z0-9]{8}$/;
 export const decisionKey: RegExp = /^[a-zA-Z0-9]{8}(?:\+[a-zA-Z0-9]{8})*(?:\|[a-zA-Z0-9]{8})?$/;
 
 /**
+ * A {@link QualifierDefaultValueToken | qualifier default value token} has the form
+ * `<qualifierName>=<value>` or `<qualifierName>=` (to remove default).
+ * Default values allow broader character set including commas for comma-separated values.
+ * @internal
+ */
+export const qualifierDefaultValueToken: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*=(?:[a-zA-Z0-9_\-,\s]*)?$/;
+
+/**
+ * A {@link QualifierDefaultValuesToken | qualifier default values token} is a
+ * pipe-separated list of one or more qualifier default value tokens.
+ * Uses "|" as separator to avoid conflicts with comma-separated values within defaults.
+ * @internal
+ */
+export const qualifierDefaultValuesToken: RegExp =
+  /^[a-zA-Z_][a-zA-Z0-9_\-]*=(?:[a-zA-Z0-9_\-,\s]*)?(?:\|[a-zA-Z_][a-zA-Z0-9_\-]*=(?:[a-zA-Z0-9_\-,\s]*)?)*$/;
+
+/**
  * @internal
  */
 export const territoryCode: RegExp = /^[a-zA-Z]{2}$/;

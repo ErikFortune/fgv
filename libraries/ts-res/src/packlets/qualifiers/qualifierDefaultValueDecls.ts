@@ -20,12 +20,38 @@
  * SOFTWARE.
  */
 
-import * as Convert from './convert';
+import { QualifierContextValue, QualifierName } from '../common';
+import { Qualifier } from './qualifier';
 
-export * from './qualifier';
-export * from './qualifierDecl';
-export * from './qualifierCollector';
-export * from './qualifierDefaultValueDecls';
-export * from './qualifierDefaultValueToken';
+/**
+ * Non-validated declaration of a single qualifier default value.
+ * @public
+ */
+export interface IQualifierDefaultValueDecl {
+  qualifier: string;
+  value: string;
+}
 
-export { Convert };
+/**
+ * Non-validated declaration of qualifier default values, consisting of named
+ * default values.
+ * @public
+ */
+export type IQualifierDefaultValuesDecl = Record<string, string>;
+
+/**
+ * Validated declaration of a single qualifier default value.
+ * @public
+ */
+export interface IValidatedQualifierDefaultValueDecl {
+  qualifier: Qualifier;
+  value: QualifierContextValue;
+}
+
+/**
+ * Validated declaration of qualifier default values, a record with strongly-typed
+ * {@link QualifierName | qualifier names} as keys and
+ * {@link QualifierContextValue | qualifier context values} as values.
+ * @public
+ */
+export type IValidatedQualifierDefaultValuesDecl = Record<QualifierName, QualifierContextValue>;
