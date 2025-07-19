@@ -39,7 +39,7 @@ export interface ArrayValidatorConstructorParams<T, TC = unknown>
  * values or objects.
  * @public
  */
-export class ArrayValidator<T, TC = unknown> extends ValidatorBase<ReadonlyArray<T>, TC> {
+export class ArrayValidator<T, TC = unknown> extends ValidatorBase<T[], TC> {
   /**
    * {@link Validation.ValidatorOptions | Options} which apply to this
    * validator.
