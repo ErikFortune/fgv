@@ -54,9 +54,7 @@ export class CollectionImporter implements IImporter {
   /**
    * Creates a new {@link Import.Importers.CollectionImporter | CollectionImporter} instance.
    * @returns `Success` with the new {@link Import.Importers.CollectionImporter | CollectionImporter} if successful,
-   * `Failure` o4
-   *
-   * therwise.
+   * `Failure` otherwise.
    */
   public static create(): Result<CollectionImporter> {
     return captureResult(() => new CollectionImporter());
@@ -80,11 +78,11 @@ export class CollectionImporter implements IImporter {
     return ImportContext.forContainerImport(container.context, item.context)
       .onSuccess((context) => {
         const errors: MessageAggregator = new MessageAggregator();
-        for (const resource of container.getLooseResources()) {
+        for (const resource of container.getImporterResources()) {
           this._addResource(manager, resource, context).aggregateError(errors);
         }
 
-        for (const candidate of container.getLooseCandidates()) {
+        for (const candidate of container.getImporterCandidates()) {
           this._addCandidate(manager, candidate, context).aggregateError(errors);
         }
         return errors.returnOrReport(succeed([]));
@@ -93,12 +91,12 @@ export class CollectionImporter implements IImporter {
   }
 
   /**
-   * Adds a {@link ResourceJson.Normalized.ILooseResourceDecl | declared resource} to
+   * Adds a {@link ResourceJson.Normalized.IImporterResourceDecl | declared resource} to
    * the supplied {@link Resources.ResourceManagerBuilder | resource manager builder}, merging an
    * optional {@link Import.ImportContext | import context} if provided.
    * @param manager - The {@link Resources.ResourceManagerBuilder | resource manager builder} to which
    * the resource will be added.
-   * @param resource - The {@link ResourceJson.Normalized.ILooseResourceDecl | resource}
+   * @param resource - The {@link ResourceJson.Normalized.IImporterResourceDecl | resource}
    * to add.
    * @param context - Optional {@link Import.ImportContext | import context} to merge
    * with the resource.
@@ -107,24 +105,28 @@ export class CollectionImporter implements IImporter {
    */
   private _addResource(
     manager: ResourceManagerBuilder,
-    resource: ResourceJson.Normalized.ILooseResourceDecl,
+    resource: ResourceJson.Normalized.IImporterResourceDecl,
     context?: ImportContext
   ): Result<ResourceBuilder> {
     if (context) {
       return ResourceJson.Helpers.mergeLooseResource(resource, context.baseId, context.conditions).onSuccess(
         (merged) => manager.addResource(merged)
       );
+    } /* c8 ignore next 3 - defense in depth, should be guarded elsewhere */ else if (
+      !ResourceJson.Json.isLooseResourceDecl(resource)
+    ) {
+      return fail('cannot add child resource to manager');
     }
     return manager.addResource(resource);
   }
 
   /**
-   * Adds a {@link ResourceJson.Normalized.ILooseResourceCandidateDecl | declared resource candidate}
+   * Adds a {@link ResourceJson.Normalized.IImporterResourceCandidateDecl | declared resource candidate}
    * to the supplied {@link Resources.ResourceManagerBuilder | resource manager builder}, merging an optional
    * {@link Import.ImportContext | import context} if provided.
    * @param manager - The {@link Resources.ResourceManagerBuilder | resource manager builder} to which the
    * candidate will be added.
-   * @param candidate - The {@link ResourceJson.Normalized.ILooseResourceCandidateDecl | candidate}
+   * @param candidate - The {@link ResourceJson.Normalized.IImporterResourceCandidateDecl | candidate}
    * to add.
    * @param context - Optional {@link Import.ImportContext | import context} to merge with the candidate.
    * @returns `Success` with the {@link Resources.ResourceCandidate | resource candidate} if successful,
@@ -132,7 +134,7 @@ export class CollectionImporter implements IImporter {
    */
   private _addCandidate(
     manager: ResourceManagerBuilder,
-    candidate: ResourceJson.Normalized.ILooseResourceCandidateDecl,
+    candidate: ResourceJson.Normalized.IImporterResourceCandidateDecl,
     context?: ImportContext
   ): Result<ResourceCandidate> {
     if (context) {
@@ -141,6 +143,10 @@ export class CollectionImporter implements IImporter {
         context.baseId,
         context.conditions
       ).onSuccess((merged) => manager.addLooseCandidate(merged));
+    } /* c8 ignore next 3 - defense in depth, should be guarded elsewhere */ else if (
+      !ResourceJson.Json.isLooseResourceCandidateDecl(candidate)
+    ) {
+      return fail('cannot add child resource candidate to manager');
     }
     return manager.addLooseCandidate(candidate);
   }

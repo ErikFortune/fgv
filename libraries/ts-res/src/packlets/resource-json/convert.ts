@@ -198,3 +198,27 @@ export const resourceCollectionDecl: Converter<Normalized.IResourceCollectionDec
     }).convert(from, context);
   }
 );
+
+/**
+ * `Converter` for a normalized {@link ResourceJson.Normalized.IImporterResourceCollectionDecl | importer resource collection declaration}.
+ * This allows for a mix of loose and child resource declarations.
+ * @public
+ */
+export const importerResourceCollectionDecl: Converter<Normalized.IImporterResourceCollectionDecl> =
+  Converters.generic<Normalized.IImporterResourceCollectionDecl, unknown>(
+    (
+      from: unknown,
+      self: Converter<Normalized.IImporterResourceCollectionDecl, unknown>,
+      context?: unknown
+    ): Result<Normalized.IImporterResourceCollectionDecl> => {
+      return Converters.strictObject<Normalized.IImporterResourceCollectionDecl>({
+        context: containerContextDecl.optional(),
+        candidates: Converters.arrayOf(
+          Converters.oneOf([looseResourceCandidateDecl, childResourceCandidateDecl])
+        ).optional(),
+        resources: Converters.arrayOf(Converters.oneOf([looseResourceDecl, childResourceDecl])).optional(),
+        collections: Converters.arrayOf(self).optional(),
+        metadata: JsonConverters.jsonObject.optional()
+      }).convert(from, context);
+    }
+  );

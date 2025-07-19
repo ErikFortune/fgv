@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { mapResults, Result, succeed } from '@fgv/ts-utils';
+import { mapResults, Result, fail, succeed } from '@fgv/ts-utils';
 import * as Normalized from './normalized';
 import * as Json from './json';
 import { Helpers as CommonHelpers } from '../common';
@@ -33,7 +33,7 @@ import { sanitizeJsonObject } from '@fgv/ts-json-base';
 export interface IDeclarationOptions {
   /**
    * If `true`, properties with default values will be included in the
-   * output. IF omitted or `false`, properties with default values will be omitted.
+   * output. If omitted or `false`, properties with default values will be omitted.
    */
   showDefaults?: boolean;
 
@@ -89,11 +89,55 @@ export function mergeContextDecl(
  * @public
  */
 export function mergeLooseCandidate(
-  candidate: Normalized.ILooseResourceCandidateDecl,
+  candidate: Normalized.IImporterResourceCandidateDecl,
   baseName?: string,
   baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>
 ): Result<Normalized.ILooseResourceCandidateDecl> {
-  return CommonHelpers.joinResourceIds(baseName, candidate.id).onSuccess((id) => {
+  const candidateId = Json.isLooseResourceCandidateDecl(candidate) ? candidate.id : '';
+  if (!Json.isLooseResourceCandidateDecl(candidate) && !baseName) {
+    return fail('id is required in mergeLooseCandidate');
+  }
+
+  return CommonHelpers.joinResourceIds(baseName, candidateId).onSuccess((id) => {
+    /* c8 ignore next 1 - defense in depth */
+    const conditions = [...(baseConditions ?? []), ...(candidate.conditions ?? [])];
+    return succeed({ ...candidate, id, conditions });
+  });
+}
+
+/**
+ * Helper method to merge a resource candidate with a base name and conditions from import context.
+ * This function enables name inheritance for resource candidates, similar to resources.
+ *
+ * @param candidate - The candidate to merge. Can have an optional ID that will be joined with baseName.
+ * @param baseName - The base name from import context to merge with the candidate.
+ * When provided, this will be used as the parent component of the candidate ID.
+ * @param baseConditions - The base conditions from import context to merge with the candidate's conditions.
+ * @returns `Success` with the merged candidate if successful, otherwise `Failure`.
+ *
+ * @remarks
+ * This function supports name inheritance for candidates:
+ * - Joins baseName with candidate's existing ID using dot notation
+ * - If candidate has no ID, uses baseName as the full ID
+ * - Always merges base conditions with candidate's existing conditions
+ *
+ * @example
+ * ```typescript
+ * // Candidate inherits full name from import context
+ * const candidate = { value: "Hello", conditions: [...] }; // No id field
+ * const result = mergeImporterCandidate(candidate, "pages.home.greeting", []);
+ * // Result: { id: "pages.home.greeting", value: "Hello", conditions: [...] }
+ * ```
+ *
+ * @public
+ */
+export function mergeImporterCandidate(
+  candidate: Normalized.IImporterResourceCandidateDecl,
+  baseName?: string,
+  baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>
+): Result<Normalized.IImporterResourceCandidateDecl> {
+  const candidateId = 'id' in candidate ? candidate.id : '';
+  return CommonHelpers.joinResourceIds(baseName, candidateId).onSuccess((id) => {
     /* c8 ignore next 1 - defense in depth */
     const conditions = [...(baseConditions ?? []), ...(candidate.conditions ?? [])];
     return succeed({ ...candidate, id, conditions });
@@ -125,11 +169,16 @@ export function mergeChildCandidate(
  * @public
  */
 export function mergeLooseResource(
-  resource: Normalized.ILooseResourceDecl,
+  resource: Normalized.IImporterResourceDecl,
   baseName?: string,
   baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>
 ): Result<Normalized.ILooseResourceDecl> {
-  return CommonHelpers.joinResourceIds(baseName, resource.id).onSuccess((id) => {
+  const resourceId = Json.isLooseResourceDecl(resource) ? resource.id : '';
+  if (!baseName && !Json.isLooseResourceDecl(resource)) {
+    return fail('id is required in mergeLooseResource');
+  }
+
+  return CommonHelpers.joinResourceIds(baseName, resourceId).onSuccess((id) => {
     return mapResults(
       /* c8 ignore next 1 - defense in depth */
       (resource.candidates ?? []).map((candidate) => mergeChildCandidate(candidate, baseConditions))
@@ -140,9 +189,72 @@ export function mergeLooseResource(
 }
 
 /**
+ * Helper method to merge a resource with a base name and conditions from import context.
+ * This function enables name inheritance where resources can automatically inherit their
+ * resource ID from the import context when no explicit ID is provided in the resource declaration.
+ *
+ * @param resource - The resource to merge. Can be either a loose resource (with optional ID)
+ * or a child resource (without ID).
+ * @param baseName - The base name from import context to merge with the resource.
+ * When provided, this will be used as the parent component of the resource ID.
+ * @param baseConditions - The base conditions from import context to merge with the resource's conditions.
+ * @returns `Success` with the merged resource if successful, otherwise `Failure`.
+ *
+ * @remarks
+ * This function supports several scenarios for name inheritance:
+ * - **Explicit ID + Base Name**: Joins baseName.resourceId (e.g., "pages.home" + "greeting" = "pages.home.greeting")
+ * - **No ID + Base Name**: Uses baseName as the resource ID (enables name inheritance from import context)
+ * - **Explicit ID + No Base Name**: Uses the resource's existing ID
+ * - **No ID + No Base Name**: Returns resource without ID (for child resources)
+ *
+ * Base conditions are always merged with the resource's existing conditions.
+ *
+ * @example
+ * ```typescript
+ * // Resource without ID inherits name from import context
+ * const resource = { candidates: [...] }; // No id field
+ * const result = mergeImporterResource(resource, "pages.home", []);
+ * // Result: { id: "pages.home", candidates: [...] }
+ *
+ * // Resource with ID gets joined with base name
+ * const resource = { id: "greeting", candidates: [...] };
+ * const result = mergeImporterResource(resource, "pages.home", []);
+ * // Result: { id: "pages.home.greeting", candidates: [...] }
+ * ```
+ *
+ * @public
+ */
+export function mergeImporterResource(
+  resource: Normalized.IImporterResourceDecl,
+  baseName?: string,
+  baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>
+): Result<Normalized.IImporterResourceDecl> {
+  if (baseName || `id` in resource) {
+    const resourceId = 'id' in resource ? resource.id : '';
+    // If we have a base name or the resource has no id, we can just
+    return CommonHelpers.joinResourceIds(baseName, resourceId).onSuccess((id) => {
+      return mapResults(
+        /* c8 ignore next 1 - defense in depth */
+        (resource.candidates ?? []).map((candidate) => mergeChildCandidate(candidate, baseConditions))
+      ).onSuccess((candidates) => {
+        return succeed({ ...resource, id, candidates });
+      });
+    });
+  } else {
+    return mapResults(
+      /* c8 ignore next 1 - defense in depth */
+      (resource.candidates ?? []).map((candidate) => mergeChildCandidate(candidate, baseConditions))
+    ).onSuccess((candidates) => {
+      return succeed({ ...resource, candidates });
+    });
+  }
+}
+
+/**
  * Helper method to merge a child resource with a parent name and conditions.
  * @param resource - The resource to merge.
  * @param name - The name of the resource.
+ *
  * @param parentName - The name of the parent resource.
  * @param parentConditions - The conditions of the parent resource.
  * @returns `Success` with the merged resource if successful, otherwise `Failure`.

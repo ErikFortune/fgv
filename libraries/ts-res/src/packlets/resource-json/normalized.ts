@@ -172,3 +172,30 @@ export interface IResourceCollectionDecl {
   readonly collections?: ReadonlyArray<IResourceCollectionDecl>;
   readonly metadata?: JsonObject;
 }
+
+/**
+ * Normalized non-validated declaration of a resource candidate for import,
+ * which can be either a loose or child resource candidate.
+ * @public
+ */
+export type IImporterResourceCandidateDecl = ILooseResourceCandidateDecl | IChildResourceCandidateDecl;
+
+/**
+ * Normalized non-validated declaration of a resource for import,
+ * which can be either a loose or child resource.
+ * @public
+ */
+export type IImporterResourceDecl = ILooseResourceDecl | IChildResourceDecl;
+
+/**
+ * Normalized non-validated declaration of a collection of resources for importers.
+ * This allows for a mix of loose and child resource declarations.
+ * @public
+ */
+export interface IImporterResourceCollectionDecl {
+  readonly context?: IContainerContextDecl;
+  readonly candidates?: ReadonlyArray<IImporterResourceCandidateDecl>;
+  readonly resources?: ReadonlyArray<IImporterResourceDecl>;
+  readonly collections?: ReadonlyArray<IImporterResourceCollectionDecl>;
+  readonly metadata?: JsonObject;
+}

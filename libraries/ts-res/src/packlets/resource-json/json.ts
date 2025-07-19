@@ -239,3 +239,47 @@ export interface IResourceCollectionDecl {
   readonly collections?: ReadonlyArray<IResourceCollectionDecl>;
   readonly metadata?: JsonObject;
 }
+
+/**
+ * Non-validated declaration of a resource candidate for import,
+ * which can be either a loose or child resource candidate.
+ * @public
+ */
+export type IImporterResourceCandidateDecl = ILooseResourceCandidateDecl | IChildResourceCandidateDecl;
+
+/**
+ * Non-validated declaration of a resource for import,
+ * which can be either a loose or child resource.
+ * @public
+ */
+export type IImporterResourceDecl = ILooseResourceDecl | IChildResourceDecl;
+
+/**
+ * Non-validated declaration of a collection of resources for an importer.
+ * @public
+ */
+export interface IImporterResourceCollectionDecl {
+  readonly context?: IContainerContextDecl;
+  readonly candidates?: ReadonlyArray<IImporterResourceCandidateDecl>;
+  readonly resources?: ReadonlyArray<IImporterResourceDecl>;
+  readonly collections?: ReadonlyArray<IImporterResourceCollectionDecl>;
+  readonly metadata?: JsonObject;
+}
+
+/**
+ * Type guard function to check if a resource candidate declaration is a loose resource candidate declaration.
+ * @public
+ */
+export function isLooseResourceCandidateDecl(
+  decl: IImporterResourceCandidateDecl
+): decl is ILooseResourceCandidateDecl {
+  return 'id' in decl;
+}
+
+/**
+ * Type guard function to check if a resource declaration is a loose resource declaration.
+ * @public
+ */
+export function isLooseResourceDecl(decl: IImporterResourceDecl): decl is ILooseResourceDecl {
+  return 'id' in decl;
+}

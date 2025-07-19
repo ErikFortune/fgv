@@ -77,7 +77,7 @@ export class ResourceDeclTree implements IResourceDeclContainer {
    * @returns The {@link ResourceJson.Normalized.ILooseResourceDecl | loose resource declarations}
    * extracted from the collection.
    */
-  public getLooseResources(): ReadonlyArray<Normalized.ILooseResourceDecl> {
+  public getImporterResources(): ReadonlyArray<Normalized.ILooseResourceDecl> {
     return this._resources;
   }
 
@@ -86,7 +86,7 @@ export class ResourceDeclTree implements IResourceDeclContainer {
    * @returns The {@link ResourceJson.Normalized.ILooseResourceCandidateDecl | loose resource candidate declarations}
    * extracted from the collection.
    */
-  public getLooseCandidates(): ReadonlyArray<Normalized.ILooseResourceCandidateDecl> {
+  public getImporterCandidates(): ReadonlyArray<Normalized.ILooseResourceCandidateDecl> {
     return this._candidates;
   }
 

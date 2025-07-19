@@ -190,7 +190,7 @@ Creates a new [ResourceDeclTree](./ts-res.resourcejson.resourcedecltree.md) from
 </td></tr>
 <tr><td>
 
-[getLooseCandidates()](./ts-res.resourcejson.resourcedecltree.getloosecandidates.md)
+[getImporterCandidates()](./ts-res.resourcejson.resourcedecltree.getimportercandidates.md)
 
 
 </td><td>
@@ -204,7 +204,7 @@ Gets the loose candidates extracted from the collection.
 </td></tr>
 <tr><td>
 
-[getLooseResources()](./ts-res.resourcejson.resourcedecltree.getlooseresources.md)
+[getImporterResources()](./ts-res.resourcejson.resourcedecltree.getimporterresources.md)
 
 
 </td><td>

@@ -9,5 +9,5 @@ The [resource collection declaration](./ts-res.resourcejson.normalized.iresource
 **Signature:**
 
 ```typescript
-readonly collection: Normalized.IResourceCollectionDecl;
+readonly collection: Normalized.IImporterResourceCollectionDecl;
 ```

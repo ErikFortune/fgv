@@ -50,8 +50,8 @@ describe('ResourceDeclTree', () => {
         }
       };
       expect(TsRes.ResourceJson.ResourceDeclTree.create(json)).toSucceedAndSatisfy((tree) => {
-        expect(tree.getLooseCandidates()).toEqual([]);
-        expect(tree.getLooseResources()).toEqual([
+        expect(tree.getImporterCandidates()).toEqual([]);
+        expect(tree.getImporterResources()).toEqual([
           {
             id: 'foo',
             resourceTypeName: 'json',
@@ -105,7 +105,7 @@ describe('ResourceDeclTree', () => {
         }
       };
       expect(TsRes.ResourceJson.ResourceDeclTree.create(json)).toSucceedAndSatisfy((tree) => {
-        expect(tree.getLooseResources()).toEqual([
+        expect(tree.getImporterResources()).toEqual([
           {
             id: 'base.foo',
             resourceTypeName: 'json',
@@ -236,7 +236,7 @@ describe('ResourceDeclTree', () => {
         }
       };
       expect(TsRes.ResourceJson.ResourceDeclTree.create(json)).toSucceedAndSatisfy((tree) => {
-        expect(tree.getLooseResources()).toEqual([
+        expect(tree.getImporterResources()).toEqual([
           {
             id: 'base.foo',
             resourceTypeName: 'json',

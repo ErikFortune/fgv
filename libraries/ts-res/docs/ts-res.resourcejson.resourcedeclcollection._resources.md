@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-protected _resources: Normalized.ILooseResourceDecl[];
+protected _resources: Normalized.IImporterResourceDecl[];
 ```

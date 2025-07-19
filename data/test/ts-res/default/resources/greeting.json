@@ -1,7 +1,6 @@
 {
   "resources": [
     {
-      "id": "greeting",
       "resourceTypeName": "json",
       "candidates": [
         {

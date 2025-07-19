@@ -73,23 +73,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[getLooseCandidates()](./ts-res.resourcejson.iresourcedeclcontainer.getloosecandidates.md)
+[getImporterCandidates()](./ts-res.resourcejson.iresourcedeclcontainer.getimportercandidates.md)
 
 
 </td><td>
 
-Gets a normalized array of [loose resource candidate](./ts-res.resourcejson.normalized.ilooseresourcecandidatedecl.md) declarations for all resources in the container, including children.
+Gets a normalized array of [importer resource candidate](./ts-res.resourcejson.normalized.iimporterresourcecandidatedecl.md) declarations for all resources in the container, including children.
 
 
 </td></tr>
 <tr><td>
 
-[getLooseResources()](./ts-res.resourcejson.iresourcedeclcontainer.getlooseresources.md)
+[getImporterResources()](./ts-res.resourcejson.iresourcedeclcontainer.getimporterresources.md)
 
 
 </td><td>
 
-Gets a normalized array of [loose resource](./ts-res.resourcejson.normalized.ilooseresourcedecl.md) declarations for all resources in the container, including children.
+Gets a normalized array of [importer resource](./ts-res.resourcejson.normalized.iimporterresourcedecl.md) declarations for all resources in the container, including children.
 
 
 </td></tr>
