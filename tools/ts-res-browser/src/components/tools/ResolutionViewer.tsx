@@ -3,7 +3,7 @@ import { MagnifyingGlassIcon, CubeIcon, DocumentTextIcon } from '@heroicons/reac
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message, FilterState } from '../../types/app';
 import { FilterResult } from '../../utils/filterResources';
-import { Runtime, Config } from '@fgv/ts-res';
+import { Runtime, Config, NoMatch } from '@fgv/ts-res';
 import { createSimpleContext, DEFAULT_SYSTEM_CONFIGURATION } from '../../utils/tsResIntegration';
 
 interface ResolutionViewerProps {
@@ -300,9 +300,16 @@ const CacheContentsDisplay: React.FC<CacheContentsDisplayProps> = ({ resolver })
 
                     return (
                       <div key={index} className="flex items-center justify-between text-xs">
-                        <span className="text-gray-600 truncate max-w-24">
-                          {index}: {qualifierName}={JSON.stringify(conditionObj.value)}
-                        </span>
+                        <div className="text-gray-600 truncate max-w-24">
+                          <div>
+                            {index}: {qualifierName}={JSON.stringify(conditionObj.value)}
+                          </div>
+                          {conditionObj.scoreAsDefault !== undefined && (
+                            <div className="text-amber-600 font-medium text-xs">
+                              default: {conditionObj.scoreAsDefault}
+                            </div>
+                          )}
+                        </div>
                         <span
                           className={`px-2 py-1 rounded ${
                             score > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'

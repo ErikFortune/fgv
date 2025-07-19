@@ -9,6 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message } from '../../types/app';
+import { NoMatch } from '@fgv/ts-res';
 
 interface SourceBrowserProps {
   onMessage?: (type: Message['type'], message: string) => void;
@@ -324,7 +325,8 @@ const ResourceDetail: React.FC<ResourceDetailProps> = ({ resourceId, processedRe
                 qualifier: condition.qualifier.name,
                 operator: condition.operator,
                 value: condition.value,
-                priority: condition.priority
+                priority: condition.priority,
+                scoreAsDefault: condition.scoreAsDefault
               })),
               isPartial: candidate.isPartial,
               mergeMethod: candidate.mergeMethod
@@ -452,7 +454,14 @@ const ResourceDetail: React.FC<ResourceDetailProps> = ({ resourceId, processedRe
                             <span className="font-medium text-blue-800">{condition.qualifier}</span>
                             <span className="mx-1 text-blue-600">{condition.operator}</span>
                             <span className="text-blue-700">{condition.value}</span>
-                            <span className="ml-auto text-blue-500">priority: {condition.priority}</span>
+                            <div className="ml-auto flex items-center space-x-2">
+                              <span className="text-blue-500">priority: {condition.priority}</span>
+                              {condition.scoreAsDefault !== undefined && (
+                                <span className="text-amber-600 font-medium">
+                                  default: {condition.scoreAsDefault}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>

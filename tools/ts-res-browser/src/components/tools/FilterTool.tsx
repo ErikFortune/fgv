@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message, FilterState } from '../../types/app';
+import { NoMatch } from '@fgv/ts-res';
 import { DEFAULT_SYSTEM_CONFIGURATION } from '../../utils/tsResIntegration';
 import {
   createFilteredResourceManager,
@@ -768,9 +769,16 @@ const FilterTool: React.FC<FilterToolProps> = ({
                                                 {condition.operator}
                                               </span>
                                               <span className="text-green-700">{condition.value}</span>
-                                              <span className="ml-auto text-green-500">
-                                                priority: {condition.priority}
-                                              </span>
+                                              <div className="ml-auto flex items-center space-x-2">
+                                                <span className="text-green-500">
+                                                  priority: {condition.priority}
+                                                </span>
+                                                {condition.scoreAsDefault !== undefined && (
+                                                  <span className="text-amber-600 font-medium">
+                                                    default: {condition.scoreAsDefault}
+                                                  </span>
+                                                )}
+                                              </div>
                                             </div>
                                           ))}
                                         </div>
@@ -846,9 +854,16 @@ const FilterTool: React.FC<FilterToolProps> = ({
                                               </span>
                                               <span className="mx-1 text-gray-500">{condition.operator}</span>
                                               <span className="text-gray-600">{condition.value}</span>
-                                              <span className="ml-auto text-gray-400">
-                                                priority: {condition.priority}
-                                              </span>
+                                              <div className="ml-auto flex items-center space-x-2">
+                                                <span className="text-gray-400">
+                                                  priority: {condition.priority}
+                                                </span>
+                                                {condition.scoreAsDefault !== undefined && (
+                                                  <span className="text-amber-500 font-medium">
+                                                    default: {condition.scoreAsDefault}
+                                                  </span>
+                                                )}
+                                              </div>
                                             </div>
                                           ))}
                                         </div>
@@ -910,9 +925,16 @@ const FilterTool: React.FC<FilterToolProps> = ({
                                             </span>
                                             <span className="mx-1 text-blue-600">{condition.operator}</span>
                                             <span className="text-blue-700">{condition.value}</span>
-                                            <span className="ml-auto text-blue-500">
-                                              priority: {condition.priority}
-                                            </span>
+                                            <div className="ml-auto flex items-center space-x-2">
+                                              <span className="text-blue-500">
+                                                priority: {condition.priority}
+                                              </span>
+                                              {condition.scoreAsDefault !== undefined && (
+                                                <span className="text-amber-600 font-medium">
+                                                  default: {condition.scoreAsDefault}
+                                                </span>
+                                              )}
+                                            </div>
                                           </div>
                                         ))}
                                       </div>

@@ -12,7 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message, FilterState } from '../../types/app';
-import { ResourceJson } from '@fgv/ts-res';
+import { ResourceJson, NoMatch } from '@fgv/ts-res';
 
 interface CompiledBrowserProps {
   onMessage?: (type: Message['type'], message: string) => void;
@@ -906,8 +906,12 @@ const NodeDetail: React.FC<NodeDetailProps> = ({
                           <div>Value: {condition.value}</div>
                           <div>Priority: {condition.priority}</div>
                           {condition.operator && <div>Operator: {condition.operator}</div>}
-                          {condition.scoreAsDefault && (
-                            <div>Score as Default: {condition.scoreAsDefault}</div>
+                          {condition.scoreAsDefault !== undefined && (
+                            <div>
+                              <span className="text-xs font-medium text-amber-700">
+                                Score as Default: {condition.scoreAsDefault}
+                              </span>
+                            </div>
                           )}
                         </div>
                       </div>

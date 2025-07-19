@@ -533,6 +533,13 @@ const ConfigurationTool: React.FC<ConfigurationToolProps> = ({
                           <div>Type: {qualifierType?.systemType || 'unknown'}</div>
                           <div>Priority: {qualifier.defaultPriority}</div>
                         </div>
+                        {qualifier.defaultValue && (
+                          <div className="mt-1">
+                            <span className="text-xs text-gray-700">
+                              <span className="font-medium">Default value:</span> {qualifier.defaultValue}
+                            </span>
+                          </div>
+                        )}
                         {qualifier.tokenIsOptional && (
                           <div className="mt-1">
                             <span className="text-xs text-gray-500">Token is optional</span>
@@ -1226,6 +1233,7 @@ const QualifierEditForm: React.FC<QualifierEditFormProps> = ({
   const [defaultPriority, setDefaultPriority] = useState(qualifier.defaultPriority);
   const [token, setToken] = useState(qualifier.token || '');
   const [tokenIsOptional, setTokenIsOptional] = useState(qualifier.tokenIsOptional || false);
+  const [defaultValue, setDefaultValue] = useState(qualifier.defaultValue || '');
 
   const handleSave = () => {
     const updatedQualifier: Config.Model.ISystemConfiguration['qualifiers'][0] = {
@@ -1233,7 +1241,8 @@ const QualifierEditForm: React.FC<QualifierEditFormProps> = ({
       typeName,
       defaultPriority,
       ...(token && { token }),
-      ...(token && { tokenIsOptional })
+      ...(token && { tokenIsOptional }),
+      ...(defaultValue.trim() && { defaultValue: defaultValue.trim() })
     };
     onSave(updatedQualifier);
   };
@@ -1300,6 +1309,21 @@ const QualifierEditForm: React.FC<QualifierEditFormProps> = ({
           </label>
         </div>
       )}
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Default Value (optional)</label>
+        <input
+          type="text"
+          value={defaultValue}
+          onChange={(e) => setDefaultValue(e.target.value)}
+          placeholder="Enter default value for this qualifier"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+        />
+        <p className="mt-1 text-xs text-gray-500">
+          The default value to use when this qualifier is not specified in a context. For list-capable
+          qualifiers, use comma-separated values (e.g., "en-US, fr-FR").
+        </p>
+      </div>
 
       <div className="flex justify-end space-x-2">
         <button

@@ -24,6 +24,12 @@ This directory contains various system configuration files for testing the ts-re
 - **Priority**: Language (600) > Device (500)
 - **Features**: Only two qualifiers, minimal complexity
 
+### qualifier-default-values.json
+- **Use Case**: Demonstrating qualifier default values functionality
+- **Priority**: Language (600) > Territory (500) > Device (400) > Environment (300)
+- **Features**: All qualifiers have default values configured (language with multiple values, territory single value, device with list, environment single value)
+- **Demonstrates**: How default values are defined and used when qualifiers are not specified in context
+
 ### enterprise-complex.json
 - **Use Case**: Large enterprise applications with complex permissions and multi-tenancy
 - **Priority**: Tenant (1000) > Environment (950) > Security (900) > Territory (850/800) > Language (750) > Role (700) > Department (650) > Feature Flags (600)
@@ -54,4 +60,5 @@ Use these configurations to test:
 2. **Context Lists**: Territory and role configurations with `allowContextList` enabled
 3. **Case Sensitivity**: Role configurations with different case sensitivity settings
 4. **Token Usage**: Various token configurations (optional vs required)
-5. **Complexity Scaling**: From minimal (2 qualifiers) to complex (9 qualifiers)
+5. **Default Values**: Qualifier default values for fallback behavior (see qualifier-default-values.json)
+6. **Complexity Scaling**: From minimal (2 qualifiers) to complex (9 qualifiers)
