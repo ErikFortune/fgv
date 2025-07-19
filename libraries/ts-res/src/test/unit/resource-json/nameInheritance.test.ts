@@ -245,6 +245,37 @@ describe('Name Inheritance in Resource Collections', () => {
         }
       );
     });
+
+    describe('error cases', () => {
+      test('fails when child candidate has no ID and no base name', () => {
+        const candidate: TsRes.ResourceJson.Normalized.IChildResourceCandidateDecl = {
+          json: { content: 'No ID candidate' }
+        };
+
+        expect(TsRes.ResourceJson.Helpers.mergeLooseCandidate(candidate, undefined)).toFailWith(
+          /id is required in mergeLooseCandidate/i
+        );
+      });
+    });
+  });
+
+  describe('mergeLooseResource', () => {
+    describe('error cases', () => {
+      test('fails when child resource has no ID and no base name', () => {
+        const resource: TsRes.ResourceJson.Normalized.IChildResourceDecl = {
+          resourceTypeName: 'text',
+          candidates: [
+            {
+              json: { content: 'No ID resource' }
+            }
+          ]
+        };
+
+        expect(TsRes.ResourceJson.Helpers.mergeLooseResource(resource, undefined)).toFailWith(
+          /id is required in mergeLooseResource/i
+        );
+      });
+    });
   });
 
   describe('Integration with ResourceDeclCollection', () => {
