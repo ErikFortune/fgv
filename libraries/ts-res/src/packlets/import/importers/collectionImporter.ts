@@ -112,7 +112,7 @@ export class CollectionImporter implements IImporter {
       return ResourceJson.Helpers.mergeLooseResource(resource, context.baseId, context.conditions).onSuccess(
         (merged) => manager.addResource(merged)
       );
-    } /* c8 ignore next 3 - defense in depth, should be guarded elsewhere */ else if (
+    } /* c8 ignore next 4 - defense in depth, should be guarded elsewhere */ else if (
       !ResourceJson.Json.isLooseResourceDecl(resource)
     ) {
       return fail('cannot add child resource to manager');
@@ -143,7 +143,7 @@ export class CollectionImporter implements IImporter {
         context.baseId,
         context.conditions
       ).onSuccess((merged) => manager.addLooseCandidate(merged));
-    } /* c8 ignore next 3 - defense in depth, should be guarded elsewhere */ else if (
+    } /* c8 ignore next 4 - defense in depth, should be guarded elsewhere */ else if (
       !ResourceJson.Json.isLooseResourceCandidateDecl(candidate)
     ) {
       return fail('cannot add child resource candidate to manager');

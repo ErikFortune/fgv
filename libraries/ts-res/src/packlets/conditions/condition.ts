@@ -91,6 +91,12 @@ export class Condition implements IValidatedConditionDecl {
     scoreAsDefault,
     index
   }: IValidatedConditionDecl) {
+    if (scoreAsDefault === undefined && qualifier.defaultValue !== undefined) {
+      const defaultMatch = qualifier.type.matches(value, qualifier.defaultValue, 'matches');
+      if (defaultMatch !== NoMatch) {
+        scoreAsDefault = defaultMatch;
+      }
+    }
     this.qualifier = qualifier;
     this.operator = operator;
     this.value = qualifier.validateCondition(value, operator).orThrow();

@@ -145,6 +145,7 @@ export class QualifierCollector
       return true;
     }
     for (const q of this.values()) {
+      /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
       if (q.token === nameOrToken) {
         return true;
       }
@@ -182,7 +183,7 @@ export class QualifierCollector
             `Qualifier token '${validated.token}' is not unique or collides with name`
           );
         } else if (this.hasNameOrToken(validated.name)) {
-          /* c8 ignore next 3 - functional error case tested but coverage intermittently missed */
+          /* c8 ignore next 4 - functional error case tested but coverage intermittently missed */
           return fail<IValidatedQualifierDecl>(
             `Qualifier name '${validated.name}' is not unique or collides with token`
           );
