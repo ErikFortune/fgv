@@ -106,11 +106,29 @@ export function mergeLooseCandidate(
 }
 
 /**
- * Helper method to merge a loose candidate with a base name and conditions.
- * @param candidate - The candidate to merge.
- * @param baseName - The base name to merge with the candidate.
- * @param baseConditions - The base conditions to merge with the candidate.
+ * Helper method to merge a resource candidate with a base name and conditions from import context.
+ * This function enables name inheritance for resource candidates, similar to resources.
+ *
+ * @param candidate - The candidate to merge. Can have an optional ID that will be joined with baseName.
+ * @param baseName - The base name from import context to merge with the candidate.
+ * When provided, this will be used as the parent component of the candidate ID.
+ * @param baseConditions - The base conditions from import context to merge with the candidate's conditions.
  * @returns `Success` with the merged candidate if successful, otherwise `Failure`.
+ *
+ * @remarks
+ * This function supports name inheritance for candidates:
+ * - Joins baseName with candidate's existing ID using dot notation
+ * - If candidate has no ID, uses baseName as the full ID
+ * - Always merges base conditions with candidate's existing conditions
+ *
+ * @example
+ * ```typescript
+ * // Candidate inherits full name from import context
+ * const candidate = { value: "Hello", conditions: [...] }; // No id field
+ * const result = mergeImporterCandidate(candidate, "pages.home.greeting", []);
+ * // Result: { id: "pages.home.greeting", value: "Hello", conditions: [...] }
+ * ```
+ *
  * @public
  */
 export function mergeImporterCandidate(
@@ -171,11 +189,39 @@ export function mergeLooseResource(
 }
 
 /**
- * Helper method to merge a loose resource with a base name and conditions.
- * @param resource - The resource to merge.
- * @param baseName - The base name to merge with the resource.
- * @param baseConditions - The base conditions to merge with the resource.
+ * Helper method to merge a resource with a base name and conditions from import context.
+ * This function enables name inheritance where resources can automatically inherit their
+ * resource ID from the import context when no explicit ID is provided in the resource declaration.
+ *
+ * @param resource - The resource to merge. Can be either a loose resource (with optional ID)
+ * or a child resource (without ID).
+ * @param baseName - The base name from import context to merge with the resource.
+ * When provided, this will be used as the parent component of the resource ID.
+ * @param baseConditions - The base conditions from import context to merge with the resource's conditions.
  * @returns `Success` with the merged resource if successful, otherwise `Failure`.
+ *
+ * @remarks
+ * This function supports several scenarios for name inheritance:
+ * - **Explicit ID + Base Name**: Joins baseName.resourceId (e.g., "pages.home" + "greeting" = "pages.home.greeting")
+ * - **No ID + Base Name**: Uses baseName as the resource ID (enables name inheritance from import context)
+ * - **Explicit ID + No Base Name**: Uses the resource's existing ID
+ * - **No ID + No Base Name**: Returns resource without ID (for child resources)
+ *
+ * Base conditions are always merged with the resource's existing conditions.
+ *
+ * @example
+ * ```typescript
+ * // Resource without ID inherits name from import context
+ * const resource = { candidates: [...] }; // No id field
+ * const result = mergeImporterResource(resource, "pages.home", []);
+ * // Result: { id: "pages.home", candidates: [...] }
+ *
+ * // Resource with ID gets joined with base name
+ * const resource = { id: "greeting", candidates: [...] };
+ * const result = mergeImporterResource(resource, "pages.home", []);
+ * // Result: { id: "pages.home.greeting", candidates: [...] }
+ * ```
+ *
  * @public
  */
 export function mergeImporterResource(

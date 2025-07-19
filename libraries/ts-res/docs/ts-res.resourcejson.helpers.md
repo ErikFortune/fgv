@@ -52,6 +52,28 @@ Helper method to merge a resource context declaration with a parent name and con
 </td></tr>
 <tr><td>
 
+[mergeImporterCandidate(candidate, baseName, baseConditions)](./ts-res.resourcejson.helpers.mergeimportercandidate.md)
+
+
+</td><td>
+
+Helper method to merge a resource candidate with a base name and conditions from import context. This function enables name inheritance for resource candidates, similar to resources.
+
+
+</td></tr>
+<tr><td>
+
+[mergeImporterResource(resource, baseName, baseConditions)](./ts-res.resourcejson.helpers.mergeimporterresource.md)
+
+
+</td><td>
+
+Helper method to merge a resource with a base name and conditions from import context. This function enables name inheritance where resources can automatically inherit their resource ID from the import context when no explicit ID is provided in the resource declaration.
+
+
+</td></tr>
+<tr><td>
+
 [mergeLooseCandidate(candidate, baseName, baseConditions)](./ts-res.resourcejson.helpers.mergeloosecandidate.md)
 
 

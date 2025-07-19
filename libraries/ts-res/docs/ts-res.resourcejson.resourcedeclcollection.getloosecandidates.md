@@ -9,11 +9,11 @@ Gets the loose candidates extracted from the collection.
 **Signature:**
 
 ```typescript
-getLooseCandidates(): ReadonlyArray<Normalized.ILooseResourceCandidateDecl>;
+getLooseCandidates(): ReadonlyArray<Normalized.IImporterResourceCandidateDecl>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;Normalized.ILooseResourceCandidateDecl&gt;
+ReadonlyArray&lt;Normalized.IImporterResourceCandidateDecl&gt;
 
 The [loose resource candidate declarations](./ts-res.resourcejson.normalized.ilooseresourcecandidatedecl.md) extracted from the collection.
 

@@ -9,7 +9,7 @@ Helper method to merge a loose resource with a base name and conditions.
 **Signature:**
 
 ```typescript
-export declare function mergeLooseResource(resource: Normalized.ILooseResourceDecl, baseName?: string, baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>): Result<Normalized.ILooseResourceDecl>;
+export declare function mergeLooseResource(resource: Normalized.IImporterResourceDecl, baseName?: string, baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>): Result<Normalized.ILooseResourceDecl>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ resource
 
 </td><td>
 
-Normalized.ILooseResourceDecl
+Normalized.IImporterResourceDecl
 
 
 </td><td>

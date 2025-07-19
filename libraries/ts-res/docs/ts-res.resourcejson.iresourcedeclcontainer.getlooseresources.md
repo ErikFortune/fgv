@@ -9,9 +9,9 @@ Gets a normalized array of [loose resource](./ts-res.resourcejson.normalized.ilo
 **Signature:**
 
 ```typescript
-getLooseResources(): ReadonlyArray<Normalized.ILooseResourceDecl>;
+getLooseResources(): ReadonlyArray<Normalized.IImporterResourceDecl>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;Normalized.ILooseResourceDecl&gt;
+ReadonlyArray&lt;Normalized.IImporterResourceDecl&gt;
 

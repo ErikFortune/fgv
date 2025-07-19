@@ -74,6 +74,17 @@ Description
 </td></tr>
 <tr><td>
 
+[importerResourceCollectionDecl](./ts-res.resourcejson.convert.importerresourcecollectiondecl.md)
+
+
+</td><td>
+
+`Converter` for a normalized [importer resource collection declaration](./ts-res.resourcejson.normalized.iimporterresourcecollectiondecl.md)<!-- -->. This allows for a mix of loose and child resource declarations.
+
+
+</td></tr>
+<tr><td>
+
 [looseConditionDecl](./ts-res.resourcejson.convert.looseconditiondecl.md)
 
 

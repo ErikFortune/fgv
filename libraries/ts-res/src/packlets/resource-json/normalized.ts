@@ -23,7 +23,6 @@
 import { JsonObject } from '@fgv/ts-json-base';
 import { ResourceValueMergeMethod } from '../common';
 import { ILooseConditionDecl } from './json';
-import exp from 'constants';
 
 /**
  * Normalized non-validated declaration of a {@link Conditions.Condition | condition}.
@@ -174,8 +173,18 @@ export interface IResourceCollectionDecl {
   readonly metadata?: JsonObject;
 }
 
+/**
+ * Normalized non-validated declaration of a resource candidate for import,
+ * which can be either a loose or child resource candidate.
+ * @public
+ */
 export type IImporterResourceCandidateDecl = ILooseResourceCandidateDecl | IChildResourceCandidateDecl;
 
+/**
+ * Normalized non-validated declaration of a resource for import,
+ * which can be either a loose or child resource.
+ * @public
+ */
 export type IImporterResourceDecl = ILooseResourceDecl | IChildResourceDecl;
 
 /**

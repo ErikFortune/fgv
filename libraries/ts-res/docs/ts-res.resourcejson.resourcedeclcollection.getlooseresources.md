@@ -9,11 +9,11 @@ Gets the loose resources extracted from the collection.
 **Signature:**
 
 ```typescript
-getLooseResources(): ReadonlyArray<Normalized.ILooseResourceDecl>;
+getLooseResources(): ReadonlyArray<Normalized.IImporterResourceDecl>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;Normalized.ILooseResourceDecl&gt;
+ReadonlyArray&lt;Normalized.IImporterResourceDecl&gt;
 
 The [loose resource declarations](./ts-res.resourcejson.normalized.ilooseresourcedecl.md) extracted from the collection.
 

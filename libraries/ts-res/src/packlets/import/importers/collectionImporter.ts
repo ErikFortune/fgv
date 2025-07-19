@@ -28,7 +28,7 @@ import {
   Result,
   succeed
 } from '@fgv/ts-utils';
-import { Resource, ResourceBuilder, ResourceCandidate, ResourceManagerBuilder } from '../../resources';
+import { ResourceBuilder, ResourceCandidate, ResourceManagerBuilder } from '../../resources';
 import { IImportable, isImportable } from '../importable';
 import { IImporter, ImporterResultDetail } from './importer';
 import * as ResourceJson from '../../resource-json';
@@ -54,9 +54,7 @@ export class CollectionImporter implements IImporter {
   /**
    * Creates a new {@link Import.Importers.CollectionImporter | CollectionImporter} instance.
    * @returns `Success` with the new {@link Import.Importers.CollectionImporter | CollectionImporter} if successful,
-   * `Failure` o4
-   *
-   * therwise.
+   * `Failure` otherwise.
    */
   public static create(): Result<CollectionImporter> {
     return captureResult(() => new CollectionImporter());

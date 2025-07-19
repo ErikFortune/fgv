@@ -9,9 +9,9 @@ Gets a normalized array of [loose resource candidate](./ts-res.resourcejson.norm
 **Signature:**
 
 ```typescript
-getLooseCandidates(): ReadonlyArray<Normalized.ILooseResourceCandidateDecl>;
+getLooseCandidates(): ReadonlyArray<Normalized.IImporterResourceCandidateDecl>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;Normalized.ILooseResourceCandidateDecl&gt;
+ReadonlyArray&lt;Normalized.IImporterResourceCandidateDecl&gt;
 

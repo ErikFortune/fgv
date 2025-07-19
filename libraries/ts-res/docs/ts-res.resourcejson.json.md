@@ -4,6 +4,43 @@
 
 ## ResourceJson.Json namespace
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[isLooseResourceCandidateDecl(decl)](./ts-res.resourcejson.json.islooseresourcecandidatedecl.md)
+
+
+</td><td>
+
+Type guard function to check if a resource candidate declaration is a loose resource candidate declaration.
+
+
+</td></tr>
+<tr><td>
+
+[isLooseResourceDecl(decl)](./ts-res.resourcejson.json.islooseresourcedecl.md)
+
+
+</td><td>
+
+Type guard function to check if a resource declaration is a loose resource declaration.
+
+
+</td></tr>
+</tbody></table>
+
 ## Interfaces
 
 <table><thead><tr><th>
@@ -58,6 +95,17 @@ Non-validated child declaration of a [resource](./ts-res.resources.resource.md)<
 </td><td>
 
 Declared context for a resource container.
+
+
+</td></tr>
+<tr><td>
+
+[IImporterResourceCollectionDecl](./ts-res.resourcejson.json.iimporterresourcecollectiondecl.md)
+
+
+</td><td>
+
+Non-validated declaration of a collection of resources for an importer.
 
 
 </td></tr>
@@ -172,6 +220,28 @@ Non-validated declaration of a [condition](./ts-res.conditions.condition.md)<!--
 </td><td>
 
 Non-validated declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IImporterResourceCandidateDecl](./ts-res.resourcejson.json.iimporterresourcecandidatedecl.md)
+
+
+</td><td>
+
+Non-validated declaration of a resource candidate for import, which can be either a loose or child resource candidate.
+
+
+</td></tr>
+<tr><td>
+
+[IImporterResourceDecl](./ts-res.resourcejson.json.iimporterresourcedecl.md)
+
+
+</td><td>
+
+Non-validated declaration of a resource for import, which can be either a loose or child resource.
 
 
 </td></tr>

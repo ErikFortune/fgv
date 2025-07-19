@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-protected _candidates: Normalized.ILooseResourceCandidateDecl[];
+protected _candidates: Normalized.IImporterResourceCandidateDecl[];
 ```

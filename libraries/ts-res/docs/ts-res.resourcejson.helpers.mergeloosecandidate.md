@@ -9,7 +9,7 @@ Helper method to merge a loose candidate with a base name and conditions.
 **Signature:**
 
 ```typescript
-export declare function mergeLooseCandidate(candidate: Normalized.ILooseResourceCandidateDecl, baseName?: string, baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>): Result<Normalized.ILooseResourceCandidateDecl>;
+export declare function mergeLooseCandidate(candidate: Normalized.IImporterResourceCandidateDecl, baseName?: string, baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>): Result<Normalized.ILooseResourceCandidateDecl>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ candidate
 
 </td><td>
 
-Normalized.ILooseResourceCandidateDecl
+Normalized.IImporterResourceCandidateDecl
 
 
 </td><td>

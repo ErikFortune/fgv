@@ -9,7 +9,7 @@ Constructs a new instance of the `ResourceDeclCollection` class
 **Signature:**
 
 ```typescript
-protected constructor(collection: Normalized.IResourceCollectionDecl);
+protected constructor(collection: Normalized.IImporterResourceCollectionDecl);
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ collection
 
 </td><td>
 
-Normalized.IResourceCollectionDecl
+Normalized.IImporterResourceCollectionDecl
 
 
 </td><td>

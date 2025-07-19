@@ -84,7 +84,7 @@ Description
 
 </td><td>
 
-Normalized.ILooseResourceCandidateDecl\[\]
+Normalized.IImporterResourceCandidateDecl\[\]
 
 
 </td><td>
@@ -103,7 +103,7 @@ Normalized.ILooseResourceCandidateDecl\[\]
 
 </td><td>
 
-Normalized.ILooseResourceDecl\[\]
+Normalized.IImporterResourceDecl\[\]
 
 
 </td><td>
@@ -122,7 +122,7 @@ Normalized.ILooseResourceDecl\[\]
 
 </td><td>
 
-Normalized.IResourceCollectionDecl
+Normalized.IImporterResourceCollectionDecl
 
 
 </td><td>
