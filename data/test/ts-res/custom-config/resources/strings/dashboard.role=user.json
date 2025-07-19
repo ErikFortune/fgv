@@ -1,7 +1,6 @@
 {
   "candidates": [
     {
-      "id": "dashboard",
       "resourceTypeName": "json",
       "json": {
         "title": "User Dashboard",

@@ -136,12 +136,16 @@ export function mergeImporterCandidate(
   baseName?: string,
   baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>
 ): Result<Normalized.IImporterResourceCandidateDecl> {
-  const candidateId = 'id' in candidate ? candidate.id : '';
-  return CommonHelpers.joinResourceIds(baseName, candidateId).onSuccess((id) => {
-    /* c8 ignore next 1 - defense in depth */
-    const conditions = [...(baseConditions ?? []), ...(candidate.conditions ?? [])];
-    return succeed({ ...candidate, id, conditions });
-  });
+  if (baseName || Json.isLooseResourceCandidateDecl(candidate)) {
+    const candidateId = 'id' in candidate ? candidate.id : '';
+    return CommonHelpers.joinResourceIds(baseName, candidateId).onSuccess((id) => {
+      /* c8 ignore next 1 - defense in depth */
+      const conditions = [...(baseConditions ?? []), ...(candidate.conditions ?? [])];
+      return succeed({ ...candidate, id, conditions });
+    });
+  } else {
+    return succeed({ ...candidate, conditions: baseConditions });
+  }
 }
 
 /**

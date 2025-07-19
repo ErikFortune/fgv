@@ -1,7 +1,6 @@
 {
   "candidates": [
     {
-      "id": "common",
       "resourceTypeName": "json",
       "json": {
         "welcome": "Welcome to the United States version",

@@ -74,6 +74,17 @@ Description
 </td></tr>
 <tr><td>
 
+[importerResourceCandidateDecl](./ts-res.resourcejson.convert.importerresourcecandidatedecl.md)
+
+
+</td><td>
+
+`Converter` for a normalized [importer resource candidate declaration](./ts-res.resourcejson.normalized.iimporterresourcecandidatedecl.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [importerResourceCollectionDecl](./ts-res.resourcejson.convert.importerresourcecollectiondecl.md)
 
 

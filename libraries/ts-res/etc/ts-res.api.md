@@ -844,6 +844,7 @@ declare namespace Convert_4 {
         childConditionDecl,
         conditionSetDecl_2 as conditionSetDecl,
         looseResourceCandidateDecl,
+        importerResourceCandidateDecl,
         childResourceCandidateDecl,
         looseResourceDecl,
         childResourceDecl,
@@ -1663,10 +1664,16 @@ interface IImporterCreateParams {
 }
 
 // @public
-type IImporterResourceCandidateDecl = ILooseResourceCandidateDecl | IChildResourceCandidateDecl;
+interface IImporterResourceCandidateDecl extends IChildResourceCandidateDecl {
+    readonly id?: string;
+    readonly resourceTypeName?: string;
+}
 
 // @public
-type IImporterResourceCandidateDecl_2 = ILooseResourceCandidateDecl_2 | IChildResourceCandidateDecl_2;
+interface IImporterResourceCandidateDecl_2 extends IChildResourceCandidateDecl_2 {
+    readonly id?: string;
+    readonly resourceTypeName?: string;
+}
 
 // @public
 interface IImporterResourceCollectionDecl {
@@ -1886,6 +1893,11 @@ class ImportContext implements IValidatedImportContext {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     withName(...names: string[]): Result<ImportContext>;
 }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const importerResourceCandidateDecl: Converter<Normalized.IImporterResourceCandidateDecl>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -2662,6 +2674,7 @@ declare namespace Json {
         ConditionSetDeclAsRecord,
         ConditionSetDecl,
         IChildResourceCandidateDecl,
+        IImporterResourceCandidateDecl,
         ILooseResourceCandidateDecl,
         IChildResourceDecl,
         ILooseResourceDecl,
@@ -2669,7 +2682,6 @@ declare namespace Json {
         IContainerContextDecl,
         IResourceTreeRootDecl,
         IResourceCollectionDecl,
-        IImporterResourceCandidateDecl,
         IImporterResourceDecl,
         IImporterResourceCollectionDecl
     }
@@ -2898,6 +2910,7 @@ declare namespace Normalized {
     export {
         ConditionSetDecl_2 as ConditionSetDecl,
         IChildResourceCandidateDecl_2 as IChildResourceCandidateDecl,
+        IImporterResourceCandidateDecl_2 as IImporterResourceCandidateDecl,
         ILooseResourceCandidateDecl_2 as ILooseResourceCandidateDecl,
         IChildResourceDecl_2 as IChildResourceDecl,
         ILooseResourceDecl_2 as ILooseResourceDecl,
@@ -2905,7 +2918,6 @@ declare namespace Normalized {
         IContainerContextDecl_2 as IContainerContextDecl,
         IResourceTreeRootDecl_2 as IResourceTreeRootDecl,
         IResourceCollectionDecl_2 as IResourceCollectionDecl,
-        IImporterResourceCandidateDecl_2 as IImporterResourceCandidateDecl,
         IImporterResourceDecl_2 as IImporterResourceDecl,
         IImporterResourceCollectionDecl_2 as IImporterResourceCollectionDecl
     }

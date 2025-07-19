@@ -1,7 +1,6 @@
 {
   "candidates": [
     {
-      "id": "strings",
       "resourceTypeName": "json",
       "json": {
         "welcome": "Welcome to the app",

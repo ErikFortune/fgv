@@ -102,6 +102,20 @@ export const looseResourceCandidateDecl: Converter<Normalized.ILooseResourceCand
   });
 
 /**
+ * `Converter` for a normalized {@link ResourceJson.Normalized.IImporterResourceCandidateDecl | importer resource candidate declaration}.
+ * @public
+ */
+export const importerResourceCandidateDecl: Converter<Normalized.IImporterResourceCandidateDecl> =
+  Converters.strictObject<Normalized.IImporterResourceCandidateDecl>({
+    id: CommonConvert.resourceId.optional(),
+    json: JsonConverters.jsonObject,
+    conditions: conditionSetDecl.optional(),
+    mergeMethod: CommonConvert.resourceValueMergeMethod.optional(),
+    isPartial: Converters.boolean.optional(),
+    resourceTypeName: CommonConvert.resourceTypeName.optional()
+  });
+
+/**
  * `Converter` for a normalized {@link ResourceJson.Json.IChildResourceCandidateDecl | child resource candidate declaration}.
  * @public
  */
@@ -213,9 +227,7 @@ export const importerResourceCollectionDecl: Converter<Normalized.IImporterResou
     ): Result<Normalized.IImporterResourceCollectionDecl> => {
       return Converters.strictObject<Normalized.IImporterResourceCollectionDecl>({
         context: containerContextDecl.optional(),
-        candidates: Converters.arrayOf(
-          Converters.oneOf([looseResourceCandidateDecl, childResourceCandidateDecl])
-        ).optional(),
+        candidates: Converters.arrayOf(importerResourceCandidateDecl).optional(),
         resources: Converters.arrayOf(Converters.oneOf([looseResourceDecl, childResourceDecl])).optional(),
         collections: Converters.arrayOf(self).optional(),
         metadata: JsonConverters.jsonObject.optional()

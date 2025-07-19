@@ -52,6 +52,17 @@ Declared context for a resource container.
 </td></tr>
 <tr><td>
 
+[IImporterResourceCandidateDecl](./ts-res.resourcejson.normalized.iimporterresourcecandidatedecl.md)
+
+
+</td><td>
+
+Normalized non-validated declaration of a resource candidate for import, which can be either a loose or child resource candidate.
+
+
+</td></tr>
+<tr><td>
+
 [IImporterResourceCollectionDecl](./ts-res.resourcejson.normalized.iimporterresourcecollectiondecl.md)
 
 
@@ -139,17 +150,6 @@ Description
 </td><td>
 
 Normalized non-validated declaration of a [condition](./ts-res.conditions.condition.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[IImporterResourceCandidateDecl](./ts-res.resourcejson.normalized.iimporterresourcecandidatedecl.md)
-
-
-</td><td>
-
-Normalized non-validated declaration of a resource candidate for import, which can be either a loose or child resource candidate.
 
 
 </td></tr>

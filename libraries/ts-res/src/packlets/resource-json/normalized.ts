@@ -58,6 +58,23 @@ export interface IChildResourceCandidateDecl {
 }
 
 /**
+ * Normalized non-validated declaration of a resource candidate for import,
+ * which can be either a loose or child resource candidate.
+ * @public
+ */
+export interface IImporterResourceCandidateDecl extends IChildResourceCandidateDecl {
+  /**
+   * The {@link ResourceId | id} of the resource.
+   */
+  readonly id?: string;
+
+  /**
+   * The name of the type of this resource.
+   */
+  readonly resourceTypeName?: string;
+}
+
+/**
  * Normalized non-validated loose declaration of a {@link Resources.ResourceCandidate | resource candidate}.
  * @public
  */
@@ -172,13 +189,6 @@ export interface IResourceCollectionDecl {
   readonly collections?: ReadonlyArray<IResourceCollectionDecl>;
   readonly metadata?: JsonObject;
 }
-
-/**
- * Normalized non-validated declaration of a resource candidate for import,
- * which can be either a loose or child resource candidate.
- * @public
- */
-export type IImporterResourceCandidateDecl = ILooseResourceCandidateDecl | IChildResourceCandidateDecl;
 
 /**
  * Normalized non-validated declaration of a resource for import,

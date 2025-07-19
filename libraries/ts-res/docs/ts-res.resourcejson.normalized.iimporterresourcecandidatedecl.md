@@ -2,12 +2,81 @@
 
 [Home](./index.md) &gt; [@fgv/ts-res](./ts-res.md) &gt; [ResourceJson](./ts-res.resourcejson.md) &gt; [Normalized](./ts-res.resourcejson.normalized.md) &gt; [IImporterResourceCandidateDecl](./ts-res.resourcejson.normalized.iimporterresourcecandidatedecl.md)
 
-## ResourceJson.Normalized.IImporterResourceCandidateDecl type
+## ResourceJson.Normalized.IImporterResourceCandidateDecl interface
 
 Normalized non-validated declaration of a resource candidate for import, which can be either a loose or child resource candidate.
 
 **Signature:**
 
 ```typescript
-export type IImporterResourceCandidateDecl = ILooseResourceCandidateDecl | IChildResourceCandidateDecl;
+export interface IImporterResourceCandidateDecl extends IChildResourceCandidateDecl 
 ```
+**Extends:** IChildResourceCandidateDecl
+
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[id?](./ts-res.resourcejson.normalized.iimporterresourcecandidatedecl.id.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ The [id](./ts-res.resourceid.md) of the resource.
+
+
+</td></tr>
+<tr><td>
+
+[resourceTypeName?](./ts-res.resourcejson.normalized.iimporterresourcecandidatedecl.resourcetypename.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ The name of the type of this resource.
+
+
+</td></tr>
+</tbody></table>
+

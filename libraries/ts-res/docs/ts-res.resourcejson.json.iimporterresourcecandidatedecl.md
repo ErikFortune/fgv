@@ -2,14 +2,81 @@
 
 [Home](./index.md) &gt; [@fgv/ts-res](./ts-res.md) &gt; [ResourceJson](./ts-res.resourcejson.md) &gt; [Json](./ts-res.resourcejson.json.md) &gt; [IImporterResourceCandidateDecl](./ts-res.resourcejson.json.iimporterresourcecandidatedecl.md)
 
-## ResourceJson.Json.IImporterResourceCandidateDecl type
+## ResourceJson.Json.IImporterResourceCandidateDecl interface
 
 Non-validated declaration of a resource candidate for import, which can be either a loose or child resource candidate.
 
 **Signature:**
 
 ```typescript
-export type IImporterResourceCandidateDecl = ILooseResourceCandidateDecl | IChildResourceCandidateDecl;
+export interface IImporterResourceCandidateDecl extends IChildResourceCandidateDecl 
 ```
-**References:** [ILooseResourceCandidateDecl](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md)<!-- -->, [IChildResourceCandidateDecl](./ts-res.resourcejson.json.ichildresourcecandidatedecl.md)
+**Extends:** [IChildResourceCandidateDecl](./ts-res.resourcejson.json.ichildresourcecandidatedecl.md)
+
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[id?](./ts-res.resourcejson.json.iimporterresourcecandidatedecl.id.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ The [id](./ts-res.resourceid.md) of the resource.
+
+
+</td></tr>
+<tr><td>
+
+[resourceTypeName?](./ts-res.resourcejson.json.iimporterresourcecandidatedecl.resourcetypename.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ The name of the type of this resource.
+
+
+</td></tr>
+</tbody></table>
 

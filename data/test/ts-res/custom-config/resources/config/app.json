@@ -1,7 +1,6 @@
 {
   "candidates": [
     {
-      "id": "app",
       "resourceTypeName": "json",
       "json": {
         "app_name": "Sample Application",
