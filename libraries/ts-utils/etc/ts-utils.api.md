@@ -20,7 +20,7 @@ function arrayOf_2<T, TC>(validateElement: Validator<T, TC>, params?: Omit<Array
 // Warning: (ae-forgotten-export) The symbol "ValidatorBase" needs to be exported by the entry point index.d.ts
 //
 // @public
-class ArrayValidator<T, TC = unknown> extends ValidatorBase<ReadonlyArray<T>, TC> {
+class ArrayValidator<T, TC = unknown> extends ValidatorBase<T[], TC> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
