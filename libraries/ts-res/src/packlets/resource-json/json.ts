@@ -239,3 +239,29 @@ export interface IResourceCollectionDecl {
   readonly collections?: ReadonlyArray<IResourceCollectionDecl>;
   readonly metadata?: JsonObject;
 }
+
+export type IImporterResourceCandidateDecl = ILooseResourceCandidateDecl | IChildResourceCandidateDecl;
+
+export type IImporterResourceDecl = ILooseResourceDecl | IChildResourceDecl;
+
+/**
+ * Non-validated declaration of a collection of resources for an importer.
+ * @public
+ */
+export interface IImporterResourceCollectionDecl {
+  readonly context?: IContainerContextDecl;
+  readonly candidates?: ReadonlyArray<IImporterResourceCandidateDecl>;
+  readonly resources?: ReadonlyArray<IImporterResourceDecl>;
+  readonly collections?: ReadonlyArray<IImporterResourceCollectionDecl>;
+  readonly metadata?: JsonObject;
+}
+
+export function isLooseResourceCandidateDecl(
+  decl: IImporterResourceCandidateDecl
+): decl is ILooseResourceCandidateDecl {
+  return 'id' in decl;
+}
+
+export function isLooseResourceDecl(decl: IImporterResourceDecl): decl is ILooseResourceDecl {
+  return 'id' in decl;
+}

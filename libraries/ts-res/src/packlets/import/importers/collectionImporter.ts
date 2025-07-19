@@ -28,7 +28,7 @@ import {
   Result,
   succeed
 } from '@fgv/ts-utils';
-import { ResourceBuilder, ResourceCandidate, ResourceManagerBuilder } from '../../resources';
+import { Resource, ResourceBuilder, ResourceCandidate, ResourceManagerBuilder } from '../../resources';
 import { IImportable, isImportable } from '../importable';
 import { IImporter, ImporterResultDetail } from './importer';
 import * as ResourceJson from '../../resource-json';
@@ -107,13 +107,15 @@ export class CollectionImporter implements IImporter {
    */
   private _addResource(
     manager: ResourceManagerBuilder,
-    resource: ResourceJson.Normalized.ILooseResourceDecl,
+    resource: ResourceJson.Normalized.IImporterResourceDecl,
     context?: ImportContext
   ): Result<ResourceBuilder> {
     if (context) {
       return ResourceJson.Helpers.mergeLooseResource(resource, context.baseId, context.conditions).onSuccess(
         (merged) => manager.addResource(merged)
       );
+    } else if (!ResourceJson.Json.isLooseResourceDecl(resource)) {
+      return fail('cannot add child resource to manager');
     }
     return manager.addResource(resource);
   }
@@ -132,7 +134,7 @@ export class CollectionImporter implements IImporter {
    */
   private _addCandidate(
     manager: ResourceManagerBuilder,
-    candidate: ResourceJson.Normalized.ILooseResourceCandidateDecl,
+    candidate: ResourceJson.Normalized.IImporterResourceCandidateDecl,
     context?: ImportContext
   ): Result<ResourceCandidate> {
     if (context) {
@@ -141,6 +143,8 @@ export class CollectionImporter implements IImporter {
         context.baseId,
         context.conditions
       ).onSuccess((merged) => manager.addLooseCandidate(merged));
+    } else if (!ResourceJson.Json.isLooseResourceCandidateDecl(candidate)) {
+      return fail('cannot add child resource candidate to manager');
     }
     return manager.addLooseCandidate(candidate);
   }

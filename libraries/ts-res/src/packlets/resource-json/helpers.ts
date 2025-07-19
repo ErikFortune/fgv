@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { mapResults, Result, succeed } from '@fgv/ts-utils';
+import { mapResults, Result, fail, succeed } from '@fgv/ts-utils';
 import * as Normalized from './normalized';
 import * as Json from './json';
 import { Helpers as CommonHelpers } from '../common';
@@ -89,11 +89,37 @@ export function mergeContextDecl(
  * @public
  */
 export function mergeLooseCandidate(
-  candidate: Normalized.ILooseResourceCandidateDecl,
+  candidate: Normalized.IImporterResourceCandidateDecl,
   baseName?: string,
   baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>
 ): Result<Normalized.ILooseResourceCandidateDecl> {
-  return CommonHelpers.joinResourceIds(baseName, candidate.id).onSuccess((id) => {
+  const candidateId = Json.isLooseResourceCandidateDecl(candidate) ? candidate.id : '';
+  if (!Json.isLooseResourceCandidateDecl(candidate) && !baseName) {
+    return fail('id is required in mergeLooseCandidate');
+  }
+
+  return CommonHelpers.joinResourceIds(baseName, candidateId).onSuccess((id) => {
+    /* c8 ignore next 1 - defense in depth */
+    const conditions = [...(baseConditions ?? []), ...(candidate.conditions ?? [])];
+    return succeed({ ...candidate, id, conditions });
+  });
+}
+
+/**
+ * Helper method to merge a loose candidate with a base name and conditions.
+ * @param candidate - The candidate to merge.
+ * @param baseName - The base name to merge with the candidate.
+ * @param baseConditions - The base conditions to merge with the candidate.
+ * @returns `Success` with the merged candidate if successful, otherwise `Failure`.
+ * @public
+ */
+export function mergeImporterCandidate(
+  candidate: Normalized.IImporterResourceCandidateDecl,
+  baseName?: string,
+  baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>
+): Result<Normalized.IImporterResourceCandidateDecl> {
+  const candidateId = 'id' in candidate ? candidate.id : '';
+  return CommonHelpers.joinResourceIds(baseName, candidateId).onSuccess((id) => {
     /* c8 ignore next 1 - defense in depth */
     const conditions = [...(baseConditions ?? []), ...(candidate.conditions ?? [])];
     return succeed({ ...candidate, id, conditions });
@@ -125,11 +151,16 @@ export function mergeChildCandidate(
  * @public
  */
 export function mergeLooseResource(
-  resource: Normalized.ILooseResourceDecl,
+  resource: Normalized.IImporterResourceDecl,
   baseName?: string,
   baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>
 ): Result<Normalized.ILooseResourceDecl> {
-  return CommonHelpers.joinResourceIds(baseName, resource.id).onSuccess((id) => {
+  const resourceId = Json.isLooseResourceDecl(resource) ? resource.id : '';
+  if (!baseName && !Json.isLooseResourceDecl(resource)) {
+    return fail('id is required in mergeLooseResource');
+  }
+
+  return CommonHelpers.joinResourceIds(baseName, resourceId).onSuccess((id) => {
     return mapResults(
       /* c8 ignore next 1 - defense in depth */
       (resource.candidates ?? []).map((candidate) => mergeChildCandidate(candidate, baseConditions))
@@ -140,9 +171,44 @@ export function mergeLooseResource(
 }
 
 /**
+ * Helper method to merge a loose resource with a base name and conditions.
+ * @param resource - The resource to merge.
+ * @param baseName - The base name to merge with the resource.
+ * @param baseConditions - The base conditions to merge with the resource.
+ * @returns `Success` with the merged resource if successful, otherwise `Failure`.
+ * @public
+ */
+export function mergeImporterResource(
+  resource: Normalized.ILooseResourceDecl | Normalized.IChildResourceDecl,
+  baseName?: string,
+  baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>
+): Result<Normalized.IImporterResourceDecl> {
+  if (baseName || `id` in resource) {
+    const resourceId = 'id' in resource ? resource.id : '';
+    // If we have a base name or the resource has no id, we can just
+    return CommonHelpers.joinResourceIds(baseName, resourceId).onSuccess((id) => {
+      return mapResults(
+        /* c8 ignore next 1 - defense in depth */
+        (resource.candidates ?? []).map((candidate) => mergeChildCandidate(candidate, baseConditions))
+      ).onSuccess((candidates) => {
+        return succeed({ ...resource, id, candidates });
+      });
+    });
+  } else {
+    return mapResults(
+      /* c8 ignore next 1 - defense in depth */
+      (resource.candidates ?? []).map((candidate) => mergeChildCandidate(candidate, baseConditions))
+    ).onSuccess((candidates) => {
+      return succeed({ ...resource, candidates });
+    });
+  }
+}
+
+/**
  * Helper method to merge a child resource with a parent name and conditions.
  * @param resource - The resource to merge.
  * @param name - The name of the resource.
+ *
  * @param parentName - The name of the parent resource.
  * @param parentConditions - The conditions of the parent resource.
  * @returns `Success` with the merged resource if successful, otherwise `Failure`.

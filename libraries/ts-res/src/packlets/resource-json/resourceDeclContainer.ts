@@ -38,11 +38,11 @@ export interface IResourceDeclContainer {
    * Gets a normalized array of {@link ResourceJson.Normalized.ILooseResourceDecl | loose resource}
    * declarations for all resources in the container, including children.
    */
-  getLooseResources(): ReadonlyArray<Normalized.ILooseResourceDecl>;
+  getLooseResources(): ReadonlyArray<Normalized.IImporterResourceDecl>;
 
   /**
    * Gets a normalized array of {@link ResourceJson.Normalized.ILooseResourceCandidateDecl | loose resource candidate}
    * declarations for all resources in the container, including children.
    */
-  getLooseCandidates(): ReadonlyArray<Normalized.ILooseResourceCandidateDecl>;
+  getLooseCandidates(): ReadonlyArray<Normalized.IImporterResourceCandidateDecl>;
 }

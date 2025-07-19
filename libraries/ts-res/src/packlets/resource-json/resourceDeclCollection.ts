@@ -25,7 +25,7 @@ import { IResourceDeclContainer } from './resourceDeclContainer';
 import * as Convert from './convert';
 import * as Normalized from './normalized';
 import * as Json from './json';
-import { mergeContextDecl, mergeLooseCandidate, mergeLooseResource } from './helpers';
+import { mergeContextDecl, mergeImporterCandidate, mergeImporterResource } from './helpers';
 
 /**
  * Class that extracts resources and candidates from a
@@ -37,7 +37,7 @@ export class ResourceDeclCollection implements IResourceDeclContainer {
    * The {@link ResourceJson.Normalized.IResourceCollectionDecl | resource collection declaration}
    * being processed.
    */
-  public readonly collection: Normalized.IResourceCollectionDecl;
+  public readonly collection: Normalized.IImporterResourceCollectionDecl;
 
   /**
    * {@inheritdoc ResourceJson.IResourceDeclContainer.context}
@@ -46,10 +46,10 @@ export class ResourceDeclCollection implements IResourceDeclContainer {
     return this.collection.context;
   }
 
-  protected _resources: Normalized.ILooseResourceDecl[] = [];
-  protected _candidates: Normalized.ILooseResourceCandidateDecl[] = [];
+  protected _resources: Normalized.IImporterResourceDecl[] = [];
+  protected _candidates: Normalized.IImporterResourceCandidateDecl[] = [];
 
-  protected constructor(collection: Normalized.IResourceCollectionDecl) {
+  protected constructor(collection: Normalized.IImporterResourceCollectionDecl) {
     this.collection = collection;
     this._extract(collection).orThrow();
   }
@@ -61,7 +61,7 @@ export class ResourceDeclCollection implements IResourceDeclContainer {
    * @returns `Success` with the new collection if the JSON object is valid, otherwise `Failure`.
    */
   public static create(from: unknown): Result<ResourceDeclCollection> {
-    return Convert.resourceCollectionDecl
+    return Convert.importerResourceCollectionDecl
       .convert(from)
       .withErrorFormat((err) => `Invalid resource collection: ${err}`)
       .onSuccess((decl) => {
@@ -74,7 +74,7 @@ export class ResourceDeclCollection implements IResourceDeclContainer {
    * @returns The {@link ResourceJson.Normalized.ILooseResourceDecl | loose resource declarations}
    * extracted from the collection.
    */
-  public getLooseResources(): ReadonlyArray<Normalized.ILooseResourceDecl> {
+  public getLooseResources(): ReadonlyArray<Normalized.IImporterResourceDecl> {
     return this._resources;
   }
 
@@ -83,12 +83,12 @@ export class ResourceDeclCollection implements IResourceDeclContainer {
    * @returns The {@link ResourceJson.Normalized.ILooseResourceCandidateDecl | loose resource candidate declarations}
    * extracted from the collection.
    */
-  public getLooseCandidates(): ReadonlyArray<Normalized.ILooseResourceCandidateDecl> {
+  public getLooseCandidates(): ReadonlyArray<Normalized.IImporterResourceCandidateDecl> {
     return this._candidates;
   }
 
   private _extract(
-    collection: Normalized.IResourceCollectionDecl,
+    collection: Normalized.IImporterResourceCollectionDecl,
     parentName?: string,
     parentConditions?: ReadonlyArray<Json.ILooseConditionDecl>
   ): Result<this> {
@@ -97,13 +97,14 @@ export class ResourceDeclCollection implements IResourceDeclContainer {
       ({ baseId: baseName, conditions: baseConditions }) => {
         const mergedCandidates =
           collection.candidates?.map((candidate) =>
-            mergeLooseCandidate(candidate, baseName, baseConditions)
+            mergeImporterCandidate(candidate, baseName, baseConditions)
           ) ?? [];
         this._candidates.push(...mapResults(mergedCandidates).aggregateError(errors).orDefault([]));
 
         const mergedResources =
-          collection.resources?.map((resource) => mergeLooseResource(resource, baseName, baseConditions)) ??
-          [];
+          collection.resources?.map((resource) =>
+            mergeImporterResource(resource, baseName, baseConditions)
+          ) ?? [];
         this._resources.push(...mapResults(mergedResources).aggregateError(errors).orDefault([]));
 
         collection.collections?.forEach((subCollection) => {
