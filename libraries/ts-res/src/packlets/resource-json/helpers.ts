@@ -33,7 +33,7 @@ import { sanitizeJsonObject } from '@fgv/ts-json-base';
 export interface IDeclarationOptions {
   /**
    * If `true`, properties with default values will be included in the
-   * output. IF omitted or `false`, properties with default values will be omitted.
+   * output. If omitted or `false`, properties with default values will be omitted.
    */
   showDefaults?: boolean;
 
@@ -225,7 +225,7 @@ export function mergeLooseResource(
  * @public
  */
 export function mergeImporterResource(
-  resource: Normalized.ILooseResourceDecl | Normalized.IChildResourceDecl,
+  resource: Normalized.IImporterResourceDecl,
   baseName?: string,
   baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>
 ): Result<Normalized.IImporterResourceDecl> {

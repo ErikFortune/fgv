@@ -41,7 +41,7 @@ describe('ResourceDeclCollection', () => {
         ]
       };
       expect(TsRes.ResourceJson.ResourceDeclCollection.create(jsonDecl)).toSucceedAndSatisfy((collection) => {
-        expect(collection.getLooseCandidates()).toEqual([
+        expect(collection.getImporterCandidates()).toEqual([
           {
             id: 'foo',
             json: { myNameIs: 'foo' },
@@ -76,7 +76,7 @@ describe('ResourceDeclCollection', () => {
         ]
       };
       expect(TsRes.ResourceJson.ResourceDeclCollection.create(jsonDecl)).toSucceedAndSatisfy((collection) => {
-        expect(collection.getLooseCandidates()).toEqual([
+        expect(collection.getImporterCandidates()).toEqual([
           {
             id: 'parent.foo',
             json: { myNameIs: 'foo' },
@@ -117,7 +117,7 @@ describe('ResourceDeclCollection', () => {
         ]
       };
       expect(TsRes.ResourceJson.ResourceDeclCollection.create(jsonDecl)).toSucceedAndSatisfy((collection) => {
-        expect(collection.getLooseResources()).toEqual([
+        expect(collection.getImporterResources()).toEqual([
           {
             id: 'foo.bar',
             resourceTypeName: 'fooType',
@@ -160,7 +160,7 @@ describe('ResourceDeclCollection', () => {
         ]
       };
       expect(TsRes.ResourceJson.ResourceDeclCollection.create(jsonDecl)).toSucceedAndSatisfy((collection) => {
-        expect(collection.getLooseResources()).toEqual([
+        expect(collection.getImporterResources()).toEqual([
           {
             id: 'parent.foo.bar',
             resourceTypeName: 'fooType',
@@ -269,7 +269,7 @@ describe('ResourceDeclCollection', () => {
         ]
       };
       expect(TsRes.ResourceJson.ResourceDeclCollection.create(jsonDecl)).toSucceedAndSatisfy((collection) => {
-        expect(collection.getLooseCandidates()).toEqual([
+        expect(collection.getImporterCandidates()).toEqual([
           {
             id: 'parent.child.foo',
             json: { myNameIs: 'foo' },
@@ -319,7 +319,7 @@ describe('ResourceDeclCollection', () => {
           }
         ]);
 
-        expect(collection.getLooseResources()).toEqual([
+        expect(collection.getImporterResources()).toEqual([
           {
             id: 'parent.child.grandchild.foo',
             resourceTypeName: 'fooType',
@@ -423,7 +423,7 @@ describe('ResourceDeclCollection', () => {
         ]
       };
       expect(TsRes.ResourceJson.ResourceDeclCollection.create(jsonDecl)).toSucceedAndSatisfy((collection) => {
-        expect(collection.getLooseCandidates()).toEqual([
+        expect(collection.getImporterCandidates()).toEqual([
           {
             id: 'child.foo',
             json: { myNameIs: 'foo' },
@@ -458,7 +458,7 @@ describe('ResourceDeclCollection', () => {
           }
         ]);
 
-        expect(collection.getLooseResources()).toEqual([
+        expect(collection.getImporterResources()).toEqual([
           {
             id: 'child.foo_res',
             resourceTypeName: 'fooType',
@@ -526,7 +526,7 @@ describe('ResourceDeclCollection', () => {
         ]
       };
       expect(TsRes.ResourceJson.ResourceDeclCollection.create(jsonDecl)).toSucceedAndSatisfy((collection) => {
-        expect(collection.getLooseCandidates()).toEqual([
+        expect(collection.getImporterCandidates()).toEqual([
           {
             id: 'foo',
             json: { myNameIs: 'foo' },
@@ -539,7 +539,7 @@ describe('ResourceDeclCollection', () => {
           }
         ]);
 
-        expect(collection.getLooseResources()).toEqual([
+        expect(collection.getImporterResources()).toEqual([
           {
             id: 'foo_res',
             resourceTypeName: 'fooType',

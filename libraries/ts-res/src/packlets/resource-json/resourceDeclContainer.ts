@@ -35,14 +35,14 @@ export interface IResourceDeclContainer {
   readonly context?: Normalized.IContainerContextDecl;
 
   /**
-   * Gets a normalized array of {@link ResourceJson.Normalized.ILooseResourceDecl | loose resource}
+   * Gets a normalized array of {@link ResourceJson.Normalized.IImporterResourceDecl | importer resource}
    * declarations for all resources in the container, including children.
    */
-  getLooseResources(): ReadonlyArray<Normalized.IImporterResourceDecl>;
+  getImporterResources(): ReadonlyArray<Normalized.IImporterResourceDecl>;
 
   /**
-   * Gets a normalized array of {@link ResourceJson.Normalized.ILooseResourceCandidateDecl | loose resource candidate}
+   * Gets a normalized array of {@link ResourceJson.Normalized.IImporterResourceCandidateDecl | importer resource candidate}
    * declarations for all resources in the container, including children.
    */
-  getLooseCandidates(): ReadonlyArray<Normalized.IImporterResourceCandidateDecl>;
+  getImporterCandidates(): ReadonlyArray<Normalized.IImporterResourceCandidateDecl>;
 }

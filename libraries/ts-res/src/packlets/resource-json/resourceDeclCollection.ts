@@ -70,20 +70,20 @@ export class ResourceDeclCollection implements IResourceDeclContainer {
   }
 
   /**
-   * Gets the loose resources extracted from the collection.
-   * @returns The {@link ResourceJson.Normalized.ILooseResourceDecl | loose resource declarations}
+   * Gets the importer resources extracted from the collection.
+   * @returns The {@link ResourceJson.Normalized.IImporterResourceDecl | importer resource declarations}
    * extracted from the collection.
    */
-  public getLooseResources(): ReadonlyArray<Normalized.IImporterResourceDecl> {
+  public getImporterResources(): ReadonlyArray<Normalized.IImporterResourceDecl> {
     return this._resources;
   }
 
   /**
-   * Gets the loose candidates extracted from the collection.
-   * @returns The {@link ResourceJson.Normalized.ILooseResourceCandidateDecl | loose resource candidate declarations}
+   * Gets the importer candidates extracted from the collection.
+   * @returns The {@link ResourceJson.Normalized.IImporterResourceCandidateDecl | importer resource candidate declarations}
    * extracted from the collection.
    */
-  public getLooseCandidates(): ReadonlyArray<Normalized.IImporterResourceCandidateDecl> {
+  public getImporterCandidates(): ReadonlyArray<Normalized.IImporterResourceCandidateDecl> {
     return this._candidates;
   }
 

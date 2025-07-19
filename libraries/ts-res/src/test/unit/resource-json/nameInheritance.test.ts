@@ -267,7 +267,7 @@ describe('Name Inheritance in Resource Collections', () => {
 
       expect(TsRes.ResourceJson.ResourceDeclCollection.create(collectionJson)).toSucceedAndSatisfy(
         (collection) => {
-          const resources = collection.getLooseResources();
+          const resources = collection.getImporterResources();
           expect(resources).toHaveLength(1);
           expect(TsRes.ResourceJson.Json.isLooseResourceDecl(resources[0]) && resources[0].id).toBe(
             'pages.home'
@@ -307,7 +307,7 @@ describe('Name Inheritance in Resource Collections', () => {
 
       expect(TsRes.ResourceJson.ResourceDeclCollection.create(collectionJson)).toSucceedAndSatisfy(
         (collection) => {
-          const resources = collection.getLooseResources();
+          const resources = collection.getImporterResources();
           expect(resources).toHaveLength(2);
 
           // First resource inherits full context ID
@@ -351,7 +351,7 @@ describe('Name Inheritance in Resource Collections', () => {
 
       expect(TsRes.ResourceJson.ResourceDeclCollection.create(collectionJson)).toSucceedAndSatisfy(
         (collection) => {
-          const resources = collection.getLooseResources();
+          const resources = collection.getImporterResources();
           expect(resources).toHaveLength(1);
           expect(TsRes.ResourceJson.Json.isLooseResourceDecl(resources[0]) && resources[0].id).toBe(
             'pages.home'
@@ -375,7 +375,7 @@ describe('Name Inheritance in Resource Collections', () => {
 
       expect(TsRes.ResourceJson.ResourceDeclCollection.create(collectionJson)).toSucceedAndSatisfy(
         (collection) => {
-          const candidates = collection.getLooseCandidates();
+          const candidates = collection.getImporterCandidates();
           expect(candidates).toHaveLength(1);
           expect(
             TsRes.ResourceJson.Json.isLooseResourceCandidateDecl(candidates[0]) && candidates[0].id
@@ -414,7 +414,7 @@ describe('Name Inheritance in Resource Collections', () => {
 
       expect(TsRes.ResourceJson.ResourceDeclCollection.create(collectionJson)).toSucceedAndSatisfy(
         (collection) => {
-          const resources = collection.getLooseResources();
+          const resources = collection.getImporterResources();
           expect(resources).toHaveLength(1);
           expect(TsRes.ResourceJson.Json.isLooseResourceDecl(resources[0]) && resources[0].id).toBe(
             'components.buttons'
@@ -450,7 +450,7 @@ describe('Name Inheritance in Resource Collections', () => {
 
       expect(TsRes.ResourceJson.ResourceDeclCollection.create(collectionJson)).toSucceedAndSatisfy(
         (collection) => {
-          const resources = collection.getLooseResources();
+          const resources = collection.getImporterResources();
           expect(resources).toHaveLength(1);
           expect(TsRes.ResourceJson.Json.isLooseResourceDecl(resources[0]) && resources[0].id).toBe(
             'standalone'

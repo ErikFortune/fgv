@@ -2275,9 +2275,9 @@ interface IResourceDeclContainer {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly context?: Normalized.IContainerContextDecl;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getLooseCandidates(): ReadonlyArray<Normalized.IImporterResourceCandidateDecl>;
+    getImporterCandidates(): ReadonlyArray<Normalized.IImporterResourceCandidateDecl>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getLooseResources(): ReadonlyArray<Normalized.IImporterResourceDecl>;
+    getImporterResources(): ReadonlyArray<Normalized.IImporterResourceDecl>;
 }
 
 // @public
@@ -2852,7 +2852,7 @@ function mergeContextDecl(decl?: Normalized.IContainerContextDecl, parentName?: 
 function mergeImporterCandidate(candidate: Normalized.IImporterResourceCandidateDecl, baseName?: string, baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>): Result<Normalized.IImporterResourceCandidateDecl>;
 
 // @public
-function mergeImporterResource(resource: Normalized.ILooseResourceDecl | Normalized.IChildResourceDecl, baseName?: string, baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>): Result<Normalized.IImporterResourceDecl>;
+function mergeImporterResource(resource: Normalized.IImporterResourceDecl, baseName?: string, baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>): Result<Normalized.IImporterResourceDecl>;
 
 // @public
 function mergeLooseCandidate(candidate: Normalized.IImporterResourceCandidateDecl, baseName?: string, baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>): Result<Normalized.ILooseResourceCandidateDecl>;
@@ -3468,9 +3468,9 @@ class ResourceDeclCollection implements IResourceDeclContainer {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(from: unknown): Result<ResourceDeclCollection>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getLooseCandidates(): ReadonlyArray<Normalized.IImporterResourceCandidateDecl>;
+    getImporterCandidates(): ReadonlyArray<Normalized.IImporterResourceCandidateDecl>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getLooseResources(): ReadonlyArray<Normalized.IImporterResourceDecl>;
+    getImporterResources(): ReadonlyArray<Normalized.IImporterResourceDecl>;
     // (undocumented)
     protected _resources: Normalized.IImporterResourceDecl[];
 }
@@ -3490,9 +3490,9 @@ class ResourceDeclTree implements IResourceDeclContainer {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(from: unknown): Result<ResourceDeclTree>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getLooseCandidates(): ReadonlyArray<Normalized.ILooseResourceCandidateDecl>;
+    getImporterCandidates(): ReadonlyArray<Normalized.ILooseResourceCandidateDecl>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getLooseResources(): ReadonlyArray<Normalized.ILooseResourceDecl>;
+    getImporterResources(): ReadonlyArray<Normalized.ILooseResourceDecl>;
     // (undocumented)
     protected _resources: Normalized.ILooseResourceDecl[];
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

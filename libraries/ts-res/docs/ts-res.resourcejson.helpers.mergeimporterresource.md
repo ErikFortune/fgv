@@ -9,7 +9,7 @@ Helper method to merge a resource with a base name and conditions from import co
 **Signature:**
 
 ```typescript
-export declare function mergeImporterResource(resource: Normalized.ILooseResourceDecl | Normalized.IChildResourceDecl, baseName?: string, baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>): Result<Normalized.IImporterResourceDecl>;
+export declare function mergeImporterResource(resource: Normalized.IImporterResourceDecl, baseName?: string, baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>): Result<Normalized.IImporterResourceDecl>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ resource
 
 </td><td>
 
-Normalized.ILooseResourceDecl \| Normalized.IChildResourceDecl
+Normalized.IImporterResourceDecl
 
 
 </td><td>

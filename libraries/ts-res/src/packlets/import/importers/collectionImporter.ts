@@ -78,11 +78,11 @@ export class CollectionImporter implements IImporter {
     return ImportContext.forContainerImport(container.context, item.context)
       .onSuccess((context) => {
         const errors: MessageAggregator = new MessageAggregator();
-        for (const resource of container.getLooseResources()) {
+        for (const resource of container.getImporterResources()) {
           this._addResource(manager, resource, context).aggregateError(errors);
         }
 
-        for (const candidate of container.getLooseCandidates()) {
+        for (const candidate of container.getImporterCandidates()) {
           this._addCandidate(manager, candidate, context).aggregateError(errors);
         }
         return errors.returnOrReport(succeed([]));
@@ -91,12 +91,12 @@ export class CollectionImporter implements IImporter {
   }
 
   /**
-   * Adds a {@link ResourceJson.Normalized.ILooseResourceDecl | declared resource} to
+   * Adds a {@link ResourceJson.Normalized.IImporterResourceDecl | declared resource} to
    * the supplied {@link Resources.ResourceManagerBuilder | resource manager builder}, merging an
    * optional {@link Import.ImportContext | import context} if provided.
    * @param manager - The {@link Resources.ResourceManagerBuilder | resource manager builder} to which
    * the resource will be added.
-   * @param resource - The {@link ResourceJson.Normalized.ILooseResourceDecl | resource}
+   * @param resource - The {@link ResourceJson.Normalized.IImporterResourceDecl | resource}
    * to add.
    * @param context - Optional {@link Import.ImportContext | import context} to merge
    * with the resource.
@@ -119,12 +119,12 @@ export class CollectionImporter implements IImporter {
   }
 
   /**
-   * Adds a {@link ResourceJson.Normalized.ILooseResourceCandidateDecl | declared resource candidate}
+   * Adds a {@link ResourceJson.Normalized.IImporterResourceCandidateDecl | declared resource candidate}
    * to the supplied {@link Resources.ResourceManagerBuilder | resource manager builder}, merging an optional
    * {@link Import.ImportContext | import context} if provided.
    * @param manager - The {@link Resources.ResourceManagerBuilder | resource manager builder} to which the
    * candidate will be added.
-   * @param candidate - The {@link ResourceJson.Normalized.ILooseResourceCandidateDecl | candidate}
+   * @param candidate - The {@link ResourceJson.Normalized.IImporterResourceCandidateDecl | candidate}
    * to add.
    * @param context - Optional {@link Import.ImportContext | import context} to merge with the candidate.
    * @returns `Success` with the {@link Resources.ResourceCandidate | resource candidate} if successful,
