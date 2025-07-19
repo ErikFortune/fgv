@@ -736,6 +736,13 @@ export class DetailedSuccess<T, TD> extends Success<T> {
   public static with<T, TD>(value: T, detail?: TD): DetailedSuccess<T, TD> {
     return new DetailedSuccess<T, TD>(value, detail);
   }
+
+  /**
+   * Returns this {@link DetailedSuccess} as a {@link Result}.
+   */
+  public get asResult(): Result<T> {
+    return this;
+  }
 }
 
 /**
@@ -821,6 +828,13 @@ export class DetailedFailure<T, TD> extends Failure<T> {
       }
     }
     throw new Error(this._message);
+  }
+
+  /**
+   * Returns this {@link DetailedFailure} as a {@link Result}.
+   */
+  public get asResult(): Result<T> {
+    return this;
   }
 
   /**

@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { ConditionPriority, QualifierIndex, QualifierName } from '../common';
+import { ConditionPriority, QualifierContextValue, QualifierIndex, QualifierName } from '../common';
 import { QualifierType } from '../qualifier-types';
 
 /**
@@ -33,6 +33,7 @@ export interface IQualifierDecl {
   defaultPriority: number;
   token?: string;
   tokenIsOptional?: boolean;
+  defaultValue?: string;
 }
 
 /**
@@ -66,6 +67,11 @@ export interface IValidatedQualifierDecl {
    * Indicates whether the token is optional when parsing a resource token.
    */
   tokenIsOptional: boolean;
+
+  /**
+   * Optional default value for the qualifier.
+   */
+  defaultValue?: QualifierContextValue;
 
   /**
    * Index of the qualifier.

@@ -599,6 +599,7 @@ function delimitedString(delimiter: string, options?: 'filtered' | 'all'): Conve
 // @public
 export class DetailedFailure<T, TD> extends Failure<T> {
     constructor(message: string, detail?: TD);
+    get asResult(): Result<T>;
     get detail(): TD | undefined;
     // @internal (undocumented)
     protected _detail?: TD;
@@ -627,6 +628,7 @@ export type DetailedResult<T, TD> = DetailedSuccess<T, TD> | DetailedFailure<T, 
 // @public
 export class DetailedSuccess<T, TD> extends Success<T> {
     constructor(value: T, detail?: TD);
+    get asResult(): Result<T>;
     get detail(): TD | undefined;
     // @internal (undocumented)
     protected _detail?: TD;

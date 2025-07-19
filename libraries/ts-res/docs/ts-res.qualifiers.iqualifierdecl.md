@@ -54,6 +54,25 @@ number
 </td></tr>
 <tr><td>
 
+[defaultValue?](./ts-res.qualifiers.iqualifierdecl.defaultvalue.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
 [name](./ts-res.qualifiers.iqualifierdecl.name.md)
 
 

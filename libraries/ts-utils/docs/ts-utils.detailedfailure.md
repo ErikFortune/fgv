@@ -72,6 +72,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[asResult](./ts-utils.detailedfailure.asresult.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[Result](./ts-utils.result.md)<!-- -->&lt;T&gt;
+
+
+</td><td>
+
+Returns this [DetailedFailure](./ts-utils.detailedfailure.md) as a [Result](./ts-utils.result.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [detail](./ts-utils.detailedfailure.detail.md)
 
 

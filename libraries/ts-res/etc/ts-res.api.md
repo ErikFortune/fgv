@@ -1992,6 +1992,8 @@ interface IQualifierDecl {
     // (undocumented)
     defaultPriority: number;
     // (undocumented)
+    defaultValue?: string;
+    // (undocumented)
     name: string;
     // (undocumented)
     token?: string;
@@ -2641,6 +2643,7 @@ interface IValidatedImportContext {
 // @public
 interface IValidatedQualifierDecl {
     defaultPriority: ConditionPriority;
+    defaultValue?: QualifierContextValue;
     index: QualifierIndex | undefined;
     name: QualifierName;
     token: QualifierName;
@@ -2989,7 +2992,7 @@ class Qualifier implements IValidatedQualifierDecl, ICollectible<QualifierName, 
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor({ name, token, type, defaultPriority, tokenIsOptional, index }: IValidatedQualifierDecl);
+    protected constructor({ name, token, type, defaultPriority, tokenIsOptional, defaultValue, index }: IValidatedQualifierDecl);
     // (undocumented)
     protected readonly _collectible: Collections.Collectible<QualifierName, QualifierIndex>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2998,6 +3001,7 @@ class Qualifier implements IValidatedQualifierDecl, ICollectible<QualifierName, 
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(decl: IValidatedQualifierDecl): Result<Qualifier>;
     readonly defaultPriority: ConditionPriority;
+    readonly defaultValue?: QualifierContextValue;
     get index(): QualifierIndex | undefined;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //

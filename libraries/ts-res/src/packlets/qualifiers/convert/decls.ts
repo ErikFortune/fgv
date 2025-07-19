@@ -36,7 +36,8 @@ export const qualifierDecl = Converters.strictObject<IQualifierDecl>({
   typeName: Converters.string,
   defaultPriority: Converters.number,
   token: Converters.string.optional(),
-  tokenIsOptional: Converters.boolean.optional()
+  tokenIsOptional: Converters.boolean.optional(),
+  defaultValue: Converters.string.optional()
 });
 
 /**
@@ -68,19 +69,22 @@ export const validatedQualifierDecl = Converters.generic<
       : succeed(undefined);
 
   return qualifierDecl.convert(from).onSuccess((decl) => {
-    const token = decl.token ?? decl.name;
-    return populateObject<IValidatedQualifierDecl>({
-      name: () => Validate.toQualifierName(decl.name),
-      token: () => Validate.toQualifierName(token),
-      tokenIsOptional: () => succeed(decl.tokenIsOptional === true),
-      type: () => context.qualifierTypes.validating.get(decl.typeName),
-      defaultPriority: () => Validate.toConditionPriority(decl.defaultPriority),
-      index: () => validatedIndexResult
-    }).onSuccess((validated) => {
-      if (context.qualifierIndex !== undefined) {
-        context.qualifierIndex++;
-      }
-      return succeed(validated);
+    return context.qualifierTypes.validating.get(decl.typeName).asResult.onSuccess((type) => {
+      return populateObject<IValidatedQualifierDecl>({
+        name: () => Validate.toQualifierName(decl.name),
+        token: () => Validate.toQualifierName(decl.token ?? decl.name),
+        tokenIsOptional: () => succeed(decl.tokenIsOptional === true),
+        type: () => succeed(type),
+        defaultPriority: () => Validate.toConditionPriority(decl.defaultPriority),
+        defaultValue: () =>
+          decl.defaultValue ? type.validateContextValue(decl.defaultValue) : succeed(undefined),
+        index: () => validatedIndexResult
+      }).onSuccess((validated) => {
+        if (context.qualifierIndex !== undefined) {
+          context.qualifierIndex++;
+        }
+        return succeed(validated);
+      });
     });
   });
 });

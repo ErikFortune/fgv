@@ -61,6 +61,11 @@ export class Qualifier implements IValidatedQualifierDecl, ICollectible<Qualifie
   public readonly tokenIsOptional: boolean;
 
   /**
+   * Optional default value for the qualifier.
+   */
+  public readonly defaultValue?: QualifierContextValue;
+
+  /**
    * The index of the qualifier.
    */
   public get index(): QualifierIndex | undefined {
@@ -96,6 +101,7 @@ export class Qualifier implements IValidatedQualifierDecl, ICollectible<Qualifie
     type,
     defaultPriority,
     tokenIsOptional,
+    defaultValue,
     index
   }: IValidatedQualifierDecl) {
     this.name = name;
@@ -103,6 +109,7 @@ export class Qualifier implements IValidatedQualifierDecl, ICollectible<Qualifie
     this.type = type;
     this.defaultPriority = defaultPriority;
     this.tokenIsOptional = tokenIsOptional;
+    this.defaultValue = defaultValue;
     this._collectible = new Collections.Collectible<QualifierName, QualifierIndex>({
       key: name,
       index,

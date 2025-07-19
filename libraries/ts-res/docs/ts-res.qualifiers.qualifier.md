@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)({ name, token, type, defaultPriority, tokenIsOptional, index })](./ts-res.qualifiers.qualifier._constructor_.md)
+[(constructor)({ name, token, type, defaultPriority, tokenIsOptional, defaultValue, index })](./ts-res.qualifiers.qualifier._constructor_.md)
 
 
 </td><td>
@@ -111,6 +111,27 @@ Collections.Collectible&lt;[QualifierName](./ts-res.qualifiername.md)<!-- -->, [
 </td><td>
 
 The default [priority](./ts-res.conditionpriority.md) of conditions that depend on this qualifier.
+
+
+</td></tr>
+<tr><td>
+
+[defaultValue?](./ts-res.qualifiers.qualifier.defaultvalue.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[QualifierContextValue](./ts-res.qualifiercontextvalue.md)
+
+
+</td><td>
+
+_(Optional)_ Optional default value for the qualifier.
 
 
 </td></tr>

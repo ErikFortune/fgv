@@ -56,6 +56,25 @@ The default [priority](./ts-res.conditionpriority.md) of conditions that depend 
 </td></tr>
 <tr><td>
 
+[defaultValue?](./ts-res.qualifiers.ivalidatedqualifierdecl.defaultvalue.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[QualifierContextValue](./ts-res.qualifiercontextvalue.md)
+
+
+</td><td>
+
+_(Optional)_ Optional default value for the qualifier.
+
+
+</td></tr>
+<tr><td>
+
 [index](./ts-res.qualifiers.ivalidatedqualifierdecl.index.md)
 
 
