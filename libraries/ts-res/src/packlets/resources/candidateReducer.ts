@@ -124,8 +124,23 @@ export class CandidateReducer {
   }
 
   /**
-   * Resolves collisions by reverting reduced candidates to unchanged when they collide
-   * with other candidates. Iterates until no more collisions are found.
+   * Merges a partial candidate's JSON value into a base candidate's JSON value.
+   * @param baseJson - The base JSON value to merge into
+   * @param partialJson - The partial JSON value to merge from
+   * @returns The merged JSON value
+   * @internal
+   */
+  private static _mergeJsonValues(baseJson: JsonObject, partialJson: JsonObject): JsonObject {
+    // Simple merge: partial values override base values
+    return { ...baseJson, ...partialJson };
+  }
+
+  /**
+   * Resolves collisions using smart collision resolution rules.
+   * - If a reduced candidate collides with an unchanged candidate and only one reduced candidate collides:
+   *   - If reduced candidate is complete: suppress unchanged, keep reduced
+   *   - If reduced candidate is partial: merge into unchanged, suppress reduced
+   * - Otherwise: revert reduced candidates to unchanged to avoid collisions
    * @internal
    */
   private _resolveCollisions(): void {
@@ -137,23 +152,53 @@ export class CandidateReducer {
       hasCollisions = false;
       iterationCount++;
 
-      // Group candidates by their condition set keys
+      // Group candidates by their condition set keys (excluding suppressed)
       const conditionKeyGroups = new Map<string, ICandidateInfo[]>();
 
       for (const candidateInfo of this._candidateInfos) {
-        const key = candidateInfo.conditionSetKey;
-        if (!conditionKeyGroups.has(key)) {
-          conditionKeyGroups.set(key, []);
+        if (candidateInfo.action !== 'suppressed') {
+          // Don't include suppressed candidates
+          const key = candidateInfo.conditionSetKey;
+          if (!conditionKeyGroups.has(key)) {
+            conditionKeyGroups.set(key, []);
+          }
+          conditionKeyGroups.get(key)!.push(candidateInfo);
         }
-        conditionKeyGroups.get(key)!.push(candidateInfo);
       }
 
-      // Check for collisions and revert reduced candidates to unchanged
+      // Apply smart collision resolution
       for (const [, candidatesWithSameKey] of conditionKeyGroups) {
         if (candidatesWithSameKey.length > 1) {
-          // We have a collision - revert any reduced candidates to unchanged
-          for (const candidateInfo of candidatesWithSameKey) {
-            if (candidateInfo.action === 'reduced') {
+          // Categorize candidates
+          const unchangedCandidates = candidatesWithSameKey.filter((c) => c.action === 'unchanged');
+          const reducedCandidates = candidatesWithSameKey.filter((c) => c.action === 'reduced');
+
+          if (unchangedCandidates.length === 1 && reducedCandidates.length === 1) {
+            // Simple case: one unchanged vs one reduced - apply smart resolution
+            const unchangedCandidate = unchangedCandidates[0];
+            const reducedCandidate = reducedCandidates[0];
+
+            if (!reducedCandidate.originalCandidate.isPartial) {
+              // Complete reduced candidate wins - suppress unchanged
+              unchangedCandidate.action = 'suppressed';
+              hasCollisions = true;
+            } else {
+              // Partial reduced candidate - merge into unchanged and suppress reduced
+              const mergedJson = CandidateReducer._mergeJsonValues(
+                unchangedCandidate.originalCandidate.json,
+                reducedCandidate.originalCandidate.json
+              );
+
+              // Update unchanged candidate with merged JSON, keeping its isPartial status
+              (unchangedCandidate as { json?: JsonObject }).json = mergedJson;
+
+              // Suppress the reduced candidate
+              reducedCandidate.action = 'suppressed';
+              hasCollisions = true;
+            }
+          } else {
+            // Complex collision case - revert all reduced candidates to unchanged
+            for (const candidateInfo of reducedCandidates) {
               // Revert to original conditions and mark as unchanged
               const originalConditions = candidateInfo.originalCandidate.conditions.conditions.map((c) =>
                 c.toLooseConditionDecl()
@@ -165,7 +210,7 @@ export class CandidateReducer {
               candidateInfo.conditions = originalConditions;
               candidateInfo.conditionSetKey = originalKey;
 
-              hasCollisions = true; // Continue checking for more collisions
+              hasCollisions = true;
             }
           }
         }

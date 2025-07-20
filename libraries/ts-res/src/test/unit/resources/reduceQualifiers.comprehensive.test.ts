@@ -461,24 +461,16 @@ describe('reduceQualifiers comprehensive functionality', () => {
         reduceQualifiers: true
       });
 
-      // Both candidates should match (default matches everything, specific matches prod)
-      expect(declaration.candidates).toHaveLength(2);
+      // Smart collision resolution: specific candidate wins over default when they collide after reduction
+      expect(declaration.candidates).toHaveLength(1);
 
-      // Find the candidates
-      const defaultCandidate = declaration.candidates?.find(
-        (c) => (c.json as { value: string }).value === 'default'
-      );
-      const specificCandidate = declaration.candidates?.find(
-        (c) => (c.json as { value: string }).value === 'specific'
-      );
+      // Only the specific candidate should remain after smart collision resolution
+      const remainingCandidate = declaration.candidates?.[0];
+      expect((remainingCandidate?.json as { value: string }).value).toBe('specific');
 
-      // Default candidate should have no conditions
-      expect(Object.keys(defaultCandidate?.conditions || {})).toHaveLength(0);
-
-      // Specific candidate should retain environment condition due to collision avoidance
-      // (reduction would make it {}, which collides with the default candidate)
-      expect(specificCandidate?.conditions).toHaveProperty('environment', 'prod');
-      expect(Object.keys(specificCandidate?.conditions || {})).toHaveLength(1);
+      // The specific candidate should have no conditions since environment was reduced
+      // (it won the collision against the default candidate)
+      expect(Object.keys(remainingCandidate?.conditions || {})).toHaveLength(0);
     });
 
     test('handles filter context with qualifiers not present in candidates', () => {

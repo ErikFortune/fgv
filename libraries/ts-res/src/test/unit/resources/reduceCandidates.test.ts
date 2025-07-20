@@ -116,7 +116,7 @@ describe('reduceCandidates collision detection', () => {
       });
     });
 
-    test('should successfully clone with territory=US filter and reduce=true (collision avoidance)', () => {
+    test('should successfully clone with territory=US filter and reduce=true (smart collision resolution)', () => {
       // Add the same resource with unconditional and conditional candidates
       resourceManager
         .addResource({
@@ -139,9 +139,9 @@ describe('reduceCandidates collision detection', () => {
 
       const filterContext = resourceManager.validateContext({ territory: 'US' }).orThrow();
 
-      // This should now succeed due to collision avoidance
-      // The conditional candidate { territory: 'US' } would become unconditional {} after reduction,
-      // but since that collides with the existing unconditional candidate, it stays unchanged
+      // This should now succeed due to smart collision resolution
+      // The conditional candidate { territory: 'US' } becomes unconditional {} after reduction,
+      // and since it's complete (not partial) it wins over the existing unconditional candidate
       expect(
         resourceManager.clone({
           filterForContext: filterContext,
@@ -152,9 +152,16 @@ describe('reduceCandidates collision detection', () => {
 
         const clonedResource = clonedManager.getBuiltResource('test.message').orThrow();
 
-        // Both candidates should be present, but the conditional one should retain its territory condition
-        // due to collision avoidance (it wasn't reduced to avoid the collision)
-        expect(clonedResource.candidates).toHaveLength(2);
+        // Smart collision resolution: the reduced candidate (territory=US -> {}) should win over
+        // the unchanged candidate ({}) because it's more precise and complete (not partial)
+        expect(clonedResource.candidates).toHaveLength(1);
+
+        // The remaining candidate should be the originally conditional one with its JSON value
+        const remainingCandidate = clonedResource.candidates[0];
+        expect(remainingCandidate.json).toEqual({ text: 'US message' });
+
+        // The candidate should have no conditions since the territory qualifier was reduced
+        expect(Object.keys(remainingCandidate.conditions.conditions)).toHaveLength(0);
       });
     });
   });
