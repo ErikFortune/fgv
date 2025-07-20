@@ -702,14 +702,30 @@ describe('Condition', () => {
       expect(condition.canMatchPartialContext(context)).toBe(true);
     });
 
-    test('returns false when qualifier is present and does not match', () => {
+    test('returns true when qualifier is present and does not match but has scoreAsDefault > NoMatch', () => {
       const context = { homeTerritory: 'US' };
-      expect(condition.canMatchPartialContext(context)).toBe(false);
+      expect(condition.canMatchPartialContext(context)).toBe(true);
     });
 
     test('returns true when qualifier is not present in context', () => {
       const context = { currentTerritory: 'CA' };
       expect(condition.canMatchPartialContext(context)).toBe(true);
+    });
+
+    test('returns false when qualifier is present and does not match with scoreAsDefault <= NoMatch', () => {
+      const noDefaultDecl = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'homeTerritory',
+            value: 'CA'
+            // No scoreAsDefault means it defaults to undefined/NoMatch
+          },
+          { qualifiers }
+        )
+        .orThrow();
+      const noDefaultCondition = TsRes.Conditions.Condition.create(noDefaultDecl).orThrow();
+      const context = { homeTerritory: 'US' };
+      expect(noDefaultCondition.canMatchPartialContext(context)).toBe(false);
     });
   });
 });

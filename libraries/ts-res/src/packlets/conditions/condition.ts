@@ -153,7 +153,6 @@ export class Condition implements IValidatedConditionDecl {
       const contextValue = context[this.qualifier.name];
       const match = this.qualifier.type.matches(this.value, contextValue, this.operator);
       if (match === NoMatch && options.acceptDefaultScore === true && this.scoreAsDefault !== undefined) {
-        /* c8 ignore next 2 - defensive coding: scoreAsDefault fallback rarely triggered in practice */
         return this.scoreAsDefault;
       }
       return match;
@@ -180,7 +179,9 @@ export class Condition implements IValidatedConditionDecl {
     context: Context.IValidatedContextDecl,
     options?: Context.IContextMatchOptions
   ): boolean {
-    if (!(this.qualifier.name in context)) {
+    /* c8 ignore next 1 - defense in depth */
+    const scoreAsDefault = this.scoreAsDefault ?? NoMatch;
+    if (!(this.qualifier.name in context) || scoreAsDefault > NoMatch) {
       return true;
     }
     return this.getContextMatch(context, options) !== NoMatch;

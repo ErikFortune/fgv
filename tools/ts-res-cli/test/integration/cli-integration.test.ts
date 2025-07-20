@@ -120,7 +120,7 @@ describe('CLI Integration Tests', () => {
               },
               {
                 json: { text: 'Welcome to the USA!', subtitle: 'Please log in to continue' },
-                conditions: { language: 'en-US', territory: 'US' }
+                conditions: { language: 'en-US', currentTerritory: 'US' }
               }
             ]
           },
@@ -246,7 +246,7 @@ describe('CLI Integration Tests', () => {
         '--output',
         outputFile,
         '--context',
-        '{"language": "en-US", "territory": "US"}',
+        '{"language": "en-US", "currentTerritory": "US"}',
         '--format',
         'source'
       ]);
@@ -267,7 +267,7 @@ describe('CLI Integration Tests', () => {
           const hasUSVariant = welcomeResource?.candidates?.some(
             (c) =>
               c.conditions?.some((cond) => cond.qualifierName === 'language' && cond.value === 'en-US') &&
-              c.conditions?.some((cond) => cond.qualifierName === 'territory' && cond.value === 'US')
+              c.conditions?.some((cond) => cond.qualifierName === 'currentTerritory' && cond.value === 'US')
           );
           expect(hasUSVariant).toBe(true);
           return true;

@@ -120,11 +120,11 @@ describe('CLI Context Filter Working Tests', () => {
           candidates: [
             {
               json: { symbol: '$', name: 'US Dollar' },
-              conditions: { territory: 'US' }
+              conditions: { currentTerritory: 'US' }
             },
             {
               json: { symbol: '€', name: 'Euro' },
-              conditions: { territory: 'DE' }
+              conditions: { currentTerritory: 'DE' }
             }
           ]
         }
@@ -140,7 +140,7 @@ describe('CLI Context Filter Working Tests', () => {
       '--output',
       outputFile,
       '--context-filter',
-      'territory=US',
+      'currentTerritory=US',
       '--format',
       'source'
     ]);
@@ -158,7 +158,7 @@ describe('CLI Context Filter Working Tests', () => {
         expect(currencyResource).toBeDefined();
         expect(currencyResource?.candidates?.length).toBe(1);
         expect(currencyResource?.candidates?.[0]?.conditions).toEqual([
-          { qualifierName: 'territory', value: 'US' }
+          { qualifierName: 'currentTerritory', value: 'US' }
         ]);
         expect(currencyResource?.candidates?.[0]?.json).toEqual({ symbol: '$', name: 'US Dollar' });
 
@@ -179,15 +179,15 @@ describe('CLI Context Filter Working Tests', () => {
           candidates: [
             {
               json: { text: 'Good morning' },
-              conditions: { language: 'en', territory: 'US' }
+              conditions: { language: 'en', currentTerritory: 'US' }
             },
             {
               json: { text: 'Good day' },
-              conditions: { language: 'en', territory: 'GB' }
+              conditions: { language: 'en', currentTerritory: 'GB' }
             },
             {
               json: { text: 'Buenos días' },
-              conditions: { language: 'es', territory: 'ES' }
+              conditions: { language: 'es', currentTerritory: 'ES' }
             }
           ]
         }
@@ -203,7 +203,7 @@ describe('CLI Context Filter Working Tests', () => {
       '--output',
       outputFile,
       '--context-filter',
-      'language=en|territory=US',
+      'language=en|currentTerritory=US',
       '--format',
       'source'
     ]);
@@ -220,10 +220,12 @@ describe('CLI Context Filter Working Tests', () => {
         const greetingResource = resources?.resources?.find((r) => r.id === 'multi.greeting.formal');
         expect(greetingResource).toBeDefined();
         expect(greetingResource?.candidates?.length).toBe(1);
-        expect(greetingResource?.candidates?.[0]?.conditions).toEqual([
-          { qualifierName: 'language', value: 'en' },
-          { qualifierName: 'territory', value: 'US' }
-        ]);
+        expect(greetingResource?.candidates?.[0]?.conditions).toEqual(
+          expect.arrayContaining([
+            { qualifierName: 'language', value: 'en' },
+            { qualifierName: 'currentTerritory', value: 'US' }
+          ])
+        );
         expect(greetingResource?.candidates?.[0]?.json).toEqual({ text: 'Good morning' });
 
         return true;

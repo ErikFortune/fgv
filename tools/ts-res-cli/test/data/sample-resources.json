@@ -1,31 +1,41 @@
-[
-  {
-    "id": "welcome.message",
-    "json": { "text": "Welcome!" },
-    "conditions": { "language": "en" },
-    "resourceTypeName": "json"
-  },
-  {
-    "id": "welcome.message",
-    "json": { "text": "¡Bienvenido!" },
-    "conditions": { "language": "es" },
-    "resourceTypeName": "json"
-  },
-  {
-    "id": "welcome.message",
-    "json": { "text": "Welcome to the USA!" },
-    "conditions": { "language": "en-US", "territory": "US" },
-    "resourceTypeName": "json"
-  },
-  {
-    "id": "app.name",
-    "json": { "title": "My App" },
-    "resourceTypeName": "json"
-  },
-  {
-    "id": "error.messages",
-    "json": { "notFound": "Not found", "serverError": "Server error" },
-    "conditions": { "language": "en" },
-    "resourceTypeName": "json"
-  }
-]
+{
+  "resources": [
+    {
+      "id": "welcome.message",
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": { "text": "Welcome!" },
+          "conditions": { "language": "en" }
+        },
+        {
+          "json": { "text": "¡Bienvenido!" },
+          "conditions": { "language": "es" }
+        },
+        {
+          "json": { "text": "Welcome to the USA!" },
+          "conditions": { "language": "en-US", "currentTerritory": "US" }
+        }
+      ]
+    },
+    {
+      "id": "app.name",
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": { "title": "My App" }
+        }
+      ]
+    },
+    {
+      "id": "error.messages",
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": { "notFound": "Not found", "serverError": "Server error" },
+          "conditions": { "language": "en" }
+        }
+      ]
+    }
+  ]
+}
