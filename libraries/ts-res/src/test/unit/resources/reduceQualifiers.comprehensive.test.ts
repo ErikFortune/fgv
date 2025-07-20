@@ -475,9 +475,10 @@ describe('reduceQualifiers comprehensive functionality', () => {
       // Default candidate should have no conditions
       expect(Object.keys(defaultCandidate?.conditions || {})).toHaveLength(0);
 
-      // Specific candidate should have environment reduced
-      expect(specificCandidate?.conditions).not.toHaveProperty('environment');
-      expect(Object.keys(specificCandidate?.conditions || {})).toHaveLength(0);
+      // Specific candidate should retain environment condition due to collision avoidance
+      // (reduction would make it {}, which collides with the default candidate)
+      expect(specificCandidate?.conditions).toHaveProperty('environment', 'prod');
+      expect(Object.keys(specificCandidate?.conditions || {})).toHaveLength(1);
     });
 
     test('handles filter context with qualifiers not present in candidates', () => {

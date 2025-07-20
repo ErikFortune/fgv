@@ -39,8 +39,9 @@ export type CandidateAction = 'unchanged' | 'reduced' | 'suppressed';
  */
 export interface ICandidateInfo {
   readonly originalCandidate: ResourceCandidate;
-  readonly action: CandidateAction;
-  readonly conditions: ResourceJson.Json.ILooseConditionDecl[];
+  action: CandidateAction;
+  conditions: ResourceJson.Json.ILooseConditionDecl[];
+  conditionSetKey: string;
   readonly json?: JsonObject;
 }
 
@@ -81,13 +82,14 @@ export class CandidateReducer {
     this._qualifiersToReduce =
       ResourceCandidate.findReducibleQualifiers(candidates, filterForContext) ?? new Set();
 
-    // Initialize candidate info array
+    // Initialize candidate info array with initial reduction attempts
     this._candidateInfos = candidates.map((candidate): ICandidateInfo => {
       const filteredConditions = candidate.conditions.conditions.filter(
         (c) => !this._qualifiersToReduce.has(c.qualifier.name)
       );
 
       const reducedConditions = filteredConditions.map((c) => c.toLooseConditionDecl());
+      const conditionSetKey = CandidateReducer._computeConditionSetKey(reducedConditions);
 
       const action: CandidateAction =
         filteredConditions.length < candidate.conditions.conditions.length ? 'reduced' : 'unchanged';
@@ -96,9 +98,79 @@ export class CandidateReducer {
         originalCandidate: candidate,
         action,
         conditions: reducedConditions,
+        conditionSetKey,
         json: undefined // Will be set later when needed
       };
     });
+
+    // Resolve collisions by reverting reduced candidates to unchanged when they collide
+    this._resolveCollisions();
+  }
+
+  /**
+   * Computes a string key for a set of condition declarations for collision detection.
+   * @param conditions - The conditions to compute a key for
+   * @returns A string key representing the condition set
+   */
+  private static _computeConditionSetKey(conditions: ResourceJson.Json.ILooseConditionDecl[]): string {
+    if (conditions.length === 0) {
+      return '{}';
+    }
+
+    // Sort conditions by qualifier name for consistent keys
+    const sortedConditions = [...conditions].sort((a, b) => a.qualifierName.localeCompare(b.qualifierName));
+    const pairs = sortedConditions.map((c) => `${c.qualifierName}:${c.value}`);
+    return `{${pairs.join(',')}}`;
+  }
+
+  /**
+   * Resolves collisions by reverting reduced candidates to unchanged when they collide
+   * with other candidates. Iterates until no more collisions are found.
+   * @internal
+   */
+  private _resolveCollisions(): void {
+    let hasCollisions = true;
+    let iterationCount = 0;
+    const maxIterations = this._candidateInfos.length; // Safety limit
+
+    while (hasCollisions && iterationCount < maxIterations) {
+      hasCollisions = false;
+      iterationCount++;
+
+      // Group candidates by their condition set keys
+      const conditionKeyGroups = new Map<string, ICandidateInfo[]>();
+
+      for (const candidateInfo of this._candidateInfos) {
+        const key = candidateInfo.conditionSetKey;
+        if (!conditionKeyGroups.has(key)) {
+          conditionKeyGroups.set(key, []);
+        }
+        conditionKeyGroups.get(key)!.push(candidateInfo);
+      }
+
+      // Check for collisions and revert reduced candidates to unchanged
+      for (const [, candidatesWithSameKey] of conditionKeyGroups) {
+        if (candidatesWithSameKey.length > 1) {
+          // We have a collision - revert any reduced candidates to unchanged
+          for (const candidateInfo of candidatesWithSameKey) {
+            if (candidateInfo.action === 'reduced') {
+              // Revert to original conditions and mark as unchanged
+              const originalConditions = candidateInfo.originalCandidate.conditions.conditions.map((c) =>
+                c.toLooseConditionDecl()
+              );
+              const originalKey = CandidateReducer._computeConditionSetKey(originalConditions);
+
+              // Update the candidate info to revert to original state
+              candidateInfo.action = 'unchanged';
+              candidateInfo.conditions = originalConditions;
+              candidateInfo.conditionSetKey = originalKey;
+
+              hasCollisions = true; // Continue checking for more collisions
+            }
+          }
+        }
+      }
+    }
   }
 
   /**

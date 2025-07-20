@@ -116,7 +116,7 @@ describe('reduceCandidates collision detection', () => {
       });
     });
 
-    test('should fail when cloning with territory=US filter and reduce=true (collision bug)', () => {
+    test('should successfully clone with territory=US filter and reduce=true (collision avoidance)', () => {
       // Add the same resource with unconditional and conditional candidates
       resourceManager
         .addResource({
@@ -139,15 +139,23 @@ describe('reduceCandidates collision detection', () => {
 
       const filterContext = resourceManager.validateContext({ territory: 'US' }).orThrow();
 
-      // This should fail due to collision between reduced and existing candidates
-      // The bug: when reducing qualifiers, the conditional candidate { territory: 'US' }
-      // becomes unconditional {}, which collides with the existing unconditional candidate
+      // This should now succeed due to collision avoidance
+      // The conditional candidate { territory: 'US' } would become unconditional {} after reduction,
+      // but since that collides with the existing unconditional candidate, it stays unchanged
       expect(
         resourceManager.clone({
           filterForContext: filterContext,
           reduceQualifiers: true
         })
-      ).toFailWith(/conflicting candidates/i);
+      ).toSucceedAndSatisfy((clonedManager) => {
+        expect(clonedManager.build()).toSucceed();
+
+        const clonedResource = clonedManager.getBuiltResource('test.message').orThrow();
+
+        // Both candidates should be present, but the conditional one should retain its territory condition
+        // due to collision avoidance (it wasn't reduced to avoid the collision)
+        expect(clonedResource.candidates).toHaveLength(2);
+      });
     });
   });
 });

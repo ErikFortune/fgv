@@ -1255,9 +1255,11 @@ interface ICandidateDeclOptions extends ResourceJson.Helpers.IDeclarationOptions
 // @public
 interface ICandidateInfo {
     // (undocumented)
-    readonly action: CandidateAction;
+    action: CandidateAction;
     // (undocumented)
-    readonly conditions: ResourceJson.Json.ILooseConditionDecl[];
+    conditions: ResourceJson.Json.ILooseConditionDecl[];
+    // (undocumented)
+    conditionSetKey: string;
     // (undocumented)
     readonly json?: JsonObject;
     // (undocumented)
