@@ -461,13 +461,13 @@
     {
       "packageName": "@fgv/ts-res-cli",
       "projectFolder": "tools/ts-res-cli",
-      "shouldPublish": false,
+      "shouldPublish": true,
       "tags": ["tools", "cli"]
     },
     {
       "packageName": "@fgv/ts-res-browser",
       "projectFolder": "tools/ts-res-browser",
-      "shouldPublish": false,
+      "shouldPublish": true,
       "tags": ["tools", "browser"]
     }
   ]
