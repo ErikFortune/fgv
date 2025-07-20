@@ -145,16 +145,19 @@ class Candidate<TVALUE extends JsonValue = JsonValue> implements ICandidate<TVAL
 }
 
 // @public
+type CandidateAction = 'unchanged' | 'reduced' | 'suppressed';
+
+// @public
 class CandidateReducer {
     constructor(candidates: ReadonlyArray<ResourceCandidate>, filterForContext: Context.IValidatedContextDecl);
     get qualifiersToReduce(): ReadonlySet<QualifierName> | undefined;
-    reduceCandidate(candidate: ResourceCandidate): IReducedCandidate | undefined;
+    reduceCandidate(candidate: ResourceCandidate): Result<IReducedCandidate | undefined>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static reduceToChildResourceCandidateDecls(candidates: ReadonlyArray<ResourceCandidate>, filterForContext?: Context.IValidatedContextDecl): ResourceJson.Json.IChildResourceCandidateDecl[];
+    static reduceToChildResourceCandidateDecls(candidates: ReadonlyArray<ResourceCandidate>, filterForContext?: Context.IValidatedContextDecl): Result<ResourceJson.Json.IChildResourceCandidateDecl[]>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static reduceToLooseResourceCandidateDecls(id: ResourceId, candidates: ReadonlyArray<ResourceCandidate>, filterForContext?: Context.IValidatedContextDecl): ResourceJson.Json.ILooseResourceCandidateDecl[];
+    static reduceToLooseResourceCandidateDecls(id: ResourceId, candidates: ReadonlyArray<ResourceCandidate>, filterForContext?: Context.IValidatedContextDecl): Result<ResourceJson.Json.ILooseResourceCandidateDecl[]>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1247,6 +1250,18 @@ interface ICandidate<TVALUE extends JsonValue = JsonValue> {
 // @public
 interface ICandidateDeclOptions extends ResourceJson.Helpers.IDeclarationOptions {
     qualifiersToReduce?: ReadonlySet<QualifierName>;
+}
+
+// @public
+interface ICandidateInfo {
+    // (undocumented)
+    readonly action: CandidateAction;
+    // (undocumented)
+    readonly conditions: ResourceJson.Json.ILooseConditionDecl[];
+    // (undocumented)
+    readonly json?: JsonObject;
+    // (undocumented)
+    readonly originalCandidate: ResourceCandidate;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3928,6 +3943,8 @@ type ResourceResolverCacheType = 'condition' | 'conditionSet' | 'decision';
 
 declare namespace Resources {
     export {
+        CandidateAction,
+        ICandidateInfo,
         IReducedCandidate,
         CandidateReducer,
         IResourceCandidateCreateParams,

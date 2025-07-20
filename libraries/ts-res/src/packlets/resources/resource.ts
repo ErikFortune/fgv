@@ -149,7 +149,7 @@ export class Resource implements IResource {
     const matches = this._getMatchingCandidates(options);
 
     const candidates = options.reduceQualifiers
-      ? CandidateReducer.reduceToChildResourceCandidateDecls(matches, options.filterForContext)
+      ? CandidateReducer.reduceToChildResourceCandidateDecls(matches, options.filterForContext).orThrow()
       : matches.map((c) => c.toChildResourceCandidateDecl());
 
     return {
@@ -169,7 +169,7 @@ export class Resource implements IResource {
     const matches = this._getMatchingCandidates(options);
 
     const candidates = options.reduceQualifiers
-      ? CandidateReducer.reduceToChildResourceCandidateDecls(matches, options.filterForContext)
+      ? CandidateReducer.reduceToChildResourceCandidateDecls(matches, options.filterForContext).orThrow()
       : matches.map((c) => c.toChildResourceCandidateDecl());
 
     return {

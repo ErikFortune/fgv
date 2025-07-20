@@ -25,6 +25,24 @@ import * as Context from '../context';
 import * as ResourceJson from '../resource-json';
 import { ResourceCandidate } from './resourceCandidate';
 import { JsonObject } from '@fgv/ts-json-base';
+import { Result, succeed, fail, mapResults } from '@fgv/ts-utils';
+
+/**
+ * Action taken on a candidate during reduction processing.
+ * @public
+ */
+export type CandidateAction = 'unchanged' | 'reduced' | 'suppressed';
+
+/**
+ * Information about a candidate being processed by the reducer.
+ * @public
+ */
+export interface ICandidateInfo {
+  readonly originalCandidate: ResourceCandidate;
+  readonly action: CandidateAction;
+  readonly conditions: ResourceJson.Json.ILooseConditionDecl[];
+  readonly json?: JsonObject;
+}
 
 /**
  * Represents a reduced candidate after applying reduction logic.
@@ -44,7 +62,7 @@ export interface IReducedCandidate {
  * @public
  */
 export class CandidateReducer {
-  private readonly _candidates: ReadonlyArray<ResourceCandidate>;
+  private readonly _candidateInfos: ICandidateInfo[];
   private readonly _filterForContext: Context.IValidatedContextDecl;
   private readonly _qualifiersToReduce: ReadonlySet<QualifierName>;
 
@@ -57,12 +75,30 @@ export class CandidateReducer {
     candidates: ReadonlyArray<ResourceCandidate>,
     filterForContext: Context.IValidatedContextDecl
   ) {
-    this._candidates = candidates;
     this._filterForContext = filterForContext;
 
     // Use existing logic to determine reducible qualifiers
     this._qualifiersToReduce =
       ResourceCandidate.findReducibleQualifiers(candidates, filterForContext) ?? new Set();
+
+    // Initialize candidate info array
+    this._candidateInfos = candidates.map((candidate): ICandidateInfo => {
+      const filteredConditions = candidate.conditions.conditions.filter(
+        (c) => !this._qualifiersToReduce.has(c.qualifier.name)
+      );
+
+      const reducedConditions = filteredConditions.map((c) => c.toLooseConditionDecl());
+
+      const action: CandidateAction =
+        filteredConditions.length < candidate.conditions.conditions.length ? 'reduced' : 'unchanged';
+
+      return {
+        originalCandidate: candidate,
+        action,
+        conditions: reducedConditions,
+        json: undefined // Will be set later when needed
+      };
+    });
   }
 
   /**
@@ -71,28 +107,33 @@ export class CandidateReducer {
    * from a set of {@link Resources.ResourceCandidate | resource candidates}.
    * @param candidates - The candidates to reduce
    * @param filterForContext - Optional context to filter against
-   * @returns Array of reduced candidate declarations
+   * @returns Result with array of reduced candidate declarations, or Failure if reduction fails
    */
   public static reduceToChildResourceCandidateDecls(
     candidates: ReadonlyArray<ResourceCandidate>,
     filterForContext?: Context.IValidatedContextDecl
-  ): ResourceJson.Json.IChildResourceCandidateDecl[] {
+  ): Result<ResourceJson.Json.IChildResourceCandidateDecl[]> {
     if (!filterForContext || Object.keys(filterForContext).length === 0) {
-      return candidates.map((candidate) => candidate.toChildResourceCandidateDecl());
+      return succeed(candidates.map((candidate) => candidate.toChildResourceCandidateDecl()));
     }
 
     const reducer = new CandidateReducer(candidates, filterForContext);
-    return candidates
-      .map((candidate) => reducer.reduceCandidate(candidate))
-      .filter((reduction): reduction is IReducedCandidate => reduction !== undefined)
-      .map((reduction) => {
-        return {
+    const reductionResults = mapResults(candidates.map((candidate) => reducer.reduceCandidate(candidate)));
+
+    return reductionResults.onSuccess((reductions) => {
+      const validReductions = reductions.filter(
+        (reduction): reduction is IReducedCandidate => reduction !== undefined
+      );
+
+      return succeed(
+        validReductions.map((reduction) => ({
           json: reduction.json ?? reduction.candidate.json,
           isPartial: reduction.isPartial ?? reduction.candidate.isPartial,
           mergeMethod: reduction.mergeMethod ?? reduction.candidate.mergeMethod,
           conditions: reduction.conditions
-        };
-      });
+        }))
+      );
+    });
   }
 
   /**
@@ -102,45 +143,64 @@ export class CandidateReducer {
    * @param id - The id of the resource
    * @param candidates - The candidates to reduce
    * @param filterForContext - Optional context to filter against
-   * @returns Array of reduced candidate declarations
+   * @returns Result with array of reduced candidate declarations, or Failure if reduction fails
    */
   public static reduceToLooseResourceCandidateDecls(
     id: ResourceId,
     candidates: ReadonlyArray<ResourceCandidate>,
     filterForContext?: Context.IValidatedContextDecl
-  ): ResourceJson.Json.ILooseResourceCandidateDecl[] {
+  ): Result<ResourceJson.Json.ILooseResourceCandidateDecl[]> {
     if (!filterForContext || Object.keys(filterForContext).length === 0) {
-      return candidates.map((candidate) => candidate.toLooseResourceCandidateDecl());
+      return succeed(candidates.map((candidate) => candidate.toLooseResourceCandidateDecl()));
     }
 
     const reducer = new CandidateReducer(candidates, filterForContext);
-    return candidates
-      .map((candidate) => reducer.reduceCandidate(candidate))
-      .filter((reduction): reduction is IReducedCandidate => reduction !== undefined)
-      .map((reduction) => {
-        return {
+    const reductionResults = mapResults(candidates.map((candidate) => reducer.reduceCandidate(candidate)));
+
+    return reductionResults.onSuccess((reductions) => {
+      const validReductions = reductions.filter(
+        (reduction): reduction is IReducedCandidate => reduction !== undefined
+      );
+
+      return succeed(
+        validReductions.map((reduction) => ({
           id,
           json: reduction.json ?? reduction.candidate.json,
           isPartial: reduction.isPartial ?? reduction.candidate.isPartial,
           mergeMethod: reduction.mergeMethod ?? reduction.candidate.mergeMethod,
           conditions: reduction.conditions
-        };
-      });
+        }))
+      );
+    });
   }
 
   /**
    * Reduces a single candidate according to the configured reduction rules.
    * @param candidate - The candidate to reduce
-   * @returns Either a reduced candidate declaration or undefined if the candidate should be filtered out
+   * @returns Either a reduced candidate declaration or an error if the candidate is not found
    */
-  public reduceCandidate(candidate: ResourceCandidate): IReducedCandidate | undefined {
-    // For now, we don't filter out any candidates - just apply reduction
-    // This preserves the existing behavior while setting up for future collision detection
-    const conditions = candidate.conditions.conditions
-      .filter((c) => !this._qualifiersToReduce.has(c.qualifier.name))
-      .map((c) => c.toLooseConditionDecl());
+  public reduceCandidate(candidate: ResourceCandidate): Result<IReducedCandidate | undefined> {
+    const candidateInfo = this._candidateInfos.find((info) => info.originalCandidate === candidate);
+    if (!candidateInfo) {
+      return fail(`Candidate not found in reducer state`);
+    }
 
-    return { candidate, conditions };
+    if (candidateInfo.action === 'suppressed') {
+      return succeed(undefined);
+    }
+
+    // Convert array of conditions back to ConditionSetDecl for compatibility
+    const conditionsAsRecord = candidateInfo.conditions.reduce((acc, condition) => {
+      return { ...acc, [condition.qualifierName]: condition.value };
+    }, {} as ResourceJson.Json.ConditionSetDecl);
+
+    return succeed({
+      candidate,
+      conditions: conditionsAsRecord,
+      json: candidateInfo.json,
+      isPartial: candidate.isPartial,
+      mergeMethod: candidate.mergeMethod
+    });
   }
 
   /**
