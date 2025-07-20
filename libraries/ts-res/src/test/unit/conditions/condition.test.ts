@@ -727,5 +727,96 @@ describe('Condition', () => {
       const context = { homeTerritory: 'US' };
       expect(noDefaultCondition.canMatchPartialContext(context)).toBe(false);
     });
+
+    describe('scoreAsDefault boundary value tests', () => {
+      test('returns false when scoreAsDefault is explicitly 0.0 (NoMatch) and does not match', () => {
+        const zeroDefaultDecl = TsRes.Conditions.Convert.validatedConditionDecl
+          .convert(
+            {
+              qualifierName: 'homeTerritory',
+              value: 'CA',
+              scoreAsDefault: 0.0 // Explicit NoMatch
+            },
+            { qualifiers }
+          )
+          .orThrow();
+        const zeroDefaultCondition = TsRes.Conditions.Condition.create(zeroDefaultDecl).orThrow();
+        const context = { homeTerritory: 'US' };
+        expect(zeroDefaultCondition.canMatchPartialContext(context)).toBe(false);
+      });
+
+      test('returns true when scoreAsDefault is just above NoMatch (0.01) and does not match', () => {
+        const minimalDefaultDecl = TsRes.Conditions.Convert.validatedConditionDecl
+          .convert(
+            {
+              qualifierName: 'homeTerritory',
+              value: 'CA',
+              scoreAsDefault: 0.01 // Just above NoMatch
+            },
+            { qualifiers }
+          )
+          .orThrow();
+        const minimalDefaultCondition = TsRes.Conditions.Condition.create(minimalDefaultDecl).orThrow();
+        const context = { homeTerritory: 'US' };
+        expect(minimalDefaultCondition.canMatchPartialContext(context)).toBe(true);
+      });
+
+      test('returns true when scoreAsDefault is PerfectMatch (1.0) and does not match', () => {
+        const perfectDefaultDecl = TsRes.Conditions.Convert.validatedConditionDecl
+          .convert(
+            {
+              qualifierName: 'homeTerritory',
+              value: 'CA',
+              scoreAsDefault: 1.0 // PerfectMatch
+            },
+            { qualifiers }
+          )
+          .orThrow();
+        const perfectDefaultCondition = TsRes.Conditions.Condition.create(perfectDefaultDecl).orThrow();
+        const context = { homeTerritory: 'US' };
+        expect(perfectDefaultCondition.canMatchPartialContext(context)).toBe(true);
+      });
+
+      test('returns true with various scoreAsDefault values > NoMatch', () => {
+        const testValues = [0.1, 0.2, 0.3, 0.7, 0.8, 0.9];
+
+        testValues.forEach((scoreValue) => {
+          const testDecl = TsRes.Conditions.Convert.validatedConditionDecl
+            .convert(
+              {
+                qualifierName: 'homeTerritory',
+                value: 'CA',
+                scoreAsDefault: scoreValue
+              },
+              { qualifiers }
+            )
+            .orThrow();
+          const testCondition = TsRes.Conditions.Condition.create(testDecl).orThrow();
+          const context = { homeTerritory: 'US' };
+          expect(testCondition.canMatchPartialContext(context)).toBe(true);
+        });
+      });
+    });
+
+    describe('context match options integration', () => {
+      test('respects context match options when scoreAsDefault is NoMatch', () => {
+        const noDefaultDecl = TsRes.Conditions.Convert.validatedConditionDecl
+          .convert(
+            {
+              qualifierName: 'homeTerritory',
+              value: 'CA'
+              // No scoreAsDefault
+            },
+            { qualifiers }
+          )
+          .orThrow();
+        const noDefaultCondition = TsRes.Conditions.Condition.create(noDefaultDecl).orThrow();
+        const context = { homeTerritory: 'US' };
+
+        // With no special options, should return false for non-match
+        expect(noDefaultCondition.canMatchPartialContext(context)).toBe(false);
+        expect(noDefaultCondition.canMatchPartialContext(context, {})).toBe(false);
+      });
+    });
   });
 });
