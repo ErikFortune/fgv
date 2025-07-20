@@ -32,7 +32,7 @@ import { IValidatedContextDecl } from '../context';
  * // Preferred Result pattern with onSuccess chaining
  * resourceManager.validateContext({ language: 'en' })
  *   .onSuccess((validatedContext) => {
- *     return resourceManager.clone({ validatedFilterContext: validatedContext });
+ *     return resourceManager.clone({ filterForContext: validatedContext });
  *   })
  *   .onSuccess((clonedManager) => {
  *     return clonedManager.getResourceCollectionDecl();
@@ -50,7 +50,14 @@ export interface IResourceDeclarationOptions extends ResourceJson.Helpers.IDecla
    *
    * Use resourceManager.validateContext() to create a validated context from an IContextDecl.
    */
-  validatedFilterContext?: IValidatedContextDecl;
+  filterForContext?: IValidatedContextDecl;
+
+  /**
+   * If true, reduces the qualifiers of the resource candidates by removing qualifiers that are made
+   * irrelevant by the filterForContext.
+   * @defaultValue false
+   */
+  reduceQualifiers?: boolean;
 
   /**
    * Whether to include metadata in compiled outputs.
@@ -74,5 +81,5 @@ export interface ICompiledResourceOptionsWithFilter extends ResourceJson.Compile
    *
    * Use resourceManager.validateContext() to create a validated context from an IContextDecl.
    */
-  validatedFilterContext?: IValidatedContextDecl;
+  filterForContext?: IValidatedContextDecl;
 }

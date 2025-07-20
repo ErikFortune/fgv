@@ -21,7 +21,7 @@
  */
 
 import { JsonObject, JsonValue } from '@fgv/ts-json-base';
-import { ResourceId, ResourceValueMergeMethod, Validate } from '../common';
+import { PerfectMatch, QualifierName, ResourceId, ResourceValueMergeMethod, Validate } from '../common';
 import { Condition, ConditionSet, ConditionSetCollector } from '../conditions';
 import * as ResourceJson from '../resource-json';
 import { ResourceType } from '../resource-types';
@@ -39,6 +39,21 @@ export interface IResourceCandidateCreateParams {
   resourceType?: ResourceType;
   parentConditions?: ReadonlyArray<Condition>;
   conditionSets: ConditionSetCollector;
+}
+
+/**
+ * Options for creating a {@link Resources.ResourceCandidate | ResourceCandidate} declaration.
+ * @remarks
+ * This interface extends the {@link ResourceJson.Helpers.IDeclarationOptions | declaration options}
+ * interface to include a `reduceQualifiers` option.
+ * @public
+ */
+export interface ICandidateDeclOptions extends ResourceJson.Helpers.IDeclarationOptions {
+  /**
+   * If provided, reduces the qualifiers of the candidate by removing qualifiers that are made
+   * irrelevant by the filterForContext.
+   */
+  qualifiersToReduce?: ReadonlySet<QualifierName>;
 }
 
 /**
@@ -132,7 +147,7 @@ export class ResourceCandidate implements IResourceCandidate {
    * @returns The {@link ResourceJson.Json.IChildResourceCandidateDecl | child resource candidate declaration}.
    */
   public toChildResourceCandidateDecl(
-    options?: ResourceJson.Helpers.IDeclarationOptions
+    options?: ICandidateDeclOptions
   ): ResourceJson.Json.IChildResourceCandidateDecl {
     const showDefaults = options?.showDefaults === true;
     return {
@@ -150,7 +165,7 @@ export class ResourceCandidate implements IResourceCandidate {
    * @returns The {@link ResourceJson.Json.ILooseResourceCandidateDecl | loose resource candidate declaration}.
    */
   public toLooseResourceCandidateDecl(
-    options?: ResourceJson.Helpers.IDeclarationOptions
+    options?: ICandidateDeclOptions
   ): ResourceJson.Json.ILooseResourceCandidateDecl {
     const showDefaults = options?.showDefaults === true;
     const resourceTypeName = this.resourceType?.key;
@@ -266,5 +281,39 @@ export class ResourceCandidate implements IResourceCandidate {
         }
       );
     });
+  }
+
+  /**
+   * Finds the qualifiers that are made irrelevant by the supplied filterForContext.
+   * @param candidates - The candidates to find the reducible qualifiers for.
+   * @param filterForContext - The filter for context to use.
+   * @returns The qualifiers that are made irrelevant by the filterForContext.
+   * @remarks
+   * For any given set of candidates, qualifiers that match every candidate perfectly
+   * are irrelevant to the filtered content and can be removed.  Qualifiers that do not
+   * match, that are not in the filterForContext, or which partially match at least one
+   * candidate remain relevant and must not be removed.
+   * @public
+   */
+  public static findReducibleQualifiers(
+    candidates: ReadonlyArray<ResourceCandidate>,
+    filterForContext: Context.IValidatedContextDecl
+  ): ReadonlySet<QualifierName> | undefined {
+    const qualifiersToReduce = new Set<QualifierName>(Object.keys(filterForContext) as QualifierName[]);
+    for (const candidate of candidates) {
+      for (const condition of candidate.conditions.conditions) {
+        if (qualifiersToReduce.has(condition.qualifier.name)) {
+          const match = condition.qualifier.type.matches(
+            condition.value,
+            filterForContext[condition.qualifier.name],
+            'matches'
+          );
+          if (match !== PerfectMatch) {
+            qualifiersToReduce.delete(condition.qualifier.name);
+          }
+        }
+      }
+    }
+    return qualifiersToReduce.size > 0 ? qualifiersToReduce : undefined;
   }
 }

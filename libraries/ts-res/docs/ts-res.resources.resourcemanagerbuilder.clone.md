@@ -42,7 +42,7 @@ options
 
 </td><td>
 
-_(Optional)_ Options for the cloning operation, including the strongly-typed validatedFilterContext property.
+_(Optional)_ Options for the cloning operation, including the strongly-typed filterForContext property.
 
 
 </td></tr>

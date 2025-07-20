@@ -9,7 +9,7 @@ Gets the [child resource candidate declaration](./ts-res.resourcejson.json.ichil
 **Signature:**
 
 ```typescript
-toChildResourceCandidateDecl(options?: ResourceJson.Helpers.IDeclarationOptions): ResourceJson.Json.IChildResourceCandidateDecl;
+toChildResourceCandidateDecl(options?: ICandidateDeclOptions): ResourceJson.Json.IChildResourceCandidateDecl;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ options
 
 </td><td>
 
-ResourceJson.Helpers.IDeclarationOptions
+[ICandidateDeclOptions](./ts-res.resources.icandidatedecloptions.md)
 
 
 </td><td>

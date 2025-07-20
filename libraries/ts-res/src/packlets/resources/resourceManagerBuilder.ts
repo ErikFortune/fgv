@@ -521,7 +521,7 @@ export class ResourceManagerBuilder implements IResourceManager {
    * Creates a filtered clone of this ResourceManagerBuilder using the specified context.
    * This is a convenience method that creates a new ResourceManagerBuilder with the same
    * configuration but filtered to include only candidates that match the provided context.
-   * @param options - Options for the cloning operation, including the strongly-typed validatedFilterContext property.
+   * @param options - Options for the cloning operation, including the strongly-typed filterForContext property.
    * @returns A Result containing the new filtered ResourceManagerBuilder.
    * @public
    */

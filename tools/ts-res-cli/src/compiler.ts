@@ -367,7 +367,7 @@ export class ResourceCompiler {
     if (this._options.contextFilter) {
       const tokens = new TsRes.Context.ContextTokens(original.qualifiers);
       return tokens.contextTokenToPartialContext(this._options.contextFilter).onSuccess((context) => {
-        return original.clone({ validatedFilterContext: context }).onSuccess((manager) => {
+        return original.clone({ filterForContext: context }).onSuccess((manager) => {
           return succeed({ original, manager, context });
         });
       });

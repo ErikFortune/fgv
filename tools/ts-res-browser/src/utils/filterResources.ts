@@ -60,7 +60,7 @@ export const createFilteredResourceManagerSimple = async (
       .onSuccess((validatedContext) => {
         debugLog(enableDebug, 'Context validated, creating clone with context:', validatedContext);
         return originalSystem.resourceManager.clone({
-          validatedFilterContext: validatedContext
+          filterForContext: validatedContext
         });
       })
       .onFailure((error) => {

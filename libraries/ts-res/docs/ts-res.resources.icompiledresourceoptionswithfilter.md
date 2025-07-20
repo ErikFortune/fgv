@@ -38,7 +38,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[validatedFilterContext?](./ts-res.resources.icompiledresourceoptionswithfilter.validatedfiltercontext.md)
+[filterForContext?](./ts-res.resources.icompiledresourceoptionswithfilter.filterforcontext.md)
 
 
 </td><td>

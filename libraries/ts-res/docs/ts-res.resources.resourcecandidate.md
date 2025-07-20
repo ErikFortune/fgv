@@ -282,6 +282,22 @@ Compares two [ResourceCandidates](./ts-res.resources.resourcecandidate.md) for e
 </td></tr>
 <tr><td>
 
+[findReducibleQualifiers(candidates, filterForContext)](./ts-res.resources.resourcecandidate.findreduciblequalifiers.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Finds the qualifiers that are made irrelevant by the supplied filterForContext.
+
+
+</td></tr>
+<tr><td>
+
 [toChildResourceCandidateDecl(options)](./ts-res.resources.resourcecandidate.tochildresourcecandidatedecl.md)
 
 

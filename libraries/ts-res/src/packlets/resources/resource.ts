@@ -142,10 +142,21 @@ export class Resource implements IResource {
    * @param options - {@link ResourceJson.Helpers.IDeclarationOptions | options} for the declaration.
    * @returns The {@link ResourceJson.Json.IChildResourceDecl | child resource declaration}.
    */
-  public toChildResourceDecl(
-    options?: ResourceJson.Helpers.IDeclarationOptions
-  ): ResourceJson.Json.IChildResourceDecl {
-    const candidates = this.candidates.map((c) => c.toChildResourceCandidateDecl(options));
+  public toChildResourceDecl(options?: IResourceDeclarationOptions): ResourceJson.Json.IChildResourceDecl {
+    /* c8 ignore next 1 - defense in depth */
+    options = options ?? {};
+    const matches = this._getMatchingCandidates(options);
+    const qualifiersToReduce =
+      options.reduceQualifiers === true && options.filterForContext
+        ? ResourceCandidate.findReducibleQualifiers(matches, options.filterForContext)
+        : undefined;
+
+    const candidates = matches.map((c) =>
+      c.toChildResourceCandidateDecl({
+        ...options,
+        ...(qualifiersToReduce ? { qualifiersToReduce } : {})
+      })
+    );
     return {
       resourceTypeName: this.resourceTypeName,
       ...(candidates.length > 0 ? { candidates } : {})
@@ -158,8 +169,18 @@ export class Resource implements IResource {
    * @returns The {@link ResourceJson.Json.ILooseResourceDecl | loose resource declaration}.
    */
   public toLooseResourceDecl(options?: IResourceDeclarationOptions): ResourceJson.Json.ILooseResourceDecl {
-    const candidates = this._getMatchingCandidates(options).map((c) =>
-      c.toChildResourceCandidateDecl(options)
+    /* c8 ignore next 1 - defense in depth */
+    options = options ?? {};
+    const matches = this._getMatchingCandidates(options);
+    const qualifiersToReduce =
+      options.reduceQualifiers === true && options.filterForContext
+        ? ResourceCandidate.findReducibleQualifiers(matches, options.filterForContext)
+        : undefined;
+    const candidates = matches.map((c) =>
+      c.toChildResourceCandidateDecl({
+        ...options,
+        ...(qualifiersToReduce ? { qualifiersToReduce } : {})
+      })
     );
 
     return {
@@ -286,9 +307,9 @@ export class Resource implements IResource {
     options?: IResourceDeclarationOptions | ICompiledResourceOptionsWithFilter
   ): ReadonlyArray<ResourceCandidate> {
     /* c8 ignore next 5 - functional code path tested but coverage intermittently missed */
-    if (options?.validatedFilterContext) {
+    if (options?.filterForContext) {
       return this.candidates.filter((candidate) =>
-        candidate.canMatchPartialContext(options.validatedFilterContext!, { partialContextMatch: true })
+        candidate.canMatchPartialContext(options.filterForContext!, { partialContextMatch: true })
       );
     }
     return this.candidates;

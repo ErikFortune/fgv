@@ -9,7 +9,7 @@ Gets the [condition set declaration as a record](./ts-res.resourcejson.json.cond
 **Signature:**
 
 ```typescript
-toConditionSetRecordDecl(options?: ResourceJson.Helpers.IDeclarationOptions): ResourceJson.Json.ConditionSetDeclAsRecord;
+toConditionSetRecordDecl(options?: IConditionSetDeclOptions): ResourceJson.Json.ConditionSetDeclAsRecord;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ options
 
 </td><td>
 
-ResourceJson.Helpers.IDeclarationOptions
+[IConditionSetDeclOptions](./ts-res.conditions.iconditionsetdecloptions.md)
 
 
 </td><td>

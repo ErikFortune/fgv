@@ -20,7 +20,7 @@ export interface IResourceDeclarationOptions extends ResourceJson.Helpers.IDecla
 // Preferred Result pattern with onSuccess chaining
 resourceManager.validateContext({ language: 'en' })
   .onSuccess((validatedContext) => {
-    return resourceManager.clone({ validatedFilterContext: validatedContext });
+    return resourceManager.clone({ filterForContext: validatedContext });
   })
   .onSuccess((clonedManager) => {
     return clonedManager.getResourceCollectionDecl();
@@ -55,6 +55,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[filterForContext?](./ts-res.resources.iresourcedeclarationoptions.filterforcontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[IValidatedContextDecl](./ts-res.context.ivalidatedcontextdecl.md)
+
+
+</td><td>
+
+_(Optional)_ If provided, filters resource candidates to only include those that can match the specified validated context. This provides strongly-typed context filtering.
+
+Use resourceManager.validateContext() to create a validated context from an IContextDecl.
+
+
+</td></tr>
+<tr><td>
+
 [includeMetadata?](./ts-res.resources.iresourcedeclarationoptions.includemetadata.md)
 
 
@@ -74,7 +95,7 @@ _(Optional)_ Whether to include metadata in compiled outputs. Metadata includes 
 </td></tr>
 <tr><td>
 
-[validatedFilterContext?](./ts-res.resources.iresourcedeclarationoptions.validatedfiltercontext.md)
+[reduceQualifiers?](./ts-res.resources.iresourcedeclarationoptions.reducequalifiers.md)
 
 
 </td><td>
@@ -82,14 +103,12 @@ _(Optional)_ Whether to include metadata in compiled outputs. Metadata includes 
 
 </td><td>
 
-[IValidatedContextDecl](./ts-res.context.ivalidatedcontextdecl.md)
+boolean
 
 
 </td><td>
 
-_(Optional)_ If provided, filters resource candidates to only include those that can match the specified validated context. This provides strongly-typed context filtering.
-
-Use resourceManager.validateContext() to create a validated context from an IContextDecl.
+_(Optional)_ If true, reduces the qualifiers of the resource candidates by removing qualifiers that are made irrelevant by the filterForContext.
 
 
 </td></tr>

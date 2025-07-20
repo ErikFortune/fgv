@@ -122,6 +122,17 @@ Non-validated declaration of a [set of conditions](./ts-res.conditions.condition
 </td></tr>
 <tr><td>
 
+[IConditionSetDeclOptions](./ts-res.conditions.iconditionsetdecloptions.md)
+
+
+</td><td>
+
+Options for creating a [ConditionSet](./ts-res.conditions.conditionset.md) declaration.
+
+
+</td></tr>
+<tr><td>
+
 [IValidatedConditionDecl](./ts-res.conditions.ivalidatedconditiondecl.md)
 
 

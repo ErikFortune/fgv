@@ -34,6 +34,21 @@ import * as ResourceJson from '../resource-json';
 import * as Context from '../context';
 
 /**
+ * Options for creating a {@link Conditions.ConditionSet | ConditionSet} declaration.
+ * @remarks
+ * This interface extends the {@link ResourceJson.Helpers.IDeclarationOptions | declaration options}
+ * interface to include a `reduceQualifiers` option.
+ * @public
+ */
+export interface IConditionSetDeclOptions extends ResourceJson.Helpers.IDeclarationOptions {
+  /**
+   * If provided, reduces the qualifiers of the condition set by removing qualifiers that are made
+   * irrelevant by the filterForContext.
+   */
+  qualifiersToReduce?: ReadonlySet<QualifierName>;
+}
+
+/**
  * Represents a set of {@link Conditions.Condition | conditions} that must all be met in some runtime
  * context for a resource instance to be valid.
  * @public
@@ -212,10 +227,14 @@ export class ConditionSet implements IValidatedConditionSetDecl {
    * @returns The {@link ResourceJson.Json.ConditionSetDeclAsRecord | condition set declaration as a record} for this condition set.
    */
   public toConditionSetRecordDecl(
-    options?: ResourceJson.Helpers.IDeclarationOptions
+    options?: IConditionSetDeclOptions
   ): ResourceJson.Json.ConditionSetDeclAsRecord {
+    const qualifiersToReduce = options?.qualifiersToReduce;
+    const conditions = qualifiersToReduce
+      ? this.conditions.filter((c) => !qualifiersToReduce.has(c.qualifier.name))
+      : this.conditions;
     return Object.fromEntries(
-      this.conditions.map((c): [string, ResourceJson.Json.IChildConditionDecl | string] => {
+      conditions.map((c): [string, ResourceJson.Json.IChildConditionDecl | string] => {
         return [c.qualifier.name, c.toValueOrChildConditionDecl(options)];
       })
     );
@@ -227,9 +246,13 @@ export class ConditionSet implements IValidatedConditionSetDecl {
    * @returns The {@link ResourceJson.Json.ConditionSetDeclAsArray | condition set declaration as an array} for this condition set.
    */
   public toConditionSetArrayDecl(
-    options?: ResourceJson.Helpers.IDeclarationOptions
+    options?: IConditionSetDeclOptions
   ): ResourceJson.Json.ConditionSetDeclAsArray {
-    return this.conditions.map((c) => c.toLooseConditionDecl(options));
+    const qualifiersToReduce = options?.qualifiersToReduce;
+    const conditions = qualifiersToReduce
+      ? this.conditions.filter((c) => !qualifiersToReduce.has(c.qualifier.name))
+      : this.conditions;
+    return conditions.map((c) => c.toLooseConditionDecl(options));
   }
 
   /**

@@ -9,7 +9,7 @@ Gets the [loose resource candidate declaration](./ts-res.resourcejson.json.iloos
 **Signature:**
 
 ```typescript
-toLooseResourceCandidateDecl(options?: ResourceJson.Helpers.IDeclarationOptions): ResourceJson.Json.ILooseResourceCandidateDecl;
+toLooseResourceCandidateDecl(options?: ICandidateDeclOptions): ResourceJson.Json.ILooseResourceCandidateDecl;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ options
 
 </td><td>
 
-ResourceJson.Helpers.IDeclarationOptions
+[ICandidateDeclOptions](./ts-res.resources.icandidatedecloptions.md)
 
 
 </td><td>

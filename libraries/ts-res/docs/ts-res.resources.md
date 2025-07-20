@@ -78,6 +78,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ICandidateDeclOptions](./ts-res.resources.icandidatedecloptions.md)
+
+
+</td><td>
+
+Options for creating a [ResourceCandidate](./ts-res.resources.resourcecandidate.md) declaration.
+
+
+</td></tr>
+<tr><td>
+
 [ICompiledResourceOptionsWithFilter](./ts-res.resources.icompiledresourceoptionswithfilter.md)
 
 
