@@ -13,6 +13,7 @@ export interface FilterState {
   values: Record<string, string>;
   appliedValues: Record<string, string>;
   hasPendingChanges: boolean;
+  reduceQualifiers: boolean;
 }
 
 export interface AppState {
@@ -29,6 +30,7 @@ export interface AppActions {
   updateFilterValues: (values: Record<string, string>) => void;
   applyFilterValues: () => void;
   resetFilterValues: () => void;
+  updateReduceQualifiers: (reduceQualifiers: boolean) => void;
 }
 
 // Tool-specific types

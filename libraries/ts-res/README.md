@@ -216,6 +216,260 @@ const customType = TsRes.QualifierTypes.LiteralQualifierType.create({
 - **Import**: File system and external resource import utilities
 - **ResourceJson**: JSON serialization and deserialization
 
+## Context Filtering and Qualifier Reduction
+
+One feature of ts-res is its ability to create filtered, context-specific resource bundles with reduced qualifiers. This is particularly useful for operational scenarios like feature flag management across different environments.
+
+### The Problem: Noisy Environment-Specific Bundles
+
+Consider a feature flag system with different settings across environments:
+
+```typescript
+// Feature flags with environment-specific settings
+const featureFlags = [
+  {
+    id: 'features.newDashboard',
+    json: { enabled: false, rolloutPercent: 0 },
+    conditions: { environment: 'production' }
+  },
+  {
+    id: 'features.newDashboard', 
+    json: { enabled: true, rolloutPercent: 50 },
+    conditions: { environment: 'integration' }
+  },
+  {
+    id: 'features.newDashboard',
+    json: { enabled: true, rolloutPercent: 100 },
+    conditions: { environment: 'development' }
+  },
+  {
+    id: 'features.betaAPI',
+    json: { enabled: false, version: 'v1' },
+    conditions: { environment: 'production' }
+  },
+  {
+    id: 'features.betaAPI',
+    json: { enabled: true, version: 'v2' },
+    conditions: { environment: 'integration' }
+  },
+  {
+    id: 'features.betaAPI',
+    json: { enabled: true, version: 'v2-beta' },
+    conditions: { environment: 'development' }
+  }
+];
+```
+
+### Step 1: No Filtering (Complete Bundle)
+
+Without filtering, your complete bundle contains all environments:
+
+```typescript
+const completeBundle = resourceManager.getResourceCollectionDecl().orThrow();
+
+// Result: All candidates with all environment conditions
+{
+  "resources": [
+    {
+      "id": "features.newDashboard",
+      "candidates": [
+        {
+          "json": { "enabled": false, "rolloutPercent": 0 },
+          "conditions": { "environment": "production" }
+        },
+        {
+          "json": { "enabled": true, "rolloutPercent": 50 },
+          "conditions": { "environment": "integration" }
+        },
+        {
+          "json": { "enabled": true, "rolloutPercent": 100 },
+          "conditions": { "environment": "development" }
+        }
+      ]
+    },
+    // ... more resources with similar environment conditions
+  ]
+}
+```
+
+**Problem**: Bundle contains all environments, making it difficult to compare environment-specific configurations.
+
+### Step 2: Context Filtering Only
+
+Filter for a specific environment (e.g., production):
+
+```typescript
+const productionContext = resourceManager.validateContext({ 
+  environment: 'production' 
+}).orThrow();
+
+const filteredBundle = resourceManager.getResourceCollectionDecl({
+  filterForContext: productionContext
+  // reduceQualifiers: false (default)
+}).orThrow();
+
+// Result: Only production candidates, but environment conditions remain
+{
+  "resources": [
+    {
+      "id": "features.newDashboard", 
+      "candidates": [
+        {
+          "json": { "enabled": false, "rolloutPercent": 0 },
+          "conditions": { "environment": "production" }  // Environment condition still present
+        }
+      ]
+    },
+    {
+      "id": "features.betaAPI",
+      "candidates": [
+        {
+          "json": { "enabled": false, "version": "v1" },
+          "conditions": { "environment": "production" }  // Environment condition still present
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Improvement**: Bundle size reduced, but environment conditions add noise when comparing between environments.
+
+### Step 3: Context Filtering + Qualifier Reduction
+
+Filter for production AND reduce redundant qualifiers:
+
+```typescript
+const cleanProductionBundle = resourceManager.getResourceCollectionDecl({
+  filterForContext: productionContext,
+  reduceQualifiers: true  // Enable qualifier reduction
+}).orThrow();
+
+// Result: Clean production bundle with environment conditions removed
+{
+  "resources": [
+    {
+      "id": "features.newDashboard",
+      "candidates": [
+        {
+          "json": { "enabled": false, "rolloutPercent": 0 }
+          // conditions: {} - Environment condition removed!
+        }
+      ]
+    },
+    {
+      "id": "features.betaAPI", 
+      "candidates": [
+        {
+          "json": { "enabled": false, "version": "v1" }
+          // conditions: {} - Environment condition removed!
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Benefits**: 
+- **Clean bundles**: No irrelevant environment conditions
+- **Easy comparison**: Compare bundles between environments to see actual differences
+- **Reduced noise**: Focus on configuration values, not deployment context
+
+### Easy Environment Comparison
+
+Now you can easily compare configuration differences between environments:
+
+```typescript
+// Get clean bundles for each environment
+const [prodBundle, devBundle] = await Promise.all([
+  getCleanBundle('production'),
+  getCleanBundle('development')
+]);
+
+// Compare actual differences without environment noise
+function compareFeatureFlags(prod, dev) {
+  prod.resources.forEach(prodResource => {
+    const devResource = dev.resources.find(r => r.id === prodResource.id);
+    const prodConfig = prodResource.candidates[0].json;
+    const devConfig = devResource.candidates[0].json;
+    
+    if (JSON.stringify(prodConfig) !== JSON.stringify(devConfig)) {
+      console.log(`${prodResource.id} differs:`, {
+        production: prodConfig,
+        development: devConfig
+      });
+    }
+  });
+}
+
+// Output:
+// features.newDashboard differs: {
+//   production: { enabled: false, rolloutPercent: 0 },
+//   development: { enabled: true, rolloutPercent: 100 }
+// }
+// features.betaAPI differs: {
+//   production: { enabled: false, version: 'v1' },
+//   development: { enabled: true, version: 'v2-beta' }
+// }
+```
+
+### Advanced: Multi-Qualifier Scenarios
+
+Qualifier reduction is intelligent - it only removes qualifiers that match perfectly across ALL filtered candidates:
+
+```typescript
+// Resource with environment + language conditions
+const multiQualifierResource = {
+  id: 'features.localized',
+  candidates: [
+    {
+      json: { enabled: true, locale: 'en-US' },
+      conditions: { environment: 'production', language: 'en', territory: 'US' }
+    },
+    {
+      json: { enabled: true, locale: 'en-GB' },
+      conditions: { environment: 'production', language: 'en', territory: 'GB' }
+    },
+    {
+      json: { enabled: true, locale: 'fr-FR' },
+      conditions: { environment: 'production', language: 'fr', territory: 'FR' }
+    }
+  ]
+};
+
+// Filter by environment only
+const result = resource.toLooseResourceDecl({
+  filterForContext: { environment: 'production' },
+  reduceQualifiers: true
+});
+
+// Result: Environment reduced (all match 'production'), language/territory preserved (they differ)
+{
+  "candidates": [
+    {
+      "json": { "enabled": true, "locale": "en-US" },
+      "conditions": { "language": "en", "territory": "US" }  // environment removed, others preserved
+    },
+    {
+      "json": { "enabled": true, "locale": "en-GB" },
+      "conditions": { "language": "en", "territory": "GB" }  // environment removed, others preserved
+    },
+    {
+      "json": { "enabled": true, "locale": "fr-FR" },
+      "conditions": { "language": "fr", "territory": "FR" }  // environment removed, others preserved
+    }
+  ]
+}
+```
+
+### Use Cases
+
+**Feature Flag Management**: Clean environment-specific bundles for operational analysis
+**Configuration Deployment**: Environment-specific configs without deployment noise  
+**A/B Testing**: Clean experiment configurations for specific user segments
+**Internationalization**: Language-specific bundles without region clutter
+**Multi-tenant Applications**: Tenant-specific configurations without organizational context
+
 ## Common Patterns
 
 ### Web Application Localization

@@ -93,4 +93,9 @@ export interface ICompileOptions {
    * Maximum distance for language matching
    */
   maxDistance?: number;
+
+  /**
+   * Whether to reduce qualifiers when filtering by context
+   */
+  reduceQualifiers?: boolean;
 }

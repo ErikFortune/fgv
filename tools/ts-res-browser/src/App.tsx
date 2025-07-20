@@ -84,7 +84,8 @@ const App: React.FC = () => {
               updateFilterEnabled: actions.updateFilterEnabled,
               updateFilterValues: actions.updateFilterValues,
               applyFilterValues: actions.applyFilterValues,
-              resetFilterValues: actions.resetFilterValues
+              resetFilterValues: actions.resetFilterValues,
+              updateReduceQualifiers: actions.updateReduceQualifiers
             }}
             onFilterResult={setFilterResult}
           />

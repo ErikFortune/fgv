@@ -9,7 +9,8 @@ export const useAppState = (): { state: AppState; actions: AppActions } => {
       enabled: false,
       values: {},
       appliedValues: {},
-      hasPendingChanges: false
+      hasPendingChanges: false,
+      reduceQualifiers: false
     }
   });
 
@@ -81,6 +82,16 @@ export const useAppState = (): { state: AppState; actions: AppActions } => {
     }));
   }, []);
 
+  const updateReduceQualifiers = useCallback((reduceQualifiers: boolean) => {
+    setState((prev) => ({
+      ...prev,
+      filterState: {
+        ...prev.filterState,
+        reduceQualifiers
+      }
+    }));
+  }, []);
+
   const actions: AppActions = {
     setSelectedTool,
     addMessage,
@@ -88,7 +99,8 @@ export const useAppState = (): { state: AppState; actions: AppActions } => {
     updateFilterEnabled,
     updateFilterValues,
     applyFilterValues,
-    resetFilterValues
+    resetFilterValues,
+    updateReduceQualifiers
   };
 
   return { state, actions };

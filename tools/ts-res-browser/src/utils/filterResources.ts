@@ -5,6 +5,7 @@ import { ProcessedResources, TsResSystem, createTsResSystemFromConfig } from './
 export interface FilterOptions {
   partialContextMatch?: boolean;
   enableDebugLogging?: boolean;
+  reduceQualifiers?: boolean;
 }
 
 export interface FilteredResource {
@@ -60,7 +61,8 @@ export const createFilteredResourceManagerSimple = async (
       .onSuccess((validatedContext) => {
         debugLog(enableDebug, 'Context validated, creating clone with context:', validatedContext);
         return originalSystem.resourceManager.clone({
-          filterForContext: validatedContext
+          filterForContext: validatedContext,
+          reduceQualifiers: options.reduceQualifiers
         });
       })
       .onFailure((error) => {

@@ -35,6 +35,7 @@ interface FilterToolProps {
     updateFilterValues: (values: Record<string, string>) => void;
     applyFilterValues: () => void;
     resetFilterValues: () => void;
+    updateReduceQualifiers: (reduceQualifiers: boolean) => void;
   };
   onFilterResult?: (result: FilterResult | null) => void;
 }
@@ -88,7 +89,8 @@ const FilterTool: React.FC<FilterToolProps> = ({
             exportedAt: new Date().toISOString(),
             totalResources: filterResult.processedResources.resourceCount,
             type: 'ts-res-filtered-resource-collection',
-            filterContext: filterState.appliedValues
+            filterContext: filterState.appliedValues,
+            reduceQualifiers: filterState.reduceQualifiers
           }
         };
       } else {
@@ -155,7 +157,11 @@ const FilterTool: React.FC<FilterToolProps> = ({
         let filteredResult = await createFilteredResourceManagerSimple(
           resourceState.processedResources!.system,
           filterState.appliedValues,
-          { partialContextMatch: true, enableDebugLogging: false }
+          {
+            partialContextMatch: true,
+            enableDebugLogging: false,
+            reduceQualifiers: filterState.reduceQualifiers
+          }
         );
 
         if (filteredResult.isFailure()) {
@@ -168,7 +174,11 @@ const FilterTool: React.FC<FilterToolProps> = ({
           filteredResult = await createFilteredResourceManager(
             resourceState.processedResources!.system,
             filterState.appliedValues,
-            { partialContextMatch: true, enableDebugLogging: false }
+            {
+              partialContextMatch: true,
+              enableDebugLogging: false,
+              reduceQualifiers: filterState.reduceQualifiers
+            }
           );
 
           if (filteredResult.isFailure()) {
@@ -181,7 +191,11 @@ const FilterTool: React.FC<FilterToolProps> = ({
             filteredResult = await createFilteredResourceManagerAlternative(
               resourceState.processedResources!.system,
               filterState.appliedValues,
-              { partialContextMatch: true, enableDebugLogging: false }
+              {
+                partialContextMatch: true,
+                enableDebugLogging: false,
+                reduceQualifiers: filterState.reduceQualifiers
+              }
             );
 
             if (filteredResult.isFailure()) {
@@ -425,9 +439,26 @@ const FilterTool: React.FC<FilterToolProps> = ({
                   />
                   <span className="ml-2 text-sm text-gray-700">Enable Filtering</span>
                 </label>
+                <label
+                  className="flex items-center"
+                  title="Remove perfectly matching qualifier conditions from filtered resources to create cleaner bundles for comparison"
+                >
+                  <input
+                    type="checkbox"
+                    checked={filterState.reduceQualifiers}
+                    onChange={(e) => filterActions.updateReduceQualifiers(e.target.checked)}
+                    disabled={!filterState.enabled}
+                    className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 disabled:text-gray-400"
+                  />
+                  <span
+                    className={`ml-2 text-sm ${!filterState.enabled ? 'text-gray-400' : 'text-gray-700'}`}
+                  >
+                    Reduce Qualifiers
+                  </span>
+                </label>
                 {isFilteringActive && (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                    Active
+                    Active{filterState.reduceQualifiers ? ' + Reducing' : ''}
                   </span>
                 )}
                 {filterState.hasPendingChanges && filterState.enabled && (

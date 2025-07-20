@@ -230,6 +230,79 @@ describe('reduceQualifiers functionality', () => {
     });
   });
 
+  describe('toChildResourceDecl with reduceQualifiers', () => {
+    test('reduces qualifiers in child resource declarations', () => {
+      resourceManager
+        .addResource({
+          id: 'test.greeting',
+          resourceTypeName: 'string',
+          candidates: [
+            {
+              json: { message: 'Hello' },
+              conditions: { language: 'en', territory: 'US' }
+            },
+            {
+              json: { message: 'Hello' },
+              conditions: { language: 'en', territory: 'GB' }
+            }
+          ]
+        })
+        .orThrow();
+
+      const filterContext = { language: 'en' };
+      const validatedContext = resourceManager.validateContext(filterContext).orThrow();
+
+      const resource = resourceManager.getBuiltResource('test.greeting').orThrow();
+      const childDeclaration = resource.toChildResourceDecl({
+        filterForContext: validatedContext,
+        reduceQualifiers: true
+      });
+
+      // Should have resource type name in child declaration
+      expect(childDeclaration.resourceTypeName).toBe('string');
+      expect(childDeclaration.candidates).toHaveLength(2);
+
+      // Language should be reduced (all candidates match 'en' perfectly)
+      // Territory should be preserved (differs between candidates)
+      childDeclaration.candidates?.forEach((candidate) => {
+        expect(candidate.conditions).toHaveProperty('territory');
+        expect(candidate.conditions).not.toHaveProperty('language');
+      });
+    });
+
+    test('preserves qualifiers in child declarations when reduceQualifiers is false', () => {
+      resourceManager
+        .addResource({
+          id: 'test.greeting',
+          resourceTypeName: 'string',
+          candidates: [
+            {
+              json: { message: 'Hello' },
+              conditions: { language: 'en', territory: 'US' }
+            }
+          ]
+        })
+        .orThrow();
+
+      const filterContext = { language: 'en' };
+      const validatedContext = resourceManager.validateContext(filterContext).orThrow();
+
+      const resource = resourceManager.getBuiltResource('test.greeting').orThrow();
+      const childDeclaration = resource.toChildResourceDecl({
+        filterForContext: validatedContext,
+        reduceQualifiers: false
+      });
+
+      expect(childDeclaration.resourceTypeName).toBe('string');
+      expect(childDeclaration.candidates).toHaveLength(1);
+
+      // All qualifiers should be preserved when reduceQualifiers is false
+      const candidate = childDeclaration.candidates?.[0];
+      expect(candidate?.conditions).toHaveProperty('language', 'en');
+      expect(candidate?.conditions).toHaveProperty('territory', 'US');
+    });
+  });
+
   describe('findReducibleQualifiers static method', () => {
     test('returns correct set of reducible qualifiers', () => {
       // Create candidates manually for direct testing

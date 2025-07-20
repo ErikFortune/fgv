@@ -43,6 +43,7 @@ interface ICompileCommandOptions {
   includeMetadata?: boolean;
   resourceTypes?: string;
   maxDistance?: number;
+  reduceQualifiers?: boolean;
 }
 
 /**
@@ -51,9 +52,12 @@ interface ICompileCommandOptions {
 interface IValidateCommandOptions {
   input: string;
   config?: string;
+  context?: string;
+  contextFilter?: string;
   qualifierDefaults?: string;
   verbose?: boolean;
   quiet?: boolean;
+  reduceQualifiers?: boolean;
 }
 
 /**
@@ -67,6 +71,7 @@ interface IInfoCommandOptions {
   qualifierDefaults?: string;
   resourceTypes?: string;
   maxDistance?: number;
+  reduceQualifiers?: boolean;
 }
 
 /**
@@ -136,6 +141,11 @@ export class TsResCliApp {
       .option('--include-metadata', 'Include resource metadata in output', false)
       .option('--resource-types <types>', 'Resource type filter (comma-separated)')
       .option('--max-distance <number>', 'Maximum distance for language matching', parseInt)
+      .option(
+        '--reduce-qualifiers',
+        'Remove perfectly matching qualifier conditions from filtered resources',
+        false
+      )
       .action(async (options) => {
         await this._handleCompileCommand(options);
       });
@@ -148,12 +158,22 @@ export class TsResCliApp {
         '--config <name|path>',
         'Predefined configuration name or system configuration file path (JSON, ISystemConfiguration format)'
       )
+      .option('-c, --context <json>', 'Context filter for resources (JSON string)')
+      .option(
+        '--context-filter <token>',
+        'Context filter token (pipe-separated, e.g., "language=en-US|territory=US")'
+      )
       .option(
         '--qualifier-defaults <token>',
         'Qualifier default values token (pipe-separated, e.g., "language=en-US,en-CA|territory=US")'
       )
       .option('-v, --verbose', 'Verbose output', false)
       .option('-q, --quiet', 'Quiet output', false)
+      .option(
+        '--reduce-qualifiers',
+        'Remove perfectly matching qualifier conditions from filtered resources',
+        false
+      )
       .action(async (options) => {
         await this._handleValidateCommand(options);
       });
@@ -177,6 +197,11 @@ export class TsResCliApp {
       )
       .option('--resource-types <types>', 'Resource type filter (comma-separated)')
       .option('--max-distance <number>', 'Maximum distance for language matching', parseInt)
+      .option(
+        '--reduce-qualifiers',
+        'Remove perfectly matching qualifier conditions from filtered resources',
+        false
+      )
       .action(async (options) => {
         await this._handleInfoCommand(options);
       });
@@ -225,17 +250,35 @@ export class TsResCliApp {
    * Handles the validate command
    */
   private async _handleValidateCommand(options: IValidateCommandOptions): Promise<void> {
+    // Convert JSON context to contextFilter if provided
+    let contextFilter = options.contextFilter;
+    if (options.context && !contextFilter) {
+      try {
+        const contextObj = JSON.parse(options.context);
+        const tokens: string[] = [];
+        for (const [key, value] of Object.entries(contextObj)) {
+          tokens.push(`${key}=${value}`);
+        }
+        contextFilter = tokens.join('|');
+      } catch (error) {
+        console.error(`Error: Invalid context JSON: ${error}`);
+        process.exit(1);
+      }
+    }
+
     const validateOptions: ICompileOptions = {
       input: options.input,
       output: '', // Not used for validation
       config: options.config,
+      contextFilter,
       qualifierDefaults: options.qualifierDefaults,
       format: 'compiled',
       debug: false,
       verbose: options.verbose || false,
       quiet: options.quiet || false,
       validate: true,
-      includeMetadata: false
+      includeMetadata: false,
+      reduceQualifiers: options.reduceQualifiers || false
     };
 
     const compiler = new ResourceCompiler(validateOptions);
@@ -284,7 +327,8 @@ export class TsResCliApp {
       contextFilter,
       qualifierDefaults: options.qualifierDefaults,
       resourceTypes: options.resourceTypes,
-      maxDistance: options.maxDistance
+      maxDistance: options.maxDistance,
+      reduceQualifiers: options.reduceQualifiers || false
     };
 
     const compiler = new ResourceCompiler(infoOptions);
@@ -551,7 +595,8 @@ export class TsResCliApp {
         validate: options.validate !== false,
         includeMetadata: options.includeMetadata || false,
         resourceTypes: options.resourceTypes,
-        maxDistance: options.maxDistance
+        maxDistance: options.maxDistance,
+        reduceQualifiers: options.reduceQualifiers || false
       };
 
       return succeed(compileOptions);
