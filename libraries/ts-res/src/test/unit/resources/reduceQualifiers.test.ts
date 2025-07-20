@@ -89,8 +89,13 @@ describe('reduceQualifiers functionality', () => {
 
       // Both candidates should have language removed but territory preserved
       declaration.candidates?.forEach((candidate) => {
-        expect(candidate.conditions).toHaveProperty('territory');
-        expect(candidate.conditions).not.toHaveProperty('language');
+        if (Array.isArray(candidate.conditions)) {
+          expect(candidate.conditions.find((c) => c.qualifierName === 'territory')).toBeDefined();
+          expect(candidate.conditions.find((c) => c.qualifierName === 'language')).toBeUndefined();
+        } else {
+          expect(candidate.conditions).toHaveProperty('territory');
+          expect(candidate.conditions).not.toHaveProperty('language');
+        }
       });
     });
 
@@ -129,8 +134,13 @@ describe('reduceQualifiers functionality', () => {
       // Language should not be reduced because the candidates are imperfect matches
       // Territory should be preserved - not in the filter context
       declaration.candidates?.forEach((candidate) => {
-        expect(candidate.conditions).toHaveProperty('territory'); // Territory preserved
-        expect(candidate.conditions).toHaveProperty('language'); // Language not reduced
+        if (Array.isArray(candidate.conditions)) {
+          expect(candidate.conditions.find((c) => c.qualifierName === 'territory')).toBeDefined();
+          expect(candidate.conditions.find((c) => c.qualifierName === 'language')).toBeDefined();
+        } else {
+          expect(candidate.conditions).toHaveProperty('territory'); // Territory preserved
+          expect(candidate.conditions).toHaveProperty('language'); // Language not reduced
+        }
       });
     });
   });
@@ -224,8 +234,13 @@ describe('reduceQualifiers functionality', () => {
       // Language should be reduced (all candidates match en)
       // Variant should be preserved (not in filter context)
       declaration.candidates?.forEach((candidate) => {
-        expect(candidate.conditions).not.toHaveProperty('language');
-        expect(candidate.conditions).toHaveProperty('variant');
+        if (Array.isArray(candidate.conditions)) {
+          expect(candidate.conditions.find((c) => c.qualifierName === 'language')).toBeUndefined();
+          expect(candidate.conditions.find((c) => c.qualifierName === 'variant')).toBeDefined();
+        } else {
+          expect(candidate.conditions).not.toHaveProperty('language');
+          expect(candidate.conditions).toHaveProperty('variant');
+        }
       });
     });
   });
@@ -265,8 +280,13 @@ describe('reduceQualifiers functionality', () => {
       // Language should be reduced (all candidates match 'en' perfectly)
       // Territory should be preserved (differs between candidates)
       childDeclaration.candidates?.forEach((candidate) => {
-        expect(candidate.conditions).toHaveProperty('territory');
-        expect(candidate.conditions).not.toHaveProperty('language');
+        if (Array.isArray(candidate.conditions)) {
+          expect(candidate.conditions.find((c) => c.qualifierName === 'territory')).toBeDefined();
+          expect(candidate.conditions.find((c) => c.qualifierName === 'language')).toBeUndefined();
+        } else {
+          expect(candidate.conditions).toHaveProperty('territory');
+          expect(candidate.conditions).not.toHaveProperty('language');
+        }
       });
     });
 

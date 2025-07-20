@@ -9,5 +9,5 @@ The JSON representation of the instance data to be applied.
 **Signature:**
 
 ```typescript
-readonly json: JsonValue;
+readonly json: JsonObject;
 ```

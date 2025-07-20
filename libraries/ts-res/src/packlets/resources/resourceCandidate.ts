@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { JsonObject, JsonValue } from '@fgv/ts-json-base';
+import { JsonObject } from '@fgv/ts-json-base';
 import { PerfectMatch, QualifierName, ResourceId, ResourceValueMergeMethod, Validate } from '../common';
 import { Condition, ConditionSet, ConditionSetCollector } from '../conditions';
 import * as ResourceJson from '../resource-json';
@@ -72,7 +72,7 @@ export class ResourceCandidate implements IResourceCandidate {
   /**
    * The JSON representation of the instance data to be applied.
    */
-  public readonly json: JsonValue;
+  public readonly json: JsonObject;
 
   /**
    * The conditions under which this candidate applies.

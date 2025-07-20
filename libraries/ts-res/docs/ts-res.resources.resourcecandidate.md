@@ -147,7 +147,7 @@ True if this candidate is a partial instance.
 
 </td><td>
 
-JsonValue
+JsonObject
 
 
 </td><td>

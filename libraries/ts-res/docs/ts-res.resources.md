@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[CandidateReducer](./ts-res.resources.candidatereducer.md)
+
+
+</td><td>
+
+Manages candidate reduction logic for filtering and qualifier reduction operations. Encapsulates the state and logic needed to consistently process candidates for reduction.
+
+
+</td></tr>
+<tr><td>
+
 [Resource](./ts-res.resources.resource.md)
 
 
@@ -95,6 +106,17 @@ Options for creating a [ResourceCandidate](./ts-res.resources.resourcecandidate.
 </td><td>
 
 Extended compiled resource options that includes context filtering capabilities. This interface combines the standard compilation options with strongly-typed context filtering for resource candidates.
+
+
+</td></tr>
+<tr><td>
+
+[IReducedCandidate](./ts-res.resources.ireducedcandidate.md)
+
+
+</td><td>
+
+Represents a reduced candidate after applying reduction logic.
 
 
 </td></tr>

@@ -23,6 +23,7 @@
 import { MessageAggregator, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { ResourceId, Validate } from '../common';
 import { ResourceCandidate } from './resourceCandidate';
+import { CandidateReducer } from './candidateReducer';
 import { ResourceType } from '../resource-types';
 import { ConcreteDecision, AbstractDecisionCollector } from '../decisions';
 import { IResource } from '../runtime';
@@ -146,17 +147,11 @@ export class Resource implements IResource {
     /* c8 ignore next 1 - defense in depth */
     options = options ?? {};
     const matches = this._getMatchingCandidates(options);
-    const qualifiersToReduce =
-      options.reduceQualifiers === true && options.filterForContext
-        ? ResourceCandidate.findReducibleQualifiers(matches, options.filterForContext)
-        : undefined;
 
-    const candidates = matches.map((c) =>
-      c.toChildResourceCandidateDecl({
-        ...options,
-        ...(qualifiersToReduce ? { qualifiersToReduce } : {})
-      })
-    );
+    const candidates = options.reduceQualifiers
+      ? CandidateReducer.reduceToChildResourceCandidateDecls(matches, options.filterForContext)
+      : matches.map((c) => c.toChildResourceCandidateDecl());
+
     return {
       resourceTypeName: this.resourceTypeName,
       ...(candidates.length > 0 ? { candidates } : {})
@@ -172,16 +167,10 @@ export class Resource implements IResource {
     /* c8 ignore next 1 - defense in depth */
     options = options ?? {};
     const matches = this._getMatchingCandidates(options);
-    const qualifiersToReduce =
-      options.reduceQualifiers === true && options.filterForContext
-        ? ResourceCandidate.findReducibleQualifiers(matches, options.filterForContext)
-        : undefined;
-    const candidates = matches.map((c) =>
-      c.toChildResourceCandidateDecl({
-        ...options,
-        ...(qualifiersToReduce ? { qualifiersToReduce } : {})
-      })
-    );
+
+    const candidates = options.reduceQualifiers
+      ? CandidateReducer.reduceToChildResourceCandidateDecls(matches, options.filterForContext)
+      : matches.map((c) => c.toChildResourceCandidateDecl());
 
     return {
       id: this.id,

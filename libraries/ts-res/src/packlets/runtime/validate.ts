@@ -33,7 +33,7 @@ import { IResource, IResourceCandidate } from './iResourceManager';
  */
 export const resourceCandidate: Validator<IResourceCandidate, unknown> =
   Validators.object<IResourceCandidate>({
-    json: JsonValidators.jsonValue,
+    json: JsonValidators.jsonObject,
     isPartial: Validators.boolean,
     mergeMethod: Validators.isA(
       'resource value merge method',

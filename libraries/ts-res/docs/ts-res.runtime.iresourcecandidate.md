@@ -68,7 +68,7 @@ Indicates if this candidate is a partial resource.
 
 </td><td>
 
-JsonValue
+JsonObject
 
 
 </td><td>

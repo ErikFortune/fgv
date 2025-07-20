@@ -21,7 +21,7 @@
  */
 
 import { Result, Collections } from '@fgv/ts-utils';
-import { JsonValue } from '@fgv/ts-json-base';
+import { JsonObject } from '@fgv/ts-json-base';
 import { ReadOnlyConditionCollector, ReadOnlyConditionSetCollector } from '../conditions';
 import { ReadOnlyAbstractDecisionCollector, ConcreteDecision } from '../decisions';
 import { ResourceId, ResourceValueMergeMethod } from '../common';
@@ -34,7 +34,7 @@ import { IContextDecl, IValidatedContextDecl } from '../context';
  */
 export interface IResourceCandidate {
   /** The JSON value for this candidate */
-  readonly json: JsonValue;
+  readonly json: JsonObject;
 
   /**
    * Indicates if this candidate is a partial resource.
