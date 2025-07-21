@@ -585,7 +585,7 @@ describe('CandidateReducer', () => {
       ).toSucceedAndSatisfy((result) => {
         expect(result).toHaveLength(1);
         expect(result[0].json).toEqual({
-          items: ['a', 'b', 'c', 'd'], // Arrays are concatenated by JsonEditor
+          items: ['c', 'd'], // Arrays are replaced, not merged
           other: 'data'
         });
       });

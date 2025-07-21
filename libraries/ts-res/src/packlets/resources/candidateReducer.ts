@@ -132,9 +132,14 @@ export class CandidateReducer {
    * @internal
    */
   private static _mergeJsonValues(baseJson: JsonObject, partialJson: JsonObject): JsonObject {
-    // Use JsonEditor.mergeObjectsInPlace for consistent merging behavior
-    // Note: JsonEditor concatenates arrays rather than replacing them
-    return JsonEditor.default.mergeObjectsInPlace({}, [baseJson, partialJson]).orThrow(); // Internal method should throw on error - this indicates a serious bug
+    // Create JsonEditor with array replacement behavior for candidate merging
+    const editor = JsonEditor.create({
+      merge: {
+        arrayMergeBehavior: 'replace'
+      }
+    }).orThrow(); // Should never fail with valid options
+
+    return editor.mergeObjectsInPlace({}, [baseJson, partialJson]).orThrow(); // Internal method should throw on error - this indicates a serious bug
   }
 
   /**
