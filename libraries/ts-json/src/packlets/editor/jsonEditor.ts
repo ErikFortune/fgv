@@ -49,6 +49,7 @@ import {
 import { IJsonContext } from '../context';
 import {
   IJsonCloneEditor,
+  IJsonEditorMergeOptions,
   IJsonEditorOptions,
   IJsonEditorValidationOptions,
   JsonEditFailureReason,
@@ -149,7 +150,13 @@ export class JsonEditor implements IJsonCloneEditor {
         onUndefinedPropertyValue: 'ignore'
       };
     }
-    return succeed({ context, validation });
+    let merge: IJsonEditorMergeOptions | undefined = options?.merge;
+    if (merge === undefined) {
+      merge = {
+        arrayMergeBehavior: 'append'
+      };
+    }
+    return succeed({ context, validation, merge });
   }
 
   /**
@@ -345,7 +352,19 @@ export class JsonEditor implements IJsonCloneEditor {
     /* c8 ignore else */
     if (isJsonArray(newValue)) {
       if (isJsonArray(existing)) {
-        target[key] = existing.concat(...newValue);
+        /* c8 ignore next 1 - ?? is defense in depth */
+        const arrayMergeBehavior = state.options.merge?.arrayMergeBehavior ?? 'append';
+        switch (arrayMergeBehavior) {
+          case 'append':
+            target[key] = existing.concat(...newValue);
+            break;
+          case 'replace':
+            target[key] = newValue;
+            break;
+          /* c8 ignore next 2 - exhaustive switch for ArrayMergeBehavior type */
+          default:
+            return failWithDetail(`Invalid array merge behavior: ${arrayMergeBehavior as string}`, 'error');
+        }
         return succeedWithDetail(target[key], 'edited');
       }
       target[key] = newValue;

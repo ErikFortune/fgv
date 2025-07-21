@@ -14,6 +14,9 @@ import { JsonValue } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
 
 // @public
+export type ArrayMergeBehavior = 'append' | 'replace';
+
+// @public
 export class CompositeJsonMap implements IJsonReferenceMap {
     // @internal
     protected constructor(maps: IJsonReferenceMap[]);
@@ -152,9 +155,16 @@ export interface IJsonConverterOptions {
 }
 
 // @public
+export interface IJsonEditorMergeOptions {
+    arrayMergeBehavior: ArrayMergeBehavior;
+}
+
+// @public
 export interface IJsonEditorOptions {
     // (undocumented)
     context?: IJsonContext;
+    // (undocumented)
+    merge?: IJsonEditorMergeOptions;
     // (undocumented)
     validation: IJsonEditorValidationOptions;
 }

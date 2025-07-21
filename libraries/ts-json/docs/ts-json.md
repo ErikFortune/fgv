@@ -269,6 +269,17 @@ Conversion options for [JsonConverter](./ts-json.jsonconverter.md)<!-- -->.
 </td></tr>
 <tr><td>
 
+[IJsonEditorMergeOptions](./ts-json.ijsoneditormergeoptions.md)
+
+
+</td><td>
+
+Merge options for a [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [IJsonEditorOptions](./ts-json.ijsoneditoroptions.md)
 
 
@@ -382,6 +393,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[ArrayMergeBehavior](./ts-json.arraymergebehavior.md)
+
+
+</td><td>
+
+Array merge behavior options for a [JsonEditor](./ts-json.jsoneditor.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
 
 [ConditionalJsonConverterOptions](./ts-json.conditionaljsonconverteroptions.md)
 
