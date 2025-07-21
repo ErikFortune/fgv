@@ -46,52 +46,6 @@ Constructor for CandidateReducer.
 </td></tr>
 </tbody></table>
 
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[qualifiersToReduce](./ts-res.resources.candidatereducer.qualifierstoreduce.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlySet&lt;[QualifierName](./ts-res.qualifiername.md)<!-- -->&gt; \| undefined
-
-
-</td><td>
-
-Gets the set of qualifiers that will be reduced by this reducer.
-
-
-</td></tr>
-</tbody></table>
-
 ## Methods
 
 <table><thead><tr><th>

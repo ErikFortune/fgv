@@ -25,6 +25,7 @@ import * as Context from '../context';
 import * as ResourceJson from '../resource-json';
 import { ResourceCandidate } from './resourceCandidate';
 import { JsonObject } from '@fgv/ts-json-base';
+import { JsonEditor } from '@fgv/ts-json';
 import { Result, succeed, fail, mapResults } from '@fgv/ts-utils';
 
 /**
@@ -131,8 +132,9 @@ export class CandidateReducer {
    * @internal
    */
   private static _mergeJsonValues(baseJson: JsonObject, partialJson: JsonObject): JsonObject {
-    // Simple merge: partial values override base values
-    return { ...baseJson, ...partialJson };
+    // Use JsonEditor.mergeObjectsInPlace for consistent merging behavior
+    // Note: JsonEditor concatenates arrays rather than replacing them
+    return JsonEditor.default.mergeObjectsInPlace({}, [baseJson, partialJson]).orThrow(); // Internal method should throw on error - this indicates a serious bug
   }
 
   /**
@@ -244,6 +246,7 @@ export class CandidateReducer {
 
       return succeed(
         validReductions.map((reduction) => ({
+          /* c8 ignore next 3 -- defense in depth */
           json: reduction.json ?? reduction.candidate.json,
           isPartial: reduction.isPartial ?? reduction.candidate.isPartial,
           mergeMethod: reduction.mergeMethod ?? reduction.candidate.mergeMethod,
@@ -282,6 +285,7 @@ export class CandidateReducer {
       return succeed(
         validReductions.map((reduction) => ({
           id,
+          /* c8 ignore next 3 -- defense in depth */
           json: reduction.json ?? reduction.candidate.json,
           isPartial: reduction.isPartial ?? reduction.candidate.isPartial,
           mergeMethod: reduction.mergeMethod ?? reduction.candidate.mergeMethod,
@@ -314,17 +318,9 @@ export class CandidateReducer {
     return succeed({
       candidate,
       conditions: conditionsAsRecord,
-      json: candidateInfo.json,
+      json: candidateInfo.json ?? candidate.json,
       isPartial: candidate.isPartial,
       mergeMethod: candidate.mergeMethod
     });
-  }
-
-  /**
-   * Gets the set of qualifiers that will be reduced by this reducer.
-   * @returns The set of qualifier names to be reduced, or undefined if no reduction will occur
-   */
-  public get qualifiersToReduce(): ReadonlySet<QualifierName> | undefined {
-    return this._qualifiersToReduce;
   }
 }

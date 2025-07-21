@@ -9,7 +9,7 @@ Reduces a single candidate according to the configured reduction rules.
 **Signature:**
 
 ```typescript
-reduceCandidate(candidate: ResourceCandidate): IReducedCandidate | undefined;
+reduceCandidate(candidate: ResourceCandidate): Result<IReducedCandidate | undefined>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The candidate to reduce
 
 **Returns:**
 
-[IReducedCandidate](./ts-res.resources.ireducedcandidate.md) \| undefined
+Result&lt;[IReducedCandidate](./ts-res.resources.ireducedcandidate.md) \| undefined&gt;
 
-Either a reduced candidate declaration or undefined if the candidate should be filtered out
+Either a reduced candidate declaration or an error if the candidate is not found
 

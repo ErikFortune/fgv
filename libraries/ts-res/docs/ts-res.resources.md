@@ -100,6 +100,17 @@ Options for creating a [ResourceCandidate](./ts-res.resources.resourcecandidate.
 </td></tr>
 <tr><td>
 
+[ICandidateInfo](./ts-res.resources.icandidateinfo.md)
+
+
+</td><td>
+
+Information about a candidate being processed by the reducer.
+
+
+</td></tr>
+<tr><td>
+
 [ICompiledResourceOptionsWithFilter](./ts-res.resources.icompiledresourceoptionswithfilter.md)
 
 
@@ -191,6 +202,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[CandidateAction](./ts-res.resources.candidateaction.md)
+
+
+</td><td>
+
+Action taken on a candidate during reduction processing.
+
+
+</td></tr>
+<tr><td>
 
 [ResourceBuilderResultDetail](./ts-res.resources.resourcebuilderresultdetail.md)
 

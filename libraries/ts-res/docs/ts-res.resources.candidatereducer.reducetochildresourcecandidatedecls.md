@@ -9,7 +9,7 @@ Static convenience method to construct an array of properly reduced [child resou
 **Signature:**
 
 ```typescript
-static reduceToChildResourceCandidateDecls(candidates: ReadonlyArray<ResourceCandidate>, filterForContext?: Context.IValidatedContextDecl): ResourceJson.Json.IChildResourceCandidateDecl[];
+static reduceToChildResourceCandidateDecls(candidates: ReadonlyArray<ResourceCandidate>, filterForContext?: Context.IValidatedContextDecl): Result<ResourceJson.Json.IChildResourceCandidateDecl[]>;
 ```
 
 ## Parameters
@@ -66,7 +66,7 @@ _(Optional)_ Optional context to filter against
 
 **Returns:**
 
-[ResourceJson.Json.IChildResourceCandidateDecl](./ts-res.resourcejson.json.ichildresourcecandidatedecl.md)<!-- -->\[\]
+Result&lt;[ResourceJson.Json.IChildResourceCandidateDecl](./ts-res.resourcejson.json.ichildresourcecandidatedecl.md)<!-- -->\[\]&gt;
 
-Array of reduced candidate declarations
+Result with array of reduced candidate declarations, or Failure if reduction fails
 

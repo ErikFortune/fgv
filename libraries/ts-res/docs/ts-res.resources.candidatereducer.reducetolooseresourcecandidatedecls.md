@@ -9,7 +9,7 @@ Static convenience method to construct an array of properly reduced [loose resou
 **Signature:**
 
 ```typescript
-static reduceToLooseResourceCandidateDecls(id: ResourceId, candidates: ReadonlyArray<ResourceCandidate>, filterForContext?: Context.IValidatedContextDecl): ResourceJson.Json.ILooseResourceCandidateDecl[];
+static reduceToLooseResourceCandidateDecls(id: ResourceId, candidates: ReadonlyArray<ResourceCandidate>, filterForContext?: Context.IValidatedContextDecl): Result<ResourceJson.Json.ILooseResourceCandidateDecl[]>;
 ```
 
 ## Parameters
@@ -82,7 +82,7 @@ _(Optional)_ Optional context to filter against
 
 **Returns:**
 
-[ResourceJson.Json.ILooseResourceCandidateDecl](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md)<!-- -->\[\]
+Result&lt;[ResourceJson.Json.ILooseResourceCandidateDecl](./ts-res.resourcejson.json.ilooseresourcecandidatedecl.md)<!-- -->\[\]&gt;
 
-Array of reduced candidate declarations
+Result with array of reduced candidate declarations, or Failure if reduction fails
 

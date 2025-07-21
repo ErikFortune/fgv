@@ -150,7 +150,6 @@ type CandidateAction = 'unchanged' | 'reduced' | 'suppressed';
 // @public
 class CandidateReducer {
     constructor(candidates: ReadonlyArray<ResourceCandidate>, filterForContext: Context.IValidatedContextDecl);
-    get qualifiersToReduce(): ReadonlySet<QualifierName> | undefined;
     reduceCandidate(candidate: ResourceCandidate): Result<IReducedCandidate | undefined>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
