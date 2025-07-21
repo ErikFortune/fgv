@@ -243,9 +243,15 @@ describe('reduceQualifiers comprehensive functionality', () => {
       // Environment should be reduced (all match production)
       // Language and territory should be preserved (they differ between candidates)
       declaration.candidates?.forEach((candidate) => {
-        expect(candidate.conditions).not.toHaveProperty('environment');
-        expect(candidate.conditions).toHaveProperty('language');
-        expect(candidate.conditions).toHaveProperty('territory');
+        if (Array.isArray(candidate.conditions)) {
+          expect(candidate.conditions.find((c) => c.qualifierName === 'environment')).toBeUndefined();
+          expect(candidate.conditions.find((c) => c.qualifierName === 'language')).toBeDefined();
+          expect(candidate.conditions.find((c) => c.qualifierName === 'territory')).toBeDefined();
+        } else {
+          expect(candidate.conditions).not.toHaveProperty('environment');
+          expect(candidate.conditions).toHaveProperty('language');
+          expect(candidate.conditions).toHaveProperty('territory');
+        }
       });
     });
   });
@@ -287,14 +293,25 @@ describe('reduceQualifiers comprehensive functionality', () => {
       expect(declaration.candidates).toHaveLength(2);
 
       declaration.candidates?.forEach((candidate) => {
-        // Environment should be reduced (all filtered candidates match 'prod' perfectly)
-        expect(candidate.conditions).not.toHaveProperty('environment');
+        if (Array.isArray(candidate.conditions)) {
+          // Environment should be reduced (all filtered candidates match 'prod' perfectly)
+          expect(candidate.conditions.find((c) => c.qualifierName === 'environment')).toBeUndefined();
 
-        // Language should be reduced (all filtered candidates match 'en' perfectly)
-        expect(candidate.conditions).not.toHaveProperty('language');
+          // Language should be reduced (all filtered candidates match 'en' perfectly)
+          expect(candidate.conditions.find((c) => c.qualifierName === 'language')).toBeUndefined();
 
-        // Territory should be preserved (differs between filtered candidates: US vs GB)
-        expect(candidate.conditions).toHaveProperty('territory');
+          // Territory should be preserved (differs between filtered candidates: US vs GB)
+          expect(candidate.conditions.find((c) => c.qualifierName === 'territory')).toBeDefined();
+        } else {
+          // Environment should be reduced (all filtered candidates match 'prod' perfectly)
+          expect(candidate.conditions).not.toHaveProperty('environment');
+
+          // Language should be reduced (all filtered candidates match 'en' perfectly)
+          expect(candidate.conditions).not.toHaveProperty('language');
+
+          // Territory should be preserved (differs between filtered candidates: US vs GB)
+          expect(candidate.conditions).toHaveProperty('territory');
+        }
       });
     });
 
@@ -334,12 +351,23 @@ describe('reduceQualifiers comprehensive functionality', () => {
       expect(declaration.candidates).toHaveLength(3);
 
       declaration.candidates?.forEach((candidate) => {
-        // Language should NOT be reduced because en-US, en-CA, and en are imperfect matches for 'en'
-        expect(candidate.conditions).toHaveProperty('language');
+        if (Array.isArray(candidate.conditions)) {
+          // Language should NOT be reduced because en-US, en-CA, and en are imperfect matches for 'en'
+          expect(candidate.conditions.find((c) => c.qualifierName === 'language')).toBeDefined();
 
-        // Territory should be preserved where present
-        if ('territory' in (candidate.conditions || {})) {
-          expect(candidate.conditions).toHaveProperty('territory');
+          // Territory should be preserved where present
+          const territoryCondition = candidate.conditions.find((c) => c.qualifierName === 'territory');
+          if (territoryCondition) {
+            expect(territoryCondition).toBeDefined();
+          }
+        } else {
+          // Language should NOT be reduced because en-US, en-CA, and en are imperfect matches for 'en'
+          expect(candidate.conditions).toHaveProperty('language');
+
+          // Territory should be preserved where present
+          if ('territory' in (candidate.conditions || {})) {
+            expect(candidate.conditions).toHaveProperty('territory');
+          }
         }
       });
     });
@@ -433,23 +461,16 @@ describe('reduceQualifiers comprehensive functionality', () => {
         reduceQualifiers: true
       });
 
-      // Both candidates should match (default matches everything, specific matches prod)
-      expect(declaration.candidates).toHaveLength(2);
+      // Smart collision resolution: specific candidate wins over default when they collide after reduction
+      expect(declaration.candidates).toHaveLength(1);
 
-      // Find the candidates
-      const defaultCandidate = declaration.candidates?.find(
-        (c) => (c.json as { value: string }).value === 'default'
-      );
-      const specificCandidate = declaration.candidates?.find(
-        (c) => (c.json as { value: string }).value === 'specific'
-      );
+      // Only the specific candidate should remain after smart collision resolution
+      const remainingCandidate = declaration.candidates?.[0];
+      expect((remainingCandidate?.json as { value: string }).value).toBe('specific');
 
-      // Default candidate should have no conditions
-      expect(Object.keys(defaultCandidate?.conditions || {})).toHaveLength(0);
-
-      // Specific candidate should have environment reduced
-      expect(specificCandidate?.conditions).not.toHaveProperty('environment');
-      expect(Object.keys(specificCandidate?.conditions || {})).toHaveLength(0);
+      // The specific candidate should have no conditions since environment was reduced
+      // (it won the collision against the default candidate)
+      expect(Object.keys(remainingCandidate?.conditions || {})).toHaveLength(0);
     });
 
     test('handles filter context with qualifiers not present in candidates', () => {
@@ -656,16 +677,31 @@ describe('reduceQualifiers comprehensive functionality', () => {
       const candidateC = declaration.candidates?.find((c) => (c.json as { value: string }).value === 'C');
 
       // Candidate A: environment should be reduced
-      expect(candidateA?.conditions).not.toHaveProperty('environment');
-      expect(Object.keys(candidateA?.conditions || {})).toHaveLength(0);
+      if (Array.isArray(candidateA?.conditions)) {
+        expect(candidateA.conditions.find((c) => c.qualifierName === 'environment')).toBeUndefined();
+        expect(candidateA.conditions).toHaveLength(0);
+      } else {
+        expect(candidateA?.conditions).not.toHaveProperty('environment');
+        expect(Object.keys(candidateA?.conditions || {})).toHaveLength(0);
+      }
 
       // Candidate B: should preserve language and territory (no environment to reduce)
-      expect(candidateB?.conditions).toHaveProperty('language', 'en');
-      expect(candidateB?.conditions).toHaveProperty('territory', 'US');
+      if (Array.isArray(candidateB?.conditions)) {
+        expect(candidateB.conditions.find((c) => c.qualifierName === 'language')?.value).toBe('en');
+        expect(candidateB.conditions.find((c) => c.qualifierName === 'territory')?.value).toBe('US');
+      } else {
+        expect(candidateB?.conditions).toHaveProperty('language', 'en');
+        expect(candidateB?.conditions).toHaveProperty('territory', 'US');
+      }
 
       // Candidate C: environment should be reduced, variant preserved
-      expect(candidateC?.conditions).not.toHaveProperty('environment');
-      expect(candidateC?.conditions).toHaveProperty('variant', 'test');
+      if (Array.isArray(candidateC?.conditions)) {
+        expect(candidateC.conditions.find((c) => c.qualifierName === 'environment')).toBeUndefined();
+        expect(candidateC.conditions.find((c) => c.qualifierName === 'variant')?.value).toBe('test');
+      } else {
+        expect(candidateC?.conditions).not.toHaveProperty('environment');
+        expect(candidateC?.conditions).toHaveProperty('variant', 'test');
+      }
     });
   });
 });

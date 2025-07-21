@@ -525,7 +525,14 @@ export class ResourceResolver {
         return fail(`${resource.id}: Unable to compose non-object candidate values.`);
       }
 
-      return JsonEditor.default
+      // Create JsonEditor with array replacement behavior for resource composition
+      const editor = JsonEditor.create({
+        merge: {
+          arrayMergeBehavior: 'replace'
+        }
+      }).orThrow(); // Should never fail with valid options
+
+      return editor
         .mergeObjectsInPlace({}, allCandidates)
         .withErrorFormat((err) => `${resource.id}: Composition failed: ${err}`);
     });

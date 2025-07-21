@@ -144,6 +144,21 @@ class Candidate<TVALUE extends JsonValue = JsonValue> implements ICandidate<TVAL
     readonly value: TVALUE;
 }
 
+// @public
+type CandidateAction = 'unchanged' | 'reduced' | 'suppressed';
+
+// @public
+class CandidateReducer {
+    constructor(candidates: ReadonlyArray<ResourceCandidate>, filterForContext: Context.IValidatedContextDecl);
+    reduceCandidate(candidate: ResourceCandidate): Result<IReducedCandidate | undefined>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static reduceToChildResourceCandidateDecls(candidates: ReadonlyArray<ResourceCandidate>, filterForContext?: Context.IValidatedContextDecl): Result<ResourceJson.Json.IChildResourceCandidateDecl[]>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static reduceToLooseResourceCandidateDecls(id: ResourceId, candidates: ReadonlyArray<ResourceCandidate>, filterForContext?: Context.IValidatedContextDecl): Result<ResourceJson.Json.ILooseResourceCandidateDecl[]>;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -1236,6 +1251,20 @@ interface ICandidateDeclOptions extends ResourceJson.Helpers.IDeclarationOptions
     qualifiersToReduce?: ReadonlySet<QualifierName>;
 }
 
+// @public
+interface ICandidateInfo {
+    // (undocumented)
+    action: CandidateAction;
+    // (undocumented)
+    conditions: ResourceJson.Json.ILooseConditionDecl[];
+    // (undocumented)
+    conditionSetKey: string;
+    // (undocumented)
+    readonly json?: JsonObject;
+    // (undocumented)
+    readonly originalCandidate: ResourceCandidate;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -2230,6 +2259,20 @@ interface IReadOnlyValidatingResourceTreeChildren<T> extends IReadOnlyResourceTr
 }
 
 // @public
+interface IReducedCandidate {
+    // (undocumented)
+    readonly candidate: ResourceCandidate;
+    // (undocumented)
+    readonly conditions: ResourceJson.Json.ConditionSetDecl;
+    // (undocumented)
+    readonly isPartial?: boolean;
+    // (undocumented)
+    readonly json?: JsonObject;
+    // (undocumented)
+    readonly mergeMethod?: ResourceValueMergeMethod;
+}
+
+// @public
 interface IResource {
     readonly candidates: ReadonlyArray<IResourceCandidate>;
     readonly decision: ConcreteDecision;
@@ -2256,7 +2299,7 @@ interface IResourceBuilderCreateParams {
 // @public
 interface IResourceCandidate {
     readonly isPartial: boolean;
-    readonly json: JsonValue;
+    readonly json: JsonObject;
     readonly mergeMethod: ResourceValueMergeMethod;
 }
 
@@ -3610,7 +3653,7 @@ class ResourceCandidate implements IResourceCandidate {
     static findReducibleQualifiers(candidates: ReadonlyArray<ResourceCandidate>, filterForContext: Context.IValidatedContextDecl): ReadonlySet<QualifierName> | undefined;
     readonly id: ResourceId;
     readonly isPartial: boolean;
-    readonly json: JsonValue;
+    readonly json: JsonObject;
     readonly mergeMethod: ResourceValueMergeMethod;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly resourceType: ResourceType | undefined;
@@ -3901,6 +3944,10 @@ type ResourceResolverCacheType = 'condition' | 'conditionSet' | 'decision';
 
 declare namespace Resources {
     export {
+        CandidateAction,
+        ICandidateInfo,
+        IReducedCandidate,
+        CandidateReducer,
         IResourceCandidateCreateParams,
         ICandidateDeclOptions,
         ResourceCandidate,
@@ -4409,9 +4456,9 @@ class ValidatingSimpleContextQualifierProvider extends SimpleContextQualifierPro
 // src/packlets/import/importers/collectionImporter.ts:135:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/import/importers/collectionImporter.ts:135:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/import/importers/collectionImporter.ts:135:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resource.ts:252:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resource.ts:252:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resource.ts:275:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resource.ts:241:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resource.ts:241:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resource.ts:264:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resourceCandidate.ts:257:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/conditionSetResolutionResult.ts:56:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/resourceResolver.ts:146:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

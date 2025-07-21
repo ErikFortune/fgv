@@ -9,5 +9,5 @@ The JSON value for this candidate
 **Signature:**
 
 ```typescript
-readonly json: JsonValue;
+readonly json: JsonObject;
 ```

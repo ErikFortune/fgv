@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[CandidateReducer](./ts-res.resources.candidatereducer.md)
+
+
+</td><td>
+
+Manages candidate reduction logic for filtering and qualifier reduction operations. Encapsulates the state and logic needed to consistently process candidates for reduction.
+
+
+</td></tr>
+<tr><td>
+
 [Resource](./ts-res.resources.resource.md)
 
 
@@ -89,12 +100,34 @@ Options for creating a [ResourceCandidate](./ts-res.resources.resourcecandidate.
 </td></tr>
 <tr><td>
 
+[ICandidateInfo](./ts-res.resources.icandidateinfo.md)
+
+
+</td><td>
+
+Information about a candidate being processed by the reducer.
+
+
+</td></tr>
+<tr><td>
+
 [ICompiledResourceOptionsWithFilter](./ts-res.resources.icompiledresourceoptionswithfilter.md)
 
 
 </td><td>
 
 Extended compiled resource options that includes context filtering capabilities. This interface combines the standard compilation options with strongly-typed context filtering for resource candidates.
+
+
+</td></tr>
+<tr><td>
+
+[IReducedCandidate](./ts-res.resources.ireducedcandidate.md)
+
+
+</td><td>
+
+Represents a reduced candidate after applying reduction logic.
 
 
 </td></tr>
@@ -169,6 +202,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[CandidateAction](./ts-res.resources.candidateaction.md)
+
+
+</td><td>
+
+Action taken on a candidate during reduction processing.
+
+
+</td></tr>
+<tr><td>
 
 [ResourceBuilderResultDetail](./ts-res.resources.resourcebuilderresultdetail.md)
 

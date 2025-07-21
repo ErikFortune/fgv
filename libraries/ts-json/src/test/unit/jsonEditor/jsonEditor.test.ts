@@ -527,4 +527,451 @@ describe('JsonObjectEditor', () => {
       });
     });
   });
+
+  describe('array merge behavior configuration', () => {
+    describe('with append behavior (default)', () => {
+      const editor = JsonEditor.create({
+        validation: {
+          onInvalidPropertyName: 'error',
+          onInvalidPropertyValue: 'error',
+          onUndefinedPropertyValue: 'ignore'
+        },
+        merge: {
+          arrayMergeBehavior: 'append'
+        }
+      }).orThrow();
+
+      test('appends new array elements to existing arrays', () => {
+        const base = {
+          numbers: [1, 2],
+          strings: ['a', 'b'],
+          mixed: [1, 'a', true]
+        };
+        const source = {
+          numbers: [3, 4],
+          strings: ['c'],
+          mixed: [false, 'z']
+        };
+        const expected = {
+          numbers: [1, 2, 3, 4],
+          strings: ['a', 'b', 'c'],
+          mixed: [1, 'a', true, false, 'z']
+        };
+
+        expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+      });
+
+      test('handles empty arrays correctly', () => {
+        const base = { emptyArray: [], existingArray: [1, 2] };
+        const source = { emptyArray: [1], existingArray: [] };
+        const expected = { emptyArray: [1], existingArray: [1, 2] };
+
+        expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+      });
+
+      test('creates new arrays when base property does not exist', () => {
+        const base = { existing: [1] };
+        const source = { existing: [2], newArray: [3, 4] };
+        const expected = { existing: [1, 2], newArray: [3, 4] };
+
+        expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+      });
+    });
+
+    describe('with replace behavior', () => {
+      const editor = JsonEditor.create({
+        validation: {
+          onInvalidPropertyName: 'error',
+          onInvalidPropertyValue: 'error',
+          onUndefinedPropertyValue: 'ignore'
+        },
+        merge: {
+          arrayMergeBehavior: 'replace'
+        }
+      }).orThrow();
+
+      test('replaces existing arrays completely with new arrays', () => {
+        const base = {
+          numbers: [1, 2, 3],
+          strings: ['old1', 'old2'],
+          mixed: [1, 'old', true]
+        };
+        const source = {
+          numbers: [99],
+          strings: ['new'],
+          mixed: ['completely', 'different']
+        };
+        const expected = {
+          numbers: [99],
+          strings: ['new'],
+          mixed: ['completely', 'different']
+        };
+
+        expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+      });
+
+      test('replaces with empty arrays', () => {
+        const base = { fullArray: [1, 2, 3, 4] };
+        const source = { fullArray: [] };
+        const expected = { fullArray: [] };
+
+        expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+      });
+
+      test('creates new arrays when base property does not exist', () => {
+        const base = { existing: [1, 2, 3] };
+        const source = { existing: [99], newArray: [5, 6] };
+        const expected = { existing: [99], newArray: [5, 6] };
+
+        expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+      });
+    });
+
+    describe('array merge behavior with nested objects', () => {
+      test('append behavior works with nested structures', () => {
+        const editor = JsonEditor.create({
+          validation: {
+            onInvalidPropertyName: 'error',
+            onInvalidPropertyValue: 'error',
+            onUndefinedPropertyValue: 'ignore'
+          },
+          merge: {
+            arrayMergeBehavior: 'append'
+          }
+        }).orThrow();
+
+        const base = {
+          nested: {
+            items: [{ id: 1 }, { id: 2 }]
+          }
+        };
+        const source = {
+          nested: {
+            items: [{ id: 3 }]
+          }
+        };
+        const expected = {
+          nested: {
+            items: [{ id: 1 }, { id: 2 }, { id: 3 }]
+          }
+        };
+
+        expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+      });
+
+      test('replace behavior works with nested structures', () => {
+        const editor = JsonEditor.create({
+          validation: {
+            onInvalidPropertyName: 'error',
+            onInvalidPropertyValue: 'error',
+            onUndefinedPropertyValue: 'ignore'
+          },
+          merge: {
+            arrayMergeBehavior: 'replace'
+          }
+        }).orThrow();
+
+        const base = {
+          nested: {
+            items: [{ id: 1 }, { id: 2 }]
+          }
+        };
+        const source = {
+          nested: {
+            items: [{ id: 99 }]
+          }
+        };
+        const expected = {
+          nested: {
+            items: [{ id: 99 }]
+          }
+        };
+
+        expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+      });
+    });
+
+    describe('clone method with array merge behaviors', () => {
+      test('append behavior works in clone operations', () => {
+        const editor = JsonEditor.create({
+          validation: {
+            onInvalidPropertyName: 'error',
+            onInvalidPropertyValue: 'error',
+            onUndefinedPropertyValue: 'ignore'
+          },
+          merge: {
+            arrayMergeBehavior: 'append'
+          }
+        }).orThrow();
+
+        const input = {
+          arrays: [1, 2, 3],
+          nested: {
+            moreArrays: ['a', 'b']
+          }
+        };
+
+        expect(editor.clone(input)).toSucceedAndSatisfy((cloned) => {
+          expect(cloned).toEqual(input);
+          expect(cloned).not.toBe(input);
+        });
+      });
+
+      test('replace behavior works in clone operations', () => {
+        const editor = JsonEditor.create({
+          validation: {
+            onInvalidPropertyName: 'error',
+            onInvalidPropertyValue: 'error',
+            onUndefinedPropertyValue: 'ignore'
+          },
+          merge: {
+            arrayMergeBehavior: 'replace'
+          }
+        }).orThrow();
+
+        const input = {
+          arrays: [1, 2, 3],
+          nested: {
+            moreArrays: ['a', 'b']
+          }
+        };
+
+        expect(editor.clone(input)).toSucceedAndSatisfy((cloned) => {
+          expect(cloned).toEqual(input);
+          expect(cloned).not.toBe(input);
+        });
+      });
+    });
+
+    describe('default options behavior', () => {
+      test('default editor uses append behavior', () => {
+        const editor = JsonEditor.create().orThrow();
+
+        expect(editor.options.merge?.arrayMergeBehavior).toBe('append');
+
+        const base = { arr: [1, 2] };
+        const source = { arr: [3] };
+        const expected = { arr: [1, 2, 3] };
+
+        expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+      });
+
+      test('partial options preserve default merge behavior', () => {
+        const editor = JsonEditor.create({
+          validation: {
+            onInvalidPropertyName: 'ignore',
+            onInvalidPropertyValue: 'ignore',
+            onUndefinedPropertyValue: 'ignore'
+          }
+        }).orThrow();
+
+        expect(editor.options.merge?.arrayMergeBehavior).toBe('append');
+      });
+    });
+
+    describe('edge cases and error conditions', () => {
+      test('handles mixed data types in array merge - append', () => {
+        const editor = JsonEditor.create({
+          validation: {
+            onInvalidPropertyName: 'error',
+            onInvalidPropertyValue: 'error',
+            onUndefinedPropertyValue: 'ignore'
+          },
+          merge: {
+            arrayMergeBehavior: 'append'
+          }
+        }).orThrow();
+
+        const base: JsonObject = {
+          mixed: [1, 'string', true, null, { key: 'value' }]
+        };
+        const source: JsonObject = {
+          mixed: [false, 42, 'another', { other: 'data' }]
+        };
+        const expected: JsonObject = {
+          mixed: [1, 'string', true, null, { key: 'value' }, false, 42, 'another', { other: 'data' }]
+        };
+
+        expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+      });
+
+      test('handles mixed data types in array merge - replace', () => {
+        const editor = JsonEditor.create({
+          validation: {
+            onInvalidPropertyName: 'error',
+            onInvalidPropertyValue: 'error',
+            onUndefinedPropertyValue: 'ignore'
+          },
+          merge: {
+            arrayMergeBehavior: 'replace'
+          }
+        }).orThrow();
+
+        const base: JsonObject = {
+          mixed: [1, 'string', true, null, { key: 'value' }]
+        };
+        const source: JsonObject = {
+          mixed: [false, 42]
+        };
+        const expected: JsonObject = {
+          mixed: [false, 42]
+        };
+
+        expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+      });
+
+      test('array merge behavior does not affect non-array properties', () => {
+        const editor = JsonEditor.create({
+          validation: {
+            onInvalidPropertyName: 'error',
+            onInvalidPropertyValue: 'error',
+            onUndefinedPropertyValue: 'ignore'
+          },
+          merge: {
+            arrayMergeBehavior: 'replace'
+          }
+        }).orThrow();
+
+        const base = {
+          arrays: [1, 2],
+          objects: { a: 1, b: 2 },
+          primitives: 'original'
+        };
+        const source = {
+          arrays: [3],
+          objects: { b: 99, c: 3 },
+          primitives: 'updated'
+        };
+        const expected = {
+          arrays: [3],
+          objects: { a: 1, b: 99, c: 3 },
+          primitives: 'updated'
+        };
+
+        expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+      });
+
+      test('handles null and undefined values correctly with arrays', () => {
+        const editor = JsonEditor.create({
+          validation: {
+            onInvalidPropertyName: 'error',
+            onInvalidPropertyValue: 'error',
+            onUndefinedPropertyValue: 'ignore'
+          },
+          merge: {
+            arrayMergeBehavior: 'append'
+          }
+        }).orThrow();
+
+        const base = {
+          withNull: [null, 1],
+          normalArray: [1, 2]
+        };
+        const source = {
+          withNull: [2, null],
+          normalArray: [3],
+          undefinedValue: undefined as unknown as JsonValue
+        };
+        const expected = {
+          withNull: [null, 1, 2, null],
+          normalArray: [1, 2, 3]
+        };
+
+        expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+      });
+
+      test('deeply nested array merge behavior', () => {
+        const editor = JsonEditor.create({
+          validation: {
+            onInvalidPropertyName: 'error',
+            onInvalidPropertyValue: 'error',
+            onUndefinedPropertyValue: 'ignore'
+          },
+          merge: {
+            arrayMergeBehavior: 'replace'
+          }
+        }).orThrow();
+
+        const base = {
+          level1: {
+            level2: {
+              level3: {
+                deepArray: [1, 2, 3]
+              }
+            }
+          }
+        };
+        const source = {
+          level1: {
+            level2: {
+              level3: {
+                deepArray: [99]
+              }
+            }
+          }
+        };
+        const expected = {
+          level1: {
+            level2: {
+              level3: {
+                deepArray: [99]
+              }
+            }
+          }
+        };
+
+        expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+      });
+
+      test('large array performance with append', () => {
+        const editor = JsonEditor.create({
+          validation: {
+            onInvalidPropertyName: 'error',
+            onInvalidPropertyValue: 'error',
+            onUndefinedPropertyValue: 'ignore'
+          },
+          merge: {
+            arrayMergeBehavior: 'append'
+          }
+        }).orThrow();
+
+        const largeArray1 = Array.from({ length: 1000 }, (_, i) => i);
+        const largeArray2 = Array.from({ length: 500 }, (_, i) => i + 1000);
+
+        const base = { large: largeArray1 };
+        const source = { large: largeArray2 };
+        const expected = { large: [...largeArray1, ...largeArray2] };
+
+        expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+      });
+
+      test('array replacement when base is not an array', () => {
+        const editor = JsonEditor.create({
+          validation: {
+            onInvalidPropertyName: 'error',
+            onInvalidPropertyValue: 'error',
+            onUndefinedPropertyValue: 'ignore'
+          },
+          merge: {
+            arrayMergeBehavior: 'replace'
+          }
+        }).orThrow();
+
+        const base = {
+          notArray: 'primitive value',
+          alsoNotArray: { object: 'value' }
+        };
+        const source = {
+          notArray: [1, 2, 3],
+          alsoNotArray: ['a', 'b']
+        };
+        const expected = {
+          notArray: [1, 2, 3],
+          alsoNotArray: ['a', 'b']
+        };
+
+        expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+      });
+    });
+  });
 });

@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+export * from './candidateReducer';
 export * from './resourceCandidate';
 export * from './resource';
 export * from './resourceBuilder';
