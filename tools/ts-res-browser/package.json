@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "bin": {
-    "ts-res-browser": "./lib/cli.js"
+    "ts-res-browser": "./cli.js"
   },
   "scripts": {
     "build": "webpack --mode production",
