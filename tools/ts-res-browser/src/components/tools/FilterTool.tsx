@@ -13,7 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message, FilterState } from '../../types/app';
-import { NoMatch } from '@fgv/ts-res';
+import { NoMatch, Config } from '@fgv/ts-res';
 import { DEFAULT_SYSTEM_CONFIGURATION } from '../../utils/tsResIntegration';
 import {
   createFilteredResourceManager,
@@ -64,6 +64,64 @@ const FilterTool: React.FC<FilterToolProps> = ({
     const config = resourceState.activeConfiguration || DEFAULT_SYSTEM_CONFIGURATION;
     return config.qualifiers.map((q) => q.name);
   }, [resourceState.processedResources?.compiledCollection.qualifiers, resourceState.activeConfiguration]);
+
+  // Get qualifier type information for dropdown decisions
+  const qualifierTypeInfo = useMemo(() => {
+    const info: Record<
+      string,
+      {
+        type: Config.Model.ISystemConfiguration['qualifierTypes'][0];
+        enumeratedValues?: string[];
+        allowedTerritories?: string[];
+      }
+    > = {};
+
+    // Get the active configuration to access qualifier types
+    const config = resourceState.activeConfiguration || DEFAULT_SYSTEM_CONFIGURATION;
+
+    // Create a map of qualifier name to qualifier type for quick lookup
+    const qualifierTypeMap: Record<string, Config.Model.ISystemConfiguration['qualifierTypes'][0]> = {};
+
+    // First, create a mapping of qualifiers to their types
+    config.qualifiers.forEach((qualifier) => {
+      const qualifierType = config.qualifierTypes.find((qt) => qt.name === qualifier.typeName);
+      if (qualifierType) {
+        qualifierTypeMap[qualifier.name] = qualifierType;
+      }
+    });
+
+    // Build info for each qualifier
+    availableQualifiers.forEach((qualifierName) => {
+      const qualifierType = qualifierTypeMap[qualifierName];
+      if (qualifierType) {
+        info[qualifierName] = { type: qualifierType };
+
+        // Extract enumerated values for literal types
+        if (
+          qualifierType.systemType === 'literal' &&
+          qualifierType.configuration &&
+          typeof qualifierType.configuration === 'object' &&
+          'enumeratedValues' in qualifierType.configuration &&
+          Array.isArray(qualifierType.configuration.enumeratedValues)
+        ) {
+          info[qualifierName].enumeratedValues = qualifierType.configuration.enumeratedValues;
+        }
+
+        // Extract allowed territories for territory types
+        if (
+          qualifierType.systemType === 'territory' &&
+          qualifierType.configuration &&
+          typeof qualifierType.configuration === 'object' &&
+          'allowedTerritories' in qualifierType.configuration &&
+          Array.isArray(qualifierType.configuration.allowedTerritories)
+        ) {
+          info[qualifierName].allowedTerritories = qualifierType.configuration.allowedTerritories;
+        }
+      }
+    });
+
+    return info;
+  }, [availableQualifiers, resourceState.activeConfiguration]);
 
   // Check if we have any applied filter values set
   const hasAppliedFilterValues = useMemo(() => {
@@ -504,25 +562,54 @@ const FilterTool: React.FC<FilterToolProps> = ({
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Context Filters</h3>
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {availableQualifiers.map((qualifierName) => (
-                <div key={qualifierName} className="bg-white rounded border border-gray-200 p-2">
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm font-medium text-gray-700 min-w-0 flex-shrink-0">
-                      {qualifierName}:
-                    </label>
-                    <input
-                      type="text"
-                      value={filterState.values[qualifierName] || ''}
-                      onChange={(e) => handleFilterChange(qualifierName, e.target.value)}
-                      disabled={!filterState.enabled}
-                      className={`flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent text-sm min-w-0 ${
-                        !filterState.enabled ? 'bg-gray-100 text-gray-400' : ''
-                      }`}
-                      placeholder={filterState.enabled ? `Filter by ${qualifierName}` : 'Disabled'}
-                    />
+              {availableQualifiers.map((qualifierName) => {
+                const typeInfo = qualifierTypeInfo[qualifierName];
+                const hasConstrainedValues =
+                  (typeInfo?.enumeratedValues && typeInfo.enumeratedValues.length > 0) ||
+                  (typeInfo?.allowedTerritories && typeInfo.allowedTerritories.length > 0);
+
+                const constrainedValues = typeInfo?.enumeratedValues || typeInfo?.allowedTerritories || [];
+
+                return (
+                  <div key={qualifierName} className="bg-white rounded border border-gray-200 p-2">
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm font-medium text-gray-700 min-w-0 flex-shrink-0">
+                        {qualifierName}:
+                      </label>
+                      {hasConstrainedValues ? (
+                        <select
+                          value={filterState.values[qualifierName] || ''}
+                          onChange={(e) => handleFilterChange(qualifierName, e.target.value)}
+                          disabled={!filterState.enabled}
+                          className={`flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent text-sm min-w-0 ${
+                            !filterState.enabled ? 'bg-gray-100 text-gray-400' : 'bg-white'
+                          }`}
+                        >
+                          <option value="">
+                            {filterState.enabled ? `All ${qualifierName} values` : 'Disabled'}
+                          </option>
+                          {constrainedValues.map((value) => (
+                            <option key={value} value={value}>
+                              {value}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          value={filterState.values[qualifierName] || ''}
+                          onChange={(e) => handleFilterChange(qualifierName, e.target.value)}
+                          disabled={!filterState.enabled}
+                          className={`flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent text-sm min-w-0 ${
+                            !filterState.enabled ? 'bg-gray-100 text-gray-400' : ''
+                          }`}
+                          placeholder={filterState.enabled ? `Filter by ${qualifierName}` : 'Disabled'}
+                        />
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             {filterState.enabled && (
               <div className="mt-3 text-sm text-gray-600">
