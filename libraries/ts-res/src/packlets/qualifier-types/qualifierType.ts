@@ -76,6 +76,14 @@ export interface IQualifierType extends ICollectible<QualifierTypeName, Qualifie
   isValidContextValue(value: string): value is QualifierContextValue;
 
   /**
+   * Determines if a supplied condition value is a potential match for a possible context value.
+   * @param conditionValue - The condition value.
+   * @param contextValue - The context value.
+   * @returns `true` if the condition value is a potential match for the context value, `false` otherwise.
+   */
+  isPotentialMatch(conditionValue: string, contextValue: string): boolean;
+
+  /**
    * Validates that a value and optional operator are valid for use in a condition
    * for qualifiers of this type.
    * @param value - The string value to validate.
@@ -202,6 +210,16 @@ export abstract class QualifierType implements IQualifierType {
       return value.split(',').every((v) => this.isValidConditionValue(v.trim()));
     }
     /* c8 ignore next 1 - functional code tested but coverage intermittently missed */
+    return false;
+  }
+
+  /**
+   * {@inheritdoc QualifierTypes.IQualifierType.isPotentialMatch}
+   */
+  public isPotentialMatch(conditionValue: string, contextValue: string): boolean {
+    if (this.isValidConditionValue(conditionValue) && this.isValidContextValue(contextValue)) {
+      return this._matchOne(conditionValue, contextValue, 'matches') !== NoMatch;
+    }
     return false;
   }
 

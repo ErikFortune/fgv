@@ -153,6 +153,21 @@ export class LiteralQualifierType extends QualifierType {
   }
 
   /**
+   * {@inheritdoc QualifierTypes.IQualifierType.isPotentialMatch}
+   */
+  public isPotentialMatch(conditionValue: string, contextValue: string): boolean {
+    if (this.isValidConditionValue(conditionValue) && this.isValidContextValue(contextValue)) {
+      if (this._matchOne(conditionValue, contextValue, 'matches') !== NoMatch) {
+        return true;
+      }
+      if (this.hierarchy) {
+        return this.hierarchy.isAncestor(conditionValue, contextValue);
+      }
+    }
+    return false;
+  }
+
+  /**
    * {@inheritdoc QualifierTypes.QualifierType._matchOne}
    */
   protected _matchOne(

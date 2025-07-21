@@ -165,6 +165,20 @@ export class LiteralValueHierarchy<T extends string = string> {
   }
 
   /**
+   * Determines if a value is an ancestor of a possible ancestor value.
+   * @param value - The value to check.
+   * @param possibleAncestor - The possible ancestor value.
+   * @returns `true` if the value is an ancestor of the possible ancestor, `false` otherwise.
+   */
+  public isAncestor(value: T, possibleAncestor: T): boolean {
+    const ancestors = this.getAncestors(value);
+    if (ancestors.isSuccess()) {
+      return ancestors.value.includes(possibleAncestor);
+    }
+    return false;
+  }
+
+  /**
    * Gets all descendants of a value in the hierarchy.
    * @param value - The value to get descendants for.
    * @returns `Success` with an array of descendant values, or `Failure` if the value

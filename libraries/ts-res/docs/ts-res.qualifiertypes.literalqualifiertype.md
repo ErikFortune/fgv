@@ -205,6 +205,20 @@ Creates a new [LiteralQualifierType](./ts-res.qualifiertypes.literalqualifiertyp
 </td></tr>
 <tr><td>
 
+[isPotentialMatch(conditionValue, contextValue)](./ts-res.qualifiertypes.literalqualifiertype.ispotentialmatch.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Determines if a supplied condition value is a potential match for a possible context value.
+
+
+</td></tr>
+<tr><td>
+
 [isValidConditionValue(value)](./ts-res.qualifiertypes.literalqualifiertype.isvalidconditionvalue.md)
 
 

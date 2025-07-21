@@ -2115,6 +2115,7 @@ interface IQualifierDefaultValueTokenParts {
 interface IQualifierType extends ICollectible<QualifierTypeName, QualifierTypeIndex> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly index: QualifierTypeIndex | undefined;
+    isPotentialMatch(conditionValue: string, contextValue: string): boolean;
     isValidConditionValue(value: string): value is QualifierConditionValue;
     isValidContextValue(value: string): value is QualifierContextValue;
     readonly key: QualifierTypeName;
@@ -2929,6 +2930,10 @@ class LiteralQualifierType extends QualifierType {
     readonly enumeratedValues?: ReadonlyArray<QualifierConditionValue>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly hierarchy?: LiteralValueHierarchy<string>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    isPotentialMatch(conditionValue: string, contextValue: string): boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     isValidConditionValue(value: string): value is QualifierConditionValue;
     static isValidLiteralConditionValue(from: string): from is QualifierConditionValue;
@@ -2957,6 +2962,7 @@ class LiteralValueHierarchy<T extends string = string> {
     getDescendants(value: T): Result<T[]>;
     getRoots(): Result<T[]>;
     hasValue(value: T): boolean;
+    isAncestor(value: T, possibleAncestor: T): boolean;
     readonly isOpenValues: boolean;
     // (undocumented)
     match(condition: T, context: T): QualifierMatchScore;
@@ -3322,6 +3328,10 @@ abstract class QualifierType implements IQualifierType {
     //
     // (undocumented)
     get index(): QualifierTypeIndex | undefined;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    isPotentialMatch(conditionValue: string, contextValue: string): boolean;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)

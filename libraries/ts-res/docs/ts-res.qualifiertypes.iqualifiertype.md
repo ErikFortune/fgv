@@ -116,6 +116,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[isPotentialMatch(conditionValue, contextValue)](./ts-res.qualifiertypes.iqualifiertype.ispotentialmatch.md)
+
+
+</td><td>
+
+Determines if a supplied condition value is a potential match for a possible context value.
+
+
+</td></tr>
+<tr><td>
+
 [isValidConditionValue(value)](./ts-res.qualifiertypes.iqualifiertype.isvalidconditionvalue.md)
 
 

@@ -184,7 +184,7 @@ export class Condition implements IValidatedConditionDecl {
     if (!(this.qualifier.name in context) || scoreAsDefault > NoMatch) {
       return true;
     }
-    return this.getContextMatch(context, options) !== NoMatch;
+    return this.qualifier.type.isPotentialMatch(this.value, context[this.qualifier.name]);
   }
 
   /**

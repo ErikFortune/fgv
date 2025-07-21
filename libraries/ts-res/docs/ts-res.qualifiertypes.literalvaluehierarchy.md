@@ -227,6 +227,20 @@ Checks if a value exists in the hierarchy.
 </td></tr>
 <tr><td>
 
+[isAncestor(value, possibleAncestor)](./ts-res.qualifiertypes.literalvaluehierarchy.isancestor.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Determines if a value is an ancestor of a possible ancestor value.
+
+
+</td></tr>
+<tr><td>
+
 [match(condition, context)](./ts-res.qualifiertypes.literalvaluehierarchy.match.md)
 
 

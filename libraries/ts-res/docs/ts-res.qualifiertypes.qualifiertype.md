@@ -267,6 +267,20 @@ Compares two qualifier types by index.
 </td></tr>
 <tr><td>
 
+[isPotentialMatch(conditionValue, contextValue)](./ts-res.qualifiertypes.qualifiertype.ispotentialmatch.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Determines if a supplied condition value is a potential match for a possible context value.
+
+
+</td></tr>
+<tr><td>
+
 [isValidConditionValue(value)](./ts-res.qualifiertypes.qualifiertype.isvalidconditionvalue.md)
 
 
