@@ -21,6 +21,7 @@ import {
 } from '../../utils/tsResIntegration';
 import { fileImporter } from '../../utils/fileImport';
 import { Result } from '@fgv/ts-utils';
+import { useUrlParams } from '../../hooks/useUrlParams';
 
 interface ConfigurationToolProps {
   onMessage?: (type: Message['type'], message: string) => void;
@@ -38,6 +39,7 @@ const ConfigurationTool: React.FC<ConfigurationToolProps> = ({
   onSaveHandlerRef
 }) => {
   const { state: resourceState } = resourceManager;
+  const { urlParams } = useUrlParams();
   const [activePanel, setActivePanel] = useState<ActivePanel>('qualifiers');
 
   // Check if we have processed resources
@@ -84,7 +86,8 @@ const ConfigurationTool: React.FC<ConfigurationToolProps> = ({
     try {
       const fileResult = await fileImporter.pickFiles({
         acceptedTypes: ['.json'],
-        multiple: false
+        multiple: false,
+        startIn: urlParams.configStartDir
       });
 
       if (fileResult.isFailure()) {

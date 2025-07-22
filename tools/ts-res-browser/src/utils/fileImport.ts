@@ -18,6 +18,7 @@ export interface FileImportOptions {
   acceptedTypes?: string[];
   multiple?: boolean;
   includeDirectories?: boolean;
+  startIn?: string | FileSystemHandle;
 }
 
 /**
@@ -34,7 +35,7 @@ export class ModernFileImporter {
   /**
    * Pick a directory using File System Access API
    */
-  async pickDirectory(): Promise<Result<ImportedDirectory>> {
+  async pickDirectory(options: FileImportOptions = {}): Promise<Result<ImportedDirectory>> {
     try {
       if (!isFileSystemAccessSupported()) {
         return fail('File System Access API not supported');
@@ -42,7 +43,7 @@ export class ModernFileImporter {
 
       const directoryHandle = await window.showDirectoryPicker({
         mode: 'read',
-        startIn: 'documents'
+        startIn: options.startIn || 'documents'
       });
 
       const importedDirectory = await this.processDirectoryHandle(directoryHandle);
@@ -76,7 +77,8 @@ export class ModernFileImporter {
               }
             ]
           : undefined,
-        excludeAcceptAllOption: false
+        excludeAcceptAllOption: false,
+        startIn: options.startIn || 'documents'
       });
 
       const importedFiles: ImportedFile[] = [];
@@ -303,9 +305,9 @@ export class FileImporter {
   /**
    * Pick a directory using the best available method
    */
-  async pickDirectory(): Promise<Result<ImportedDirectory>> {
+  async pickDirectory(options: FileImportOptions = {}): Promise<Result<ImportedDirectory>> {
     if (isFileSystemAccessSupported()) {
-      return this.modernImporter.pickDirectory();
+      return this.modernImporter.pickDirectory(options);
     } else {
       return this.fallbackImporter.pickDirectory();
     }

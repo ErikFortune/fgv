@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Result, succeed, fail } from '@fgv/ts-utils';
+import { Result, succeed, fail, FileTree } from '@fgv/ts-utils';
 import {
   ProcessedResources,
   processImportedDirectory,
@@ -7,6 +7,7 @@ import {
   createSimpleContext
 } from '../utils/tsResIntegration';
 import { ImportedDirectory, ImportedFile } from '../utils/fileImport';
+import { FileTreeConverter } from '../utils/fileTreeConverter';
 import { Config } from '@fgv/ts-res';
 
 export interface ResourceManagerState {
@@ -22,6 +23,7 @@ export interface UseResourceManagerReturn {
   actions: {
     processDirectory: (directory: ImportedDirectory) => Promise<void>;
     processFiles: (files: ImportedFile[]) => Promise<void>;
+    processFileTree: (fileTree: FileTree.FileTree, rootPath?: string) => Promise<void>;
     clearError: () => void;
     reset: () => void;
     resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<any>>;
@@ -216,6 +218,54 @@ export const useResourceManager = (): UseResourceManagerReturn => {
     [state.processedResources]
   );
 
+  const processFileTree = useCallback(
+    async (fileTree: FileTree.FileTree, rootPath: string = '/') => {
+      console.log('=== STARTING FILETREE PROCESSING ===');
+      console.log('Root path:', rootPath);
+
+      setState((prev) => ({ ...prev, isProcessing: true, error: null }));
+
+      try {
+        console.log('1. Converting FileTree to ImportedDirectory/Files...');
+
+        const convertResult = FileTreeConverter.convertPath(fileTree, rootPath);
+        if (convertResult.isFailure()) {
+          setState((prev) => ({
+            ...prev,
+            isProcessing: false,
+            error: `Failed to convert FileTree: ${convertResult.message}`
+          }));
+          return;
+        }
+
+        const converted = convertResult.value;
+        console.log('2. FileTree converted successfully');
+
+        // Process based on whether we got a directory or files
+        if (Array.isArray(converted)) {
+          // Got files
+          console.log('3. Processing as files, count:', converted.length);
+          await processFiles(converted);
+        } else {
+          // Got directory
+          console.log('3. Processing as directory:', converted.name);
+          await processDirectory(converted);
+        }
+
+        console.log('4. processFileTree completed successfully');
+      } catch (error) {
+        console.error('=== FILETREE PROCESSING ERROR ===');
+        console.error('Error:', error);
+        setState((prev) => ({
+          ...prev,
+          isProcessing: false,
+          error: `Unexpected error: ${error instanceof Error ? error.message : String(error)}`
+        }));
+      }
+    },
+    [processFiles, processDirectory]
+  );
+
   const applyConfiguration = useCallback((config: Config.Model.ISystemConfiguration) => {
     console.log('Applying configuration:', config.name || 'Unnamed configuration');
     setState((prev) => ({
@@ -233,6 +283,7 @@ export const useResourceManager = (): UseResourceManagerReturn => {
     actions: {
       processDirectory,
       processFiles,
+      processFileTree,
       clearError,
       reset,
       resolveResource,

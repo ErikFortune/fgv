@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-res-browser",
-  "version": "1.0.0",
+  "version": "5.0.0-2",
   "description": "Visual browser tool for ts-res resources",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -35,7 +35,11 @@
     "@heroicons/react": "~2.2.0",
     "core-js": "~3.44.0",
     "whatwg-fetch": "~3.6.20",
-    "@rushstack/heft-web-rig": "~0.29.0"
+    "@rushstack/heft-web-rig": "~0.29.0",
+    "@fgv/ts-extras": "workspace:*",
+    "jszip": "~3.10.1",
+    "browserify-zlib": "~0.2.0",
+    "assert": "~2.1.0"
   },
   "devDependencies": {
     "@fgv/ts-utils-jest": "workspace:*",
@@ -73,6 +77,7 @@
     "@rushstack/heft-jest-plugin": "~0.16.9",
     "@rushstack/heft-lint-plugin": "~0.7.0",
     "@rushstack/heft-sass-plugin": "~0.17.8",
-    "@rushstack/heft-webpack5-plugin": "~0.11.34"
+    "@rushstack/heft-webpack5-plugin": "~0.11.34",
+    "@types/jszip": "~3.4.1"
   }
 }

@@ -12,12 +12,14 @@ interface FileImporterProps {
   onDirectoryImported?: (directory: ImportedDirectory) => void;
   onFilesImported?: (files: ImportedFile[]) => void;
   onError?: (error: string) => void;
+  startInDirectory?: string;
 }
 
 export const FileImporter: React.FC<FileImporterProps> = ({
   onDirectoryImported,
   onFilesImported,
-  onError
+  onError,
+  startInDirectory
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [importMethod, setImportMethod] = useState<'modern' | 'fallback'>(
@@ -27,7 +29,9 @@ export const FileImporter: React.FC<FileImporterProps> = ({
   const handleDirectoryImport = useCallback(async () => {
     setIsLoading(true);
     try {
-      const result = await fileImporter.pickDirectory();
+      const result = await fileImporter.pickDirectory({
+        startIn: startInDirectory
+      });
 
       if (result.isSuccess()) {
         onDirectoryImported?.(result.value);
@@ -39,14 +43,15 @@ export const FileImporter: React.FC<FileImporterProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [onDirectoryImported, onError]);
+  }, [onDirectoryImported, onError, startInDirectory]);
 
   const handleFileImport = useCallback(async () => {
     setIsLoading(true);
     try {
       const result = await fileImporter.pickFiles({
         acceptedTypes: ['.json'],
-        multiple: true
+        multiple: true,
+        startIn: startInDirectory
       });
 
       if (result.isSuccess()) {
@@ -59,7 +64,7 @@ export const FileImporter: React.FC<FileImporterProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [onFilesImported, onError]);
+  }, [onFilesImported, onError, startInDirectory]);
 
   return (
     <div className="space-y-4">

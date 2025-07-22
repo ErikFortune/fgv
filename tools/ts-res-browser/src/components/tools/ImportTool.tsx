@@ -4,6 +4,7 @@ import { Message } from '../../types/app';
 import { UseFileImportReturn } from '../../hooks/useFileImport';
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import FileImporter from '../common/FileImporter';
+import { useUrlParams } from '../../hooks/useUrlParams';
 
 interface ImportToolProps {
   onMessage: (type: Message['type'], message: string) => void;
@@ -14,6 +15,7 @@ interface ImportToolProps {
 const ImportTool: React.FC<ImportToolProps> = ({ onMessage, fileImport, resourceManager }) => {
   const { state: fileImportState, actions: fileImportActions } = fileImport;
   const { state: resourceState, actions: resourceActions } = resourceManager;
+  const { urlParams } = useUrlParams();
 
   // Track if we've already processed the current import to prevent infinite loops
   const lastProcessedImport = useRef<{
@@ -114,6 +116,7 @@ const ImportTool: React.FC<ImportToolProps> = ({ onMessage, fileImport, resource
             onDirectoryImported={fileImportActions.handleDirectoryImport}
             onFilesImported={fileImportActions.handleFilesImport}
             onError={fileImportActions.handleError}
+            startInDirectory={urlParams.inputStartDir}
           />
         </div>
 

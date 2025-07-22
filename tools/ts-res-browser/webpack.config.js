@@ -16,12 +16,18 @@ module.exports = {
       crypto: require.resolve('crypto-browserify'),
       stream: require.resolve('stream-browserify'),
       util: require.resolve('util'),
-      buffer: require.resolve('buffer'),
+      buffer: require.resolve('buffer/'),
       process: require.resolve('process/browser'),
+      zlib: require.resolve('browserify-zlib'),
+      assert: require.resolve('assert/'),
       // Remove fs and path since we're using in-memory FileTree
       fs: false,
       path: false,
       vm: false
+    },
+    alias: {
+      // Replace the Node.js ZIP implementation with empty module
+      'adm-zip': false
     }
   },
   module: {
