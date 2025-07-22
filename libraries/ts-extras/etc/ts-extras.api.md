@@ -235,20 +235,15 @@ export { RecordJar }
 // @public
 function templateString(defaultContext?: unknown): Conversion.StringConverter<string, unknown>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IFileTreeDirectoryItem"
-//
 // @public
 class ZipDirectoryItem implements FileTree.IFileTreeDirectoryItem {
     constructor(directoryPath: string, accessors: ZipFileTreeAccessors);
     readonly absolutePath: string;
     getChildren(): Result<ReadonlyArray<FileTree.FileTreeItem>>;
     readonly name: string;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
     readonly type: 'directory';
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
-//
 // @public
 class ZipFileItem implements FileTree.IFileTreeFileItem {
     constructor(zipFilePath: string, contents: string, accessors: ZipFileTreeAccessors);
@@ -260,7 +255,6 @@ class ZipFileItem implements FileTree.IFileTreeFileItem {
     getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
     getRawContents(): Result<string>;
     readonly name: string;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
     readonly type: 'file';
 }
 

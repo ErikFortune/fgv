@@ -24,12 +24,12 @@ import AdmZip from 'adm-zip';
 import { Result, succeed, fail, captureResult, Converter, Validator, FileTree } from '@fgv/ts-utils';
 
 /**
- * Implementation of {@link FileTree.IFileTreeFileItem} for files in a ZIP archive.
+ * Implementation of `FileTree.IFileTreeFileItem` for files in a ZIP archive.
  * @public
  */
 export class ZipFileItem implements FileTree.IFileTreeFileItem {
   /**
-   * Indicates that this {@link FileTree.FileTreeItem} is a file.
+   * Indicates that this `FileTree.FileTreeItem` is a file.
    */
   public readonly type: 'file' = 'file';
 
@@ -114,12 +114,12 @@ export class ZipFileItem implements FileTree.IFileTreeFileItem {
 }
 
 /**
- * Implementation of {@link IFileTreeDirectoryItem} for directories in a ZIP archive.
+ * Implementation of `IFileTreeDirectoryItem` for directories in a ZIP archive.
  * @public
  */
 export class ZipDirectoryItem implements FileTree.IFileTreeDirectoryItem {
   /**
-   * Indicates that this {@link FileTree.FileTreeItem} is a directory.
+   * Indicates that this `FileTree.FileTreeItem` is a directory.
    */
   public readonly type: 'directory' = 'directory';
 
