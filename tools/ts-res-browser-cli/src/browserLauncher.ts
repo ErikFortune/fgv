@@ -39,11 +39,12 @@ export class BrowserLauncher {
   public async launch(options: IBrowseOptions): Promise<Result<void>> {
     try {
       // Validate options before proceeding
-      if (options.interactive && !options.dev && !options.url) {
+      if (options.interactive && !options.dev && !options.serve && !options.url) {
         return fail(
-          'Interactive mode requires either --dev to start a local server or --url to specify a remote server.\n\n' +
+          'Interactive mode requires either --dev/--serve to start a local server or --url to specify a remote server.\n\n' +
             'Examples:\n' +
             '  ts-res-browser-cli --interactive --dev\n' +
+            '  ts-res-browser-cli --interactive --serve\n' +
             '  ts-res-browser-cli --interactive --url https://example.com/ts-res-browser'
         );
       }
@@ -80,8 +81,8 @@ export class BrowserLauncher {
         zipCreated = true;
       }
 
-      // Start development server if requested
-      if (finalOptions.dev && !finalOptions.url) {
+      // Start development server or serve if requested
+      if ((finalOptions.dev || finalOptions.serve) && !finalOptions.url) {
         if (!finalOptions.quiet) {
           console.log('Starting TS-RES Browser development server...');
         }
@@ -248,17 +249,37 @@ export class BrowserLauncher {
           stdio: options.verbose ? 'inherit' : ['ignore', 'pipe', 'pipe']
         });
       } else {
-        // Published packages: dev server not available
-        return fail(
-          'Development server is not available in published packages.\n\n' +
-            'The dev server requires webpack-cli and webpack-dev-server which are\n' +
-            'not included in published packages to keep them lightweight.\n\n' +
-            'To use the development server:\n' +
-            '1. Clone the repository\n' +
-            '2. Install dependencies: rush install\n' +
-            '3. Run: rushx dev from tools/ts-res-browser\n\n' +
-            'For published packages, omit the --dev flag to use static serving.'
-        );
+        // Published packages: dev server not available, but serve flag can use serve command
+        if (options.serve) {
+          // Use serve command for --serve flag in published packages
+          const servePort = 8080;
+
+          if (options.verbose) {
+            console.log('Using published ts-res-browser package with serve command');
+            console.log(`Serving on port ${servePort} (published packages use serve instead of dev)`);
+          }
+
+          // For published packages with --serve, use serve command
+          this._devServer = spawn('npx', ['ts-res-browser', 'serve', servePort.toString()], {
+            env,
+            stdio: options.verbose ? 'inherit' : ['ignore', 'pipe', 'pipe']
+          });
+
+          // Update the port for URL building
+          options.port = servePort;
+        } else {
+          // --dev flag not supported in published packages
+          return fail(
+            'Development server is not available in published packages.\n\n' +
+              'The dev server requires webpack-cli and webpack-dev-server which are\n' +
+              'not included in published packages to keep them lightweight.\n\n' +
+              'To use the development server:\n' +
+              '1. Clone the repository\n' +
+              '2. Install dependencies: rush install\n' +
+              '3. Run: rushx dev from tools/ts-res-browser\n\n' +
+              'For published packages, use --serve flag instead of --dev.'
+          );
+        }
       }
 
       this._devServer.on('error', (error) => {

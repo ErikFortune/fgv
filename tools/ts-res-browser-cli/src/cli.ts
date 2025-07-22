@@ -89,6 +89,11 @@ export class TsResBrowserCliApp {
       .option('--no-open', 'Do not open browser automatically')
       .option('--interactive', 'Launch in interactive mode with sample data', false)
       .option('--dev', 'Automatically start development server locally', false)
+      .option(
+        '--serve',
+        'Start server (dev in monorepo, serve in published packages) and connect automatically',
+        false
+      )
       .action(async (options) => {
         // If no options provided, show help
         if (!this._hasOptions(options)) {
@@ -130,6 +135,11 @@ export class TsResBrowserCliApp {
       .option('--no-open', 'Do not open browser automatically')
       .option('--interactive', 'Launch in interactive mode with sample data', false)
       .option('--dev', 'Automatically start development server locally', false)
+      .option(
+        '--serve',
+        'Start server (dev in monorepo, serve in published packages) and connect automatically',
+        false
+      )
       .action(async (options) => {
         await this._handleBrowseCommand(options);
       });
@@ -167,7 +177,8 @@ export class TsResBrowserCliApp {
       options.reduceQualifiers ||
       options.interactive ||
       options.url ||
-      options.dev
+      options.dev ||
+      options.serve
     );
   }
 
@@ -398,7 +409,8 @@ export class TsResBrowserCliApp {
         url: options.url,
         open: options.open,
         interactive: options.interactive || false,
-        dev: options.dev || false
+        dev: options.dev || false,
+        serve: options.serve || false
       };
 
       return succeed(browseOptions);

@@ -96,6 +96,11 @@ export interface IBrowseOptions {
   dev?: boolean;
 
   /**
+   * Whether to start server (dev in monorepo, serve in published packages) and connect automatically
+   */
+  serve?: boolean;
+
+  /**
    * Whether to use ZIP loading mode (internal flag)
    */
   loadZip?: boolean;
@@ -130,4 +135,5 @@ export interface IBrowseCommandOptions {
   interactive?: boolean;
   url?: string;
   dev?: boolean;
+  serve?: boolean;
 }
