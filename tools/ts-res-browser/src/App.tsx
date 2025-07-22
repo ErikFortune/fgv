@@ -132,7 +132,7 @@ const App: React.FC = () => {
         actions.setSelectedTool('source');
       }
     }
-  }, [hasUrlParams]); // Remove urlParams and actions to prevent re-runs
+  }, [hasUrlParams]); // Depend on hasUrlParams to handle async URL param loading; ref prevents duplicate initialization
 
   // Handle navigation with unsaved changes check
   const handleToolSelect = useCallback(

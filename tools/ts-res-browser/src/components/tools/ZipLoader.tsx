@@ -8,6 +8,18 @@ import {
 } from '@heroicons/react/24/outline';
 import { Message } from '../../types/app';
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
+
+// File System Access API types (not available in all TypeScript versions)
+interface FileSystemAccessWindow extends Window {
+  showOpenFilePicker?: (options?: {
+    types?: Array<{
+      description: string;
+      accept: Record<string, string[]>;
+    }>;
+    startIn?: string;
+    multiple?: boolean;
+  }) => Promise<FileSystemFileHandle[]>;
+}
 import { BrowserZipFileTreeAccessors } from '../../utils/zip/browserZipFileTreeAccessors';
 import { FileTree } from '@fgv/ts-utils';
 
@@ -67,9 +79,12 @@ const ZipLoader: React.FC<ZipLoaderProps> = ({
       // Try to load the ZIP file using File System Access API
       let fileHandle: FileSystemFileHandle | null = null;
 
-      if ('showOpenFilePicker' in window) {
+      // Check if File System Access API is available
+      const fileSystemWindow = window as FileSystemAccessWindow;
+
+      if (fileSystemWindow.showOpenFilePicker) {
         try {
-          const [handle] = await (window as any).showOpenFilePicker({
+          const [handle] = await fileSystemWindow.showOpenFilePicker({
             types: [
               {
                 description: 'ZIP Archives',
