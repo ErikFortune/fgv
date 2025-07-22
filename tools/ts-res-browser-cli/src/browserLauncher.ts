@@ -239,15 +239,22 @@ export class BrowserLauncher {
         });
       } else {
         // Published packages: use serve command since dev requires webpack-cli
+        // Use port 8080 for serve command (default serve port)
+        const servePort = 8080;
+
         if (options.verbose) {
           console.log('Using published ts-res-browser package with serve command');
+          console.log(`Serving on port ${servePort} (published packages use serve instead of dev)`);
         }
 
-        // For published packages, we need to build first, then serve
-        this._devServer = spawn('npx', ['ts-res-browser', 'serve', port.toString()], {
+        // For published packages, use serve command
+        this._devServer = spawn('npx', ['ts-res-browser', 'serve', servePort.toString()], {
           env,
           stdio: options.verbose ? 'inherit' : ['ignore', 'pipe', 'pipe']
         });
+
+        // Update the port for URL building
+        options.port = servePort;
       }
 
       this._devServer.on('error', (error) => {
