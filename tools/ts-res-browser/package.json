@@ -7,6 +7,13 @@
   "bin": {
     "ts-res-browser": "./cli.js"
   },
+  "files": [
+    "cli.js",
+    "dist/**/*",
+    "lib/**/*",
+    "README.md",
+    "package.json"
+  ],
   "scripts": {
     "build": "webpack --mode production",
     "dev": "webpack serve --mode development",
@@ -39,7 +46,8 @@
     "@fgv/ts-extras": "workspace:*",
     "jszip": "~3.10.1",
     "browserify-zlib": "~0.2.0",
-    "assert": "~2.1.0"
+    "assert": "~2.1.0",
+    "serve-handler": "~6.1.6"
   },
   "devDependencies": {
     "@fgv/ts-utils-jest": "workspace:*",

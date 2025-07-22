@@ -218,22 +218,36 @@ export class BrowserLauncher {
    */
   private async _startDevServer(options: IBrowseOptions): Promise<Result<void>> {
     try {
-      // Find the ts-res-browser project directory
-      // Assume we're running from tools/ts-res-browser-cli, so go up and over to tools/ts-res-browser
-      const browserProjectPath = path.resolve(__dirname, '../../ts-res-browser');
-
-      if (options.verbose) {
-        console.log(`Looking for ts-res-browser at: ${browserProjectPath}`);
-      }
-
       const port = options.port || 3000;
       const env = { ...process.env, PORT: port.toString() };
 
-      this._devServer = spawn('rushx', ['dev'], {
-        cwd: browserProjectPath,
-        env,
-        stdio: options.verbose ? 'inherit' : ['ignore', 'pipe', 'pipe']
-      });
+      // Detect if we're in a monorepo or using published packages
+      const isMonorepo = this._isMonorepoEnvironment();
+
+      if (isMonorepo) {
+        // Monorepo development: use rushx from sibling project
+        const browserProjectPath = path.resolve(__dirname, '../../ts-res-browser');
+
+        if (options.verbose) {
+          console.log(`Looking for ts-res-browser at: ${browserProjectPath}`);
+        }
+
+        this._devServer = spawn('rushx', ['dev'], {
+          cwd: browserProjectPath,
+          env,
+          stdio: options.verbose ? 'inherit' : ['ignore', 'pipe', 'pipe']
+        });
+      } else {
+        // Published packages: call ts-res-browser CLI directly
+        if (options.verbose) {
+          console.log('Using published ts-res-browser package');
+        }
+
+        this._devServer = spawn('npx', ['ts-res-browser', 'dev', port.toString()], {
+          env,
+          stdio: options.verbose ? 'inherit' : ['ignore', 'pipe', 'pipe']
+        });
+      }
 
       this._devServer.on('error', (error) => {
         return fail(`Failed to start development server: ${error}`);
@@ -325,6 +339,32 @@ export class BrowserLauncher {
    */
   private _sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Detects if we're running in a monorepo environment
+   */
+  private _isMonorepoEnvironment(): boolean {
+    try {
+      // Check if we have a rush.json file in parent directories (indicating monorepo)
+      let currentDir = __dirname;
+      for (let i = 0; i < 5; i++) {
+        // Look up to 5 levels up
+        const rushJsonPath = path.join(currentDir, 'rush.json');
+        if (fs.existsSync(rushJsonPath)) {
+          return true;
+        }
+        currentDir = path.dirname(currentDir);
+      }
+
+      // Also check if ts-res-browser sibling directory exists
+      const browserProjectPath = path.resolve(__dirname, '../../ts-res-browser');
+      return (
+        fs.existsSync(browserProjectPath) && fs.existsSync(path.join(browserProjectPath, 'package.json'))
+      );
+    } catch {
+      return false;
+    }
   }
 
   /**
