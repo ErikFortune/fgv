@@ -238,23 +238,17 @@ export class BrowserLauncher {
           stdio: options.verbose ? 'inherit' : ['ignore', 'pipe', 'pipe']
         });
       } else {
-        // Published packages: use serve command since dev requires webpack-cli
-        // Use port 8080 for serve command (default serve port)
-        const servePort = 8080;
-
-        if (options.verbose) {
-          console.log('Using published ts-res-browser package with serve command');
-          console.log(`Serving on port ${servePort} (published packages use serve instead of dev)`);
-        }
-
-        // For published packages, use serve command
-        this._devServer = spawn('npx', ['ts-res-browser', 'serve', servePort.toString()], {
-          env,
-          stdio: options.verbose ? 'inherit' : ['ignore', 'pipe', 'pipe']
-        });
-
-        // Update the port for URL building
-        options.port = servePort;
+        // Published packages: dev server not available
+        return fail(
+          'Development server is not available in published packages.\n\n' +
+            'The dev server requires webpack-cli and webpack-dev-server which are\n' +
+            'not included in published packages to keep them lightweight.\n\n' +
+            'To use the development server:\n' +
+            '1. Clone the repository\n' +
+            '2. Install dependencies: rush install\n' +
+            '3. Run: rushx dev from tools/ts-res-browser\n\n' +
+            'For published packages, omit the --dev flag to use static serving.'
+        );
       }
 
       this._devServer.on('error', (error) => {
