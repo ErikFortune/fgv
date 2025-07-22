@@ -17,19 +17,28 @@ Command-line interface to launch ts-res-browser with specified resources and con
 npm install -g @fgv/ts-res-browser-cli
 ```
 
+Or use directly with npx (no installation required):
+
+```bash
+npx @fgv/ts-res-browser-cli --help
+```
+
 ## Usage
 
 ### Basic Usage
 
 ```bash
 # Launch browser with resources from a directory
-ts-res-browser-cli browse --input ./resources --config default
+ts-res-browser-cli browse --input ./resources --config default --serve
+
+# With npx (no installation required)
+npx @fgv/ts-res-browser-cli --input ./resources --config default --serve
 
 # Launch with a specific configuration file
-ts-res-browser-cli browse --input ./my-resources --config ./config.json
+ts-res-browser-cli browse --input ./my-resources --config ./config.json --serve
 
 # Create ZIP and launch without opening browser automatically
-ts-res-browser-cli browse --input ./resources --config extended-example --no-open
+ts-res-browser-cli browse --input ./resources --config extended-example --serve --no-open
 ```
 
 ### ZIP Workflow
@@ -42,18 +51,32 @@ The CLI automatically creates ZIP archives containing your resources and configu
 
 ```bash
 # Creates: ~/Downloads/ts-res-bundle-[timestamp].zip
-ts-res-browser-cli browse --input ./resources --config my-config
+ts-res-browser-cli browse --input ./resources --config my-config --serve
 ```
 
-### Development Server
+### Server Options
+
+The CLI provides several ways to launch the browser with a server:
 
 ```bash
-# Automatically start development server locally
+# Recommended: Universal server start (works everywhere)
+ts-res-browser-cli browse --input ./resources --serve
+
+# Development server (monorepo environment only)  
 ts-res-browser-cli browse --input ./resources --dev
 
-# Use existing server at custom URL  
+# Connect to existing server
 ts-res-browser-cli browse --input ./resources --url http://localhost:3001
 ```
+
+**Server Flag Behavior:**
+- `--serve`: Works in both monorepo and published packages
+  - **Monorepo**: Starts webpack dev server with hot reloading (port 3000)
+  - **Published packages**: Starts static file server (port 8080)
+- `--dev`: Development server with hot reloading (monorepo only)
+  - **Monorepo**: Same as `--serve` 
+  - **Published packages**: Shows error with instructions to use `--serve`
+- `--url`: Connect to existing server at specified URL
 
 ### Advanced Options
 
@@ -64,8 +87,8 @@ ts-res-browser-cli browse \
   --context-filter "language=en-US|territory=US" \
   --reduce-qualifiers
 
-# Interactive mode with sample data
-ts-res-browser-cli browse --interactive
+# Interactive mode with sample data (requires server)
+ts-res-browser-cli browse --interactive --serve
 
 # Verbose output
 ts-res-browser-cli browse --input ./resources --verbose
@@ -89,8 +112,9 @@ Launch ts-res-browser with specified resources and configuration.
 - `-p, --port <number>`: Port for local browser instance
 - `--url <url>`: URL of remote browser instance
 - `--no-open`: Do not open browser automatically
-- `--interactive`: Launch in interactive mode with sample data
-- `--dev`: Automatically start development server locally
+- `--interactive`: Launch in interactive mode with sample data (requires --serve, --dev, or --url)
+- `--serve`: Start server (dev in monorepo, serve in published packages) and connect automatically
+- `--dev`: Start development server locally (monorepo only)
 - `-v, --verbose`: Verbose output
 - `-q, --quiet`: Quiet output
 
