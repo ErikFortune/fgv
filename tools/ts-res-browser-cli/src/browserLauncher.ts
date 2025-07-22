@@ -238,12 +238,13 @@ export class BrowserLauncher {
           stdio: options.verbose ? 'inherit' : ['ignore', 'pipe', 'pipe']
         });
       } else {
-        // Published packages: call ts-res-browser CLI directly
+        // Published packages: use serve command since dev requires webpack-cli
         if (options.verbose) {
-          console.log('Using published ts-res-browser package');
+          console.log('Using published ts-res-browser package with serve command');
         }
 
-        this._devServer = spawn('npx', ['ts-res-browser', 'dev', port.toString()], {
+        // For published packages, we need to build first, then serve
+        this._devServer = spawn('npx', ['ts-res-browser', 'serve', port.toString()], {
           env,
           stdio: options.verbose ? 'inherit' : ['ignore', 'pipe', 'pipe']
         });

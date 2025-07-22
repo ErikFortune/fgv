@@ -12,6 +12,25 @@ const distPath = path.join(projectRoot, 'dist');
 const hasBuiltFiles = fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html'));
 
 function startDevServer(port = 3000) {
+  // Check if we have webpack-cli available (needed for dev server)
+  try {
+    require.resolve('webpack-cli');
+    require.resolve('webpack-dev-server');
+  } catch (error) {
+    console.error('❌ Development server is not available in the published package.');
+    console.error('');
+    console.error('The dev server requires webpack-cli and webpack-dev-server which are');
+    console.error('not included in the published package to keep it lightweight.');
+    console.error('');
+    console.error('To use the development server:');
+    console.error('1. Clone the repository: git clone <repo-url>');
+    console.error('2. Install dependencies: rush install');
+    console.error('3. Run: rushx dev');
+    console.error('');
+    console.error('For production use, run: ts-res-browser serve');
+    process.exit(1);
+  }
+
   const packageManager = fs.existsSync(path.join(projectRoot, 'package-lock.json'))
     ? 'npm'
     : fs.existsSync(path.join(projectRoot, 'yarn.lock'))
@@ -104,7 +123,7 @@ switch (command) {
     console.log('TS-RES Browser CLI');
     console.log('');
     console.log('Usage:');
-    console.log('  ts-res-browser dev    - Start development server');
+    console.log('  ts-res-browser dev    - Start development server (requires dev dependencies)');
     console.log('  ts-res-browser build  - Build for production');
     console.log('  ts-res-browser serve  - Serve built files');
     console.log('');
@@ -112,10 +131,26 @@ switch (command) {
     console.log('  ts-res-browser dev [port]   - Start dev server on specific port');
     console.log('  ts-res-browser serve [port] - Serve on specific port');
     console.log('');
+
+    // Check if dev dependencies are available
+    let hasDevDeps = false;
+    try {
+      require.resolve('webpack-cli');
+      require.resolve('webpack-dev-server');
+      hasDevDeps = true;
+    } catch (error) {
+      // Dev dependencies not available
+    }
+
     if (hasBuiltFiles) {
       console.log('✅ Built files found - you can run "ts-res-browser serve"');
     } else {
       console.log('⚠️  No built files - run "ts-res-browser build" first');
+    }
+
+    if (!hasDevDeps) {
+      console.log('ℹ️  Development server not available in published package');
+      console.log('   Use "ts-res-browser serve" for production serving');
     }
     break;
 }
