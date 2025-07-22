@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Erik Fortune
+ * Copyright (c) 2025 Erik Fortune
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +20,14 @@
  * SOFTWARE.
  */
 
-import * as Csv from './packlets/csv';
-import * as Experimental from './packlets/experimental';
-import * as Hash from './packlets/hash';
-import * as RecordJar from './packlets/record-jar';
-import * as ZipFileTree from './packlets/zip-file-tree';
+/**
+ * ZIP-based FileTree implementation for ts-extras.
+ *
+ * This packlet provides a FileTree accessor implementation that can read from ZIP archives,
+ * making it useful for browser environments where files need to be bundled and transferred
+ * as a single archive.
+ *
+ * @packageDocumentation
+ */
 
-import { Converters } from './packlets/conversion';
-
-export { Converters, Csv, Experimental, Hash, RecordJar, ZipFileTree };
+export { ZipFileTreeAccessors, ZipFileItem, ZipDirectoryItem } from './zipFileTreeAccessors';

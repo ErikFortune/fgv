@@ -6,8 +6,10 @@
 
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-utils';
 import { Hash as Hash_2 } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
+import { Validator } from '@fgv/ts-utils';
 
 declare namespace Converters {
     export {
@@ -232,6 +234,57 @@ export { RecordJar }
 
 // @public
 function templateString(defaultContext?: unknown): Conversion.StringConverter<string, unknown>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IFileTreeDirectoryItem"
+//
+// @public
+class ZipDirectoryItem implements FileTree.IFileTreeDirectoryItem {
+    constructor(directoryPath: string, accessors: ZipFileTreeAccessors);
+    readonly absolutePath: string;
+    getChildren(): Result<ReadonlyArray<FileTree.FileTreeItem>>;
+    readonly name: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
+    readonly type: 'directory';
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
+//
+// @public
+class ZipFileItem implements FileTree.IFileTreeFileItem {
+    constructor(zipFilePath: string, contents: string, accessors: ZipFileTreeAccessors);
+    readonly absolutePath: string;
+    readonly baseName: string;
+    readonly extension: string;
+    getContents(): Result<unknown>;
+    // (undocumented)
+    getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
+    getRawContents(): Result<string>;
+    readonly name: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
+    readonly type: 'file';
+}
+
+declare namespace ZipFileTree {
+    export {
+        ZipFileTreeAccessors,
+        ZipFileItem,
+        ZipDirectoryItem
+    }
+}
+export { ZipFileTree }
+
+// @public
+class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors {
+    static fromBuffer(zipBuffer: ArrayBuffer | Uint8Array, prefix?: string): Result<ZipFileTreeAccessors>;
+    static fromFile(file: File, prefix?: string): Promise<Result<ZipFileTreeAccessors>>;
+    getBaseName(path: string, suffix?: string): string;
+    getChildren(path: string): Result<ReadonlyArray<FileTree.FileTreeItem>>;
+    getExtension(path: string): string;
+    getFileContents(path: string): Result<string>;
+    getItem(path: string): Result<FileTree.FileTreeItem>;
+    joinPaths(...paths: string[]): string;
+    resolveAbsolutePath(...paths: string[]): string;
+}
 
 // (No @packageDocumentation comment for this package)
 
