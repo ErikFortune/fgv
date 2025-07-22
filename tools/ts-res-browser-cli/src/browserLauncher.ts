@@ -38,6 +38,16 @@ export class BrowserLauncher {
    */
   public async launch(options: IBrowseOptions): Promise<Result<void>> {
     try {
+      // Validate options before proceeding
+      if (options.interactive && !options.dev && !options.url) {
+        return fail(
+          'Interactive mode requires either --dev to start a local server or --url to specify a remote server.\n\n' +
+            'Examples:\n' +
+            '  ts-res-browser-cli --interactive --dev\n' +
+            '  ts-res-browser-cli --interactive --url https://example.com/ts-res-browser'
+        );
+      }
+
       // Check if we need to create a ZIP archive for file-based inputs
       let zipCreated = false;
       let finalOptions = { ...options };
