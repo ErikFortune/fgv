@@ -95,12 +95,12 @@ export class BrowserZipFileItem implements FileTree.IFileTreeFileItem {
             }
           }
           return succeed(parsed);
-        }).onFailure(() => {
-          return fail(`Failed to parse JSON from file: ${this.absolutePath}`);
+        }).onFailure((err) => {
+          return fail(`${this.absolutePath}: JSON parse error: ${err}`);
         });
       })
       .onFailure((error) => {
-        return fail(`Failed to get contents from file: ${error}`);
+        return fail(`${this.absolutePath}: read raw contents failed${error}`);
       });
   }
 
