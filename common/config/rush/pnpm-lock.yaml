@@ -918,6 +918,9 @@ importers:
       '@fgv/ts-res':
         specifier: workspace:*
         version: link:../../libraries/ts-res
+      '@fgv/ts-res-browser':
+        specifier: workspace:*
+        version: link:../ts-res-browser
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../../libraries/ts-utils

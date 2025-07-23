@@ -20,19 +20,17 @@
  * SOFTWARE.
  */
 
-import { exec, spawn, ChildProcess } from 'child_process';
+import { exec } from 'child_process';
 import * as path from 'path';
 import * as http from 'http';
 import { Result, succeed, fail } from '@fgv/ts-utils';
 import { IBrowseOptions } from './options';
 import { zipArchiver } from './zipArchiver';
-import * as fs from 'fs';
 
 /**
- * Manages launching the browser application with specified options
+ * Simplified browser launcher using direct dependency on ts-res-browser
  */
-export class BrowserLauncher {
-  private _devServer?: ChildProcess;
+export class SimpleBrowserLauncher {
   /**
    * Launches the browser with the specified options
    */
@@ -81,27 +79,15 @@ export class BrowserLauncher {
         zipCreated = true;
       }
 
-      // Start development server or serve if requested
+      // Start server if requested
       if ((finalOptions.dev || finalOptions.serve) && !finalOptions.url) {
         if (!finalOptions.quiet) {
-          console.log('Starting TS-RES Browser development server...');
+          console.log('Starting TS-RES Browser server...');
         }
 
-        const serverResult = await this._startDevServer(finalOptions);
+        const serverResult = await this._startServer(finalOptions);
         if (serverResult.isFailure()) {
           return serverResult;
-        }
-
-        // Wait for server to be ready
-        const port = options.port || 3000;
-        const readyResult = await this._waitForServerReady(port, options.verbose || false);
-        if (readyResult.isFailure()) {
-          this._stopDevServer();
-          return readyResult;
-        }
-
-        if (!options.quiet) {
-          console.log(`Development server started on port ${port}`);
         }
       }
 
@@ -148,6 +134,41 @@ export class BrowserLauncher {
   }
 
   /**
+   * Starts the server using ts-res-browser CLI directly
+   */
+  private async _startServer(options: IBrowseOptions): Promise<Result<void>> {
+    try {
+      // Use ts-res-browser directly from node_modules
+      const browserPath = require.resolve('@fgv/ts-res-browser/cli.js');
+      const command = `node "${browserPath}" ${options.dev ? 'dev' : 'serve'}`;
+
+      if (options.verbose) {
+        console.log(`Running: ${command}`);
+      }
+
+      return new Promise((resolve) => {
+        const child = exec(command, (error) => {
+          if (error) {
+            resolve(fail(`Failed to start server: ${error.message}`));
+          } else {
+            resolve(succeed(undefined));
+          }
+        });
+
+        // Give server time to start, then assume success
+        setTimeout(() => {
+          if (options.verbose) {
+            console.log('Server startup initiated');
+          }
+          resolve(succeed(undefined));
+        }, 2000);
+      });
+    } catch (error) {
+      return fail(`Failed to start server: ${error}`);
+    }
+  }
+
+  /**
    * Opens the browser to the specified URL
    */
   private async _openBrowser(url: string, verbose: boolean): Promise<Result<void>> {
@@ -172,8 +193,9 @@ export class BrowserLauncher {
    * Builds the URL with query parameters based on options
    */
   private _buildUrl(options: IBrowseOptions): string {
-    // Use provided URL or default to localhost
-    const baseUrl = options.url || `http://localhost:${options.port || 3000}`;
+    // Use provided URL or default based on server type
+    const defaultPort = options.dev ? 3000 : 8080;
+    const baseUrl = options.url || `http://localhost:${options.port || defaultPort}`;
     const params = new URLSearchParams();
 
     if (options.input) {
@@ -225,182 +247,6 @@ export class BrowserLauncher {
   }
 
   /**
-   * Starts the development server for ts-res-browser
-   */
-  private async _startDevServer(options: IBrowseOptions): Promise<Result<void>> {
-    try {
-      const port = options.port || 3000;
-      const env = { ...process.env, PORT: port.toString() };
-
-      // Detect if we're in a monorepo or using published packages
-      const isMonorepo = this._isMonorepoEnvironment();
-
-      if (isMonorepo) {
-        // Monorepo development: use rushx from sibling project
-        const browserProjectPath = path.resolve(__dirname, '../../ts-res-browser');
-
-        if (options.verbose) {
-          console.log(`Looking for ts-res-browser at: ${browserProjectPath}`);
-        }
-
-        this._devServer = spawn('rushx', ['dev'], {
-          cwd: browserProjectPath,
-          env,
-          stdio: options.verbose ? 'inherit' : ['ignore', 'pipe', 'pipe']
-        });
-      } else {
-        // Published packages: dev server not available, but serve flag can use serve command
-        if (options.serve) {
-          // Use serve command for --serve flag in published packages
-          const servePort = 8080;
-
-          if (options.verbose) {
-            console.log('Using published ts-res-browser package with serve command');
-            console.log(`Serving on port ${servePort} (published packages use serve instead of dev)`);
-          }
-
-          // For published packages with --serve, use serve command
-          this._devServer = spawn('npx', ['ts-res-browser', 'serve', servePort.toString()], {
-            env,
-            stdio: options.verbose ? 'inherit' : ['ignore', 'pipe', 'pipe']
-          });
-
-          // Update the port for URL building
-          options.port = servePort;
-        } else {
-          // --dev flag not supported in published packages
-          return fail(
-            'Development server is not available in published packages.\n\n' +
-              'The dev server requires webpack-cli and webpack-dev-server which are\n' +
-              'not included in published packages to keep them lightweight.\n\n' +
-              'To use the development server:\n' +
-              '1. Clone the repository\n' +
-              '2. Install dependencies: rush install\n' +
-              '3. Run: rushx dev from tools/ts-res-browser\n\n' +
-              'For published packages, use --serve flag instead of --dev.'
-          );
-        }
-      }
-
-      this._devServer.on('error', (error) => {
-        return fail(`Failed to start development server: ${error}`);
-      });
-
-      // Give the server a moment to start
-      await this._sleep(3000);
-
-      if (this._devServer && !this._devServer.killed) {
-        if (options.verbose) {
-          console.log('Development server process started successfully');
-        }
-        return succeed(undefined);
-      } else {
-        return fail('Development server process failed to start');
-      }
-    } catch (error) {
-      return fail(`Failed to start development server: ${error}`);
-    }
-  }
-
-  /**
-   * Waits for the development server to be ready by checking HTTP availability
-   */
-  private async _waitForServerReady(
-    port: number,
-    verbose: boolean,
-    maxAttempts: number = 60
-  ): Promise<Result<void>> {
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        const isReady = await this._checkServerHealth(port);
-        if (isReady) {
-          if (verbose) {
-            console.log(`Server is ready at http://localhost:${port}`);
-          }
-          return succeed(undefined);
-        }
-      } catch (error) {
-        // Server not ready yet, continue waiting
-      }
-
-      if (verbose && attempt % 10 === 0) {
-        console.log(`Waiting for server to be ready... (attempt ${attempt}/${maxAttempts})`);
-      }
-
-      await this._sleep(1000);
-    }
-
-    return fail(`Server did not become ready after ${maxAttempts} attempts`);
-  }
-
-  /**
-   * Checks if the server is responding
-   */
-  private async _checkServerHealth(port: number): Promise<boolean> {
-    return new Promise((resolve) => {
-      const request = http.get(`http://localhost:${port}`, (res) => {
-        resolve(res.statusCode !== undefined && res.statusCode >= 200 && res.statusCode < 400);
-      });
-
-      request.on('error', () => {
-        resolve(false);
-      });
-
-      request.setTimeout(3000, () => {
-        request.destroy();
-        resolve(false);
-      });
-    });
-  }
-
-  /**
-   * Stops the development server
-   */
-  private _stopDevServer(): void {
-    if (this._devServer && !this._devServer.killed) {
-      this._devServer.kill('SIGTERM');
-      setTimeout(() => {
-        if (this._devServer && !this._devServer.killed) {
-          this._devServer.kill('SIGKILL');
-        }
-      }, 5000);
-    }
-  }
-
-  /**
-   * Sleep for the specified number of milliseconds
-   */
-  private _sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  /**
-   * Detects if we're running in a monorepo environment
-   */
-  private _isMonorepoEnvironment(): boolean {
-    try {
-      // Check if we have a rush.json file in parent directories (indicating monorepo)
-      let currentDir = __dirname;
-      for (let i = 0; i < 5; i++) {
-        // Look up to 5 levels up
-        const rushJsonPath = path.join(currentDir, 'rush.json');
-        if (fs.existsSync(rushJsonPath)) {
-          return true;
-        }
-        currentDir = path.dirname(currentDir);
-      }
-
-      // Also check if ts-res-browser sibling directory exists
-      const browserProjectPath = path.resolve(__dirname, '../../ts-res-browser');
-      return (
-        fs.existsSync(browserProjectPath) && fs.existsSync(path.join(browserProjectPath, 'package.json'))
-      );
-    } catch {
-      return false;
-    }
-  }
-
-  /**
    * Determines if a ZIP archive should be created based on the options
    */
   private _shouldCreateZip(options: IBrowseOptions): boolean {
@@ -428,12 +274,5 @@ export class BrowserLauncher {
     } catch (error) {
       return fail(`Failed to create ZIP archive: ${error instanceof Error ? error.message : String(error)}`);
     }
-  }
-
-  /**
-   * Graceful shutdown - stops development server if running
-   */
-  public shutdown(): void {
-    this._stopDevServer();
   }
 }

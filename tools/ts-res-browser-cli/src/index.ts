@@ -23,4 +23,4 @@
 // Export main components
 export * from './cli';
 export * from './options';
-export * from './browserLauncher';
+export * from './simpleBrowserLauncher';

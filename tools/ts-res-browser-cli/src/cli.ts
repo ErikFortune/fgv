@@ -27,20 +27,19 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 
 import { IBrowseOptions, IBrowseCommandOptions } from './options';
-import { BrowserLauncher } from './browserLauncher';
+import { SimpleBrowserLauncher } from './simpleBrowserLauncher';
 
 /**
  * Main CLI class for ts-res-browser-cli
  */
 export class TsResBrowserCliApp {
   private readonly _program: Command;
-  private readonly _launcher: BrowserLauncher;
+  private readonly _launcher: SimpleBrowserLauncher;
 
   public constructor() {
     this._program = new Command();
-    this._launcher = new BrowserLauncher();
+    this._launcher = new SimpleBrowserLauncher();
     this._setupCommands();
-    this._setupGracefulShutdown();
   }
 
   /**
@@ -417,19 +416,5 @@ export class TsResBrowserCliApp {
     } catch (error) {
       return fail(`Failed to parse options: ${error}`);
     }
-  }
-
-  /**
-   * Sets up graceful shutdown handling
-   */
-  private _setupGracefulShutdown(): void {
-    const shutdown = (signal: string) => {
-      console.log(`\nReceived ${signal}, shutting down gracefully...`);
-      this._launcher.shutdown();
-      process.exit(0);
-    };
-
-    process.on('SIGINT', () => shutdown('SIGINT'));
-    process.on('SIGTERM', () => shutdown('SIGTERM'));
   }
 }
