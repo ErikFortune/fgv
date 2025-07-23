@@ -134,35 +134,133 @@ const ZipLoader: React.FC<ZipLoaderProps> = ({
       setLoadingStep('Reading manifest...');
 
       // Try to read manifest
+      let parsedManifest: ZipManifest | null = null;
       const manifestResult = fileTree.value.getFile('/manifest.json');
       if (manifestResult.isSuccess()) {
         const manifestContents = manifestResult.value.getContents();
         if (manifestContents.isSuccess()) {
-          const parsedManifest = manifestContents.value as ZipManifest;
+          // Check if it's already parsed or needs parsing
+          let rawContent = manifestContents.value;
+
+          // If it's a Result object, extract the value
+          if (rawContent && typeof rawContent === 'object' && 'success' in rawContent && rawContent.success) {
+            rawContent = (rawContent as any).value || (rawContent as any)._value;
+          }
+
+          if (typeof rawContent === 'string') {
+            try {
+              parsedManifest = JSON.parse(rawContent);
+            } catch (error) {
+              console.error('Failed to parse manifest JSON:', error);
+              onMessage(
+                'error',
+                `Failed to parse ZIP manifest: ${error instanceof Error ? error.message : String(error)}`
+              );
+              return;
+            }
+          } else {
+            // Already an object
+            parsedManifest = rawContent as ZipManifest;
+          }
+          console.log('Successfully loaded manifest:', parsedManifest);
+          console.log(
+            'Manifest timestamp:',
+            parsedManifest.timestamp,
+            'Type:',
+            typeof parsedManifest.timestamp
+          );
           setManifest(parsedManifest);
           onMessage('info', `ZIP created: ${new Date(parsedManifest.timestamp).toLocaleString()}`);
+        } else {
+          console.error('Failed to read manifest contents:', manifestContents.message);
+          onMessage('error', `Failed to read manifest: ${manifestContents.message}`);
+        }
+      } else {
+        console.error('Manifest file not found in ZIP');
+        onMessage('error', 'ZIP manifest not found');
+      }
+
+      // FIRST: Load configuration before processing resources
+      setLoadingStep('Loading configuration...');
+
+      // Load configuration if present (use parsedManifest, not state manifest)
+      console.log('ZIP manifest:', parsedManifest);
+      if (parsedManifest?.config) {
+        const configPath = `/${parsedManifest.config.archivePath}`;
+        console.log('Looking for config at path:', configPath);
+        const configResult = fileTree.value.getFile(configPath);
+
+        if (configResult.isSuccess()) {
+          const configContents = configResult.value.getContents();
+          if (configContents.isSuccess()) {
+            // Check if config content is already parsed or needs parsing
+            let configJson: any;
+            let rawConfigContent = configContents.value;
+
+            // If it's a Result object, extract the value
+            if (
+              rawConfigContent &&
+              typeof rawConfigContent === 'object' &&
+              'success' in rawConfigContent &&
+              rawConfigContent.success
+            ) {
+              rawConfigContent = (rawConfigContent as any).value || (rawConfigContent as any)._value;
+            }
+
+            if (typeof rawConfigContent === 'string') {
+              try {
+                configJson = JSON.parse(rawConfigContent);
+              } catch (error) {
+                onMessage(
+                  'error',
+                  `Failed to parse configuration from ZIP: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                );
+                return;
+              }
+            } else {
+              // Already an object
+              configJson = rawConfigContent;
+            }
+            console.log('Parsed ZIP configuration:', configJson);
+            resourceManager.actions.applyConfiguration(configJson);
+            onMessage(
+              'success',
+              `Configuration loaded from ZIP: ${configJson.name || 'Extended Example Configuration'}`
+            );
+
+            // Store config for direct use in resource processing
+            (window as any).__zipConfig = configJson;
+          } else {
+            onMessage('error', `Failed to read configuration from ZIP: ${configContents.message}`);
+          }
+        } else {
+          onMessage('error', `Configuration file not found in ZIP at path: ${configPath}`);
         }
       }
 
-      // Process resources from the ZIP
+      // THEN: Process resources with the loaded configuration
       setLoadingStep('Processing resources...');
 
       // Look for input directory/files
       let inputProcessed = false;
-      if (manifest?.input) {
-        const inputPath = `/${manifest.input.archivePath}`;
+      if (parsedManifest?.input) {
+        const inputPath = `/${parsedManifest.input.archivePath}`;
         const inputResult = fileTree.value.getItem(inputPath);
 
         if (inputResult.isSuccess()) {
           const inputItem = inputResult.value;
 
           if (inputItem.type === 'directory') {
-            // Process directory
-            await resourceManager.actions.processFileTree(fileTree.value, inputPath);
+            // Process directory with ZIP configuration
+            const zipConfig = (window as any).__zipConfig;
+            await resourceManager.actions.processFileTree(fileTree.value, inputPath, zipConfig);
             inputProcessed = true;
           } else if (inputItem.type === 'file') {
-            // Process single file
-            await resourceManager.actions.processFileTree(fileTree.value, inputPath);
+            // Process single file with ZIP configuration
+            const zipConfig = (window as any).__zipConfig;
+            await resourceManager.actions.processFileTree(fileTree.value, inputPath, zipConfig);
             inputProcessed = true;
           }
         }
@@ -174,23 +272,10 @@ const ZipLoader: React.FC<ZipLoaderProps> = ({
         for (const inputPath of commonInputPaths) {
           const inputResult = fileTree.value.getItem(inputPath);
           if (inputResult.isSuccess() && inputResult.value.type === 'directory') {
-            await resourceManager.actions.processFileTree(fileTree.value, inputPath);
+            const zipConfig = (window as any).__zipConfig;
+            await resourceManager.actions.processFileTree(fileTree.value, inputPath, zipConfig);
             inputProcessed = true;
             break;
-          }
-        }
-      }
-
-      // Load configuration if present
-      if (manifest?.config) {
-        const configPath = `/${manifest.config.archivePath}`;
-        const configResult = fileTree.value.getFile(configPath);
-
-        if (configResult.isSuccess()) {
-          const configContents = configResult.value.getContents();
-          if (configContents.isSuccess()) {
-            resourceManager.actions.applyConfiguration(configContents.value as any);
-            onMessage('success', 'Configuration loaded from ZIP');
           }
         }
       }

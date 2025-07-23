@@ -219,7 +219,11 @@ export const useResourceManager = (): UseResourceManagerReturn => {
   );
 
   const processFileTree = useCallback(
-    async (fileTree: FileTree.FileTree, rootPath: string = '/') => {
+    async (
+      fileTree: FileTree.FileTree,
+      rootPath: string = '/',
+      systemConfig?: Config.Model.ISystemConfiguration
+    ) => {
       console.log('=== STARTING FILETREE PROCESSING ===');
       console.log('Root path:', rootPath);
 
@@ -245,11 +249,67 @@ export const useResourceManager = (): UseResourceManagerReturn => {
         if (Array.isArray(converted)) {
           // Got files
           console.log('3. Processing as files, count:', converted.length);
-          await processFiles(converted);
+
+          // Use provided config or fall back to state config
+          const configToUse = systemConfig || state.activeConfiguration || undefined;
+
+          setState((prev) => ({ ...prev, isProcessing: true, error: null }));
+
+          try {
+            const result = processImportedFiles(converted, configToUse);
+            if (result.isSuccess()) {
+              setState((prev) => ({
+                ...prev,
+                isProcessing: false,
+                processedResources: result.value,
+                hasProcessedData: true
+              }));
+            } else {
+              setState((prev) => ({
+                ...prev,
+                isProcessing: false,
+                error: result.message
+              }));
+            }
+          } catch (error) {
+            setState((prev) => ({
+              ...prev,
+              isProcessing: false,
+              error: `Failed to process files: ${error instanceof Error ? error.message : String(error)}`
+            }));
+          }
         } else {
           // Got directory
           console.log('3. Processing as directory:', converted.name);
-          await processDirectory(converted);
+
+          // Use provided config or fall back to state config
+          const configToUse = systemConfig || state.activeConfiguration || undefined;
+
+          setState((prev) => ({ ...prev, isProcessing: true, error: null }));
+
+          try {
+            const result = processImportedDirectory(converted, configToUse);
+            if (result.isSuccess()) {
+              setState((prev) => ({
+                ...prev,
+                isProcessing: false,
+                processedResources: result.value,
+                hasProcessedData: true
+              }));
+            } else {
+              setState((prev) => ({
+                ...prev,
+                isProcessing: false,
+                error: result.message
+              }));
+            }
+          } catch (error) {
+            setState((prev) => ({
+              ...prev,
+              isProcessing: false,
+              error: `Failed to process directory: ${error instanceof Error ? error.message : String(error)}`
+            }));
+          }
         }
 
         console.log('4. processFileTree completed successfully');
@@ -263,7 +323,7 @@ export const useResourceManager = (): UseResourceManagerReturn => {
         }));
       }
     },
-    [processFiles, processDirectory]
+    [state.activeConfiguration]
   );
 
   const applyConfiguration = useCallback((config: Config.Model.ISystemConfiguration) => {
