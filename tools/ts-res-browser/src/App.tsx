@@ -100,10 +100,15 @@ const App: React.FC = () => {
         actions.updateReduceQualifiers(true);
       }
 
-      // Handle ZIP loading
+      // Handle ZIP loading - start with ZIP tool but make other tools easily accessible
       if (urlParams.loadZip) {
         actions.setActiveTool('zip-loader');
-        actions.addMessage('info', 'ZIP archive ready to load');
+        if (urlParams.zipFile || urlParams.zipPath) {
+          actions.addMessage('info', `ZIP archive ready to load: ${urlParams.zipFile || 'Bundle file'}`);
+          actions.addMessage('info', 'You can also use the File Browser for other resources');
+        } else {
+          actions.addMessage('info', 'ZIP loader opened - select a ZIP file to load');
+        }
       }
 
       // Show appropriate messages for other parameters

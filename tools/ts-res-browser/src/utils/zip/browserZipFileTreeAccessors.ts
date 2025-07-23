@@ -84,23 +84,21 @@ export class BrowserZipFileItem implements FileTree.IFileTreeFileItem {
   public getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
   public getContents<T>(converter?: Validator<T> | Converter<T>): Result<T | unknown> {
     return this.getRawContents()
+      .withErrorFormat((err) => `${this.absolutePath}: read raw contents failed: ${err}`)
       .onSuccess((contents) => {
-        return captureResult(() => {
-          const parsed = JSON.parse(contents);
-          if (converter) {
-            if ('convert' in converter) {
-              return converter.convert(parsed);
-            } else {
-              return (converter as Validator<T>).validate(parsed);
-            }
-          }
-          return succeed(parsed);
-        }).onFailure((err) => {
-          return fail(`${this.absolutePath}: JSON parse error: ${err}`);
-        });
+        return captureResult(() => JSON.parse(contents)).withErrorFormat(
+          (err) => `${this.absolutePath}: JSON parse error: ${err}`
+        );
       })
-      .onFailure((error) => {
-        return fail(`${this.absolutePath}: read raw contents failed${error}`);
+      .onSuccess((parsed) => {
+        if (converter) {
+          if ('convert' in converter) {
+            return converter.convert(parsed);
+          } else {
+            return (converter as Validator<T>).validate(parsed);
+          }
+        }
+        return succeed(parsed);
       });
   }
 

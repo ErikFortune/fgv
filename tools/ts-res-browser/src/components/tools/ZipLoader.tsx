@@ -21,7 +21,8 @@ interface FileSystemAccessWindow extends Window {
   }) => Promise<FileSystemFileHandle[]>;
 }
 import { BrowserZipFileTreeAccessors } from '../../utils/zip/browserZipFileTreeAccessors';
-import { FileTree } from '@fgv/ts-utils';
+import { FileTree, Converters, fail } from '@fgv/ts-utils';
+import { Config } from '@fgv/ts-res';
 
 interface ZipLoaderProps {
   onMessage: (type: Message['type'], message: string) => void;
@@ -29,6 +30,7 @@ interface ZipLoaderProps {
   zipFile?: string;
   zipPath?: string;
   onLoadComplete?: () => void;
+  debug?: boolean; // Compatible with ts-res-cli debug flag
 }
 
 interface ZipManifest {
@@ -45,12 +47,28 @@ interface ZipManifest {
   };
 }
 
+// Converter for type-safe ZIP manifest parsing
+const zipManifestConverter = Converters.object<ZipManifest>({
+  timestamp: Converters.string,
+  input: Converters.object({
+    type: Converters.enumeratedValue(['file', 'directory'] as const),
+    originalPath: Converters.string,
+    archivePath: Converters.string
+  }).optional(),
+  config: Converters.object({
+    type: Converters.enumeratedValue(['file'] as const),
+    originalPath: Converters.string,
+    archivePath: Converters.string
+  }).optional()
+});
+
 const ZipLoader: React.FC<ZipLoaderProps> = ({
   onMessage,
   resourceManager,
   zipFile,
   zipPath,
-  onLoadComplete
+  onLoadComplete,
+  debug = false
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState<string>('');
@@ -67,11 +85,6 @@ const ZipLoader: React.FC<ZipLoaderProps> = ({
   }, [zipFile, zipPath, autoloadAttempted]);
 
   const handleLoadZip = async () => {
-    if (!zipFile && !zipPath) {
-      onMessage('error', 'No ZIP file specified');
-      return;
-    }
-
     setIsLoading(true);
     setLoadingStep('Opening file picker...');
 
@@ -84,6 +97,11 @@ const ZipLoader: React.FC<ZipLoaderProps> = ({
 
       if (fileSystemWindow.showOpenFilePicker) {
         try {
+          // If we have a specific ZIP file referenced, give guidance but still allow manual selection
+          if (zipFile || zipPath) {
+            setLoadingStep(`Looking for ZIP file: ${zipFile || 'Bundle file'}...`);
+          }
+
           const [handle] = await fileSystemWindow.showOpenFilePicker({
             types: [
               {
@@ -133,111 +151,43 @@ const ZipLoader: React.FC<ZipLoaderProps> = ({
 
       setLoadingStep('Reading manifest...');
 
-      // Try to read manifest
-      let parsedManifest: ZipManifest | null = null;
-      const manifestResult = fileTree.value.getFile('/manifest.json');
-      if (manifestResult.isSuccess()) {
-        const manifestContents = manifestResult.value.getContents();
-        if (manifestContents.isSuccess()) {
-          // Check if it's already parsed or needs parsing
-          let rawContent = manifestContents.value;
+      // Load and parse manifest using Result pattern
+      const manifestResult = fileTree.value
+        .getFile('/manifest.json')
+        .onSuccess((manifestFile) => manifestFile.getContents(zipManifestConverter));
 
-          // If it's a Result object, extract the value
-          if (rawContent && typeof rawContent === 'object' && 'success' in rawContent && rawContent.success) {
-            rawContent = (rawContent as any).value || (rawContent as any)._value;
-          }
-
-          if (typeof rawContent === 'string') {
-            try {
-              parsedManifest = JSON.parse(rawContent);
-            } catch (error) {
-              console.error('Failed to parse manifest JSON:', error);
-              onMessage(
-                'error',
-                `Failed to parse ZIP manifest: ${error instanceof Error ? error.message : String(error)}`
-              );
-              return;
-            }
-          } else {
-            // Already an object
-            parsedManifest = rawContent as ZipManifest;
-          }
-          console.log('Successfully loaded manifest:', parsedManifest);
-          console.log(
-            'Manifest timestamp:',
-            parsedManifest.timestamp,
-            'Type:',
-            typeof parsedManifest.timestamp
-          );
-          setManifest(parsedManifest);
-          onMessage('info', `ZIP created: ${new Date(parsedManifest.timestamp).toLocaleString()}`);
-        } else {
-          console.error('Failed to read manifest contents:', manifestContents.message);
-          onMessage('error', `Failed to read manifest: ${manifestContents.message}`);
-        }
-      } else {
-        console.error('Manifest file not found in ZIP');
-        onMessage('error', 'ZIP manifest not found');
+      if (manifestResult.isFailure()) {
+        onMessage('error', `Failed to load ZIP manifest: ${manifestResult.message}`);
+        return;
       }
 
-      // FIRST: Load configuration before processing resources
+      const parsedManifest = manifestResult.value;
+      setManifest(parsedManifest);
+      onMessage('info', `ZIP created: ${new Date(parsedManifest.timestamp).toLocaleString()}`);
+
+      // Load configuration if present using Result pattern and proper converter
       setLoadingStep('Loading configuration...');
 
-      // Load configuration if present (use parsedManifest, not state manifest)
-      console.log('ZIP manifest:', parsedManifest);
-      if (parsedManifest?.config) {
+      let loadedConfig: Config.Model.ISystemConfiguration | undefined = undefined;
+
+      if (parsedManifest.config) {
         const configPath = `/${parsedManifest.config.archivePath}`;
-        console.log('Looking for config at path:', configPath);
-        const configResult = fileTree.value.getFile(configPath);
 
-        if (configResult.isSuccess()) {
-          const configContents = configResult.value.getContents();
-          if (configContents.isSuccess()) {
-            // Check if config content is already parsed or needs parsing
-            let configJson: any;
-            let rawConfigContent = configContents.value;
+        const configResult = fileTree.value
+          .getFile(configPath)
+          .onSuccess((configFile) => configFile.getContents(Config.Convert.systemConfiguration));
 
-            // If it's a Result object, extract the value
-            if (
-              rawConfigContent &&
-              typeof rawConfigContent === 'object' &&
-              'success' in rawConfigContent &&
-              rawConfigContent.success
-            ) {
-              rawConfigContent = (rawConfigContent as any).value || (rawConfigContent as any)._value;
-            }
-
-            if (typeof rawConfigContent === 'string') {
-              try {
-                configJson = JSON.parse(rawConfigContent);
-              } catch (error) {
-                onMessage(
-                  'error',
-                  `Failed to parse configuration from ZIP: ${
-                    error instanceof Error ? error.message : String(error)
-                  }`
-                );
-                return;
-              }
-            } else {
-              // Already an object
-              configJson = rawConfigContent;
-            }
-            console.log('Parsed ZIP configuration:', configJson);
-            resourceManager.actions.applyConfiguration(configJson);
-            onMessage(
-              'success',
-              `Configuration loaded from ZIP: ${configJson.name || 'Extended Example Configuration'}`
-            );
-
-            // Store config for direct use in resource processing
-            (window as any).__zipConfig = configJson;
-          } else {
-            onMessage('error', `Failed to read configuration from ZIP: ${configContents.message}`);
-          }
-        } else {
-          onMessage('error', `Configuration file not found in ZIP at path: ${configPath}`);
+        if (configResult.isFailure()) {
+          onMessage('error', `Failed to load configuration from ZIP: ${configResult.message}`);
+          return;
         }
+
+        loadedConfig = configResult.value;
+        resourceManager.actions.applyConfiguration(loadedConfig);
+        onMessage(
+          'success',
+          `Configuration loaded from ZIP: ${loadedConfig.name || 'Extended Example Configuration'}`
+        );
       }
 
       // THEN: Process resources with the loaded configuration
@@ -254,13 +204,11 @@ const ZipLoader: React.FC<ZipLoaderProps> = ({
 
           if (inputItem.type === 'directory') {
             // Process directory with ZIP configuration
-            const zipConfig = (window as any).__zipConfig;
-            await resourceManager.actions.processFileTree(fileTree.value, inputPath, zipConfig);
+            await resourceManager.actions.processFileTree(fileTree.value, inputPath, loadedConfig);
             inputProcessed = true;
           } else if (inputItem.type === 'file') {
             // Process single file with ZIP configuration
-            const zipConfig = (window as any).__zipConfig;
-            await resourceManager.actions.processFileTree(fileTree.value, inputPath, zipConfig);
+            await resourceManager.actions.processFileTree(fileTree.value, inputPath, loadedConfig);
             inputProcessed = true;
           }
         }
@@ -272,8 +220,7 @@ const ZipLoader: React.FC<ZipLoaderProps> = ({
         for (const inputPath of commonInputPaths) {
           const inputResult = fileTree.value.getItem(inputPath);
           if (inputResult.isSuccess() && inputResult.value.type === 'directory') {
-            const zipConfig = (window as any).__zipConfig;
-            await resourceManager.actions.processFileTree(fileTree.value, inputPath, zipConfig);
+            await resourceManager.actions.processFileTree(fileTree.value, inputPath, loadedConfig);
             inputProcessed = true;
             break;
           }
@@ -306,28 +253,43 @@ const ZipLoader: React.FC<ZipLoaderProps> = ({
 
       <div className="max-w-2xl">
         {/* ZIP File Info */}
-        <div className="bg-blue-50 rounded-lg p-4 mb-6">
-          <div className="flex items-start space-x-3">
-            <ArchiveBoxIcon className="h-5 w-5 text-blue-600 mt-0.5" />
-            <div className="text-sm text-blue-800">
-              <p className="font-medium">ZIP Archive Ready</p>
-              {zipPath && (
-                <p className="mt-1">
-                  <span className="font-medium">Location:</span> {zipPath}
+        {zipFile || zipPath ? (
+          <div className="bg-blue-50 rounded-lg p-4 mb-6">
+            <div className="flex items-start space-x-3">
+              <ArchiveBoxIcon className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div className="text-sm text-blue-800">
+                <p className="font-medium">ZIP Archive Ready</p>
+                {zipPath && (
+                  <p className="mt-1">
+                    <span className="font-medium">Location:</span> {zipPath}
+                  </p>
+                )}
+                {zipFile && (
+                  <p className="mt-1">
+                    <span className="font-medium">File:</span> {zipFile}
+                  </p>
+                )}
+                <p className="mt-2">
+                  The CLI has created a ZIP archive containing your resources and configuration. Click below
+                  to load it directly into the browser.
                 </p>
-              )}
-              {zipFile && (
-                <p className="mt-1">
-                  <span className="font-medium">File:</span> {zipFile}
-                </p>
-              )}
-              <p className="mt-2">
-                The CLI has created a ZIP archive containing your resources and configuration. Click below to
-                load it directly into the browser.
-              </p>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="bg-purple-50 rounded-lg p-4 mb-6">
+            <div className="flex items-start space-x-3">
+              <ArchiveBoxIcon className="h-5 w-5 text-purple-600 mt-0.5" />
+              <div className="text-sm text-purple-800">
+                <p className="font-medium">Load ZIP Archive</p>
+                <p className="mt-2">
+                  Select a ZIP archive created by ts-res-cli or from a previous session. The archive should
+                  contain your resources and configuration files.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Load Button */}
         <div className="space-y-4">
@@ -355,10 +317,19 @@ const ZipLoader: React.FC<ZipLoaderProps> = ({
             <h3 className="text-sm font-medium text-gray-900 mb-2">Instructions:</h3>
             <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
               <li>Click "Load ZIP Archive" above</li>
-              <li>
-                Select the ZIP file: <code className="bg-gray-200 px-1 rounded">{expectedFileName}</code>
-              </li>
+              {zipFile || zipPath ? (
+                <li>
+                  Select the ZIP file: <code className="bg-gray-200 px-1 rounded">{expectedFileName}</code>
+                </li>
+              ) : (
+                <li>Browse for any ZIP archive created by ts-res-cli (usually in Downloads)</li>
+              )}
               <li>The browser will automatically process your resources and configuration</li>
+              {!(zipFile || zipPath) && (
+                <li className="text-blue-600">
+                  Tip: You can also use the File Browser tool for individual resource files
+                </li>
+              )}
             </ol>
           </div>
 
