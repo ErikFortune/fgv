@@ -682,6 +682,29 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
   const [cacheMetrics, setCacheMetrics] =
     useState<Runtime.ResourceResolverCacheMetricsListener<Runtime.AggregateCacheMetrics> | null>(null);
 
+  // Edit journal state
+  const [editedResources, setEditedResources] = useState<EditedResources>(new Map());
+
+  // Simple edit management functions
+  const hasUnsavedEdits = useCallback(() => {
+    return editedResources.size > 0;
+  }, [editedResources]);
+
+  const saveEdit = useCallback((resourceId: string, editedValue: any) => {
+    setEditedResources((prev) => new Map(prev).set(resourceId, editedValue));
+  }, []);
+
+  const getEditedValue = useCallback(
+    (resourceId: string) => {
+      return editedResources.get(resourceId);
+    },
+    [editedResources]
+  );
+
+  const clearEdits = useCallback(() => {
+    setEditedResources(new Map());
+  }, []);
+
   // Available resources
   const availableResources = useMemo(() => {
     if (!activeProcessedResources?.summary?.resourceIds) {
@@ -747,40 +770,31 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
     [getConditionKey]
   );
 
-  const getCandidateConditionSetKey = useCallback(
-    (candidateIndex: number, resource: any, compiledCollection: any): string | null => {
-      try {
-        // Get the decision for this resource
-        const decision = compiledCollection.decisions[resource.decision];
-        if (!decision || !decision.conditionSets) {
-          return null;
-        }
+  // Removed complex condition set key tracking
 
-        // Map candidate index to condition set index
-        // Assuming candidates correspond to condition sets in order
-        if (candidateIndex >= decision.conditionSets.length) {
-          return null;
-        }
-
-        const conditionSetIndex = decision.conditionSets[candidateIndex];
-        const conditionSet = compiledCollection.conditionSets[conditionSetIndex];
-        if (!conditionSet) {
-          return null;
-        }
-
-        return getConditionSetKey(conditionSet, conditionSetIndex, compiledCollection);
-      } catch (error) {
-        return null;
-      }
-    },
-    [getConditionSetKey]
-  );
+  // Removed complex condition set hash tracking
 
   // Apply context changes
   const applyContext = useCallback(() => {
     if (!activeProcessedResources?.system) {
       onMessage?.('error', 'No resources loaded');
       return;
+    }
+
+    // Check for pending edits
+    if (hasUnsavedEdits()) {
+      const changeCount = editedResources.size;
+      const confirmMessage =
+        changeCount === 1
+          ? 'You have 1 resource with unsaved changes. Apply context change anyway? This will discard your edits.'
+          : `You have ${changeCount} resources with unsaved changes. Apply context change anyway? This will discard your edits.`;
+
+      if (!window.confirm(confirmMessage)) {
+        return; // User cancelled
+      }
+
+      // User confirmed - clear the edits
+      clearEdits();
     }
 
     // Create new context provider
@@ -825,7 +839,15 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
     }
 
     onMessage?.('success', 'Context applied successfully');
-  }, [pendingContextValues, activeProcessedResources?.system, selectedResourceId, onMessage]);
+  }, [
+    pendingContextValues,
+    activeProcessedResources?.system,
+    selectedResourceId,
+    onMessage,
+    hasUnsavedEdits,
+    editedResources,
+    clearEdits
+  ]);
 
   // Helper function to evaluate conditions for a candidate
   const evaluateConditionsForCandidate = useCallback(
@@ -947,7 +969,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
         // Find the index by comparing candidate objects
         const index = resource.candidates.findIndex((candidate) => candidate === matchedCandidate);
         if (index !== -1) {
-          const conditionSetKey = getCandidateConditionSetKey(index, compiledResource, compiledCollection);
+          const conditionSetKey = `candidate-${index}`; // Simplified key for display
           const conditionEvaluations = evaluateConditionsForCandidate(
             resolver,
             index,
@@ -981,7 +1003,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
       resource.candidates.forEach((candidate, index) => {
         const isMatched = matchedCandidates.some((mc) => mc === candidate);
         if (!isMatched) {
-          const conditionSetKey = getCandidateConditionSetKey(index, compiledResource, compiledCollection);
+          const conditionSetKey = `candidate-${index}`; // Simplified key for display
           const conditionEvaluations = evaluateConditionsForCandidate(
             resolver,
             index,
@@ -1011,7 +1033,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
         return;
       }
 
-      setResolutionResult({
+      const resolutionData = {
         success: true,
         resource,
         bestCandidate: bestResult.isSuccess() ? bestResult.value : undefined,
@@ -1019,12 +1041,19 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
         candidateDetails,
         composedValue: composedResult.isSuccess() ? composedResult.value : undefined,
         error: bestResult.isFailure() ? bestResult.message : undefined
-      });
+      };
+
+      setResolutionResult(resolutionData);
+
+      // Pre-create journal entry for the composed value if it exists (only if not already in journal)
+      if (composedResult.isSuccess() && composedResult.value !== undefined) {
+        // For composed values, we use a special hash since it's composed from multiple candidates
+        // In simplified approach, we don't pre-create journal entries
+      }
     },
     [
       activeProcessedResources?.system.resourceManager,
       activeProcessedResources?.compiledCollection,
-      getCandidateConditionSetKey,
       evaluateConditionsForCandidate
     ]
   );
@@ -1192,17 +1221,60 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
                   .map(([key, value]) => `${key}=${value === undefined ? '(undefined)' : value}`)
                   .join(', ')}
               </div>
-              <button
-                onClick={applyContext}
-                disabled={!hasPendingChanges}
-                className={`px-4 py-2 rounded-md text-sm font-medium ${
-                  hasPendingChanges
-                    ? 'bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                {hasPendingChanges ? 'Apply Changes' : currentResolver ? 'Context Applied' : 'Apply Context'}
-              </button>
+              <div className="flex items-center space-x-2">
+                {hasUnsavedEdits() && (
+                  <>
+                    <button
+                      onClick={() => {
+                        // Stub: Apply all edits
+                        const changeCount = editedResources.size;
+                        onMessage?.(
+                          'info',
+                          `Applied ${changeCount} pending changes (stub - not actually applied yet)`
+                        );
+                        // TODO: Implement actual apply logic
+                      }}
+                      className="px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      title="Apply all pending edits"
+                    >
+                      Apply Edits
+                    </button>
+                    <button
+                      onClick={() => {
+                        const changeCount = editedResources.size;
+                        const confirmMessage =
+                          changeCount === 1
+                            ? 'Discard 1 pending edit?'
+                            : `Discard ${changeCount} pending edits?`;
+
+                        if (window.confirm(confirmMessage)) {
+                          clearEdits();
+                          onMessage?.('info', 'Discarded all pending changes');
+                        }
+                      }}
+                      className="px-3 py-1 text-xs font-medium text-red-700 bg-red-100 rounded hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      title="Discard all pending edits"
+                    >
+                      Discard Edits
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={applyContext}
+                  disabled={!hasPendingChanges}
+                  className={`px-4 py-2 rounded-md text-sm font-medium ${
+                    hasPendingChanges
+                      ? 'bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  {hasPendingChanges
+                    ? 'Apply Changes'
+                    : currentResolver
+                    ? 'Context Applied'
+                    : 'Apply Context'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1307,10 +1379,9 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
                   result={resolutionResult}
                   viewMode={viewMode}
                   contextValues={contextValues}
+                  getEditedValue={getEditedValue}
+                  saveEdit={saveEdit}
                   onSave={(saveAction) => {
-                    // For now, just log the save action - we'll implement actual saving later
-                    console.log('Save action triggered:', saveAction);
-                    saveAction.onSave(saveAction);
                     onMessage?.('info', `Changes validated for ${saveAction.type} view`);
                   }}
                 />
@@ -1339,12 +1410,19 @@ interface SaveAction {
   validateJson?: (value: any) => boolean;
 }
 
+// Simple edit tracking
+type EditedResources = Map<string, any>; // resourceId -> editedValue
+
 // Resolution Results Component
 interface ResolutionResultsProps {
   result: ResolutionResult;
   viewMode: ViewMode;
   contextValues: ContextState;
   onSave?: (saveAction: SaveAction) => void;
+  // Journal-related props
+  // Simple edit functions
+  getEditedValue?: (resourceId: string) => any;
+  saveEdit?: (resourceId: string, editedValue: any) => void;
 }
 
 // Editable JSON View Component
@@ -1355,6 +1433,10 @@ interface EditableJsonViewProps {
   viewType: EditableViewType;
   onSave?: (saveAction: SaveAction) => void;
   className?: string;
+  // Simple edit tracking props
+  resourceId?: string;
+  editedValue?: any; // Pre-existing edited value if any
+  onEditSave?: (resourceId: string, editedValue: any) => void;
 }
 
 const EditableJsonView: React.FC<EditableJsonViewProps> = ({
@@ -1363,37 +1445,46 @@ const EditableJsonView: React.FC<EditableJsonViewProps> = ({
   description,
   viewType,
   onSave,
-  className = ''
+  className = '',
+  resourceId,
+  editedValue,
+  onEditSave
 }) => {
+  // Use edited value if available, otherwise use original value
+  const displayValue = editedValue ?? value;
+  const hasEdit = editedValue !== undefined;
+
+  // Removed debug logging
+
   const [editState, setEditState] = useState<EditState>({
     isEditing: false,
-    editedValue: value,
+    editedValue: displayValue,
     hasChanges: false,
     isValidJson: true
   });
 
-  // Reset edit state when value changes
+  // Reset edit state when resource changes (not when display value changes due to edits)
   React.useEffect(() => {
     setEditState({
       isEditing: false,
-      editedValue: value,
+      editedValue: displayValue,
       hasChanges: false,
       isValidJson: true
     });
-  }, [value]);
+  }, [resourceId]); // Only reset when switching resources, not when displayValue changes
 
   const handleEdit = useCallback(() => {
-    setEditState((prev) => ({ ...prev, isEditing: true, editedValue: value }));
-  }, [value]);
+    setEditState((prev) => ({ ...prev, isEditing: true, editedValue: displayValue }));
+  }, [displayValue]);
 
   const handleCancel = useCallback(() => {
     setEditState({
       isEditing: false,
-      editedValue: value,
+      editedValue: displayValue,
       hasChanges: false,
       isValidJson: true
     });
-  }, [value]);
+  }, [displayValue]);
 
   const handleChange = useCallback(
     (updatedValue: any) => {
@@ -1421,27 +1512,42 @@ const EditableJsonView: React.FC<EditableJsonViewProps> = ({
   );
 
   const handleSave = useCallback(() => {
-    if (!editState.isValidJson || !editState.hasChanges || !onSave) return;
+    if (!editState.isValidJson || !editState.hasChanges) return;
 
-    const saveAction: SaveAction = {
-      type: viewType,
-      onSave: (editedValue) => {
-        // For now, just validate JSON - actual save logic will be implemented later
-        console.log(`Saving ${viewType}:`, editedValue);
-      },
-      validateJson: (val) => {
-        try {
-          JSON.stringify(val);
-          return true;
-        } catch {
-          return false;
+    // Save edit using simplified approach
+    if (onEditSave && resourceId) {
+      onEditSave(resourceId, editState.editedValue);
+    }
+
+    // Call the save action if provided
+    if (onSave) {
+      const saveAction: SaveAction = {
+        type: viewType,
+        onSave: (editedValue) => {
+          // Save action for potential future use
+        },
+        validateJson: (val) => {
+          try {
+            JSON.stringify(val);
+            return true;
+          } catch {
+            return false;
+          }
         }
-      }
-    };
+      };
+      // Call saveAction.onSave with the edited value
+      saveAction.onSave(editState.editedValue);
+      // Then call the main onSave with the saveAction for any additional handling
+      onSave(saveAction);
+    }
 
-    onSave(saveAction);
-    setEditState((prev) => ({ ...prev, isEditing: false, hasChanges: false }));
-  }, [editState, viewType, onSave]);
+    setEditState((prev) => ({
+      ...prev,
+      isEditing: false,
+      hasChanges: false,
+      editedValue: displayValue // Reset to current display value to sync with saved state
+    }));
+  }, [editState, viewType, onSave, onEditSave, resourceId]);
 
   if (!value) {
     return null;
@@ -1451,7 +1557,14 @@ const EditableJsonView: React.FC<EditableJsonViewProps> = ({
     <div className={`bg-white p-3 rounded border ${className}`}>
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h4 className="font-medium text-gray-800">{title}</h4>
+          <div className="flex items-center space-x-2">
+            <h4 className="font-medium text-gray-800">{title}</h4>
+            {hasEdit && (
+              <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded font-medium">
+                Edited
+              </span>
+            )}
+          </div>
           {description && <div className="text-sm font-medium text-gray-700 mt-1">{description}</div>}
         </div>
         <div className="flex items-center space-x-2">
@@ -1509,13 +1622,22 @@ const EditableJsonView: React.FC<EditableJsonViewProps> = ({
           )}
         </div>
       ) : (
-        <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">{JSON.stringify(value, null, 2)}</pre>
+        <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
+          {JSON.stringify(displayValue, null, 2)}
+        </pre>
       )}
     </div>
   );
 };
 
-const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode, contextValues, onSave }) => {
+const ResolutionResults: React.FC<ResolutionResultsProps> = ({
+  result,
+  viewMode,
+  contextValues,
+  onSave,
+  getEditedValue,
+  saveEdit
+}) => {
   if (!result.success) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -1564,6 +1686,11 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
             description="Composed value from all matching candidates"
             viewType="composed"
             onSave={onSave}
+            resourceId={result.resource?.id}
+            editedValue={result.resource?.id ? getEditedValue(result.resource.id) : undefined}
+            onEditSave={(resourceId, editedValue) => {
+              saveEdit(resourceId, editedValue);
+            }}
           />
         ) : (
           <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
@@ -1634,7 +1761,7 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
             <div className="space-y-2">
               {regularMatchingCandidates.map((candidateInfo, index) => (
                 <div
-                  key={candidateInfo.candidateIndex}
+                  key={`${selectedResource}-${candidateInfo.candidateIndex}`}
                   className="bg-white p-3 rounded border border-green-200"
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -1683,7 +1810,7 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
             <div className="space-y-2">
               {defaultMatchingCandidates.map((candidateInfo, index) => (
                 <div
-                  key={candidateInfo.candidateIndex}
+                  key={`${selectedResource}-default-${candidateInfo.candidateIndex}`}
                   className="bg-white p-3 rounded border border-amber-200"
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -1739,7 +1866,7 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
             <div className="space-y-2">
               {nonMatchingCandidates.map((candidateInfo) => (
                 <div
-                  key={candidateInfo.candidateIndex}
+                  key={`${selectedResource}-nonmatching-${candidateInfo.candidateIndex}`}
                   className="bg-gray-50 p-3 rounded border border-gray-200 opacity-75"
                 >
                   <div className="flex items-center justify-between mb-2">
