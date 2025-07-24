@@ -6,7 +6,14 @@ export interface Message {
   timestamp: Date;
 }
 
-export type Tool = 'import' | 'source' | 'filter' | 'compiled' | 'resolution' | 'configuration';
+export type Tool =
+  | 'import'
+  | 'source'
+  | 'filter'
+  | 'compiled'
+  | 'resolution'
+  | 'configuration'
+  | 'zip-loader';
 
 export interface FilterState {
   enabled: boolean;
@@ -24,6 +31,7 @@ export interface AppState {
 
 export interface AppActions {
   setSelectedTool: (tool: Tool, force?: boolean) => void;
+  setActiveTool: (tool: Tool, force?: boolean) => void; // Alias for setSelectedTool
   addMessage: (type: Message['type'], message: string) => void;
   clearMessages: () => void;
   updateFilterEnabled: (enabled: boolean) => void;

@@ -18,6 +18,9 @@ export const useAppState = (): { state: AppState; actions: AppActions } => {
     setState((prev) => ({ ...prev, selectedTool: tool }));
   }, []);
 
+  // Alias for setSelectedTool to match the interface
+  const setActiveTool = setSelectedTool;
+
   const addMessage = useCallback((type: Message['type'], message: string) => {
     const newMessage: Message = {
       id: Date.now().toString(),
@@ -94,6 +97,7 @@ export const useAppState = (): { state: AppState; actions: AppActions } => {
 
   const actions: AppActions = {
     setSelectedTool,
+    setActiveTool,
     addMessage,
     clearMessages,
     updateFilterEnabled,

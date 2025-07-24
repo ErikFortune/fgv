@@ -1,33 +1,121 @@
 #!/usr/bin/env node
 
-const { exec } = require('child_process');
+const { exec, spawn } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 
 const command = process.argv[2];
 const projectRoot = __dirname;
 
+// Check if we have a built dist directory
+const distPath = path.join(projectRoot, 'dist');
+const hasBuiltFiles = fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html'));
+
+function startDevServer(port = 3000) {
+  // Check if we have webpack-cli available (needed for dev server)
+  try {
+    require.resolve('webpack-cli');
+    require.resolve('webpack-dev-server');
+  } catch (error) {
+    console.error('❌ Development server is not available in the published package.');
+    console.error('');
+    console.error('The dev server requires webpack-cli and webpack-dev-server which are');
+    console.error('not included in the published package to keep it lightweight.');
+    console.error('');
+    console.error('To use the development server:');
+    console.error('1. Clone the repository: git clone <repo-url>');
+    console.error('2. Install dependencies: rush install');
+    console.error('3. Run: rushx dev');
+    console.error('');
+    console.error('For production use, run: ts-res-browser serve');
+    process.exit(1);
+  }
+
+  const packageManager = fs.existsSync(path.join(projectRoot, 'package-lock.json'))
+    ? 'npm'
+    : fs.existsSync(path.join(projectRoot, 'yarn.lock'))
+    ? 'yarn'
+    : 'npm';
+
+  console.log('Starting TS-RES Browser development server...');
+  console.log(`Using ${packageManager} to start server...`);
+
+  const child = spawn(packageManager, ['run', 'dev'], {
+    cwd: projectRoot,
+    stdio: 'inherit',
+    env: { ...process.env, PORT: port.toString() }
+  });
+
+  child.on('error', (error) => {
+    console.error(`Error starting dev server: ${error.message}`);
+    process.exit(1);
+  });
+}
+
+function serveBuildFiles(port = 8080) {
+  if (!hasBuiltFiles) {
+    console.error('No built files found. Please run "ts-res-browser build" first.');
+    process.exit(1);
+  }
+
+  // Try to use a simple static server
+  try {
+    const handler = require('serve-handler');
+    const http = require('http');
+
+    const server = http.createServer((request, response) => {
+      return handler(request, response, {
+        public: distPath,
+        rewrites: [{ source: '**', destination: '/index.html' }]
+      });
+    });
+
+    server.listen(port, () => {
+      console.log(`TS-RES Browser running at http://localhost:${port}`);
+      console.log('Press Ctrl+C to stop');
+    });
+  } catch (error) {
+    // Fallback: just open the HTML file
+    console.log(`Built files available at: ${path.join(distPath, 'index.html')}`);
+    console.log('To serve the files, install a static server like: npm install -g serve');
+    console.log(`Then run: serve -s ${distPath} -p ${port}`);
+  }
+}
+
 switch (command) {
   case 'dev':
-    console.log('Starting TS-RES Browser development server...');
-    exec('npm run dev', { cwd: projectRoot }, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`Error: ${error}`);
-        return;
-      }
-      console.log(stdout);
-      if (stderr) console.error(stderr);
-    });
+    const devPort = process.argv[3] || process.env.PORT || 3000;
+    startDevServer(devPort);
+    break;
+
+  case 'serve':
+  case 'start':
+    const servePort = process.argv[3] || 8080;
+    serveBuildFiles(servePort);
     break;
 
   case 'build':
     console.log('Building TS-RES Browser...');
-    exec('npm run build', { cwd: projectRoot }, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`Error: ${error}`);
-        return;
+    const packageManager = fs.existsSync(path.join(projectRoot, 'package-lock.json')) ? 'npm' : 'npm';
+
+    const buildChild = spawn(packageManager, ['run', 'build'], {
+      cwd: projectRoot,
+      stdio: 'inherit'
+    });
+
+    buildChild.on('error', (error) => {
+      console.error(`Error building: ${error.message}`);
+      process.exit(1);
+    });
+
+    buildChild.on('close', (code) => {
+      if (code === 0) {
+        console.log('Build completed successfully!');
+        console.log('To serve the built files, run: ts-res-browser serve');
+      } else {
+        console.error(`Build failed with code ${code}`);
+        process.exit(code);
       }
-      console.log(stdout);
-      if (stderr) console.error(stderr);
     });
     break;
 
@@ -35,11 +123,34 @@ switch (command) {
     console.log('TS-RES Browser CLI');
     console.log('');
     console.log('Usage:');
-    console.log('  ts-res-browser dev   - Start development server');
-    console.log('  ts-res-browser build - Build for production');
+    console.log('  ts-res-browser dev    - Start development server (requires dev dependencies)');
+    console.log('  ts-res-browser build  - Build for production');
+    console.log('  ts-res-browser serve  - Serve built files');
     console.log('');
-    console.log('For development, you can also use:');
-    console.log('  rushx dev   - Start development server');
-    console.log('  rushx build - Build for production');
+    console.log('Options:');
+    console.log('  ts-res-browser dev [port]   - Start dev server on specific port');
+    console.log('  ts-res-browser serve [port] - Serve on specific port');
+    console.log('');
+
+    // Check if dev dependencies are available
+    let hasDevDeps = false;
+    try {
+      require.resolve('webpack-cli');
+      require.resolve('webpack-dev-server');
+      hasDevDeps = true;
+    } catch (error) {
+      // Dev dependencies not available
+    }
+
+    if (hasBuiltFiles) {
+      console.log('✅ Built files found - you can run "ts-res-browser serve"');
+    } else {
+      console.log('⚠️  No built files - run "ts-res-browser build" first');
+    }
+
+    if (!hasDevDeps) {
+      console.log('ℹ️  Development server not available in published package');
+      console.log('   Use "ts-res-browser serve" for production serving');
+    }
     break;
 }

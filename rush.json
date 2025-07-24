@@ -462,13 +462,22 @@
       "packageName": "@fgv/ts-res-cli",
       "projectFolder": "tools/ts-res-cli",
       "shouldPublish": true,
+      "versionPolicyName": "base-utils",
       "tags": ["tools", "cli"]
     },
     {
       "packageName": "@fgv/ts-res-browser",
       "projectFolder": "tools/ts-res-browser",
       "shouldPublish": true,
+      "versionPolicyName": "base-utils",
       "tags": ["tools", "browser"]
+    },
+    {
+      "packageName": "@fgv/ts-res-browser-cli",
+      "projectFolder": "tools/ts-res-browser-cli",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["tools", "cli", "browser"]
     }
   ]
 }

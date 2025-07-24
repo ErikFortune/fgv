@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-extras",
-  "version": "5.0.0-1",
+  "version": "5.0.0-5",
   "description": "Assorted Typescript Utilities",
   "main": "lib/index.js",
   "types": "dist/ts-extras.d.ts",
@@ -63,7 +63,9 @@
   "dependencies": {
     "luxon": "^3.6.1",
     "mustache": "^4.2.0",
-    "papaparse": "^5.4.1"
+    "papaparse": "^5.4.1",
+    "@types/adm-zip": "~0.5.7",
+    "adm-zip": "~0.5.16"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*"
