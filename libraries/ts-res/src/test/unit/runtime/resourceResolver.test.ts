@@ -42,7 +42,8 @@ describe('ResourceResolver class', () => {
       onCacheHit: jest.fn(),
       onCacheMiss: jest.fn(),
       onCacheError: jest.fn(),
-      onCacheClear: jest.fn()
+      onCacheClear: jest.fn(),
+      onContextError: jest.fn()
     };
 
     // Set up qualifier types
@@ -473,13 +474,103 @@ describe('ResourceResolver class', () => {
     });
 
     describe('onCacheError callbacks', () => {
-      test('calls onCacheError for condition cache error', () => {
+      test('calls onContextError for context qualification failure', () => {
         expect(resourceManager.conditions.getAt(0)).toSucceedAndSatisfy((condition) => {
           // Clear context to cause qualifier lookup failure
           contextProvider.clear();
 
-          expect(resolverWithListener.resolveCondition(condition)).toFail();
-          expect(mockListener.onCacheError).toHaveBeenCalledWith('condition', condition.index);
+          expect(resolverWithListener.resolveCondition(condition)).toSucceedAndSatisfy((result) => {
+            expect(result.matchType).toBe('noMatch');
+          });
+          expect(mockListener.onContextError).toHaveBeenCalledWith(
+            condition.qualifier.name,
+            expect.any(String)
+          );
+        });
+      });
+
+      test('calls onContextError with correct qualifier name and error message', () => {
+        expect(resourceManager.conditions.getAt(0)).toSucceedAndSatisfy((condition) => {
+          // Clear context to cause qualifier lookup failure
+          contextProvider.clear();
+
+          expect(resolverWithListener.resolveCondition(condition)).toSucceedAndSatisfy((result) => {
+            expect(result.matchType).toBe('noMatch');
+          });
+
+          // Verify specific call details
+          expect(mockListener.onContextError).toHaveBeenCalledTimes(1);
+          expect(mockListener.onContextError).toHaveBeenCalledWith(
+            condition.qualifier.name,
+            expect.stringContaining('not found')
+          );
+        });
+      });
+
+      test('calls onContextError once per condition even with multiple evaluations', () => {
+        expect(resourceManager.conditions.getAt(0)).toSucceedAndSatisfy((condition) => {
+          // Clear context to cause qualifier lookup failure
+          contextProvider.clear();
+
+          // Reset mock to ensure clean state
+          mockListener.onContextError.mockClear();
+
+          // Resolve the same condition multiple times
+          expect(resolverWithListener.resolveCondition(condition)).toSucceedAndSatisfy((result) => {
+            expect(result.matchType).toBe('noMatch');
+          });
+
+          expect(resolverWithListener.resolveCondition(condition)).toSucceedAndSatisfy((result) => {
+            expect(result.matchType).toBe('noMatch');
+          });
+
+          // Should only be called once due to caching
+          expect(mockListener.onContextError).toHaveBeenCalledTimes(1);
+        });
+      });
+
+      test('calls onContextError for different qualifiers independently', () => {
+        // Clear context to cause all qualifier lookups to fail
+        contextProvider.clear();
+
+        // Reset mock to ensure clean state
+        mockListener.onContextError.mockClear();
+
+        // Test multiple conditions with different qualifiers
+        expect(resourceManager.conditions.getAt(0)).toSucceedAndSatisfy((condition1) => {
+          expect(resolverWithListener.resolveCondition(condition1)).toSucceedAndSatisfy((result) => {
+            expect(result.matchType).toBe('noMatch');
+          });
+        });
+
+        if (resourceManager.conditions.size > 1) {
+          expect(resourceManager.conditions.getAt(1)).toSucceedAndSatisfy((condition2) => {
+            expect(resolverWithListener.resolveCondition(condition2)).toSucceedAndSatisfy((result) => {
+              expect(result.matchType).toBe('noMatch');
+            });
+          });
+        }
+
+        // Should be called for each unique qualifier that fails
+        expect(mockListener.onContextError).toHaveBeenCalled();
+      });
+
+      test('does not call onContextError when qualifier resolution succeeds', () => {
+        // Ensure context is properly set up with values
+        expect(contextProvider.validating.set('language', 'en')).toSucceed();
+        expect(contextProvider.validating.set('territory', 'US')).toSucceed();
+
+        // Reset mock to ensure clean state
+        mockListener.onContextError.mockClear();
+
+        expect(resourceManager.conditions.getAt(0)).toSucceedAndSatisfy((condition) => {
+          expect(resolverWithListener.resolveCondition(condition)).toSucceedAndSatisfy((result) => {
+            // Should succeed or at least not be a noMatch due to context errors
+            expect(['match', 'matchAsDefault', 'noMatch']).toContain(result.matchType);
+          });
+
+          // onContextError should not be called when context resolution succeeds
+          expect(mockListener.onContextError).not.toHaveBeenCalled();
         });
       });
 
@@ -957,7 +1048,7 @@ describe('ResourceResolver class', () => {
         // Clear context to cause resolution failure (greeting has no unconditional fallback)
         contextProvider.clear();
 
-        expect(resolver.resolveComposedResourceValue(resource)).toFailWith(/Failed to resolve decision/);
+        expect(resolver.resolveComposedResourceValue(resource)).toFailWith(/No matching candidates found/);
       });
     });
 

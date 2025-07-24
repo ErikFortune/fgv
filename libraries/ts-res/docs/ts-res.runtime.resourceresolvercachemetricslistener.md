@@ -105,6 +105,25 @@ Get the metrics for all cache types.
 
 
 </td></tr>
+<tr><td>
+
+[numContextErrors](./ts-res.runtime.resourceresolvercachemetricslistener.numcontexterrors.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods
@@ -178,6 +197,20 @@ Called when a cache hit occurs.
 </td><td>
 
 Called when a cache miss occurs.
+
+
+</td></tr>
+<tr><td>
+
+[onContextError(qualifier, error)](./ts-res.runtime.resourceresolvercachemetricslistener.oncontexterror.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Called when a context error occurs.
 
 
 </td></tr>

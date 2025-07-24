@@ -2444,6 +2444,7 @@ interface IResourceResolverCacheListener {
     onCacheError(cache: ResourceResolverCacheType, index: number): void;
     onCacheHit(cache: ResourceResolverCacheType, index: number): void;
     onCacheMiss(cache: ResourceResolverCacheType, index: number): void;
+    onContextError(qualifier: string, error: string): void;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3050,6 +3051,10 @@ class NoOpResourceResolverCacheListener implements IResourceResolverCacheListene
     //
     // (undocumented)
     onCacheMiss(cache: ResourceResolverCacheType, index: number): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    onContextError(qualifier: string, error: string): void;
 }
 
 declare namespace Normalized {
@@ -3928,6 +3933,8 @@ class ResourceResolverCacheMetricsListener<TM extends ICacheMetrics> implements 
     constructor(factory: () => TM);
     constructor(metrics: OverallCacheMetrics<TM>);
     get metrics(): Readonly<OverallCacheMetrics>;
+    // (undocumented)
+    get numContextErrors(): number;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -3944,6 +3951,10 @@ class ResourceResolverCacheMetricsListener<TM extends ICacheMetrics> implements 
     //
     // (undocumented)
     onCacheMiss(cache: ResourceResolverCacheType, index: number): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    onContextError(qualifier: string, error: string): void;
     reset(): void;
 }
 
