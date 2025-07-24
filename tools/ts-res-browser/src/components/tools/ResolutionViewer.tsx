@@ -1,5 +1,13 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { MagnifyingGlassIcon, CubeIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import {
+  MagnifyingGlassIcon,
+  CubeIcon,
+  DocumentTextIcon,
+  PencilIcon,
+  CheckIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
+import { JsonEditor } from 'json-edit-react';
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message, FilterState } from '../../types/app';
 import { FilterResult } from '../../utils/filterResources';
@@ -1299,6 +1307,12 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
                   result={resolutionResult}
                   viewMode={viewMode}
                   contextValues={contextValues}
+                  onSave={(saveAction) => {
+                    // For now, just log the save action - we'll implement actual saving later
+                    console.log('Save action triggered:', saveAction);
+                    saveAction.onSave(saveAction);
+                    onMessage?.('info', `Changes validated for ${saveAction.type} view`);
+                  }}
                 />
               )}
             </div>
@@ -1309,14 +1323,199 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
   );
 };
 
+// Types for editing functionality
+type EditableViewType = 'composed' | 'candidate' | 'raw';
+
+interface EditState {
+  isEditing: boolean;
+  editedValue: any;
+  hasChanges: boolean;
+  isValidJson: boolean;
+}
+
+interface SaveAction {
+  type: EditableViewType;
+  onSave: (editedValue: any) => void;
+  validateJson?: (value: any) => boolean;
+}
+
 // Resolution Results Component
 interface ResolutionResultsProps {
   result: ResolutionResult;
   viewMode: ViewMode;
   contextValues: ContextState;
+  onSave?: (saveAction: SaveAction) => void;
 }
 
-const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode, contextValues }) => {
+// Editable JSON View Component
+interface EditableJsonViewProps {
+  value: any;
+  title: string;
+  description?: string;
+  viewType: EditableViewType;
+  onSave?: (saveAction: SaveAction) => void;
+  className?: string;
+}
+
+const EditableJsonView: React.FC<EditableJsonViewProps> = ({
+  value,
+  title,
+  description,
+  viewType,
+  onSave,
+  className = ''
+}) => {
+  const [editState, setEditState] = useState<EditState>({
+    isEditing: false,
+    editedValue: value,
+    hasChanges: false,
+    isValidJson: true
+  });
+
+  // Reset edit state when value changes
+  React.useEffect(() => {
+    setEditState({
+      isEditing: false,
+      editedValue: value,
+      hasChanges: false,
+      isValidJson: true
+    });
+  }, [value]);
+
+  const handleEdit = useCallback(() => {
+    setEditState((prev) => ({ ...prev, isEditing: true, editedValue: value }));
+  }, [value]);
+
+  const handleCancel = useCallback(() => {
+    setEditState({
+      isEditing: false,
+      editedValue: value,
+      hasChanges: false,
+      isValidJson: true
+    });
+  }, [value]);
+
+  const handleChange = useCallback(
+    (updatedValue: any) => {
+      try {
+        // Validate that it's valid JSON by trying to stringify and parse
+        const jsonString = JSON.stringify(updatedValue);
+        JSON.parse(jsonString);
+
+        setEditState((prev) => ({
+          ...prev,
+          editedValue: updatedValue,
+          hasChanges: JSON.stringify(updatedValue) !== JSON.stringify(value),
+          isValidJson: true
+        }));
+      } catch (error) {
+        setEditState((prev) => ({
+          ...prev,
+          editedValue: updatedValue,
+          hasChanges: true,
+          isValidJson: false
+        }));
+      }
+    },
+    [value]
+  );
+
+  const handleSave = useCallback(() => {
+    if (!editState.isValidJson || !editState.hasChanges || !onSave) return;
+
+    const saveAction: SaveAction = {
+      type: viewType,
+      onSave: (editedValue) => {
+        // For now, just validate JSON - actual save logic will be implemented later
+        console.log(`Saving ${viewType}:`, editedValue);
+      },
+      validateJson: (val) => {
+        try {
+          JSON.stringify(val);
+          return true;
+        } catch {
+          return false;
+        }
+      }
+    };
+
+    onSave(saveAction);
+    setEditState((prev) => ({ ...prev, isEditing: false, hasChanges: false }));
+  }, [editState, viewType, onSave]);
+
+  if (!value) {
+    return null;
+  }
+
+  return (
+    <div className={`bg-white p-3 rounded border ${className}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h4 className="font-medium text-gray-800">{title}</h4>
+          {description && <div className="text-sm font-medium text-gray-700 mt-1">{description}</div>}
+        </div>
+        <div className="flex items-center space-x-2">
+          {editState.isEditing ? (
+            <>
+              <button
+                onClick={handleCancel}
+                className="px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                title="Cancel editing"
+              >
+                <XMarkIcon className="h-4 w-4" />
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={!editState.hasChanges || !editState.isValidJson}
+                className={`px-3 py-1 text-xs font-medium rounded focus:outline-none focus:ring-2 ${
+                  editState.hasChanges && editState.isValidJson
+                    ? 'text-white bg-green-600 hover:bg-green-700 focus:ring-green-500'
+                    : 'text-gray-400 bg-gray-300 cursor-not-allowed'
+                }`}
+                title={
+                  !editState.isValidJson
+                    ? 'Invalid JSON'
+                    : !editState.hasChanges
+                    ? 'No changes to save'
+                    : 'Save changes'
+                }
+              >
+                <CheckIcon className="h-4 w-4" />
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={handleEdit}
+              className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              title="Edit JSON"
+            >
+              <PencilIcon className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {editState.isEditing ? (
+        <div className="space-y-2">
+          <JsonEditor
+            data={editState.editedValue}
+            setData={handleChange}
+            restrictAdd={false}
+            restrictEdit={false}
+            restrictDelete={false}
+          />
+          {!editState.isValidJson && (
+            <div className="text-xs text-red-600 bg-red-50 p-2 rounded">Invalid JSON format</div>
+          )}
+        </div>
+      ) : (
+        <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">{JSON.stringify(value, null, 2)}</pre>
+      )}
+    </div>
+  );
+};
+
+const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode, contextValues, onSave }) => {
   if (!result.success) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -1358,24 +1557,20 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
   if (viewMode === 'composed') {
     return (
       <div className="space-y-4">
-        <div>
-          <h4 className="font-medium text-gray-800 mb-2">Composed Resource Value</h4>
-          {result.composedValue ? (
-            <div className="bg-white p-3 rounded border">
-              <div className="text-sm font-medium text-gray-700 mb-2">
-                Composed value from all matching candidates
-              </div>
-              <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
-                {JSON.stringify(result.composedValue, null, 2)}
-              </pre>
-            </div>
-          ) : (
-            <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
-              <p className="text-sm text-yellow-800">No composed value available for the current context.</p>
-              {result.error && <p className="text-xs text-yellow-600 mt-1">{result.error}</p>}
-            </div>
-          )}
-        </div>
+        {result.composedValue ? (
+          <EditableJsonView
+            value={result.composedValue}
+            title="Composed Resource Value"
+            description="Composed value from all matching candidates"
+            viewType="composed"
+            onSave={onSave}
+          />
+        ) : (
+          <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+            <p className="text-sm text-yellow-800">No composed value available for the current context.</p>
+            {result.error && <p className="text-xs text-yellow-600 mt-1">{result.error}</p>}
+          </div>
+        )}
 
         {result.resource && (
           <div>

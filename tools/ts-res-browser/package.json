@@ -47,7 +47,8 @@
     "jszip": "~3.10.1",
     "browserify-zlib": "~0.2.0",
     "assert": "~2.1.0",
-    "serve-handler": "~6.1.6"
+    "serve-handler": "~6.1.6",
+    "json-edit-react": "~1.28.2"
   },
   "devDependencies": {
     "@fgv/ts-utils-jest": "workspace:*",
