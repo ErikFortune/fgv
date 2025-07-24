@@ -441,15 +441,18 @@ function finalizeProcessing(system: TsResSystem): Result<ProcessedResources> {
  * Creates a simple context for resource resolution
  */
 export function createSimpleContext(
-  contextValues: Record<string, string>,
+  contextValues: Record<string, string | undefined>,
   system: TsResSystem
 ): Result<Runtime.ValidatingSimpleContextQualifierProvider> {
   return Runtime.ValidatingSimpleContextQualifierProvider.create({
     qualifiers: system.qualifiers
   })
     .onSuccess((provider): Result<Runtime.ValidatingSimpleContextQualifierProvider> => {
-      // Set context values
+      // Set context values (skip undefined values)
       for (const [qualifierName, value] of Object.entries(contextValues)) {
+        if (value === undefined) {
+          continue; // Skip undefined values
+        }
         try {
           provider.set(qualifierName as any, value as any);
         } catch (error) {

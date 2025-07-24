@@ -27,7 +27,7 @@ interface ResolutionViewerProps {
 }
 
 interface ContextState {
-  [qualifierName: string]: string;
+  [qualifierName: string]: string | undefined;
 }
 
 interface ConditionEvaluationResult {
@@ -1037,7 +1037,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
   );
 
   // Handle context value change
-  const handleContextChange = useCallback((qualifierName: string, value: string) => {
+  const handleContextChange = useCallback((qualifierName: string, value: string | undefined) => {
     setPendingContextValues((prev) => ({
       ...prev,
       [qualifierName]: value
@@ -1125,8 +1125,13 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
                         </label>
                         {hasEnumeratedValues ? (
                           <select
-                            value={pendingContextValues[qualifierName] || ''}
-                            onChange={(e) => handleContextChange(qualifierName, e.target.value)}
+                            value={pendingContextValues[qualifierName] ?? ''}
+                            onChange={(e) =>
+                              handleContextChange(
+                                qualifierName,
+                                e.target.value === '__undefined__' ? undefined : e.target.value
+                              )
+                            }
                             className="flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm min-w-0 bg-white"
                           >
                             <option value="" disabled>
@@ -1137,15 +1142,34 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
                                 {value}
                               </option>
                             ))}
+                            <option value="__undefined__" className="text-gray-500 italic">
+                              undefined
+                            </option>
                           </select>
                         ) : (
-                          <input
-                            type="text"
-                            value={pendingContextValues[qualifierName] || ''}
-                            onChange={(e) => handleContextChange(qualifierName, e.target.value)}
-                            className="flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm min-w-0"
-                            placeholder={`Enter ${qualifierName} value`}
-                          />
+                          <div className="flex-1 flex items-center gap-1">
+                            <input
+                              type="text"
+                              value={pendingContextValues[qualifierName] ?? ''}
+                              onChange={(e) => handleContextChange(qualifierName, e.target.value)}
+                              className="flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm min-w-0"
+                              placeholder={
+                                pendingContextValues[qualifierName] === undefined
+                                  ? '(undefined)'
+                                  : `Enter ${qualifierName} value`
+                              }
+                            />
+                            {pendingContextValues[qualifierName] !== undefined && (
+                              <button
+                                type="button"
+                                onClick={() => handleContextChange(qualifierName, undefined)}
+                                className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                                title="Set to undefined"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1157,7 +1181,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
               <div className="text-sm text-gray-600">
                 Current:{' '}
                 {Object.entries(contextValues)
-                  .map(([key, value]) => `${key}=${value}`)
+                  .map(([key, value]) => `${key}=${value === undefined ? '(undefined)' : value}`)
                   .join(', ')}
               </div>
               <button
