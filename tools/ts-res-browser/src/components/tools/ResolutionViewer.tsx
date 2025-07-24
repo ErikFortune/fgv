@@ -969,7 +969,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
         // Find the index by comparing candidate objects
         const index = resource.candidates.findIndex((candidate) => candidate === matchedCandidate);
         if (index !== -1) {
-          const conditionSetKey = `candidate-${index}`; // Simplified key for display
+          const conditionSetKey = matchedCandidate.conditions.toHash(); // Use actual condition set hash
           const conditionEvaluations = evaluateConditionsForCandidate(
             resolver,
             index,
@@ -1003,7 +1003,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
       resource.candidates.forEach((candidate, index) => {
         const isMatched = matchedCandidates.some((mc) => mc === candidate);
         if (!isMatched) {
-          const conditionSetKey = `candidate-${index}`; // Simplified key for display
+          const conditionSetKey = candidate.conditions.toHash(); // Use actual condition set hash
           const conditionEvaluations = evaluateConditionsForCandidate(
             resolver,
             index,
