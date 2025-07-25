@@ -17,8 +17,8 @@ export type Tool =
 
 export interface FilterState {
   enabled: boolean;
-  values: Record<string, string>;
-  appliedValues: Record<string, string>;
+  values: Record<string, string | undefined>;
+  appliedValues: Record<string, string | undefined>;
   hasPendingChanges: boolean;
   reduceQualifiers: boolean;
 }
@@ -35,7 +35,7 @@ export interface AppActions {
   addMessage: (type: Message['type'], message: string) => void;
   clearMessages: () => void;
   updateFilterEnabled: (enabled: boolean) => void;
-  updateFilterValues: (values: Record<string, string>) => void;
+  updateFilterValues: (values: Record<string, string | undefined>) => void;
   applyFilterValues: () => void;
   resetFilterValues: () => void;
   updateReduceQualifiers: (reduceQualifiers: boolean) => void;

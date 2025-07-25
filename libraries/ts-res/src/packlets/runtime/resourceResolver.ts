@@ -203,18 +203,18 @@ export class ResourceResolver {
     }
 
     // Resolve the condition by getting qualifier value and evaluating with qualifier type
-    const qualifierValueResult = this.contextQualifierProvider.get(condition.qualifier);
-    if (qualifierValueResult.isFailure()) {
-      this._listener?.onCacheError('condition', conditionIndex);
-      return fail(
-        `Failed to get qualifier value for "${condition.qualifier.name}": ${qualifierValueResult.message}`
-      );
-    }
+    const score = this.contextQualifierProvider
+      .get(condition.qualifier)
+      .onSuccess((qualifierValue) => {
+        // Evaluate the condition using the qualifier type's matching logic
+        return succeed(condition.qualifier.type.matches(condition.value, qualifierValue, condition.operator));
+      })
+      .onFailure((err) => {
+        this._listener?.onContextError(condition.qualifier.name, err);
+        return fail(err);
+      })
+      .orDefault(NoMatch);
 
-    const qualifierValue = qualifierValueResult.value;
-
-    // Evaluate the condition using the qualifier type's matching logic
-    const score = condition.qualifier.type.matches(condition.value, qualifierValue, condition.operator);
     const priority = condition.priority;
     const scoreAsDefault = condition.scoreAsDefault ?? NoMatch;
     const matchResult: IConditionMatchResult =

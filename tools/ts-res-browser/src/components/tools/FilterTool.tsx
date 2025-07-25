@@ -340,7 +340,7 @@ const FilterTool: React.FC<FilterToolProps> = ({
 
   // Handle filter value changes
   const handleFilterChange = useCallback(
-    (qualifierName: string, value: string) => {
+    (qualifierName: string, value: string | undefined) => {
       const newValues = { ...filterState.values, [qualifierName]: value };
       filterActions.updateFilterValues(newValues);
     },
@@ -578,8 +578,13 @@ const FilterTool: React.FC<FilterToolProps> = ({
                       </label>
                       {hasConstrainedValues ? (
                         <select
-                          value={filterState.values[qualifierName] || ''}
-                          onChange={(e) => handleFilterChange(qualifierName, e.target.value)}
+                          value={filterState.values[qualifierName] ?? ''}
+                          onChange={(e) =>
+                            handleFilterChange(
+                              qualifierName,
+                              e.target.value === '__undefined__' ? undefined : e.target.value
+                            )
+                          }
                           disabled={!filterState.enabled}
                           className={`flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent text-sm min-w-0 ${
                             !filterState.enabled ? 'bg-gray-100 text-gray-400' : 'bg-white'
@@ -593,18 +598,39 @@ const FilterTool: React.FC<FilterToolProps> = ({
                               {value}
                             </option>
                           ))}
+                          <option value="__undefined__" className="text-gray-500 italic">
+                            undefined
+                          </option>
                         </select>
                       ) : (
-                        <input
-                          type="text"
-                          value={filterState.values[qualifierName] || ''}
-                          onChange={(e) => handleFilterChange(qualifierName, e.target.value)}
-                          disabled={!filterState.enabled}
-                          className={`flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent text-sm min-w-0 ${
-                            !filterState.enabled ? 'bg-gray-100 text-gray-400' : ''
-                          }`}
-                          placeholder={filterState.enabled ? `Filter by ${qualifierName}` : 'Disabled'}
-                        />
+                        <div className="flex-1 flex items-center gap-1">
+                          <input
+                            type="text"
+                            value={filterState.values[qualifierName] ?? ''}
+                            onChange={(e) => handleFilterChange(qualifierName, e.target.value)}
+                            disabled={!filterState.enabled}
+                            className={`flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent text-sm min-w-0 ${
+                              !filterState.enabled ? 'bg-gray-100 text-gray-400' : ''
+                            }`}
+                            placeholder={
+                              !filterState.enabled
+                                ? 'Disabled'
+                                : filterState.values[qualifierName] === undefined
+                                ? '(undefined)'
+                                : `Filter by ${qualifierName}`
+                            }
+                          />
+                          {filterState.enabled && filterState.values[qualifierName] !== undefined && (
+                            <button
+                              type="button"
+                              onClick={() => handleFilterChange(qualifierName, undefined)}
+                              className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                              title="Set to undefined"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>

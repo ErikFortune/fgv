@@ -1,0 +1,153 @@
+{
+  "qualifierTypes": [
+    {
+      "name": "language",
+      "systemType": "language",
+      "configuration": {
+        "allowContextList": true
+      }
+    },
+    {
+      "name": "territory",
+      "systemType": "territory",
+      "configuration": {
+        "allowContextList": false,
+        "acceptLowercase": false
+      }
+    },
+    {
+      "name": "role",
+      "systemType": "literal",
+      "configuration": {
+        "enumeratedValues": ["admin", "agent", "user", "guest"]
+      }
+    },
+    {
+      "name": "environment",
+      "systemType": "literal",
+      "configuration": {
+        "enumeratedValues": ["production", "integration", "development", "test", "ephemeral"]
+      }
+    },
+    {
+      "name": "currency",
+      "systemType": "literal",
+      "configuration": {
+        "caseSensitive": true,
+        "enumeratedValues": ["USD", "EUR", "GBP", "JPY", "CNY"]
+      }
+    },
+    {
+      "name": "market",
+      "systemType": "literal",
+      "configuration": {
+        "enumeratedValues": [
+          "world",
+          "americas",
+          "europe",
+          "asia",
+          "oceania",
+          "africa",
+          "middle-east",
+          "latin-america",
+          "caribbean",
+          "central-america",
+          "south-america",
+          "north-america",
+          "nordics",
+          "baltic",
+          "balkans",
+          "eastern-europe",
+          "western-europe",
+          "central-europe",
+          "eastern-africa",
+          "western-africa",
+          "central-africa",
+          "north-africa",
+          "south-africa",
+          "middle-africa",
+          "southeast-asia"
+        ],
+        "hierarchy": {
+          "americas": "world",
+          "europe": "world",
+          "asia": "world",
+          "oceania": "world",
+          "africa": "world",
+          "middle-east": "world",
+          "latin-america": "americas",
+          "caribbean": "americas",
+          "central-america": "americas",
+          "south-america": "americas",
+          "north-america": "americas",
+          "nordics": "europe",
+          "baltic": "europe",
+          "balkans": "europe",
+          "eastern-europe": "europe",
+          "western-europe": "europe",
+          "central-europe": "europe",
+          "eastern-africa": "africa",
+          "western-africa": "africa",
+          "central-africa": "africa",
+          "north-africa": "africa",
+          "south-africa": "africa",
+          "middle-africa": "africa",
+          "southeast-asia": "asia"
+        }
+      }
+    }
+  ],
+  "qualifiers": [
+    {
+      "name": "homeTerritory",
+      "token": "home",
+      "typeName": "territory",
+      "defaultPriority": 900
+    },
+    {
+      "name": "currentTerritory",
+      "token": "geo",
+      "typeName": "territory",
+      "defaultPriority": 850
+    },
+    {
+      "name": "language",
+      "typeName": "language",
+      "defaultPriority": 800,
+      "token": "lang",
+      "tokenIsOptional": false,
+      "defaultValue": "en-US"
+    },
+    {
+      "name": "market",
+      "typeName": "market",
+      "defaultPriority": 750,
+      "defaultValue": "world"
+    },
+    {
+      "name": "role",
+      "typeName": "role",
+      "defaultPriority": 700
+    },
+    {
+      "name": "environment",
+      "typeName": "environment",
+      "defaultPriority": 650,
+      "token": "env",
+      "tokenIsOptional": false,
+      "defaultValue": "production"
+    },
+    {
+      "name": "currency",
+      "typeName": "currency",
+      "defaultPriority": 600,
+      "defaultValue": "EUR"
+    }
+  ],
+  "resourceTypes": [
+    {
+      "name": "json",
+      "typeName": "json"
+    }
+  ]
+}

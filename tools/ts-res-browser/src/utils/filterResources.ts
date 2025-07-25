@@ -39,7 +39,7 @@ const debugLog = (enableDebug: boolean, ...args: any[]) => {
  */
 export const createFilteredResourceManagerSimple = async (
   originalSystem: TsResSystem,
-  partialContext: Record<string, string>,
+  partialContext: Record<string, string | undefined>,
   options: FilterOptions = { partialContextMatch: true }
 ): Promise<Result<ProcessedResources>> => {
   try {
@@ -54,10 +54,15 @@ export const createFilteredResourceManagerSimple = async (
       return fail('Original system or resourceManager is undefined');
     }
 
+    // Filter out undefined values from the context before processing
+    const filteredContext = Object.fromEntries(
+      Object.entries(partialContext).filter(([, value]) => value !== undefined)
+    ) as Record<string, string>;
+
     // Use Result pattern chaining as recommended
-    debugLog(enableDebug, 'Validating context and cloning manager:', partialContext);
+    debugLog(enableDebug, 'Validating context and cloning manager:', filteredContext);
     const cloneResult = originalSystem.resourceManager
-      .validateContext(partialContext)
+      .validateContext(filteredContext)
       .onSuccess((validatedContext) => {
         debugLog(enableDebug, 'Context validated, creating clone with context:', validatedContext);
         return originalSystem.resourceManager.clone({
@@ -151,7 +156,7 @@ export const createFilteredResourceManagerSimple = async (
 
 export const createFilteredResourceManager = async (
   originalSystem: TsResSystem,
-  partialContext: Record<string, string>,
+  partialContext: Record<string, string | undefined>,
   options: FilterOptions = { partialContextMatch: true }
 ): Promise<Result<ProcessedResources>> => {
   try {
@@ -550,17 +555,17 @@ export const analyzeFilteredResources = (
 /**
  * Helper to check if context has any meaningful values
  */
-export const hasFilterValues = (context: Record<string, string>): boolean => {
-  return Object.values(context).some((value) => value.trim() !== '');
+export const hasFilterValues = (context: Record<string, string | undefined>): boolean => {
+  return Object.values(context).some((value) => value !== undefined && value.trim() !== '');
 };
 
 /**
  * Helper to create filter display text
  */
-export const getFilterSummary = (context: Record<string, string>): string => {
+export const getFilterSummary = (context: Record<string, string | undefined>): string => {
   const setValues = Object.entries(context)
-    .filter(([, value]) => value.trim() !== '')
-    .map(([key, value]) => `${key}=${value}`);
+    .filter(([, value]) => value !== undefined && value.trim() !== '')
+    .map(([key, value]) => `${key}=${value === undefined ? '(undefined)' : value}`);
 
   if (setValues.length === 0) {
     return 'No filters applied';
@@ -575,7 +580,7 @@ export const getFilterSummary = (context: Record<string, string>): string => {
  */
 export const createFilteredResourceManagerAlternative = async (
   originalSystem: TsResSystem,
-  partialContext: Record<string, string>,
+  partialContext: Record<string, string | undefined>,
   options: FilterOptions = { partialContextMatch: true }
 ): Promise<Result<ProcessedResources>> => {
   const enableDebug = options.enableDebugLogging === true;

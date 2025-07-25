@@ -36,9 +36,11 @@ import {
 } from '@fgv/ts-utils';
 import {
   ConditionCollector,
+  ConditionSet,
   ConditionSetCollector,
   ReadOnlyConditionCollector,
-  ReadOnlyConditionSetCollector
+  ReadOnlyConditionSetCollector,
+  Convert as ConditionsConvert
 } from '../conditions';
 import { AbstractDecisionCollector, ReadOnlyAbstractDecisionCollector } from '../decisions';
 import { IReadOnlyQualifierCollector } from '../qualifiers';
@@ -48,7 +50,7 @@ import { IResourceManager } from '../runtime';
 import { ResourceBuilder, ResourceBuilderResultDetail } from './resourceBuilder';
 import { Resource } from './resource';
 import { ResourceCandidate } from './resourceCandidate';
-import { IResourceDeclarationOptions } from './common';
+import { IResourceDeclarationOptions, IResourceManagerCloneOptions } from './common';
 import * as ResourceJson from '../resource-json';
 import * as Context from '../context';
 
@@ -521,30 +523,270 @@ export class ResourceManagerBuilder implements IResourceManager {
    * Creates a filtered clone of this ResourceManagerBuilder using the specified context.
    * This is a convenience method that creates a new ResourceManagerBuilder with the same
    * configuration but filtered to include only candidates that match the provided context.
-   * @param options - Options for the cloning operation, including the strongly-typed filterForContext property.
+   * If candidates are provided for editing, they will be applied with collision detection.
+   * @param options - Options for the cloning operation, including the strongly-typed filterForContext property and optional candidates for edits.
    * @returns A Result containing the new filtered ResourceManagerBuilder.
    * @public
    */
   /* c8 ignore next 21 - functional code path tested but coverage intermittently missed */
-  public clone(options?: IResourceDeclarationOptions): Result<ResourceManagerBuilder> {
+  public clone(options?: IResourceManagerCloneOptions): Result<ResourceManagerBuilder> {
     return this.getResourceCollectionDecl(options).onSuccess((collection) => {
       return ResourceManagerBuilder.create({
         qualifiers: this.qualifiers,
         resourceTypes: this.resourceTypes
       }).onSuccess((newManager) => {
-        // Add each resource from the filtered collection to the new manager
-        if (collection.resources) {
-          for (const resourceDecl of collection.resources) {
-            const addResult = newManager.addResource(resourceDecl);
-            if (addResult.isFailure()) {
-              return fail(
-                `${resourceDecl.id}: Failed to add resource to cloned manager: ${addResult.message}`
+        // Check if we have candidates to apply as edits
+        const editCandidates = options?.candidates || [];
+        const candidatesByResourceResult =
+          editCandidates.length > 0
+            ? ResourceManagerBuilder._createCandidatesByResourceMap(editCandidates)
+            : succeed(new Map());
+
+        return candidatesByResourceResult.onSuccess((candidatesByResource) => {
+          // Track which resource IDs have been processed from the original collection
+          const processedResourceIds = new Set<ResourceId>();
+
+          // Add each resource from the filtered collection to the new manager
+          if (collection.resources) {
+            for (const resourceDecl of collection.resources) {
+              processedResourceIds.add(resourceDecl.id as ResourceId);
+
+              // Apply edits if there are candidates for this resource
+              const editedDeclResult = ResourceManagerBuilder._applyEditsToResourceDeclaration(
+                resourceDecl,
+                candidatesByResource,
+                this._conditions
               );
+
+              if (editedDeclResult.isFailure()) {
+                return fail(`${resourceDecl.id}: Failed to apply edits: ${editedDeclResult.message}`);
+              }
+
+              const addResult = newManager.addResource(editedDeclResult.value);
+              if (addResult.isFailure()) {
+                return fail(
+                  `${resourceDecl.id}: Failed to add resource to cloned manager: ${addResult.message}`
+                );
+              }
             }
           }
-        }
-        return succeed(newManager);
+
+          // Handle any remaining candidates that target new resources not in the original collection
+          const errors = new MessageAggregator();
+          for (const [resourceId, candidates] of candidatesByResource) {
+            if (!processedResourceIds.has(resourceId)) {
+              // Create a new resource declaration for candidates targeting a new resource ID
+              ResourceManagerBuilder._createResourceDeclFromCandidates(
+                resourceId,
+                candidates,
+                this._conditions
+              )
+                .withErrorFormat((e) => `${resourceId}: Failed to create new resource from candidates: ${e}`)
+                .onSuccess((newResourceDecl) => {
+                  return newManager
+                    .addResource(newResourceDecl)
+                    .withErrorFormat(
+                      (e) => `${resourceId}: Failed to add new resource to cloned manager: ${e}`
+                    );
+                })
+                .aggregateError(errors);
+            }
+          }
+
+          return errors.returnOrReport(succeed(newManager));
+        });
       });
     });
+  }
+
+  /**
+   * Creates a resource ID keyed map from an array of loose resource candidate declarations.
+   * This enables efficient detection of edit collisions by grouping candidates by their target resource.
+   * @param candidates - Array of loose resource candidate declarations to organize
+   * @returns A Result containing a Map where keys are validated ResourceIds and values are arrays of candidates for that resource
+   * @internal
+   */
+  private static _createCandidatesByResourceMap(
+    candidates: ReadonlyArray<ResourceJson.Json.ILooseResourceCandidateDecl>
+  ): Result<Map<ResourceId, ResourceJson.Json.ILooseResourceCandidateDecl[]>> {
+    const candidatesByResource = new Map<ResourceId, ResourceJson.Json.ILooseResourceCandidateDecl[]>();
+
+    for (const candidate of candidates) {
+      const { value: resourceId, message } = Validate.toResourceId(candidate.id);
+      if (message !== undefined) {
+        return fail(`Invalid resource ID "${candidate.id}": ${message}`);
+      }
+
+      const existingCandidates = candidatesByResource.get(resourceId);
+      if (existingCandidates) {
+        existingCandidates.push(candidate);
+      } else {
+        candidatesByResource.set(resourceId, [candidate]);
+      }
+    }
+
+    return succeed(candidatesByResource);
+  }
+
+  /**
+   * Generates a proper ConditionSet token for collision detection using the existing ConditionSet.getKeyForDecl method.
+   * @param conditionSet - The condition set to generate a token for
+   * @param conditionCollector - The condition collector needed for validation context
+   * @returns A Result containing the ConditionSet token if successful, or failure if validation fails
+   * @internal
+   */
+  private static _getConditionSetToken(
+    conditionSet: ResourceJson.Json.ConditionSetDecl | undefined,
+    conditionCollector: ConditionCollector
+  ): Result<string> {
+    if (!conditionSet) {
+      return succeed(ConditionSet.UnconditionalKey);
+    }
+
+    // Convert ConditionSetDecl to IConditionSetDecl format
+    let conditionSetDecl: { conditions: ResourceJson.Json.ILooseConditionDecl[] };
+
+    if (Array.isArray(conditionSet)) {
+      // ConditionSetDeclAsArray: array of ILooseConditionDecl
+      conditionSetDecl = { conditions: conditionSet };
+    } else {
+      // ConditionSetDeclAsRecord: Record<string, string | IChildConditionDecl>
+      const conditions = Object.entries(conditionSet).map(([qualifierName, value]) => {
+        if (typeof value === 'string') {
+          return { qualifierName, value };
+        } else {
+          return { qualifierName, ...value };
+        }
+      });
+      conditionSetDecl = { conditions };
+    }
+
+    // Validate and convert to IValidatedConditionSetDecl
+    return ConditionsConvert.validatedConditionSetDecl
+      .convert(conditionSetDecl, { conditions: conditionCollector })
+      .onSuccess((validatedDecl) => {
+        // Use proper ConditionSet.getKeyForDecl method to generate the token
+        return ConditionSet.getKeyForDecl(validatedDecl);
+      });
+  }
+
+  /**
+   * Applies candidate edits to a resource declaration, handling collisions using condition set tokens.
+   * If there's no collision, adds the candidate. If there's a collision, replaces the original candidate with the edit.
+   * @param resourceDecl - The original resource declaration to potentially modify
+   * @param candidatesByResource - Map of resource IDs to arrays of candidate edits
+   * @param conditionCollector - The condition collector needed for generating condition tokens
+   * @returns A Result containing the resource declaration to use (original or modified)
+   * @internal
+   */
+  private static _applyEditsToResourceDeclaration(
+    resourceDecl: ResourceJson.Json.ILooseResourceDecl,
+    candidatesByResource: Map<ResourceId, ResourceJson.Json.ILooseResourceCandidateDecl[]>,
+    conditionCollector: ConditionCollector
+  ): Result<ResourceJson.Json.ILooseResourceDecl> {
+    const { value: resourceId, message } = Validate.toResourceId(resourceDecl.id);
+    if (message !== undefined) {
+      return fail(`Invalid resource ID "${resourceDecl.id}": ${message}`);
+    }
+
+    const editCandidates = candidatesByResource.get(resourceId);
+    if (!editCandidates || editCandidates.length === 0) {
+      return succeed(resourceDecl);
+    }
+
+    // Use Map approach: apply original candidates first, then replace with edits on collision
+    const candidatesByConditionKey = new Map<string, ResourceJson.Json.IChildResourceCandidateDecl>();
+
+    // First, add all original candidates keyed by their condition set token
+    for (const candidate of resourceDecl.candidates || []) {
+      const conditionTokenResult = ResourceManagerBuilder._getConditionSetToken(
+        candidate.conditions,
+        conditionCollector
+      );
+      if (conditionTokenResult.isFailure()) {
+        return fail(
+          `Failed to generate condition token for original candidate: ${conditionTokenResult.message}`
+        );
+      }
+      candidatesByConditionKey.set(conditionTokenResult.value, candidate);
+    }
+
+    // Then, apply edits (this replaces any colliding original candidates)
+    // Convert edit candidates (which have ids) to child candidates (without ids) for merging
+    for (const editCandidate of editCandidates) {
+      const conditionTokenResult = ResourceManagerBuilder._getConditionSetToken(
+        editCandidate.conditions,
+        conditionCollector
+      );
+      if (conditionTokenResult.isFailure()) {
+        return fail(`Failed to generate condition token for edit candidate: ${conditionTokenResult.message}`);
+      }
+
+      const childCandidate: ResourceJson.Json.IChildResourceCandidateDecl = {
+        json: editCandidate.json,
+        conditions: editCandidate.conditions,
+        isPartial: editCandidate.isPartial,
+        mergeMethod: editCandidate.mergeMethod
+      };
+      candidatesByConditionKey.set(conditionTokenResult.value, childCandidate);
+    }
+
+    // Extract the final merged candidate list
+    const mergedCandidates = Array.from(candidatesByConditionKey.values());
+
+    const modifiedDecl: ResourceJson.Json.ILooseResourceDecl = {
+      ...resourceDecl,
+      candidates: mergedCandidates
+    };
+
+    return succeed(modifiedDecl);
+  }
+
+  /**
+   * Creates a new resource declaration from an array of candidate declarations.
+   * This is used when cloning to create new resources that don't exist in the original manager.
+   * @param resourceId - The validated resource ID for the new resource
+   * @param candidates - Array of loose candidate declarations for the new resource
+   * @param conditionCollector - The condition collector for validation context
+   * @returns A Result containing the new resource declaration if successful, or failure if validation fails
+   * @internal
+   */
+  private static _createResourceDeclFromCandidates(
+    resourceId: ResourceId,
+    candidates: ResourceJson.Json.ILooseResourceCandidateDecl[],
+    conditionCollector: ConditionCollector
+  ): Result<ResourceJson.Json.ILooseResourceDecl> {
+    // Convert candidate declarations to child candidate declarations
+    const childCandidates: ResourceJson.Json.IChildResourceCandidateDecl[] = [];
+
+    // Ensure we have candidates
+    if (candidates.length === 0) {
+      return fail('Cannot create resource declaration from empty candidates array');
+    }
+
+    // Extract resourceTypeName from the first candidate (all candidates for the same resource should have the same type)
+    const resourceTypeName = candidates[0].resourceTypeName;
+    if (!resourceTypeName) {
+      return fail('resourceTypeName is required for new resource candidates');
+    }
+
+    for (const candidate of candidates) {
+      const childCandidate: ResourceJson.Json.IChildResourceCandidateDecl = {
+        json: candidate.json,
+        conditions: candidate.conditions,
+        isPartial: candidate.isPartial,
+        mergeMethod: candidate.mergeMethod
+      };
+      childCandidates.push(childCandidate);
+    }
+
+    // Create the new resource declaration
+    const newResourceDecl: ResourceJson.Json.ILooseResourceDecl = {
+      id: resourceId,
+      candidates: childCandidates,
+      resourceTypeName
+    };
+
+    return succeed(newResourceDecl);
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-res-browser",
-  "version": "5.0.0-5",
+  "version": "5.0.0-6",
   "description": "Visual browser tool for ts-res resources",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -47,7 +47,8 @@
     "jszip": "~3.10.1",
     "browserify-zlib": "~0.2.0",
     "assert": "~2.1.0",
-    "serve-handler": "~6.1.6"
+    "serve-handler": "~6.1.6",
+    "json-edit-react": "~1.28.2"
   },
   "devDependencies": {
     "@fgv/ts-utils-jest": "workspace:*",

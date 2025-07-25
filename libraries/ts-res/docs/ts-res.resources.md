@@ -186,6 +186,17 @@ Interface for parameters to the [ResourceManagerBuilder create method](./ts-res.
 
 
 </td></tr>
+<tr><td>
+
+[IResourceManagerCloneOptions](./ts-res.resources.iresourcemanagercloneoptions.md)
+
+
+</td><td>
+
+Options for ResourceManagerBuilder clone operations. Extends IDeclarationOptions to include support for applying edits when cloning.
+
+
+</td></tr>
 </tbody></table>
 
 ## Type Aliases

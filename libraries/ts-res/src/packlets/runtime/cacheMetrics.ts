@@ -130,6 +130,11 @@ export class ResourceResolverCacheMetricsListener<TM extends ICacheMetrics>
   implements IResourceResolverCacheListener
 {
   private readonly _metrics: OverallCacheMetrics<TM>;
+  private _contextErrors: number;
+
+  public get numContextErrors(): number {
+    return this._contextErrors;
+  }
 
   public constructor(factory: () => TM);
   public constructor(metrics: OverallCacheMetrics<TM>);
@@ -143,6 +148,7 @@ export class ResourceResolverCacheMetricsListener<TM extends ICacheMetrics>
     } else {
       this._metrics = factoryOrMetrics;
     }
+    this._contextErrors = 0;
   }
 
   /**
@@ -175,6 +181,13 @@ export class ResourceResolverCacheMetricsListener<TM extends ICacheMetrics>
   }
 
   /**
+   * {@inheritDoc Runtime.IResourceResolverCacheListener.onContextError}
+   */
+  public onContextError(qualifier: string, error: string): void {
+    this._contextErrors++;
+  }
+
+  /**
    * {@inheritDoc Runtime.IResourceResolverCacheListener.onCacheClear}
    */
   public onCacheClear(cache: ResourceResolverCacheType): void {
@@ -188,5 +201,6 @@ export class ResourceResolverCacheMetricsListener<TM extends ICacheMetrics>
     this._metrics.condition.reset();
     this._metrics.conditionSet.reset();
     this._metrics.decision.reset();
+    this._contextErrors = 0;
   }
 }

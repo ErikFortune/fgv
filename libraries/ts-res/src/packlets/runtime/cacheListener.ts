@@ -59,6 +59,12 @@ export interface IResourceResolverCacheListener {
   onCacheError(cache: ResourceResolverCacheType, index: number): void;
 
   /**
+   * Called when a context error occurs.
+   * @param error - The error that occurred.
+   */
+  onContextError(qualifier: string, error: string): void;
+
+  /**
    * Called when a cache is cleared.
    * @param cache - The type of cache that was cleared.
    */
@@ -88,6 +94,13 @@ export class NoOpResourceResolverCacheListener implements IResourceResolverCache
    * {@inheritDoc Runtime.IResourceResolverCacheListener.onCacheError}
    */
   public onCacheError(cache: ResourceResolverCacheType, index: number): void {
+    // no-op
+  }
+
+  /**
+   * {@inheritDoc Runtime.IResourceResolverCacheListener.onContextError}
+   */
+  public onContextError(qualifier: string, error: string): void {
     // no-op
   }
 

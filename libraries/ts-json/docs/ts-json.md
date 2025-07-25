@@ -370,6 +370,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Diff](./ts-json.diff.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [EditorRules](./ts-json.editorrules.md)
 
 

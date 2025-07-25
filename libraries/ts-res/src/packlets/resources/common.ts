@@ -83,3 +83,16 @@ export interface ICompiledResourceOptionsWithFilter extends ResourceJson.Compile
    */
   filterForContext?: IValidatedContextDecl;
 }
+
+/**
+ * Options for ResourceManagerBuilder clone operations.
+ * Extends IDeclarationOptions to include support for applying edits when cloning.
+ * @public
+ */
+export interface IResourceManagerCloneOptions extends IResourceDeclarationOptions {
+  /**
+   * Optional array of loose condition declarations to be applied as edits during the clone operation.
+   * These conditions can modify or extend the resource candidates in the cloned manager.
+   */
+  readonly candidates?: ReadonlyArray<ResourceJson.Json.ILooseResourceCandidateDecl>;
+}

@@ -87,5 +87,19 @@ Called when a cache miss occurs.
 
 
 </td></tr>
+<tr><td>
+
+[onContextError(qualifier, error)](./ts-res.runtime.noopresourceresolvercachelistener.oncontexterror.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Called when a context error occurs.
+
+
+</td></tr>
 </tbody></table>
 

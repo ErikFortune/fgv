@@ -69,5 +69,16 @@ Called when a cache miss occurs.
 
 
 </td></tr>
+<tr><td>
+
+[onContextError(qualifier, error)](./ts-res.runtime.iresourceresolvercachelistener.oncontexterror.md)
+
+
+</td><td>
+
+Called when a context error occurs.
+
+
+</td></tr>
 </tbody></table>
 

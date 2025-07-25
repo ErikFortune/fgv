@@ -1,10 +1,23 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { MagnifyingGlassIcon, CubeIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import {
+  MagnifyingGlassIcon,
+  CubeIcon,
+  DocumentTextIcon,
+  PencilIcon,
+  CheckIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
+import { JsonEditor } from 'json-edit-react';
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message, FilterState } from '../../types/app';
 import { FilterResult } from '../../utils/filterResources';
 import { Runtime, Config, NoMatch } from '@fgv/ts-res';
-import { createSimpleContext, DEFAULT_SYSTEM_CONFIGURATION } from '../../utils/tsResIntegration';
+import { Diff as JsonDiff } from '@fgv/ts-json';
+import {
+  createSimpleContext,
+  DEFAULT_SYSTEM_CONFIGURATION,
+  finalizeProcessing
+} from '../../utils/tsResIntegration';
 
 // Updated types for default resolution support
 type ConditionMatchType = 'match' | 'matchAsDefault' | 'noMatch';
@@ -27,7 +40,7 @@ interface ResolutionViewerProps {
 }
 
 interface ContextState {
-  [qualifierName: string]: string;
+  [qualifierName: string]: string | undefined;
 }
 
 interface ConditionEvaluationResult {
@@ -661,7 +674,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
 
   // Selection state
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('best');
+  const [viewMode, setViewMode] = useState<ViewMode>('composed');
 
   // Resolution state
   const [currentResolver, setCurrentResolver] = useState<Runtime.ResourceResolver | null>(null);
@@ -673,6 +686,29 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
   // Cache metrics state
   const [cacheMetrics, setCacheMetrics] =
     useState<Runtime.ResourceResolverCacheMetricsListener<Runtime.AggregateCacheMetrics> | null>(null);
+
+  // Edit journal state
+  const [editedResources, setEditedResources] = useState<EditedResources>(new Map());
+
+  // Simple edit management functions
+  const hasUnsavedEdits = useCallback(() => {
+    return editedResources.size > 0;
+  }, [editedResources]);
+
+  const saveEdit = useCallback((resourceId: string, editedValue: any) => {
+    setEditedResources((prev) => new Map(prev).set(resourceId, editedValue));
+  }, []);
+
+  const getEditedValue = useCallback(
+    (resourceId: string) => {
+      return editedResources.get(resourceId);
+    },
+    [editedResources]
+  );
+
+  const clearEdits = useCallback(() => {
+    setEditedResources(new Map());
+  }, []);
 
   // Available resources
   const availableResources = useMemo(() => {
@@ -739,40 +775,31 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
     [getConditionKey]
   );
 
-  const getCandidateConditionSetKey = useCallback(
-    (candidateIndex: number, resource: any, compiledCollection: any): string | null => {
-      try {
-        // Get the decision for this resource
-        const decision = compiledCollection.decisions[resource.decision];
-        if (!decision || !decision.conditionSets) {
-          return null;
-        }
+  // Removed complex condition set key tracking
 
-        // Map candidate index to condition set index
-        // Assuming candidates correspond to condition sets in order
-        if (candidateIndex >= decision.conditionSets.length) {
-          return null;
-        }
-
-        const conditionSetIndex = decision.conditionSets[candidateIndex];
-        const conditionSet = compiledCollection.conditionSets[conditionSetIndex];
-        if (!conditionSet) {
-          return null;
-        }
-
-        return getConditionSetKey(conditionSet, conditionSetIndex, compiledCollection);
-      } catch (error) {
-        return null;
-      }
-    },
-    [getConditionSetKey]
-  );
+  // Removed complex condition set hash tracking
 
   // Apply context changes
   const applyContext = useCallback(() => {
     if (!activeProcessedResources?.system) {
       onMessage?.('error', 'No resources loaded');
       return;
+    }
+
+    // Check for pending edits
+    if (hasUnsavedEdits()) {
+      const changeCount = editedResources.size;
+      const confirmMessage =
+        changeCount === 1
+          ? 'You have 1 resource with unsaved changes. Apply context change anyway? This will discard your edits.'
+          : `You have ${changeCount} resources with unsaved changes. Apply context change anyway? This will discard your edits.`;
+
+      if (!window.confirm(confirmMessage)) {
+        return; // User cancelled
+      }
+
+      // User confirmed - clear the edits
+      clearEdits();
     }
 
     // Create new context provider
@@ -817,7 +844,15 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
     }
 
     onMessage?.('success', 'Context applied successfully');
-  }, [pendingContextValues, activeProcessedResources?.system, selectedResourceId, onMessage]);
+  }, [
+    pendingContextValues,
+    activeProcessedResources?.system,
+    selectedResourceId,
+    onMessage,
+    hasUnsavedEdits,
+    editedResources,
+    clearEdits
+  ]);
 
   // Helper function to evaluate conditions for a candidate
   const evaluateConditionsForCandidate = useCallback(
@@ -939,7 +974,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
         // Find the index by comparing candidate objects
         const index = resource.candidates.findIndex((candidate) => candidate === matchedCandidate);
         if (index !== -1) {
-          const conditionSetKey = getCandidateConditionSetKey(index, compiledResource, compiledCollection);
+          const conditionSetKey = matchedCandidate.conditions.toHash(); // Use actual condition set hash
           const conditionEvaluations = evaluateConditionsForCandidate(
             resolver,
             index,
@@ -973,7 +1008,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
       resource.candidates.forEach((candidate, index) => {
         const isMatched = matchedCandidates.some((mc) => mc === candidate);
         if (!isMatched) {
-          const conditionSetKey = getCandidateConditionSetKey(index, compiledResource, compiledCollection);
+          const conditionSetKey = candidate.conditions.toHash(); // Use actual condition set hash
           const conditionEvaluations = evaluateConditionsForCandidate(
             resolver,
             index,
@@ -1003,7 +1038,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
         return;
       }
 
-      setResolutionResult({
+      const resolutionData = {
         success: true,
         resource,
         bestCandidate: bestResult.isSuccess() ? bestResult.value : undefined,
@@ -1011,12 +1046,19 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
         candidateDetails,
         composedValue: composedResult.isSuccess() ? composedResult.value : undefined,
         error: bestResult.isFailure() ? bestResult.message : undefined
-      });
+      };
+
+      setResolutionResult(resolutionData);
+
+      // Pre-create journal entry for the composed value if it exists (only if not already in journal)
+      if (composedResult.isSuccess() && composedResult.value !== undefined) {
+        // For composed values, we use a special hash since it's composed from multiple candidates
+        // In simplified approach, we don't pre-create journal entries
+      }
     },
     [
       activeProcessedResources?.system.resourceManager,
       activeProcessedResources?.compiledCollection,
-      getCandidateConditionSetKey,
       evaluateConditionsForCandidate
     ]
   );
@@ -1037,7 +1079,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
   );
 
   // Handle context value change
-  const handleContextChange = useCallback((qualifierName: string, value: string) => {
+  const handleContextChange = useCallback((qualifierName: string, value: string | undefined) => {
     setPendingContextValues((prev) => ({
       ...prev,
       [qualifierName]: value
@@ -1124,28 +1166,64 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
                           {qualifierName}:
                         </label>
                         {hasEnumeratedValues ? (
-                          <select
-                            value={pendingContextValues[qualifierName] || ''}
-                            onChange={(e) => handleContextChange(qualifierName, e.target.value)}
-                            className="flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm min-w-0 bg-white"
-                          >
-                            <option value="" disabled>
-                              Select {qualifierName}...
-                            </option>
-                            {typeInfo!.enumeratedValues!.map((value) => (
-                              <option key={value} value={value}>
-                                {value}
+                          <div className="flex-1 flex items-center gap-1">
+                            <select
+                              value={pendingContextValues[qualifierName] ?? ''}
+                              onChange={(e) =>
+                                handleContextChange(
+                                  qualifierName,
+                                  e.target.value === '__undefined__' ? undefined : e.target.value
+                                )
+                              }
+                              className="flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm min-w-0 bg-white"
+                            >
+                              <option value="" disabled>
+                                Select {qualifierName}...
                               </option>
-                            ))}
-                          </select>
+                              {typeInfo!.enumeratedValues!.map((value) => (
+                                <option key={value} value={value}>
+                                  {value}
+                                </option>
+                              ))}
+                              <option value="__undefined__" className="text-gray-500 italic">
+                                undefined
+                              </option>
+                            </select>
+                            {pendingContextValues[qualifierName] !== undefined && (
+                              <button
+                                type="button"
+                                onClick={() => handleContextChange(qualifierName, undefined)}
+                                className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                                title="Set to undefined"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
                         ) : (
-                          <input
-                            type="text"
-                            value={pendingContextValues[qualifierName] || ''}
-                            onChange={(e) => handleContextChange(qualifierName, e.target.value)}
-                            className="flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm min-w-0"
-                            placeholder={`Enter ${qualifierName} value`}
-                          />
+                          <div className="flex-1 flex items-center gap-1">
+                            <input
+                              type="text"
+                              value={pendingContextValues[qualifierName] ?? ''}
+                              onChange={(e) => handleContextChange(qualifierName, e.target.value)}
+                              className="flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm min-w-0"
+                              placeholder={
+                                pendingContextValues[qualifierName] === undefined
+                                  ? '(undefined)'
+                                  : `Enter ${qualifierName} value`
+                              }
+                            />
+                            {pendingContextValues[qualifierName] !== undefined && (
+                              <button
+                                type="button"
+                                onClick={() => handleContextChange(qualifierName, undefined)}
+                                className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                                title="Set to undefined"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1157,20 +1235,246 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
               <div className="text-sm text-gray-600">
                 Current:{' '}
                 {Object.entries(contextValues)
-                  .map(([key, value]) => `${key}=${value}`)
+                  .map(([key, value]) => `${key}=${value === undefined ? '(undefined)' : value}`)
                   .join(', ')}
               </div>
-              <button
-                onClick={applyContext}
-                disabled={!hasPendingChanges}
-                className={`px-4 py-2 rounded-md text-sm font-medium ${
-                  hasPendingChanges
-                    ? 'bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                {hasPendingChanges ? 'Apply Changes' : currentResolver ? 'Context Applied' : 'Apply Context'}
-              </button>
+              <div className="flex items-center space-x-2">
+                {hasUnsavedEdits() && (
+                  <>
+                    <button
+                      onClick={async () => {
+                        try {
+                          // Build loose candidate declarations from edited resources
+                          const looseCandidateDeclarations: any[] = [];
+
+                          // Extract conditions from context values that have defined values
+                          const conditions: Record<string, string> = {};
+                          Object.entries(contextValues).forEach(([qualifierName, value]) => {
+                            if (value !== undefined && value !== '') {
+                              conditions[qualifierName] = value;
+                            }
+                          });
+
+                          // Build loose candidate declaration for each edited resource
+                          for (const [resourceId, editedValue] of editedResources) {
+                            // Get the original resolved value for this resource to compute diff
+                            let optimizedJson = editedValue; // fallback to full edited value
+
+                            try {
+                              // Use the current resolver from ResolutionViewer which has the correct context
+                              // First get the resource object from the system
+                              const currentSystem = activeProcessedResources?.system;
+                              if (!currentSystem || !currentResolver) {
+                                console.warn(
+                                  `No current system or resolver for ${resourceId}, using full edited value`
+                                );
+                                continue;
+                              }
+
+                              const resourceResult =
+                                currentSystem.resourceManager.getBuiltResource(resourceId);
+                              if (resourceResult.isFailure()) {
+                                console.warn(`Resource not found for ${resourceId}:`, resourceResult.message);
+                                continue;
+                              }
+
+                              // Resolve using the current resolver which has the correct context
+                              const resolveResult = currentResolver.resolveComposedResourceValue(
+                                resourceResult.value
+                              );
+
+                              if (resolveResult.isSuccess()) {
+                                const originalValue = resolveResult.value;
+
+                                console.log(`=== THREE-WAY DIFF DEBUG for ${resourceId} ===`);
+                                console.log('Original value:', JSON.stringify(originalValue, null, 2));
+                                console.log('Edited value:', JSON.stringify(editedValue, null, 2));
+                                console.log(
+                                  'Values equal?',
+                                  JSON.stringify(originalValue) === JSON.stringify(editedValue)
+                                );
+
+                                // Compute three-way diff to get only the changed properties
+                                const diffResult = JsonDiff.jsonThreeWayDiff(originalValue, editedValue);
+                                if (diffResult.isSuccess()) {
+                                  const diff = diffResult.value;
+
+                                  console.log('Diff result:', {
+                                    identical: diff.identical,
+                                    onlyInA: diff.onlyInA,
+                                    onlyInB: diff.onlyInB,
+                                    unchanged: diff.unchanged,
+                                    metadata: diff.metadata
+                                  });
+
+                                  // Use only the changed/new properties from the edited value
+                                  // This creates a minimal candidate with just the differences
+                                  if (!diff.identical) {
+                                    // Check if diff.onlyInB has any content
+                                    const diffContent = diff.onlyInB;
+                                    console.log('Diff content:', JSON.stringify(diffContent, null, 2));
+
+                                    if (
+                                      diffContent &&
+                                      (typeof diffContent === 'object'
+                                        ? Object.keys(diffContent).length > 0
+                                        : diffContent !== null)
+                                    ) {
+                                      optimizedJson = diffContent;
+
+                                      console.log(
+                                        `✅ Using optimized JSON for ${resourceId}:`,
+                                        JSON.stringify(optimizedJson, null, 2)
+                                      );
+                                    } else {
+                                      // Diff result is empty, fall back to full edited value
+                                      console.log(
+                                        `⚠️ Empty diff result for ${resourceId}, using full edited value`
+                                      );
+                                      optimizedJson = editedValue;
+                                    }
+                                  } else {
+                                    // No changes detected, skip this resource
+                                    console.log(
+                                      `ℹ️ No changes detected for ${resourceId}, skipping candidate creation`
+                                    );
+                                    continue;
+                                  }
+                                } else {
+                                  console.warn(
+                                    `❌ Failed to compute diff for ${resourceId}:`,
+                                    diffResult.message
+                                  );
+                                }
+                              } else {
+                                console.warn(
+                                  `Failed to resolve original value for ${resourceId}:`,
+                                  resolveResult.message
+                                );
+                              }
+                            } catch (error) {
+                              console.warn(`Error computing diff for ${resourceId}:`, error);
+                            }
+
+                            const looseCandidateDecl = {
+                              id: resourceId,
+                              json: optimizedJson,
+                              conditions: conditions
+                            };
+                            looseCandidateDeclarations.push(looseCandidateDecl);
+                          }
+
+                          if (looseCandidateDeclarations.length === 0) {
+                            onMessage?.('warning', 'No edits to apply');
+                            return;
+                          }
+
+                          // Get the current system from active processed resources
+                          const currentSystem = activeProcessedResources?.system;
+                          if (!currentSystem) {
+                            onMessage?.('error', 'No resource system available');
+                            return;
+                          }
+
+                          // Clone the resource manager builder with the loose candidates
+                          const cloneResult = currentSystem.resourceManager.clone({
+                            candidates: looseCandidateDeclarations
+                          });
+
+                          if (cloneResult.isFailure()) {
+                            onMessage?.('error', `Failed to clone resource manager: ${cloneResult.message}`);
+                            return;
+                          }
+
+                          const clonedManager = cloneResult.value;
+
+                          // Create a new system with the cloned manager
+                          const newSystem = {
+                            ...currentSystem,
+                            resourceManager: clonedManager
+                          };
+
+                          // Finalize processing to rebuild the compiled view and resolver
+                          const finalizeResult = finalizeProcessing(newSystem);
+                          if (finalizeResult.isFailure()) {
+                            onMessage?.('error', `Failed to rebuild system: ${finalizeResult.message}`);
+                            return;
+                          }
+
+                          // Update the resource manager with the new processed resources
+                          resourceManager.actions.updateProcessedResources(finalizeResult.value);
+
+                          // Clear the edits since they've been applied
+                          setEditedResources(new Map());
+
+                          // Reset resolver and resolution state to force refresh
+                          setCurrentResolver(null);
+                          setResolutionResult(null);
+
+                          const hasOptimizations = looseCandidateDeclarations.some(
+                            (decl) =>
+                              typeof decl.json === 'object' &&
+                              decl.json &&
+                              JSON.stringify(decl.json).length <
+                                JSON.stringify(editedResources.get(decl.id)).length
+                          );
+
+                          onMessage?.(
+                            'success',
+                            `Successfully applied ${looseCandidateDeclarations.length} ${
+                              hasOptimizations ? 'optimized ' : ''
+                            }edit(s) and rebuilt system with ${
+                              finalizeResult.value.summary.totalResources
+                            } resources${hasOptimizations ? ' (using minimal diff candidates)' : ''}`
+                          );
+                        } catch (error) {
+                          onMessage?.(
+                            'error',
+                            `Error applying edits: ${error instanceof Error ? error.message : String(error)}`
+                          );
+                        }
+                      }}
+                      className="px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      title="Apply all pending edits and rebuild system"
+                    >
+                      Apply Edits
+                    </button>
+                    <button
+                      onClick={() => {
+                        const changeCount = editedResources.size;
+                        const confirmMessage =
+                          changeCount === 1
+                            ? 'Discard 1 pending edit?'
+                            : `Discard ${changeCount} pending edits?`;
+
+                        if (window.confirm(confirmMessage)) {
+                          clearEdits();
+                          onMessage?.('info', 'Discarded all pending changes');
+                        }
+                      }}
+                      className="px-3 py-1 text-xs font-medium text-red-700 bg-red-100 rounded hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      title="Discard all pending edits"
+                    >
+                      Discard Edits
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={applyContext}
+                  disabled={!hasPendingChanges}
+                  className={`px-4 py-2 rounded-md text-sm font-medium ${
+                    hasPendingChanges
+                      ? 'bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  {hasPendingChanges
+                    ? 'Apply Changes'
+                    : currentResolver
+                    ? 'Context Applied'
+                    : 'Apply Context'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1219,6 +1523,14 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
               {selectedResourceId && (
                 <div className="flex space-x-2">
                   <button
+                    onClick={() => setViewMode('composed')}
+                    className={`px-3 py-1 text-xs rounded ${
+                      viewMode === 'composed' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    Composed
+                  </button>
+                  <button
                     onClick={() => setViewMode('best')}
                     className={`px-3 py-1 text-xs rounded ${
                       viewMode === 'best' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
@@ -1233,14 +1545,6 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
                     }`}
                   >
                     All
-                  </button>
-                  <button
-                    onClick={() => setViewMode('composed')}
-                    className={`px-3 py-1 text-xs rounded ${
-                      viewMode === 'composed' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
-                    }`}
-                  >
-                    Composed
                   </button>
                   <button
                     onClick={() => setViewMode('raw')}
@@ -1275,6 +1579,11 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
                   result={resolutionResult}
                   viewMode={viewMode}
                   contextValues={contextValues}
+                  getEditedValue={getEditedValue}
+                  saveEdit={saveEdit}
+                  onSave={(saveAction) => {
+                    onMessage?.('info', `Changes validated for ${saveAction.type} view`);
+                  }}
                 />
               )}
             </div>
@@ -1285,14 +1594,250 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
   );
 };
 
+// Types for editing functionality
+type EditableViewType = 'composed' | 'candidate' | 'raw';
+
+interface EditState {
+  isEditing: boolean;
+  editedValue: any;
+  hasChanges: boolean;
+  isValidJson: boolean;
+}
+
+interface SaveAction {
+  type: EditableViewType;
+  onSave: (editedValue: any) => void;
+  validateJson?: (value: any) => boolean;
+}
+
+// Simple edit tracking
+type EditedResources = Map<string, any>; // resourceId -> editedValue
+
 // Resolution Results Component
 interface ResolutionResultsProps {
   result: ResolutionResult;
   viewMode: ViewMode;
   contextValues: ContextState;
+  onSave?: (saveAction: SaveAction) => void;
+  // Journal-related props
+  // Simple edit functions
+  getEditedValue?: (resourceId: string) => any;
+  saveEdit?: (resourceId: string, editedValue: any) => void;
 }
 
-const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode, contextValues }) => {
+// Editable JSON View Component
+interface EditableJsonViewProps {
+  value: any;
+  title: string;
+  description?: string;
+  viewType: EditableViewType;
+  onSave?: (saveAction: SaveAction) => void;
+  className?: string;
+  // Simple edit tracking props
+  resourceId?: string;
+  editedValue?: any; // Pre-existing edited value if any
+  onEditSave?: (resourceId: string, editedValue: any) => void;
+}
+
+const EditableJsonView: React.FC<EditableJsonViewProps> = ({
+  value,
+  title,
+  description,
+  viewType,
+  onSave,
+  className = '',
+  resourceId,
+  editedValue,
+  onEditSave
+}) => {
+  // Use edited value if available, otherwise use original value
+  const displayValue = editedValue ?? value;
+  const hasEdit = editedValue !== undefined;
+
+  // Removed debug logging
+
+  const [editState, setEditState] = useState<EditState>({
+    isEditing: false,
+    editedValue: displayValue,
+    hasChanges: false,
+    isValidJson: true
+  });
+
+  // Reset edit state when resource changes (not when display value changes due to edits)
+  React.useEffect(() => {
+    setEditState({
+      isEditing: false,
+      editedValue: displayValue,
+      hasChanges: false,
+      isValidJson: true
+    });
+  }, [resourceId]); // Only reset when switching resources, not when displayValue changes
+
+  const handleEdit = useCallback(() => {
+    setEditState((prev) => ({ ...prev, isEditing: true, editedValue: displayValue }));
+  }, [displayValue]);
+
+  const handleCancel = useCallback(() => {
+    setEditState({
+      isEditing: false,
+      editedValue: displayValue,
+      hasChanges: false,
+      isValidJson: true
+    });
+  }, [displayValue]);
+
+  const handleChange = useCallback(
+    (updatedValue: any) => {
+      try {
+        // Validate that it's valid JSON by trying to stringify and parse
+        const jsonString = JSON.stringify(updatedValue);
+        JSON.parse(jsonString);
+
+        setEditState((prev) => ({
+          ...prev,
+          editedValue: updatedValue,
+          hasChanges: JSON.stringify(updatedValue) !== JSON.stringify(value),
+          isValidJson: true
+        }));
+      } catch (error) {
+        setEditState((prev) => ({
+          ...prev,
+          editedValue: updatedValue,
+          hasChanges: true,
+          isValidJson: false
+        }));
+      }
+    },
+    [value]
+  );
+
+  const handleSave = useCallback(() => {
+    if (!editState.isValidJson || !editState.hasChanges) return;
+
+    // Save edit using simplified approach
+    if (onEditSave && resourceId) {
+      onEditSave(resourceId, editState.editedValue);
+    }
+
+    // Call the save action if provided
+    if (onSave) {
+      const saveAction: SaveAction = {
+        type: viewType,
+        onSave: (editedValue) => {
+          // Save action for potential future use
+        },
+        validateJson: (val) => {
+          try {
+            JSON.stringify(val);
+            return true;
+          } catch {
+            return false;
+          }
+        }
+      };
+      // Call saveAction.onSave with the edited value
+      saveAction.onSave(editState.editedValue);
+      // Then call the main onSave with the saveAction for any additional handling
+      onSave(saveAction);
+    }
+
+    setEditState((prev) => ({
+      ...prev,
+      isEditing: false,
+      hasChanges: false,
+      editedValue: displayValue // Reset to current display value to sync with saved state
+    }));
+  }, [editState, viewType, onSave, onEditSave, resourceId]);
+
+  if (!value) {
+    return null;
+  }
+
+  return (
+    <div className={`bg-white p-3 rounded border ${className}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <div className="flex items-center space-x-2">
+            <h4 className="font-medium text-gray-800">{title}</h4>
+            {hasEdit && (
+              <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded font-medium">
+                Edited
+              </span>
+            )}
+          </div>
+          {description && <div className="text-sm font-medium text-gray-700 mt-1">{description}</div>}
+        </div>
+        <div className="flex items-center space-x-2">
+          {editState.isEditing ? (
+            <>
+              <button
+                onClick={handleCancel}
+                className="px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                title="Cancel editing"
+              >
+                <XMarkIcon className="h-4 w-4" />
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={!editState.hasChanges || !editState.isValidJson}
+                className={`px-3 py-1 text-xs font-medium rounded focus:outline-none focus:ring-2 ${
+                  editState.hasChanges && editState.isValidJson
+                    ? 'text-white bg-green-600 hover:bg-green-700 focus:ring-green-500'
+                    : 'text-gray-400 bg-gray-300 cursor-not-allowed'
+                }`}
+                title={
+                  !editState.isValidJson
+                    ? 'Invalid JSON'
+                    : !editState.hasChanges
+                    ? 'No changes to save'
+                    : 'Save changes'
+                }
+              >
+                <CheckIcon className="h-4 w-4" />
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={handleEdit}
+              className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              title="Edit JSON"
+            >
+              <PencilIcon className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {editState.isEditing ? (
+        <div className="space-y-2">
+          <JsonEditor
+            data={editState.editedValue}
+            setData={handleChange}
+            restrictAdd={false}
+            restrictEdit={false}
+            restrictDelete={false}
+          />
+          {!editState.isValidJson && (
+            <div className="text-xs text-red-600 bg-red-50 p-2 rounded">Invalid JSON format</div>
+          )}
+        </div>
+      ) : (
+        <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
+          {JSON.stringify(displayValue, null, 2)}
+        </pre>
+      )}
+    </div>
+  );
+};
+
+const ResolutionResults: React.FC<ResolutionResultsProps> = ({
+  result,
+  viewMode,
+  contextValues,
+  onSave,
+  getEditedValue,
+  saveEdit
+}) => {
   if (!result.success) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -1334,24 +1879,25 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
   if (viewMode === 'composed') {
     return (
       <div className="space-y-4">
-        <div>
-          <h4 className="font-medium text-gray-800 mb-2">Composed Resource Value</h4>
-          {result.composedValue ? (
-            <div className="bg-white p-3 rounded border">
-              <div className="text-sm font-medium text-gray-700 mb-2">
-                Composed value from all matching candidates
-              </div>
-              <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
-                {JSON.stringify(result.composedValue, null, 2)}
-              </pre>
-            </div>
-          ) : (
-            <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
-              <p className="text-sm text-yellow-800">No composed value available for the current context.</p>
-              {result.error && <p className="text-xs text-yellow-600 mt-1">{result.error}</p>}
-            </div>
-          )}
-        </div>
+        {result.composedValue ? (
+          <EditableJsonView
+            value={result.composedValue}
+            title="Composed Resource Value"
+            description="Composed value from all matching candidates"
+            viewType="composed"
+            onSave={onSave}
+            resourceId={result.resource?.id}
+            editedValue={result.resource?.id ? getEditedValue(result.resource.id) : undefined}
+            onEditSave={(resourceId, editedValue) => {
+              saveEdit(resourceId, editedValue);
+            }}
+          />
+        ) : (
+          <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+            <p className="text-sm text-yellow-800">No composed value available for the current context.</p>
+            {result.error && <p className="text-xs text-yellow-600 mt-1">{result.error}</p>}
+          </div>
+        )}
 
         {result.resource && (
           <div>
@@ -1415,7 +1961,7 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
             <div className="space-y-2">
               {regularMatchingCandidates.map((candidateInfo, index) => (
                 <div
-                  key={candidateInfo.candidateIndex}
+                  key={`${selectedResource}-${candidateInfo.candidateIndex}`}
                   className="bg-white p-3 rounded border border-green-200"
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -1464,7 +2010,7 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
             <div className="space-y-2">
               {defaultMatchingCandidates.map((candidateInfo, index) => (
                 <div
-                  key={candidateInfo.candidateIndex}
+                  key={`${selectedResource}-default-${candidateInfo.candidateIndex}`}
                   className="bg-white p-3 rounded border border-amber-200"
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -1520,7 +2066,7 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
             <div className="space-y-2">
               {nonMatchingCandidates.map((candidateInfo) => (
                 <div
-                  key={candidateInfo.candidateIndex}
+                  key={`${selectedResource}-nonmatching-${candidateInfo.candidateIndex}`}
                   className="bg-gray-50 p-3 rounded border border-gray-200 opacity-75"
                 >
                   <div className="flex items-center justify-between mb-2">
