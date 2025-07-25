@@ -4,12 +4,12 @@
 
 ## Resources.ResourceManagerBuilder.clone() method
 
-Creates a filtered clone of this ResourceManagerBuilder using the specified context. This is a convenience method that creates a new ResourceManagerBuilder with the same configuration but filtered to include only candidates that match the provided context.
+Creates a filtered clone of this ResourceManagerBuilder using the specified context. This is a convenience method that creates a new ResourceManagerBuilder with the same configuration but filtered to include only candidates that match the provided context. If candidates are provided for editing, they will be applied with collision detection.
 
 **Signature:**
 
 ```typescript
-clone(options?: IResourceDeclarationOptions): Result<ResourceManagerBuilder>;
+clone(options?: IResourceManagerCloneOptions): Result<ResourceManagerBuilder>;
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ options
 
 </td><td>
 
-[IResourceDeclarationOptions](./ts-res.resources.iresourcedeclarationoptions.md)
+[IResourceManagerCloneOptions](./ts-res.resources.iresourcemanagercloneoptions.md)
 
 
 </td><td>
 
-_(Optional)_ Options for the cloning operation, including the strongly-typed filterForContext property.
+_(Optional)_ Options for the cloning operation, including the strongly-typed filterForContext property and optional candidates for edits.
 
 
 </td></tr>

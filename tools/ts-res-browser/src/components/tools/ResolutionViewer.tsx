@@ -1226,13 +1226,33 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
                   <>
                     <button
                       onClick={() => {
-                        // Stub: Apply all edits
-                        const changeCount = editedResources.size;
+                        // Build loose candidate declarations from edited resources
+                        const looseCandidateDeclarations: any[] = [];
+
+                        // Extract conditions from context values that have defined values
+                        const conditions: Record<string, string> = {};
+                        Object.entries(contextValues).forEach(([qualifierName, value]) => {
+                          if (value !== undefined && value !== '') {
+                            conditions[qualifierName] = value;
+                          }
+                        });
+
+                        // Build loose candidate declaration for each edited resource
+                        editedResources.forEach((editedValue, resourceId) => {
+                          const looseCandidateDecl = {
+                            id: resourceId,
+                            json: editedValue,
+                            conditions: conditions
+                          };
+                          looseCandidateDeclarations.push(looseCandidateDecl);
+                        });
+
+                        // Display the declarations in the message window
+                        const declarationsText = JSON.stringify(looseCandidateDeclarations, null, 2);
                         onMessage?.(
                           'info',
-                          `Applied ${changeCount} pending changes (stub - not actually applied yet)`
+                          `Built ${looseCandidateDeclarations.length} loose candidate declaration(s):\n\n${declarationsText}`
                         );
-                        // TODO: Implement actual apply logic
                       }}
                       className="px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500"
                       title="Apply all pending edits"

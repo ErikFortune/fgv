@@ -2436,6 +2436,11 @@ interface IResourceManagerBuilderCreateParams {
     resourceTypes: ReadOnlyResourceTypeCollector;
 }
 
+// @public
+interface IResourceManagerCloneOptions extends IResourceDeclarationOptions {
+    readonly candidates?: ReadonlyArray<ResourceJson.Json.ILooseResourceCandidateDecl>;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -3792,7 +3797,7 @@ class ResourceManagerBuilder implements IResourceManager {
     get builtResources(): Collections.IReadOnlyValidatingResultMap<ResourceId, Resource>;
     // (undocumented)
     readonly _builtResources: ValidatingResultMap<ResourceId, Resource>;
-    clone(options?: IResourceDeclarationOptions): Result<ResourceManagerBuilder>;
+    clone(options?: IResourceManagerCloneOptions): Result<ResourceManagerBuilder>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3981,7 +3986,8 @@ declare namespace Resources {
         ResourceManagerBuilderResultDetail,
         ResourceManagerBuilder,
         IResourceDeclarationOptions,
-        ICompiledResourceOptionsWithFilter
+        ICompiledResourceOptionsWithFilter,
+        IResourceManagerCloneOptions
     }
 }
 export { Resources }

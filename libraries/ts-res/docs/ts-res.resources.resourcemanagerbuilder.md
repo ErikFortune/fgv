@@ -491,7 +491,7 @@ Builds the [resources](./ts-res.resources.resource.md) from the collected [candi
 
 </td><td>
 
-Creates a filtered clone of this ResourceManagerBuilder using the specified context. This is a convenience method that creates a new ResourceManagerBuilder with the same configuration but filtered to include only candidates that match the provided context.
+Creates a filtered clone of this ResourceManagerBuilder using the specified context. This is a convenience method that creates a new ResourceManagerBuilder with the same configuration but filtered to include only candidates that match the provided context. If candidates are provided for editing, they will be applied with collision detection.
 
 
 </td></tr>
