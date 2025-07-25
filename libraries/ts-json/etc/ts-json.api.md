@@ -84,6 +84,9 @@ export { Converters }
 // @public
 export function defaultExtendVars(base: TemplateVars | undefined, values: VariableValue[]): Result<TemplateVars | undefined>;
 
+// @public
+export type DiffChangeType = 'added' | 'removed' | 'modified' | 'unchanged';
+
 declare namespace EditorRules {
     export {
         IConditionalJsonKeyResult,
@@ -124,6 +127,20 @@ interface IConditionalJsonRuleOptions extends Partial<IJsonEditorOptions> {
 }
 
 // @public
+export interface IDiffChange {
+    newValue?: JsonValue;
+    oldValue?: JsonValue;
+    path: string;
+    type: DiffChangeType;
+}
+
+// @public
+export interface IDiffResult {
+    changes: IDiffChange[];
+    identical: boolean;
+}
+
+// @public
 export interface IJsonCloneEditor {
     clone(src: JsonValue, context?: IJsonContext): DetailedResult<JsonValue, JsonEditFailureReason>;
 }
@@ -152,6 +169,13 @@ export interface IJsonConverterOptions {
     useReferences: boolean;
     useValueTemplates: boolean;
     vars?: TemplateVars;
+}
+
+// @public
+export interface IJsonDiffOptions {
+    arrayOrderMatters?: boolean;
+    includeUnchanged?: boolean;
+    pathSeparator?: string;
 }
 
 // @public
@@ -222,6 +246,23 @@ interface ITemplatedJsonRuleOptions extends Partial<IJsonEditorOptions> {
 }
 
 // @public
+export interface IThreeWayDiff {
+    identical: boolean;
+    metadata: IThreeWayDiffMetadata;
+    onlyInA: JsonValue;
+    onlyInB: JsonValue;
+    unchanged: JsonValue;
+}
+
+// @public
+export interface IThreeWayDiffMetadata {
+    added: number;
+    modified: number;
+    removed: number;
+    unchanged: number;
+}
+
+// @public
 const json: JsonConverter;
 
 // @public
@@ -254,6 +295,9 @@ export class JsonConverter extends JsonEditorConverter {
     constructor(options?: Partial<IJsonConverterOptions>);
     static create(options?: Partial<IJsonConverterOptions>): Result<JsonConverter>;
 }
+
+// @public
+export function jsonDiff(obj1: JsonValue, obj2: JsonValue, options?: IJsonDiffOptions): Result<IDiffResult>;
 
 // @public
 export type JsonEditFailureReason = 'ignore' | 'inapplicable' | 'edited' | 'error';
@@ -339,6 +383,9 @@ export class JsonEditorState {
 export type JsonEditorValidationRules = 'invalidPropertyName' | 'invalidPropertyValue' | 'undefinedPropertyValue';
 
 // @public
+export function jsonEquals(obj1: JsonValue, obj2: JsonValue): boolean;
+
+// @public
 const jsonObject: Converter<JsonObject, IJsonContext>;
 
 // @public
@@ -346,6 +393,9 @@ export type JsonPropertyEditFailureReason = JsonEditFailureReason | 'deferred';
 
 // @public
 export type JsonReferenceMapFailureReason = 'unknown' | 'error';
+
+// @public
+export function jsonThreeWayDiff(obj1: JsonValue, obj2: JsonValue): Result<IThreeWayDiff>;
 
 // @public
 export function mergeDefaultJsonConverterOptions(partial?: Partial<IJsonConverterOptions>): IJsonConverterOptions;

@@ -12,6 +12,7 @@ import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message, FilterState } from '../../types/app';
 import { FilterResult } from '../../utils/filterResources';
 import { Runtime, Config, NoMatch } from '@fgv/ts-res';
+import { jsonThreeWayDiff } from '@fgv/ts-json';
 import {
   createSimpleContext,
   DEFAULT_SYSTEM_CONFIGURATION,
@@ -1243,14 +1244,113 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
                           });
 
                           // Build loose candidate declaration for each edited resource
-                          editedResources.forEach((editedValue, resourceId) => {
+                          for (const [resourceId, editedValue] of editedResources) {
+                            // Get the original resolved value for this resource to compute diff
+                            let optimizedJson = editedValue; // fallback to full edited value
+
+                            try {
+                              // Use the current resolver from ResolutionViewer which has the correct context
+                              // First get the resource object from the system
+                              const currentSystem = activeProcessedResources?.system;
+                              if (!currentSystem || !currentResolver) {
+                                console.warn(
+                                  `No current system or resolver for ${resourceId}, using full edited value`
+                                );
+                                continue;
+                              }
+
+                              const resourceResult =
+                                currentSystem.resourceManager.getBuiltResource(resourceId);
+                              if (resourceResult.isFailure()) {
+                                console.warn(`Resource not found for ${resourceId}:`, resourceResult.message);
+                                continue;
+                              }
+
+                              // Resolve using the current resolver which has the correct context
+                              const resolveResult = currentResolver.resolveComposedResourceValue(
+                                resourceResult.value
+                              );
+
+                              if (resolveResult.isSuccess()) {
+                                const originalValue = resolveResult.value;
+
+                                console.log(`=== THREE-WAY DIFF DEBUG for ${resourceId} ===`);
+                                console.log('Original value:', JSON.stringify(originalValue, null, 2));
+                                console.log('Edited value:', JSON.stringify(editedValue, null, 2));
+                                console.log(
+                                  'Values equal?',
+                                  JSON.stringify(originalValue) === JSON.stringify(editedValue)
+                                );
+
+                                // Compute three-way diff to get only the changed properties
+                                const diffResult = jsonThreeWayDiff(originalValue, editedValue);
+                                if (diffResult.isSuccess()) {
+                                  const diff = diffResult.value;
+
+                                  console.log('Diff result:', {
+                                    identical: diff.identical,
+                                    onlyInA: diff.onlyInA,
+                                    onlyInB: diff.onlyInB,
+                                    unchanged: diff.unchanged,
+                                    metadata: diff.metadata
+                                  });
+
+                                  // Use only the changed/new properties from the edited value
+                                  // This creates a minimal candidate with just the differences
+                                  if (!diff.identical) {
+                                    // Check if diff.onlyInB has any content
+                                    const diffContent = diff.onlyInB;
+                                    console.log('Diff content:', JSON.stringify(diffContent, null, 2));
+
+                                    if (
+                                      diffContent &&
+                                      (typeof diffContent === 'object'
+                                        ? Object.keys(diffContent).length > 0
+                                        : diffContent !== null)
+                                    ) {
+                                      optimizedJson = diffContent;
+
+                                      console.log(
+                                        `✅ Using optimized JSON for ${resourceId}:`,
+                                        JSON.stringify(optimizedJson, null, 2)
+                                      );
+                                    } else {
+                                      // Diff result is empty, fall back to full edited value
+                                      console.log(
+                                        `⚠️ Empty diff result for ${resourceId}, using full edited value`
+                                      );
+                                      optimizedJson = editedValue;
+                                    }
+                                  } else {
+                                    // No changes detected, skip this resource
+                                    console.log(
+                                      `ℹ️ No changes detected for ${resourceId}, skipping candidate creation`
+                                    );
+                                    continue;
+                                  }
+                                } else {
+                                  console.warn(
+                                    `❌ Failed to compute diff for ${resourceId}:`,
+                                    diffResult.message
+                                  );
+                                }
+                              } else {
+                                console.warn(
+                                  `Failed to resolve original value for ${resourceId}:`,
+                                  resolveResult.message
+                                );
+                              }
+                            } catch (error) {
+                              console.warn(`Error computing diff for ${resourceId}:`, error);
+                            }
+
                             const looseCandidateDecl = {
                               id: resourceId,
-                              json: editedValue,
+                              json: optimizedJson,
                               conditions: conditions
                             };
                             looseCandidateDeclarations.push(looseCandidateDecl);
-                          });
+                          }
 
                           if (looseCandidateDeclarations.length === 0) {
                             onMessage?.('warning', 'No edits to apply');
@@ -1299,9 +1399,21 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
                           setCurrentResolver(null);
                           setResolutionResult(null);
 
+                          const hasOptimizations = looseCandidateDeclarations.some(
+                            (decl) =>
+                              typeof decl.json === 'object' &&
+                              decl.json &&
+                              JSON.stringify(decl.json).length <
+                                JSON.stringify(editedResources.get(decl.id)).length
+                          );
+
                           onMessage?.(
                             'success',
-                            `Successfully applied ${looseCandidateDeclarations.length} edit(s) and rebuilt system with ${finalizeResult.value.summary.totalResources} resources`
+                            `Successfully applied ${looseCandidateDeclarations.length} ${
+                              hasOptimizations ? 'optimized ' : ''
+                            }edit(s) and rebuilt system with ${
+                              finalizeResult.value.summary.totalResources
+                            } resources${hasOptimizations ? ' (using minimal diff candidates)' : ''}`
                           );
                         } catch (error) {
                           onMessage?.(

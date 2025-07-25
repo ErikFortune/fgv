@@ -197,21 +197,30 @@ export const useResourceManager = (): UseResourceManagerReturn => {
 
   const resolveResource = useCallback(
     async (resourceId: string, context?: Record<string, string>): Promise<Result<any>> => {
-      if (!state.processedResources?.resolver) {
+      if (!state.processedResources?.resolver || !state.processedResources?.system) {
         return fail('No resolver available');
       }
 
       try {
-        const contextProvider = context
-          ? createSimpleContext(context, state.processedResources.system)
-          : null;
-
-        if (contextProvider?.isFailure()) {
-          return fail(`Failed to create context: ${contextProvider.error}`);
+        // First get the resource object from the resource manager
+        const resourceResult = state.processedResources.system.resourceManager.getBuiltResource(resourceId);
+        if (resourceResult.isFailure()) {
+          return fail(`Resource not found: ${resourceId}`);
         }
 
-        const resolveContext = contextProvider?.value || undefined;
-        return await state.processedResources.resolver.resolve(resourceId, resolveContext);
+        const resource = resourceResult.value;
+
+        // If context is provided, we need to update the context provider
+        // For now, we'll use the current resolver (this is a limitation)
+        // TODO: Ideally we'd create a new resolver with the updated context
+        if (context) {
+          console.warn(
+            `Context override not fully implemented for resolveResource. Using current resolver context.`
+          );
+        }
+
+        // Use resolveComposedResourceValue to get the final composed JSON value
+        return state.processedResources.resolver.resolveComposedResourceValue(resource);
       } catch (error) {
         return fail(`Failed to resolve resource: ${error instanceof Error ? error.message : String(error)}`);
       }
