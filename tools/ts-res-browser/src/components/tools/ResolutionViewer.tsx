@@ -12,7 +12,7 @@ import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message, FilterState } from '../../types/app';
 import { FilterResult } from '../../utils/filterResources';
 import { Runtime, Config, NoMatch } from '@fgv/ts-res';
-import { jsonThreeWayDiff } from '@fgv/ts-json';
+import { Diff as JsonDiff } from '@fgv/ts-json';
 import {
   createSimpleContext,
   DEFAULT_SYSTEM_CONFIGURATION,
@@ -1295,7 +1295,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
                                 );
 
                                 // Compute three-way diff to get only the changed properties
-                                const diffResult = jsonThreeWayDiff(originalValue, editedValue);
+                                const diffResult = JsonDiff.jsonThreeWayDiff(originalValue, editedValue);
                                 if (diffResult.isSuccess()) {
                                   const diff = diffResult.value;
 

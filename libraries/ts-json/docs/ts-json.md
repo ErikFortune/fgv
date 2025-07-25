@@ -210,59 +210,6 @@ This default implementation of a [TemplateVarsExtendFunction](./ts-json.template
 </td></tr>
 <tr><td>
 
-[jsonDiff(obj1, obj2, options)](./ts-json.jsondiff.md)
-
-
-</td><td>
-
-Performs a deep diff comparison between two JSON values.
-
-This function provides detailed change tracking by analyzing every difference between two JSON structures. It returns a list of specific changes with paths, making it ideal for debugging, logging, change analysis, and understanding exactly what has changed between two data states.
-
-\*\*Key Features:\*\* - Deep recursive comparison of nested objects and arrays - Precise path tracking using dot notation (e.g., "user.profile.name") - Support for all JSON value types: objects, arrays, primitives, null - Configurable array comparison (ordered vs unordered) - Optional inclusion of unchanged values for complete comparisons
-
-\*\*Use Cases:\*\* - Debugging data changes in applications - Generating change logs or audit trails - Validating API responses against expected data - Creating detailed diff reports for data synchronization
-
-
-</td></tr>
-<tr><td>
-
-[jsonEquals(obj1, obj2)](./ts-json.jsonequals.md)
-
-
-</td><td>
-
-A simpler helper function that returns true if two JSON values are deeply equal.
-
-This function provides a fast boolean check for JSON equality without the overhead of tracking individual changes. It performs the same deep comparison logic as [jsonDiff()](./ts-json.jsondiff.md) but returns only a true/false result, making it ideal for conditional logic and validation scenarios.
-
-\*\*Key Features:\*\* - Deep recursive comparison of all nested structures - Handles all JSON types: objects, arrays, primitives, null - Object property order independence - Array order significance (index positions matter) - Performance optimized for equality checking
-
-\*\*Use Cases:\*\* - Conditional logic based on data equality - Input validation and testing assertions - Caching and memoization keys - Quick checks before expensive diff operations
-
-
-</td></tr>
-<tr><td>
-
-[jsonThreeWayDiff(obj1, obj2)](./ts-json.jsonthreewaydiff.md)
-
-
-</td><td>
-
-Performs a three-way diff comparison between two JSON values, returning separate objects containing the differences and similarities.
-
-This function provides an alternative to [jsonDiff()](./ts-json.jsondiff.md) that focuses on actionable results rather than detailed change analysis. Instead of a list of individual changes, it returns three objects that can be directly used for merging, UI display, or programmatic manipulation.
-
-\*\*Key Features:\*\* - \*\*Actionable Results\*\*: Returns objects ready for immediate use in merging operations - \*\*Simplified Array Handling\*\*: Arrays are treated as atomic values for cleaner results - \*\*Structural Preservation\*\*: Maintains original JSON structure rather than flattened paths - \*\*UI-Optimized\*\*: Perfect for side-by-side diff displays and change visualization - \*\*Merge-Friendly\*\*: Designed specifically for three-way merge scenarios
-
-\*\*Array Handling:\*\* Unlike [jsonDiff()](./ts-json.jsondiff.md)<!-- -->, this function treats arrays as complete units. If arrays differ, the entire array appears in the appropriate result object rather than computing element-by-element deltas. This approach is simpler and more predictable for most use cases involving data updates and synchronization.
-
-\*\*Use Cases:\*\* - Applying configuration updates while preserving unchanged settings - Creating side-by-side diff displays in user interfaces - Building three-way merge tools for data synchronization - Implementing undo/redo functionality with granular control - Generating patch objects for API updates
-
-
-</td></tr>
-<tr><td>
-
 [mergeDefaultJsonConverterOptions(partial)](./ts-json.mergedefaultjsonconverteroptions.md)
 
 
@@ -288,32 +235,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[IDiffChange](./ts-json.idiffchange.md)
-
-
-</td><td>
-
-Represents a single change in a JSON diff operation.
-
-Each change describes a specific difference between two JSON values, including the location of the change and the old/new values involved.
-
-
-</td></tr>
-<tr><td>
-
-[IDiffResult](./ts-json.idiffresult.md)
-
-
-</td><td>
-
-Result of a JSON diff operation containing all detected changes.
-
-This interface provides detailed information about every difference found between two JSON values, making it ideal for analysis, debugging, and understanding exactly what changed.
-
-
-</td></tr>
-<tr><td>
 
 [IJsonCloneEditor](./ts-json.ijsoncloneeditor.md)
 
@@ -343,19 +264,6 @@ Context used to convert or edit JSON objects.
 </td><td>
 
 Conversion options for [JsonConverter](./ts-json.jsonconverter.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[IJsonDiffOptions](./ts-json.ijsondiffoptions.md)
-
-
-</td><td>
-
-Options for customizing JSON diff behavior.
-
-These options allow you to control how the diff algorithm processes different types of JSON structures and what information is included in the results.
 
 
 </td></tr>
@@ -436,34 +344,6 @@ Initialization options for a [SimpleJsonMap](./ts-json.simplejsonmap.md)<!-- -->
 
 
 </td></tr>
-<tr><td>
-
-[IThreeWayDiff](./ts-json.ithreewaydiff.md)
-
-
-</td><td>
-
-Result of a three-way JSON diff operation.
-
-This interface provides an actionable representation of differences between two JSON values by separating them into three distinct objects. This approach makes it easy to apply changes, display side-by-side comparisons, perform merges, or programmatically work with the differences.
-
-\*\*Key Benefits:\*\* - \*\*Actionable Results\*\*: Objects can be directly used for merging or applying changes - \*\*UI-Friendly\*\*: Perfect for side-by-side diff displays with clear visual separation - \*\*Merge-Ready\*\*: Simplified three-way merge operations - \*\*Structured Data\*\*: Maintains original JSON structure rather than flattened paths
-
-
-</td></tr>
-<tr><td>
-
-[IThreeWayDiffMetadata](./ts-json.ithreewaydiffmetadata.md)
-
-
-</td><td>
-
-Metadata about the differences found in a three-way diff.
-
-Provides summary statistics about the types and quantities of changes detected between two JSON values, making it easy to understand the overall scope of differences at a glance.
-
-
-</td></tr>
 </tbody></table>
 
 ## Namespaces
@@ -482,6 +362,15 @@ Description
 <tbody><tr><td>
 
 [Converters](./ts-json.converters.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Diff](./ts-json.diff.md)
 
 
 </td><td>
@@ -531,19 +420,6 @@ Array merge behavior options for a [JsonEditor](./ts-json.jsoneditor.md)<!-- -->
 </td><td>
 
 Options for a [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[DiffChangeType](./ts-json.diffchangetype.md)
-
-
-</td><td>
-
-Type of change detected in a JSON diff operation.
-
-- `'added'` - Property exists only in the second object - `'removed'` - Property exists only in the first object - `'modified'` - Property exists in both objects but with different values - `'unchanged'` - Property exists in both objects with identical values (only included when `includeUnchanged` is true)
 
 
 </td></tr>

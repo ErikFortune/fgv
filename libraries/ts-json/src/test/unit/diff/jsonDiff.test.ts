@@ -22,7 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import { JsonValue } from '@fgv/ts-json-base';
-import { jsonDiff, jsonEquals, jsonThreeWayDiff } from '../../..';
+import { jsonDiff, jsonEquals, jsonThreeWayDiff } from '../../../packlets/diff';
 
 describe('jsonDiff', () => {
   describe('primitive values', () => {
@@ -371,6 +371,54 @@ describe('jsonDiff', () => {
         });
       });
     });
+
+    test('should handle object vs primitive types', () => {
+      expect(jsonDiff({ name: 'John' }, 'simple string')).toSucceedAndSatisfy((result) => {
+        expect(result.identical).toBe(false);
+        expect(result.changes).toHaveLength(1);
+        expect(result.changes[0]).toEqual({
+          path: '',
+          type: 'modified',
+          oldValue: { name: 'John' },
+          newValue: 'simple string'
+        });
+      });
+
+      expect(jsonDiff(42, { count: 42 })).toSucceedAndSatisfy((result) => {
+        expect(result.identical).toBe(false);
+        expect(result.changes).toHaveLength(1);
+        expect(result.changes[0]).toEqual({
+          path: '',
+          type: 'modified',
+          oldValue: 42,
+          newValue: { count: 42 }
+        });
+      });
+    });
+
+    test('should handle null vs object types', () => {
+      expect(jsonDiff(null, { data: 'value' })).toSucceedAndSatisfy((result) => {
+        expect(result.identical).toBe(false);
+        expect(result.changes).toHaveLength(1);
+        expect(result.changes[0]).toEqual({
+          path: '',
+          type: 'modified',
+          oldValue: null,
+          newValue: { data: 'value' }
+        });
+      });
+
+      expect(jsonDiff({ data: 'value' }, null)).toSucceedAndSatisfy((result) => {
+        expect(result.identical).toBe(false);
+        expect(result.changes).toHaveLength(1);
+        expect(result.changes[0]).toEqual({
+          path: '',
+          type: 'modified',
+          oldValue: { data: 'value' },
+          newValue: null
+        });
+      });
+    });
   });
 
   describe('options', () => {
@@ -423,6 +471,27 @@ describe('jsonDiff', () => {
         const addedChanges = result.changes.filter((c) => c.type === 'added');
         expect(addedChanges).toHaveLength(1);
         expect(addedChanges[0].newValue).toBe(3);
+      });
+    });
+
+    test('should include unchanged elements in unordered arrays when includeUnchanged is true', () => {
+      expect(
+        jsonDiff([1, 2, 3], [3, 1, 2], { arrayOrderMatters: false, includeUnchanged: true })
+      ).toSucceedAndSatisfy((result) => {
+        const unchangedChanges = result.changes.filter((c) => c.type === 'unchanged');
+        expect(unchangedChanges.length).toBeGreaterThan(0);
+      });
+    });
+
+    test('should detect removed elements in unordered arrays', () => {
+      expect(jsonDiff([1, 2, 3, 4], [1, 3], { arrayOrderMatters: false })).toSucceedAndSatisfy((result) => {
+        expect(result.identical).toBe(false);
+        const removedChanges = result.changes.filter((c) => c.type === 'removed');
+        expect(removedChanges.length).toBeGreaterThan(0);
+
+        const removedValues = removedChanges.map((c) => c.oldValue).sort();
+        expect(removedValues).toContain(2);
+        expect(removedValues).toContain(4);
       });
     });
   });

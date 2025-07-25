@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Erik Fortune
+ * Copyright (c) 2025 Erik Fortune
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,10 +20,47 @@
  * SOFTWARE.
  */
 
-export * from './packlets/context';
-export * from './packlets/converters';
-export * from './packlets/editor';
+import { JsonValue, isJsonObject, isJsonArray, isJsonPrimitive } from '@fgv/ts-json-base';
 
-import * as Diff from './packlets/diff';
+/**
+ * Deep comparison function for JSON values that handles all JSON types.
+ */
+export function deepEquals(a: JsonValue, b: JsonValue): boolean {
+  if (a === b) {
+    return true;
+  }
 
-export { Diff };
+  if (isJsonPrimitive(a) || isJsonPrimitive(b)) {
+    return a === b;
+  }
+
+  if (isJsonArray(a) && isJsonArray(b)) {
+    if (a.length !== b.length) {
+      return false;
+    }
+    for (let i = 0; i < a.length; i++) {
+      if (!deepEquals(a[i], b[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  if (isJsonObject(a) && isJsonObject(b)) {
+    const keysA = Object.keys(a);
+    const keysB = Object.keys(b);
+
+    if (keysA.length !== keysB.length) {
+      return false;
+    }
+
+    for (const key of keysA) {
+      if (!(key in b) || !deepEquals(a[key], b[key])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  return false;
+}

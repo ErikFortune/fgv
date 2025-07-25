@@ -20,4 +20,5 @@
  * SOFTWARE.
  */
 
-export * from './jsonDiff';
+export * from './detailedDiff';
+export * from './threeWayDiff';
