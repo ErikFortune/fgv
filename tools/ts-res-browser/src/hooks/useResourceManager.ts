@@ -28,6 +28,7 @@ export interface UseResourceManagerReturn {
     reset: () => void;
     resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<any>>;
     applyConfiguration: (config: Config.Model.ISystemConfiguration) => void;
+    updateProcessedResources: (processedResources: ProcessedResources) => void;
   };
 }
 
@@ -338,6 +339,16 @@ export const useResourceManager = (): UseResourceManagerReturn => {
     }));
   }, []);
 
+  const updateProcessedResources = useCallback((processedResources: ProcessedResources) => {
+    console.log('Updating processed resources:', processedResources.summary.totalResources, 'resources');
+    setState((prev) => ({
+      ...prev,
+      processedResources,
+      hasProcessedData: true,
+      error: null
+    }));
+  }, []);
+
   return {
     state,
     actions: {
@@ -347,7 +358,8 @@ export const useResourceManager = (): UseResourceManagerReturn => {
       clearError,
       reset,
       resolveResource,
-      applyConfiguration
+      applyConfiguration,
+      updateProcessedResources
     }
   };
 };

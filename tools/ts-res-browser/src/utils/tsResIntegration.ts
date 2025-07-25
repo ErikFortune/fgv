@@ -392,7 +392,7 @@ export function processImportedDirectory(
 /**
  * Finalizes processing and creates compiled resources
  */
-function finalizeProcessing(system: TsResSystem): Result<ProcessedResources> {
+export function finalizeProcessing(system: TsResSystem): Result<ProcessedResources> {
   console.log('=== FINALIZING PROCESSING ===');
   console.log('Resource manager resources:', system.resourceManager.resources.size);
   console.log('Resource manager resource keys:', Array.from(system.resourceManager.resources.keys()));

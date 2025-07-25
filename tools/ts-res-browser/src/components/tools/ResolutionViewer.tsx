@@ -12,7 +12,11 @@ import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message, FilterState } from '../../types/app';
 import { FilterResult } from '../../utils/filterResources';
 import { Runtime, Config, NoMatch } from '@fgv/ts-res';
-import { createSimpleContext, DEFAULT_SYSTEM_CONFIGURATION } from '../../utils/tsResIntegration';
+import {
+  createSimpleContext,
+  DEFAULT_SYSTEM_CONFIGURATION,
+  finalizeProcessing
+} from '../../utils/tsResIntegration';
 
 // Updated types for default resolution support
 type ConditionMatchType = 'match' | 'matchAsDefault' | 'noMatch';
@@ -1225,37 +1229,89 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
                 {hasUnsavedEdits() && (
                   <>
                     <button
-                      onClick={() => {
-                        // Build loose candidate declarations from edited resources
-                        const looseCandidateDeclarations: any[] = [];
+                      onClick={async () => {
+                        try {
+                          // Build loose candidate declarations from edited resources
+                          const looseCandidateDeclarations: any[] = [];
 
-                        // Extract conditions from context values that have defined values
-                        const conditions: Record<string, string> = {};
-                        Object.entries(contextValues).forEach(([qualifierName, value]) => {
-                          if (value !== undefined && value !== '') {
-                            conditions[qualifierName] = value;
+                          // Extract conditions from context values that have defined values
+                          const conditions: Record<string, string> = {};
+                          Object.entries(contextValues).forEach(([qualifierName, value]) => {
+                            if (value !== undefined && value !== '') {
+                              conditions[qualifierName] = value;
+                            }
+                          });
+
+                          // Build loose candidate declaration for each edited resource
+                          editedResources.forEach((editedValue, resourceId) => {
+                            const looseCandidateDecl = {
+                              id: resourceId,
+                              json: editedValue,
+                              conditions: conditions
+                            };
+                            looseCandidateDeclarations.push(looseCandidateDecl);
+                          });
+
+                          if (looseCandidateDeclarations.length === 0) {
+                            onMessage?.('warning', 'No edits to apply');
+                            return;
                           }
-                        });
 
-                        // Build loose candidate declaration for each edited resource
-                        editedResources.forEach((editedValue, resourceId) => {
-                          const looseCandidateDecl = {
-                            id: resourceId,
-                            json: editedValue,
-                            conditions: conditions
+                          // Get the current system from active processed resources
+                          const currentSystem = activeProcessedResources?.system;
+                          if (!currentSystem) {
+                            onMessage?.('error', 'No resource system available');
+                            return;
+                          }
+
+                          // Clone the resource manager builder with the loose candidates
+                          const cloneResult = currentSystem.resourceManager.clone({
+                            candidates: looseCandidateDeclarations
+                          });
+
+                          if (cloneResult.isFailure()) {
+                            onMessage?.('error', `Failed to clone resource manager: ${cloneResult.message}`);
+                            return;
+                          }
+
+                          const clonedManager = cloneResult.value;
+
+                          // Create a new system with the cloned manager
+                          const newSystem = {
+                            ...currentSystem,
+                            resourceManager: clonedManager
                           };
-                          looseCandidateDeclarations.push(looseCandidateDecl);
-                        });
 
-                        // Display the declarations in the message window
-                        const declarationsText = JSON.stringify(looseCandidateDeclarations, null, 2);
-                        onMessage?.(
-                          'info',
-                          `Built ${looseCandidateDeclarations.length} loose candidate declaration(s):\n\n${declarationsText}`
-                        );
+                          // Finalize processing to rebuild the compiled view and resolver
+                          const finalizeResult = finalizeProcessing(newSystem);
+                          if (finalizeResult.isFailure()) {
+                            onMessage?.('error', `Failed to rebuild system: ${finalizeResult.message}`);
+                            return;
+                          }
+
+                          // Update the resource manager with the new processed resources
+                          resourceManager.actions.updateProcessedResources(finalizeResult.value);
+
+                          // Clear the edits since they've been applied
+                          setEditedResources(new Map());
+
+                          // Reset resolver and resolution state to force refresh
+                          setCurrentResolver(null);
+                          setResolutionResult(null);
+
+                          onMessage?.(
+                            'success',
+                            `Successfully applied ${looseCandidateDeclarations.length} edit(s) and rebuilt system with ${finalizeResult.value.summary.totalResources} resources`
+                          );
+                        } catch (error) {
+                          onMessage?.(
+                            'error',
+                            `Error applying edits: ${error instanceof Error ? error.message : String(error)}`
+                          );
+                        }
                       }}
                       className="px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500"
-                      title="Apply all pending edits"
+                      title="Apply all pending edits and rebuild system"
                     >
                       Apply Edits
                     </button>
