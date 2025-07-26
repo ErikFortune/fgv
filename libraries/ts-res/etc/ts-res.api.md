@@ -148,6 +148,9 @@ class Candidate<TVALUE extends JsonValue = JsonValue> implements ICandidate<TVAL
 type CandidateAction = 'unchanged' | 'reduced' | 'suppressed';
 
 // @public
+type CandidateCompleteness = 'full' | 'partial';
+
+// @public
 class CandidateReducer {
     constructor(candidates: ReadonlyArray<ResourceCandidate>, filterForContext: Context.IValidatedContextDecl);
     reduceCandidate(candidate: ResourceCandidate): Result<IReducedCandidate | undefined>;
@@ -2869,15 +2872,15 @@ class JsonResourceType extends ResourceType<JsonObject> {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    validate(json: JsonObject, isPartial: true): Result<JsonObject>;
+    validate(json: JsonObject, completeness: CandidateCompleteness): Result<JsonObject>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    validate(json: JsonObject, isPartial: false): Result<JsonObject>;
+    validate(json: JsonObject, completeness: 'full'): Result<JsonObject>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    validate(json: JsonObject, isPartial: boolean): Result<JsonObject>;
+    validate(json: JsonObject, completeness: 'partial'): Result<JsonObject>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -4058,9 +4061,14 @@ abstract class ResourceType<T = unknown> implements ICollectible<ResourceTypeNam
     get index(): ResourceTypeIndex | undefined;
     get key(): ResourceTypeName;
     setIndex(index: number): Result<ResourceTypeIndex>;
-    abstract validate(json: JsonValue, isPartial: true): Result<Partial<T>>;
-    abstract validate(json: JsonValue, isPartial: false): Result<T>;
-    abstract validate(json: JsonValue, isPartial?: boolean): Result<T | Partial<T>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "CandidateCompleteness"
+    abstract validate(json: JsonValue, completeness: CandidateCompleteness): Result<Partial<T>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "CandidateCompleteness"
+    abstract validate(json: JsonValue, completeness: 'full'): Result<T>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "CandidateCompleteness"
+    abstract validate(json: JsonValue, completeness: 'partial'): Result<Partial<T>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "CandidateCompleteness"
+    abstract validate(json: JsonValue, completeness?: CandidateCompleteness): Result<T | Partial<T>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     abstract validateDeclaration(props: IResourceCandidateValidationProperties): Result<T | Partial<T>>;
@@ -4098,6 +4106,7 @@ const resourceTypeName: Converter<ResourceTypeName, unknown>;
 declare namespace ResourceTypes {
     export {
         Config_3 as Config,
+        CandidateCompleteness,
         IResourceCandidateValidationProperties,
         ResourceType,
         IResourceCollectorCreateParams,

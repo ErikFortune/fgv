@@ -180,6 +180,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[CandidateCompleteness](./ts-res.resourcetypes.candidatecompleteness.md)
+
+
+</td><td>
+
+The completeness of a resource candidate value. A full value is one that contains all of the required properties for the resource type. A partial value is one that contains some of the required properties for the resource type.
+
+
+</td></tr>
+<tr><td>
+
 [ReadOnlyResourceTypeCollector](./ts-res.resourcetypes.readonlyresourcetypecollector.md)
 
 

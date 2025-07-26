@@ -4,12 +4,12 @@
 
 ## ResourceTypes.ResourceType.validate() method
 
-Validates a JSON value for use as a full or partial resource instance value.
+Validates a JSON value for use as a partial resource instance value.
 
 **Signature:**
 
 ```typescript
-abstract validate(json: JsonValue, isPartial?: boolean): Result<T | Partial<T>>;
+abstract validate(json: JsonValue, completeness: 'partial'): Result<Partial<T>>;
 ```
 
 ## Parameters
@@ -48,17 +48,17 @@ The JSON value to validate.
 </td></tr>
 <tr><td>
 
-isPartial
+completeness
 
 
 </td><td>
 
-boolean
+'partial'
 
 
 </td><td>
 
-_(Optional)_ Indicates whether the value is expected to be partial.
+Describes  the candidate value is.
 
 
 </td></tr>
@@ -66,7 +66,7 @@ _(Optional)_ Indicates whether the value is expected to be partial.
 
 **Returns:**
 
-Result&lt;T \| Partial&lt;T&gt;&gt;
+Result&lt;Partial&lt;T&gt;&gt;
 
-`Success` with the strongly-typed full or partial resource value if the JSON is valid, `Failure` with an error message otherwise.
+`Success` with the strongly-typed partial resource value if the JSON is valid, `Failure` with an error message otherwise.
 
