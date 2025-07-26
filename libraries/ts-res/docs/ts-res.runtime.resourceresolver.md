@@ -251,7 +251,7 @@ The readonly qualifier type collector that provides qualifier implementations.
 
 </td><td>
 
-[IResourceManager](./ts-res.runtime.iresourcemanager.md)
+[IResourceManager](./ts-res.iresourcemanager.md)
 
 
 </td><td>

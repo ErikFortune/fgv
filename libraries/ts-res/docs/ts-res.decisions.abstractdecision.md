@@ -11,7 +11,7 @@ An abstract decision represents a class of decisions with candidates that differ
 ```typescript
 export declare class AbstractDecision extends Decision<number> 
 ```
-**Extends:** [Decision](./ts-res.decisions.decision.md)<!-- -->&lt;number&gt;
+**Extends:** [Decision](./ts-res.decision.md)<!-- -->&lt;number&gt;
 
 ## Constructors
 

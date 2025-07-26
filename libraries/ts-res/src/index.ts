@@ -33,18 +33,36 @@ import * as Import from './packlets/import';
 import * as Runtime from './packlets/runtime';
 
 export * from './packlets/common';
-export * from './packlets/common';
+
+import { Condition, ConditionSet } from './packlets/conditions';
+import { Decision } from './packlets/decisions';
+import { QualifierType } from './packlets/qualifier-types';
+import { Qualifier } from './packlets/qualifiers';
+import { ResourceType } from './packlets/resource-types';
+import { Resource, ResourceCandidate, ResourceManagerBuilder } from './packlets/resources';
+import { IResourceManager, ResourceResolver } from './packlets/runtime';
 
 export {
+  Condition,
   Conditions,
+  ConditionSet,
   Config,
   Context,
+  Decision,
   Decisions,
   Import,
+  IResourceManager,
+  Qualifier,
+  QualifierType,
   QualifierTypes,
   Qualifiers,
+  Resource,
+  ResourceCandidate,
   ResourceJson,
-  Resources,
+  ResourceResolver,
+  ResourceManagerBuilder,
+  ResourceType,
   ResourceTypes,
+  Resources,
   Runtime
 };

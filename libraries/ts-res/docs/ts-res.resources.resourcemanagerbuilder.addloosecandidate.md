@@ -48,7 +48,7 @@ decl
 
 **Returns:**
 
-DetailedResult&lt;[ResourceCandidate](./ts-res.resources.resourcecandidate.md)<!-- -->, [ResourceBuilderResultDetail](./ts-res.resources.resourcebuilderresultdetail.md)<!-- -->&gt;
+DetailedResult&lt;[ResourceCandidate](./ts-res.resourcecandidate.md)<!-- -->, [ResourceBuilderResultDetail](./ts-res.resources.resourcebuilderresultdetail.md)<!-- -->&gt;
 
 `Success` with the candidate if successful, or `Failure` with an error message if not.
 

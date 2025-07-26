@@ -252,7 +252,7 @@ Indicates whether the token is optional in the name or path of a resource being 
 
 </td><td>
 
-[QualifierType](./ts-res.qualifiertypes.qualifiertype.md)
+[QualifierType](./ts-res.qualifiertype.md)
 
 
 </td><td>

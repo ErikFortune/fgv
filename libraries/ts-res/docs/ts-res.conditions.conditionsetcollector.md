@@ -11,7 +11,7 @@ A `ValidatingCollector` for [ConditionSets](./ts-res.conditions.conditionset.md)
 ```typescript
 export declare class ConditionSetCollector extends ValidatingCollector<ConditionSet> 
 ```
-**Extends:** ValidatingCollector&lt;[ConditionSet](./ts-res.conditions.conditionset.md)<!-- -->&gt;
+**Extends:** ValidatingCollector&lt;[ConditionSet](./ts-res.conditionset.md)<!-- -->&gt;
 
 ## Constructors
 
@@ -103,7 +103,7 @@ Gets the [ConditionCollector](./ts-res.conditions.conditioncollector.md) used to
 
 </td><td>
 
-[ConditionSet](./ts-res.conditions.conditionset.md)
+[ConditionSet](./ts-res.conditionset.md)
 
 
 </td><td>

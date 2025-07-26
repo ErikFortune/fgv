@@ -50,7 +50,7 @@ The [validated condition declaration](./ts-res.conditions.ivalidatedconditiondec
 
 **Returns:**
 
-Result&lt;[Condition](./ts-res.conditions.condition.md)<!-- -->&gt;
+Result&lt;[Condition](./ts-res.condition.md)<!-- -->&gt;
 
 `Success` with the new [Condition](./ts-res.conditions.condition.md) if successful, `Failure` otherwise.
 

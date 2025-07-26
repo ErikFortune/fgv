@@ -82,7 +82,7 @@ The [declaration](./ts-res.qualifiers.iqualifierdecl.md) for the qualifier.
 
 **Returns:**
 
-Result&lt;[Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->&gt;
+Result&lt;[Qualifier](./ts-res.qualifier.md)<!-- -->&gt;
 
 `Success` with the new [Qualifier](./ts-res.qualifiers.qualifier.md) if successful, or `Failure` if not.
 

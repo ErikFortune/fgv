@@ -11,5 +11,5 @@ A read-only version of [ResourceTypeCollector](./ts-res.resourcetypes.resourcety
 ```typescript
 export type ReadOnlyResourceTypeCollector = Collections.IReadOnlyValidatingCollector<ResourceType>;
 ```
-**References:** [ResourceType](./ts-res.resourcetypes.resourcetype.md)
+**References:** [ResourceType](./ts-res.resourcetype.md)
 

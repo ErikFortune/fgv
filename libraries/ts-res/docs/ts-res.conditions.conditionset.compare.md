@@ -37,7 +37,7 @@ cs1
 
 </td><td>
 
-[ConditionSet](./ts-res.conditions.conditionset.md)
+[ConditionSet](./ts-res.conditionset.md)
 
 
 </td><td>
@@ -53,7 +53,7 @@ cs2
 
 </td><td>
 
-[ConditionSet](./ts-res.conditions.conditionset.md)
+[ConditionSet](./ts-res.conditionset.md)
 
 
 </td><td>

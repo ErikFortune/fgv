@@ -45,7 +45,7 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;[ResourceCandidate](./ts-res.resources.resourcecandidate.md)<!-- -->&gt;
+ReadonlyArray&lt;[ResourceCandidate](./ts-res.resourcecandidate.md)<!-- -->&gt;
 
 
 </td><td>
@@ -102,7 +102,7 @@ _(Optional)_ The id of the resource.
 
 </td><td>
 
-[ResourceType](./ts-res.resourcetypes.resourcetype.md)
+[ResourceType](./ts-res.resourcetype.md)
 
 
 </td><td>

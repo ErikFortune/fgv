@@ -11,5 +11,5 @@ Interface exposing non-mutating members of a [QualifierTypeCollector](./ts-res.q
 ```typescript
 export type ReadOnlyQualifierTypeCollector = Collections.IReadOnlyValidatingCollector<QualifierType>;
 ```
-**References:** [QualifierType](./ts-res.qualifiertypes.qualifiertype.md)
+**References:** [QualifierType](./ts-res.qualifiertype.md)
 

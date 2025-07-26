@@ -11,5 +11,5 @@ A read-only [ConditionSetCollector](./ts-res.conditions.conditionsetcollector.md
 ```typescript
 export type ReadOnlyConditionSetCollector = Collections.IReadOnlyValidatingCollector<ConditionSet>;
 ```
-**References:** [ConditionSet](./ts-res.conditions.conditionset.md)
+**References:** [ConditionSet](./ts-res.conditionset.md)
 

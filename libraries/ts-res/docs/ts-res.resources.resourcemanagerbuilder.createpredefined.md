@@ -66,7 +66,7 @@ _(Optional)_ Optional default values for qualifiers.
 
 **Returns:**
 
-Result&lt;[ResourceManagerBuilder](./ts-res.resources.resourcemanagerbuilder.md)<!-- -->&gt;
+Result&lt;[ResourceManagerBuilder](./ts-res.resourcemanagerbuilder.md)<!-- -->&gt;
 
 `Success` with the new [ResourceManagerBuilder](./ts-res.resources.resourcemanagerbuilder.md) object if successful, or `Failure` with an error message if not.
 

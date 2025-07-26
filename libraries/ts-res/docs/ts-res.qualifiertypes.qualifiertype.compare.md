@@ -37,7 +37,7 @@ t1
 
 </td><td>
 
-[QualifierType](./ts-res.qualifiertypes.qualifiertype.md)
+[QualifierType](./ts-res.qualifiertype.md)
 
 
 </td><td>
@@ -53,7 +53,7 @@ t2
 
 </td><td>
 
-[QualifierType](./ts-res.qualifiertypes.qualifiertype.md)
+[QualifierType](./ts-res.qualifiertype.md)
 
 
 </td><td>

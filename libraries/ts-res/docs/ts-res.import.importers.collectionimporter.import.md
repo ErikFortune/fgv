@@ -53,7 +53,7 @@ manager
 
 </td><td>
 
-[ResourceManagerBuilder](./ts-res.resources.resourcemanagerbuilder.md)
+[ResourceManagerBuilder](./ts-res.resourcemanagerbuilder.md)
 
 
 </td><td>

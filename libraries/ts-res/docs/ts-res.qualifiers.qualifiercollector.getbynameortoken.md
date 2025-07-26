@@ -50,7 +50,7 @@ The name or token of the qualifier to retrieve.
 
 **Returns:**
 
-Result&lt;[Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->&gt;
+Result&lt;[Qualifier](./ts-res.qualifier.md)<!-- -->&gt;
 
 `Success` with the qualifier if found, or `Failure` if not.
 

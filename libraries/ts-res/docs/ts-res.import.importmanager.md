@@ -161,7 +161,7 @@ The initial [import context](./ts-res.import.importcontext.md) for the import op
 
 </td><td>
 
-[ResourceManagerBuilder](./ts-res.resources.resourcemanagerbuilder.md)
+[ResourceManagerBuilder](./ts-res.resourcemanagerbuilder.md)
 
 
 </td><td>

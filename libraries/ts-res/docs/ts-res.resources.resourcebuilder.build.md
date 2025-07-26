@@ -13,7 +13,7 @@ build(): Result<Resource>;
 ```
 **Returns:**
 
-Result&lt;[Resource](./ts-res.resources.resource.md)<!-- -->&gt;
+Result&lt;[Resource](./ts-res.resource.md)<!-- -->&gt;
 
 `Success` with the new [Resource](./ts-res.resources.resource.md) object if successful, or `Failure` with an error message if not. Fails if no candidates have been added or if the resource type is not defined.
 

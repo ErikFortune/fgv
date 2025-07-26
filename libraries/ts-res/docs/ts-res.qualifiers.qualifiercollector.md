@@ -11,7 +11,7 @@ Collects [Qualifiers](./ts-res.qualifiers.qualifier.md) from [declarations](./ts
 ```typescript
 export declare class QualifierCollector extends ValidatingConvertingCollector<Qualifier, IQualifierDecl> implements IReadOnlyQualifierCollector 
 ```
-**Extends:** ValidatingConvertingCollector&lt;[Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->, [IQualifierDecl](./ts-res.qualifiers.iqualifierdecl.md)<!-- -->&gt;
+**Extends:** ValidatingConvertingCollector&lt;[Qualifier](./ts-res.qualifier.md)<!-- -->, [IQualifierDecl](./ts-res.qualifiers.iqualifierdecl.md)<!-- -->&gt;
 
 **Implements:** [IReadOnlyQualifierCollector](./ts-res.qualifiers.ireadonlyqualifiercollector.md)
 

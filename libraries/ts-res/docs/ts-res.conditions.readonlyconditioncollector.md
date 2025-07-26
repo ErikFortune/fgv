@@ -11,5 +11,5 @@ Type alias for a read-only [ConditionCollector](./ts-res.conditions.conditioncol
 ```typescript
 export type ReadOnlyConditionCollector = Collections.IReadOnlyValidatingCollector<Condition>;
 ```
-**References:** [Condition](./ts-res.conditions.condition.md)
+**References:** [Condition](./ts-res.condition.md)
 

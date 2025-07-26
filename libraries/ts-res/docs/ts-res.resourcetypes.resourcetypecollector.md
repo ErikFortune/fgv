@@ -11,7 +11,7 @@ Map [resource type names](./ts-res.resourcetypename.md) to [resource types](./ts
 ```typescript
 export declare class ResourceTypeCollector extends ValidatingCollector<ResourceType> 
 ```
-**Extends:** ValidatingCollector&lt;[ResourceType](./ts-res.resourcetypes.resourcetype.md)<!-- -->&gt;
+**Extends:** ValidatingCollector&lt;[ResourceType](./ts-res.resourcetype.md)<!-- -->&gt;
 
 ## Constructors
 

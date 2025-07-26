@@ -66,7 +66,7 @@ _(Optional)_ [options](./ts-res.context.icontextmatchoptions.md) for the context
 
 **Returns:**
 
-Result&lt;ReadonlyArray&lt;[ResourceCandidate](./ts-res.resources.resourcecandidate.md)<!-- -->&gt;&gt;
+Result&lt;ReadonlyArray&lt;[ResourceCandidate](./ts-res.resourcecandidate.md)<!-- -->&gt;&gt;
 
 `Success` with an array of [candidates](./ts-res.resources.resourcecandidate.md) if successful, or `Failure` with an error message if not.
 

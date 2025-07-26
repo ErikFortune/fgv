@@ -50,7 +50,7 @@ params
 
 **Returns:**
 
-Result&lt;[ConditionSet](./ts-res.conditions.conditionset.md)<!-- -->&gt;
+Result&lt;[ConditionSet](./ts-res.conditionset.md)<!-- -->&gt;
 
 `Success` with the new [ConditionSet](./ts-res.conditions.conditionset.md) object if successful, or `Failure` with an error message if not.
 

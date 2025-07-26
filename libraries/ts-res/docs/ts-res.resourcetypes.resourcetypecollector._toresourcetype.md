@@ -46,5 +46,5 @@ unknown
 
 **Returns:**
 
-Result&lt;[ResourceType](./ts-res.resourcetypes.resourcetype.md)<!-- -->&gt;
+Result&lt;[ResourceType](./ts-res.resourcetype.md)<!-- -->&gt;
 

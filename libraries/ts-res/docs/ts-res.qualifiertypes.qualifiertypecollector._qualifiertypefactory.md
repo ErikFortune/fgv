@@ -63,7 +63,7 @@ value
 
 </td><td>
 
-[QualifierType](./ts-res.qualifiertypes.qualifiertype.md)
+[QualifierType](./ts-res.qualifiertype.md)
 
 
 </td><td>
@@ -74,5 +74,5 @@ value
 
 **Returns:**
 
-Result&lt;[QualifierType](./ts-res.qualifiertypes.qualifiertype.md)<!-- -->&gt;
+Result&lt;[QualifierType](./ts-res.qualifiertype.md)<!-- -->&gt;
 

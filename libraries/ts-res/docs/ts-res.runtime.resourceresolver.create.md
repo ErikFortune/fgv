@@ -50,7 +50,7 @@ params
 
 **Returns:**
 
-Result&lt;[ResourceResolver](./ts-res.runtime.resourceresolver.md)<!-- -->&gt;
+Result&lt;[ResourceResolver](./ts-res.resourceresolver.md)<!-- -->&gt;
 
 `Success` with the new [ResourceResolver](./ts-res.runtime.resourceresolver.md) object if successful, or `Failure` with an error message if not.
 

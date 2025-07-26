@@ -50,7 +50,7 @@ params
 
 **Returns:**
 
-Result&lt;[Resource](./ts-res.resources.resource.md)<!-- -->&gt;
+Result&lt;[Resource](./ts-res.resource.md)<!-- -->&gt;
 
 `Success` with the new [Resource](./ts-res.resources.resource.md) object if successful, or `Failure` with an error message if not.
 

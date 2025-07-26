@@ -84,7 +84,7 @@ Description
 
 </td><td>
 
-[ConditionSet](./ts-res.conditions.conditionset.md)
+[ConditionSet](./ts-res.conditionset.md)
 
 
 </td><td>
@@ -189,7 +189,7 @@ The method to use when merging this candidate with other instances.
 
 </td><td>
 
-[ResourceType](./ts-res.resourcetypes.resourcetype.md) \| undefined
+[ResourceType](./ts-res.resourcetype.md) \| undefined
 
 
 </td><td>

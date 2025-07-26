@@ -37,7 +37,7 @@ nameOrIndexOrQualifier
 
 </td><td>
 
-[QualifierName](./ts-res.qualifiername.md) \| [QualifierIndex](./ts-res.qualifierindex.md) \| [Qualifier](./ts-res.qualifiers.qualifier.md)
+[QualifierName](./ts-res.qualifiername.md) \| [QualifierIndex](./ts-res.qualifierindex.md) \| [Qualifier](./ts-res.qualifier.md)
 
 
 </td><td>

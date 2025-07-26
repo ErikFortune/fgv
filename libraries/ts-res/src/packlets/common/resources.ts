@@ -67,3 +67,12 @@ export type ResourceValueMergeMethod = 'augment' | 'delete' | 'replace';
  * @public
  */
 export const allResourceValueMergeMethods: ResourceValueMergeMethod[] = ['augment', 'delete', 'replace'];
+
+/**
+ * The completeness of a resource candidate value.  A full value is one that
+ * contains all of the required properties for the resource type.  A partial
+ * value is one that contains some of the required properties for the resource
+ * type.
+ * @public
+ */
+export type CandidateCompleteness = 'full' | 'partial';

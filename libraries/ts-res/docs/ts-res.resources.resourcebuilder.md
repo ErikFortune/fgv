@@ -83,7 +83,7 @@ Description
 
 </td><td>
 
-ResultMap&lt;string, [ResourceCandidate](./ts-res.resources.resourcecandidate.md)<!-- -->&gt;
+ResultMap&lt;string, [ResourceCandidate](./ts-res.resourcecandidate.md)<!-- -->&gt;
 
 
 </td><td>
@@ -146,7 +146,7 @@ Collector for [abstract decisions](./ts-res.decisions.abstractdecision.md)<!-- -
 
 </td><td>
 
-[ResourceType](./ts-res.resourcetypes.resourcetype.md) \| undefined
+[ResourceType](./ts-res.resourcetype.md) \| undefined
 
 
 </td><td>
@@ -188,7 +188,7 @@ Map of all known [resource types](./ts-res.resourcetypes.resourcetype.md)<!-- --
 
 </td><td>
 
-ReadonlyArray&lt;[ResourceCandidate](./ts-res.resources.resourcecandidate.md)<!-- -->&gt;
+ReadonlyArray&lt;[ResourceCandidate](./ts-res.resourcecandidate.md)<!-- -->&gt;
 
 
 </td><td>
@@ -230,7 +230,7 @@ The unique [id](./ts-res.resourceid.md) of the resource being built.
 
 </td><td>
 
-[ResourceType](./ts-res.resourcetypes.resourcetype.md) \| undefined
+[ResourceType](./ts-res.resourcetype.md) \| undefined
 
 
 </td><td>

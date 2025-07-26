@@ -11,7 +11,7 @@ A `ValidatingCollector` for [Conditions](./ts-res.conditions.condition.md)<!-- -
 ```typescript
 export declare class ConditionCollector extends ValidatingCollector<Condition> 
 ```
-**Extends:** ValidatingCollector&lt;[Condition](./ts-res.conditions.condition.md)<!-- -->&gt;
+**Extends:** ValidatingCollector&lt;[Condition](./ts-res.condition.md)<!-- -->&gt;
 
 ## Constructors
 

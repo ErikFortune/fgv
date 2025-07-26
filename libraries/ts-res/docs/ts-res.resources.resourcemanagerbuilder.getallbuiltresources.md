@@ -13,7 +13,7 @@ getAllBuiltResources(): Result<ReadonlyArray<Resource>>;
 ```
 **Returns:**
 
-Result&lt;ReadonlyArray&lt;[Resource](./ts-res.resources.resource.md)<!-- -->&gt;&gt;
+Result&lt;ReadonlyArray&lt;[Resource](./ts-res.resource.md)<!-- -->&gt;&gt;
 
 `Success` with an array of resources if successful, or `Failure` with an error message if not.
 

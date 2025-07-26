@@ -48,7 +48,7 @@ decl
 
 **Returns:**
 
-DetailedResult&lt;[ResourceCandidate](./ts-res.resources.resourcecandidate.md)<!-- -->, [ResourceBuilderResultDetail](./ts-res.resources.resourcebuilderresultdetail.md)<!-- -->&gt;
+DetailedResult&lt;[ResourceCandidate](./ts-res.resourcecandidate.md)<!-- -->, [ResourceBuilderResultDetail](./ts-res.resources.resourcebuilderresultdetail.md)<!-- -->&gt;
 
 `Success` with the added [candidate](./ts-res.resources.resourcecandidate.md) if successful, or `Failure` with an error message if not. Fails with error detail 'type-mismatch' if the candidate specifies a different resource type than previously added candidates, or with 'exists' if a candidate already exists with the same conditions but different values. Succeeds with 'exists' and returns the existing candidate if the candidate to be added is identical to an existing candidate.
 

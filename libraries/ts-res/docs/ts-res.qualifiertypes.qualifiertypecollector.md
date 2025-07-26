@@ -11,7 +11,7 @@ Collector for [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) objects.
 ```typescript
 export declare class QualifierTypeCollector extends ValidatingConvertingCollector<QualifierType, QualifierType> 
 ```
-**Extends:** ValidatingConvertingCollector&lt;[QualifierType](./ts-res.qualifiertypes.qualifiertype.md)<!-- -->, [QualifierType](./ts-res.qualifiertypes.qualifiertype.md)<!-- -->&gt;
+**Extends:** ValidatingConvertingCollector&lt;[QualifierType](./ts-res.qualifiertype.md)<!-- -->, [QualifierType](./ts-res.qualifiertype.md)<!-- -->&gt;
 
 ## Constructors
 

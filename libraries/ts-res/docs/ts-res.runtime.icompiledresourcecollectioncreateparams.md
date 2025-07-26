@@ -64,7 +64,7 @@ The compiled resource collection data.
 
 </td><td>
 
-Collections.IReadOnlyResultMap&lt;string, [QualifierType](./ts-res.qualifiertypes.qualifiertype.md)<!-- -->&gt;
+Collections.IReadOnlyResultMap&lt;string, [QualifierType](./ts-res.qualifiertype.md)<!-- -->&gt;
 
 
 </td><td>
@@ -83,7 +83,7 @@ Map of qualifier type names to qualifier type objects.
 
 </td><td>
 
-Collections.IReadOnlyResultMap&lt;string, [ResourceType](./ts-res.resourcetypes.resourcetype.md)<!-- -->&gt;
+Collections.IReadOnlyResultMap&lt;string, [ResourceType](./ts-res.resourcetype.md)<!-- -->&gt;
 
 
 </td><td>

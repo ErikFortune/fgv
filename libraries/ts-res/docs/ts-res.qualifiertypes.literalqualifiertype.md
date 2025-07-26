@@ -11,7 +11,7 @@ A [qualifier](./ts-res.qualifiertypes.qualifiertype.md) that matches a literal v
 ```typescript
 export declare class LiteralQualifierType extends QualifierType 
 ```
-**Extends:** [QualifierType](./ts-res.qualifiertypes.qualifiertype.md)
+**Extends:** [QualifierType](./ts-res.qualifiertype.md)
 
 ## Constructors
 

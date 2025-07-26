@@ -53,7 +53,7 @@ The [importable](./ts-res.import.iimportable.md) item to import.
 
 </td><td>
 
-[ResourceManagerBuilder](./ts-res.resources.resourcemanagerbuilder.md)
+[ResourceManagerBuilder](./ts-res.resourcemanagerbuilder.md)
 
 
 </td><td>

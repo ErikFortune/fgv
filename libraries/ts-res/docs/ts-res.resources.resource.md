@@ -84,7 +84,7 @@ Description
 
 </td><td>
 
-[ResourceType](./ts-res.resourcetypes.resourcetype.md)
+[ResourceType](./ts-res.resourcetype.md)
 
 
 </td><td>
@@ -105,7 +105,7 @@ The [type](./ts-res.resourcetypes.resourcetype.md) of the resource.
 
 </td><td>
 
-ReadonlyArray&lt;[ResourceCandidate](./ts-res.resources.resourcecandidate.md)<!-- -->&gt;
+ReadonlyArray&lt;[ResourceCandidate](./ts-res.resourcecandidate.md)<!-- -->&gt;
 
 
 </td><td>
@@ -168,7 +168,7 @@ The unique [id](./ts-res.resourceid.md) of the resource.
 
 </td><td>
 
-[ResourceType](./ts-res.resourcetypes.resourcetype.md)
+[ResourceType](./ts-res.resourcetype.md)
 
 
 </td><td>

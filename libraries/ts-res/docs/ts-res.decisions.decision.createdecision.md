@@ -50,7 +50,7 @@ params
 
 **Returns:**
 
-Result&lt;[Decision](./ts-res.decisions.decision.md)<!-- -->&gt;
+Result&lt;[Decision](./ts-res.decision.md)<!-- -->&gt;
 
 `Success` with the new decision if successful, or `Failure` with an error message if not.
 

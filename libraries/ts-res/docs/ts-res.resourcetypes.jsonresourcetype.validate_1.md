@@ -58,7 +58,7 @@ completeness
 
 </td><td>
 
-Describes  the candidate value is.
+Describes [how complete](./ts-res.candidatecompleteness.md) the candidate value is.
 
 
 </td></tr>

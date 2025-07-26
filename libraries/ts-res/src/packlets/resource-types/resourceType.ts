@@ -23,6 +23,7 @@
 import { JsonValue } from '@fgv/ts-json-base';
 import { Collections, ICollectible, Result } from '@fgv/ts-utils';
 import {
+  CandidateCompleteness,
   Convert as CommonConvert,
   Validate,
   ResourceTypeIndex,
@@ -30,15 +31,6 @@ import {
   ResourceValueMergeMethod,
   ResourceId
 } from '../common';
-
-/**
- * The completeness of a resource candidate value.  A full value is one that
- * contains all of the required properties for the resource type.  A partial
- * value is one that contains some of the required properties for the resource
- * type.
- * @public
- */
-export type CandidateCompleteness = 'full' | 'partial';
 
 /**
  * Parameters used to validate a {@link ResourceJson.Json.ILooseResourceCandidateDecl | resource candidate declaration}.

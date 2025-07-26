@@ -45,7 +45,7 @@ Description
 
 </td><td>
 
-[QualifierType](./ts-res.qualifiertypes.qualifiertype.md)<!-- -->\[\]
+[QualifierType](./ts-res.qualifiertype.md)<!-- -->\[\]
 
 
 </td><td>

@@ -48,7 +48,7 @@ childDecl
 
 **Returns:**
 
-DetailedResult&lt;[ResourceCandidate](./ts-res.resources.resourcecandidate.md)<!-- -->, [ResourceBuilderResultDetail](./ts-res.resources.resourcebuilderresultdetail.md)<!-- -->&gt;
+DetailedResult&lt;[ResourceCandidate](./ts-res.resourcecandidate.md)<!-- -->, [ResourceBuilderResultDetail](./ts-res.resources.resourcebuilderresultdetail.md)<!-- -->&gt;
 
 `Success` with the added [candidate](./ts-res.resources.resourcecandidate.md) if successful, or `Failure` with an error message if not.
 

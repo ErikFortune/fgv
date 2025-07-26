@@ -50,7 +50,7 @@ _(Optional)_ Options for the cloning operation, including the strongly-typed fil
 
 **Returns:**
 
-Result&lt;[ResourceManagerBuilder](./ts-res.resources.resourcemanagerbuilder.md)<!-- -->&gt;
+Result&lt;[ResourceManagerBuilder](./ts-res.resourcemanagerbuilder.md)<!-- -->&gt;
 
 A Result containing the new filtered ResourceManagerBuilder.
 

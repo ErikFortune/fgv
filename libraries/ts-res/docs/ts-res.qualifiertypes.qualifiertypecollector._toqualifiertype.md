@@ -46,5 +46,5 @@ unknown
 
 **Returns:**
 
-Result&lt;[QualifierType](./ts-res.qualifiertypes.qualifiertype.md)<!-- -->&gt;
+Result&lt;[QualifierType](./ts-res.qualifiertype.md)<!-- -->&gt;
 

@@ -102,7 +102,7 @@ The [readonly qualifier type collector](./ts-res.qualifiertypes.readonlyqualifie
 
 </td><td>
 
-[IResourceManager](./ts-res.runtime.iresourcemanager.md)
+[IResourceManager](./ts-res.iresourcemanager.md)
 
 
 </td><td>

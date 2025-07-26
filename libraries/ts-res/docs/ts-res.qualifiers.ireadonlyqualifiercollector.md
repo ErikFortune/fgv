@@ -11,7 +11,7 @@ Readonly version of [QualifierCollector](./ts-res.qualifiers.qualifiercollector.
 ```typescript
 export interface IReadOnlyQualifierCollector extends Collections.IReadOnlyValidatingCollector<Qualifier> 
 ```
-**Extends:** Collections.IReadOnlyValidatingCollector&lt;[Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->&gt;
+**Extends:** Collections.IReadOnlyValidatingCollector&lt;[Qualifier](./ts-res.qualifier.md)<!-- -->&gt;
 
 ## Properties
 

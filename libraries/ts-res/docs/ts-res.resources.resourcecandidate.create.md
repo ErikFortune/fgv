@@ -50,7 +50,7 @@ Parameters to create a new [ResourceCandidate](./ts-res.resources.resourcecandid
 
 **Returns:**
 
-Result&lt;[ResourceCandidate](./ts-res.resources.resourcecandidate.md)<!-- -->&gt;
+Result&lt;[ResourceCandidate](./ts-res.resourcecandidate.md)<!-- -->&gt;
 
 `Success` with the new [ResourceCandidate](./ts-res.resources.resourcecandidate.md) object if successful, or `Failure` with an error message if not.
 

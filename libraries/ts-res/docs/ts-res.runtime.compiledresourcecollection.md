@@ -11,7 +11,7 @@ A compiled resource collection implements [IResourceManager](./ts-res.runtime.ir
 ```typescript
 export declare class CompiledResourceCollection implements IResourceManager 
 ```
-**Implements:** [IResourceManager](./ts-res.runtime.iresourcemanager.md)
+**Implements:** [IResourceManager](./ts-res.iresourcemanager.md)
 
 ## Remarks
 

@@ -50,7 +50,7 @@ The [configuration object](./ts-res.resourcetypes.config.iresourcetypeconfig.md)
 
 **Returns:**
 
-Result&lt;[ResourceType](./ts-res.resourcetypes.resourcetype.md)<!-- -->&gt;
+Result&lt;[ResourceType](./ts-res.resourcetype.md)<!-- -->&gt;
 
 `Success` with the new [ResourceType](./ts-res.resourcetypes.resourcetype.md) if successful, `Failure` with an error message otherwise.
 

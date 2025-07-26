@@ -96,7 +96,7 @@ string
 
 </td><td>
 
-ReadonlyArray&lt;[Condition](./ts-res.conditions.condition.md)<!-- -->&gt;
+ReadonlyArray&lt;[Condition](./ts-res.condition.md)<!-- -->&gt;
 
 
 </td><td>
@@ -115,7 +115,7 @@ _(Optional)_
 
 </td><td>
 
-[ResourceType](./ts-res.resourcetypes.resourcetype.md)
+[ResourceType](./ts-res.resourcetype.md)
 
 
 </td><td>

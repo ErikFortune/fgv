@@ -37,7 +37,7 @@ condition
 
 </td><td>
 
-[Condition](./ts-res.conditions.condition.md)
+[Condition](./ts-res.condition.md)
 
 
 </td><td>

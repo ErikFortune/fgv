@@ -37,7 +37,7 @@ candidates
 
 </td><td>
 
-ReadonlyArray&lt;[ResourceCandidate](./ts-res.resources.resourcecandidate.md)<!-- -->&gt;
+ReadonlyArray&lt;[ResourceCandidate](./ts-res.resourcecandidate.md)<!-- -->&gt;
 
 
 </td><td>
@@ -53,7 +53,7 @@ expectedType
 
 </td><td>
 
-[ResourceType](./ts-res.resourcetypes.resourcetype.md)
+[ResourceType](./ts-res.resourcetype.md)
 
 
 </td><td>
@@ -66,7 +66,7 @@ _(Optional)_
 
 **Returns:**
 
-Result&lt;[ResourceType](./ts-res.resourcetypes.resourcetype.md) \| undefined&gt;
+Result&lt;[ResourceType](./ts-res.resourcetype.md) \| undefined&gt;
 
 `Success` with the resource type if successful, `Success` with `undefined` if none of the candidates specify a resource tap, and `Failure` with an error message if clients specify conflicting resource types.
 

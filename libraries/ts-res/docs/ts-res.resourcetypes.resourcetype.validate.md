@@ -53,12 +53,12 @@ completeness
 
 </td><td>
 
-[CandidateCompleteness](./ts-res.resourcetypes.candidatecompleteness.md)
+[CandidateCompleteness](./ts-res.candidatecompleteness.md)
 
 
 </td><td>
 
-Describes  the candidate value is.
+Describes [how complete](./ts-res.candidatecompleteness.md) the candidate value is.
 
 
 </td></tr>

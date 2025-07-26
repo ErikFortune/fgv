@@ -66,7 +66,7 @@ _(Optional)_ [options](./ts-res.context.icontextmatchoptions.md) for the context
 
 **Returns:**
 
-ReadonlyArray&lt;[ResourceCandidate](./ts-res.resources.resourcecandidate.md)<!-- -->&gt;
+ReadonlyArray&lt;[ResourceCandidate](./ts-res.resourcecandidate.md)<!-- -->&gt;
 
 A read-only array of [candidates](./ts-res.resources.resourcecandidate.md) that can match the context.
 

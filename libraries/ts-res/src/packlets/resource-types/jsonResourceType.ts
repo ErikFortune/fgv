@@ -21,8 +21,8 @@
  */
 
 import { Converters as JsonConverters, JsonObject } from '@fgv/ts-json-base';
-import { CandidateCompleteness, IResourceCandidateValidationProperties, ResourceType } from './resourceType';
-import { Convert, ResourceTypeName } from '../common';
+import { IResourceCandidateValidationProperties, ResourceType } from './resourceType';
+import { CandidateCompleteness, Convert, ResourceTypeName } from '../common';
 import { captureResult, Result } from '@fgv/ts-utils';
 
 /**

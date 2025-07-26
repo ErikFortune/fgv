@@ -50,7 +50,7 @@ The [configuration object](./ts-res.qualifiertypes.config.iqualifiertypeconfig.m
 
 **Returns:**
 
-Result&lt;[QualifierType](./ts-res.qualifiertypes.qualifiertype.md)<!-- -->&gt;
+Result&lt;[QualifierType](./ts-res.qualifiertype.md)<!-- -->&gt;
 
 `Success` with the new [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) if successful, `Failure` with an error message otherwise.
 

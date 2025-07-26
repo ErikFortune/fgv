@@ -37,7 +37,7 @@ candidate
 
 </td><td>
 
-[ResourceCandidate](./ts-res.resources.resourcecandidate.md)
+[ResourceCandidate](./ts-res.resourcecandidate.md)
 
 
 </td><td>

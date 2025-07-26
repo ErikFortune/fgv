@@ -50,7 +50,7 @@ The [id](./ts-res.resourceid.md) of the resource to get.
 
 **Returns:**
 
-Result&lt;[Resource](./ts-res.resources.resource.md)<!-- -->&gt;
+Result&lt;[Resource](./ts-res.resource.md)<!-- -->&gt;
 
 `Success` with the resource if successful, or `Failure` with an error message if not.
 

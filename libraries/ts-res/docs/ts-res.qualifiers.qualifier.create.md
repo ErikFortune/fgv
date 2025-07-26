@@ -50,7 +50,7 @@ The [validated declaration](./ts-res.qualifiers.ivalidatedqualifierdecl.md) for 
 
 **Returns:**
 
-Result&lt;[Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->&gt;
+Result&lt;[Qualifier](./ts-res.qualifier.md)<!-- -->&gt;
 
 `Success` with the new [Qualifier](./ts-res.qualifiers.qualifier.md) if successful, `Failure` with an error message otherwise.
 

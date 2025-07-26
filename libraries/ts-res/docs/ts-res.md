@@ -4,6 +4,172 @@
 
 ## ts-res package
 
+## Classes
+
+<table><thead><tr><th>
+
+Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Condition](./ts-res.condition.md)
+
+
+</td><td>
+
+Represents a single condition applied to some resource instance.
+
+
+</td></tr>
+<tr><td>
+
+[ConditionSet](./ts-res.conditionset.md)
+
+
+</td><td>
+
+Represents a set of [conditions](./ts-res.conditions.condition.md) that must all be met in some runtime context for a resource instance to be valid.
+
+
+</td></tr>
+<tr><td>
+
+[Decision](./ts-res.decision.md)
+
+
+</td><td>
+
+Simple collectible implementation of [IDecision](./ts-res.decisions.idecision.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[Qualifier](./ts-res.qualifier.md)
+
+
+</td><td>
+
+Represents a qualifier that can be used to identify the context in which a resource is used.
+
+
+</td></tr>
+<tr><td>
+
+[Resource](./ts-res.resource.md)
+
+
+</td><td>
+
+Represents a single logical resource, with a unique id and a set of possible candidate instances.
+
+
+</td></tr>
+<tr><td>
+
+[ResourceCandidate](./ts-res.resourcecandidate.md)
+
+
+</td><td>
+
+A [resource candidate](./ts-res.resources.resourcecandidate.md) represents a single possible instance value for some resource, with the conditions under which it applies and instructions on how to merge it with other instances.
+
+
+</td></tr>
+<tr><td>
+
+[ResourceManagerBuilder](./ts-res.resourcemanagerbuilder.md)
+
+
+</td><td>
+
+Builder for a collection of [resources](./ts-res.resources.resource.md)<!-- -->. Collects [candidates](./ts-res.resources.resourcecandidate.md) for each resource into a [ResourceBuilder](./ts-res.resources.resourcebuilder.md) per resource, validates them against each other, and builds a collection of [resources](./ts-res.resources.resource.md) once all candidates are collected.
+
+
+</td></tr>
+<tr><td>
+
+[ResourceResolver](./ts-res.resourceresolver.md)
+
+
+</td><td>
+
+High-performance runtime resource resolver with O(1) condition caching. Resolves resources for a given context by evaluating conditions against qualifier values and caching results for optimal performance.
+
+
+</td></tr>
+</tbody></table>
+
+## Abstract Classes
+
+<table><thead><tr><th>
+
+Abstract Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[QualifierType](./ts-res.qualifiertype.md)
+
+
+</td><td>
+
+Abstract base class for qualifier types. Provides default implementations for the [IQualifierType](./ts-res.qualifiertypes.iqualifiertype.md) interface.
+
+
+</td></tr>
+<tr><td>
+
+[ResourceType](./ts-res.resourcetype.md)
+
+
+</td><td>
+
+Abstract base class for resource types which are responsible for validating and converting JSON values into the appropriate strongly-typed resource value.
+
+
+</td></tr>
+</tbody></table>
+
+## Interfaces
+
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[IResourceManager](./ts-res.iresourcemanager.md)
+
+
+</td><td>
+
+Interface defining the read-only properties that the runtime resource resolver needs from a resource manager. This abstraction allows the runtime to work with different implementations without requiring the full ResourceManagerBuilder build mechanics.
+
+
+</td></tr>
+</tbody></table>
+
 ## Namespaces
 
 <table><thead><tr><th>
@@ -240,6 +406,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[CandidateCompleteness](./ts-res.candidatecompleteness.md)
+
+
+</td><td>
+
+The completeness of a resource candidate value. A full value is one that contains all of the required properties for the resource type. A partial value is one that contains some of the required properties for the resource type.
+
+
+</td></tr>
+<tr><td>
 
 [ConditionIndex](./ts-res.conditionindex.md)
 

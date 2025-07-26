@@ -110,7 +110,7 @@ The resource identifier
 
 </td><td>
 
-[ResourceType](./ts-res.resourcetypes.resourcetype.md)
+[ResourceType](./ts-res.resourcetype.md)
 
 
 </td><td>

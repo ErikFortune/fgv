@@ -13,7 +13,7 @@ getAllBuiltCandidates(): Result<ReadonlyArray<ResourceCandidate>>;
 ```
 **Returns:**
 
-Result&lt;ReadonlyArray&lt;[ResourceCandidate](./ts-res.resources.resourcecandidate.md)<!-- -->&gt;&gt;
+Result&lt;ReadonlyArray&lt;[ResourceCandidate](./ts-res.resourcecandidate.md)<!-- -->&gt;&gt;
 
 `Success` with an array of resources if successful, or `Failure` with an error message if not.
 

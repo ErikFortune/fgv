@@ -11,7 +11,7 @@
 ```typescript
 export declare class LanguageQualifierType extends QualifierType 
 ```
-**Extends:** [QualifierType](./ts-res.qualifiertypes.qualifiertype.md)
+**Extends:** [QualifierType](./ts-res.qualifiertype.md)
 
 ## Constructors
 

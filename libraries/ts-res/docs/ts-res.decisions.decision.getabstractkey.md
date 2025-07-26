@@ -37,7 +37,7 @@ conditionSets
 
 </td><td>
 
-ReadonlyArray&lt;[ConditionSet](./ts-res.conditions.conditionset.md)<!-- -->&gt;
+ReadonlyArray&lt;[ConditionSet](./ts-res.conditionset.md)<!-- -->&gt;
 
 
 </td><td>

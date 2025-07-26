@@ -159,7 +159,7 @@ Indicates whether the token is optional when parsing a resource token.
 
 </td><td>
 
-[QualifierType](./ts-res.qualifiertypes.qualifiertype.md)
+[QualifierType](./ts-res.qualifiertype.md)
 
 
 </td><td>

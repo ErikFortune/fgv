@@ -11,7 +11,7 @@ Builder for a collection of [resources](./ts-res.resources.resource.md)<!-- -->.
 ```typescript
 export declare class ResourceManagerBuilder implements IResourceManager 
 ```
-**Implements:** [IResourceManager](./ts-res.runtime.iresourcemanager.md)
+**Implements:** [IResourceManager](./ts-res.iresourcemanager.md)
 
 ## Constructors
 
@@ -103,7 +103,7 @@ boolean
 
 </td><td>
 
-ValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [Resource](./ts-res.resources.resource.md)<!-- -->&gt;
+ValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [Resource](./ts-res.resource.md)<!-- -->&gt;
 
 
 </td><td>
@@ -227,7 +227,7 @@ ValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [ResourceBu
 
 </td><td>
 
-Collections.IReadOnlyValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [Resource](./ts-res.resources.resource.md)<!-- -->&gt;
+Collections.IReadOnlyValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [Resource](./ts-res.resource.md)<!-- -->&gt;
 
 
 </td><td>

@@ -66,7 +66,7 @@ the qualifiers to match against.
 
 **Returns:**
 
-Result&lt;[Qualifier](./ts-res.qualifiers.qualifier.md)<!-- -->&gt;
+Result&lt;[Qualifier](./ts-res.qualifier.md)<!-- -->&gt;
 
 `Success` with the matching qualifier if successful, `Failure` with an error message if not.
 

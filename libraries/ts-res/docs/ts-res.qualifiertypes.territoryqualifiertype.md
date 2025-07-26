@@ -11,7 +11,7 @@ Qualifier type for territory values. Territories are two-letter ISO-3166-2 Alpha
 ```typescript
 export declare class TerritoryQualifierType extends QualifierType 
 ```
-**Extends:** [QualifierType](./ts-res.qualifiertypes.qualifiertype.md)
+**Extends:** [QualifierType](./ts-res.qualifiertype.md)
 
 ## Constructors
 
