@@ -21,7 +21,7 @@
  */
 
 import { Converters as JsonConverters, JsonObject } from '@fgv/ts-json-base';
-import { IResourceCandidateValidationProperties, ResourceType } from './resourceType';
+import { CandidateCompleteness, IResourceCandidateValidationProperties, ResourceType } from './resourceType';
 import { Convert, ResourceTypeName } from '../common';
 import { captureResult, Result } from '@fgv/ts-utils';
 
@@ -81,16 +81,16 @@ export class JsonResourceType extends ResourceType<JsonObject> {
   /**
    * {@inheritdoc ResourceTypes.ResourceType.(validate:1)}
    */
-  public validate(json: JsonObject, isPartial: true): Result<JsonObject>;
+  public validate(json: JsonObject, completeness: CandidateCompleteness): Result<JsonObject>;
   /**
    * {@inheritdoc ResourceTypes.ResourceType.(validate:2)}
    */
-  public validate(json: JsonObject, isPartial: false): Result<JsonObject>;
+  public validate(json: JsonObject, completeness: 'full'): Result<JsonObject>;
   /**
    * {@inheritdoc ResourceTypes.ResourceType.(validate:3)}
    */
-  public validate(json: JsonObject, isPartial: boolean): Result<JsonObject>;
-  public validate(json: JsonObject, __isPartial?: boolean): Result<JsonObject> {
+  public validate(json: JsonObject, completeness: 'partial'): Result<JsonObject>;
+  public validate(json: JsonObject, __completeness?: CandidateCompleteness): Result<JsonObject> {
     return JsonConverters.jsonObject.convert(json);
   }
 }

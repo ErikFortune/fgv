@@ -150,7 +150,7 @@ Sets the index for this resource type. Once set, the index cannot be changed.
 </td></tr>
 <tr><td>
 
-[validate(json, isPartial)](./ts-res.resourcetypes.resourcetype.validate.md)
+[validate(json, completeness)](./ts-res.resourcetypes.resourcetype.validate.md)
 
 
 </td><td>
@@ -166,7 +166,7 @@ Validates a JSON value for use as a partial resource instance value.
 </td></tr>
 <tr><td>
 
-[validate(json, isPartial)](./ts-res.resourcetypes.resourcetype.validate_1.md)
+[validate(json, completeness)](./ts-res.resourcetypes.resourcetype.validate_1.md)
 
 
 </td><td>
@@ -182,7 +182,23 @@ Validates a JSON value for use as a complete resource instance value.
 </td></tr>
 <tr><td>
 
-[validate(json, isPartial)](./ts-res.resourcetypes.resourcetype.validate_2.md)
+[validate(json, completeness)](./ts-res.resourcetypes.resourcetype.validate_2.md)
+
+
+</td><td>
+
+`abstract`
+
+
+</td><td>
+
+Validates a JSON value for use as a partial resource instance value.
+
+
+</td></tr>
+<tr><td>
+
+[validate(json, completeness)](./ts-res.resourcetypes.resourcetype.validate_3.md)
 
 
 </td><td>

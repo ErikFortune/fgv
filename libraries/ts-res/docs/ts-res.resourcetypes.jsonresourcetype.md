@@ -85,7 +85,7 @@ Factory method to create a new [JsonResourceType](./ts-res.resourcetypes.jsonres
 </td></tr>
 <tr><td>
 
-[validate(json, isPartial)](./ts-res.resourcetypes.jsonresourcetype.validate.md)
+[validate(json, completeness)](./ts-res.resourcetypes.jsonresourcetype.validate.md)
 
 
 </td><td>
@@ -99,7 +99,7 @@ Validates a JSON value for use as a partial resource instance value.
 </td></tr>
 <tr><td>
 
-[validate(json, isPartial)](./ts-res.resourcetypes.jsonresourcetype.validate_1.md)
+[validate(json, completeness)](./ts-res.resourcetypes.jsonresourcetype.validate_1.md)
 
 
 </td><td>
@@ -113,7 +113,7 @@ Validates a JSON value for use as a complete resource instance value.
 </td></tr>
 <tr><td>
 
-[validate(json, isPartial)](./ts-res.resourcetypes.jsonresourcetype.validate_2.md)
+[validate(json, completeness)](./ts-res.resourcetypes.jsonresourcetype.validate_2.md)
 
 
 </td><td>
@@ -121,7 +121,7 @@ Validates a JSON value for use as a complete resource instance value.
 
 </td><td>
 
-Validates a JSON value for use as a full or partial resource instance value.
+Validates a JSON value for use as a partial resource instance value.
 
 
 </td></tr>

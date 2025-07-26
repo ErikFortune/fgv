@@ -32,6 +32,15 @@ import {
 } from '../common';
 
 /**
+ * The completeness of a resource candidate value.  A full value is one that
+ * contains all of the required properties for the resource type.  A partial
+ * value is one that contains some of the required properties for the resource
+ * type.
+ * @public
+ */
+export type CandidateCompleteness = 'full' | 'partial';
+
+/**
  * Parameters used to validate a {@link ResourceJson.Json.ILooseResourceCandidateDecl | resource candidate declaration}.
  * @public
  */
@@ -105,32 +114,42 @@ export abstract class ResourceType<T = unknown> implements ICollectible<Resource
   /**
    * Validates a JSON value for use as a partial resource instance value.
    * @param json - The JSON value to validate.
-   * @param isPartial - `true` indicates that the value is expected to be partial.
+   * @param completeness - Describes {@link CandidateCompleteness | how complete} the candidate value is.
    * @returns `Success` with the strongly-typed partial resource value if the JSON is valid,
    * `Failure` with an error message otherwise.
    * @public
    */
-  public abstract validate(json: JsonValue, isPartial: true): Result<Partial<T>>;
+  public abstract validate(json: JsonValue, completeness: CandidateCompleteness): Result<Partial<T>>;
 
   /**
    * Validates a JSON value for use as a complete resource instance value.
    * @param json - The JSON value to validate.
-   * @param isPartial - `false` indicates that the value is expected to be complete.
+   * @param completeness - Describes {@link CandidateCompleteness | how complete} the candidate value is.
    * @returns `Success` with the strongly-typed resource value if the JSON is valid,
    * `Failure` with an error message otherwise.
    * @public
    */
-  public abstract validate(json: JsonValue, isPartial: false): Result<T>;
+  public abstract validate(json: JsonValue, completeness: 'full'): Result<T>;
+
+  /**
+   * Validates a JSON value for use as a partial resource instance value.
+   * @param json - The JSON value to validate.
+   * @param completeness - Describes {@link CandidateCompleteness | how complete} the candidate value is.
+   * @returns `Success` with the strongly-typed partial resource value if the JSON is valid,
+   * `Failure` with an error message otherwise.
+   * @public
+   */
+  public abstract validate(json: JsonValue, completeness: 'partial'): Result<Partial<T>>;
 
   /**
    * Validates a JSON value for use as a full or partial resource instance value.
    * @param json - The JSON value to validate.
-   * @param isPartial - Indicates whether the value is expected to be partial.
+   * @param completeness - Describes {@link CandidateCompleteness | how complete} the candidate value is.
    * @returns `Success` with the strongly-typed full or partial resource value if
    * the JSON is valid, `Failure` with an error message otherwise.
    * @public
    */
-  public abstract validate(json: JsonValue, isPartial?: boolean): Result<T | Partial<T>>;
+  public abstract validate(json: JsonValue, completeness?: CandidateCompleteness): Result<T | Partial<T>>;
 
   /**
    * Sets the index for this resource type.  Once set, the index cannot be changed.
