@@ -513,6 +513,22 @@ Creates a new [ResourceManagerBuilder](./ts-res.resources.resourcemanagerbuilder
 </td></tr>
 <tr><td>
 
+[createPredefined(name, qualifierDefaultValues)](./ts-res.resources.resourcemanagerbuilder.createpredefined.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [ResourceManagerBuilder](./ts-res.resources.resourcemanagerbuilder.md) object from a predefined system configuration.
+
+
+</td></tr>
+<tr><td>
+
 [getAllBuiltCandidates()](./ts-res.resources.resourcemanagerbuilder.getallbuiltcandidates.md)
 
 

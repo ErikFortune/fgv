@@ -53,6 +53,7 @@ import { ResourceCandidate } from './resourceCandidate';
 import { IResourceDeclarationOptions, IResourceManagerCloneOptions } from './common';
 import * as ResourceJson from '../resource-json';
 import * as Context from '../context';
+import * as Config from '../config';
 
 /**
  * Interface for parameters to the {@link Resources.ResourceManagerBuilder.create | ResourceManagerBuilder create method}.
@@ -198,6 +199,29 @@ export class ResourceManagerBuilder implements IResourceManager {
    */
   public static create(params: IResourceManagerBuilderCreateParams): Result<ResourceManagerBuilder> {
     return captureResult(() => new ResourceManagerBuilder(params));
+  }
+
+  /**
+   * Creates a new {@link Resources.ResourceManagerBuilder | ResourceManagerBuilder} object from a predefined system configuration.
+   * @param name - The name of the predefined system configuration to use.
+   * @param qualifierDefaultValues - Optional default values for qualifiers.
+   * @returns `Success` with the new {@link Resources.ResourceManagerBuilder | ResourceManagerBuilder} object if successful,
+   * or `Failure` with an error message if not.
+   * @public
+   */
+  public static createPredefined(
+    name: Config.PredefinedSystemConfiguration,
+    qualifierDefaultValues?: Config.ISystemConfigurationInitParams['qualifierDefaultValues']
+  ): Result<ResourceManagerBuilder> {
+    return Config.getPredefinedSystemConfiguration(
+      name,
+      qualifierDefaultValues ? { qualifierDefaultValues } : undefined
+    ).onSuccess((systemConfig) => {
+      return ResourceManagerBuilder.create({
+        qualifiers: systemConfig.qualifiers,
+        resourceTypes: systemConfig.resourceTypes
+      });
+    });
   }
 
   /**

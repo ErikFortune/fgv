@@ -83,14 +83,14 @@ describe('JsonResourceType', () => {
     test('succeeds for valid json regardless of completeness', () => {
       const value = { someProperty: 'someValue' };
       const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
-      expect(rt.validate(value, false)).toSucceedWith(value);
-      expect(rt.validate(value, true)).toSucceedWith(value);
+      expect(rt.validate(value, 'full')).toSucceedWith(value);
+      expect(rt.validate(value, 'partial')).toSucceedWith(value);
     });
 
     test('fails for non-json values', () => {
       const value = { foo: () => true } as unknown as JsonObject;
       const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
-      expect(rt.validate(value, false)).toFailWith(/not a valid JSON object/);
+      expect(rt.validate(value, 'full')).toFailWith(/not a valid JSON object/);
     });
   });
 

@@ -9,7 +9,7 @@ Validates a JSON value for use as a complete resource instance value.
 **Signature:**
 
 ```typescript
-abstract validate(json: JsonValue, isPartial: false): Result<T>;
+abstract validate(json: JsonValue, completeness: 'full'): Result<T>;
 ```
 
 ## Parameters
@@ -48,17 +48,17 @@ The JSON value to validate.
 </td></tr>
 <tr><td>
 
-isPartial
+completeness
 
 
 </td><td>
 
-false
+'full'
 
 
 </td><td>
 
-`false` indicates that the value is expected to be complete.
+Describes  the candidate value is.
 
 
 </td></tr>
