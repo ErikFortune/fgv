@@ -3816,6 +3816,9 @@ class ResourceManagerBuilder implements IResourceManager {
     static create(params: IResourceManagerBuilderCreateParams): Result<ResourceManagerBuilder>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static createPredefined(name: Config.PredefinedSystemConfiguration, qualifierDefaultValues?: Config.ISystemConfigurationInitParams['qualifierDefaultValues']): Result<ResourceManagerBuilder>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get decisions(): ReadOnlyAbstractDecisionCollector;
     // (undocumented)
