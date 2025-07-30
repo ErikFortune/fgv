@@ -265,6 +265,127 @@ describe('ResourceResolver class', () => {
       })
       .orThrow();
 
+    // Add a resource with null values for null-as-delete testing
+    resourceManager
+      .addResource({
+        id: 'null-test-resource',
+        resourceTypeName: 'json',
+        candidates: [
+          {
+            json: {
+              name: 'John Doe',
+              email: 'john@example.com',
+              phone: '555-1234',
+              department: 'Engineering'
+            },
+            conditions: {
+              language: 'en'
+            },
+            isPartial: false // This is the full candidate (base)
+          },
+          {
+            json: {
+              name: 'John',
+              email: null, // This should delete the email property
+              age: 30,
+              department: null // This should delete the department property
+            },
+            conditions: {
+              language: 'en',
+              territory: 'US'
+            },
+            isPartial: true
+          }
+        ]
+      })
+      .orThrow();
+
+    // Add edge case test resources for null-as-delete testing
+    resourceManager
+      .addResource({
+        id: 'only-nulls-resource',
+        resourceTypeName: 'json',
+        candidates: [
+          {
+            json: { name: 'Base', active: true, value: 'original' },
+            conditions: { language: 'en' },
+            isPartial: false
+          },
+          {
+            json: { name: null, active: null, value: null },
+            conditions: { language: 'en', territory: 'US' },
+            isPartial: true
+          }
+        ]
+      })
+      .orThrow();
+
+    resourceManager
+      .addResource({
+        id: 'nested-nulls-resource',
+        resourceTypeName: 'json',
+        candidates: [
+          {
+            json: {
+              user: { name: 'Jane', email: 'jane@example.com' },
+              settings: { theme: 'dark', notifications: true }
+            },
+            conditions: { language: 'en' },
+            isPartial: false
+          },
+          {
+            json: {
+              user: { name: 'Jane', email: null },
+              settings: null
+            },
+            conditions: { language: 'en', territory: 'US' },
+            isPartial: true
+          }
+        ]
+      })
+      .orThrow();
+
+    resourceManager
+      .addResource({
+        id: 'arrays-with-nulls-resource',
+        resourceTypeName: 'json',
+        candidates: [
+          {
+            json: {
+              items: [1, 2, 3],
+              tags: ['a', 'b'],
+              metadata: { version: 1, deprecated: false }
+            },
+            conditions: { language: 'en' },
+            isPartial: false
+          },
+          {
+            json: {
+              items: [null, 4, null],
+              tags: null,
+              metadata: { version: 2, deprecated: null }
+            },
+            conditions: { language: 'en', territory: 'US' },
+            isPartial: true
+          }
+        ]
+      })
+      .orThrow();
+
+    resourceManager
+      .addResource({
+        id: 'single-candidate-with-nulls',
+        resourceTypeName: 'json',
+        candidates: [
+          {
+            json: { name: 'Single', active: null, value: 'test' },
+            conditions: { language: 'en' },
+            isPartial: false
+          }
+        ]
+      })
+      .orThrow();
+
     // Build resources to create decisions
     resourceManager.build().orThrow();
 
@@ -1060,6 +1181,212 @@ describe('ResourceResolver class', () => {
         });
       });
     });
+
+    describe('nullAsDelete behavior', () => {
+      testBothResolvers('deletes properties with null values by default', (resolver, resolverName) => {
+        expect(resolver.resourceManager.getBuiltResource('null-test-resource')).toSucceedAndSatisfy(
+          (resource) => {
+            expect(resolver.resolveComposedResourceValue(resource)).toSucceedAndSatisfy((composedValue) => {
+              // Should delete email and department properties due to null values
+              expect(composedValue).toEqual({
+                name: 'John', // Overridden by partial candidate
+                phone: '555-1234', // From full candidate (unchanged)
+                age: 30 // Added by partial candidate
+              });
+            });
+          }
+        );
+      });
+
+      test('preserves null values when suppressNullAsDelete is true', () => {
+        // Create resolver with suppressNullAsDelete option
+        const resolverWithSuppressedNulls = TsRes.Runtime.ResourceResolver.create({
+          resourceManager: builderResolver.resourceManager,
+          qualifierTypes: builderResolver.qualifierTypes,
+          contextQualifierProvider: builderResolver.contextQualifierProvider,
+          options: {
+            suppressNullAsDelete: true
+          }
+        }).orThrow();
+
+        expect(
+          resolverWithSuppressedNulls.resourceManager.getBuiltResource('null-test-resource')
+        ).toSucceedAndSatisfy((resource) => {
+          expect(resolverWithSuppressedNulls.resolveComposedResourceValue(resource)).toSucceedAndSatisfy(
+            (composedValue) => {
+              // Should preserve null values instead of deleting properties
+              expect(composedValue).toEqual({
+                name: 'John', // Overridden by partial candidate
+                email: null, // Preserved as null (not deleted)
+                phone: '555-1234', // From full candidate (unchanged)
+                age: 30, // Added by partial candidate
+                department: null // Preserved as null (not deleted)
+              });
+            }
+          );
+        });
+      });
+
+      test('default behavior enables null-as-delete', () => {
+        // Verify that the default ResourceResolver has suppressNullAsDelete: false
+        expect(builderResolver.options.suppressNullAsDelete).toBe(false);
+
+        // Verify that nullAsDelete is enabled by default (which means nulls delete properties)
+        expect(builderResolver.resourceManager.getBuiltResource('null-test-resource')).toSucceedAndSatisfy(
+          (resource) => {
+            expect(builderResolver.resolveComposedResourceValue(resource)).toSucceedAndSatisfy(
+              (composedValue) => {
+                // Should NOT have email or department properties
+                expect(composedValue).not.toHaveProperty('email');
+                expect(composedValue).not.toHaveProperty('department');
+                expect(composedValue).toEqual({
+                  name: 'John',
+                  phone: '555-1234',
+                  age: 30
+                });
+              }
+            );
+          }
+        );
+      });
+
+      test('explicit suppressNullAsDelete: false enables null-as-delete', () => {
+        // Create resolver with explicit suppressNullAsDelete: false
+        const resolverWithEnabledNulls = TsRes.Runtime.ResourceResolver.create({
+          resourceManager: builderResolver.resourceManager,
+          qualifierTypes: builderResolver.qualifierTypes,
+          contextQualifierProvider: builderResolver.contextQualifierProvider,
+          options: {
+            suppressNullAsDelete: false
+          }
+        }).orThrow();
+
+        expect(resolverWithEnabledNulls.options.suppressNullAsDelete).toBe(false);
+
+        expect(
+          resolverWithEnabledNulls.resourceManager.getBuiltResource('null-test-resource')
+        ).toSucceedAndSatisfy((resource) => {
+          expect(resolverWithEnabledNulls.resolveComposedResourceValue(resource)).toSucceedAndSatisfy(
+            (composedValue) => {
+              // Should delete properties with null values
+              expect(composedValue).toEqual({
+                name: 'John',
+                phone: '555-1234',
+                age: 30
+              });
+            }
+          );
+        });
+      });
+
+      describe('edge cases and complex scenarios', () => {
+        testBothResolvers(
+          'handles all properties being null in partial candidate',
+          (resolver, resolverName) => {
+            expect(resolver.resourceManager.getBuiltResource('only-nulls-resource')).toSucceedAndSatisfy(
+              (resource) => {
+                expect(resolver.resolveComposedResourceValue(resource)).toSucceedAndSatisfy(
+                  (composedValue) => {
+                    // All properties from partial should be deleted, leaving empty object
+                    expect(composedValue).toEqual({});
+                  }
+                );
+              }
+            );
+          }
+        );
+
+        testBothResolvers('handles nested object properties with nulls', (resolver, resolverName) => {
+          expect(resolver.resourceManager.getBuiltResource('nested-nulls-resource')).toSucceedAndSatisfy(
+            (resource) => {
+              expect(resolver.resolveComposedResourceValue(resource)).toSucceedAndSatisfy((composedValue) => {
+                // Should delete email within user object and entire settings object
+                expect(composedValue).toEqual({
+                  user: { name: 'Jane' } // email deleted from nested object
+                  // settings object deleted entirely
+                });
+              });
+            }
+          );
+        });
+
+        testBothResolvers('handles arrays with null elements correctly', (resolver, resolverName) => {
+          expect(resolver.resourceManager.getBuiltResource('arrays-with-nulls-resource')).toSucceedAndSatisfy(
+            (resource) => {
+              expect(resolver.resolveComposedResourceValue(resource)).toSucceedAndSatisfy((composedValue) => {
+                // Array replacement should occur, null elements preserved, but null properties deleted
+                expect(composedValue).toEqual({
+                  items: [null, 4, null], // Array replaced, null elements preserved
+                  // tags property deleted due to null value
+                  metadata: { version: 2 } // deprecated property deleted due to null value
+                });
+              });
+            }
+          );
+        });
+
+        testBothResolvers('handles single candidate with null properties', (resolver, resolverName) => {
+          expect(
+            resolver.resourceManager.getBuiltResource('single-candidate-with-nulls')
+          ).toSucceedAndSatisfy((resource) => {
+            expect(resolver.resolveComposedResourceValue(resource)).toSucceedAndSatisfy((composedValue) => {
+              // Single candidate, no merging, but nulls should still be handled during composition
+              expect(composedValue).toEqual({
+                name: 'Single',
+                value: 'test'
+                // active property deleted due to null value
+              });
+            });
+          });
+        });
+
+        test('preserves nested nulls when suppressNullAsDelete is true', () => {
+          const suppressedResolver = TsRes.Runtime.ResourceResolver.create({
+            resourceManager: builderResolver.resourceManager,
+            qualifierTypes: builderResolver.qualifierTypes,
+            contextQualifierProvider: builderResolver.contextQualifierProvider,
+            options: { suppressNullAsDelete: true }
+          }).orThrow();
+
+          expect(
+            suppressedResolver.resourceManager.getBuiltResource('nested-nulls-resource')
+          ).toSucceedAndSatisfy((resource) => {
+            expect(suppressedResolver.resolveComposedResourceValue(resource)).toSucceedAndSatisfy(
+              (composedValue) => {
+                // Should preserve all null values in nested structures
+                expect(composedValue).toEqual({
+                  user: { name: 'Jane', email: null },
+                  settings: null
+                });
+              }
+            );
+          });
+        });
+
+        test('handles empty options object', () => {
+          const resolverWithEmptyOptions = TsRes.Runtime.ResourceResolver.create({
+            resourceManager: builderResolver.resourceManager,
+            qualifierTypes: builderResolver.qualifierTypes,
+            contextQualifierProvider: builderResolver.contextQualifierProvider,
+            options: {} // Empty options should default suppressNullAsDelete to false
+          }).orThrow();
+
+          expect(resolverWithEmptyOptions.options.suppressNullAsDelete).toBe(false);
+
+          expect(
+            resolverWithEmptyOptions.resourceManager.getBuiltResource('null-test-resource')
+          ).toSucceedAndSatisfy((resource) => {
+            expect(resolverWithEmptyOptions.resolveComposedResourceValue(resource)).toSucceedAndSatisfy(
+              (composedValue) => {
+                // Should behave like default (delete null properties)
+                expect(composedValue).not.toHaveProperty('email');
+                expect(composedValue).not.toHaveProperty('department');
+              }
+            );
+          });
+        });
+      });
+    });
   });
 
   describe('error handling in condition and decision resolution', () => {
@@ -1091,6 +1418,60 @@ describe('ResourceResolver class', () => {
           resolver.resolveDecision(mockDecision as unknown as TsRes.Decisions.AbstractDecision)
         ).toFailWith(/does not have a valid index/);
       });
+    });
+  });
+
+  describe('single candidate early return path coverage', () => {
+    // Test that we have proper setup for single candidate testing
+    test('verify single-candidate-with-nulls has no partial candidates', () => {
+      expect(
+        builderResolver.resourceManager.getBuiltResource('single-candidate-with-nulls')
+      ).toSucceedAndSatisfy((resource) => {
+        expect(resource.candidates).toHaveLength(1);
+        expect(resource.candidates[0].isPartial).toBe(false);
+      });
+    });
+
+    // Add test for single candidate + suppressNullAsDelete: true (lines 543-545)
+    test('single candidate with suppressNullAsDelete: true returns candidate directly', () => {
+      const suppressedResolver = TsRes.Runtime.ResourceResolver.create({
+        resourceManager: builderResolver.resourceManager,
+        qualifierTypes: builderResolver.qualifierTypes,
+        contextQualifierProvider: builderResolver.contextQualifierProvider,
+        options: { suppressNullAsDelete: true }
+      }).orThrow();
+
+      expect(
+        suppressedResolver.resourceManager.getBuiltResource('single-candidate-with-nulls')
+      ).toSucceedAndSatisfy((resource) => {
+        expect(suppressedResolver.resolveComposedResourceValue(resource)).toSucceedAndSatisfy(
+          (composedValue) => {
+            // With suppressNullAsDelete: true, null properties should be preserved (early return path)
+            expect(composedValue).toEqual({
+              name: 'Single',
+              active: null, // null preserved due to suppressNullAsDelete: true
+              value: 'test'
+            });
+          }
+        );
+      });
+    });
+
+    // Test the condition where baseCandidate.json is not a JSON object
+    // Note: This tests the concept, though in practice resource validation may prevent non-objects
+    test('early return with suppressNullAsDelete: false but for non-object handling concept', () => {
+      // This test verifies the conditional logic even though resources typically contain objects
+      expect(builderResolver.resourceManager.getBuiltResource('simple-value')).toSucceedAndSatisfy(
+        (resource) => {
+          expect(builderResolver.resolveComposedResourceValue(resource)).toSucceedAndSatisfy(
+            (composedValue) => {
+              // Should return the object directly without null-as-delete processing
+              // Since it's a simple single-candidate resource
+              expect(composedValue).toEqual({ text: 'Simple string value' });
+            }
+          );
+        }
+      );
     });
   });
 });

@@ -220,6 +220,27 @@ Gets the current size of the decision cache array.
 </td></tr>
 <tr><td>
 
+[options](./ts-res.runtime.resourceresolver.options.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IResourceResolverOptions](./ts-res.runtime.iresourceresolveroptions.md)
+
+
+</td><td>
+
+The configuration options for this resource resolver.
+
+
+</td></tr>
+<tr><td>
+
 [qualifierTypes](./ts-res.runtime.resourceresolver.qualifiertypes.md)
 
 
