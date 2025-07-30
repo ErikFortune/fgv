@@ -54,5 +54,24 @@ Controls how arrays are merged when combining JSON values. - `'append'` (default
 
 
 </td></tr>
+<tr><td>
+
+[nullAsDelete?](./ts-json.ijsoneditormergeoptions.nullasdelete.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_ Controls whether null values should be treated as property deletion during merge operations. - `false` (default): Null values are merged normally, setting the property to null - `true`<!-- -->: Null values delete the property from the target object during merge
+
+
+</td></tr>
 </tbody></table>
 

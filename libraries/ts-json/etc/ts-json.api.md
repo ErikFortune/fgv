@@ -200,6 +200,7 @@ interface IJsonDiffOptions {
 // @public
 export interface IJsonEditorMergeOptions {
     arrayMergeBehavior: ArrayMergeBehavior;
+    nullAsDelete?: boolean;
 }
 
 // @public
@@ -336,25 +337,27 @@ export class JsonEditor implements IJsonCloneEditor {
     // @internal
     protected constructor(options?: Partial<IJsonEditorOptions>, rules?: IJsonEditorRule[]);
     clone(src: JsonValue, context?: IJsonContext): DetailedResult<JsonValue, JsonEditFailureReason>;
-    // @internal (undocumented)
+    // @internal
     protected _cloneArray(src: JsonArray, context?: IJsonContext): DetailedResult<JsonArray, JsonEditFailureReason>;
+    // @internal
+    protected _cloneObjectWithoutNullAsDelete(target: JsonObject, src: JsonObject, state: JsonEditorState): DetailedResult<JsonObject, JsonEditFailureReason>;
     static create(options?: Partial<IJsonEditorOptions>, rules?: IJsonEditorRule[]): Result<JsonEditor>;
     static get default(): JsonEditor;
     // @internal
     protected static _default?: JsonEditor;
-    // @internal (undocumented)
+    // @internal
     protected _editProperty(key: string, value: JsonValue, state: JsonEditorState): DetailedResult<JsonObject, JsonPropertyEditFailureReason>;
-    // @internal (undocumented)
+    // @internal
     protected _editValue(value: JsonValue, state: JsonEditorState): DetailedResult<JsonValue, JsonEditFailureReason>;
-    // @internal (undocumented)
+    // @internal
     protected _finalizeAndMerge(target: JsonObject, state: JsonEditorState): DetailedResult<JsonObject, JsonEditFailureReason>;
-    // @internal (undocumented)
+    // @internal
     protected static _getDefaultOptions(options?: Partial<IJsonEditorOptions>): Result<IJsonEditorOptions>;
     static getDefaultRules(options?: IJsonEditorOptions): Result<IJsonEditorRule[]>;
-    // @internal (undocumented)
+    // @internal
     protected _mergeClonedProperty(target: JsonObject, key: string, newValue: JsonValue, state: JsonEditorState): DetailedResult<JsonValue, JsonEditFailureReason>;
     mergeObjectInPlace(target: JsonObject, src: JsonObject, runtimeContext?: IJsonContext): Result<JsonObject>;
-    // @internal (undocumented)
+    // @internal
     protected _mergeObjectInPlace(target: JsonObject, src: JsonObject, state: JsonEditorState): Result<JsonObject>;
     mergeObjectsInPlace(target: JsonObject, srcObjects: JsonObject[]): Result<JsonObject>;
     mergeObjectsInPlaceWithContext(context: IJsonContext | undefined, base: JsonObject, srcObjects: JsonObject[]): Result<JsonObject>;
