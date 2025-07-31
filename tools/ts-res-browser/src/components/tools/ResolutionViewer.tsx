@@ -1359,7 +1359,8 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
                             const looseCandidateDecl = {
                               id: resourceId,
                               json: optimizedJson,
-                              conditions: conditions
+                              conditions: conditions,
+                              isPartial: true
                             };
                             looseCandidateDeclarations.push(looseCandidateDecl);
                           }
