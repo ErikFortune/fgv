@@ -11,7 +11,7 @@ import { JsonEditor } from 'json-edit-react';
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message, FilterState } from '../../types/app';
 import { FilterResult } from '../../utils/filterResources';
-import { Runtime, Config, NoMatch } from '@fgv/ts-res';
+import { Runtime, Config } from '@fgv/ts-res';
 import { Diff as JsonDiff } from '@fgv/ts-json';
 import {
   createSimpleContext,
@@ -27,10 +27,6 @@ interface IConditionMatchResult {
   priority: number;
   matchType: ConditionMatchType;
 }
-
-type DecisionResolutionResult =
-  | { success: false }
-  | { success: true; instanceIndices: ReadonlyArray<number>; defaultInstanceIndices: ReadonlyArray<number> };
 
 interface ResolutionViewerProps {
   onMessage?: (type: Message['type'], message: string) => void;
@@ -411,7 +407,7 @@ const CacheContentsDisplay: React.FC<CacheContentsDisplayProps> = ({ resolver })
                           {index}: condition-{index}
                         </span>
                         <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                          condition-{index} ({score.toFixed(2)})
+                          condition-{index} ({score.score.toFixed(2)})
                         </span>
                       </div>
                     );
@@ -440,10 +436,12 @@ const CacheContentsDisplay: React.FC<CacheContentsDisplayProps> = ({ resolver })
                         </span>
                         <span
                           className={`px-2 py-1 rounded ${
-                            result.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            result.matchType !== 'noMatch'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
                           }`}
                         >
-                          {key} ({result.success ? '✓' : '✗'})
+                          {key} ({result.matchType !== 'noMatch' ? '✓' : '✗'})
                         </span>
                       </div>
                     );
@@ -455,10 +453,12 @@ const CacheContentsDisplay: React.FC<CacheContentsDisplayProps> = ({ resolver })
                         </span>
                         <span
                           className={`px-2 py-1 rounded ${
-                            result.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            result.matchType !== 'noMatch'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
                           }`}
                         >
-                          cs-{index} ({result.success ? '✓' : '✗'})
+                          cs-{index} ({result.matchType !== 'noMatch' ? '✓' : '✗'})
                         </span>
                       </div>
                     );
@@ -607,60 +607,17 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
     return info;
   }, [availableQualifiers, resourceState.activeConfiguration]);
 
-  // Initialize context with smart default values based on qualifier types
+  // Initialize context with all qualifiers undefined for cleaner UX
   const defaultContextValues = useMemo(() => {
     const defaults: ContextState = {};
 
-    // Compute intelligent defaults based on qualifier types
+    // Initialize all qualifiers as undefined - users can set only what they need
     availableQualifiers.forEach((qualifierName) => {
-      const typeInfo = qualifierTypeInfo[qualifierName];
-
-      if (!typeInfo) {
-        // No type info available, use empty string
-        defaults[qualifierName] = '';
-        return;
-      }
-
-      const qualifierType = typeInfo.type;
-
-      // Compute default based on system type
-      switch (qualifierType.systemType) {
-        case 'language':
-          // Language qualifiers default to en-US
-          defaults[qualifierName] = 'en-US';
-          break;
-
-        case 'territory':
-          // Territory qualifiers: use first allowed territory if constrained, otherwise US
-          if (
-            qualifierType.configuration &&
-            typeof qualifierType.configuration === 'object' &&
-            'allowedTerritories' in qualifierType.configuration &&
-            Array.isArray(qualifierType.configuration.allowedTerritories) &&
-            qualifierType.configuration.allowedTerritories.length > 0
-          ) {
-            defaults[qualifierName] = qualifierType.configuration.allowedTerritories[0];
-          } else {
-            defaults[qualifierName] = 'US';
-          }
-          break;
-
-        case 'literal':
-          // Literal qualifiers: use first enumerated value if constrained, otherwise "unknown"
-          if (typeInfo.enumeratedValues && typeInfo.enumeratedValues.length > 0) {
-            defaults[qualifierName] = typeInfo.enumeratedValues[0];
-          } else {
-            defaults[qualifierName] = 'unknown';
-          }
-          break;
-
-        default:
-          defaults[qualifierName] = '';
-      }
+      defaults[qualifierName] = undefined;
     });
 
     return defaults;
-  }, [availableQualifiers, qualifierTypeInfo]);
+  }, [availableQualifiers]);
 
   // Context state
   const [contextValues, setContextValues] = useState<ContextState>({});
@@ -722,58 +679,6 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
   const hasPendingChanges = useMemo(() => {
     return JSON.stringify(contextValues) !== JSON.stringify(pendingContextValues);
   }, [contextValues, pendingContextValues]);
-
-  // Helper functions for condition set keys (similar to CompiledBrowser)
-  const getConditionKey = useCallback((condition: any, compiledCollection: any): string => {
-    try {
-      // Use metadata if available
-      if (condition.metadata?.key) {
-        return condition.metadata.key;
-      }
-
-      // Fall back to manual construction
-      const qualifier = compiledCollection.qualifiers[condition.qualifierIndex];
-      if (!qualifier) return `unknown-qualifier`;
-
-      // Create a meaningful key like "language=en-US" or "territory=US"
-      const key = `${qualifier.name}=${condition.value}`;
-      return key;
-    } catch (error) {
-      return `condition-${condition.qualifierIndex}`;
-    }
-  }, []);
-
-  const getConditionSetKey = useCallback(
-    (conditionSet: any, conditionSetIndex: number, compiledCollection: any): string => {
-      try {
-        // Use metadata if available
-        if (conditionSet.metadata?.key) {
-          return conditionSet.metadata.key;
-        }
-
-        if (conditionSetIndex === 0) {
-          return 'unconditional';
-        }
-
-        // Fall back to manual construction
-        if (!conditionSet.conditions || conditionSet.conditions.length === 0) {
-          return `condition-set-${conditionSetIndex}`;
-        }
-
-        // Build a composite key from all conditions in the set
-        const conditionKeys = conditionSet.conditions.map((conditionIndex: number) => {
-          const condition = compiledCollection.conditions[conditionIndex];
-          if (!condition) return `unknown-${conditionIndex}`;
-          return getConditionKey(condition, compiledCollection);
-        });
-
-        return conditionKeys.join(',');
-      } catch (error) {
-        return `condition-set-${conditionSetIndex}`;
-      }
-    },
-    [getConditionKey]
-  );
 
   // Removed complex condition set key tracking
 
@@ -974,7 +879,7 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
         // Find the index by comparing candidate objects
         const index = resource.candidates.findIndex((candidate) => candidate === matchedCandidate);
         if (index !== -1) {
-          const conditionSetKey = matchedCandidate.conditions.toHash(); // Use actual condition set hash
+          const conditionSetKey = `cs-${index}`; // Use candidate index as key
           const conditionEvaluations = evaluateConditionsForCandidate(
             resolver,
             index,
@@ -1767,7 +1672,7 @@ const EditableJsonView: React.FC<EditableJsonViewProps> = ({
     if (onSave) {
       const saveAction: SaveAction = {
         type: viewType,
-        onSave: (editedValue) => {
+        onSave: () => {
           // Save action for potential future use
         },
         validateJson: (val) => {
@@ -1931,10 +1836,10 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({
             viewType="composed"
             onSave={onSave}
             resourceId={result.resource?.id}
-            editedValue={result.resource?.id ? getEditedValue(result.resource.id) : undefined}
-            onEditSave={(resourceId, editedValue) => {
-              saveEdit(resourceId, editedValue);
-            }}
+            editedValue={
+              result.resource?.id && getEditedValue ? getEditedValue(result.resource.id) : undefined
+            }
+            onEditSave={saveEdit || (() => {})}
           />
         ) : (
           <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
@@ -2005,7 +1910,7 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({
             <div className="space-y-2">
               {regularMatchingCandidates.map((candidateInfo, index) => (
                 <div
-                  key={`${selectedResource}-${candidateInfo.candidateIndex}`}
+                  key={`${result.resource?.id}-${candidateInfo.candidateIndex}`}
                   className="bg-white p-3 rounded border border-green-200"
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -2052,9 +1957,9 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({
           <div>
             <h4 className="font-medium text-gray-800 mb-2">Default Matches</h4>
             <div className="space-y-2">
-              {defaultMatchingCandidates.map((candidateInfo, index) => (
+              {defaultMatchingCandidates.map((candidateInfo) => (
                 <div
-                  key={`${selectedResource}-default-${candidateInfo.candidateIndex}`}
+                  key={`${result.resource?.id}-default-${candidateInfo.candidateIndex}`}
                   className="bg-white p-3 rounded border border-amber-200"
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -2110,7 +2015,7 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({
             <div className="space-y-2">
               {nonMatchingCandidates.map((candidateInfo) => (
                 <div
-                  key={`${selectedResource}-non-matching-${candidateInfo.candidateIndex}`}
+                  key={`${result.resource?.id}-non-matching-${candidateInfo.candidateIndex}`}
                   className="bg-gray-50 p-3 rounded border border-gray-200 opacity-75"
                 >
                   <div className="flex items-center justify-between mb-2">
