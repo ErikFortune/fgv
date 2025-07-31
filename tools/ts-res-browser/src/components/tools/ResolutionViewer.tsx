@@ -1307,29 +1307,70 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
                                     metadata: diff.metadata
                                   });
 
-                                  // Use only the changed/new properties from the edited value
-                                  // This creates a minimal candidate with just the differences
+                                  // Create a minimal candidate with changes and deletions
+                                  // Include both new/changed properties AND truly deleted properties (as null)
                                   if (!diff.identical) {
-                                    // Check if diff.onlyInB has any content
-                                    const diffContent = diff.onlyInB;
-                                    console.log('Diff content:', JSON.stringify(diffContent, null, 2));
+                                    const changedContent = diff.onlyInB; // Properties that changed or were added
+                                    const originalOnlyContent = diff.onlyInA; // Properties in original
 
+                                    console.log('Changed content:', JSON.stringify(changedContent, null, 2));
+                                    console.log(
+                                      'Original-only content:',
+                                      JSON.stringify(originalOnlyContent, null, 2)
+                                    );
+
+                                    // Build the optimized JSON with both changes and deletions
+                                    let hasChanges = false;
+                                    optimizedJson = {};
+
+                                    // Add changed/new properties
                                     if (
-                                      diffContent &&
-                                      (typeof diffContent === 'object'
-                                        ? Object.keys(diffContent).length > 0
-                                        : diffContent !== null)
+                                      changedContent &&
+                                      typeof changedContent === 'object' &&
+                                      changedContent !== null
                                     ) {
-                                      optimizedJson = diffContent;
+                                      Object.assign(optimizedJson, changedContent);
+                                      hasChanges = true;
+                                    }
+
+                                    // Identify truly deleted properties (exist in original but completely absent from edited)
+                                    if (
+                                      originalOnlyContent &&
+                                      typeof originalOnlyContent === 'object' &&
+                                      originalOnlyContent !== null
+                                    ) {
+                                      for (const [key] of Object.entries(originalOnlyContent)) {
+                                        // Only add as null if the property is not present in the edited value at all
+                                        if (!(key in editedValue)) {
+                                          optimizedJson[key] = null;
+                                          hasChanges = true;
+                                        }
+                                      }
+                                    }
+
+                                    if (hasChanges) {
+                                      const deletedKeys = Object.keys(optimizedJson).filter(
+                                        (key) => optimizedJson[key] === null
+                                      );
+                                      const changedKeys = Object.keys(optimizedJson).filter(
+                                        (key) => optimizedJson[key] !== null
+                                      );
 
                                       console.log(
                                         `✅ Using optimized JSON for ${resourceId}:`,
+                                        `\n  - Changed/Added: ${
+                                          changedKeys.length > 0 ? changedKeys.join(', ') : 'none'
+                                        }`,
+                                        `\n  - Deleted (as null): ${
+                                          deletedKeys.length > 0 ? deletedKeys.join(', ') : 'none'
+                                        }`,
+                                        `\n  - Candidate:`,
                                         JSON.stringify(optimizedJson, null, 2)
                                       );
                                     } else {
-                                      // Diff result is empty, fall back to full edited value
+                                      // No changes or deletions detected, fall back to full edited value
                                       console.log(
-                                        `⚠️ Empty diff result for ${resourceId}, using full edited value`
+                                        `⚠️ No changes or deletions detected for ${resourceId}, using full edited value`
                                       );
                                       optimizedJson = editedValue;
                                     }
@@ -1426,7 +1467,9 @@ const ResolutionViewer: React.FC<ResolutionViewerProps> = ({
                               hasOptimizations ? 'optimized ' : ''
                             }edit(s) and rebuilt system with ${
                               finalizeResult.value.summary.totalResources
-                            } resources${hasOptimizations ? ' (using minimal diff candidates)' : ''}`
+                            } resources${
+                              hasOptimizations ? ' (changes and deletions as null-as-delete)' : ''
+                            }`
                           );
                         } catch (error) {
                           onMessage?.(
@@ -2067,7 +2110,7 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({
             <div className="space-y-2">
               {nonMatchingCandidates.map((candidateInfo) => (
                 <div
-                  key={`${selectedResource}-nonmatching-${candidateInfo.candidateIndex}`}
+                  key={`${selectedResource}-non-matching-${candidateInfo.candidateIndex}`}
                   className="bg-gray-50 p-3 rounded border border-gray-200 opacity-75"
                 >
                   <div className="flex items-center justify-between mb-2">
