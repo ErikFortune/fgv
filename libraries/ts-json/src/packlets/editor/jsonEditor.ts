@@ -279,6 +279,10 @@ export class JsonEditor implements IJsonCloneEditor {
   ): Result<JsonObject> {
     for (const key in src) {
       if (src.hasOwnProperty(key)) {
+        // Skip dangerous property names to prevent prototype pollution
+        if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+          continue;
+        }
         const propResult = this._editProperty(key, src[key], state);
         if (propResult.isSuccess()) {
           if (propResult.detail === 'deferred') {
@@ -349,6 +353,11 @@ export class JsonEditor implements IJsonCloneEditor {
     newValue: JsonValue,
     state: JsonEditorState
   ): DetailedResult<JsonValue, JsonEditFailureReason> {
+    // Skip dangerous property names to prevent prototype pollution
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      return succeedWithDetail(newValue, 'edited');
+    }
+
     const existing = target[key];
 
     // Handle null-as-delete behavior before primitive check

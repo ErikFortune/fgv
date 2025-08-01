@@ -1350,5 +1350,65 @@ describe('JsonObjectEditor', () => {
         });
       });
     });
+
+    describe('prototype pollution protection', () => {
+      const editor = JsonEditor.create().orThrow();
+
+      test('prevents prototype pollution via __proto__ property', () => {
+        const target = {};
+        const source = JSON.parse('{"__proto__": {"isAdmin": true}, "normalProperty": "value"}');
+
+        const result = editor.mergeObjectsInPlace(target, [source]);
+        expect(result).toSucceed();
+
+        // Verify that the __proto__ pollution did not occur
+        expect((target as Record<string, unknown>).isAdmin).toBeUndefined();
+        expect(target).toEqual({ normalProperty: 'value' });
+      });
+
+      test('prevents prototype pollution via constructor property', () => {
+        const target = {};
+        const source = JSON.parse(
+          '{"constructor": {"prototype": {"isAdmin": true}}, "normalProperty": "value"}'
+        );
+
+        const result = editor.mergeObjectsInPlace(target, [source]);
+        expect(result).toSucceed();
+
+        // Verify that constructor pollution did not occur
+        expect((target as Record<string, unknown>).isAdmin).toBeUndefined();
+        expect(target).toEqual({ normalProperty: 'value' });
+      });
+
+      test('prevents prototype pollution via prototype property', () => {
+        const target = {};
+        const source = JSON.parse('{"prototype": {"isAdmin": true}, "normalProperty": "value"}');
+
+        const result = editor.mergeObjectsInPlace(target, [source]);
+        expect(result).toSucceed();
+
+        // Verify that prototype pollution did not occur
+        expect((target as Record<string, unknown>).isAdmin).toBeUndefined();
+        expect(target).toEqual({ normalProperty: 'value' });
+      });
+
+      test('allows safe properties with similar but different names', () => {
+        const target = {};
+        const source = {
+          __proto: 'safe',
+          constructors: 'safe',
+          prototypes: 'safe',
+          normalProperty: 'value'
+        };
+
+        const result = editor.mergeObjectsInPlace(target, [source]);
+        expect(result).toSucceedWith({
+          __proto: 'safe',
+          constructors: 'safe',
+          prototypes: 'safe',
+          normalProperty: 'value'
+        });
+      });
+    });
   });
 });
