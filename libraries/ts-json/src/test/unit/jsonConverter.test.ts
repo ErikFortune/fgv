@@ -152,7 +152,8 @@ describe('JsonConverter module', () => {
           onUndefinedPropertyValue: 'ignore'
         },
         merge: {
-          arrayMergeBehavior: 'append'
+          arrayMergeBehavior: 'append',
+          nullAsDelete: false
         }
       };
 

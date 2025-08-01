@@ -47,6 +47,20 @@ export type DecisionResolutionResult =
   | { success: true; instanceIndices: ReadonlyArray<number>; defaultInstanceIndices: ReadonlyArray<number> };
 
 /**
+ * Options for configuring a {@link Runtime.ResourceResolver | ResourceResolver}.
+ * @public
+ */
+export interface IResourceResolverOptions {
+  /**
+   * Controls whether null values in resource composition should suppress properties
+   * instead of setting them to null. When true, properties with null values from
+   * higher-priority partial candidates will be omitted from the final composed resource.
+   * @defaultValue false
+   */
+  suppressNullAsDelete?: boolean;
+}
+
+/**
  * Parameters for creating a {@link Runtime.ResourceResolver | ResourceResolver}.
  * @public
  */
@@ -73,6 +87,11 @@ export interface IResourceResolverCreateParams {
    * An optional listener for {@link Runtime.ResourceResolver | ResourceResolver} cache activity.
    */
   listener?: IResourceResolverCacheListener;
+
+  /**
+   * Optional configuration options for the {@link Runtime.ResourceResolver | ResourceResolver}.
+   */
+  options?: IResourceResolverOptions;
 }
 
 /**
@@ -96,6 +115,11 @@ export class ResourceResolver {
    * The context qualifier provider that resolves qualifier values.
    */
   public readonly contextQualifierProvider: IContextQualifierProvider;
+
+  /**
+   * The configuration options for this resource resolver.
+   */
+  public readonly options: IResourceResolverOptions;
 
   /**
    * The cache array for resolved conditions, indexed by condition index for O(1) lookup.
@@ -153,6 +177,9 @@ export class ResourceResolver {
     this.resourceManager = params.resourceManager;
     this.qualifierTypes = params.qualifierTypes;
     this.contextQualifierProvider = params.contextQualifierProvider;
+    this.options = {
+      suppressNullAsDelete: params.options?.suppressNullAsDelete ?? false
+    };
 
     // Initialize condition cache array with size matching the condition collector
     const conditionCollectorSize = this.resourceManager.conditions.size;
@@ -260,8 +287,8 @@ export class ResourceResolver {
     for (const condition of conditionSet.conditions) {
       const { value: conditionResult, message: conditionMessage } = this.resolveCondition(condition);
 
+      /* c8 ignore next 4 - defensive coding: extreme internal error scenario not reachable in normal operation */
       if (conditionMessage !== undefined) {
-        /* c8 ignore next 2 - defensive coding: extreme internal error scenario not reachable in normal operation */
         this._listener?.onCacheError('conditionSet', conditionSetIndex);
         return fail(`Failed to resolve condition "${condition.key}": ${conditionMessage}`);
       }
@@ -334,8 +361,8 @@ export class ResourceResolver {
       const candidate = decision.candidates[instanceIndex];
       const conditionSetResult = this.resolveConditionSet(candidate.conditionSet);
 
+      /* c8 ignore next 4 - defensive coding: extreme internal error scenario not reachable in normal operation */
       if (conditionSetResult.isFailure()) {
-        /* c8 ignore next 2 - defensive coding: extreme internal error scenario not reachable in normal operation */
         this._listener?.onCacheError('decision', decisionIndex);
         return fail(`${decision.key}: Failed to resolve condition set": ${conditionSetResult.message}`);
       }
@@ -510,9 +537,24 @@ export class ResourceResolver {
       const baseCandidateIndex = fullCandidateIndex >= 0 ? fullCandidateIndex : candidates.length - 1;
       const baseCandidate = candidates[baseCandidateIndex];
 
-      // If there are no partial candidates to merge, return the base candidate's value
+      // If there are no partial candidates to merge, but null-as-delete is enabled,
+      // still process through JsonEditor to handle null properties in the base candidate
       if (partialCandidates.length === 0) {
-        return succeed(baseCandidate.json);
+        if (this.options.suppressNullAsDelete || !isJsonObject(baseCandidate.json)) {
+          return succeed(baseCandidate.json);
+        }
+
+        // Process single candidate through JsonEditor to apply null-as-delete
+        const editor = JsonEditor.create({
+          merge: {
+            arrayMergeBehavior: 'replace',
+            nullAsDelete: true
+          }
+        }).orThrow(); // Should never fail with valid options
+
+        return editor
+          .mergeObjectsInPlace({}, [baseCandidate.json])
+          .withErrorFormat((err) => `${resource.id}: Composition failed: ${err}`);
       }
 
       const allCandidates = [
@@ -525,10 +567,11 @@ export class ResourceResolver {
         return fail(`${resource.id}: Unable to compose non-object candidate values.`);
       }
 
-      // Create JsonEditor with array replacement behavior for resource composition
+      // Create JsonEditor with array replacement behavior and null-as-delete for resource composition
       const editor = JsonEditor.create({
         merge: {
-          arrayMergeBehavior: 'replace'
+          arrayMergeBehavior: 'replace',
+          nullAsDelete: !this.options.suppressNullAsDelete
         }
       }).orThrow(); // Should never fail with valid options
 

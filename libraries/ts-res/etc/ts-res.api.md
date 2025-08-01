@@ -2464,9 +2464,18 @@ interface IResourceResolverCreateParams {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     listener?: IResourceResolverCacheListener;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    options?: IResourceResolverOptions;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     qualifierTypes: ReadOnlyQualifierTypeCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resourceManager: IResourceManager;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IResourceResolverOptions {
+    suppressNullAsDelete?: boolean;
 }
 
 // @public
@@ -3914,6 +3923,7 @@ export class ResourceResolver {
     static create(params: IResourceResolverCreateParams): Result<ResourceResolver>;
     get decisionCache(): ReadonlyArray<DecisionResolutionResult | undefined>;
     get decisionCacheSize(): number;
+    readonly options: IResourceResolverOptions;
     readonly qualifierTypes: ReadOnlyQualifierTypeCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resolveAllResourceCandidates(resource: IResource): Result<ReadonlyArray<IResourceCandidate>>;
@@ -4134,6 +4144,7 @@ declare namespace Runtime {
         IValidatingSimpleContextQualifierProviderCreateParams,
         ValidatingSimpleContextQualifierProvider,
         DecisionResolutionResult,
+        IResourceResolverOptions,
         IResourceResolverCreateParams,
         ResourceResolver,
         ConditionMatchType,
@@ -4495,7 +4506,7 @@ class ValidatingSimpleContextQualifierProvider extends SimpleContextQualifierPro
 // src/packlets/resources/resource.ts:264:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resourceCandidate.ts:257:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/conditionSetResolutionResult.ts:56:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/runtime/resourceResolver.ts:146:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/runtime/resourceResolver.ts:170:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 

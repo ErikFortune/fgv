@@ -61,6 +61,13 @@ export interface IJsonEditorMergeOptions {
    * - `'replace'`: Existing array is completely replaced with the new array
    */
   arrayMergeBehavior: ArrayMergeBehavior;
+
+  /**
+   * Controls whether null values should be treated as property deletion during merge operations.
+   * - `false` (default): Null values are merged normally, setting the property to null
+   * - `true`: Null values delete the property from the target object during merge
+   */
+  nullAsDelete?: boolean;
 }
 
 /**

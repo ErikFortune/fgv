@@ -972,6 +972,383 @@ describe('JsonObjectEditor', () => {
 
         expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
       });
+
+      describe('nullAsDelete merge option', () => {
+        test('deletes properties when nullAsDelete is true and value is null', () => {
+          const editor = JsonEditor.create({
+            validation: {
+              onInvalidPropertyName: 'error',
+              onInvalidPropertyValue: 'error',
+              onUndefinedPropertyValue: 'ignore'
+            },
+            merge: {
+              arrayMergeBehavior: 'append',
+              nullAsDelete: true
+            }
+          }).orThrow();
+
+          const base = {
+            keepThisProperty: 'keep',
+            deleteThisProperty: 'will be deleted',
+            alsoDelete: { nested: 'object' }
+          };
+          const source = {
+            keepThisProperty: 'updated',
+            deleteThisProperty: null,
+            alsoDelete: null,
+            newProperty: 'new value'
+          };
+          const expected = {
+            keepThisProperty: 'updated',
+            newProperty: 'new value'
+          };
+
+          expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+        });
+
+        test('preserves null values when nullAsDelete is false', () => {
+          const editor = JsonEditor.create({
+            validation: {
+              onInvalidPropertyName: 'error',
+              onInvalidPropertyValue: 'error',
+              onUndefinedPropertyValue: 'ignore'
+            },
+            merge: {
+              arrayMergeBehavior: 'append',
+              nullAsDelete: false
+            }
+          }).orThrow();
+
+          const base = {
+            keepThisProperty: 'keep',
+            willBecomeNull: 'will become null'
+          };
+          const source = {
+            keepThisProperty: 'updated',
+            willBecomeNull: null,
+            newNullProperty: null
+          };
+          const expected = {
+            keepThisProperty: 'updated',
+            willBecomeNull: null,
+            newNullProperty: null
+          };
+
+          expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+        });
+
+        test('defaults to false when nullAsDelete is not specified', () => {
+          const editor = JsonEditor.create({
+            validation: {
+              onInvalidPropertyName: 'error',
+              onInvalidPropertyValue: 'error',
+              onUndefinedPropertyValue: 'ignore'
+            },
+            merge: {
+              arrayMergeBehavior: 'append'
+            }
+          }).orThrow();
+
+          const base = {
+            keepThisProperty: 'keep',
+            willBecomeNull: 'will become null'
+          };
+          const source = {
+            keepThisProperty: 'updated',
+            willBecomeNull: null
+          };
+          const expected = {
+            keepThisProperty: 'updated',
+            willBecomeNull: null
+          };
+
+          expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+        });
+
+        test('nullAsDelete works with nested objects', () => {
+          const editor = JsonEditor.create({
+            validation: {
+              onInvalidPropertyName: 'error',
+              onInvalidPropertyValue: 'error',
+              onUndefinedPropertyValue: 'ignore'
+            },
+            merge: {
+              arrayMergeBehavior: 'append',
+              nullAsDelete: true
+            }
+          }).orThrow();
+
+          const base = {
+            level1: {
+              keep: 'this',
+              delete: 'this will be deleted',
+              nested: {
+                alsoKeep: 'this',
+                alsoDelete: 'this will also be deleted'
+              }
+            }
+          };
+          const source = {
+            level1: {
+              keep: 'updated',
+              delete: null,
+              nested: {
+                alsoKeep: 'updated nested',
+                alsoDelete: null,
+                newProp: 'new nested value'
+              }
+            }
+          };
+          const expected = {
+            level1: {
+              keep: 'updated',
+              nested: {
+                alsoKeep: 'updated nested',
+                newProp: 'new nested value'
+              }
+            }
+          };
+
+          expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+        });
+
+        test('nullAsDelete does not affect arrays with null elements', () => {
+          const editor = JsonEditor.create({
+            validation: {
+              onInvalidPropertyName: 'error',
+              onInvalidPropertyValue: 'error',
+              onUndefinedPropertyValue: 'ignore'
+            },
+            merge: {
+              arrayMergeBehavior: 'append',
+              nullAsDelete: true
+            }
+          }).orThrow();
+
+          const base = {
+            arrayWithNulls: [1, null, 3],
+            regularProperty: 'keep'
+          };
+          const source = {
+            arrayWithNulls: [null, 4],
+            regularProperty: null,
+            newArray: [null, 'value', null]
+          };
+          const expected = {
+            arrayWithNulls: [1, null, 3, null, 4],
+            newArray: [null, 'value', null]
+          };
+
+          expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+        });
+
+        test('clone method preserves null values when nullAsDelete is enabled', () => {
+          const editor = JsonEditor.create({
+            validation: {
+              onInvalidPropertyName: 'error',
+              onInvalidPropertyValue: 'error',
+              onUndefinedPropertyValue: 'ignore'
+            },
+            merge: {
+              arrayMergeBehavior: 'append',
+              nullAsDelete: true
+            }
+          }).orThrow();
+
+          const objectWithNulls = {
+            keep: 'this value',
+            shouldBePreserved: null,
+            nested: {
+              alsoKeep: 'nested value',
+              alsoPreserved: null
+            }
+          };
+
+          expect(editor.clone(objectWithNulls)).toSucceedAndSatisfy((cloned) => {
+            expect(cloned).toEqual({
+              keep: 'this value',
+              shouldBePreserved: null,
+              nested: {
+                alsoKeep: 'nested value',
+                alsoPreserved: null
+              }
+            });
+          });
+        });
+
+        test('nullAsDelete works with arrayMergeBehavior replace', () => {
+          const editor = JsonEditor.create({
+            validation: {
+              onInvalidPropertyName: 'error',
+              onInvalidPropertyValue: 'error',
+              onUndefinedPropertyValue: 'ignore'
+            },
+            merge: {
+              arrayMergeBehavior: 'replace',
+              nullAsDelete: true
+            }
+          }).orThrow();
+
+          const base = {
+            arrays: [1, 2, 3],
+            deleteMe: 'will be deleted',
+            keepMe: 'will be kept'
+          };
+          const source = {
+            arrays: [4, 5],
+            deleteMe: null,
+            keepMe: 'updated'
+          };
+          const expected = {
+            arrays: [4, 5],
+            keepMe: 'updated'
+          };
+
+          expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+        });
+
+        test('single object merge with nullAsDelete', () => {
+          const editor = JsonEditor.create({
+            validation: {
+              onInvalidPropertyName: 'error',
+              onInvalidPropertyValue: 'error',
+              onUndefinedPropertyValue: 'ignore'
+            },
+            merge: {
+              arrayMergeBehavior: 'append',
+              nullAsDelete: true
+            }
+          }).orThrow();
+
+          const target = {
+            existing: 'value',
+            toDelete: 'will be deleted'
+          };
+          const source = {
+            existing: 'updated',
+            toDelete: null,
+            newProp: 'new value'
+          };
+
+          expect(editor.mergeObjectInPlace(target, source)).toSucceedAndSatisfy((result) => {
+            expect(result).toBe(target); // Should modify in place
+            expect(result).toEqual({
+              existing: 'updated',
+              newProp: 'new value'
+            });
+          });
+        });
+
+        test('empty object edge cases with nullAsDelete', () => {
+          const editor = JsonEditor.create({
+            validation: {
+              onInvalidPropertyName: 'error',
+              onInvalidPropertyValue: 'error',
+              onUndefinedPropertyValue: 'ignore'
+            },
+            merge: {
+              arrayMergeBehavior: 'append',
+              nullAsDelete: true
+            }
+          }).orThrow();
+
+          // Empty base, source with null
+          expect(editor.mergeObjectsInPlace({}, [{}, { nullProp: null }])).toSucceedWith({});
+
+          // Base with properties, source with only null
+          expect(
+            editor.mergeObjectsInPlace({}, [{ keep: 'value', delete: 'this' }, { delete: null }])
+          ).toSucceedWith({ keep: 'value' });
+
+          // Both empty
+          expect(editor.mergeObjectsInPlace({}, [{}, {}])).toSucceedWith({});
+        });
+
+        test('mixed null and undefined behavior with nullAsDelete', () => {
+          const editor = JsonEditor.create({
+            validation: {
+              onInvalidPropertyName: 'error',
+              onInvalidPropertyValue: 'error',
+              onUndefinedPropertyValue: 'ignore'
+            },
+            merge: {
+              arrayMergeBehavior: 'append',
+              nullAsDelete: true
+            }
+          }).orThrow();
+
+          const base = {
+            deleteWithNull: 'delete me',
+            ignoreUndefined: 'keep me',
+            normalProp: 'update me'
+          };
+          const source = {
+            deleteWithNull: null,
+            ignoreUndefined: undefined as unknown as JsonValue,
+            normalProp: 'updated',
+            newProp: 'new'
+          };
+          const expected = {
+            ignoreUndefined: 'keep me',
+            normalProp: 'updated',
+            newProp: 'new'
+          };
+
+          expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+        });
+
+        test('deeply nested null deletion', () => {
+          const editor = JsonEditor.create({
+            validation: {
+              onInvalidPropertyName: 'error',
+              onInvalidPropertyValue: 'error',
+              onUndefinedPropertyValue: 'ignore'
+            },
+            merge: {
+              arrayMergeBehavior: 'append',
+              nullAsDelete: true
+            }
+          }).orThrow();
+
+          const base = {
+            level1: {
+              level2: {
+                level3: {
+                  level4: {
+                    deleteMe: 'deep deletion',
+                    keepMe: 'deep value'
+                  }
+                }
+              }
+            }
+          };
+          const source = {
+            level1: {
+              level2: {
+                level3: {
+                  level4: {
+                    deleteMe: null,
+                    keepMe: 'updated deep value'
+                  }
+                }
+              }
+            }
+          };
+          const expected = {
+            level1: {
+              level2: {
+                level3: {
+                  level4: {
+                    keepMe: 'updated deep value'
+                  }
+                }
+              }
+            }
+          };
+
+          expect(editor.mergeObjectsInPlace({}, [base, source])).toSucceedWith(expected);
+        });
+      });
     });
   });
 });

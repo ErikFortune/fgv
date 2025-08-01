@@ -75,6 +75,25 @@ _(Optional)_ An optional listener for [ResourceResolver](./ts-res.runtime.resour
 </td></tr>
 <tr><td>
 
+[options?](./ts-res.runtime.iresourceresolvercreateparams.options.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[IResourceResolverOptions](./ts-res.runtime.iresourceresolveroptions.md)
+
+
+</td><td>
+
+_(Optional)_ Optional configuration options for the [ResourceResolver](./ts-res.runtime.resourceresolver.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [qualifierTypes](./ts-res.runtime.iresourceresolvercreateparams.qualifiertypes.md)
 
 

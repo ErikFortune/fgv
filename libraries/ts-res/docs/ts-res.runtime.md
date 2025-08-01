@@ -210,6 +210,17 @@ Parameters for creating a [ResourceResolver](./ts-res.runtime.resourceresolver.m
 </td></tr>
 <tr><td>
 
+[IResourceResolverOptions](./ts-res.runtime.iresourceresolveroptions.md)
+
+
+</td><td>
+
+Options for configuring a [ResourceResolver](./ts-res.runtime.resourceresolver.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [ISimpleContextQualifierProviderCreateParams](./ts-res.runtime.isimplecontextqualifierprovidercreateparams.md)
 
 
