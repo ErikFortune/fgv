@@ -61,41 +61,7 @@ export class BundleUtils {
    * @public
    */
   public static isBundleFile(data: unknown): boolean {
-    if (typeof data !== 'object' || data === null) {
-      return false;
-    }
-
-    const obj = data as Record<string, unknown>;
-
-    // Check for required top-level properties
-    if (!('metadata' in obj) || !('config' in obj) || !('compiledCollection' in obj)) {
-      return false;
-    }
-
-    // Check metadata structure
-    const metadata = obj.metadata;
-    if (typeof metadata !== 'object' || metadata === null) {
-      return false;
-    }
-
-    const metadataObj = metadata as Record<string, unknown>;
-    if (typeof metadataObj.dateBuilt !== 'string' || typeof metadataObj.checksum !== 'string') {
-      return false;
-    }
-
-    // Check config structure
-    const config = obj.config;
-    if (typeof config !== 'object' || config === null) {
-      return false;
-    }
-
-    // Check compiledCollection structure
-    const compiledCollection = obj.compiledCollection;
-    if (typeof compiledCollection !== 'object' || compiledCollection === null) {
-      return false;
-    }
-
-    return true;
+    return bundleConverter.convert(data).isSuccess();
   }
 
   /**
@@ -137,37 +103,14 @@ export class BundleUtils {
    * @public
    */
   public static extractBundleMetadata(data: unknown): Result<IBundleMetadata> {
-    if (!BundleUtils.isBundleFile(data)) {
-      return fail('Data does not appear to be a bundle file');
-    }
-
-    const obj = data as Record<string, unknown>;
-    const metadata = obj.metadata as Record<string, unknown>;
-
-    // Validate required metadata fields
-    if (typeof metadata.dateBuilt !== 'string') {
-      return fail('Bundle metadata missing or invalid dateBuilt field');
-    }
-
-    if (typeof metadata.checksum !== 'string') {
-      return fail('Bundle metadata missing or invalid checksum field');
-    }
-
-    const result: IBundleMetadata = {
-      dateBuilt: metadata.dateBuilt,
-      checksum: metadata.checksum
-    };
-
-    // Add optional fields if present and valid
-    if (typeof metadata.version === 'string') {
-      result.version = metadata.version;
-    }
-
-    if (typeof metadata.description === 'string') {
-      result.description = metadata.description;
-    }
-
-    return succeed(result);
+    return bundleConverter
+      .convert(data)
+      .onSuccess((bundle) => {
+        return succeed(bundle.metadata);
+      })
+      .withErrorFormat((err) => {
+        return `Not a bundle file: ${err}`;
+      });
   }
 
   /**
