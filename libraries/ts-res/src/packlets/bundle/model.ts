@@ -97,4 +97,11 @@ export interface IBundleCreateParams {
    * a CRC32 normalizer will be used for browser compatibility.
    */
   hashNormalizer?: Hash.HashingNormalizer;
+
+  /**
+   * Whether to normalize the ResourceManagerBuilder before bundle creation.
+   * When true, the builder is reconstructed in canonical order to ensure
+   * order-independent checksums. Defaults to false for Phase 1 compatibility.
+   */
+  normalize?: boolean;
 }

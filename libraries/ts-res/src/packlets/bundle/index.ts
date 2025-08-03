@@ -40,3 +40,7 @@ export type { IBundleLoaderCreateParams } from './bundleLoader';
 
 // Converters
 export * as Convert from './convert';
+
+// Internal utilities (not part of public API)
+/** @internal */
+export { BundleNormalizer } from './bundleNormalizer';

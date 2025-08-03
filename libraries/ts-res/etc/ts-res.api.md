@@ -9,6 +9,7 @@ import { Collections } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-utils';
+import { Hash } from '@fgv/ts-utils';
 import { ICollectible } from '@fgv/ts-utils';
 import { IReadOnlyResultMap } from '@fgv/ts-utils';
 import { JsonObject } from '@fgv/ts-json-base';
@@ -119,6 +120,52 @@ function buildQualifierDefaultValuesToken(parts: ReadonlyArray<IQualifierDefault
 // @public
 function buildQualifierDefaultValueToken({ qualifier, value }: IQualifierDefaultValueTokenParts): Result<QualifierDefaultValueToken>;
 
+declare namespace Bundle {
+    export {
+        IBundleMetadata,
+        IBundle,
+        IBundleCreateParams,
+        BundleBuilder,
+        BundleLoader,
+        IBundleLoaderCreateParams,
+        Convert_10 as Convert,
+        BundleNormalizer
+    }
+}
+export { Bundle }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const bundle: Converter<IBundle>;
+
+// @public
+export class BundleBuilder {
+    static create(builder: ResourceManagerBuilder, systemConfig: SystemConfiguration, params?: IBundleCreateParams): Result<IBundle>;
+    static createFromPredefined(builder: ResourceManagerBuilder, configName: PredefinedSystemConfiguration, params?: IBundleCreateParams): Result<IBundle>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const bundleCreateParams: Converter<IBundleCreateParams>;
+
+// @public
+export class BundleLoader {
+    static create(params: IBundleLoaderCreateParams): Result<IResourceManager>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const bundleMetadata: Converter<IBundleMetadata>;
+
+// @internal
+class BundleNormalizer {
+    static normalize(originalBuilder: ResourceManagerBuilder, systemConfig: SystemConfiguration): Result<ResourceManagerBuilder>;
+    static normalizeFromPredefined(originalBuilder: ResourceManagerBuilder, configName: PredefinedSystemConfiguration): Result<ResourceManagerBuilder>;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -200,7 +247,7 @@ class CollectionImporter implements IImporter {
 
 declare namespace Compiled {
     export {
-        Convert_3 as Convert,
+        Convert_6 as Convert,
         ICompiledResourceOptions,
         ICompiledConditionMetadata,
         ICompiledConditionSetMetadata,
@@ -217,56 +264,56 @@ declare namespace Compiled {
     }
 }
 
-// Warning: (ae-forgotten-export) The symbol "Model" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "Model_3" needs to be exported by the entry point index.d.ts
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const compiledAbstractDecision: ObjectConverter<Model.ICompiledAbstractDecision, unknown>;
+const compiledAbstractDecision: ObjectConverter<Model_3.ICompiledAbstractDecision, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const compiledCandidate: ObjectConverter<Model.ICompiledCandidate, unknown>;
+const compiledCandidate: ObjectConverter<Model_3.ICompiledCandidate, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const compiledCondition: ObjectConverter<Model.ICompiledCondition, unknown>;
+const compiledCondition: ObjectConverter<Model_3.ICompiledCondition, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const compiledConditionMetadata: ObjectConverter<Model.ICompiledConditionMetadata, unknown>;
+const compiledConditionMetadata: ObjectConverter<Model_3.ICompiledConditionMetadata, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const compiledConditionSet: ObjectConverter<Model.ICompiledConditionSet, unknown>;
+const compiledConditionSet: ObjectConverter<Model_3.ICompiledConditionSet, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const compiledConditionSetMetadata: ObjectConverter<Model.ICompiledConditionSetMetadata, unknown>;
+const compiledConditionSetMetadata: ObjectConverter<Model_3.ICompiledConditionSetMetadata, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const compiledDecisionMetadata: ObjectConverter<Model.ICompiledDecisionMetadata, unknown>;
+const compiledDecisionMetadata: ObjectConverter<Model_3.ICompiledDecisionMetadata, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const compiledQualifier: ObjectConverter<Model.ICompiledQualifier, unknown>;
+const compiledQualifier: ObjectConverter<Model_3.ICompiledQualifier, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const compiledQualifierType: ObjectConverter<Model.ICompiledQualifierType, unknown>;
+const compiledQualifierType: ObjectConverter<Model_3.ICompiledQualifierType, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const compiledResource: ObjectConverter<Model.ICompiledResource, unknown>;
+const compiledResource: ObjectConverter<Model_3.ICompiledResource, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -324,12 +371,12 @@ class CompiledResourceCollection implements IResourceManager {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const compiledResourceCollection: ObjectConverter<Model.ICompiledResourceCollection, unknown>;
+const compiledResourceCollection: ObjectConverter<Model_3.ICompiledResourceCollection, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const compiledResourceType: ObjectConverter<Model.ICompiledResourceType, unknown>;
+const compiledResourceType: ObjectConverter<Model_3.ICompiledResourceType, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -461,7 +508,7 @@ const conditionPriority: Converter<ConditionPriority, unknown>;
 
 declare namespace Conditions {
     export {
-        Convert_5 as Convert,
+        Convert_11 as Convert,
         Condition,
         IConditionCollectorCreateParams,
         ConditionCollector,
@@ -655,8 +702,8 @@ class ConditionTokens {
 
 declare namespace Config {
     export {
-        Model_2 as Model,
-        Convert_10 as Convert,
+        Model,
+        Convert_9 as Convert,
         updateSystemConfigurationQualifierDefaultValues,
         ISystemConfigurationInitParams,
         SystemConfiguration,
@@ -672,7 +719,7 @@ export { Config }
 
 declare namespace Config_2 {
     export {
-        Convert_6 as Convert,
+        Convert_2 as Convert,
         IQualifierTypeConfig,
         ILanguageQualifierTypeConfig,
         ITerritoryQualifierTypeConfig,
@@ -686,7 +733,7 @@ declare namespace Config_2 {
 
 declare namespace Config_3 {
     export {
-        Convert_9 as Convert,
+        Convert_5 as Convert,
         IResourceTypeConfig
     }
 }
@@ -698,7 +745,7 @@ const containerContextDecl: Converter<Normalized.IContainerContextDecl>;
 
 declare namespace Context {
     export {
-        Convert_2 as Convert,
+        Convert_7 as Convert,
         IContextMatchOptions,
         IContextQualifierValueDecl,
         IContextDecl,
@@ -847,22 +894,60 @@ export { Convert }
 
 declare namespace Convert_10 {
     export {
-        systemConfiguration,
-        predefinedSystemConfiguration
+        bundleMetadata,
+        bundle,
+        bundleCreateParams
+    }
+}
+
+declare namespace Convert_11 {
+    export {
+        conditionDecl,
+        IConditionDeclConvertContext,
+        validatedConditionDecl,
+        conditionSetDecl_2 as conditionSetDecl,
+        IConditionSetDeclConvertContext,
+        validatedConditionSetDecl
     }
 }
 
 declare namespace Convert_2 {
     export {
-        contextQualifierValueDecl,
-        contextDecl,
-        IContextDeclConvertContext,
-        validatedContextQualifierValueDecl,
-        validatedContextDecl
+        languageQualifierTypeConfig,
+        territoryQualifierTypeConfig,
+        literalQualifierTypeConfig,
+        systemLanguageQualifierTypeConfig,
+        systemTerritoryQualifierTypeConfig,
+        systemLiteralQualifierTypeConfig,
+        systemQualifierTypeConfig
     }
 }
 
 declare namespace Convert_3 {
+    export {
+        literalValueHierarchyCreateParams,
+        IQualifierTypeConvertContext,
+        qualifierType
+    }
+}
+
+declare namespace Convert_4 {
+    export {
+        qualifierDecl,
+        IQualifierDeclConvertContext,
+        validatedQualifierDecl,
+        IQualifierConvertContext,
+        qualifier
+    }
+}
+
+declare namespace Convert_5 {
+    export {
+        resourceTypeConfig
+    }
+}
+
+declare namespace Convert_6 {
     export {
         compiledConditionMetadata,
         compiledConditionSetMetadata,
@@ -879,7 +964,17 @@ declare namespace Convert_3 {
     }
 }
 
-declare namespace Convert_4 {
+declare namespace Convert_7 {
+    export {
+        contextQualifierValueDecl,
+        contextDecl,
+        IContextDeclConvertContext,
+        validatedContextQualifierValueDecl,
+        validatedContextDecl
+    }
+}
+
+declare namespace Convert_8 {
     export {
         looseConditionDecl,
         childConditionDecl,
@@ -897,50 +992,10 @@ declare namespace Convert_4 {
     }
 }
 
-declare namespace Convert_5 {
-    export {
-        conditionDecl,
-        IConditionDeclConvertContext,
-        validatedConditionDecl,
-        conditionSetDecl_2 as conditionSetDecl,
-        IConditionSetDeclConvertContext,
-        validatedConditionSetDecl
-    }
-}
-
-declare namespace Convert_6 {
-    export {
-        languageQualifierTypeConfig,
-        territoryQualifierTypeConfig,
-        literalQualifierTypeConfig,
-        systemLanguageQualifierTypeConfig,
-        systemTerritoryQualifierTypeConfig,
-        systemLiteralQualifierTypeConfig,
-        systemQualifierTypeConfig
-    }
-}
-
-declare namespace Convert_7 {
-    export {
-        literalValueHierarchyCreateParams,
-        IQualifierTypeConvertContext,
-        qualifierType
-    }
-}
-
-declare namespace Convert_8 {
-    export {
-        qualifierDecl,
-        IQualifierDeclConvertContext,
-        validatedQualifierDecl,
-        IQualifierConvertContext,
-        qualifier
-    }
-}
-
 declare namespace Convert_9 {
     export {
-        resourceTypeConfig
+        systemConfiguration,
+        predefinedSystemConfiguration
     }
 }
 
@@ -1204,6 +1259,37 @@ interface IAbstractDecisionCreateParams {
     conditionSets: ConditionSet[];
     // (undocumented)
     index?: number;
+}
+
+// @public
+interface IBundle {
+    compiledCollection: Compiled.ICompiledResourceCollection;
+    config: Model.ISystemConfiguration;
+    metadata: IBundleMetadata;
+}
+
+// @public
+interface IBundleCreateParams {
+    dateBuilt?: string;
+    description?: string;
+    hashNormalizer?: Hash.HashingNormalizer;
+    normalize?: boolean;
+    version?: string;
+}
+
+// @public
+interface IBundleLoaderCreateParams {
+    bundle: IBundle;
+    hashNormalizer?: Hash.HashingNormalizer;
+    skipChecksumVerification?: boolean;
+}
+
+// @public
+interface IBundleMetadata {
+    checksum: string;
+    dateBuilt: string;
+    description?: string;
+    version?: string;
 }
 
 // @public
@@ -2923,12 +3009,12 @@ class LanguageQualifierType extends QualifierType {
     protected _matchOne(condition: QualifierConditionValue, context: QualifierContextValue, operator: ConditionOperator): QualifierMatchScore;
 }
 
-// Warning: (ae-forgotten-export) The symbol "Model_3" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "Model_2" needs to be exported by the entry point index.d.ts
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const languageQualifierTypeConfig: ObjectConverter<Model_3.ILanguageQualifierTypeConfig, unknown>;
+const languageQualifierTypeConfig: ObjectConverter<Model_2.ILanguageQualifierTypeConfig, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -2966,7 +3052,7 @@ class LiteralQualifierType extends QualifierType {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const literalQualifierTypeConfig: ObjectConverter<Model_3.ILiteralQualifierTypeConfig, unknown>;
+const literalQualifierTypeConfig: ObjectConverter<Model_2.ILiteralQualifierTypeConfig, unknown>;
 
 // @public
 class LiteralValueHierarchy<T extends string = string> {
@@ -3039,7 +3125,7 @@ function mergeLooseResource(resource: Normalized.IImporterResourceDecl, baseName
 // @public
 export const MinConditionPriority: ConditionPriority;
 
-declare namespace Model_2 {
+declare namespace Model {
     export {
         ISystemConfiguration
     }
@@ -3321,7 +3407,7 @@ const qualifierName: Converter<QualifierName, unknown>;
 
 declare namespace Qualifiers {
     export {
-        Convert_8 as Convert,
+        Convert_4 as Convert,
         Qualifier,
         IQualifierDecl,
         IValidatedQualifierDecl,
@@ -3437,7 +3523,7 @@ const qualifierTypeName: Converter<QualifierTypeName, unknown>;
 declare namespace QualifierTypes {
     export {
         Config_2 as Config,
-        Convert_7 as Convert,
+        Convert_3 as Convert,
         IQualifierType,
         IQualifierTypeCreateParams,
         QualifierType,
@@ -3770,7 +3856,7 @@ const resourceIndex: Converter<ResourceIndex, unknown>;
 declare namespace ResourceJson {
     export {
         Compiled,
-        Convert_4 as Convert,
+        Convert_8 as Convert,
         Helpers_2 as Helpers,
         Json,
         Normalized,
@@ -4228,25 +4314,25 @@ const systemConfiguration: ObjectConverter<ISystemConfiguration, unknown>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const systemLanguageQualifierTypeConfig: ObjectConverter<Model_3.ISystemLanguageQualifierTypeConfig, unknown>;
+const systemLanguageQualifierTypeConfig: ObjectConverter<Model_2.ISystemLanguageQualifierTypeConfig, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const systemLiteralQualifierTypeConfig: ObjectConverter<Model_3.ISystemLiteralQualifierTypeConfig, unknown>;
+const systemLiteralQualifierTypeConfig: ObjectConverter<Model_2.ISystemLiteralQualifierTypeConfig, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const systemQualifierTypeConfig: Converter<Model_3.ISystemQualifierTypeConfig, unknown>;
+const systemQualifierTypeConfig: Converter<Model_2.ISystemQualifierTypeConfig, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const systemTerritoryQualifierTypeConfig: ObjectConverter<Model_3.ISystemTerritoryQualifierTypeConfig, unknown>;
+const systemTerritoryQualifierTypeConfig: ObjectConverter<Model_2.ISystemTerritoryQualifierTypeConfig, unknown>;
 
 // @internal (undocumented)
 const territoryCode: RegExp;
@@ -4289,7 +4375,7 @@ class TerritoryQualifierType extends QualifierType {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const territoryQualifierTypeConfig: ObjectConverter<Model_3.ITerritoryQualifierTypeConfig, unknown>;
+const territoryQualifierTypeConfig: ObjectConverter<Model_2.ITerritoryQualifierTypeConfig, unknown>;
 
 // @public
 function toConditionIndex(index: number): Result<ConditionIndex>;

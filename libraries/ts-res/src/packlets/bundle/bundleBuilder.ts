@@ -28,6 +28,7 @@ import {
   getPredefinedSystemConfiguration
 } from '../config';
 import { IBundle, IBundleCreateParams, IBundleMetadata } from './model';
+import { BundleNormalizer } from './bundleNormalizer';
 
 /**
  * Builder for creating resource bundles from a ResourceManagerBuilder.
@@ -51,25 +52,32 @@ export class BundleBuilder {
   ): Result<IBundle> {
     const hashNormalizer = params?.hashNormalizer ?? new Hash.Crc32Normalizer();
 
-    return systemConfig.getConfig().onSuccess((config) => {
-      return builder.getCompiledResourceCollection().onSuccess((compiledCollection) => {
-        return BundleBuilder._generateChecksum(compiledCollection, hashNormalizer).onSuccess((checksum) => {
-          const dateBuilt = params?.dateBuilt ?? new Date().toISOString();
+    // Determine which builder to use based on normalization setting
+    const builderToUse = params?.normalize
+      ? BundleNormalizer.normalize(builder, systemConfig)
+      : succeed(builder);
 
-          const metadata: IBundleMetadata = {
-            dateBuilt,
-            checksum,
-            version: params?.version,
-            description: params?.description
-          };
+    return builderToUse.onSuccess((targetBuilder) => {
+      return systemConfig.getConfig().onSuccess((config) => {
+        return targetBuilder.getCompiledResourceCollection().onSuccess((compiledCollection) => {
+          return BundleBuilder._generateChecksum(compiledCollection, hashNormalizer).onSuccess((checksum) => {
+            const dateBuilt = params?.dateBuilt ?? new Date().toISOString();
 
-          const bundle: IBundle = {
-            metadata,
-            config,
-            compiledCollection
-          };
+            const metadata: IBundleMetadata = {
+              dateBuilt,
+              checksum,
+              version: params?.version,
+              description: params?.description
+            };
 
-          return succeed(bundle);
+            const bundle: IBundle = {
+              metadata,
+              config,
+              compiledCollection
+            };
+
+            return succeed(bundle);
+          });
         });
       });
     });
@@ -89,9 +97,41 @@ export class BundleBuilder {
     configName: PredefinedSystemConfiguration,
     params?: IBundleCreateParams
   ): Result<IBundle> {
-    return getPredefinedSystemConfiguration(configName).onSuccess((systemConfig) =>
-      BundleBuilder.create(builder, systemConfig, params)
-    );
+    const hashNormalizer = params?.hashNormalizer ?? new Hash.Crc32Normalizer();
+
+    // Determine which builder to use based on normalization setting
+    const builderToUse = params?.normalize
+      ? BundleNormalizer.normalizeFromPredefined(builder, configName)
+      : succeed(builder);
+
+    return builderToUse.onSuccess((targetBuilder) => {
+      return getPredefinedSystemConfiguration(configName).onSuccess((systemConfig) => {
+        return systemConfig.getConfig().onSuccess((config) => {
+          return targetBuilder.getCompiledResourceCollection().onSuccess((compiledCollection) => {
+            return BundleBuilder._generateChecksum(compiledCollection, hashNormalizer).onSuccess(
+              (checksum) => {
+                const dateBuilt = params?.dateBuilt ?? new Date().toISOString();
+
+                const metadata: IBundleMetadata = {
+                  dateBuilt,
+                  checksum,
+                  version: params?.version,
+                  description: params?.description
+                };
+
+                const bundle: IBundle = {
+                  metadata,
+                  config,
+                  compiledCollection
+                };
+
+                return succeed(bundle);
+              }
+            );
+          });
+        });
+      });
+    });
   }
 
   /**

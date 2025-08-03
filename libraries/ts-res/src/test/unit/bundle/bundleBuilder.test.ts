@@ -165,5 +165,141 @@ describe('BundleBuilder', () => {
         }
       );
     });
+
+    test('should generate same checksum with normalization enabled for different addition order', () => {
+      // Create first manager and add resources in order A -> B
+      const manager1 = ResourceManagerBuilder.createPredefined('default').orThrow();
+      manager1
+        .addResource({
+          id: 'resource.a',
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: { value: 'Resource A' },
+              conditions: { language: 'en' }
+            }
+          ]
+        })
+        .orThrow();
+      manager1
+        .addResource({
+          id: 'resource.b',
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: { value: 'Resource B' },
+              conditions: { language: 'fr' }
+            }
+          ]
+        })
+        .orThrow();
+
+      // Create second manager and add resources in order B -> A
+      const manager2 = ResourceManagerBuilder.createPredefined('default').orThrow();
+      manager2
+        .addResource({
+          id: 'resource.b',
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: { value: 'Resource B' },
+              conditions: { language: 'fr' }
+            }
+          ]
+        })
+        .orThrow();
+      manager2
+        .addResource({
+          id: 'resource.a',
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: { value: 'Resource A' },
+              conditions: { language: 'en' }
+            }
+          ]
+        })
+        .orThrow();
+
+      // Create bundles with normalization enabled
+      const bundle1 = BundleBuilder.createFromPredefined(manager1, 'default', { normalize: true }).orThrow();
+      const bundle2 = BundleBuilder.createFromPredefined(manager2, 'default', { normalize: true }).orThrow();
+
+      // PHASE 2 BEHAVIOR: Same content with normalization should produce identical checksums
+      expect(bundle1.metadata.checksum).toBe(bundle2.metadata.checksum);
+
+      // Both bundles should have the same content when loaded
+      expect(bundle1.compiledCollection.resources).toHaveLength(2);
+      expect(bundle2.compiledCollection.resources).toHaveLength(2);
+
+      // Resource IDs should be the same in both bundles (and in same order due to normalization)
+      const bundle1ResourceIds = bundle1.compiledCollection.resources.map((r) => r.id);
+      const bundle2ResourceIds = bundle2.compiledCollection.resources.map((r) => r.id);
+      expect(bundle1ResourceIds).toEqual(bundle2ResourceIds);
+      expect(bundle1ResourceIds).toEqual(['resource.a', 'resource.b']); // Should be in alphabetical order
+    });
+
+    test('should still generate different checksums without normalization', () => {
+      // Create first manager and add resources in order A -> B
+      const manager1 = ResourceManagerBuilder.createPredefined('default').orThrow();
+      manager1
+        .addResource({
+          id: 'resource.a',
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: { value: 'Resource A' },
+              conditions: { language: 'en' }
+            }
+          ]
+        })
+        .orThrow();
+      manager1
+        .addResource({
+          id: 'resource.b',
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: { value: 'Resource B' },
+              conditions: { language: 'fr' }
+            }
+          ]
+        })
+        .orThrow();
+
+      // Create second manager and add resources in order B -> A
+      const manager2 = ResourceManagerBuilder.createPredefined('default').orThrow();
+      manager2
+        .addResource({
+          id: 'resource.b',
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: { value: 'Resource B' },
+              conditions: { language: 'fr' }
+            }
+          ]
+        })
+        .orThrow();
+      manager2
+        .addResource({
+          id: 'resource.a',
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: { value: 'Resource A' },
+              conditions: { language: 'en' }
+            }
+          ]
+        })
+        .orThrow();
+
+      // Create bundles without normalization (Phase 1 behavior)
+      const bundle1 = BundleBuilder.createFromPredefined(manager1, 'default', { normalize: false }).orThrow();
+      const bundle2 = BundleBuilder.createFromPredefined(manager2, 'default', { normalize: false }).orThrow();
+
+      // PHASE 1 BEHAVIOR: Different order results in different checksums
+      expect(bundle1.metadata.checksum).not.toBe(bundle2.metadata.checksum);
+    });
   });
 });
