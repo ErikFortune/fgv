@@ -209,6 +209,54 @@ describe('CLI Integration Tests', () => {
       expect(outputContent).toMatch(/ as const;$/);
     });
 
+    test('compiles resources to bundle format', async () => {
+      const bundleOutputFile = path.join(tempDir, 'compiled.bundle.json');
+      const result = await runCli([
+        'compile',
+        '--input',
+        inputFile,
+        '--output',
+        bundleOutputFile,
+        '--format',
+        'bundle'
+      ]);
+
+      expect(result.exitCode).toBe(0);
+
+      const outputContent = await fs.readFile(bundleOutputFile, 'utf-8');
+      const bundle = JSON.parse(outputContent);
+
+      // Bundle should have the expected structure
+      expect(bundle).toHaveProperty('metadata');
+      expect(bundle).toHaveProperty('config');
+      expect(bundle).toHaveProperty('compiledCollection');
+
+      // Metadata should have checksum and date
+      expect(bundle.metadata).toHaveProperty('checksum');
+      expect(bundle.metadata).toHaveProperty('dateBuilt');
+
+      // Config should be a valid system configuration
+      expect(bundle.config).toHaveProperty('qualifierTypes');
+      expect(bundle.config).toHaveProperty('qualifiers');
+      expect(bundle.config).toHaveProperty('resourceTypes');
+
+      // Compiled collection should have resources
+      expect(bundle.compiledCollection).toHaveProperty('resources');
+      expect(Array.isArray(bundle.compiledCollection.resources)).toBe(true);
+      expect(bundle.compiledCollection.resources.length).toBeGreaterThan(0);
+
+      // Check that resources include our test data
+      const resourceIds = bundle.compiledCollection.resources.map((r: any) => r.id);
+      expect(resourceIds).toContain('resources.app.title');
+      expect(resourceIds).toContain('resources.messages.welcome');
+
+      // Verify bundle can be loaded back into a resource manager
+      expect(TsRes.Bundle.Convert.bundle.convert(bundle)).toSucceedAndSatisfy((validatedBundle) => {
+        expect(TsRes.Bundle.BundleLoader.createManagerFromBundle({ bundle: validatedBundle })).toSucceed();
+        return true;
+      });
+    });
+
     test('compiles with context filtering', async () => {
       const result = await runCli([
         'compile',

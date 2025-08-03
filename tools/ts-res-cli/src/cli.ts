@@ -133,7 +133,7 @@ export class TsResCliApp {
         '--qualifier-defaults <token>',
         'Qualifier default values token (pipe-separated, e.g., "language=en-US,en-CA|territory=US")'
       )
-      .option('-f, --format <format>', 'Output format', 'compiled')
+      .option('-f, --format <format>', 'Output format (compiled, source, js, ts, binary, bundle)', 'compiled')
       .option('--debug', 'Include debug information', false)
       .option('-v, --verbose', 'Verbose output', false)
       .option('-q, --quiet', 'Quiet output', false)
@@ -563,7 +563,7 @@ export class TsResCliApp {
   private _parseCompileOptions(options: ICompileCommandOptions): Result<ICompileOptions> {
     try {
       const format = options.format as OutputFormat;
-      if (!['compiled', 'source', 'js', 'ts', 'binary'].includes(format)) {
+      if (!['compiled', 'source', 'js', 'ts', 'binary', 'bundle'].includes(format)) {
         return fail(`Invalid format: ${format}`);
       }
 
