@@ -123,11 +123,14 @@ function buildQualifierDefaultValueToken({ qualifier, value }: IQualifierDefault
 declare namespace Bundle {
     export {
         IBundleMetadata,
+        IBundleExportMetadata,
         IBundle,
         IBundleCreateParams,
         BundleBuilder,
         BundleLoader,
         IBundleLoaderCreateParams,
+        BundleUtils,
+        IBundleComponents,
         Convert_10 as Convert,
         BundleNormalizer
     }
@@ -150,6 +153,11 @@ export class BundleBuilder {
 // @public
 const bundleCreateParams: Converter<IBundleCreateParams>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const bundleExportMetadata: Converter<IBundleExportMetadata>;
+
 // @public
 export class BundleLoader {
     static createManagerFromBundle(params: IBundleLoaderCreateParams): Result<IResourceManager>;
@@ -164,6 +172,22 @@ const bundleMetadata: Converter<IBundleMetadata>;
 class BundleNormalizer {
     static normalize(originalBuilder: ResourceManagerBuilder, systemConfig: SystemConfiguration): Result<ResourceManagerBuilder>;
     static normalizeFromPredefined(originalBuilder: ResourceManagerBuilder, configName: PredefinedSystemConfiguration): Result<ResourceManagerBuilder>;
+}
+
+// @public
+const bundleStructure: Converter<{
+    metadata: IBundleMetadata;
+    config: unknown;
+    compiledCollection: unknown;
+}>;
+
+// @public
+class BundleUtils {
+    static extractBundleComponents(bundleData: unknown): Result<IBundleComponents>;
+    static extractBundleMetadata(data: unknown): Result<IBundleMetadata>;
+    static isBundleFile(data: unknown): boolean;
+    static isBundleFileName(fileName: string): boolean;
+    static parseBundleFromJson(jsonString: string): Result<IBundleComponents>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -895,8 +919,10 @@ export { Convert }
 declare namespace Convert_10 {
     export {
         bundleMetadata,
+        bundleExportMetadata,
         bundle,
-        bundleCreateParams
+        bundleCreateParams,
+        bundleStructure
     }
 }
 
@@ -1265,7 +1291,15 @@ interface IAbstractDecisionCreateParams {
 interface IBundle {
     compiledCollection: Compiled.ICompiledResourceCollection;
     config: Model.ISystemConfiguration;
+    exportMetadata?: IBundleExportMetadata;
     metadata: IBundleMetadata;
+}
+
+// @public
+interface IBundleComponents {
+    compiledCollection: Compiled.ICompiledResourceCollection;
+    metadata: IBundleMetadata;
+    systemConfiguration: SystemConfiguration;
 }
 
 // @public
@@ -1275,6 +1309,14 @@ interface IBundleCreateParams {
     hashNormalizer?: Hash.HashingNormalizer;
     normalize?: boolean;
     version?: string;
+}
+
+// @public
+interface IBundleExportMetadata {
+    exportedAt: string;
+    exportedFrom: string;
+    filterContext?: Record<string, unknown>;
+    type: string;
 }
 
 // @public

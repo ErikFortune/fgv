@@ -51,6 +51,32 @@ export interface IBundleMetadata {
 }
 
 /**
+ * Optional export metadata for tracking bundle export information.
+ * @public
+ */
+export interface IBundleExportMetadata {
+  /**
+   * ISO timestamp indicating when the bundle was exported.
+   */
+  exportedAt: string;
+
+  /**
+   * Tool or application that exported the bundle.
+   */
+  exportedFrom: string;
+
+  /**
+   * Type of bundle export (e.g., 'ts-res-bundle', 'ts-res-bundle-filtered').
+   */
+  type: string;
+
+  /**
+   * Optional filter context if the bundle represents filtered data.
+   */
+  filterContext?: Record<string, unknown>;
+}
+
+/**
  * A complete resource bundle that encapsulates built resources, configuration, and metadata.
  * Bundles provide a portable, integrity-verified way to distribute pre-compiled resource collections.
  * @public
@@ -70,6 +96,11 @@ export interface IBundle {
    * The compiled resource collection containing all resources, conditions, and decisions.
    */
   compiledCollection: ResourceJsonCompiled.ICompiledResourceCollection;
+
+  /**
+   * Optional export metadata for tracking when and how the bundle was exported.
+   */
+  exportMetadata?: IBundleExportMetadata;
 }
 
 /**

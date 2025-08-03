@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   CubeIcon,
   FolderIcon,
@@ -45,6 +45,10 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({
 }) => {
   const { state: resourceState } = resourceManager;
 
+  // Debug logging
+  console.log('CompiledBrowser - resourceState.isLoadedFromBundle:', resourceState.isLoadedFromBundle);
+  console.log('CompiledBrowser - resourceState.bundleMetadata:', resourceState.bundleMetadata);
+
   // Use filtered resources when filtering is active and successful
   const isFilteringActive = filterState.enabled && filterResult?.success === true;
   const activeProcessedResources = isFilteringActive
@@ -53,6 +57,18 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['root', 'resources']));
   const [showJsonView, setShowJsonView] = useState(false);
+  const [useNormalization, setUseNormalization] = useState(
+    () =>
+      // Default to ON when loaded from bundle, OFF otherwise
+      resourceState.isLoadedFromBundle
+  );
+
+  // Update normalization default when bundle state changes
+  useEffect(() => {
+    if (resourceState.isLoadedFromBundle && !useNormalization) {
+      setUseNormalization(true);
+    }
+  }, [resourceState.isLoadedFromBundle, useNormalization]);
 
   // Helper functions to resolve indices to meaningful keys
   const getConditionKey = (
@@ -198,7 +214,30 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({
       return null;
     }
 
-    const compiledCollection = activeProcessedResources.compiledCollection;
+    let compiledCollection = activeProcessedResources.compiledCollection;
+
+    // Apply normalization if enabled
+    if (useNormalization && resourceState.activeConfiguration) {
+      try {
+        // Create a ResourceManagerBuilder from the current data
+        const resourceManagerResult = Bundle.BundleNormalizer.normalize(
+          activeProcessedResources.system.resourceManager,
+          resourceState.activeConfiguration
+        );
+
+        if (resourceManagerResult.isSuccess()) {
+          const normalizedCompiledResult = resourceManagerResult.value.getCompiledResourceCollection({
+            includeMetadata: true
+          });
+          if (normalizedCompiledResult.isSuccess()) {
+            compiledCollection = normalizedCompiledResult.value;
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to normalize compiled collection:', error);
+        // Fall back to original collection
+      }
+    }
 
     const tree: TreeNode = {
       id: 'root',
@@ -263,7 +302,15 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({
     }
 
     return tree;
-  }, [activeProcessedResources?.compiledCollection, onMessage, isFilteringActive]);
+  }, [
+    activeProcessedResources?.compiledCollection,
+    activeProcessedResources?.system.resourceManager,
+    onMessage,
+    isFilteringActive,
+    useNormalization,
+    resourceState.isLoadedFromBundle,
+    resourceState.activeConfiguration
+  ]);
 
   // Export compiled collection to JSON file
   const handleExportCompiledData = useCallback(async () => {
@@ -273,11 +320,38 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({
         return;
       }
 
+      // Get the current compiled collection (potentially normalized)
+      let compiledCollection = activeProcessedResources.compiledCollection;
+
+      // Apply normalization if enabled
+      if (useNormalization && resourceState.activeConfiguration) {
+        try {
+          const resourceManagerResult = Bundle.BundleNormalizer.normalize(
+            activeProcessedResources.system.resourceManager,
+            resourceState.activeConfiguration
+          );
+
+          if (resourceManagerResult.isSuccess()) {
+            const normalizedCompiledResult = resourceManagerResult.value.getCompiledResourceCollection({
+              includeMetadata: true
+            });
+            if (normalizedCompiledResult.isSuccess()) {
+              compiledCollection = normalizedCompiledResult.value;
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to normalize for export:', error);
+          // Fall back to original collection
+        }
+      }
+
       const compiledData = {
-        ...activeProcessedResources.compiledCollection,
+        ...compiledCollection,
         metadata: {
           exportedAt: new Date().toISOString(),
           type: isFilteringActive ? 'ts-res-filtered-compiled-collection' : 'ts-res-compiled-collection',
+          normalized: useNormalization,
+          ...(resourceState.isLoadedFromBundle && { loadedFromBundle: true }),
           ...(isFilteringActive && { filterContext: filterState.appliedValues })
         }
       };
@@ -340,7 +414,16 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({
         `Failed to export compiled data: ${error instanceof Error ? error.message : String(error)}`
       );
     }
-  }, [activeProcessedResources?.compiledCollection, onMessage, isFilteringActive, filterState.appliedValues]);
+  }, [
+    activeProcessedResources?.compiledCollection,
+    activeProcessedResources?.system.resourceManager,
+    onMessage,
+    isFilteringActive,
+    filterState.appliedValues,
+    useNormalization,
+    resourceState.isLoadedFromBundle,
+    resourceState.activeConfiguration
+  ]);
 
   // Export bundle with metadata, config, and compiled collection
   const handleExportBundle = useCallback(async () => {
@@ -604,21 +687,52 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({
         )}
       </div>
 
-      {/* JSON View Toggle */}
+      {/* Controls Panel */}
       {activeProcessedResources && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-          <button
-            onClick={() => setShowJsonView(!showJsonView)}
-            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <CodeBracketIcon className="h-4 w-4 mr-2" />
-            {showJsonView ? 'Hide' : 'Show'} JSON Compiled Collection
-            {showJsonView ? (
-              <ChevronUpIcon className="h-4 w-4 ml-2" />
-            ) : (
-              <ChevronDownIcon className="h-4 w-4 ml-2" />
-            )}
-          </button>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-6">
+              {/* Normalization Toggle - Always available */}
+              <div className="flex items-center space-x-2">
+                {resourceState.isLoadedFromBundle ? (
+                  <ArchiveBoxIcon className="h-4 w-4 text-blue-600" />
+                ) : (
+                  <CubeIcon className="h-4 w-4 text-gray-600" />
+                )}
+                <label className="text-sm font-medium text-gray-700">Normalize Output:</label>
+                <button
+                  onClick={() => setUseNormalization(!useNormalization)}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    useNormalization ? 'bg-blue-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                      useNormalization ? 'translate-x-5' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className="text-xs text-gray-500">{useNormalization ? 'ON' : 'OFF'}</span>
+                {resourceState.isLoadedFromBundle && (
+                  <span className="text-xs text-blue-600 font-medium">Bundle</span>
+                )}
+              </div>
+
+              {/* JSON View Toggle */}
+              <button
+                onClick={() => setShowJsonView(!showJsonView)}
+                className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <CodeBracketIcon className="h-4 w-4 mr-2" />
+                {showJsonView ? 'Hide' : 'Show'} JSON Compiled Collection
+                {showJsonView ? (
+                  <ChevronUpIcon className="h-4 w-4 ml-2" />
+                ) : (
+                  <ChevronDownIcon className="h-4 w-4 ml-2" />
+                )}
+              </button>
+            </div>
+          </div>
 
           {/* JSON View */}
           {showJsonView && (

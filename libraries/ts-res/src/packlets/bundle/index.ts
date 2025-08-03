@@ -31,12 +31,16 @@
  */
 
 // Model interfaces
-export type { IBundleMetadata, IBundle, IBundleCreateParams } from './model';
+export type { IBundleMetadata, IBundleExportMetadata, IBundle, IBundleCreateParams } from './model';
 
 // Builder and loader classes
 export { BundleBuilder } from './bundleBuilder';
 export { BundleLoader } from './bundleLoader';
 export type { IBundleLoaderCreateParams } from './bundleLoader';
+
+// Utilities
+export { BundleUtils } from './bundleUtils';
+export type { IBundleComponents } from './bundleUtils';
 
 // Converters
 export * as Convert from './convert';

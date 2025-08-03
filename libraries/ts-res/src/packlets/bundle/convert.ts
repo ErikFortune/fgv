@@ -21,9 +21,10 @@
  */
 
 import { Converter, Converters } from '@fgv/ts-utils';
+import { Converters as JsonConverters } from '@fgv/ts-json-base';
 import { Convert as ConfigConvert } from '../config';
 import { Compiled as ResourceJsonCompiled } from '../resource-json';
-import { IBundleMetadata, IBundle, IBundleCreateParams } from './model';
+import { IBundleMetadata, IBundleExportMetadata, IBundle, IBundleCreateParams } from './model';
 
 /**
  * `Converter` for a {@link Bundle.IBundleMetadata | bundle metadata} object.
@@ -37,13 +38,26 @@ export const bundleMetadata: Converter<IBundleMetadata> = Converters.strictObjec
 });
 
 /**
+ * `Converter` for {@link Bundle.IBundleExportMetadata | bundle export metadata}.
+ * @public
+ */
+export const bundleExportMetadata: Converter<IBundleExportMetadata> =
+  Converters.strictObject<IBundleExportMetadata>({
+    exportedAt: Converters.string,
+    exportedFrom: Converters.string,
+    type: Converters.string,
+    filterContext: JsonConverters.jsonObject.optional()
+  });
+
+/**
  * `Converter` for a {@link Bundle.IBundle | bundle} object.
  * @public
  */
 export const bundle: Converter<IBundle> = Converters.strictObject<IBundle>({
   metadata: bundleMetadata,
   config: ConfigConvert.systemConfiguration,
-  compiledCollection: ResourceJsonCompiled.Convert.compiledResourceCollection
+  compiledCollection: ResourceJsonCompiled.Convert.compiledResourceCollection,
+  exportMetadata: bundleExportMetadata.optional()
 });
 
 /**
@@ -56,3 +70,18 @@ export const bundleCreateParams: Converter<IBundleCreateParams> =
     description: Converters.string.optional(),
     dateBuilt: Converters.string.optional()
   });
+
+/**
+ * Lightweight converter for bundle structure validation without full processing.
+ * Useful for detecting bundle files without the overhead of full validation.
+ * @public
+ */
+export const bundleStructure: Converter<{
+  metadata: IBundleMetadata;
+  config: unknown;
+  compiledCollection: unknown;
+}> = Converters.strictObject({
+  metadata: bundleMetadata,
+  config: JsonConverters.jsonValue,
+  compiledCollection: JsonConverters.jsonValue
+});

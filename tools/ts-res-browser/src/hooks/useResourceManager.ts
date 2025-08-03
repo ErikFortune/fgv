@@ -4,11 +4,14 @@ import {
   ProcessedResources,
   processImportedDirectory,
   processImportedFiles,
-  createSimpleContext
+  createSimpleContext,
+  createProcessedResourcesFromManager,
+  finalizeProcessing
 } from '../utils/tsResIntegration';
 import { ImportedDirectory, ImportedFile } from '../utils/fileImport';
 import { FileTreeConverter } from '../utils/fileTreeConverter';
-import { Config } from '@fgv/ts-res';
+import { Config, Bundle } from '@fgv/ts-res';
+import { reconstructSystemFromBundle } from '../utils/bundleReconstruction';
 
 export interface ResourceManagerState {
   isProcessing: boolean;
@@ -16,6 +19,8 @@ export interface ResourceManagerState {
   error: string | null;
   hasProcessedData: boolean;
   activeConfiguration: Config.Model.ISystemConfiguration | null;
+  isLoadedFromBundle: boolean;
+  bundleMetadata: Bundle.IBundleMetadata | null;
 }
 
 export interface UseResourceManagerReturn {
@@ -24,6 +29,7 @@ export interface UseResourceManagerReturn {
     processDirectory: (directory: ImportedDirectory) => Promise<void>;
     processFiles: (files: ImportedFile[]) => Promise<void>;
     processFileTree: (fileTree: FileTree.FileTree, rootPath?: string) => Promise<void>;
+    processBundleFile: (file: ImportedFile) => Promise<void>;
     clearError: () => void;
     reset: () => void;
     resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<any>>;
@@ -37,7 +43,9 @@ const initialState: ResourceManagerState = {
   processedResources: null,
   error: null,
   hasProcessedData: false,
-  activeConfiguration: null
+  activeConfiguration: null,
+  isLoadedFromBundle: false,
+  bundleMetadata: null
 };
 
 export const useResourceManager = (): UseResourceManagerReturn => {
@@ -202,7 +210,7 @@ export const useResourceManager = (): UseResourceManagerReturn => {
       }
 
       try {
-        // First get the resource object from the resource manager
+        // Get the resource object from the resource manager
         const resourceResult = state.processedResources.system.resourceManager.getBuiltResource(resourceId);
         if (resourceResult.isFailure()) {
           return fail(`Resource not found: ${resourceId}`);
@@ -344,7 +352,10 @@ export const useResourceManager = (): UseResourceManagerReturn => {
       // Clear processed resources when configuration changes
       processedResources: null,
       hasProcessedData: false,
-      error: null
+      error: null,
+      // Clear bundle state when manually applying configuration
+      isLoadedFromBundle: false,
+      bundleMetadata: null
     }));
   }, []);
 
@@ -358,12 +369,98 @@ export const useResourceManager = (): UseResourceManagerReturn => {
     }));
   }, []);
 
+  const processBundleFile = useCallback(async (file: ImportedFile) => {
+    console.log('=== STARTING BUNDLE FILE PROCESSING ===');
+    console.log('File:', file.name, 'Is bundle:', file.isBundleFile);
+
+    if (!file.isBundleFile) {
+      setState((prev) => ({
+        ...prev,
+        error: `File ${file.name} is not a bundle file`
+      }));
+      return;
+    }
+
+    setState((prev) => ({ ...prev, isProcessing: true, error: null }));
+
+    try {
+      // Extract bundle components using the ts-res utilities
+      const bundleComponentsResult = Bundle.BundleUtils.parseBundleFromJson(file.content);
+      if (bundleComponentsResult.isFailure()) {
+        setState((prev) => ({
+          ...prev,
+          isProcessing: false,
+          error: `Failed to parse bundle: ${bundleComponentsResult.message}`
+        }));
+        return;
+      }
+
+      const bundleComponents = bundleComponentsResult.value;
+      console.log('Bundle components extracted successfully');
+
+      // Apply the system configuration from the bundle
+      setState((prev) => ({
+        ...prev,
+        activeConfiguration: bundleComponents.systemConfiguration.getConfig().orThrow()
+      }));
+
+      // Reconstruct the full system from the bundle
+      const reconstructedSystemResult = reconstructSystemFromBundle(bundleComponents);
+      if (reconstructedSystemResult.isFailure()) {
+        setState((prev) => ({
+          ...prev,
+          isProcessing: false,
+          error: `Failed to reconstruct system from bundle: ${reconstructedSystemResult.message}`
+        }));
+        return;
+      }
+
+      const reconstructedSystem = reconstructedSystemResult.value;
+      console.log('System reconstructed from bundle');
+
+      // Create ProcessedResources from the reconstructed system
+      const processedResourcesResult = finalizeProcessing(reconstructedSystem);
+
+      if (processedResourcesResult.isFailure()) {
+        setState((prev) => ({
+          ...prev,
+          isProcessing: false,
+          error: `Failed to create processed resources: ${processedResourcesResult.message}`
+        }));
+        return;
+      }
+
+      const processedResources = processedResourcesResult.value;
+      console.log('Processed resources created from reconstructed system');
+
+      setState((prev) => ({
+        ...prev,
+        isProcessing: false,
+        processedResources,
+        hasProcessedData: true,
+        isLoadedFromBundle: true,
+        bundleMetadata: bundleComponents.metadata
+      }));
+
+      console.log('=== BUNDLE FILE PROCESSING COMPLETED ===');
+    } catch (error) {
+      console.error('=== BUNDLE FILE PROCESSING ERROR ===');
+      console.error('Error:', error);
+      setState((prev) => ({
+        ...prev,
+        isProcessing: false,
+        error: `Unexpected error processing bundle: ${error instanceof Error ? error.message : String(error)}`
+      }));
+    }
+  }, []);
+
   return {
     state,
     actions: {
       processDirectory,
       processFiles,
       processFileTree,
+      processBundleFile,
       clearError,
       reset,
       resolveResource,
