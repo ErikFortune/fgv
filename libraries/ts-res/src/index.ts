@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+import * as Bundle from './packlets/bundle';
 import * as QualifierTypes from './packlets/qualifier-types';
 import * as Qualifiers from './packlets/qualifiers';
 import * as Conditions from './packlets/conditions';
@@ -41,8 +42,12 @@ import { Qualifier } from './packlets/qualifiers';
 import { ResourceType } from './packlets/resource-types';
 import { Resource, ResourceCandidate, ResourceManagerBuilder } from './packlets/resources';
 import { IResourceManager, ResourceResolver } from './packlets/runtime';
+import { BundleBuilder, BundleLoader } from './packlets/bundle';
 
 export {
+  Bundle,
+  BundleBuilder,
+  BundleLoader,
   Condition,
   Conditions,
   ConditionSet,
