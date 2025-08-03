@@ -112,7 +112,14 @@ export class ResourceCandidate implements IResourceCandidate {
     this.mergeMethod = params.decl.mergeMethod ?? 'augment';
     this.resourceType = params.resourceType;
     if (this.resourceType) {
-      this.resourceType.validateDeclaration(this).orThrow();
+      this.resourceType
+        .validateDeclaration({
+          id: this.id,
+          completeness: this.isPartial ? 'partial' : 'full',
+          json: this.json,
+          mergeMethod: this.mergeMethod
+        })
+        .orThrow();
     }
   }
 

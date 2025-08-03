@@ -37,6 +37,25 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[completeness](./ts-res.resourcetypes.iresourcecandidatevalidationproperties.completeness.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[CandidateCompleteness](./ts-res.candidatecompleteness.md)
+
+
+</td><td>
+
+Describes how complete the candidate value is.
+
+
+</td></tr>
+<tr><td>
+
 [id](./ts-res.resourcetypes.iresourcecandidatevalidationproperties.id.md)
 
 
@@ -51,25 +70,6 @@ Description
 </td><td>
 
 The [id](./ts-res.resourceid.md) of the resource.
-
-
-</td></tr>
-<tr><td>
-
-[isPartial](./ts-res.resourcetypes.iresourcecandidatevalidationproperties.ispartial.md)
-
-
-</td><td>
-
-
-</td><td>
-
-boolean
-
-
-</td><td>
-
-If true, the resource is only a partial representation of the full resource.
 
 
 </td></tr>

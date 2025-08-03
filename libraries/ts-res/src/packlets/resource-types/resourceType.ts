@@ -44,10 +44,10 @@ export interface IResourceCandidateValidationProperties {
   id: ResourceId;
 
   /**
-   * {@inheritdoc ResourceJson.Json.ILooseResourceCandidateDecl.isPartial}
+   * Describes how complete the candidate value is.
    * @public
    */
-  isPartial: boolean;
+  completeness: CandidateCompleteness;
 
   /**
    * {@inheritdoc ResourceJson.Json.ILooseResourceCandidateDecl.json}
