@@ -273,9 +273,26 @@ func (p *Parser) parseRegion(part string) error {
 		return nil
 	}
 	
-	// Not a region, try variant
-	p.state = StateVariant
-	return p.parseVariant(part)
+	// Check if this could be a variant (5-8 chars or 4 starting with digit)
+	if variantPattern.MatchString(part) {
+		p.state = StateVariant
+		return p.parseVariant(part)
+	}
+	
+	// Check if this is an extension singleton
+	if len(part) == 1 && extensionPattern.MatchString(part) {
+		p.state = StateExtension
+		return p.parseExtension(part)
+	}
+	
+	// Check if this is private use
+	if strings.ToLower(part) == PrivateUseSingleton {
+		p.state = StatePrivateUse
+		return nil
+	}
+	
+	// If none of the above, it's an invalid subtag
+	return NewError(ErrorTypeInvalidSyntax, "invalid subtag", p.tag, part)
 }
 
 // parseVariant parses variant subtags
