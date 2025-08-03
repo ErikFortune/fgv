@@ -30,51 +30,37 @@ type SystemConfiguration struct {
 
 // CompiledQualifierType represents a compiled qualifier type
 type CompiledQualifierType struct {
-	Name        string      `json:"name"`
-	Description *string     `json:"description,omitempty"`
-	ValueType   string      `json:"valueType"`
-	Config      interface{} `json:"config,omitempty"`
+	Name string `json:"name"`
 }
 
 // CompiledQualifier represents a compiled qualifier
 type CompiledQualifier struct {
-	Name           string `json:"name"`
-	QualifierType  string `json:"qualifierType"`
-	Value          interface{} `json:"value"`
-	Description    *string `json:"description,omitempty"`
+	Name            string `json:"name"`
+	Type            int    `json:"type"`
+	DefaultPriority int    `json:"defaultPriority"`
 }
 
 // CompiledResourceType represents a compiled resource type
 type CompiledResourceType struct {
-	Name        string `json:"name"`
-	Description *string `json:"description,omitempty"`
-	MergeMethod string `json:"mergeMethod"`
+	Name string `json:"name"`
 }
 
 // CompiledCondition represents a compiled condition
 type CompiledCondition struct {
-	Key             string      `json:"key"`
-	Qualifier       string      `json:"qualifier"`
-	Operator        string      `json:"operator"`
-	Value           interface{} `json:"value"`
-	Priority        int         `json:"priority"`
-	ScoreAsDefault  *int        `json:"scoreAsDefault,omitempty"`
-	Index           *int        `json:"index,omitempty"`
+	QualifierIndex int         `json:"qualifierIndex"`
+	Value          interface{} `json:"value"`
+	Priority       int         `json:"priority"`
+	ScoreAsDefault *int        `json:"scoreAsDefault,omitempty"`
 }
 
 // CompiledConditionSet represents a compiled condition set
 type CompiledConditionSet struct {
-	Key        string   `json:"key"`
-	Conditions []string `json:"conditions"`
-	Priority   int      `json:"priority"`
-	Index      *int     `json:"index,omitempty"`
+	Conditions []int `json:"conditions"`
 }
 
 // CompiledAbstractDecision represents a compiled abstract decision
 type CompiledAbstractDecision struct {
-	Key               string   `json:"key"`
-	ConditionSets     []string `json:"conditionSets"`
-	Index             *int     `json:"index,omitempty"`
+	ConditionSets []int `json:"conditionSets"`
 }
 
 // CompiledCandidate represents a compiled resource candidate
@@ -86,10 +72,10 @@ type CompiledCandidate struct {
 
 // CompiledResource represents a compiled resource
 type CompiledResource struct {
-	ID           string              `json:"id"`
-	ResourceType string              `json:"resourceType"`
-	Decision     string              `json:"decision"`
-	Candidates   []CompiledCandidate `json:"candidates"`
+	ID         string              `json:"id"`
+	Type       int                 `json:"type"`
+	Decision   int                 `json:"decision"`
+	Candidates []CompiledCandidate `json:"candidates"`
 }
 
 // CompiledResourceCollection represents the complete compiled resource collection

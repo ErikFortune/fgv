@@ -12,17 +12,17 @@ type ResourceManager struct {
 	
 	// Index maps for fast lookups
 	qualifierMap     map[string]*types.CompiledQualifier
-	qualifierTypeMap map[string]*types.CompiledQualifierType
+	qualifierTypeMap map[string]*types.CompiledQualifierType  
 	resourceTypeMap  map[string]*types.CompiledResourceType
-	conditionMap     map[string]*types.CompiledCondition
-	conditionSetMap  map[string]*types.CompiledConditionSet
-	decisionMap      map[string]*types.CompiledAbstractDecision
 	resourceMap      map[string]*types.CompiledResource
 	
 	// Index arrays for O(1) access by index
 	conditions    []*types.CompiledCondition
 	conditionSets []*types.CompiledConditionSet
 	decisions     []*types.CompiledAbstractDecision
+	qualifiers    []*types.CompiledQualifier
+	qualifierTypes []*types.CompiledQualifierType
+	resourceTypes []*types.CompiledResourceType
 }
 
 // NewResourceManager creates a new resource manager from a bundle
@@ -36,9 +36,6 @@ func NewResourceManager(bundle *types.Bundle) (*ResourceManager, error) {
 		qualifierMap:     make(map[string]*types.CompiledQualifier),
 		qualifierTypeMap: make(map[string]*types.CompiledQualifierType),
 		resourceTypeMap:  make(map[string]*types.CompiledResourceType),
-		conditionMap:     make(map[string]*types.CompiledCondition),
-		conditionSetMap:  make(map[string]*types.CompiledConditionSet),
-		decisionMap:      make(map[string]*types.CompiledAbstractDecision),
 		resourceMap:      make(map[string]*types.CompiledResource),
 	}
 	
@@ -53,79 +50,47 @@ func NewResourceManager(bundle *types.Bundle) (*ResourceManager, error) {
 func (rm *ResourceManager) buildIndexes() error {
 	collection := &rm.bundle.CompiledCollection
 	
-	// Build qualifier maps
+	// Build qualifier arrays and maps
+	rm.qualifiers = make([]*types.CompiledQualifier, len(collection.Qualifiers))
 	for i := range collection.Qualifiers {
 		q := &collection.Qualifiers[i]
 		rm.qualifierMap[q.Name] = q
+		rm.qualifiers[i] = q
 	}
 	
+	rm.qualifierTypes = make([]*types.CompiledQualifierType, len(collection.QualifierTypes))
 	for i := range collection.QualifierTypes {
 		qt := &collection.QualifierTypes[i]
 		rm.qualifierTypeMap[qt.Name] = qt
+		rm.qualifierTypes[i] = qt
 	}
 	
+	rm.resourceTypes = make([]*types.CompiledResourceType, len(collection.ResourceTypes))
 	for i := range collection.ResourceTypes {
 		rt := &collection.ResourceTypes[i]
 		rm.resourceTypeMap[rt.Name] = rt
+		rm.resourceTypes[i] = rt
 	}
 	
-	// Build condition maps and arrays
+	// Build condition arrays (direct index mapping)
 	rm.conditions = make([]*types.CompiledCondition, len(collection.Conditions))
 	for i := range collection.Conditions {
 		c := &collection.Conditions[i]
-		rm.conditionMap[c.Key] = c
-		
-		// If index is set, use it; otherwise use array index
-		index := i
-		if c.Index != nil {
-			index = *c.Index
-		}
-		
-		if index >= len(rm.conditions) {
-			// Extend array if needed
-			newConditions := make([]*types.CompiledCondition, index+1)
-			copy(newConditions, rm.conditions)
-			rm.conditions = newConditions
-		}
-		rm.conditions[index] = c
+		rm.conditions[i] = c
 	}
 	
-	// Build condition set maps and arrays
+	// Build condition set arrays (direct index mapping)
 	rm.conditionSets = make([]*types.CompiledConditionSet, len(collection.ConditionSets))
 	for i := range collection.ConditionSets {
 		cs := &collection.ConditionSets[i]
-		rm.conditionSetMap[cs.Key] = cs
-		
-		index := i
-		if cs.Index != nil {
-			index = *cs.Index
-		}
-		
-		if index >= len(rm.conditionSets) {
-			newConditionSets := make([]*types.CompiledConditionSet, index+1)
-			copy(newConditionSets, rm.conditionSets)
-			rm.conditionSets = newConditionSets
-		}
-		rm.conditionSets[index] = cs
+		rm.conditionSets[i] = cs
 	}
 	
-	// Build decision maps and arrays
+	// Build decision arrays (direct index mapping)
 	rm.decisions = make([]*types.CompiledAbstractDecision, len(collection.Decisions))
 	for i := range collection.Decisions {
 		d := &collection.Decisions[i]
-		rm.decisionMap[d.Key] = d
-		
-		index := i
-		if d.Index != nil {
-			index = *d.Index
-		}
-		
-		if index >= len(rm.decisions) {
-			newDecisions := make([]*types.CompiledAbstractDecision, index+1)
-			copy(newDecisions, rm.decisions)
-			rm.decisions = newDecisions
-		}
-		rm.decisions[index] = d
+		rm.decisions[i] = d
 	}
 	
 	// Build resource map
@@ -187,31 +152,28 @@ func (rm *ResourceManager) GetResourceType(name string) (*types.CompiledResource
 	return resourceType, nil
 }
 
-// GetCondition returns a condition by key
-func (rm *ResourceManager) GetCondition(key string) (*types.CompiledCondition, error) {
-	condition, exists := rm.conditionMap[key]
-	if !exists {
-		return nil, fmt.Errorf("condition not found: %s", key)
+// GetQualifierByIndex returns a qualifier by its index
+func (rm *ResourceManager) GetQualifierByIndex(index int) (*types.CompiledQualifier, error) {
+	if index < 0 || index >= len(rm.qualifiers) {
+		return nil, fmt.Errorf("qualifier index out of range: %d", index)
 	}
-	return condition, nil
+	return rm.qualifiers[index], nil
 }
 
-// GetConditionSet returns a condition set by key
-func (rm *ResourceManager) GetConditionSet(key string) (*types.CompiledConditionSet, error) {
-	conditionSet, exists := rm.conditionSetMap[key]
-	if !exists {
-		return nil, fmt.Errorf("condition set not found: %s", key)
+// GetQualifierTypeByIndex returns a qualifier type by its index
+func (rm *ResourceManager) GetQualifierTypeByIndex(index int) (*types.CompiledQualifierType, error) {
+	if index < 0 || index >= len(rm.qualifierTypes) {
+		return nil, fmt.Errorf("qualifier type index out of range: %d", index)
 	}
-	return conditionSet, nil
+	return rm.qualifierTypes[index], nil
 }
 
-// GetDecision returns a decision by key
-func (rm *ResourceManager) GetDecision(key string) (*types.CompiledAbstractDecision, error) {
-	decision, exists := rm.decisionMap[key]
-	if !exists {
-		return nil, fmt.Errorf("decision not found: %s", key)
+// GetResourceTypeByIndex returns a resource type by its index
+func (rm *ResourceManager) GetResourceTypeByIndex(index int) (*types.CompiledResourceType, error) {
+	if index < 0 || index >= len(rm.resourceTypes) {
+		return nil, fmt.Errorf("resource type index out of range: %d", index)
 	}
-	return decision, nil
+	return rm.resourceTypes[index], nil
 }
 
 // GetConditionByIndex returns a condition by its index (for O(1) lookup)

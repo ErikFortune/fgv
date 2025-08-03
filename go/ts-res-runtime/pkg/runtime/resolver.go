@@ -108,14 +108,8 @@ func (rr *ResourceResolver) clearCaches() {
 	}
 }
 
-// ResolveCondition resolves a condition with caching
-func (rr *ResourceResolver) ResolveCondition(condition *types.CompiledCondition) (*ConditionMatchResult, error) {
-	// Check for valid index
-	if condition.Index == nil {
-		return nil, fmt.Errorf("condition %s has no index", condition.Key)
-	}
-	
-	index := *condition.Index
+// ResolveCondition resolves a condition with caching by index
+func (rr *ResourceResolver) ResolveCondition(index int) (*ConditionMatchResult, error) {
 	if index < 0 || index >= len(rr.conditionCache) {
 		return nil, fmt.Errorf("condition index %d out of range", index)
 	}
@@ -125,28 +119,25 @@ func (rr *ResourceResolver) ResolveCondition(condition *types.CompiledCondition)
 		return cached, nil
 	}
 	
-	// Get qualifier and qualifier type
-	qualifier, err := rr.manager.GetQualifier(condition.Qualifier)
+	// Get condition by index
+	condition, err := rr.manager.GetConditionByIndex(index)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get qualifier %s: %w", condition.Qualifier, err)
+		return nil, fmt.Errorf("failed to get condition at index %d: %w", index, err)
 	}
 	
-	qualifierType, err := rr.manager.GetQualifierType(qualifier.QualifierType)
+	// Get qualifier by index
+	qualifier, err := rr.manager.GetQualifierByIndex(condition.QualifierIndex)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get qualifier type %s: %w", qualifier.QualifierType, err)
+		return nil, fmt.Errorf("failed to get qualifier at index %d: %w", condition.QualifierIndex, err)
 	}
 	
 	// Get context value for this qualifier
 	contextValue, hasContextValue := rr.context[qualifier.Name]
 	
-	// Evaluate condition
+	// Evaluate condition (simplified - just check for exact match)
 	score := NoMatch
-	if hasContextValue {
-		matchScore, err := rr.evaluateCondition(condition, qualifier, qualifierType, contextValue)
-		if err != nil {
-			return nil, fmt.Errorf("failed to evaluate condition %s: %w", condition.Key, err)
-		}
-		score = matchScore
+	if hasContextValue && contextValue == condition.Value {
+		score = 100 // Exact match
 	}
 	
 	// Determine match result
@@ -305,14 +296,8 @@ func (rr *ResourceResolver) evaluateBooleanCondition(condition *types.CompiledCo
 	}
 }
 
-// ResolveConditionSet resolves a condition set with caching
-func (rr *ResourceResolver) ResolveConditionSet(conditionSet *types.CompiledConditionSet) (*ConditionSetResolutionResult, error) {
-	// Check for valid index
-	if conditionSet.Index == nil {
-		return nil, fmt.Errorf("condition set %s has no index", conditionSet.Key)
-	}
-	
-	index := *conditionSet.Index
+// ResolveConditionSet resolves a condition set with caching by index
+func (rr *ResourceResolver) ResolveConditionSet(index int) (*ConditionSetResolutionResult, error) {
 	if index < 0 || index >= len(rr.conditionSetCache) {
 		return nil, fmt.Errorf("condition set index %d out of range", index)
 	}
@@ -322,20 +307,21 @@ func (rr *ResourceResolver) ResolveConditionSet(conditionSet *types.CompiledCond
 		return cached, nil
 	}
 	
+	// Get condition set by index
+	conditionSet, err := rr.manager.GetConditionSetByIndex(index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get condition set at index %d: %w", index, err)
+	}
+	
 	// Resolve all conditions in the set
 	conditions := make([]ConditionMatchResult, 0, len(conditionSet.Conditions))
 	matchType := MatchTypeMatch
 	totalScore := 0
 	
-	for _, conditionKey := range conditionSet.Conditions {
-		condition, err := rr.manager.GetCondition(conditionKey)
+	for _, conditionIndex := range conditionSet.Conditions {
+		conditionResult, err := rr.ResolveCondition(conditionIndex)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get condition %s: %w", conditionKey, err)
-		}
-		
-		conditionResult, err := rr.ResolveCondition(condition)
-		if err != nil {
-			return nil, fmt.Errorf("failed to resolve condition %s: %w", conditionKey, err)
+			return nil, fmt.Errorf("failed to resolve condition at index %d: %w", conditionIndex, err)
 		}
 		
 		conditions = append(conditions, *conditionResult)
@@ -345,7 +331,7 @@ func (rr *ResourceResolver) ResolveConditionSet(conditionSet *types.CompiledCond
 			result := &ConditionSetResolutionResult{
 				MatchType:  MatchTypeNoMatch,
 				Score:      NoMatch,
-				Priority:   conditionSet.Priority,
+				Priority:   0, // No priority in simplified format
 				Conditions: conditions,
 			}
 			rr.conditionSetCache[index] = result
@@ -369,7 +355,7 @@ func (rr *ResourceResolver) ResolveConditionSet(conditionSet *types.CompiledCond
 	result := &ConditionSetResolutionResult{
 		MatchType:  matchType,
 		Score:      averageScore,
-		Priority:   conditionSet.Priority,
+		Priority:   0, // No priority in simplified format
 		Conditions: conditions,
 	}
 	
