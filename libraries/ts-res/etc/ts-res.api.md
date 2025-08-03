@@ -152,7 +152,7 @@ const bundleCreateParams: Converter<IBundleCreateParams>;
 
 // @public
 export class BundleLoader {
-    static create(params: IBundleLoaderCreateParams): Result<IResourceManager>;
+    static createManagerFromBundle(params: IBundleLoaderCreateParams): Result<IResourceManager>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

@@ -76,7 +76,7 @@ describe('Bundle Integration', () => {
       const deserializedBundle = Convert.bundle.convert(deserializedJson).orThrow();
 
       // Step 5: Load the bundle into a new resource manager
-      const loadedManager = BundleLoader.create({ bundle: deserializedBundle }).orThrow();
+      const loadedManager = BundleLoader.createManagerFromBundle({ bundle: deserializedBundle }).orThrow();
 
       // Step 6: Verify the loaded manager has the same resources
       expect(loadedManager.numResources).toBe(originalManager.numResources);
@@ -155,7 +155,7 @@ describe('Bundle Integration', () => {
       const bundle = BundleBuilder.createFromPredefined(manager, 'default').orThrow();
       const serialized = JSON.stringify(bundle);
       const deserialized = Convert.bundle.convert(JSON.parse(serialized)).orThrow();
-      const loadedManager = BundleLoader.create({ bundle: deserialized }).orThrow();
+      const loadedManager = BundleLoader.createManagerFromBundle({ bundle: deserialized }).orThrow();
 
       expect(loadedManager.getBuiltResource('complex.resource')).toSucceedAndSatisfy((resource) => {
         expect(resource.candidates).toHaveLength(2);
@@ -205,7 +205,7 @@ describe('Bundle Integration', () => {
       const bundle = BundleBuilder.createFromPredefined(manager, 'default').orThrow();
       const serialized = JSON.stringify(bundle);
       const deserialized = Convert.bundle.convert(JSON.parse(serialized)).orThrow();
-      const loadedManager = BundleLoader.create({ bundle: deserialized }).orThrow();
+      const loadedManager = BundleLoader.createManagerFromBundle({ bundle: deserialized }).orThrow();
 
       expect(loadedManager.getBuiltResource('partial.test')).toSucceedAndSatisfy((resource) => {
         expect(resource.candidates).toHaveLength(2);
@@ -248,11 +248,13 @@ describe('Bundle Integration', () => {
       } as typeof bundle;
 
       // Should fail integrity check
-      expect(BundleLoader.create({ bundle: tamperedBundle })).toFailWith(/integrity verification failed/i);
+      expect(BundleLoader.createManagerFromBundle({ bundle: tamperedBundle })).toFailWith(
+        /integrity verification failed/i
+      );
 
       // Should succeed with verification skipped
       expect(
-        BundleLoader.create({
+        BundleLoader.createManagerFromBundle({
           bundle: tamperedBundle,
           skipChecksumVerification: true
         })

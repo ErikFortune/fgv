@@ -23,6 +23,7 @@
 import '@fgv/ts-utils-jest';
 import { BundleBuilder } from '../../../packlets/bundle';
 import { ResourceManagerBuilder } from '../../../packlets/resources';
+import { SystemConfiguration } from '../../../packlets/config';
 
 describe('Bundle Normalization', () => {
   describe('Phase 1 behavior (order-dependent)', () => {
@@ -246,6 +247,141 @@ describe('Bundle Normalization', () => {
       const bundle1CandidateValues = bundle1.compiledCollection.resources[0].candidates.map((c) => c.json);
       const bundle2CandidateValues = bundle2.compiledCollection.resources[0].candidates.map((c) => c.json);
       expect(bundle1CandidateValues).toEqual(bundle2CandidateValues);
+    });
+
+    test('should work with custom SystemConfiguration (not just predefined)', () => {
+      // Test that normalization works with any SystemConfiguration, not just predefined ones
+
+      // Create a custom system configuration
+      const customConfig = SystemConfiguration.create({
+        name: 'custom-test-config',
+        description: 'Custom configuration for testing normalization',
+        qualifierTypes: [
+          {
+            name: 'language',
+            systemType: 'language',
+            configuration: {
+              allowContextList: true
+            }
+          },
+          {
+            name: 'custom',
+            systemType: 'literal',
+            configuration: {
+              allowContextList: false,
+              caseSensitive: true,
+              enumeratedValues: ['value1', 'value2', 'value3']
+            }
+          }
+        ],
+        qualifiers: [
+          {
+            name: 'language',
+            token: 'lang',
+            typeName: 'language',
+            defaultPriority: 850
+          },
+          {
+            name: 'custom',
+            token: 'custom',
+            typeName: 'custom',
+            defaultPriority: 800
+          }
+        ],
+        resourceTypes: [
+          {
+            name: 'json',
+            typeName: 'json'
+          }
+        ]
+      }).orThrow();
+
+      // Create first manager and add resources in order A -> B
+      const manager1 = ResourceManagerBuilder.create({
+        qualifiers: customConfig.qualifiers,
+        resourceTypes: customConfig.resourceTypes
+      }).orThrow();
+
+      manager1
+        .addResource({
+          id: 'resource.a',
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: { value: 'Resource A' },
+              conditions: [{ qualifierName: 'custom', value: 'value1' }]
+            }
+          ]
+        })
+        .orThrow();
+
+      manager1
+        .addResource({
+          id: 'resource.b',
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: { value: 'Resource B' },
+              conditions: [{ qualifierName: 'custom', value: 'value2' }]
+            }
+          ]
+        })
+        .orThrow();
+
+      // Create second manager and add resources in order B -> A
+      const manager2 = ResourceManagerBuilder.create({
+        qualifiers: customConfig.qualifiers,
+        resourceTypes: customConfig.resourceTypes
+      }).orThrow();
+
+      manager2
+        .addResource({
+          id: 'resource.b',
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: { value: 'Resource B' },
+              conditions: [{ qualifierName: 'custom', value: 'value2' }]
+            }
+          ]
+        })
+        .orThrow();
+
+      manager2
+        .addResource({
+          id: 'resource.a',
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: { value: 'Resource A' },
+              conditions: [{ qualifierName: 'custom', value: 'value1' }]
+            }
+          ]
+        })
+        .orThrow();
+
+      // Create bundles from both managers WITH normalization using the custom config
+      const bundle1 = BundleBuilder.create(manager1, customConfig, { normalize: true }).orThrow();
+      const bundle2 = BundleBuilder.create(manager2, customConfig, { normalize: true }).orThrow();
+
+      // PHASE 2 BEHAVIOR: Same content with normalization produces identical checksums
+      // even when using a custom SystemConfiguration
+      expect(bundle1.metadata.checksum).toBe(bundle2.metadata.checksum);
+
+      // Both bundles should have the same content
+      expect(bundle1.compiledCollection.resources).toHaveLength(2);
+      expect(bundle2.compiledCollection.resources).toHaveLength(2);
+
+      // Resource IDs should be the same in both bundles and in canonical order
+      const bundle1ResourceIds = bundle1.compiledCollection.resources.map((r) => r.id);
+      const bundle2ResourceIds = bundle2.compiledCollection.resources.map((r) => r.id);
+      expect(bundle1ResourceIds).toEqual(bundle2ResourceIds);
+      expect(bundle1ResourceIds).toEqual(['resource.a', 'resource.b']); // Alphabetical order
+
+      // Verify the custom config is preserved in the bundle
+      expect(bundle1.config.name).toBe('custom-test-config');
+      expect(bundle1.config.qualifierTypes).toHaveLength(2);
+      expect(bundle1.config.qualifierTypes[1].name).toBe('custom');
     });
   });
 });

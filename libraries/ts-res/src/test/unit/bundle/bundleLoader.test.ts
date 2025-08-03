@@ -50,7 +50,7 @@ describe('BundleLoader', () => {
 
   describe('create', () => {
     test('should load a valid bundle successfully', () => {
-      expect(BundleLoader.create({ bundle: testBundle })).toSucceedAndSatisfy((manager) => {
+      expect(BundleLoader.createManagerFromBundle({ bundle: testBundle })).toSucceedAndSatisfy((manager) => {
         expect(manager.numResources).toBe(1);
         expect(manager.getBuiltResource('test.resource')).toSucceed();
       });
@@ -65,7 +65,9 @@ describe('BundleLoader', () => {
         }
       };
 
-      expect(BundleLoader.create({ bundle: corruptedBundle })).toFailWith(/integrity verification failed/i);
+      expect(BundleLoader.createManagerFromBundle({ bundle: corruptedBundle })).toFailWith(
+        /integrity verification failed/i
+      );
     });
 
     test('should skip checksum verification when requested', () => {
@@ -78,7 +80,7 @@ describe('BundleLoader', () => {
       };
 
       expect(
-        BundleLoader.create({
+        BundleLoader.createManagerFromBundle({
           bundle: corruptedBundle,
           skipChecksumVerification: true
         })
@@ -88,24 +90,28 @@ describe('BundleLoader', () => {
     });
 
     test('should create resource manager with same resources as original', () => {
-      expect(BundleLoader.create({ bundle: testBundle })).toSucceedAndSatisfy((loadedManager) => {
-        expect(loadedManager.numResources).toBe(resourceManager.numResources);
-        expect(loadedManager.numCandidates).toBe(resourceManager.numCandidates);
+      expect(BundleLoader.createManagerFromBundle({ bundle: testBundle })).toSucceedAndSatisfy(
+        (loadedManager) => {
+          expect(loadedManager.numResources).toBe(resourceManager.numResources);
+          expect(loadedManager.numCandidates).toBe(resourceManager.numCandidates);
 
-        expect(loadedManager.getBuiltResource('test.resource')).toSucceedAndSatisfy((resource) => {
-          expect(resource.id).toBe('test.resource');
-          expect(resource.candidates).toHaveLength(1);
-          expect(resource.candidates[0].json).toEqual({ value: 'test' });
-        });
-      });
+          expect(loadedManager.getBuiltResource('test.resource')).toSucceedAndSatisfy((resource) => {
+            expect(resource.id).toBe('test.resource');
+            expect(resource.candidates).toHaveLength(1);
+            expect(resource.candidates[0].json).toEqual({ value: 'test' });
+          });
+        }
+      );
     });
 
     test('should create resource manager with same qualifiers', () => {
-      expect(BundleLoader.create({ bundle: testBundle })).toSucceedAndSatisfy((loadedManager) => {
-        expect(loadedManager.conditions.size).toBe(resourceManager.conditions.size);
-        expect(loadedManager.conditionSets.size).toBe(resourceManager.conditionSets.size);
-        expect(loadedManager.decisions.size).toBe(resourceManager.decisions.size);
-      });
+      expect(BundleLoader.createManagerFromBundle({ bundle: testBundle })).toSucceedAndSatisfy(
+        (loadedManager) => {
+          expect(loadedManager.conditions.size).toBe(resourceManager.conditions.size);
+          expect(loadedManager.conditionSets.size).toBe(resourceManager.conditionSets.size);
+          expect(loadedManager.decisions.size).toBe(resourceManager.decisions.size);
+        }
+      );
     });
 
     test('should validate context correctly', () => {
@@ -113,19 +119,23 @@ describe('BundleLoader', () => {
         language: 'en'
       };
 
-      expect(BundleLoader.create({ bundle: testBundle })).toSucceedAndSatisfy((loadedManager) => {
-        expect(loadedManager.validateContext(context)).toSucceed();
-      });
+      expect(BundleLoader.createManagerFromBundle({ bundle: testBundle })).toSucceedAndSatisfy(
+        (loadedManager) => {
+          expect(loadedManager.validateContext(context)).toSucceed();
+        }
+      );
     });
 
     test('should handle empty bundle', () => {
       const emptyManager = ResourceManagerBuilder.createPredefined('default').orThrow();
       const emptyBundle = BundleBuilder.createFromPredefined(emptyManager, 'default').orThrow();
 
-      expect(BundleLoader.create({ bundle: emptyBundle })).toSucceedAndSatisfy((loadedManager) => {
-        expect(loadedManager.numResources).toBe(0);
-        expect(loadedManager.numCandidates).toBe(0);
-      });
+      expect(BundleLoader.createManagerFromBundle({ bundle: emptyBundle })).toSucceedAndSatisfy(
+        (loadedManager) => {
+          expect(loadedManager.numResources).toBe(0);
+          expect(loadedManager.numCandidates).toBe(0);
+        }
+      );
     });
 
     test('should handle bundle with multiple resources', () => {
@@ -158,11 +168,13 @@ describe('BundleLoader', () => {
 
       const multiResourceBundle = BundleBuilder.createFromPredefined(multiManager, 'default').orThrow();
 
-      expect(BundleLoader.create({ bundle: multiResourceBundle })).toSucceedAndSatisfy((loadedManager) => {
-        expect(loadedManager.numResources).toBe(2);
-        expect(loadedManager.getBuiltResource('test.resource')).toSucceed();
-        expect(loadedManager.getBuiltResource('test.resource2')).toSucceed();
-      });
+      expect(BundleLoader.createManagerFromBundle({ bundle: multiResourceBundle })).toSucceedAndSatisfy(
+        (loadedManager) => {
+          expect(loadedManager.numResources).toBe(2);
+          expect(loadedManager.getBuiltResource('test.resource')).toSucceed();
+          expect(loadedManager.getBuiltResource('test.resource2')).toSucceed();
+        }
+      );
     });
 
     test('should preserve resource properties correctly', () => {
@@ -185,22 +197,26 @@ describe('BundleLoader', () => {
 
       const bundleWithPartial = BundleBuilder.createFromPredefined(partialManager, 'default').orThrow();
 
-      expect(BundleLoader.create({ bundle: bundleWithPartial })).toSucceedAndSatisfy((loadedManager) => {
-        expect(loadedManager.getBuiltResource('test.partial')).toSucceedAndSatisfy((resource) => {
-          expect(resource.candidates).toHaveLength(1);
-          expect(resource.candidates[0].isPartial).toBe(true);
-          expect(resource.candidates[0].mergeMethod).toBe('augment');
-        });
-      });
+      expect(BundleLoader.createManagerFromBundle({ bundle: bundleWithPartial })).toSucceedAndSatisfy(
+        (loadedManager) => {
+          expect(loadedManager.getBuiltResource('test.partial')).toSucceedAndSatisfy((resource) => {
+            expect(resource.candidates).toHaveLength(1);
+            expect(resource.candidates[0].isPartial).toBe(true);
+            expect(resource.candidates[0].mergeMethod).toBe('augment');
+          });
+        }
+      );
     });
 
     test('should handle round-trip bundle creation and loading', () => {
       const originalBundle = BundleBuilder.createFromPredefined(resourceManager, 'default').orThrow();
 
-      expect(BundleLoader.create({ bundle: originalBundle })).toSucceedAndSatisfy((loadedManager) => {
-        const reBundle = BundleBuilder.createFromPredefined(resourceManager, 'default').orThrow();
-        expect(reBundle.metadata.checksum).toBe(originalBundle.metadata.checksum);
-      });
+      expect(BundleLoader.createManagerFromBundle({ bundle: originalBundle })).toSucceedAndSatisfy(
+        (loadedManager) => {
+          const reBundle = BundleBuilder.createFromPredefined(resourceManager, 'default').orThrow();
+          expect(reBundle.metadata.checksum).toBe(originalBundle.metadata.checksum);
+        }
+      );
     });
   });
 });

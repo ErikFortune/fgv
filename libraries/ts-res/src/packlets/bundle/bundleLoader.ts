@@ -63,7 +63,7 @@ export class BundleLoader {
    * @returns Success with the IResourceManager if successful, Failure with error message otherwise
    * @public
    */
-  public static create(params: IBundleLoaderCreateParams): Result<IResourceManager> {
+  public static createManagerFromBundle(params: IBundleLoaderCreateParams): Result<IResourceManager> {
     const hashNormalizer = params.hashNormalizer ?? new Hash.Crc32Normalizer();
 
     return BundleLoader._verifyBundleIntegrity(

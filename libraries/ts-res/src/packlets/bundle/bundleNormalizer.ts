@@ -52,9 +52,11 @@ export class BundleNormalizer {
     originalBuilder: ResourceManagerBuilder,
     systemConfig: SystemConfiguration
   ): Result<ResourceManagerBuilder> {
-    // For now, use the 'default' predefined configuration to create a fresh builder
-    // This should work for most cases since the predefined configs are standardized
-    return ResourceManagerBuilder.createPredefined('default').onSuccess((normalizedBuilder) => {
+    // Create a fresh builder using the same system configuration
+    return ResourceManagerBuilder.create({
+      qualifiers: systemConfig.qualifiers,
+      resourceTypes: systemConfig.resourceTypes
+    }).onSuccess((normalizedBuilder) => {
       return BundleNormalizer._addNormalizedResources(originalBuilder, normalizedBuilder).onSuccess(() =>
         succeed(normalizedBuilder)
       );
