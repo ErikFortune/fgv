@@ -3919,6 +3919,8 @@ export class ResourceManagerBuilder implements IResourceManager {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(params: IResourceManagerBuilderCreateParams);
+    addCondition(decl: ResourceJson.Json.ILooseConditionDecl): Result<Condition>;
+    addConditionSet(conditions: ResourceJson.Normalized.ConditionSetDecl): Result<ConditionSet>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

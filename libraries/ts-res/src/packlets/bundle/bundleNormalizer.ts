@@ -20,10 +20,11 @@
  * SOFTWARE.
  */
 
-import { Result, succeed, fail } from '@fgv/ts-utils';
+import { Result, succeed, MessageAggregator } from '@fgv/ts-utils';
 import { ResourceManagerBuilder } from '../resources';
 import { ResourceCandidate } from '../resources';
 import { SystemConfiguration, PredefinedSystemConfiguration } from '../config';
+import { Condition, ConditionSet } from '../conditions';
 
 /**
  * Normalizes ResourceManagerBuilder instances to ensure consistent ordering
@@ -79,8 +80,82 @@ export class BundleNormalizer {
   }
 
   /**
-   * Extracts all candidates from the original builder and adds them to the
-   * normalized builder in canonical order (using ResourceCandidate.compare).
+   * Normalizes all conditions from the original builder by adding them to the
+   * normalized builder in sorted order using loose condition declarations.
+   *
+   * @param originalBuilder - The source ResourceManagerBuilder
+   * @param normalizedBuilder - The target normalized ResourceManagerBuilder
+   * @returns Success if all conditions were normalized successfully, Failure otherwise
+   * @internal
+   */
+  private static _normalizeConditions(
+    originalBuilder: ResourceManagerBuilder,
+    normalizedBuilder: ResourceManagerBuilder
+  ): Result<boolean> {
+    const conditions = Array.from(originalBuilder.conditions.values()).sort(Condition.compare);
+
+    const errors = new MessageAggregator();
+    for (const condition of conditions) {
+      const looseDecl = condition.toLooseConditionDecl();
+      normalizedBuilder.addCondition(looseDecl).aggregateError(errors);
+    }
+
+    return errors.returnOrReport(succeed(true));
+  }
+
+  /**
+   * Normalizes all condition sets from the original builder by adding them to the
+   * normalized builder in sorted order using loose condition set declarations.
+   *
+   * @param originalBuilder - The source ResourceManagerBuilder
+   * @param normalizedBuilder - The target normalized ResourceManagerBuilder
+   * @returns Success if all condition sets were normalized successfully, Failure otherwise
+   * @internal
+   */
+  private static _normalizeConditionSets(
+    originalBuilder: ResourceManagerBuilder,
+    normalizedBuilder: ResourceManagerBuilder
+  ): Result<boolean> {
+    const conditionSets = Array.from(originalBuilder.conditionSets.values()).sort(ConditionSet.compare);
+
+    const errors = new MessageAggregator();
+    for (const conditionSet of conditionSets) {
+      const conditions = conditionSet.toConditionSetArrayDecl();
+      normalizedBuilder.addConditionSet(conditions).aggregateError(errors);
+    }
+
+    return errors.returnOrReport(succeed(true));
+  }
+
+  /**
+   * Normalizes all candidates by sorting them first by resource ID, then by condition set.
+   *
+   * @param originalBuilder - The source ResourceManagerBuilder
+   * @param normalizedBuilder - The target normalized ResourceManagerBuilder
+   * @returns Success if all candidates were normalized successfully, Failure otherwise
+   * @internal
+   */
+  private static _normalizeCandidates(
+    originalBuilder: ResourceManagerBuilder,
+    normalizedBuilder: ResourceManagerBuilder
+  ): Result<boolean> {
+    const candidates = Array.from(originalBuilder.getAllCandidates()).sort((c1, c2) => {
+      const idCompare = c1.id.localeCompare(c2.id);
+      return idCompare !== 0 ? idCompare : ResourceCandidate.compare(c1, c2);
+    });
+
+    const errors = new MessageAggregator();
+    for (const candidate of candidates) {
+      const decl = candidate.toLooseResourceCandidateDecl();
+      normalizedBuilder.addLooseCandidate(decl).aggregateError(errors);
+    }
+
+    return errors.returnOrReport(succeed(true));
+  }
+
+  /**
+   * Adds normalized resources to the target builder by first normalizing conditions,
+   * then condition sets, then candidates.
    *
    * @param originalBuilder - The source ResourceManagerBuilder
    * @param normalizedBuilder - The target normalized ResourceManagerBuilder
@@ -90,59 +165,9 @@ export class BundleNormalizer {
   private static _addNormalizedResources(
     originalBuilder: ResourceManagerBuilder,
     normalizedBuilder: ResourceManagerBuilder
-  ): Result<void> {
-    // Extract all candidates and sort them using the canonical compare method
-    const candidates = Array.from(originalBuilder.getAllCandidates()).sort(ResourceCandidate.compare);
-
-    // Group candidates by resource ID to rebuild resources properly
-    const candidatesByResourceId = new Map<string, ResourceCandidate[]>();
-    for (const candidate of candidates) {
-      const resourceId = candidate.id;
-      if (!candidatesByResourceId.has(resourceId)) {
-        candidatesByResourceId.set(resourceId, []);
-      }
-      candidatesByResourceId.get(resourceId)!.push(candidate);
-    }
-
-    // Sort resource IDs for consistent processing order
-    const sortedResourceIds = Array.from(candidatesByResourceId.keys()).sort();
-
-    // Add each resource with its candidates in normalized order
-    for (const resourceId of sortedResourceIds) {
-      const resourceCandidates = candidatesByResourceId.get(resourceId)!;
-
-      // Convert candidates to declarations for resource creation
-      const candidateDecls = resourceCandidates.map((candidate) => {
-        // Convert condition array to condition set declaration (qualifier -> value map)
-        const conditions =
-          candidate.conditions.conditions.length > 0
-            ? Object.fromEntries(
-                candidate.conditions.conditions.map((condition) => [
-                  condition.qualifier.name,
-                  condition.value
-                ])
-              )
-            : undefined;
-
-        return {
-          json: candidate.json,
-          isPartial: candidate.isPartial,
-          mergeMethod: candidate.mergeMethod,
-          conditions
-        };
-      });
-
-      const addResult = normalizedBuilder.addResource({
-        id: resourceId,
-        resourceTypeName: resourceCandidates[0].resourceType?.key ?? 'json',
-        candidates: candidateDecls
-      });
-
-      if (addResult.isFailure()) {
-        return fail(addResult.message);
-      }
-    }
-
-    return succeed(undefined);
+  ): Result<boolean> {
+    return BundleNormalizer._normalizeConditions(originalBuilder, normalizedBuilder)
+      .onSuccess(() => BundleNormalizer._normalizeConditionSets(originalBuilder, normalizedBuilder))
+      .onSuccess(() => BundleNormalizer._normalizeCandidates(originalBuilder, normalizedBuilder));
   }
 }
