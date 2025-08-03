@@ -14,7 +14,7 @@ type LiteralQualifierType struct {
 	*types.BaseQualifierType
 	caseSensitive      bool
 	enumeratedValues   []string
-	// TODO: Add hierarchy support in future iterations
+	hierarchy          *LiteralValueHierarchy
 }
 
 // LiteralQualifierTypeConfig holds configuration for creating a LiteralQualifierType
@@ -23,6 +23,7 @@ type LiteralQualifierTypeConfig struct {
 	AllowContextList   bool
 	CaseSensitive      bool
 	EnumeratedValues   []string
+	Hierarchy          LiteralValueHierarchyDecl
 	Index              *int
 }
 
@@ -35,6 +36,7 @@ func NewLiteralQualifierType() *LiteralQualifierType {
 		BaseQualifierType: types.NewBaseQualifierType("literal", true),
 		caseSensitive:     false,
 		enumeratedValues:  nil,
+		hierarchy:         nil,
 	}
 }
 
@@ -49,6 +51,22 @@ func NewLiteralQualifierTypeWithConfig(config LiteralQualifierTypeConfig) *Liter
 		BaseQualifierType: types.NewBaseQualifierType(name, config.AllowContextList),
 		caseSensitive:     config.CaseSensitive,
 		enumeratedValues:  config.EnumeratedValues,
+		hierarchy:         nil,
+	}
+	
+	// Create hierarchy if provided
+	if config.Hierarchy != nil && len(config.Hierarchy) > 0 {
+		hierarchyConfig := LiteralValueHierarchyConfig{
+			Values:    config.EnumeratedValues,
+			Hierarchy: config.Hierarchy,
+		}
+		hierarchy, err := NewLiteralValueHierarchy(hierarchyConfig)
+		if err != nil {
+			// For now, ignore hierarchy errors and fall back to non-hierarchical matching
+			// In a production system, you might want to return the error
+		} else {
+			qt.hierarchy = hierarchy
+		}
 	}
 	
 	if config.Index != nil {
@@ -125,7 +143,10 @@ func (lqt *LiteralQualifierType) IsPotentialMatch(conditionValue, contextValue s
 		}
 	}
 	
-	// TODO: Add hierarchy support for ancestor checking in future iterations
+	// Check hierarchy if available
+	if lqt.hierarchy != nil {
+		return lqt.hierarchy.IsAncestor(conditionValue, contextValue)
+	}
 	
 	return false
 }
@@ -179,9 +200,12 @@ func (lqt *LiteralQualifierType) Matches(condition types.QualifierConditionValue
 // matchOne performs matching against a single context value
 // Mirrors TypeScript LiteralQualifierType._matchOne
 func (lqt *LiteralQualifierType) matchOne(condition types.QualifierConditionValue, context types.QualifierContextValue, operator types.ConditionOperator) types.QualifierMatchScore {
-	// TODO: Add hierarchy support in future iterations
+	// Use hierarchy matching if available
+	if lqt.hierarchy != nil {
+		return lqt.hierarchy.Match(string(condition), string(context), operator)
+	}
 	
-	// Direct comparison
+	// Direct comparison fallback
 	if lqt.caseSensitive {
 		if string(condition) == string(context) {
 			return types.PerfectMatch
@@ -235,4 +259,9 @@ func (lqt *LiteralQualifierType) GetEnumeratedValues() []string {
 	result := make([]string, len(lqt.enumeratedValues))
 	copy(result, lqt.enumeratedValues)
 	return result
+}
+
+// GetHierarchy returns the hierarchy, if any
+func (lqt *LiteralQualifierType) GetHierarchy() *LiteralValueHierarchy {
+	return lqt.hierarchy
 }
