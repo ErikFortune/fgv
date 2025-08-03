@@ -30,7 +30,9 @@ type SystemConfiguration struct {
 
 // CompiledQualifierType represents a compiled qualifier type
 type CompiledQualifierType struct {
-	Name string `json:"name"`
+	Name          string                 `json:"name"`
+	SystemType    string                 `json:"systemType,omitempty"`
+	Configuration map[string]interface{} `json:"configuration,omitempty"`
 }
 
 // CompiledQualifier represents a compiled qualifier

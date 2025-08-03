@@ -3,6 +3,7 @@ package runtime
 import (
 	"fmt"
 
+	"github.com/fgv-vis/fgv/go/ts-bcp47/pkg/bcp47"
 	"github.com/fgv-vis/fgv/go/ts-res-runtime/pkg/qualifiers"
 	"github.com/fgv-vis/fgv/go/ts-res-runtime/pkg/types"
 )
@@ -52,17 +53,20 @@ func NewResourceResolver(manager *ResourceManager, context map[string]interface{
 		qualifierTypes: make(map[string]types.QualifierType),
 	}
 
-	// Initialize qualifier types - for now, use literal qualifier types for all
-	// TODO: Use proper qualifier type mapping from bundle configuration
-	for _, qualifierType := range manager.resourceTypes {
-		// For now, create a literal qualifier type for each qualifier type name
-		// This is a simplification - in the future we'd read the actual type from bundle config
-		literalQT := qualifiers.NewLiteralQualifierTypeWithConfig(qualifiers.LiteralQualifierTypeConfig{
-			Name:             qualifierType.Name,
-			AllowContextList: true,  // Default to allowing context lists
-			CaseSensitive:    false, // Default to case-insensitive
-		})
-		resolver.qualifierTypes[qualifierType.Name] = literalQT
+	// Initialize qualifier types based on bundle configuration
+	for _, qualifierType := range manager.qualifierTypes {
+		qt, err := resolver.createQualifierType(*qualifierType)
+		if err != nil {
+			// Fall back to literal qualifier type on error
+			literalQT := qualifiers.NewLiteralQualifierTypeWithConfig(qualifiers.LiteralQualifierTypeConfig{
+				Name:             qualifierType.Name,
+				AllowContextList: true,  // Default to allowing context lists
+				CaseSensitive:    false, // Default to case-insensitive
+			})
+			resolver.qualifierTypes[qualifierType.Name] = literalQT
+		} else {
+			resolver.qualifierTypes[qualifierType.Name] = qt
+		}
 	}
 
 	if err := resolver.initializeCaches(); err != nil {
@@ -70,6 +74,117 @@ func NewResourceResolver(manager *ResourceManager, context map[string]interface{
 	}
 
 	return resolver, nil
+}
+
+// createQualifierType creates the appropriate qualifier type based on system type and configuration
+func (r *ResourceResolver) createQualifierType(qualifierType types.CompiledQualifierType) (types.QualifierType, error) {
+	switch qualifierType.SystemType {
+	case "language":
+		return r.createLanguageQualifierType(qualifierType)
+	case "territory":
+		return r.createTerritoryQualifierType(qualifierType)
+	case "literal", "":
+		return r.createLiteralQualifierType(qualifierType)
+	default:
+		// Unknown system type, fall back to literal
+		return r.createLiteralQualifierType(qualifierType)
+	}
+}
+
+// createLanguageQualifierType creates a language qualifier type from configuration
+func (r *ResourceResolver) createLanguageQualifierType(qualifierType types.CompiledQualifierType) (types.QualifierType, error) {
+	config := qualifiers.LanguageQualifierTypeConfig{
+		Name:             qualifierType.Name,
+		AllowContextList: true, // Default
+		AcceptMalformed:  false, // Default
+		MinimumScore:     bcp47.SimilarityNone, // Default
+		Normalization:    bcp47.Canonical, // Default
+		Validation:       bcp47.WellFormed, // Default
+	}
+	
+	// Apply configuration from bundle
+	if qualifierType.Configuration != nil {
+		if allowContextList, ok := qualifierType.Configuration["allowContextList"].(bool); ok {
+			config.AllowContextList = allowContextList
+		}
+		if acceptMalformed, ok := qualifierType.Configuration["acceptMalformed"].(bool); ok {
+			config.AcceptMalformed = acceptMalformed
+		}
+		if allowedLanguages, ok := qualifierType.Configuration["allowedLanguages"].([]interface{}); ok {
+			languages := make([]string, len(allowedLanguages))
+			for i, lang := range allowedLanguages {
+				if langStr, ok := lang.(string); ok {
+					languages[i] = langStr
+				}
+			}
+			config.AllowedLanguages = languages
+		}
+		if minimumScore, ok := qualifierType.Configuration["minimumScore"].(float64); ok {
+			config.MinimumScore = bcp47.SimilarityScore(minimumScore)
+		}
+	}
+	
+	return qualifiers.NewLanguageQualifierTypeWithConfig(config)
+}
+
+// createTerritoryQualifierType creates a territory qualifier type from configuration
+func (r *ResourceResolver) createTerritoryQualifierType(qualifierType types.CompiledQualifierType) (types.QualifierType, error) {
+	config := qualifiers.TerritoryQualifierTypeConfig{
+		Name:             qualifierType.Name,
+		AllowContextList: false, // Default for territory
+		AcceptLowercase:  false, // Default
+	}
+	
+	// Apply configuration from bundle
+	if qualifierType.Configuration != nil {
+		if allowContextList, ok := qualifierType.Configuration["allowContextList"].(bool); ok {
+			config.AllowContextList = allowContextList
+		}
+		if acceptLowercase, ok := qualifierType.Configuration["acceptLowercase"].(bool); ok {
+			config.AcceptLowercase = acceptLowercase
+		}
+		if allowedTerritories, ok := qualifierType.Configuration["allowedTerritories"].([]interface{}); ok {
+			territories := make([]string, len(allowedTerritories))
+			for i, territory := range allowedTerritories {
+				if territoryStr, ok := territory.(string); ok {
+					territories[i] = territoryStr
+				}
+			}
+			config.AllowedTerritories = territories
+		}
+	}
+	
+	return qualifiers.NewTerritoryQualifierTypeWithConfig(config)
+}
+
+// createLiteralQualifierType creates a literal qualifier type from configuration
+func (r *ResourceResolver) createLiteralQualifierType(qualifierType types.CompiledQualifierType) (types.QualifierType, error) {
+	config := qualifiers.LiteralQualifierTypeConfig{
+		Name:             qualifierType.Name,
+		AllowContextList: true,  // Default
+		CaseSensitive:    false, // Default
+	}
+	
+	// Apply configuration from bundle
+	if qualifierType.Configuration != nil {
+		if allowContextList, ok := qualifierType.Configuration["allowContextList"].(bool); ok {
+			config.AllowContextList = allowContextList
+		}
+		if caseSensitive, ok := qualifierType.Configuration["caseSensitive"].(bool); ok {
+			config.CaseSensitive = caseSensitive
+		}
+		if enumeratedValues, ok := qualifierType.Configuration["enumeratedValues"].([]interface{}); ok {
+			values := make([]string, len(enumeratedValues))
+			for i, value := range enumeratedValues {
+				if valueStr, ok := value.(string); ok {
+					values[i] = valueStr
+				}
+			}
+			config.EnumeratedValues = values
+		}
+	}
+	
+	return qualifiers.NewLiteralQualifierTypeWithConfig(config), nil
 }
 
 // initializeCaches initializes the cache arrays with the correct size
