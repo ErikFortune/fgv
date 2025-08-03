@@ -21,7 +21,14 @@
  */
 
 import { JsonObject } from '@fgv/ts-json-base';
-import { PerfectMatch, QualifierName, ResourceId, ResourceValueMergeMethod, Validate } from '../common';
+import {
+  CandidateCompleteness,
+  PerfectMatch,
+  QualifierName,
+  ResourceId,
+  ResourceValueMergeMethod,
+  Validate
+} from '../common';
 import { Condition, ConditionSet, ConditionSetCollector } from '../conditions';
 import * as ResourceJson from '../resource-json';
 import { ResourceType } from '../resource-types';
@@ -96,6 +103,13 @@ export class ResourceCandidate implements IResourceCandidate {
   public readonly resourceType: ResourceType | undefined;
 
   /**
+   * The completeness of the candidate value.
+   */
+  public get completeness(): CandidateCompleteness {
+    return this.isPartial ? 'partial' : 'full';
+  }
+
+  /**
    * Constructor for a {@link Resources.ResourceCandidate | ResourceCandidate} object.
    * @param params - Parameters to create a new {@link Resources.ResourceCandidate | ResourceCandidate}.
    * @public
@@ -112,14 +126,7 @@ export class ResourceCandidate implements IResourceCandidate {
     this.mergeMethod = params.decl.mergeMethod ?? 'augment';
     this.resourceType = params.resourceType;
     if (this.resourceType) {
-      this.resourceType
-        .validateDeclaration({
-          id: this.id,
-          completeness: this.isPartial ? 'partial' : 'full',
-          json: this.json,
-          mergeMethod: this.mergeMethod
-        })
-        .orThrow();
+      this.resourceType.validateDeclaration(this).orThrow();
     }
   }
 

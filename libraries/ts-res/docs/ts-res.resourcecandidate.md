@@ -74,6 +74,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[completeness](./ts-res.resourcecandidate.completeness.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[CandidateCompleteness](./ts-res.candidatecompleteness.md)
+
+
+</td><td>
+
+The completeness of the candidate value.
+
+
+</td></tr>
+<tr><td>
+
 [conditions](./ts-res.resourcecandidate.conditions.md)
 
 

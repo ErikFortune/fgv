@@ -3800,6 +3800,7 @@ export class ResourceCandidate implements IResourceCandidate {
     canMatchPartialContext(context: Context.IValidatedContextDecl, options?: Context.IContextMatchOptions): boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static compare(rc1: ResourceCandidate, rc2: ResourceCandidate): number;
+    get completeness(): CandidateCompleteness;
     readonly conditions: ConditionSet;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -4631,7 +4632,7 @@ class ValidatingSimpleContextQualifierProvider extends SimpleContextQualifierPro
 // src/packlets/resources/resource.ts:241:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resource.ts:241:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resource.ts:264:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resourceCandidate.ts:264:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resourceCandidate.ts:266:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/conditionSetResolutionResult.ts:56:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/resourceResolver.ts:170:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
