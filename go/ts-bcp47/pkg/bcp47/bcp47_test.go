@@ -60,11 +60,11 @@ func TestParseTag(t *testing.T) {
 		// Error cases
 		{"", Subtags{}, true},                    // Empty tag
 		{"e", Subtags{}, true},                   // Too short language
-		{"eng", Subtags{}, true},                 // Invalid 3-letter language
+		{"eng", Subtags{PrimaryLanguage: "eng"}, false}, // 3-letter language is well-formed
 		{"en-", Subtags{}, true},                 // Trailing dash
 		{"en--US", Subtags{}, true},              // Double dash
-		{"en-U", Subtags{}, true},                // Invalid region (too short)
-		{"en-USA", Subtags{}, true},              // Invalid region (3 letters, not digits)
+		{"en-U", Subtags{PrimaryLanguage: "en", Region: "U"}, false}, // 1-letter region is well-formed but invalid
+		{"en-USA", Subtags{PrimaryLanguage: "en", Region: "USA"}, false}, // 3-letter region is well-formed but invalid
 		{"en-US-valencia-valencia", Subtags{}, true}, // Duplicate variant
 	}
 	
@@ -275,9 +275,10 @@ func TestValidation(t *testing.T) {
 		{"zh-Hans-CN", true, "language with script and region"},
 		{"", false, "empty tag"},
 		{"e", false, "too short"},
-		{"eng", false, "invalid 3-letter language code"},
+		{"eng", true, "3-letter language code is well-formed"},
 		{"en-", false, "trailing dash"},
-		{"en-USA", false, "invalid region"},
+		{"en-USA", true, "3-letter region is well-formed"},
+		{"en-U", true, "1-letter region is well-formed"},
 	}
 	
 	for _, tt := range tests {
