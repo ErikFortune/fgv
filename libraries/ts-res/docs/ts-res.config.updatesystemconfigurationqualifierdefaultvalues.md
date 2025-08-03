@@ -37,7 +37,7 @@ config
 
 </td><td>
 
-ISystemConfiguration
+[ISystemConfiguration](./ts-res.config.model.isystemconfiguration.md)
 
 
 </td><td>
@@ -66,7 +66,7 @@ Map of qualifier names to default values. Use `null` to remove existing values.
 
 **Returns:**
 
-Result&lt;ISystemConfiguration&gt;
+Result&lt;[ISystemConfiguration](./ts-res.config.model.isystemconfiguration.md)<!-- -->&gt;
 
 `Success` with the updated [system configuration](./ts-res.config.model.isystemconfiguration.md) if successful, `Failure` with an error message otherwise.
 

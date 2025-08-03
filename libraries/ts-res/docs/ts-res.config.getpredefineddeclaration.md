@@ -66,7 +66,7 @@ _(Optional)_ Optional [initialization parameters](./ts-res.config.isystemconfigu
 
 **Returns:**
 
-Result&lt;ISystemConfiguration&gt;
+Result&lt;[ISystemConfiguration](./ts-res.config.model.isystemconfiguration.md)<!-- -->&gt;
 
 `Success` with the [system configuration](./ts-res.config.model.isystemconfiguration.md) declaration if successful, `Failure` with an error message otherwise.
 

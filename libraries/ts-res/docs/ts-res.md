@@ -19,6 +19,28 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[BundleBuilder](./ts-res.bundlebuilder.md)
+
+
+</td><td>
+
+Builder for creating resource bundles from a ResourceManagerBuilder. Handles the compilation, configuration extraction, and integrity verification needed to create a complete, portable bundle.
+
+
+</td></tr>
+<tr><td>
+
+[BundleLoader](./ts-res.bundleloader.md)
+
+
+</td><td>
+
+Loader for creating an IResourceManager from a resource bundle. Handles integrity verification and reconstruction of the runtime resource manager.
+
+
+</td></tr>
+<tr><td>
+
 [Condition](./ts-res.condition.md)
 
 
@@ -184,6 +206,15 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[Bundle](./ts-res.bundle.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
 
 [Conditions](./ts-res.conditions.md)
 

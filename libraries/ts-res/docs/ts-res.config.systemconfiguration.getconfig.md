@@ -13,7 +13,7 @@ getConfig(): Result<ISystemConfiguration>;
 ```
 **Returns:**
 
-Result&lt;ISystemConfiguration&gt;
+Result&lt;[ISystemConfiguration](./ts-res.config.model.isystemconfiguration.md)<!-- -->&gt;
 
 `Success` with the [system configuration](./ts-res.config.model.isystemconfiguration.md) if successful, `Failure` with an error message otherwise.
 
