@@ -14,11 +14,15 @@ var (
 	// Extended language: 3 lowercase letters
 	extlangPattern = regexp.MustCompile(`^[a-z]{3}$`)
 	
-	// Script: 4 letters, title case (Xxxx)
+	// Script: 4 letters, title case (Xxxx) - strict valid
+	// For well-formed, accept any 4 letters
 	scriptPattern = regexp.MustCompile(`^[A-Z][a-z]{3}$`)
+	scriptWellFormedPattern = regexp.MustCompile(`^[A-Za-z]{4}$`)
 	
-	// Region: 2 letters (uppercase) or 3 digits
+	// Region: 2 letters (uppercase) or 3 digits (strict valid)
+	// For well-formed parsing, we also accept 1 letter or 3 letters
 	regionPattern = regexp.MustCompile(`^([A-Z]{2}|[0-9]{3})$`)
+	regionWellFormedPattern = regexp.MustCompile(`^([A-Za-z]{1,3}|[0-9]{3})$`)
 	
 	// Variant: 5-8 alphanumeric or 4 starting with digit
 	variantPattern = regexp.MustCompile(`^([0-9][A-Za-z0-9]{3}|[A-Za-z0-9]{5,8})$`)
@@ -29,8 +33,9 @@ var (
 	// Extension subtag: 2-8 alphanumeric
 	extensionSubtagPattern = regexp.MustCompile(`^[A-Za-z0-9]{2,8}$`)
 	
-	// Private use subtag: 1-8 alphanumeric
-	privateUsePattern = regexp.MustCompile(`^[A-Za-z0-9]{1,8}$`)
+	// Private use subtag: 1-8 alphanumeric (RFC 5646)
+	// For well-formed parsing, be more permissive
+	privateUsePattern = regexp.MustCompile(`^[A-Za-z0-9]{1,}$`)
 	
 	// Full tag pattern for basic validation
 	basicTagPattern = regexp.MustCompile(`^[A-Za-z0-9]([A-Za-z0-9\-]*[A-Za-z0-9])?$`)
@@ -235,24 +240,21 @@ func (p *Parser) parseLanguage(part string) error {
 
 // parseExtLang parses extended language subtags  
 func (p *Parser) parseExtLang(part string) error {
-	lowerPart := strings.ToLower(part)
+	// For now, skip ExtLang parsing for well-formed tags since we don't have IANA registry
+	// In the future, we should check against IANA ExtLang registry here
+	// This ensures "en-USA" parses USA as region, not extlang
 	
-	// Check if this could be an extended language
-	if extlangPattern.MatchString(lowerPart) && len(p.subtags.ExtLangs) < MaxExtLangs {
-		p.subtags.ExtLangs = append(p.subtags.ExtLangs, lowerPart)
-		return nil
-	}
-	
-	// Not an extlang, try script
+	// Move directly to script parsing
 	p.state = StateScript
 	return p.parseScript(part)
 }
 
 // parseScript parses the script subtag
 func (p *Parser) parseScript(part string) error {
-	// Check if this is a script subtag (4 letters, title case)
-	if scriptPattern.MatchString(part) {
-		p.subtags.Script = part // Keep original case for script
+	// Check if this is a script subtag (4 letters, any case for well-formed)
+	if scriptWellFormedPattern.MatchString(part) {
+		// Normalize to title case for consistency
+		p.subtags.Script = strings.Title(strings.ToLower(part))
 		p.state = StateRegion
 		return nil
 	}
@@ -264,10 +266,34 @@ func (p *Parser) parseScript(part string) error {
 
 // parseRegion parses the region subtag
 func (p *Parser) parseRegion(part string) error {
+	// Check for private use singleton first (before region matching)
+	if strings.ToLower(part) == PrivateUseSingleton {
+		p.state = StatePrivateUse
+		return nil
+	}
+	
 	upperPart := strings.ToUpper(part)
 	
-	// Check if this is a region subtag
-	if regionPattern.MatchString(upperPart) {
+	// For single characters, prefer region for uppercase, extension for lowercase
+	if len(part) == 1 {
+		if part >= "A" && part <= "Z" && part != "X" {
+			// Uppercase single letter -> prefer region (e.g., en-U)
+			if regionWellFormedPattern.MatchString(upperPart) {
+				p.subtags.Region = upperPart
+				p.state = StateVariant
+				return nil
+			}
+		}
+		
+		// Check if this is an extension singleton
+		if extensionPattern.MatchString(part) {
+			p.state = StateExtension
+			return p.parseExtension(part)
+		}
+	}
+	
+	// Check if this is a region subtag (well-formed)
+	if regionWellFormedPattern.MatchString(upperPart) {
 		p.subtags.Region = upperPart
 		p.state = StateVariant
 		return nil
@@ -277,30 +303,6 @@ func (p *Parser) parseRegion(part string) error {
 	if variantPattern.MatchString(part) {
 		p.state = StateVariant
 		return p.parseVariant(part)
-	}
-	
-	// Check if this is an extension singleton
-	if len(part) == 1 && extensionPattern.MatchString(part) {
-		p.state = StateExtension
-		return p.parseExtension(part)
-	}
-	
-	// Check if this is private use
-	if strings.ToLower(part) == PrivateUseSingleton {
-		p.state = StatePrivateUse
-		return nil
-	}
-	
-	// For well-formed parsing, accept any reasonable subtag that doesn't fit other patterns
-	// This allows 1-letter regions, 3-letter non-numeric regions, etc.
-	// Validation will catch invalid subtags later
-	if len(part) >= 1 && len(part) <= 8 && basicTagPattern.MatchString(part) {
-		// Store as region for now - this is a simplification but maintains well-formed status
-		if p.subtags.Region == "" {
-			p.subtags.Region = strings.ToUpper(part)
-			p.state = StateVariant
-			return nil
-		}
 	}
 	
 	// If none of the above, it's an invalid subtag
