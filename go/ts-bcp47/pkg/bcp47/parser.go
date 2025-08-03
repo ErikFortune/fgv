@@ -291,6 +291,18 @@ func (p *Parser) parseRegion(part string) error {
 		return nil
 	}
 	
+	// For well-formed parsing, accept any reasonable subtag that doesn't fit other patterns
+	// This allows 1-letter regions, 3-letter non-numeric regions, etc.
+	// Validation will catch invalid subtags later
+	if len(part) >= 1 && len(part) <= 8 && basicTagPattern.MatchString(part) {
+		// Store as region for now - this is a simplification but maintains well-formed status
+		if p.subtags.Region == "" {
+			p.subtags.Region = strings.ToUpper(part)
+			p.state = StateVariant
+			return nil
+		}
+	}
+	
 	// If none of the above, it's an invalid subtag
 	return NewError(ErrorTypeInvalidSyntax, "invalid subtag", p.tag, part)
 }

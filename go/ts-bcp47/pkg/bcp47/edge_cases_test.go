@@ -306,8 +306,10 @@ func TestNormalizationEdgeCases(t *testing.T) {
 			} else {
 				if err != nil {
 					t.Errorf("Unexpected error for %q: %v", tt.input, err)
-				} else if result != tt.expected {
-					t.Errorf("Normalize(%q, %v) = %q, want %q", tt.input, tt.level, result, tt.expected)
+				} else if result == nil {
+					t.Errorf("Expected result for %q, got nil", tt.input)
+				} else if result.Tag != tt.expected {
+					t.Errorf("Normalize(%q, %v) = %q, want %q", tt.input, tt.level, result.Tag, tt.expected)
 				}
 			}
 		})
@@ -345,7 +347,10 @@ func TestPerformance(t *testing.T) {
 	}
 	
 	// Large choose operation
-	matches := Choose(tags[:5], tags)
+	matches, err := Choose(tags[:5], tags)
+	if err != nil {
+		t.Errorf("Choose failed: %v", err)
+	}
 	if len(matches) == 0 {
 		t.Error("Expected some matches in large choose operation")
 	}
