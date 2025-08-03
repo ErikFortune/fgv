@@ -1,10 +1,13 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
+import { Bundle } from '@fgv/ts-res';
 
 export interface ImportedFile {
   name: string;
   path: string;
   content: string;
   handle?: FileSystemFileHandle;
+  isBundleFile?: boolean;
+  bundleMetadata?: Bundle.IBundleMetadata;
 }
 
 export interface ImportedDirectory {
@@ -19,6 +22,45 @@ export interface FileImportOptions {
   multiple?: boolean;
   includeDirectories?: boolean;
   startIn?: string | FileSystemHandle;
+}
+
+/**
+ * Analyzes file content to detect bundle files and extract metadata
+ */
+function analyzeFileForBundle(
+  fileName: string,
+  content: string
+): {
+  isBundleFile: boolean;
+  bundleMetadata?: Bundle.IBundleMetadata;
+} {
+  // First check if the filename suggests it might be a bundle
+  if (!Bundle.BundleUtils.isBundleFileName(fileName)) {
+    return { isBundleFile: false };
+  }
+
+  try {
+    const data = JSON.parse(content);
+
+    // Check if it's a bundle structure
+    if (!Bundle.BundleUtils.isBundleFile(data)) {
+      return { isBundleFile: false };
+    }
+
+    // Extract metadata if possible
+    const metadataResult = Bundle.BundleUtils.extractBundleMetadata(data);
+    if (metadataResult.isSuccess()) {
+      return {
+        isBundleFile: true,
+        bundleMetadata: metadataResult.value
+      };
+    }
+
+    return { isBundleFile: true };
+  } catch {
+    // Not valid JSON or other parsing error
+    return { isBundleFile: false };
+  }
 }
 
 /**
@@ -138,11 +180,16 @@ export class ModernFileImporter {
       const content = await file.text();
       const filePath = basePath ? `${basePath}/${file.name}` : file.name;
 
+      // Analyze for bundle detection
+      const bundleAnalysis = analyzeFileForBundle(file.name, content);
+
       return succeed({
         name: file.name,
         path: filePath,
         content,
-        handle: fileHandle
+        handle: fileHandle,
+        isBundleFile: bundleAnalysis.isBundleFile,
+        bundleMetadata: bundleAnalysis.bundleMetadata
       });
     } catch (error) {
       return fail(
@@ -215,10 +262,16 @@ export class FallbackFileImporter {
           const importedFiles: ImportedFile[] = [];
           for (const file of Array.from(files)) {
             const content = await file.text();
+
+            // Analyze for bundle detection
+            const bundleAnalysis = analyzeFileForBundle(file.name, content);
+
             importedFiles.push({
               name: file.name,
               path: file.name,
-              content
+              content,
+              isBundleFile: bundleAnalysis.isBundleFile,
+              bundleMetadata: bundleAnalysis.bundleMetadata
             });
           }
           resolve(succeed(importedFiles));
@@ -246,10 +299,15 @@ export class FallbackFileImporter {
       const fileName = pathParts[pathParts.length - 1];
       const dirPath = pathParts.slice(0, -1).join('/');
 
+      // Analyze for bundle detection
+      const bundleAnalysis = analyzeFileForBundle(fileName, content);
+
       const importedFile: ImportedFile = {
         name: fileName,
         path: file.webkitRelativePath,
-        content
+        content,
+        isBundleFile: bundleAnalysis.isBundleFile,
+        bundleMetadata: bundleAnalysis.bundleMetadata
       };
 
       if (!fileMap.has(dirPath)) {

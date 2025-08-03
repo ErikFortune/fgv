@@ -36,11 +36,13 @@ import {
 } from '@fgv/ts-utils';
 import {
   ConditionCollector,
-  ConditionSet,
   ConditionSetCollector,
   ReadOnlyConditionCollector,
   ReadOnlyConditionSetCollector,
-  Convert as ConditionsConvert
+  Convert as ConditionsConvert,
+  Condition,
+  ConditionSet,
+  IConditionSetDecl
 } from '../conditions';
 import { AbstractDecisionCollector, ReadOnlyAbstractDecisionCollector } from '../decisions';
 import { IReadOnlyQualifierCollector } from '../qualifiers';
@@ -301,6 +303,39 @@ export class ResourceManagerBuilder implements IResourceManager {
         return succeed(builder);
       })
       .withDetail('failure', detail);
+  }
+
+  /**
+   * Adds a condition to the manager.
+   * @param decl - The condition declaration to add.
+   * @returns `Success` with the condition if successful, or `Failure` with an error message if not.
+   * @public
+   */
+  public addCondition(decl: ResourceJson.Json.ILooseConditionDecl): Result<Condition> {
+    return ConditionsConvert.validatedConditionDecl
+      .convert(decl, { qualifiers: this.qualifiers })
+      .onSuccess((validated) => {
+        return Condition.getKeyForDecl(validated).onSuccess((key) => {
+          return this._conditions.validating.getOrAdd(key, () => Condition.create(validated));
+        });
+      });
+  }
+
+  /**
+   * Adds a condition set to the manager.
+   * @param decl - The condition set declaration to add.
+   * @returns `Success` with the condition set if successful, or `Failure` with an error message if not.
+   * @public
+   */
+  public addConditionSet(conditions: ResourceJson.Normalized.ConditionSetDecl): Result<ConditionSet> {
+    const decl: IConditionSetDecl = { conditions: [...conditions] };
+    return ConditionsConvert.validatedConditionSetDecl
+      .convert(decl, { conditions: this._conditions })
+      .onSuccess((validated) => {
+        return ConditionSet.getKeyForDecl(validated).onSuccess((key) => {
+          return this._conditionSets.validating.getOrAdd(key, () => ConditionSet.create(validated));
+        });
+      });
   }
 
   /**

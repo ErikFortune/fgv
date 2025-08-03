@@ -37,7 +37,7 @@ config
 
 </td><td>
 
-ISystemConfiguration
+[ISystemConfiguration](./ts-res.config.model.isystemconfiguration.md)
 
 
 </td><td>

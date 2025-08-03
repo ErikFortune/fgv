@@ -53,6 +53,7 @@ export interface IFilteredManager {
 export interface IResourceBlob {
   resources?: TsRes.ResourceJson.Json.IResourceCollectionDecl;
   compiledCollection?: TsRes.ResourceJson.Compiled.ICompiledResourceCollection;
+  bundle?: TsRes.Bundle.IBundle;
   metadata?: IResourceInfo;
 }
 
@@ -387,6 +388,8 @@ export class ResourceCompiler {
     try {
       if (this._options.format === 'compiled') {
         return this._generateCompiledBlob(filtered);
+      } else if (this._options.format === 'bundle') {
+        return this._generateBundleBlob(filtered);
       } else {
         return this._generateSourceBlob(filtered);
       }
@@ -424,6 +427,39 @@ export class ResourceCompiler {
       }
 
       return succeed(blob);
+    });
+  }
+
+  /**
+   * Generates a bundle blob
+   */
+  private _generateBundleBlob(filtered: IFilteredManager): Result<IResourceBlob> {
+    if (!this._systemConfiguration) {
+      return fail('System configuration is required for bundle generation');
+    }
+
+    // Create SystemConfiguration from the loaded configuration
+    return TsRes.Config.SystemConfiguration.create(this._systemConfiguration).onSuccess((systemConfig) => {
+      // Create bundle using BundleBuilder
+      const bundleParams: TsRes.Bundle.IBundleCreateParams = {
+        version: '1.0.0',
+        description: 'Generated bundle from ts-res-cli',
+        normalize: true // Use order-resilient normalization for consistent output
+      };
+
+      return TsRes.Bundle.BundleBuilder.create(filtered.manager, systemConfig, bundleParams).onSuccess(
+        (bundle) => {
+          const blob: IResourceBlob = {
+            bundle
+          };
+
+          if (this._options.includeMetadata) {
+            blob.metadata = this._generateResourceInfo(filtered);
+          }
+
+          return succeed(blob);
+        }
+      );
     });
   }
 
@@ -490,6 +526,11 @@ export class ResourceCompiler {
           // For now, use JSON as a placeholder
           const binaryData = blob.compiledCollection || blob;
           content = JSON.stringify(binaryData);
+          break;
+        case 'bundle':
+          // Bundle format outputs the complete bundle with metadata, config, and compiled resources
+          const bundleData = this._options.includeMetadata ? blob : blob.bundle;
+          content = JSON.stringify(bundleData, null, 2);
           break;
         default:
           return fail(`Unsupported output format: ${this._options.format}`);

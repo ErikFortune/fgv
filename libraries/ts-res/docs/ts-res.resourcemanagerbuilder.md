@@ -443,6 +443,34 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[addCondition(decl)](./ts-res.resourcemanagerbuilder.addcondition.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds a condition to the manager.
+
+
+</td></tr>
+<tr><td>
+
+[addConditionSet(conditions)](./ts-res.resourcemanagerbuilder.addconditionset.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds a condition set to the manager.
+
+
+</td></tr>
+<tr><td>
+
 [addLooseCandidate(decl)](./ts-res.resourcemanagerbuilder.addloosecandidate.md)
 
 

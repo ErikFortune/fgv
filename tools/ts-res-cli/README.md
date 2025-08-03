@@ -33,6 +33,13 @@ ts-res-compile compile \
   -o ./dist/resources.ts \
   --format ts \
   --include-metadata
+
+# Create a complete bundle with metadata and configuration
+ts-res-compile compile \
+  -i ./resources \
+  -o ./dist/resources.bundle.json \
+  --format bundle \
+  --include-metadata
 ```
 
 ### Validate Resources
@@ -66,7 +73,7 @@ Compiles resources from input to output format.
 
 **Optional Options:**
 - `-c, --context <json>` - Context filter for resources (JSON string)
-- `-f, --format <format>` - Output format (json, js, ts, binary) [default: json]
+- `-f, --format <format>` - Output format (compiled, source, js, ts, binary, bundle) [default: compiled]
 - `--debug` - Include debug information [default: false]
 - `-v, --verbose` - Verbose output [default: false]
 - `-q, --quiet` - Quiet output [default: false]
@@ -134,13 +141,54 @@ The CLI supports the following input formats:
 
 ## Output Formats
 
-### JSON (default)
+### Compiled (default)
+Compiled resource collection optimized for runtime use:
 ```json
 {
   "resources": {
     "welcome.message": {
       "default": { "text": "Welcome!" }
     }
+  }
+}
+```
+
+### Source
+Original resource collection format:
+```json
+{
+  "resources": [
+    {
+      "id": "welcome.message",
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": { "text": "Welcome!" },
+          "conditions": { "language": "en" }
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Bundle
+Complete resource bundle with metadata, configuration, and compiled resources:
+```json
+{
+  "metadata": {
+    "dateBuilt": "2025-01-01T00:00:00.000Z",
+    "checksum": "abc12345",
+    "version": "1.0.0",
+    "description": "Generated bundle from ts-res-cli"
+  },
+  "config": {
+    "qualifierTypes": [...],
+    "qualifiers": [...],
+    "resourceTypes": [...]
+  },
+  "compiledCollection": {
+    "resources": {...}
   }
 }
 ```

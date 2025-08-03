@@ -1,9 +1,15 @@
 import React, { useEffect, useRef } from 'react';
-import { DocumentArrowUpIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import {
+  DocumentArrowUpIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  ArchiveBoxIcon
+} from '@heroicons/react/24/outline';
 import { Message } from '../../types/app';
 import { UseFileImportReturn } from '../../hooks/useFileImport';
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import FileImporter from '../common/FileImporter';
+import BundleInfo from '../common/BundleInfo';
 import { useUrlParams } from '../../hooks/useUrlParams';
 
 interface ImportToolProps {
@@ -52,8 +58,26 @@ const ImportTool: React.FC<ImportToolProps> = ({ onMessage, fileImport, resource
           onMessage('info', 'Directory imported successfully. Processing resources...');
           resourceActions.processDirectory(currentDirectory);
         } else if (currentFiles.length > 0) {
-          onMessage('info', `${currentFiles.length} files imported successfully. Processing resources...`);
-          resourceActions.processFiles(currentFiles);
+          // Check if any files are bundle files
+          const bundleFiles = currentFiles.filter((file) => file.isBundleFile);
+          const regularFiles = currentFiles.filter((file) => !file.isBundleFile);
+
+          if (bundleFiles.length > 0) {
+            console.log('ImportTool - Bundle files detected:', bundleFiles);
+            if (bundleFiles.length > 1) {
+              onMessage(
+                'warning',
+                `Multiple bundle files detected. Processing first bundle: ${bundleFiles[0].name}`
+              );
+            } else {
+              onMessage('info', `Bundle file detected: ${bundleFiles[0].name}. Loading bundle...`);
+            }
+            console.log('ImportTool - Calling processBundleFile for:', bundleFiles[0].name);
+            resourceActions.processBundleFile(bundleFiles[0]);
+          } else if (regularFiles.length > 0) {
+            onMessage('info', `${regularFiles.length} files imported successfully. Processing resources...`);
+            resourceActions.processFiles(regularFiles);
+          }
         }
       }
     }
@@ -70,9 +94,13 @@ const ImportTool: React.FC<ImportToolProps> = ({ onMessage, fileImport, resource
   useEffect(() => {
     if (resourceState.processedResources) {
       const resourceCount = resourceState.processedResources.summary.resourceIds.length;
-      onMessage('success', `Resources processed successfully! Found ${resourceCount} resources.`);
+      if (resourceState.isLoadedFromBundle) {
+        onMessage('success', `Bundle loaded successfully! Found ${resourceCount} resources from bundle.`);
+      } else {
+        onMessage('success', `Resources processed successfully! Found ${resourceCount} resources.`);
+      }
     }
-  }, [resourceState.processedResources, onMessage]);
+  }, [resourceState.processedResources, resourceState.isLoadedFromBundle, onMessage]);
 
   // Handle errors
   useEffect(() => {
@@ -145,6 +173,27 @@ const ImportTool: React.FC<ImportToolProps> = ({ onMessage, fileImport, resource
                   </>
                 )}
               </div>
+
+              {/* Bundle Detection Status */}
+              {fileImportState.hasImportedData && fileImportState.importedFiles.length > 0 && (
+                <div className="flex items-center space-x-3">
+                  {fileImportState.importedFiles.some((file) => file.isBundleFile) ? (
+                    <>
+                      <ArchiveBoxIcon className="w-5 h-5 text-blue-500" />
+                      <span className="text-sm text-blue-900">
+                        Bundle file detected (
+                        {fileImportState.importedFiles.filter((f) => f.isBundleFile).length} bundle
+                        {fileImportState.importedFiles.filter((f) => f.isBundleFile).length > 1 ? 's' : ''})
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <DocumentArrowUpIcon className="w-5 h-5 text-gray-400" />
+                      <span className="text-sm text-gray-500">Regular resource files</span>
+                    </>
+                  )}
+                </div>
+              )}
 
               {/* Resource Processing Status */}
               <div className="flex items-center space-x-3">
@@ -226,6 +275,11 @@ const ImportTool: React.FC<ImportToolProps> = ({ onMessage, fileImport, resource
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Bundle Information */}
+          {resourceState.isLoadedFromBundle && resourceState.bundleMetadata && (
+            <BundleInfo bundleMetadata={resourceState.bundleMetadata} showStatus={true} />
           )}
 
           {/* Error Display */}

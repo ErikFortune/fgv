@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   CubeIcon,
   FolderIcon,
@@ -8,11 +8,12 @@ import {
   ChevronDownIcon,
   DocumentArrowDownIcon,
   CodeBracketIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
+  ArchiveBoxIcon
 } from '@heroicons/react/24/outline';
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message, FilterState } from '../../types/app';
-import { ResourceJson, NoMatch } from '@fgv/ts-res';
+import { ResourceJson, NoMatch, Config, Bundle } from '@fgv/ts-res';
 
 interface CompiledBrowserProps {
   onMessage?: (type: Message['type'], message: string) => void;
@@ -44,6 +45,10 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({
 }) => {
   const { state: resourceState } = resourceManager;
 
+  // Debug logging
+  console.log('CompiledBrowser - resourceState.isLoadedFromBundle:', resourceState.isLoadedFromBundle);
+  console.log('CompiledBrowser - resourceState.bundleMetadata:', resourceState.bundleMetadata);
+
   // Use filtered resources when filtering is active and successful
   const isFilteringActive = filterState.enabled && filterResult?.success === true;
   const activeProcessedResources = isFilteringActive
@@ -52,6 +57,18 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['root', 'resources']));
   const [showJsonView, setShowJsonView] = useState(false);
+  const [useNormalization, setUseNormalization] = useState(
+    () =>
+      // Default to ON when loaded from bundle, OFF otherwise
+      resourceState.isLoadedFromBundle
+  );
+
+  // Update normalization default when bundle state changes
+  useEffect(() => {
+    if (resourceState.isLoadedFromBundle && !useNormalization) {
+      setUseNormalization(true);
+    }
+  }, [resourceState.isLoadedFromBundle, useNormalization]);
 
   // Helper functions to resolve indices to meaningful keys
   const getConditionKey = (
@@ -197,7 +214,30 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({
       return null;
     }
 
-    const compiledCollection = activeProcessedResources.compiledCollection;
+    let compiledCollection = activeProcessedResources.compiledCollection;
+
+    // Apply normalization if enabled
+    if (useNormalization && resourceState.activeConfiguration) {
+      try {
+        // Create a ResourceManagerBuilder from the current data
+        const resourceManagerResult = Bundle.BundleNormalizer.normalize(
+          activeProcessedResources.system.resourceManager,
+          resourceState.activeConfiguration
+        );
+
+        if (resourceManagerResult.isSuccess()) {
+          const normalizedCompiledResult = resourceManagerResult.value.getCompiledResourceCollection({
+            includeMetadata: true
+          });
+          if (normalizedCompiledResult.isSuccess()) {
+            compiledCollection = normalizedCompiledResult.value;
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to normalize compiled collection:', error);
+        // Fall back to original collection
+      }
+    }
 
     const tree: TreeNode = {
       id: 'root',
@@ -262,48 +302,243 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({
     }
 
     return tree;
-  }, [activeProcessedResources?.compiledCollection, onMessage, isFilteringActive]);
+  }, [
+    activeProcessedResources?.compiledCollection,
+    activeProcessedResources?.system.resourceManager,
+    onMessage,
+    isFilteringActive,
+    useNormalization,
+    resourceState.isLoadedFromBundle,
+    resourceState.activeConfiguration
+  ]);
 
   // Export compiled collection to JSON file
-  const handleExportCompiledData = useCallback(() => {
+  const handleExportCompiledData = useCallback(async () => {
     try {
       if (!activeProcessedResources?.compiledCollection) {
         onMessage?.('error', 'No compiled data available to export');
         return;
       }
 
+      // Get the current compiled collection (potentially normalized)
+      let compiledCollection = activeProcessedResources.compiledCollection;
+
+      // Apply normalization if enabled
+      if (useNormalization && resourceState.activeConfiguration) {
+        try {
+          const resourceManagerResult = Bundle.BundleNormalizer.normalize(
+            activeProcessedResources.system.resourceManager,
+            resourceState.activeConfiguration
+          );
+
+          if (resourceManagerResult.isSuccess()) {
+            const normalizedCompiledResult = resourceManagerResult.value.getCompiledResourceCollection({
+              includeMetadata: true
+            });
+            if (normalizedCompiledResult.isSuccess()) {
+              compiledCollection = normalizedCompiledResult.value;
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to normalize for export:', error);
+          // Fall back to original collection
+        }
+      }
+
       const compiledData = {
-        ...activeProcessedResources.compiledCollection,
+        ...compiledCollection,
         metadata: {
           exportedAt: new Date().toISOString(),
           type: isFilteringActive ? 'ts-res-filtered-compiled-collection' : 'ts-res-compiled-collection',
+          normalized: useNormalization,
+          ...(resourceState.isLoadedFromBundle && { loadedFromBundle: true }),
           ...(isFilteringActive && { filterContext: filterState.appliedValues })
         }
       };
 
       const compiledJson = JSON.stringify(compiledData, null, 2);
-      const blob = new Blob([compiledJson], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
 
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = isFilteringActive ? 'filtered-compiled-collection.json' : 'compiled-collection.json';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // Try to use File System Access API for modern browsers
+      if ('showSaveFilePicker' in window) {
+        try {
+          const suggestedName = isFilteringActive
+            ? 'filtered-compiled-collection.json'
+            : 'compiled-collection.json';
+          const fileHandle = await window.showSaveFilePicker({
+            suggestedName,
+            types: [
+              {
+                description: 'JSON files',
+                accept: {
+                  'application/json': ['.json']
+                }
+              }
+            ]
+          });
 
-      onMessage?.(
-        'success',
-        `${isFilteringActive ? 'Filtered c' : 'C'}ompiled collection exported successfully`
-      );
+          const writable = await fileHandle.createWritable();
+          await writable.write(compiledJson);
+          await writable.close();
+
+          onMessage?.(
+            'success',
+            `${isFilteringActive ? 'Filtered c' : 'C'}ompiled collection saved successfully`
+          );
+        } catch (saveError) {
+          // User cancelled the dialog or other error
+          if ((saveError as Error).name !== 'AbortError') {
+            throw saveError;
+          }
+        }
+      } else {
+        // Fallback for browsers without File System Access API
+        const blob = new Blob([compiledJson], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = isFilteringActive ? 'filtered-compiled-collection.json' : 'compiled-collection.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        onMessage?.(
+          'success',
+          `${isFilteringActive ? 'Filtered c' : 'C'}ompiled collection downloaded successfully`
+        );
+      }
     } catch (error) {
       onMessage?.(
         'error',
         `Failed to export compiled data: ${error instanceof Error ? error.message : String(error)}`
       );
     }
-  }, [activeProcessedResources?.compiledCollection, onMessage, isFilteringActive, filterState.appliedValues]);
+  }, [
+    activeProcessedResources?.compiledCollection,
+    activeProcessedResources?.system.resourceManager,
+    onMessage,
+    isFilteringActive,
+    filterState.appliedValues,
+    useNormalization,
+    resourceState.isLoadedFromBundle,
+    resourceState.activeConfiguration
+  ]);
+
+  // Export bundle with metadata, config, and compiled collection
+  const handleExportBundle = useCallback(async () => {
+    try {
+      if (!activeProcessedResources?.system?.resourceManager || !resourceState.activeConfiguration) {
+        onMessage?.('error', 'No resource manager or configuration available to create bundle');
+        return;
+      }
+
+      // Create SystemConfiguration from the active configuration
+      const systemConfigResult = Config.SystemConfiguration.create(resourceState.activeConfiguration);
+      if (systemConfigResult.isFailure()) {
+        onMessage?.('error', `Failed to create system configuration: ${systemConfigResult.message}`);
+        return;
+      }
+
+      const systemConfig = systemConfigResult.value;
+
+      // Create bundle parameters
+      const bundleParams: Bundle.IBundleCreateParams = {
+        version: '1.0.0',
+        description: isFilteringActive
+          ? 'Bundle exported from ts-res-browser (filtered)'
+          : 'Bundle exported from ts-res-browser',
+        normalize: true // Use order-resilient normalization for consistent output
+      };
+
+      // Create the bundle
+      const bundleResult = Bundle.BundleBuilder.create(
+        activeProcessedResources.system.resourceManager,
+        systemConfig,
+        bundleParams
+      );
+
+      if (bundleResult.isFailure()) {
+        onMessage?.('error', `Failed to create bundle: ${bundleResult.message}`);
+        return;
+      }
+
+      const bundle = bundleResult.value;
+
+      // Add export metadata
+      const exportBundle = {
+        ...bundle,
+        exportMetadata: {
+          exportedAt: new Date().toISOString(),
+          exportedFrom: 'ts-res-browser',
+          type: isFilteringActive ? 'ts-res-bundle-filtered' : 'ts-res-bundle',
+          ...(isFilteringActive && { filterContext: filterState.appliedValues })
+        }
+      };
+
+      const bundleJson = JSON.stringify(exportBundle, null, 2);
+
+      // Try to use File System Access API for modern browsers
+      if ('showSaveFilePicker' in window) {
+        try {
+          const suggestedName = isFilteringActive ? 'filtered-resource-bundle.json' : 'resource-bundle.json';
+          const fileHandle = await window.showSaveFilePicker({
+            suggestedName,
+            types: [
+              {
+                description: 'JSON files',
+                accept: {
+                  'application/json': ['.json']
+                }
+              }
+            ]
+          });
+
+          const writable = await fileHandle.createWritable();
+          await writable.write(bundleJson);
+          await writable.close();
+
+          onMessage?.(
+            'success',
+            `${isFilteringActive ? 'Filtered r' : 'R'}esource bundle saved successfully`
+          );
+        } catch (saveError) {
+          // User cancelled the dialog or other error
+          if ((saveError as Error).name !== 'AbortError') {
+            throw saveError;
+          }
+        }
+      } else {
+        // Fallback for browsers without File System Access API
+        const blob = new Blob([bundleJson], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = isFilteringActive ? 'filtered-resource-bundle.json' : 'resource-bundle.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        onMessage?.(
+          'success',
+          `${isFilteringActive ? 'Filtered r' : 'R'}esource bundle downloaded successfully`
+        );
+      }
+    } catch (error) {
+      onMessage?.(
+        'error',
+        `Failed to export bundle: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }, [
+    activeProcessedResources?.system?.resourceManager,
+    resourceState.activeConfiguration,
+    onMessage,
+    isFilteringActive,
+    filterState.appliedValues
+  ]);
 
   const handleNodeClick = (node: TreeNode) => {
     setSelectedNodeId(node.id);
@@ -441,25 +676,63 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({
               <DocumentArrowDownIcon className="h-4 w-4 mr-1" />
               Export JSON
             </button>
+            <button
+              onClick={handleExportBundle}
+              className="inline-flex items-center px-3 py-1.5 border border-blue-300 text-xs font-medium rounded text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <ArchiveBoxIcon className="h-4 w-4 mr-1" />
+              Export Bundle
+            </button>
           </div>
         )}
       </div>
 
-      {/* JSON View Toggle */}
+      {/* Controls Panel */}
       {activeProcessedResources && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-          <button
-            onClick={() => setShowJsonView(!showJsonView)}
-            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <CodeBracketIcon className="h-4 w-4 mr-2" />
-            {showJsonView ? 'Hide' : 'Show'} JSON Compiled Collection
-            {showJsonView ? (
-              <ChevronUpIcon className="h-4 w-4 ml-2" />
-            ) : (
-              <ChevronDownIcon className="h-4 w-4 ml-2" />
-            )}
-          </button>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-6">
+              {/* Normalization Toggle - Always available */}
+              <div className="flex items-center space-x-2">
+                {resourceState.isLoadedFromBundle ? (
+                  <ArchiveBoxIcon className="h-4 w-4 text-blue-600" />
+                ) : (
+                  <CubeIcon className="h-4 w-4 text-gray-600" />
+                )}
+                <label className="text-sm font-medium text-gray-700">Normalize Output:</label>
+                <button
+                  onClick={() => setUseNormalization(!useNormalization)}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    useNormalization ? 'bg-blue-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                      useNormalization ? 'translate-x-5' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className="text-xs text-gray-500">{useNormalization ? 'ON' : 'OFF'}</span>
+                {resourceState.isLoadedFromBundle && (
+                  <span className="text-xs text-blue-600 font-medium">Bundle</span>
+                )}
+              </div>
+
+              {/* JSON View Toggle */}
+              <button
+                onClick={() => setShowJsonView(!showJsonView)}
+                className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <CodeBracketIcon className="h-4 w-4 mr-2" />
+                {showJsonView ? 'Hide' : 'Show'} JSON Compiled Collection
+                {showJsonView ? (
+                  <ChevronUpIcon className="h-4 w-4 ml-2" />
+                ) : (
+                  <ChevronDownIcon className="h-4 w-4 ml-2" />
+                )}
+              </button>
+            </div>
+          </div>
 
           {/* JSON View */}
           {showJsonView && (
@@ -467,13 +740,22 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({
               <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-medium text-gray-900">Compiled Collection (JSON)</h3>
-                  <button
-                    onClick={handleExportCompiledData}
-                    className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    <DocumentArrowDownIcon className="h-3 w-3 mr-1" />
-                    Export
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={handleExportCompiledData}
+                      className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      <DocumentArrowDownIcon className="h-3 w-3 mr-1" />
+                      Export JSON
+                    </button>
+                    <button
+                      onClick={handleExportBundle}
+                      className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      <ArchiveBoxIcon className="h-3 w-3 mr-1" />
+                      Export Bundle
+                    </button>
+                  </div>
                 </div>
                 <pre className="text-xs text-gray-800 bg-white p-3 rounded border overflow-x-auto max-h-64 overflow-y-auto">
                   {JSON.stringify(

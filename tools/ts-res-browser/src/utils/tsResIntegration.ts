@@ -438,6 +438,87 @@ export function finalizeProcessing(system: TsResSystem): Result<ProcessedResourc
 }
 
 /**
+ * Creates ProcessedResources from a loaded IResourceManager (from bundle).
+ * This is different from finalizeProcessing which works with a ResourceManagerBuilder.
+ */
+export function createProcessedResourcesFromManager(
+  resourceManager: Runtime.IResourceManager,
+  systemConfig: Config.Model.ISystemConfiguration,
+  compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
+): Result<ProcessedResources> {
+  console.log('=== CREATING PROCESSED RESOURCES FROM MANAGER ===');
+
+  return Config.SystemConfiguration.create(systemConfig).onSuccess((systemConfiguration) => {
+    try {
+      // Set up context qualifier provider
+      const contextQualifierProvider = Runtime.ValidatingSimpleContextQualifierProvider.create({
+        qualifiers: systemConfiguration.qualifiers
+      }).orThrow();
+
+      console.log('Using compiled collection from bundle');
+
+      // Create a new resolver
+      return Runtime.ResourceResolver.create({
+        resourceManager,
+        qualifierTypes: systemConfiguration.qualifierTypes,
+        contextQualifierProvider
+      }).onSuccess((resolver) => {
+        // Create summary from available data
+        // Get resource IDs from the compiled collection since IResourceManager doesn't have getAllResources
+        const resourceIds = compiledCollection.resources?.map((r) => r.id) || [];
+
+        const summary = {
+          totalResources: resourceIds.length,
+          resourceIds,
+          errorCount: 0,
+          warnings: []
+        };
+
+        // Create a minimal TsResSystem for compatibility
+        // Note: We don't have access to the original ResourceManagerBuilder,
+        // so we create a new one for compatibility purposes
+        const compatResourceManagerBuilder = Resources.ResourceManagerBuilder.create({
+          qualifiers: systemConfiguration.qualifiers,
+          resourceTypes: systemConfiguration.resourceTypes
+        }).orThrow();
+
+        const importManager = Import.ImportManager.create({
+          resources: compatResourceManagerBuilder
+        }).orThrow();
+
+        // Create the system for compatibility
+        const system: TsResSystem = {
+          qualifierTypes: systemConfiguration.qualifierTypes,
+          qualifiers: systemConfiguration.qualifiers,
+          resourceTypes: systemConfiguration.resourceTypes,
+          resourceManager: compatResourceManagerBuilder,
+          importManager,
+          contextQualifierProvider
+        };
+
+        console.log('=== PROCESSED RESOURCES FROM MANAGER COMPLETE ===');
+        console.log('Resource count:', resourceIds.length);
+        console.log('Resource IDs:', resourceIds);
+
+        return succeed({
+          system,
+          compiledCollection,
+          resolver,
+          resourceCount: resourceIds.length,
+          summary
+        });
+      });
+    } catch (error) {
+      return fail(
+        `Failed to create processed resources from manager: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  });
+}
+
+/**
  * Creates a simple context for resource resolution
  */
 export function createSimpleContext(

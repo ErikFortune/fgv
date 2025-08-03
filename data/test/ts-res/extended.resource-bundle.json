@@ -1,0 +1,633 @@
+{
+  "metadata": {
+    "dateBuilt": "2025-08-03T04:15:19.693Z",
+    "checksum": "73e9d1cb",
+    "version": "1.0.0",
+    "description": "Bundle exported from ts-res-browser"
+  },
+  "config": {
+    "qualifierTypes": [
+      {
+        "name": "language",
+        "systemType": "language",
+        "configuration": {
+          "allowContextList": true
+        }
+      },
+      {
+        "name": "territory",
+        "systemType": "territory",
+        "configuration": {
+          "allowContextList": false,
+          "acceptLowercase": false
+        }
+      },
+      {
+        "name": "role",
+        "systemType": "literal",
+        "configuration": {
+          "enumeratedValues": ["admin", "agent", "user", "guest"]
+        }
+      },
+      {
+        "name": "environment",
+        "systemType": "literal",
+        "configuration": {
+          "enumeratedValues": ["production", "integration", "development", "test", "ephemeral"]
+        }
+      },
+      {
+        "name": "currency",
+        "systemType": "literal",
+        "configuration": {
+          "caseSensitive": true,
+          "enumeratedValues": ["USD", "EUR", "GBP", "JPY", "CNY"]
+        }
+      },
+      {
+        "name": "market",
+        "systemType": "literal",
+        "configuration": {
+          "enumeratedValues": [
+            "world",
+            "americas",
+            "europe",
+            "asia",
+            "oceania",
+            "africa",
+            "middle-east",
+            "latin-america",
+            "caribbean",
+            "central-america",
+            "south-america",
+            "north-america",
+            "nordics",
+            "baltic",
+            "balkans",
+            "eastern-europe",
+            "western-europe",
+            "central-europe",
+            "eastern-africa",
+            "western-africa",
+            "central-africa",
+            "north-africa",
+            "south-africa",
+            "middle-africa",
+            "southeast-asia"
+          ],
+          "hierarchy": {
+            "americas": "world",
+            "europe": "world",
+            "asia": "world",
+            "oceania": "world",
+            "africa": "world",
+            "middle-east": "world",
+            "latin-america": "americas",
+            "caribbean": "americas",
+            "central-america": "americas",
+            "south-america": "americas",
+            "north-america": "americas",
+            "nordics": "europe",
+            "baltic": "europe",
+            "balkans": "europe",
+            "eastern-europe": "europe",
+            "western-europe": "europe",
+            "central-europe": "europe",
+            "eastern-africa": "africa",
+            "western-africa": "africa",
+            "central-africa": "africa",
+            "north-africa": "africa",
+            "south-africa": "africa",
+            "middle-africa": "africa",
+            "southeast-asia": "asia"
+          }
+        }
+      }
+    ],
+    "qualifiers": [
+      {
+        "name": "homeTerritory",
+        "typeName": "territory",
+        "defaultPriority": 900,
+        "token": "home"
+      },
+      {
+        "name": "currentTerritory",
+        "typeName": "territory",
+        "defaultPriority": 850,
+        "token": "geo"
+      },
+      {
+        "name": "language",
+        "typeName": "language",
+        "defaultPriority": 800,
+        "token": "lang",
+        "tokenIsOptional": false,
+        "defaultValue": "en-US"
+      },
+      {
+        "name": "market",
+        "typeName": "market",
+        "defaultPriority": 750,
+        "defaultValue": "world"
+      },
+      {
+        "name": "role",
+        "typeName": "role",
+        "defaultPriority": 700
+      },
+      {
+        "name": "environment",
+        "typeName": "environment",
+        "defaultPriority": 650,
+        "token": "env",
+        "tokenIsOptional": false,
+        "defaultValue": "production"
+      },
+      {
+        "name": "currency",
+        "typeName": "currency",
+        "defaultPriority": 600,
+        "defaultValue": "EUR"
+      }
+    ],
+    "resourceTypes": [
+      {
+        "name": "json",
+        "typeName": "json"
+      }
+    ]
+  },
+  "compiledCollection": {
+    "qualifiers": [
+      {
+        "name": "homeTerritory",
+        "type": 1,
+        "defaultPriority": 900
+      },
+      {
+        "name": "currentTerritory",
+        "type": 1,
+        "defaultPriority": 850
+      },
+      {
+        "name": "language",
+        "type": 0,
+        "defaultPriority": 800
+      },
+      {
+        "name": "market",
+        "type": 5,
+        "defaultPriority": 750
+      },
+      {
+        "name": "role",
+        "type": 2,
+        "defaultPriority": 700
+      },
+      {
+        "name": "environment",
+        "type": 3,
+        "defaultPriority": 650
+      },
+      {
+        "name": "currency",
+        "type": 4,
+        "defaultPriority": 600
+      }
+    ],
+    "qualifierTypes": [
+      {
+        "name": "language"
+      },
+      {
+        "name": "territory"
+      },
+      {
+        "name": "role"
+      },
+      {
+        "name": "environment"
+      },
+      {
+        "name": "currency"
+      },
+      {
+        "name": "market"
+      }
+    ],
+    "resourceTypes": [
+      {
+        "name": "json"
+      }
+    ],
+    "conditions": [
+      {
+        "qualifierIndex": 5,
+        "value": "development",
+        "priority": 650
+      },
+      {
+        "qualifierIndex": 5,
+        "value": "production",
+        "priority": 650,
+        "scoreAsDefault": 1
+      },
+      {
+        "qualifierIndex": 4,
+        "value": "admin",
+        "priority": 700
+      },
+      {
+        "qualifierIndex": 4,
+        "value": "agent",
+        "priority": 700
+      },
+      {
+        "qualifierIndex": 4,
+        "value": "user",
+        "priority": 700
+      },
+      {
+        "qualifierIndex": 6,
+        "value": "GBP",
+        "priority": 600
+      },
+      {
+        "qualifierIndex": 6,
+        "value": "JPY",
+        "priority": 600
+      },
+      {
+        "qualifierIndex": 6,
+        "value": "EUR",
+        "priority": 600,
+        "scoreAsDefault": 1
+      },
+      {
+        "qualifierIndex": 2,
+        "value": "fr",
+        "priority": 800
+      },
+      {
+        "qualifierIndex": 1,
+        "value": "CA",
+        "priority": 850
+      },
+      {
+        "qualifierIndex": 3,
+        "value": "americas",
+        "priority": 750
+      },
+      {
+        "qualifierIndex": 3,
+        "value": "asia",
+        "priority": 750
+      },
+      {
+        "qualifierIndex": 3,
+        "value": "europe",
+        "priority": 750
+      },
+      {
+        "qualifierIndex": 3,
+        "value": "north-america",
+        "priority": 750
+      },
+      {
+        "qualifierIndex": 3,
+        "value": "western-europe",
+        "priority": 750
+      }
+    ],
+    "conditionSets": [
+      {
+        "conditions": []
+      },
+      {
+        "conditions": [0]
+      },
+      {
+        "conditions": [1]
+      },
+      {
+        "conditions": [2]
+      },
+      {
+        "conditions": [3]
+      },
+      {
+        "conditions": [4]
+      },
+      {
+        "conditions": [5]
+      },
+      {
+        "conditions": [6]
+      },
+      {
+        "conditions": [7]
+      },
+      {
+        "conditions": [8, 7]
+      },
+      {
+        "conditions": [9, 8]
+      },
+      {
+        "conditions": [10]
+      },
+      {
+        "conditions": [11]
+      },
+      {
+        "conditions": [12]
+      },
+      {
+        "conditions": [13]
+      },
+      {
+        "conditions": [14]
+      }
+    ],
+    "decisions": [
+      {
+        "conditionSets": []
+      },
+      {
+        "conditionSets": [0]
+      },
+      {
+        "conditionSets": [5, 4, 3, 2, 1, 0]
+      },
+      {
+        "conditionSets": [10, 9, 8, 7, 6, 0]
+      },
+      {
+        "conditionSets": [15, 14, 13, 12, 11, 0]
+      }
+    ],
+    "resources": [
+      {
+        "id": "admin-dashboard.dashboard-config",
+        "type": 0,
+        "decision": 2,
+        "candidates": [
+          {
+            "json": {
+              "title": "👤 USER Personal Space",
+              "userManagementLabel": "👤 USER Profile",
+              "systemSettingsLabel": "⚙️ USER Preferences",
+              "reportsLabel": "📄 USER My Reports",
+              "auditLogLabel": "🕒 USER Activity History",
+              "maxUsersDisplayed": 10,
+              "selectedBy": "ROLE: User selected"
+            },
+            "isPartial": false,
+            "mergeMethod": "augment"
+          },
+          {
+            "json": {
+              "title": "🎧 AGENT Support Center",
+              "userManagementLabel": "👤 AGENT Customer Management",
+              "systemSettingsLabel": "🎛️ AGENT Settings",
+              "reportsLabel": "📈 AGENT Customer Reports",
+              "auditLogLabel": "📝 AGENT Activity Log",
+              "maxUsersDisplayed": 25,
+              "selectedBy": "ROLE: Agent selected"
+            },
+            "isPartial": false,
+            "mergeMethod": "augment"
+          },
+          {
+            "json": {
+              "title": "🔐 ADMIN Command Center",
+              "userManagementLabel": "👑 ADMIN User Management",
+              "systemSettingsLabel": "🛠️ ADMIN System Settings",
+              "reportsLabel": "📊 ADMIN Advanced Reports",
+              "auditLogLabel": "🔍 ADMIN Security Audit Log",
+              "maxUsersDisplayed": 100,
+              "selectedBy": "ROLE: Admin selected"
+            },
+            "isPartial": false,
+            "mergeMethod": "augment"
+          },
+          {
+            "json": {
+              "title": "🚀 PROD Live Dashboard",
+              "userManagementLabel": "👥 PROD User Management",
+              "systemSettingsLabel": "⚙️ PROD System Settings",
+              "reportsLabel": "📊 PROD Live Reports",
+              "auditLogLabel": "📋 PROD Audit Log",
+              "maxUsersDisplayed": 50,
+              "selectedBy": "ENVIRONMENT: Production"
+            },
+            "isPartial": false,
+            "mergeMethod": "augment"
+          },
+          {
+            "json": {
+              "title": "🛠️ DEV Debug Console",
+              "userManagementLabel": "🧪 DEV Test User Management",
+              "systemSettingsLabel": "🐛 DEV Debug Settings",
+              "reportsLabel": "🔬 DEV Debug Reports",
+              "auditLogLabel": "🔍 DEV Debug Audit Log",
+              "maxUsersDisplayed": 1000,
+              "selectedBy": "ENVIRONMENT: Development"
+            },
+            "isPartial": false,
+            "mergeMethod": "augment"
+          },
+          {
+            "json": {
+              "title": "📊 Basic Dashboard (DEFAULT)",
+              "userManagementLabel": "👥 User Management (Default)",
+              "systemSettingsLabel": "⚙️ System Settings (Default)",
+              "reportsLabel": "📋 Reports (Default)",
+              "auditLogLabel": "📜 Audit Log (Default)",
+              "maxUsersDisplayed": 50,
+              "selectedBy": "DEFAULT - no conditions"
+            },
+            "isPartial": false,
+            "mergeMethod": "augment"
+          }
+        ]
+      },
+      {
+        "id": "financial-ui.financial-ui",
+        "type": 0,
+        "decision": 3,
+        "candidates": [
+          {
+            "json": {
+              "currencySymbol": "$ CAD (FRANÇAIS CANADA)",
+              "decimalSeparator": ", (style canadien français)",
+              "thousandSeparator": ". (style canadien français)",
+              "currencyFormat": "{amount} $ CAD (canadien)",
+              "interestRateLabel": "Taux d'intérêt (Canada français)",
+              "transactionFeeLabel": "Frais de transaction (Canada français)",
+              "selectedBy": "BOTH: French language + Canada territory"
+            },
+            "isPartial": false,
+            "mergeMethod": "augment"
+          },
+          {
+            "json": {
+              "currencySymbol": "€ (EURO + FRANÇAIS)",
+              "decimalSeparator": ", (style européen)",
+              "thousandSeparator": ". (style européen)",
+              "currencyFormat": "{amount} € (format européen)",
+              "interestRateLabel": "Taux d'intérêt (EUR + FR)",
+              "transactionFeeLabel": "Frais de transaction (EUR + FR)",
+              "selectedBy": "BOTH: EUR currency + French language"
+            },
+            "isPartial": false,
+            "mergeMethod": "augment"
+          },
+          {
+            "json": {
+              "currencySymbol": "€ (EURO CURRENCY)",
+              "decimalSeparator": ", (European style)",
+              "thousandSeparator": ". (European style)",
+              "currencyFormat": "{amount} € (European format)",
+              "interestRateLabel": "Interest Rate (EUR)",
+              "transactionFeeLabel": "Transaction Fee (EUR)",
+              "selectedBy": "CURRENCY: EUR selected"
+            },
+            "isPartial": false,
+            "mergeMethod": "augment"
+          },
+          {
+            "json": {
+              "currencySymbol": "¥ (JAPANESE YEN)",
+              "decimalSeparator": ". (Japanese style)",
+              "thousandSeparator": ", (Japanese style)",
+              "currencyFormat": "¥{amount} (Japanese format)",
+              "interestRateLabel": "利率 Interest Rate (JPY)",
+              "transactionFeeLabel": "取引手数料 Transaction Fee (JPY)",
+              "selectedBy": "CURRENCY: JPY selected"
+            },
+            "isPartial": false,
+            "mergeMethod": "augment"
+          },
+          {
+            "json": {
+              "currencySymbol": "£ (BRITISH POUND)",
+              "decimalSeparator": ". (British style)",
+              "thousandSeparator": ", (British style)",
+              "currencyFormat": "£{amount} (British format)",
+              "interestRateLabel": "Interest Rate (GBP)",
+              "transactionFeeLabel": "Transaction Fee (GBP)",
+              "selectedBy": "CURRENCY: GBP selected"
+            },
+            "isPartial": false,
+            "mergeMethod": "augment"
+          },
+          {
+            "json": {
+              "currencySymbol": "$ (DEFAULT USD)",
+              "decimalSeparator": ". (US style)",
+              "thousandSeparator": ", (US style)",
+              "currencyFormat": "${amount} (US format)",
+              "interestRateLabel": "Interest Rate (DEFAULT)",
+              "transactionFeeLabel": "Transaction Fee (DEFAULT)",
+              "selectedBy": "DEFAULT - no conditions"
+            },
+            "isPartial": false,
+            "mergeMethod": "augment"
+          }
+        ]
+      },
+      {
+        "id": "market-specific.regional-features",
+        "type": 0,
+        "decision": 4,
+        "candidates": [
+          {
+            "json": {
+              "marketName": "🇩🇪🇫🇷🇬🇧 WESTERN EUROPE Specific",
+              "availablePaymentMethods": ["💳 credit-card", "🏦 SEPA Western", "💸 bank-transfer Western EU"],
+              "supportedLanguages": ["🇬🇧 en", "🇩🇪 de", "🇫🇷 fr"],
+              "regulatoryCompliance": "📋 Western EU GDPR strict",
+              "marketingBudget": "💰 Western Europe premium",
+              "customerSupportHours": "🕐 Western EU extended",
+              "selectedBy": "MARKET: Western Europe (sub-region)"
+            },
+            "isPartial": false,
+            "mergeMethod": "augment"
+          },
+          {
+            "json": {
+              "marketName": "🇺🇸🇨🇦 NORTH AMERICA Specific",
+              "availablePaymentMethods": ["💳 credit-card", "💳 debit-card", "🏦 ACH North America"],
+              "supportedLanguages": ["🇺🇸 en", "🇪🇸 es"],
+              "regulatoryCompliance": "📋 US/Canada federal",
+              "marketingBudget": "💰 North America focused",
+              "customerSupportHours": "🕐 North America extended",
+              "selectedBy": "MARKET: North America (sub-region)"
+            },
+            "isPartial": false,
+            "mergeMethod": "augment"
+          },
+          {
+            "json": {
+              "marketName": "🇪🇺 EUROPE Regional",
+              "availablePaymentMethods": ["💳 credit-card", "🏦 SEPA", "💸 bank-transfer EU"],
+              "supportedLanguages": ["🇬🇧 en", "🇩🇪 de", "🇫🇷 fr", "🇪🇸 es", "🇮🇹 it"],
+              "regulatoryCompliance": "📋 EU GDPR compliance",
+              "marketingBudget": "💰 European regional",
+              "customerSupportHours": "🕐 EU business hours",
+              "selectedBy": "MARKET: Europe selected"
+            },
+            "isPartial": false,
+            "mergeMethod": "augment"
+          },
+          {
+            "json": {
+              "marketName": "🌏 ASIA Regional",
+              "availablePaymentMethods": ["💳 credit-card", "🏦 bank-transfer Asia", "📱 mobile-payment"],
+              "supportedLanguages": ["🇬🇧 en", "🇨🇳 zh", "🇯🇵 ja", "🇰🇷 ko"],
+              "regulatoryCompliance": "📋 Asia-Pacific standards",
+              "marketingBudget": "💰 Asian regional",
+              "customerSupportHours": "🕐 Asia 24/7",
+              "selectedBy": "MARKET: Asia selected"
+            },
+            "isPartial": false,
+            "mergeMethod": "augment"
+          },
+          {
+            "json": {
+              "marketName": "🌎 AMERICAS Regional",
+              "availablePaymentMethods": ["💳 credit-card", "💳 debit-card", "🏦 ach", "💸 wire-transfer"],
+              "supportedLanguages": ["🇺🇸 en", "🇪🇸 es", "🇫🇷 fr"],
+              "regulatoryCompliance": "📋 NAFTA regional",
+              "marketingBudget": "💰 Americas regional budget",
+              "customerSupportHours": "🕐 Americas business hours",
+              "selectedBy": "MARKET: Americas selected"
+            },
+            "isPartial": false,
+            "mergeMethod": "augment"
+          },
+          {
+            "json": {
+              "marketName": "🌍 GLOBAL (DEFAULT)",
+              "availablePaymentMethods": ["💳 credit-card", "💳 debit-card"],
+              "supportedLanguages": ["🇺🇸 en"],
+              "regulatoryCompliance": "📋 standard global",
+              "marketingBudget": "💰 global budget",
+              "customerSupportHours": "🕐 24/7 global",
+              "selectedBy": "DEFAULT - no market specified"
+            },
+            "isPartial": false,
+            "mergeMethod": "augment"
+          }
+        ]
+      }
+    ]
+  },
+  "exportMetadata": {
+    "exportedAt": "2025-08-03T04:15:19.693Z",
+    "exportedFrom": "ts-res-browser",
+    "type": "ts-res-bundle"
+  }
+}
