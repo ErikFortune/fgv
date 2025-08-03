@@ -18,6 +18,7 @@ func main() {
 		resourceID = flag.String("resource", "", "ID of the resource to resolve")
 		contextStr = flag.String("context", "{}", "JSON context for resource resolution")
 		verbose    = flag.Bool("verbose", false, "Enable verbose output")
+		skipChecksum = flag.Bool("skip-checksum", false, "Skip checksum verification")
 	)
 	flag.Parse()
 
@@ -32,7 +33,10 @@ func main() {
 		fmt.Printf("Loading bundle from: %s\n", *bundleFile)
 	}
 	
-	loadedBundle, err := bundle.LoadFromFile(*bundleFile)
+	opts := bundle.DefaultLoaderOptions()
+	opts.SkipChecksumVerification = *skipChecksum
+	
+	loadedBundle, err := bundle.LoadFromFile(*bundleFile, opts)
 	if err != nil {
 		log.Fatalf("Failed to load bundle: %v", err)
 	}
@@ -81,7 +85,7 @@ func main() {
 				fmt.Printf("  ❌ %s (error: %v)\n", id, err)
 				continue
 			}
-			fmt.Printf("  ✓ %s (type: %s, candidates: %d)\n", id, resource.ResourceType, len(resource.Candidates))
+			fmt.Printf("  ✓ %s (type index: %d, candidates: %d)\n", id, resource.Type, len(resource.Candidates))
 		}
 		return
 	}
@@ -119,8 +123,8 @@ func main() {
 	}
 
 	fmt.Printf("Resource: %s\n", *resourceID)
-	fmt.Printf("  Type: %s\n", resource.ResourceType)
-	fmt.Printf("  Decision: %s\n", resource.Decision)
+	fmt.Printf("  Type Index: %d\n", resource.Type)
+	fmt.Printf("  Decision Index: %d\n", resource.Decision)
 	fmt.Printf("  Candidates: %d\n", len(resource.Candidates))
 	fmt.Println()
 

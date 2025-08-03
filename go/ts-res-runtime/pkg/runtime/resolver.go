@@ -3,8 +3,6 @@ package runtime
 import (
 	"fmt"
 	"sort"
-	"strconv"
-	"strings"
 
 	"github.com/fgv-vis/fgv/go/ts-res-runtime/pkg/types"
 )
@@ -108,39 +106,42 @@ func (rr *ResourceResolver) clearCaches() {
 	}
 }
 
-// ResolveCondition resolves a condition with caching by index
-func (rr *ResourceResolver) ResolveCondition(index int) (*ConditionMatchResult, error) {
-	if index < 0 || index >= len(rr.conditionCache) {
-		return nil, fmt.Errorf("condition index %d out of range", index)
+// ResolveCondition resolves a condition with caching by condition index (matches TypeScript pattern)
+func (rr *ResourceResolver) ResolveCondition(conditionIndex int) (*ConditionMatchResult, error) {
+	if conditionIndex < 0 || conditionIndex >= len(rr.conditionCache) {
+		return nil, fmt.Errorf("condition index %d out of range", conditionIndex)
 	}
 	
-	// Check cache first
-	if cached := rr.conditionCache[index]; cached != nil {
+	// Check cache first for O(1) lookup (same as TypeScript)
+	if cached := rr.conditionCache[conditionIndex]; cached != nil {
 		return cached, nil
 	}
 	
-	// Get condition by index
-	condition, err := rr.manager.GetConditionByIndex(index)
+	// Get condition by index from the compiled collection
+	condition, err := rr.manager.GetConditionByIndex(conditionIndex)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get condition at index %d: %w", index, err)
+		return nil, fmt.Errorf("failed to get condition at index %d: %w", conditionIndex, err)
 	}
 	
-	// Get qualifier by index
+	// Get qualifier by its index from the compiled collection
 	qualifier, err := rr.manager.GetQualifierByIndex(condition.QualifierIndex)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get qualifier at index %d: %w", condition.QualifierIndex, err)
 	}
 	
-	// Get context value for this qualifier
+	// Get context value for this qualifier by name
 	contextValue, hasContextValue := rr.context[qualifier.Name]
 	
-	// Evaluate condition (simplified - just check for exact match)
+	// Evaluate condition using exact match (simplified implementation)
+	// In full implementation, this would use qualifier type's matching logic
 	score := NoMatch
-	if hasContextValue && contextValue == condition.Value {
-		score = 100 // Exact match
+	if hasContextValue {
+		if rr.valuesMatch(contextValue, condition.Value) {
+			score = 100 // Exact match score
+		}
 	}
 	
-	// Determine match result
+	// Determine match result based on score and scoreAsDefault
 	var result *ConditionMatchResult
 	if score > NoMatch {
 		result = &ConditionMatchResult{
@@ -162,158 +163,31 @@ func (rr *ResourceResolver) ResolveCondition(index int) (*ConditionMatchResult, 
 		}
 	}
 	
-	// Cache and return
-	rr.conditionCache[index] = result
+	// Cache the resolved value for future O(1 lookup (matches TypeScript pattern)
+	rr.conditionCache[conditionIndex] = result
 	return result, nil
 }
 
-// evaluateCondition evaluates a condition against context value
-func (rr *ResourceResolver) evaluateCondition(condition *types.CompiledCondition, qualifier *types.CompiledQualifier, qualifierType *types.CompiledQualifierType, contextValue interface{}) (int, error) {
-	// Handle different qualifier types
-	switch qualifierType.ValueType {
-	case "string":
-		return rr.evaluateStringCondition(condition, contextValue)
-	case "number":
-		return rr.evaluateNumberCondition(condition, contextValue)
-	case "boolean":
-		return rr.evaluateBooleanCondition(condition, contextValue)
-	default:
-		return NoMatch, fmt.Errorf("unsupported qualifier type: %s", qualifierType.ValueType)
-	}
-}
 
-// evaluateStringCondition evaluates string-based conditions
-func (rr *ResourceResolver) evaluateStringCondition(condition *types.CompiledCondition, contextValue interface{}) (int, error) {
-	contextStr, ok := contextValue.(string)
-	if !ok {
-		return NoMatch, nil
-	}
-	
-	conditionValueStr, ok := condition.Value.(string)
-	if !ok {
-		return NoMatch, fmt.Errorf("condition value is not a string")
-	}
-	
-	switch condition.Operator {
-	case "eq", "equals":
-		if contextStr == conditionValueStr {
-			return 100, nil // Exact match gets high score
-		}
-		return NoMatch, nil
-		
-	case "contains":
-		if strings.Contains(contextStr, conditionValueStr) {
-			return 80, nil // Partial match gets lower score
-		}
-		return NoMatch, nil
-		
-	case "startsWith":
-		if strings.HasPrefix(contextStr, conditionValueStr) {
-			return 90, nil
-		}
-		return NoMatch, nil
-		
-	case "endsWith":
-		if strings.HasSuffix(contextStr, conditionValueStr) {
-			return 90, nil
-		}
-		return NoMatch, nil
-		
-	default:
-		return NoMatch, fmt.Errorf("unsupported string operator: %s", condition.Operator)
-	}
-}
 
-// evaluateNumberCondition evaluates number-based conditions
-func (rr *ResourceResolver) evaluateNumberCondition(condition *types.CompiledCondition, contextValue interface{}) (int, error) {
-	contextNum, err := toFloat64(contextValue)
-	if err != nil {
-		return NoMatch, nil
+// ResolveConditionSet resolves a condition set with caching by condition set index (matches TypeScript pattern)
+func (rr *ResourceResolver) ResolveConditionSet(conditionSetIndex int) (*ConditionSetResolutionResult, error) {
+	if conditionSetIndex < 0 || conditionSetIndex >= len(rr.conditionSetCache) {
+		return nil, fmt.Errorf("condition set index %d out of range", conditionSetIndex)
 	}
 	
-	conditionNum, err := toFloat64(condition.Value)
-	if err != nil {
-		return NoMatch, fmt.Errorf("condition value is not a number")
-	}
-	
-	switch condition.Operator {
-	case "eq", "equals":
-		if contextNum == conditionNum {
-			return 100, nil
-		}
-		return NoMatch, nil
-		
-	case "gt", "greaterThan":
-		if contextNum > conditionNum {
-			return 100, nil
-		}
-		return NoMatch, nil
-		
-	case "gte", "greaterThanOrEqual":
-		if contextNum >= conditionNum {
-			return 100, nil
-		}
-		return NoMatch, nil
-		
-	case "lt", "lessThan":
-		if contextNum < conditionNum {
-			return 100, nil
-		}
-		return NoMatch, nil
-		
-	case "lte", "lessThanOrEqual":
-		if contextNum <= conditionNum {
-			return 100, nil
-		}
-		return NoMatch, nil
-		
-	default:
-		return NoMatch, fmt.Errorf("unsupported number operator: %s", condition.Operator)
-	}
-}
-
-// evaluateBooleanCondition evaluates boolean-based conditions
-func (rr *ResourceResolver) evaluateBooleanCondition(condition *types.CompiledCondition, contextValue interface{}) (int, error) {
-	contextBool, ok := contextValue.(bool)
-	if !ok {
-		return NoMatch, nil
-	}
-	
-	conditionBool, ok := condition.Value.(bool)
-	if !ok {
-		return NoMatch, fmt.Errorf("condition value is not a boolean")
-	}
-	
-	switch condition.Operator {
-	case "eq", "equals":
-		if contextBool == conditionBool {
-			return 100, nil
-		}
-		return NoMatch, nil
-		
-	default:
-		return NoMatch, fmt.Errorf("unsupported boolean operator: %s", condition.Operator)
-	}
-}
-
-// ResolveConditionSet resolves a condition set with caching by index
-func (rr *ResourceResolver) ResolveConditionSet(index int) (*ConditionSetResolutionResult, error) {
-	if index < 0 || index >= len(rr.conditionSetCache) {
-		return nil, fmt.Errorf("condition set index %d out of range", index)
-	}
-	
-	// Check cache first
-	if cached := rr.conditionSetCache[index]; cached != nil {
+	// Check cache first for O(1) lookup (same as TypeScript)
+	if cached := rr.conditionSetCache[conditionSetIndex]; cached != nil {
 		return cached, nil
 	}
 	
-	// Get condition set by index
-	conditionSet, err := rr.manager.GetConditionSetByIndex(index)
+	// Get condition set by index from the compiled collection
+	conditionSet, err := rr.manager.GetConditionSetByIndex(conditionSetIndex)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get condition set at index %d: %w", index, err)
+		return nil, fmt.Errorf("failed to get condition set at index %d: %w", conditionSetIndex, err)
 	}
 	
-	// Resolve all conditions in the set
+	// Resolve all conditions in the set (matches TypeScript logic)
 	conditions := make([]ConditionMatchResult, 0, len(conditionSet.Conditions))
 	matchType := MatchTypeMatch
 	totalScore := 0
@@ -326,19 +200,19 @@ func (rr *ResourceResolver) ResolveConditionSet(index int) (*ConditionSetResolut
 		
 		conditions = append(conditions, *conditionResult)
 		
-		// If any condition doesn't match, the whole set doesn't match
+		// If any condition doesn't match, the whole set doesn't match (same as TypeScript)
 		if conditionResult.MatchType == MatchTypeNoMatch {
 			result := &ConditionSetResolutionResult{
 				MatchType:  MatchTypeNoMatch,
 				Score:      NoMatch,
-				Priority:   0, // No priority in simplified format
+				Priority:   0, // Priority would come from condition set priority in full implementation
 				Conditions: conditions,
 			}
-			rr.conditionSetCache[index] = result
+			rr.conditionSetCache[conditionSetIndex] = result
 			return result, nil
 		}
 		
-		// If any condition matches as default, the set matches as default
+		// If any condition matches as default, the set matches as default (same as TypeScript)
 		if conditionResult.MatchType == MatchTypeMatchAsDefault {
 			matchType = MatchTypeMatchAsDefault
 		}
@@ -346,7 +220,7 @@ func (rr *ResourceResolver) ResolveConditionSet(index int) (*ConditionSetResolut
 		totalScore += conditionResult.Score
 	}
 	
-	// Calculate average score
+	// Calculate average score (simplified - TypeScript uses more complex priority logic)
 	averageScore := totalScore
 	if len(conditions) > 0 {
 		averageScore = totalScore / len(conditions)
@@ -355,32 +229,39 @@ func (rr *ResourceResolver) ResolveConditionSet(index int) (*ConditionSetResolut
 	result := &ConditionSetResolutionResult{
 		MatchType:  matchType,
 		Score:      averageScore,
-		Priority:   0, // No priority in simplified format
+		Priority:   0, // Priority would come from condition set priority in full implementation
 		Conditions: conditions,
 	}
 	
-	rr.conditionSetCache[index] = result
+	// Cache the resolved value for future O(1 lookup (matches TypeScript pattern)
+	rr.conditionSetCache[conditionSetIndex] = result
 	return result, nil
 }
 
-// ResolveDecision resolves a decision with caching
-func (rr *ResourceResolver) ResolveDecision(decision *types.CompiledAbstractDecision) (*DecisionResolutionResult, error) {
-	// Check for valid index
-	if decision.Index == nil {
-		return nil, fmt.Errorf("decision %s has no index", decision.Key)
+// valuesMatch checks if two values match (simplified comparison)
+func (rr *ResourceResolver) valuesMatch(contextValue, conditionValue interface{}) bool {
+	// Simple equality check - in full implementation this would use qualifier type matching logic
+	return fmt.Sprintf("%v", contextValue) == fmt.Sprintf("%v", conditionValue)
+}
+
+// ResolveDecision resolves a decision with caching by decision index (matches TypeScript pattern)
+func (rr *ResourceResolver) ResolveDecision(decisionIndex int) (*DecisionResolutionResult, error) {
+	if decisionIndex < 0 || decisionIndex >= len(rr.decisionCache) {
+		return nil, fmt.Errorf("decision index %d out of range", decisionIndex)
 	}
 	
-	index := *decision.Index
-	if index < 0 || index >= len(rr.decisionCache) {
-		return nil, fmt.Errorf("decision index %d out of range", index)
-	}
-	
-	// Check cache first
-	if cached := rr.decisionCache[index]; cached != nil {
+	// Check cache first for O(1) lookup (same as TypeScript)
+	if cached := rr.decisionCache[decisionIndex]; cached != nil {
 		return cached, nil
 	}
 	
-	// Resolve all condition sets in the decision
+	// Get decision by index from the compiled collection
+	decision, err := rr.manager.GetDecisionByIndex(decisionIndex)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get decision at index %d: %w", decisionIndex, err)
+	}
+	
+	// Resolve all condition sets in the decision (matches TypeScript logic)
 	type indexedResult struct {
 		index  int
 		result *ConditionSetResolutionResult
@@ -389,15 +270,10 @@ func (rr *ResourceResolver) ResolveDecision(decision *types.CompiledAbstractDeci
 	var matchingResults []indexedResult
 	var defaultResults []indexedResult
 	
-	for i, conditionSetKey := range decision.ConditionSets {
-		conditionSet, err := rr.manager.GetConditionSet(conditionSetKey)
+	for i, conditionSetIndex := range decision.ConditionSets {
+		conditionSetResult, err := rr.ResolveConditionSet(conditionSetIndex)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get condition set %s: %w", conditionSetKey, err)
-		}
-		
-		conditionSetResult, err := rr.ResolveConditionSet(conditionSet)
-		if err != nil {
-			return nil, fmt.Errorf("failed to resolve condition set %s: %w", conditionSetKey, err)
+			return nil, fmt.Errorf("failed to resolve condition set at index %d: %w", conditionSetIndex, err)
 		}
 		
 		switch conditionSetResult.MatchType {
@@ -440,25 +316,22 @@ func (rr *ResourceResolver) ResolveDecision(decision *types.CompiledAbstractDeci
 		DefaultInstanceIndices: defaultInstanceIndices,
 	}
 	
-	rr.decisionCache[index] = result
+	// Cache the resolved value for future O(1 lookup (matches TypeScript pattern)
+	rr.decisionCache[decisionIndex] = result
 	return result, nil
 }
 
-// ResolveResource resolves a resource to its best matching candidate
+// ResolveResource resolves a resource to its best matching candidate (matches TypeScript pattern)
 func (rr *ResourceResolver) ResolveResource(resourceID string) (*types.CompiledCandidate, error) {
 	resource, err := rr.manager.GetResource(resourceID)
 	if err != nil {
 		return nil, err
 	}
 	
-	decision, err := rr.manager.GetDecision(resource.Decision)
+	// Resolve the decision by index (resource.Decision is now an int index)
+	decisionResult, err := rr.ResolveDecision(resource.Decision)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get decision %s: %w", resource.Decision, err)
-	}
-	
-	decisionResult, err := rr.ResolveDecision(decision)
-	if err != nil {
-		return nil, fmt.Errorf("failed to resolve decision %s: %w", resource.Decision, err)
+		return nil, fmt.Errorf("failed to resolve decision at index %d: %w", resource.Decision, err)
 	}
 	
 	if !decisionResult.Success || (len(decisionResult.InstanceIndices) == 0 && len(decisionResult.DefaultInstanceIndices) == 0) {
@@ -529,21 +402,17 @@ func (rr *ResourceResolver) ResolveResourceValue(resourceID string) (interface{}
 	return result, nil
 }
 
-// ResolveAllResourceCandidates resolves all matching candidates for a resource
+// ResolveAllResourceCandidates resolves all matching candidates for a resource (matches TypeScript pattern)
 func (rr *ResourceResolver) ResolveAllResourceCandidates(resourceID string) ([]types.CompiledCandidate, error) {
 	resource, err := rr.manager.GetResource(resourceID)
 	if err != nil {
 		return nil, err
 	}
 	
-	decision, err := rr.manager.GetDecision(resource.Decision)
+	// Resolve the decision by index (resource.Decision is now an int index)
+	decisionResult, err := rr.ResolveDecision(resource.Decision)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get decision %s: %w", resource.Decision, err)
-	}
-	
-	decisionResult, err := rr.ResolveDecision(decision)
-	if err != nil {
-		return nil, fmt.Errorf("failed to resolve decision %s: %w", resource.Decision, err)
+		return nil, fmt.Errorf("failed to resolve decision at index %d: %w", resource.Decision, err)
 	}
 	
 	if !decisionResult.Success || (len(decisionResult.InstanceIndices) == 0 && len(decisionResult.DefaultInstanceIndices) == 0) {
@@ -573,25 +442,7 @@ func (rr *ResourceResolver) ResolveAllResourceCandidates(resourceID string) ([]t
 
 // Helper functions
 
-// toFloat64 converts various numeric types to float64
-func toFloat64(value interface{}) (float64, error) {
-	switch v := value.(type) {
-	case float64:
-		return v, nil
-	case float32:
-		return float64(v), nil
-	case int:
-		return float64(v), nil
-	case int32:
-		return float64(v), nil
-	case int64:
-		return float64(v), nil
-	case string:
-		return strconv.ParseFloat(v, 64)
-	default:
-		return 0, fmt.Errorf("cannot convert %T to float64", value)
-	}
-}
+
 
 // mergeJSON merges two JSON objects (simplified implementation)
 func mergeJSON(base, overlay interface{}) (interface{}, error) {

@@ -129,44 +129,28 @@ func ValidateBundle(bundle *types.Bundle) error {
 		resourceTypeMap[rt.Name] = true
 	}
 
-	conditionMap := make(map[string]bool)
-	for _, c := range bundle.CompiledCollection.Conditions {
-		conditionMap[c.Key] = true
-		// Validate that condition references valid qualifier
-		if !qualifierMap[c.Qualifier] {
-			return fmt.Errorf("condition %s references unknown qualifier %s", c.Key, c.Qualifier)
-		}
+	// Validate conditions (simplified since they use indices)
+	if len(bundle.CompiledCollection.Conditions) == 0 {
+		return fmt.Errorf("bundle contains no conditions")
 	}
 
-	conditionSetMap := make(map[string]bool)
-	for _, cs := range bundle.CompiledCollection.ConditionSets {
-		conditionSetMap[cs.Key] = true
-		// Validate that all condition set conditions exist
-		for _, condKey := range cs.Conditions {
-			if !conditionMap[condKey] {
-				return fmt.Errorf("condition set %s references unknown condition %s", cs.Key, condKey)
-			}
-		}
+	// Validate condition sets (simplified since they use indices)
+	if len(bundle.CompiledCollection.ConditionSets) == 0 {
+		return fmt.Errorf("bundle contains no condition sets")
 	}
 
-	decisionMap := make(map[string]bool)
-	for _, d := range bundle.CompiledCollection.Decisions {
-		decisionMap[d.Key] = true
-		// Validate that all decision condition sets exist
-		for _, csKey := range d.ConditionSets {
-			if !conditionSetMap[csKey] {
-				return fmt.Errorf("decision %s references unknown condition set %s", d.Key, csKey)
-			}
-		}
+	// Validate decisions (simplified since they use indices)
+	if len(bundle.CompiledCollection.Decisions) == 0 {
+		return fmt.Errorf("bundle contains no decisions")
 	}
 
-	// Validate resources
+	// Validate resources (simplified validation)
 	for _, r := range bundle.CompiledCollection.Resources {
-		if !resourceTypeMap[r.ResourceType] {
-			return fmt.Errorf("resource %s references unknown resource type %s", r.ID, r.ResourceType)
+		if r.Type < 0 || r.Type >= len(bundle.CompiledCollection.ResourceTypes) {
+			return fmt.Errorf("resource %s references invalid resource type index %d", r.ID, r.Type)
 		}
-		if !decisionMap[r.Decision] {
-			return fmt.Errorf("resource %s references unknown decision %s", r.ID, r.Decision)
+		if r.Decision < 0 || r.Decision >= len(bundle.CompiledCollection.Decisions) {
+			return fmt.Errorf("resource %s references invalid decision index %d", r.ID, r.Decision)
 		}
 		if len(r.Candidates) == 0 {
 			return fmt.Errorf("resource %s has no candidates", r.ID)

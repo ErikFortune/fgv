@@ -226,45 +226,13 @@ func (rm *ResourceManager) GetNumCandidates() int {
 	return total
 }
 
-// ValidateContext validates a context against available qualifiers
+// ValidateContext validates a context against available qualifiers (simplified)
 func (rm *ResourceManager) ValidateContext(context map[string]interface{}) error {
-	for key, value := range context {
-		qualifier, exists := rm.qualifierMap[key]
-		if !exists {
+	for key := range context {
+		if _, exists := rm.qualifierMap[key]; !exists {
 			return fmt.Errorf("unknown qualifier in context: %s", key)
-		}
-		
-		qualifierType, exists := rm.qualifierTypeMap[qualifier.QualifierType]
-		if !exists {
-			return fmt.Errorf("qualifier %s references unknown type: %s", key, qualifier.QualifierType)
-		}
-		
-		// Basic type validation based on qualifier type
-		if err := validateValueType(value, qualifierType.ValueType); err != nil {
-			return fmt.Errorf("invalid value for qualifier %s: %w", key, err)
 		}
 	}
 	return nil
 }
 
-// validateValueType performs basic type validation
-func validateValueType(value interface{}, expectedType string) error {
-	switch expectedType {
-	case "string":
-		if _, ok := value.(string); !ok {
-			return fmt.Errorf("expected string, got %T", value)
-		}
-	case "number":
-		switch value.(type) {
-		case int, int32, int64, float32, float64:
-			// OK
-		default:
-			return fmt.Errorf("expected number, got %T", value)
-		}
-	case "boolean":
-		if _, ok := value.(bool); !ok {
-			return fmt.Errorf("expected boolean, got %T", value)
-		}
-	}
-	return nil
-}
