@@ -8,11 +8,12 @@ import {
   ChevronDownIcon,
   DocumentArrowDownIcon,
   CodeBracketIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
+  ArchiveBoxIcon
 } from '@heroicons/react/24/outline';
 import { UseResourceManagerReturn } from '../../hooks/useResourceManager';
 import { Message, FilterState } from '../../types/app';
-import { ResourceJson, NoMatch } from '@fgv/ts-res';
+import { ResourceJson, NoMatch, Config, Bundle } from '@fgv/ts-res';
 
 interface CompiledBrowserProps {
   onMessage?: (type: Message['type'], message: string) => void;
@@ -265,7 +266,7 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({
   }, [activeProcessedResources?.compiledCollection, onMessage, isFilteringActive]);
 
   // Export compiled collection to JSON file
-  const handleExportCompiledData = useCallback(() => {
+  const handleExportCompiledData = useCallback(async () => {
     try {
       if (!activeProcessedResources?.compiledCollection) {
         onMessage?.('error', 'No compiled data available to export');
@@ -282,21 +283,57 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({
       };
 
       const compiledJson = JSON.stringify(compiledData, null, 2);
-      const blob = new Blob([compiledJson], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
 
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = isFilteringActive ? 'filtered-compiled-collection.json' : 'compiled-collection.json';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // Try to use File System Access API for modern browsers
+      if ('showSaveFilePicker' in window) {
+        try {
+          const suggestedName = isFilteringActive
+            ? 'filtered-compiled-collection.json'
+            : 'compiled-collection.json';
+          const fileHandle = await window.showSaveFilePicker({
+            suggestedName,
+            types: [
+              {
+                description: 'JSON files',
+                accept: {
+                  'application/json': ['.json']
+                }
+              }
+            ]
+          });
 
-      onMessage?.(
-        'success',
-        `${isFilteringActive ? 'Filtered c' : 'C'}ompiled collection exported successfully`
-      );
+          const writable = await fileHandle.createWritable();
+          await writable.write(compiledJson);
+          await writable.close();
+
+          onMessage?.(
+            'success',
+            `${isFilteringActive ? 'Filtered c' : 'C'}ompiled collection saved successfully`
+          );
+        } catch (saveError) {
+          // User cancelled the dialog or other error
+          if ((saveError as Error).name !== 'AbortError') {
+            throw saveError;
+          }
+        }
+      } else {
+        // Fallback for browsers without File System Access API
+        const blob = new Blob([compiledJson], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = isFilteringActive ? 'filtered-compiled-collection.json' : 'compiled-collection.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        onMessage?.(
+          'success',
+          `${isFilteringActive ? 'Filtered c' : 'C'}ompiled collection downloaded successfully`
+        );
+      }
     } catch (error) {
       onMessage?.(
         'error',
@@ -304,6 +341,121 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({
       );
     }
   }, [activeProcessedResources?.compiledCollection, onMessage, isFilteringActive, filterState.appliedValues]);
+
+  // Export bundle with metadata, config, and compiled collection
+  const handleExportBundle = useCallback(async () => {
+    try {
+      if (!activeProcessedResources?.system?.resourceManager || !resourceState.activeConfiguration) {
+        onMessage?.('error', 'No resource manager or configuration available to create bundle');
+        return;
+      }
+
+      // Create SystemConfiguration from the active configuration
+      const systemConfigResult = Config.SystemConfiguration.create(resourceState.activeConfiguration);
+      if (systemConfigResult.isFailure()) {
+        onMessage?.('error', `Failed to create system configuration: ${systemConfigResult.message}`);
+        return;
+      }
+
+      const systemConfig = systemConfigResult.value;
+
+      // Create bundle parameters
+      const bundleParams: Bundle.IBundleCreateParams = {
+        version: '1.0.0',
+        description: isFilteringActive
+          ? 'Bundle exported from ts-res-browser (filtered)'
+          : 'Bundle exported from ts-res-browser',
+        normalize: true // Use order-resilient normalization for consistent output
+      };
+
+      // Create the bundle
+      const bundleResult = Bundle.BundleBuilder.create(
+        activeProcessedResources.system.resourceManager,
+        systemConfig,
+        bundleParams
+      );
+
+      if (bundleResult.isFailure()) {
+        onMessage?.('error', `Failed to create bundle: ${bundleResult.message}`);
+        return;
+      }
+
+      const bundle = bundleResult.value;
+
+      // Add export metadata
+      const exportBundle = {
+        ...bundle,
+        exportMetadata: {
+          exportedAt: new Date().toISOString(),
+          exportedFrom: 'ts-res-browser',
+          type: isFilteringActive ? 'ts-res-bundle-filtered' : 'ts-res-bundle',
+          ...(isFilteringActive && { filterContext: filterState.appliedValues })
+        }
+      };
+
+      const bundleJson = JSON.stringify(exportBundle, null, 2);
+
+      // Try to use File System Access API for modern browsers
+      if ('showSaveFilePicker' in window) {
+        try {
+          const suggestedName = isFilteringActive ? 'filtered-resource-bundle.json' : 'resource-bundle.json';
+          const fileHandle = await window.showSaveFilePicker({
+            suggestedName,
+            types: [
+              {
+                description: 'JSON files',
+                accept: {
+                  'application/json': ['.json']
+                }
+              }
+            ]
+          });
+
+          const writable = await fileHandle.createWritable();
+          await writable.write(bundleJson);
+          await writable.close();
+
+          onMessage?.(
+            'success',
+            `${isFilteringActive ? 'Filtered r' : 'R'}esource bundle saved successfully`
+          );
+        } catch (saveError) {
+          // User cancelled the dialog or other error
+          if ((saveError as Error).name !== 'AbortError') {
+            throw saveError;
+          }
+        }
+      } else {
+        // Fallback for browsers without File System Access API
+        const blob = new Blob([bundleJson], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = isFilteringActive ? 'filtered-resource-bundle.json' : 'resource-bundle.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        onMessage?.(
+          'success',
+          `${isFilteringActive ? 'Filtered r' : 'R'}esource bundle downloaded successfully`
+        );
+      }
+    } catch (error) {
+      onMessage?.(
+        'error',
+        `Failed to export bundle: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }, [
+    activeProcessedResources?.system?.resourceManager,
+    resourceState.activeConfiguration,
+    onMessage,
+    isFilteringActive,
+    filterState.appliedValues
+  ]);
 
   const handleNodeClick = (node: TreeNode) => {
     setSelectedNodeId(node.id);
@@ -441,6 +593,13 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({
               <DocumentArrowDownIcon className="h-4 w-4 mr-1" />
               Export JSON
             </button>
+            <button
+              onClick={handleExportBundle}
+              className="inline-flex items-center px-3 py-1.5 border border-blue-300 text-xs font-medium rounded text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <ArchiveBoxIcon className="h-4 w-4 mr-1" />
+              Export Bundle
+            </button>
           </div>
         )}
       </div>
@@ -467,13 +626,22 @@ const CompiledBrowser: React.FC<CompiledBrowserProps> = ({
               <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-medium text-gray-900">Compiled Collection (JSON)</h3>
-                  <button
-                    onClick={handleExportCompiledData}
-                    className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    <DocumentArrowDownIcon className="h-3 w-3 mr-1" />
-                    Export
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={handleExportCompiledData}
+                      className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      <DocumentArrowDownIcon className="h-3 w-3 mr-1" />
+                      Export JSON
+                    </button>
+                    <button
+                      onClick={handleExportBundle}
+                      className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      <ArchiveBoxIcon className="h-3 w-3 mr-1" />
+                      Export Bundle
+                    </button>
+                  </div>
                 </div>
                 <pre className="text-xs text-gray-800 bg-white p-3 rounded border overflow-x-auto max-h-64 overflow-y-auto">
                   {JSON.stringify(
