@@ -168,7 +168,7 @@ export class BundleLoader {
 // @public
 const bundleMetadata: Converter<IBundleMetadata>;
 
-// @internal
+// @public
 class BundleNormalizer {
     static normalize(originalBuilder: ResourceManagerBuilder, systemConfig: SystemConfiguration): Result<ResourceManagerBuilder>;
     static normalizeFromPredefined(originalBuilder: ResourceManagerBuilder, configName: PredefinedSystemConfiguration): Result<ResourceManagerBuilder>;

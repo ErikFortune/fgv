@@ -23,11 +23,7 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
 import { ResourceManagerBuilder } from '../resources';
 import { ResourceCandidate } from '../resources';
-import {
-  SystemConfiguration,
-  PredefinedSystemConfiguration,
-  getPredefinedSystemConfiguration
-} from '../config';
+import { SystemConfiguration, PredefinedSystemConfiguration } from '../config';
 
 /**
  * Normalizes ResourceManagerBuilder instances to ensure consistent ordering
@@ -36,7 +32,7 @@ import {
  * The normalization process rebuilds the ResourceManagerBuilder from the ground up
  * in a canonical order to ensure identical index assignments regardless of
  * original construction order.
- * @internal
+ * @public
  */
 export class BundleNormalizer {
   /**

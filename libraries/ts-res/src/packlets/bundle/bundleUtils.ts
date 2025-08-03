@@ -23,7 +23,7 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
 import { SystemConfiguration } from '../config';
 import { Compiled as ResourceJsonCompiled } from '../resource-json';
-import { IBundle, IBundleMetadata } from './model';
+import { IBundleMetadata } from './model';
 import { bundle as bundleConverter } from './convert';
 
 /**

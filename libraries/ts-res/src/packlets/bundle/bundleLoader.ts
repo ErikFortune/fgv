@@ -93,9 +93,9 @@ export class BundleLoader {
     bundle: IBundle,
     skipVerification: boolean,
     hashNormalizer: Hash.HashingNormalizer
-  ): Result<void> {
+  ): Result<boolean> {
     if (skipVerification) {
-      return succeed(undefined);
+      return succeed(true);
     }
 
     return BundleLoader._generateChecksum(bundle.compiledCollection, hashNormalizer).onSuccess(
@@ -105,7 +105,7 @@ export class BundleLoader {
             `Bundle integrity verification failed: expected checksum ${bundle.metadata.checksum}, got ${calculatedChecksum}`
           );
         }
-        return succeed(undefined);
+        return succeed(true);
       }
     );
   }

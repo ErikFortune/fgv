@@ -50,10 +50,12 @@ export class BundleBuilder {
     systemConfig: SystemConfiguration,
     params?: IBundleCreateParams
   ): Result<IBundle> {
-    const hashNormalizer = params?.hashNormalizer ?? new Hash.Crc32Normalizer();
+    /* c8 ignore next 1 */
+    params = params ?? {};
+    const hashNormalizer = params.hashNormalizer ?? new Hash.Crc32Normalizer();
 
     // Determine which builder to use based on normalization setting
-    const builderToUse = params?.normalize
+    const builderToUse = params.normalize
       ? BundleNormalizer.normalize(builder, systemConfig)
       : succeed(builder);
 
@@ -61,13 +63,13 @@ export class BundleBuilder {
       return systemConfig.getConfig().onSuccess((config) => {
         return targetBuilder.getCompiledResourceCollection().onSuccess((compiledCollection) => {
           return BundleBuilder._generateChecksum(compiledCollection, hashNormalizer).onSuccess((checksum) => {
-            const dateBuilt = params?.dateBuilt ?? new Date().toISOString();
+            const dateBuilt = params.dateBuilt ?? new Date().toISOString();
 
             const metadata: IBundleMetadata = {
               dateBuilt,
               checksum,
-              version: params?.version,
-              description: params?.description
+              version: params.version,
+              description: params.description
             };
 
             const bundle: IBundle = {
@@ -97,10 +99,12 @@ export class BundleBuilder {
     configName: PredefinedSystemConfiguration,
     params?: IBundleCreateParams
   ): Result<IBundle> {
-    const hashNormalizer = params?.hashNormalizer ?? new Hash.Crc32Normalizer();
+    /* c8 ignore next 1 */
+    params = params ?? {};
+    const hashNormalizer = params.hashNormalizer ?? new Hash.Crc32Normalizer();
 
     // Determine which builder to use based on normalization setting
-    const builderToUse = params?.normalize
+    const builderToUse = params.normalize
       ? BundleNormalizer.normalizeFromPredefined(builder, configName)
       : succeed(builder);
 
@@ -110,12 +114,12 @@ export class BundleBuilder {
           return targetBuilder.getCompiledResourceCollection().onSuccess((compiledCollection) => {
             return BundleBuilder._generateChecksum(compiledCollection, hashNormalizer).onSuccess(
               (checksum) => {
-                const dateBuilt = params?.dateBuilt ?? new Date().toISOString();
+                const dateBuilt = params.dateBuilt ?? new Date().toISOString();
 
                 const metadata: IBundleMetadata = {
                   dateBuilt,
                   checksum,
-                  version: params?.version,
+                  version: params.version,
                   description: params?.description
                 };
 

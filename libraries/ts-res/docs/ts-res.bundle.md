@@ -41,6 +41,19 @@ Loader for creating an IResourceManager from a resource bundle. Handles integrit
 </td></tr>
 <tr><td>
 
+[BundleNormalizer](./ts-res.bundle.bundlenormalizer.md)
+
+
+</td><td>
+
+Normalizes ResourceManagerBuilder instances to ensure consistent ordering of internal entities, enabling order-independent bundle checksums.
+
+The normalization process rebuilds the ResourceManagerBuilder from the ground up in a canonical order to ensure identical index assignments regardless of original construction order.
+
+
+</td></tr>
+<tr><td>
+
 [BundleUtils](./ts-res.bundle.bundleutils.md)
 
 
