@@ -319,6 +319,7 @@ const (
 	ErrorTypeInvalidStructure
 	
 	// Validation errors
+	ErrorTypeInvalidSubtag
 	ErrorTypeUnknownLanguage
 	ErrorTypeUnknownScript
 	ErrorTypeUnknownRegion

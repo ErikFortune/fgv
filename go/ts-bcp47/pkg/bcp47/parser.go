@@ -1,6 +1,7 @@
 package bcp47
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -240,11 +241,29 @@ func (p *Parser) parseLanguage(part string) error {
 
 // parseExtLang parses extended language subtags  
 func (p *Parser) parseExtLang(part string) error {
-	// For now, skip ExtLang parsing for well-formed tags since we don't have IANA registry
-	// In the future, we should check against IANA ExtLang registry here
-	// This ensures "en-USA" parses USA as region, not extlang
+	lowerPart := strings.ToLower(part)
 	
-	// Move directly to script parsing
+	// For well-formed parsing, be more selective about ExtLangs
+	// Only accept ExtLangs when they're likely to be legitimate
+	if extlangPattern.MatchString(lowerPart) && len(p.subtags.ExtLangs) < MaxExtLangs {
+		// Try to load registry for smarter decisions
+		if registry, err := GetRegistry(); err == nil {
+			// If it's a known ExtLang, accept it
+			if registry.IsValidExtLang(lowerPart) {
+				p.subtags.ExtLangs = append(p.subtags.ExtLangs, lowerPart)
+				return nil
+			}
+		} else {
+			// If we can't load registry, be conservative and accept 3-letter patterns
+			// but only for languages that commonly have ExtLangs (like 'zh')
+			if p.subtags.PrimaryLanguage == "zh" || p.subtags.PrimaryLanguage == "sgn" {
+				p.subtags.ExtLangs = append(p.subtags.ExtLangs, lowerPart)
+				return nil
+			}
+		}
+	}
+	
+	// Not an extlang, try script
 	p.state = StateScript
 	return p.parseScript(part)
 }
@@ -396,6 +415,92 @@ func (p *Parser) parsePrivateUse(part string) error {
 	return nil
 }
 
+// validate performs IANA registry validation on the parsed tag
+func (p *Parser) validate(tag *LanguageTag, level TagValidity) error {
+	if level == WellFormed {
+		return nil // Already well-formed if we got here
+	}
+	
+	// Load IANA registry
+	registry, err := GetRegistry()
+	if err != nil {
+		return fmt.Errorf("failed to load IANA registry for validation: %w", err)
+	}
+	
+	// Check grandfathered tags first
+	if tag.IsGrandfathered {
+		if registry.IsValidGrandfathered(tag.Subtags.Grandfathered) {
+			tag.validity = Valid
+			if level >= StrictlyValid {
+				tag.validity = StrictlyValid // Grandfathered tags are considered strictly valid
+			}
+			return nil
+		}
+		return NewError(ErrorTypeInvalidSubtag, "invalid grandfathered tag", tag.Tag, tag.Subtags.Grandfathered)
+	}
+	
+	// Validate primary language
+	if tag.Subtags.PrimaryLanguage != "" {
+		if !registry.IsValidLanguage(tag.Subtags.PrimaryLanguage) {
+			return NewError(ErrorTypeInvalidSubtag, "invalid language subtag", tag.Tag, tag.Subtags.PrimaryLanguage)
+		}
+	}
+	
+	// Validate ExtLangs
+	for _, extlang := range tag.Subtags.ExtLangs {
+		if !registry.IsValidExtLang(extlang) {
+			return NewError(ErrorTypeInvalidSubtag, "invalid extlang subtag", tag.Tag, extlang)
+		}
+	}
+	
+	// Validate script
+	if tag.Subtags.Script != "" {
+		if !registry.IsValidScript(tag.Subtags.Script) {
+			return NewError(ErrorTypeInvalidSubtag, "invalid script subtag", tag.Tag, tag.Subtags.Script)
+		}
+	}
+	
+	// Validate region
+	if tag.Subtags.Region != "" {
+		if !registry.IsValidRegion(tag.Subtags.Region) {
+			return NewError(ErrorTypeInvalidSubtag, "invalid region subtag", tag.Tag, tag.Subtags.Region)
+		}
+	}
+	
+	// Validate variants
+	for _, variant := range tag.Subtags.Variants {
+		if !registry.IsValidVariant(variant) {
+			return NewError(ErrorTypeInvalidSubtag, "invalid variant subtag", tag.Tag, variant)
+		}
+	}
+	
+	// If we got here, the tag is valid
+	tag.validity = Valid
+	
+	// For strictly valid, check prefix requirements
+	if level >= StrictlyValid {
+		// Check ExtLang prefixes
+		if len(tag.Subtags.ExtLangs) > 0 {
+			err := registry.ValidateExtLangPrefixes(tag.Subtags.PrimaryLanguage, tag.Subtags.ExtLangs)
+			if err != nil {
+				return NewError(ErrorTypeInvalidPrefix, err.Error(), tag.Tag, "")
+			}
+		}
+		
+		// Check variant prefixes
+		if len(tag.Subtags.Variants) > 0 {
+			err := registry.ValidateVariantPrefixes(tag.Subtags.PrimaryLanguage, tag.Subtags.Script, tag.Subtags.Region, tag.Subtags.Variants)
+			if err != nil {
+				return NewError(ErrorTypeInvalidPrefix, err.Error(), tag.Tag, "")
+			}
+		}
+		
+		tag.validity = StrictlyValid
+	}
+	
+	return nil
+}
+
 // normalize applies normalization to the language tag
 func (p *Parser) normalize(tag *LanguageTag, level TagNormalization) error {
 	// TODO: Implement normalization using IANA registry data
@@ -440,24 +545,3 @@ func (p *Parser) normalize(tag *LanguageTag, level TagNormalization) error {
 	return nil
 }
 
-// validate applies validation to the language tag
-func (p *Parser) validate(tag *LanguageTag, level TagValidity) error {
-	// TODO: Implement validation using IANA registry data
-	// For now, just validate basic structure
-	
-	if level >= Valid {
-		// Check that we have a primary language (unless grandfathered)
-		if !tag.IsGrandfathered && tag.Subtags.PrimaryLanguage == "" {
-			return NewError(ErrorTypeUnknownLanguage, "missing primary language", tag.Tag, "")
-		}
-		
-		// TODO: Validate against IANA registry
-	}
-	
-	if level >= StrictlyValid {
-		// TODO: Validate prefix requirements
-	}
-	
-	tag.validity = level
-	return nil
-}
