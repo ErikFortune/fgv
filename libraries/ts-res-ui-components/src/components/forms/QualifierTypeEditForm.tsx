@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { XMarkIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { QualifierTypes } from '@fgv/ts-res';
+import { HierarchyEditor } from './HierarchyEditor';
 
 export interface QualifierTypeEditFormProps {
   qualifierType?: QualifierTypes.Config.ISystemQualifierTypeConfig;
@@ -19,6 +20,8 @@ interface FormData {
   // Territory type specific
   acceptLowercase: boolean;
   allowedTerritories: string[];
+  // Hierarchy support (for literal and territory types)
+  hierarchy: Record<string, string>;
 }
 
 export const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({
@@ -37,7 +40,8 @@ export const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({
         caseSensitive: (config as any)?.caseSensitive ?? true,
         enumeratedValues: (config as any)?.enumeratedValues || [],
         acceptLowercase: (config as any)?.acceptLowercase ?? false,
-        allowedTerritories: (config as any)?.allowedTerritories || []
+        allowedTerritories: (config as any)?.allowedTerritories || [],
+        hierarchy: (config as any)?.hierarchy || {}
       };
     }
     return {
@@ -47,7 +51,8 @@ export const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({
       caseSensitive: true,
       enumeratedValues: [],
       acceptLowercase: false,
-      allowedTerritories: []
+      allowedTerritories: [],
+      hierarchy: {}
     };
   });
 
@@ -107,6 +112,10 @@ export const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({
           caseSensitive: formData.caseSensitive,
           enumeratedValues: formData.enumeratedValues.length > 0 ? formData.enumeratedValues : undefined
         };
+        // Add hierarchy if it has entries
+        if (Object.keys(formData.hierarchy).length > 0) {
+          configuration.hierarchy = formData.hierarchy;
+        }
         break;
       case 'territory':
         configuration = {
@@ -114,6 +123,10 @@ export const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({
           acceptLowercase: formData.acceptLowercase,
           allowedTerritories: formData.allowedTerritories.length > 0 ? formData.allowedTerritories : undefined
         };
+        // Add hierarchy if it has entries
+        if (Object.keys(formData.hierarchy).length > 0) {
+          configuration.hierarchy = formData.hierarchy;
+        }
         break;
       case 'language':
         // Language types only have allowContextList
@@ -272,6 +285,19 @@ export const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({
                   Separate multiple territory codes with commas. Will be automatically converted to uppercase.
                 </p>
               </div>
+            </div>
+          )}
+
+          {/* Hierarchy Editor for Literal and Territory Types */}
+          {(formData.systemType === 'literal' || formData.systemType === 'territory') && (
+            <div className="space-y-4">
+              <HierarchyEditor
+                hierarchy={formData.hierarchy}
+                onChange={(hierarchy) => updateField('hierarchy', hierarchy)}
+                availableValues={
+                  formData.systemType === 'literal' ? formData.enumeratedValues : formData.allowedTerritories
+                }
+              />
             </div>
           )}
 
