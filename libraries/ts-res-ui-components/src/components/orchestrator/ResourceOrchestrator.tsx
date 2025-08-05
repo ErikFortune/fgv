@@ -1,0 +1,286 @@
+import React, { ReactNode, useCallback, useMemo, useState } from 'react';
+import { Result } from '@fgv/ts-utils';
+import { Config, Bundle } from '@fgv/ts-res';
+import {
+  OrchestratorState,
+  OrchestratorActions,
+  ImportedDirectory,
+  ImportedFile,
+  ProcessedResources,
+  FilterState,
+  FilterResult,
+  Message
+} from '../../types';
+import { useResourceData } from '../../hooks/useResourceData';
+import { useFilterState } from '../../hooks/useFilterState';
+import { useViewState } from '../../hooks/useViewState';
+import { useResolutionState } from '../../hooks/useResolutionState';
+import { createSimpleContext } from '../../utils/tsResIntegration';
+import {
+  createFilteredResourceManagerSimple,
+  analyzeFilteredResources,
+  hasFilterValues,
+  FilterResult as FilterUtilResult
+} from '../../utils/filterResources';
+import { Runtime } from '@fgv/ts-res';
+
+export interface ResourceOrchestratorProps {
+  children: (orchestrator: { state: OrchestratorState; actions: OrchestratorActions }) => ReactNode;
+  initialConfiguration?: Config.Model.ISystemConfiguration;
+  onStateChange?: (state: Partial<OrchestratorState>) => void;
+}
+
+export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
+  children,
+  initialConfiguration,
+  onStateChange
+}) => {
+  // Core hooks
+  const resourceData = useResourceData();
+  const filterState = useFilterState();
+  const viewState = useViewState();
+  const resolutionData = useResolutionState(resourceData.state.processedResources, viewState.addMessage);
+
+  // Local state for filter results
+  const [filterResult, setFilterResult] = useState<FilterResult | null>(null);
+
+  // Initialize with configuration if provided
+  React.useEffect(() => {
+    if (initialConfiguration && !resourceData.state.activeConfiguration) {
+      resourceData.actions.applyConfiguration(initialConfiguration);
+    }
+  }, [initialConfiguration, resourceData.state.activeConfiguration, resourceData.actions]);
+
+  // Notify parent of state changes
+  React.useEffect(() => {
+    if (onStateChange) {
+      onStateChange({
+        resources: resourceData.state.processedResources,
+        configuration: resourceData.state.activeConfiguration,
+        filterState: filterState.state,
+        filterResult,
+        selectedResourceId: viewState.selectedResourceId,
+        isProcessing: resourceData.state.isProcessing,
+        error: resourceData.state.error,
+        messages: viewState.messages
+      });
+    }
+  }, [
+    resourceData.state,
+    filterState.state,
+    filterResult,
+    viewState.selectedResourceId,
+    viewState.messages,
+    onStateChange
+  ]);
+
+  // Apply filter action with comprehensive filtering logic
+  const applyFilter = useCallback(async (): Promise<FilterResult | null> => {
+    if (!resourceData.state.processedResources || !filterState.state.enabled) {
+      setFilterResult(null);
+      return null;
+    }
+
+    // Check if we have any applied filter values set
+    const hasAppliedFilterValues = hasFilterValues(filterState.state.appliedValues);
+    if (!hasAppliedFilterValues) {
+      setFilterResult(null);
+      return null;
+    }
+
+    try {
+      const { system } = resourceData.state.processedResources;
+
+      viewState.addMessage('info', 'Starting filtering process...');
+
+      // Try the simplified filtering approach
+      let filteredResult = await createFilteredResourceManagerSimple(
+        system,
+        filterState.state.appliedValues,
+        {
+          partialContextMatch: true,
+          enableDebugLogging: false,
+          reduceQualifiers: filterState.state.reduceQualifiers
+        }
+      );
+
+      if (filteredResult.isFailure()) {
+        const result: FilterResult = {
+          success: false,
+          error: `Filtering failed: ${filteredResult.message}`
+        };
+        setFilterResult(result);
+        viewState.addMessage('error', `Filtering failed: ${filteredResult.message}`);
+        return result;
+      }
+
+      // Analyze filtered resources compared to original
+      const originalResources = resourceData.state.processedResources.summary.resourceIds || [];
+      const analysis = analyzeFilteredResources(
+        originalResources,
+        filteredResult.value,
+        resourceData.state.processedResources
+      );
+
+      const result: FilterResult = {
+        success: true,
+        processedResources: analysis.processedResources,
+        filteredResources: analysis.filteredResources,
+        warnings: analysis.warnings
+      };
+
+      setFilterResult(result);
+      filterState.actions.applyFilterValues();
+
+      if (analysis.warnings.length > 0) {
+        viewState.addMessage('warning', `Filtering completed with ${analysis.warnings.length} warning(s)`);
+      } else {
+        viewState.addMessage(
+          'success',
+          `Filtering completed: ${analysis.filteredResources.length} resources`
+        );
+      }
+
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const result: FilterResult = {
+        success: false,
+        error: errorMessage
+      };
+      setFilterResult(result);
+      viewState.addMessage('error', `Filtering error: ${errorMessage}`);
+      return result;
+    }
+  }, [resourceData.state.processedResources, filterState.state, filterState.actions, viewState]);
+
+  // Reset filter action
+  const resetFilter = useCallback(() => {
+    setFilterResult(null);
+    filterState.actions.resetFilterValues();
+    viewState.addMessage('info', 'Filter reset');
+  }, [filterState.actions, viewState]);
+
+  // Automatically apply filter when applied filter values change
+  React.useEffect(() => {
+    if (!resourceData.state.processedResources || !filterState.state.enabled) {
+      setFilterResult(null);
+      return;
+    }
+
+    const hasAppliedFilterValues = hasFilterValues(filterState.state.appliedValues);
+    if (!hasAppliedFilterValues) {
+      setFilterResult(null);
+      return;
+    }
+
+    // Apply filter automatically when appliedValues change
+    applyFilter();
+  }, [
+    filterState.state.appliedValues,
+    filterState.state.enabled,
+    resourceData.state.processedResources,
+    applyFilter
+  ]);
+
+  // Combined state
+  const state: OrchestratorState = useMemo(
+    () => ({
+      resources: resourceData.state.processedResources,
+      configuration: resourceData.state.activeConfiguration,
+      filterState: filterState.state,
+      filterResult,
+      resolutionState: resolutionData.state,
+      selectedResourceId: viewState.selectedResourceId,
+      isProcessing: resourceData.state.isProcessing,
+      error: resourceData.state.error,
+      messages: viewState.messages
+    }),
+    [
+      resourceData.state,
+      filterState.state,
+      filterResult,
+      resolutionData.state,
+      viewState.selectedResourceId,
+      viewState.messages
+    ]
+  );
+
+  // Combined actions
+  const actions: OrchestratorActions = useMemo(
+    () => ({
+      // Resource management
+      importDirectory: async (directory: ImportedDirectory) => {
+        viewState.addMessage('info', 'Importing directory...');
+        await resourceData.actions.processDirectory(directory);
+        if (!resourceData.state.error) {
+          viewState.addMessage('success', 'Directory imported successfully');
+        }
+      },
+      importFiles: async (files: ImportedFile[]) => {
+        viewState.addMessage('info', 'Importing files...');
+        await resourceData.actions.processFiles(files);
+        if (!resourceData.state.error) {
+          viewState.addMessage('success', 'Files imported successfully');
+        }
+      },
+      importBundle: async (bundle: Bundle.IBundle) => {
+        viewState.addMessage('info', 'Importing bundle...');
+        await resourceData.actions.processBundleFile(bundle);
+        if (!resourceData.state.error) {
+          viewState.addMessage('success', 'Bundle imported successfully');
+        }
+      },
+      clearResources: () => {
+        resourceData.actions.reset();
+        setFilterResult(null);
+        viewState.addMessage('info', 'Resources cleared');
+      },
+
+      // Configuration management
+      updateConfiguration: (config: Config.Model.ISystemConfiguration) => {
+        resourceData.actions.applyConfiguration(config);
+        viewState.addMessage('info', 'Configuration updated');
+      },
+      applyConfiguration: (config: Config.Model.ISystemConfiguration) => {
+        resourceData.actions.applyConfiguration(config);
+        viewState.addMessage('success', 'Configuration applied');
+      },
+
+      // Filter management
+      updateFilterState: (updates: Partial<FilterState>) => {
+        if (updates.enabled !== undefined) {
+          filterState.actions.updateFilterEnabled(updates.enabled);
+        }
+        if (updates.values !== undefined) {
+          filterState.actions.updateFilterValues(updates.values);
+        }
+        if (updates.reduceQualifiers !== undefined) {
+          filterState.actions.updateReduceQualifiers(updates.reduceQualifiers);
+        }
+      },
+      applyFilter,
+      resetFilter,
+
+      // Resolution management
+      updateResolutionContext: resolutionData.actions.updateContextValue,
+      applyResolutionContext: resolutionData.actions.applyContext,
+      selectResourceForResolution: resolutionData.actions.selectResource,
+      setResolutionViewMode: resolutionData.actions.setViewMode,
+      resetResolutionCache: resolutionData.actions.resetCache,
+
+      // UI state management
+      selectResource: viewState.selectResource,
+      addMessage: viewState.addMessage,
+      clearMessages: viewState.clearMessages,
+
+      // Resource resolution
+      resolveResource: resourceData.actions.resolveResource
+    }),
+    [resourceData.actions, filterState.actions, resolutionData.actions, viewState, applyFilter, resetFilter]
+  );
+
+  return <>{children({ state, actions })}</>;
+};
+
+export default ResourceOrchestrator;
