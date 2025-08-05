@@ -6,8 +6,10 @@
     "rootDir": "src",
     "jsx": "react",
     "esModuleInterop": true,
-    "types": ["node", "jest"]
+    "types": ["node", "jest"],
+    "module": "ES2020",
+    "target": "ES2020"
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["node_modules", "lib"]
+  "exclude": ["node_modules", "lib", "lib-commonjs"]
 }
