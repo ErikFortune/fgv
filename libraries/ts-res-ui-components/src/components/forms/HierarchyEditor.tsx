@@ -16,9 +16,24 @@ export const HierarchyEditor: React.FC<HierarchyEditorProps> = ({
   const [newChild, setNewChild] = useState('');
   const [newParent, setNewParent] = useState('');
 
+  // Ensure hierarchy is a valid object with string values
+  const safeHierarchy = React.useMemo(() => {
+    if (!hierarchy || typeof hierarchy !== 'object') {
+      return {};
+    }
+    // Filter out any non-string values
+    const safe: Record<string, string> = {};
+    for (const [key, value] of Object.entries(hierarchy)) {
+      if (typeof value === 'string') {
+        safe[key] = value;
+      }
+    }
+    return safe;
+  }, [hierarchy]);
+
   const handleAddRelationship = () => {
     if (newChild && newParent && newChild !== newParent) {
-      const updatedHierarchy = { ...hierarchy, [newChild]: newParent };
+      const updatedHierarchy = { ...safeHierarchy, [newChild]: newParent };
       onChange(updatedHierarchy);
       setNewChild('');
       setNewParent('');
@@ -26,15 +41,15 @@ export const HierarchyEditor: React.FC<HierarchyEditorProps> = ({
   };
 
   const handleRemoveRelationship = (child: string) => {
-    const updatedHierarchy = { ...hierarchy };
+    const updatedHierarchy = { ...safeHierarchy };
     delete updatedHierarchy[child];
     onChange(updatedHierarchy);
   };
 
   const getHierarchyTree = () => {
     const roots = new Set(availableValues);
-    const children = new Set(Object.keys(hierarchy));
-    const parents = new Set(Object.values(hierarchy));
+    const children = new Set(Object.keys(safeHierarchy));
+    const parents = new Set(Object.values(safeHierarchy));
 
     // Remove children from roots (they have parents)
     children.forEach((child) => roots.delete(child));
@@ -47,7 +62,7 @@ export const HierarchyEditor: React.FC<HierarchyEditorProps> = ({
     });
 
     const buildTree = (value: string, level = 0): any => {
-      const childrenOfValue = Object.entries(hierarchy).filter(([, parent]) => parent === value);
+      const childrenOfValue = Object.entries(safeHierarchy).filter(([, parent]) => parent === value);
       return {
         value,
         level,
@@ -59,18 +74,22 @@ export const HierarchyEditor: React.FC<HierarchyEditorProps> = ({
   };
 
   const renderTree = (nodes: any[]): React.ReactNode => {
-    return nodes.map((node) => (
-      <div key={node.value} className="ml-4">
-        <div className="flex items-center space-x-2 py-1">
-          <span className="text-sm text-gray-700" style={{ marginLeft: `${node.level * 20}px` }}>
-            {node.level > 0 && '└─ '}
-            {node.value}
-          </span>
-          {hierarchy[node.value] && <span className="text-xs text-gray-500">→ {hierarchy[node.value]}</span>}
+    return nodes.map((node) => {
+      const parentValue = safeHierarchy[node.value];
+
+      return (
+        <div key={node.value} className="ml-4">
+          <div className="flex items-center space-x-2 py-1">
+            <span className="text-sm text-gray-700" style={{ marginLeft: `${node.level * 20}px` }}>
+              {node.level > 0 && '└─ '}
+              {node.value}
+            </span>
+            {parentValue && <span className="text-xs text-gray-500">→ {parentValue}</span>}
+          </div>
+          {node.children.length > 0 && renderTree(node.children)}
         </div>
-        {node.children.length > 0 && renderTree(node.children)}
-      </div>
-    ));
+      );
+    });
   };
 
   return (
@@ -134,40 +153,46 @@ export const HierarchyEditor: React.FC<HierarchyEditorProps> = ({
         </div>
 
         {/* Current relationships */}
-        {Object.keys(hierarchy).length > 0 && (
+        {Object.keys(safeHierarchy).length > 0 && (
           <div className="mb-4">
-            <div className="text-sm font-medium text-gray-700 mb-2">Current Relationships</div>
-            <div className="space-y-1">
-              {Object.entries(hierarchy).map(([child, parent]) => (
-                <div key={child} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded">
-                  <span className="text-sm">
-                    <span className="font-medium">{child}</span> →{' '}
-                    <span className="text-gray-600">{parent}</span>
-                  </span>
-                  <button
-                    onClick={() => handleRemoveRelationship(child)}
-                    className="text-red-600 hover:text-red-800 text-xs"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
+            <div className="text-sm font-medium text-gray-700 mb-2">
+              Current Relationships ({Object.keys(safeHierarchy).length})
+            </div>
+            <div className="max-h-24 overflow-y-auto border border-gray-200 rounded bg-white p-2">
+              <div className="space-y-1">
+                {Object.entries(safeHierarchy).map(([child, parent]) => (
+                  <div key={child} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded">
+                    <span className="text-sm">
+                      <span className="font-medium">{child}</span> →{' '}
+                      <span className="text-gray-600">{parent}</span>
+                    </span>
+                    <button
+                      onClick={() => handleRemoveRelationship(child)}
+                      className="text-red-600 hover:text-red-800 text-xs ml-2 flex-shrink-0"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
 
         {/* Hierarchy visualization */}
-        {(availableValues.length > 0 || Object.keys(hierarchy).length > 0) && (
+        {(availableValues.length > 0 || Object.keys(safeHierarchy).length > 0) && (
           <div>
             <div className="text-sm font-medium text-gray-700 mb-2">Hierarchy Tree</div>
-            <div className="bg-gray-50 p-2 rounded border text-sm font-mono">
-              {getHierarchyTree().length > 0 ? (
-                renderTree(getHierarchyTree())
-              ) : (
-                <div className="text-gray-500 text-center py-2">
-                  No hierarchy defined. Add relationships above to see the tree structure.
-                </div>
-              )}
+            <div className="bg-gray-50 border rounded max-h-32 overflow-y-auto">
+              <div className="p-2 text-sm font-mono">
+                {getHierarchyTree().length > 0 ? (
+                  renderTree(getHierarchyTree())
+                ) : (
+                  <div className="text-gray-500 text-center py-2">
+                    No hierarchy defined. Add relationships above to see the tree structure.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

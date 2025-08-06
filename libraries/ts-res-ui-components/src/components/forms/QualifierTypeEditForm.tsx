@@ -33,6 +33,17 @@ export const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({
   const [formData, setFormData] = useState<FormData>(() => {
     if (qualifierType) {
       const config = qualifierType.configuration || {};
+      // Ensure hierarchy is a plain object with string values
+      let hierarchy: Record<string, string> = {};
+      const rawHierarchy = (config as any)?.hierarchy;
+      if (rawHierarchy && typeof rawHierarchy === 'object' && !Array.isArray(rawHierarchy)) {
+        for (const [key, value] of Object.entries(rawHierarchy)) {
+          if (typeof value === 'string') {
+            hierarchy[key] = value;
+          }
+        }
+      }
+
       return {
         name: qualifierType.name,
         systemType: qualifierType.systemType as 'language' | 'territory' | 'literal',
@@ -41,7 +52,7 @@ export const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({
         enumeratedValues: (config as any)?.enumeratedValues || [],
         acceptLowercase: (config as any)?.acceptLowercase ?? false,
         allowedTerritories: (config as any)?.allowedTerritories || [],
-        hierarchy: (config as any)?.hierarchy || {}
+        hierarchy: hierarchy
       };
     }
     return {
@@ -153,9 +164,10 @@ export const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full h-full max-h-[calc(100vh-2rem)] flex flex-col">
+        {/* Fixed Header */}
+        <div className="flex items-center justify-between p-6 border-b flex-shrink-0">
           <h3 className="text-lg font-medium text-gray-900">
             {qualifierType ? 'Edit Qualifier Type' : 'Add Qualifier Type'}
           </h3>
@@ -164,7 +176,8 @@ export const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        {/* Scrollable Content */}
+        <div className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
           {/* Basic Properties */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -313,8 +326,8 @@ export const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({
           )}
         </div>
 
-        {/* Actions */}
-        <div className="flex justify-end space-x-3 px-6 py-4 border-t bg-gray-50">
+        {/* Fixed Footer */}
+        <div className="flex justify-end space-x-3 px-6 py-4 border-t bg-gray-50 flex-shrink-0">
           <button
             onClick={onCancel}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"

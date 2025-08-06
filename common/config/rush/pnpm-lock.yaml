@@ -505,6 +505,9 @@ importers:
       '@heroicons/react':
         specifier: ~2.2.0
         version: 2.2.0(react@19.1.0)
+      jszip:
+        specifier: ~3.10.1
+        version: 3.10.1
       tslib:
         specifier: ^2.8.1
         version: 2.8.1
@@ -855,6 +858,9 @@ importers:
       '@fgv/ts-res':
         specifier: workspace:*
         version: link:../../libraries/ts-res
+      '@fgv/ts-res-ui-components':
+        specifier: workspace:*
+        version: link:../../libraries/ts-res-ui-components
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../../libraries/ts-utils

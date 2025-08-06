@@ -1,35 +1,34 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import AppLayout from './components/layout/AppLayout';
-import ImportTool from './components/tools/ImportTool';
-import SourceBrowser from './components/tools/SourceBrowser';
-import FilterTool from './components/tools/FilterTool';
-import CompiledBrowser from './components/tools/CompiledBrowser';
-import ResolutionViewer from './components/tools/ResolutionViewer';
-import ConfigurationTool from './components/tools/ConfigurationTool';
-import ZipLoader from './components/tools/ZipLoader';
+import {
+  ImportView,
+  SourceView,
+  FilterView,
+  CompiledView,
+  ResolutionView,
+  ConfigurationView,
+  ZipLoaderView,
+  ResourceOrchestrator,
+  OrchestratorState,
+  OrchestratorActions
+} from '@fgv/ts-res-ui-components';
 import NavigationWarningModal from './components/common/NavigationWarningModal';
-import { useAppState } from './hooks/useAppState';
-import { useFileImport } from './hooks/useFileImport';
-import { useResourceManager } from './hooks/useResourceManager';
 import { useNavigationWarning } from './hooks/useNavigationWarning';
 import { useUrlParams } from './hooks/useUrlParams';
-import { FilterResult } from './utils/filterResources';
 import { parseContextFilter } from './utils/urlParams';
 import { Tool } from './types/app';
 import * as TsRes from '@fgv/ts-res';
 
-const App: React.FC = () => {
-  const { state, actions } = useAppState();
-  const fileImport = useFileImport();
-  const resourceManager = useResourceManager();
+// Separate component to handle initialization logic
+interface AppContentProps {
+  orchestrator: { state: OrchestratorState; actions: OrchestratorActions };
+}
+
+const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
+  const { state, actions } = orchestrator;
+  const [selectedTool, setSelectedTool] = useState<Tool>('import');
   const navigationWarning = useNavigationWarning();
   const { urlParams, hasUrlParams } = useUrlParams();
-
-  // State to share filter result between components
-  const [filterResult, setFilterResult] = React.useState<FilterResult | null>(null);
-
-  // Ref to store the configuration tool's save handler
-  const configSaveHandlerRef = React.useRef<(() => void) | null>(null);
 
   // Ref to track if we've already initialized from URL parameters
   const initializedFromUrlRef = React.useRef(false);
@@ -58,8 +57,7 @@ const App: React.FC = () => {
               );
 
               if (configResult.isSuccess()) {
-                // Store the declaration directly, not the SystemConfiguration instance
-                resourceManager.actions.applyConfiguration(configResult.value);
+                actions.updateConfiguration(configResult.value);
                 actions.addMessage('success', `Loaded predefined configuration: ${urlParams.config}`);
               } else {
                 actions.addMessage(
@@ -86,9 +84,11 @@ const App: React.FC = () => {
       if (urlParams.contextFilter) {
         try {
           const contextObj = parseContextFilter(urlParams.contextFilter);
-          actions.updateFilterValues(contextObj);
-          actions.updateFilterEnabled(true);
-          actions.applyFilterValues();
+          actions.updateFilterState({
+            values: contextObj,
+            enabled: true,
+            appliedValues: contextObj
+          });
           actions.addMessage('info', `Applied context filter from URL: ${urlParams.contextFilter}`);
         } catch (error) {
           actions.addMessage('error', `Invalid context filter in URL: ${urlParams.contextFilter}`);
@@ -97,12 +97,12 @@ const App: React.FC = () => {
 
       // Apply reduceQualifiers setting
       if (urlParams.reduceQualifiers) {
-        actions.updateReduceQualifiers(true);
+        actions.updateFilterState({ reduceQualifiers: true });
       }
 
-      // Handle ZIP loading - start with ZIP tool but make other tools easily accessible
+      // Handle ZIP loading
       if (urlParams.loadZip) {
-        actions.setActiveTool('zip-loader');
+        setSelectedTool('zip-loader');
         if (urlParams.zipFile || urlParams.zipPath) {
           actions.addMessage('info', `ZIP archive ready to load: ${urlParams.zipFile || 'Bundle file'}`);
           actions.addMessage('info', 'You can also use the File Browser for other resources');
@@ -130,125 +130,174 @@ const App: React.FC = () => {
 
       // Navigate to appropriate tool based on URL params
       if (urlParams.input) {
-        // If input is specified, start with import tool
-        actions.setSelectedTool('import');
+        setSelectedTool('import');
       } else if (urlParams.interactive) {
-        // If interactive mode, might want to go straight to source browser with sample data
-        actions.setSelectedTool('source');
+        setSelectedTool('source');
       }
     }
-  }, [hasUrlParams]); // Depend on hasUrlParams to handle async URL param loading; ref prevents duplicate initialization
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasUrlParams, urlParams]);
 
   // Handle navigation with unsaved changes check
   const handleToolSelect = useCallback(
     (tool: Tool) => {
       // If we're trying to navigate away from configuration and have unsaved changes
-      if (state.selectedTool === 'configuration' && navigationWarning.state.hasUnsavedChanges) {
+      if (selectedTool === 'configuration' && navigationWarning.state.hasUnsavedChanges) {
         navigationWarning.actions.showWarning(tool);
         return;
       }
 
       // Otherwise, navigate normally
-      actions.setSelectedTool(tool);
+      setSelectedTool(tool);
     },
-    [state.selectedTool, navigationWarning, actions]
+    [selectedTool, navigationWarning]
   );
 
   // Handle save and continue from navigation warning
   const handleSaveAndContinue = useCallback(() => {
-    // Call the configuration tool's save handler if available
-    if (configSaveHandlerRef.current) {
-      configSaveHandlerRef.current();
-    }
-
+    // TODO: Implement save functionality through orchestrator
     const pendingTool = navigationWarning.actions.confirmNavigation();
     if (pendingTool) {
-      actions.setSelectedTool(pendingTool);
+      setSelectedTool(pendingTool);
     }
-  }, [navigationWarning, actions]);
+  }, [navigationWarning]);
 
   // Handle discard changes and continue
   const handleDiscardAndContinue = useCallback(() => {
     const pendingTool = navigationWarning.actions.confirmNavigation();
     if (pendingTool) {
-      actions.setSelectedTool(pendingTool);
+      setSelectedTool(pendingTool);
     }
-  }, [navigationWarning, actions]);
+  }, [navigationWarning]);
 
   const renderTool = () => {
-    switch (state.selectedTool) {
+    switch (selectedTool) {
       case 'import':
         return (
-          <ImportTool
+          <ImportView
             onMessage={actions.addMessage}
-            fileImport={fileImport}
-            resourceManager={resourceManager}
+            onImport={(data) => {
+              if (Array.isArray(data)) {
+                actions.importFiles(data);
+              } else {
+                actions.importDirectory(data);
+              }
+            }}
+            onBundleImport={actions.importBundle}
           />
         );
+
       case 'source':
-        return <SourceBrowser onMessage={actions.addMessage} resourceManager={resourceManager} />;
+        return (
+          <SourceView
+            onMessage={actions.addMessage}
+            resources={state.resources}
+            selectedResourceId={state.selectedResourceId}
+            onResourceSelect={actions.selectResource}
+            onExport={(data, type) => {
+              // TODO: Implement export functionality
+              actions.addMessage('info', `Export ${type} requested`);
+            }}
+          />
+        );
+
       case 'filter':
         return (
-          <FilterTool
+          <FilterView
             onMessage={actions.addMessage}
-            resourceManager={resourceManager}
+            resources={state.resources}
             filterState={state.filterState}
             filterActions={{
-              updateFilterEnabled: actions.updateFilterEnabled,
-              updateFilterValues: actions.updateFilterValues,
-              applyFilterValues: actions.applyFilterValues,
-              resetFilterValues: actions.resetFilterValues,
-              updateReduceQualifiers: actions.updateReduceQualifiers
+              updateFilterEnabled: (enabled) => actions.updateFilterState({ enabled }),
+              updateFilterValues: (values) => actions.updateFilterState({ values }),
+              applyFilterValues: () => actions.applyFilter(),
+              resetFilterValues: () => actions.resetFilter(),
+              updateReduceQualifiers: (reduceQualifiers) => actions.updateFilterState({ reduceQualifiers })
             }}
-            onFilterResult={setFilterResult}
+            filterResult={state.filterResult}
+            onFilterResult={(result) => {
+              // The orchestrator manages filter results internally
+            }}
           />
         );
+
       case 'compiled':
         return (
-          <CompiledBrowser
+          <CompiledView
             onMessage={actions.addMessage}
-            resourceManager={resourceManager}
+            resources={state.resources}
             filterState={state.filterState}
-            filterResult={filterResult}
+            filterResult={state.filterResult}
+            useNormalization={true}
+            onExport={(data, type) => {
+              // TODO: Implement export functionality
+              actions.addMessage('info', `Export ${type} requested`);
+            }}
           />
         );
+
       case 'resolution':
         return (
-          <ResolutionViewer
+          <ResolutionView
             onMessage={actions.addMessage}
-            resourceManager={resourceManager}
+            resources={state.resources}
             filterState={state.filterState}
-            filterResult={filterResult}
+            filterResult={state.filterResult}
+            resolutionState={state.resolutionState}
+            resolutionActions={{
+              updateContextValue: actions.updateResolutionContext,
+              applyContext: actions.applyResolutionContext,
+              selectResource: actions.selectResourceForResolution,
+              setViewMode: actions.setResolutionViewMode,
+              resetCache: actions.resetResolutionCache
+            }}
+            availableQualifiers={
+              state.resources?.compiledCollection.qualifiers?.map((q: any) => q.name) ||
+              state.configuration?.qualifiers?.map((q) => q.name) ||
+              []
+            }
           />
         );
+
       case 'configuration':
         return (
-          <ConfigurationTool
+          <ConfigurationView
             onMessage={actions.addMessage}
-            resourceManager={resourceManager}
-            onUnsavedChanges={navigationWarning.actions.setHasUnsavedChanges}
-            onSaveHandlerRef={configSaveHandlerRef}
+            configuration={state.configuration}
+            onConfigurationChange={actions.updateConfiguration}
+            onSave={(config) => {
+              actions.applyConfiguration(config);
+              actions.addMessage('success', 'Configuration saved successfully');
+            }}
+            hasUnsavedChanges={navigationWarning.state.hasUnsavedChanges}
           />
         );
+
       case 'zip-loader':
         return (
-          <ZipLoader
+          <ZipLoaderView
             onMessage={actions.addMessage}
-            resourceManager={resourceManager}
-            zipFile={urlParams.zipFile}
+            zipFileUrl={urlParams.zipFile}
             zipPath={urlParams.zipPath}
             onLoadComplete={() => {
               // Switch to source browser after successful load
-              actions.setSelectedTool('source');
+              setSelectedTool('source');
             }}
           />
         );
+
       default:
         return (
-          <ImportTool
+          <ImportView
             onMessage={actions.addMessage}
-            fileImport={fileImport}
-            resourceManager={resourceManager}
+            onImport={(data) => {
+              if (Array.isArray(data)) {
+                actions.importFiles(data);
+              } else {
+                actions.importDirectory(data);
+              }
+            }}
+            onBundleImport={actions.importBundle}
           />
         );
     }
@@ -257,7 +306,7 @@ const App: React.FC = () => {
   return (
     <>
       <AppLayout
-        selectedTool={state.selectedTool}
+        selectedTool={selectedTool}
         onToolSelect={handleToolSelect}
         messages={state.messages}
         onClearMessages={actions.clearMessages}
@@ -273,6 +322,14 @@ const App: React.FC = () => {
         hasUnsavedChanges={navigationWarning.state.hasUnsavedChanges}
       />
     </>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <ResourceOrchestrator>
+      {(orchestrator) => <AppContent orchestrator={orchestrator} />}
+    </ResourceOrchestrator>
   );
 };
 

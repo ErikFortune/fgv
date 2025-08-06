@@ -48,10 +48,26 @@ export const SourceView: React.FC<SourceViewProps> = ({ resources, onExport, onM
     }
 
     try {
-      const collectionResult = resources.system.resourceManager.getResourceCollectionDecl();
-      if (collectionResult.isSuccess()) {
+      // Check if this is a ResourceManagerBuilder (has getResourceCollectionDecl method)
+      if ('getResourceCollectionDecl' in resources.system.resourceManager) {
+        const collectionResult = (resources.system.resourceManager as any).getResourceCollectionDecl();
+        if (collectionResult.isSuccess()) {
+          return {
+            ...collectionResult.value,
+            metadata: {
+              exportedAt: new Date().toISOString(),
+              totalResources: resources.summary.totalResources,
+              type: 'ts-res-resource-collection'
+            }
+          };
+        } else {
+          onMessage?.('error', `Failed to get resource collection: ${collectionResult.message}`);
+          return null;
+        }
+      } else if (resources.compiledCollection) {
+        // For IResourceManager from bundles, use the compiled collection directly
         return {
-          ...collectionResult.value,
+          resources: resources.compiledCollection.resources || [],
           metadata: {
             exportedAt: new Date().toISOString(),
             totalResources: resources.summary.totalResources,
@@ -59,7 +75,7 @@ export const SourceView: React.FC<SourceViewProps> = ({ resources, onExport, onM
           }
         };
       } else {
-        onMessage?.('error', `Failed to get resource collection: ${collectionResult.message}`);
+        onMessage?.('error', 'Resource collection data not available');
         return null;
       }
     } catch (error) {
@@ -278,22 +294,74 @@ const ResourceDetail: React.FC<ResourceDetailProps> = ({ resourceId, processedRe
         if (resourceResult.isSuccess()) {
           const resource = resourceResult.value;
 
-          const detail: ResourceDetailData = {
-            id: resource.id,
-            resourceType: resource.resourceType.key,
-            candidateCount: resource.candidates.length,
-            candidates: resource.candidates.map((candidate: any) => ({
+          // Handle different resource formats (ResourceManagerBuilder vs IResourceManager)
+          let candidateDetails: any[] = [];
+
+          // Check if candidates have conditions property (ResourceManagerBuilder format)
+          if (resource.candidates.length > 0 && 'conditions' in resource.candidates[0]) {
+            // ResourceManagerBuilder format with full condition details
+            candidateDetails = resource.candidates.map((candidate: any) => ({
               json: candidate.json,
-              conditions: candidate.conditions.conditions.map((condition: any) => ({
-                qualifier: condition.qualifier.name,
-                operator: condition.operator,
-                value: condition.value,
-                priority: condition.priority,
-                scoreAsDefault: condition.scoreAsDefault
-              })),
+              conditions:
+                candidate.conditions?.conditions?.map((condition: any) => ({
+                  qualifier: condition.qualifier.name,
+                  operator: condition.operator,
+                  value: condition.value,
+                  priority: condition.priority,
+                  scoreAsDefault: condition.scoreAsDefault
+                })) || [],
               isPartial: candidate.isPartial,
               mergeMethod: candidate.mergeMethod
-            }))
+            }));
+          } else {
+            // IResourceManager format - extract conditions from compiled collection
+            const compiledCollection = processedResources.compiledCollection;
+            const compiledResource = compiledCollection?.resources?.find((r: any) => r.id === resourceId);
+
+            candidateDetails = resource.candidates.map((candidate: any, index: number) => {
+              // Try to get conditions from the compiled collection
+              let conditions: any[] = [];
+
+              if (compiledResource && compiledCollection) {
+                const decision = compiledCollection.decisions?.[compiledResource.decision];
+                if (decision?.conditionSets && index < decision.conditionSets.length) {
+                  const conditionSetIndex = decision.conditionSets[index];
+                  const conditionSet = compiledCollection.conditionSets?.[conditionSetIndex];
+
+                  if (conditionSet?.conditions) {
+                    conditions = conditionSet.conditions
+                      .map((condIndex: number) => {
+                        const condition = compiledCollection.conditions?.[condIndex];
+                        const qualifier = compiledCollection.qualifiers?.[condition?.qualifierIndex];
+                        return condition && qualifier
+                          ? {
+                              qualifier: qualifier.name,
+                              operator: condition.operator || 'eq',
+                              value: condition.value,
+                              priority: condition.priority || qualifier.defaultPriority || 500,
+                              scoreAsDefault: condition.scoreAsDefault
+                            }
+                          : null;
+                      })
+                      .filter(Boolean);
+                  }
+                }
+              }
+
+              return {
+                json: candidate.json,
+                conditions: conditions,
+                isPartial: candidate.isPartial,
+                mergeMethod: candidate.mergeMethod
+              };
+            });
+          }
+
+          const detail: ResourceDetailData = {
+            id: resource.id,
+            resourceType: resource.resourceType.key || resource.resourceType.name || 'unknown',
+            candidateCount: resource.candidates.length,
+            candidates: candidateDetails
           };
 
           setResourceDetail(detail);

@@ -9,6 +9,7 @@ import {
   TrashIcon
 } from '@heroicons/react/24/outline';
 import { ResolutionViewProps, CandidateInfo } from '../../../types';
+import { QualifierContextControl } from '../../common/QualifierContextControl';
 
 export const ResolutionView: React.FC<ResolutionViewProps> = ({
   resources,
@@ -32,21 +33,8 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
     return activeProcessedResources.summary.resourceIds.sort();
   }, [activeProcessedResources?.summary?.resourceIds]);
 
-  // Get qualifier type information for form controls
-  const qualifierTypeInfo = useMemo(() => {
-    const info: Record<string, { hasEnumeratedValues: boolean; values?: string[] }> = {};
-
-    // For the simplified version, we'll treat all qualifiers as text inputs
-    // In a more advanced version, this would examine the system configuration
-    availableQualifiers.forEach((qualifierName) => {
-      info[qualifierName] = { hasEnumeratedValues: false };
-    });
-
-    return info;
-  }, [availableQualifiers]);
-
-  // Handle context value changes
-  const handleContextChange = useCallback(
+  // Handle context value changes using the shared component's callback pattern
+  const handleQualifierChange = useCallback(
     (qualifierName: string, value: string | undefined) => {
       resolutionActions?.updateContextValue(qualifierName, value);
     },
@@ -114,41 +102,16 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="mb-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {availableQualifiers.map((qualifierName) => {
-                  const typeInfo = qualifierTypeInfo[qualifierName];
-                  const currentValue = resolutionState?.pendingContextValues[qualifierName];
-
-                  return (
-                    <div key={qualifierName} className="bg-white rounded border border-gray-200 p-2">
-                      <div className="flex items-center gap-2">
-                        <label className="text-sm font-medium text-gray-700 min-w-0 flex-shrink-0">
-                          {qualifierName}:
-                        </label>
-                        <div className="flex-1 flex items-center gap-1">
-                          <input
-                            type="text"
-                            value={currentValue ?? ''}
-                            onChange={(e) => handleContextChange(qualifierName, e.target.value || undefined)}
-                            className="flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm min-w-0"
-                            placeholder={
-                              currentValue === undefined ? '(undefined)' : `Enter ${qualifierName} value`
-                            }
-                          />
-                          {currentValue !== undefined && (
-                            <button
-                              type="button"
-                              onClick={() => handleContextChange(qualifierName, undefined)}
-                              className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
-                              title="Set to undefined"
-                            >
-                              ✕
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {availableQualifiers.map((qualifierName) => (
+                  <QualifierContextControl
+                    key={qualifierName}
+                    qualifierName={qualifierName}
+                    value={resolutionState?.pendingContextValues[qualifierName]}
+                    onChange={handleQualifierChange}
+                    placeholder={`Enter ${qualifierName} value`}
+                    resources={activeProcessedResources}
+                  />
+                ))}
               </div>
             </div>
 

@@ -65,25 +65,41 @@ export const ImportView: React.FC<ImportViewProps> = ({
             type: file.type
           };
 
-          // Check if it's a bundle file
-          if (file.name.endsWith('.bundle.json') || file.name.includes('bundle')) {
-            try {
-              const bundleData = JSON.parse(content);
-              if (bundleData.metadata?.type === 'ts-res-bundle' || bundleData.normalizedCollection) {
-                bundleFile = { ...importedFile, bundle: bundleData };
-              }
-            } catch {
-              // Not a valid bundle, treat as regular file
+          // Check if it's a bundle file using proper detection
+          let isCurrentFileBundle = false;
+          try {
+            const parsedData = JSON.parse(content);
+
+            console.log(`[ImportView] Checking if ${file.name} is a bundle...`);
+
+            // Use BundleUtils for proper bundle detection
+            if (Bundle.BundleUtils.isBundleFile(parsedData)) {
+              console.log(`[ImportView] ✅ ${file.name} detected as bundle file`);
+              bundleFile = { ...importedFile, bundle: parsedData };
+              isCurrentFileBundle = true;
+            } else if (Bundle.BundleUtils.isBundleFileName(file.name)) {
+              // File name suggests it's a bundle, but content doesn't match - log a warning
+              console.warn(
+                `[ImportView] ⚠️ File ${file.name} appears to be a bundle by name but content doesn't match bundle structure`
+              );
+            } else {
+              console.log(`[ImportView] ❌ ${file.name} is not a bundle file`);
             }
+          } catch (parseError) {
+            console.log(`[ImportView] ❌ ${file.name} failed JSON parsing:`, parseError);
+            // Not valid JSON or not a bundle, treat as regular file
           }
 
-          if (!bundleFile) {
+          // Only add to regular files if this specific file is not a bundle
+          if (!isCurrentFileBundle) {
             importedFiles.push(importedFile);
           }
         }
 
         // Process results
         if (bundleFile) {
+          console.log(`[ImportView] Processing bundle file: ${bundleFile.name}`, bundleFile.bundle);
+
           setImportStatus({
             hasImported: true,
             fileCount: 1,
@@ -92,7 +108,10 @@ export const ImportView: React.FC<ImportViewProps> = ({
           });
           onMessage?.('info', `Bundle file detected: ${bundleFile.name}`);
           if (onBundleImport && bundleFile.bundle) {
+            console.log(`[ImportView] Calling onBundleImport with bundle data`);
             onBundleImport(bundleFile.bundle);
+          } else {
+            console.warn(`[ImportView] No bundle import handler or bundle data missing`);
           }
         } else if (importedFiles.length > 0) {
           setImportStatus({
@@ -285,19 +304,31 @@ export const ImportView: React.FC<ImportViewProps> = ({
           type: file.type
         };
 
-        // Check for bundle
-        if (file.name.endsWith('.bundle.json') || file.name.includes('bundle')) {
-          try {
-            const bundleData = JSON.parse(content);
-            if (bundleData.metadata?.type === 'ts-res-bundle' || bundleData.normalizedCollection) {
-              bundleFile = { ...importedFile, bundle: bundleData };
-            }
-          } catch {
-            // Not a valid bundle
+        // Check for bundle using proper detection
+        let isCurrentFileBundle = false;
+        try {
+          const parsedData = JSON.parse(content);
+
+          console.log(`[ImportView] Modern API - Checking if ${file.name} is a bundle...`);
+
+          // Use BundleUtils for proper bundle detection
+          if (Bundle.BundleUtils.isBundleFile(parsedData)) {
+            console.log(`[ImportView] Modern API - ✅ ${file.name} detected as bundle file`);
+            bundleFile = { ...importedFile, bundle: parsedData };
+            isCurrentFileBundle = true;
+          } else if (Bundle.BundleUtils.isBundleFileName(file.name)) {
+            console.warn(
+              `[ImportView] Modern API - ⚠️ File ${file.name} appears to be a bundle by name but content doesn't match bundle structure`
+            );
+          } else {
+            console.log(`[ImportView] Modern API - ❌ ${file.name} is not a bundle file`);
           }
+        } catch (parseError) {
+          console.log(`[ImportView] Modern API - ❌ ${file.name} failed JSON parsing:`, parseError);
         }
 
-        if (!bundleFile) {
+        // Only add to regular files if this specific file is not a bundle
+        if (!isCurrentFileBundle) {
           importedFiles.push(importedFile);
         }
       }

@@ -313,14 +313,14 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
               <nav className="-mb-px flex space-x-8 px-6">
                 {[
                   {
-                    key: 'qualifierTypes' as const,
-                    label: 'Qualifier Types',
-                    count: state.currentConfiguration.qualifierTypes?.length || 0
-                  },
-                  {
                     key: 'qualifiers' as const,
                     label: 'Qualifiers',
                     count: state.currentConfiguration.qualifiers?.length || 0
+                  },
+                  {
+                    key: 'qualifierTypes' as const,
+                    label: 'Qualifier Types',
+                    count: state.currentConfiguration.qualifierTypes?.length || 0
                   },
                   {
                     key: 'resourceTypes' as const,
@@ -348,16 +348,6 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
 
             {/* Tab Content */}
             <div className="p-6">
-              {state.activeTab === 'qualifierTypes' && (
-                <QualifierTypesPanel
-                  qualifierTypes={state.currentConfiguration.qualifierTypes || []}
-                  onUpdateItem={actions.updateQualifierType}
-                  onRemove={actions.removeQualifierType}
-                  onShowAdd={() => setShowAddQualifierType(true)}
-                  onEdit={(item, index) => setEditingQualifierType({ item, index })}
-                />
-              )}
-
               {state.activeTab === 'qualifiers' && (
                 <QualifiersPanel
                   qualifiers={state.currentConfiguration.qualifiers || []}
@@ -366,6 +356,16 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
                   onRemove={actions.removeQualifier}
                   onShowAdd={() => setShowAddQualifier(true)}
                   onEdit={(item, index) => setEditingQualifier({ item, index })}
+                />
+              )}
+
+              {state.activeTab === 'qualifierTypes' && (
+                <QualifierTypesPanel
+                  qualifierTypes={state.currentConfiguration.qualifierTypes || []}
+                  onUpdateItem={actions.updateQualifierType}
+                  onRemove={actions.removeQualifierType}
+                  onShowAdd={() => setShowAddQualifierType(true)}
+                  onEdit={(item, index) => setEditingQualifierType({ item, index })}
                 />
               )}
 
@@ -650,23 +650,28 @@ const QualifiersPanel: React.FC<QualifiersPanelProps> = ({
                 key={originalIndex}
                 className="bg-gray-50 p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
               >
-                <div className="flex items-start justify-between">
+                <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
+                    {/* Header line with name, type, and token */}
+                    <div className="flex items-center space-x-3 mb-2">
                       <h4 className="font-medium text-gray-900">{qualifier.name}</h4>
-                      <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                        Priority: {qualifier.defaultPriority}
-                      </span>
+                      <span className="text-gray-600 text-sm">{qualifier.typeName}</span>
+                      {qualifier.token && (
+                        <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded">
+                          token: {qualifier.token}
+                        </span>
+                      )}
                       {!qualifierType && (
                         <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
                           Missing Type
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 mb-1">
-                      Type: <span className="font-medium">{qualifier.typeName}</span>
-                    </p>
-                    <p className="text-sm text-gray-500">{getQualifierSummary(qualifier)}</p>
+                    {/* Bottom line with type and priority */}
+                    <div className="flex items-center justify-between text-sm text-gray-600">
+                      <span>Type: {qualifier.typeName}</span>
+                      <span>Priority: {qualifier.defaultPriority}</span>
+                    </div>
                   </div>
                   <div className="flex items-center space-x-2 ml-4">
                     <button

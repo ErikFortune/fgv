@@ -33,17 +33,12 @@
     "@fgv/ts-json": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
     "@heroicons/react": "~2.2.0",
+    "jszip": "~3.10.1",
     "tslib": "^2.8.1"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
-    "react-dom": ">=18.0.0",
-    "jszip": "^3.10.1"
-  },
-  "peerDependenciesMeta": {
-    "jszip": {
-      "optional": true
-    }
+    "react-dom": ">=18.0.0"
   },
   "devDependencies": {
     "@fgv/ts-utils-jest": "workspace:*",

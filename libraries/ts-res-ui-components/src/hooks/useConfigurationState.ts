@@ -92,7 +92,7 @@ export function useConfigurationState(
   const [currentConfiguration, setCurrentConfiguration] = useState<Config.Model.ISystemConfiguration>(
     cloneConfiguration(defaultConfig)
   );
-  const [activeTab, setActiveTab] = useState<ConfigurationState['activeTab']>('qualifierTypes');
+  const [activeTab, setActiveTab] = useState<ConfigurationState['activeTab']>('qualifiers');
   const [isJsonView, setIsJsonView] = useState(false);
   const [jsonString, setJsonString] = useState('');
   const [jsonError, setJsonError] = useState<string | null>(null);
@@ -124,8 +124,21 @@ export function useConfigurationState(
   }, [currentConfiguration, isJsonView]);
 
   // Notify parent of configuration changes
+  const isFirstMount = useRef(true);
+  const lastNotifiedConfig = useRef(currentConfiguration);
+
   React.useEffect(() => {
-    onConfigurationChange?.(currentConfiguration);
+    // Skip notification on first mount to avoid loops
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+
+    // Only notify if configuration actually changed
+    if (!compareConfigurations(lastNotifiedConfig.current, currentConfiguration)) {
+      lastNotifiedConfig.current = currentConfiguration;
+      onConfigurationChange?.(currentConfiguration);
+    }
   }, [currentConfiguration, onConfigurationChange]);
 
   // Notify parent of unsaved changes

@@ -142,9 +142,10 @@ export const QualifierEditForm: React.FC<QualifierEditFormProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full h-full max-h-[calc(100vh-2rem)] flex flex-col">
+        {/* Fixed Header */}
+        <div className="flex items-center justify-between p-6 border-b flex-shrink-0">
           <h3 className="text-lg font-medium text-gray-900">
             {qualifier ? 'Edit Qualifier' : 'Add Qualifier'}
           </h3>
@@ -153,7 +154,8 @@ export const QualifierEditForm: React.FC<QualifierEditFormProps> = ({
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        {/* Scrollable Content */}
+        <div className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
           {/* Basic Properties */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -332,8 +334,8 @@ export const QualifierEditForm: React.FC<QualifierEditFormProps> = ({
           )}
         </div>
 
-        {/* Actions */}
-        <div className="flex justify-end space-x-3 px-6 py-4 border-t bg-gray-50">
+        {/* Fixed Footer */}
+        <div className="flex justify-end space-x-3 px-6 py-4 border-t bg-gray-50 flex-shrink-0">
           <button
             onClick={onCancel}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"

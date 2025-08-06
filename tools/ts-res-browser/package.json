@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "@fgv/ts-res": "workspace:*",
+    "@fgv/ts-res-ui-components": "workspace:*",
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
     "@fgv/ts-json": "workspace:*",

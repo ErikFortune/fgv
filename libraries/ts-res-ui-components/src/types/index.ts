@@ -29,7 +29,7 @@ export interface FilterActions {
 // Resource processing types
 export interface ProcessedResources {
   system: {
-    resourceManager: Resources.ResourceManagerBuilder;
+    resourceManager: Resources.ResourceManagerBuilder | Runtime.IResourceManager; // Support both builder and runtime manager
     qualifierTypes: any;
     qualifiers: any;
     resourceTypes: any;

@@ -205,7 +205,7 @@ export function resolveResourceDetailed(
 
     // Add matched candidates first
     matchedCandidates.forEach((matchedCandidate) => {
-      const index = resource.candidates.findIndex((candidate) => candidate === matchedCandidate);
+      const index = resource.candidates.findIndex((candidate: any) => candidate === matchedCandidate);
       if (index !== -1) {
         const conditionSetKey = `cs-${index}`;
         const conditionEvaluations = evaluateConditionsForCandidate(
@@ -233,10 +233,11 @@ export function resolveResourceDetailed(
     });
 
     // Add non-matching candidates
-    resource.candidates.forEach((candidate, index) => {
+    resource.candidates.forEach((candidate: any, index: number) => {
       const isMatched = matchedCandidates.some((mc) => mc === candidate);
       if (!isMatched) {
-        const conditionSetKey = candidate.conditions.toHash();
+        // Handle different candidate formats - IResourceCandidate doesn't have conditions
+        const conditionSetKey = candidate.conditions?.toHash ? candidate.conditions.toHash() : `cs-${index}`;
         const conditionEvaluations = evaluateConditionsForCandidate(
           resolver,
           index,

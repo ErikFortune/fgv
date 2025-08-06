@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { FilterViewProps } from '../../../types';
 import { Config } from '@fgv/ts-res';
+import { QualifierContextControl } from '../../common/QualifierContextControl';
 
 // Import FilteredResource type from the utils
 interface FilteredResource {
@@ -45,21 +46,14 @@ export const FilterView: React.FC<FilterViewProps> = ({
     return ['language', 'territory', 'currentTerritory', 'role', 'env'];
   }, [resources?.compiledCollection.qualifiers]);
 
-  // Get qualifier type information for form controls
-  const qualifierTypeInfo = useMemo(() => {
-    const info: Record<string, any> = {};
-
-    // Simple type mapping for basic form controls
-    availableQualifiers.forEach((qualifierName) => {
-      // Default to text input for all qualifiers in the simplified version
-      info[qualifierName] = {
-        type: { systemType: 'literal' },
-        enumeratedValues: []
-      };
-    });
-
-    return info;
-  }, [availableQualifiers]);
+  // Handle filter value changes using the shared component's callback pattern
+  const handleQualifierChange = useCallback(
+    (qualifierName: string, value: string | undefined) => {
+      const newValues = { ...filterState.values, [qualifierName]: value };
+      filterActions.updateFilterValues(newValues);
+    },
+    [filterState.values, filterActions]
+  );
 
   // Check if we have any applied filter values set
   const hasAppliedFilterValues = useMemo(() => {
@@ -85,11 +79,30 @@ export const FilterView: React.FC<FilterViewProps> = ({
     }
 
     try {
-      const collectionResult =
-        filterResult.processedResources.system.resourceManager.getResourceCollectionDecl();
-      if (collectionResult.isSuccess()) {
+      const resourceManager = filterResult.processedResources.system.resourceManager;
+
+      // Check if this is a ResourceManagerBuilder (has getResourceCollectionDecl method)
+      if ('getResourceCollectionDecl' in resourceManager) {
+        const collectionResult = (resourceManager as any).getResourceCollectionDecl();
+        if (collectionResult.isSuccess()) {
+          return {
+            ...collectionResult.value,
+            metadata: {
+              exportedAt: new Date().toISOString(),
+              totalResources: filterResult.processedResources.resourceCount,
+              type: 'ts-res-filtered-resource-collection',
+              filterContext: filterState.appliedValues,
+              reduceQualifiers: filterState.reduceQualifiers
+            }
+          };
+        } else {
+          onMessage?.('error', `Failed to get filtered resource collection: ${collectionResult.message}`);
+          return null;
+        }
+      } else if (filterResult.processedResources.compiledCollection) {
+        // For IResourceManager from bundles, use the compiled collection directly
         return {
-          ...collectionResult.value,
+          resources: filterResult.processedResources.compiledCollection.resources || [],
           metadata: {
             exportedAt: new Date().toISOString(),
             totalResources: filterResult.processedResources.resourceCount,
@@ -99,7 +112,7 @@ export const FilterView: React.FC<FilterViewProps> = ({
           }
         };
       } else {
-        onMessage?.('error', `Failed to get filtered resource collection: ${collectionResult.message}`);
+        onMessage?.('error', 'Filtered resource collection data not available');
         return null;
       }
     } catch (error) {
@@ -314,41 +327,15 @@ export const FilterView: React.FC<FilterViewProps> = ({
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {availableQualifiers.map((qualifierName) => (
-                <div key={qualifierName} className="bg-white rounded border border-gray-200 p-2">
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm font-medium text-gray-700 min-w-0 flex-shrink-0">
-                      {qualifierName}:
-                    </label>
-                    <div className="flex-1 flex items-center gap-1">
-                      <input
-                        type="text"
-                        value={filterState.values[qualifierName] ?? ''}
-                        onChange={(e) => handleFilterChange(qualifierName, e.target.value)}
-                        disabled={!filterState.enabled}
-                        className={`flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent text-sm min-w-0 ${
-                          !filterState.enabled ? 'bg-gray-100 text-gray-400' : ''
-                        }`}
-                        placeholder={
-                          !filterState.enabled
-                            ? 'Disabled'
-                            : filterState.values[qualifierName] === undefined
-                            ? '(undefined)'
-                            : `Filter by ${qualifierName}`
-                        }
-                      />
-                      {filterState.enabled && filterState.values[qualifierName] !== undefined && (
-                        <button
-                          type="button"
-                          onClick={() => handleFilterChange(qualifierName, undefined)}
-                          className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
-                          title="Set to undefined"
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <QualifierContextControl
+                  key={qualifierName}
+                  qualifierName={qualifierName}
+                  value={filterState.values[qualifierName]}
+                  onChange={handleQualifierChange}
+                  disabled={!filterState.enabled}
+                  placeholder={`Filter by ${qualifierName}`}
+                  resources={resources}
+                />
               ))}
             </div>
             {filterState.enabled && (
@@ -449,15 +436,306 @@ export const FilterView: React.FC<FilterViewProps> = ({
           </div>
         </div>
 
-        {/* Selected Resource Info */}
+        {/* Selected Resource Details */}
         {selectedResourceId && (
-          <div className="bg-blue-50 rounded-lg p-4">
-            <h4 className="font-medium text-blue-900 mb-2">Selected Resource</h4>
-            <p className="text-sm text-blue-800">
-              <strong>ID:</strong> {selectedResourceId}
-            </p>
-            <p className="text-sm text-blue-700 mt-1">
-              Click on a resource above to view detailed filtering information.
+          <FilteredResourceDetail
+            resourceId={selectedResourceId}
+            processedResources={resources}
+            filterResult={filterResult}
+            isFilteringActive={isFilteringActive}
+            filterContext={filterState.appliedValues}
+            onMessage={onMessage}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+interface FilteredResourceDetailProps {
+  resourceId: string;
+  processedResources: any;
+  filterResult: any;
+  isFilteringActive: boolean;
+  filterContext: Record<string, string | undefined>;
+  onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void;
+}
+
+const FilteredResourceDetail: React.FC<FilteredResourceDetailProps> = ({
+  resourceId,
+  processedResources,
+  filterResult,
+  isFilteringActive,
+  filterContext,
+  onMessage
+}) => {
+  const [resourceDetail, setResourceDetail] = useState<any>(null);
+  const [filteredResourceDetail, setFilteredResourceDetail] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showFilteredView, setShowFilteredView] = useState(true);
+
+  React.useEffect(() => {
+    const loadResourceDetails = () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // Load original resource details
+        const resourceManager = processedResources.system.resourceManager;
+        const resourceResult = resourceManager.getBuiltResource(resourceId);
+
+        if (resourceResult.isSuccess()) {
+          const resource = resourceResult.value;
+          const originalDetail = {
+            id: resource.id,
+            resourceType: resource.resourceType.key,
+            candidateCount: resource.candidates.length,
+            candidates: resource.candidates.map((candidate: any) => ({
+              json: candidate.json,
+              conditions: candidate.conditions.conditions.map((condition: any) => ({
+                qualifier: condition.qualifier.name,
+                operator: condition.operator,
+                value: condition.value,
+                priority: condition.priority,
+                scoreAsDefault: condition.scoreAsDefault
+              })),
+              isPartial: candidate.isPartial,
+              mergeMethod: candidate.mergeMethod
+            }))
+          };
+          setResourceDetail(originalDetail);
+
+          // Load filtered resource details if filtering is active
+          if (isFilteringActive && filterResult?.processedResources) {
+            const filteredResourceManager = filterResult.processedResources.system.resourceManager;
+            const filteredResourceResult = filteredResourceManager.getBuiltResource(resourceId);
+
+            if (filteredResourceResult.isSuccess()) {
+              const filteredResource = filteredResourceResult.value;
+              const filteredDetail = {
+                id: filteredResource.id,
+                resourceType: filteredResource.resourceType.key,
+                candidateCount: filteredResource.candidates.length,
+                candidates: filteredResource.candidates.map((candidate: any) => ({
+                  json: candidate.json,
+                  conditions: candidate.conditions.conditions.map((condition: any) => ({
+                    qualifier: condition.qualifier.name,
+                    operator: condition.operator,
+                    value: condition.value,
+                    priority: condition.priority,
+                    scoreAsDefault: condition.scoreAsDefault
+                  })),
+                  isPartial: candidate.isPartial,
+                  mergeMethod: candidate.mergeMethod
+                }))
+              };
+              setFilteredResourceDetail(filteredDetail);
+            }
+          }
+
+          onMessage?.('info', `Loaded details for resource: ${resourceId}`);
+        } else {
+          setError(`Failed to load resource details: ${resourceResult.message}`);
+          onMessage?.('error', `Failed to load resource details: ${resourceResult.message}`);
+        }
+      } catch (err) {
+        const errorMsg = `Error loading resource details: ${
+          err instanceof Error ? err.message : String(err)
+        }`;
+        setError(errorMsg);
+        onMessage?.('error', errorMsg);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadResourceDetails();
+  }, [resourceId, processedResources, filterResult, isFilteringActive, onMessage]);
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <h4 className="font-medium text-gray-900 mb-2">Resource Details</h4>
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <div className="animate-spin h-6 w-6 border-2 border-purple-600 border-t-transparent rounded-full mx-auto mb-2"></div>
+            <p className="text-sm text-gray-500">Loading resource details...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg border border-red-200 p-4">
+        <h4 className="font-medium text-red-900 mb-2">Resource Details</h4>
+        <div className="bg-red-50 p-3 rounded">
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!resourceDetail) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <h4 className="font-medium text-gray-900 mb-2">Resource Details</h4>
+        <p className="text-sm text-gray-500">No resource details available</p>
+      </div>
+    );
+  }
+
+  const currentDetail = showFilteredView && filteredResourceDetail ? filteredResourceDetail : resourceDetail;
+  const isShowingFiltered = showFilteredView && filteredResourceDetail;
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="font-medium text-gray-900">Resource Details</h4>
+        {isFilteringActive && filteredResourceDetail && (
+          <div className="flex items-center space-x-2">
+            <span className="text-xs text-gray-500">View:</span>
+            <button
+              onClick={() => setShowFilteredView(false)}
+              className={`px-2 py-1 text-xs rounded ${
+                !showFilteredView
+                  ? 'bg-blue-100 text-blue-800 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Original ({resourceDetail.candidateCount})
+            </button>
+            <button
+              onClick={() => setShowFilteredView(true)}
+              className={`px-2 py-1 text-xs rounded ${
+                showFilteredView
+                  ? 'bg-purple-100 text-purple-800 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Filtered ({filteredResourceDetail.candidateCount})
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-4">
+        {/* Resource Overview */}
+        <div>
+          <div className="bg-gray-50 p-3 rounded border space-y-2">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-gray-600">Resource ID:</span>
+              <code className="text-sm bg-white px-2 py-1 rounded border break-all">{currentDetail.id}</code>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-gray-600">Type:</span>
+              <span className="text-sm">{currentDetail.resourceType}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-gray-600">Candidates:</span>
+              <span
+                className={`text-sm font-medium ${
+                  isShowingFiltered && currentDetail.candidateCount === 0
+                    ? 'text-red-600'
+                    : isShowingFiltered && currentDetail.candidateCount < resourceDetail.candidateCount
+                    ? 'text-amber-600'
+                    : 'text-green-600'
+                }`}
+              >
+                {currentDetail.candidateCount}
+                {isShowingFiltered && currentDetail.candidateCount !== resourceDetail.candidateCount && (
+                  <span className="text-gray-400 ml-1">(was {resourceDetail.candidateCount})</span>
+                )}
+              </span>
+            </div>
+            {isFilteringActive && (
+              <div className="flex items-start space-x-2">
+                <span className="text-sm font-medium text-gray-600">Filter:</span>
+                <span className="text-sm text-purple-700">
+                  {Object.entries(filterContext)
+                    .filter(([, value]) => value !== undefined && value !== '')
+                    .map(([key, value]) => `${key}=${value}`)
+                    .join(', ') || 'No filters'}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Candidates */}
+        {currentDetail.candidates.length > 0 ? (
+          <div>
+            <h5 className="font-medium text-gray-700 mb-2">
+              {isShowingFiltered ? 'Filtered ' : ''}Candidates ({currentDetail.candidates.length})
+            </h5>
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {currentDetail.candidates.map((candidate: any, index: number) => (
+                <div key={index} className="bg-gray-50 p-3 rounded border">
+                  <div className="flex items-center justify-between mb-2">
+                    <h6 className="font-medium text-gray-800 text-sm">Candidate {index + 1}</h6>
+                    <div className="flex items-center space-x-2 text-xs">
+                      {candidate.isPartial && (
+                        <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">Partial</span>
+                      )}
+                      <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded">
+                        {candidate.mergeMethod}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Conditions */}
+                  {candidate.conditions.length > 0 ? (
+                    <div className="mb-2">
+                      <h6 className="text-xs font-medium text-gray-600 mb-1">Conditions:</h6>
+                      <div className="space-y-1">
+                        {candidate.conditions.map((condition: any, condIndex: number) => (
+                          <div
+                            key={condIndex}
+                            className="flex items-center justify-between text-xs bg-blue-50 px-2 py-1 rounded"
+                          >
+                            <div className="flex items-center space-x-1">
+                              <span className="font-medium text-blue-800">{condition.qualifier}</span>
+                              <span className="text-blue-600">{condition.operator}</span>
+                              <span className="text-blue-700">{condition.value}</span>
+                            </div>
+                            <div className="flex items-center space-x-2 text-xs">
+                              <span className="text-blue-500">p:{condition.priority}</span>
+                              {condition.scoreAsDefault !== undefined && (
+                                <span className="text-amber-600 font-medium">
+                                  d:{condition.scoreAsDefault}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mb-2">
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                        No conditions (default)
+                      </span>
+                    </div>
+                  )}
+
+                  {/* JSON Content */}
+                  <div>
+                    <h6 className="text-xs font-medium text-gray-600 mb-1">Content:</h6>
+                    <pre className="text-xs bg-white p-2 rounded border overflow-x-auto max-h-32 overflow-y-auto">
+                      {JSON.stringify(candidate.json, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="bg-red-50 border border-red-200 p-3 rounded">
+            <p className="text-sm text-red-700 font-medium">No candidates match the filter</p>
+            <p className="text-xs text-red-600 mt-1">
+              This resource has been completely filtered out. Consider adjusting your filter criteria.
             </p>
           </div>
         )}

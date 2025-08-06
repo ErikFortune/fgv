@@ -12,7 +12,7 @@ import {
   ArchiveBoxIcon
 } from '@heroicons/react/24/outline';
 import { CompiledViewProps, ProcessedResources, FilterState, FilterResult } from '../../../types';
-import { ResourceJson, Config, Bundle } from '@fgv/ts-res';
+import { ResourceJson, Config, Bundle, Resources } from '@fgv/ts-res';
 
 interface TreeNode {
   id: string;
@@ -155,19 +155,23 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
       try {
         const systemConfigResult = Config.SystemConfiguration.create(resources.activeConfiguration);
         if (systemConfigResult.isSuccess()) {
-          const resourceManagerResult = Bundle.BundleNormalizer.normalize(
-            activeProcessedResources.system.resourceManager,
-            systemConfigResult.value
-          );
+          // Check if we have a ResourceManagerBuilder (which supports normalization)
+          if ('getCompiledResourceCollection' in activeProcessedResources.system.resourceManager) {
+            const resourceManagerResult = Bundle.BundleNormalizer.normalize(
+              activeProcessedResources.system.resourceManager as Resources.ResourceManagerBuilder,
+              systemConfigResult.value
+            );
 
-          if (resourceManagerResult.isSuccess()) {
-            const normalizedCompiledResult = resourceManagerResult.value.getCompiledResourceCollection({
-              includeMetadata: true
-            });
-            if (normalizedCompiledResult.isSuccess()) {
-              compiledCollection = normalizedCompiledResult.value;
+            if (resourceManagerResult.isSuccess()) {
+              const normalizedCompiledResult = resourceManagerResult.value.getCompiledResourceCollection({
+                includeMetadata: true
+              });
+              if (normalizedCompiledResult.isSuccess()) {
+                compiledCollection = normalizedCompiledResult.value;
+              }
             }
           }
+          // For IResourceManager from bundles, the compiled collection is already normalized
         }
       } catch (error) {
         console.warn('Failed to normalize compiled collection:', error);
@@ -255,19 +259,23 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
       try {
         const systemConfigResult = Config.SystemConfiguration.create(resources.activeConfiguration);
         if (systemConfigResult.isSuccess()) {
-          const resourceManagerResult = Bundle.BundleNormalizer.normalize(
-            activeProcessedResources.system.resourceManager,
-            systemConfigResult.value
-          );
+          // Check if we have a ResourceManagerBuilder (which supports normalization)
+          if ('getCompiledResourceCollection' in activeProcessedResources.system.resourceManager) {
+            const resourceManagerResult = Bundle.BundleNormalizer.normalize(
+              activeProcessedResources.system.resourceManager as Resources.ResourceManagerBuilder,
+              systemConfigResult.value
+            );
 
-          if (resourceManagerResult.isSuccess()) {
-            const normalizedCompiledResult = resourceManagerResult.value.getCompiledResourceCollection({
-              includeMetadata: true
-            });
-            if (normalizedCompiledResult.isSuccess()) {
-              compiledCollection = normalizedCompiledResult.value;
+            if (resourceManagerResult.isSuccess()) {
+              const normalizedCompiledResult = resourceManagerResult.value.getCompiledResourceCollection({
+                includeMetadata: true
+              });
+              if (normalizedCompiledResult.isSuccess()) {
+                compiledCollection = normalizedCompiledResult.value;
+              }
             }
           }
+          // For IResourceManager from bundles, the compiled collection is already normalized
         }
       } catch (error) {
         console.warn('Failed to normalize for export:', error);
@@ -318,8 +326,14 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
       normalize: true
     };
 
+    // Check if we have a ResourceManagerBuilder (which supports bundle creation)
+    if (!('getCompiledResourceCollection' in activeProcessedResources.system.resourceManager)) {
+      onMessage?.('error', 'Bundle export is not supported for resources loaded from bundles');
+      return;
+    }
+
     const bundleResult = Bundle.BundleBuilder.create(
-      activeProcessedResources.system.resourceManager,
+      activeProcessedResources.system.resourceManager as Resources.ResourceManagerBuilder,
       systemConfig,
       bundleParams
     );
@@ -596,23 +610,269 @@ const NodeDetail: React.FC<NodeDetailProps> = ({
   formatDisplayName,
   getResourceTypeName
 }) => {
+  const [showRawJson, setShowRawJson] = useState(false);
+
   const renderDetails = () => {
     if (!node.data) {
       return (
-        <div className="p-4">
-          <h4 className="font-medium text-gray-700 mb-2">Folder: {node.name}</h4>
-          <p className="text-sm text-gray-600">
-            {node.children ? `Contains ${node.children.length} items` : 'Empty folder'}
-          </p>
+        <div className="space-y-4">
+          <div className="bg-white rounded-lg border p-4">
+            <h4 className="font-medium text-gray-700 mb-2">📁 {node.name}</h4>
+            <p className="text-sm text-gray-600">
+              {node.children ? `Contains ${node.children.length} items` : 'Empty folder'}
+            </p>
+          </div>
         </div>
       );
     }
 
     const { type, collection, resource, compiledCollection } = node.data;
 
-    // Simplified rendering logic - showing just basic info
+    switch (type) {
+      case 'compiled-resource':
+        return renderCompiledResource(resource, compiledCollection);
+
+      case 'decisions':
+        return renderCollectionSection('Decisions', collection, compiledCollection, 'decision');
+
+      case 'condition-sets':
+        return renderCollectionSection('Condition Sets', collection, compiledCollection, 'condition-set');
+
+      case 'conditions':
+        return renderCollectionSection('Conditions', collection, compiledCollection, 'condition');
+
+      default:
+        return renderRawData();
+    }
+  };
+
+  const renderCompiledResource = (resource: any, compiledCollection: any) => {
     return (
-      <div className="p-4">
+      <div className="space-y-4">
+        {/* Resource Overview */}
+        <div className="bg-white rounded-lg border p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-medium text-gray-900">🎯 Compiled Resource</h4>
+            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+              Type: {getResourceTypeName(resource.resourceTypeIndex, compiledCollection)}
+            </span>
+          </div>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center space-x-2">
+              <span className="font-medium text-gray-600">Resource ID:</span>
+              <code className="bg-gray-100 px-2 py-1 rounded text-xs">{resource.id}</code>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="font-medium text-gray-600">Resource Type Index:</span>
+              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-mono">
+                [{resource.resourceTypeIndex}]
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="font-medium text-gray-600">Decision Index:</span>
+              <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-mono">
+                [{resource.decisionIndex}]
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Decision Details */}
+        {resource.decisionIndex !== undefined &&
+          compiledCollection.decisions &&
+          compiledCollection.decisions[resource.decisionIndex] && (
+            <div className="bg-white rounded-lg border p-4">
+              <h5 className="font-medium text-gray-700 mb-3">🔗 Referenced Decision</h5>
+              {renderDecisionDetail(
+                compiledCollection.decisions[resource.decisionIndex],
+                resource.decisionIndex,
+                compiledCollection
+              )}
+            </div>
+          )}
+      </div>
+    );
+  };
+
+  const renderCollectionSection = (
+    title: string,
+    collection: any[],
+    compiledCollection: any,
+    itemType: string
+  ) => {
+    if (!collection || collection.length === 0) {
+      return (
+        <div className="bg-white rounded-lg border p-4">
+          <h4 className="font-medium text-gray-700 mb-2">📋 {title}</h4>
+          <p className="text-sm text-gray-500">No {title.toLowerCase()} available</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        <div className="bg-white rounded-lg border p-4">
+          <h4 className="font-medium text-gray-700 mb-3">
+            📋 {title} ({collection.length})
+          </h4>
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {collection.map((item: any, index: number) => (
+              <div key={index} className="bg-gray-50 rounded-lg border p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-sm text-gray-800">
+                    {itemType === 'decision' &&
+                      formatDisplayName(getDecisionKey(item, index, compiledCollection), index)}
+                    {itemType === 'condition-set' &&
+                      formatDisplayName(getConditionSetKey(item, index, compiledCollection), index)}
+                    {itemType === 'condition' &&
+                      formatDisplayName(getConditionKey(item, compiledCollection), index)}
+                  </span>
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-mono">
+                    [{index}]
+                  </span>
+                </div>
+
+                {itemType === 'decision' && renderDecisionDetail(item, index, compiledCollection)}
+                {itemType === 'condition-set' && renderConditionSetDetail(item, index, compiledCollection)}
+                {itemType === 'condition' && renderConditionDetail(item, index, compiledCollection)}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderDecisionDetail = (decision: any, decisionIndex: number, compiledCollection: any) => {
+    return (
+      <div className="space-y-2">
+        {decision.conditionSets && decision.conditionSets.length > 0 && (
+          <div>
+            <span className="text-xs font-medium text-gray-600 block mb-1">Condition Sets:</span>
+            <div className="flex flex-wrap gap-1">
+              {decision.conditionSets.map((conditionSetIndex: number, idx: number) => {
+                const conditionSet = compiledCollection.conditionSets?.[conditionSetIndex];
+                return (
+                  <span key={idx} className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-mono">
+                    {conditionSet
+                      ? getConditionSetKey(conditionSet, conditionSetIndex, compiledCollection)
+                      : `unknown`}{' '}
+                    [{conditionSetIndex}]
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {decision.candidates && decision.candidates.length > 0 && (
+          <div>
+            <span className="text-xs font-medium text-gray-600 block mb-1">
+              Candidates ({decision.candidates.length}):
+            </span>
+            <div className="space-y-1">
+              {decision.candidates.slice(0, 3).map((candidate: any, idx: number) => (
+                <div key={idx} className="bg-blue-50 p-2 rounded text-xs">
+                  <div className="font-mono text-blue-800">
+                    Candidate {idx}:{' '}
+                    {typeof candidate === 'object'
+                      ? JSON.stringify(candidate).slice(0, 100) + '...'
+                      : String(candidate)}
+                  </div>
+                </div>
+              ))}
+              {decision.candidates.length > 3 && (
+                <div className="text-xs text-gray-500 italic">
+                  ... and {decision.candidates.length - 3} more candidates
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderConditionSetDetail = (
+    conditionSet: any,
+    conditionSetIndex: number,
+    compiledCollection: any
+  ) => {
+    return (
+      <div className="space-y-2">
+        {conditionSet.conditions && conditionSet.conditions.length > 0 && (
+          <div>
+            <span className="text-xs font-medium text-gray-600 block mb-1">Conditions:</span>
+            <div className="flex flex-wrap gap-1">
+              {conditionSet.conditions.map((conditionIndex: number, idx: number) => {
+                const condition = compiledCollection.conditions?.[conditionIndex];
+                return (
+                  <span
+                    key={idx}
+                    className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-mono"
+                  >
+                    {condition ? getConditionKey(condition, compiledCollection) : `unknown`} [{conditionIndex}
+                    ]
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {conditionSet.metadata && (
+          <div>
+            <span className="text-xs font-medium text-gray-600 block mb-1">Metadata:</span>
+            <div className="bg-gray-100 p-2 rounded text-xs">
+              <pre>{JSON.stringify(conditionSet.metadata, null, 2)}</pre>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderConditionDetail = (condition: any, conditionIndex: number, compiledCollection: any) => {
+    const qualifier = compiledCollection.qualifiers?.[condition.qualifierIndex];
+
+    return (
+      <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <span className="font-medium text-gray-600">Qualifier Index:</span>
+            <span className="ml-2 bg-indigo-100 text-indigo-800 px-2 py-1 rounded font-mono">
+              [{condition.qualifierIndex}]
+            </span>
+          </div>
+          <div>
+            <span className="font-medium text-gray-600">Qualifier Name:</span>
+            <span className="ml-2 text-gray-800">{qualifier?.name || 'unknown'}</span>
+          </div>
+          <div>
+            <span className="font-medium text-gray-600">Value:</span>
+            <span className="ml-2 bg-gray-100 px-2 py-1 rounded font-mono">{condition.value}</span>
+          </div>
+          <div>
+            <span className="font-medium text-gray-600">Priority:</span>
+            <span className="ml-2 text-gray-800">{condition.priority || 'default'}</span>
+          </div>
+        </div>
+
+        {condition.scoreAsDefault !== undefined && (
+          <div className="text-xs">
+            <span className="font-medium text-gray-600">Score as Default:</span>
+            <span className="ml-2 bg-amber-100 text-amber-800 px-2 py-1 rounded font-mono">
+              {condition.scoreAsDefault}
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderRawData = () => {
+    return (
+      <div className="bg-white rounded-lg border p-4">
         <h4 className="font-medium text-gray-700 mb-2">{node.name}</h4>
         <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto max-h-96 overflow-y-auto">
           {JSON.stringify(node.data, null, 2)}
@@ -623,9 +883,25 @@ const NodeDetail: React.FC<NodeDetailProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Details</h3>
-      <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50">
-        {renderDetails()}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">Details</h3>
+        <button
+          onClick={() => setShowRawJson(!showRawJson)}
+          className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100"
+        >
+          {showRawJson ? 'Rich View' : 'Raw JSON'}
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto">
+        {showRawJson ? (
+          <div className="bg-white rounded-lg border p-4">
+            <pre className="text-xs bg-gray-50 p-3 rounded overflow-x-auto">
+              {JSON.stringify(node.data, null, 2)}
+            </pre>
+          </div>
+        ) : (
+          renderDetails()
+        )}
       </div>
     </div>
   );

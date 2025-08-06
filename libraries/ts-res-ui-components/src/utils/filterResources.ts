@@ -53,7 +53,7 @@ export function getFilterSummary(values: Record<string, string | undefined>): st
  */
 export const createFilteredResourceManagerSimple = async (
   originalSystem: {
-    resourceManager: Resources.ResourceManagerBuilder;
+    resourceManager: Resources.ResourceManagerBuilder | Runtime.IResourceManager;
     qualifiers: any;
     qualifierTypes: any;
     resourceTypes: any;
@@ -80,13 +80,42 @@ export const createFilteredResourceManagerSimple = async (
       Object.entries(partialContext).filter(([, value]) => value !== undefined)
     ) as Record<string, string>;
 
+    // Check if we have a ResourceManagerBuilder that supports cloning
+    if (!('clone' in originalSystem.resourceManager)) {
+      // For IResourceManager from bundles, filtering is not supported
+      // Return the original system as-is with a warning
+      const compiledResult =
+        'getCompiledResourceCollection' in originalSystem.resourceManager
+          ? (originalSystem.resourceManager as any).getCompiledResourceCollection({ includeMetadata: true })
+          : succeed(null);
+
+      if (compiledResult.isSuccess() && compiledResult.value) {
+        const resourceIds = compiledResult.value.resources?.map((r: any) => r.id) || [];
+        return succeed({
+          system: originalSystem,
+          compiledCollection: compiledResult.value,
+          resolver: null as any, // Will be created later if needed
+          resourceCount: resourceIds.length,
+          summary: {
+            totalResources: resourceIds.length,
+            resourceIds,
+            errorCount: 0,
+            warnings: ['Filtering is not supported for resources loaded from bundles']
+          }
+        });
+      }
+
+      return fail('Filtering is not supported for this type of resource manager');
+    }
+
     // Use Result pattern chaining as recommended
     debugLog(enableDebug, 'Validating context and cloning manager:', filteredContext);
-    const cloneResult = originalSystem.resourceManager
+    const resourceManagerBuilder = originalSystem.resourceManager as Resources.ResourceManagerBuilder;
+    const cloneResult = resourceManagerBuilder
       .validateContext(filteredContext)
       .onSuccess((validatedContext) => {
         debugLog(enableDebug, 'Context validated, creating clone with context:', validatedContext);
-        return originalSystem.resourceManager.clone({
+        return resourceManagerBuilder.clone({
           filterForContext: validatedContext,
           reduceQualifiers: options.reduceQualifiers
         });
