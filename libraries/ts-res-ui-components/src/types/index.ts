@@ -37,6 +37,7 @@ export interface ProcessedResources {
     contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
   };
   compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
+  compiledResourceCollectionManager: Runtime.CompiledResourceCollection | null; // Runtime manager for compiled collection
   resolver: Runtime.ResourceResolver;
   resourceCount: number;
   summary: {

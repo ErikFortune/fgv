@@ -6,7 +6,8 @@ import {
   processImportedFiles,
   processImportedDirectory,
   createSimpleContext,
-  createTsResSystemFromConfig
+  createTsResSystemFromConfig,
+  createCompiledResourceCollectionManager
 } from '../utils/tsResIntegration';
 
 export interface UseResourceDataReturn {
@@ -267,6 +268,13 @@ export function useResourceData(): UseResourceDataReturn {
         throw new Error(`Failed to create resolver: ${resolverResult.message}`);
       }
 
+      // Create CompiledResourceCollection manager from the bundle's compiled collection
+      const compiledManagerResult = createCompiledResourceCollectionManager(
+        compiledCollection,
+        system.qualifierTypes,
+        system.resourceTypes
+      );
+
       // Create the processed resources structure with bundle data
       const processedResources: ProcessedResources = {
         system: {
@@ -278,6 +286,9 @@ export function useResourceData(): UseResourceDataReturn {
           contextQualifierProvider: system.contextQualifierProvider
         },
         compiledCollection,
+        compiledResourceCollectionManager: compiledManagerResult.isSuccess()
+          ? compiledManagerResult.value
+          : null,
         resolver: resolverResult.value,
         resourceCount,
         summary: {

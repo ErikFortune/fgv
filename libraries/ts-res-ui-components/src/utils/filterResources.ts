@@ -1,6 +1,7 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
 import { Context, Runtime, Import, Resources } from '@fgv/ts-res';
 import { ProcessedResources } from '../types';
+import { createCompiledResourceCollectionManager } from './tsResIntegration';
 
 export interface FilterOptions {
   partialContextMatch?: boolean;
@@ -91,9 +92,20 @@ export const createFilteredResourceManagerSimple = async (
 
       if (compiledResult.isSuccess() && compiledResult.value) {
         const resourceIds = compiledResult.value.resources?.map((r: any) => r.id) || [];
+
+        // Create CompiledResourceCollection manager for bundle resources
+        const compiledManagerResult = createCompiledResourceCollectionManager(
+          compiledResult.value,
+          originalSystem.qualifierTypes,
+          originalSystem.resourceTypes
+        );
+
         return succeed({
           system: originalSystem,
           compiledCollection: compiledResult.value,
+          compiledResourceCollectionManager: compiledManagerResult.isSuccess()
+            ? compiledManagerResult.value
+            : null,
           resolver: null as any, // Will be created later if needed
           resourceCount: resourceIds.length,
           summary: {
@@ -177,6 +189,13 @@ export const createFilteredResourceManagerSimple = async (
       return fail(`Failed to create resolver: ${resolverResult.message}`);
     }
 
+    // Create CompiledResourceCollection manager for filtered results
+    const compiledManagerResult = createCompiledResourceCollectionManager(
+      compiledCollectionResult.value,
+      originalSystem.qualifierTypes,
+      originalSystem.resourceTypes
+    );
+
     // Create summary
     const resourceIds = Array.from(filteredManager.resources.keys());
     const summary = {
@@ -189,6 +208,9 @@ export const createFilteredResourceManagerSimple = async (
     const processedResources: ProcessedResources = {
       system: newSystem,
       compiledCollection: compiledCollectionResult.value,
+      compiledResourceCollectionManager: compiledManagerResult.isSuccess()
+        ? compiledManagerResult.value
+        : null,
       resolver: resolverResult.value,
       resourceCount: resourceIds.length,
       summary
