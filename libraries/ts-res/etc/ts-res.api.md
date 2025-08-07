@@ -171,6 +171,8 @@ const bundleMetadata: Converter<IBundleMetadata>;
 // @public
 class BundleNormalizer {
     static normalize(originalBuilder: ResourceManagerBuilder, systemConfig: SystemConfiguration): Result<ResourceManagerBuilder>;
+    static normalize(originalManager: IResourceManager, systemConfig: SystemConfiguration): Result<ResourceManagerBuilder>;
+    static normalizeFromCompiledCollection(compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection, systemConfig: SystemConfiguration): Result<ResourceManagerBuilder>;
     static normalizeFromPredefined(originalBuilder: ResourceManagerBuilder, configName: PredefinedSystemConfiguration): Result<ResourceManagerBuilder>;
 }
 
@@ -3954,6 +3956,9 @@ export class ResourceManagerBuilder implements IResourceManager {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params: IResourceManagerBuilderCreateParams): Result<ResourceManagerBuilder>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static createFromCompiledResourceCollection(compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection, systemConfig: Config.SystemConfiguration): Result<ResourceManagerBuilder>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createPredefined(name: Config.PredefinedSystemConfiguration, qualifierDefaultValues?: Config.ISystemConfigurationInitParams['qualifierDefaultValues']): Result<ResourceManagerBuilder>;

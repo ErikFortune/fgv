@@ -125,6 +125,14 @@ export interface ResolutionViewProps extends ViewBaseProps {
   availableQualifiers?: string[];
 }
 
+// Resolution editing types
+export interface EditedResourceInfo {
+  resourceId: string;
+  originalValue: any;
+  editedValue: any;
+  timestamp: Date;
+}
+
 // Resolution types
 export interface ResolutionState {
   contextValues: Record<string, string | undefined>;
@@ -134,6 +142,10 @@ export interface ResolutionState {
   resolutionResult: ResolutionResult | null;
   viewMode: 'composed' | 'best' | 'all' | 'raw';
   hasPendingChanges: boolean;
+  // Edit state
+  editedResources: Map<string, any>;
+  hasUnsavedEdits: boolean;
+  isApplyingEdits: boolean;
 }
 
 export interface ResolutionActions {
@@ -142,6 +154,13 @@ export interface ResolutionActions {
   selectResource: (resourceId: string) => void;
   setViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
   resetCache: () => void;
+  // Edit actions
+  saveEdit: (resourceId: string, editedValue: any, originalValue?: any) => void;
+  getEditedValue: (resourceId: string) => any | undefined;
+  hasEdit: (resourceId: string) => boolean;
+  clearEdits: () => void;
+  applyEdits: () => Promise<void>;
+  discardEdits: () => void;
 }
 
 export interface ResolutionResult {
@@ -260,6 +279,14 @@ export interface OrchestratorActions {
   selectResourceForResolution: (resourceId: string) => void;
   setResolutionViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
   resetResolutionCache: () => void;
+
+  // Resolution editing
+  saveResourceEdit: (resourceId: string, editedValue: any, originalValue?: any) => void;
+  getEditedValue: (resourceId: string) => any | undefined;
+  hasResourceEdit: (resourceId: string) => boolean;
+  clearResourceEdits: () => void;
+  applyResourceEdits: () => Promise<void>;
+  discardResourceEdits: () => void;
 
   // UI state management
   selectResource: (resourceId: string | null) => void;

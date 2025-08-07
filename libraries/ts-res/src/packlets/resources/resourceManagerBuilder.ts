@@ -34,6 +34,7 @@ import {
   succeedWithDetail,
   ValidatingResultMap
 } from '@fgv/ts-utils';
+import { Converters as JsonConverters, JsonObject } from '@fgv/ts-json-base';
 import {
   ConditionCollector,
   ConditionSetCollector,
@@ -44,9 +45,9 @@ import {
   ConditionSet,
   IConditionSetDecl
 } from '../conditions';
-import { AbstractDecisionCollector, ReadOnlyAbstractDecisionCollector } from '../decisions';
+import { AbstractDecisionCollector, ReadOnlyAbstractDecisionCollector, AbstractDecision } from '../decisions';
 import { IReadOnlyQualifierCollector } from '../qualifiers';
-import { ReadOnlyResourceTypeCollector } from '../resource-types';
+import { ReadOnlyResourceTypeCollector, ResourceType } from '../resource-types';
 import { Convert, ResourceId, Validate } from '../common';
 import { IResourceManager } from '../runtime';
 import { ResourceBuilder, ResourceBuilderResultDetail } from './resourceBuilder';
@@ -223,6 +224,34 @@ export class ResourceManagerBuilder implements IResourceManager {
         qualifiers: systemConfig.qualifiers,
         resourceTypes: systemConfig.resourceTypes
       });
+    });
+  }
+
+  /**
+   * Creates a new {@link Resources.ResourceManagerBuilder | ResourceManagerBuilder} from a
+   * {@link ResourceJson.Compiled.ICompiledResourceCollection | compiled resource collection}.
+   * This method reconstructs an exactly equivalent builder where all qualifier, condition,
+   * condition set, and decision indices match the original compiled collection.
+   * @param compiledCollection - The compiled resource collection to reconstruct from.
+   * @param systemConfig - The system configuration containing qualifiers and resource types.
+   * @returns `Success` with the new manager if successful, or `Failure` with an error message if not.
+   * @public
+   */
+  public static createFromCompiledResourceCollection(
+    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection,
+    systemConfig: Config.SystemConfiguration
+  ): Result<ResourceManagerBuilder> {
+    // Create the base builder with system configuration
+    return ResourceManagerBuilder.create({
+      qualifiers: systemConfig.qualifiers,
+      resourceTypes: systemConfig.resourceTypes
+    }).onSuccess((builder) => {
+      // Reconstruct all entities in order to preserve indices
+      return ResourceManagerBuilder._reconstructConditions(builder, compiledCollection)
+        .onSuccess(() => ResourceManagerBuilder._reconstructConditionSets(builder, compiledCollection))
+        .onSuccess(() => ResourceManagerBuilder._reconstructDecisions(builder, compiledCollection))
+        .onSuccess(() => ResourceManagerBuilder._reconstructResources(builder, compiledCollection))
+        .onSuccess(() => succeed(builder));
     });
   }
 
@@ -847,5 +876,211 @@ export class ResourceManagerBuilder implements IResourceManager {
     };
 
     return succeed(newResourceDecl);
+  }
+
+  /**
+   * Reconstructs conditions from a compiled collection and adds them to the builder.
+   * @param builder - The builder to add conditions to.
+   * @param compiledCollection - The compiled collection containing conditions.
+   * @returns `Success` if all conditions were added successfully, `Failure` otherwise.
+   * @internal
+   */
+  private static _reconstructConditions(
+    builder: ResourceManagerBuilder,
+    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
+  ): Result<boolean> {
+    const errors = new MessageAggregator();
+
+    for (const compiledCondition of compiledCollection.conditions) {
+      // Get the qualifier by index
+      const qualifierResult = builder.qualifiers.getAt(compiledCondition.qualifierIndex);
+      if (qualifierResult.isFailure()) {
+        qualifierResult.aggregateError(errors);
+        continue;
+      }
+
+      // Create condition declaration from compiled condition
+      const conditionDecl: ResourceJson.Json.ILooseConditionDecl = {
+        qualifierName: qualifierResult.value.name,
+        operator: compiledCondition.operator,
+        value: compiledCondition.value,
+        priority: compiledCondition.priority,
+        scoreAsDefault: compiledCondition.scoreAsDefault
+      };
+
+      // Add condition to builder (it will get the next sequential index)
+      builder.addCondition(conditionDecl).aggregateError(errors);
+    }
+
+    return errors.returnOrReport(succeed(true));
+  }
+
+  /**
+   * Reconstructs condition sets from a compiled collection and adds them to the builder.
+   * @param builder - The builder to add condition sets to.
+   * @param compiledCollection - The compiled collection containing condition sets.
+   * @returns `Success` if all condition sets were added successfully, `Failure` otherwise.
+   * @internal
+   */
+  private static _reconstructConditionSets(
+    builder: ResourceManagerBuilder,
+    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
+  ): Result<boolean> {
+    const errors = new MessageAggregator();
+
+    for (const compiledConditionSet of compiledCollection.conditionSets) {
+      // Get conditions by their indices
+      const conditionResults = compiledConditionSet.conditions.map((idx) => builder._conditions.getAt(idx));
+
+      // Check for any failures
+      const failedIndex = conditionResults.findIndex((r) => r.isFailure());
+      if (failedIndex >= 0) {
+        conditionResults[failedIndex].aggregateError(errors);
+        continue;
+      }
+
+      // Create condition set from conditions (not declarations)
+      const conditions = conditionResults.map((r) => r.orThrow());
+      // Convert conditions to declarations for addConditionSet
+      const conditionDecls = conditions.map((c) => c.toLooseConditionDecl());
+      builder.addConditionSet(conditionDecls).aggregateError(errors);
+    }
+
+    return errors.returnOrReport(succeed(true));
+  }
+
+  /**
+   * Reconstructs decisions from a compiled collection and adds them to the builder.
+   * @param builder - The builder to add decisions to.
+   * @param compiledCollection - The compiled collection containing decisions.
+   * @returns `Success` if all decisions were added successfully, `Failure` otherwise.
+   * @internal
+   */
+  private static _reconstructDecisions(
+    builder: ResourceManagerBuilder,
+    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
+  ): Result<boolean> {
+    const errors = new MessageAggregator();
+
+    for (const compiledDecision of compiledCollection.decisions) {
+      // Get condition sets by their indices
+      const conditionSetResults = compiledDecision.conditionSets.map((idx) =>
+        builder._conditionSets.getAt(idx)
+      );
+
+      // Check for any failures
+      const failedIndex = conditionSetResults.findIndex((r) => r.isFailure());
+      if (failedIndex >= 0) {
+        conditionSetResults[failedIndex].aggregateError(errors);
+        continue;
+      }
+
+      // Get condition sets from successful results
+      const conditionSets = conditionSetResults.map((r) => r.orThrow());
+      // Create AbstractDecision from condition sets and add to collector
+      AbstractDecision.createAbstractDecision({ conditionSets })
+        .onSuccess((decision) => builder._decisions.getOrAdd(decision))
+        .aggregateError(errors);
+    }
+
+    return errors.returnOrReport(succeed(true));
+  }
+
+  /**
+   * Reconstructs resources and their candidates from a compiled collection and adds them to the builder.
+   * @param builder - The builder to add resources to.
+   * @param compiledCollection - The compiled collection containing resources.
+   * @returns `Success` if all resources were added successfully, `Failure` otherwise.
+   * @internal
+   */
+  private static _reconstructResources(
+    builder: ResourceManagerBuilder,
+    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
+  ): Result<boolean> {
+    const errors = new MessageAggregator();
+
+    for (const compiledResource of compiledCollection.resources) {
+      // Get the resource type by index
+      const resourceTypeResult = builder.resourceTypes.getAt(compiledResource.type);
+      if (resourceTypeResult.isFailure()) {
+        resourceTypeResult.aggregateError(errors);
+        continue;
+      }
+
+      // Get the decision by index
+      const decisionResult = builder._decisions.getAt(compiledResource.decision);
+      if (decisionResult.isFailure()) {
+        decisionResult.aggregateError(errors);
+        continue;
+      }
+
+      const decision = decisionResult.value;
+      const resourceType = resourceTypeResult.value;
+
+      // Create candidates from the decision's condition sets
+      ResourceManagerBuilder._createCandidatesFromDecision(
+        compiledResource,
+        decision,
+        resourceType,
+        builder
+      ).aggregateError(errors);
+    }
+
+    return errors.returnOrReport(succeed(true));
+  }
+
+  /**
+   * Helper method to create candidates from a decision's condition sets.
+   * @param compiledResource - The compiled resource containing candidates.
+   * @param decision - The decision containing condition sets.
+   * @param resourceType - The resource type for the candidates.
+   * @param builder - The builder to add candidates to.
+   * @returns `Success` if all candidates were added successfully, `Failure` otherwise.
+   * @internal
+   */
+  private static _createCandidatesFromDecision(
+    compiledResource: ResourceJson.Compiled.ICompiledResource,
+    decision: AbstractDecision,
+    resourceType: ResourceType,
+    builder: ResourceManagerBuilder
+  ): Result<boolean> {
+    const errors = new MessageAggregator();
+
+    // Match each candidate to its corresponding condition set
+    for (let i = 0; i < compiledResource.candidates.length; i++) {
+      const candidate = compiledResource.candidates[i];
+
+      // Build conditions from the corresponding condition set (if available)
+      let conditions: Record<string, string> | undefined;
+      if (i < decision.candidates.length) {
+        const decisionCandidate = decision.candidates[i];
+        conditions = {};
+        for (const condition of decisionCandidate.conditionSet.conditions) {
+          conditions[condition.qualifier.name] = condition.value;
+        }
+        if (Object.keys(conditions).length === 0) {
+          conditions = undefined;
+        }
+      }
+
+      // Convert json value to JsonObject, handling undefined case
+      const jsonValue =
+        candidate.json !== undefined
+          ? JsonConverters.jsonObject.convert(candidate.json).orDefault({} as JsonObject)
+          : ({} as JsonObject);
+
+      const candidateDecl: ResourceJson.Json.ILooseResourceCandidateDecl = {
+        id: compiledResource.id,
+        json: jsonValue,
+        conditions,
+        isPartial: candidate.isPartial,
+        mergeMethod: candidate.mergeMethod,
+        resourceTypeName: resourceType.key
+      };
+
+      builder.addLooseCandidate(candidateDecl).aggregateError(errors);
+    }
+
+    return errors.returnOrReport(succeed(true));
   }
 }

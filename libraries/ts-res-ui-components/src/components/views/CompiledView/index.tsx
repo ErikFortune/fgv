@@ -755,21 +755,30 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node }) => {
   };
 
   const getItemDisplayKey = (item: any, collectionType: string): string => {
-    switch (collectionType) {
-      case 'qualifiers':
-        return `defaultPriority: ${item.defaultPriority}`;
-      case 'qualifier-types':
-        return `allowContextList: ${item.allowContextList}`;
-      case 'resource-types':
-        return `key: ${item.key}`;
-      case 'conditions':
-        return `priority: ${item.priority}`;
-      case 'condition-sets':
-        return item.conditions?.map((c: any) => `${c.qualifier.name}=${c.value}`).join(', ') || 'default';
-      case 'decisions':
-        return `${item.conditionSets?.length ?? 0} condition sets`;
-      default:
-        return '';
+    try {
+      switch (collectionType) {
+        case 'qualifiers':
+          return `defaultPriority: ${item?.defaultPriority ?? 'N/A'}`;
+        case 'qualifier-types':
+          return `allowContextList: ${item?.allowContextList ?? 'N/A'}`;
+        case 'resource-types':
+          return `key: ${item?.key ?? 'N/A'}`;
+        case 'conditions':
+          return `priority: ${item?.priority ?? 'N/A'}`;
+        case 'condition-sets':
+          return (
+            item?.conditions
+              ?.map((c: any) => `${c?.qualifier?.name ?? 'unknown'}=${c?.value ?? 'unknown'}`)
+              .join(', ') || 'default'
+          );
+        case 'decisions':
+          return `${item?.conditionSets?.length ?? 0} condition sets`;
+        default:
+          return '';
+      }
+    } catch (error) {
+      console.warn('Error in getItemDisplayKey:', error, { item, collectionType });
+      return 'Display error';
     }
   };
 

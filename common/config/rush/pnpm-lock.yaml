@@ -505,6 +505,9 @@ importers:
       '@heroicons/react':
         specifier: ~2.2.0
         version: 2.2.0(react@19.1.0)
+      json-edit-react:
+        specifier: ~1.28.2
+        version: 1.28.2(react@19.1.0)
       jszip:
         specifier: ~3.10.1
         version: 3.10.1

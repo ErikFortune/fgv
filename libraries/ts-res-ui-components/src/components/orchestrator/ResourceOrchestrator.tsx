@@ -39,7 +39,20 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
   const resourceData = useResourceData();
   const filterState = useFilterState();
   const viewState = useViewState();
-  const resolutionData = useResolutionState(resourceData.state.processedResources, viewState.addMessage);
+  // System update handler for resolution editing
+  const handleSystemUpdate = useCallback(
+    (updatedResources: ProcessedResources) => {
+      resourceData.actions.updateProcessedResources(updatedResources);
+      viewState.addMessage('success', 'Resource system updated with edits');
+    },
+    [resourceData.actions, viewState]
+  );
+
+  const resolutionData = useResolutionState(
+    resourceData.state.processedResources,
+    viewState.addMessage,
+    handleSystemUpdate
+  );
 
   // Local state for filter results
   const [filterResult, setFilterResult] = useState<FilterResult | null>(null);
@@ -268,6 +281,14 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
       selectResourceForResolution: resolutionData.actions.selectResource,
       setResolutionViewMode: resolutionData.actions.setViewMode,
       resetResolutionCache: resolutionData.actions.resetCache,
+
+      // Resolution editing actions
+      saveResourceEdit: resolutionData.actions.saveEdit,
+      getEditedValue: resolutionData.actions.getEditedValue,
+      hasResourceEdit: resolutionData.actions.hasEdit,
+      clearResourceEdits: resolutionData.actions.clearEdits,
+      applyResourceEdits: resolutionData.actions.applyEdits,
+      discardResourceEdits: resolutionData.actions.discardEdits,
 
       // UI state management
       selectResource: viewState.selectResource,

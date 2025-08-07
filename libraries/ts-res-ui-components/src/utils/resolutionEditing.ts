@@ -1,0 +1,298 @@
+import { Result, succeed, fail } from '@fgv/ts-utils';
+import { ResourceJson, Resources, Runtime } from '@fgv/ts-res';
+import { Diff } from '@fgv/ts-json';
+import { ProcessedResources } from '../types';
+
+export interface EditedResourceInfo {
+  resourceId: string;
+  originalValue: any;
+  editedValue: any;
+  timestamp: Date;
+}
+
+export interface EditValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+/**
+ * Validates an edited resource JSON value
+ */
+export function validateEditedResource(editedValue: any): EditValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  // Basic JSON validation
+  if (editedValue === null || editedValue === undefined) {
+    errors.push('Resource value cannot be null or undefined');
+  }
+
+  // Check if it's valid JSON-serializable
+  try {
+    JSON.stringify(editedValue);
+  } catch (error) {
+    errors.push(`Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+
+  // Type-specific validation
+  if (typeof editedValue === 'object' && editedValue !== null) {
+    // Object validation - check for circular references
+    const seen = new Set();
+    const checkCircular = (obj: any): boolean => {
+      if (seen.has(obj)) return true;
+      seen.add(obj);
+      for (const key in obj) {
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+          if (checkCircular(obj[key])) return true;
+        }
+      }
+      seen.delete(obj);
+      return false;
+    };
+
+    if (checkCircular(editedValue)) {
+      errors.push('Resource contains circular references');
+    }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings
+  };
+}
+
+/**
+ * Computes a 3-way diff between base, resolved, and edited values to create minimal delta
+ * @param baseValue - The base/original value before resolution (if available)
+ * @param resolvedValue - The fully resolved/composed value shown to user
+ * @param editedValue - The value after user edits
+ * @returns A minimal delta object with only the changes, or null if no changes
+ */
+export function computeResourceDelta(
+  baseValue: any | undefined,
+  resolvedValue: any,
+  editedValue: any
+): Result<any> {
+  // Use ts-json's three-way diff for proper delta computation
+  const diffResult = Diff.jsonThreeWayDiff(resolvedValue, editedValue);
+
+  if (diffResult.isFailure()) {
+    // Fall back to full replacement on diff failure
+    console.error('Failed to compute three-way diff:', diffResult.message);
+    return succeed(editedValue);
+  }
+
+  const diff = diffResult.value;
+
+  // If identical, no changes needed
+  if (diff.identical) {
+    return succeed(null);
+  }
+
+  // The onlyInB contains the new/modified values that should be saved
+  // This represents the minimal delta from resolved to edited
+  if (diff.onlyInB === null) {
+    // Only deletions occurred
+    return succeed(null);
+  }
+
+  // For resource editing, we want to save the delta (onlyInB)
+  // which contains only the changed/added properties
+  return succeed(diff.onlyInB);
+}
+
+/**
+ * Creates candidate declarations for edited resources with proper delta handling
+ */
+export function createCandidateDeclarations(
+  editedResources: Map<string, { originalValue: any; editedValue: any; delta: any }>,
+  currentContext: Record<string, string>
+): ResourceJson.Json.ILooseResourceCandidateDecl[] {
+  const declarations: ResourceJson.Json.ILooseResourceCandidateDecl[] = [];
+
+  for (const [resourceId, resourceEdit] of editedResources.entries()) {
+    // Create conditions from current context (using array format)
+    const conditions: ResourceJson.Json.ILooseConditionDecl[] = [];
+
+    for (const [qualifierName, qualifierValue] of Object.entries(currentContext)) {
+      if (qualifierValue && qualifierValue.trim() !== '') {
+        conditions.push({
+          qualifierName,
+          operator: 'matches',
+          value: qualifierValue,
+          priority: 900 // High priority for user edits
+        });
+      }
+    }
+
+    // Always use the delta if we have one (which should be the minimal changes)
+    // The delta will be null if there are no changes, or the delta itself if there are changes
+    const hasChanges = resourceEdit.delta !== null && resourceEdit.delta !== undefined;
+
+    if (!hasChanges) {
+      // No changes, skip this resource
+      continue;
+    }
+
+    // Always save as partial with just the delta when we have changes
+    // This ensures minimal, clean resource files
+    declarations.push({
+      id: resourceId,
+      conditions: conditions.length > 0 ? conditions : undefined,
+      json: resourceEdit.delta, // Always use the delta (minimal changes only)
+      isPartial: true, // Always partial when saving deltas
+      mergeMethod: 'augment' // Always augment to merge the delta with base
+    });
+  }
+
+  return declarations;
+}
+
+/**
+ * Rebuilds the resource system with edited candidates using deltas
+ */
+export async function rebuildSystemWithEdits(
+  originalSystem: ProcessedResources['system'],
+  editedResources: Map<string, { originalValue: any; editedValue: any; delta: any }>,
+  currentContext: Record<string, string>
+): Promise<Result<ProcessedResources>> {
+  try {
+    // Only works with ResourceManagerBuilder
+    if (!('clone' in originalSystem.resourceManager)) {
+      return fail('System rebuilding is only supported for ResourceManagerBuilder instances');
+    }
+
+    const resourceManagerBuilder = originalSystem.resourceManager as Resources.ResourceManagerBuilder;
+
+    // Create candidate declarations from edited resources with deltas
+    const candidateDeclarations = createCandidateDeclarations(editedResources, currentContext);
+
+    // Clone the resource manager with new candidates
+    let clonedManager = resourceManagerBuilder;
+
+    for (const declaration of candidateDeclarations) {
+      const addResult = clonedManager.addLooseCandidate(declaration);
+      if (addResult.isFailure()) {
+        return fail(`Failed to add candidate for ${declaration.id}: ${addResult.message}`);
+      }
+      // Note: addLooseCandidate returns a DetailedResult with the added candidate, not a new manager
+    }
+
+    // Get compiled collection from the updated manager
+    const compiledResult = clonedManager.getCompiledResourceCollection({ includeMetadata: true });
+    if (compiledResult.isFailure()) {
+      return fail(`Failed to get compiled collection: ${compiledResult.message}`);
+    }
+
+    // Create resolver for the updated system
+    const resolverResult = Runtime.ResourceResolver.create({
+      resourceManager: clonedManager,
+      qualifierTypes: originalSystem.qualifierTypes,
+      contextQualifierProvider: originalSystem.contextQualifierProvider
+    });
+
+    if (resolverResult.isFailure()) {
+      return fail(`Failed to create resolver: ${resolverResult.message}`);
+    }
+
+    // Create summary
+    const resourceIds = Array.from(clonedManager.resources.keys());
+    const summary = {
+      totalResources: resourceIds.length,
+      resourceIds,
+      errorCount: 0,
+      warnings: []
+    };
+
+    const updatedSystem: ProcessedResources = {
+      system: {
+        qualifierTypes: originalSystem.qualifierTypes,
+        qualifiers: originalSystem.qualifiers,
+        resourceTypes: originalSystem.resourceTypes,
+        resourceManager: clonedManager,
+        importManager: originalSystem.importManager,
+        contextQualifierProvider: originalSystem.contextQualifierProvider
+      },
+      compiledCollection: compiledResult.value,
+      compiledResourceCollectionManager: null, // Could be recreated if needed
+      resolver: resolverResult.value,
+      resourceCount: resourceIds.length,
+      summary
+    };
+
+    return succeed(updatedSystem);
+  } catch (error) {
+    return fail(
+      `Failed to rebuild system with edits: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+/**
+ * Extracts the current resolution context from resolver state
+ */
+export function extractResolutionContext(
+  resolver: Runtime.ResourceResolver,
+  contextValues: Record<string, string>
+): Record<string, string> {
+  // Filter out empty/undefined context values
+  const cleanContext: Record<string, string> = {};
+
+  for (const [key, value] of Object.entries(contextValues)) {
+    if (value && value.trim() !== '') {
+      cleanContext[key] = value.trim();
+    }
+  }
+
+  return cleanContext;
+}
+
+/**
+ * Creates a collision detection key for tracking edit conflicts
+ */
+export function createEditCollisionKey(resourceId: string, context: Record<string, string>): string {
+  const contextEntries = Object.entries(context)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `${key}=${value}`)
+    .join('&');
+
+  return `${resourceId}?${contextEntries}`;
+}
+
+/**
+ * Checks for potential edit conflicts with existing candidates
+ */
+export function checkEditConflicts(
+  resourceManager: Resources.ResourceManagerBuilder | Runtime.IResourceManager,
+  editedResources: Map<string, any>,
+  currentContext: Record<string, string>
+): { conflicts: string[]; warnings: string[] } {
+  const conflicts: string[] = [];
+  const warnings: string[] = [];
+
+  for (const [resourceId] of editedResources) {
+    try {
+      // Get the current resource to check for conflicts
+      const resourceResult = resourceManager.getBuiltResource(resourceId);
+      if (resourceResult.isSuccess()) {
+        const resource = resourceResult.value;
+
+        // Check if we're likely to create a conflict
+        if (resource.candidates.length > 1) {
+          warnings.push(
+            `Resource ${resourceId} has ${resource.candidates.length} candidates - edits may create conflicts`
+          );
+        }
+
+        // Could add more sophisticated conflict detection here
+        // based on condition overlap analysis
+      }
+    } catch (error) {
+      // Ignore errors in conflict checking
+    }
+  }
+
+  return { conflicts, warnings };
+}

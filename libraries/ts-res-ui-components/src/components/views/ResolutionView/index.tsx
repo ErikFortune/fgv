@@ -8,8 +8,10 @@ import {
   PencilIcon,
   TrashIcon
 } from '@heroicons/react/24/outline';
-import { ResolutionViewProps, CandidateInfo } from '../../../types';
+import { ResolutionViewProps, CandidateInfo, ResolutionActions, ResolutionState } from '../../../types';
 import { QualifierContextControl } from '../../common/QualifierContextControl';
+import { EditableJsonView } from './EditableJsonView';
+import { ResolutionEditControls } from './ResolutionEditControls';
 
 export const ResolutionView: React.FC<ResolutionViewProps> = ({
   resources,
@@ -150,6 +152,20 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
           </div>
         </div>
 
+        {/* Edit Controls - Show when there are unsaved edits */}
+        {resolutionState?.hasUnsavedEdits && (
+          <div className="mt-6">
+            <ResolutionEditControls
+              editCount={resolutionState.editedResources.size}
+              isApplying={resolutionState.isApplyingEdits}
+              hasEdits={resolutionState.hasUnsavedEdits}
+              onApplyEdits={resolutionActions?.applyEdits}
+              onDiscardEdits={resolutionActions?.discardEdits}
+              disabled={!resolutionState.currentResolver}
+            />
+          </div>
+        )}
+
         {/* Main Browser/Details Layout */}
         <div className="flex flex-col lg:flex-row gap-6 h-[600px]">
           {/* Left side: Resource Selection */}
@@ -180,6 +196,12 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
                   >
                     {resourceId}
                   </span>
+                  {/* Show edit indicator */}
+                  {resolutionActions?.hasEdit?.(resourceId) && (
+                    <span className="ml-auto">
+                      <PencilIcon className="h-3 w-3 text-blue-500" />
+                    </span>
+                  )}
                 </div>
               ))}
             </div>
@@ -256,6 +278,8 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
                   result={resolutionState.resolutionResult}
                   viewMode={resolutionState.viewMode}
                   contextValues={resolutionState.contextValues}
+                  resolutionActions={resolutionActions}
+                  resolutionState={resolutionState}
                 />
               )}
             </div>
@@ -271,9 +295,17 @@ interface ResolutionResultsProps {
   result: any;
   viewMode: 'composed' | 'best' | 'all' | 'raw';
   contextValues: Record<string, string | undefined>;
+  resolutionActions?: ResolutionActions;
+  resolutionState?: ResolutionState;
 }
 
-const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode, contextValues }) => {
+const ResolutionResults: React.FC<ResolutionResultsProps> = ({
+  result,
+  viewMode,
+  contextValues,
+  resolutionActions,
+  resolutionState
+}) => {
   if (!result.success) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -316,12 +348,15 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({ result, viewMode,
     return (
       <div className="space-y-4">
         {result.composedValue ? (
-          <div className="bg-white p-3 rounded border">
-            <h4 className="font-medium text-gray-800 mb-2">Composed Resource Value</h4>
-            <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
-              {JSON.stringify(result.composedValue, null, 2)}
-            </pre>
-          </div>
+          <EditableJsonView
+            value={result.composedValue}
+            resourceId={result.resourceId}
+            isEdited={resolutionActions?.hasEdit?.(result.resourceId) || false}
+            editedValue={resolutionActions?.getEditedValue?.(result.resourceId)}
+            onSave={resolutionActions?.saveEdit}
+            onCancel={() => {}} // Could add cancel functionality if needed
+            disabled={resolutionState?.isApplyingEdits || false}
+          />
         ) : (
           <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
             <p className="text-sm text-yellow-800">No composed value available for the current context.</p>

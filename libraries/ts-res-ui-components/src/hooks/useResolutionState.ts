@@ -7,6 +7,13 @@ import {
   getAvailableQualifiers,
   hasPendingContextChanges
 } from '../utils/resolutionUtils';
+import {
+  validateEditedResource,
+  computeResourceDelta,
+  rebuildSystemWithEdits,
+  extractResolutionContext,
+  checkEditConflicts
+} from '../utils/resolutionEditing';
 
 export interface UseResolutionStateReturn {
   state: ResolutionState;
@@ -16,7 +23,8 @@ export interface UseResolutionStateReturn {
 
 export function useResolutionState(
   processedResources: ProcessedResources | null,
-  onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void
+  onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void,
+  onSystemUpdate?: (updatedResources: ProcessedResources) => void
 ): UseResolutionStateReturn {
   // Get available qualifiers
   const availableQualifiers = useMemo(() => {
@@ -41,6 +49,12 @@ export function useResolutionState(
   const [resolutionResult, setResolutionResult] = useState<ResolutionResult | null>(null);
   const [viewMode, setViewMode] = useState<'composed' | 'best' | 'all' | 'raw'>('composed');
 
+  // Edit state - stores original, edited, and delta for each resource
+  const [editedResources, setEditedResources] = useState<
+    Map<string, { originalValue: any; editedValue: any; delta: any }>
+  >(new Map());
+  const [isApplyingEdits, setIsApplyingEdits] = useState(false);
+
   // Update context state when defaults change
   React.useEffect(() => {
     setContextValues(defaultContextValues);
@@ -51,6 +65,11 @@ export function useResolutionState(
   const hasPendingChanges = useMemo(() => {
     return hasPendingContextChanges(contextValues, pendingContextValues);
   }, [contextValues, pendingContextValues]);
+
+  // Check for unsaved edits
+  const hasUnsavedEdits = useMemo(() => {
+    return editedResources.size > 0;
+  }, [editedResources]);
 
   // Update context value
   const updateContextValue = useCallback((qualifierName: string, value: string | undefined) => {
@@ -142,6 +161,157 @@ export function useResolutionState(
     }
   }, [processedResources, defaultContextValues]);
 
+  // Edit management functions
+  const saveEdit = useCallback(
+    (resourceId: string, editedValue: any, originalValue?: any) => {
+      try {
+        // Validate the edited value
+        const validation = validateEditedResource(editedValue);
+        if (!validation.isValid) {
+          onMessage?.('error', `Invalid edit: ${validation.errors.join(', ')}`);
+          return;
+        }
+
+        // Show warnings if any
+        if (validation.warnings.length > 0) {
+          validation.warnings.forEach((warning) => onMessage?.('warning', warning));
+        }
+
+        // Compute the delta between original and edited
+        const resolvedValue = originalValue || editedValue; // Use originalValue as the resolved/baseline
+        const deltaResult = computeResourceDelta(undefined, resolvedValue, editedValue);
+
+        if (deltaResult.isFailure()) {
+          onMessage?.('warning', `Could not compute delta, saving full value: ${deltaResult.message}`);
+        }
+
+        const delta = deltaResult.isSuccess() ? deltaResult.value : null;
+
+        // Save the edit with original, edited, and delta
+        setEditedResources((prev) => {
+          const newMap = new Map(prev);
+          newMap.set(resourceId, {
+            originalValue: resolvedValue,
+            editedValue,
+            delta
+          });
+          return newMap;
+        });
+
+        // Log info about delta
+        if (delta !== null && delta !== editedValue) {
+          const deltaSize = JSON.stringify(delta).length;
+          const fullSize = JSON.stringify(editedValue).length;
+          const reduction = Math.round((1 - deltaSize / fullSize) * 100);
+          onMessage?.('info', `Edit saved for ${resourceId} (delta: ${reduction}% smaller)`);
+        } else {
+          onMessage?.('info', `Edit saved for resource ${resourceId}`);
+        }
+      } catch (error) {
+        onMessage?.(
+          'error',
+          `Failed to save edit: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    },
+    [onMessage]
+  );
+
+  const getEditedValue = useCallback(
+    (resourceId: string) => {
+      const edit = editedResources.get(resourceId);
+      return edit?.editedValue;
+    },
+    [editedResources]
+  );
+
+  const hasEdit = useCallback(
+    (resourceId: string) => {
+      return editedResources.has(resourceId);
+    },
+    [editedResources]
+  );
+
+  const clearEdits = useCallback(() => {
+    setEditedResources(new Map());
+    onMessage?.('info', 'All edits cleared');
+  }, [onMessage]);
+
+  const discardEdits = useCallback(() => {
+    if (hasUnsavedEdits) {
+      setEditedResources(new Map());
+      onMessage?.('info', 'All unsaved edits discarded');
+    }
+  }, [hasUnsavedEdits, onMessage]);
+
+  const applyEdits = useCallback(async () => {
+    if (!processedResources || editedResources.size === 0) {
+      onMessage?.('warning', 'No edits to apply');
+      return;
+    }
+
+    if (!onSystemUpdate) {
+      onMessage?.('error', 'System update callback not provided');
+      return;
+    }
+
+    setIsApplyingEdits(true);
+
+    try {
+      // Extract current resolution context (filter out undefined values)
+      const cleanedContextValues: Record<string, string> = {};
+      Object.entries(contextValues).forEach(([key, value]) => {
+        if (value !== undefined) {
+          cleanedContextValues[key] = value;
+        }
+      });
+
+      const currentContext = extractResolutionContext(
+        currentResolver as Runtime.ResourceResolver,
+        cleanedContextValues
+      );
+
+      // Check for potential conflicts
+      const conflictCheck = checkEditConflicts(
+        processedResources.system.resourceManager,
+        editedResources,
+        currentContext
+      );
+
+      // Show warnings about potential conflicts
+      conflictCheck.warnings.forEach((warning) => onMessage?.('warning', warning));
+
+      if (conflictCheck.conflicts.length > 0) {
+        onMessage?.('error', `Conflicts detected: ${conflictCheck.conflicts.join(', ')}`);
+        return;
+      }
+
+      // Rebuild the system with edits
+      const rebuildResult = await rebuildSystemWithEdits(
+        processedResources.system,
+        editedResources,
+        currentContext
+      );
+
+      if (rebuildResult.isFailure()) {
+        onMessage?.('error', `Failed to apply edits: ${rebuildResult.message}`);
+        return;
+      }
+
+      // Update the system through the callback
+      onSystemUpdate(rebuildResult.value);
+
+      // Clear edits after successful application
+      setEditedResources(new Map());
+
+      onMessage?.('success', `Successfully applied ${editedResources.size} edit(s)`);
+    } catch (error) {
+      onMessage?.('error', `Error applying edits: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setIsApplyingEdits(false);
+    }
+  }, [processedResources, editedResources, onSystemUpdate, currentResolver, contextValues, onMessage]);
+
   const state: ResolutionState = {
     contextValues,
     pendingContextValues,
@@ -149,7 +319,11 @@ export function useResolutionState(
     currentResolver,
     resolutionResult,
     viewMode,
-    hasPendingChanges
+    hasPendingChanges,
+    // Edit state
+    editedResources,
+    hasUnsavedEdits,
+    isApplyingEdits
   };
 
   const actions: ResolutionActions = {
@@ -157,7 +331,14 @@ export function useResolutionState(
     applyContext,
     selectResource,
     setViewMode,
-    resetCache
+    resetCache,
+    // Edit actions
+    saveEdit,
+    getEditedValue,
+    hasEdit,
+    clearEdits,
+    applyEdits,
+    discardEdits
   };
 
   return {

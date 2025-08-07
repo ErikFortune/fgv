@@ -249,7 +249,14 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
               applyContext: actions.applyResolutionContext,
               selectResource: actions.selectResourceForResolution,
               setViewMode: actions.setResolutionViewMode,
-              resetCache: actions.resetResolutionCache
+              resetCache: actions.resetResolutionCache,
+              // Edit actions
+              saveEdit: actions.saveResourceEdit,
+              getEditedValue: actions.getEditedValue,
+              hasEdit: actions.hasResourceEdit,
+              clearEdits: actions.clearResourceEdits,
+              applyEdits: actions.applyResourceEdits,
+              discardEdits: actions.discardResourceEdits
             }}
             availableQualifiers={
               state.resources?.compiledCollection.qualifiers?.map((q: any) => q.name) ||

@@ -139,13 +139,39 @@ export function useResourceData(): UseResourceDataReturn {
       // We'll use it directly for both UI and resolution
       const bundleResourceManager = bundleManagerResult.value;
 
-      // Create the system using the bundle's resource manager directly
-      // The IResourceManager interface is compatible with what the UI expects
+      // Debug: Check what resources are in the original bundle manager
+      console.log('[Bundle Processing] Original bundle manager resources:', {
+        numResources: bundleResourceManager.numResources,
+        numCandidates: bundleResourceManager.numCandidates,
+        resourceIds: Array.from(bundleResourceManager.builtResources.keys())
+      });
+
+      // Convert the compiled collection to an editable ResourceManagerBuilder
+      // using createFromCompiledResourceCollection for exact reconstruction
+      const reconstructedBuilderResult =
+        Resources.ResourceManagerBuilder.createFromCompiledResourceCollection(
+          compiledCollection,
+          systemConfiguration
+        );
+      if (reconstructedBuilderResult.isFailure()) {
+        throw new Error(
+          `Failed to reconstruct builder from compiled collection: ${reconstructedBuilderResult.message}`
+        );
+      }
+
+      const editableResourceManager = reconstructedBuilderResult.value;
+      console.log('[Bundle Processing] Normalized builder resources:', {
+        numResources: editableResourceManager.resources.size,
+        numCandidates: Array.from(editableResourceManager.getAllCandidates()).length,
+        resourceIds: Array.from(editableResourceManager.resources.keys())
+      });
+
+      // Create the system using the normalized, editable resource manager
       const system = {
         qualifierTypes: systemConfiguration.qualifierTypes,
         qualifiers: systemConfiguration.qualifiers,
         resourceTypes: systemConfiguration.resourceTypes,
-        resourceManager: bundleResourceManager as any, // The IResourceManager from the bundle with all resources
+        resourceManager: editableResourceManager, // Now editable ResourceManagerBuilder
         importManager: Import.ImportManager.create({
           resources: Resources.ResourceManagerBuilder.create({
             qualifiers: systemConfiguration.qualifiers,
