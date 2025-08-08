@@ -10,6 +10,7 @@ import {
 } from './types';
 import { parseManifest, parseConfiguration, zipTreeToFiles, zipTreeToDirectory, isZipFile } from './zipUtils';
 import { processImportedFiles, processImportedDirectory } from '../tsResIntegration';
+import { ProcessedResources } from '../../types';
 
 // Dynamic import for JSZip to support both Node.js and browser environments
 let JSZip: any = null;
@@ -54,14 +55,12 @@ export class BrowserZipLoader implements IZipLoader {
       return fail(`File ${file.name} is not a ZIP file`);
     }
 
-    try {
-      const buffer = await file.arrayBuffer();
-      onProgress?.('reading-file', 100, 'File read complete');
+    const buffer = await file.arrayBuffer().catch((error) => {
+      throw new Error(`Failed to read file: ${error instanceof Error ? error.message : String(error)}`);
+    });
+    onProgress?.('reading-file', 100, 'File read complete');
 
-      return this.loadFromBuffer(buffer, options, onProgress);
-    } catch (error) {
-      return fail(`Failed to read file: ${error instanceof Error ? error.message : String(error)}`);
-    }
+    return this.loadFromBuffer(buffer, options, onProgress);
   }
 
   /**
@@ -72,68 +71,62 @@ export class BrowserZipLoader implements IZipLoader {
     options: ZipLoadOptions = {},
     onProgress?: ZipProgressCallback
   ): Promise<Result<ZipLoadResult>> {
-    try {
-      onProgress?.('parsing-zip', 0, 'Parsing ZIP archive');
+    onProgress?.('parsing-zip', 0, 'Parsing ZIP archive');
 
-      const JSZipClass = getJSZip();
-      const zip = new JSZipClass();
-      const loadedZip = await zip.loadAsync(buffer);
+    const JSZipClass = getJSZip();
+    const zip = new JSZipClass();
+    const loadedZip = await zip.loadAsync(buffer).catch((error: any) => {
+      throw new Error(`Failed to parse ZIP: ${error instanceof Error ? error.message : String(error)}`);
+    });
 
-      onProgress?.('parsing-zip', 100, 'ZIP archive parsed');
+    onProgress?.('parsing-zip', 100, 'ZIP archive parsed');
 
-      // Build file tree
-      const fileTree = await this.buildFileTree(loadedZip, onProgress);
+    // Build file tree
+    const fileTree = await this.buildFileTree(loadedZip, onProgress);
 
-      // Load manifest
-      onProgress?.('loading-manifest', 0, 'Loading manifest');
-      const manifest = await this.loadManifest(loadedZip);
-      onProgress?.('loading-manifest', 100, 'Manifest loaded');
+    // Load manifest
+    onProgress?.('loading-manifest', 0, 'Loading manifest');
+    const manifest = await this.loadManifest(loadedZip);
+    onProgress?.('loading-manifest', 100, 'Manifest loaded');
 
-      // Load configuration
-      onProgress?.('loading-config', 0, 'Loading configuration');
-      const config = await this.loadConfiguration(loadedZip, options);
-      onProgress?.('loading-config', 100, 'Configuration loaded');
+    // Load configuration
+    onProgress?.('loading-config', 0, 'Loading configuration');
+    const config = await this.loadConfiguration(loadedZip, options);
+    onProgress?.('loading-config', 100, 'Configuration loaded');
 
-      // Extract files and directory structure
-      onProgress?.('extracting-files', 0, 'Extracting files');
-      const files = zipTreeToFiles(fileTree);
-      const directory = zipTreeToDirectory(fileTree);
-      onProgress?.('extracting-files', 100, `Extracted ${files.length} files`);
+    // Extract files and directory structure
+    onProgress?.('extracting-files', 0, 'Extracting files');
+    const files = zipTreeToFiles(fileTree);
+    const directory = zipTreeToDirectory(fileTree);
+    onProgress?.('extracting-files', 100, `Extracted ${files.length} files`);
 
-      // Process resources if requested
-      let processedResources = null;
-      if (options.autoProcessResources) {
-        onProgress?.('processing-resources', 0, 'Processing resources');
+    // Process resources if requested
+    let processedResources: ProcessedResources | null = null;
+    if (options.autoProcessResources) {
+      onProgress?.('processing-resources', 0, 'Processing resources');
 
-        const configToUse = options.overrideConfig || config;
+      const configToUse = options.overrideConfig || config;
 
-        if (directory) {
-          const processResult = await processImportedDirectory(directory, configToUse || undefined);
-          if (processResult.isSuccess()) {
-            processedResources = processResult.value;
-          }
-        } else if (files.length > 0) {
-          const processResult = await processImportedFiles(files, configToUse || undefined);
-          if (processResult.isSuccess()) {
-            processedResources = processResult.value;
-          }
-        }
-
-        onProgress?.('processing-resources', 100, 'Resources processed');
+      if (directory) {
+        const processResult = await processImportedDirectory(directory, configToUse || undefined);
+        processedResources = processResult.orDefault() ?? null;
+      } else if (files.length > 0) {
+        const processResult = await processImportedFiles(files, configToUse || undefined);
+        processedResources = processResult.orDefault() ?? null;
       }
 
-      onProgress?.('complete', 100, 'ZIP loading complete');
-
-      return succeed({
-        manifest,
-        config: options.overrideConfig || config,
-        files,
-        directory,
-        processedResources
-      });
-    } catch (error) {
-      return fail(`Failed to load ZIP: ${error instanceof Error ? error.message : String(error)}`);
+      onProgress?.('processing-resources', 100, 'Resources processed');
     }
+
+    onProgress?.('complete', 100, 'ZIP loading complete');
+
+    return succeed({
+      manifest,
+      config: options.overrideConfig || config,
+      files,
+      directory,
+      processedResources
+    });
   }
 
   /**
@@ -146,20 +139,24 @@ export class BrowserZipLoader implements IZipLoader {
   ): Promise<Result<ZipLoadResult>> {
     onProgress?.('reading-file', 0, `Fetching from URL: ${url}`);
 
-    try {
-      const response = await fetch(url);
+    const response = await fetch(url).catch((error) => {
+      throw new Error(
+        `Failed to fetch ZIP from URL: ${error instanceof Error ? error.message : String(error)}`
+      );
+    });
 
-      if (!response.ok) {
-        return fail(`Failed to fetch ZIP from URL: ${response.status} ${response.statusText}`);
-      }
-
-      const buffer = await response.arrayBuffer();
-      onProgress?.('reading-file', 100, 'URL fetch complete');
-
-      return this.loadFromBuffer(buffer, options, onProgress);
-    } catch (error) {
-      return fail(`Failed to fetch ZIP from URL: ${error instanceof Error ? error.message : String(error)}`);
+    if (!response.ok) {
+      return fail(`Failed to fetch ZIP from URL: ${response.status} ${response.statusText}`);
     }
+
+    const buffer = await response.arrayBuffer().catch((error) => {
+      throw new Error(
+        `Failed to read response buffer: ${error instanceof Error ? error.message : String(error)}`
+      );
+    });
+    onProgress?.('reading-file', 100, 'URL fetch complete');
+
+    return this.loadFromBuffer(buffer, options, onProgress);
   }
 
   /**
@@ -224,14 +221,15 @@ export class BrowserZipLoader implements IZipLoader {
       return null;
     }
 
-    try {
-      const manifestData = await manifestFile.async('string');
-      const parseResult = parseManifest(manifestData);
-      return parseResult.isSuccess() ? parseResult.value : null;
-    } catch (error) {
-      console.warn('Failed to load manifest:', error);
+    const manifestData = await manifestFile.async('string').catch((error: any) => {
+      console.warn('Failed to read manifest file:', error);
       return null;
-    }
+    });
+
+    if (!manifestData) return null;
+
+    const parseResult = parseManifest(manifestData);
+    return parseResult.orDefault() ?? null;
   }
 
   /**
@@ -247,14 +245,15 @@ export class BrowserZipLoader implements IZipLoader {
       return null;
     }
 
-    try {
-      const configData = await configFile.async('string');
-      const parseResult = parseConfiguration(configData);
-      return parseResult.isSuccess() ? parseResult.value : null;
-    } catch (error) {
-      console.warn('Failed to load configuration:', error);
+    const configData = await configFile.async('string').catch((error: any) => {
+      console.warn('Failed to read config file:', error);
       return null;
-    }
+    });
+
+    if (!configData) return null;
+
+    const parseResult = parseConfiguration(configData);
+    return parseResult.orDefault() ?? null;
   }
 
   /**

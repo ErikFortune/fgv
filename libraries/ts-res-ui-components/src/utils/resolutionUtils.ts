@@ -1,4 +1,4 @@
-import { Result, succeed, fail } from '@fgv/ts-utils';
+import { Result, succeed, fail, MessageAggregator } from '@fgv/ts-utils';
 import { Runtime } from '@fgv/ts-res';
 import { ProcessedResources, ResolutionResult, CandidateInfo, ConditionEvaluationResult } from '../types';
 
@@ -27,61 +27,51 @@ export function createResolverWithContext(
   debugLog(enableDebug, '=== CREATING RESOLVER WITH CONTEXT ===');
   debugLog(enableDebug, 'Context values:', contextValues);
 
-  try {
-    // Create context provider with filtered values (remove undefined)
-    const filteredContext = Object.fromEntries(
-      Object.entries(contextValues).filter(([, value]) => value !== undefined)
-    ) as Record<string, string>;
+  // Create context provider with filtered values (remove undefined)
+  const filteredContext = Object.fromEntries(
+    Object.entries(contextValues).filter(([, value]) => value !== undefined)
+  ) as Record<string, string>;
 
-    const contextProviderResult = Runtime.ValidatingSimpleContextQualifierProvider.create({
-      qualifiers: processedResources.system.qualifiers
-    });
-
-    if (contextProviderResult.isFailure()) {
-      return fail(`Failed to create context provider: ${contextProviderResult.message}`);
-    }
-
-    const contextProvider = contextProviderResult.value;
-
-    // Set context values
-    for (const [qualifierName, value] of Object.entries(filteredContext)) {
-      try {
-        contextProvider.set(qualifierName as any, value as any);
-      } catch (error) {
-        return fail(
-          `Failed to set context value ${qualifierName}=${value}: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        );
+  return Runtime.ValidatingSimpleContextQualifierProvider.create({
+    qualifiers: processedResources.system.qualifiers
+  })
+    .withErrorFormat((e) => `Failed to create context provider: ${e}`)
+    .onSuccess((contextProvider) => {
+      const errors = new MessageAggregator();
+      // Set context values
+      for (const [qualifierName, value] of Object.entries(filteredContext)) {
+        contextProvider.validating
+          .set(qualifierName, value)
+          .withErrorFormat((e) => `Failed to set context value ${qualifierName}=${value}: ${e}`)
+          .aggregateError(errors);
       }
-    }
 
-    // Create resolver
-    const resolverParams: any = {
-      resourceManager: processedResources.system.resourceManager,
-      qualifierTypes: processedResources.system.qualifierTypes,
-      contextQualifierProvider: contextProvider
-    };
+      if (errors.hasMessages) {
+        return fail(`Errors setting context values: ${errors.toString()}`);
+      }
 
-    // Add cache metrics listener if caching is enabled
-    if (options.enableCaching) {
-      const metricsListener = new Runtime.ResourceResolverCacheMetricsListener(
-        () => new Runtime.AggregateCacheMetrics()
-      );
-      resolverParams.listener = metricsListener;
-    }
+      // Create resolver
+      const resolverParams: any = {
+        resourceManager: processedResources.system.resourceManager,
+        qualifierTypes: processedResources.system.qualifierTypes,
+        contextQualifierProvider: contextProvider
+      };
 
-    const resolverResult = Runtime.ResourceResolver.create(resolverParams);
+      // Add cache metrics listener if caching is enabled
+      if (options.enableCaching) {
+        const metricsListener = new Runtime.ResourceResolverCacheMetricsListener(
+          () => new Runtime.AggregateCacheMetrics()
+        );
+        resolverParams.listener = metricsListener;
+      }
 
-    if (resolverResult.isFailure()) {
-      return fail(`Failed to create resolver: ${resolverResult.message}`);
-    }
-
-    debugLog(enableDebug, 'Resolver created successfully');
-    return succeed(resolverResult.value);
-  } catch (error) {
-    return fail(`Failed to create resolver: ${error instanceof Error ? error.message : String(error)}`);
-  }
+      return Runtime.ResourceResolver.create(resolverParams)
+        .withErrorFormat((e) => `Failed to create resolver: ${e}`)
+        .onSuccess((resolver) => {
+          debugLog(enableDebug, 'Resolver created successfully');
+          return succeed(resolver);
+        });
+    });
 }
 
 /**
@@ -116,10 +106,10 @@ export function evaluateConditionsForCandidate(
 
       // Get the qualifier value from context
       const qualifierValueResult = resolver.contextQualifierProvider.get(qualifier);
-      const qualifierValue = qualifierValueResult.isSuccess() ? qualifierValueResult.value : null;
+      const qualifierValue = qualifierValueResult.orDefault();
 
       // Get the cached condition result from resolver (if available)
-      const cachedResult = resolver.conditionCache?.[conditionIndex] as any;
+      const cachedResult = resolver.conditionCache?.[conditionIndex];
       const score = cachedResult?.score || 0;
       const matchType = cachedResult?.matchType || 'noMatch';
       const matched = matchType !== 'noMatch';
@@ -128,7 +118,7 @@ export function evaluateConditionsForCandidate(
         qualifierName: qualifier.name,
         qualifierValue,
         conditionValue: condition.value,
-        operator: condition.operator || 'eq',
+        operator: condition.operator || 'matches',
         score,
         matched,
         matchType,
@@ -158,125 +148,124 @@ export function resolveResourceDetailed(
   debugLog(enableDebug, '=== RESOLVING RESOURCE ===');
   debugLog(enableDebug, 'Resource ID:', resourceId);
 
-  try {
-    // Get the resource
-    const resourceResult = processedResources.system.resourceManager.getBuiltResource(resourceId);
-    if (resourceResult.isFailure()) {
-      return succeed({
-        success: false,
-        resourceId,
-        error: `Failed to get resource: ${resourceResult.message}`
-      });
-    }
-
-    const resource = resourceResult.value;
-    const compiledCollection = processedResources.compiledCollection;
-
-    // Find the compiled resource for condition analysis
-    const compiledResource = compiledCollection.resources.find((r) => r.id === resourceId);
-    if (!compiledResource) {
-      return succeed({
-        success: false,
-        resourceId,
-        error: 'Failed to find compiled resource'
-      });
-    }
-
-    // Resolve best candidate
-    const bestResult = resolver.resolveResource(resource);
-
-    // Resolve all candidates
-    const allResult = resolver.resolveAllResourceCandidates(resource);
-
-    // Resolve composed value
-    const composedResult = resolver.resolveComposedResourceValue(resource);
-
-    // Get decision resolution result
-    const decisionResult = resolver.resolveDecision(resource.decision.baseDecision);
-    const decision = decisionResult.isSuccess() ? decisionResult.value : null;
-
-    // Build detailed candidate information
-    const candidateDetails: CandidateInfo[] = [];
-    const matchedCandidates = allResult.isSuccess() ? allResult.value : [];
-
-    // Create lookup sets for regular and default matches
-    const regularMatchIndices = new Set(decision?.success ? decision.instanceIndices : []);
-    const defaultMatchIndices = new Set(decision?.success ? decision.defaultInstanceIndices : []);
-
-    // Add matched candidates first
-    matchedCandidates.forEach((matchedCandidate) => {
-      const index = resource.candidates.findIndex((candidate: any) => candidate === matchedCandidate);
-      if (index !== -1) {
-        const conditionSetKey = `cs-${index}`;
-        const conditionEvaluations = evaluateConditionsForCandidate(
-          resolver,
-          index,
-          compiledResource,
-          compiledCollection
-        );
-
-        const isDefaultMatch = defaultMatchIndices.has(index);
-        const isRegularMatch = regularMatchIndices.has(index);
-
-        const candidateMatchType = isRegularMatch ? 'match' : isDefaultMatch ? 'matchAsDefault' : 'noMatch';
-
-        candidateDetails.push({
-          candidate: resource.candidates[index],
-          conditionSetKey,
-          candidateIndex: index,
-          matched: true,
-          matchType: candidateMatchType,
-          isDefaultMatch,
-          conditionEvaluations
-        });
-      }
-    });
-
-    // Add non-matching candidates
-    resource.candidates.forEach((candidate: any, index: number) => {
-      const isMatched = matchedCandidates.some((mc) => mc === candidate);
-      if (!isMatched) {
-        // Handle different candidate formats - IResourceCandidate doesn't have conditions
-        const conditionSetKey = candidate.conditions?.toHash ? candidate.conditions.toHash() : `cs-${index}`;
-        const conditionEvaluations = evaluateConditionsForCandidate(
-          resolver,
-          index,
-          compiledResource,
-          compiledCollection
-        );
-
-        candidateDetails.push({
-          candidate,
-          conditionSetKey,
-          candidateIndex: index,
-          matched: false,
-          matchType: 'noMatch',
-          isDefaultMatch: false,
-          conditionEvaluations
-        });
-      }
-    });
-
-    const result: ResolutionResult = {
-      success: true,
-      resourceId,
-      resource,
-      bestCandidate: bestResult.isSuccess() ? bestResult.value : undefined,
-      allCandidates: allResult.isSuccess() ? allResult.value : undefined,
-      candidateDetails,
-      composedValue: composedResult.isSuccess() ? composedResult.value : undefined,
-      error: bestResult.isFailure() ? bestResult.message : undefined
-    };
-
-    debugLog(enableDebug, 'Resolution completed successfully');
-    return succeed(result);
-  } catch (error) {
+  const resourceResult = processedResources.system.resourceManager.getBuiltResource(resourceId);
+  if (resourceResult.isFailure()) {
     return succeed({
       success: false,
       resourceId,
-      error: `Resolution error: ${error instanceof Error ? error.message : String(error)}`
+      error: `Failed to get resource: ${resourceResult.message}`
     });
   }
+
+  const resource = resourceResult.value;
+  const compiledCollection = processedResources.compiledCollection;
+
+  // Find the compiled resource for condition analysis
+  const compiledResource = compiledCollection.resources.find((r) => r.id === resourceId);
+  if (!compiledResource) {
+    return succeed({
+      success: false,
+      resourceId,
+      error: 'Failed to find compiled resource'
+    });
+  }
+
+  // Resolve best candidate
+  const bestResult = resolver.resolveResource(resource);
+
+  // Resolve all candidates
+  const allResult = resolver.resolveAllResourceCandidates(resource);
+
+  // Resolve composed value
+  const composedResult = resolver.resolveComposedResourceValue(resource);
+
+  // Get decision resolution result
+  const decisionResult = resolver.resolveDecision(resource.decision.baseDecision);
+  if (decisionResult.isFailure()) {
+    return succeed({
+      success: false,
+      resourceId,
+      error: `Failed to resolve decision: ${decisionResult.message}`
+    });
+  }
+
+  const decision = decisionResult.value;
+
+  // Build detailed candidate information
+  const candidateDetails: CandidateInfo[] = [];
+  const matchedCandidates = allResult.isSuccess() ? allResult.value : [];
+
+  // Create lookup sets for regular and default matches
+  const regularMatchIndices = new Set(decision?.success ? decision.instanceIndices : []);
+  const defaultMatchIndices = new Set(decision?.success ? decision.defaultInstanceIndices : []);
+
+  // Add matched candidates first
+  matchedCandidates.forEach((matchedCandidate) => {
+    const index = resource.candidates.findIndex((candidate: any) => candidate === matchedCandidate);
+    if (index !== -1) {
+      const conditionSetKey = `cs-${index}`;
+      const conditionEvaluations = evaluateConditionsForCandidate(
+        resolver,
+        index,
+        compiledResource,
+        compiledCollection
+      );
+
+      const isDefaultMatch = defaultMatchIndices.has(index);
+      const isRegularMatch = regularMatchIndices.has(index);
+
+      const candidateMatchType = isRegularMatch ? 'match' : isDefaultMatch ? 'matchAsDefault' : 'noMatch';
+
+      candidateDetails.push({
+        candidate: resource.candidates[index],
+        conditionSetKey,
+        candidateIndex: index,
+        matched: true,
+        matchType: candidateMatchType,
+        isDefaultMatch,
+        conditionEvaluations
+      });
+    }
+  });
+
+  // Add non-matching candidates
+  resource.candidates.forEach((candidate: any, index: number) => {
+    const isMatched = matchedCandidates.some((mc) => mc === candidate);
+    if (!isMatched) {
+      // Handle different candidate formats - IResourceCandidate doesn't have conditions
+      const conditionSetKey = candidate.conditions?.toHash ? candidate.conditions.toHash() : `cs-${index}`;
+      const conditionEvaluations = evaluateConditionsForCandidate(
+        resolver,
+        index,
+        compiledResource,
+        compiledCollection
+      );
+
+      candidateDetails.push({
+        candidate,
+        conditionSetKey,
+        candidateIndex: index,
+        matched: false,
+        matchType: 'noMatch',
+        isDefaultMatch: false,
+        conditionEvaluations
+      });
+    }
+  });
+
+  const result: ResolutionResult = {
+    success: true,
+    resourceId,
+    resource,
+    bestCandidate: bestResult.isSuccess() ? bestResult.value : undefined,
+    allCandidates: allResult.isSuccess() ? allResult.value : undefined,
+    candidateDetails,
+    composedValue: composedResult.isSuccess() ? composedResult.value : undefined,
+    error: bestResult.isFailure() ? bestResult.message : undefined
+  };
+
+  debugLog(enableDebug, 'Resolution completed successfully');
+  return succeed(result);
 }
 
 /**

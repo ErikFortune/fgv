@@ -1,5 +1,5 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
-import { Context, Runtime, Import, Resources } from '@fgv/ts-res';
+import { Runtime, Import, Resources } from '@fgv/ts-res';
 import { ProcessedResources } from '../types';
 import { createCompiledResourceCollectionManager } from './tsResIntegration';
 
@@ -64,43 +64,39 @@ export const createFilteredResourceManagerSimple = async (
   partialContext: Record<string, string | undefined>,
   options: FilterOptions = { partialContextMatch: true }
 ): Promise<Result<ProcessedResources>> => {
-  try {
-    const enableDebug = options.enableDebugLogging === true;
+  const enableDebug = options.enableDebugLogging === true;
 
-    debugLog(enableDebug, '=== SIMPLE FILTER CREATION ===');
-    debugLog(enableDebug, 'Original system:', originalSystem);
-    debugLog(enableDebug, 'Partial context:', partialContext);
+  debugLog(enableDebug, '=== SIMPLE FILTER CREATION ===');
+  debugLog(enableDebug, 'Original system:', originalSystem);
+  debugLog(enableDebug, 'Partial context:', partialContext);
 
-    // Validate the original system
-    if (!originalSystem?.resourceManager) {
-      return fail('Original system or resourceManager is undefined');
-    }
+  // Validate the original system
+  if (!originalSystem?.resourceManager) {
+    return fail('Original system or resourceManager is undefined');
+  }
 
-    // Filter out undefined values from the context before processing
-    const filteredContext = Object.fromEntries(
-      Object.entries(partialContext).filter(([, value]) => value !== undefined)
-    ) as Record<string, string>;
+  // Filter out undefined values from the context before processing
+  const filteredContext = Object.fromEntries(
+    Object.entries(partialContext).filter(([, value]) => value !== undefined)
+  ) as Record<string, string>;
 
-    const compiledResult = originalSystem.resourceManager.getCompiledResourceCollection({
-      includeMetadata: true
-    });
+  const compiledResult = originalSystem.resourceManager.getCompiledResourceCollection({
+    includeMetadata: true
+  });
 
-    if (compiledResult.isSuccess() && compiledResult.value) {
-      const resourceIds = compiledResult.value.resources?.map((r: any) => r.id) || [];
+  if (compiledResult.isSuccess() && compiledResult.value) {
+    const resourceIds = compiledResult.value.resources?.map((r: any) => r.id) || [];
 
-      // Create CompiledResourceCollection manager for bundle resources
-      const compiledManagerResult = createCompiledResourceCollectionManager(
-        compiledResult.value,
-        originalSystem.qualifierTypes,
-        originalSystem.resourceTypes
-      );
-
+    // Create CompiledResourceCollection manager for bundle resources
+    return createCompiledResourceCollectionManager(
+      compiledResult.value,
+      originalSystem.qualifierTypes,
+      originalSystem.resourceTypes
+    ).onSuccess((compiledManager) => {
       return succeed({
         system: originalSystem,
         compiledCollection: compiledResult.value,
-        compiledResourceCollectionManager: compiledManagerResult.isSuccess()
-          ? compiledManagerResult.value
-          : null,
+        compiledResourceCollectionManager: compiledManager,
         resolver: null as any, // Will be created later if needed
         resourceCount: resourceIds.length,
         summary: {
@@ -110,114 +106,99 @@ export const createFilteredResourceManagerSimple = async (
           warnings: ['Filtering is not supported for resources loaded from bundles']
         }
       });
-    }
-
-    // Use Result pattern chaining as recommended
-    debugLog(enableDebug, 'Validating context and cloning manager:', filteredContext);
-    const resourceManagerBuilder = originalSystem.resourceManager as Resources.ResourceManagerBuilder;
-    const cloneResult = resourceManagerBuilder
-      .validateContext(filteredContext)
-      .onSuccess((validatedContext) => {
-        debugLog(enableDebug, 'Context validated, creating clone with context:', validatedContext);
-        return resourceManagerBuilder.clone({
-          filterForContext: validatedContext,
-          reduceQualifiers: options.reduceQualifiers
-        });
-      })
-      .onFailure((error) => {
-        debugLog(enableDebug, 'Failed to validate context or clone:', error);
-        return fail(error);
-      });
-
-    if (cloneResult.isFailure()) {
-      return fail(`Failed to create filtered resource manager: ${cloneResult.message}`);
-    }
-
-    const filteredManager = cloneResult.value;
-    debugLog(enableDebug, 'Filtered manager created:', filteredManager);
-
-    // Create new ImportManager for the filtered system
-    const newImportManagerResult = Import.ImportManager.create({
-      resources: filteredManager
     });
-
-    if (newImportManagerResult.isFailure()) {
-      return fail(`Failed to create filtered import manager: ${newImportManagerResult.message}`);
-    }
-
-    // Create new ContextQualifierProvider for the filtered system
-    const newContextQualifierProviderResult = Runtime.ValidatingSimpleContextQualifierProvider.create({
-      qualifiers: originalSystem.qualifiers
-    });
-
-    if (newContextQualifierProviderResult.isFailure()) {
-      return fail(`Failed to create filtered context provider: ${newContextQualifierProviderResult.message}`);
-    }
-
-    // Build the new system object
-    const newSystem = {
-      qualifierTypes: originalSystem.qualifierTypes,
-      qualifiers: originalSystem.qualifiers,
-      resourceTypes: originalSystem.resourceTypes,
-      resourceManager: filteredManager,
-      importManager: newImportManagerResult.value,
-      contextQualifierProvider: newContextQualifierProviderResult.value
-    };
-
-    // Get compiled collection from the filtered manager
-    const compiledCollectionResult = filteredManager.getCompiledResourceCollection({ includeMetadata: true });
-    if (compiledCollectionResult.isFailure()) {
-      return fail(`Failed to get compiled collection: ${compiledCollectionResult.message}`);
-    }
-
-    // Create resolver for the filtered system
-    const resolverResult = Runtime.ResourceResolver.create({
-      resourceManager: filteredManager,
-      qualifierTypes: originalSystem.qualifierTypes,
-      contextQualifierProvider: newContextQualifierProviderResult.value
-    });
-
-    if (resolverResult.isFailure()) {
-      return fail(`Failed to create resolver: ${resolverResult.message}`);
-    }
-
-    // Create CompiledResourceCollection manager for filtered results
-    const compiledManagerResult = createCompiledResourceCollectionManager(
-      compiledCollectionResult.value,
-      originalSystem.qualifierTypes,
-      originalSystem.resourceTypes
-    );
-
-    // Create summary
-    const resourceIds = Array.from(filteredManager.resources.keys());
-    const summary = {
-      totalResources: resourceIds.length,
-      resourceIds,
-      errorCount: 0,
-      warnings: []
-    };
-
-    const processedResources: ProcessedResources = {
-      system: newSystem,
-      compiledCollection: compiledCollectionResult.value,
-      compiledResourceCollectionManager: compiledManagerResult.isSuccess()
-        ? compiledManagerResult.value
-        : null,
-      resolver: resolverResult.value,
-      resourceCount: resourceIds.length,
-      summary
-    };
-
-    debugLog(enableDebug, '=== FILTERED PROCESSING COMPLETE ===');
-    debugLog(enableDebug, 'Filtered resource count:', resourceIds.length);
-    debugLog(enableDebug, 'Filtered resource IDs:', resourceIds);
-
-    return succeed(processedResources);
-  } catch (error) {
-    return fail(
-      `Failed to create filtered resource manager: ${error instanceof Error ? error.message : String(error)}`
-    );
   }
+
+  debugLog(enableDebug, 'Validating context and cloning manager:', filteredContext);
+  const resourceManagerBuilder = originalSystem.resourceManager as Resources.ResourceManagerBuilder;
+
+  return resourceManagerBuilder
+    .validateContext(filteredContext)
+    .onSuccess((validatedContext) => {
+      debugLog(enableDebug, 'Context validated, creating clone with context:', validatedContext);
+      return resourceManagerBuilder.clone({
+        filterForContext: validatedContext,
+        reduceQualifiers: options.reduceQualifiers
+      });
+    })
+    .withErrorFormat((e) => `Failed to validate context or clone: ${e}`)
+    .onSuccess((filteredManager) => {
+      debugLog(enableDebug, 'Filtered manager created:', filteredManager);
+
+      // Create new ImportManager for the filtered system
+      return Import.ImportManager.create({
+        resources: filteredManager
+      })
+        .withErrorFormat((e) => `Failed to create filtered import manager: ${e}`)
+        .onSuccess((newImportManager) => {
+          // Create new ContextQualifierProvider for the filtered system
+          return Runtime.ValidatingSimpleContextQualifierProvider.create({
+            qualifiers: originalSystem.qualifiers
+          })
+            .withErrorFormat((e) => `Failed to create filtered context provider: ${e}`)
+            .onSuccess((newContextQualifierProvider) => {
+              // Build the new system object
+              const newSystem = {
+                qualifierTypes: originalSystem.qualifierTypes,
+                qualifiers: originalSystem.qualifiers,
+                resourceTypes: originalSystem.resourceTypes,
+                resourceManager: filteredManager,
+                importManager: newImportManager,
+                contextQualifierProvider: newContextQualifierProvider
+              };
+
+              // Get compiled collection from the filtered manager
+              return filteredManager
+                .getCompiledResourceCollection({ includeMetadata: true })
+                .withErrorFormat((e) => `Failed to get compiled collection: ${e}`)
+                .onSuccess((compiledCollection) => {
+                  // Create resolver for the filtered system
+                  return Runtime.ResourceResolver.create({
+                    resourceManager: filteredManager,
+                    qualifierTypes: originalSystem.qualifierTypes,
+                    contextQualifierProvider: newContextQualifierProvider
+                  })
+                    .withErrorFormat((e) => `Failed to create resolver: ${e}`)
+                    .onSuccess((resolver) => {
+                      // Create CompiledResourceCollection manager for filtered results
+                      return createCompiledResourceCollectionManager(
+                        compiledCollection,
+                        originalSystem.qualifierTypes,
+                        originalSystem.resourceTypes
+                      ).onSuccess((compiledManager) => {
+                        // Create summary
+                        const resourceIds = Array.from(filteredManager.resources.keys());
+                        const summary = {
+                          totalResources: resourceIds.length,
+                          resourceIds,
+                          errorCount: 0,
+                          warnings: [] as string[]
+                        };
+
+                        const processedResources: ProcessedResources = {
+                          system: newSystem,
+                          compiledCollection,
+                          compiledResourceCollectionManager: compiledManager,
+                          resolver,
+                          resourceCount: resourceIds.length,
+                          summary
+                        };
+
+                        debugLog(enableDebug, '=== FILTERED PROCESSING COMPLETE ===');
+                        debugLog(enableDebug, 'Filtered resource count:', resourceIds.length);
+                        debugLog(enableDebug, 'Filtered resource IDs:', resourceIds);
+
+                        return succeed(processedResources);
+                      });
+                    });
+                });
+            });
+        });
+    })
+    .onFailure((error) => {
+      debugLog(enableDebug, 'Failed to create filtered resource manager:', error);
+      return fail(`Failed to create filtered resource manager: ${error}`);
+    });
 };
 
 /**

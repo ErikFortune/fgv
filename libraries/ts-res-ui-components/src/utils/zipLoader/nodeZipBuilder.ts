@@ -78,46 +78,42 @@ export function prepareZipData(
   files: ImportedFile[],
   options: ZipArchiveOptions = {}
 ): Result<BrowserZipData> {
-  try {
-    const timestamp = new Date().toISOString();
-    const filename = options.filename || 'ts-res-bundle';
+  const timestamp = new Date().toISOString();
+  const filename = options.filename || 'ts-res-bundle';
 
-    // Create manifest
-    const manifest = createManifest(
-      'file',
-      'browser-files',
-      'files/',
-      options.includeConfig ? 'config.json' : undefined
-    );
+  // Create manifest
+  const manifest = createManifest(
+    'file',
+    'browser-files',
+    'files/',
+    options.includeConfig ? 'config.json' : undefined
+  );
 
-    // Prepare file data
-    const zipFiles = files.map((file) => ({
-      path: normalizePath(file.path || file.name),
-      content: file.content
-    }));
+  // Prepare file data
+  const zipFiles = files.map((file) => ({
+    path: normalizePath(file.path || file.name),
+    content: file.content
+  }));
 
-    // Add manifest
+  // Add manifest
+  zipFiles.push({
+    path: 'manifest.json',
+    content: JSON.stringify(manifest, null, 2)
+  });
+
+  // Add configuration if provided
+  if (options.includeConfig && options.config) {
     zipFiles.push({
-      path: 'manifest.json',
-      content: JSON.stringify(manifest, null, 2)
+      path: 'config.json',
+      content: JSON.stringify(options.config, null, 2)
     });
-
-    // Add configuration if provided
-    if (options.includeConfig && options.config) {
-      zipFiles.push({
-        path: 'config.json',
-        content: JSON.stringify(options.config, null, 2)
-      });
-    }
-
-    return succeed({
-      files: zipFiles,
-      manifest,
-      config: options.config
-    });
-  } catch (error) {
-    return fail(`Failed to prepare ZIP data: ${error instanceof Error ? error.message : String(error)}`);
   }
+
+  return succeed({
+    files: zipFiles,
+    manifest,
+    config: options.config
+  });
 }
 
 /**
@@ -127,37 +123,31 @@ export function prepareZipDataFromDirectory(
   directory: ImportedDirectory,
   options: ZipArchiveOptions = {}
 ): Result<BrowserZipData> {
-  try {
-    // Flatten directory to files
-    const files: ImportedFile[] = [];
+  // Flatten directory to files
+  const files: ImportedFile[] = [];
 
-    const collectFiles = (dir: ImportedDirectory, basePath: string = '') => {
-      // Add files from current directory
-      dir.files.forEach((file) => {
-        files.push({
-          ...file,
-          path: basePath ? `${basePath}/${file.name}` : file.name
-        });
+  const collectFiles = (dir: ImportedDirectory, basePath: string = '') => {
+    // Add files from current directory
+    dir.files.forEach((file) => {
+      files.push({
+        ...file,
+        path: basePath ? `${basePath}/${file.name}` : file.name
       });
-
-      // Recursively collect from subdirectories
-      if (dir.subdirectories) {
-        dir.subdirectories.forEach((subdir) => {
-          const subdirPath = basePath ? `${basePath}/${subdir.name}` : subdir.name;
-          collectFiles(subdir, subdirPath);
-        });
-      }
-    };
-
-    collectFiles(directory);
-
-    return prepareZipData(files, {
-      ...options,
-      filename: options.filename || sanitizeFilename(directory.name)
     });
-  } catch (error) {
-    return fail(
-      `Failed to prepare ZIP data from directory: ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
+
+    // Recursively collect from subdirectories
+    if (dir.subdirectories) {
+      dir.subdirectories.forEach((subdir) => {
+        const subdirPath = basePath ? `${basePath}/${subdir.name}` : subdir.name;
+        collectFiles(subdir, subdirPath);
+      });
+    }
+  };
+
+  collectFiles(directory);
+
+  return prepareZipData(files, {
+    ...options,
+    filename: options.filename || sanitizeFilename(directory.name)
+  });
 }

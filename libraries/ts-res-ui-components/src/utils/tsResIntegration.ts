@@ -15,13 +15,8 @@ import { ImportedDirectory, ImportedFile } from '../types';
  * Get the default system configuration from ts-res library
  */
 export function getDefaultSystemConfiguration(): Config.Model.ISystemConfiguration {
-  const defaultResult = Config.getPredefinedDeclaration('default');
-  if (defaultResult.isSuccess()) {
-    return defaultResult.value;
-  }
-
-  // Fallback configuration if predefined default is not available
-  return {
+  return Config.getPredefinedDeclaration('default').orDefault({
+    // Fallback configuration if predefined default is not available
     name: 'Browser Default Configuration',
     description: 'Fallback default configuration for ts-res browser tool',
     qualifierTypes: [
@@ -60,7 +55,7 @@ export function getDefaultSystemConfiguration(): Config.Model.ISystemConfigurati
         typeName: 'json'
       }
     ]
-  };
+  });
 }
 
 /**
@@ -70,13 +65,9 @@ export function createSimpleContext(
   qualifiers: Qualifiers.IReadOnlyQualifierCollector,
   values: Record<string, string | undefined>
 ): Result<Runtime.ValidatingSimpleContextQualifierProvider> {
-  try {
-    return Runtime.ValidatingSimpleContextQualifierProvider.create({
-      qualifiers
-    });
-  } catch (error) {
-    return fail(`Failed to create context: ${error instanceof Error ? error.message : String(error)}`);
-  }
+  return Runtime.ValidatingSimpleContextQualifierProvider.create({
+    qualifiers
+  }).withErrorFormat((e) => `Failed to create context: ${e}`);
 }
 
 /**
@@ -115,12 +106,7 @@ export function convertImportedDirectoryToFileTree(directory: ImportedDirectory)
   const inMemoryFiles = flattenFiles(directory);
 
   // Use ts-res's inMemory FileTree utility
-  const fileTreeResult = FileTree.inMemory(inMemoryFiles);
-  if (fileTreeResult.isFailure()) {
-    throw new Error(`Failed to create file tree: ${fileTreeResult.message}`);
-  }
-
-  return fileTreeResult.value;
+  return FileTree.inMemory(inMemoryFiles).orThrow((msg) => `Failed to create file tree: ${msg}`);
 }
 
 /**
@@ -136,38 +122,37 @@ export function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemC
 }> {
   const configToUse = systemConfig ?? getDefaultSystemConfiguration();
 
-  return Config.SystemConfiguration.create(configToUse).onSuccess((systemConfiguration) => {
-    try {
-      // Set up resource manager
-      const resourceManager = Resources.ResourceManagerBuilder.create({
+  return Config.SystemConfiguration.create(configToUse)
+    .onSuccess((systemConfiguration) => {
+      return Resources.ResourceManagerBuilder.create({
         qualifiers: systemConfiguration.qualifiers,
         resourceTypes: systemConfiguration.resourceTypes
-      }).orThrow();
-
-      // Set up import manager
-      const importManager = Import.ImportManager.create({
-        resources: resourceManager
-      }).orThrow();
-
-      // Set up context qualifier provider
-      const contextQualifierProvider = Runtime.ValidatingSimpleContextQualifierProvider.create({
-        qualifiers: systemConfiguration.qualifiers
-      }).orThrow();
-
-      return succeed({
-        qualifierTypes: systemConfiguration.qualifierTypes,
-        qualifiers: systemConfiguration.qualifiers,
-        resourceTypes: systemConfiguration.resourceTypes,
-        resourceManager,
-        importManager,
-        contextQualifierProvider
-      });
-    } catch (error) {
-      return fail(
-        `Failed to create ts-res system: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  });
+      })
+        .withErrorFormat((e) => `Failed to create resource manager: ${e}`)
+        .onSuccess((resourceManager) => {
+          return Import.ImportManager.create({
+            resources: resourceManager
+          })
+            .withErrorFormat((e) => `Failed to create import manager: ${e}`)
+            .onSuccess((importManager) => {
+              return Runtime.ValidatingSimpleContextQualifierProvider.create({
+                qualifiers: systemConfiguration.qualifiers
+              })
+                .withErrorFormat((e) => `Failed to create context qualifier provider: ${e}`)
+                .onSuccess((contextQualifierProvider) => {
+                  return succeed({
+                    qualifierTypes: systemConfiguration.qualifierTypes,
+                    qualifiers: systemConfiguration.qualifiers,
+                    resourceTypes: systemConfiguration.resourceTypes,
+                    resourceManager,
+                    importManager,
+                    contextQualifierProvider
+                  });
+                });
+            });
+        });
+    })
+    .withErrorFormat((e) => `Failed to create ts-res system: ${e}`);
 }
 
 /**
@@ -200,43 +185,58 @@ export function processImportedFiles(
     return fail('No files provided for processing');
   }
 
-  const systemResult = createTsResSystemFromConfig(systemConfig);
-  if (systemResult.isFailure()) {
-    return systemResult as any; // Type assertion needed for return type compatibility
-  }
-
-  const tsResSystem = systemResult.value;
-
-  // Convert ImportedFile[] to IInMemoryFile[] format
-  const inMemoryFiles = files.map((file) => ({
-    path: file.path || file.name,
-    contents: file.content
-  }));
-
-  return (FileTree.inMemory(inMemoryFiles) as any)
-    .onSuccess((fileTree: any) => {
-      return Import.ImportManager.create({
-        fileTree,
-        resources: tsResSystem.resourceManager
-      }) as any;
-    })
-    .onSuccess((importManager: any) => {
-      // Import each file using its filesystem path
-      for (const file of files) {
-        const importResult = importManager.importFromFileSystem(file.path || file.name);
-        if (importResult.isFailure()) {
-          return fail(`Failed to import file ${file.path || file.name}: ${importResult.message}`);
-        }
-      }
-
-      // Finalize processing
-      const updatedSystem = {
-        ...tsResSystem,
-        importManager
+  return createTsResSystemFromConfig(systemConfig)
+    .onSuccess<{
+      system: {
+        qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
+        qualifiers: Qualifiers.IReadOnlyQualifierCollector;
+        resourceTypes: ResourceTypes.ReadOnlyResourceTypeCollector;
+        resourceManager: Resources.ResourceManagerBuilder;
+        importManager: Import.ImportManager;
+        contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
       };
-      return finalizeProcessing(updatedSystem);
+      compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
+      compiledResourceCollectionManager: Runtime.CompiledResourceCollection | null;
+      resolver: Runtime.ResourceResolver;
+      resourceCount: number;
+      summary: {
+        totalResources: number;
+        resourceIds: string[];
+        errorCount: number;
+        warnings: string[];
+      };
+    }>((tsResSystem) => {
+      // Convert ImportedFile[] to IInMemoryFile[] format
+      const inMemoryFiles = files.map((file) => ({
+        path: file.path || file.name,
+        contents: file.content
+      }));
+
+      return FileTree.inMemory(inMemoryFiles)
+        .onSuccess((fileTree) => {
+          return Import.ImportManager.create({
+            fileTree,
+            resources: tsResSystem.resourceManager
+          });
+        })
+        .onSuccess((importManager) => {
+          // Import each file using its filesystem path
+          for (const file of files) {
+            const importResult = importManager.importFromFileSystem(file.path || file.name);
+            if (importResult.isFailure()) {
+              return fail(`Failed to import file ${file.path || file.name}: ${importResult.message}`);
+            }
+          }
+
+          // Finalize processing
+          const updatedSystem = {
+            ...tsResSystem,
+            importManager
+          };
+          return finalizeProcessing(updatedSystem);
+        });
     })
-    .withErrorFormat((message: string) => `processImportedFiles failed: ${message}`);
+    .withErrorFormat((message) => `processImportedFiles failed: ${message}`);
 }
 
 /**
@@ -265,37 +265,49 @@ export function processImportedDirectory(
     warnings: string[];
   };
 }> {
-  const systemResult = createTsResSystemFromConfig(systemConfig);
-  if (systemResult.isFailure()) {
-    return systemResult as any; // Type assertion needed for return type compatibility
-  }
-
-  const tsResSystem = systemResult.value;
-
-  // Convert directory to file tree
-  const fileTree = convertImportedDirectoryToFileTree(directory);
-
-  return (
-    Import.ImportManager.create({
-      fileTree,
-      resources: tsResSystem.resourceManager
-    }) as any
-  )
-    .onSuccess((importManager: any) => {
-      // Import from root path
-      const importResult = importManager.importFromFileSystem('/');
-      if (importResult.isFailure()) {
-        return fail(`Failed to import directory ${directory.name}: ${importResult.message}`);
-      }
-
-      // Finalize processing
-      const updatedSystem = {
-        ...tsResSystem,
-        importManager
+  return createTsResSystemFromConfig(systemConfig)
+    .onSuccess<{
+      system: {
+        qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
+        qualifiers: Qualifiers.IReadOnlyQualifierCollector;
+        resourceTypes: ResourceTypes.ReadOnlyResourceTypeCollector;
+        resourceManager: Resources.ResourceManagerBuilder;
+        importManager: Import.ImportManager;
+        contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
       };
-      return finalizeProcessing(updatedSystem);
+      compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
+      compiledResourceCollectionManager: Runtime.CompiledResourceCollection | null;
+      resolver: Runtime.ResourceResolver;
+      resourceCount: number;
+      summary: {
+        totalResources: number;
+        resourceIds: string[];
+        errorCount: number;
+        warnings: string[];
+      };
+    }>((tsResSystem) => {
+      // Convert directory to file tree
+      const fileTree = convertImportedDirectoryToFileTree(directory);
+
+      return Import.ImportManager.create({
+        fileTree,
+        resources: tsResSystem.resourceManager
+      }).onSuccess((importManager) => {
+        // Import from root path
+        const importResult = importManager.importFromFileSystem('/');
+        if (importResult.isFailure()) {
+          return fail(`Failed to import directory ${directory.name}: ${importResult.message}`);
+        }
+
+        // Finalize processing
+        const updatedSystem = {
+          ...tsResSystem,
+          importManager
+        };
+        return finalizeProcessing(updatedSystem);
+      });
     })
-    .withErrorFormat((message: string) => `processImportedDirectory failed: ${message}`);
+    .withErrorFormat((message) => `processImportedDirectory failed: ${message}`);
 }
 
 /**
@@ -325,39 +337,37 @@ function finalizeProcessing(system: {
     .getCompiledResourceCollection({ includeMetadata: true })
     .onSuccess((compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection) => {
       // Create CompiledResourceCollection manager
-      const compiledManagerResult = createCompiledResourceCollectionManager(
+      return createCompiledResourceCollectionManager(
         compiledCollection,
         system.qualifierTypes,
         system.resourceTypes
-      );
+      ).onSuccess((compiledManager) => {
+        return Runtime.ResourceResolver.create({
+          resourceManager: system.resourceManager,
+          qualifierTypes: system.qualifierTypes,
+          contextQualifierProvider: system.contextQualifierProvider
+        }).onSuccess((resolver) => {
+          // Create summary
+          const resourceIds = Array.from(system.resourceManager.resources.keys());
+          const summary = {
+            totalResources: resourceIds.length,
+            resourceIds,
+            errorCount: 0,
+            warnings: [] as string[]
+          };
 
-      return Runtime.ResourceResolver.create({
-        resourceManager: system.resourceManager,
-        qualifierTypes: system.qualifierTypes,
-        contextQualifierProvider: system.contextQualifierProvider
-      }).onSuccess((resolver) => {
-        // Create summary
-        const resourceIds = Array.from(system.resourceManager.resources.keys());
-        const summary = {
-          totalResources: resourceIds.length,
-          resourceIds,
-          errorCount: 0,
-          warnings: []
-        };
-
-        return succeed({
-          system,
-          compiledCollection,
-          compiledResourceCollectionManager: compiledManagerResult.isSuccess()
-            ? compiledManagerResult.value
-            : null,
-          resolver,
-          resourceCount: resourceIds.length,
-          summary
+          return succeed({
+            system,
+            compiledCollection,
+            compiledResourceCollectionManager: compiledManager,
+            resolver,
+            resourceCount: resourceIds.length,
+            summary
+          });
         });
       });
     })
-    .withErrorFormat((message: string) => `Failed to finalize processing: ${message}`);
+    .withErrorFormat((message) => `Failed to finalize processing: ${message}`);
 }
 
 /**
@@ -387,12 +397,12 @@ export function createCompiledResourceCollectionManager(
         const qualifierType = qualifierTypeMap.get(name);
         return qualifierType ? succeed(qualifierType) : fail(`Qualifier type '${name}' not found`);
       }
-    } as any,
+    } as unknown as QualifierTypes.ReadOnlyQualifierTypeCollector,
     resourceTypes: {
       get: (name: string) => {
         const resourceType = resourceTypeMap.get(name);
         return resourceType ? succeed(resourceType) : fail(`Resource type '${name}' not found`);
       }
-    } as any
+    } as unknown as ResourceTypes.ReadOnlyResourceTypeCollector
   });
 }
