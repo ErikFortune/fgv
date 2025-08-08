@@ -6,12 +6,16 @@ import {
   CheckIcon,
   XMarkIcon,
   PencilIcon,
-  TrashIcon
+  TrashIcon,
+  ListBulletIcon,
+  FolderIcon
 } from '@heroicons/react/24/outline';
 import { ResolutionViewProps, CandidateInfo, ResolutionActions, ResolutionState } from '../../../types';
 import { QualifierContextControl } from '../../common/QualifierContextControl';
 import { EditableJsonView } from './EditableJsonView';
 import { ResolutionEditControls } from './ResolutionEditControls';
+import { ResourceTreeView } from '../../common/ResourceTreeView';
+import { ResourceListView } from '../../common/ResourceListView';
 
 export const ResolutionView: React.FC<ResolutionViewProps> = ({
   resources,
@@ -23,6 +27,9 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
   onMessage,
   className = ''
 }) => {
+  // Local UI state
+  const [viewMode, setViewMode] = useState<'tree' | 'list'>('list');
+
   // Use filtered resources when filtering is active and successful
   const isFilteringActive = filterState?.enabled && filterResult?.success === true;
   const activeProcessedResources = isFilteringActive ? filterResult?.processedResources : resources;
@@ -171,39 +178,78 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
           {/* Left side: Resource Selection */}
           <div className="lg:w-1/2 flex flex-col">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Resources</h3>
-              <div className="text-sm text-gray-500">{availableResources.length} available</div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Resources</h3>
+                <div className="text-sm text-gray-500">{availableResources.length} available</div>
+              </div>
+              {/* View Mode Toggle */}
+              <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`flex items-center px-2 py-1 text-xs font-medium rounded ${
+                    viewMode === 'list'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  title="List View"
+                >
+                  <ListBulletIcon className="h-4 w-4" />
+                  <span className="ml-1">List</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('tree')}
+                  className={`flex items-center px-2 py-1 text-xs font-medium rounded ${
+                    viewMode === 'tree'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  title="Tree View"
+                >
+                  <FolderIcon className="h-4 w-4" />
+                  <span className="ml-1">Tree</span>
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg bg-gray-50">
-              {availableResources.map((resourceId) => (
-                <div
-                  key={resourceId}
-                  className={`flex items-center px-3 py-2 cursor-pointer hover:bg-gray-100 ${
-                    resolutionState?.selectedResourceId === resourceId
-                      ? 'bg-blue-50 border-r-2 border-blue-500'
-                      : ''
-                  }`}
-                  onClick={() => handleResourceSelect(resourceId)}
-                >
-                  <DocumentTextIcon className="w-4 h-4 mr-2 text-green-500" />
-                  <span
-                    className={`text-sm ${
+              {viewMode === 'tree' && activeProcessedResources?.system.resourceManager ? (
+                <ResourceTreeView
+                  resources={activeProcessedResources.system.resourceManager}
+                  selectedResourceId={resolutionState?.selectedResourceId || null}
+                  onResourceSelect={handleResourceSelect}
+                  searchTerm=""
+                  className=""
+                />
+              ) : (
+                availableResources.map((resourceId) => (
+                  <div
+                    key={resourceId}
+                    className={`flex items-center px-3 py-2 cursor-pointer hover:bg-gray-100 ${
                       resolutionState?.selectedResourceId === resourceId
-                        ? 'font-medium text-blue-900'
-                        : 'text-gray-700'
+                        ? 'bg-blue-50 border-r-2 border-blue-500'
+                        : ''
                     }`}
+                    onClick={() => handleResourceSelect(resourceId)}
                   >
-                    {resourceId}
-                  </span>
-                  {/* Show edit indicator */}
-                  {resolutionActions?.hasEdit?.(resourceId) && (
-                    <span className="ml-auto">
-                      <PencilIcon className="h-3 w-3 text-blue-500" />
+                    <DocumentTextIcon className="w-4 h-4 mr-2 text-green-500" />
+                    <span
+                      className={`text-sm ${
+                        resolutionState?.selectedResourceId === resourceId
+                          ? 'font-medium text-blue-900'
+                          : 'text-gray-700'
+                      }`}
+                    >
+                      {resourceId}
                     </span>
-                  )}
-                </div>
-              ))}
+                    {/* Show edit indicator */}
+                    {resolutionActions?.hasEdit?.(resourceId) && (
+                      <span className="ml-auto">
+                        <PencilIcon className="h-3 w-3 text-blue-500" />
+                      </span>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

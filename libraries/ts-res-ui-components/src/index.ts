@@ -18,6 +18,11 @@ export { QualifierTypeEditForm } from './components/forms/QualifierTypeEditForm'
 export { QualifierEditForm } from './components/forms/QualifierEditForm';
 export { ResourceTypeEditForm } from './components/forms/ResourceTypeEditForm';
 
+// Export common components
+export { ResourceTreeView } from './components/common/ResourceTreeView';
+export { ResourceListView } from './components/common/ResourceListView';
+export { QualifierContextControl } from './components/common/QualifierContextControl';
+
 // Export hooks
 export { useResourceData } from './hooks/useResourceData';
 export { useFilterState } from './hooks/useFilterState';

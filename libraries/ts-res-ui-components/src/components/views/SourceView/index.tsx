@@ -5,14 +5,19 @@ import {
   DocumentArrowDownIcon,
   CodeBracketIcon,
   ChevronDownIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
+  ListBulletIcon,
+  FolderIcon
 } from '@heroicons/react/24/outline';
 import { SourceViewProps, ResourceDetailData } from '../../../types';
+import { ResourceTreeView } from '../../common/ResourceTreeView';
+import { ResourceListView } from '../../common/ResourceListView';
 
 export const SourceView: React.FC<SourceViewProps> = ({ resources, onExport, onMessage, className = '' }) => {
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showJsonView, setShowJsonView] = useState(false);
+  const [viewMode, setViewMode] = useState<'tree' | 'list'>('list');
 
   // Sort and filter resource IDs
   const filteredResourceIds = useMemo(() => {
@@ -193,10 +198,37 @@ export const SourceView: React.FC<SourceViewProps> = ({ resources, onExport, onM
         <div className="flex flex-col lg:flex-row gap-6 h-[600px]">
           {/* Left side: Resource List */}
           <div className="lg:w-1/2 flex flex-col">
-            <div className="flex items-center space-x-3 mb-4">
+            <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
                 Resources ({filteredResourceIds.length})
               </h3>
+              {/* View Mode Toggle */}
+              <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`flex items-center px-2 py-1 text-xs font-medium rounded ${
+                    viewMode === 'list'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  title="List View"
+                >
+                  <ListBulletIcon className="h-4 w-4" />
+                  <span className="ml-1">List</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('tree')}
+                  className={`flex items-center px-2 py-1 text-xs font-medium rounded ${
+                    viewMode === 'tree'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  title="Tree View"
+                >
+                  <FolderIcon className="h-4 w-4" />
+                  <span className="ml-1">Tree</span>
+                </button>
+              </div>
             </div>
 
             {/* Search Box */}
@@ -211,39 +243,24 @@ export const SourceView: React.FC<SourceViewProps> = ({ resources, onExport, onM
               />
             </div>
 
-            {/* Resource List */}
-            <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg">
-              {filteredResourceIds.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">
-                  {searchTerm ? 'No resources match your search' : 'No resources available'}
-                </div>
+            {/* Resource List or Tree */}
+            <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg bg-gray-50">
+              {viewMode === 'tree' && resources?.system.resourceManager ? (
+                <ResourceTreeView
+                  resources={resources.system.resourceManager}
+                  selectedResourceId={selectedResourceId}
+                  onResourceSelect={handleResourceSelect}
+                  searchTerm={searchTerm}
+                  className=""
+                />
               ) : (
-                <div className="divide-y divide-gray-200">
-                  {filteredResourceIds.map((resourceId: string) => (
-                    <button
-                      key={resourceId}
-                      onClick={() => handleResourceSelect(resourceId)}
-                      className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
-                        selectedResourceId === resourceId ? 'bg-blue-50 border-r-2 border-blue-500' : ''
-                      }`}
-                    >
-                      <div className="font-medium text-gray-900 truncate">
-                        {searchTerm ? (
-                          <span
-                            dangerouslySetInnerHTML={{
-                              __html: resourceId.replace(
-                                new RegExp(`(${searchTerm})`, 'gi'),
-                                '<mark class="bg-yellow-200">$1</mark>'
-                              )
-                            }}
-                          />
-                        ) : (
-                          resourceId
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
+                <ResourceListView
+                  resourceIds={filteredResourceIds}
+                  selectedResourceId={selectedResourceId}
+                  onResourceSelect={handleResourceSelect}
+                  searchTerm={searchTerm}
+                  className=""
+                />
               )}
             </div>
           </div>

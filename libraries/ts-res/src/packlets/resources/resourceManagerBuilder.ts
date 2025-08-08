@@ -49,7 +49,7 @@ import { AbstractDecisionCollector, ReadOnlyAbstractDecisionCollector, AbstractD
 import { IReadOnlyQualifierCollector } from '../qualifiers';
 import { ReadOnlyResourceTypeCollector, ResourceType } from '../resource-types';
 import { Convert, ResourceId, Validate } from '../common';
-import { IResourceManager } from '../runtime';
+import { IResourceManager, ResourceTree } from '../runtime';
 import { ResourceBuilder, ResourceBuilderResultDetail } from './resourceBuilder';
 import { Resource } from './resource';
 import { ResourceCandidate } from './resourceCandidate';
@@ -94,6 +94,7 @@ export class ResourceManagerBuilder implements IResourceManager {
   public readonly _builtResources: ValidatingResultMap<ResourceId, Resource>;
 
   protected _built: boolean;
+  protected _cachedResourceTree?: ResourceTree.IReadOnlyResourceTreeRoot<Resource>;
 
   /**
    * A {@link Conditions.ConditionCollector | ConditionCollector} which
@@ -192,6 +193,7 @@ export class ResourceManagerBuilder implements IResourceManager {
       })
     });
     this._built = false;
+    this._cachedResourceTree = undefined;
   }
 
   /**
@@ -290,6 +292,7 @@ export class ResourceManagerBuilder implements IResourceManager {
       this._builtResources.delete(id);
       this._built = false;
       this._numCandidates = undefined;
+      this._cachedResourceTree = undefined;
       return succeedWithDetail(c, d);
     });
   }
@@ -418,6 +421,39 @@ export class ResourceManagerBuilder implements IResourceManager {
     return this.build().onSuccess((manager) =>
       succeed(Array.from(manager._builtResources.values()).sort((a, b) => a.id.localeCompare(b.id)))
     );
+  }
+
+  /**
+   * Builds and returns a hierarchical tree representation of all resources managed by this builder.
+   * Resources are organized based on their dot-separated resource IDs (e.g., "app.messages.welcome"
+   * becomes a tree with "app" as root, "messages" as branch, and "welcome" as leaf).
+   *
+   * String-based validation is available through the `children.validating` property,
+   * allowing callers to use `tree.children.validating.getById(stringId)` for validated access.
+   *
+   * Uses lazy initialization with caching for performance.
+   * @returns Result containing the resource tree root, or failure if tree construction fails
+   * @public
+   */
+  public getBuiltResourceTree(): Result<ResourceTree.IReadOnlyResourceTreeRoot<Resource>> {
+    // Ensure resources are built first
+    return this.build().onSuccess((manager) => {
+      if (manager._cachedResourceTree) {
+        return succeed(manager._cachedResourceTree);
+      }
+
+      // Convert all built resources to [ResourceId, Resource] pairs
+      const resources: [ResourceId, Resource][] = [];
+      for (const [id, resource] of manager._builtResources.entries()) {
+        resources.push([id, resource]);
+      }
+
+      // Create the resource tree with lazy initialization
+      return ResourceTree.ReadOnlyResourceTreeRoot.create(resources).onSuccess((tree) => {
+        manager._cachedResourceTree = tree;
+        return succeed(tree);
+      });
+    });
   }
 
   /**
