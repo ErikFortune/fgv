@@ -362,91 +362,114 @@ export const FilterView: React.FC<FilterViewProps> = ({
           </div>
         </div>
 
-        {/* Resource List */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {isFilteringActive ? 'Filtered Resources' : 'All Resources'}
-            </h3>
-            <div className="flex items-center space-x-2 text-sm text-gray-500">
-              <span>{displayResources.length} resources</span>
-              {isFilteringActive && displayResources.some((r) => r.hasWarning) && (
-                <>
-                  <span>•</span>
-                  <span className="text-amber-600 flex items-center">
-                    <ExclamationTriangleIcon className="h-4 w-4 mr-1" />
-                    {displayResources.filter((r) => r.hasWarning).length} warnings
-                  </span>
-                </>
-              )}
+        {/* Main Browser/Details Layout */}
+        <div className="flex flex-col md:flex-row gap-6 h-[600px]">
+          {/* Left side: Resource List */}
+          <div className="md:w-1/2 flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {isFilteringActive ? 'Filtered Resources' : 'All Resources'}
+              </h3>
+              <div className="flex items-center space-x-2 text-sm text-gray-500">
+                <span>{displayResources.length} resources</span>
+                {isFilteringActive && displayResources.some((r) => r.hasWarning) && (
+                  <>
+                    <span>•</span>
+                    <span className="text-amber-600 flex items-center">
+                      <ExclamationTriangleIcon className="h-4 w-4 mr-1" />
+                      {displayResources.filter((r) => r.hasWarning).length} warnings
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg bg-gray-50">
+              {displayResources.map((resource) => (
+                <div
+                  key={resource.id}
+                  className={`flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-100 last:border-b-0 ${
+                    selectedResourceId === resource.id ? 'bg-purple-50 border-r-2 border-purple-500' : ''
+                  }`}
+                  onClick={() => handleResourceSelect(resource.id)}
+                >
+                  <div className="flex items-center space-x-2 flex-1 min-w-0">
+                    <DocumentTextIcon className="w-4 h-4 text-green-500 flex-shrink-0" />
+                    <span
+                      className={`text-sm truncate ${
+                        selectedResourceId === resource.id ? 'font-medium text-purple-900' : 'text-gray-700'
+                      }`}
+                    >
+                      {resource.id}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2 flex-shrink-0">
+                    {isFilteringActive && (
+                      <div className="flex items-center space-x-1 text-xs">
+                        <span className="text-gray-400">{resource.originalCandidateCount}</span>
+                        <span className="text-gray-400">→</span>
+                        <span
+                          className={`font-medium ${
+                            resource.filteredCandidateCount === 0
+                              ? 'text-red-600'
+                              : resource.filteredCandidateCount < resource.originalCandidateCount
+                              ? 'text-amber-600'
+                              : 'text-green-600'
+                          }`}
+                        >
+                          {resource.filteredCandidateCount}
+                        </span>
+                      </div>
+                    )}
+                    {!isFilteringActive && (
+                      <span className="text-xs text-gray-500">
+                        {resource.originalCandidateCount} candidates
+                      </span>
+                    )}
+                    {resource.hasWarning && (
+                      <ExclamationTriangleIcon
+                        className="h-4 w-4 text-amber-500"
+                        title="No matching candidates"
+                      />
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="bg-gray-50 rounded-lg border border-gray-200 max-h-96 overflow-y-auto">
-            {displayResources.map((resource) => (
-              <div
-                key={resource.id}
-                className={`flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-100 last:border-b-0 ${
-                  selectedResourceId === resource.id ? 'bg-purple-50 border-r-2 border-purple-500' : ''
-                }`}
-                onClick={() => handleResourceSelect(resource.id)}
-              >
-                <div className="flex items-center space-x-2 flex-1 min-w-0">
-                  <DocumentTextIcon className="w-4 h-4 text-green-500 flex-shrink-0" />
-                  <span
-                    className={`text-sm truncate ${
-                      selectedResourceId === resource.id ? 'font-medium text-purple-900' : 'text-gray-700'
-                    }`}
-                  >
-                    {resource.id}
-                  </span>
+          {/* Right side: Resource Details */}
+          <div className="md:w-1/2 flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Resource Details</h3>
+            </div>
+
+            <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50">
+              {!selectedResourceId ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <FunnelIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">Select a resource to view details</p>
+                    {isFilteringActive && (
+                      <p className="text-sm text-gray-400 mt-2">
+                        Showing resources that match your filter criteria
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2 flex-shrink-0">
-                  {isFilteringActive && (
-                    <div className="flex items-center space-x-1 text-xs">
-                      <span className="text-gray-400">{resource.originalCandidateCount}</span>
-                      <span className="text-gray-400">→</span>
-                      <span
-                        className={`font-medium ${
-                          resource.filteredCandidateCount === 0
-                            ? 'text-red-600'
-                            : resource.filteredCandidateCount < resource.originalCandidateCount
-                            ? 'text-amber-600'
-                            : 'text-green-600'
-                        }`}
-                      >
-                        {resource.filteredCandidateCount}
-                      </span>
-                    </div>
-                  )}
-                  {!isFilteringActive && (
-                    <span className="text-xs text-gray-500">
-                      {resource.originalCandidateCount} candidates
-                    </span>
-                  )}
-                  {resource.hasWarning && (
-                    <ExclamationTriangleIcon
-                      className="h-4 w-4 text-amber-500"
-                      title="No matching candidates"
-                    />
-                  )}
-                </div>
-              </div>
-            ))}
+              ) : (
+                <FilteredResourceDetail
+                  resourceId={selectedResourceId}
+                  processedResources={resources}
+                  filterResult={filterResult}
+                  isFilteringActive={isFilteringActive}
+                  filterContext={filterState.appliedValues}
+                  onMessage={onMessage}
+                />
+              )}
+            </div>
           </div>
         </div>
-
-        {/* Selected Resource Details */}
-        {selectedResourceId && (
-          <FilteredResourceDetail
-            resourceId={selectedResourceId}
-            processedResources={resources}
-            filterResult={filterResult}
-            isFilteringActive={isFilteringActive}
-            filterContext={filterState.appliedValues}
-            onMessage={onMessage}
-          />
-        )}
       </div>
     </div>
   );

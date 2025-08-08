@@ -719,9 +719,9 @@ const FilterTool: React.FC<FilterToolProps> = ({
         )}
 
         {/* Main Browser/Details Layout */}
-        <div className="flex flex-col lg:flex-row gap-6 h-[600px]">
+        <div className="flex flex-col md:flex-row gap-6 h-[600px]">
           {/* Left side: Resource List */}
-          <div className="lg:w-1/2 flex flex-col">
+          <div className="md:w-1/2 flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
                 {isFilteringActive ? 'Filtered Resources' : 'All Resources'}
@@ -795,7 +795,7 @@ const FilterTool: React.FC<FilterToolProps> = ({
           </div>
 
           {/* Right side: Resource Details */}
-          <div className="lg:w-1/2 flex flex-col">
+          <div className="md:w-1/2 flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Resource Details</h3>
             </div>
