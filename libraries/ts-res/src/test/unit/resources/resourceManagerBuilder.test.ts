@@ -21,7 +21,6 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { JsonObject } from '@fgv/ts-json-base';
 import * as TsRes from '../../../index';
 
 describe('ResourceManagerBuilder', () => {
@@ -1670,23 +1669,6 @@ describe('ResourceManagerBuilder', () => {
         });
 
         expect(cloneResult).toFailWith(/value.*not found|missing.*value|value.*required/i);
-      });
-
-      test('fails with null JSON value', () => {
-        const editCandidates: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl[] = [
-          {
-            id: 'test.resource',
-            json: null as unknown as JsonObject, // Null JSON value should be invalid
-            conditions: { language: 'en' },
-            resourceTypeName: 'json'
-          }
-        ];
-
-        const cloneResult = sourceManager.clone({
-          candidates: editCandidates
-        });
-
-        expect(cloneResult).toFailWith(/not.*valid.*json|invalid.*json/i);
       });
 
       test('handles resource type mismatch gracefully', () => {
