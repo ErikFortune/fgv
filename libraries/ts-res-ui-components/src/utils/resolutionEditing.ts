@@ -185,36 +185,25 @@ export async function rebuildSystemWithEdits(
   currentContext: Record<string, string>
 ): Promise<Result<ProcessedResources>> {
   try {
-    // Only works with ResourceManagerBuilder
-    if (!('clone' in originalSystem.resourceManager)) {
-      return fail('System rebuilding is only supported for ResourceManagerBuilder instances');
-    }
-
-    const resourceManagerBuilder = originalSystem.resourceManager as Resources.ResourceManagerBuilder;
-
-    // Create candidate declarations from edited resources with deltas
     const candidateDeclarations = createCandidateDeclarations(editedResources, currentContext);
 
-    // Clone the resource manager with new candidates
-    let clonedManager = resourceManagerBuilder;
+    const clonedManager = originalSystem.resourceManager.clone({
+      candidates: candidateDeclarations
+    });
 
-    for (const declaration of candidateDeclarations) {
-      const addResult = clonedManager.addLooseCandidate(declaration);
-      if (addResult.isFailure()) {
-        return fail(`Failed to add candidate for ${declaration.id}: ${addResult.message}`);
-      }
-      // Note: addLooseCandidate returns a DetailedResult with the added candidate, not a new manager
+    if (clonedManager.isFailure()) {
+      return fail(`Failed to clone manager: ${clonedManager.message}`);
     }
 
     // Get compiled collection from the updated manager
-    const compiledResult = clonedManager.getCompiledResourceCollection({ includeMetadata: true });
+    const compiledResult = clonedManager.value.getCompiledResourceCollection({ includeMetadata: true });
     if (compiledResult.isFailure()) {
       return fail(`Failed to get compiled collection: ${compiledResult.message}`);
     }
 
     // Create resolver for the updated system
     const resolverResult = Runtime.ResourceResolver.create({
-      resourceManager: clonedManager,
+      resourceManager: clonedManager.value,
       qualifierTypes: originalSystem.qualifierTypes,
       contextQualifierProvider: originalSystem.contextQualifierProvider
     });
@@ -224,7 +213,7 @@ export async function rebuildSystemWithEdits(
     }
 
     // Create summary
-    const resourceIds = Array.from(clonedManager.resources.keys());
+    const resourceIds = Array.from(clonedManager.value.resources.keys());
     const summary = {
       totalResources: resourceIds.length,
       resourceIds,
@@ -237,7 +226,7 @@ export async function rebuildSystemWithEdits(
         qualifierTypes: originalSystem.qualifierTypes,
         qualifiers: originalSystem.qualifiers,
         resourceTypes: originalSystem.resourceTypes,
-        resourceManager: clonedManager,
+        resourceManager: clonedManager.value,
         importManager: originalSystem.importManager,
         contextQualifierProvider: originalSystem.contextQualifierProvider
       },

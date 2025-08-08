@@ -57,6 +57,7 @@ import { IResourceDeclarationOptions, IResourceManagerCloneOptions } from './com
 import * as ResourceJson from '../resource-json';
 import * as Context from '../context';
 import * as Config from '../config';
+import { JsonEditor } from '@fgv/ts-json';
 
 /**
  * Interface for parameters to the {@link Resources.ResourceManagerBuilder.create | ResourceManagerBuilder create method}.
@@ -809,9 +810,23 @@ export class ResourceManagerBuilder implements IResourceManager {
       if (conditionTokenResult.isFailure()) {
         return fail(`Failed to generate condition token for edit candidate: ${conditionTokenResult.message}`);
       }
+      let editedJson = editCandidate.json;
+      const previousJson = candidatesByConditionKey.get(conditionTokenResult.value)?.json;
+      if (previousJson && previousJson !== editedJson) {
+        editedJson = JsonEditor.create({
+          merge: {
+            arrayMergeBehavior: 'replace',
+            nullAsDelete: false
+          }
+        })
+          .onSuccess((editor) => {
+            return editor.mergeObjectsInPlace({}, [previousJson, editedJson]);
+          })
+          .orThrow();
+      }
 
       const childCandidate: ResourceJson.Json.IChildResourceCandidateDecl = {
-        json: editCandidate.json,
+        json: editedJson,
         conditions: editCandidate.conditions,
         isPartial: editCandidate.isPartial,
         mergeMethod: editCandidate.mergeMethod

@@ -171,8 +171,6 @@ const bundleMetadata: Converter<IBundleMetadata>;
 // @public
 class BundleNormalizer {
     static normalize(originalBuilder: ResourceManagerBuilder, systemConfig: SystemConfiguration): Result<ResourceManagerBuilder>;
-    static normalize(originalManager: IResourceManager, systemConfig: SystemConfiguration): Result<ResourceManagerBuilder>;
-    static normalizeFromCompiledCollection(compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection, systemConfig: SystemConfiguration): Result<ResourceManagerBuilder>;
     static normalizeFromPredefined(originalBuilder: ResourceManagerBuilder, configName: PredefinedSystemConfiguration): Result<ResourceManagerBuilder>;
 }
 

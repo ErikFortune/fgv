@@ -54,7 +54,7 @@ export function getFilterSummary(values: Record<string, string | undefined>): st
  */
 export const createFilteredResourceManagerSimple = async (
   originalSystem: {
-    resourceManager: Resources.ResourceManagerBuilder | Runtime.IResourceManager;
+    resourceManager: Resources.ResourceManagerBuilder;
     qualifiers: any;
     qualifierTypes: any;
     resourceTypes: any;
@@ -81,43 +81,35 @@ export const createFilteredResourceManagerSimple = async (
       Object.entries(partialContext).filter(([, value]) => value !== undefined)
     ) as Record<string, string>;
 
-    // Check if we have a ResourceManagerBuilder that supports cloning
-    if (!('clone' in originalSystem.resourceManager)) {
-      // For IResourceManager from bundles, filtering is not supported
-      // Return the original system as-is with a warning
-      const compiledResult =
-        'getCompiledResourceCollection' in originalSystem.resourceManager
-          ? (originalSystem.resourceManager as any).getCompiledResourceCollection({ includeMetadata: true })
-          : succeed(null);
+    const compiledResult = originalSystem.resourceManager.getCompiledResourceCollection({
+      includeMetadata: true
+    });
 
-      if (compiledResult.isSuccess() && compiledResult.value) {
-        const resourceIds = compiledResult.value.resources?.map((r: any) => r.id) || [];
+    if (compiledResult.isSuccess() && compiledResult.value) {
+      const resourceIds = compiledResult.value.resources?.map((r: any) => r.id) || [];
 
-        // Create CompiledResourceCollection manager for bundle resources
-        const compiledManagerResult = createCompiledResourceCollectionManager(
-          compiledResult.value,
-          originalSystem.qualifierTypes,
-          originalSystem.resourceTypes
-        );
+      // Create CompiledResourceCollection manager for bundle resources
+      const compiledManagerResult = createCompiledResourceCollectionManager(
+        compiledResult.value,
+        originalSystem.qualifierTypes,
+        originalSystem.resourceTypes
+      );
 
-        return succeed({
-          system: originalSystem,
-          compiledCollection: compiledResult.value,
-          compiledResourceCollectionManager: compiledManagerResult.isSuccess()
-            ? compiledManagerResult.value
-            : null,
-          resolver: null as any, // Will be created later if needed
-          resourceCount: resourceIds.length,
-          summary: {
-            totalResources: resourceIds.length,
-            resourceIds,
-            errorCount: 0,
-            warnings: ['Filtering is not supported for resources loaded from bundles']
-          }
-        });
-      }
-
-      return fail('Filtering is not supported for this type of resource manager');
+      return succeed({
+        system: originalSystem,
+        compiledCollection: compiledResult.value,
+        compiledResourceCollectionManager: compiledManagerResult.isSuccess()
+          ? compiledManagerResult.value
+          : null,
+        resolver: null as any, // Will be created later if needed
+        resourceCount: resourceIds.length,
+        summary: {
+          totalResources: resourceIds.length,
+          resourceIds,
+          errorCount: 0,
+          warnings: ['Filtering is not supported for resources loaded from bundles']
+        }
+      });
     }
 
     // Use Result pattern chaining as recommended
