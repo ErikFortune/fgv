@@ -25,8 +25,6 @@ import { ResourceManagerBuilder } from '../resources';
 import { ResourceCandidate } from '../resources';
 import { SystemConfiguration, PredefinedSystemConfiguration } from '../config';
 import { Condition, ConditionSet } from '../conditions';
-import { IResourceManager } from '../runtime';
-import * as ResourceJson from '../resource-json';
 
 /**
  * Normalizes ResourceManagerBuilder instances to ensure consistent ordering
@@ -50,45 +48,15 @@ export class BundleNormalizer {
   public static normalize(
     originalBuilder: ResourceManagerBuilder,
     systemConfig: SystemConfiguration
-  ): Result<ResourceManagerBuilder>;
-
-  /**
-   * Creates a normalized ResourceManagerBuilder from an existing IResourceManager.
-   * This method enables conversion of read-only resource managers (from bundles)
-   * into editable ResourceManagerBuilder instances while preserving normalized order.
-   *
-   * @param originalManager - The IResourceManager to convert and normalize
-   * @param systemConfig - The SystemConfiguration used to create the original manager
-   * @returns Success with the normalized ResourceManagerBuilder if successful, Failure otherwise
-   */
-  public static normalize(
-    originalManager: IResourceManager,
-    systemConfig: SystemConfiguration
-  ): Result<ResourceManagerBuilder>;
-
-  public static normalize(
-    originalBuilderOrManager: ResourceManagerBuilder | IResourceManager,
-    systemConfig: SystemConfiguration
   ): Result<ResourceManagerBuilder> {
     // Create a fresh builder using the same system configuration
     return ResourceManagerBuilder.create({
       qualifiers: systemConfig.qualifiers,
       resourceTypes: systemConfig.resourceTypes
     }).onSuccess((normalizedBuilder) => {
-      // Check if the first parameter is a ResourceManagerBuilder or IResourceManager
-      if ('getAllCandidates' in originalBuilderOrManager) {
-        // It's a ResourceManagerBuilder
-        return BundleNormalizer._addNormalizedResources(
-          originalBuilderOrManager,
-          normalizedBuilder
-        ).onSuccess(() => succeed(normalizedBuilder));
-      } else {
-        // It's an IResourceManager
-        return BundleNormalizer._addNormalizedResourcesFromManager(
-          originalBuilderOrManager,
-          normalizedBuilder
-        ).onSuccess(() => succeed(normalizedBuilder));
-      }
+      return BundleNormalizer._addNormalizedResources(originalBuilder, normalizedBuilder).onSuccess(() =>
+        succeed(normalizedBuilder)
+      );
     });
   }
 
@@ -201,109 +169,5 @@ export class BundleNormalizer {
     return BundleNormalizer._normalizeConditions(originalBuilder, normalizedBuilder)
       .onSuccess(() => BundleNormalizer._normalizeConditionSets(originalBuilder, normalizedBuilder))
       .onSuccess(() => BundleNormalizer._normalizeCandidates(originalBuilder, normalizedBuilder));
-  }
-
-  /**
-   * Adds normalized resources to the target builder by extracting candidates from
-   * an IResourceManager and converting them to loose candidate declarations.
-   *
-   * @param originalManager - The source IResourceManager
-   * @param normalizedBuilder - The target normalized ResourceManagerBuilder
-   * @returns Success if all resources were added successfully, Failure otherwise
-   * @internal
-   */
-  private static _addNormalizedResourcesFromManager(
-    originalManager: IResourceManager,
-    normalizedBuilder: ResourceManagerBuilder
-  ): Result<boolean> {
-    const errors = new MessageAggregator();
-
-    // Get all resource IDs and sort them for consistent ordering
-    const resourceIds = Array.from(originalManager.builtResources.keys()).sort();
-
-    for (const resourceId of resourceIds) {
-      const resourceResult = originalManager.builtResources.get(resourceId);
-      if (resourceResult.isFailure()) {
-        resourceResult.aggregateError(errors);
-        continue;
-      }
-
-      const resource = resourceResult.value;
-
-      // Sort candidates by a consistent criteria (comparing JSON stringified content)
-      const sortedCandidates = Array.from(resource.candidates).sort((c1, c2) => {
-        const jsonCompare = JSON.stringify(c1.json).localeCompare(JSON.stringify(c2.json));
-        if (jsonCompare !== 0) return jsonCompare;
-        // Fall back to merge method comparison if JSON is identical
-        return c1.mergeMethod.localeCompare(c2.mergeMethod);
-      });
-
-      // Convert each candidate to a loose candidate declaration and add to the builder
-      for (const candidate of sortedCandidates) {
-        // Create the loose candidate declaration manually from the runtime candidate
-        const looseCandidateDecl: ResourceJson.Json.ILooseResourceCandidateDecl = {
-          id: resourceId,
-          json: candidate.json,
-          isPartial: candidate.isPartial,
-          mergeMethod: candidate.mergeMethod,
-          // Note: We don't have access to conditions from IResourceCandidate,
-          // so we omit the conditions field which will make this an unconditional candidate
-          resourceTypeName: resource.resourceType.key
-        };
-
-        // Add the loose candidate to the normalized builder
-        normalizedBuilder.addLooseCandidate(looseCandidateDecl).aggregateError(errors);
-      }
-    }
-
-    return errors.returnOrReport(succeed(true));
-  }
-
-  /**
-   * Creates a normalized ResourceManagerBuilder from a compiled collection.
-   * This method reconstructs resources with proper conditions from the compiled format,
-   * enabling full editing functionality while preserving normalized order.
-   *
-   * @param compiledCollection - The compiled collection containing all resource data
-   * @param systemConfig - The SystemConfiguration used to create the resources
-   * @returns Success with the normalized ResourceManagerBuilder if successful, Failure otherwise
-   */
-  public static normalizeFromCompiledCollection(
-    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection,
-    systemConfig: SystemConfiguration
-  ): Result<ResourceManagerBuilder> {
-    // Create a fresh ResourceManagerBuilder
-    return ResourceManagerBuilder.create({
-      qualifiers: systemConfig.qualifiers,
-      resourceTypes: systemConfig.resourceTypes
-    }).onSuccess((builder) => {
-      // Note: This method intentionally creates a normalized/sorted version
-      // rather than preserving the exact structure. For exact reconstruction,
-      // use ResourceManagerBuilder.createFromCompiledResourceCollection directly.
-      const errors = new MessageAggregator();
-
-      // Sort resources for normalized output
-      const sortedResources = Array.from(compiledCollection.resources).sort((r1, r2) =>
-        r1.id.localeCompare(r2.id)
-      );
-
-      for (const resource of sortedResources) {
-        for (const candidate of resource.candidates) {
-          const looseCandidateDecl: ResourceJson.Json.ILooseResourceCandidateDecl = {
-            id: resource.id,
-            json: candidate.json as any, // JsonValue to JsonObject cast needed
-            isPartial: candidate.isPartial,
-            mergeMethod: candidate.mergeMethod
-            // TODO: Reconstruct conditions from the decision/conditionSets indices
-            // For now, creating unconditional candidates - this needs proper implementation
-            // to extract the actual conditions from the compiled format
-          };
-
-          builder.addLooseCandidate(looseCandidateDecl).aggregateError(errors);
-        }
-      }
-
-      return errors.returnOrReport(succeed(builder));
-    });
   }
 }

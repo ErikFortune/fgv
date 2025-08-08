@@ -91,16 +91,42 @@ export function computeResourceDelta(
     return succeed(null);
   }
 
-  // The onlyInB contains the new/modified values that should be saved
-  // This represents the minimal delta from resolved to edited
-  if (diff.onlyInB === null) {
-    // Only deletions occurred
+  // Build a proper delta that includes deletions as null values
+  const delta: any = {};
+
+  // Add all changes/additions from onlyInB
+  if (diff.onlyInB !== null) {
+    Object.assign(delta, diff.onlyInB);
+  }
+
+  // Add deletions as null values from onlyInA
+  // onlyInA contains properties that existed in resolved but not in edited
+  if (diff.onlyInA !== null) {
+    // Add null entries for all deleted properties
+    addDeletionsAsNull(diff.onlyInA, delta);
+  }
+
+  // If delta is empty, no changes
+  if (Object.keys(delta).length === 0) {
     return succeed(null);
   }
 
-  // For resource editing, we want to save the delta (onlyInB)
-  // which contains only the changed/added properties
-  return succeed(diff.onlyInB);
+  return succeed(delta);
+}
+
+/**
+ * Recursively adds null values to delta for all properties in the deleted object
+ */
+function addDeletionsAsNull(deleted: any, delta: any): void {
+  for (const key in deleted) {
+    if (deleted.hasOwnProperty(key)) {
+      // If this key already exists in delta (from onlyInB), it means the property
+      // was modified, not deleted, so don't override with null
+      if (!(key in delta)) {
+        delta[key] = null;
+      }
+    }
+  }
 }
 
 /**
