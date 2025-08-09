@@ -9,7 +9,7 @@ Interface defining the read-only properties that the runtime resource resolver n
 **Signature:**
 
 ```typescript
-export interface IResourceManager 
+export interface IResourceManager<TR extends IResource = IResource> 
 ```
 
 ## Properties
@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-Collections.IReadOnlyValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [IResource](./ts-res.runtime.iresource.md)<!-- -->&gt;
+Collections.IReadOnlyValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, TR&gt;
 
 
 </td><td>
@@ -184,6 +184,17 @@ Description
 </td><td>
 
 Gets a built resource by ID for runtime resolution.
+
+
+</td></tr>
+<tr><td>
+
+[getBuiltResourceTree()](./ts-res.iresourcemanager.getbuiltresourcetree.md)
+
+
+</td><td>
+
+Gets a resource tree built from the resources in this resource manager.
 
 
 </td></tr>

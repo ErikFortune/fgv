@@ -27,6 +27,7 @@ import { ReadOnlyAbstractDecisionCollector, ConcreteDecision } from '../decision
 import { ResourceId, ResourceValueMergeMethod } from '../common';
 import { ResourceType } from '../resource-types';
 import { IContextDecl, IValidatedContextDecl } from '../context';
+import { IReadOnlyResourceTreeRoot } from './resource-tree';
 
 /**
  * Runtime representation of a resource candidate with the minimal data needed for resolution.
@@ -70,7 +71,7 @@ export interface IResource {
  * implementations without requiring the full ResourceManagerBuilder build mechanics.
  * @public
  */
-export interface IResourceManager {
+export interface IResourceManager<TR extends IResource = IResource> {
   /**
    * A {@link Conditions.ReadOnlyConditionCollector | ReadOnlyConditionCollector} which
    * contains the {@link Conditions.Condition | conditions} used by resource candidates.
@@ -94,13 +95,19 @@ export interface IResourceManager {
    * @param id - The resource identifier
    * @returns Success with the runtime resource if found, Failure otherwise
    */
-  getBuiltResource(id: string): Result<IResource>;
+  getBuiltResource(id: string): Result<TR>;
+
+  /**
+   * Gets a resource tree built from the resources in this resource manager.
+   * @returns Result containing the resource tree root, or failure if tree construction fails
+   */
+  getBuiltResourceTree(): Result<IReadOnlyResourceTreeRoot<TR>>;
 
   /**
    * A read-only result map of all built resources, keyed by resource ID.
    * Resources are built on-demand when accessed and returns Results for error handling.
    */
-  readonly builtResources: Collections.IReadOnlyValidatingResultMap<ResourceId, IResource>;
+  readonly builtResources: Collections.IReadOnlyValidatingResultMap<ResourceId, TR>;
 
   /**
    * The number of resources in this resource manager.

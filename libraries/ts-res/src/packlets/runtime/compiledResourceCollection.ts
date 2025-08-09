@@ -74,7 +74,7 @@ export interface ICompiledResourceCollectionCreateParams {
  * and use pre-compiled resource collections without rebuilding them from scratch.
  * @public
  */
-export class CompiledResourceCollection implements IResourceManager {
+export class CompiledResourceCollection implements IResourceManager<IResource> {
   public readonly conditions: ReadOnlyConditionCollector;
   public readonly conditionSets: ReadOnlyConditionSetCollector;
   public readonly decisions: ReadOnlyAbstractDecisionCollector;

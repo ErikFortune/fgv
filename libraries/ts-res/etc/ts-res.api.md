@@ -342,7 +342,7 @@ const compiledResource: ObjectConverter<Model_3.ICompiledResource, unknown>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class CompiledResourceCollection implements IResourceManager {
+class CompiledResourceCollection implements IResourceManager<IResource> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -2537,8 +2537,8 @@ interface IResourceDeclContainer {
 }
 
 // @public
-export interface IResourceManager {
-    readonly builtResources: Collections.IReadOnlyValidatingResultMap<ResourceId, IResource>;
+export interface IResourceManager<TR extends IResource = IResource> {
+    readonly builtResources: Collections.IReadOnlyValidatingResultMap<ResourceId, TR>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly conditions: ReadOnlyConditionCollector;
@@ -2548,7 +2548,8 @@ export interface IResourceManager {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly decisions: ReadOnlyAbstractDecisionCollector;
-    getBuiltResource(id: string): Result<IResource>;
+    getBuiltResource(id: string): Result<TR>;
+    getBuiltResourceTree(): Result<IReadOnlyResourceTreeRoot<TR>>;
     readonly numCandidates: number;
     readonly numResources: number;
     validateContext(context: IContextDecl): Result<IValidatedContextDecl>;
@@ -3913,7 +3914,7 @@ export { ResourceJson }
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-export class ResourceManagerBuilder implements IResourceManager {
+export class ResourceManagerBuilder implements IResourceManager<Resource> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(params: IResourceManagerBuilderCreateParams);

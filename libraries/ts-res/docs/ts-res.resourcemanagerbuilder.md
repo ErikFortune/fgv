@@ -9,9 +9,9 @@ Builder for a collection of [resources](./ts-res.resources.resource.md)<!-- -->.
 **Signature:**
 
 ```typescript
-export declare class ResourceManagerBuilder implements IResourceManager 
+export declare class ResourceManagerBuilder implements IResourceManager<Resource> 
 ```
-**Implements:** [IResourceManager](./ts-res.iresourcemanager.md)
+**Implements:** [IResourceManager](./ts-res.iresourcemanager.md)<!-- -->&lt;[Resource](./ts-res.resource.md)<!-- -->&gt;
 
 ## Constructors
 

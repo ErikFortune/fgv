@@ -83,7 +83,7 @@ export type ResourceManagerBuilderResultDetail =
  * and builds a collection of {@link Resources.Resource | resources} once all candidates are collected.
  * @public
  */
-export class ResourceManagerBuilder implements IResourceManager {
+export class ResourceManagerBuilder implements IResourceManager<Resource> {
   public readonly qualifiers: IReadOnlyQualifierCollector;
   public readonly resourceTypes: ReadOnlyResourceTypeCollector;
 
