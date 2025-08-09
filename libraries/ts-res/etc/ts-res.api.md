@@ -131,6 +131,7 @@ declare namespace Bundle {
         IBundleLoaderCreateParams,
         BundleUtils,
         IBundleComponents,
+        Model_4 as Model,
         Convert_10 as Convert,
         BundleNormalizer
     }
@@ -574,6 +575,7 @@ export class ConditionSet implements IValidatedConditionSetDecl {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static getKeyForDecl(decl: IValidatedConditionSetDecl): Result<ConditionSetKey>;
+    static getKeyFromLooseDecl(conditionSet: ResourceJson.Json.ConditionSetDecl | undefined, conditionCollector: ConditionCollector): Result<ConditionSetKey>;
     get index(): ConditionSetIndex | undefined;
     get key(): ConditionSetKey;
     setIndex(index: number): Result<ConditionSetIndex>;
@@ -3168,6 +3170,15 @@ export const MinConditionPriority: ConditionPriority;
 declare namespace Model {
     export {
         ISystemConfiguration
+    }
+}
+
+declare namespace Model_4 {
+    export {
+        IBundleMetadata,
+        IBundleExportMetadata,
+        IBundle,
+        IBundleCreateParams
     }
 }
 

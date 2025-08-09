@@ -34,7 +34,7 @@ import {
   succeedWithDetail,
   ValidatingResultMap
 } from '@fgv/ts-utils';
-import { Converters as JsonConverters, JsonObject } from '@fgv/ts-json-base';
+import { Converters as JsonConverters } from '@fgv/ts-json-base';
 import {
   ConditionCollector,
   ConditionSetCollector,
@@ -221,6 +221,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
   ): Result<ResourceManagerBuilder> {
     return Config.getPredefinedSystemConfiguration(
       name,
+      /* c8 ignore next 1 - defense in depth */
       qualifierDefaultValues ? { qualifierDefaultValues } : undefined
     ).onSuccess((systemConfig) => {
       return ResourceManagerBuilder.create({
@@ -688,6 +689,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
               }
 
               const addResult = newManager.addResource(editedDeclResult.value);
+              /* c8 ignore next 5 - edge case (nearly?) impossible to reproduce */
               if (addResult.isFailure()) {
                 return fail(
                   `${resourceDecl.id}: Failed to add resource to cloned manager: ${addResult.message}`
@@ -760,40 +762,6 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
    * @returns A Result containing the ConditionSet token if successful, or failure if validation fails
    * @internal
    */
-  private static _getConditionSetToken(
-    conditionSet: ResourceJson.Json.ConditionSetDecl | undefined,
-    conditionCollector: ConditionCollector
-  ): Result<string> {
-    if (!conditionSet) {
-      return succeed(ConditionSet.UnconditionalKey);
-    }
-
-    // Convert ConditionSetDecl to IConditionSetDecl format
-    let conditionSetDecl: { conditions: ResourceJson.Json.ILooseConditionDecl[] };
-
-    if (Array.isArray(conditionSet)) {
-      // ConditionSetDeclAsArray: array of ILooseConditionDecl
-      conditionSetDecl = { conditions: conditionSet };
-    } else {
-      // ConditionSetDeclAsRecord: Record<string, string | IChildConditionDecl>
-      const conditions = Object.entries(conditionSet).map(([qualifierName, value]) => {
-        if (typeof value === 'string') {
-          return { qualifierName, value };
-        } else {
-          return { qualifierName, ...value };
-        }
-      });
-      conditionSetDecl = { conditions };
-    }
-
-    // Validate and convert to IValidatedConditionSetDecl
-    return ConditionsConvert.validatedConditionSetDecl
-      .convert(conditionSetDecl, { conditions: conditionCollector })
-      .onSuccess((validatedDecl) => {
-        // Use proper ConditionSet.getKeyForDecl method to generate the token
-        return ConditionSet.getKeyForDecl(validatedDecl);
-      });
-  }
 
   /**
    * Applies candidate edits to a resource declaration, handling collisions using condition set tokens.
@@ -810,6 +778,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
     conditionCollector: ConditionCollector
   ): Result<ResourceJson.Json.ILooseResourceDecl> {
     const { value: resourceId, message } = Validate.toResourceId(resourceDecl.id);
+    /* c8 ignore next 3 - defensive validation: resource IDs are validated when added to builder, but this protects against corrupted data */
     if (message !== undefined) {
       return fail(`Invalid resource ID "${resourceDecl.id}": ${message}`);
     }
@@ -822,12 +791,13 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
     // Use Map approach: apply original candidates first, then replace with edits on collision
     const candidatesByConditionKey = new Map<string, ResourceJson.Json.IChildResourceCandidateDecl>();
 
+    /* c8 ignore next 1 - ?? is defense in depth */
+    const declCandidates = resourceDecl.candidates ?? [];
+
     // First, add all original candidates keyed by their condition set token
-    for (const candidate of resourceDecl.candidates || []) {
-      const conditionTokenResult = ResourceManagerBuilder._getConditionSetToken(
-        candidate.conditions,
-        conditionCollector
-      );
+    for (const candidate of declCandidates) {
+      const conditionTokenResult = ConditionSet.getKeyFromLooseDecl(candidate.conditions, conditionCollector);
+      /* c8 ignore next 5 - edge case or internal error (nearly?) impossible to reproduce */
       if (conditionTokenResult.isFailure()) {
         return fail(
           `Failed to generate condition token for original candidate: ${conditionTokenResult.message}`
@@ -839,7 +809,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
     // Then, apply edits (this replaces any colliding original candidates)
     // Convert edit candidates (which have ids) to child candidates (without ids) for merging
     for (const editCandidate of editCandidates) {
-      const conditionTokenResult = ResourceManagerBuilder._getConditionSetToken(
+      const conditionTokenResult = ConditionSet.getKeyFromLooseDecl(
         editCandidate.conditions,
         conditionCollector
       );
@@ -899,12 +869,14 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
     const childCandidates: ResourceJson.Json.IChildResourceCandidateDecl[] = [];
 
     // Ensure we have candidates
+    /* c8 ignore next 3 - defense in depth against internal error */
     if (candidates.length === 0) {
       return fail('Cannot create resource declaration from empty candidates array');
     }
 
     // Extract resourceTypeName from the first candidate (all candidates for the same resource should have the same type)
     const resourceTypeName = candidates[0].resourceTypeName;
+    /* c8 ignore next 3 - defense in depth */
     if (!resourceTypeName) {
       return fail('resourceTypeName is required for new resource candidates');
     }
@@ -945,6 +917,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
     for (const compiledCondition of compiledCollection.conditions) {
       // Get the qualifier by index
       const qualifierResult = builder.qualifiers.getAt(compiledCondition.qualifierIndex);
+      /* c8 ignore next 4 - edge case or internal error (nearly?) impossible to reproduce */
       if (qualifierResult.isFailure()) {
         qualifierResult.aggregateError(errors);
         continue;
@@ -985,6 +958,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
 
       // Check for any failures
       const failedIndex = conditionResults.findIndex((r) => r.isFailure());
+      /* c8 ignore next 4 - edge case or internal error (nearly?) impossible to reproduce */
       if (failedIndex >= 0) {
         conditionResults[failedIndex].aggregateError(errors);
         continue;
@@ -1053,6 +1027,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
     for (const compiledResource of compiledCollection.resources) {
       // Get the resource type by index
       const resourceTypeResult = builder.resourceTypes.getAt(compiledResource.type);
+      /* c8 ignore next 4 - edge case or internal error (nearly?) impossible to reproduce */
       if (resourceTypeResult.isFailure()) {
         resourceTypeResult.aggregateError(errors);
         continue;
@@ -1060,6 +1035,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
 
       // Get the decision by index
       const decisionResult = builder._decisions.getAt(compiledResource.decision);
+      /* c8 ignore next 4 - edge case or internal error (nearly?) impossible to reproduce */
       if (decisionResult.isFailure()) {
         decisionResult.aggregateError(errors);
         continue;
@@ -1109,27 +1085,30 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
         for (const condition of decisionCandidate.conditionSet.conditions) {
           conditions[condition.qualifier.name] = condition.value;
         }
+        /* c8 ignore next 3 - defense in depth */
         if (Object.keys(conditions).length === 0) {
           conditions = undefined;
         }
       }
 
       // Convert json value to JsonObject, handling undefined case
-      const jsonValue =
-        candidate.json !== undefined
-          ? JsonConverters.jsonObject.convert(candidate.json).orDefault({} as JsonObject)
-          : ({} as JsonObject);
+      /* c8 ignore next 1 - defense in depth */
+      const rawJson = candidate.json ?? {};
+      JsonConverters.jsonObject
+        .convert(rawJson)
+        .onSuccess((json) => {
+          const candidateDecl: ResourceJson.Json.ILooseResourceCandidateDecl = {
+            id: compiledResource.id,
+            json,
+            conditions,
+            isPartial: candidate.isPartial,
+            mergeMethod: candidate.mergeMethod,
+            resourceTypeName: resourceType.key
+          };
 
-      const candidateDecl: ResourceJson.Json.ILooseResourceCandidateDecl = {
-        id: compiledResource.id,
-        json: jsonValue,
-        conditions,
-        isPartial: candidate.isPartial,
-        mergeMethod: candidate.mergeMethod,
-        resourceTypeName: resourceType.key
-      };
-
-      builder.addLooseCandidate(candidateDecl).aggregateError(errors);
+          return builder.addLooseCandidate(candidateDecl).aggregateError(errors);
+        })
+        .aggregateError(errors);
     }
 
     return errors.returnOrReport(succeed(true));

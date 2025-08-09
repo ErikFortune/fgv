@@ -2242,6 +2242,9 @@ interface TypeGuardValidatorConstructorParams<T, TC = unknown> extends Validator
 // @public
 type TypeGuardWithContext<T, TC = unknown> = (from: unknown, context?: TC) => from is T;
 
+// @public
+export function useOrInitialize<T>(value: T | undefined, initializer: () => Result<T>): Result<T>;
+
 declare namespace Utils {
     export {
         isIterable

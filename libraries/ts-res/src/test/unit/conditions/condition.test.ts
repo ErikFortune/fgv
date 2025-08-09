@@ -818,5 +818,147 @@ describe('Condition', () => {
         expect(noDefaultCondition.canMatchPartialContext(context, {})).toBe(false);
       });
     });
+
+    describe('isPotentialMatch integration with hierarchical qualifiers', () => {
+      let hierarchicalQualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
+      let hierarchicalQualifiers: TsRes.Qualifiers.QualifierCollector;
+
+      beforeAll(() => {
+        // Create a hierarchical literal qualifier type for testing
+        const hierarchicalLiteralType = TsRes.QualifierTypes.LiteralQualifierType.create({
+          name: 'hierarchical',
+          enumeratedValues: ['child1', 'child2', 'parent', 'grandparent', 'root'],
+          hierarchy: {
+            child1: 'parent',
+            child2: 'parent',
+            parent: 'grandparent',
+            grandparent: 'root'
+          }
+        }).orThrow();
+
+        hierarchicalQualifierTypes = TsRes.QualifierTypes.QualifierTypeCollector.create({
+          qualifierTypes: [
+            TsRes.QualifierTypes.LanguageQualifierType.create().orThrow(),
+            TsRes.QualifierTypes.TerritoryQualifierType.create().orThrow(),
+            hierarchicalLiteralType
+          ]
+        }).orThrow();
+
+        const qualifierDecls: TsRes.Qualifiers.IQualifierDecl[] = [
+          {
+            name: 'homeTerritory',
+            typeName: 'territory',
+            defaultPriority: 800,
+            token: 'home',
+            tokenIsOptional: true
+          },
+          { name: 'currentTerritory', typeName: 'territory', defaultPriority: 700 },
+          { name: 'language', typeName: 'language', defaultPriority: 600 },
+          { name: 'category', typeName: 'hierarchical', defaultPriority: 500 }
+        ];
+        hierarchicalQualifiers = TsRes.Qualifiers.QualifierCollector.create({
+          qualifierTypes: hierarchicalQualifierTypes,
+          qualifiers: qualifierDecls
+        }).orThrow();
+      });
+
+      test('returns true when qualifier is not present in context (hierarchical qualifier)', () => {
+        const condition = TsRes.Conditions.Convert.validatedConditionDecl
+          .convert(
+            {
+              qualifierName: 'category',
+              value: 'parent'
+            },
+            { qualifiers: hierarchicalQualifiers }
+          )
+          .onSuccess(TsRes.Conditions.Condition.create)
+          .orThrow();
+
+        const contextWithoutCategory = { language: 'en' };
+        expect(condition.canMatchPartialContext(contextWithoutCategory)).toBe(true);
+      });
+
+      test('returns true when condition value has context value as ancestor', () => {
+        const childCondition = TsRes.Conditions.Convert.validatedConditionDecl
+          .convert(
+            {
+              qualifierName: 'category',
+              value: 'child1' // condition looking for specific child
+            },
+            { qualifiers: hierarchicalQualifiers }
+          )
+          .onSuccess(TsRes.Conditions.Condition.create)
+          .orThrow();
+
+        const contextWithParent = { category: 'parent' }; // context has ancestor value - isPotentialMatch returns true
+        expect(childCondition.canMatchPartialContext(contextWithParent)).toBe(true);
+      });
+
+      test('returns true when context value is descendant of condition value', () => {
+        const parentCondition = TsRes.Conditions.Convert.validatedConditionDecl
+          .convert(
+            {
+              qualifierName: 'category',
+              value: 'parent' // condition looking for parent level
+            },
+            { qualifiers: hierarchicalQualifiers }
+          )
+          .onSuccess(TsRes.Conditions.Condition.create)
+          .orThrow();
+
+        const contextWithChild = { category: 'child1' }; // context has descendant - hierarchy matching returns true
+        expect(parentCondition.canMatchPartialContext(contextWithChild)).toBe(true);
+      });
+
+      test('returns true when condition value matches context value exactly', () => {
+        const exactCondition = TsRes.Conditions.Convert.validatedConditionDecl
+          .convert(
+            {
+              qualifierName: 'category',
+              value: 'parent'
+            },
+            { qualifiers: hierarchicalQualifiers }
+          )
+          .onSuccess(TsRes.Conditions.Condition.create)
+          .orThrow();
+
+        const contextWithSameValue = { category: 'parent' };
+        expect(exactCondition.canMatchPartialContext(contextWithSameValue)).toBe(true);
+      });
+
+      test('returns false for sibling values in hierarchy', () => {
+        const siblingCondition = TsRes.Conditions.Convert.validatedConditionDecl
+          .convert(
+            {
+              qualifierName: 'category',
+              value: 'child1' // sibling of child2
+            },
+            { qualifiers: hierarchicalQualifiers }
+          )
+          .onSuccess(TsRes.Conditions.Condition.create)
+          .orThrow();
+
+        const contextWithSibling = { category: 'child2' }; // sibling of child1
+        expect(siblingCondition.canMatchPartialContext(contextWithSibling)).toBe(false);
+      });
+
+      test('returns true when condition has scoreAsDefault > NoMatch even for non-hierarchical mismatch', () => {
+        const conditionWithDefault = TsRes.Conditions.Convert.validatedConditionDecl
+          .convert(
+            {
+              qualifierName: 'category',
+              value: 'child1',
+              scoreAsDefault: 0.5 // Has default score
+            },
+            { qualifiers: hierarchicalQualifiers }
+          )
+          .onSuccess(TsRes.Conditions.Condition.create)
+          .orThrow();
+
+        const contextWithUnrelated = { category: 'child2' }; // Sibling, should not match
+        // But should still return true because scoreAsDefault > NoMatch
+        expect(conditionWithDefault.canMatchPartialContext(contextWithUnrelated)).toBe(true);
+      });
+    });
   });
 });

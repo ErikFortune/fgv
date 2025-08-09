@@ -496,6 +496,17 @@ Returns [DetailedSuccess&lt;T, TD&gt;](./ts-utils.detailedsuccess.md) with a sup
 
 
 </td></tr>
+<tr><td>
+
+[useOrInitialize(value, initializer)](./ts-utils.useorinitialize.md)
+
+
+</td><td>
+
+Uses a value or calls a supplied initializer if the supplied value is undefined.
+
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces

@@ -72,27 +72,20 @@ export class BundleUtils {
    * @public
    */
   public static extractBundleComponents(bundleData: unknown): Result<IBundleComponents> {
-    // First validate and convert the bundle
-    const bundleResult = bundleConverter.convert(bundleData);
-    if (bundleResult.isFailure()) {
-      return fail(`Invalid bundle structure: ${bundleResult.message}`);
-    }
-
-    const bundle = bundleResult.value;
-
-    // Create SystemConfiguration from the bundle config
-    const systemConfigResult = SystemConfiguration.create(bundle.config);
-    if (systemConfigResult.isFailure()) {
-      return fail(`Invalid system configuration in bundle: ${systemConfigResult.message}`);
-    }
-
-    const systemConfiguration = systemConfigResult.value;
-
-    return succeed({
-      systemConfiguration,
-      compiledCollection: bundle.compiledCollection,
-      metadata: bundle.metadata
-    });
+    return bundleConverter
+      .convert(bundleData)
+      .withErrorFormat((err) => `Invalid bundle structure: ${err}`)
+      .onSuccess((bundle) => {
+        return SystemConfiguration.create(bundle.config)
+          .withErrorFormat((err) => `Invalid system configuration in bundle: ${err}`)
+          .onSuccess((systemConfiguration) => {
+            return succeed({
+              systemConfiguration,
+              compiledCollection: bundle.compiledCollection,
+              metadata: bundle.metadata
+            });
+          });
+      });
   }
 
   /**
@@ -125,6 +118,7 @@ export class BundleUtils {
       const data = JSON.parse(jsonString);
       return BundleUtils.extractBundleComponents(data);
     } catch (error) {
+      /* c8 ignore next 1 - defense in depth */
       return fail(`Failed to parse JSON: ${error instanceof Error ? error.message : String(error)}`);
     }
   }

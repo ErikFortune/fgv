@@ -852,4 +852,126 @@ describe('LiteralQualifierType', () => {
       );
     });
   });
+
+  describe('isPotentialMatch with hierarchical ancestors', () => {
+    let hierarchicalQualifierType: TsRes.QualifierTypes.LiteralQualifierType;
+
+    beforeAll(() => {
+      const params: TsRes.QualifierTypes.ILiteralQualifierTypeCreateParams = {
+        name: 'hierarchical',
+        enumeratedValues: ['child1', 'child2', 'parent', 'grandparent', 'root'],
+        hierarchy: {
+          child1: 'parent',
+          child2: 'parent',
+          parent: 'grandparent',
+          grandparent: 'root'
+        }
+      };
+      hierarchicalQualifierType = TsRes.QualifierTypes.LiteralQualifierType.create(params).orThrow();
+    });
+
+    test('returns true for exact matches', () => {
+      expect(hierarchicalQualifierType.isPotentialMatch('child1', 'child1')).toBe(true);
+      expect(hierarchicalQualifierType.isPotentialMatch('parent', 'parent')).toBe(true);
+      expect(hierarchicalQualifierType.isPotentialMatch('root', 'root')).toBe(true);
+    });
+
+    test('returns true when condition value has context value as an ancestor', () => {
+      // child1 has parent as ancestor - potential match via isAncestor check
+      expect(hierarchicalQualifierType.isPotentialMatch('child1', 'parent')).toBe(true);
+
+      // child1 has grandparent as ancestor (through parent)
+      expect(hierarchicalQualifierType.isPotentialMatch('child1', 'grandparent')).toBe(true);
+
+      // child1 has root as ancestor (through parent -> grandparent)
+      expect(hierarchicalQualifierType.isPotentialMatch('child1', 'root')).toBe(true);
+
+      // parent has grandparent as ancestor
+      expect(hierarchicalQualifierType.isPotentialMatch('parent', 'grandparent')).toBe(true);
+
+      // grandparent has root as ancestor
+      expect(hierarchicalQualifierType.isPotentialMatch('grandparent', 'root')).toBe(true);
+    });
+
+    test('returns true when context value is a descendant of condition value', () => {
+      // parent condition can match child1 context via hierarchy match (returns 0.9 score)
+      expect(hierarchicalQualifierType.isPotentialMatch('parent', 'child1')).toBe(true);
+
+      // grandparent condition can match parent context via hierarchy match
+      expect(hierarchicalQualifierType.isPotentialMatch('grandparent', 'parent')).toBe(true);
+
+      // root condition can match grandparent context via hierarchy match
+      expect(hierarchicalQualifierType.isPotentialMatch('root', 'grandparent')).toBe(true);
+    });
+
+    test('returns false for sibling values in hierarchy', () => {
+      // child1 and child2 are siblings under parent
+      expect(hierarchicalQualifierType.isPotentialMatch('child1', 'child2')).toBe(false);
+      expect(hierarchicalQualifierType.isPotentialMatch('child2', 'child1')).toBe(false);
+    });
+
+    test('returns false for unrelated values', () => {
+      // Values not in hierarchy relationships
+      expect(hierarchicalQualifierType.isPotentialMatch('child1', 'nonexistent')).toBe(false);
+      expect(hierarchicalQualifierType.isPotentialMatch('nonexistent', 'child1')).toBe(false);
+    });
+
+    test('returns false when condition value is invalid', () => {
+      expect(hierarchicalQualifierType.isPotentialMatch('invalid', 'child1')).toBe(false);
+      expect(hierarchicalQualifierType.isPotentialMatch('', 'child1')).toBe(false);
+    });
+
+    test('returns false when context value is invalid', () => {
+      expect(hierarchicalQualifierType.isPotentialMatch('parent', 'invalid')).toBe(false);
+      expect(hierarchicalQualifierType.isPotentialMatch('parent', '')).toBe(false);
+    });
+  });
+
+  describe('isPotentialMatch without hierarchy', () => {
+    let nonHierarchicalQualifierType: TsRes.QualifierTypes.LiteralQualifierType;
+
+    beforeAll(() => {
+      nonHierarchicalQualifierType = TsRes.QualifierTypes.LiteralQualifierType.create({
+        name: 'non-hierarchical',
+        enumeratedValues: ['a', 'b', 'c']
+      }).orThrow();
+    });
+
+    test('returns true for exact matches only', () => {
+      expect(nonHierarchicalQualifierType.isPotentialMatch('a', 'a')).toBe(true);
+      expect(nonHierarchicalQualifierType.isPotentialMatch('b', 'b')).toBe(true);
+      expect(nonHierarchicalQualifierType.isPotentialMatch('c', 'c')).toBe(true);
+    });
+
+    test('returns false for non-matching values', () => {
+      expect(nonHierarchicalQualifierType.isPotentialMatch('a', 'b')).toBe(false);
+      expect(nonHierarchicalQualifierType.isPotentialMatch('b', 'c')).toBe(false);
+      expect(nonHierarchicalQualifierType.isPotentialMatch('c', 'a')).toBe(false);
+    });
+
+    test('handles case-insensitive matching when caseSensitive is false', () => {
+      const caseInsensitiveType = TsRes.QualifierTypes.LiteralQualifierType.create({
+        name: 'case-insensitive',
+        caseSensitive: false,
+        enumeratedValues: ['Test', 'Value']
+      }).orThrow();
+
+      expect(caseInsensitiveType.isPotentialMatch('Test', 'test')).toBe(true);
+      expect(caseInsensitiveType.isPotentialMatch('test', 'Test')).toBe(true);
+      expect(caseInsensitiveType.isPotentialMatch('VALUE', 'value')).toBe(true);
+    });
+
+    test('handles case-sensitive matching when caseSensitive is true', () => {
+      const caseSensitiveType = TsRes.QualifierTypes.LiteralQualifierType.create({
+        name: 'case-sensitive',
+        caseSensitive: true,
+        enumeratedValues: ['Test', 'test']
+      }).orThrow();
+
+      expect(caseSensitiveType.isPotentialMatch('Test', 'Test')).toBe(true);
+      expect(caseSensitiveType.isPotentialMatch('test', 'test')).toBe(true);
+      expect(caseSensitiveType.isPotentialMatch('Test', 'test')).toBe(false);
+      expect(caseSensitiveType.isPotentialMatch('test', 'Test')).toBe(false);
+    });
+  });
 });

@@ -30,6 +30,9 @@
  * @packageDocumentation
  */
 
+import * as Model from './model';
+import * as Convert from './convert';
+
 // Model interfaces
 export type { IBundleMetadata, IBundleExportMetadata, IBundle, IBundleCreateParams } from './model';
 
@@ -42,8 +45,7 @@ export type { IBundleLoaderCreateParams } from './bundleLoader';
 export { BundleUtils } from './bundleUtils';
 export type { IBundleComponents } from './bundleUtils';
 
-// Converters
-export * as Convert from './convert';
+export { Model, Convert };
 
 // Internal utilities (not part of public API)
 /** @internal */

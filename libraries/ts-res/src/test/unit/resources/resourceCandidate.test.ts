@@ -914,4 +914,86 @@ describe('ResourceCandidate', () => {
       );
     });
   });
+
+  describe('completeness getter', () => {
+    test('should return "full" for non-partial candidates', () => {
+      const decl: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = {
+        id: 'test.resource.id',
+        json: { name: 'Test Resource' },
+        isPartial: false
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'test-candidate',
+        conditionSets,
+        resourceType: resourceTypes.validating.get('json').orThrow(),
+        decl
+      }).orThrow();
+
+      expect(candidate.completeness).toBe('full');
+    });
+
+    test('should return "partial" for partial candidates', () => {
+      const decl: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = {
+        id: 'partial.resource.id',
+        json: { name: 'Partial Resource' },
+        isPartial: true
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'partial-candidate',
+        conditionSets,
+        resourceType: resourceTypes.validating.get('json').orThrow(),
+        decl
+      }).orThrow();
+
+      expect(candidate.completeness).toBe('partial');
+    });
+
+    test('should return "full" when isPartial is undefined (default)', () => {
+      const decl: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = {
+        id: 'default.resource.id',
+        json: { name: 'Default Resource' }
+        // isPartial is undefined, should default to false
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'default-candidate',
+        conditionSets,
+        resourceType: resourceTypes.validating.get('json').orThrow(),
+        decl
+      }).orThrow();
+
+      expect(candidate.completeness).toBe('full');
+    });
+
+    test('should return "full" when isPartial is explicitly false', () => {
+      const decl: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = {
+        id: 'explicit.full.resource.id',
+        json: { name: 'Explicit Full Resource' },
+        isPartial: false
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'explicit-full-candidate',
+        conditionSets,
+        resourceType: resourceTypes.validating.get('json').orThrow(),
+        decl
+      }).orThrow();
+
+      expect(candidate.completeness).toBe('full');
+    });
+
+    test('should return "partial" when isPartial is explicitly true', () => {
+      const decl: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl = {
+        id: 'explicit.partial.resource.id',
+        json: { name: 'Explicit Partial Resource' },
+        isPartial: true
+      };
+      const candidate = TsRes.Resources.ResourceCandidate.create({
+        id: 'explicit-partial-candidate',
+        conditionSets,
+        resourceType: resourceTypes.validating.get('json').orThrow(),
+        decl
+      }).orThrow();
+
+      expect(candidate.completeness).toBe('partial');
+    });
+  });
 });

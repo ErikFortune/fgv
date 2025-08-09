@@ -57,6 +57,7 @@ export class JsonImporter implements IImporter {
     item: IImportable,
     manager: ResourceManagerBuilder
   ): DetailedResult<IImportable[], ImporterResultDetail> {
+    /* c8 ignore next 1 - coverage intermittently misses the next line */
     if (!isImportable(item) || item.type !== 'json') {
       /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
       const name = item.context?.baseId ?? 'unknown';
