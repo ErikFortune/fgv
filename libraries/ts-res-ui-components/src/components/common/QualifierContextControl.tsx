@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { ProcessedResources } from '../../types';
 
 export interface QualifierContextControlProps {
   qualifierName: string;
@@ -6,7 +7,7 @@ export interface QualifierContextControlProps {
   onChange: (qualifierName: string, value: string | undefined) => void;
   disabled?: boolean;
   placeholder?: string;
-  resources?: any; // ProcessedResources
+  resources?: ProcessedResources | null;
   className?: string;
 }
 

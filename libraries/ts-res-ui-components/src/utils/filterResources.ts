@@ -110,7 +110,7 @@ export const createFilteredResourceManagerSimple = async (
   }
 
   debugLog(enableDebug, 'Validating context and cloning manager:', filteredContext);
-  const resourceManagerBuilder = originalSystem.resourceManager as Resources.ResourceManagerBuilder;
+  const resourceManagerBuilder = originalSystem.resourceManager;
 
   return resourceManagerBuilder
     .validateContext(filteredContext)
