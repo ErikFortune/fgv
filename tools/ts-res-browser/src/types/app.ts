@@ -6,14 +6,7 @@ export interface Message {
   timestamp: Date;
 }
 
-export type Tool =
-  | 'import'
-  | 'source'
-  | 'filter'
-  | 'compiled'
-  | 'resolution'
-  | 'configuration'
-  | 'zip-loader';
+export type Tool = 'import' | 'source' | 'filter' | 'compiled' | 'resolution' | 'configuration';
 
 export interface FilterState {
   enabled: boolean;

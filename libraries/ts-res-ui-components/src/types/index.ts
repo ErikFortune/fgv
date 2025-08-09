@@ -90,6 +90,7 @@ export interface ViewBaseProps {
 export interface ImportViewProps extends ViewBaseProps {
   onImport?: (data: ImportedDirectory | ImportedFile[]) => void;
   onBundleImport?: (bundle: Bundle.IBundle) => void;
+  onZipImport?: (zipFile: File, config?: Config.Model.ISystemConfiguration) => void; // Pass raw File for FileTree creation
   acceptedFileTypes?: string[];
 }
 
@@ -206,7 +207,9 @@ export interface ConfigurationViewProps extends ViewBaseProps {
 export interface ZipLoaderViewProps extends ViewBaseProps {
   zipFileUrl?: string;
   zipPath?: string;
-  onLoadComplete?: (resources: ProcessedResources) => void;
+  onImport?: (data: ImportedDirectory | ImportedFile[]) => void;
+  onConfigurationLoad?: (config: Config.Model.ISystemConfiguration) => void;
+  onLoadComplete?: () => void;
 }
 
 // Resource detail types for SourceView
@@ -260,6 +263,10 @@ export interface OrchestratorState {
 export interface OrchestratorActions {
   // Resource management
   importDirectory: (directory: ImportedDirectory) => Promise<void>;
+  importDirectoryWithConfig: (
+    directory: ImportedDirectory,
+    config: Config.Model.ISystemConfiguration
+  ) => Promise<void>;
   importFiles: (files: ImportedFile[]) => Promise<void>;
   importBundle: (bundle: Bundle.IBundle) => Promise<void>;
   clearResources: () => void;

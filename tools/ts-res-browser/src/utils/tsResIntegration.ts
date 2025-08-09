@@ -390,6 +390,45 @@ export function processImportedDirectory(
 }
 
 /**
+ * Processes FileTree directly without conversion to ImportedFile/ImportedDirectory
+ */
+export function processFileTreeDirectly(
+  fileTree: FileTree.FileTree,
+  rootPath: string = '/',
+  systemConfigOrSystem?: Config.Model.ISystemConfiguration | TsResSystem
+): Result<ProcessedResources> {
+  // Determine if we have a system or a config
+  const systemResult =
+    systemConfigOrSystem &&
+    'qualifierTypes' in systemConfigOrSystem &&
+    'resourceManager' in systemConfigOrSystem
+      ? succeed(systemConfigOrSystem as TsResSystem)
+      : createTsResSystemFromConfig(systemConfigOrSystem as Config.Model.ISystemConfiguration);
+
+  return systemResult.onSuccess((tsResSystem) => {
+    return Import.ImportManager.create({
+      fileTree,
+      resources: tsResSystem.resourceManager
+    })
+      .onSuccess<ProcessedResources>((importManager) => {
+        // Import from the specified root path
+        const importResult = importManager.importFromFileSystem(rootPath);
+        if (importResult.isFailure()) {
+          return fail(`Failed to import from FileTree at ${rootPath}: ${importResult.message}`);
+        }
+
+        // Update the system with the new ImportManager
+        const updatedSystem = {
+          ...tsResSystem,
+          importManager
+        };
+        return finalizeProcessing(updatedSystem);
+      })
+      .withErrorFormat((message) => `processFileTreeDirectly failed: ${message}`);
+  });
+}
+
+/**
  * Finalizes processing and creates compiled resources
  */
 export function finalizeProcessing(system: TsResSystem): Result<ProcessedResources> {

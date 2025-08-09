@@ -5,8 +5,7 @@ import {
   FunnelIcon,
   CubeIcon,
   MagnifyingGlassIcon,
-  CogIcon,
-  ArchiveBoxIcon
+  CogIcon
 } from '@heroicons/react/24/outline';
 import { Tool } from '../../types/app';
 
@@ -20,7 +19,7 @@ const tools = [
     id: 'import',
     name: 'Import Resources',
     icon: DocumentArrowUpIcon,
-    description: 'Import ts-res resource files and directories'
+    description: 'Import resource files, directories, bundles, and ZIP archives'
   },
   {
     id: 'source',
@@ -51,12 +50,6 @@ const tools = [
     name: 'Configuration',
     icon: CogIcon,
     description: 'Manage qualifier types, qualifiers, and resource types'
-  },
-  {
-    id: 'zip-loader',
-    name: 'ZIP Loader',
-    icon: ArchiveBoxIcon,
-    description: 'Load resources from ZIP archive created by CLI'
   }
 ];
 

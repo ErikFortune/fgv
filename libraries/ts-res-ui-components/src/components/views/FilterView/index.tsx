@@ -83,31 +83,14 @@ export const FilterView: React.FC<FilterViewProps> = ({
       return null;
     }
 
-    try {
-      const resourceManager = filterResult.processedResources.system.resourceManager;
+    const resourceManager = filterResult.processedResources.system.resourceManager;
 
-      // Check if this is a ResourceManagerBuilder (has getResourceCollectionDecl method)
-      if ('getResourceCollectionDecl' in resourceManager) {
-        const collectionResult = (resourceManager as any).getResourceCollectionDecl();
-        if (collectionResult.isSuccess()) {
-          return {
-            ...collectionResult.value,
-            metadata: {
-              exportedAt: new Date().toISOString(),
-              totalResources: filterResult.processedResources.resourceCount,
-              type: 'ts-res-filtered-resource-collection',
-              filterContext: filterState.appliedValues,
-              reduceQualifiers: filterState.reduceQualifiers
-            }
-          };
-        } else {
-          onMessage?.('error', `Failed to get filtered resource collection: ${collectionResult.message}`);
-          return null;
-        }
-      } else if (filterResult.processedResources.compiledCollection) {
-        // For IResourceManager from bundles, use the compiled collection directly
+    // Check if this is a ResourceManagerBuilder (has getResourceCollectionDecl method)
+    if ('getResourceCollectionDecl' in resourceManager) {
+      const collectionResult = (resourceManager as any).getResourceCollectionDecl();
+      if (collectionResult.isSuccess()) {
         return {
-          resources: filterResult.processedResources.compiledCollection.resources || [],
+          ...collectionResult.value,
           metadata: {
             exportedAt: new Date().toISOString(),
             totalResources: filterResult.processedResources.resourceCount,
@@ -117,16 +100,23 @@ export const FilterView: React.FC<FilterViewProps> = ({
           }
         };
       } else {
-        onMessage?.('error', 'Filtered resource collection data not available');
+        onMessage?.('error', `Failed to get filtered resource collection: ${collectionResult.message}`);
         return null;
       }
-    } catch (error) {
-      onMessage?.(
-        'error',
-        `Error getting filtered resource collection: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
+    } else if (filterResult.processedResources.compiledCollection) {
+      // For IResourceManager from bundles, use the compiled collection directly
+      return {
+        resources: filterResult.processedResources.compiledCollection.resources || [],
+        metadata: {
+          exportedAt: new Date().toISOString(),
+          totalResources: filterResult.processedResources.resourceCount,
+          type: 'ts-res-filtered-resource-collection',
+          filterContext: filterState.appliedValues,
+          reduceQualifiers: filterState.reduceQualifiers
+        }
+      };
+    } else {
+      onMessage?.('error', 'Filtered resource collection data not available');
       return null;
     }
   }, [filterResult, onMessage, filterState.appliedValues, filterState.reduceQualifiers]);

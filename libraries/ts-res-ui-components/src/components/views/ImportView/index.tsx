@@ -7,7 +7,8 @@ import {
   FolderOpenIcon
 } from '@heroicons/react/24/outline';
 import { ImportViewProps, ImportedFile, ImportedDirectory, ExtendedProcessedResources } from '../../../types';
-import { Bundle } from '@fgv/ts-res';
+import { Bundle, Config } from '@fgv/ts-res';
+import { isZipFile } from '../../../utils/zipLoader';
 
 interface FileInputResult {
   files: ImportedFile[];
@@ -18,7 +19,8 @@ interface FileInputResult {
 export const ImportView: React.FC<ImportViewProps> = ({
   onImport,
   onBundleImport,
-  acceptedFileTypes = ['.json'],
+  onZipImport,
+  acceptedFileTypes = ['.json', '.zip'],
   onMessage,
   className = ''
 }) => {
@@ -28,11 +30,13 @@ export const ImportView: React.FC<ImportViewProps> = ({
     fileCount: number;
     isDirectory: boolean;
     isBundle: boolean;
+    isZip: boolean;
   }>({
     hasImported: false,
     fileCount: 0,
     isDirectory: false,
-    isBundle: false
+    isBundle: false,
+    isZip: false
   });
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -51,6 +55,38 @@ export const ImportView: React.FC<ImportViewProps> = ({
       setError(null);
 
       try {
+        // Handle single file selection - check file type first
+        if (files.length === 1) {
+          const file = files[0];
+
+          // Check if it's a ZIP file first
+          if (isZipFile(file.name)) {
+            console.log(`[ImportView] ✅ ${file.name} detected as ZIP file`);
+            onMessage?.('info', `Processing ZIP file: ${file.name}`);
+
+            // Just pass the File object directly to onZipImport
+            // The App will handle creating the FileTree
+            if (onZipImport) {
+              setImportStatus({
+                hasImported: true,
+                fileCount: 1,
+                isDirectory: false,
+                isBundle: false,
+                isZip: true
+              });
+
+              onMessage?.('success', `ZIP file detected: ${file.name}`);
+              onZipImport(file, undefined);
+
+              setIsLoading(false);
+              return;
+            } else {
+              throw new Error('No ZIP import handler configured');
+            }
+          }
+        }
+
+        // Handle regular files (non-ZIP)
         const importedFiles: ImportedFile[] = [];
         let bundleFile: (ImportedFile & { bundle?: Bundle.IBundle }) | undefined;
 
@@ -104,7 +140,8 @@ export const ImportView: React.FC<ImportViewProps> = ({
             hasImported: true,
             fileCount: 1,
             isDirectory: false,
-            isBundle: true
+            isBundle: true,
+            isZip: false
           });
           onMessage?.('info', `Bundle file detected: ${bundleFile.name}`);
           if (onBundleImport && bundleFile.bundle) {
@@ -118,7 +155,8 @@ export const ImportView: React.FC<ImportViewProps> = ({
             hasImported: true,
             fileCount: importedFiles.length,
             isDirectory: false,
-            isBundle: false
+            isBundle: false,
+            isZip: false
           });
           onMessage?.('success', `Imported ${importedFiles.length} file(s)`);
           onImport?.(importedFiles);
@@ -216,7 +254,8 @@ export const ImportView: React.FC<ImportViewProps> = ({
           hasImported: true,
           fileCount: files.length,
           isDirectory: true,
-          isBundle: false
+          isBundle: false,
+          isZip: false
         });
 
         onMessage?.('success', `Imported directory with ${files.length} file(s)`);
@@ -255,7 +294,8 @@ export const ImportView: React.FC<ImportViewProps> = ({
         hasImported: true,
         fileCount,
         isDirectory: true,
-        isBundle: false
+        isBundle: false,
+        isZip: false
       });
 
       onMessage?.('success', `Imported directory "${rootDir.name}" with ${fileCount} file(s)`);
@@ -285,17 +325,55 @@ export const ImportView: React.FC<ImportViewProps> = ({
         multiple: true,
         types: [
           {
-            description: 'JSON files',
-            accept: { 'application/json': acceptedFileTypes }
+            description: 'Resource files',
+            accept: {
+              'application/json': ['.json'],
+              'application/zip': ['.zip']
+            }
           }
         ]
       });
+
+      // Check if we have a single ZIP file first
+      if (fileHandles.length === 1) {
+        const file = await fileHandles[0].getFile();
+
+        if (isZipFile(file.name)) {
+          console.log(`[ImportView] Modern API - ✅ ${file.name} detected as ZIP file`);
+          onMessage?.('info', `Processing ZIP file: ${file.name}`);
+
+          if (onZipImport) {
+            setImportStatus({
+              hasImported: true,
+              fileCount: 1,
+              isDirectory: false,
+              isBundle: false,
+              isZip: true
+            });
+
+            onMessage?.('success', `ZIP file detected: ${file.name}`);
+            onZipImport(file, undefined);
+
+            setIsLoading(false);
+            return;
+          } else {
+            throw new Error('No ZIP import handler configured');
+          }
+        }
+      }
 
       const importedFiles: ImportedFile[] = [];
       let bundleFile: (ImportedFile & { bundle?: Bundle.IBundle }) | undefined;
 
       for (const fileHandle of fileHandles) {
         const file = await fileHandle.getFile();
+
+        // Skip ZIP files in multi-file selection
+        if (isZipFile(file.name)) {
+          onMessage?.('warning', `Skipping ZIP file ${file.name} - select it individually to import`);
+          continue;
+        }
+
         const content = await file.text();
 
         const importedFile: ImportedFile = {
@@ -339,7 +417,8 @@ export const ImportView: React.FC<ImportViewProps> = ({
           hasImported: true,
           fileCount: 1,
           isDirectory: false,
-          isBundle: true
+          isBundle: true,
+          isZip: false
         });
         onMessage?.('info', `Bundle file detected: ${bundleFile.name}`);
         if (onBundleImport && bundleFile.bundle) {
@@ -350,7 +429,8 @@ export const ImportView: React.FC<ImportViewProps> = ({
           hasImported: true,
           fileCount: importedFiles.length,
           isDirectory: false,
-          isBundle: false
+          isBundle: false,
+          isZip: false
         });
         onMessage?.('success', `Imported ${importedFiles.length} file(s)`);
         onImport?.(importedFiles);
@@ -371,7 +451,8 @@ export const ImportView: React.FC<ImportViewProps> = ({
       hasImported: false,
       fileCount: 0,
       isDirectory: false,
-      isBundle: false
+      isBundle: false,
+      isZip: false
     });
     setError(null);
     onMessage?.('info', 'Import cleared');
@@ -502,6 +583,8 @@ export const ImportView: React.FC<ImportViewProps> = ({
                     <span className="text-sm text-gray-900">
                       {importStatus.isBundle
                         ? 'Bundle imported'
+                        : importStatus.isZip
+                        ? 'ZIP archive imported'
                         : importStatus.isDirectory
                         ? 'Directory imported'
                         : `${importStatus.fileCount} file(s) imported`}
@@ -520,6 +603,14 @@ export const ImportView: React.FC<ImportViewProps> = ({
                 <div className="flex items-center space-x-3">
                   <ArchiveBoxIcon className="w-5 h-5 text-blue-500" />
                   <span className="text-sm text-blue-900">Bundle file detected</span>
+                </div>
+              )}
+
+              {/* ZIP Detection */}
+              {importStatus.isZip && (
+                <div className="flex items-center space-x-3">
+                  <ArchiveBoxIcon className="w-5 h-5 text-purple-500" />
+                  <span className="text-sm text-purple-900">ZIP archive processed</span>
                 </div>
               )}
             </div>
@@ -558,6 +649,8 @@ export const ImportView: React.FC<ImportViewProps> = ({
                   <p>
                     {importStatus.isBundle
                       ? 'Bundle resources are ready to browse.'
+                      : importStatus.isZip
+                      ? 'ZIP archive contents have been imported and are ready for processing.'
                       : 'Resources are ready for processing.'}
                   </p>
                 </div>

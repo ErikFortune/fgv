@@ -73,6 +73,8 @@ export interface ZipLoadResult {
   files: ImportedFile[];
   /** Loaded directory structure */
   directory: ImportedDirectory | null;
+  /** File tree for direct processing */
+  fileTree?: any; // FileTree.FileTree from ts-utils
   /** Processed resources if auto-processing was enabled */
   processedResources: ProcessedResources | null;
 }

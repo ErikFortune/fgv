@@ -34,6 +34,8 @@ interface LoadedState {
 export const ZipLoaderView: React.FC<ZipLoaderViewProps> = ({
   zipFileUrl,
   zipPath,
+  onImport,
+  onConfigurationLoad,
   onLoadComplete,
   onMessage,
   className = ''
@@ -77,8 +79,8 @@ export const ZipLoaderView: React.FC<ZipLoaderViewProps> = ({
       });
 
       const options: ZipLoadOptions = {
-        autoApplyConfig: true,
-        autoProcessResources: true
+        autoApplyConfig: false,
+        autoProcessResources: false
       };
 
       const progressCallback = (stage: ZipLoadingStage, progress: number, message?: string) => {
@@ -90,50 +92,43 @@ export const ZipLoaderView: React.FC<ZipLoaderViewProps> = ({
         });
       };
 
-      try {
-        const loader = createBrowserZipLoader();
-        const result = await loader.loadFromFile(file, options, progressCallback);
+      const loader = createBrowserZipLoader();
+      const result = await loader.loadFromFile(file, options, progressCallback);
 
-        if (result.isSuccess()) {
-          const zipResult = result.value;
+      if (result.isSuccess()) {
+        const zipResult = result.value;
 
-          setLoadedState((prev) => ({
-            ...prev,
-            result: zipResult,
-            error: null
-          }));
+        setLoadedState((prev) => ({
+          ...prev,
+          result: zipResult,
+          error: null
+        }));
 
-          setLoadingState({
-            isLoading: false,
-            stage: 'complete',
-            progress: 100,
-            message: 'ZIP file loaded successfully'
-          });
+        setLoadingState({
+          isLoading: false,
+          stage: 'complete',
+          progress: 100,
+          message: 'ZIP file loaded successfully'
+        });
 
-          onMessage?.('success', `Loaded ZIP file: ${file.name}`);
+        onMessage?.('success', `Loaded ZIP file: ${file.name}`);
 
-          if (zipResult.processedResources) {
-            onLoadComplete?.(zipResult.processedResources);
-          }
-        } else {
-          const errorMessage = result.message;
-          setLoadedState((prev) => ({
-            ...prev,
-            error: errorMessage,
-            result: null
-          }));
-
-          setLoadingState({
-            isLoading: false,
-            stage: null,
-            progress: 0,
-            message: ''
-          });
-
-          onMessage?.('error', `Failed to load ZIP: ${errorMessage}`);
+        // Load configuration if found
+        if (zipResult.config) {
+          onConfigurationLoad?.(zipResult.config);
+          onMessage?.('info', `Configuration loaded from ZIP`);
         }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+
+        // Import the raw data for processing by the orchestrator
+        if (zipResult.directory) {
+          onImport?.(zipResult.directory);
+        } else if (zipResult.files.length > 0) {
+          onImport?.(zipResult.files);
+        }
+
+        onLoadComplete?.();
+      } else {
+        const errorMessage = result.message;
         setLoadedState((prev) => ({
           ...prev,
           error: errorMessage,
@@ -147,7 +142,7 @@ export const ZipLoaderView: React.FC<ZipLoaderViewProps> = ({
           message: ''
         });
 
-        onMessage?.('error', `Unexpected error: ${errorMessage}`);
+        onMessage?.('error', `Failed to load ZIP: ${errorMessage}`);
       }
     },
     [onMessage, onLoadComplete]
@@ -171,8 +166,8 @@ export const ZipLoaderView: React.FC<ZipLoaderViewProps> = ({
       });
 
       const options: ZipLoadOptions = {
-        autoApplyConfig: true,
-        autoProcessResources: true
+        autoApplyConfig: false,
+        autoProcessResources: false
       };
 
       const progressCallback = (stage: ZipLoadingStage, progress: number, message?: string) => {
@@ -184,50 +179,43 @@ export const ZipLoaderView: React.FC<ZipLoaderViewProps> = ({
         });
       };
 
-      try {
-        const loader = createBrowserZipLoader();
-        const result = await loader.loadFromUrl(url, options, progressCallback);
+      const loader = createBrowserZipLoader();
+      const result = await loader.loadFromUrl(url, options, progressCallback);
 
-        if (result.isSuccess()) {
-          const zipResult = result.value;
+      if (result.isSuccess()) {
+        const zipResult = result.value;
 
-          setLoadedState((prev) => ({
-            ...prev,
-            result: zipResult,
-            error: null
-          }));
+        setLoadedState((prev) => ({
+          ...prev,
+          result: zipResult,
+          error: null
+        }));
 
-          setLoadingState({
-            isLoading: false,
-            stage: 'complete',
-            progress: 100,
-            message: 'ZIP file loaded successfully'
-          });
+        setLoadingState({
+          isLoading: false,
+          stage: 'complete',
+          progress: 100,
+          message: 'ZIP file loaded successfully'
+        });
 
-          onMessage?.('success', `Loaded ZIP from URL: ${url}`);
+        onMessage?.('success', `Loaded ZIP from URL: ${url}`);
 
-          if (zipResult.processedResources) {
-            onLoadComplete?.(zipResult.processedResources);
-          }
-        } else {
-          const errorMessage = result.message;
-          setLoadedState((prev) => ({
-            ...prev,
-            error: errorMessage,
-            result: null
-          }));
-
-          setLoadingState({
-            isLoading: false,
-            stage: null,
-            progress: 0,
-            message: ''
-          });
-
-          onMessage?.('error', `Failed to load ZIP from URL: ${errorMessage}`);
+        // Load configuration if found
+        if (zipResult.config) {
+          onConfigurationLoad?.(zipResult.config);
+          onMessage?.('info', `Configuration loaded from ZIP`);
         }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+
+        // Import the raw data for processing by the orchestrator
+        if (zipResult.directory) {
+          onImport?.(zipResult.directory);
+        } else if (zipResult.files.length > 0) {
+          onImport?.(zipResult.files);
+        }
+
+        onLoadComplete?.();
+      } else {
+        const errorMessage = result.message;
         setLoadedState((prev) => ({
           ...prev,
           error: errorMessage,
@@ -241,7 +229,7 @@ export const ZipLoaderView: React.FC<ZipLoaderViewProps> = ({
           message: ''
         });
 
-        onMessage?.('error', `Unexpected error loading from URL: ${errorMessage}`);
+        onMessage?.('error', `Failed to load ZIP from URL: ${errorMessage}`);
       }
     },
     [onMessage, onLoadComplete]
@@ -343,7 +331,7 @@ export const ZipLoaderView: React.FC<ZipLoaderViewProps> = ({
             onDragOver={handleDragOver}
             onClick={() => fileInputRef.current?.click()}
           >
-            <FolderOpenIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <FolderOpenIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Select or Drop ZIP File</h3>
             <p className="text-gray-600 mb-4">Choose a ZIP file containing resources to load and process</p>
             <button

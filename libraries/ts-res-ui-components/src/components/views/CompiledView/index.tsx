@@ -152,29 +152,31 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
     let compiledCollection = activeProcessedResources.compiledCollection;
 
     if (useNormalization && resources?.activeConfiguration) {
-      try {
-        const systemConfigResult = Config.SystemConfiguration.create(resources.activeConfiguration);
-        if (systemConfigResult.isSuccess()) {
-          // Check if we have a ResourceManagerBuilder (which supports normalization)
-          if ('getCompiledResourceCollection' in activeProcessedResources.system.resourceManager) {
-            const resourceManagerResult = Bundle.BundleNormalizer.normalize(
-              activeProcessedResources.system.resourceManager as Resources.ResourceManagerBuilder,
-              systemConfigResult.value
-            );
+      const systemConfigResult = Config.SystemConfiguration.create(resources.activeConfiguration);
+      if (systemConfigResult.isSuccess()) {
+        // Check if we have a ResourceManagerBuilder (which supports normalization)
+        if ('getCompiledResourceCollection' in activeProcessedResources.system.resourceManager) {
+          const resourceManagerResult = Bundle.BundleNormalizer.normalize(
+            activeProcessedResources.system.resourceManager as Resources.ResourceManagerBuilder,
+            systemConfigResult.value
+          );
 
-            if (resourceManagerResult.isSuccess()) {
-              const normalizedCompiledResult = resourceManagerResult.value.getCompiledResourceCollection({
-                includeMetadata: true
-              });
-              if (normalizedCompiledResult.isSuccess()) {
-                compiledCollection = normalizedCompiledResult.value;
-              }
+          if (resourceManagerResult.isSuccess()) {
+            const normalizedCompiledResult = resourceManagerResult.value.getCompiledResourceCollection({
+              includeMetadata: true
+            });
+            if (normalizedCompiledResult.isSuccess()) {
+              compiledCollection = normalizedCompiledResult.value;
+            } else {
+              console.warn('Failed to get normalized compiled collection:', normalizedCompiledResult.message);
             }
+          } else {
+            console.warn('Failed to normalize bundle:', resourceManagerResult.message);
           }
-          // For IResourceManager from bundles, the compiled collection is already normalized
         }
-      } catch (error) {
-        console.warn('Failed to normalize for export:', error);
+        // For IResourceManager from bundles, the compiled collection is already normalized
+      } else {
+        console.warn('Failed to create system configuration for normalization:', systemConfigResult.message);
       }
     }
 

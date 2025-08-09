@@ -52,27 +52,12 @@ export const SourceView: React.FC<SourceViewProps> = ({ resources, onExport, onM
       return null;
     }
 
-    try {
-      // Check if this is a ResourceManagerBuilder (has getResourceCollectionDecl method)
-      if ('getResourceCollectionDecl' in resources.system.resourceManager) {
-        const collectionResult = (resources.system.resourceManager as any).getResourceCollectionDecl();
-        if (collectionResult.isSuccess()) {
-          return {
-            ...collectionResult.value,
-            metadata: {
-              exportedAt: new Date().toISOString(),
-              totalResources: resources.summary.totalResources,
-              type: 'ts-res-resource-collection'
-            }
-          };
-        } else {
-          onMessage?.('error', `Failed to get resource collection: ${collectionResult.message}`);
-          return null;
-        }
-      } else if (resources.compiledCollection) {
-        // For IResourceManager from bundles, use the compiled collection directly
+    // Check if this is a ResourceManagerBuilder (has getResourceCollectionDecl method)
+    if ('getResourceCollectionDecl' in resources.system.resourceManager) {
+      const collectionResult = (resources.system.resourceManager as any).getResourceCollectionDecl();
+      if (collectionResult.isSuccess()) {
         return {
-          resources: resources.compiledCollection.resources || [],
+          ...collectionResult.value,
           metadata: {
             exportedAt: new Date().toISOString(),
             totalResources: resources.summary.totalResources,
@@ -80,14 +65,21 @@ export const SourceView: React.FC<SourceViewProps> = ({ resources, onExport, onM
           }
         };
       } else {
-        onMessage?.('error', 'Resource collection data not available');
+        onMessage?.('error', `Failed to get resource collection: ${collectionResult.message}`);
         return null;
       }
-    } catch (error) {
-      onMessage?.(
-        'error',
-        `Error getting resource collection: ${error instanceof Error ? error.message : String(error)}`
-      );
+    } else if (resources.compiledCollection) {
+      // For IResourceManager from bundles, use the compiled collection directly
+      return {
+        resources: resources.compiledCollection.resources || [],
+        metadata: {
+          exportedAt: new Date().toISOString(),
+          totalResources: resources.summary.totalResources,
+          type: 'ts-res-resource-collection'
+        }
+      };
+    } else {
+      onMessage?.('error', 'Resource collection data not available');
       return null;
     }
   }, [resources, onMessage]);

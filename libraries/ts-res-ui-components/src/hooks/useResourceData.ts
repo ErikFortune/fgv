@@ -14,6 +14,10 @@ export interface UseResourceDataReturn {
   state: ResourceManagerState;
   actions: {
     processDirectory: (directory: ImportedDirectory) => Promise<void>;
+    processDirectoryWithConfig: (
+      directory: ImportedDirectory,
+      config: Config.Model.ISystemConfiguration
+    ) => Promise<void>;
     processFiles: (files: ImportedFile[]) => Promise<void>;
     processBundleFile: (bundle: Bundle.IBundle) => Promise<void>;
     clearError: () => void;
@@ -65,6 +69,37 @@ export function useResourceData(): UseResourceDataReturn {
       }
     },
     [state.activeConfiguration]
+  );
+
+  const processDirectoryWithConfig = useCallback(
+    async (directory: ImportedDirectory, config: Config.Model.ISystemConfiguration) => {
+      setState((prev) => ({ ...prev, isProcessing: true, error: null, activeConfiguration: config }));
+
+      try {
+        const result = processImportedDirectory(directory, config);
+
+        if (result.isSuccess()) {
+          setState((prev) => ({
+            ...prev,
+            isProcessing: false,
+            processedResources: result.value,
+            hasProcessedData: true,
+            isLoadedFromBundle: false,
+            bundleMetadata: null,
+            activeConfiguration: config
+          }));
+        } else {
+          throw new Error(result.message);
+        }
+      } catch (error) {
+        setState((prev) => ({
+          ...prev,
+          isProcessing: false,
+          error: error instanceof Error ? error.message : String(error)
+        }));
+      }
+    },
+    []
   );
 
   const processFiles = useCallback(
@@ -400,6 +435,7 @@ export function useResourceData(): UseResourceDataReturn {
     state,
     actions: {
       processDirectory,
+      processDirectoryWithConfig,
       processFiles,
       processBundleFile,
       clearError,

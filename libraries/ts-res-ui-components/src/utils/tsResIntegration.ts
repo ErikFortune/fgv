@@ -105,6 +105,15 @@ export function convertImportedDirectoryToFileTree(directory: ImportedDirectory)
 
   const inMemoryFiles = flattenFiles(directory);
 
+  console.log('[convertImportedDirectoryToFileTree] Converting directory to FileTree:', {
+    directoryName: directory.name,
+    directoryPath: directory.path,
+    numFiles: directory.files?.length || 0,
+    numSubdirs: directory.subdirectories?.length || 0,
+    totalFlattenedFiles: inMemoryFiles.length,
+    sampleFiles: inMemoryFiles.slice(0, 3).map((f) => f.path)
+  });
+
   // Use ts-res's inMemory FileTree utility
   return FileTree.inMemory(inMemoryFiles).orThrow((msg) => `Failed to create file tree: ${msg}`);
 }
@@ -293,10 +302,79 @@ export function processImportedDirectory(
         fileTree,
         resources: tsResSystem.resourceManager
       }).onSuccess((importManager) => {
-        // Import from root path
+        // Simply try to import from the filesystem root
+        // The ImportManager will handle finding and importing all resources
+        console.log('[tsResIntegration] Starting resource import from FileTree');
+
         const importResult = importManager.importFromFileSystem('/');
         if (importResult.isFailure()) {
-          return fail(`Failed to import directory ${directory.name}: ${importResult.message}`);
+          console.warn(`[tsResIntegration] Failed to import from root, trying individual files`);
+
+          // If root import fails, try to import files individually
+          // We'll recursively traverse the tree using the FileTree API
+          let importedCount = 0;
+          const failedImports: Array<{ file: string; error: string }> = [];
+
+          const importDirectory = (dirPath: string): void => {
+            const dirResult = fileTree.getDirectory(dirPath);
+            if (dirResult.isSuccess()) {
+              const dir = dirResult.value;
+              const childrenResult = dir.getChildren();
+              if (childrenResult.isSuccess()) {
+                for (const child of childrenResult.value) {
+                  if (child.type === 'file' && child.name.endsWith('.json')) {
+                    console.log(`[tsResIntegration] Importing file: ${child.absolutePath}`);
+                    const fileImportResult = importManager.importFromFileSystem(child.absolutePath);
+                    if (fileImportResult.isSuccess()) {
+                      importedCount++;
+                      console.log(`[tsResIntegration] Successfully imported ${child.absolutePath}`);
+                    } else {
+                      console.warn(
+                        `[tsResIntegration] Failed to import ${child.absolutePath}: ${fileImportResult.message}`
+                      );
+                      failedImports.push({ file: child.absolutePath, error: fileImportResult.message });
+                    }
+                  } else if (child.type === 'directory') {
+                    importDirectory(child.absolutePath);
+                  }
+                }
+              }
+            }
+          };
+
+          // Start from root
+          importDirectory('/');
+
+          // Also try without leading slash
+          if (importedCount === 0) {
+            importDirectory('');
+          }
+
+          console.log(`[tsResIntegration] Import complete. Imported ${importedCount} files`);
+
+          if (importedCount === 0 && failedImports.length > 0) {
+            // Create a summary of unique errors
+            const errorSummary = new Map<string, string[]>();
+            failedImports.forEach(({ file, error }) => {
+              // Extract the main error (e.g., "invalid item: role: not found")
+              const mainError = error.split('\n')[0];
+              if (!errorSummary.has(mainError)) {
+                errorSummary.set(mainError, []);
+              }
+              errorSummary.get(mainError)!.push(file);
+            });
+
+            let errorMessage = `Failed to import resources. Missing qualifiers in configuration:\n`;
+            errorSummary.forEach((files, error) => {
+              errorMessage += `- ${error} (${files.length} file${files.length > 1 ? 's' : ''})\n`;
+            });
+
+            return fail(errorMessage);
+          } else if (importedCount === 0) {
+            return fail(`No resource files found in ${directory.name}`);
+          }
+        } else {
+          console.log('[tsResIntegration] Successfully imported resources from root');
         }
 
         // Finalize processing

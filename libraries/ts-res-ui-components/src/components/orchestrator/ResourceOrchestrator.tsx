@@ -228,6 +228,20 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
         await resourceData.actions.processDirectory(directory);
         if (!resourceData.state.error) {
           viewState.addMessage('success', 'Directory imported successfully');
+        } else {
+          viewState.addMessage('error', resourceData.state.error);
+        }
+      },
+      importDirectoryWithConfig: async (
+        directory: ImportedDirectory,
+        config: Config.Model.ISystemConfiguration
+      ) => {
+        viewState.addMessage('info', 'Importing directory with configuration...');
+        await resourceData.actions.processDirectoryWithConfig(directory, config);
+        if (!resourceData.state.error) {
+          viewState.addMessage('success', 'Directory imported successfully');
+        } else {
+          viewState.addMessage('error', resourceData.state.error);
         }
       },
       importFiles: async (files: ImportedFile[]) => {

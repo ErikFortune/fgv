@@ -23,12 +23,7 @@ export function useViewState(): UseViewStateReturn {
 
     setMessages((prev) => [...prev, newMessage]);
 
-    // Auto-clear info messages after 5 seconds
-    if (type === 'info') {
-      setTimeout(() => {
-        setMessages((prev) => prev.filter((m) => m.id !== newMessage.id));
-      }, 5000);
-    }
+    // No auto-clearing - let users manage messages with filters
   }, []);
 
   const clearMessages = useCallback(() => {

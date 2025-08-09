@@ -109,10 +109,18 @@ export class BrowserZipLoader implements IZipLoader {
 
       if (directory) {
         const processResult = await processImportedDirectory(directory, configToUse || undefined);
-        processedResources = processResult.orDefault() ?? null;
+        if (processResult.isSuccess()) {
+          processedResources = processResult.value;
+        } else {
+          throw new Error(`Failed to process resources from directory: ${processResult.message}`);
+        }
       } else if (files.length > 0) {
         const processResult = await processImportedFiles(files, configToUse || undefined);
-        processedResources = processResult.orDefault() ?? null;
+        if (processResult.isSuccess()) {
+          processedResources = processResult.value;
+        } else {
+          throw new Error(`Failed to process resources from files: ${processResult.message}`);
+        }
       }
 
       onProgress?.('processing-resources', 100, 'Resources processed');
