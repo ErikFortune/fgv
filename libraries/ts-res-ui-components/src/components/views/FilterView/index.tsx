@@ -146,14 +146,35 @@ export const FilterView: React.FC<FilterViewProps> = ({
 
   // Get resources to display (filtered or original) - now uses orchestrator's filterResult
   const displayResources = useMemo(() => {
+    console.log('FilterView displayResources calculation:', {
+      hasResources: !!resources,
+      isFilteringActive,
+      filterResultExists: !!filterResult,
+      filterResultSuccess: filterResult?.success,
+      filterResultCount: filterResult?.filteredResources?.length,
+      appliedValues: filterState.appliedValues,
+      hasAppliedFilterValues
+    });
+
     if (!resources) return [];
 
     let resourceList: FilteredResource[] = [];
 
     if (isFilteringActive && filterResult?.success && filterResult.filteredResources) {
+      console.log('Using filtered resources:', filterResult.filteredResources.length);
+      console.log(
+        'Filtered resource details:',
+        filterResult.filteredResources.map((r) => ({
+          id: r.id,
+          original: r.originalCandidateCount,
+          filtered: r.filteredCandidateCount,
+          hasWarning: r.hasWarning
+        }))
+      );
       resourceList = filterResult.filteredResources;
     } else {
       // Return original resources
+      console.log('Using original resources');
       const originalResources = resources.summary.resourceIds || [];
       resourceList = originalResources.map((id) => {
         const resourceResult = resources.system.resourceManager.getBuiltResource(id);

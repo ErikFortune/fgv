@@ -57,6 +57,9 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
   // Local state for filter results
   const [filterResult, setFilterResult] = useState<FilterResult | null>(null);
 
+  // Track if filtering is in progress to prevent concurrent operations
+  const isFilteringInProgress = React.useRef(false);
+
   // Initialize with configuration if provided
   React.useEffect(() => {
     if (initialConfiguration && !resourceData.state.activeConfiguration) {
@@ -87,85 +90,132 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
     onStateChange
   ]);
 
-  // Apply filter action with comprehensive filtering logic
-  const applyFilter = useCallback(async (): Promise<FilterResult | null> => {
-    if (!resourceData.state.processedResources || !filterState.state.enabled) {
-      setFilterResult(null);
-      return null;
-    }
+  // Internal filtering logic (used by both manual and automatic application)
+  const performFiltering = useCallback(
+    async (filterValues: Record<string, string | undefined>): Promise<FilterResult | null> => {
+      // Prevent concurrent filtering operations
+      if (isFilteringInProgress.current) {
+        console.log('Filtering already in progress, skipping...');
+        return null;
+      }
 
-    // Check if we have any applied filter values set
-    const hasAppliedFilterValues = hasFilterValues(filterState.state.appliedValues);
-    if (!hasAppliedFilterValues) {
-      setFilterResult(null);
-      return null;
-    }
+      if (!resourceData.state.processedResources || !filterState.state.enabled) {
+        setFilterResult(null);
+        return null;
+      }
 
-    try {
-      const { system } = resourceData.state.processedResources;
-
-      viewState.addMessage('info', 'Starting filtering process...');
-
-      // Try the simplified filtering approach
-      let filteredResult = await createFilteredResourceManagerSimple(
-        system,
-        filterState.state.appliedValues,
-        {
-          partialContextMatch: true,
-          enableDebugLogging: false,
-          reduceQualifiers: filterState.state.reduceQualifiers
-        }
+      // Check if we have any filter values to work with
+      const hasFilterValues = Object.values(filterValues).some(
+        (value) => value !== undefined && value !== ''
       );
+      if (!hasFilterValues) {
+        setFilterResult(null);
+        return null;
+      }
 
-      if (filteredResult.isFailure()) {
+      isFilteringInProgress.current = true;
+
+      try {
+        const { system } = resourceData.state.processedResources;
+
+        viewState.addMessage('info', 'Starting filtering process...');
+        console.log('Filtering with values:', filterValues);
+        console.log('Filter state:', filterState.state);
+
+        // Try the simplified filtering approach using provided values
+        let filteredResult = await createFilteredResourceManagerSimple(system, filterValues, {
+          partialContextMatch: true,
+          enableDebugLogging: true, // Enable debug logging to see what's happening
+          reduceQualifiers: filterState.state.reduceQualifiers
+        });
+
+        if (filteredResult.isFailure()) {
+          const result: FilterResult = {
+            success: false,
+            error: `Filtering failed: ${filteredResult.message}`
+          };
+          setFilterResult(result);
+          viewState.addMessage('error', `Filtering failed: ${filteredResult.message}`);
+          return result;
+        }
+
+        // Analyze filtered resources compared to original
+        const originalResources = resourceData.state.processedResources.summary.resourceIds || [];
+        console.log('Original resources count:', originalResources.length);
+
+        const analysis = analyzeFilteredResources(
+          originalResources,
+          filteredResult.value,
+          resourceData.state.processedResources
+        );
+
+        console.log('Analysis result:', {
+          success: analysis.success,
+          filteredResourcesCount: analysis.filteredResources.length,
+          warningsCount: analysis.warnings.length,
+          hasProcessedResources: !!analysis.processedResources
+        });
+
+        console.log(
+          'Filtered resources breakdown:',
+          analysis.filteredResources.map((r) => ({
+            id: r.id,
+            originalCandidates: r.originalCandidateCount,
+            filteredCandidates: r.filteredCandidateCount,
+            reduction: r.originalCandidateCount - r.filteredCandidateCount,
+            hasWarning: r.hasWarning
+          }))
+        );
+
+        const result: FilterResult = {
+          success: true,
+          processedResources: analysis.processedResources,
+          filteredResources: analysis.filteredResources,
+          warnings: analysis.warnings
+        };
+
+        console.log('Setting filter result:', result);
+        setFilterResult(result);
+
+        if (analysis.warnings.length > 0) {
+          viewState.addMessage('warning', `Filtering completed with ${analysis.warnings.length} warning(s)`);
+        } else {
+          viewState.addMessage(
+            'success',
+            `Filtering completed: ${analysis.filteredResources.length} resources`
+          );
+        }
+
+        return result;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
         const result: FilterResult = {
           success: false,
-          error: `Filtering failed: ${filteredResult.message}`
+          error: errorMessage
         };
         setFilterResult(result);
-        viewState.addMessage('error', `Filtering failed: ${filteredResult.message}`);
+        viewState.addMessage('error', `Filtering error: ${errorMessage}`);
         return result;
+      } finally {
+        isFilteringInProgress.current = false;
       }
+    },
+    [resourceData.state.processedResources, filterState.state, viewState]
+  );
 
-      // Analyze filtered resources compared to original
-      const originalResources = resourceData.state.processedResources.summary.resourceIds || [];
-      const analysis = analyzeFilteredResources(
-        originalResources,
-        filteredResult.value,
-        resourceData.state.processedResources
-      );
+  // Manual apply filter action (for the Apply button)
+  const applyFilter = useCallback(async (): Promise<FilterResult | null> => {
+    // Capture the current values before applying them
+    const currentValues = { ...filterState.state.values };
 
-      const result: FilterResult = {
-        success: true,
-        processedResources: analysis.processedResources,
-        filteredResources: analysis.filteredResources,
-        warnings: analysis.warnings
-      };
+    // First apply the pending values to make them the applied values
+    filterState.actions.applyFilterValues();
 
-      setFilterResult(result);
-      filterState.actions.applyFilterValues();
+    // Then perform filtering with the captured values
+    const result = await performFiltering(currentValues);
 
-      if (analysis.warnings.length > 0) {
-        viewState.addMessage('warning', `Filtering completed with ${analysis.warnings.length} warning(s)`);
-      } else {
-        viewState.addMessage(
-          'success',
-          `Filtering completed: ${analysis.filteredResources.length} resources`
-        );
-      }
-
-      return result;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      const result: FilterResult = {
-        success: false,
-        error: errorMessage
-      };
-      setFilterResult(result);
-      viewState.addMessage('error', `Filtering error: ${errorMessage}`);
-      return result;
-    }
-  }, [resourceData.state.processedResources, filterState.state, filterState.actions, viewState]);
+    return result;
+  }, [performFiltering, filterState.actions]);
 
   // Reset filter action
   const resetFilter = useCallback(() => {
@@ -175,26 +225,27 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
   }, [filterState.actions, viewState]);
 
   // Automatically apply filter when applied filter values change
-  React.useEffect(() => {
-    if (!resourceData.state.processedResources || !filterState.state.enabled) {
-      setFilterResult(null);
-      return;
-    }
+  // TEMPORARILY DISABLED to fix responsiveness issue
+  // React.useEffect(() => {
+  //   if (!resourceData.state.processedResources || !filterState.state.enabled) {
+  //     setFilterResult(null);
+  //     return;
+  //   }
 
-    const hasAppliedFilterValues = hasFilterValues(filterState.state.appliedValues);
-    if (!hasAppliedFilterValues) {
-      setFilterResult(null);
-      return;
-    }
+  //   const hasAppliedFilterValues = hasFilterValues(filterState.state.appliedValues);
+  //   if (!hasAppliedFilterValues) {
+  //     setFilterResult(null);
+  //     return;
+  //   }
 
-    // Apply filter automatically when appliedValues change
-    applyFilter();
-  }, [
-    filterState.state.appliedValues,
-    filterState.state.enabled,
-    resourceData.state.processedResources,
-    applyFilter
-  ]);
+  //   // Apply filter automatically when appliedValues change using the applied values
+  //   performFiltering(filterState.state.appliedValues);
+  // }, [
+  //   filterState.state.appliedValues,
+  //   filterState.state.enabled,
+  //   resourceData.state.processedResources,
+  //   performFiltering
+  // ]);
 
   // Combined state
   const state: OrchestratorState = useMemo(

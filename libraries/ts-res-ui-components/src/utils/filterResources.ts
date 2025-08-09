@@ -80,35 +80,8 @@ export const createFilteredResourceManagerSimple = async (
     Object.entries(partialContext).filter(([, value]) => value !== undefined)
   ) as Record<string, string>;
 
-  const compiledResult = originalSystem.resourceManager.getCompiledResourceCollection({
-    includeMetadata: true
-  });
-
-  if (compiledResult.isSuccess() && compiledResult.value) {
-    const resourceIds = compiledResult.value.resources?.map((r: any) => r.id) || [];
-
-    // Create CompiledResourceCollection manager for bundle resources
-    return createCompiledResourceCollectionManager(
-      compiledResult.value,
-      originalSystem.qualifierTypes,
-      originalSystem.resourceTypes
-    ).onSuccess((compiledManager) => {
-      return succeed({
-        system: originalSystem,
-        compiledCollection: compiledResult.value,
-        compiledResourceCollectionManager: compiledManager,
-        resolver: null as any, // Will be created later if needed
-        resourceCount: resourceIds.length,
-        summary: {
-          totalResources: resourceIds.length,
-          resourceIds,
-          errorCount: 0,
-          warnings: ['Filtering is not supported for resources loaded from bundles']
-        }
-      });
-    });
-  }
-
+  // Try to use ResourceManagerBuilder.clone() for proper filtering first
+  debugLog(enableDebug, 'Using ResourceManagerBuilder for proper filtering');
   debugLog(enableDebug, 'Validating context and cloning manager:', filteredContext);
   const resourceManagerBuilder = originalSystem.resourceManager;
 
