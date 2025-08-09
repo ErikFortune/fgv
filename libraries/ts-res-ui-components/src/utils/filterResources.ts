@@ -1,7 +1,6 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
 import { Runtime, Import, Resources } from '@fgv/ts-res';
 import { ProcessedResources } from '../types';
-import { createCompiledResourceCollectionManager } from './tsResIntegration';
 
 export interface FilterOptions {
   partialContextMatch?: boolean;
@@ -25,7 +24,7 @@ export interface FilterResult {
 }
 
 // Helper function for conditional debug logging
-const debugLog = (enableDebug: boolean, ...args: any[]) => {
+const debugLog = (enableDebug: boolean, ...args: unknown[]) => {
   if (enableDebug) {
     console.log(...args);
   }
@@ -53,14 +52,7 @@ export function getFilterSummary(values: Record<string, string | undefined>): st
  * This is a simplified implementation that leverages the built-in filtering functionality.
  */
 export const createFilteredResourceManagerSimple = async (
-  originalSystem: {
-    resourceManager: Resources.ResourceManagerBuilder;
-    qualifiers: any;
-    qualifierTypes: any;
-    resourceTypes: any;
-    importManager: any;
-    contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
-  },
+  originalSystem: ProcessedResources['system'],
   partialContext: Record<string, string | undefined>,
   options: FilterOptions = { partialContextMatch: true }
 ): Promise<Result<ProcessedResources>> => {
@@ -133,36 +125,28 @@ export const createFilteredResourceManagerSimple = async (
                   })
                     .withErrorFormat((e) => `Failed to create resolver: ${e}`)
                     .onSuccess((resolver) => {
-                      // Create CompiledResourceCollection manager for filtered results
-                      return createCompiledResourceCollectionManager(
+                      // Create summary
+                      const resourceIds = Array.from(filteredManager.resources.keys());
+                      const summary = {
+                        totalResources: resourceIds.length,
+                        resourceIds,
+                        errorCount: 0,
+                        warnings: [] as string[]
+                      };
+
+                      const processedResources: ProcessedResources = {
+                        system: newSystem,
                         compiledCollection,
-                        originalSystem.qualifierTypes,
-                        originalSystem.resourceTypes
-                      ).onSuccess((compiledManager) => {
-                        // Create summary
-                        const resourceIds = Array.from(filteredManager.resources.keys());
-                        const summary = {
-                          totalResources: resourceIds.length,
-                          resourceIds,
-                          errorCount: 0,
-                          warnings: [] as string[]
-                        };
+                        resolver,
+                        resourceCount: resourceIds.length,
+                        summary
+                      };
 
-                        const processedResources: ProcessedResources = {
-                          system: newSystem,
-                          compiledCollection,
-                          compiledResourceCollectionManager: compiledManager,
-                          resolver,
-                          resourceCount: resourceIds.length,
-                          summary
-                        };
+                      debugLog(enableDebug, '=== FILTERED PROCESSING COMPLETE ===');
+                      debugLog(enableDebug, 'Filtered resource count:', resourceIds.length);
+                      debugLog(enableDebug, 'Filtered resource IDs:', resourceIds);
 
-                        debugLog(enableDebug, '=== FILTERED PROCESSING COMPLETE ===');
-                        debugLog(enableDebug, 'Filtered resource count:', resourceIds.length);
-                        debugLog(enableDebug, 'Filtered resource IDs:', resourceIds);
-
-                        return succeed(processedResources);
-                      });
+                      return succeed(processedResources);
                     });
                 });
             });

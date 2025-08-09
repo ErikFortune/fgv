@@ -1,12 +1,13 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
 import { ResourceJson, Resources, Runtime } from '@fgv/ts-res';
 import { Diff } from '@fgv/ts-json';
-import { ProcessedResources } from '../types';
+import { JsonObject } from '@fgv/ts-json-base';
+import { ProcessedResources, JsonValue } from '../types';
 
 export interface EditedResourceInfo {
   resourceId: string;
-  originalValue: any;
-  editedValue: any;
+  originalValue: JsonValue;
+  editedValue: JsonValue;
   timestamp: Date;
 }
 
@@ -19,7 +20,7 @@ export interface EditValidationResult {
 /**
  * Validates an edited resource JSON value
  */
-export function validateEditedResource(editedValue: any): EditValidationResult {
+export function validateEditedResource(editedValue: JsonValue): EditValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -38,13 +39,16 @@ export function validateEditedResource(editedValue: any): EditValidationResult {
   // Type-specific validation
   if (typeof editedValue === 'object' && editedValue !== null) {
     // Object validation - check for circular references
-    const seen = new Set();
-    const checkCircular = (obj: any): boolean => {
+    const seen = new Set<unknown>();
+    const checkCircular = (obj: unknown): boolean => {
       if (seen.has(obj)) return true;
       seen.add(obj);
-      for (const key in obj) {
-        if (typeof obj[key] === 'object' && obj[key] !== null) {
-          if (checkCircular(obj[key])) return true;
+      if (typeof obj === 'object' && obj !== null) {
+        for (const key in obj as Record<string, unknown>) {
+          const objTyped = obj as Record<string, unknown>;
+          if (typeof objTyped[key] === 'object' && objTyped[key] !== null) {
+            if (checkCircular(objTyped[key])) return true;
+          }
         }
       }
       seen.delete(obj);
@@ -71,10 +75,10 @@ export function validateEditedResource(editedValue: any): EditValidationResult {
  * @returns A minimal delta object with only the changes, or null if no changes
  */
 export function computeResourceDelta(
-  baseValue: any | undefined,
-  resolvedValue: any,
-  editedValue: any
-): Result<any> {
+  baseValue: JsonValue | undefined,
+  resolvedValue: JsonValue,
+  editedValue: JsonValue
+): Result<JsonValue> {
   // Use ts-json's three-way diff for proper delta computation
   const diffResult = Diff.jsonThreeWayDiff(resolvedValue, editedValue);
 
@@ -92,7 +96,7 @@ export function computeResourceDelta(
   }
 
   // Build a proper delta that includes deletions as null values
-  const delta: any = {};
+  const delta: Record<string, JsonValue> = {};
 
   // Add all changes/additions from onlyInB
   if (diff.onlyInB !== null) {
@@ -117,13 +121,16 @@ export function computeResourceDelta(
 /**
  * Recursively adds null values to delta for all properties in the deleted object
  */
-function addDeletionsAsNull(deleted: any, delta: any): void {
-  for (const key in deleted) {
-    if (deleted.hasOwnProperty(key)) {
-      // If this key already exists in delta (from onlyInB), it means the property
-      // was modified, not deleted, so don't override with null
-      if (!(key in delta)) {
-        delta[key] = null;
+function addDeletionsAsNull(deleted: JsonValue, delta: Record<string, JsonValue>): void {
+  if (typeof deleted === 'object' && deleted !== null && !Array.isArray(deleted)) {
+    const deletedObj = deleted as Record<string, JsonValue>;
+    for (const key in deletedObj) {
+      if (deletedObj.hasOwnProperty(key)) {
+        // If this key already exists in delta (from onlyInB), it means the property
+        // was modified, not deleted, so don't override with null
+        if (!(key in delta)) {
+          delta[key] = null;
+        }
       }
     }
   }
@@ -133,7 +140,7 @@ function addDeletionsAsNull(deleted: any, delta: any): void {
  * Creates candidate declarations for edited resources with proper delta handling
  */
 export function createCandidateDeclarations(
-  editedResources: Map<string, { originalValue: any; editedValue: any; delta: any }>,
+  editedResources: Map<string, { originalValue: JsonValue; editedValue: JsonValue; delta: JsonValue }>,
   currentContext: Record<string, string>
 ): ResourceJson.Json.ILooseResourceCandidateDecl[] {
   const declarations: ResourceJson.Json.ILooseResourceCandidateDecl[] = [];
@@ -167,7 +174,7 @@ export function createCandidateDeclarations(
     declarations.push({
       id: resourceId,
       conditions: conditions.length > 0 ? conditions : undefined,
-      json: resourceEdit.delta, // Always use the delta (minimal changes only)
+      json: resourceEdit.delta as JsonObject, // Always use the delta (minimal changes only)
       isPartial: true, // Always partial when saving deltas
       mergeMethod: 'augment' // Always augment to merge the delta with base
     });
@@ -181,7 +188,7 @@ export function createCandidateDeclarations(
  */
 export async function rebuildSystemWithEdits(
   originalSystem: ProcessedResources['system'],
-  editedResources: Map<string, { originalValue: any; editedValue: any; delta: any }>,
+  editedResources: Map<string, { originalValue: JsonValue; editedValue: JsonValue; delta: JsonValue }>,
   currentContext: Record<string, string>
 ): Promise<Result<ProcessedResources>> {
   try {
@@ -231,7 +238,6 @@ export async function rebuildSystemWithEdits(
         contextQualifierProvider: originalSystem.contextQualifierProvider
       },
       compiledCollection: compiledResult.value,
-      compiledResourceCollectionManager: null, // Could be recreated if needed
       resolver: resolverResult.value,
       resourceCount: resourceIds.length,
       summary
@@ -281,7 +287,7 @@ export function createEditCollisionKey(resourceId: string, context: Record<strin
  */
 export function checkEditConflicts(
   resourceManager: Resources.ResourceManagerBuilder | Runtime.IResourceManager,
-  editedResources: Map<string, any>,
+  editedResources: Map<string, JsonValue>,
   currentContext: Record<string, string>
 ): { conflicts: string[]; warnings: string[] } {
   const conflicts: string[] = [];

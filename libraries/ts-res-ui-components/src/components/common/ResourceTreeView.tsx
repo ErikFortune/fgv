@@ -135,7 +135,7 @@ export const ResourceTreeView: React.FC<ResourceTreeViewProps> = ({
 
   // Render a single tree node
   const renderTreeNode = (
-    node: Runtime.ResourceTree.IReadOnlyResourceTreeNode<any>,
+    node: Runtime.ResourceTree.IReadOnlyResourceTreeNode<Resources.Resource | Runtime.IResource>,
     level: number = 0
   ): React.ReactElement | null => {
     const isExpanded = expandedNodes.has(node.id);

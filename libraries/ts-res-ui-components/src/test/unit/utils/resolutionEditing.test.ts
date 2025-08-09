@@ -22,6 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import { succeed, fail } from '@fgv/ts-utils';
+import { JsonValue } from '@fgv/ts-json-base';
 import {
   validateEditedResource,
   computeResourceDelta,
@@ -72,7 +73,7 @@ describe('resolutionEditing utilities', () => {
     });
 
     test('rejects undefined values', () => {
-      const result = validateEditedResource(undefined);
+      const result = validateEditedResource(undefined as unknown as JsonValue);
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('Resource value cannot be null or undefined');
@@ -515,7 +516,7 @@ describe('resolutionEditing utilities', () => {
         .mockReturnValueOnce(succeed(singleCandidate))
         .mockReturnValueOnce(succeed(multipleCandidate));
 
-      const editedResources = new Map([
+      const editedResources = new Map<string, JsonValue>([
         ['resource1', { some: 'edit' }],
         ['resource2', { other: 'edit' }]
       ]);

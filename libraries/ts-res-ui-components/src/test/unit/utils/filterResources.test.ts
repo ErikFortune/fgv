@@ -364,14 +364,13 @@ describe('filterResources utilities', () => {
           resourceManager: {
             getBuiltResource: jest.fn()
           } as any,
-          qualifiers: {},
-          qualifierTypes: {},
-          resourceTypes: {},
-          importManager: {},
+          qualifiers: {} as any, // TODO: Fix mock types after refactoring
+          qualifierTypes: {} as any,
+          resourceTypes: {} as any,
+          importManager: {} as any,
           contextQualifierProvider: {} as any
         },
         compiledCollection: {} as any,
-        compiledResourceCollectionManager: null,
         resolver: {} as any,
         resourceCount: 2,
         summary: {
@@ -387,14 +386,13 @@ describe('filterResources utilities', () => {
           resourceManager: {
             getBuiltResource: jest.fn()
           } as any,
-          qualifiers: {},
-          qualifierTypes: {},
-          resourceTypes: {},
-          importManager: {},
+          qualifiers: {} as any, // TODO: Fix mock types after refactoring
+          qualifierTypes: {} as any,
+          resourceTypes: {} as any,
+          importManager: {} as any,
           contextQualifierProvider: {} as any
         },
         compiledCollection: {} as any,
-        compiledResourceCollectionManager: null,
         resolver: {} as any,
         resourceCount: 1,
         summary: {

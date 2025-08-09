@@ -1,13 +1,27 @@
 import { useState, useCallback } from 'react';
 import { Result, succeed, fail } from '@fgv/ts-utils';
-import { ResourceManagerState, ProcessedResources, ImportedDirectory, ImportedFile } from '../types';
-import { Config, Bundle, Runtime, Resources, Import } from '@fgv/ts-res';
+import {
+  ResourceManagerState,
+  ProcessedResources,
+  ImportedDirectory,
+  ImportedFile,
+  JsonValue
+} from '../types';
+import {
+  Config,
+  Bundle,
+  Runtime,
+  Resources,
+  Import,
+  QualifierTypes,
+  Qualifiers,
+  ResourceTypes
+} from '@fgv/ts-res';
 import {
   processImportedFiles,
   processImportedDirectory,
   createSimpleContext,
-  createTsResSystemFromConfig,
-  createCompiledResourceCollectionManager
+  createTsResSystemFromConfig
 } from '../utils/tsResIntegration';
 
 export interface UseResourceDataReturn {
@@ -22,7 +36,7 @@ export interface UseResourceDataReturn {
     processBundleFile: (bundle: Bundle.IBundle) => Promise<void>;
     clearError: () => void;
     reset: () => void;
-    resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<any>>;
+    resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<JsonValue>>;
     applyConfiguration: (config: Config.Model.ISystemConfiguration) => void;
     updateProcessedResources: (processedResources: ProcessedResources) => void;
   };
@@ -223,7 +237,7 @@ export function useResourceData(): UseResourceDataReturn {
       const configForStorage: Config.Model.ISystemConfiguration = {
         name: 'Bundle Configuration',
         description: metadata?.description || 'Configuration extracted from bundle',
-        qualifierTypes: Array.from(system.qualifierTypes.values()).map((qt: any) => {
+        qualifierTypes: Array.from(system.qualifierTypes.values()).map((qt) => {
           console.log('[Bundle Processing] Extracting qualifier type:', qt);
           // Determine the system type based on the class name
           let systemType: 'literal' | 'language' | 'territory' = 'literal';
@@ -236,7 +250,7 @@ export function useResourceData(): UseResourceDataReturn {
           }
 
           // Extract configuration properties based on type
-          const configuration: any = {};
+          const configuration: Record<string, unknown> = {};
 
           // Common properties
           if (qt.allowContextList !== undefined) {
@@ -245,24 +259,26 @@ export function useResourceData(): UseResourceDataReturn {
 
           // LiteralQualifierType specific
           if (systemType === 'literal') {
-            if (qt.caseSensitive !== undefined) {
-              configuration.caseSensitive = qt.caseSensitive;
+            const qtAny = qt as unknown as Record<string, unknown>;
+            if (qtAny.caseSensitive !== undefined) {
+              configuration.caseSensitive = qtAny.caseSensitive;
             }
-            if (qt.enumeratedValues) {
-              configuration.enumeratedValues = qt.enumeratedValues;
+            if (qtAny.enumeratedValues) {
+              configuration.enumeratedValues = qtAny.enumeratedValues;
             }
-            if (qt.hierarchy) {
-              configuration.hierarchy = qt.hierarchy;
+            if (qtAny.hierarchy) {
+              configuration.hierarchy = qtAny.hierarchy;
             }
           }
 
           // TerritoryQualifierType specific
           if (systemType === 'territory') {
-            if (qt.acceptLowercase !== undefined) {
-              configuration.acceptLowercase = qt.acceptLowercase;
+            const qtAny = qt as unknown as Record<string, unknown>;
+            if (qtAny.acceptLowercase !== undefined) {
+              configuration.acceptLowercase = qtAny.acceptLowercase;
             }
-            if (qt.allowedTerritories) {
-              configuration.allowedTerritories = qt.allowedTerritories;
+            if (qtAny.allowedTerritories) {
+              configuration.allowedTerritories = qtAny.allowedTerritories;
             }
           }
 
@@ -272,31 +288,33 @@ export function useResourceData(): UseResourceDataReturn {
             configuration: configuration
           };
         }),
-        qualifiers: Array.from(system.qualifiers.values()).map((q: any) => {
+        qualifiers: Array.from(system.qualifiers.values()).map((q) => {
           console.log('[Bundle Processing] Extracting qualifier:', q);
           // Instantiated Qualifier objects have .type property which is a QualifierType object
-          const typeName = q.type?.name || q.typeName;
+          const qAny = q as unknown as Record<string, unknown>;
+          const typeName = (q.type as QualifierTypes.QualifierType)?.name || qAny.typeName;
           if (!typeName) {
             console.error('[Bundle Processing] Missing typeName for qualifier:', q);
           }
           return {
             name: q.name,
-            typeName: typeName || 'unknown',
+            typeName: (typeName || 'unknown') as string,
             token: q.token,
             defaultPriority: q.defaultPriority || 500,
             defaultValue: q.defaultValue,
             tokenIsOptional: q.tokenIsOptional || false
-          };
+          } as Qualifiers.IQualifierDecl;
         }),
-        resourceTypes: Array.from(system.resourceTypes.values()).map((rt: any, index: number) => {
+        resourceTypes: Array.from(system.resourceTypes.values()).map((rt, index: number) => {
           console.log('[Bundle Processing] Extracting resource type:', rt);
           // ResourceTypes in bundles might not have a name property
           // Default to 'json' for JsonResourceType
-          const typeName = rt.constructor?.name === 'JsonResourceType' ? 'json' : rt.typeName || 'json';
+          const rtAny = rt as unknown as Record<string, unknown>;
+          const typeName = rt.constructor?.name === 'JsonResourceType' ? 'json' : rtAny.typeName || 'json';
           return {
-            name: rt.name || `resourceType${index}`, // Provide a default name if missing
-            typeName: typeName
-          };
+            name: (rtAny.name || `resourceType${index}`) as string, // Provide a default name if missing
+            typeName: typeName as string
+          } as ResourceTypes.Config.IResourceTypeConfig;
         })
       };
 
@@ -329,12 +347,8 @@ export function useResourceData(): UseResourceDataReturn {
         throw new Error(`Failed to create resolver: ${resolverResult.message}`);
       }
 
-      // Create CompiledResourceCollection manager from the bundle's compiled collection
-      const compiledManagerResult = createCompiledResourceCollectionManager(
-        compiledCollection,
-        system.qualifierTypes,
-        system.resourceTypes
-      );
+      // No longer create a separate CompiledResourceCollection manager
+      // We'll derive the compiled collection from ResourceManagerBuilder when needed
 
       // Create the processed resources structure with bundle data
       const processedResources: ProcessedResources = {
@@ -347,9 +361,6 @@ export function useResourceData(): UseResourceDataReturn {
           contextQualifierProvider: system.contextQualifierProvider
         },
         compiledCollection,
-        compiledResourceCollectionManager: compiledManagerResult.isSuccess()
-          ? compiledManagerResult.value
-          : null,
         resolver: resolverResult.value,
         resourceCount,
         summary: {
@@ -397,7 +408,7 @@ export function useResourceData(): UseResourceDataReturn {
   }, []);
 
   const resolveResource = useCallback(
-    async (resourceId: string, context?: Record<string, string>): Promise<Result<any>> => {
+    async (resourceId: string, context?: Record<string, string>): Promise<Result<JsonValue>> => {
       if (!state.processedResources?.system?.resourceManager) {
         return fail('No resources loaded');
       }
@@ -409,9 +420,17 @@ export function useResourceData(): UseResourceDataReturn {
           return fail(`Resource not found: ${resourceId}`);
         }
 
-        // For now, return the resource object itself
-        // Full resolution with context would require more complex logic
-        return succeed(resourceResult.value);
+        // Get the resource and convert to JSON
+        const resource = resourceResult.value;
+
+        // For now, return a simple representation since we don't have full resolution context
+        // TODO: Use proper converters from ts-json-base when implementing full resolution
+        const resourceJson = {
+          id: resource.id as string,
+          type: resource.resourceType as unknown,
+          candidateCount: resource.candidates.length
+        };
+        return succeed(resourceJson as unknown as JsonValue);
       } catch (error) {
         return fail(`Failed to resolve resource: ${error instanceof Error ? error.message : String(error)}`);
       }

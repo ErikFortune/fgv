@@ -1,5 +1,16 @@
 import { Result } from '@fgv/ts-utils';
-import { ResourceJson, Config, Bundle, Resources, Runtime } from '@fgv/ts-res';
+import {
+  ResourceJson,
+  Config,
+  Bundle,
+  Resources,
+  Runtime,
+  QualifierTypes,
+  Qualifiers,
+  ResourceTypes,
+  Import
+} from '@fgv/ts-res';
+import { JsonValue } from '@fgv/ts-json-base';
 
 // Message system types
 export interface Message {
@@ -29,15 +40,14 @@ export interface FilterActions {
 // Resource processing types
 export interface ProcessedResources {
   system: {
-    resourceManager: Resources.ResourceManagerBuilder; // Support both builder and runtime manager
-    qualifierTypes: any;
-    qualifiers: any;
-    resourceTypes: any;
-    importManager: any;
+    resourceManager: Resources.ResourceManagerBuilder;
+    qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
+    qualifiers: Qualifiers.IReadOnlyQualifierCollector;
+    resourceTypes: ResourceTypes.ReadOnlyResourceTypeCollector;
+    importManager: Import.ImportManager;
     contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
   };
   compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
-  compiledResourceCollectionManager: Runtime.CompiledResourceCollection | null; // Runtime manager for compiled collection
   resolver: Runtime.ResourceResolver;
   resourceCount: number;
   summary: {
@@ -98,7 +108,7 @@ export interface SourceViewProps extends ViewBaseProps {
   resources?: ExtendedProcessedResources | null;
   selectedResourceId?: string | null;
   onResourceSelect?: (resourceId: string) => void;
-  onExport?: (data: any, type: 'json') => void;
+  onExport?: (data: ResourceJson.Compiled.ICompiledResourceCollection, type: 'json') => void;
 }
 
 export interface FilterViewProps extends ViewBaseProps {
@@ -114,7 +124,10 @@ export interface CompiledViewProps extends ViewBaseProps {
   filterState?: FilterState;
   filterResult?: FilterResult | null;
   useNormalization?: boolean;
-  onExport?: (data: any, type: 'json' | 'bundle') => void;
+  onExport?: (
+    data: ResourceJson.Compiled.ICompiledResourceCollection | Bundle.IBundle,
+    type: 'json' | 'bundle'
+  ) => void;
 }
 
 export interface ResolutionViewProps extends ViewBaseProps {
@@ -129,8 +142,8 @@ export interface ResolutionViewProps extends ViewBaseProps {
 // Resolution editing types
 export interface EditedResourceInfo {
   resourceId: string;
-  originalValue: any;
-  editedValue: any;
+  originalValue: JsonValue;
+  editedValue: JsonValue;
   timestamp: Date;
 }
 
@@ -144,7 +157,7 @@ export interface ResolutionState {
   viewMode: 'composed' | 'best' | 'all' | 'raw';
   hasPendingChanges: boolean;
   // Edit state
-  editedResources: Map<string, any>;
+  editedResources: Map<string, JsonValue>;
   hasUnsavedEdits: boolean;
   isApplyingEdits: boolean;
 }
@@ -156,8 +169,8 @@ export interface ResolutionActions {
   setViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
   resetCache: () => void;
   // Edit actions
-  saveEdit: (resourceId: string, editedValue: any, originalValue?: any) => void;
-  getEditedValue: (resourceId: string) => any | undefined;
+  saveEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
+  getEditedValue: (resourceId: string) => JsonValue | undefined;
   hasEdit: (resourceId: string) => boolean;
   clearEdits: () => void;
   applyEdits: () => Promise<void>;
@@ -171,7 +184,7 @@ export interface ResolutionResult {
   bestCandidate?: Runtime.IResourceCandidate;
   allCandidates?: readonly Runtime.IResourceCandidate[];
   candidateDetails?: CandidateInfo[];
-  composedValue?: any;
+  composedValue?: JsonValue;
   error?: string;
 }
 
@@ -187,8 +200,8 @@ export interface CandidateInfo {
 
 export interface ConditionEvaluationResult {
   qualifierName: string;
-  qualifierValue: any;
-  conditionValue: any;
+  qualifierValue: string | undefined;
+  conditionValue: string | undefined;
   operator: string;
   score: number;
   matched: boolean;
@@ -218,7 +231,7 @@ export interface ResourceDetailData {
   resourceType: string;
   candidateCount: number;
   candidates: Array<{
-    json: any;
+    json: JsonValue;
     conditions: Array<{
       qualifier: string;
       operator: string;
@@ -288,8 +301,8 @@ export interface OrchestratorActions {
   resetResolutionCache: () => void;
 
   // Resolution editing
-  saveResourceEdit: (resourceId: string, editedValue: any, originalValue?: any) => void;
-  getEditedValue: (resourceId: string) => any | undefined;
+  saveResourceEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
+  getEditedValue: (resourceId: string) => JsonValue | undefined;
   hasResourceEdit: (resourceId: string) => boolean;
   clearResourceEdits: () => void;
   applyResourceEdits: () => Promise<void>;
@@ -301,8 +314,9 @@ export interface OrchestratorActions {
   clearMessages: () => void;
 
   // Resource resolution
-  resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<any>>;
+  resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<JsonValue>>;
 }
 
 // Export utility types
 export type { Result } from '@fgv/ts-utils';
+export type { JsonValue } from '@fgv/ts-json-base';

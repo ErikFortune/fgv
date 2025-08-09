@@ -39,21 +39,23 @@ export const QualifierContextControl: React.FC<QualifierContextControlProps> = (
       // Access the instantiated qualifier type
       if (qualifier.type) {
         const qualifierType = qualifier.type;
-        const config = qualifierType.configuration || {};
+        // Use type assertion to access properties that may exist on specific subtypes
+        const qtAny = qualifierType as unknown as Record<string, unknown>;
+        const config = (qtAny.configuration || {}) as Record<string, unknown>;
 
         // Look for enumerated values in different possible locations
         const enumeratedValues =
           config.enumeratedValues ||
           config.allowedTerritories ||
-          qualifierType.enumeratedValues ||
-          qualifierType.allowedTerritories ||
+          qtAny.enumeratedValues ||
+          qtAny.allowedTerritories ||
           [];
 
-        if (enumeratedValues && enumeratedValues.length > 0) {
+        if (enumeratedValues && Array.isArray(enumeratedValues) && enumeratedValues.length > 0) {
           return {
             hasEnumeratedValues: true,
-            enumeratedValues,
-            systemType: qualifierType.systemType || 'literal',
+            enumeratedValues: enumeratedValues as string[],
+            systemType: (qtAny.systemType as string) || 'literal',
             caseSensitive: config.caseSensitive !== false
           };
         }

@@ -1,6 +1,12 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Runtime } from '@fgv/ts-res';
-import { ResolutionState, ResolutionActions, ResolutionResult, ProcessedResources } from '../types';
+import {
+  ResolutionState,
+  ResolutionActions,
+  ResolutionResult,
+  ProcessedResources,
+  JsonValue
+} from '../types';
 import {
   createResolverWithContext,
   resolveResourceDetailed,
@@ -51,7 +57,7 @@ export function useResolutionState(
 
   // Edit state - stores original, edited, and delta for each resource
   const [editedResources, setEditedResources] = useState<
-    Map<string, { originalValue: any; editedValue: any; delta: any }>
+    Map<string, { originalValue: JsonValue; editedValue: JsonValue; delta: JsonValue }>
   >(new Map());
   const [isApplyingEdits, setIsApplyingEdits] = useState(false);
 
@@ -163,7 +169,7 @@ export function useResolutionState(
 
   // Edit management functions
   const saveEdit = useCallback(
-    (resourceId: string, editedValue: any, originalValue?: any) => {
+    (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => {
       try {
         // Validate the edited value
         const validation = validateEditedResource(editedValue);

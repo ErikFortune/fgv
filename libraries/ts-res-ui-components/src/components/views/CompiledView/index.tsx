@@ -47,20 +47,20 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
   const isFilteringActive = filterState?.enabled && filterResult?.success === true;
   const activeProcessedResources = isFilteringActive ? filterResult?.processedResources : resources;
 
-  // Get the active CompiledResourceCollection manager
-  const activeCompiledManager = useMemo(() => {
+  // Get the active compiled collection
+  const activeCompiledCollection = useMemo(() => {
     return isFilteringActive
-      ? filterResult?.processedResources?.compiledResourceCollectionManager
-      : resources?.compiledResourceCollectionManager;
+      ? filterResult?.processedResources?.compiledCollection
+      : resources?.compiledCollection;
   }, [
     isFilteringActive,
-    filterResult?.processedResources?.compiledResourceCollectionManager,
-    resources?.compiledResourceCollectionManager
+    filterResult?.processedResources?.compiledCollection,
+    resources?.compiledCollection
   ]);
 
-  // Build tree structure using the CompiledResourceCollection manager
+  // Build tree structure using the compiled collection
   const treeData = useMemo(() => {
-    if (!activeCompiledManager) {
+    if (!activeCompiledCollection) {
       return null;
     }
 
@@ -72,8 +72,8 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
     };
 
     try {
-      // Resources section using the runtime manager
-      const resourcesCount = activeCompiledManager.numResources;
+      // Resources section using the compiled collection
+      const resourcesCount = activeCompiledCollection.resources?.length || 0;
       const resourcesSection: TreeNode = {
         id: 'resources',
         name: `Resources (${resourcesCount})`,
@@ -81,67 +81,66 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
         children: []
       };
 
-      // Get all resource IDs from the manager
-      const resourceIds = Array.from(activeCompiledManager.builtResources.keys());
-      if (resourceIds.length > 0) {
-        resourcesSection.children = resourceIds.map((resourceId) => ({
-          id: `resource-${resourceId}`,
-          name: resourceId,
+      // Get all resource IDs from the compiled collection
+      if (activeCompiledCollection.resources && activeCompiledCollection.resources.length > 0) {
+        resourcesSection.children = activeCompiledCollection.resources.map((resource) => ({
+          id: `resource-${resource.id}`,
+          name: String(resource.id || 'unnamed'),
           type: 'resource' as const,
-          data: { type: 'runtime-resource', resourceId, manager: activeCompiledManager }
+          data: { type: 'compiled-resource', resource }
         }));
       }
 
       tree.children!.push(resourcesSection);
 
-      // Collectors section - showing the runtime objects
+      // Collectors section - showing from compiled collection
       tree.children!.push({
         id: 'qualifiers',
-        name: `Qualifiers (${activeCompiledManager.qualifiers.size})`,
+        name: `Qualifiers (${activeCompiledCollection.qualifiers?.length || 0})`,
         type: 'section',
-        data: { type: 'qualifiers', manager: activeCompiledManager }
+        data: { type: 'qualifiers', items: activeCompiledCollection.qualifiers }
       });
 
       tree.children!.push({
         id: 'qualifier-types',
-        name: `Qualifier Types (${activeCompiledManager.qualifierTypes.size})`,
+        name: `Qualifier Types (${activeCompiledCollection.qualifierTypes?.length || 0})`,
         type: 'section',
-        data: { type: 'qualifier-types', manager: activeCompiledManager }
+        data: { type: 'qualifier-types', items: activeCompiledCollection.qualifierTypes }
       });
 
       tree.children!.push({
         id: 'resource-types',
-        name: `Resource Types (${activeCompiledManager.resourceTypes.size})`,
+        name: `Resource Types (${activeCompiledCollection.resourceTypes?.length || 0})`,
         type: 'section',
-        data: { type: 'resource-types', manager: activeCompiledManager }
+        data: { type: 'resource-types', items: activeCompiledCollection.resourceTypes }
       });
 
       tree.children!.push({
         id: 'conditions',
-        name: `Conditions (${activeCompiledManager.conditions.size})`,
+        name: `Conditions (${activeCompiledCollection.conditions?.length || 0})`,
         type: 'section',
-        data: { type: 'conditions', manager: activeCompiledManager }
+        data: { type: 'conditions', items: activeCompiledCollection.conditions }
       });
 
       tree.children!.push({
         id: 'condition-sets',
-        name: `Condition Sets (${activeCompiledManager.conditionSets.size})`,
+        name: `Condition Sets (${activeCompiledCollection.conditionSets?.length || 0})`,
         type: 'section',
-        data: { type: 'condition-sets', manager: activeCompiledManager }
+        data: { type: 'condition-sets', items: activeCompiledCollection.conditionSets }
       });
 
       tree.children!.push({
         id: 'decisions',
-        name: `Decisions (${activeCompiledManager.decisions.size})`,
+        name: `Decisions (${activeCompiledCollection.decisions?.length || 0})`,
         type: 'section',
-        data: { type: 'decisions', manager: activeCompiledManager }
+        data: { type: 'decisions', items: activeCompiledCollection.decisions }
       });
     } catch (error) {
       onMessage?.('error', `Error building tree: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     return tree;
-  }, [activeCompiledManager, onMessage]);
+  }, [activeCompiledCollection, onMessage]);
 
   const handleExportCompiledData = useCallback(async () => {
     if (!activeProcessedResources?.compiledCollection) {

@@ -180,7 +180,6 @@ export function processImportedFiles(
     contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
   };
   compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
-  compiledResourceCollectionManager: Runtime.CompiledResourceCollection | null;
   resolver: Runtime.ResourceResolver;
   resourceCount: number;
   summary: {
@@ -205,7 +204,6 @@ export function processImportedFiles(
         contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
       };
       compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
-      compiledResourceCollectionManager: Runtime.CompiledResourceCollection | null;
       resolver: Runtime.ResourceResolver;
       resourceCount: number;
       summary: {
@@ -264,7 +262,6 @@ export function processImportedDirectory(
     contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
   };
   compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
-  compiledResourceCollectionManager: Runtime.CompiledResourceCollection | null;
   resolver: Runtime.ResourceResolver;
   resourceCount: number;
   summary: {
@@ -285,7 +282,6 @@ export function processImportedDirectory(
         contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
       };
       compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
-      compiledResourceCollectionManager: Runtime.CompiledResourceCollection | null;
       resolver: Runtime.ResourceResolver;
       resourceCount: number;
       summary: {
@@ -401,7 +397,6 @@ function finalizeProcessing(system: {
 }): Result<{
   system: typeof system;
   compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
-  compiledResourceCollectionManager: Runtime.CompiledResourceCollection | null;
   resolver: Runtime.ResourceResolver;
   resourceCount: number;
   summary: {
@@ -414,73 +409,32 @@ function finalizeProcessing(system: {
   return system.resourceManager
     .getCompiledResourceCollection({ includeMetadata: true })
     .onSuccess((compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection) => {
-      // Create CompiledResourceCollection manager
-      return createCompiledResourceCollectionManager(
-        compiledCollection,
-        system.qualifierTypes,
-        system.resourceTypes
-      ).onSuccess((compiledManager) => {
-        return Runtime.ResourceResolver.create({
-          resourceManager: system.resourceManager,
-          qualifierTypes: system.qualifierTypes,
-          contextQualifierProvider: system.contextQualifierProvider
-        }).onSuccess((resolver) => {
-          // Create summary
-          const resourceIds = Array.from(system.resourceManager.resources.keys());
-          const summary = {
-            totalResources: resourceIds.length,
-            resourceIds,
-            errorCount: 0,
-            warnings: [] as string[]
-          };
+      // Create resolver directly without CompiledResourceCollection manager
+      return Runtime.ResourceResolver.create({
+        resourceManager: system.resourceManager,
+        qualifierTypes: system.qualifierTypes,
+        contextQualifierProvider: system.contextQualifierProvider
+      }).onSuccess((resolver) => {
+        // Create summary
+        const resourceIds = Array.from(system.resourceManager.resources.keys());
+        const summary = {
+          totalResources: resourceIds.length,
+          resourceIds,
+          errorCount: 0,
+          warnings: [] as string[]
+        };
 
-          return succeed({
-            system,
-            compiledCollection,
-            compiledResourceCollectionManager: compiledManager,
-            resolver,
-            resourceCount: resourceIds.length,
-            summary
-          });
+        return succeed({
+          system,
+          compiledCollection,
+          resolver,
+          resourceCount: resourceIds.length,
+          summary
         });
       });
     })
     .withErrorFormat((message) => `Failed to finalize processing: ${message}`);
 }
 
-/**
- * Creates a CompiledResourceCollection instance from compiled collection data
- * This provides runtime access to compiled resources with proper object reconstruction
- */
-export function createCompiledResourceCollectionManager(
-  compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection,
-  qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector,
-  resourceTypes: ResourceTypes.ReadOnlyResourceTypeCollector
-): Result<Runtime.CompiledResourceCollection> {
-  // Convert collectors to the maps expected by CompiledResourceCollection
-  const qualifierTypeMap = new Map<string, QualifierTypes.QualifierType>();
-  for (const qualifierType of qualifierTypes.values()) {
-    qualifierTypeMap.set(qualifierType.name, qualifierType);
-  }
-
-  const resourceTypeMap = new Map<string, ResourceTypes.ResourceType>();
-  for (const resourceType of resourceTypes.values()) {
-    resourceTypeMap.set(resourceType.key, resourceType);
-  }
-
-  return Runtime.CompiledResourceCollection.create({
-    compiledCollection,
-    qualifierTypes: {
-      get: (name: string) => {
-        const qualifierType = qualifierTypeMap.get(name);
-        return qualifierType ? succeed(qualifierType) : fail(`Qualifier type '${name}' not found`);
-      }
-    } as unknown as QualifierTypes.ReadOnlyQualifierTypeCollector,
-    resourceTypes: {
-      get: (name: string) => {
-        const resourceType = resourceTypeMap.get(name);
-        return resourceType ? succeed(resourceType) : fail(`Resource type '${name}' not found`);
-      }
-    } as unknown as ResourceTypes.ReadOnlyResourceTypeCollector
-  });
-}
+// Note: createCompiledResourceCollectionManager was removed as part of the refactoring
+// We now always use ResourceManagerBuilder as the primary data structure
