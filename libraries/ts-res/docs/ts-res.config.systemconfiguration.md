@@ -226,5 +226,21 @@ Returns the [system configuration](./ts-res.config.model.isystemconfiguration.md
 
 
 </td></tr>
+<tr><td>
+
+[loadFromFile(path)](./ts-res.config.systemconfiguration.loadfromfile.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Loads a [SystemConfiguration](./ts-res.config.systemconfiguration.md) from a file.
+
+
+</td></tr>
 </tbody></table>
 

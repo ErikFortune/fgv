@@ -28,7 +28,7 @@ import { IReadOnlyQualifierCollector, QualifierCollector } from '../qualifiers';
 import { ReadOnlyResourceTypeCollector, ResourceTypeCollector } from '../resource-types';
 import { ISystemConfiguration } from './json';
 import { systemConfiguration } from './convert';
-import { sanitizeJsonObject } from '@fgv/ts-json-base';
+import { JsonFile, sanitizeJsonObject } from '@fgv/ts-json-base';
 
 /**
  * Parameters used to initialize a {@link Config.SystemConfiguration | SystemConfiguration}.
@@ -177,6 +177,19 @@ export class SystemConfiguration {
       ).onSuccess((updatedConfig) => captureResult(() => new SystemConfiguration(updatedConfig)));
     }
     return captureResult(() => new SystemConfiguration(config));
+  }
+
+  /**
+   * Loads a {@link Config.SystemConfiguration | SystemConfiguration} from a file.
+   * @param path - The path to the file to load.
+   * @returns `Success` with the {@link Config.SystemConfiguration | SystemConfiguration}
+   * if successful, `Failure` with an error message otherwise.
+   * @public
+   */
+  public static loadFromFile(path: string): Result<SystemConfiguration> {
+    return JsonFile.convertJsonFileSync(path, systemConfiguration).onSuccess((config) =>
+      captureResult(() => new SystemConfiguration(config))
+    );
   }
 
   /**

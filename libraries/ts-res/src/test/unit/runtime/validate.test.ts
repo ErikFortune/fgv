@@ -217,6 +217,7 @@ describe('Runtime.validate', () => {
     test('validates resource with multiple candidates', () => {
       const resourceWithMultipleCandidates = {
         id: 'multi.resource' as ResourceId,
+        name: 'resource' as TsRes.ResourceName,
         resourceType,
         decision,
         candidates: [
@@ -244,6 +245,7 @@ describe('Runtime.validate', () => {
     test('validates resource with empty candidates array', () => {
       const resourceWithEmptyCandidates = {
         id: 'empty.resource' as ResourceId,
+        name: 'resource' as TsRes.ResourceName,
         resourceType,
         decision,
         candidates: []
@@ -375,6 +377,7 @@ describe('Runtime.validate', () => {
     test('fails with extra properties', () => {
       const resourceWithExtraProps = {
         id: 'test.resource' as ResourceId,
+        name: 'resource' as TsRes.ResourceName,
         resourceType,
         decision,
         candidates: [],
