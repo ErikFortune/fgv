@@ -11,7 +11,7 @@
   {
     "definitionName": "lockStepVersion",
     "policyName": "base-utils",
-    "version": "5.0.0-11",
+    "version": "5.0.0-12",
     "nextBump": "minor"
   }
   // {
