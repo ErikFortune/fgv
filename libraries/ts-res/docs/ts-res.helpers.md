@@ -85,6 +85,17 @@ Converts a [the parts that make up a qualifier default value token](./ts-res.hel
 </td></tr>
 <tr><td>
 
+[getNameForResourceId(id)](./ts-res.helpers.getnameforresourceid.md)
+
+
+</td><td>
+
+Gets the name for a resource ID.
+
+
+</td></tr>
+<tr><td>
+
 [joinOptionalResourceIds(ids)](./ts-res.helpers.joinoptionalresourceids.md)
 
 

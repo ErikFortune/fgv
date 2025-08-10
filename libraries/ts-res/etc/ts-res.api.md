@@ -1220,6 +1220,9 @@ class FsItemImporter implements IImporter {
 // @public
 type FsItemResultDetail = 'failed' | 'skipped' | 'succeeded';
 
+// @public
+function getNameForResourceId(id: string | undefined): Result<ResourceName>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1253,7 +1256,8 @@ declare namespace Helpers {
         IQualifierDefaultValueTokenParts,
         splitResourceId,
         joinResourceIds,
-        joinOptionalResourceIds
+        joinOptionalResourceIds,
+        getNameForResourceId
     }
 }
 export { Helpers }
@@ -2411,6 +2415,7 @@ interface IResource {
     readonly candidates: ReadonlyArray<IResourceCandidate>;
     readonly decision: ConcreteDecision;
     readonly id: string;
+    readonly name: string;
     readonly resourceType: ResourceType;
 }
 
@@ -3732,6 +3737,7 @@ export class Resource implements IResource {
     // @internal
     protected _getMatchingCandidates(options?: IResourceDeclarationOptions | ICompiledResourceOptionsWithFilter): ReadonlyArray<ResourceCandidate>;
     readonly id: ResourceId;
+    readonly name: ResourceName;
     get resourceType(): ResourceType;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly _resourceType: ResourceType;
@@ -4647,9 +4653,9 @@ class ValidatingSimpleContextQualifierProvider extends SimpleContextQualifierPro
 // src/packlets/import/importers/collectionImporter.ts:135:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/import/importers/collectionImporter.ts:135:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/import/importers/collectionImporter.ts:135:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resource.ts:241:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resource.ts:241:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resource.ts:264:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resource.ts:248:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resource.ts:248:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resource.ts:271:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resourceCandidate.ts:271:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/conditionSetResolutionResult.ts:56:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/resourceResolver.ts:170:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

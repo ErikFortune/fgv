@@ -40,7 +40,7 @@ import { AbstractDecisionCollector, ReadOnlyAbstractDecisionCollector } from '..
 import { QualifierCollector } from '../qualifiers';
 import { ResourceType, ResourceTypeCollector } from '../resource-types';
 import { QualifierType, QualifierTypeCollector } from '../qualifier-types';
-import { Convert, ResourceId } from '../common';
+import { Convert, ResourceId, Helpers } from '../common';
 import { Converters } from '@fgv/ts-json-base';
 import { IResourceManager, IResource, IResourceCandidate } from './iResourceManager';
 import { ConcreteDecision } from '../decisions';
@@ -579,9 +579,17 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
       }
       const concreteDecision = concreteDecisionResult.value;
 
+      const { value: name, message: nameError } = Helpers.getNameForResourceId(compiledResource.id);
+      /* c8 ignore next 4 - defense in depth nearly impossible to reproduce */
+      if (nameError !== undefined) {
+        errors.addMessage(`Failed to get name for resource ${compiledResource.id}: ${nameError}`);
+        continue;
+      }
+
       // Create minimal resource that implements IResource
       const resource: IResource = {
         id: compiledResource.id,
+        name,
         resourceType,
         decision: concreteDecision,
         candidates

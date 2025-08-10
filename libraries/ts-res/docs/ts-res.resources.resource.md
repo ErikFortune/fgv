@@ -158,6 +158,27 @@ The unique [id](./ts-res.resourceid.md) of the resource.
 </td></tr>
 <tr><td>
 
+[name](./ts-res.resources.resource.name.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ResourceName](./ts-res.resourcename.md)
+
+
+</td><td>
+
+The name of the resource.
+
+
+</td></tr>
+<tr><td>
+
 [resourceType](./ts-res.resources.resource.resourcetype.md)
 
 

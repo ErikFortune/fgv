@@ -35,7 +35,7 @@ export const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({
       const config = qualifierType.configuration || {};
       // Ensure hierarchy is a plain object with string values
       let hierarchy: Record<string, string> = {};
-      const rawHierarchy = (config as any)?.hierarchy;
+      const rawHierarchy = (config as Record<string, unknown>)?.hierarchy;
       if (rawHierarchy && typeof rawHierarchy === 'object' && !Array.isArray(rawHierarchy)) {
         for (const [key, value] of Object.entries(rawHierarchy)) {
           if (typeof value === 'string') {
@@ -47,11 +47,11 @@ export const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({
       return {
         name: qualifierType.name,
         systemType: qualifierType.systemType as 'language' | 'territory' | 'literal',
-        allowContextList: (config as any)?.allowContextList ?? false,
-        caseSensitive: (config as any)?.caseSensitive ?? true,
-        enumeratedValues: (config as any)?.enumeratedValues || [],
-        acceptLowercase: (config as any)?.acceptLowercase ?? false,
-        allowedTerritories: (config as any)?.allowedTerritories || [],
+        allowContextList: ((config as Record<string, unknown>)?.allowContextList as boolean) ?? false,
+        caseSensitive: ((config as Record<string, unknown>)?.caseSensitive as boolean) ?? true,
+        enumeratedValues: ((config as Record<string, unknown>)?.enumeratedValues as string[]) || [],
+        acceptLowercase: ((config as Record<string, unknown>)?.acceptLowercase as boolean) ?? false,
+        allowedTerritories: ((config as Record<string, unknown>)?.allowedTerritories as string[]) || [],
         hierarchy: hierarchy
       };
     }
@@ -112,7 +112,7 @@ export const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({
   const handleSave = useCallback(() => {
     if (!validateForm()) return;
 
-    let configuration: any = {
+    let configuration: Record<string, unknown> = {
       allowContextList: formData.allowContextList
     };
 
@@ -148,13 +148,13 @@ export const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({
       name: formData.name,
       systemType: formData.systemType,
       configuration: Object.keys(configuration).length > 1 ? configuration : undefined
-    } as any;
+    };
 
     onSave(result);
   }, [formData, validateForm, onSave]);
 
   const updateField = useCallback(
-    (field: keyof FormData, value: any) => {
+    (field: keyof FormData, value: FormData[keyof FormData]) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
       if (errors[field]) {
         setErrors((prev) => ({ ...prev, [field]: '' }));

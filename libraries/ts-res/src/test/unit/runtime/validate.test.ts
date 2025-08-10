@@ -199,6 +199,7 @@ describe('Runtime.validate', () => {
     test('validates valid resource', () => {
       const validResource = {
         id: 'test.resource' as ResourceId,
+        name: 'resource' as TsRes.ResourceName,
         resourceType,
         decision,
         candidates: [

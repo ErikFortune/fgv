@@ -57,6 +57,8 @@ export interface IResourceCandidate {
 export interface IResource {
   /** The resource identifier */
   readonly id: string;
+  /** The resource name */
+  readonly name: string;
   /** The resource type */
   readonly resourceType: ResourceType;
   /** The decision used to select candidates */

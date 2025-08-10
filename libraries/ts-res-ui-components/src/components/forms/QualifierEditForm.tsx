@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { XMarkIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { Qualifiers, QualifierTypes } from '@fgv/ts-res';
+import { Converters } from '@fgv/ts-utils';
 
 export interface QualifierEditFormProps {
   qualifier?: Qualifiers.IQualifierDecl;
@@ -51,8 +52,15 @@ export const QualifierEditForm: React.FC<QualifierEditFormProps> = ({
 
   // Get the selected qualifier type for context
   const selectedQualifierType = qualifierTypes.find((qt) => qt.name === formData.typeName);
-  const allowsContextList =
-    selectedQualifierType?.configuration && (selectedQualifierType.configuration as any).allowContextList;
+
+  // Type-safe extraction of allowContextList property
+  const allowsContextList = (() => {
+    if (!selectedQualifierType?.configuration) return false;
+    const result = Converters.boolean.convert(
+      (selectedQualifierType.configuration as Record<string, unknown>).allowContextList
+    );
+    return result.isSuccess() ? result.value : false;
+  })();
 
   // Validation
   const validateForm = useCallback((): boolean => {
@@ -96,13 +104,15 @@ export const QualifierEditForm: React.FC<QualifierEditFormProps> = ({
   }, [formData, validateForm, onSave]);
 
   const updateField = useCallback(
-    (field: keyof FormData, value: any) => {
+    (field: keyof FormData, value: FormData[keyof FormData]) => {
       setFormData((prev) => {
         const updated = { ...prev, [field]: value };
 
         // Auto-generate token from name if no custom token is set
         if (field === 'name' && !prev.token) {
-          updated.token = value.toLowerCase().replace(/[^a-zA-Z0-9]/g, '');
+          updated.token = String(value)
+            .toLowerCase()
+            .replace(/[^a-zA-Z0-9]/g, '');
         }
 
         // Clear tokenIsOptional if token is cleared
@@ -129,7 +139,14 @@ export const QualifierEditForm: React.FC<QualifierEditFormProps> = ({
       case 'territory':
         return allowsContextList ? 'e.g., US or US,CA' : 'e.g., US';
       case 'literal':
-        const enumValues = (selectedQualifierType.configuration as any)?.enumeratedValues;
+        // Type-safe extraction of enumeratedValues
+        const enumValues = (() => {
+          if (!selectedQualifierType.configuration) return undefined;
+          const result = Converters.arrayOf(Converters.string).convert(
+            (selectedQualifierType.configuration as Record<string, unknown>).enumeratedValues
+          );
+          return result.isSuccess() ? result.value : undefined;
+        })();
         if (enumValues && enumValues.length > 0) {
           return allowsContextList
             ? `e.g., ${enumValues[0]} or ${enumValues.slice(0, 2).join(',')}`
@@ -298,36 +315,54 @@ export const QualifierEditForm: React.FC<QualifierEditFormProps> = ({
                   {allowsContextList ? 'Yes' : 'No'}
                 </p>
                 {selectedQualifierType.systemType === 'literal' && selectedQualifierType.configuration && (
-                  <>
-                    {(selectedQualifierType.configuration as any).caseSensitive !== undefined && (
+                  <React.Fragment>
+                    {(selectedQualifierType.configuration as Record<string, unknown>).caseSensitive !==
+                      undefined && (
                       <p>
                         <span className="font-medium">Case Sensitive:</span>{' '}
-                        {(selectedQualifierType.configuration as any).caseSensitive ? 'Yes' : 'No'}
+                        {((selectedQualifierType.configuration as Record<string, unknown>)
+                          .caseSensitive as boolean)
+                          ? 'Yes'
+                          : 'No'}
                       </p>
                     )}
-                    {(selectedQualifierType.configuration as any).enumeratedValues && (
+                    {((selectedQualifierType.configuration as Record<string, unknown>).enumeratedValues as
+                      | string[]
+                      | undefined) && (
                       <p>
                         <span className="font-medium">Allowed Values:</span>{' '}
-                        {(selectedQualifierType.configuration as any).enumeratedValues.join(', ')}
+                        {(
+                          (selectedQualifierType.configuration as Record<string, unknown>)
+                            .enumeratedValues as string[]
+                        ).join(', ')}
                       </p>
                     )}
-                  </>
+                  </React.Fragment>
                 )}
                 {selectedQualifierType.systemType === 'territory' && selectedQualifierType.configuration && (
-                  <>
-                    {(selectedQualifierType.configuration as any).acceptLowercase !== undefined && (
+                  <React.Fragment>
+                    {(selectedQualifierType.configuration as Record<string, unknown>).acceptLowercase !==
+                      undefined && (
                       <p>
                         <span className="font-medium">Accept Lowercase:</span>{' '}
-                        {(selectedQualifierType.configuration as any).acceptLowercase ? 'Yes' : 'No'}
+                        {((selectedQualifierType.configuration as Record<string, unknown>)
+                          .acceptLowercase as boolean)
+                          ? 'Yes'
+                          : 'No'}
                       </p>
                     )}
-                    {(selectedQualifierType.configuration as any).allowedTerritories && (
+                    {((selectedQualifierType.configuration as Record<string, unknown>).allowedTerritories as
+                      | string[]
+                      | undefined) && (
                       <p>
                         <span className="font-medium">Allowed Territories:</span>{' '}
-                        {(selectedQualifierType.configuration as any).allowedTerritories.join(', ')}
+                        {(
+                          (selectedQualifierType.configuration as Record<string, unknown>)
+                            .allowedTerritories as string[]
+                        ).join(', ')}
                       </p>
                     )}
-                  </>
+                  </React.Fragment>
                 )}
               </div>
             </div>

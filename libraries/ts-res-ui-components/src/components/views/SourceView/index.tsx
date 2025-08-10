@@ -9,6 +9,8 @@ import {
   ListBulletIcon,
   FolderIcon
 } from '@heroicons/react/24/outline';
+import { Resources, ResourceJson } from '@fgv/ts-res';
+import { Result } from '@fgv/ts-utils';
 import { SourceViewProps, ResourceDetailData } from '../../../types';
 import { ResourceTreeView } from '../../common/ResourceTreeView';
 import { ResourceListView } from '../../common/ResourceListView';
@@ -54,7 +56,7 @@ export const SourceView: React.FC<SourceViewProps> = ({ resources, onExport, onM
 
     // Check if this is a ResourceManagerBuilder (has getResourceCollectionDecl method)
     if ('getResourceCollectionDecl' in resources.system.resourceManager) {
-      const collectionResult = (resources.system.resourceManager as any).getResourceCollectionDecl();
+      const collectionResult = resources.system.resourceManager.getResourceCollectionDecl();
       if (collectionResult.isSuccess()) {
         return {
           ...collectionResult.value,

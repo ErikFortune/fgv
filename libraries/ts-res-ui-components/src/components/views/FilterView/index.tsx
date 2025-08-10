@@ -13,6 +13,7 @@ import {
   ListBulletIcon,
   FolderIcon
 } from '@heroicons/react/24/outline';
+import { Resources } from '@fgv/ts-res';
 import { FilterViewProps } from '../../../types';
 import { Config } from '@fgv/ts-res';
 import { QualifierContextControl } from '../../common/QualifierContextControl';
@@ -87,7 +88,9 @@ export const FilterView: React.FC<FilterViewProps> = ({
 
     // Check if this is a ResourceManagerBuilder (has getResourceCollectionDecl method)
     if ('getResourceCollectionDecl' in resourceManager) {
-      const collectionResult = (resourceManager as any).getResourceCollectionDecl();
+      const collectionResult = (
+        resourceManager as Resources.ResourceManagerBuilder
+      ).getResourceCollectionDecl();
       if (collectionResult.isSuccess()) {
         return {
           ...collectionResult.value,

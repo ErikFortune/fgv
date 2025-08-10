@@ -24,20 +24,37 @@ import {
   createTsResSystemFromConfig
 } from '../utils/tsResIntegration';
 
+/**
+ * Return type for the useResourceData hook.
+ * Provides state and actions for managing ts-res data processing.
+ *
+ * @public
+ */
 export interface UseResourceDataReturn {
+  /** Current state of the resource management system */
   state: ResourceManagerState;
+  /** Available actions for processing and managing resources */
   actions: {
+    /** Process an imported directory structure into a resource system */
     processDirectory: (directory: ImportedDirectory) => Promise<void>;
+    /** Process a directory with an explicit configuration */
     processDirectoryWithConfig: (
       directory: ImportedDirectory,
       config: Config.Model.ISystemConfiguration
     ) => Promise<void>;
+    /** Process an array of imported files into a resource system */
     processFiles: (files: ImportedFile[]) => Promise<void>;
+    /** Process a pre-compiled bundle file */
     processBundleFile: (bundle: Bundle.IBundle) => Promise<void>;
+    /** Clear any current error state */
     clearError: () => void;
+    /** Reset the entire resource management state */
     reset: () => void;
+    /** Resolve a specific resource with optional context */
     resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<JsonValue>>;
+    /** Apply a new configuration to the current system */
     applyConfiguration: (config: Config.Model.ISystemConfiguration) => void;
+    /** Update the processed resources state directly */
     updateProcessedResources: (processedResources: ProcessedResources) => void;
   };
 }
@@ -52,6 +69,43 @@ const initialState: ResourceManagerState = {
   bundleMetadata: null
 };
 
+/**
+ * React hook for managing ts-res resource data processing and state.
+ *
+ * Provides comprehensive functionality for:
+ * - Importing and processing resource files and directories
+ * - Loading and processing pre-compiled bundles
+ * - Resource resolution with context
+ * - Configuration management
+ * - Error handling and state management
+ *
+ * @returns Object containing current state and available actions
+ *
+ * @example
+ * ```typescript
+ * const { state, actions } = useResourceData();
+ *
+ * // Process imported files
+ * await actions.processFiles(importedFiles);
+ *
+ * // Resolve a resource with context
+ * const result = await actions.resolveResource('my.resource', {
+ *   language: 'en-US',
+ *   environment: 'production'
+ * });
+ *
+ * // Check processing state
+ * if (state.isProcessing) {
+ *   // Show loading UI
+ * } else if (state.error) {
+ *   // Show error message
+ * } else if (state.processedResources) {
+ *   // Use processed resources
+ * }
+ * ```
+ *
+ * @public
+ */
 export function useResourceData(): UseResourceDataReturn {
   const [state, setState] = useState<ResourceManagerState>(initialState);
 

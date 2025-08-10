@@ -496,17 +496,19 @@ const QualifierTypesPanel: React.FC<QualifierTypesPanelProps> = ({
 }) => {
   const getConfigurationSummary = (type: QualifierTypes.Config.ISystemQualifierTypeConfig): string => {
     if (!type.configuration) return 'No configuration';
-    const config = type.configuration as any;
+    const config = type.configuration as Record<string, unknown>;
     const details: string[] = [];
 
-    if (config.allowContextList) details.push('Context List');
+    if (config?.allowContextList) details.push('Context List');
     if (type.systemType === 'literal') {
-      if (config.caseSensitive === false) details.push('Case Insensitive');
-      if (config.enumeratedValues?.length) details.push(`${config.enumeratedValues.length} values`);
+      if (config?.caseSensitive === false) details.push('Case Insensitive');
+      const enumValues = config?.enumeratedValues as string[] | undefined;
+      if (enumValues?.length) details.push(`${enumValues.length} values`);
     }
     if (type.systemType === 'territory') {
-      if (config.acceptLowercase) details.push('Accept Lowercase');
-      if (config.allowedTerritories?.length) details.push(`${config.allowedTerritories.length} territories`);
+      if (config?.acceptLowercase) details.push('Accept Lowercase');
+      const territories = config?.allowedTerritories as string[] | undefined;
+      if (territories?.length) details.push(`${territories.length} territories`);
     }
 
     return details.length > 0 ? details.join(', ') : 'Default settings';

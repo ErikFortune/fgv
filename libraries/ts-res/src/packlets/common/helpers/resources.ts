@@ -82,3 +82,15 @@ export function joinOptionalResourceIds(...ids: (string | undefined)[]): Result<
   const id = parts.join('.');
   return errors.returnOrReport(id ? toResourceId(id) : succeed(undefined));
 }
+
+/**
+ * Gets the name for a resource ID.
+ * @param id - The resource ID to get the name for.
+ * @returns The resource name if found, or undefined if not.
+ * @public
+ */
+export function getNameForResourceId(id: string | undefined): Result<ResourceName> {
+  return splitResourceId(id).onSuccess((parts) => {
+    return parts.length > 0 ? succeed(parts[parts.length - 1]) : fail('Empty id has no name');
+  });
+}

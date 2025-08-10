@@ -24,12 +24,60 @@ import {
 } from '../../utils/filterResources';
 import { Runtime } from '@fgv/ts-res';
 
+/**
+ * Props for the ResourceOrchestrator component.
+ * Provides render props pattern for resource management UI.
+ *
+ * @public
+ */
 export interface ResourceOrchestratorProps {
+  /** Render function that receives orchestrator state and actions */
   children: (orchestrator: { state: OrchestratorState; actions: OrchestratorActions }) => ReactNode;
+  /** Optional initial configuration to apply on mount */
   initialConfiguration?: Config.Model.ISystemConfiguration;
+  /** Callback fired when orchestrator state changes */
   onStateChange?: (state: Partial<OrchestratorState>) => void;
 }
 
+/**
+ * Main orchestrator component for ts-res resource management UI.
+ *
+ * This component provides a centralized state management and action coordination
+ * for all ts-res UI functionality. It uses the render props pattern to provide
+ * state and actions to child components.
+ *
+ * Features:
+ * - Resource processing (files, directories, bundles)
+ * - Filtering and context management
+ * - Resource resolution testing
+ * - Configuration management
+ * - View state coordination
+ *
+ * @param props - ResourceOrchestrator configuration
+ * @returns JSX element using render props pattern
+ *
+ * @example
+ * ```typescript
+ * <ResourceOrchestrator>
+ *   {({ state, actions }) => (
+ *     <div>
+ *       <ImportView
+ *         onImport={actions.importDirectory}
+ *         onBundleImport={actions.importBundle}
+ *       />
+ *       {state.processedResources && (
+ *         <SourceView
+ *           resources={state.processedResources}
+ *           onExport={actions.exportData}
+ *         />
+ *       )}
+ *     </div>
+ *   )}
+ * </ResourceOrchestrator>
+ * ```
+ *
+ * @public
+ */
 export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
   children,
   initialConfiguration,
