@@ -9,7 +9,7 @@ Loads a [SystemConfiguration](./ts-res.config.systemconfiguration.md) from a fil
 **Signature:**
 
 ```typescript
-static loadFromFile(path: string): Result<SystemConfiguration>;
+static loadFromFile(path: string, initParams?: ISystemConfigurationInitParams): Result<SystemConfiguration>;
 ```
 
 ## Parameters
@@ -43,6 +43,22 @@ string
 </td><td>
 
 The path to the file to load.
+
+
+</td></tr>
+<tr><td>
+
+initParams
+
+
+</td><td>
+
+[ISystemConfigurationInitParams](./ts-res.config.isystemconfigurationinitparams.md)
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>

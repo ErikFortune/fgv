@@ -746,6 +746,7 @@ export { Config }
 declare namespace Config_2 {
     export {
         Convert_2 as Convert,
+        isSystemQualifierTypeConfig,
         IQualifierTypeConfig,
         ILanguageQualifierTypeConfig,
         ITerritoryQualifierTypeConfig,
@@ -753,7 +754,8 @@ declare namespace Config_2 {
         ISystemLanguageQualifierTypeConfig,
         ISystemTerritoryQualifierTypeConfig,
         ISystemLiteralQualifierTypeConfig,
-        ISystemQualifierTypeConfig
+        ISystemQualifierTypeConfig,
+        IAnyQualifierTypeConfig
     }
 }
 
@@ -1292,6 +1294,9 @@ interface IAbstractDecisionCreateParams {
     // (undocumented)
     index?: number;
 }
+
+// @public
+type IAnyQualifierTypeConfig = IQualifierTypeConfig | ISystemQualifierTypeConfig;
 
 // @public
 interface IBundle {
@@ -2715,6 +2720,13 @@ function isResourceTreeLeafInit<T>(init: ResourceTreeNodeInit<T>): init is IReso
 // @public
 function isResourceTreeRootOrNodeInit<T>(init: ResourceTreeNodeInit<T> | IResourceTreeRootInit<T>): init is IResourceTreeBranchInit<T>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isSystemQualifierTypeConfig(config: IAnyQualifierTypeConfig): config is ISystemQualifierTypeConfig;
+
 // @public
 function isValidConditionIndex(index: number): index is ConditionIndex;
 
@@ -2804,6 +2816,12 @@ interface ISystemConfiguration {
 // @public
 interface ISystemConfigurationInitParams {
     qualifierDefaultValues?: Record<string, string | null>;
+    // Warning: (ae-forgotten-export) The symbol "IConfigInitFactory" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    qualifierTypeFactory?: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierType>;
+    // (undocumented)
+    resourceTypeFactory?: IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceType>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -4349,7 +4367,7 @@ class SystemConfiguration {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor(config: ISystemConfiguration);
+    protected constructor(config: ISystemConfiguration, initParams?: ISystemConfigurationInitParams);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -4363,7 +4381,7 @@ class SystemConfiguration {
     getConfig(): Result<ISystemConfiguration>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static loadFromFile(path: string): Result<SystemConfiguration>;
+    static loadFromFile(path: string, initParams?: ISystemConfigurationInitParams): Result<SystemConfiguration>;
     get name(): string | undefined;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly qualifiers: IReadOnlyQualifierCollector;

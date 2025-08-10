@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)(config)](./ts-res.config.systemconfiguration._constructor_.md)
+[(constructor)(config, initParams)](./ts-res.config.systemconfiguration._constructor_.md)
 
 
 </td><td>
@@ -228,7 +228,7 @@ Returns the [system configuration](./ts-res.config.model.isystemconfiguration.md
 </td></tr>
 <tr><td>
 
-[loadFromFile(path)](./ts-res.config.systemconfiguration.loadfromfile.md)
+[loadFromFile(path, initParams)](./ts-res.config.systemconfiguration.loadfromfile.md)
 
 
 </td><td>

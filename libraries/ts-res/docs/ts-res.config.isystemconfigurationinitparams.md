@@ -54,5 +54,43 @@ _(Optional)_ Optional map of qualifier names to default values. If provided, qua
 
 
 </td></tr>
+<tr><td>
+
+[qualifierTypeFactory?](./ts-res.config.isystemconfigurationinitparams.qualifiertypefactory.md)
+
+
+</td><td>
+
+
+</td><td>
+
+IConfigInitFactory&lt;QualifierTypes.Config.IAnyQualifierTypeConfig, [QualifierType](./ts-res.qualifiertype.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[resourceTypeFactory?](./ts-res.config.isystemconfigurationinitparams.resourcetypefactory.md)
+
+
+</td><td>
+
+
+</td><td>
+
+IConfigInitFactory&lt;ResourceTypes.Config.IResourceTypeConfig, [ResourceType](./ts-res.resourcetype.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
 </tbody></table>
 

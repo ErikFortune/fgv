@@ -4,6 +4,32 @@
 
 ## QualifierTypes.Config namespace
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[isSystemQualifierTypeConfig(config)](./ts-res.qualifiertypes.config.issystemqualifiertypeconfig.md)
+
+
+</td><td>
+
+Checks if a [qualifier type configuration](./ts-res.qualifiertypes.config.ianyqualifiertypeconfig.md) is a [system qualifier type configuration](./ts-res.qualifiertypes.config.isystemqualifiertypeconfig.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
+
 ## Interfaces
 
 <table><thead><tr><th>
@@ -134,6 +160,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[IAnyQualifierTypeConfig](./ts-res.qualifiertypes.config.ianyqualifiertypeconfig.md)
+
+
+</td><td>
+
+A union of all qualifier type configurations.
+
+
+</td></tr>
+<tr><td>
 
 [ISystemQualifierTypeConfig](./ts-res.qualifiertypes.config.isystemqualifiertypeconfig.md)
 

@@ -20,15 +20,20 @@
  * SOFTWARE.
  */
 
-import { captureResult, mapResults, Result, fail, succeed } from '@fgv/ts-utils';
+import { captureResult, mapResults, Result, fail, succeed, omit } from '@fgv/ts-utils';
 import * as QualifierTypes from '../qualifier-types';
 import * as ResourceTypes from '../resource-types';
-import { QualifierTypeCollector, ReadOnlyQualifierTypeCollector } from '../qualifier-types';
+import { QualifierType, QualifierTypeCollector, ReadOnlyQualifierTypeCollector } from '../qualifier-types';
 import { IReadOnlyQualifierCollector, QualifierCollector } from '../qualifiers';
-import { ReadOnlyResourceTypeCollector, ResourceTypeCollector } from '../resource-types';
+import { ReadOnlyResourceTypeCollector, ResourceType, ResourceTypeCollector } from '../resource-types';
 import { ISystemConfiguration } from './json';
 import { systemConfiguration } from './convert';
 import { JsonFile, sanitizeJsonObject } from '@fgv/ts-json-base';
+import {
+  BuiltInQualifierTypeFactory,
+  BuiltInResourceTypeFactory,
+  IConfigInitFactory
+} from './configInitFactory';
 
 /**
  * Parameters used to initialize a {@link Config.SystemConfiguration | SystemConfiguration}.
@@ -41,6 +46,8 @@ export interface ISystemConfigurationInitParams {
    * Use `null` as the value to remove an existing default value.
    */
   qualifierDefaultValues?: Record<string, string | null>; // eslint-disable-line @rushstack/no-new-null
+  qualifierTypeFactory?: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierType>;
+  resourceTypeFactory?: IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceType>;
 }
 
 /**
@@ -136,13 +143,13 @@ export class SystemConfiguration {
    * @param config - The {@link Config.Model.ISystemConfiguration | system configuration} to use.
    * @public
    */
-  protected constructor(config: ISystemConfiguration) {
+  protected constructor(config: ISystemConfiguration, initParams?: ISystemConfigurationInitParams) {
     this._config = config;
+    const qualifierTypeFactory = initParams?.qualifierTypeFactory ?? new BuiltInQualifierTypeFactory();
+    const resourceTypeFactory = initParams?.resourceTypeFactory ?? new BuiltInResourceTypeFactory();
 
     this.qualifierTypes = QualifierTypeCollector.create({
-      qualifierTypes: mapResults(
-        config.qualifierTypes.map(QualifierTypes.createQualifierTypeFromSystemConfig)
-      ).orThrow()
+      qualifierTypes: mapResults(config.qualifierTypes.map((tc) => qualifierTypeFactory.create(tc))).orThrow()
     }).orThrow();
 
     this.qualifiers = QualifierCollector.create({
@@ -151,9 +158,7 @@ export class SystemConfiguration {
     }).orThrow();
 
     this.resourceTypes = ResourceTypeCollector.create({
-      resourceTypes: mapResults(
-        config.resourceTypes.map(ResourceTypes.createResourceTypeFromConfig)
-      ).orThrow()
+      resourceTypes: mapResults(config.resourceTypes.map((rt) => resourceTypeFactory.create(rt))).orThrow()
     }).orThrow();
   }
 
@@ -174,9 +179,13 @@ export class SystemConfiguration {
       return updateSystemConfigurationQualifierDefaultValues(
         config,
         initParams.qualifierDefaultValues
-      ).onSuccess((updatedConfig) => captureResult(() => new SystemConfiguration(updatedConfig)));
+      ).onSuccess((updatedConfig) =>
+        captureResult(
+          () => new SystemConfiguration(updatedConfig, omit(initParams, ['qualifierDefaultValues']))
+        )
+      );
     }
-    return captureResult(() => new SystemConfiguration(config));
+    return captureResult(() => new SystemConfiguration(config, initParams));
   }
 
   /**
@@ -186,9 +195,12 @@ export class SystemConfiguration {
    * if successful, `Failure` with an error message otherwise.
    * @public
    */
-  public static loadFromFile(path: string): Result<SystemConfiguration> {
+  public static loadFromFile(
+    path: string,
+    initParams?: ISystemConfigurationInitParams
+  ): Result<SystemConfiguration> {
     return JsonFile.convertJsonFileSync(path, systemConfiguration).onSuccess((config) =>
-      captureResult(() => new SystemConfiguration(config))
+      SystemConfiguration.create(config, initParams)
     );
   }
 
