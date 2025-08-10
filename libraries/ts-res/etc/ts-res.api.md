@@ -120,6 +120,28 @@ function buildQualifierDefaultValuesToken(parts: ReadonlyArray<IQualifierDefault
 // @public
 function buildQualifierDefaultValueToken({ qualifier, value }: IQualifierDefaultValueTokenParts): Result<QualifierDefaultValueToken>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class BuiltInQualifierTypeFactory implements IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierType> {
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    create(config: QualifierTypes.Config.IAnyQualifierTypeConfig): Result<QualifierType>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class BuiltInResourceTypeFactory implements IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceType> {
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    create(config: ResourceTypes.Config.IResourceTypeConfig): Result<ResourceType>;
+}
+
 declare namespace Bundle {
     export {
         IBundleMetadata,
@@ -232,6 +254,14 @@ class CandidateReducer {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static reduceToLooseResourceCandidateDecls(id: ResourceId, candidates: ReadonlyArray<ResourceCandidate>, filterForContext?: Context.IValidatedContextDecl): Result<ResourceJson.Json.ILooseResourceCandidateDecl[]>;
+}
+
+// @public
+class ChainedConfigInitFactory<TConfig, T> implements IConfigInitFactory<TConfig, T> {
+    constructor(factories: IConfigInitFactory<TConfig, T>[]);
+    create(config: TConfig): Result<T>;
+    // (undocumented)
+    readonly factories: IConfigInitFactory<TConfig, T>[];
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -730,6 +760,12 @@ declare namespace Config {
     export {
         Model,
         Convert_9 as Convert,
+        IConfigInitFactory,
+        ChainedConfigInitFactory,
+        BuiltInQualifierTypeFactory,
+        QualifierTypeFactory,
+        BuiltInResourceTypeFactory,
+        ResourceTypeFactory,
         updateSystemConfigurationQualifierDefaultValues,
         ISystemConfigurationInitParams,
         SystemConfiguration,
@@ -1657,6 +1693,11 @@ interface IConditionTokenParts {
     qualifier?: string;
     // (undocumented)
     value: string;
+}
+
+// @public
+interface IConfigInitFactory<TConfig, T> {
+    create(config: TConfig): Result<T>;
 }
 
 // @public
@@ -2816,8 +2857,6 @@ interface ISystemConfiguration {
 // @public
 interface ISystemConfigurationInitParams {
     qualifierDefaultValues?: Record<string, string | null>;
-    // Warning: (ae-forgotten-export) The symbol "IConfigInitFactory" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     qualifierTypeFactory?: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierType>;
     // (undocumented)
@@ -3582,6 +3621,18 @@ class QualifierTypeCollector extends ValidatingConvertingCollector<QualifierType
     protected static _toQualifierType(from: unknown): Result<QualifierType>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class QualifierTypeFactory extends ChainedConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierType> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(factories: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierType>[]);
+}
+
 // @public
 export type QualifierTypeIndex = Brand<number, 'QualifierTypeIndex'>;
 
@@ -4266,6 +4317,17 @@ class ResourceTypeCollector extends ValidatingCollector<ResourceType> {
 //
 // @public
 const resourceTypeConfig: ObjectConverter<IResourceTypeConfig, unknown>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ResourceTypeFactory extends ChainedConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceType> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(factories: IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceType>[]);
+}
 
 // @public
 export type ResourceTypeIndex = Brand<number, 'ResourceTypeIndex'>;

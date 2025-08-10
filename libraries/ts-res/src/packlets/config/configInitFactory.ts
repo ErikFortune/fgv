@@ -70,7 +70,7 @@ export class ChainedConfigInitFactory<TConfig, T> implements IConfigInitFactory<
 }
 
 /**
- * A factory that creates a {@link QualifierType | QualifierType} from a {@link QualifierTypes.Config.ISystemQualifierTypeConfig | system qualifier type configuration}.
+ * A factory that creates a {@link QualifierTypes.QualifierType | QualifierType} from a {@link QualifierTypes.Config.ISystemQualifierTypeConfig | system qualifier type configuration}.
  * @public
  */
 export class BuiltInQualifierTypeFactory
@@ -86,8 +86,8 @@ export class BuiltInQualifierTypeFactory
 }
 
 /**
- * A factory that creates a {@link QualifierType | QualifierType} from a {@link QualifierTypes.Config.IAnyQualifierTypeConfig | system qualifier type configuration}
- * by chaining a supplied factory with a {@link BuiltInQualifierTypeFactory | built-in factory} that handles built-in qualifier types.
+ * A factory that creates a {@link QualifierTypes.QualifierType | QualifierType} from a {@link QualifierTypes.Config.IAnyQualifierTypeConfig | system qualifier type configuration}
+ * by chaining a supplied factory with a {@link Config.BuiltInQualifierTypeFactory | built-in factory} that handles built-in qualifier types.
  * @public
  */
 export class QualifierTypeFactory extends ChainedConfigInitFactory<
@@ -95,9 +95,9 @@ export class QualifierTypeFactory extends ChainedConfigInitFactory<
   QualifierType
 > {
   /**
-   * Constructor for a {@link QualifierTypeFactory | qualifier type factory}.
-   * @param factories - The {@link IConfigInitFactory | factories} to chain.
-   * @remarks The {@link BuiltInQualifierTypeFactory | built-in factory} is always added to the end of the chain.
+   * Constructor for a {@link Config.QualifierTypeFactory | qualifier type factory}.
+   * @param factories - The {@link Config.IConfigInitFactory | factories} to chain.
+   * @remarks The {@link Config.BuiltInQualifierTypeFactory | built-in factory} is always added to the end of the chain.
    */
   public constructor(
     factories: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierType>[]
@@ -107,7 +107,7 @@ export class QualifierTypeFactory extends ChainedConfigInitFactory<
 }
 
 /**
- * A factory that creates a {@link ResourceType | ResourceType} from a {@link ResourceTypes.IResourceTypeConfig | resource type configuration}.
+ * A factory that creates a {@link ResourceTypes.ResourceType | ResourceType} from a {@link ResourceTypes.Config.IResourceTypeConfig | resource type configuration}.
  * @public
  */
 export class BuiltInResourceTypeFactory
@@ -120,8 +120,8 @@ export class BuiltInResourceTypeFactory
 }
 
 /**
- * A factory that creates a {@link ResourceType | ResourceType} from a {@link ResourceTypes.Config.IResourceTypeConfig | resource type configuration}
- * by chaining a supplied factory with a {@link BuiltInResourceTypeFactory | built-in factory} that handles built-in resource types.
+ * A factory that creates a {@link ResourceTypes.ResourceType | ResourceType} from a {@link ResourceTypes.Config.IResourceTypeConfig | resource type configuration}
+ * by chaining a supplied factory with a {@link Config.BuiltInResourceTypeFactory | built-in factory} that handles built-in resource types.
  * @public
  */
 export class ResourceTypeFactory extends ChainedConfigInitFactory<
@@ -130,8 +130,8 @@ export class ResourceTypeFactory extends ChainedConfigInitFactory<
 > {
   /**
    * Constructor for a resource type factory.
-   * @param factories - The {@link IConfigInitFactory | factories}  to chain.
-   * @remarks The {@link BuiltInResourceTypeFactory | built-in factory} is always added to the end of the chain.
+   * @param factories - The {@link Config.IConfigInitFactory | factories}  to chain.
+   * @remarks The {@link Config.BuiltInResourceTypeFactory | built-in factory} is always added to the end of the chain.
    */
   public constructor(
     factories: IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceType>[]
