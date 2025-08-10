@@ -423,14 +423,63 @@ export function useResourceData(): UseResourceDataReturn {
         // Get the resource and convert to JSON
         const resource = resourceResult.value;
 
-        // For now, return a simple representation since we don't have full resolution context
-        // TODO: Use proper converters from ts-json-base when implementing full resolution
-        const resourceJson = {
-          id: resource.id as string,
-          type: resource.resourceType as unknown,
-          candidateCount: resource.candidates.length
+        // Import resolution utilities for detailed resolution
+        const { createResolverWithContext, resolveResourceDetailed } = await import(
+          '../utils/resolutionUtils'
+        );
+
+        // Use provided context or empty context
+        const contextValues = context || {};
+
+        // Create resolver with context
+        const resolverResult = createResolverWithContext(state.processedResources, contextValues, {
+          enableDebugLogging: false
+        });
+
+        if (resolverResult.isFailure()) {
+          return fail(`Failed to create resolver: ${resolverResult.message}`);
+        }
+
+        // Resolve resource with detailed information
+        const detailedResult = resolveResourceDetailed(
+          resolverResult.value,
+          resourceId,
+          state.processedResources,
+          { enableDebugLogging: false }
+        );
+
+        if (detailedResult.isFailure()) {
+          return fail(`Failed to resolve resource details: ${detailedResult.message}`);
+        }
+
+        const resolutionResult = detailedResult.value;
+
+        // Return the detailed resolution result as JsonValue
+        const detailedJson = {
+          success: resolutionResult.success,
+          resourceId: resolutionResult.resourceId,
+          resource: resolutionResult.resource
+            ? {
+                id: resolutionResult.resource.id,
+                resourceType: resolutionResult.resource.resourceType?.key || 'unknown',
+                candidateCount: resolutionResult.resource.candidates.length
+              }
+            : null,
+          bestCandidate: resolutionResult.bestCandidate?.json,
+          allCandidates: resolutionResult.allCandidates?.map((c: any) => c.json),
+          candidateDetails: resolutionResult.candidateDetails?.map((cd: any) => ({
+            candidateIndex: cd.candidateIndex,
+            matched: cd.matched,
+            matchType: cd.matchType,
+            isDefaultMatch: cd.isDefaultMatch,
+            conditionEvaluations: cd.conditionEvaluations,
+            candidateJson: cd.candidate?.json
+          })),
+          composedValue: resolutionResult.composedValue,
+          error: resolutionResult.error
         };
-        return succeed(resourceJson as unknown as JsonValue);
+
+        return succeed(detailedJson as unknown as JsonValue);
       } catch (error) {
         return fail(`Failed to resolve resource: ${error instanceof Error ? error.message : String(error)}`);
       }

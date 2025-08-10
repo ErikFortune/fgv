@@ -454,7 +454,7 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
           {/* Details Panel */}
           <div className="lg:w-1/2 flex flex-col">
             {selectedNode ? (
-              <NodeDetail node={selectedNode} />
+              <NodeDetail node={selectedNode} activeCompiledCollection={activeCompiledCollection} />
             ) : (
               <div className="flex-1 flex items-center justify-center border border-gray-200 rounded-lg bg-gray-50">
                 <div className="text-center">
@@ -482,12 +482,13 @@ const findNodeById = (tree: TreeNode, id: string): TreeNode | null => {
   return null;
 };
 
-// Runtime-powered NodeDetail component
+// NodeDetail component with access to compiled collection
 interface NodeDetailProps {
   node: TreeNode;
+  activeCompiledCollection: ResourceJson.Compiled.ICompiledResourceCollection | null | undefined;
 }
 
-const NodeDetail: React.FC<NodeDetailProps> = ({ node }) => {
+const NodeDetail: React.FC<NodeDetailProps> = ({ node, activeCompiledCollection }) => {
   const [showRawJson, setShowRawJson] = useState(false);
 
   const renderDetails = () => {
@@ -504,11 +505,11 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node }) => {
       );
     }
 
-    const { type, resourceId, manager } = node.data;
+    const { type, resource, items } = node.data;
 
     switch (type) {
-      case 'runtime-resource':
-        return renderRuntimeResource(resourceId, manager);
+      case 'compiled-resource':
+        return renderCompiledResource(resource);
 
       case 'qualifiers':
       case 'qualifier-types':
@@ -516,28 +517,23 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node }) => {
       case 'conditions':
       case 'condition-sets':
       case 'decisions':
-        return renderRuntimeCollection(type, manager);
+        return renderCompiledCollection(type, items);
 
       default:
         return renderRawData();
     }
   };
 
-  // New function that uses runtime objects instead of manual JSON manipulation
-  const renderRuntimeResource = (resourceId: string, manager: any) => {
-    // Get the full runtime resource object with all its rich data
-    const resourceResult = manager.getBuiltResource(resourceId);
-
-    if (resourceResult.isFailure()) {
+  // Function that renders compiled resource data with indices
+  const renderCompiledResource = (resource: any) => {
+    if (!resource) {
       return (
         <div className="bg-white rounded-lg border p-4">
           <h4 className="font-medium text-red-700 mb-2">Error Loading Resource</h4>
-          <p className="text-sm text-red-600">{resourceResult.message}</p>
+          <p className="text-sm text-red-600">Resource data not available</p>
         </div>
       );
     }
-
-    const resource = resourceResult.value;
 
     return (
       <div className="space-y-6">
@@ -553,142 +549,151 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node }) => {
 
             <div className="flex items-start">
               <span className="font-semibold text-gray-700 w-32">Resource Type:</span>
-              <span className="text-gray-900">
-                {resource.resourceType.name || resource.resourceType.key}
-                <span className="ml-2 text-xs font-mono bg-gray-100 px-2 py-1 rounded">
-                  ({resource.resourceType.index})
-                </span>
-              </span>
+              <span className="text-gray-900">Index: {resource.type}</span>
             </div>
 
             <div className="flex items-start">
               <span className="font-semibold text-gray-700 w-32">Decision:</span>
               <span className="text-gray-900">
                 <span className="font-mono">
-                  Decision {resource.decision.baseDecision?.index ?? resource.decision.index ?? 'unknown'}{' '}
-                  with {resource.decision.candidates.length} candidates
+                  Decision Index: {resource.decision} with {resource.candidates?.length || 0} candidates
                 </span>
               </span>
             </div>
           </div>
         </div>
 
-        {/* Candidates Section - Now with full candidate data including bodies! */}
+        {/* Candidates Section - Full candidate data from compiled collection */}
         <div className="bg-gray-50 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Candidates</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Candidates ({resource.candidates?.length || 0})
+          </h3>
 
           <div className="space-y-4">
-            {resource.candidates.map((candidate: any, candidateIdx: number) => {
-              // Get the corresponding decision candidate to access condition sets
-              const decisionCandidate = resource.decision.candidates[candidateIdx];
+            {resource.candidates &&
+              resource.candidates.map((candidate: any, candidateIdx: number) => {
+                // Get the condition set index for this candidate from the decision
+                const compiledCollection = activeCompiledCollection;
+                const decision = compiledCollection?.decisions?.[resource.decision];
+                const conditionSetIndex = decision?.conditionSets?.[candidateIdx];
+                const conditionSet =
+                  conditionSetIndex !== undefined
+                    ? compiledCollection?.conditionSets?.[conditionSetIndex]
+                    : null;
 
-              return (
-                <div key={candidateIdx} className="bg-white rounded-lg border p-4">
-                  <div className="mb-3">
-                    <h4 className="font-semibold text-gray-900">
-                      Candidate {candidateIdx + 1}
-                      {candidate.isPartial && (
-                        <span className="ml-2 bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">
-                          Partial
+                return (
+                  <div key={candidateIdx} className="bg-white rounded-lg border p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <h4 className="font-semibold text-gray-900">
+                        Candidate {candidateIdx}
+                        {candidate.isPartial && (
+                          <span className="ml-2 bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">
+                            Partial
+                          </span>
+                        )}
+                      </h4>
+                      {conditionSetIndex !== undefined && (
+                        <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
+                          ConditionSet: {conditionSetIndex}
                         </span>
                       )}
-                    </h4>
-                  </div>
+                    </div>
 
-                  {/* Candidate JSON Data - This is the actual resource content! */}
-                  <div className="bg-gray-50 rounded p-3 mb-3">
-                    <h6 className="text-sm font-semibold text-gray-700 mb-2">Resource Content:</h6>
-                    <pre className="text-sm font-mono text-gray-800 whitespace-pre-wrap">
-                      {JSON.stringify(candidate.json, null, 2)}
-                    </pre>
-                  </div>
+                    {/* Candidate JSON Data - The actual resource content */}
+                    {(candidate || typeof candidate === 'object') && (
+                      <div className="bg-gray-50 rounded p-3 mb-3">
+                        <h6 className="text-sm font-semibold text-gray-700 mb-2">Resource Content:</h6>
+                        <pre className="text-sm font-mono text-gray-800 whitespace-pre-wrap overflow-x-auto max-h-48 overflow-y-auto">
+                          {JSON.stringify(candidate, null, 2)}
+                        </pre>
+                      </div>
+                    )}
 
-                  {/* Conditions from the condition set */}
-                  {decisionCandidate?.conditionSet &&
-                    decisionCandidate.conditionSet.conditions.length > 0 && (
+                    {/* Conditions from the condition set */}
+                    {conditionSet && conditionSet.conditions && conditionSet.conditions.length > 0 && (
                       <div className="border-t pt-3">
-                        <h5 className="text-sm font-semibold text-gray-700 mb-2">
-                          Condition Set {decisionCandidate.conditionSet.index}:
-                        </h5>
+                        <h5 className="text-sm font-semibold text-gray-700 mb-2">Conditions:</h5>
                         <div className="space-y-2">
-                          {decisionCandidate.conditionSet.conditions.map((condition: any, idx: number) => (
-                            <div key={idx} className="flex items-center text-sm bg-blue-50 rounded px-3 py-2">
-                              <span className="font-mono text-blue-700 mr-2 text-xs">
-                                {condition.index.toString().padStart(2, '0')}:
-                              </span>
-                              <span className="font-medium text-blue-900 mr-2">
-                                {condition.qualifier.name}
-                              </span>
-                              <span className="text-blue-700 mr-2">{condition.operator}</span>
-                              <span className="font-mono text-blue-800">{condition.value}</span>
-                              <span className="ml-auto text-xs text-blue-600">
-                                Priority: {condition.priority}
-                                {condition.scoreAsDefault !== undefined && (
-                                  <span className="ml-2">Default: {condition.scoreAsDefault}</span>
-                                )}
-                              </span>
-                            </div>
-                          ))}
+                          {conditionSet.conditions.map((conditionIndex: number, idx: number) => {
+                            const condition = compiledCollection?.conditions?.[conditionIndex];
+                            if (!condition) return null;
+                            const qualifier = compiledCollection?.qualifiers?.[condition.qualifierIndex];
+
+                            return (
+                              <div
+                                key={idx}
+                                className="flex items-center text-sm bg-blue-50 rounded px-3 py-2"
+                              >
+                                <span className="font-mono text-blue-700 mr-2 text-xs">
+                                  [{conditionIndex}]
+                                </span>
+                                <span className="font-medium text-blue-900 mr-2">
+                                  {qualifier?.name || `Q${condition.qualifierIndex}`}
+                                </span>
+                                <span className="text-blue-700 mr-2">{condition.operator || 'matches'}</span>
+                                <span className="font-mono text-blue-800">{condition.value}</span>
+                                <span className="ml-auto text-xs text-blue-600">
+                                  Priority: {condition.priority || 0}
+                                  {condition.scoreAsDefault !== undefined && (
+                                    <span className="ml-2">Default: {condition.scoreAsDefault}</span>
+                                  )}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
 
-                  {(!decisionCandidate?.conditionSet ||
-                    decisionCandidate.conditionSet.conditions.length === 0) && (
-                    <div className="border-t pt-3">
-                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        No conditions (default candidate)
-                      </span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                    {(!conditionSet || !conditionSet.conditions || conditionSet.conditions.length === 0) && (
+                      <div className="border-t pt-3">
+                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                          No conditions (default candidate)
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
           </div>
         </div>
       </div>
     );
   };
 
-  // New function that uses runtime collections instead of raw JSON
-  const renderRuntimeCollection = (collectionType: string, manager: any) => {
-    let collector: any;
-    let title: string;
+  // Function that renders compiled collection data
+  const renderCompiledCollection = (collectionType: string, items: any[]) => {
+    if (!items) {
+      return (
+        <div className="bg-white rounded-lg border p-4">
+          <p className="text-sm text-gray-500">No data available</p>
+        </div>
+      );
+    }
 
+    let title: string;
     switch (collectionType) {
       case 'qualifiers':
-        collector = manager.qualifiers;
         title = 'Qualifiers';
         break;
       case 'qualifier-types':
-        collector = manager.qualifierTypes;
         title = 'Qualifier Types';
         break;
       case 'resource-types':
-        collector = manager.resourceTypes;
         title = 'Resource Types';
         break;
       case 'conditions':
-        collector = manager.conditions;
         title = 'Conditions';
         break;
       case 'condition-sets':
-        collector = manager.conditionSets;
         title = 'Condition Sets';
         break;
       case 'decisions':
-        collector = manager.decisions;
         title = 'Decisions';
         break;
       default:
-        return (
-          <div className="bg-white rounded-lg border p-4">
-            <p className="text-sm text-gray-500">Unknown collection type: {collectionType}</p>
-          </div>
-        );
+        title = collectionType;
     }
-
-    const items = Array.from(collector.values());
 
     return (
       <div className="bg-gray-50 rounded-lg p-4">
@@ -707,20 +712,18 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node }) => {
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <h4 className="font-semibold text-gray-900">
-                      {getItemDisplayName(item, collectionType, index)}
+                      {getCompiledItemDisplayName(item, collectionType, index)}
                     </h4>
                     <p className="text-sm text-gray-600 font-mono mt-1">
-                      {getItemDisplayKey(item, collectionType)}
+                      {getCompiledItemDisplayKey(item, collectionType, index)}
                     </p>
                   </div>
-                  {item.index !== undefined && (
-                    <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-mono">
-                      Index: {item.index}
-                    </span>
-                  )}
+                  <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-mono">
+                    Index: {index}
+                  </span>
                 </div>
 
-                <div className="border-t pt-3">{renderRuntimeItemDetail(item, collectionType)}</div>
+                <div className="border-t pt-3">{renderCompiledItemDetail(item, collectionType, index)}</div>
               </div>
             ))}
           </div>
@@ -729,85 +732,105 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node }) => {
     );
   };
 
-  // Helper functions for runtime object display
-  const getItemDisplayName = (item: any, collectionType: string, index: number): string => {
+  // Helper functions for compiled object display
+  const getCompiledItemDisplayName = (item: any, collectionType: string, index: number): string => {
     switch (collectionType) {
       case 'qualifiers':
-        return `${item.index}: ${item.name} (${item.type.name})`;
+        return `${index}: ${item?.name || 'unnamed'}`;
       case 'qualifier-types':
-        return `${item.index}: ${item.name} (${item.systemType})`;
+        return `${index}: ${item?.name || 'unnamed'}`;
       case 'resource-types':
-        return `${item.index}: ${item.name || item.key}`;
+        return `${index}: ${item?.name || item?.key || 'unnamed'}`;
       case 'conditions':
-        return `${item.index.toString().padStart(2, '0')}: ${item.qualifier.name} ${item.operator} ${
-          item.value
-        }`;
+        const qualifier = activeCompiledCollection?.qualifiers?.[item?.qualifierIndex];
+        return `${index}: ${qualifier?.name || `Q${item?.qualifierIndex}`} ${item?.operator || 'matches'} "${
+          item?.value || ''
+        }"`;
       case 'condition-sets':
-        return `${item.index}: ${
-          item.conditions.length === 0 ? 'Unconditional' : `${item.conditions.length} conditions`
+        return `${index}: ${
+          item?.conditions?.length === 0 || !item?.conditions
+            ? 'Unconditional'
+            : `${item.conditions.length} conditions`
         }`;
       case 'decisions':
-        return `${item.baseDecision?.index ?? item.index}: Decision with ${
-          item.candidates.length
-        } candidates`;
+        return `${index}: Decision with ${item?.conditionSets?.length || 0} condition sets`;
       default:
         return `${index}: Item ${index}`;
     }
   };
 
-  const getItemDisplayKey = (item: any, collectionType: string): string => {
+  const getCompiledItemDisplayKey = (item: any, collectionType: string, index: number): string => {
     try {
       switch (collectionType) {
         case 'qualifiers':
-          return `defaultPriority: ${item?.defaultPriority ?? 'N/A'}`;
+          return `type: ${item?.type || 'N/A'}, defaultPriority: ${item?.defaultPriority ?? 'N/A'}`;
         case 'qualifier-types':
-          return `allowContextList: ${item?.allowContextList ?? 'N/A'}`;
+          return `systemType: ${item?.systemType ?? 'N/A'}`;
         case 'resource-types':
           return `key: ${item?.key ?? 'N/A'}`;
         case 'conditions':
-          return `priority: ${item?.priority ?? 'N/A'}`;
+          return `priority: ${item?.priority ?? 0}`;
         case 'condition-sets':
-          return (
-            item?.conditions
-              ?.map((c: any) => `${c?.qualifier?.name ?? 'unknown'}=${c?.value ?? 'unknown'}`)
-              .join(', ') || 'default'
-          );
+          if (!item?.conditions || item.conditions.length === 0) return 'default';
+          return `${item.conditions.length} condition${item.conditions.length !== 1 ? 's' : ''}`;
         case 'decisions':
-          return `${item?.conditionSets?.length ?? 0} condition sets`;
+          return `${item?.conditionSets?.length ?? 0} condition set${
+            (item?.conditionSets?.length ?? 0) !== 1 ? 's' : ''
+          }`;
         default:
           return '';
       }
     } catch (error) {
-      console.warn('Error in getItemDisplayKey:', error, { item, collectionType });
+      console.warn('Error in getCompiledItemDisplayKey:', error, { item, collectionType, index });
       return 'Display error';
     }
   };
 
-  const renderRuntimeItemDetail = (item: any, collectionType: string) => {
+  const renderCompiledItemDetail = (item: any, collectionType: string, index: number) => {
     switch (collectionType) {
       case 'qualifiers':
+        const qualifierType = activeCompiledCollection?.qualifierTypes?.[item?.type];
         return (
           <div className="space-y-2">
             <div>
-              <span className="font-medium">Type:</span> {item.type.name}
+              <span className="font-medium">Name:</span> {item?.name || 'N/A'}
             </div>
             <div>
-              <span className="font-medium">Default Priority:</span> {item.defaultPriority}
+              <span className="font-medium">Type Index:</span> {item?.type ?? 'N/A'}
+              {qualifierType && (
+                <span className="ml-2 text-gray-600">({qualifierType.name || 'unnamed'})</span>
+              )}
             </div>
+            <div>
+              <span className="font-medium">Default Priority:</span> {item?.defaultPriority ?? 'N/A'}
+            </div>
+            {item?.token && (
+              <div>
+                <span className="font-medium">Token:</span> {item.token}
+              </div>
+            )}
+            {item?.defaultValue !== undefined && (
+              <div>
+                <span className="font-medium">Default Value:</span> {item.defaultValue}
+              </div>
+            )}
           </div>
         );
       case 'qualifier-types':
         return (
           <div className="space-y-2">
             <div>
-              <span className="font-medium">System Type:</span> {item.systemType}
+              <span className="font-medium">Name:</span> {item?.name || 'N/A'}
             </div>
             <div>
-              <span className="font-medium">Allow Context List:</span> {item.allowContextList ? 'Yes' : 'No'}
+              <span className="font-medium">System Type:</span> {item?.systemType || 'N/A'}
             </div>
-            {item.enumeratedValues && (
+            {item?.configuration && (
               <div>
-                <span className="font-medium">Enumerated Values:</span> {item.enumeratedValues.join(', ')}
+                <span className="font-medium">Configuration:</span>
+                <pre className="text-xs bg-gray-50 p-2 rounded mt-1 overflow-x-auto">
+                  {JSON.stringify(item.configuration, null, 2)}
+                </pre>
               </div>
             )}
           </div>
@@ -816,29 +839,31 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node }) => {
         return (
           <div className="space-y-2">
             <div>
-              <span className="font-medium">Key:</span> {item.key}
+              <span className="font-medium">Name:</span> {item?.name || 'N/A'}
             </div>
             <div>
-              <span className="font-medium">Name:</span> {item.name}
+              <span className="font-medium">Key:</span> {item?.key || 'N/A'}
             </div>
           </div>
         );
       case 'conditions':
+        const qualifier = activeCompiledCollection?.qualifiers?.[item?.qualifierIndex];
         return (
           <div className="space-y-2">
             <div>
-              <span className="font-medium">Qualifier:</span> {item.qualifier.name}
+              <span className="font-medium">Qualifier Index:</span> {item?.qualifierIndex ?? 'N/A'}
+              {qualifier && <span className="ml-2 text-gray-600">({qualifier.name || 'unnamed'})</span>}
             </div>
             <div>
-              <span className="font-medium">Operator:</span> {item.operator}
+              <span className="font-medium">Operator:</span> {item?.operator || 'matches'}
             </div>
             <div>
-              <span className="font-medium">Value:</span> {item.value}
+              <span className="font-medium">Value:</span> {item?.value || 'N/A'}
             </div>
             <div>
-              <span className="font-medium">Priority:</span> {item.priority}
+              <span className="font-medium">Priority:</span> {item?.priority ?? 0}
             </div>
-            {item.scoreAsDefault !== undefined && (
+            {item?.scoreAsDefault !== undefined && (
               <div>
                 <span className="font-medium">Score As Default:</span> {item.scoreAsDefault}
               </div>
@@ -849,15 +874,24 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node }) => {
         return (
           <div className="space-y-2">
             <div>
-              <span className="font-medium">Conditions:</span> {item.conditions?.length ?? 0}
+              <span className="font-medium">Conditions:</span> {item?.conditions?.length ?? 0}
             </div>
-            {(item.conditions?.length ?? 0) > 0 && (
+            {item?.conditions && item.conditions.length > 0 && (
               <div className="space-y-1">
-                {item.conditions?.map((condition: any, idx: number) => (
-                  <div key={idx} className="text-xs bg-blue-50 rounded px-2 py-1">
-                    {condition.qualifier.name} {condition.operator} {condition.value} (p:{condition.priority})
-                  </div>
-                ))}
+                <div className="font-medium text-sm">Condition Indices:</div>
+                {item.conditions.map((conditionIndex: number, idx: number) => {
+                  const condition = activeCompiledCollection?.conditions?.[conditionIndex];
+                  const qualifier = condition
+                    ? activeCompiledCollection?.qualifiers?.[condition.qualifierIndex]
+                    : null;
+                  return (
+                    <div key={idx} className="text-xs bg-blue-50 rounded px-2 py-1">
+                      [{conditionIndex}] {qualifier?.name || `Q${condition?.qualifierIndex}`}{' '}
+                      {condition?.operator || 'matches'} "{condition?.value || ''}" (p:
+                      {condition?.priority || 0})
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -866,16 +900,25 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node }) => {
         return (
           <div className="space-y-2">
             <div>
-              <span className="font-medium">Condition Sets:</span> {item.conditionSets?.length ?? 0}
+              <span className="font-medium">Condition Sets:</span> {item?.conditionSets?.length ?? 0}
             </div>
-            <div>
-              <span className="font-medium">Candidates:</span> {item.candidates?.length ?? 0}
-            </div>
+            {item?.conditionSets && item.conditionSets.length > 0 && (
+              <div className="space-y-1">
+                <div className="font-medium text-sm">Condition Set Indices:</div>
+                <div className="flex flex-wrap gap-1">
+                  {item.conditionSets.map((conditionSetIndex: number, idx: number) => (
+                    <span key={idx} className="text-xs bg-green-50 text-green-800 px-2 py-1 rounded">
+                      [{conditionSetIndex}]
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         );
       default:
         return (
-          <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
+          <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto max-h-32 overflow-y-auto">
             {JSON.stringify(item, null, 2)}
           </pre>
         );
