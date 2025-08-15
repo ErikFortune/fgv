@@ -231,7 +231,7 @@ export class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors {
           }
         });
       } catch (error) {
-        /* c8 ignore next 3 - defensive coding: fflate always throws Error objects in practice */
+        /* c8 ignore next 5 - defensive coding: fflate always throws Error objects in practice */
         resolve(
           fail(`Failed to load ZIP archive: ${error instanceof Error ? error.message : String(error)}`)
         );
