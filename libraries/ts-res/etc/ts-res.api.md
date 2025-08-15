@@ -2723,7 +2723,7 @@ interface IResourceTreeRootInit<T> {
     readonly children: Record<ResourceName, ResourceTreeNodeInit<T>>;
 }
 
-// @public (undocumented)
+// @public
 interface IResourceType<T = unknown> extends ICollectible<ResourceTypeName, ResourceTypeIndex> {
     readonly index: ResourceTypeIndex | undefined;
     readonly key: ResourceTypeName;
@@ -4088,7 +4088,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getBuiltResourcesForContext(context: Context.IValidatedContextDecl, options?: Context.IContextMatchOptions): Result<ReadonlyArray<Resource>>;
-    getBuiltResourceTree(): Result<ResourceTree.ReadOnlyResourceTreeRoot<Resource>>;
+    getBuiltResourceTree(): Result<ResourceTree.IReadOnlyResourceTreeRoot<Resource>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

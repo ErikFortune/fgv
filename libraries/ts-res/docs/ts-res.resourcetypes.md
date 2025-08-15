@@ -139,6 +139,17 @@ Parameters for creating a [ResourceTypeCollector](./ts-res.resourcetypes.resourc
 
 
 </td></tr>
+<tr><td>
+
+[IResourceType](./ts-res.resourcetypes.iresourcetype.md)
+
+
+</td><td>
+
+Interface for a resource type. Resource types are responsible for validating and converting JSON values into the appropriate strongly-typed resource value.
+
+
+</td></tr>
 </tbody></table>
 
 ## Namespaces

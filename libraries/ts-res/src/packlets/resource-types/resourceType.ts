@@ -62,6 +62,12 @@ export interface IResourceCandidateValidationProperties {
   mergeMethod: ResourceValueMergeMethod;
 }
 
+/**
+ * Interface for a resource type.  Resource types are responsible for
+ * validating and converting JSON values into the appropriate strongly-typed
+ * resource value.
+ * @public
+ */
 export interface IResourceType<T = unknown> extends ICollectible<ResourceTypeName, ResourceTypeIndex> {
   /**
    * The key for this resource type.

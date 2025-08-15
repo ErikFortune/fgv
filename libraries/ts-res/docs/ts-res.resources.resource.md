@@ -74,27 +74,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_resourceType](./ts-res.resources.resource._resourcetype.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[ResourceType](./ts-res.resourcetype.md)
-
-
-</td><td>
-
-The [type](./ts-res.resourcetypes.resourcetype.md) of the resource.
-
-
-</td></tr>
-<tr><td>
-
 [candidates](./ts-res.resources.resource.candidates.md)
 
 
@@ -194,7 +173,7 @@ The name of the resource.
 
 </td><td>
 
-Gets the resource type (implements IResource interface).
+The [type](./ts-res.resourcetypes.resourcetype.md) of the resource.
 
 
 </td></tr>

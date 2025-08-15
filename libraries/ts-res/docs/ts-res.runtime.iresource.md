@@ -131,7 +131,7 @@ The resource name
 
 </td><td>
 
-[ResourceType](./ts-res.resourcetype.md)
+[IResourceType](./ts-res.resourcetypes.iresourcetype.md)
 
 
 </td><td>
