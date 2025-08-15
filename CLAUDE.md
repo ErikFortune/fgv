@@ -52,7 +52,7 @@ Use `rushx` to run commands within individual project folders:
 ### Result Pattern
 All operations that can fail return `Result<T>` objects from `@fgv/ts-utils`. This provides consistent error handling across the codebase.  Avoid throwing errors as much as possible, preferring to return a Result and use .orThrow() only on paths that must throw.
 
-**For comprehensive Result pattern guidance, including chaining, error aggregation, MessageAggregator usage, and testing patterns, see [RESULT_PATTERN_GUIDE.md](./RESULT_PATTERN_GUIDE.md).**
+**For comprehensive Result pattern guidance, including chaining, error aggregation, MessageAggregator usage, and testing patterns, see the imported guidelines below.**
 
 #### Result Pattern Quick Reference
 - Avoid intermediate result variables when possible
@@ -166,7 +166,7 @@ return converter.convert(from);
 
 ## Testing Standards
 
-**For comprehensive coverage guidelines, systematic approaches to achieving 100% test coverage, and detailed testing methodologies, see [COVERAGE_GUIDELINES.md](./COVERAGE_GUIDELINES.md).**
+**For comprehensive coverage guidelines, systematic approaches to achieving 100% test coverage, and detailed testing methodologies, see the imported guidelines below.**
 
 ### Testing Philosophy: Function-First, Coverage-Second
 
@@ -398,3 +398,21 @@ const corruptedData = {
 - Uses **pnpm 8.15.9** for fast, efficient package management
 - Workspace protocol (`workspace:*`) for inter-project dependencies
 - Shared lockfile at `common/temp/pnpm-lock.yaml`
+
+## Agent Files Organization
+
+**IMPORTANT**: All agent-specific guides, plans, and documentation should be placed in the `.agents/` directory at the repository root. This includes:
+- Development guidelines (e.g., MONOREPO_GUIDELINES.md)
+- Pattern guides (e.g., RESULT_PATTERN_GUIDE.md)
+- Coverage guides (e.g., COVERAGE_GUIDELINES.md)
+- Any future plans or agent-specific documentation
+
+When creating new agent documentation or plans, ALWAYS place them in the `.agents/` directory, not at the repository root or in project directories.
+
+## Imported Agent Guidelines
+
+The following agent-specific guidelines provide detailed information for working with this codebase:
+
+@.agents/MONOREPO_GUIDELINES.md
+@.agents/RESULT_PATTERN_GUIDE.md
+@.agents/COVERAGE_GUIDELINES.md
