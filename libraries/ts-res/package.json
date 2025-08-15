@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-res",
-  "version": "5.0.0-14",
+  "version": "5.0.0-15",
   "description": "Multi-dimensional Resource Runtime",
   "main": "lib/index.js",
   "types": "dist/ts-res.d.ts",
@@ -57,11 +57,11 @@
     "@rushstack/heft-jest-plugin": "~0.16.11",
     "@rushstack/heft-node-rig": "~2.9.3",
     "@types/heft-jest": "1.0.6",
+    "@fgv/ts-extras": "workspace:*",
     "eslint-plugin-tsdoc": "~0.4.0"
   },
   "dependencies": {
     "@fgv/ts-utils": "workspace:*",
-    "@fgv/ts-extras": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
     "@fgv/ts-bcp47": "workspace:*",
     "@fgv/ts-json": "workspace:*",
