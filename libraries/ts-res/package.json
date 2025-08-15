@@ -50,7 +50,7 @@
     "rimraf": "^5.0.7",
     "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.3",
+    "typescript": "^5.8.3",
     "eslint-plugin-n": "^16.6.2",
     "@rushstack/eslint-config": "~4.4.0",
     "@rushstack/heft": "~0.74.2",

@@ -9,11 +9,11 @@ Gets a resource tree built from the resources in this resource manager.
 **Signature:**
 
 ```typescript
-getBuiltResourceTree(): Result<ReadOnlyResourceTreeRoot<TR>>;
+getBuiltResourceTree(): Result<IReadOnlyResourceTreeRoot<TR>>;
 ```
 **Returns:**
 
-Result&lt;[ReadOnlyResourceTreeRoot](./ts-res.runtime.resourcetree.readonlyresourcetreeroot.md)<!-- -->&lt;TR&gt;&gt;
+Result&lt;[IReadOnlyResourceTreeRoot](./ts-res.runtime.resourcetree.ireadonlyresourcetreeroot.md)<!-- -->&lt;TR&gt;&gt;
 
 Result containing the resource tree root, or failure if tree construction fails
 

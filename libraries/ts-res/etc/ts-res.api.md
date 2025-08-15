@@ -2602,7 +2602,7 @@ export interface IResourceManager<TR extends IResource = IResource> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly decisions: ReadOnlyAbstractDecisionCollector;
     getBuiltResource(id: string): Result<TR>;
-    getBuiltResourceTree(): Result<ReadOnlyResourceTreeRoot<TR>>;
+    getBuiltResourceTree(): Result<IReadOnlyResourceTreeRoot<TR>>;
     readonly numCandidates: number;
     readonly numResources: number;
     validateContext(context: IContextDecl): Result<IValidatedContextDecl>;

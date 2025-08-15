@@ -27,7 +27,7 @@ import { ReadOnlyAbstractDecisionCollector, ConcreteDecision } from '../decision
 import { ResourceId, ResourceValueMergeMethod } from '../common';
 import { IResourceType } from '../resource-types';
 import { IContextDecl, IValidatedContextDecl } from '../context';
-import { ReadOnlyResourceTreeRoot } from './resource-tree';
+import { IReadOnlyResourceTreeRoot } from './resource-tree';
 
 /**
  * Runtime representation of a resource candidate with the minimal data needed for resolution.
@@ -103,7 +103,7 @@ export interface IResourceManager<TR extends IResource = IResource> {
    * Gets a resource tree built from the resources in this resource manager.
    * @returns Result containing the resource tree root, or failure if tree construction fails
    */
-  getBuiltResourceTree(): Result<ReadOnlyResourceTreeRoot<TR>>;
+  getBuiltResourceTree(): Result<IReadOnlyResourceTreeRoot<TR>>;
 
   /**
    * A read-only result map of all built resources, keyed by resource ID.
