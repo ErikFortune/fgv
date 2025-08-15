@@ -23,6 +23,15 @@ export { ResourceTreeView } from './components/common/ResourceTreeView';
 export { ResourceListView } from './components/common/ResourceListView';
 export { QualifierContextControl } from './components/common/QualifierContextControl';
 
+// Export pickers
+export { ResourcePicker } from './components/pickers/ResourcePicker';
+export type {
+  ResourcePickerProps,
+  ResourceAnnotations,
+  ResourceAnnotation,
+  PendingResource
+} from './components/pickers/ResourcePicker/types';
+
 // Export hooks
 export { useResourceData } from './hooks/useResourceData';
 export { useFilterState } from './hooks/useFilterState';

@@ -1,0 +1,175 @@
+import React, { useState, useMemo, useCallback } from 'react';
+import { MagnifyingGlassIcon, ListBulletIcon, FolderIcon } from '@heroicons/react/24/outline';
+import { ResourcePickerProps } from './types';
+import { ResourcePickerList } from './ResourcePickerList';
+import { ResourcePickerTree } from './ResourcePickerTree';
+import { searchResources, filterTreeBranch } from './utils/treeNavigation';
+
+/**
+ * Comprehensive resource picker component with search, view modes, and annotation support
+ */
+export const ResourcePicker: React.FC<ResourcePickerProps> = ({
+  resources,
+  selectedResourceId,
+  onResourceSelect,
+  defaultView = 'list',
+  showViewToggle = true,
+  rootPath,
+  hideRootNode = false,
+  enableSearch = true,
+  searchPlaceholder,
+  searchScope = 'current-branch',
+  resourceAnnotations,
+  pendingResources,
+  emptyMessage,
+  height = '600px',
+  className = '',
+  onMessage
+}) => {
+  const [viewMode, setViewMode] = useState<'list' | 'tree'>(defaultView);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Get resource IDs based on current filters
+  const resourceIds = useMemo(() => {
+    if (!resources?.summary.resourceIds) {
+      return [];
+    }
+
+    let ids = resources.summary.resourceIds;
+
+    // Apply branch filtering if specified
+    if (rootPath) {
+      ids = filterTreeBranch(ids, rootPath, hideRootNode);
+    }
+
+    // Apply search filtering
+    if (searchTerm) {
+      ids = searchResources(ids, searchTerm, searchScope, rootPath);
+    }
+
+    return ids;
+  }, [resources?.summary.resourceIds, rootPath, hideRootNode, searchTerm, searchScope]);
+
+  // Handle resource selection
+  const handleResourceSelect = useCallback(
+    (resourceId: string | null) => {
+      onResourceSelect(resourceId);
+      if (resourceId) {
+        onMessage?.('info', `Selected resource: ${resourceId}`);
+      }
+    },
+    [onResourceSelect, onMessage]
+  );
+
+  // Calculate dynamic search placeholder
+  const getSearchPlaceholder = () => {
+    if (searchPlaceholder) {
+      return searchPlaceholder;
+    }
+    if (rootPath && hideRootNode) {
+      const segments = rootPath.split('/');
+      const branchName = segments[segments.length - 1];
+      return `Search ${branchName}...`;
+    }
+    return 'Search resources...';
+  };
+
+  // Handle empty state
+  if (!resources) {
+    return (
+      <div className={`${className} p-4 text-center text-gray-500`}>
+        <p>{emptyMessage || 'No resources loaded'}</p>
+      </div>
+    );
+  }
+
+  const containerHeight = typeof height === 'number' ? `${height}px` : height;
+
+  return (
+    <div className={`flex flex-col ${className}`} style={{ height: containerHeight }}>
+      {/* Header with search and view toggle */}
+      {(enableSearch || showViewToggle) && (
+        <div className="flex flex-col gap-3 mb-4">
+          {/* Search Box */}
+          {enableSearch && (
+            <div className="relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder={getSearchPlaceholder()}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              />
+            </div>
+          )}
+
+          {/* View Mode Toggle */}
+          {showViewToggle && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">
+                {resourceIds.length} resource{resourceIds.length !== 1 ? 's' : ''}
+                {searchTerm && ` matching "${searchTerm}"`}
+              </span>
+              <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`flex items-center px-2 py-1 text-xs font-medium rounded transition-colors ${
+                    viewMode === 'list'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  title="List View"
+                >
+                  <ListBulletIcon className="h-4 w-4" />
+                  <span className="ml-1">List</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('tree')}
+                  className={`flex items-center px-2 py-1 text-xs font-medium rounded transition-colors ${
+                    viewMode === 'tree'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  title="Tree View"
+                >
+                  <FolderIcon className="h-4 w-4" />
+                  <span className="ml-1">Tree</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Resource List or Tree */}
+      <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg bg-gray-50">
+        {viewMode === 'tree' ? (
+          <ResourcePickerTree
+            resources={resources}
+            pendingResources={pendingResources}
+            selectedResourceId={selectedResourceId}
+            onResourceSelect={handleResourceSelect}
+            resourceAnnotations={resourceAnnotations}
+            searchTerm={searchTerm}
+            rootPath={rootPath}
+            hideRootNode={hideRootNode}
+            emptyMessage={emptyMessage}
+          />
+        ) : (
+          <ResourcePickerList
+            resourceIds={resourceIds}
+            pendingResources={pendingResources}
+            selectedResourceId={selectedResourceId}
+            onResourceSelect={handleResourceSelect}
+            resourceAnnotations={resourceAnnotations}
+            searchTerm={searchTerm}
+            emptyMessage={emptyMessage}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ResourcePicker;

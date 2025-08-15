@@ -1,0 +1,29 @@
+{
+  "resources": [
+    {
+      "id": "home",
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "path": "/assets/icons/home.svg",
+            "alt": "Home icon",
+            "width": 24,
+            "height": 24
+          }
+        },
+        {
+          "json": {
+            "path": "/assets/icons/home@2x.svg",
+            "alt": "Home icon",
+            "width": 48,
+            "height": 48
+          },
+          "conditions": {
+            "density": "hdpi"
+          }
+        }
+      ]
+    }
+  ]
+}
