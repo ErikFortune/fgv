@@ -33,9 +33,9 @@
     "@fgv/ts-json": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
     "@heroicons/react": "~2.2.0",
-    "jszip": "~3.10.1",
     "tslib": "^2.8.1",
-    "json-edit-react": "~1.28.2"
+    "json-edit-react": "~1.28.2",
+    "@fgv/ts-extras": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

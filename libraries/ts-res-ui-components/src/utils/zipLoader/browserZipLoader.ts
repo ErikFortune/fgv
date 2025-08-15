@@ -1,4 +1,5 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
+import { ZipFileTree as ExtrasZipFileTree } from '@fgv/ts-extras';
 import {
   IZipLoader,
   ZipLoadOptions,
@@ -11,31 +12,6 @@ import {
 import { parseManifest, parseConfiguration, zipTreeToFiles, zipTreeToDirectory, isZipFile } from './zipUtils';
 import { processImportedFiles, processImportedDirectory } from '../tsResIntegration';
 import { ProcessedResources } from '../../types';
-
-// Dynamic import for JSZip to support both Node.js and browser environments
-let JSZip: any = null;
-
-/**
- * Get JSZip instance (assumes JSZip is available)
- */
-function getJSZip(): any {
-  if (JSZip) return JSZip;
-
-  // Check if JSZip is globally available
-  if (typeof window !== 'undefined' && (window as any).JSZip) {
-    JSZip = (window as any).JSZip;
-    return JSZip;
-  }
-
-  // Try to get JSZip from require/import (will work in bundled environments)
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    JSZip = require('jszip');
-    return JSZip;
-  } catch (error) {
-    throw new Error('JSZip is not available. Please install jszip as a dependency: npm install jszip');
-  }
-}
 
 /**
  * Browser-based ZIP loader implementation
@@ -73,32 +49,32 @@ export class BrowserZipLoader implements IZipLoader {
   ): Promise<Result<ZipLoadResult>> {
     onProgress?.('parsing-zip', 0, 'Parsing ZIP archive');
 
-    const JSZipClass = getJSZip();
-    const zip = new JSZipClass();
-    const loadedZip = await zip.loadAsync(buffer).catch((error: any) => {
-      throw new Error(`Failed to parse ZIP: ${error instanceof Error ? error.message : String(error)}`);
-    });
+    const zipAccessorsResult = ExtrasZipFileTree.ZipFileTreeAccessors.fromBuffer(buffer);
+    if (zipAccessorsResult.isFailure()) {
+      return fail(`Failed to parse ZIP: ${zipAccessorsResult.message}`);
+    }
 
+    const zipAccessors = zipAccessorsResult.value;
     onProgress?.('parsing-zip', 100, 'ZIP archive parsed');
 
-    // Build file tree
-    const fileTree = await this.buildFileTree(loadedZip, onProgress);
+    // Build file tree using the new adapter
+    const fileTree = await this.buildFileTreeFromAccessors(zipAccessors, onProgress);
 
     // Load manifest
     onProgress?.('loading-manifest', 0, 'Loading manifest');
-    const manifest = await this.loadManifest(loadedZip);
+    const manifest = await this.loadManifestFromAccessors(zipAccessors);
     onProgress?.('loading-manifest', 100, 'Manifest loaded');
 
     // Load configuration
     onProgress?.('loading-config', 0, 'Loading configuration');
-    const config = await this.loadConfiguration(loadedZip, options);
+    const config = await this.loadConfigurationFromAccessors(zipAccessors, options);
     onProgress?.('loading-config', 100, 'Configuration loaded');
 
     // Extract files and directory structure
     onProgress?.('extracting-files', 0, 'Extracting files');
-    const files = zipTreeToFiles(fileTree);
+    const filesList = zipTreeToFiles(fileTree);
     const directory = zipTreeToDirectory(fileTree);
-    onProgress?.('extracting-files', 100, `Extracted ${files.length} files`);
+    onProgress?.('extracting-files', 100, `Extracted ${filesList.length} files`);
 
     // Process resources if requested
     let processedResources: ProcessedResources | null = null;
@@ -114,8 +90,8 @@ export class BrowserZipLoader implements IZipLoader {
         } else {
           throw new Error(`Failed to process resources from directory: ${processResult.message}`);
         }
-      } else if (files.length > 0) {
-        const processResult = await processImportedFiles(files, configToUse || undefined);
+      } else if (filesList.length > 0) {
+        const processResult = await processImportedFiles(filesList, configToUse || undefined);
         if (processResult.isSuccess()) {
           processedResources = processResult.value;
         } else {
@@ -131,7 +107,7 @@ export class BrowserZipLoader implements IZipLoader {
     return succeed({
       manifest,
       config: options.overrideConfig || config,
-      files,
+      files: filesList,
       directory,
       processedResources
     });
@@ -168,50 +144,30 @@ export class BrowserZipLoader implements IZipLoader {
   }
 
   /**
-   * Build file tree from JSZip instance
+   * Build file tree from ZipFileTreeAccessors (using ts-extras)
    */
-  private async buildFileTree(zip: any, onProgress?: ZipProgressCallback): Promise<ZipFileTree> {
+  private async buildFileTreeFromAccessors(
+    zipAccessors: ExtrasZipFileTree.ZipFileTreeAccessors,
+    onProgress?: ZipProgressCallback
+  ): Promise<ZipFileTree> {
     const files = new Map<string, ZipFileItem>();
     const directories = new Set<string>();
 
-    const zipFiles = Object.keys(zip.files);
-    let processed = 0;
-
-    // Pre-load all file contents for performance
-    for (const filename of zipFiles) {
-      const zipEntry = zip.files[filename];
-
-      if (zipEntry.dir) {
-        directories.add(filename);
-        files.set(filename, {
-          name:
-            filename
-              .split('/')
-              .filter((p) => p)
-              .pop() || filename,
-          path: filename,
-          size: 0,
-          isDirectory: true,
-          lastModified: zipEntry.date
-        });
-      } else {
-        // Load file content
-        const content = await zipEntry.async('string');
-
-        files.set(filename, {
-          name: filename.split('/').pop() || filename,
-          path: filename,
-          size: content.length,
-          isDirectory: false,
-          lastModified: zipEntry.date,
-          content
-        });
-      }
-
-      processed++;
-      const progress = Math.round((processed / zipFiles.length) * 100);
-      onProgress?.('extracting-files', progress, `Processing ${filename}`);
+    // Get all children from root
+    const rootChildrenResult = zipAccessors.getChildren('/');
+    if (rootChildrenResult.isFailure()) {
+      throw new Error(`Failed to read ZIP contents: ${rootChildrenResult.message}`);
     }
+
+    // Process all items recursively
+    await this.processFileTreeItems(
+      zipAccessors,
+      '/',
+      rootChildrenResult.value,
+      files,
+      directories,
+      onProgress
+    );
 
     return {
       files,
@@ -221,46 +177,95 @@ export class BrowserZipLoader implements IZipLoader {
   }
 
   /**
-   * Load manifest from ZIP
+   * Recursively process file tree items
    */
-  private async loadManifest(zip: any): Promise<any> {
-    const manifestFile = zip.files['manifest.json'];
-    if (!manifestFile) {
+  private async processFileTreeItems(
+    zipAccessors: ExtrasZipFileTree.ZipFileTreeAccessors,
+    currentPath: string,
+    items: readonly any[],
+    files: Map<string, ZipFileItem>,
+    directories: Set<string>,
+    onProgress?: ZipProgressCallback,
+    processed: { count: number } = { count: 0 }
+  ): Promise<void> {
+    for (const item of items) {
+      const itemPath = item.absolutePath.startsWith('/') ? item.absolutePath.substring(1) : item.absolutePath;
+
+      if (item.type === 'directory') {
+        directories.add(itemPath);
+        files.set(itemPath, {
+          name: item.name,
+          path: itemPath,
+          size: 0,
+          isDirectory: true,
+          lastModified: undefined
+        });
+
+        // Recursively process children
+        const childrenResult = zipAccessors.getChildren(item.absolutePath);
+        if (childrenResult.isSuccess()) {
+          await this.processFileTreeItems(
+            zipAccessors,
+            item.absolutePath,
+            childrenResult.value,
+            files,
+            directories,
+            onProgress,
+            processed
+          );
+        }
+      } else if (item.type === 'file') {
+        // Get file content
+        const contentResult = item.getRawContents();
+        const content = contentResult.isSuccess() ? contentResult.value : '';
+
+        files.set(itemPath, {
+          name: item.name,
+          path: itemPath,
+          size: content.length,
+          isDirectory: false,
+          lastModified: undefined,
+          content
+        });
+      }
+
+      processed.count++;
+      onProgress?.('extracting-files', processed.count, `Processing ${itemPath}`);
+    }
+  }
+
+  /**
+   * Load manifest from ZIP using ZipFileTreeAccessors
+   */
+  private async loadManifestFromAccessors(
+    zipAccessors: ExtrasZipFileTree.ZipFileTreeAccessors
+  ): Promise<any> {
+    const manifestResult = zipAccessors.getFileContents('manifest.json');
+    if (manifestResult.isFailure()) {
       return null;
     }
 
-    const manifestData = await manifestFile.async('string').catch((error: any) => {
-      console.warn('Failed to read manifest file:', error);
-      return null;
-    });
-
-    if (!manifestData) return null;
-
-    const parseResult = parseManifest(manifestData);
+    const parseResult = parseManifest(manifestResult.value);
     return parseResult.orDefault() ?? null;
   }
 
   /**
-   * Load configuration from ZIP
+   * Load configuration from ZIP using ZipFileTreeAccessors
    */
-  private async loadConfiguration(zip: any, options: ZipLoadOptions): Promise<any> {
+  private async loadConfigurationFromAccessors(
+    zipAccessors: ExtrasZipFileTree.ZipFileTreeAccessors,
+    options: ZipLoadOptions
+  ): Promise<any> {
     if (options.overrideConfig) {
       return options.overrideConfig;
     }
 
-    const configFile = zip.files['config.json'];
-    if (!configFile) {
+    const configResult = zipAccessors.getFileContents('config.json');
+    if (configResult.isFailure()) {
       return null;
     }
 
-    const configData = await configFile.async('string').catch((error: any) => {
-      console.warn('Failed to read config file:', error);
-      return null;
-    });
-
-    if (!configData) return null;
-
-    const parseResult = parseConfiguration(configData);
+    const parseResult = parseConfiguration(configResult.value);
     return parseResult.orDefault() ?? null;
   }
 

@@ -110,12 +110,9 @@ importers:
 
   ../../libraries/ts-extras:
     dependencies:
-      '@types/adm-zip':
-        specifier: ~0.5.7
-        version: 0.5.7
-      adm-zip:
-        specifier: ~0.5.16
-        version: 0.5.16
+      fflate:
+        specifier: ~0.8.2
+        version: 0.8.2
       luxon:
         specifier: ^3.7.1
         version: 3.7.1
@@ -390,9 +387,6 @@ importers:
       '@fgv/ts-bcp47':
         specifier: workspace:*
         version: link:../ts-bcp47
-      '@fgv/ts-extras':
-        specifier: workspace:*
-        version: link:../ts-extras
       '@fgv/ts-json':
         specifier: workspace:*
         version: link:../ts-json
@@ -406,6 +400,9 @@ importers:
         specifier: ^3.7.1
         version: 3.7.1
     devDependencies:
+      '@fgv/ts-extras':
+        specifier: workspace:*
+        version: link:../ts-extras
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../ts-utils-jest
@@ -490,6 +487,9 @@ importers:
 
   ../../libraries/ts-res-ui-components:
     dependencies:
+      '@fgv/ts-extras':
+        specifier: workspace:*
+        version: link:../ts-extras
       '@fgv/ts-json':
         specifier: workspace:*
         version: link:../ts-json
@@ -508,9 +508,6 @@ importers:
       json-edit-react:
         specifier: ~1.28.2
         version: 1.28.2(react@19.1.1)
-      jszip:
-        specifier: ~3.10.1
-        version: 3.10.1
       tslib:
         specifier: ^2.8.1
         version: 2.8.1
@@ -4275,12 +4272,6 @@ packages:
     resolution: {integrity: sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==}
     dev: true
 
-  /@types/adm-zip@0.5.7:
-    resolution: {integrity: sha512-DNEs/QvmyRLurdQPChqq0Md4zGvPwHerAJYWk9l2jCbD1VPpnzRJorOdiq4zsw09NFbYnhfsoEhWtxIzXpn2yw==}
-    dependencies:
-      '@types/node': 20.19.11
-    dev: false
-
   /@types/archiver@6.0.3:
     resolution: {integrity: sha512-a6wUll6k3zX6qs5KlxIggs1P1JcYJaTCx2gnlr+f0S1yd2DoaEwoIK10HmBaLnZwWneBz+JBm0dwcZu0zECBcQ==}
     dependencies:
@@ -5108,11 +5099,6 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
     dev: true
-
-  /adm-zip@0.5.16:
-    resolution: {integrity: sha512-TGw5yVi4saajsSEgz25grObGHEUaDrniwvA2qwSC060KfqGPdglhvPMA2lPIoxs3PQIItj2iag35fONcQqgUaQ==}
-    engines: {node: '>=12.0'}
-    dev: false
 
   /agent-base@6.0.2:
     resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
@@ -7670,6 +7656,10 @@ packages:
     dependencies:
       picomatch: 4.0.3
     dev: true
+
+  /fflate@0.8.2:
+    resolution: {integrity: sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A==}
+    dev: false
 
   /file-entry-cache@6.0.1:
     resolution: {integrity: sha512-7Gps/XWymbLk2QLYK4NzpMOrYjMhdIxXuIvy2QBsLE6ljuodKvdkWs/cpyJJ3CVIVpH0Oi1Hvg1ovbMzLdFBBg==}
