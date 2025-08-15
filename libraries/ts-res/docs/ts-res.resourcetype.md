@@ -9,9 +9,9 @@ Abstract base class for resource types which are responsible for validating and 
 **Signature:**
 
 ```typescript
-export declare abstract class ResourceType<T = unknown> implements ICollectible<ResourceTypeName, ResourceTypeIndex> 
+export declare abstract class ResourceType<T = unknown> implements IResourceType<T> 
 ```
-**Implements:** ICollectible&lt;[ResourceTypeName](./ts-res.resourcetypename.md)<!-- -->, [ResourceTypeIndex](./ts-res.resourcetypeindex.md)<!-- -->&gt;
+**Implements:** [IResourceType](./ts-res.resourcetypes.iresourcetype.md)<!-- -->&lt;T&gt;
 
 ## Constructors
 

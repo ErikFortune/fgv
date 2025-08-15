@@ -9,5 +9,5 @@ The resource type
 **Signature:**
 
 ```typescript
-readonly resourceType: ResourceType;
+readonly resourceType: IResourceType;
 ```

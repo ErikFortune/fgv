@@ -13,11 +13,11 @@ Uses lazy initialization with caching for performance.
 **Signature:**
 
 ```typescript
-getBuiltResourceTree(): Result<IReadOnlyResourceTreeRoot<IResource>>;
+getBuiltResourceTree(): Result<ReadOnlyResourceTreeRoot<IResource>>;
 ```
 **Returns:**
 
-Result&lt;[IReadOnlyResourceTreeRoot](./ts-res.runtime.resourcetree.ireadonlyresourcetreeroot.md)<!-- -->&lt;[IResource](./ts-res.runtime.iresource.md)<!-- -->&gt;&gt;
+Result&lt;[ReadOnlyResourceTreeRoot](./ts-res.runtime.resourcetree.readonlyresourcetreeroot.md)<!-- -->&lt;[IResource](./ts-res.runtime.iresource.md)<!-- -->&gt;&gt;
 
 Result containing the resource tree root, or failure if tree construction fails
 

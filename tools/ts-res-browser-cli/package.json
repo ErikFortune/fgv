@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-res-browser-cli",
-  "version": "5.0.0-12",
+  "version": "5.0.0-14",
   "description": "Command-line interface to launch ts-res-browser with specified options",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -39,12 +39,12 @@
   },
   "devDependencies": {
     "@fgv/ts-utils-jest": "workspace:*",
-    "@rushstack/heft": "~0.74.0",
-    "@rushstack/heft-node-rig": "~2.9.0",
+    "@rushstack/heft": "~0.74.2",
+    "@rushstack/heft-node-rig": "~2.9.3",
     "@types/jest": "^29.5.14",
     "@types/node": "^20.14.9",
     "eslint": "^8.57.0",
     "jest": "^29.7.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   }
 }

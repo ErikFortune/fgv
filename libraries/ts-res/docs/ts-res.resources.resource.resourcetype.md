@@ -4,10 +4,10 @@
 
 ## Resources.Resource.resourceType property
 
-Gets the resource type (implements IResource interface).
+The [type](./ts-res.resourcetypes.resourcetype.md) of the resource.
 
 **Signature:**
 
 ```typescript
-get resourceType(): ResourceType;
+readonly resourceType: ResourceType;
 ```

@@ -25,7 +25,7 @@ import { JsonObject } from '@fgv/ts-json-base';
 import { ReadOnlyConditionCollector, ReadOnlyConditionSetCollector } from '../conditions';
 import { ReadOnlyAbstractDecisionCollector, ConcreteDecision } from '../decisions';
 import { ResourceId, ResourceValueMergeMethod } from '../common';
-import { ResourceType } from '../resource-types';
+import { IResourceType } from '../resource-types';
 import { IContextDecl, IValidatedContextDecl } from '../context';
 import { IReadOnlyResourceTreeRoot } from './resource-tree';
 
@@ -60,7 +60,7 @@ export interface IResource {
   /** The resource name */
   readonly name: string;
   /** The resource type */
-  readonly resourceType: ResourceType;
+  readonly resourceType: IResourceType;
   /** The decision used to select candidates */
   readonly decision: ConcreteDecision;
   /** The available candidates for this resource */
