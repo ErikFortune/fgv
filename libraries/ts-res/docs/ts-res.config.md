@@ -19,6 +19,61 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[BuiltInQualifierTypeFactory](./ts-res.config.builtinqualifiertypefactory.md)
+
+
+</td><td>
+
+A factory that creates a [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) from a [system qualifier type configuration](./ts-res.qualifiertypes.config.isystemqualifiertypeconfig.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[BuiltInResourceTypeFactory](./ts-res.config.builtinresourcetypefactory.md)
+
+
+</td><td>
+
+A factory that creates a [ResourceType](./ts-res.resourcetypes.resourcetype.md) from a [resource type configuration](./ts-res.resourcetypes.config.iresourcetypeconfig.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ChainedConfigInitFactory](./ts-res.config.chainedconfiginitfactory.md)
+
+
+</td><td>
+
+A factory that chains multiple factories together.
+
+
+</td></tr>
+<tr><td>
+
+[QualifierTypeFactory](./ts-res.config.qualifiertypefactory.md)
+
+
+</td><td>
+
+A factory that creates a [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) from a [system qualifier type configuration](./ts-res.qualifiertypes.config.ianyqualifiertypeconfig.md) by chaining a supplied factory with a [built-in factory](./ts-res.config.builtinqualifiertypefactory.md) that handles built-in qualifier types.
+
+
+</td></tr>
+<tr><td>
+
+[ResourceTypeFactory](./ts-res.config.resourcetypefactory.md)
+
+
+</td><td>
+
+A factory that creates a [ResourceType](./ts-res.resourcetypes.resourcetype.md) from a [resource type configuration](./ts-res.resourcetypes.config.iresourcetypeconfig.md) by chaining a supplied factory with a [built-in factory](./ts-res.config.builtinresourcetypefactory.md) that handles built-in resource types.
+
+
+</td></tr>
+<tr><td>
+
 [SystemConfiguration](./ts-res.config.systemconfiguration.md)
 
 
@@ -92,6 +147,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[IConfigInitFactory](./ts-res.config.iconfiginitfactory.md)
+
+
+</td><td>
+
+Interface for a factory that creates a new instance of a configuration object.
+
+
+</td></tr>
+<tr><td>
 
 [ISystemConfigurationInitParams](./ts-res.config.isystemconfigurationinitparams.md)
 

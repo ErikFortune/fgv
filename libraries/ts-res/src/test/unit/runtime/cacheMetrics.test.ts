@@ -286,6 +286,57 @@ describe('ResourceResolverCacheMetricsListener', () => {
     });
   });
 
+  describe('context error tracking', () => {
+    test('numContextErrors getter returns initial value of zero', () => {
+      const factory = (): TsRes.Runtime.AggregateCacheMetrics => new TsRes.Runtime.AggregateCacheMetrics();
+      const listener = new TsRes.Runtime.ResourceResolverCacheMetricsListener(factory);
+
+      expect(listener.numContextErrors).toBe(0);
+    });
+
+    test('onContextError increments context error count', () => {
+      const factory = (): TsRes.Runtime.AggregateCacheMetrics => new TsRes.Runtime.AggregateCacheMetrics();
+      const listener = new TsRes.Runtime.ResourceResolverCacheMetricsListener(factory);
+
+      listener.onContextError('language', 'invalid language tag');
+      expect(listener.numContextErrors).toBe(1);
+
+      listener.onContextError('territory', 'unknown territory');
+      expect(listener.numContextErrors).toBe(2);
+    });
+
+    test('onContextError handles various qualifier validation errors', () => {
+      const factory = (): TsRes.Runtime.AggregateCacheMetrics => new TsRes.Runtime.AggregateCacheMetrics();
+      const listener = new TsRes.Runtime.ResourceResolverCacheMetricsListener(factory);
+
+      listener.onContextError('custom', 'validation failed');
+      listener.onContextError('literal', 'value not in enumeration');
+      listener.onContextError('complex', 'nested validation error');
+
+      expect(listener.numContextErrors).toBe(3);
+    });
+
+    test('context errors are independent of cache metrics', () => {
+      const factory = (): TsRes.Runtime.AggregateCacheMetrics => new TsRes.Runtime.AggregateCacheMetrics();
+      const listener = new TsRes.Runtime.ResourceResolverCacheMetricsListener(factory);
+
+      // Add some cache activity
+      listener.onCacheHit('condition', 0);
+      listener.onCacheMiss('conditionSet', 1);
+      listener.onCacheError('decision', 2);
+
+      // Add context errors
+      listener.onContextError('language', 'error1');
+      listener.onContextError('territory', 'error2');
+
+      // Verify both metrics are tracked independently
+      expect(listener.metrics.condition.hits).toBe(1);
+      expect(listener.metrics.conditionSet.misses).toBe(1);
+      expect(listener.metrics.decision.errors).toBe(1);
+      expect(listener.numContextErrors).toBe(2);
+    });
+  });
+
   describe('reset', () => {
     test('resets all cache metrics', () => {
       const factory = (): TsRes.Runtime.AggregateCacheMetrics => new TsRes.Runtime.AggregateCacheMetrics();

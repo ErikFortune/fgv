@@ -52,7 +52,7 @@ export class FileTreeConverter {
       }
 
       const files: ImportedFile[] = [];
-      const directories: ImportedDirectory[] = [];
+      const subdirectories: ImportedDirectory[] = [];
 
       for (const child of childrenResult.value) {
         if (child.type === 'file') {
@@ -63,7 +63,7 @@ export class FileTreeConverter {
         } else if (child.type === 'directory') {
           const dirResult = this.convertDirectory(fileTree, child.absolutePath);
           if (dirResult.isSuccess()) {
-            directories.push(dirResult.value);
+            subdirectories.push(dirResult.value);
           }
         }
       }
@@ -72,7 +72,7 @@ export class FileTreeConverter {
         name: item.name,
         path: item.absolutePath,
         files,
-        directories
+        subdirectories
       };
 
       return succeed(importedDirectory);

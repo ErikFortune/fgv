@@ -100,6 +100,27 @@ The resource identifier
 </td></tr>
 <tr><td>
 
+[name](./ts-res.runtime.iresource.name.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+The resource name
+
+
+</td></tr>
+<tr><td>
+
 [resourceType](./ts-res.runtime.iresource.resourcetype.md)
 
 

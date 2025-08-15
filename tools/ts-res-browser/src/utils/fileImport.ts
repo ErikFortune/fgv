@@ -14,7 +14,7 @@ export interface ImportedDirectory {
   name: string;
   path: string;
   files: ImportedFile[];
-  directories: ImportedDirectory[];
+  subdirectories: ImportedDirectory[];
 }
 
 export interface FileImportOptions {
@@ -145,7 +145,7 @@ export class ModernFileImporter {
     basePath = ''
   ): Promise<ImportedDirectory> {
     const files: ImportedFile[] = [];
-    const directories: ImportedDirectory[] = [];
+    const subdirectories: ImportedDirectory[] = [];
     const currentPath = basePath ? `${basePath}/${directoryHandle.name}` : directoryHandle.name;
 
     for await (const [name, handle] of directoryHandle.entries()) {
@@ -159,7 +159,7 @@ export class ModernFileImporter {
           handle as FileSystemDirectoryHandle,
           currentPath
         );
-        directories.push(subDirectory);
+        subdirectories.push(subDirectory);
       }
     }
 
@@ -167,7 +167,7 @@ export class ModernFileImporter {
       name: directoryHandle.name,
       path: currentPath,
       files,
-      directories
+      subdirectories
     };
   }
 
@@ -329,7 +329,7 @@ export class FallbackFileImporter {
   ): ImportedDirectory {
     const currentPath = path ? `${path}/${name}` : name;
     const files = fileMap.get(currentPath) || [];
-    const directories: ImportedDirectory[] = [];
+    const subdirectories: ImportedDirectory[] = [];
 
     // Find subdirectories
     for (const [filePath] of fileMap) {
@@ -337,9 +337,9 @@ export class FallbackFileImporter {
         const relativePath = filePath.substring(currentPath.length + 1);
         const nextDirName = relativePath.split('/')[0];
 
-        if (relativePath.includes('/') && !directories.some((d) => d.name === nextDirName)) {
+        if (relativePath.includes('/') && !subdirectories.some((d) => d.name === nextDirName)) {
           const subDir = this.buildDirectoryTree(nextDirName, currentPath, fileMap, dirMap);
-          directories.push(subDir);
+          subdirectories.push(subDir);
         }
       }
     }
@@ -348,7 +348,7 @@ export class FallbackFileImporter {
       name,
       path: currentPath,
       files,
-      directories
+      subdirectories
     };
   }
 }

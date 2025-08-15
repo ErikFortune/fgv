@@ -1,35 +1,33 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import AppLayout from './components/layout/AppLayout';
-import ImportTool from './components/tools/ImportTool';
-import SourceBrowser from './components/tools/SourceBrowser';
-import FilterTool from './components/tools/FilterTool';
-import CompiledBrowser from './components/tools/CompiledBrowser';
-import ResolutionViewer from './components/tools/ResolutionViewer';
-import ConfigurationTool from './components/tools/ConfigurationTool';
-import ZipLoader from './components/tools/ZipLoader';
+import {
+  ImportView,
+  SourceView,
+  FilterView,
+  CompiledView,
+  ResolutionView,
+  ConfigurationView,
+  ResourceOrchestrator,
+  OrchestratorState,
+  OrchestratorActions
+} from '@fgv/ts-res-ui-components';
 import NavigationWarningModal from './components/common/NavigationWarningModal';
-import { useAppState } from './hooks/useAppState';
-import { useFileImport } from './hooks/useFileImport';
-import { useResourceManager } from './hooks/useResourceManager';
 import { useNavigationWarning } from './hooks/useNavigationWarning';
 import { useUrlParams } from './hooks/useUrlParams';
-import { FilterResult } from './utils/filterResources';
 import { parseContextFilter } from './utils/urlParams';
 import { Tool } from './types/app';
 import * as TsRes from '@fgv/ts-res';
 
-const App: React.FC = () => {
-  const { state, actions } = useAppState();
-  const fileImport = useFileImport();
-  const resourceManager = useResourceManager();
+// Separate component to handle initialization logic
+interface AppContentProps {
+  orchestrator: { state: OrchestratorState; actions: OrchestratorActions };
+}
+
+const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
+  const { state, actions } = orchestrator;
+  const [selectedTool, setSelectedTool] = useState<Tool>('import');
   const navigationWarning = useNavigationWarning();
   const { urlParams, hasUrlParams } = useUrlParams();
-
-  // State to share filter result between components
-  const [filterResult, setFilterResult] = React.useState<FilterResult | null>(null);
-
-  // Ref to store the configuration tool's save handler
-  const configSaveHandlerRef = React.useRef<(() => void) | null>(null);
 
   // Ref to track if we've already initialized from URL parameters
   const initializedFromUrlRef = React.useRef(false);
@@ -58,8 +56,7 @@ const App: React.FC = () => {
               );
 
               if (configResult.isSuccess()) {
-                // Store the declaration directly, not the SystemConfiguration instance
-                resourceManager.actions.applyConfiguration(configResult.value);
+                actions.updateConfiguration(configResult.value);
                 actions.addMessage('success', `Loaded predefined configuration: ${urlParams.config}`);
               } else {
                 actions.addMessage(
@@ -86,9 +83,11 @@ const App: React.FC = () => {
       if (urlParams.contextFilter) {
         try {
           const contextObj = parseContextFilter(urlParams.contextFilter);
-          actions.updateFilterValues(contextObj);
-          actions.updateFilterEnabled(true);
-          actions.applyFilterValues();
+          actions.updateFilterState({
+            values: contextObj,
+            enabled: true,
+            appliedValues: contextObj
+          });
           actions.addMessage('info', `Applied context filter from URL: ${urlParams.contextFilter}`);
         } catch (error) {
           actions.addMessage('error', `Invalid context filter in URL: ${urlParams.contextFilter}`);
@@ -97,17 +96,23 @@ const App: React.FC = () => {
 
       // Apply reduceQualifiers setting
       if (urlParams.reduceQualifiers) {
-        actions.updateReduceQualifiers(true);
+        actions.updateFilterState({ reduceQualifiers: true });
       }
 
-      // Handle ZIP loading - start with ZIP tool but make other tools easily accessible
+      // Handle ZIP loading - redirect to import tool
       if (urlParams.loadZip) {
-        actions.setActiveTool('zip-loader');
+        setSelectedTool('import');
         if (urlParams.zipFile || urlParams.zipPath) {
           actions.addMessage('info', `ZIP archive ready to load: ${urlParams.zipFile || 'Bundle file'}`);
-          actions.addMessage('info', 'You can also use the File Browser for other resources');
+          actions.addMessage(
+            'info',
+            'Use the Import tool to select your ZIP file - ZIP files are now automatically detected!'
+          );
         } else {
-          actions.addMessage('info', 'ZIP loader opened - select a ZIP file to load');
+          actions.addMessage(
+            'info',
+            'Import tool opened - ZIP files are automatically detected when selected'
+          );
         }
       }
 
@@ -130,125 +135,336 @@ const App: React.FC = () => {
 
       // Navigate to appropriate tool based on URL params
       if (urlParams.input) {
-        // If input is specified, start with import tool
-        actions.setSelectedTool('import');
+        setSelectedTool('import');
       } else if (urlParams.interactive) {
-        // If interactive mode, might want to go straight to source browser with sample data
-        actions.setSelectedTool('source');
+        setSelectedTool('source');
       }
     }
-  }, [hasUrlParams]); // Depend on hasUrlParams to handle async URL param loading; ref prevents duplicate initialization
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasUrlParams, urlParams]);
 
   // Handle navigation with unsaved changes check
   const handleToolSelect = useCallback(
     (tool: Tool) => {
       // If we're trying to navigate away from configuration and have unsaved changes
-      if (state.selectedTool === 'configuration' && navigationWarning.state.hasUnsavedChanges) {
+      if (selectedTool === 'configuration' && navigationWarning.state.hasUnsavedChanges) {
         navigationWarning.actions.showWarning(tool);
         return;
       }
 
       // Otherwise, navigate normally
-      actions.setSelectedTool(tool);
+      setSelectedTool(tool);
     },
-    [state.selectedTool, navigationWarning, actions]
+    [selectedTool, navigationWarning]
   );
 
   // Handle save and continue from navigation warning
   const handleSaveAndContinue = useCallback(() => {
-    // Call the configuration tool's save handler if available
-    if (configSaveHandlerRef.current) {
-      configSaveHandlerRef.current();
-    }
-
+    // TODO: Implement save functionality through orchestrator
     const pendingTool = navigationWarning.actions.confirmNavigation();
     if (pendingTool) {
-      actions.setSelectedTool(pendingTool);
+      setSelectedTool(pendingTool);
     }
-  }, [navigationWarning, actions]);
+  }, [navigationWarning]);
 
   // Handle discard changes and continue
   const handleDiscardAndContinue = useCallback(() => {
     const pendingTool = navigationWarning.actions.confirmNavigation();
     if (pendingTool) {
-      actions.setSelectedTool(pendingTool);
+      setSelectedTool(pendingTool);
     }
-  }, [navigationWarning, actions]);
+  }, [navigationWarning]);
 
   const renderTool = () => {
-    switch (state.selectedTool) {
+    switch (selectedTool) {
       case 'import':
         return (
-          <ImportTool
+          <ImportView
             onMessage={actions.addMessage}
-            fileImport={fileImport}
-            resourceManager={resourceManager}
+            onImport={(data) => {
+              if (Array.isArray(data)) {
+                actions.importFiles(data);
+              } else {
+                actions.importDirectory(data);
+              }
+            }}
+            onBundleImport={actions.importBundle}
+            onZipImport={async (zipFile, config) => {
+              // Handle ZIP file using BrowserZipFileTreeAccessors to create FileTree
+              const { BrowserZipFileTreeAccessors } = await import('./utils/zip/browserZipFileTreeAccessors');
+              const { FileTree } = await import('@fgv/ts-utils');
+
+              const zipAccessorsResult = await BrowserZipFileTreeAccessors.fromFile(zipFile);
+              if (zipAccessorsResult.isFailure()) {
+                actions.addMessage('error', `Failed to read ZIP: ${zipAccessorsResult.message}`);
+                return;
+              }
+
+              const fileTreeResult = FileTree.FileTree.create(zipAccessorsResult.value);
+              if (fileTreeResult.isFailure()) {
+                actions.addMessage('error', `Failed to create file tree: ${fileTreeResult.message}`);
+                return;
+              }
+
+              const fileTree = fileTreeResult.value;
+
+              // First, check for manifest to understand ZIP structure
+              let manifestData: any = null;
+              let configPath = '/config.json';
+              let inputPath = '/input';
+
+              const manifestResult = fileTree.getFile('/manifest.json');
+              if (manifestResult.isSuccess()) {
+                const manifestFile = manifestResult.value;
+                const manifestContent = manifestFile.getRawContents();
+                if (manifestContent.isSuccess()) {
+                  try {
+                    manifestData = JSON.parse(manifestContent.value);
+                    actions.addMessage(
+                      'info',
+                      `Manifest found: created ${new Date(manifestData.timestamp).toLocaleString()}`
+                    );
+
+                    // Get actual paths from manifest
+                    if (manifestData.config?.archivePath) {
+                      // Ensure path starts with /
+                      configPath = manifestData.config.archivePath.startsWith('/')
+                        ? manifestData.config.archivePath
+                        : `/${manifestData.config.archivePath}`;
+                      actions.addMessage('info', `Config path from manifest: ${configPath}`);
+                    }
+                    if (manifestData.input?.archivePath) {
+                      // Ensure path starts with /
+                      inputPath = manifestData.input.archivePath.startsWith('/')
+                        ? manifestData.input.archivePath
+                        : `/${manifestData.input.archivePath}`;
+                      actions.addMessage('info', `Input path from manifest: ${inputPath}`);
+                    }
+                  } catch (e) {
+                    actions.addMessage('warning', 'Could not parse manifest');
+                  }
+                }
+              }
+
+              // Load configuration FIRST, before processing resources
+              let loadedConfig = null;
+              const configResult = fileTree.getFile(configPath);
+              if (configResult.isSuccess()) {
+                const configFile = configResult.value;
+                const configContent = configFile.getRawContents();
+                if (configContent.isSuccess()) {
+                  try {
+                    loadedConfig = JSON.parse(configContent.value);
+                    // Apply configuration immediately before processing resources
+                    await actions.applyConfiguration(loadedConfig);
+                    actions.addMessage('success', `Configuration loaded and applied from ${configPath}`);
+
+                    // Add a small delay to ensure configuration is applied
+                    await new Promise((resolve) => setTimeout(resolve, 100));
+                  } catch (e) {
+                    actions.addMessage('error', `Failed to parse configuration from ${configPath}: ${e}`);
+                    return;
+                  }
+                } else {
+                  actions.addMessage(
+                    'error',
+                    `Could not read configuration content: ${configContent.message}`
+                  );
+                  return;
+                }
+              } else {
+                actions.addMessage(
+                  'warning',
+                  `No configuration found at ${configPath} - using default configuration`
+                );
+              }
+
+              // Now process the file tree with the configuration applied
+              const { FileTreeConverter } = await import('./utils/fileTreeConverter');
+
+              // Check if input path exists, otherwise try common patterns
+              const inputResult = fileTree.getItem(inputPath);
+              if (inputResult.isFailure()) {
+                actions.addMessage('info', `Input path ${inputPath} not found, checking alternatives...`);
+
+                // Try alternative paths
+                const alternatives = ['/resources', '/data', '/'];
+                for (const alt of alternatives) {
+                  const altResult = fileTree.getItem(alt);
+                  if (altResult.isSuccess() && altResult.value.type === 'directory') {
+                    inputPath = alt;
+                    actions.addMessage('info', `Using alternative path: ${inputPath}`);
+                    break;
+                  }
+                }
+              }
+
+              const importedDirResult = FileTreeConverter.convertDirectory(fileTree, inputPath);
+              if (importedDirResult.isSuccess()) {
+                const dir = importedDirResult.value;
+
+                // Debug: Show what we're actually importing
+                let totalFiles = 0;
+                const countFiles = (d: any): number => {
+                  let count = d.files?.length || 0;
+                  if (d.subdirectories) {
+                    for (const subdir of d.subdirectories) {
+                      count += countFiles(subdir);
+                    }
+                  }
+                  return count;
+                };
+                totalFiles = countFiles(dir);
+
+                actions.addMessage(
+                  'info',
+                  `Found ${dir.files.length} files and ${
+                    dir.subdirectories?.length || 0
+                  } subdirectories in ${inputPath}`
+                );
+                actions.addMessage('info', `Total files to import: ${totalFiles}`);
+
+                // List first few files for debugging
+                if (dir.files.length > 0) {
+                  const fileNames = dir.files
+                    .slice(0, 3)
+                    .map((f) => f.name)
+                    .join(', ');
+                  actions.addMessage(
+                    'info',
+                    `Sample files: ${fileNames}${dir.files.length > 3 ? '...' : ''}`
+                  );
+                }
+
+                // List subdirectories
+                if (dir.subdirectories && dir.subdirectories.length > 0) {
+                  const dirNames = dir.subdirectories.map((d) => d.name).join(', ');
+                  actions.addMessage('info', `Subdirectories: ${dirNames}`);
+                }
+
+                // Import with the loaded configuration
+                if (loadedConfig) {
+                  await actions.importDirectoryWithConfig(dir, loadedConfig);
+                } else {
+                  await actions.importDirectory(dir);
+                }
+
+                // Add a small delay to ensure state updates
+                await new Promise((resolve) => setTimeout(resolve, 100));
+
+                actions.addMessage('success', `ZIP contents imported from ${inputPath}`);
+              } else {
+                actions.addMessage('error', `Failed to process ZIP contents: ${importedDirResult.message}`);
+              }
+            }}
           />
         );
+
       case 'source':
-        return <SourceBrowser onMessage={actions.addMessage} resourceManager={resourceManager} />;
+        return (
+          <SourceView
+            onMessage={actions.addMessage}
+            resources={state.resources}
+            selectedResourceId={state.selectedResourceId}
+            onResourceSelect={actions.selectResource}
+            onExport={(data, type) => {
+              // TODO: Implement export functionality
+              actions.addMessage('info', `Export ${type} requested`);
+            }}
+          />
+        );
+
       case 'filter':
         return (
-          <FilterTool
+          <FilterView
             onMessage={actions.addMessage}
-            resourceManager={resourceManager}
+            resources={state.resources}
             filterState={state.filterState}
             filterActions={{
-              updateFilterEnabled: actions.updateFilterEnabled,
-              updateFilterValues: actions.updateFilterValues,
-              applyFilterValues: actions.applyFilterValues,
-              resetFilterValues: actions.resetFilterValues,
-              updateReduceQualifiers: actions.updateReduceQualifiers
+              updateFilterEnabled: (enabled) => actions.updateFilterState({ enabled }),
+              updateFilterValues: (values) => actions.updateFilterState({ values }),
+              applyFilterValues: () => actions.applyFilter(),
+              resetFilterValues: () => actions.resetFilter(),
+              updateReduceQualifiers: (reduceQualifiers) => actions.updateFilterState({ reduceQualifiers })
             }}
-            onFilterResult={setFilterResult}
+            filterResult={state.filterResult}
+            onFilterResult={(result) => {
+              // The orchestrator manages filter results internally
+            }}
           />
         );
+
       case 'compiled':
         return (
-          <CompiledBrowser
+          <CompiledView
             onMessage={actions.addMessage}
-            resourceManager={resourceManager}
+            resources={state.resources}
             filterState={state.filterState}
-            filterResult={filterResult}
-          />
-        );
-      case 'resolution':
-        return (
-          <ResolutionViewer
-            onMessage={actions.addMessage}
-            resourceManager={resourceManager}
-            filterState={state.filterState}
-            filterResult={filterResult}
-          />
-        );
-      case 'configuration':
-        return (
-          <ConfigurationTool
-            onMessage={actions.addMessage}
-            resourceManager={resourceManager}
-            onUnsavedChanges={navigationWarning.actions.setHasUnsavedChanges}
-            onSaveHandlerRef={configSaveHandlerRef}
-          />
-        );
-      case 'zip-loader':
-        return (
-          <ZipLoader
-            onMessage={actions.addMessage}
-            resourceManager={resourceManager}
-            zipFile={urlParams.zipFile}
-            zipPath={urlParams.zipPath}
-            onLoadComplete={() => {
-              // Switch to source browser after successful load
-              actions.setSelectedTool('source');
+            filterResult={state.filterResult}
+            useNormalization={true}
+            onExport={(data, type) => {
+              // TODO: Implement export functionality
+              actions.addMessage('info', `Export ${type} requested`);
             }}
           />
         );
+
+      case 'resolution':
+        return (
+          <ResolutionView
+            onMessage={actions.addMessage}
+            resources={state.resources}
+            filterState={state.filterState}
+            filterResult={state.filterResult}
+            resolutionState={state.resolutionState}
+            resolutionActions={{
+              updateContextValue: actions.updateResolutionContext,
+              applyContext: actions.applyResolutionContext,
+              selectResource: actions.selectResourceForResolution,
+              setViewMode: actions.setResolutionViewMode,
+              resetCache: actions.resetResolutionCache,
+              // Edit actions
+              saveEdit: actions.saveResourceEdit,
+              getEditedValue: actions.getEditedValue,
+              hasEdit: actions.hasResourceEdit,
+              clearEdits: actions.clearResourceEdits,
+              applyEdits: actions.applyResourceEdits,
+              discardEdits: actions.discardResourceEdits
+            }}
+            availableQualifiers={
+              state.resources?.compiledCollection.qualifiers?.map((q: any) => q.name) ||
+              state.configuration?.qualifiers?.map((q) => q.name) ||
+              []
+            }
+          />
+        );
+
+      case 'configuration':
+        return (
+          <ConfigurationView
+            onMessage={actions.addMessage}
+            configuration={state.configuration}
+            onConfigurationChange={actions.updateConfiguration}
+            onSave={(config) => {
+              actions.applyConfiguration(config);
+              actions.addMessage('success', 'Configuration saved successfully');
+            }}
+            hasUnsavedChanges={navigationWarning.state.hasUnsavedChanges}
+          />
+        );
+
       default:
         return (
-          <ImportTool
+          <ImportView
             onMessage={actions.addMessage}
-            fileImport={fileImport}
-            resourceManager={resourceManager}
+            onImport={(data) => {
+              if (Array.isArray(data)) {
+                actions.importFiles(data);
+              } else {
+                actions.importDirectory(data);
+              }
+            }}
+            onBundleImport={actions.importBundle}
           />
         );
     }
@@ -257,7 +473,7 @@ const App: React.FC = () => {
   return (
     <>
       <AppLayout
-        selectedTool={state.selectedTool}
+        selectedTool={selectedTool}
         onToolSelect={handleToolSelect}
         messages={state.messages}
         onClearMessages={actions.clearMessages}
@@ -273,6 +489,14 @@ const App: React.FC = () => {
         hasUnsavedChanges={navigationWarning.state.hasUnsavedChanges}
       />
     </>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <ResourceOrchestrator>
+      {(orchestrator) => <AppContent orchestrator={orchestrator} />}
+    </ResourceOrchestrator>
   );
 };
 

@@ -9,9 +9,9 @@ A compiled resource collection implements [IResourceManager](./ts-res.runtime.ir
 **Signature:**
 
 ```typescript
-export declare class CompiledResourceCollection implements IResourceManager 
+export declare class CompiledResourceCollection implements IResourceManager<IResource> 
 ```
-**Implements:** [IResourceManager](./ts-res.iresourcemanager.md)
+**Implements:** [IResourceManager](./ts-res.iresourcemanager.md)<!-- -->&lt;[IResource](./ts-res.runtime.iresource.md)<!-- -->&gt;
 
 ## Remarks
 

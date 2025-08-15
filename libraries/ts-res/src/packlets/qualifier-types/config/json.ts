@@ -103,3 +103,24 @@ export type ISystemQualifierTypeConfig =
   | ISystemLanguageQualifierTypeConfig
   | ISystemTerritoryQualifierTypeConfig
   | ISystemLiteralQualifierTypeConfig;
+
+/**
+ * A union of all qualifier type configurations.
+ * @public
+ */
+export type IAnyQualifierTypeConfig = IQualifierTypeConfig | ISystemQualifierTypeConfig;
+
+/**
+ * Checks if a {@link QualifierTypes.Config.IAnyQualifierTypeConfig | qualifier type configuration} is a
+ * {@link QualifierTypes.Config.ISystemQualifierTypeConfig | system qualifier type configuration}.
+ * @param config - The {@link QualifierTypes.Config.IAnyQualifierTypeConfig | qualifier type configuration} to check.
+ * @returns `true` if the configuration is a system qualifier type configuration, `false` otherwise.
+ * @public
+ */
+export function isSystemQualifierTypeConfig(
+  config: IAnyQualifierTypeConfig
+): config is ISystemQualifierTypeConfig {
+  return (
+    config.systemType === 'language' || config.systemType === 'territory' || config.systemType === 'literal'
+  );
+}

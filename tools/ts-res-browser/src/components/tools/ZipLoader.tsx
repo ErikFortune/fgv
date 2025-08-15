@@ -203,12 +203,12 @@ const ZipLoader: React.FC<ZipLoaderProps> = ({
           const inputItem = inputResult.value;
 
           if (inputItem.type === 'directory') {
-            // Process directory with ZIP configuration
-            await resourceManager.actions.processFileTree(fileTree.value, inputPath, loadedConfig);
+            // Process directory with ZIP configuration using direct FileTree processing
+            await resourceManager.actions.processFileTreeDirectly(fileTree.value, inputPath, loadedConfig);
             inputProcessed = true;
           } else if (inputItem.type === 'file') {
-            // Process single file with ZIP configuration
-            await resourceManager.actions.processFileTree(fileTree.value, inputPath, loadedConfig);
+            // Process single file with ZIP configuration using direct FileTree processing
+            await resourceManager.actions.processFileTreeDirectly(fileTree.value, inputPath, loadedConfig);
             inputProcessed = true;
           }
         }
@@ -220,7 +220,7 @@ const ZipLoader: React.FC<ZipLoaderProps> = ({
         for (const inputPath of commonInputPaths) {
           const inputResult = fileTree.value.getItem(inputPath);
           if (inputResult.isSuccess() && inputResult.value.type === 'directory') {
-            await resourceManager.actions.processFileTree(fileTree.value, inputPath, loadedConfig);
+            await resourceManager.actions.processFileTreeDirectly(fileTree.value, inputPath, loadedConfig);
             inputProcessed = true;
             break;
           }

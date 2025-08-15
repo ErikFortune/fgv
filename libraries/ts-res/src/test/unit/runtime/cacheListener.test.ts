@@ -104,6 +104,17 @@ describe('NoOpResourceResolverCacheListener', () => {
     });
   });
 
+  describe('onContextError', () => {
+    test('executes without throwing for context validation errors', () => {
+      expect(() => listener.onContextError('language', 'invalid language tag')).not.toThrow();
+    });
+
+    test('executes without throwing for various qualifier errors', () => {
+      expect(() => listener.onContextError('territory', 'unknown territory')).not.toThrow();
+      expect(() => listener.onContextError('custom', 'validation failed')).not.toThrow();
+    });
+  });
+
   describe('interface compliance', () => {
     test('implements IResourceResolverCacheListener interface', () => {
       // TypeScript compilation ensures interface compliance
@@ -116,6 +127,7 @@ describe('NoOpResourceResolverCacheListener', () => {
       expect(typeof listener.onCacheHit).toBe('function');
       expect(typeof listener.onCacheMiss).toBe('function');
       expect(typeof listener.onCacheError).toBe('function');
+      expect(typeof listener.onContextError).toBe('function');
       expect(typeof listener.onCacheClear).toBe('function');
     });
   });

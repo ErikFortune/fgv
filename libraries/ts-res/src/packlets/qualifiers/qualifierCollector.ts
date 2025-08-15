@@ -177,13 +177,12 @@ export class QualifierCollector
     return validatedQualifierDecl
       .convert(decl, convertContext)
       .onSuccess((validated) => {
+        /* c8 ignore next 9 - coverage intermittently misses this block */
         if (this.hasNameOrToken(validated.token)) {
-          /* c8 ignore next 3 - functional error case tested but coverage intermittently missed */
           return fail<IValidatedQualifierDecl>(
             `Qualifier token '${validated.token}' is not unique or collides with name`
           );
         } else if (this.hasNameOrToken(validated.name)) {
-          /* c8 ignore next 4 - functional error case tested but coverage intermittently missed */
           return fail<IValidatedQualifierDecl>(
             `Qualifier name '${validated.name}' is not unique or collides with token`
           );

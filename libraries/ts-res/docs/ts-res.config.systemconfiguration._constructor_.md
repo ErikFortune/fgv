@@ -9,7 +9,7 @@ Constructs a new instance of a [SystemConfiguration](./ts-res.config.systemconfi
 **Signature:**
 
 ```typescript
-protected constructor(config: ISystemConfiguration);
+protected constructor(config: ISystemConfiguration, initParams?: ISystemConfigurationInitParams);
 ```
 
 ## Parameters
@@ -43,6 +43,22 @@ config
 </td><td>
 
 The [system configuration](./ts-res.config.model.isystemconfiguration.md) to use.
+
+
+</td></tr>
+<tr><td>
+
+initParams
+
+
+</td><td>
+
+[ISystemConfigurationInitParams](./ts-res.config.isystemconfigurationinitparams.md)
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>

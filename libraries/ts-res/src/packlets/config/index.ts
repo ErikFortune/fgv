@@ -23,6 +23,7 @@
 import * as Model from './json';
 import * as Convert from './convert';
 
+export * from './configInitFactory';
 export * from './systemConfiguration';
 export * from './common';
 
