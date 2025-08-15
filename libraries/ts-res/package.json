@@ -31,10 +31,7 @@
   "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res#readme",
   "sideEffects": false,
   "devDependencies": {
-    "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-utils-jest": "workspace:*",
-    "@fgv/ts-extras": "workspace:*",
-    "@fgv/ts-json-base": "workspace:*",
     "@microsoft/api-documenter": "^7.26.29",
     "@microsoft/api-extractor": "^7.49.1",
     "@types/jest": "^29.5.14",
@@ -60,18 +57,14 @@
     "@rushstack/heft-jest-plugin": "~0.16.9",
     "@rushstack/heft-node-rig": "~2.9.0",
     "@types/heft-jest": "1.0.6",
-    "eslint-plugin-tsdoc": "~0.4.0",
-    "@fgv/ts-bcp47": "workspace:*",
-    "@fgv/ts-json": "workspace:*"
+    "eslint-plugin-tsdoc": "~0.4.0"
   },
   "dependencies": {
-    "luxon": "^3.6.1"
-  },
-  "peerDependencies": {
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-extras": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
     "@fgv/ts-bcp47": "workspace:*",
-    "@fgv/ts-json": "workspace:*"
+    "@fgv/ts-json": "workspace:*",
+    "luxon": "^3.6.1"
   }
 }

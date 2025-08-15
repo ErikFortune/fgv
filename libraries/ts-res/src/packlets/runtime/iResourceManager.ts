@@ -25,9 +25,9 @@ import { JsonObject } from '@fgv/ts-json-base';
 import { ReadOnlyConditionCollector, ReadOnlyConditionSetCollector } from '../conditions';
 import { ReadOnlyAbstractDecisionCollector, ConcreteDecision } from '../decisions';
 import { ResourceId, ResourceValueMergeMethod } from '../common';
-import { ResourceType } from '../resource-types';
+import { IResourceType } from '../resource-types';
 import { IContextDecl, IValidatedContextDecl } from '../context';
-import { IReadOnlyResourceTreeRoot } from './resource-tree';
+import { ReadOnlyResourceTreeRoot } from './resource-tree';
 
 /**
  * Runtime representation of a resource candidate with the minimal data needed for resolution.
@@ -60,7 +60,7 @@ export interface IResource {
   /** The resource name */
   readonly name: string;
   /** The resource type */
-  readonly resourceType: ResourceType;
+  readonly resourceType: IResourceType;
   /** The decision used to select candidates */
   readonly decision: ConcreteDecision;
   /** The available candidates for this resource */
@@ -103,7 +103,7 @@ export interface IResourceManager<TR extends IResource = IResource> {
    * Gets a resource tree built from the resources in this resource manager.
    * @returns Result containing the resource tree root, or failure if tree construction fails
    */
-  getBuiltResourceTree(): Result<IReadOnlyResourceTreeRoot<TR>>;
+  getBuiltResourceTree(): Result<ReadOnlyResourceTreeRoot<TR>>;
 
   /**
    * A read-only result map of all built resources, keyed by resource ID.

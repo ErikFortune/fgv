@@ -387,10 +387,6 @@ importers:
 
   ../../libraries/ts-res:
     dependencies:
-      luxon:
-        specifier: ^3.6.1
-        version: 3.6.1
-    devDependencies:
       '@fgv/ts-bcp47':
         specifier: workspace:*
         version: link:../ts-bcp47
@@ -406,6 +402,10 @@ importers:
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../ts-utils
+      luxon:
+        specifier: ^3.6.1
+        version: 3.6.1
+    devDependencies:
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../ts-utils-jest

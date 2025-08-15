@@ -62,23 +62,80 @@ export interface IResourceCandidateValidationProperties {
   mergeMethod: ResourceValueMergeMethod;
 }
 
+export interface IResourceType<T = unknown> extends ICollectible<ResourceTypeName, ResourceTypeIndex> {
+  /**
+   * The key for this resource type.
+   */
+  readonly key: ResourceTypeName;
+
+  /**
+   * The index for this resource type.
+   */
+  readonly index: ResourceTypeIndex | undefined;
+
+  /**
+   * Validates properties of a {@link ResourceJson.Json.ILooseResourceCandidateDecl | resource candidate declaration} for
+   * a resource instance value.
+   * @param props - The {@link ResourceTypes.IResourceCandidateValidationProperties | properties } to validate.
+   * @returns `Success` with the strongly-typed resource value if the JSON and merge method
+   * are valid, `Failure` with an error message otherwise.
+   * @public
+   */
+  validateDeclaration(props: IResourceCandidateValidationProperties): Result<T | Partial<T>>;
+
+  /**
+   * Validates a JSON value for use as a partial resource instance value.
+   * @param json - The JSON value to validate.
+   * @param completeness - Describes {@link CandidateCompleteness | how complete} the candidate value is.
+   * @returns `Success` with the strongly-typed partial resource value if the JSON is valid,
+   * `Failure` with an error message otherwise.
+   * @public
+   */
+  validate(json: JsonValue, completeness: CandidateCompleteness): Result<Partial<T>>;
+
+  /**
+   * Validates a JSON value for use as a complete resource instance value.
+   * @param json - The JSON value to validate.
+   * @param completeness - Describes {@link CandidateCompleteness | how complete} the candidate value is.
+   * @returns `Success` with the strongly-typed resource value if the JSON is valid,
+   * `Failure` with an error message otherwise.
+   * @public
+   */
+  validate(json: JsonValue, completeness: 'full'): Result<T>;
+
+  /**
+   * Validates a JSON value for use as a partial resource instance value.
+   * @param json - The JSON value to validate.
+   * @param completeness - Describes {@link CandidateCompleteness | how complete} the candidate value is.
+   * @returns `Success` with the strongly-typed partial resource value if the JSON is valid,
+   * `Failure` with an error message otherwise.
+   * @public
+   */
+  validate(json: JsonValue, completeness: 'partial'): Result<Partial<T>>;
+
+  /**
+   * Sets the index for this resource type.  Once set, the index cannot be changed.
+   */
+  setIndex(index: number): Result<ResourceTypeIndex>;
+}
+
 /**
  * Abstract base class for resource types which are responsible for
  * validating and converting JSON values into the appropriate strongly-typed
  * resource value.
  * @public
  */
-export abstract class ResourceType<T = unknown> implements ICollectible<ResourceTypeName, ResourceTypeIndex> {
+export abstract class ResourceType<T = unknown> implements IResourceType<T> {
   private _collectible: Collections.Collectible<ResourceTypeName, ResourceTypeIndex>;
   /**
-   * The key for this resource type.
+   * {@inheritdoc ResourceTypes.IResourceType.key}
    */
   public get key(): ResourceTypeName {
     return this._collectible.key;
   }
 
   /**
-   * The index for this resource type.
+   * {@inheritdoc ResourceTypes.IResourceType.index}
    */
   public get index(): ResourceTypeIndex | undefined {
     return this._collectible.index;

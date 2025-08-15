@@ -397,7 +397,7 @@ class CompiledResourceCollection implements IResourceManager<IResource> {
     //
     // (undocumented)
     getBuiltResource(id: string): Result<IResource>;
-    getBuiltResourceTree(): Result<IReadOnlyResourceTreeRoot<IResource>>;
+    getBuiltResourceTree(): Result<ReadOnlyResourceTreeRoot<IResource>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -2462,7 +2462,7 @@ interface IResource {
     readonly decision: ConcreteDecision;
     readonly id: string;
     readonly name: string;
-    readonly resourceType: ResourceType;
+    readonly resourceType: IResourceType;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2602,7 +2602,7 @@ export interface IResourceManager<TR extends IResource = IResource> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly decisions: ReadOnlyAbstractDecisionCollector;
     getBuiltResource(id: string): Result<TR>;
-    getBuiltResourceTree(): Result<IReadOnlyResourceTreeRoot<TR>>;
+    getBuiltResourceTree(): Result<ReadOnlyResourceTreeRoot<TR>>;
     readonly numCandidates: number;
     readonly numResources: number;
     validateContext(context: IContextDecl): Result<IValidatedContextDecl>;
@@ -2721,6 +2721,19 @@ interface IResourceTreeRootDecl_2 extends IResourceTreeChildNodeDecl_2 {
 interface IResourceTreeRootInit<T> {
     // (undocumented)
     readonly children: Record<ResourceName, ResourceTreeNodeInit<T>>;
+}
+
+// @public (undocumented)
+interface IResourceType<T = unknown> extends ICollectible<ResourceTypeName, ResourceTypeIndex> {
+    readonly index: ResourceTypeIndex | undefined;
+    readonly key: ResourceTypeName;
+    setIndex(index: number): Result<ResourceTypeIndex>;
+    validate(json: JsonValue, completeness: CandidateCompleteness): Result<Partial<T>>;
+    validate(json: JsonValue, completeness: 'full'): Result<T>;
+    validate(json: JsonValue, completeness: 'partial'): Result<Partial<T>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    validateDeclaration(props: IResourceCandidateValidationProperties): Result<T | Partial<T>>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3807,9 +3820,8 @@ export class Resource implements IResource {
     protected _getMatchingCandidates(options?: IResourceDeclarationOptions | ICompiledResourceOptionsWithFilter): ReadonlyArray<ResourceCandidate>;
     readonly id: ResourceId;
     readonly name: ResourceName;
-    get resourceType(): ResourceType;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    readonly _resourceType: ResourceType;
+    readonly resourceType: ResourceType;
     get resourceTypeName(): string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -4076,7 +4088,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getBuiltResourcesForContext(context: Context.IValidatedContextDecl, options?: Context.IContextMatchOptions): Result<ReadonlyArray<Resource>>;
-    getBuiltResourceTree(): Result<ResourceTree.IReadOnlyResourceTreeRoot<Resource>>;
+    getBuiltResourceTree(): Result<ResourceTree.ReadOnlyResourceTreeRoot<Resource>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -4287,9 +4299,15 @@ type ResourceTreeNodeInit<T> = IResourceTreeLeafInit<T> | IResourceTreeBranchIni
 const resourceTreeRootDecl: Converter<Normalized.IResourceTreeRootDecl>;
 
 // @public
-export abstract class ResourceType<T = unknown> implements ICollectible<ResourceTypeName, ResourceTypeIndex> {
+export abstract class ResourceType<T = unknown> implements IResourceType<T> {
     protected constructor(key: ResourceTypeName, index?: number);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
     get index(): ResourceTypeIndex | undefined;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
     get key(): ResourceTypeName;
     setIndex(index: number): Result<ResourceTypeIndex>;
     abstract validate(json: JsonValue, completeness: CandidateCompleteness): Result<Partial<T>>;
@@ -4345,6 +4363,7 @@ declare namespace ResourceTypes {
     export {
         Config_3 as Config,
         IResourceCandidateValidationProperties,
+        IResourceType,
         ResourceType,
         IResourceCollectorCreateParams,
         ResourceTypeCollector,
@@ -4736,9 +4755,9 @@ class ValidatingSimpleContextQualifierProvider extends SimpleContextQualifierPro
 // src/packlets/import/importers/collectionImporter.ts:135:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/import/importers/collectionImporter.ts:135:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/import/importers/collectionImporter.ts:135:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resource.ts:248:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resource.ts:248:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resource.ts:271:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resource.ts:242:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resource.ts:242:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resource.ts:265:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resourceCandidate.ts:271:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/conditionSetResolutionResult.ts:56:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/resourceResolver.ts:170:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

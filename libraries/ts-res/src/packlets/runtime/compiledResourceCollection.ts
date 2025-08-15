@@ -46,7 +46,7 @@ import { IResourceManager, IResource, IResourceCandidate } from './iResourceMana
 import { ConcreteDecision } from '../decisions';
 import * as Validate from './validate';
 import * as ResourceJson from '../resource-json';
-import { ReadOnlyResourceTreeRoot, IReadOnlyResourceTreeRoot } from './resource-tree';
+import { ReadOnlyResourceTreeRoot } from './resource-tree';
 import * as Context from '../context';
 
 /**
@@ -215,7 +215,7 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
    * @returns Result containing the resource tree root, or failure if tree construction fails
    * @public
    */
-  public getBuiltResourceTree(): Result<IReadOnlyResourceTreeRoot<IResource>> {
+  public getBuiltResourceTree(): Result<ReadOnlyResourceTreeRoot<IResource>> {
     if (this._cachedResourceTree) {
       return succeed(this._cachedResourceTree);
     }

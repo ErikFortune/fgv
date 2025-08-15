@@ -74,7 +74,8 @@ export class Resource implements IResource {
   /**
    * The {@link ResourceTypes.ResourceType | type} of the resource.
    */
-  public readonly _resourceType: ResourceType;
+  public readonly resourceType: ResourceType;
+
   /**
    * The array of {@link Resources.ResourceCandidate | candidates} for the resource.
    */
@@ -85,17 +86,10 @@ export class Resource implements IResource {
   public readonly decision: ConcreteDecision;
 
   /**
-   * Gets the resource type (implements IResource interface).
-   */
-  public get resourceType(): ResourceType {
-    return this._resourceType;
-  }
-
-  /**
    * Gets the resource type name as a string.
    */
   public get resourceTypeName(): string {
-    return this._resourceType.key;
+    return this.resourceType.key;
   }
 
   /**
@@ -107,7 +101,7 @@ export class Resource implements IResource {
     const id = params.id ? Validate.toResourceId(params.id).orThrow() : undefined;
     this.id = Resource._validateCandidateResourceIds(id, params.candidates).orThrow();
     this.name = Helpers.getNameForResourceId(this.id).orThrow();
-    this._resourceType = ResourceCandidate.validateResourceTypes(params.candidates, params.resourceType)
+    this.resourceType = ResourceCandidate.validateResourceTypes(params.candidates, params.resourceType)
       .onSuccess((t) => {
         /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
         if (t === undefined) {
