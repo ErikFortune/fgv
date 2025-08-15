@@ -270,6 +270,7 @@ export { ZipFileTree }
 // @public
 class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors {
     static fromBuffer(zipBuffer: ArrayBuffer | Uint8Array, prefix?: string): Result<ZipFileTreeAccessors>;
+    static fromBufferAsync(zipBuffer: ArrayBuffer | Uint8Array, prefix?: string): Promise<Result<ZipFileTreeAccessors>>;
     static fromFile(file: File, prefix?: string): Promise<Result<ZipFileTreeAccessors>>;
     getBaseName(path: string, suffix?: string): string;
     getChildren(path: string): Result<ReadonlyArray<FileTree.FileTreeItem>>;

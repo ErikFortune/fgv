@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import AdmZip from 'adm-zip';
+import { unzipSync, unzip, Unzipped } from 'fflate';
 import { Result, succeed, fail, captureResult, Converter, Validator, FileTree } from '@fgv/ts-utils';
 
 /**
@@ -163,9 +163,9 @@ export class ZipDirectoryItem implements FileTree.IFileTreeDirectoryItem {
  */
 export class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors {
   /**
-   * The AdmZip instance containing the archive.
+   * The unzipped file data.
    */
-  private readonly _zip: AdmZip;
+  private readonly _files: Unzipped;
 
   /**
    * Optional prefix to prepend to paths.
@@ -179,17 +179,17 @@ export class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors {
 
   /**
    * Constructor for ZipFileTreeAccessors.
-   * @param zip - The AdmZip instance.
+   * @param files - The unzipped file data from fflate.
    * @param prefix - Optional prefix to prepend to paths.
    */
-  private constructor(zip: AdmZip, prefix?: string) {
-    this._zip = zip;
+  private constructor(files: Unzipped, prefix?: string) {
+    this._files = files;
     this._prefix = prefix || '';
     this._buildItemCache();
   }
 
   /**
-   * Creates a new ZipFileTreeAccessors instance from a ZIP file buffer.
+   * Creates a new ZipFileTreeAccessors instance from a ZIP file buffer (synchronous).
    * @param zipBuffer - The ZIP file as an ArrayBuffer or Uint8Array.
    * @param prefix - Optional prefix to prepend to paths.
    * @returns Result containing the ZipFileTreeAccessors instance.
@@ -199,13 +199,44 @@ export class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors {
     prefix?: string
   ): Result<ZipFileTreeAccessors> {
     try {
-      const buffer = Buffer.from(zipBuffer);
-      const zip = new AdmZip(buffer);
-      return succeed(new ZipFileTreeAccessors(zip, prefix));
+      /* c8 ignore next 1 - defense in depth */
+      const uint8Buffer = zipBuffer instanceof Uint8Array ? zipBuffer : new Uint8Array(zipBuffer);
+      const files = unzipSync(uint8Buffer);
+      return succeed(new ZipFileTreeAccessors(files, prefix));
     } catch (error) {
-      /* c8 ignore next 1 - defensive coding: AdmZip always throws Error objects in practice */
+      /* c8 ignore next 1 - defensive coding: fflate always throws Error objects in practice */
       return fail(`Failed to load ZIP archive: ${error instanceof Error ? error.message : String(error)}`);
     }
+  }
+
+  /**
+   * Creates a new ZipFileTreeAccessors instance from a ZIP file buffer (asynchronous).
+   * @param zipBuffer - The ZIP file as an ArrayBuffer or Uint8Array.
+   * @param prefix - Optional prefix to prepend to paths.
+   * @returns Promise containing Result with the ZipFileTreeAccessors instance.
+   */
+  public static async fromBufferAsync(
+    zipBuffer: ArrayBuffer | Uint8Array,
+    prefix?: string
+  ): Promise<Result<ZipFileTreeAccessors>> {
+    return new Promise((resolve) => {
+      try {
+        /* c8 ignore next 1 - defense in depth */
+        const uint8Buffer = zipBuffer instanceof Uint8Array ? zipBuffer : new Uint8Array(zipBuffer);
+        unzip(uint8Buffer, (err, files) => {
+          if (err) {
+            resolve(fail(`Failed to load ZIP archive: ${err.message}`));
+          } else {
+            resolve(succeed(new ZipFileTreeAccessors(files, prefix)));
+          }
+        });
+      } catch (error) {
+        /* c8 ignore next 5 - defensive coding: fflate always throws Error objects in practice */
+        resolve(
+          fail(`Failed to load ZIP archive: ${error instanceof Error ? error.message : String(error)}`)
+        );
+      }
+    });
   }
 
   /**
@@ -217,7 +248,7 @@ export class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors {
   public static async fromFile(file: File, prefix?: string): Promise<Result<ZipFileTreeAccessors>> {
     try {
       const arrayBuffer = await file.arrayBuffer();
-      return ZipFileTreeAccessors.fromBuffer(new Uint8Array(arrayBuffer), prefix);
+      return await ZipFileTreeAccessors.fromBufferAsync(new Uint8Array(arrayBuffer), prefix);
     } catch (error) {
       return fail(`Failed to read file: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -228,41 +259,39 @@ export class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors {
    */
   private _buildItemCache(): void {
     const directories = new Set<string>();
-    const entries = this._zip.getEntries();
 
-    // First pass: collect all directories from file paths
-    entries.forEach((entry) => {
-      if (!entry.isDirectory) {
-        // Extract directory path from file path
-        const pathParts = entry.entryName.split('/');
-        for (let i = 1; i < pathParts.length; i++) {
-          const dirPath = pathParts.slice(0, i).join('/');
-          directories.add(dirPath);
-        }
-      } else {
-        // Also add explicit directories
-        const dirPath = entry.entryName.replace(/\/$/, ''); // Remove trailing slash
+    // Process all files and collect directory paths
+    for (const [relativePath, fileData] of Object.entries(this._files)) {
+      // Skip directories in fflate output (they have null data)
+      /* c8 ignore next 5 - handles explicit directory entries from external ZIP tools (fflate doesn't create these) */
+      if (fileData === null || fileData === undefined) {
+        const dirPath = relativePath.replace(/\/$/, '');
         if (dirPath) {
           directories.add(dirPath);
         }
+      } else {
+        // Extract directory paths from file paths
+        const pathParts = relativePath.split('/');
+        for (let i = 1; i < pathParts.length; i++) {
+          const dirPath = pathParts.slice(0, i).join('/');
+          if (dirPath) {
+            directories.add(dirPath);
+          }
+        }
+
+        // Add the file item with its contents
+        const absolutePath = this.resolveAbsolutePath(relativePath);
+        const contents = new TextDecoder().decode(fileData);
+        const item = new ZipFileItem(relativePath, contents, this);
+        this._itemCache.set(absolutePath, item);
       }
-    });
+    }
 
     // Add directory items to cache
     directories.forEach((dirPath) => {
       const absolutePath = this.resolveAbsolutePath(dirPath);
       const item = new ZipDirectoryItem(dirPath, this);
       this._itemCache.set(absolutePath, item);
-    });
-
-    // Add file items to cache
-    entries.forEach((entry) => {
-      if (!entry.isDirectory) {
-        const absolutePath = this.resolveAbsolutePath(entry.entryName);
-        const contents = entry.getData().toString('utf8');
-        const item = new ZipFileItem(entry.entryName, contents, this);
-        this._itemCache.set(absolutePath, item);
-      }
     });
   }
 
