@@ -21,7 +21,7 @@
  */
 
 import { MessageAggregator, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
-import { ResourceId, Validate } from '../common';
+import { Helpers, ResourceId, ResourceName, Validate } from '../common';
 import { ResourceCandidate } from './resourceCandidate';
 import { CandidateReducer } from './candidateReducer';
 import { ResourceType } from '../resource-types';
@@ -65,6 +65,12 @@ export class Resource implements IResource {
    * The unique {@link ResourceId | id} of the resource.
    */
   public readonly id: ResourceId;
+
+  /**
+   * The name of the resource.
+   */
+  public readonly name: ResourceName;
+
   /**
    * The {@link ResourceTypes.ResourceType | type} of the resource.
    */
@@ -100,6 +106,7 @@ export class Resource implements IResource {
   protected constructor(params: IResourceCreateParams) {
     const id = params.id ? Validate.toResourceId(params.id).orThrow() : undefined;
     this.id = Resource._validateCandidateResourceIds(id, params.candidates).orThrow();
+    this.name = Helpers.getNameForResourceId(this.id).orThrow();
     this._resourceType = ResourceCandidate.validateResourceTypes(params.candidates, params.resourceType)
       .onSuccess((t) => {
         /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */

@@ -40,7 +40,8 @@ import {
   succeed,
   succeedWithDetail,
   succeeds,
-  succeedsWithDetail
+  succeedsWithDetail,
+  useOrInitialize
 } from '../../packlets/base';
 
 describe('Result module', () => {
@@ -667,6 +668,41 @@ describe('Result module', () => {
       expect(failWithDetail('oops', 'detail')).toFailWithDetail('oops', 'detail');
       expect(failsWithDetail('oops', 'detail')).toFailWithDetail('oops', 'detail');
       expect(DetailedFailure.with('oops', 'detail')).toFailWithDetail('oops', 'detail');
+    });
+  });
+  describe('useOrInitialize', () => {
+    test('returns Success with value if value is defined', () => {
+      const result = useOrInitialize(42, () => fail('should not be called'));
+      expect(result.isSuccess()).toBe(true);
+      if (result.isSuccess()) {
+        expect(result.value).toBe(42);
+      }
+    });
+
+    test('calls initializer and returns its result if value is undefined', () => {
+      const result = useOrInitialize(undefined, () => succeed('initialized'));
+      expect(result.isSuccess()).toBe(true);
+      if (result.isSuccess()) {
+        expect(result.value).toBe('initialized');
+      }
+    });
+
+    test('returns Failure if initializer returns Failure', () => {
+      const result = useOrInitialize(undefined, () => fail('init failed'));
+      expect(result.isFailure()).toBe(true);
+      if (result.isFailure()) {
+        expect(result.message).toBe('init failed');
+      }
+    });
+
+    test('initializer is not called if value is defined', () => {
+      const initializer = jest.fn(() => succeed('should not be called'));
+      const result = useOrInitialize('present', initializer);
+      expect(result.isSuccess()).toBe(true);
+      expect(initializer).not.toHaveBeenCalled();
+      if (result.isSuccess()) {
+        expect(result.value).toBe('present');
+      }
     });
   });
 });

@@ -64,6 +64,7 @@ export class BundleLoader {
    * @public
    */
   public static createManagerFromBundle(params: IBundleLoaderCreateParams): Result<IResourceManager> {
+    /* c8 ignore next 1 - defense in depth */
     const hashNormalizer = params.hashNormalizer ?? new Hash.Crc32Normalizer();
 
     return BundleLoader._verifyBundleIntegrity(

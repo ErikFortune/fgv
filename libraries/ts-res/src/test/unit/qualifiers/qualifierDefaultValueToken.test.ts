@@ -313,6 +313,119 @@ describe('QualifierDefaultValueTokens', () => {
     });
   });
 
+  describe('validateQualifierDefaultValueTokenParts static method', () => {
+    test('validates parts with valid qualifier and value', () => {
+      const parts = { qualifier: 'language', value: 'en-US' };
+      expect(
+        TsRes.Qualifiers.QualifierDefaultValueTokens.validateQualifierDefaultValueTokenParts(
+          parts,
+          qualifiers
+        )
+      ).toSucceedAndSatisfy((result) => {
+        expect(result.qualifier.name).toBe('language');
+        expect(result.value).toBe('en-US');
+      });
+    });
+
+    test('validates parts with qualifier token instead of name', () => {
+      // Add a qualifier with a token for testing
+      const tokenQualifiers = TsRes.Qualifiers.QualifierCollector.create({
+        qualifierTypes,
+        qualifiers: [
+          { name: 'language', typeName: 'language', defaultPriority: 100, token: 'lang' },
+          { name: 'territory', typeName: 'territory', defaultPriority: 200 }
+        ]
+      }).orThrow();
+
+      const parts = { qualifier: 'lang', value: 'en-US' }; // Using token instead of name
+      expect(
+        TsRes.Qualifiers.QualifierDefaultValueTokens.validateQualifierDefaultValueTokenParts(
+          parts,
+          tokenQualifiers
+        )
+      ).toSucceedAndSatisfy((result) => {
+        expect(result.qualifier.name).toBe('language'); // Should resolve to actual qualifier name
+        expect(result.value).toBe('en-US');
+      });
+    });
+
+    test('accepts empty value', () => {
+      const parts = { qualifier: 'language', value: '' };
+      expect(
+        TsRes.Qualifiers.QualifierDefaultValueTokens.validateQualifierDefaultValueTokenParts(
+          parts,
+          qualifiers
+        )
+      ).toSucceedAndSatisfy((result) => {
+        expect(result.qualifier.name).toBe('language');
+        expect(result.value).toBe('');
+      });
+    });
+
+    test('fails with invalid qualifier name', () => {
+      const parts = { qualifier: 'invalid', value: 'en-US' };
+      expect(
+        TsRes.Qualifiers.QualifierDefaultValueTokens.validateQualifierDefaultValueTokenParts(
+          parts,
+          qualifiers
+        )
+      ).toFailWith(/not found/i);
+    });
+
+    test('fails with invalid value for qualifier type', () => {
+      const parts = { qualifier: 'language', value: 'invalid-tag' };
+      expect(
+        TsRes.Qualifiers.QualifierDefaultValueTokens.validateQualifierDefaultValueTokenParts(
+          parts,
+          qualifiers
+        )
+      ).toFailWith(/invalid.*context.*value/i);
+    });
+
+    test('fails with invalid enumerated value', () => {
+      const parts = { qualifier: 'environment', value: 'invalid' };
+      expect(
+        TsRes.Qualifiers.QualifierDefaultValueTokens.validateQualifierDefaultValueTokenParts(
+          parts,
+          qualifiers
+        )
+      ).toFailWith(/invalid.*context.*value/i);
+    });
+
+    test('validates comma-separated values for qualifier types that allow context lists', () => {
+      const parts = { qualifier: 'region', value: 'US,CA' };
+      expect(
+        TsRes.Qualifiers.QualifierDefaultValueTokens.validateQualifierDefaultValueTokenParts(
+          parts,
+          qualifiers
+        )
+      ).toSucceedAndSatisfy((result) => {
+        expect(result.qualifier.name).toBe('region');
+        expect(result.value).toBe('US,CA');
+      });
+    });
+
+    test('fails with comma-separated values for qualifier types that do not allow context lists', () => {
+      const parts = { qualifier: 'territory', value: 'US,CA' };
+      expect(
+        TsRes.Qualifiers.QualifierDefaultValueTokens.validateQualifierDefaultValueTokenParts(
+          parts,
+          qualifiers
+        )
+      ).toFailWith(/invalid.*context.*value/i);
+    });
+
+    test('validates individual values in comma-separated lists', () => {
+      const parts = { qualifier: 'region', value: 'US,INVALID' };
+      expect(
+        TsRes.Qualifiers.QualifierDefaultValueTokens.validateQualifierDefaultValueTokenParts(
+          parts,
+          qualifiers
+        )
+      ).toFailWith(/invalid.*context.*value/i);
+    });
+  });
+
   describe('edge cases and error conditions', () => {
     test('handles qualifier type that does not allow context lists', () => {
       expect(tokens.parseQualifierDefaultValueToken('territory=US,CA')).toFailWith(

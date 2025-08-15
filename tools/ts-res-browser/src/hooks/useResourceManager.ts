@@ -4,6 +4,7 @@ import {
   ProcessedResources,
   processImportedDirectory,
   processImportedFiles,
+  processFileTreeDirectly,
   createSimpleContext,
   createProcessedResourcesFromManager,
   finalizeProcessing
@@ -28,7 +29,16 @@ export interface UseResourceManagerReturn {
   actions: {
     processDirectory: (directory: ImportedDirectory) => Promise<void>;
     processFiles: (files: ImportedFile[]) => Promise<void>;
-    processFileTree: (fileTree: FileTree.FileTree, rootPath?: string) => Promise<void>;
+    processFileTree: (
+      fileTree: FileTree.FileTree,
+      rootPath?: string,
+      config?: Config.Model.ISystemConfiguration
+    ) => Promise<void>;
+    processFileTreeDirectly: (
+      fileTree: FileTree.FileTree,
+      rootPath?: string,
+      config?: Config.Model.ISystemConfiguration
+    ) => Promise<void>;
     processBundleFile: (file: ImportedFile) => Promise<void>;
     clearError: () => void;
     reset: () => void;
@@ -242,8 +252,11 @@ export const useResourceManager = (): UseResourceManagerReturn => {
       rootPath: string = '/',
       systemConfig?: Config.Model.ISystemConfiguration
     ) => {
-      console.log('=== STARTING FILETREE PROCESSING ===');
+      console.log('=== STARTING FILETREE PROCESSING (LEGACY METHOD) ===');
       console.log('Root path:', rootPath);
+      console.log(
+        'Note: This method uses conversion for backward compatibility. Use processFileTreeDirectly for better performance.'
+      );
 
       setState((prev) => ({ ...prev, isProcessing: true, error: null }));
 
@@ -271,29 +284,19 @@ export const useResourceManager = (): UseResourceManagerReturn => {
           // Use provided config or fall back to state config
           const configToUse = systemConfig || state.activeConfiguration || undefined;
 
-          setState((prev) => ({ ...prev, isProcessing: true, error: null }));
-
-          try {
-            const result = processImportedFiles(converted, configToUse);
-            if (result.isSuccess()) {
-              setState((prev) => ({
-                ...prev,
-                isProcessing: false,
-                processedResources: result.value,
-                hasProcessedData: true
-              }));
-            } else {
-              setState((prev) => ({
-                ...prev,
-                isProcessing: false,
-                error: result.message
-              }));
-            }
-          } catch (error) {
+          const result = processImportedFiles(converted, configToUse);
+          if (result.isSuccess()) {
             setState((prev) => ({
               ...prev,
               isProcessing: false,
-              error: `Failed to process files: ${error instanceof Error ? error.message : String(error)}`
+              processedResources: result.value,
+              hasProcessedData: true
+            }));
+          } else {
+            setState((prev) => ({
+              ...prev,
+              isProcessing: false,
+              error: result.message
             }));
           }
         } else {
@@ -303,29 +306,19 @@ export const useResourceManager = (): UseResourceManagerReturn => {
           // Use provided config or fall back to state config
           const configToUse = systemConfig || state.activeConfiguration || undefined;
 
-          setState((prev) => ({ ...prev, isProcessing: true, error: null }));
-
-          try {
-            const result = processImportedDirectory(converted, configToUse);
-            if (result.isSuccess()) {
-              setState((prev) => ({
-                ...prev,
-                isProcessing: false,
-                processedResources: result.value,
-                hasProcessedData: true
-              }));
-            } else {
-              setState((prev) => ({
-                ...prev,
-                isProcessing: false,
-                error: result.message
-              }));
-            }
-          } catch (error) {
+          const result = processImportedDirectory(converted, configToUse);
+          if (result.isSuccess()) {
             setState((prev) => ({
               ...prev,
               isProcessing: false,
-              error: `Failed to process directory: ${error instanceof Error ? error.message : String(error)}`
+              processedResources: result.value,
+              hasProcessedData: true
+            }));
+          } else {
+            setState((prev) => ({
+              ...prev,
+              isProcessing: false,
+              error: result.message
             }));
           }
         }
@@ -368,6 +361,52 @@ export const useResourceManager = (): UseResourceManagerReturn => {
       error: null
     }));
   }, []);
+
+  const processFileTreeDirectly = useCallback(
+    async (
+      fileTree: FileTree.FileTree,
+      rootPath: string = '/',
+      systemConfig?: Config.Model.ISystemConfiguration
+    ) => {
+      console.log('=== STARTING DIRECT FILETREE PROCESSING ===');
+      console.log('Root path:', rootPath);
+
+      setState((prev) => ({ ...prev, isProcessing: true, error: null }));
+
+      try {
+        console.log('1. Processing FileTree directly...');
+
+        // Use provided config or fall back to state config
+        const configToUse = systemConfig || state.activeConfiguration || undefined;
+
+        const result = processFileTreeDirectly(fileTree, rootPath, configToUse);
+        if (result.isSuccess()) {
+          setState((prev) => ({
+            ...prev,
+            isProcessing: false,
+            processedResources: result.value,
+            hasProcessedData: true
+          }));
+          console.log('2. Direct FileTree processing completed successfully');
+        } else {
+          setState((prev) => ({
+            ...prev,
+            isProcessing: false,
+            error: result.message
+          }));
+        }
+      } catch (error) {
+        console.error('=== DIRECT FILETREE PROCESSING ERROR ===');
+        console.error('Error:', error);
+        setState((prev) => ({
+          ...prev,
+          isProcessing: false,
+          error: `Unexpected error: ${error instanceof Error ? error.message : String(error)}`
+        }));
+      }
+    },
+    [state.activeConfiguration]
+  );
 
   const processBundleFile = useCallback(async (file: ImportedFile) => {
     console.log('=== STARTING BUNDLE FILE PROCESSING ===');
@@ -460,6 +499,7 @@ export const useResourceManager = (): UseResourceManagerReturn => {
       processDirectory,
       processFiles,
       processFileTree,
+      processFileTreeDirectly,
       processBundleFile,
       clearError,
       reset,

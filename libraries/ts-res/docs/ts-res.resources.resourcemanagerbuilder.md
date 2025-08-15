@@ -9,9 +9,9 @@ Builder for a collection of [resources](./ts-res.resources.resource.md)<!-- -->.
 **Signature:**
 
 ```typescript
-export declare class ResourceManagerBuilder implements IResourceManager 
+export declare class ResourceManagerBuilder implements IResourceManager<Resource> 
 ```
-**Implements:** [IResourceManager](./ts-res.iresourcemanager.md)
+**Implements:** [IResourceManager](./ts-res.iresourcemanager.md)<!-- -->&lt;[Resource](./ts-res.resource.md)<!-- -->&gt;
 
 ## Constructors
 
@@ -107,6 +107,27 @@ ValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [Resource](
 
 
 </td><td>
+
+
+</td></tr>
+<tr><td>
+
+[\_cachedResourceTree?](./ts-res.resources.resourcemanagerbuilder._cachedresourcetree.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+[ResourceTree.IReadOnlyResourceTreeRoot](./ts-res.runtime.resourcetree.ireadonlyresourcetreeroot.md)<!-- -->&lt;[Resource](./ts-res.resource.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>
@@ -541,6 +562,22 @@ Creates a new [ResourceManagerBuilder](./ts-res.resources.resourcemanagerbuilder
 </td></tr>
 <tr><td>
 
+[createFromCompiledResourceCollection(compiledCollection, systemConfig)](./ts-res.resources.resourcemanagerbuilder.createfromcompiledresourcecollection.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [ResourceManagerBuilder](./ts-res.resources.resourcemanagerbuilder.md) from a [compiled resource collection](./ts-res.resourcejson.compiled.icompiledresourcecollection.md)<!-- -->. This method reconstructs an exactly equivalent builder where all qualifier, condition, condition set, and decision indices match the original compiled collection.
+
+
+</td></tr>
+<tr><td>
+
 [createPredefined(name, qualifierDefaultValues)](./ts-res.resources.resourcemanagerbuilder.createpredefined.md)
 
 
@@ -650,6 +687,24 @@ Gets an individual [built resource](./ts-res.resources.resource.md) from the man
 </td><td>
 
 Gets a read-only array of all [built resources](./ts-res.resources.resource.md) that have at least one candidate that can match the supplied context.
+
+
+</td></tr>
+<tr><td>
+
+[getBuiltResourceTree()](./ts-res.resources.resourcemanagerbuilder.getbuiltresourcetree.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Builds and returns a hierarchical tree representation of all resources managed by this builder. Resources are organized based on their dot-separated resource IDs (e.g., "app.messages.welcome" becomes a tree with "app" as root, "messages" as branch, and "welcome" as leaf).
+
+String-based validation is available through the `children.validating` property, allowing callers to use `tree.children.validating.getById(stringId)` for validated access.
+
+Uses lazy initialization with caching for performance.
 
 
 </td></tr>

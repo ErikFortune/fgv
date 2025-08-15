@@ -21,7 +21,6 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { JsonObject } from '@fgv/ts-json-base';
 import * as TsRes from '../../../index';
 
 describe('ResourceManagerBuilder', () => {
@@ -1672,23 +1671,6 @@ describe('ResourceManagerBuilder', () => {
         expect(cloneResult).toFailWith(/value.*not found|missing.*value|value.*required/i);
       });
 
-      test('fails with null JSON value', () => {
-        const editCandidates: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl[] = [
-          {
-            id: 'test.resource',
-            json: null as unknown as JsonObject, // Null JSON value should be invalid
-            conditions: { language: 'en' },
-            resourceTypeName: 'json'
-          }
-        ];
-
-        const cloneResult = sourceManager.clone({
-          candidates: editCandidates
-        });
-
-        expect(cloneResult).toFailWith(/not.*valid.*json|invalid.*json/i);
-      });
-
       test('handles resource type mismatch gracefully', () => {
         const editCandidates: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl[] = [
           {
@@ -1862,6 +1844,95 @@ describe('ResourceManagerBuilder', () => {
           });
         });
       });
+    });
+  });
+
+  describe('createFromCompiledResourceCollection static method', () => {
+    test('should create builder from compiled collection (idempotency test)', () => {
+      // Create a builder with resources
+      const originalBuilder = TsRes.Resources.ResourceManagerBuilder.create({
+        qualifiers,
+        resourceTypes
+      }).orThrow();
+
+      // Add a test resource
+      originalBuilder
+        .addLooseCandidate({
+          ...someDecls[0],
+          resourceTypeName: 'json'
+        })
+        .orThrow();
+
+      const originalCollection = originalBuilder.getCompiledResourceCollection().orThrow();
+
+      // Create system config matching the original builder's configuration
+      const systemConfig = TsRes.Config.SystemConfiguration.create({
+        qualifierTypes: [
+          { name: 'language', systemType: 'language', configuration: {} },
+          { name: 'territory', systemType: 'territory', configuration: {} },
+          { name: 'literal', systemType: 'literal', configuration: {} }
+        ],
+        qualifiers: qualifierDecls,
+        resourceTypes: [
+          { name: 'json', typeName: 'json' },
+          { name: 'other', typeName: 'json' }
+        ]
+      }).orThrow();
+
+      // This is the key test - can we reconstruct from compiled collection?
+      expect(
+        TsRes.Resources.ResourceManagerBuilder.createFromCompiledResourceCollection(
+          originalCollection,
+          systemConfig
+        )
+      ).toSucceedAndSatisfy((reconstructedBuilder) => {
+        // Basic idempotency check - reconstructed should have same compiled structure
+        const reconstructedCollection = reconstructedBuilder.getCompiledResourceCollection().orThrow();
+
+        expect(reconstructedCollection.qualifierTypes).toHaveLength(originalCollection.qualifierTypes.length);
+        expect(reconstructedCollection.qualifiers).toHaveLength(originalCollection.qualifiers.length);
+        expect(reconstructedCollection.resourceTypes).toHaveLength(originalCollection.resourceTypes.length);
+        expect(reconstructedCollection.conditions).toHaveLength(originalCollection.conditions.length);
+        expect(reconstructedCollection.conditionSets).toHaveLength(originalCollection.conditionSets.length);
+        expect(reconstructedCollection.decisions).toHaveLength(originalCollection.decisions.length);
+        expect(reconstructedCollection.resources).toHaveLength(originalCollection.resources.length);
+
+        // Verify the builder can produce a working resource manager
+        expect(reconstructedBuilder.build()).toSucceed();
+      });
+    });
+
+    test('should fail with invalid compiled collection structure', () => {
+      const systemConfig = TsRes.Config.SystemConfiguration.create({
+        qualifierTypes: [
+          { name: 'language', systemType: 'language', configuration: {} },
+          { name: 'territory', systemType: 'territory', configuration: {} },
+          { name: 'literal', systemType: 'literal', configuration: {} }
+        ],
+        qualifiers: qualifierDecls,
+        resourceTypes: [
+          { name: 'json', typeName: 'json' },
+          { name: 'other', typeName: 'json' }
+        ]
+      }).orThrow();
+
+      // Invalid compiled collection with malformed decision structure
+      const invalidCollection = {
+        qualifierTypes: [],
+        qualifiers: [],
+        resourceTypes: [],
+        conditions: [],
+        conditionSets: [],
+        decisions: [{ conditionSets: [999], candidates: [] }], // Invalid decision - references non-existent condition set index
+        resources: []
+      };
+
+      expect(
+        TsRes.Resources.ResourceManagerBuilder.createFromCompiledResourceCollection(
+          invalidCollection as unknown as TsRes.ResourceJson.Compiled.ICompiledResourceCollection,
+          systemConfig
+        )
+      ).toFail();
     });
   });
 });

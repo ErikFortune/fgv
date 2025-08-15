@@ -344,6 +344,85 @@ describe('LiteralValueHierarchy', () => {
       });
     });
 
+    describe('isAncestor', () => {
+      test('returns true when possibleAncestor is direct parent', () => {
+        expect(lvh.isAncestor('some_stb', 'stb')).toBe(true);
+        expect(lvh.isAncestor('some_stb_variant', 'some_stb')).toBe(true);
+        expect(lvh.isAncestor('android', 'mobile')).toBe(true);
+        expect(lvh.isAncestor('firetv', 'ctv')).toBe(true);
+      });
+
+      test('returns true when possibleAncestor is grandparent', () => {
+        expect(lvh.isAncestor('some_stb', 'ctv')).toBe(true); // some_stb -> stb -> ctv
+        expect(lvh.isAncestor('some_stb_variant', 'stb')).toBe(true); // some_stb_variant -> some_stb -> stb
+        expect(lvh.isAncestor('some_stb_variant', 'ctv')).toBe(true); // some_stb_variant -> some_stb -> stb -> ctv
+      });
+
+      test('returns false when possibleAncestor is descendant', () => {
+        expect(lvh.isAncestor('stb', 'some_stb')).toBe(false);
+        expect(lvh.isAncestor('ctv', 'some_stb')).toBe(false);
+        expect(lvh.isAncestor('some_stb', 'some_stb_variant')).toBe(false);
+        expect(lvh.isAncestor('mobile', 'android')).toBe(false);
+      });
+
+      test('returns false for siblings in hierarchy', () => {
+        expect(lvh.isAncestor('some_stb', 'other_stb')).toBe(false); // Both children of 'stb'
+        expect(lvh.isAncestor('other_stb', 'some_stb')).toBe(false);
+        expect(lvh.isAncestor('android', 'ios')).toBe(false); // Both children of 'mobile'
+        expect(lvh.isAncestor('ios', 'android')).toBe(false);
+        expect(lvh.isAncestor('androidtv', 'appletv')).toBe(false); // Both children of 'ctv'
+      });
+
+      test('returns false when value equals possibleAncestor', () => {
+        expect(lvh.isAncestor('some_stb', 'some_stb')).toBe(false);
+        expect(lvh.isAncestor('stb', 'stb')).toBe(false);
+        expect(lvh.isAncestor('ctv', 'ctv')).toBe(false);
+        expect(lvh.isAncestor('web', 'web')).toBe(false);
+      });
+
+      test('returns false for root values when checking for ancestors', () => {
+        // Root values have no ancestors - test against non-existent values
+        expect(lvh.isAncestor('ctv', 'nonexistent' as TestPlatform)).toBe(false);
+        expect(lvh.isAncestor('mobile', 'nonexistent' as TestPlatform)).toBe(false);
+        expect(lvh.isAncestor('web', 'nonexistent' as TestPlatform)).toBe(false);
+      });
+
+      test('returns false for root values when checking against actual hierarchy values', () => {
+        // Root values have no ancestors - test against actual values in hierarchy
+        expect(lvh.isAncestor('ctv', 'stb')).toBe(false); // ctv is root, stb is child - ctv has no ancestors
+        expect(lvh.isAncestor('mobile', 'android')).toBe(false); // mobile is root, android is child
+        expect(lvh.isAncestor('web', 'stb')).toBe(false); // web is root, stb is unrelated
+        expect(lvh.isAncestor('ctv', 'mobile')).toBe(false); // both are roots, no ancestor relationship
+      });
+
+      test('returns false when value is not in hierarchy', () => {
+        expect(lvh.isAncestor('not_in_hierarchy' as TestPlatform, 'stb')).toBe(false);
+      });
+
+      test('returns false when possibleAncestor is not in hierarchy', () => {
+        expect(lvh.isAncestor('some_stb', 'not_in_hierarchy' as TestPlatform)).toBe(false);
+      });
+
+      test('returns false for unrelated values', () => {
+        expect(lvh.isAncestor('some_stb', 'web')).toBe(false);
+        expect(lvh.isAncestor('web', 'some_stb')).toBe(false);
+        expect(lvh.isAncestor('android', 'stb')).toBe(false);
+        expect(lvh.isAncestor('firetv', 'mobile')).toBe(false);
+      });
+
+      test('handles complex hierarchy paths correctly', () => {
+        // some_stb_variant -> some_stb -> stb -> ctv
+        expect(lvh.isAncestor('some_stb_variant', 'some_stb')).toBe(true);
+        expect(lvh.isAncestor('some_stb_variant', 'stb')).toBe(true);
+        expect(lvh.isAncestor('some_stb_variant', 'ctv')).toBe(true);
+
+        // Reverse should all be false
+        expect(lvh.isAncestor('some_stb', 'some_stb_variant')).toBe(false);
+        expect(lvh.isAncestor('stb', 'some_stb_variant')).toBe(false);
+        expect(lvh.isAncestor('ctv', 'some_stb_variant')).toBe(false);
+      });
+    });
+
     test('getDescendants returns empty array when value has no children', () => {
       const lvh = TsRes.QualifierTypes.LiteralValueHierarchy.create({
         values: ['leaf', 'parent'],
@@ -471,6 +550,65 @@ describe('LiteralValueHierarchy', () => {
         expect(lvh.match('unknown1', 'unknown2')).toBe(TsRes.NoMatch);
         expect(lvh.match('unknown1', 'a')).toBe(TsRes.NoMatch);
         expect(lvh.match('a', 'unknown1')).toBe(TsRes.NoMatch);
+      });
+    });
+
+    describe('isAncestor in open values mode', () => {
+      let lvh: TsRes.QualifierTypes.LiteralValueHierarchy<string>;
+
+      beforeEach(() => {
+        lvh = TsRes.QualifierTypes.LiteralValueHierarchy.create({
+          values: [] as string[],
+          hierarchy: {
+            child1: 'parent',
+            child2: 'parent',
+            parent: 'grandparent',
+            grandparent: 'root'
+          }
+        }).orThrow();
+      });
+
+      test('returns true for direct parent relationships', () => {
+        expect(lvh.isAncestor('child1', 'parent')).toBe(true);
+        expect(lvh.isAncestor('child2', 'parent')).toBe(true);
+        expect(lvh.isAncestor('parent', 'grandparent')).toBe(true);
+        expect(lvh.isAncestor('grandparent', 'root')).toBe(true);
+      });
+
+      test('returns true for multi-level ancestor relationships', () => {
+        expect(lvh.isAncestor('child1', 'grandparent')).toBe(true); // child1 -> parent -> grandparent
+        expect(lvh.isAncestor('child1', 'root')).toBe(true); // child1 -> parent -> grandparent -> root
+        expect(lvh.isAncestor('parent', 'root')).toBe(true); // parent -> grandparent -> root
+      });
+
+      test('returns false for sibling relationships', () => {
+        expect(lvh.isAncestor('child1', 'child2')).toBe(false);
+        expect(lvh.isAncestor('child2', 'child1')).toBe(false);
+      });
+
+      test('returns false for descendant relationships', () => {
+        expect(lvh.isAncestor('parent', 'child1')).toBe(false);
+        expect(lvh.isAncestor('grandparent', 'child1')).toBe(false);
+        expect(lvh.isAncestor('root', 'child1')).toBe(false);
+      });
+
+      test('returns false for values not in hierarchy', () => {
+        expect(lvh.isAncestor('unknown', 'parent')).toBe(false);
+        expect(lvh.isAncestor('child1', 'unknown')).toBe(false);
+        expect(lvh.isAncestor('unknown1', 'unknown2')).toBe(false);
+      });
+
+      test('returns false for identical values', () => {
+        expect(lvh.isAncestor('child1', 'child1')).toBe(false);
+        expect(lvh.isAncestor('parent', 'parent')).toBe(false);
+        expect(lvh.isAncestor('root', 'root')).toBe(false);
+      });
+
+      test('returns false for root values with no ancestors', () => {
+        // Root value has no ancestors - test against actual hierarchy values
+        expect(lvh.isAncestor('root', 'grandparent')).toBe(false); // root has no ancestors
+        expect(lvh.isAncestor('root', 'parent')).toBe(false); // root has no ancestors
+        expect(lvh.isAncestor('root', 'child1')).toBe(false); // root has no ancestors
       });
     });
 

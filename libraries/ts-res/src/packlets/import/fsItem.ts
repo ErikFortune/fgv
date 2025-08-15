@@ -28,7 +28,7 @@ import {
   Result,
   fail,
   succeed,
-  failWithDetail
+  useOrInitialize
 } from '@fgv/ts-utils';
 import { Helpers as CommonHelpers, Validate } from '../common';
 import * as Conditions from '../conditions';
@@ -145,20 +145,14 @@ export class FsItem implements IFsItemProps {
     qualifiers: IReadOnlyQualifierCollector,
     tree?: FileTree.FileTree
   ): DetailedResult<FsItem, FsItemResultDetail> {
-    if (tree === undefined) {
-      /* c8 ignore next 7 - functional code path tested but coverage intermittently missed */
-      const treeResult = FileTree.forFilesystem();
-      /* c8 ignore next 3 - defense in depth should never happen */
-      if (treeResult.isFailure()) {
-        return failWithDetail(treeResult.message, 'failed');
-      }
-      tree = treeResult.value;
-    }
-
-    return tree
-      .getItem(importPath)
-      .withDetail<FsItemResultDetail>('failed')
-      .onSuccess((item) => FsItem.createForItem(item, qualifiers));
+    return useOrInitialize(tree, () => FileTree.forFilesystem())
+      .withDetail<FsItemResultDetail>('failed', 'succeeded')
+      .onSuccess((tree) => {
+        return tree
+          .getItem(importPath)
+          .withDetail<FsItemResultDetail>('failed')
+          .onSuccess((item) => FsItem.createForItem(item, qualifiers));
+      });
   }
 
   /**

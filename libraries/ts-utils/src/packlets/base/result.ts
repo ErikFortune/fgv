@@ -637,6 +637,17 @@ export function fails<T>(message: string): Failure<T> {
 }
 
 /**
+ * Uses a value or calls a supplied initializer if the supplied value is undefined.
+ * @param value - the value
+ * @param initializer - a function that initializes the value if it is undefined
+ * @returns `Success` with the value if it is defined, or the result of calling the initializer function.
+ * @public
+ */
+export function useOrInitialize<T>(value: T | undefined, initializer: () => Result<T>): Result<T> {
+  return value !== undefined ? succeed(value) : initializer();
+}
+
+/**
  * Callback to be called when a {@link DetailedResult | DetailedResult} encounters success.
  * @remarks
  * A success callback can return a different result type than it receives, allowing

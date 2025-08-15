@@ -282,6 +282,22 @@ Gets the [key](./ts-res.conditionsetkey.md) for a supplied [condition set declar
 </td></tr>
 <tr><td>
 
+[getKeyFromLooseDecl(conditionSet, conditionCollector)](./ts-res.conditionset.getkeyfromloosedecl.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Gets a condition set key from a loose condition set declaration.
+
+
+</td></tr>
+<tr><td>
+
 [setIndex(index)](./ts-res.conditionset.setindex.md)
 
 

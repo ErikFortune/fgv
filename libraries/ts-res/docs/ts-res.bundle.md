@@ -168,5 +168,14 @@ Description
 
 
 </td></tr>
+<tr><td>
+
+[Model](./ts-res.bundle.model.md)
+
+
+</td><td>
+
+
+</td></tr>
 </tbody></table>
 

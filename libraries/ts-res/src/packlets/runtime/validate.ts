@@ -50,6 +50,10 @@ export const resource: Validator<IResource, unknown> = Validators.object<IResour
     'ResourceId',
     (v): v is ResourceId => typeof v === 'string' && Validate.isValidResourceId(v)
   ),
+  name: Validators.isA(
+    'ResourceName',
+    (v): v is string => typeof v === 'string' && Validate.isValidResourceName(v)
+  ),
   resourceType: Validators.isA('ResourceType instance', (v): v is ResourceType => v instanceof ResourceType),
   decision: Validators.isA(
     'ConcreteDecision instance',

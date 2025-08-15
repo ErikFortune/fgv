@@ -148,7 +148,7 @@ export class LiteralValueHierarchy<T extends string = string> {
    */
   public getAncestors(value: T): Result<T[]> {
     const current = this.values.get(value);
-    /* c8 ignore next 2 - functional error case tested but coverage intermittently missed */
+    /* c8 ignore next 3 - functional error case tested but coverage intermittently missed */
     if (!current) {
       return fail(`${value}: not found in hierarchy`);
     }

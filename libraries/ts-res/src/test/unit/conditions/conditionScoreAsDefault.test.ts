@@ -559,4 +559,97 @@ describe('Condition scoreAsDefault Automatic Initialization', () => {
       expect(sorted[2].scoreAsDefault).toBe(TsRes.PerfectMatch);
     });
   });
+
+  describe('Direct constructor scoreAsDefault fallback logic', () => {
+    let languageQualifier: TsRes.Qualifiers.Qualifier;
+
+    beforeEach(() => {
+      qualifierTypes = TsRes.QualifierTypes.QualifierTypeCollector.create({
+        qualifierTypes: [TsRes.QualifierTypes.LanguageQualifierType.create().orThrow()]
+      }).orThrow();
+
+      const qualifiers = TsRes.Qualifiers.QualifierCollector.create({
+        qualifierTypes,
+        qualifiers: [
+          {
+            name: 'language',
+            typeName: 'language',
+            defaultPriority: 100,
+            defaultValue: 'en-US'
+          }
+        ]
+      }).orThrow();
+
+      languageQualifier = qualifiers.validating.get('language').orThrow();
+    });
+
+    test('should calculate scoreAsDefault when undefined and qualifier has default value', () => {
+      // Test the specific code path in lines 95-99 of condition.ts
+      // Create validated condition decl with scoreAsDefault explicitly undefined
+      const validatedValue = languageQualifier.validateCondition('en', 'matches').orThrow();
+      const validatedDecl: TsRes.Conditions.IValidatedConditionDecl = {
+        qualifier: languageQualifier,
+        value: validatedValue, // This should partially match the default 'en-US'
+        operator: 'matches' as unknown as TsRes.ConditionOperator,
+        priority: 100 as unknown as TsRes.ConditionPriority,
+        scoreAsDefault: undefined, // Explicitly undefined to trigger the fallback
+        index: 0 as unknown as TsRes.ConditionIndex
+      };
+
+      expect(TsRes.Conditions.Condition.create(validatedDecl)).toSucceedAndSatisfy((condition) => {
+        // The scoreAsDefault should be calculated automatically from the partial match
+        expect(condition.scoreAsDefault).toBeGreaterThan(TsRes.NoMatch);
+        expect(condition.scoreAsDefault).toBeLessThan(TsRes.PerfectMatch);
+      });
+    });
+
+    test('should not calculate scoreAsDefault when qualifier has no default value', () => {
+      // Create a qualifier without default value
+      const qualifiersNoDefault = TsRes.Qualifiers.QualifierCollector.create({
+        qualifierTypes,
+        qualifiers: [
+          {
+            name: 'languageNoDefault',
+            typeName: 'language',
+            defaultPriority: 100
+            // No defaultValue
+          }
+        ]
+      }).orThrow();
+
+      const qualifierNoDefault = qualifiersNoDefault.validating.get('languageNoDefault').orThrow();
+      const validatedValue = qualifierNoDefault.validateCondition('en-US', 'matches').orThrow();
+
+      const validatedDecl: TsRes.Conditions.IValidatedConditionDecl = {
+        qualifier: qualifierNoDefault,
+        value: validatedValue,
+        operator: 'matches' as unknown as TsRes.ConditionOperator,
+        priority: 100 as unknown as TsRes.ConditionPriority,
+        scoreAsDefault: undefined,
+        index: 0 as unknown as TsRes.ConditionIndex
+      };
+
+      expect(TsRes.Conditions.Condition.create(validatedDecl)).toSucceedAndSatisfy((condition) => {
+        // scoreAsDefault should remain undefined
+        expect(condition.scoreAsDefault).toBeUndefined();
+      });
+    });
+
+    test('should not calculate scoreAsDefault when match returns NoMatch', () => {
+      const validatedValue = languageQualifier.validateCondition('zh-CN', 'matches').orThrow();
+      const validatedDecl: TsRes.Conditions.IValidatedConditionDecl = {
+        qualifier: languageQualifier,
+        value: validatedValue, // This should not match the default 'en-US' at all
+        operator: 'matches' as unknown as TsRes.ConditionOperator,
+        priority: 100 as unknown as TsRes.ConditionPriority,
+        scoreAsDefault: undefined,
+        index: 0 as unknown as TsRes.ConditionIndex
+      };
+
+      expect(TsRes.Conditions.Condition.create(validatedDecl)).toSucceedAndSatisfy((condition) => {
+        // scoreAsDefault should remain undefined because of NoMatch
+        expect(condition.scoreAsDefault).toBeUndefined();
+      });
+    });
+  });
 });

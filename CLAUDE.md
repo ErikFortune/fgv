@@ -52,7 +52,9 @@ Use `rushx` to run commands within individual project folders:
 ### Result Pattern
 All operations that can fail return `Result<T>` objects from `@fgv/ts-utils`. This provides consistent error handling across the codebase.  Avoid throwing errors as much as possible, preferring to return a Result and use .orThrow() only on paths that must throw.
 
-#### Result Pattern Examples
+**For comprehensive Result pattern guidance, including chaining, error aggregation, MessageAggregator usage, and testing patterns, see [RESULT_PATTERN_GUIDE.md](./RESULT_PATTERN_GUIDE.md).**
+
+#### Result Pattern Quick Reference
 - Avoid intermediate result variables when possible
 - Consider chaining operations with `.onSuccess()` or `.onFailure()`.
   - this is a guideline, not a rule and the priority is understandable and maintainable code.  Chaining with `.onSuccess` is often but not always cleaner, so if it seems more complex to try to chain, it is acceptable to use intermediate result variables.
