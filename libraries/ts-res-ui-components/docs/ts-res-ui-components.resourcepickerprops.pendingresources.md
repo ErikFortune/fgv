@@ -4,6 +4,8 @@
 
 ## ResourcePickerProps.pendingResources property
 
+Pending (unsaved) resources to display alongside persisted resources
+
 **Signature:**
 
 ```typescript

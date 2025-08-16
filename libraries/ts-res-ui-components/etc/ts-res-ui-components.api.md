@@ -572,15 +572,10 @@ export function parseManifest(manifestData: string): Result<ZipManifest>;
 
 // @public
 export interface PendingResource<T = unknown> {
-    // (undocumented)
     displayName?: string;
-    // (undocumented)
     id: string;
-    // (undocumented)
     resourceData?: T;
-    // (undocumented)
     resourceType?: string;
-    // (undocumented)
     type: 'new' | 'modified' | 'deleted';
 }
 
@@ -788,26 +783,21 @@ export function resolveResourceDetailed(resolver: Runtime.ResourceResolver, reso
 
 // @public
 export interface ResourceAnnotation {
-    // (undocumented)
     badge?: {
         text: string;
         variant: 'info' | 'warning' | 'success' | 'error' | 'edited' | 'new';
     };
-    // (undocumented)
     className?: string;
-    // (undocumented)
     indicator?: {
         type: 'dot' | 'icon' | 'text';
         value: string | React_2.ReactNode;
         tooltip?: string;
     };
-    // (undocumented)
     suffix?: React_2.ReactNode;
 }
 
 // @public
 export interface ResourceAnnotations {
-    // (undocumented)
     [resourceId: string]: ResourceAnnotation;
 }
 
@@ -886,45 +876,27 @@ export const ResourcePicker: <T = unknown>({ resources, selectedResourceId, onRe
 
 // @public
 export interface ResourcePickerProps<T = unknown> extends ViewBaseProps {
-    // (undocumented)
     defaultView?: 'list' | 'tree';
-    // (undocumented)
     emptyMessage?: string;
-    // (undocumented)
     enableSearch?: boolean;
-    // (undocumented)
     height?: string | number;
-    // (undocumented)
     hideRootNode?: boolean;
-    // (undocumented)
     onResourceSelect: (selection: ResourceSelection<T>) => void;
-    // (undocumented)
     pendingResources?: PendingResource<T>[];
-    // (undocumented)
     resourceAnnotations?: ResourceAnnotations;
-    // (undocumented)
     resources: ProcessedResources | ExtendedProcessedResources | null;
-    // (undocumented)
     rootPath?: string;
-    // (undocumented)
     searchPlaceholder?: string;
-    // (undocumented)
     searchScope?: 'all' | 'current-branch';
-    // (undocumented)
     selectedResourceId: string | null;
-    // (undocumented)
     showViewToggle?: boolean;
 }
 
 // @public
 export interface ResourceSelection<T = unknown> {
-    // (undocumented)
     isPending?: boolean;
-    // (undocumented)
     pendingType?: 'new' | 'modified' | 'deleted';
-    // (undocumented)
     resourceData?: T;
-    // (undocumented)
     resourceId: string | null;
 }
 
@@ -973,12 +945,12 @@ export function useConfigurationState(initialConfiguration?: Config.Model.ISyste
 
 // Warning: (ae-forgotten-export) The symbol "UseFilterStateReturn" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 export function useFilterState(initialState?: Partial<FilterState>): UseFilterStateReturn;
 
 // Warning: (ae-forgotten-export) The symbol "UseResolutionStateReturn" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 export function useResolutionState(processedResources: ProcessedResources | null, onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void, onSystemUpdate?: (updatedResources: ProcessedResources) => void): UseResolutionStateReturn;
 
 // Warning: (ae-forgotten-export) The symbol "UseResourceDataReturn" needs to be exported by the entry point index.d.ts
@@ -988,7 +960,7 @@ export function useResourceData(): UseResourceDataReturn;
 
 // Warning: (ae-forgotten-export) The symbol "UseViewStateReturn" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 export function useViewState(): UseViewStateReturn;
 
 // Warning: (ae-incompatible-release-tags) The symbol "validateConfiguration" is marked as @public, but its signature references "ConfigurationValidationResult" which is marked as @internal

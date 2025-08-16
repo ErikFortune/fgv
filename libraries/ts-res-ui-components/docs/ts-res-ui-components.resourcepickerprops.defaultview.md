@@ -4,6 +4,8 @@
 
 ## ResourcePickerProps.defaultView property
 
+Default view mode to use on initial render
+
 **Signature:**
 
 ```typescript

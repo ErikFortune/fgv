@@ -4,12 +4,31 @@
 
 ## ResourceSelection interface
 
-Resource selection data returned by the onResourceSelect callback
+Resource selection data returned by the onResourceSelect callback.
+
+This interface provides comprehensive information about the selected resource, eliminating the need for consumers to perform additional lookups.
 
 **Signature:**
 
 ```typescript
 export interface ResourceSelection<T = unknown> 
+```
+
+## Example
+
+
+```tsx
+const handleResourceSelect = (selection: ResourceSelection<MyResourceType>) => {
+  if (selection.resourceId) {
+    console.log('Selected:', selection.resourceId);
+    if (selection.resourceData) {
+      console.log('Data:', selection.resourceData);
+    }
+    if (selection.isPending) {
+      console.log('Pending operation:', selection.pendingType);
+    }
+  }
+};
 ```
 
 ## Properties
@@ -50,7 +69,7 @@ boolean
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Whether this is a pending (unsaved) resource
 
 
 </td></tr>
@@ -69,7 +88,7 @@ _(Optional)_
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Type of pending operation for unsaved resources
 
 
 </td></tr>
@@ -88,7 +107,7 @@ T
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ The actual resource data if available and typed
 
 
 </td></tr>
@@ -106,6 +125,8 @@ string \| null
 
 
 </td><td>
+
+The ID of the selected resource, or null if no selection
 
 
 </td></tr>

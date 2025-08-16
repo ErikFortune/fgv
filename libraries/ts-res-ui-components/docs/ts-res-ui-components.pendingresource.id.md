@@ -4,6 +4,8 @@
 
 ## PendingResource.id property
 
+Unique identifier for the pending resource
+
 **Signature:**
 
 ```typescript

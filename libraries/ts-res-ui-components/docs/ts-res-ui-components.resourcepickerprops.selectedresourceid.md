@@ -4,6 +4,8 @@
 
 ## ResourcePickerProps.selectedResourceId property
 
+Currently selected resource ID
+
 **Signature:**
 
 ```typescript

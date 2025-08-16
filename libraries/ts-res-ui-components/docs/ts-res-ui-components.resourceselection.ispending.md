@@ -4,6 +4,8 @@
 
 ## ResourceSelection.isPending property
 
+Whether this is a pending (unsaved) resource
+
 **Signature:**
 
 ```typescript

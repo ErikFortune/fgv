@@ -4,6 +4,8 @@
 
 ## ResourcePickerProps.enableSearch property
 
+Whether to enable the search input
+
 **Signature:**
 
 ```typescript

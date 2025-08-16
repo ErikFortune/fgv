@@ -4,6 +4,9 @@
 
 ## useViewState() function
 
+Hook for managing view state including messages and resource selection.
+
+This hook provides a centralized way to manage common view state concerns like user messages (notifications) and resource selection. It's designed to be used by view components that need to display messages and track the currently selected resource.
 
 **Signature:**
 
@@ -13,4 +16,40 @@ export declare function useViewState(): UseViewStateReturn;
 **Returns:**
 
 UseViewStateReturn
+
+Object containing view state and state management functions
+
+## Example
+
+
+```tsx
+function MyResourceView() {
+  const {
+    messages,
+    selectedResourceId,
+    addMessage,
+    clearMessages,
+    selectResource
+  } = useViewState();
+
+  const handleOperation = async () => {
+    try {
+      await someAsyncOperation();
+      addMessage('success', 'Operation completed successfully');
+    } catch (error) {
+      addMessage('error', `Operation failed: ${error.message}`);
+    }
+  };
+
+  return (
+    <div>
+      <MessageDisplay messages={messages} onClear={clearMessages} />
+      <ResourcePicker
+        selectedResourceId={selectedResourceId}
+        onResourceSelect={(selection) => selectResource(selection.resourceId)}
+      />
+    </div>
+  );
+}
+```
 

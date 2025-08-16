@@ -4,6 +4,8 @@
 
 ## PendingResource.displayName property
 
+Display name for the resource in the picker
+
 **Signature:**
 
 ```typescript

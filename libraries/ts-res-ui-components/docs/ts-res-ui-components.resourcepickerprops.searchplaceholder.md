@@ -4,6 +4,8 @@
 
 ## ResourcePickerProps.searchPlaceholder property
 
+Placeholder text for the search input
+
 **Signature:**
 
 ```typescript

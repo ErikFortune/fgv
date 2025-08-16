@@ -4,7 +4,9 @@
 
 ## ResourcePickerProps interface
 
-Props for the ResourcePicker component
+Props for the ResourcePicker component.
+
+The ResourcePicker is a comprehensive component for browsing and selecting resources with support for multiple view modes, search, annotations, and pending resources.
 
 **Signature:**
 
@@ -12,6 +14,28 @@ Props for the ResourcePicker component
 export interface ResourcePickerProps<T = unknown> extends ViewBaseProps 
 ```
 **Extends:** [ViewBaseProps](./ts-res-ui-components.viewbaseprops.md)
+
+## Example
+
+
+```tsx
+<ResourcePicker
+  resources={processedResources}
+  selectedResourceId={currentId}
+  onResourceSelect={(selection) => {
+    setCurrentId(selection.resourceId);
+    if (selection.resourceData) {
+      // Use the resource data directly
+      handleResourceData(selection.resourceData);
+    }
+  }}
+  defaultView="tree"
+  enableSearch={true}
+  resourceAnnotations={{
+    'res1': { badge: { text: '3', variant: 'info' } }
+  }}
+/>
+```
 
 ## Properties
 
@@ -51,7 +75,7 @@ Description
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Default view mode to use on initial render
 
 
 </td></tr>
@@ -70,7 +94,7 @@ string
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Message to display when no resources are available
 
 
 </td></tr>
@@ -89,7 +113,7 @@ boolean
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Whether to enable the search input
 
 
 </td></tr>
@@ -108,7 +132,7 @@ string \| number
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Height of the picker component
 
 
 </td></tr>
@@ -127,7 +151,7 @@ boolean
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Hide the root node itself, showing only its children
 
 
 </td></tr>
@@ -146,6 +170,8 @@ _(Optional)_
 
 </td><td>
 
+Callback fired when a resource is selected, providing comprehensive selection data
+
 
 </td></tr>
 <tr><td>
@@ -163,7 +189,7 @@ _(Optional)_
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Pending (unsaved) resources to display alongside persisted resources
 
 
 </td></tr>
@@ -182,7 +208,7 @@ _(Optional)_
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Annotations to display next to resource names (badges, indicators, etc.)
 
 
 </td></tr>
@@ -201,6 +227,8 @@ _(Optional)_
 
 </td><td>
 
+Processed resources to display in the picker
+
 
 </td></tr>
 <tr><td>
@@ -218,7 +246,7 @@ string
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Path to treat as root for tree branch isolation (e.g., "platform/territories")
 
 
 </td></tr>
@@ -237,7 +265,7 @@ string
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Placeholder text for the search input
 
 
 </td></tr>
@@ -256,7 +284,7 @@ _(Optional)_
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Scope of search - entire tree or just the currently visible branch
 
 
 </td></tr>
@@ -275,6 +303,8 @@ string \| null
 
 </td><td>
 
+Currently selected resource ID
+
 
 </td></tr>
 <tr><td>
@@ -292,7 +322,7 @@ boolean
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Whether to show the list/tree view toggle buttons
 
 
 </td></tr>

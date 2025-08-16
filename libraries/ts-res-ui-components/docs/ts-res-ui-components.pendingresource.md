@@ -4,12 +4,35 @@
 
 ## PendingResource interface
 
-Represents a resource that hasn't been persisted yet
+Represents a resource that hasn't been persisted yet.
+
+Pending resources are displayed alongside persisted resources in the picker, allowing users to interact with unsaved changes. They are visually distinguished with appropriate styling and annotations.
 
 **Signature:**
 
 ```typescript
 export interface PendingResource<T = unknown> 
+```
+
+## Example
+
+
+```tsx
+const pendingResources: PendingResource<MyResourceType>[] = [
+  {
+    id: 'user.new-welcome',
+    type: 'new',
+    resourceType: 'string',
+    displayName: 'Welcome Message (New)',
+    resourceData: { text: 'Welcome!', locale: 'en' }
+  },
+  {
+    id: 'user.existing-modified',
+    type: 'modified',
+    displayName: 'User Profile (Modified)',
+    resourceData: { name: 'Updated Name' }
+  }
+];
 ```
 
 ## Properties
@@ -50,7 +73,7 @@ string
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Display name for the resource in the picker
 
 
 </td></tr>
@@ -69,6 +92,8 @@ string
 
 </td><td>
 
+Unique identifier for the pending resource
+
 
 </td></tr>
 <tr><td>
@@ -86,7 +111,7 @@ T
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ The actual resource data with type safety
 
 
 </td></tr>
@@ -105,7 +130,7 @@ string
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Optional resource type identifier
 
 
 </td></tr>
@@ -123,6 +148,8 @@ _(Optional)_
 
 
 </td><td>
+
+Type of pending operation
 
 
 </td></tr>

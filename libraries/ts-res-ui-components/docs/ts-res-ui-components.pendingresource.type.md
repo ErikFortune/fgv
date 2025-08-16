@@ -4,6 +4,8 @@
 
 ## PendingResource.type property
 
+Type of pending operation
+
 **Signature:**
 
 ```typescript

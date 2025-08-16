@@ -4,6 +4,8 @@
 
 ## ResourceSelection.resourceId property
 
+The ID of the selected resource, or null if no selection
+
 **Signature:**
 
 ```typescript

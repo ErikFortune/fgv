@@ -4,6 +4,8 @@
 
 ## ResourcePickerProps.onResourceSelect property
 
+Callback fired when a resource is selected, providing comprehensive selection data
+
 **Signature:**
 
 ```typescript

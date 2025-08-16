@@ -4,6 +4,8 @@
 
 ## ResourceAnnotation.badge property
 
+Small colored badge displayed next to the resource name
+
 **Signature:**
 
 ```typescript

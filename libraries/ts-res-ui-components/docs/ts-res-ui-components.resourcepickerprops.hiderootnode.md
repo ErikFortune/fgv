@@ -4,6 +4,8 @@
 
 ## ResourcePickerProps.hideRootNode property
 
+Hide the root node itself, showing only its children
+
 **Signature:**
 
 ```typescript

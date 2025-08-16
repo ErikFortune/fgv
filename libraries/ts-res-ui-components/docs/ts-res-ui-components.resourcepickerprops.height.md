@@ -4,6 +4,8 @@
 
 ## ResourcePickerProps.height property
 
+Height of the picker component
+
 **Signature:**
 
 ```typescript

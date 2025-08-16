@@ -4,12 +4,30 @@
 
 ## ResourceAnnotation interface
 
-Individual resource annotation configuration
+Individual resource annotation configuration.
+
+Supports multiple types of visual indicators that can be combined: - Badge: Small colored badge with text - Indicator: Dot, icon, or text indicator with optional tooltip - Suffix: Additional content displayed after the resource name
 
 **Signature:**
 
 ```typescript
 export interface ResourceAnnotation 
+```
+
+## Example
+
+
+```tsx
+const annotation: ResourceAnnotation = {
+  badge: { text: 'NEW', variant: 'new' },
+  indicator: {
+    type: 'icon',
+    value: <CheckIcon />,
+    tooltip: 'Validated'
+  },
+  suffix: <span className="text-gray-500">(5 candidates)</span>,
+  className: 'resource-highlighted'
+};
 ```
 
 ## Properties
@@ -50,7 +68,7 @@ Description
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Small colored badge displayed next to the resource name
 
 
 </td></tr>
@@ -69,7 +87,7 @@ string
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Additional CSS class names to apply to the resource item
 
 
 </td></tr>
@@ -88,7 +106,7 @@ _(Optional)_
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Visual indicator (dot, icon, or text) with optional tooltip
 
 
 </td></tr>
@@ -107,7 +125,7 @@ React.ReactNode
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Additional content displayed after the resource name (e.g., candidate counts)
 
 
 </td></tr>

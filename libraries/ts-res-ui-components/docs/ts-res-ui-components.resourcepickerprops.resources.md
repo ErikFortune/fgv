@@ -4,6 +4,8 @@
 
 ## ResourcePickerProps.resources property
 
+Processed resources to display in the picker
+
 **Signature:**
 
 ```typescript

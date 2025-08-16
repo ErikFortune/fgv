@@ -4,6 +4,8 @@
 
 ## ResourcePickerProps.searchScope property
 
+Scope of search - entire tree or just the currently visible branch
+
 **Signature:**
 
 ```typescript

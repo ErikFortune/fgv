@@ -4,6 +4,8 @@
 
 ## ResourceAnnotation.suffix property
 
+Additional content displayed after the resource name (e.g., candidate counts)
+
 **Signature:**
 
 ```typescript

@@ -4,6 +4,8 @@
 
 ## ResourcePickerProps.rootPath property
 
+Path to treat as root for tree branch isolation (e.g., "platform/territories")
+
 **Signature:**
 
 ```typescript

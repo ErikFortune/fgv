@@ -4,6 +4,8 @@
 
 ## ResourceSelection.pendingType property
 
+Type of pending operation for unsaved resources
+
 **Signature:**
 
 ```typescript

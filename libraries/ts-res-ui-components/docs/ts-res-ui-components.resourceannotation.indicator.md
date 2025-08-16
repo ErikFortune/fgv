@@ -4,6 +4,8 @@
 
 ## ResourceAnnotation.indicator property
 
+Visual indicator (dot, icon, or text) with optional tooltip
+
 **Signature:**
 
 ```typescript

@@ -4,6 +4,8 @@
 
 ## ResourcePickerProps.showViewToggle property
 
+Whether to show the list/tree view toggle buttons
+
 **Signature:**
 
 ```typescript

@@ -4,6 +4,8 @@
 
 ## PendingResource.resourceData property
 
+The actual resource data with type safety
+
 **Signature:**
 
 ```typescript

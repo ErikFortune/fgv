@@ -4,6 +4,8 @@
 
 ## ResourceSelection.resourceData property
 
+The actual resource data if available and typed
+
 **Signature:**
 
 ```typescript

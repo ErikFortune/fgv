@@ -155,7 +155,11 @@ Default system configuration
 
 </td><td>
 
-Comprehensive resource picker component with search, view modes, and annotation support
+Comprehensive resource picker component with search, view modes, and annotation support.
+
+The ResourcePicker provides a flexible interface for browsing and selecting resources from processed resource collections. It supports both list and tree view modes, search functionality, visual annotations, and pending resource management.
+
+Key features: - \*\*Multiple view modes\*\*: List view for simple browsing, tree view for hierarchical navigation - \*\*Search functionality\*\*: Search across all resources or within a specific branch - \*\*Visual annotations\*\*: Display badges, indicators, and suffixes for enhanced UX - \*\*Pending resources\*\*: Show unsaved changes alongside persisted resources - \*\*Branch isolation\*\*: Focus on a specific branch node of the resource tree - \*\*Type safety\*\*: Full TypeScript support with generic resource data types
 
 
 </td></tr>
@@ -176,6 +180,11 @@ Comprehensive resource picker component with search, view modes, and annotation 
 
 </td><td>
 
+Hook for managing resource filtering state.
+
+This hook provides state management for resource filtering operations, including filter values, pending changes tracking, and apply/reset operations. It's designed to work with the FilterView component to provide a complete filtering experience with change tracking and validation.
+
+Key features: - \*\*Filter Management\*\*: Enable/disable filtering and manage filter values - \*\*Change Tracking\*\*: Track pending changes before applying filters - \*\*Validation\*\*: Prevent invalid filter states and provide user feedback - \*\*Qualifier Reduction\*\*: Option to reduce qualifier scope when filtering
 
 
 </td></tr>
@@ -186,6 +195,11 @@ Comprehensive resource picker component with search, view modes, and annotation 
 
 </td><td>
 
+Hook for managing resource resolution state and editing operations.
+
+This hook provides comprehensive state management for resource resolution, including context management, resource editing, and conflict detection. It integrates with the ts-res library to provide real-time resolution results and supports editing resources with validation and preview functionality.
+
+Key features: - \*\*Context Management\*\*: Set and update resolution context (qualifiers) - \*\*Resource Resolution\*\*: Real-time resolution with detailed results - \*\*Resource Editing\*\*: Edit resources with validation and conflict detection - \*\*Preview Mode\*\*: See how edits affect resolution without committing - \*\*Change Tracking\*\*: Track pending changes and detect conflicts
 
 
 </td></tr>
@@ -209,6 +223,9 @@ Provides comprehensive functionality for: - Importing and processing resource fi
 
 </td><td>
 
+Hook for managing view state including messages and resource selection.
+
+This hook provides a centralized way to manage common view state concerns like user messages (notifications) and resource selection. It's designed to be used by view components that need to display messages and track the currently selected resource.
 
 
 </td></tr>
@@ -444,7 +461,9 @@ Represents a user-facing message with type classification and timestamp. Used th
 
 </td><td>
 
-Represents a resource that hasn't been persisted yet
+Represents a resource that hasn't been persisted yet.
+
+Pending resources are displayed alongside persisted resources in the picker, allowing users to interact with unsaved changes. They are visually distinguished with appropriate styling and annotations.
 
 
 </td></tr>
@@ -517,7 +536,9 @@ Props for the ResolutionView component. Provides resource resolution testing and
 
 </td><td>
 
-Individual resource annotation configuration
+Individual resource annotation configuration.
+
+Supports multiple types of visual indicators that can be combined: - Badge: Small colored badge with text - Indicator: Dot, icon, or text indicator with optional tooltip - Suffix: Additional content displayed after the resource name
 
 
 </td></tr>
@@ -528,7 +549,9 @@ Individual resource annotation configuration
 
 </td><td>
 
-Annotations that can be displayed next to resource names
+Annotations that can be displayed next to resource names in the picker.
+
+This allows the host application to provide visual indicators for resources, such as candidate counts, editing status, or validation states.
 
 
 </td></tr>
@@ -582,7 +605,9 @@ Represents the current state of the resource manager. Tracks processing status, 
 
 </td><td>
 
-Props for the ResourcePicker component
+Props for the ResourcePicker component.
+
+The ResourcePicker is a comprehensive component for browsing and selecting resources with support for multiple view modes, search, annotations, and pending resources.
 
 
 </td></tr>
@@ -593,7 +618,9 @@ Props for the ResourcePicker component
 
 </td><td>
 
-Resource selection data returned by the onResourceSelect callback
+Resource selection data returned by the onResourceSelect callback.
+
+This interface provides comprehensive information about the selected resource, eliminating the need for consumers to perform additional lookups.
 
 
 </td></tr>

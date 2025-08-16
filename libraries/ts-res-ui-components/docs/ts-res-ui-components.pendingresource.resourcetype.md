@@ -4,6 +4,8 @@
 
 ## PendingResource.resourceType property
 
+Optional resource type identifier
+
 **Signature:**
 
 ```typescript

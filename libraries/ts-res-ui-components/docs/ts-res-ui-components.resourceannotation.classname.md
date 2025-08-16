@@ -4,6 +4,8 @@
 
 ## ResourceAnnotation.className property
 
+Additional CSS class names to apply to the resource item
+
 **Signature:**
 
 ```typescript
