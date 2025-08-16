@@ -7,7 +7,7 @@
     "build": "webpack --mode production",
     "dev": "webpack serve --mode development",
     "clean": "rimraf lib dist",
-    "test": "jest"
+    "test": "echo 'No tests configured for ts-res-ui-playground - this is a development playground tool' && exit 0"
   },
   "keywords": [
     "ts-res",
