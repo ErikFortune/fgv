@@ -1,7 +1,12 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { ChevronRightIcon, ChevronDownIcon, FolderIcon, FolderOpenIcon } from '@heroicons/react/24/outline';
+import {
+  ChevronRightIcon,
+  ChevronDownIcon,
+  FolderIcon,
+  FolderOpenIcon,
+  DocumentTextIcon
+} from '@heroicons/react/24/outline';
 import { ResourcePickerTreeProps } from './types';
-import { ResourceItem } from './ResourceItem';
 import { Runtime } from '@fgv/ts-res';
 
 /**
@@ -140,7 +145,7 @@ export const ResourcePickerTree: React.FC<ResourcePickerTreeProps> = ({
       <div key={node.id} className="select-none">
         <div
           className={`
-            flex items-center px-2 py-1.5 cursor-pointer hover:bg-gray-100
+            flex items-center px-2 py-1 cursor-pointer hover:bg-gray-100
             ${isSelected ? 'bg-purple-50 border-l-2 border-purple-500' : ''}
             ${matchesSearch && searchTerm ? 'bg-yellow-50' : ''}
           `}
@@ -171,27 +176,16 @@ export const ResourcePickerTree: React.FC<ResourcePickerTreeProps> = ({
           )}
 
           {/* Spacer for alignment when no children */}
-          {node.isLeaf && <div className="w-5 mr-1" />}
+          {node.isLeaf && <div className="w-4 mr-1" />}
 
           {/* Folder/Document icon */}
-          <div className="mr-2 flex-shrink-0">
-            {node.isLeaf ? (
-              <ResourceItem
-                resourceId={node.id}
-                displayName={displayName}
-                isSelected={false}
-                isPending={isPending}
-                annotation={resourceAnnotations?.[node.id]}
-                onClick={() => {}}
-                searchTerm=""
-                className="p-0 border-0 hover:bg-transparent"
-              />
-            ) : isExpanded ? (
-              <FolderOpenIcon className="w-4 h-4 text-blue-500" />
-            ) : (
-              <FolderIcon className="w-4 h-4 text-blue-500" />
-            )}
-          </div>
+          {node.isLeaf ? (
+            <DocumentTextIcon className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+          ) : isExpanded ? (
+            <FolderOpenIcon className="w-4 h-4 text-blue-500 mr-2 flex-shrink-0" />
+          ) : (
+            <FolderIcon className="w-4 h-4 text-blue-500 mr-2 flex-shrink-0" />
+          )}
 
           {/* Node name with search highlighting */}
           <span
@@ -206,9 +200,9 @@ export const ResourcePickerTree: React.FC<ResourcePickerTreeProps> = ({
             {searchTerm ? <HighlightedText text={displayName} searchTerm={searchTerm} /> : displayName}
           </span>
 
-          {/* Annotations for leaf nodes */}
-          {node.isLeaf && resourceAnnotations?.[node.id] && (
-            <div className="flex items-center gap-2 ml-2">
+          {/* Annotations for any nodes */}
+          {resourceAnnotations?.[node.id] && (
+            <div className="flex items-center gap-1 ml-2">
               {renderAnnotation(resourceAnnotations[node.id])}
             </div>
           )}
