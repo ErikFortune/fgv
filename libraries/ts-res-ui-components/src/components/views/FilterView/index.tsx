@@ -9,16 +9,14 @@ import {
   DocumentArrowDownIcon,
   CodeBracketIcon,
   ChevronDownIcon,
-  ChevronUpIcon,
-  ListBulletIcon,
-  FolderIcon
+  ChevronUpIcon
 } from '@heroicons/react/24/outline';
 import { Resources } from '@fgv/ts-res';
 import { FilterViewProps } from '../../../types';
 import { Config } from '@fgv/ts-res';
 import { QualifierContextControl } from '../../common/QualifierContextControl';
-import { ResourceTreeView } from '../../common/ResourceTreeView';
-import { ResourceListView } from '../../common/ResourceListView';
+import { ResourcePicker } from '../../pickers/ResourcePicker';
+import { ResourceSelection, ResourceAnnotations } from '../../pickers/ResourcePicker/types';
 
 // Import FilteredResource type from the utils
 interface FilteredResource {
@@ -40,7 +38,6 @@ export const FilterView: React.FC<FilterViewProps> = ({
   // Local UI state
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [showFilteredJsonView, setShowFilteredJsonView] = useState(false);
-  const [viewMode, setViewMode] = useState<'tree' | 'list'>('list');
 
   // Available qualifiers from system configuration or compiled collection
   const availableQualifiers = useMemo(() => {
@@ -196,6 +193,54 @@ export const FilterView: React.FC<FilterViewProps> = ({
     return resourceList.sort((a, b) => a.id.localeCompare(b.id));
   }, [resources, isFilteringActive, filterResult]);
 
+  // Create resource annotations for filtering information
+  const resourceAnnotations = useMemo(() => {
+    const annotations: ResourceAnnotations = {};
+
+    displayResources.forEach((resource) => {
+      if (isFilteringActive) {
+        // Show filtering effects with candidate count changes
+        const originalCount = resource.originalCandidateCount;
+        const filteredCount = resource.filteredCandidateCount;
+
+        // Determine badge color and text based on filtering result
+        let badgeVariant: 'info' | 'warning' | 'error' = 'info';
+        let badgeText = `${originalCount} → ${filteredCount}`;
+
+        if (filteredCount === 0) {
+          badgeVariant = 'error';
+          badgeText = `${originalCount} → 0`;
+        } else if (filteredCount < originalCount) {
+          badgeVariant = 'warning';
+        }
+
+        annotations[resource.id] = {
+          badge: {
+            text: badgeText,
+            variant: badgeVariant
+          }
+        };
+
+        // Add warning indicator for resources with issues
+        if (resource.hasWarning) {
+          annotations[resource.id].indicator = {
+            type: 'icon',
+            value: '⚠️',
+            tooltip: 'No matching candidates after filtering'
+          };
+        }
+      } else {
+        // Show candidate count only for non-filtered view
+        const count = resource.originalCandidateCount;
+        annotations[resource.id] = {
+          suffix: `${count} candidate${count !== 1 ? 's' : ''}`
+        };
+      }
+    });
+
+    return annotations;
+  }, [displayResources, isFilteringActive]);
+
   // Handle filter value changes
   const handleFilterChange = useCallback(
     (qualifierName: string, value: string | undefined) => {
@@ -205,9 +250,9 @@ export const FilterView: React.FC<FilterViewProps> = ({
     [filterState.values, filterActions]
   );
 
-  // Handle resource selection
-  const handleResourceSelect = useCallback((resourceId: string) => {
-    setSelectedResourceId(resourceId);
+  // Handle resource selection with enhanced callback
+  const handleResourceSelect = useCallback((selection: ResourceSelection) => {
+    setSelectedResourceId(selection.resourceId);
   }, []);
 
   // Handle filter toggle
@@ -403,96 +448,29 @@ export const FilterView: React.FC<FilterViewProps> = ({
                   )}
                 </div>
               </div>
-              {/* View Mode Toggle */}
-              <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`flex items-center px-2 py-1 text-xs font-medium rounded ${
-                    viewMode === 'list'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                  title="List View"
-                >
-                  <ListBulletIcon className="h-4 w-4" />
-                  <span className="ml-1">List</span>
-                </button>
-                <button
-                  onClick={() => setViewMode('tree')}
-                  className={`flex items-center px-2 py-1 text-xs font-medium rounded ${
-                    viewMode === 'tree'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                  title="Tree View"
-                >
-                  <FolderIcon className="h-4 w-4" />
-                  <span className="ml-1">Tree</span>
-                </button>
-              </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg bg-gray-50">
-              {viewMode === 'tree' && resources?.system.resourceManager ? (
-                <ResourceTreeView
-                  resources={resources.system.resourceManager}
-                  selectedResourceId={selectedResourceId}
-                  onResourceSelect={handleResourceSelect}
-                  searchTerm=""
-                  className=""
-                />
-              ) : (
-                displayResources.map((resource) => (
-                  <div
-                    key={resource.id}
-                    className={`flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-100 last:border-b-0 ${
-                      selectedResourceId === resource.id ? 'bg-purple-50 border-r-2 border-purple-500' : ''
-                    }`}
-                    onClick={() => handleResourceSelect(resource.id)}
-                  >
-                    <div className="flex items-center space-x-2 flex-1 min-w-0">
-                      <DocumentTextIcon className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <span
-                        className={`text-sm truncate ${
-                          selectedResourceId === resource.id ? 'font-medium text-purple-900' : 'text-gray-700'
-                        }`}
-                      >
-                        {resource.id}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 flex-shrink-0">
-                      {isFilteringActive && (
-                        <div className="flex items-center space-x-1 text-xs">
-                          <span className="text-gray-400">{resource.originalCandidateCount}</span>
-                          <span className="text-gray-400">→</span>
-                          <span
-                            className={`font-medium ${
-                              resource.filteredCandidateCount === 0
-                                ? 'text-red-600'
-                                : resource.filteredCandidateCount < resource.originalCandidateCount
-                                ? 'text-amber-600'
-                                : 'text-green-600'
-                            }`}
-                          >
-                            {resource.filteredCandidateCount}
-                          </span>
-                        </div>
-                      )}
-                      {!isFilteringActive && (
-                        <span className="text-xs text-gray-500">
-                          {resource.originalCandidateCount} candidates
-                        </span>
-                      )}
-                      {resource.hasWarning && (
-                        <ExclamationTriangleIcon
-                          className="h-4 w-4 text-amber-500"
-                          title="No matching candidates"
-                        />
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
+            <div className="flex-1">
+              <ResourcePicker
+                resources={
+                  isFilteringActive && filterResult?.processedResources
+                    ? filterResult.processedResources
+                    : resources
+                }
+                selectedResourceId={selectedResourceId}
+                onResourceSelect={handleResourceSelect}
+                resourceAnnotations={resourceAnnotations}
+                defaultView="list"
+                showViewToggle={true}
+                enableSearch={true}
+                searchPlaceholder={isFilteringActive ? 'Search filtered resources...' : 'Search resources...'}
+                searchScope="all"
+                emptyMessage={
+                  isFilteringActive ? 'No resources match the filter criteria' : 'No resources available'
+                }
+                height="520px"
+                onMessage={onMessage}
+              />
             </div>
           </div>
 

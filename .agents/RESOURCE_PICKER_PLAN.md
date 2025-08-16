@@ -87,11 +87,11 @@ interface ResourceAnnotations {
 
 interface PendingResource {
   id: string;
-  type: 'new' | 'deleted';
+  type: 'new' | 'modified' | 'deleted';
   resourceType?: string;
-  parentPath?: string; // For tree placement
   // Placeholder data for display
   displayName?: string;
+  // Note: parentPath removed - the id itself determines placement in the tree
 }
 ```
 
@@ -266,16 +266,20 @@ function filterTreeBranch(
 - ✅ Fix tree view to use proper ts-res API (`getBuiltResourceTree()`)
 - ✅ Implement simplified branch isolation approach
 
-### Phase 2: Edit Support (CURRENT PHASE)
-- Add pending resource support
-- Implement edit state indicators
-- Handle selection of pending resources
-- Test with various edit scenarios
+### Phase 2: Edit Support ✅ COMPLETED
+- ✅ Add pending resource support with virtual tree abstraction
+- ✅ Implement edit state indicators (new, modified, deleted)
+- ✅ Handle selection of pending resources
+- ✅ Create interactive resource management with "+" button
+- ✅ Add comprehensive validation (duplicates, branch conflicts)
+- ✅ Implement explicit absolute/relative path toggle
+- ✅ Apply branch isolation with prefix truncation to list view
+- ✅ Test with various edit scenarios in playground
 
-### Phase 3: Polish & Testing
+### Phase 3: Polish & Testing (CURRENT PHASE)
 - Refine visual design and animations
-- Add comprehensive unit tests
-- Create usage documentation
+- ✅ Add comprehensive unit tests
+- ✅ Create usage documentation
 - Build example implementations
 
 ## Benefits

@@ -1,5 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { ResourcePicker, ResourceAnnotations, PendingResource } from '@fgv/ts-res-ui-components';
+import {
+  ResourcePicker,
+  ResourceAnnotations,
+  PendingResource,
+  ResourceSelection
+} from '@fgv/ts-res-ui-components';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 interface ResourcePickerToolProps {
@@ -26,9 +31,20 @@ const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({ resources, onMe
   });
 
   const handleResourceSelect = useCallback(
-    (resourceId: string | null) => {
-      setSelectedResourceId(resourceId);
-      onMessage('info', `Selected resource: ${resourceId || 'none'}`);
+    (selection: ResourceSelection) => {
+      setSelectedResourceId(selection.resourceId);
+
+      // Enhanced callback with resource data information
+      const messageDetails = [
+        `ID: ${selection.resourceId || 'none'}`,
+        selection.isPending ? `Type: ${selection.pendingType}` : 'Type: existing',
+        selection.resourceData ? `Has data: Yes` : 'Has data: No'
+      ].join(', ');
+
+      onMessage('info', `Selected resource - ${messageDetails}`);
+
+      // Log the full selection object for debugging
+      console.log('Resource selected:', selection);
     },
     [onMessage]
   );
@@ -99,7 +115,14 @@ const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({ resources, onMe
     const newResource: PendingResource = {
       id: finalResourceId,
       type: 'new',
-      displayName: displayName
+      displayName: displayName,
+      resourceData: {
+        value: `Sample value for ${displayName}`,
+        createdAt: new Date().toISOString(),
+        createdBy: 'playground-user',
+        type: 'user-created',
+        path: finalResourceId
+      }
     };
 
     setCustomPendingResources((prev) => [...prev, newResource]);
@@ -155,28 +178,49 @@ const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({ resources, onMe
       }
     : {};
 
-  // Sample pending resources for demo
+  // Sample pending resources for demo with resource data
   const demoPendingResources: PendingResource[] = usePendingResources
     ? [
         {
           id: 'strings.new-feature-config',
           type: 'new',
-          displayName: 'new-feature-config (unsaved)'
+          displayName: 'new-feature-config (unsaved)',
+          resourceData: {
+            value: 'New Feature Configuration',
+            description: 'Configuration for the upcoming feature release',
+            priority: 'high'
+          }
         },
         {
           id: 'updated-dashboard',
           type: 'modified',
-          displayName: 'Updated Dashboard (pending changes)'
+          displayName: 'Updated Dashboard (pending changes)',
+          resourceData: {
+            value: 'Dashboard - Now with enhanced analytics',
+            originalValue: 'Dashboard',
+            modifiedAt: new Date().toISOString(),
+            changes: ['Added analytics', 'Updated layout']
+          }
         },
         {
           id: 'strings.common.greeting',
           type: 'modified',
-          displayName: 'greeting (edited)'
+          displayName: 'greeting (edited)',
+          resourceData: {
+            value: 'Hello, welcome to our enhanced app!',
+            originalValue: 'Hello, welcome!',
+            modifiedBy: 'demo-user'
+          }
         },
         {
           id: 'app.ui.new-component',
           type: 'new',
-          displayName: 'new-component (created)'
+          displayName: 'new-component (created)',
+          resourceData: {
+            componentType: 'React.FC',
+            props: ['title', 'onAction'],
+            status: 'draft'
+          }
         }
       ]
     : [];
