@@ -4,6 +4,7 @@
 
 ## ZipLoaderViewProps interface
 
+
 **Signature:**
 
 ```typescript

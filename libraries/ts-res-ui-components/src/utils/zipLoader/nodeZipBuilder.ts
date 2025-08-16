@@ -10,6 +10,7 @@ import { generateZipFilename, createManifest, sanitizeFilename, normalizePath } 
  * The actual Node.js ZIP building functionality should be implemented
  * in a separate Node.js-specific package or tool.
  */
+/** @internal */
 export class NodeZipBuilder implements IZipBuilder {
   /**
    * Create ZIP from files
@@ -51,6 +52,7 @@ export class NodeZipBuilder implements IZipBuilder {
  * Note: This returns a placeholder implementation.
  * For actual ZIP building, use the ts-res-browser-cli tool.
  */
+/** @internal */
 export function createNodeZipBuilder(): IZipBuilder {
   return new NodeZipBuilder();
 }
@@ -62,6 +64,7 @@ export function createNodeZipBuilder(): IZipBuilder {
  * though actual ZIP file creation requires server-side processing
  * or a separate Node.js tool.
  */
+/** @internal */
 export interface BrowserZipData {
   files: Array<{
     path: string;
@@ -74,6 +77,7 @@ export interface BrowserZipData {
 /**
  * Prepare ZIP data structure for browser download or server processing
  */
+/** @internal */
 export function prepareZipData(
   files: ImportedFile[],
   options: ZipArchiveOptions = {}
@@ -119,6 +123,7 @@ export function prepareZipData(
 /**
  * Prepare ZIP data from directory structure
  */
+/** @internal */
 export function prepareZipDataFromDirectory(
   directory: ImportedDirectory,
   options: ZipArchiveOptions = {}

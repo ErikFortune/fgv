@@ -24,6 +24,7 @@ import { ResourcePicker } from '../../pickers/ResourcePicker';
 import { ResourceSelection, ResourceAnnotations } from '../../pickers/ResourcePicker/types';
 import { ResolutionResults } from '../../common/ResolutionResults';
 
+/** @public */
 export const ResolutionView: React.FC<ResolutionViewProps> = ({
   resources,
   filterState,

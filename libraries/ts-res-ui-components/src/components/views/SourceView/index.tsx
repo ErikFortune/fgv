@@ -14,6 +14,7 @@ import { ResourcePicker } from '../../pickers/ResourcePicker';
 import { ResourceSelection } from '../../pickers/ResourcePicker/types';
 import { SourceResourceDetail } from '../../common/SourceResourceDetail';
 
+/** @public */
 export const SourceView: React.FC<SourceViewProps> = ({ resources, onExport, onMessage, className = '' }) => {
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [showJsonView, setShowJsonView] = useState(false);

@@ -5,6 +5,7 @@ import { ImportedDirectory, ImportedFile, ProcessedResources } from '../../types
 /**
  * ZIP manifest metadata structure
  */
+/** @internal */
 export interface ZipManifest {
   timestamp: string;
   input?: {
@@ -22,6 +23,7 @@ export interface ZipManifest {
 /**
  * Options for creating ZIP archives
  */
+/** @internal */
 export interface ZipArchiveOptions {
   /** Output directory for the ZIP file */
   outputDir?: string;
@@ -38,6 +40,7 @@ export interface ZipArchiveOptions {
 /**
  * Result of ZIP archive creation
  */
+/** @internal */
 export interface ZipArchiveResult {
   /** Path to the created ZIP file */
   filePath: string;
@@ -52,6 +55,7 @@ export interface ZipArchiveResult {
 /**
  * Options for loading ZIP archives
  */
+/** @internal */
 export interface ZipLoadOptions {
   /** Whether to auto-apply configuration found in ZIP */
   autoApplyConfig?: boolean;
@@ -64,6 +68,7 @@ export interface ZipLoadOptions {
 /**
  * Result of ZIP loading operation
  */
+/** @internal */
 export interface ZipLoadResult {
   /** Manifest from the ZIP */
   manifest: ZipManifest | null;
@@ -82,6 +87,7 @@ export interface ZipLoadResult {
 /**
  * ZIP loading progress stages
  */
+/** @internal */
 export type ZipLoadingStage =
   | 'reading-file'
   | 'parsing-zip'
@@ -94,6 +100,7 @@ export type ZipLoadingStage =
 /**
  * Progress callback for ZIP operations
  */
+/** @internal */
 export interface ZipProgressCallback {
   (stage: ZipLoadingStage, progress: number, message?: string): void;
 }
@@ -101,6 +108,7 @@ export interface ZipProgressCallback {
 /**
  * ZIP builder interface (Node.js environment)
  */
+/** @internal */
 export interface IZipBuilder {
   /**
    * Create ZIP from files
@@ -124,6 +132,7 @@ export interface IZipBuilder {
 /**
  * ZIP loader interface (Browser environment)
  */
+/** @internal */
 export interface IZipLoader {
   /**
    * Load ZIP from File object
@@ -156,6 +165,7 @@ export interface IZipLoader {
 /**
  * File item within a ZIP archive
  */
+/** @internal */
 export interface ZipFileItem {
   name: string;
   path: string;
@@ -168,6 +178,7 @@ export interface ZipFileItem {
 /**
  * ZIP file tree representation
  */
+/** @internal */
 export interface ZipFileTree {
   files: Map<string, ZipFileItem>;
   directories: Set<string>;

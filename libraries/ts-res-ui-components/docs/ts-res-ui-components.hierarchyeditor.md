@@ -4,6 +4,7 @@
 
 ## HierarchyEditor variable
 
+
 **Signature:**
 
 ```typescript

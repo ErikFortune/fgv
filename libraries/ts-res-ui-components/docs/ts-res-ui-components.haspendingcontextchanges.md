@@ -4,7 +4,6 @@
 
 ## hasPendingContextChanges() function
 
-Check if context has any pending changes
 
 **Signature:**
 

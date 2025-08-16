@@ -4,6 +4,7 @@
 
 ## SourceResourceDetail variable
 
+
 **Signature:**
 
 ```typescript

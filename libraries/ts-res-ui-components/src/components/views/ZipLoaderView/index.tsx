@@ -31,6 +31,7 @@ interface LoadedState {
   fileSize: number | null;
 }
 
+/** @public */
 export const ZipLoaderView: React.FC<ZipLoaderViewProps> = ({
   zipFileUrl,
   zipPath,

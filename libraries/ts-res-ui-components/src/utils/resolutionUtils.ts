@@ -2,6 +2,7 @@ import { Result, succeed, fail, MessageAggregator } from '@fgv/ts-utils';
 import { Runtime } from '@fgv/ts-res';
 import { ProcessedResources, ResolutionResult, CandidateInfo, ConditionEvaluationResult } from '../types';
 
+/** @public */
 export interface ResolutionOptions {
   enableCaching?: boolean;
   enableDebugLogging?: boolean;
@@ -17,6 +18,7 @@ const debugLog = (enableDebug: boolean, ...args: any[]) => {
 /**
  * Create a resolver with context for resource resolution
  */
+/** @public */
 export function createResolverWithContext(
   processedResources: ProcessedResources,
   contextValues: Record<string, string | undefined>,
@@ -77,6 +79,7 @@ export function createResolverWithContext(
 /**
  * Evaluate conditions for a specific candidate
  */
+/** @public */
 export function evaluateConditionsForCandidate(
   resolver: Runtime.ResourceResolver,
   candidateIndex: number,
@@ -137,6 +140,7 @@ export function evaluateConditionsForCandidate(
 /**
  * Resolve a resource and create detailed resolution result
  */
+/** @public */
 export function resolveResourceDetailed(
   resolver: Runtime.ResourceResolver,
   resourceId: string,
@@ -271,6 +275,7 @@ export function resolveResourceDetailed(
 /**
  * Get available qualifiers from processed resources
  */
+/** @public */
 export function getAvailableQualifiers(processedResources: ProcessedResources): string[] {
   if (processedResources.compiledCollection.qualifiers) {
     return processedResources.compiledCollection.qualifiers.map((q) => q.name);
@@ -281,6 +286,7 @@ export function getAvailableQualifiers(processedResources: ProcessedResources): 
 /**
  * Check if context has any pending changes
  */
+/** @public */
 export function hasPendingContextChanges(
   contextValues: Record<string, string | undefined>,
   pendingContextValues: Record<string, string | undefined>

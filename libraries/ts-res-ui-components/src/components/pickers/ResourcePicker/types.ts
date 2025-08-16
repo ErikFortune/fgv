@@ -3,6 +3,7 @@ import { ProcessedResources, ExtendedProcessedResources, ViewBaseProps } from '.
 
 /**
  * Resource selection data returned by the onResourceSelect callback
+ * @public
  */
 export interface ResourceSelection<T = unknown> {
   resourceId: string | null;
@@ -13,6 +14,7 @@ export interface ResourceSelection<T = unknown> {
 
 /**
  * Props for the ResourcePicker component
+ * @public
  */
 export interface ResourcePickerProps<T = unknown> extends ViewBaseProps {
   // Core data
@@ -48,6 +50,7 @@ export interface ResourcePickerProps<T = unknown> extends ViewBaseProps {
 
 /**
  * Annotations that can be displayed next to resource names
+ * @public
  */
 export interface ResourceAnnotations {
   [resourceId: string]: ResourceAnnotation;
@@ -55,6 +58,7 @@ export interface ResourceAnnotations {
 
 /**
  * Individual resource annotation configuration
+ * @public
  */
 export interface ResourceAnnotation {
   badge?: {
@@ -72,6 +76,7 @@ export interface ResourceAnnotation {
 
 /**
  * Represents a resource that hasn't been persisted yet
+ * @public
  */
 export interface PendingResource<T = unknown> {
   id: string;

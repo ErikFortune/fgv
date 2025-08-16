@@ -25,6 +25,7 @@ const normalizeValues = (vals: Record<string, string | undefined>): Record<strin
   return normalized;
 };
 
+/** @public */
 export function useFilterState(initialState?: Partial<FilterState>): UseFilterStateReturn {
   const [state, setState] = useState<FilterState>({
     ...initialFilterState,

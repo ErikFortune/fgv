@@ -4,7 +4,6 @@
 
 ## getAvailableQualifiers() function
 
-Get available qualifiers from processed resources
 
 **Signature:**
 

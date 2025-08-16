@@ -4,6 +4,7 @@
 
 ## FilterResult interface
 
+
 **Signature:**
 
 ```typescript

@@ -4,6 +4,7 @@
 
 ## ResolutionOptions interface
 
+
 **Signature:**
 
 ```typescript

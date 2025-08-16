@@ -4,6 +4,7 @@
 
 ## ZipLoaderView variable
 
+
 **Signature:**
 
 ```typescript

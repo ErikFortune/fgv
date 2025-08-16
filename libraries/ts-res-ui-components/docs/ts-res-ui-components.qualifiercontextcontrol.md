@@ -4,6 +4,7 @@
 
 ## QualifierContextControl variable
 
+
 **Signature:**
 
 ```typescript

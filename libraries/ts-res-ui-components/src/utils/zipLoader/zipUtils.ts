@@ -6,6 +6,7 @@ import { ImportedDirectory, ImportedFile } from '../../types';
 /**
  * Generate a timestamp-based filename for ZIP archives
  */
+/** @internal */
 export function generateZipFilename(customName?: string): string {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, -5);
   return customName ? `${customName}-${timestamp}.zip` : `ts-res-bundle-${timestamp}.zip`;
@@ -14,6 +15,7 @@ export function generateZipFilename(customName?: string): string {
 /**
  * Create a ZIP manifest object
  */
+/** @internal */
 export function createManifest(
   inputType: 'file' | 'directory',
   originalPath: string,
@@ -43,6 +45,7 @@ export function createManifest(
 /**
  * Parse and validate a ZIP manifest
  */
+/** @internal */
 export function parseManifest(manifestData: string): Result<ZipManifest> {
   try {
     const parsed = JSON.parse(manifestData);
@@ -81,6 +84,7 @@ export function parseManifest(manifestData: string): Result<ZipManifest> {
 /**
  * Parse and validate configuration JSON
  */
+/** @internal */
 export function parseConfiguration(configData: string): Result<Config.Model.ISystemConfiguration> {
   try {
     const parsed = JSON.parse(configData);
@@ -100,6 +104,7 @@ export function parseConfiguration(configData: string): Result<Config.Model.ISys
 /**
  * Convert ZIP file tree to ImportedFiles array
  */
+/** @internal */
 export function zipTreeToFiles(tree: ZipFileTree): ImportedFile[] {
   const files: ImportedFile[] = [];
 
@@ -120,6 +125,7 @@ export function zipTreeToFiles(tree: ZipFileTree): ImportedFile[] {
 /**
  * Convert ZIP file tree to ImportedDirectory structure
  */
+/** @internal */
 export function zipTreeToDirectory(tree: ZipFileTree): ImportedDirectory | null {
   if (tree.files.size === 0) {
     return null;
@@ -212,6 +218,7 @@ function getFileType(filename: string): string {
 /**
  * Normalize path separators for cross-platform compatibility
  */
+/** @internal */
 export function normalizePath(path: string): string {
   return path.replace(/\\/g, '/').replace(/\/+/g, '/');
 }
@@ -219,6 +226,7 @@ export function normalizePath(path: string): string {
 /**
  * Extract directory name from a file path
  */
+/** @internal */
 export function getDirectoryName(path: string): string {
   const normalized = normalizePath(path);
   const parts = normalized.split('/');
@@ -228,6 +236,7 @@ export function getDirectoryName(path: string): string {
 /**
  * Create a safe filename by removing invalid characters
  */
+/** @internal */
 export function sanitizeFilename(filename: string): string {
   return filename
     .replace(/[<>:"/\\|?*]/g, '_')
@@ -239,6 +248,7 @@ export function sanitizeFilename(filename: string): string {
 /**
  * Format file size in human readable format
  */
+/** @internal */
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 B';
 
@@ -252,6 +262,7 @@ export function formatFileSize(bytes: number): string {
 /**
  * Validate ZIP file extension
  */
+/** @internal */
 export function isZipFile(filename: string): boolean {
   return filename.toLowerCase().endsWith('.zip');
 }
@@ -259,6 +270,7 @@ export function isZipFile(filename: string): boolean {
 /**
  * Extract base name from filename (without extension)
  */
+/** @internal */
 export function getBaseName(filename: string): string {
   const name = filename.split('/').pop() || filename;
   const dotIndex = name.lastIndexOf('.');

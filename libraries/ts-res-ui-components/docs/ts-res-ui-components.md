@@ -4,45 +4,6 @@
 
 ## ts-res-ui-components package
 
-## Classes
-
-<table><thead><tr><th>
-
-Class
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[BrowserZipLoader](./ts-res-ui-components.browserziploader.md)
-
-
-</td><td>
-
-Browser-based ZIP loader implementation
-
-
-</td></tr>
-<tr><td>
-
-[NodeZipBuilder](./ts-res-ui-components.nodezipbuilder.md)
-
-
-</td><td>
-
-Node.js-based ZIP builder implementation
-
-Note: This is a placeholder implementation for interface compatibility. The actual Node.js ZIP building functionality should be implemented in a separate Node.js-specific package or tool.
-
-
-</td></tr>
-</tbody></table>
-
 ## Functions
 
 <table><thead><tr><th>
@@ -63,7 +24,6 @@ Description
 
 </td><td>
 
-Analyze filtered resources compared to original resources
 
 
 </td></tr>
@@ -74,40 +34,6 @@ Analyze filtered resources compared to original resources
 
 </td><td>
 
-Create a deep copy of a configuration
-
-
-</td></tr>
-<tr><td>
-
-[compareConfigurations(config1, config2)](./ts-res-ui-components.compareconfigurations.md)
-
-
-</td><td>
-
-Compare two configurations for equality
-
-
-</td></tr>
-<tr><td>
-
-[convertImportedDirectoryToFileTree(directory)](./ts-res-ui-components.convertimporteddirectorytofiletree.md)
-
-
-</td><td>
-
-Convert ImportedDirectory to FileTree format
-
-
-</td></tr>
-<tr><td>
-
-[createBrowserZipLoader()](./ts-res-ui-components.createbrowserziploader.md)
-
-
-</td><td>
-
-Create a new browser ZIP loader instance
 
 
 </td></tr>
@@ -118,31 +44,6 @@ Create a new browser ZIP loader instance
 
 </td><td>
 
-Creates a filtered resource manager using the ResourceManagerBuilder.clone() method. This is a simplified implementation that leverages the built-in filtering functionality.
-
-
-</td></tr>
-<tr><td>
-
-[createManifest(inputType, originalPath, archivePath, configPath)](./ts-res-ui-components.createmanifest.md)
-
-
-</td><td>
-
-Create a ZIP manifest object
-
-
-</td></tr>
-<tr><td>
-
-[createNodeZipBuilder()](./ts-res-ui-components.createnodezipbuilder.md)
-
-
-</td><td>
-
-Create a new Node.js ZIP builder instance
-
-Note: This returns a placeholder implementation. For actual ZIP building, use the ts-res-browser-cli tool.
 
 
 </td></tr>
@@ -153,29 +54,6 @@ Note: This returns a placeholder implementation. For actual ZIP building, use th
 
 </td><td>
 
-Create a resolver with context for resource resolution
-
-
-</td></tr>
-<tr><td>
-
-[createSimpleContext(qualifiers, values)](./ts-res-ui-components.createsimplecontext.md)
-
-
-</td><td>
-
-Create a simple context provider from qualifier values
-
-
-</td></tr>
-<tr><td>
-
-[createTsResSystemFromConfig(systemConfig)](./ts-res-ui-components.createtsressystemfromconfig.md)
-
-
-</td><td>
-
-Create ts-res system from configuration
 
 
 </td></tr>
@@ -186,18 +64,6 @@ Create ts-res system from configuration
 
 </td><td>
 
-Evaluate conditions for a specific candidate
-
-
-</td></tr>
-<tr><td>
-
-[exportAsJson(data, filename)](./ts-res-ui-components.exportasjson.md)
-
-
-</td><td>
-
-Export data as JSON file
 
 
 </td></tr>
@@ -208,62 +74,6 @@ Export data as JSON file
 
 </td><td>
 
-Export configuration to JSON string
-
-
-</td></tr>
-<tr><td>
-
-[exportUsingFileSystemAPI(data, suggestedName, description)](./ts-res-ui-components.exportusingfilesystemapi.md)
-
-
-</td><td>
-
-Export data using File System Access API if available
-
-
-</td></tr>
-<tr><td>
-
-[filesToDirectory(files)](./ts-res-ui-components.filestodirectory.md)
-
-
-</td><td>
-
-Convert flat file list to directory structure
-
-
-</td></tr>
-<tr><td>
-
-[formatFileSize(bytes)](./ts-res-ui-components.formatfilesize.md)
-
-
-</td><td>
-
-Format file size in human readable format
-
-
-</td></tr>
-<tr><td>
-
-[generateConfigurationFilename(configName, format)](./ts-res-ui-components.generateconfigurationfilename.md)
-
-
-</td><td>
-
-Generate a filename for configuration export
-
-
-</td></tr>
-<tr><td>
-
-[generateZipFilename(customName)](./ts-res-ui-components.generatezipfilename.md)
-
-
-</td><td>
-
-Generate a timestamp-based filename for ZIP archives
 
 
 </td></tr>
@@ -274,29 +84,6 @@ Generate a timestamp-based filename for ZIP archives
 
 </td><td>
 
-Get available qualifiers from processed resources
-
-
-</td></tr>
-<tr><td>
-
-[getBaseName(filename)](./ts-res-ui-components.getbasename.md)
-
-
-</td><td>
-
-Extract base name from filename (without extension)
-
-
-</td></tr>
-<tr><td>
-
-[getConfigurationTemplates()](./ts-res-ui-components.getconfigurationtemplates.md)
-
-
-</td><td>
-
-Get predefined configuration templates
 
 
 </td></tr>
@@ -313,34 +100,11 @@ Default system configuration
 </td></tr>
 <tr><td>
 
-[getDefaultSystemConfiguration()](./ts-res-ui-components.getdefaultsystemconfiguration.md)
-
-
-</td><td>
-
-Get the default system configuration from ts-res library
-
-
-</td></tr>
-<tr><td>
-
-[getDirectoryName(path)](./ts-res-ui-components.getdirectoryname.md)
-
-
-</td><td>
-
-Extract directory name from a file path
-
-
-</td></tr>
-<tr><td>
-
 [getFilterSummary(values)](./ts-res-ui-components.getfiltersummary.md)
 
 
 </td><td>
 
-Get a summary string of active filter values
 
 
 </td></tr>
@@ -351,7 +115,6 @@ Get a summary string of active filter values
 
 </td><td>
 
-Check if filter values object has any meaningful values
 
 
 </td></tr>
@@ -362,7 +125,6 @@ Check if filter values object has any meaningful values
 
 </td><td>
 
-Check if context has any pending changes
 
 
 </td></tr>
@@ -373,128 +135,6 @@ Check if context has any pending changes
 
 </td><td>
 
-Import configuration from JSON string
-
-
-</td></tr>
-<tr><td>
-
-[isZipFile(filename)](./ts-res-ui-components.iszipfile.md)
-
-
-</td><td>
-
-Validate ZIP file extension
-
-
-</td></tr>
-<tr><td>
-
-[loadZipFile(file, options, onProgress)](./ts-res-ui-components.loadzipfile.md)
-
-
-</td><td>
-
-Convenience function to load ZIP from File with default options
-
-
-</td></tr>
-<tr><td>
-
-[loadZipFromUrl(url, options, onProgress)](./ts-res-ui-components.loadzipfromurl.md)
-
-
-</td><td>
-
-Convenience function to load ZIP from URL with default options
-
-
-</td></tr>
-<tr><td>
-
-[normalizePath(path)](./ts-res-ui-components.normalizepath.md)
-
-
-</td><td>
-
-Normalize path separators for cross-platform compatibility
-
-
-</td></tr>
-<tr><td>
-
-[parseConfiguration(configData)](./ts-res-ui-components.parseconfiguration.md)
-
-
-</td><td>
-
-Parse and validate configuration JSON
-
-
-</td></tr>
-<tr><td>
-
-[parseManifest(manifestData)](./ts-res-ui-components.parsemanifest.md)
-
-
-</td><td>
-
-Parse and validate a ZIP manifest
-
-
-</td></tr>
-<tr><td>
-
-[prepareZipData(files, options)](./ts-res-ui-components.preparezipdata.md)
-
-
-</td><td>
-
-Prepare ZIP data structure for browser download or server processing
-
-
-</td></tr>
-<tr><td>
-
-[prepareZipDataFromDirectory(directory, options)](./ts-res-ui-components.preparezipdatafromdirectory.md)
-
-
-</td><td>
-
-Prepare ZIP data from directory structure
-
-
-</td></tr>
-<tr><td>
-
-[processImportedDirectory(directory, systemConfig)](./ts-res-ui-components.processimporteddirectory.md)
-
-
-</td><td>
-
-Process imported directory using the ts-res system
-
-
-</td></tr>
-<tr><td>
-
-[processImportedFiles(files, systemConfig)](./ts-res-ui-components.processimportedfiles.md)
-
-
-</td><td>
-
-Process imported files using the ts-res system
-
-
-</td></tr>
-<tr><td>
-
-[readFilesFromInput(files)](./ts-res-ui-components.readfilesfrominput.md)
-
-
-</td><td>
-
-Read files from file input element
 
 
 </td></tr>
@@ -505,7 +145,6 @@ Read files from file input element
 
 </td><td>
 
-Resolve a resource and create detailed resolution result
 
 
 </td></tr>
@@ -522,32 +161,11 @@ Comprehensive resource picker component with search, view modes, and annotation 
 </td></tr>
 <tr><td>
 
-[sanitizeFilename(filename)](./ts-res-ui-components.sanitizefilename.md)
-
-
-</td><td>
-
-Create a safe filename by removing invalid characters
-
-
-</td></tr>
-<tr><td>
-
-[trackConfigurationChanges(original, current)](./ts-res-ui-components.trackconfigurationchanges.md)
-
-
-</td><td>
-
-Track changes between configurations
-
-
-</td></tr>
-<tr><td>
-
 [useConfigurationState(initialConfiguration, onConfigurationChange, onUnsavedChanges)](./ts-res-ui-components.useconfigurationstate.md)
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -559,6 +177,7 @@ Track changes between configurations
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -566,6 +185,7 @@ Track changes between configurations
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -590,6 +210,7 @@ Provides comprehensive functionality for: - Importing and processing resource fi
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -598,29 +219,6 @@ Provides comprehensive functionality for: - Importing and processing resource fi
 
 </td><td>
 
-Validate a system configuration
-
-
-</td></tr>
-<tr><td>
-
-[zipTreeToDirectory(tree)](./ts-res-ui-components.ziptreetodirectory.md)
-
-
-</td><td>
-
-Convert ZIP file tree to ImportedDirectory structure
-
-
-</td></tr>
-<tr><td>
-
-[zipTreeToFiles(tree)](./ts-res-ui-components.ziptreetofiles.md)
-
-
-</td><td>
-
-Convert ZIP file tree to ImportedFiles array
 
 
 </td></tr>
@@ -641,23 +239,11 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[BrowserZipData](./ts-res-ui-components.browserzipdata.md)
-
-
-</td><td>
-
-Browser-compatible ZIP creation interface
-
-This provides a way to prepare ZIP data in the browser, though actual ZIP file creation requires server-side processing or a separate Node.js tool.
-
-
-</td></tr>
-<tr><td>
-
 [CandidateInfo](./ts-res-ui-components.candidateinfo.md)
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -680,49 +266,6 @@ Props for the CompiledView component. Displays the compiled resource collection 
 </td><td>
 
 
-</td></tr>
-<tr><td>
-
-[ConfigurationChanges](./ts-res-ui-components.configurationchanges.md)
-
-
-</td><td>
-
-Configuration change tracking
-
-
-</td></tr>
-<tr><td>
-
-[ConfigurationExportOptions](./ts-res-ui-components.configurationexportoptions.md)
-
-
-</td><td>
-
-Configuration export options
-
-
-</td></tr>
-<tr><td>
-
-[ConfigurationTemplate](./ts-res-ui-components.configurationtemplate.md)
-
-
-</td><td>
-
-Predefined configuration templates
-
-
-</td></tr>
-<tr><td>
-
-[ConfigurationValidationResult](./ts-res-ui-components.configurationvalidationresult.md)
-
-
-</td><td>
-
-Configuration validation result
-
 
 </td></tr>
 <tr><td>
@@ -733,6 +276,7 @@ Configuration validation result
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -740,6 +284,7 @@ Configuration validation result
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -784,6 +329,7 @@ Actions available for managing filter state. Provides methods for updating all a
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -793,6 +339,7 @@ Actions available for managing filter state. Provides methods for updating all a
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -800,6 +347,7 @@ Actions available for managing filter state. Provides methods for updating all a
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -860,28 +408,6 @@ Props for the ImportView component. Handles importing resource configurations an
 </td></tr>
 <tr><td>
 
-[IZipBuilder](./ts-res-ui-components.izipbuilder.md)
-
-
-</td><td>
-
-ZIP builder interface (Node.js environment)
-
-
-</td></tr>
-<tr><td>
-
-[IZipLoader](./ts-res-ui-components.iziploader.md)
-
-
-</td><td>
-
-ZIP loader interface (Browser environment)
-
-
-</td></tr>
-<tr><td>
-
 [Message](./ts-res-ui-components.message.md)
 
 
@@ -899,6 +425,7 @@ Represents a user-facing message with type classification and timestamp. Used th
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -906,6 +433,7 @@ Represents a user-facing message with type classification and timestamp. Used th
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -939,6 +467,7 @@ Represents a fully processed ts-res system ready for use. Contains both the runt
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -946,6 +475,7 @@ Represents a fully processed ts-res system ready for use. Contains both the runt
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -957,6 +487,7 @@ Represents a fully processed ts-res system ready for use. Contains both the runt
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -964,6 +495,7 @@ Represents a fully processed ts-res system ready for use. Contains both the runt
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -1006,6 +538,7 @@ Annotations that can be displayed next to resource names
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -1088,98 +621,11 @@ Base properties shared by all view components. Provides common functionality for
 </td></tr>
 <tr><td>
 
-[ZipArchiveOptions](./ts-res-ui-components.ziparchiveoptions.md)
-
-
-</td><td>
-
-Options for creating ZIP archives
-
-
-</td></tr>
-<tr><td>
-
-[ZipArchiveResult](./ts-res-ui-components.ziparchiveresult.md)
-
-
-</td><td>
-
-Result of ZIP archive creation
-
-
-</td></tr>
-<tr><td>
-
-[ZipFileItem](./ts-res-ui-components.zipfileitem.md)
-
-
-</td><td>
-
-File item within a ZIP archive
-
-
-</td></tr>
-<tr><td>
-
-[ZipFileTree](./ts-res-ui-components.zipfiletree.md)
-
-
-</td><td>
-
-ZIP file tree representation
-
-
-</td></tr>
-<tr><td>
-
 [ZipLoaderViewProps](./ts-res-ui-components.ziploaderviewprops.md)
 
 
 </td><td>
 
-
-</td></tr>
-<tr><td>
-
-[ZipLoadOptions](./ts-res-ui-components.ziploadoptions.md)
-
-
-</td><td>
-
-Options for loading ZIP archives
-
-
-</td></tr>
-<tr><td>
-
-[ZipLoadResult](./ts-res-ui-components.ziploadresult.md)
-
-
-</td><td>
-
-Result of ZIP loading operation
-
-
-</td></tr>
-<tr><td>
-
-[ZipManifest](./ts-res-ui-components.zipmanifest.md)
-
-
-</td><td>
-
-ZIP manifest metadata structure
-
-
-</td></tr>
-<tr><td>
-
-[ZipProgressCallback](./ts-res-ui-components.zipprogresscallback.md)
-
-
-</td><td>
-
-Progress callback for ZIP operations
 
 
 </td></tr>
@@ -1206,6 +652,7 @@ Description
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -1213,6 +660,7 @@ Description
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -1224,6 +672,7 @@ Description
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -1231,6 +680,7 @@ Description
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -1242,6 +692,7 @@ Description
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -1249,6 +700,7 @@ Description
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -1260,6 +712,7 @@ Description
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -1267,6 +720,7 @@ Description
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -1278,6 +732,7 @@ Description
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -1285,6 +740,7 @@ Description
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -1296,6 +752,7 @@ Description
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -1305,6 +762,7 @@ Description
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -1312,6 +770,7 @@ Description
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -1338,6 +797,7 @@ Features: - Resource processing (files, directories, bundles) - Filtering and co
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -1345,6 +805,7 @@ Features: - Resource processing (files, directories, bundles) - Filtering and co
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -1356,6 +817,7 @@ Features: - Resource processing (files, directories, bundles) - Filtering and co
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -1365,6 +827,7 @@ Features: - Resource processing (files, directories, bundles) - Filtering and co
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -1372,6 +835,7 @@ Features: - Resource processing (files, directories, bundles) - Filtering and co
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -1398,17 +862,6 @@ Description
 </td><td>
 
 Result of attempting to create a resource editor for a specific resource. Used by ResourceEditorFactory to provide type-specific editors.
-
-
-</td></tr>
-<tr><td>
-
-[ZipLoadingStage](./ts-res-ui-components.ziploadingstage.md)
-
-
-</td><td>
-
-ZIP loading progress stages
 
 
 </td></tr>

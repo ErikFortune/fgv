@@ -4,6 +4,7 @@
 
 ## ResourceListView variable
 
+
 **Signature:**
 
 ```typescript

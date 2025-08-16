@@ -4,7 +4,6 @@
 
 ## hasFilterValues() function
 
-Check if filter values object has any meaningful values
 
 **Signature:**
 

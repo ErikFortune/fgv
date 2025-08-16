@@ -4,6 +4,7 @@
 
 ## ResolutionEditControls variable
 
+
 **Signature:**
 
 ```typescript

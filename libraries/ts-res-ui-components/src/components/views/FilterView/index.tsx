@@ -27,6 +27,7 @@ interface FilteredResource {
   hasWarning: boolean;
 }
 
+/** @public */
 export const FilterView: React.FC<FilterViewProps> = ({
   resources,
   filterState,

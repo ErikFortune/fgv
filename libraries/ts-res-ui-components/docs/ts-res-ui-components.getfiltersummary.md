@@ -4,7 +4,6 @@
 
 ## getFilterSummary() function
 
-Get a summary string of active filter values
 
 **Signature:**
 

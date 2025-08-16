@@ -4,7 +4,6 @@
 
 ## validateConfiguration() function
 
-Validate a system configuration
 
 **Signature:**
 
@@ -48,5 +47,5 @@ Config.Model.ISystemConfiguration
 
 **Returns:**
 
-[ConfigurationValidationResult](./ts-res-ui-components.configurationvalidationresult.md)
+ConfigurationValidationResult
 

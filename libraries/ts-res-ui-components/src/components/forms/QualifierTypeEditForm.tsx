@@ -24,6 +24,7 @@ interface FormData {
   hierarchy: Record<string, string>;
 }
 
+/** @public */
 export const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({
   qualifierType,
   onSave,

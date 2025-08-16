@@ -4,6 +4,7 @@
 
 ## ResolutionResult interface
 
+
 **Signature:**
 
 ```typescript

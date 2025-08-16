@@ -3,6 +3,7 @@ import { JsonEditor } from 'json-edit-react';
 import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { validateEditedResource } from '../../../utils/resolutionEditing';
 
+/** @public */
 export interface EditableJsonViewProps {
   /** The original JSON value */
   value: any;
@@ -22,6 +23,7 @@ export interface EditableJsonViewProps {
   className?: string;
 }
 
+/** @public */
 export const EditableJsonView: React.FC<EditableJsonViewProps> = ({
   value,
   resourceId,

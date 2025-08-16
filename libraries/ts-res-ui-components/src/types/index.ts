@@ -370,6 +370,7 @@ export interface EditedResourceInfo {
 }
 
 // Resolution types
+/** @public */
 export interface ResolutionState {
   contextValues: Record<string, string | undefined>;
   pendingContextValues: Record<string, string | undefined>;
@@ -384,6 +385,7 @@ export interface ResolutionState {
   isApplyingEdits: boolean;
 }
 
+/** @public */
 export interface ResolutionActions {
   updateContextValue: (qualifierName: string, value: string | undefined) => void;
   applyContext: () => void;
@@ -399,6 +401,7 @@ export interface ResolutionActions {
   discardEdits: () => void;
 }
 
+/** @public */
 export interface ResolutionResult {
   success: boolean;
   resourceId: string;
@@ -410,6 +413,7 @@ export interface ResolutionResult {
   error?: string;
 }
 
+/** @public */
 export interface CandidateInfo {
   candidate: Runtime.IResourceCandidate;
   conditionSetKey: string | null;
@@ -420,6 +424,7 @@ export interface CandidateInfo {
   conditionEvaluations?: ConditionEvaluationResult[];
 }
 
+/** @public */
 export interface ConditionEvaluationResult {
   qualifierName: string;
   qualifierValue: string | undefined;
@@ -432,6 +437,7 @@ export interface ConditionEvaluationResult {
   conditionIndex: number;
 }
 
+/** @public */
 export interface ConfigurationViewProps extends ViewBaseProps {
   configuration?: Config.Model.ISystemConfiguration | null;
   onConfigurationChange?: (config: Config.Model.ISystemConfiguration) => void;
@@ -439,6 +445,7 @@ export interface ConfigurationViewProps extends ViewBaseProps {
   hasUnsavedChanges?: boolean;
 }
 
+/** @public */
 export interface ZipLoaderViewProps extends ViewBaseProps {
   zipFileUrl?: string;
   zipPath?: string;
@@ -448,6 +455,7 @@ export interface ZipLoaderViewProps extends ViewBaseProps {
 }
 
 // Resource detail types for SourceView
+/** @public */
 export interface ResourceDetailData {
   id: string;
   resourceType: string;
@@ -466,6 +474,7 @@ export interface ResourceDetailData {
   }>;
 }
 
+/** @public */
 export interface FilteredResource {
   id: string;
   originalCandidateCount: number;
@@ -474,6 +483,7 @@ export interface FilteredResource {
 }
 
 // Filter result type
+/** @public */
 export interface FilterResult {
   success: boolean;
   processedResources?: ProcessedResources;
@@ -483,6 +493,7 @@ export interface FilterResult {
 }
 
 // Orchestrator types
+/** @public */
 export interface OrchestratorState {
   resources: ExtendedProcessedResources | null;
   configuration: Config.Model.ISystemConfiguration | null;
@@ -495,6 +506,7 @@ export interface OrchestratorState {
   messages: Message[];
 }
 
+/** @public */
 export interface OrchestratorActions {
   // Resource management
   importDirectory: (directory: ImportedDirectory) => Promise<void>;

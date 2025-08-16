@@ -16,6 +16,7 @@ interface FileInputResult {
   bundleFile?: ImportedFile & { bundle?: Bundle.IBundle };
 }
 
+/** @public */
 export const ImportView: React.FC<ImportViewProps> = ({
   onImport,
   onBundleImport,

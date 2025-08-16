@@ -29,6 +29,7 @@ const COMMON_TYPE_NAMES = [
   'metadata'
 ];
 
+/** @public */
 export const ResourceTypeEditForm: React.FC<ResourceTypeEditFormProps> = ({
   resourceType,
   onSave,

@@ -4,6 +4,7 @@
 
 ## useConfigurationState() function
 
+
 **Signature:**
 
 ```typescript

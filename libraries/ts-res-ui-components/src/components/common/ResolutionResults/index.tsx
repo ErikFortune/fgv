@@ -13,6 +13,7 @@ export interface ResolutionResultsProps {
   onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void;
 }
 
+/** @public */
 export const ResolutionResults: React.FC<ResolutionResultsProps> = ({
   result,
   viewMode,

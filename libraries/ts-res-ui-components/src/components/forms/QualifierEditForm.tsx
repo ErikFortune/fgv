@@ -20,6 +20,7 @@ interface FormData {
   defaultValue: string;
 }
 
+/** @public */
 export const QualifierEditForm: React.FC<QualifierEditFormProps> = ({
   qualifier,
   qualifierTypes,

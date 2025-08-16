@@ -16,6 +16,7 @@ export interface SourceResourceDetailProps {
   secondaryLabel?: string;
 }
 
+/** @public */
 export const SourceResourceDetail: React.FC<SourceResourceDetailProps> = ({
   resourceId,
   processedResources,

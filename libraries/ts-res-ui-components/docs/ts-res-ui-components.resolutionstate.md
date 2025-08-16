@@ -4,6 +4,7 @@
 
 ## ResolutionState interface
 
+
 **Signature:**
 
 ```typescript

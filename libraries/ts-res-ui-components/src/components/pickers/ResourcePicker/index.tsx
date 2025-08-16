@@ -7,6 +7,7 @@ import { searchResources, filterTreeBranch } from './utils/treeNavigation';
 
 /**
  * Comprehensive resource picker component with search, view modes, and annotation support
+ * @public
  */
 export const ResourcePicker = <T = unknown,>({
   resources,

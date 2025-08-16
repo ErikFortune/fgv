@@ -9,6 +9,7 @@ interface ResourceListViewProps {
   className?: string;
 }
 
+/** @public */
 export const ResourceListView: React.FC<ResourceListViewProps> = ({
   resourceIds,
   selectedResourceId,

@@ -4,6 +4,7 @@
 
 ## CandidateInfo interface
 
+
 **Signature:**
 
 ```typescript

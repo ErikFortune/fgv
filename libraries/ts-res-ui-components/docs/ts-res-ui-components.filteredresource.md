@@ -4,6 +4,7 @@
 
 ## FilteredResource interface
 
+
 **Signature:**
 
 ```typescript

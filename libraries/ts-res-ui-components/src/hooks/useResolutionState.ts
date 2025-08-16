@@ -27,6 +27,7 @@ export interface UseResolutionStateReturn {
   availableQualifiers: string[];
 }
 
+/** @public */
 export function useResolutionState(
   processedResources: ProcessedResources | null,
   onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void,

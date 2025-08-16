@@ -4,7 +4,6 @@
 
 ## createResolverWithContext() function
 
-Create a resolver with context for resource resolution
 
 **Signature:**
 

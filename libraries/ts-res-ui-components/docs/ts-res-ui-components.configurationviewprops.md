@@ -4,6 +4,7 @@
 
 ## ConfigurationViewProps interface
 
+
 **Signature:**
 
 ```typescript

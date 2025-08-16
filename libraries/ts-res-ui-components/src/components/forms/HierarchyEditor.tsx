@@ -7,6 +7,7 @@ export interface HierarchyEditorProps {
   className?: string;
 }
 
+/** @public */
 export const HierarchyEditor: React.FC<HierarchyEditorProps> = ({
   hierarchy,
   onChange,

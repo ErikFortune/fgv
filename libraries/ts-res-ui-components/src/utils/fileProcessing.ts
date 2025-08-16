@@ -3,6 +3,7 @@ import { ImportedFile, ImportedDirectory } from '../types';
 /**
  * Read files from file input element
  */
+/** @internal */
 export async function readFilesFromInput(files: FileList): Promise<ImportedFile[]> {
   const importedFiles: ImportedFile[] = [];
 
@@ -39,6 +40,7 @@ function readFileContent(file: File): Promise<string> {
 /**
  * Convert flat file list to directory structure
  */
+/** @internal */
 export function filesToDirectory(files: ImportedFile[]): ImportedDirectory {
   // Group files by directory path
   const filesByPath = new Map<string, ImportedFile[]>();
@@ -105,6 +107,7 @@ export function filesToDirectory(files: ImportedFile[]): ImportedDirectory {
 /**
  * Export data as JSON file
  */
+/** @internal */
 export function exportAsJson(data: any, filename: string): void {
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
@@ -122,6 +125,7 @@ export function exportAsJson(data: any, filename: string): void {
 /**
  * Export data using File System Access API if available
  */
+/** @internal */
 export async function exportUsingFileSystemAPI(
   data: any,
   suggestedName: string,

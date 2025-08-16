@@ -4,6 +4,7 @@
 
 ## EditableJsonView variable
 
+
 **Signature:**
 
 ```typescript

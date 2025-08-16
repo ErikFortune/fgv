@@ -4,6 +4,7 @@
 
 ## ResolutionResults variable
 
+
 **Signature:**
 
 ```typescript

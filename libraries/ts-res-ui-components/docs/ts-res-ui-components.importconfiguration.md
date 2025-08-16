@@ -4,7 +4,6 @@
 
 ## importConfiguration() function
 
-Import configuration from JSON string
 
 **Signature:**
 

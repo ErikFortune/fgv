@@ -4,7 +4,6 @@
 
 ## resolveResourceDetailed() function
 
-Resolve a resource and create detailed resolution result
 
 **Signature:**
 

@@ -27,6 +27,7 @@ interface TreeNode {
   matchesSearch?: boolean;
 }
 
+/** @public */
 export const ResourceTreeView: React.FC<ResourceTreeViewProps> = ({
   resources,
   selectedResourceId,

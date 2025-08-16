@@ -24,6 +24,7 @@ export interface ResolutionEditControlsProps {
   className?: string;
 }
 
+/** @public */
 export const ResolutionEditControls: React.FC<ResolutionEditControlsProps> = ({
   editCount,
   isApplying,

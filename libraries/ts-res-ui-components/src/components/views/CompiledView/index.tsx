@@ -24,6 +24,7 @@ interface TreeNode {
   data?: any;
 }
 
+/** @public */
 export const CompiledView: React.FC<CompiledViewProps> = ({
   resources,
   filterState,

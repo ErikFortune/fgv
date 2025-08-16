@@ -19,6 +19,7 @@ import { QualifierTypeEditForm } from '../../forms/QualifierTypeEditForm';
 import { QualifierEditForm } from '../../forms/QualifierEditForm';
 import { ResourceTypeEditForm } from '../../forms/ResourceTypeEditForm';
 
+/** @public */
 export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
   configuration,
   onConfigurationChange,

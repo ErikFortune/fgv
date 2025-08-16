@@ -4,7 +4,6 @@
 
 ## evaluateConditionsForCandidate() function
 
-Evaluate conditions for a specific candidate
 
 **Signature:**
 

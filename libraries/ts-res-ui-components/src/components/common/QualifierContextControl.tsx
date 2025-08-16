@@ -11,6 +11,7 @@ export interface QualifierContextControlProps {
   className?: string;
 }
 
+/** @public */
 export const QualifierContextControl: React.FC<QualifierContextControlProps> = ({
   qualifierName,
   value,

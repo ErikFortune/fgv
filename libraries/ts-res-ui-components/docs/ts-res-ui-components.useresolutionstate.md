@@ -4,6 +4,7 @@
 
 ## useResolutionState() function
 
+
 **Signature:**
 
 ```typescript

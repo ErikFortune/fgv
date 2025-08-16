@@ -77,6 +77,7 @@ export interface UseConfigurationStateReturn {
   templates: ConfigurationTemplate[];
 }
 
+/** @public */
 export function useConfigurationState(
   initialConfiguration?: Config.Model.ISystemConfiguration,
   onConfigurationChange?: (config: Config.Model.ISystemConfiguration) => void,

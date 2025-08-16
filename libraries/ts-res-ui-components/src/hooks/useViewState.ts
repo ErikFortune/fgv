@@ -9,6 +9,7 @@ export interface UseViewStateReturn {
   selectResource: (resourceId: string | null) => void;
 }
 
+/** @public */
 export function useViewState(): UseViewStateReturn {
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);

@@ -4,7 +4,6 @@
 
 ## analyzeFilteredResources() function
 
-Analyze filtered resources compared to original resources
 
 **Signature:**
 

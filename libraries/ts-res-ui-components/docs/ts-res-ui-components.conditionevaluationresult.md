@@ -4,6 +4,7 @@
 
 ## ConditionEvaluationResult interface
 
+
 **Signature:**
 
 ```typescript

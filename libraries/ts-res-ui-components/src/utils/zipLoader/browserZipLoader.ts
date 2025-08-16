@@ -16,6 +16,7 @@ import { ProcessedResources } from '../../types';
 /**
  * Browser-based ZIP loader implementation
  */
+/** @internal */
 export class BrowserZipLoader implements IZipLoader {
   /**
    * Load ZIP from File object
@@ -295,6 +296,7 @@ export class BrowserZipLoader implements IZipLoader {
 /**
  * Create a new browser ZIP loader instance
  */
+/** @internal */
 export function createBrowserZipLoader(): IZipLoader {
   return new BrowserZipLoader();
 }
@@ -302,6 +304,7 @@ export function createBrowserZipLoader(): IZipLoader {
 /**
  * Convenience function to load ZIP from File with default options
  */
+/** @internal */
 export async function loadZipFile(
   file: File,
   options?: ZipLoadOptions,
@@ -314,6 +317,7 @@ export async function loadZipFile(
 /**
  * Convenience function to load ZIP from URL with default options
  */
+/** @internal */
 export async function loadZipFromUrl(
   url: string,
   options?: ZipLoadOptions,

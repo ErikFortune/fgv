@@ -4,6 +4,7 @@
 
 ## ConfigurationView variable
 
+
 **Signature:**
 
 ```typescript

@@ -2,6 +2,7 @@ import { Result, succeed, fail } from '@fgv/ts-utils';
 import { Runtime, Import, Resources } from '@fgv/ts-res';
 import { ProcessedResources } from '../types';
 
+/** @public */
 export interface FilterOptions {
   partialContextMatch?: boolean;
   enableDebugLogging?: boolean;
@@ -33,6 +34,7 @@ const debugLog = (enableDebug: boolean, ...args: unknown[]) => {
 /**
  * Check if filter values object has any meaningful values
  */
+/** @public */
 export function hasFilterValues(values: Record<string, string | undefined>): boolean {
   return Object.values(values).some((value) => value !== undefined && value !== '');
 }
@@ -40,6 +42,7 @@ export function hasFilterValues(values: Record<string, string | undefined>): boo
 /**
  * Get a summary string of active filter values
  */
+/** @public */
 export function getFilterSummary(values: Record<string, string | undefined>): string {
   const activeFilters = Object.entries(values)
     .filter(([, value]) => value !== undefined && value !== '')
@@ -51,6 +54,7 @@ export function getFilterSummary(values: Record<string, string | undefined>): st
  * Creates a filtered resource manager using the ResourceManagerBuilder.clone() method.
  * This is a simplified implementation that leverages the built-in filtering functionality.
  */
+/** @public */
 export const createFilteredResourceManagerSimple = async (
   originalSystem: ProcessedResources['system'],
   partialContext: Record<string, string | undefined>,
@@ -161,6 +165,7 @@ export const createFilteredResourceManagerSimple = async (
 /**
  * Analyze filtered resources compared to original resources
  */
+/** @public */
 export function analyzeFilteredResources(
   originalResourceIds: string[],
   filteredProcessedResources: ProcessedResources,

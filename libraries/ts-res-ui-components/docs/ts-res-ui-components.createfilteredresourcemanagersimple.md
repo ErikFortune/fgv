@@ -4,7 +4,6 @@
 
 ## createFilteredResourceManagerSimple() function
 
-Creates a filtered resource manager using the ResourceManagerBuilder.clone() method. This is a simplified implementation that leverages the built-in filtering functionality.
 
 **Signature:**
 

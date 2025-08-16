@@ -4,6 +4,7 @@
 
 ## ResolutionView variable
 
+
 **Signature:**
 
 ```typescript

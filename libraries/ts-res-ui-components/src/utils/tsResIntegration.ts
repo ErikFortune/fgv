@@ -14,6 +14,7 @@ import { ImportedDirectory, ImportedFile } from '../types';
 /**
  * Get the default system configuration from ts-res library
  */
+/** @internal */
 export function getDefaultSystemConfiguration(): Config.Model.ISystemConfiguration {
   return Config.getPredefinedDeclaration('default').orDefault({
     // Fallback configuration if predefined default is not available
@@ -61,6 +62,7 @@ export function getDefaultSystemConfiguration(): Config.Model.ISystemConfigurati
 /**
  * Create a simple context provider from qualifier values
  */
+/** @internal */
 export function createSimpleContext(
   qualifiers: Qualifiers.IReadOnlyQualifierCollector,
   values: Record<string, string | undefined>
@@ -73,6 +75,7 @@ export function createSimpleContext(
 /**
  * Convert ImportedDirectory to FileTree format
  */
+/** @internal */
 export function convertImportedDirectoryToFileTree(directory: ImportedDirectory): FileTree.FileTree {
   // Convert files to IInMemoryFile format and flatten the directory structure
   const flattenFiles = (
@@ -121,6 +124,7 @@ export function convertImportedDirectoryToFileTree(directory: ImportedDirectory)
 /**
  * Create ts-res system from configuration
  */
+/** @internal */
 export function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemConfiguration): Result<{
   qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
   qualifiers: Qualifiers.IReadOnlyQualifierCollector;
@@ -167,6 +171,7 @@ export function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemC
 /**
  * Process imported files using the ts-res system
  */
+/** @internal */
 export function processImportedFiles(
   files: ImportedFile[],
   systemConfig?: Config.Model.ISystemConfiguration
@@ -249,6 +254,7 @@ export function processImportedFiles(
 /**
  * Process imported directory using the ts-res system
  */
+/** @internal */
 export function processImportedDirectory(
   directory: ImportedDirectory,
   systemConfig?: Config.Model.ISystemConfiguration

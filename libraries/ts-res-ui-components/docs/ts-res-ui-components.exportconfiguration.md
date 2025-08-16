@@ -4,7 +4,6 @@
 
 ## exportConfiguration() function
 
-Export configuration to JSON string
 
 **Signature:**
 
@@ -51,7 +50,7 @@ options
 
 </td><td>
 
-[ConfigurationExportOptions](./ts-res-ui-components.configurationexportoptions.md)
+ConfigurationExportOptions
 
 
 </td><td>

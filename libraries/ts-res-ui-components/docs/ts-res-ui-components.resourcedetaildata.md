@@ -4,6 +4,7 @@
 
 ## ResourceDetailData interface
 
+
 **Signature:**
 
 ```typescript

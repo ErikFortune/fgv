@@ -3,6 +3,7 @@ import { Config, QualifierTypes, Qualifiers, ResourceTypes } from '@fgv/ts-res';
 
 /**
  * Configuration change tracking
+ * @internal
  */
 export interface ConfigurationChanges {
   hasChanges: boolean;
@@ -12,6 +13,7 @@ export interface ConfigurationChanges {
 
 /**
  * Configuration validation result
+ * @internal
  */
 export interface ConfigurationValidationResult {
   isValid: boolean;
@@ -21,6 +23,7 @@ export interface ConfigurationValidationResult {
 
 /**
  * Configuration export options
+ * @internal
  */
 export interface ConfigurationExportOptions {
   format: 'json' | 'yaml';
@@ -31,6 +34,7 @@ export interface ConfigurationExportOptions {
 
 /**
  * Predefined configuration templates
+ * @internal
  */
 export interface ConfigurationTemplate {
   id: string;
@@ -42,6 +46,7 @@ export interface ConfigurationTemplate {
 
 /**
  * Default system configuration
+ * @public
  */
 export function getDefaultConfiguration(): Config.Model.ISystemConfiguration {
   return {
@@ -85,6 +90,7 @@ export function getDefaultConfiguration(): Config.Model.ISystemConfiguration {
 /**
  * Validate a system configuration
  */
+/** @public */
 export function validateConfiguration(
   config: Config.Model.ISystemConfiguration
 ): ConfigurationValidationResult {
@@ -171,6 +177,7 @@ export function validateConfiguration(
 /**
  * Create a deep copy of a configuration
  */
+/** @public */
 export function cloneConfiguration(
   config: Config.Model.ISystemConfiguration
 ): Config.Model.ISystemConfiguration {
@@ -180,6 +187,7 @@ export function cloneConfiguration(
 /**
  * Compare two configurations for equality
  */
+/** @internal */
 export function compareConfigurations(
   config1: Config.Model.ISystemConfiguration,
   config2: Config.Model.ISystemConfiguration
@@ -190,6 +198,7 @@ export function compareConfigurations(
 /**
  * Track changes between configurations
  */
+/** @internal */
 export function trackConfigurationChanges(
   original: Config.Model.ISystemConfiguration,
   current: Config.Model.ISystemConfiguration
@@ -221,6 +230,7 @@ export function trackConfigurationChanges(
 /**
  * Export configuration to JSON string
  */
+/** @public */
 export function exportConfiguration(
   config: Config.Model.ISystemConfiguration,
   options: ConfigurationExportOptions = { format: 'json', pretty: true }
@@ -239,6 +249,7 @@ export function exportConfiguration(
 /**
  * Import configuration from JSON string
  */
+/** @public */
 export function importConfiguration(data: string): Result<Config.Model.ISystemConfiguration> {
   try {
     const parsed = JSON.parse(data);
@@ -262,6 +273,7 @@ export function importConfiguration(data: string): Result<Config.Model.ISystemCo
 /**
  * Get predefined configuration templates
  */
+/** @internal */
 export function getConfigurationTemplates(): ConfigurationTemplate[] {
   return [
     {
@@ -417,6 +429,7 @@ export function getConfigurationTemplates(): ConfigurationTemplate[] {
 /**
  * Generate a filename for configuration export
  */
+/** @internal */
 export function generateConfigurationFilename(configName?: string, format: 'json' | 'yaml' = 'json'): string {
   const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
   const baseName = configName ? `${configName}-config` : 'ts-res-config';

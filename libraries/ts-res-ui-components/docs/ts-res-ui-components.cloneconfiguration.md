@@ -4,7 +4,6 @@
 
 ## cloneConfiguration() function
 
-Create a deep copy of a configuration
 
 **Signature:**
 
