@@ -566,10 +566,23 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 
 Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
+## API Documentation
+
+Comprehensive API documentation is available in the [docs](./docs) directory:
+
+- **[API Overview](./docs/index.md)** - Complete API reference
+- **[Components](./docs/ts-res-ui-components.md)** - All available components and their props
+- **[Hooks](./docs/ts-res-ui-components.md)** - State management hooks (useViewState, useResolutionState, etc.)
+- **[Types](./docs/ts-res-ui-components.md)** - TypeScript interfaces and type definitions
+- **[Utilities](./docs/ts-res-ui-components.md)** - Helper functions and utility types
+
+The API documentation includes detailed examples, usage patterns, and type information for all public APIs.
+
 ## Support
 
 For questions and support, please:
 
-1. Check the [documentation](https://docs.ts-res.dev)
-2. Search [existing issues](https://github.com/fgv/ts-res/issues)
-3. Create a [new issue](https://github.com/fgv/ts-res/issues/new)
+1. Check the [API documentation](./docs/index.md) for detailed component usage
+2. Review the [ts-res documentation](https://docs.ts-res.dev) for core concepts
+3. Search [existing issues](https://github.com/fgv/ts-res/issues)
+4. Create a [new issue](https://github.com/fgv/ts-res/issues/new)
