@@ -24,6 +24,7 @@ export { ResourceTreeView } from './components/common/ResourceTreeView';
 export { ResourceListView } from './components/common/ResourceListView';
 export { QualifierContextControl } from './components/common/QualifierContextControl';
 export { SourceResourceDetail } from './components/common/SourceResourceDetail';
+export { ResolutionResults } from './components/common/ResolutionResults';
 
 // Export pickers
 export { ResourcePicker } from './components/pickers/ResourcePicker';
