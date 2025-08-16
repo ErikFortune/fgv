@@ -31,7 +31,49 @@ interface LoadedState {
   fileSize: number | null;
 }
 
-/** @public */
+/**
+ * ZipLoaderView component for loading ZIP-based resource bundles from URLs or files.
+ *
+ * Provides a specialized interface for loading ZIP archives containing ts-res resource
+ * collections, with progress tracking, auto-configuration loading, and bundle processing.
+ * Designed for loading distributed resource bundles.
+ *
+ * **Key Features:**
+ * - **URL-based loading**: Load ZIP bundles from remote URLs
+ * - **File-based loading**: Load ZIP bundles from local files
+ * - **Progress tracking**: Real-time progress updates during ZIP processing
+ * - **Auto-configuration**: Automatically extract and apply configurations from bundles
+ * - **Bundle validation**: Validate ZIP structure and manifest files
+ * - **Error recovery**: Graceful error handling with detailed error messages
+ * - **Manifest support**: Process ZIP manifests for metadata and configuration
+ *
+ * @example
+ * ```tsx
+ * import { ZipLoaderView } from '@fgv/ts-res-ui-components';
+ *
+ * function MyZipLoader() {
+ *   const handleImport = (files, directory) => {
+ *     console.log('Imported from ZIP:', files, directory);
+ *   };
+ *
+ *   const handleConfigLoad = (config) => {
+ *     console.log('Loaded configuration from ZIP:', config);
+ *   };
+ *
+ *   return (
+ *     <ZipLoaderView
+ *       zipFileUrl="https://example.com/resources.zip"
+ *       onImport={handleImport}
+ *       onConfigurationLoad={handleConfigLoad}
+ *       onLoadComplete={(result) => console.log('Load complete:', result)}
+ *       onMessage={(type, message) => console.log(`${type}: ${message}`)}
+ *     />
+ *   );
+ * }
+ * ```
+ *
+ * @public
+ */
 export const ZipLoaderView: React.FC<ZipLoaderViewProps> = ({
   zipFileUrl,
   zipPath,

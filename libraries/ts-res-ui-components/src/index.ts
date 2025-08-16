@@ -49,12 +49,12 @@ export { useViewState } from './hooks/useViewState';
 export { useResolutionState } from './hooks/useResolutionState';
 export { useConfigurationState } from './hooks/useConfigurationState';
 
-// Export organized helper namespaces
+// Export organized tool namespaces
 export {
-  FilterHelpers,
-  ResolutionHelpers,
-  ConfigurationHelpers,
-  FileHelpers,
-  TsResHelpers,
-  ZipHelpers
+  FilterTools,
+  ResolutionTools,
+  ConfigurationTools,
+  FileTools,
+  TsResTools,
+  ZipTools
 } from './namespaces';

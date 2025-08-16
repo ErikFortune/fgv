@@ -127,13 +127,22 @@ ResourceOrchestrator (state management)
 
 ### Data Flow
 
-1. **Import Phase**: Resources are imported via `ImportView` or programmatically
-2. **Processing Phase**: Raw files are processed into a `ProcessedResources` object containing:
+1. **Configuration Phase**: System configuration is created or managed via `ConfigurationView`
+   - Define qualifier types (language, territory, platform, etc.)
+   - Configure qualifiers and their default values
+   - Set up resource types and validation rules
+2. **Import Phase**: Resources are imported via `ImportView` or programmatically
+   - Individual JSON files, directories, ZIP bundles, or pre-compiled collections
+   - Configuration can be imported alongside resources or applied separately
+3. **Processing Phase**: Raw files are processed into a `ProcessedResources` object containing:
    - `ResourceManagerBuilder` for build-time operations
    - `CompiledResourceCollection` for runtime efficiency
    - `ResourceResolver` for resource resolution
-3. **Interaction Phase**: Users can filter, explore, and test resource resolution
-4. **Export Phase**: Processed resources can be exported as JSON or compiled bundles
+4. **Interaction Phase**: Users can filter, explore, and test resource resolution
+   - Filter resources with context values using `FilterView`
+   - Browse source and compiled structures with `SourceView` and `CompiledView`
+   - Test resolution with different contexts using `ResolutionView`
+5. **Export Phase**: Processed resources can be exported as JSON or compiled bundles
 
 ### Key Concepts
 
@@ -149,6 +158,8 @@ ResourceOrchestrator (state management)
 
 The main orchestration component that manages all state and provides actions via render props.
 
+> 📚 **[See ResourceOrchestrator documentation →](./docs/ts-res-ui-components.resourceorchestrator.md)**
+
 ```tsx
 <ResourceOrchestrator
   initialConfiguration={myConfig}
@@ -160,9 +171,35 @@ The main orchestration component that manages all state and provides actions via
 </ResourceOrchestrator>
 ```
 
+### ConfigurationView
+
+Visual configuration management for ts-res system settings including qualifier types, qualifiers, and resource types.
+
+> 📚 **[See ConfigurationView documentation →](./docs/ts-res-ui-components.configurationview.md)**
+
+```tsx
+<ConfigurationView
+  configuration={state.activeConfiguration}
+  onConfigurationChange={actions.applyConfiguration}
+  onSave={actions.saveConfiguration}
+  hasUnsavedChanges={state.hasConfigurationChanges}
+  onMessage={(type, message) => console.log(type, message)}
+/>
+```
+
+**Key features:**
+- **Qualifier type management**: Define language, territory, platform, and custom qualifier types
+- **Qualifier configuration**: Set up specific qualifiers with default values and validation
+- **Resource type management**: Configure resource types and their validation rules
+- **Import/export**: Load configurations from files or export current settings
+- **Real-time validation**: Validate configuration changes as you edit
+- **Change tracking**: Visual indicators for unsaved changes
+
 ### ImportView
 
 Handles importing resource files, directories, bundles, and ZIP files.
+
+> 📚 **[See ImportView documentation →](./docs/ts-res-ui-components.importview.md)**
 
 ```tsx
 <ImportView
@@ -176,7 +213,8 @@ Handles importing resource files, directories, bundles, and ZIP files.
 
 ### ResourcePicker
 
-Core component for browsing and selecting resources with advanced features like search, annotations, and pending resource support.
+Core component for browsing and selecting resources with advanced features like search, annotations, and pending resource support.  The resource picker
+is a generic component used by all of the views, which can also be used to power other application-specific views.
 
 > 📚 **[See complete ResourcePicker documentation →](./docs/ts-res-ui-components.resourcepicker.md)**
 
@@ -220,6 +258,8 @@ Core component for browsing and selecting resources with advanced features like 
 ### SourceView
 
 Displays the source resource collection with search and navigation capabilities using the enhanced ResourcePicker.
+
+> 📚 **[See SourceView documentation →](./docs/ts-res-ui-components.sourceview.md)**
 
 ```tsx
 <SourceView
@@ -343,18 +383,6 @@ const editorFactory = new MyResourceEditorFactory();
 - **Graceful Fallback**: Unknown resource types automatically fall back to JSON editor
 - **Extensible**: Easy to add new editors for new resource types
 - **Error Handling**: Factory failures are caught and reported to users
-
-### ConfigurationView
-
-Visual configuration management for the ts-res system.
-
-```tsx
-<ConfigurationView
-  configuration={state.activeConfiguration}
-  onConfigurationChange={actions.applyConfiguration}
-  onMessage={(type, msg) => showMessage(type, msg)}
-/>
-```
 
 ## Hooks API
 
@@ -504,7 +532,7 @@ All components accept a `className` prop for custom styling:
 ### Custom Resource Processing
 
 ```tsx
-import { processImportedDirectory, createTsResSystemFromConfig } from '@fgv/ts-res-ui-components';
+import { TsResTools } from '@fgv/ts-res-ui-components';
 
 // Custom processing pipeline
 const customProcessor = async (files: ImportedFile[]) => {
@@ -515,7 +543,7 @@ const customProcessor = async (files: ImportedFile[]) => {
   const config = await createConfigFromFiles(processedFiles);
   
   // Create ts-res system
-  const system = await createTsResSystemFromConfig(config);
+  const system = await TsResTools.createTsResSystemFromConfig(config);
   
   return system;
 };
@@ -588,6 +616,42 @@ The library provides comprehensive error handling through the state management s
 </ResourceOrchestrator>
 ```
 
+## Organized Tool Namespaces
+
+For better organization and discoverability, utility functions are organized into logical namespaces alongside their related view components:
+
+```tsx
+import { 
+  FilterTools,     // FilterView + filtering utilities
+  ResolutionTools, // ResolutionView + resolution utilities  
+  ConfigurationTools, // ConfigurationView + configuration utilities
+  TsResTools,      // SourceView, CompiledView + ts-res utilities
+  ZipTools,        // ImportView, ZipLoaderView + ZIP utilities
+  FileTools        // File processing utilities
+} from '@fgv/ts-res-ui-components';
+
+// Use view components from namespaces
+<FilterTools.FilterView {...filterProps} />
+<ResolutionTools.ResolutionView {...resolutionProps} />
+<TsResTools.SourceView {...sourceProps} />
+
+// Use utility functions from namespaces  
+const hasFilters = FilterTools.hasFilterValues(filterState.values);
+const resolver = ResolutionTools.createResolverWithContext(resources, context);
+const system = await TsResTools.createTsResSystemFromConfig(config);
+```
+
+### Namespace Contents
+
+- **FilterTools**: FilterView, filter analysis, filtered resource creation
+- **ResolutionTools**: ResolutionView, resolution testing, context management
+- **ConfigurationTools**: ConfigurationView, configuration validation, import/export
+- **TsResTools**: SourceView, CompiledView, ts-res system integration
+- **ZipTools**: ImportView, ZipLoaderView, ZIP bundle management
+- **FileTools**: File processing, import/export utilities
+
+All components are also available at the top level for backward compatibility.
+
 ## TypeScript Support
 
 This library is written in TypeScript and provides comprehensive type definitions with enhanced support for resource selection and generic resource data.
@@ -615,6 +679,14 @@ import type {
   UseViewStateReturn,
   UseFilterStateReturn,
   UseResolutionStateReturn
+} from '@fgv/ts-res-ui-components';
+
+// Import organized namespaces for components and utilities
+import {
+  FilterTools,
+  ResolutionTools,
+  TsResTools,
+  ZipTools
 } from '@fgv/ts-res-ui-components';
 
 // Type-safe component with enhanced resource selection
@@ -704,7 +776,7 @@ Comprehensive API documentation is available in the [docs](./docs) directory:
 - **[Components](./docs/ts-res-ui-components.md)** - All available components and their props
 - **[Hooks](./docs/ts-res-ui-components.md)** - State management hooks (useViewState, useResolutionState, etc.)
 - **[Types](./docs/ts-res-ui-components.md)** - TypeScript interfaces and type definitions
-- **[Utilities](./docs/ts-res-ui-components.md)** - Helper functions and utility types
+- **[Tool Namespaces](./docs/ts-res-ui-components.md)** - Organized tool namespaces with view components and utility functions
 
 The API documentation includes detailed examples, usage patterns, and type information for all public APIs.
 

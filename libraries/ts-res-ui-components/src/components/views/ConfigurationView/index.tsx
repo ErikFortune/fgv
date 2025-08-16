@@ -19,7 +19,52 @@ import { QualifierTypeEditForm } from '../../forms/QualifierTypeEditForm';
 import { QualifierEditForm } from '../../forms/QualifierEditForm';
 import { ResourceTypeEditForm } from '../../forms/ResourceTypeEditForm';
 
-/** @public */
+/**
+ * ConfigurationView component for managing ts-res system configurations.
+ *
+ * Provides a comprehensive interface for creating, editing, and managing ts-res
+ * system configurations including qualifier types, qualifiers, and resource types.
+ * Supports import/export functionality and real-time validation.
+ *
+ * **Key Features:**
+ * - **Configuration editing**: Create and modify system configurations
+ * - **Qualifier type management**: Add, edit, and remove qualifier types (language, territory, etc.)
+ * - **Qualifier management**: Configure specific qualifiers with default values
+ * - **Resource type management**: Define and manage resource types
+ * - **Import/export**: Load configurations from files or export current settings
+ * - **Real-time validation**: Validate configuration changes as you type
+ * - **Change tracking**: Track unsaved changes with visual indicators
+ *
+ * @example
+ * ```tsx
+ * import { ConfigurationView } from '@fgv/ts-res-ui-components';
+ *
+ * function MyConfigurationEditor() {
+ *   const [config, setConfig] = useState(defaultConfiguration);
+ *   const [hasChanges, setHasChanges] = useState(false);
+ *
+ *   const handleSave = () => {
+ *     console.log('Saving configuration...', config);
+ *     setHasChanges(false);
+ *   };
+ *
+ *   return (
+ *     <ConfigurationView
+ *       configuration={config}
+ *       onConfigurationChange={(newConfig) => {
+ *         setConfig(newConfig);
+ *         setHasChanges(true);
+ *       }}
+ *       onSave={handleSave}
+ *       hasUnsavedChanges={hasChanges}
+ *       onMessage={(type, message) => console.log(`${type}: ${message}`)}
+ *     />
+ *   );
+ * }
+ * ```
+ *
+ * @public
+ */
 export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
   configuration,
   onConfigurationChange,

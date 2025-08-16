@@ -512,7 +512,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[ConfigurationHelpers](./ts-res-ui-components.configurationhelpers.md)
+[ConfigurationTools](./ts-res-ui-components.configurationtools.md)
 
 
 </td><td>
@@ -521,7 +521,7 @@ Description
 </td></tr>
 <tr><td>
 
-[FileHelpers](./ts-res-ui-components.filehelpers.md)
+[FileTools](./ts-res-ui-components.filetools.md)
 
 
 </td><td>
@@ -530,7 +530,7 @@ Description
 </td></tr>
 <tr><td>
 
-[FilterHelpers](./ts-res-ui-components.filterhelpers.md)
+[FilterTools](./ts-res-ui-components.filtertools.md)
 
 
 </td><td>
@@ -539,7 +539,7 @@ Description
 </td></tr>
 <tr><td>
 
-[ResolutionHelpers](./ts-res-ui-components.resolutionhelpers.md)
+[ResolutionTools](./ts-res-ui-components.resolutiontools.md)
 
 
 </td><td>
@@ -548,7 +548,7 @@ Description
 </td></tr>
 <tr><td>
 
-[TsResHelpers](./ts-res-ui-components.tsreshelpers.md)
+[TsResTools](./ts-res-ui-components.tsrestools.md)
 
 
 </td><td>
@@ -557,7 +557,7 @@ Description
 </td></tr>
 <tr><td>
 
-[ZipHelpers](./ts-res-ui-components.ziphelpers.md)
+[ZipTools](./ts-res-ui-components.ziptools.md)
 
 
 </td><td>
@@ -586,6 +586,11 @@ Description
 
 </td><td>
 
+CompiledView component for browsing compiled resource collections and metadata.
+
+Provides an interface for exploring the compiled resource collection structure, including resources, configuration metadata, qualifiers, and resource types. Supports both filtered and unfiltered views with export functionality.
+
+\*\*Key Features:\*\* - \*\*Compiled structure browsing\*\*: Navigate through compiled resource collections - \*\*Metadata exploration\*\*: View system configuration, qualifiers, and resource types - \*\*Filter integration\*\*: Works with filtered resource collections - \*\*Tree-based navigation\*\*: Hierarchical view of resources and metadata - \*\*Export functionality\*\*: Export compiled collections in various formats - \*\*Bundle support\*\*: View and export as ts-res bundles for distribution
 
 
 </td></tr>
@@ -596,6 +601,11 @@ Description
 
 </td><td>
 
+ConfigurationView component for managing ts-res system configurations.
+
+Provides a comprehensive interface for creating, editing, and managing ts-res system configurations including qualifier types, qualifiers, and resource types. Supports import/export functionality and real-time validation.
+
+\*\*Key Features:\*\* - \*\*Configuration editing\*\*: Create and modify system configurations - \*\*Qualifier type management\*\*: Add, edit, and remove qualifier types (language, territory, etc.) - \*\*Qualifier management\*\*: Configure specific qualifiers with default values - \*\*Resource type management\*\*: Define and manage resource types - \*\*Import/export\*\*: Load configurations from files or export current settings - \*\*Real-time validation\*\*: Validate configuration changes as you type - \*\*Change tracking\*\*: Track unsaved changes with visual indicators
 
 
 </td></tr>
@@ -616,6 +626,11 @@ Description
 
 </td><td>
 
+FilterView component for context-based resource filtering and analysis.
+
+Provides a comprehensive interface for filtering resources based on qualifier values, displaying filtered results with candidate count comparisons, and exporting filtered resource collections. Supports partial context matching and qualifier reduction.
+
+\*\*Key Features:\*\* - \*\*Context-based filtering\*\*: Filter resources using qualifier values (language, territory, etc.) - \*\*Candidate analysis\*\*: Compare original vs filtered candidate counts for each resource - \*\*Visual indicators\*\*: Highlight resources with reduced candidates or warnings - \*\*Export functionality\*\*: Export filtered resource collections as JSON - \*\*Dual resource comparison\*\*: View original and filtered resource details side-by-side - \*\*Qualifier reduction\*\*: Option to remove perfectly matching qualifiers from results
 
 
 </td></tr>
@@ -636,6 +651,11 @@ Description
 
 </td><td>
 
+ImportView component for importing resource files, directories, and bundles.
+
+Provides a drag-and-drop interface for importing various resource formats including individual JSON files, directory structures, ZIP archives, and pre-compiled bundles. Automatically detects file types and processes them appropriately.
+
+\*\*Key Features:\*\* - \*\*Drag-and-drop import\*\*: Simple drag-and-drop interface for file import - \*\*Multiple format support\*\*: JSON files, directories, ZIP archives, and bundles - \*\*Auto-detection\*\*: Automatically detects and processes different file types - \*\*Bundle processing\*\*: Handles pre-compiled ts-res bundles - \*\*ZIP archive support\*\*: Extracts and processes ZIP-based resource collections - \*\*Progress tracking\*\*: Visual feedback during import operations - \*\*Error handling\*\*: Clear error messages for unsupported or corrupted files
 
 
 </td></tr>
@@ -696,6 +716,11 @@ Description
 
 </td><td>
 
+ResolutionView component for resource resolution testing and editing.
+
+Provides a comprehensive interface for testing resource resolution with different qualifier contexts, viewing resolution results, and editing resource values with custom editors. Supports real-time resolution testing and conflict detection.
+
+\*\*Key Features:\*\* - \*\*Context management\*\*: Set and update resolution context (qualifier values) - \*\*Real-time resolution\*\*: See how resources resolve with current context - \*\*Resource editing\*\*: Edit resource values with custom type-specific editors - \*\*Conflict detection\*\*: Detect when edits would conflict with existing resources - \*\*Preview mode\*\*: See how edits affect resolution without committing changes - \*\*Custom editors\*\*: Support for type-specific resource editors via factory pattern - \*\*Fallback editing\*\*: JSON editor fallback when custom editors aren't available
 
 
 </td></tr>
@@ -761,6 +786,11 @@ Features: - Resource processing (files, directories, bundles) - Filtering and co
 
 </td><td>
 
+SourceView component for browsing and managing source resource collections.
+
+Provides an interface for browsing source resources in their original form, viewing resource details including candidates and conditions, and exporting the complete source resource collection.
+
+\*\*Key Features:\*\* - \*\*Resource browsing\*\*: Navigate through all resources with search and filtering - \*\*Detailed resource view\*\*: See resource structure, candidates, conditions, and values - \*\*Export functionality\*\*: Export the complete source resource collection as JSON - \*\*Source-specific details\*\*: View resources in their original source form - \*\*Candidate analysis\*\*: Examine resource candidates and their conditions
 
 
 </td></tr>
@@ -771,6 +801,11 @@ Features: - Resource processing (files, directories, bundles) - Filtering and co
 
 </td><td>
 
+ZipLoaderView component for loading ZIP-based resource bundles from URLs or files.
+
+Provides a specialized interface for loading ZIP archives containing ts-res resource collections, with progress tracking, auto-configuration loading, and bundle processing. Designed for loading distributed resource bundles.
+
+\*\*Key Features:\*\* - \*\*URL-based loading\*\*: Load ZIP bundles from remote URLs - \*\*File-based loading\*\*: Load ZIP bundles from local files - \*\*Progress tracking\*\*: Real-time progress updates during ZIP processing - \*\*Auto-configuration\*\*: Automatically extract and apply configurations from bundles - \*\*Bundle validation\*\*: Validate ZIP structure and manifest files - \*\*Error recovery\*\*: Graceful error handling with detailed error messages - \*\*Manifest support\*\*: Process ZIP manifests for metadata and configuration
 
 
 </td></tr>

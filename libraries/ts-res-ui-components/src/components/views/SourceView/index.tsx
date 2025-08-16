@@ -14,7 +14,42 @@ import { ResourcePicker } from '../../pickers/ResourcePicker';
 import { ResourceSelection } from '../../pickers/ResourcePicker/types';
 import { SourceResourceDetail } from '../../common/SourceResourceDetail';
 
-/** @public */
+/**
+ * SourceView component for browsing and managing source resource collections.
+ *
+ * Provides an interface for browsing source resources in their original form,
+ * viewing resource details including candidates and conditions, and exporting
+ * the complete source resource collection.
+ *
+ * **Key Features:**
+ * - **Resource browsing**: Navigate through all resources with search and filtering
+ * - **Detailed resource view**: See resource structure, candidates, conditions, and values
+ * - **Export functionality**: Export the complete source resource collection as JSON
+ * - **Source-specific details**: View resources in their original source form
+ * - **Candidate analysis**: Examine resource candidates and their conditions
+ *
+ * @example
+ * ```tsx
+ * import { SourceView } from '@fgv/ts-res-ui-components';
+ *
+ * function MySourceBrowser() {
+ *   const handleExport = () => {
+ *     // Export source resources
+ *     console.log('Exporting source resources...');
+ *   };
+ *
+ *   return (
+ *     <SourceView
+ *       resources={processedResources}
+ *       onExport={handleExport}
+ *       onMessage={(type, message) => console.log(`${type}: ${message}`)}
+ *     />
+ *   );
+ * }
+ * ```
+ *
+ * @public
+ */
 export const SourceView: React.FC<SourceViewProps> = ({ resources, onExport, onMessage, className = '' }) => {
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [showJsonView, setShowJsonView] = useState(false);

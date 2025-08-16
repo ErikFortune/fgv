@@ -65,7 +65,7 @@ export interface CandidateInfo {
 // @public (undocumented)
 function cloneConfiguration(config: Config.Model.ISystemConfiguration): Config.Model.ISystemConfiguration;
 
-// @public (undocumented)
+// @public
 export const CompiledView: React_2.FC<CompiledViewProps>;
 
 // @public
@@ -99,8 +99,9 @@ export interface ConditionEvaluationResult {
     scoreAsDefault?: number;
 }
 
-declare namespace ConfigurationHelpers {
+declare namespace ConfigurationTools {
     export {
+        ConfigurationView,
         getDefaultConfiguration,
         validateConfiguration,
         cloneConfiguration,
@@ -109,7 +110,7 @@ declare namespace ConfigurationHelpers {
     }
 }
 
-// @public (undocumented)
+// @public
 export const ConfigurationView: React_2.FC<ConfigurationViewProps>;
 
 // @public (undocumented)
@@ -202,7 +203,10 @@ export interface ExtendedProcessedResources extends ProcessedResources {
     isLoadedFromBundle?: boolean;
 }
 
-declare namespace FileHelpers {
+// @internal (undocumented)
+function filesToDirectory(files: ImportedFile[]): ImportedDirectory;
+
+declare namespace FileTools {
     export {
         readFilesFromInput,
         filesToDirectory,
@@ -210,9 +214,6 @@ declare namespace FileHelpers {
         exportUsingFileSystemAPI
     }
 }
-
-// @internal (undocumented)
-function filesToDirectory(files: ImportedFile[]): ImportedDirectory;
 
 // @public
 export interface FilterActions {
@@ -233,16 +234,6 @@ export interface FilteredResource {
     id: string;
     // (undocumented)
     originalCandidateCount: number;
-}
-
-declare namespace FilterHelpers {
-    export {
-        createFilteredResourceManagerSimple,
-        analyzeFilteredResources,
-        hasFilterValues,
-        getFilterSummary,
-        FilterOptions
-    }
 }
 
 // @public (undocumented)
@@ -278,7 +269,18 @@ export interface FilterState {
     values: Record<string, string | undefined>;
 }
 
-// @public (undocumented)
+declare namespace FilterTools {
+    export {
+        FilterView,
+        createFilteredResourceManagerSimple,
+        analyzeFilteredResources,
+        hasFilterValues,
+        getFilterSummary,
+        FilterOptions
+    }
+}
+
+// @public
 export const FilterView: React_2.FC<FilterViewProps>;
 
 // @public
@@ -344,7 +346,7 @@ export interface ImportedFile {
     type?: string;
 }
 
-// @public (undocumented)
+// @public
 export const ImportView: React_2.FC<ImportViewProps>;
 
 // @public
@@ -607,17 +609,6 @@ export interface ResolutionActions {
 // @public (undocumented)
 export const ResolutionEditControls: React_2.FC<ResolutionEditControlsProps>;
 
-declare namespace ResolutionHelpers {
-    export {
-        createResolverWithContext,
-        evaluateConditionsForCandidate,
-        resolveResourceDetailed,
-        getAvailableQualifiers,
-        hasPendingContextChanges,
-        ResolutionOptions
-    }
-}
-
 // @public (undocumented)
 interface ResolutionOptions {
     // (undocumented)
@@ -675,7 +666,19 @@ export interface ResolutionState {
     viewMode: 'composed' | 'best' | 'all' | 'raw';
 }
 
-// @public (undocumented)
+declare namespace ResolutionTools {
+    export {
+        ResolutionView,
+        createResolverWithContext,
+        evaluateConditionsForCandidate,
+        resolveResourceDetailed,
+        getAvailableQualifiers,
+        hasPendingContextChanges,
+        ResolutionOptions
+    }
+}
+
+// @public
 export const ResolutionView: React_2.FC<ResolutionViewProps>;
 
 // @public
@@ -831,7 +834,7 @@ function sanitizeFilename(filename: string): string;
 // @public (undocumented)
 export const SourceResourceDetail: React_2.FC<SourceResourceDetailProps>;
 
-// @public (undocumented)
+// @public
 export const SourceView: React_2.FC<SourceViewProps>;
 
 // @public
@@ -842,8 +845,10 @@ export interface SourceViewProps extends ViewBaseProps {
     selectedResourceId?: string | null;
 }
 
-declare namespace TsResHelpers {
+declare namespace TsResTools {
     export {
+        SourceView,
+        CompiledView,
         getDefaultSystemConfiguration,
         createSimpleContext,
         convertImportedDirectoryToFileTree,
@@ -932,44 +937,7 @@ interface ZipFileTree {
     root: string;
 }
 
-declare namespace ZipHelpers {
-    export {
-        BrowserZipLoader,
-        createBrowserZipLoader,
-        loadZipFile,
-        loadZipFromUrl,
-        NodeZipBuilder,
-        createNodeZipBuilder,
-        BrowserZipData,
-        prepareZipData,
-        prepareZipDataFromDirectory,
-        generateZipFilename,
-        createManifest,
-        parseManifest,
-        parseConfiguration,
-        zipTreeToFiles,
-        zipTreeToDirectory,
-        normalizePath,
-        getDirectoryName,
-        sanitizeFilename,
-        formatFileSize,
-        isZipFile,
-        getBaseName,
-        ZipManifest,
-        ZipArchiveOptions,
-        ZipArchiveResult,
-        ZipLoadOptions,
-        ZipLoadResult,
-        ZipLoadingStage,
-        ZipProgressCallback,
-        IZipBuilder,
-        IZipLoader,
-        ZipFileItem,
-        ZipFileTree
-    }
-}
-
-// @public (undocumented)
+// @public
 export const ZipLoaderView: React_2.FC<ZipLoaderViewProps>;
 
 // @public (undocumented)
@@ -1028,6 +996,45 @@ interface ZipManifest {
 interface ZipProgressCallback {
     // (undocumented)
     (stage: ZipLoadingStage, progress: number, message?: string): void;
+}
+
+declare namespace ZipTools {
+    export {
+        ImportView,
+        ZipLoaderView,
+        BrowserZipLoader,
+        createBrowserZipLoader,
+        loadZipFile,
+        loadZipFromUrl,
+        NodeZipBuilder,
+        createNodeZipBuilder,
+        BrowserZipData,
+        prepareZipData,
+        prepareZipDataFromDirectory,
+        generateZipFilename,
+        createManifest,
+        parseManifest,
+        parseConfiguration,
+        zipTreeToFiles,
+        zipTreeToDirectory,
+        normalizePath,
+        getDirectoryName,
+        sanitizeFilename,
+        formatFileSize,
+        isZipFile,
+        getBaseName,
+        ZipManifest,
+        ZipArchiveOptions,
+        ZipArchiveResult,
+        ZipLoadOptions,
+        ZipLoadResult,
+        ZipLoadingStage,
+        ZipProgressCallback,
+        IZipBuilder,
+        IZipLoader,
+        ZipFileItem,
+        ZipFileTree
+    }
 }
 
 // @internal (undocumented)
