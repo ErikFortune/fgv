@@ -14,8 +14,8 @@ import { ResolutionViewProps, CandidateInfo, ResolutionActions, ResolutionState 
 import { QualifierContextControl } from '../../common/QualifierContextControl';
 import { EditableJsonView } from './EditableJsonView';
 import { ResolutionEditControls } from './ResolutionEditControls';
-import { ResourceTreeView } from '../../common/ResourceTreeView';
-import { ResourceListView } from '../../common/ResourceListView';
+import { ResourcePicker } from '../../pickers/ResourcePicker';
+import { ResourceSelection, ResourceAnnotations } from '../../pickers/ResourcePicker/types';
 
 export const ResolutionView: React.FC<ResolutionViewProps> = ({
   resources,
@@ -27,20 +27,86 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
   onMessage,
   className = ''
 }) => {
-  // Local UI state
-  const [viewMode, setViewMode] = useState<'tree' | 'list'>('list');
-
   // Use filtered resources when filtering is active and successful
   const isFilteringActive = filterState?.enabled && filterResult?.success === true;
   const activeProcessedResources = isFilteringActive ? filterResult?.processedResources : resources;
 
-  // Available resources for selection
-  const availableResources = useMemo(() => {
+  // Create resource annotations for resolution results and edit states
+  const resourceAnnotations = useMemo(() => {
+    const annotations: ResourceAnnotations = {};
+
     if (!activeProcessedResources?.summary?.resourceIds) {
-      return [];
+      return annotations;
     }
-    return activeProcessedResources.summary.resourceIds.sort();
-  }, [activeProcessedResources?.summary?.resourceIds]);
+
+    activeProcessedResources.summary.resourceIds.forEach((resourceId) => {
+      const hasEdit = resolutionActions?.hasEdit?.(resourceId);
+      const isSelected = resolutionState?.selectedResourceId === resourceId;
+      const hasResolutionResult = isSelected && resolutionState?.resolutionResult;
+
+      // Base annotation with edit indicator
+      annotations[resourceId] = {
+        indicator: hasEdit
+          ? {
+              type: 'icon',
+              value: '✏️',
+              tooltip: 'Resource has unsaved edits'
+            }
+          : undefined
+      };
+
+      // Add resolution result annotations for selected resource
+      if (hasResolutionResult && resolutionState?.resolutionResult?.success) {
+        const result = resolutionState.resolutionResult;
+
+        // Show match status as badge
+        if (result.bestCandidate) {
+          annotations[resourceId].badge = {
+            text: 'Resolved',
+            variant: 'info'
+          };
+        } else if (result.candidateDetails) {
+          const matchingCount = result.candidateDetails.filter((c: CandidateInfo) => c.matched).length;
+          const totalCount = result.candidateDetails.length;
+
+          if (matchingCount === 0) {
+            annotations[resourceId].badge = {
+              text: 'No Match',
+              variant: 'error'
+            };
+          } else {
+            annotations[resourceId].badge = {
+              text: `${matchingCount}/${totalCount}`,
+              variant: 'warning'
+            };
+          }
+        }
+
+        // Add suffix with candidate count
+        if (result.resource) {
+          const totalCandidates = result.resource.candidates.length;
+          annotations[resourceId].suffix = `${totalCandidates} candidate${totalCandidates !== 1 ? 's' : ''}`;
+        }
+      } else if (
+        isSelected &&
+        resolutionState?.resolutionResult &&
+        !resolutionState.resolutionResult.success
+      ) {
+        // Show error state
+        annotations[resourceId].badge = {
+          text: 'Error',
+          variant: 'error'
+        };
+      }
+    });
+
+    return annotations;
+  }, [
+    activeProcessedResources?.summary?.resourceIds,
+    resolutionActions,
+    resolutionState?.selectedResourceId,
+    resolutionState?.resolutionResult
+  ]);
 
   // Handle context value changes using the shared component's callback pattern
   const handleQualifierChange = useCallback(
@@ -50,10 +116,12 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
     [resolutionActions]
   );
 
-  // Handle resource selection
+  // Handle resource selection from ResourcePicker
   const handleResourceSelect = useCallback(
-    (resourceId: string) => {
-      resolutionActions?.selectResource(resourceId);
+    (selection: ResourceSelection) => {
+      if (selection.resourceId) {
+        resolutionActions?.selectResource(selection.resourceId);
+      }
     },
     [resolutionActions]
   );
@@ -177,79 +245,25 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
         <div className="flex flex-col lg:flex-row gap-6 h-[600px]">
           {/* Left side: Resource Selection */}
           <div className="lg:w-1/2 flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Resources</h3>
-                <div className="text-sm text-gray-500">{availableResources.length} available</div>
-              </div>
-              {/* View Mode Toggle */}
-              <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`flex items-center px-2 py-1 text-xs font-medium rounded ${
-                    viewMode === 'list'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                  title="List View"
-                >
-                  <ListBulletIcon className="h-4 w-4" />
-                  <span className="ml-1">List</span>
-                </button>
-                <button
-                  onClick={() => setViewMode('tree')}
-                  className={`flex items-center px-2 py-1 text-xs font-medium rounded ${
-                    viewMode === 'tree'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                  title="Tree View"
-                >
-                  <FolderIcon className="h-4 w-4" />
-                  <span className="ml-1">Tree</span>
-                </button>
-              </div>
+            <div className="flex items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Resources</h3>
             </div>
 
-            <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg bg-gray-50">
-              {viewMode === 'tree' && activeProcessedResources?.system.resourceManager ? (
-                <ResourceTreeView
-                  resources={activeProcessedResources.system.resourceManager}
-                  selectedResourceId={resolutionState?.selectedResourceId || null}
-                  onResourceSelect={handleResourceSelect}
-                  searchTerm=""
-                  className=""
-                />
-              ) : (
-                availableResources.map((resourceId) => (
-                  <div
-                    key={resourceId}
-                    className={`flex items-center px-3 py-2 cursor-pointer hover:bg-gray-100 ${
-                      resolutionState?.selectedResourceId === resourceId
-                        ? 'bg-blue-50 border-r-2 border-blue-500'
-                        : ''
-                    }`}
-                    onClick={() => handleResourceSelect(resourceId)}
-                  >
-                    <DocumentTextIcon className="w-4 h-4 mr-2 text-green-500" />
-                    <span
-                      className={`text-sm ${
-                        resolutionState?.selectedResourceId === resourceId
-                          ? 'font-medium text-blue-900'
-                          : 'text-gray-700'
-                      }`}
-                    >
-                      {resourceId}
-                    </span>
-                    {/* Show edit indicator */}
-                    {resolutionActions?.hasEdit?.(resourceId) && (
-                      <span className="ml-auto">
-                        <PencilIcon className="h-3 w-3 text-blue-500" />
-                      </span>
-                    )}
-                  </div>
-                ))
-              )}
+            <div className="flex-1">
+              <ResourcePicker
+                resources={activeProcessedResources || null}
+                selectedResourceId={resolutionState?.selectedResourceId || null}
+                onResourceSelect={handleResourceSelect}
+                resourceAnnotations={resourceAnnotations}
+                defaultView="list"
+                showViewToggle={true}
+                enableSearch={true}
+                searchPlaceholder="Search resources for resolution testing..."
+                searchScope="all"
+                emptyMessage="No resources available for resolution testing"
+                height="520px"
+                onMessage={onMessage}
+              />
             </div>
           </div>
 
