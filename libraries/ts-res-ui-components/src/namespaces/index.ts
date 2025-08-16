@@ -9,12 +9,14 @@
  * import {
  *   FilterTools,
  *   ResolutionTools,
+ *   ViewTools,
  *   ZipTools
  * } from '@fgv/ts-res-ui-components';
  *
  * // Use view components
  * <FilterTools.FilterView {...filterProps} />
  * <ResolutionTools.ResolutionView {...resolutionProps} />
+ * <ViewTools.MessagesWindow {...messageProps} />
  * <ZipTools.ImportView {...importProps} />
  *
  * // Or use utility functions
@@ -31,4 +33,5 @@ export * as ResolutionTools from './ResolutionTools';
 export * as ConfigurationTools from './ConfigurationTools';
 export * as FileTools from './FileTools';
 export * as TsResTools from './TsResTools';
+export * as ViewTools from './ViewTools';
 export * as ZipTools from './ZipTools';

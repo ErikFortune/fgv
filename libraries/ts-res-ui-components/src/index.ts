@@ -10,6 +10,7 @@ export { CompiledView } from './components/views/CompiledView';
 export { ResolutionView } from './components/views/ResolutionView';
 export { ZipLoaderView } from './components/views/ZipLoaderView';
 export { ConfigurationView } from './components/views/ConfigurationView';
+export { MessagesWindow } from './components/views/MessagesWindow';
 
 // Export orchestrator
 export { ResourceOrchestrator } from './components/orchestrator/ResourceOrchestrator';
@@ -56,5 +57,6 @@ export {
   ConfigurationTools,
   FileTools,
   TsResTools,
-  ZipTools
+  ZipTools,
+  ViewTools
 } from './namespaces';

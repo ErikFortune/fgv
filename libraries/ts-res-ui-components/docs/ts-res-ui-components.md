@@ -557,6 +557,15 @@ Description
 </td></tr>
 <tr><td>
 
+[ViewTools](./ts-res-ui-components.viewtools.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [ZipTools](./ts-res-ui-components.ziptools.md)
 
 
@@ -656,6 +665,21 @@ ImportView component for importing resource files, directories, and bundles.
 Provides a drag-and-drop interface for importing various resource formats including individual JSON files, directory structures, ZIP archives, and pre-compiled bundles. Automatically detects file types and processes them appropriately.
 
 \*\*Key Features:\*\* - \*\*Drag-and-drop import\*\*: Simple drag-and-drop interface for file import - \*\*Multiple format support\*\*: JSON files, directories, ZIP archives, and bundles - \*\*Auto-detection\*\*: Automatically detects and processes different file types - \*\*Bundle processing\*\*: Handles pre-compiled ts-res bundles - \*\*ZIP archive support\*\*: Extracts and processes ZIP-based resource collections - \*\*Progress tracking\*\*: Visual feedback during import operations - \*\*Error handling\*\*: Clear error messages for unsupported or corrupted files
+
+
+</td></tr>
+<tr><td>
+
+[MessagesWindow](./ts-res-ui-components.messageswindow.md)
+
+
+</td><td>
+
+MessagesWindow component for displaying and managing application messages.
+
+Provides a comprehensive interface for displaying, filtering, and managing application messages with advanced features like search, filtering by type, and copy functionality. Designed for use in development tools and debugging interfaces where message visibility and management are critical.
+
+\*\*Key Features:\*\* - \*\*Message filtering\*\*: Filter messages by type (info, warning, error, success) - \*\*Search functionality\*\*: Full-text search across message content - \*\*Copy functionality\*\*: Copy all filtered messages to clipboard - \*\*Collapsible interface\*\*: Minimize/maximize the message window - \*\*Message count display\*\*: Shows filtered vs total message counts - \*\*Timestamp formatting\*\*: Human-readable timestamp display - \*\*Visual indicators\*\*: Color-coded message types with appropriate icons - \*\*Auto-hide when empty\*\*: Component hides automatically when no messages exist
 
 
 </td></tr>

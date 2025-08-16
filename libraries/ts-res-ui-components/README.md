@@ -384,6 +384,148 @@ const editorFactory = new MyResourceEditorFactory();
 - **Extensible**: Easy to add new editors for new resource types
 - **Error Handling**: Factory failures are caught and reported to users
 
+### MessagesWindow
+
+Displays and manages application messages with filtering, search, and copy functionality. Perfect for debugging interfaces and development tools where message visibility is critical.
+
+> 📚 **[See MessagesWindow documentation →](./docs/ts-res-ui-components.messageswindow.md)**
+
+```tsx
+import { MessagesWindow, ViewTools } from '@fgv/ts-res-ui-components';
+
+function MyApplication() {
+  const [messages, setMessages] = useState<ViewTools.Message[]>([]);
+
+  const addMessage = (type: ViewTools.Message['type'], text: string) => {
+    const newMessage: ViewTools.Message = {
+      id: `msg-${Date.now()}-${Math.random()}`,
+      type,
+      message: text,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, newMessage]);
+  };
+
+  const clearMessages = () => {
+    setMessages([]);
+  };
+
+  return (
+    <div className="flex flex-col h-screen">
+      <div className="flex-1">
+        {/* Main application content */}
+        <button onClick={() => addMessage('info', 'Processing started')}>
+          Add Info Message
+        </button>
+        <button onClick={() => addMessage('success', 'Operation completed')}>
+          Add Success Message  
+        </button>
+        <button onClick={() => addMessage('error', 'Something went wrong')}>
+          Add Error Message
+        </button>
+      </div>
+      
+      {/* Messages window at bottom */}
+      <MessagesWindow 
+        messages={messages}
+        onClearMessages={clearMessages}
+      />
+    </div>
+  );
+}
+```
+
+**Key features:**
+- **Message filtering**: Filter by type (info, warning, error, success) with count indicators
+- **Search functionality**: Full-text search across message content
+- **Copy functionality**: Copy all filtered messages to clipboard with timestamps
+- **Collapsible interface**: Minimize/maximize to save screen space
+- **Auto-hide when empty**: Component automatically hides when no messages exist
+- **Visual indicators**: Color-coded message types with appropriate icons
+- **Timestamp formatting**: Human-readable timestamp display
+
+#### Adding Messages to Your Application
+
+To integrate MessagesWindow into your application and provide user feedback during operations:
+
+```tsx
+import { ViewTools } from '@fgv/ts-res-ui-components';
+
+function useMessages() {
+  const [messages, setMessages] = useState<ViewTools.Message[]>([]);
+
+  const addMessage = useCallback((type: ViewTools.Message['type'], message: string) => {
+    const newMessage: ViewTools.Message = {
+      id: `msg-${Date.now()}-${Math.random()}`,
+      type,
+      message,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, newMessage]);
+  }, []);
+
+  const clearMessages = useCallback(() => {
+    setMessages([]);
+  }, []);
+
+  return { messages, addMessage, clearMessages };
+}
+
+function MyResourceTool() {
+  const { messages, addMessage, clearMessages } = useMessages();
+  const [resources, setResources] = useState(null);
+
+  const handleFileImport = async (files) => {
+    try {
+      addMessage('info', 'Starting file import...');
+      const processed = await processFiles(files);
+      setResources(processed);
+      addMessage('success', `Successfully imported ${files.length} files`);
+    } catch (error) {
+      addMessage('error', `Import failed: ${error.message}`);
+    }
+  };
+
+  const handleResourceFilter = (filterValues) => {
+    if (Object.keys(filterValues).length === 0) {
+      addMessage('warning', 'No filter values provided');
+      return;
+    }
+    
+    try {
+      const filtered = applyFilters(resources, filterValues);
+      addMessage('success', `Filtered to ${filtered.length} resources`);
+    } catch (error) {
+      addMessage('error', `Filter failed: ${error.message}`);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-screen">
+      <div className="flex-1">
+        <ImportView onImport={handleFileImport} onMessage={addMessage} />
+        <FilterView onFilter={handleResourceFilter} onMessage={addMessage} />
+        {/* Other components that use onMessage callback */}
+      </div>
+      
+      <ViewTools.MessagesWindow 
+        messages={messages}
+        onClearMessages={clearMessages}
+      />
+    </div>
+  );
+}
+```
+
+**Common patterns for adding messages:**
+- **info**: Operation started, processing steps, configuration loaded
+- **success**: Operations completed successfully, files imported, resources processed
+- **warning**: Non-critical issues, fallback behaviors, deprecated features used
+- **error**: Operation failures, validation errors, unexpected conditions
+
+**Message callback integration:**
+Most components in this library accept an `onMessage` callback prop that you can connect to your message system. This provides consistent feedback across all operations.
+
 ## Hooks API
 
 > 📚 **[See complete hooks documentation →](./docs/ts-res-ui-components.md)** for detailed examples and patterns
@@ -626,6 +768,7 @@ import {
   ResolutionTools, // ResolutionView + resolution utilities  
   ConfigurationTools, // ConfigurationView + configuration utilities
   TsResTools,      // SourceView, CompiledView + ts-res utilities
+  ViewTools,       // MessagesWindow + view state utilities
   ZipTools,        // ImportView, ZipLoaderView + ZIP utilities
   FileTools        // File processing utilities
 } from '@fgv/ts-res-ui-components';
@@ -633,6 +776,7 @@ import {
 // Use view components from namespaces
 <FilterTools.FilterView {...filterProps} />
 <ResolutionTools.ResolutionView {...resolutionProps} />
+<ViewTools.MessagesWindow {...messageProps} />
 <TsResTools.SourceView {...sourceProps} />
 
 // Use utility functions from namespaces  
@@ -647,6 +791,7 @@ const system = await TsResTools.createTsResSystemFromConfig(config);
 - **ResolutionTools**: ResolutionView, resolution testing, context management
 - **ConfigurationTools**: ConfigurationView, configuration validation, import/export
 - **TsResTools**: SourceView, CompiledView, ts-res system integration
+- **ViewTools**: MessagesWindow, message management, view state utilities
 - **ZipTools**: ImportView, ZipLoaderView, ZIP bundle management
 - **FileTools**: File processing, import/export utilities
 

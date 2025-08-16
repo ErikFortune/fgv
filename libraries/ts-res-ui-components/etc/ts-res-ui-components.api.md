@@ -390,6 +390,24 @@ export interface Message {
     type: 'info' | 'warning' | 'error' | 'success';
 }
 
+// @public
+interface Message_2 {
+    id: string;
+    message: string;
+    timestamp: Date;
+    type: 'info' | 'warning' | 'error' | 'success';
+}
+
+// @public
+export const MessagesWindow: React_2.FC<MessagesWindowProps>;
+
+// @public
+interface MessagesWindowProps {
+    className?: string;
+    messages: Message_2[];
+    onClearMessages: () => void;
+}
+
 // @internal (undocumented)
 class NodeZipBuilder implements IZipBuilder {
     createFromDirectory(directory: ImportedDirectory, options?: ZipArchiveOptions): Promise<Result<ZipArchiveResult>>;
@@ -892,6 +910,14 @@ function validateConfiguration(config: Config.Model.ISystemConfiguration): Confi
 export interface ViewBaseProps {
     className?: string;
     onMessage?: (type: Message['type'], message: string) => void;
+}
+
+declare namespace ViewTools {
+    export {
+        MessagesWindow,
+        Message_2 as Message,
+        MessagesWindowProps
+    }
 }
 
 // @internal (undocumented)
