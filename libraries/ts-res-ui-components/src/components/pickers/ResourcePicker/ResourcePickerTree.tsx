@@ -42,42 +42,53 @@ export const ResourcePickerTree: React.FC<ResourcePickerTreeProps> = ({
     return treeResult.value;
   }, [resources]);
 
-  // Filter tree based on search term and root path
-  const filteredTree = useMemo(() => {
-    if (!treeData) return null;
+  // Find the effective root node(s) to display
+  const effectiveRootNodes = useMemo(() => {
+    if (!treeData) return [];
 
-    // TODO: Implement rootPath filtering and hideRootNode logic
-    // For now, just handle search filtering similar to ResourceTreeView
-    if (!searchTerm) return treeData;
+    // If no rootPath, show all top-level nodes
+    if (!rootPath) {
+      return Array.from(treeData.children.values());
+    }
 
-    // Helper function to check if a node or its descendants match the search
-    const markMatchingNodes = (
+    // Find the target node in the tree
+    const findNodeById = (
       node: Runtime.ResourceTree.IReadOnlyResourceTreeNode<any>,
-      searchLower: string
-    ): boolean => {
-      const nodeIdLower = node.id.toLowerCase();
-      let matches = nodeIdLower.includes(searchLower);
+      targetId: string
+    ): Runtime.ResourceTree.IReadOnlyResourceTreeNode<any> | null => {
+      if (node.id === targetId) {
+        return node;
+      }
 
       if (!node.isLeaf && node.children) {
-        // Check children recursively
         for (const child of node.children.values()) {
-          if (markMatchingNodes(child, searchLower)) {
-            matches = true;
-          }
+          const found = findNodeById(child, targetId);
+          if (found) return found;
         }
       }
 
-      return matches;
+      return null;
     };
 
-    // Mark all matching nodes
-    const searchLower = searchTerm.toLowerCase();
+    // Search through all top-level children to find the target
+    let targetNode: Runtime.ResourceTree.IReadOnlyResourceTreeNode<any> | null = null;
     for (const child of treeData.children.values()) {
-      markMatchingNodes(child, searchLower);
+      targetNode = findNodeById(child, rootPath);
+      if (targetNode) break;
     }
 
-    return treeData;
-  }, [treeData, searchTerm]);
+    if (!targetNode) {
+      return []; // Target node not found
+    }
+
+    // If hideRootNode is true, show the target's children instead of the target itself
+    if (hideRootNode && !targetNode.isLeaf && targetNode.children) {
+      return Array.from(targetNode.children.values());
+    } else {
+      // Show the target node as the new root
+      return [targetNode];
+    }
+  }, [treeData, rootPath, hideRootNode]);
 
   // Create a map of pending resource IDs for quick lookup
   const pendingResourceMap = useMemo(() => {
@@ -283,7 +294,7 @@ export const ResourcePickerTree: React.FC<ResourcePickerTreeProps> = ({
     return elements;
   };
 
-  if (!filteredTree) {
+  if (!treeData || effectiveRootNodes.length === 0) {
     return (
       <div className={`${className} p-4 text-center text-gray-500`}>
         <p>{emptyMessage}</p>
@@ -293,7 +304,7 @@ export const ResourcePickerTree: React.FC<ResourcePickerTreeProps> = ({
 
   return (
     <div className={`${className} overflow-y-auto`}>
-      {Array.from(filteredTree.children.values())
+      {effectiveRootNodes
         .sort(
           (
             a: Runtime.ResourceTree.IReadOnlyResourceTreeNode<any>,
