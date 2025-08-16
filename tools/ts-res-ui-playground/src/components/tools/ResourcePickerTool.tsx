@@ -62,6 +62,18 @@ const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({ resources, onMe
   const hasResources = resources && resources.compiledCollection;
   const resourceCount = hasResources ? Object.keys(resources.compiledCollection.resources || {}).length : 0;
 
+  // Pass resources through without transformation
+  const resourcesForPicker = React.useMemo(() => {
+    return hasResources ? resources : null;
+  }, [hasResources, resources]);
+
+  // Debug: Log resource structure to understand the tree issue
+  React.useEffect(() => {
+    if (hasResources) {
+      console.log('ResourcePicker Debug - resourceIds:', resources.summary?.resourceIds?.slice(0, 10));
+    }
+  }, [hasResources, resources]);
+
   if (!hasResources || resourceCount === 0) {
     return (
       <div className="p-6">
@@ -191,7 +203,7 @@ const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({ resources, onMe
               <h2 className="text-lg font-semibold text-gray-700 mb-4">ResourcePicker Component</h2>
               <div className="border border-gray-200 rounded-lg">
                 <ResourcePicker
-                  resources={resources}
+                  resources={resourcesForPicker}
                   selectedResourceId={selectedResourceId}
                   onResourceSelect={handleResourceSelect}
                   defaultView={viewMode}

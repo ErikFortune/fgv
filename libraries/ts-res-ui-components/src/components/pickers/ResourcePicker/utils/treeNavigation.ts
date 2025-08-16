@@ -13,10 +13,10 @@ export function filterTreeBranch(resourceIds: string[], rootPath?: string, hideR
   const filtered = resourceIds.filter((id) => {
     if (hideRootNode) {
       // Show children of the root path, but not the root itself
-      return id.startsWith(rootPath + '/') && id !== rootPath;
+      return id.startsWith(rootPath + '.') && id !== rootPath;
     }
     // Show the root path and all its children
-    return id === rootPath || id.startsWith(rootPath + '/');
+    return id === rootPath || id.startsWith(rootPath + '.');
   });
 
   return filtered;
@@ -32,7 +32,7 @@ export function adjustResourcePath(resourceId: string, rootPath?: string, hideRo
   }
 
   // Remove the root path prefix to make children appear as top-level
-  if (resourceId.startsWith(rootPath + '/')) {
+  if (resourceId.startsWith(rootPath + '.')) {
     return resourceId.substring(rootPath.length + 1);
   }
 
@@ -80,31 +80,58 @@ export function buildResourceTree(
   // Sort IDs to ensure parents come before children
   const sortedIds = [...filteredIds].sort();
 
-  for (const id of sortedIds) {
-    const segments = id.split('/');
-    const adjustedId = adjustResourcePath(id, rootPath, hideRootNode);
+  // Convert dot notation to slash notation for tree building
+  const convertedIds = sortedIds.map((id) => id.replace(/\./g, '/'));
+
+  // Check for conflicts where a converted ID would be both a parent and leaf
+  const conflicts = new Set<string>();
+  for (const convertedId of convertedIds) {
+    const hasChildren = convertedIds.some(
+      (otherId) => otherId !== convertedId && otherId.startsWith(convertedId + '/')
+    );
+    if (hasChildren && convertedIds.includes(convertedId)) {
+      conflicts.add(convertedId);
+    }
+  }
+
+  if (conflicts.size > 0) {
+    throw new Error(`${Array.from(conflicts)[0]}: Duplicate resource at path.`);
+  }
+
+  // Build tree with converted IDs but keep original IDs for node references
+  for (let i = 0; i < sortedIds.length; i++) {
+    const originalId = sortedIds[i];
+    const convertedId = convertedIds[i];
+    const segments = convertedId.split('/');
+    const adjustedId = adjustResourcePath(convertedId, rootPath, hideRootNode);
     const adjustedSegments = adjustedId.split('/');
 
     const node: TreeNode = {
-      id,
+      id: originalId, // Keep original ID
       displayName: segments[segments.length - 1],
       children: [],
-      isExpanded: expandedNodes?.has(id)
+      isExpanded: expandedNodes?.has(originalId)
     };
 
-    nodeMap.set(id, node);
+    nodeMap.set(originalId, node);
 
     if (adjustedSegments.length === 1) {
       // Top-level node in the adjusted tree
       tree.push(node);
     } else {
-      // Find parent node
+      // Find parent node using converted path logic
       const parentSegments = segments.slice(0, -1);
-      const parentId = parentSegments.join('/');
-      const parentNode = nodeMap.get(parentId);
+      const parentConvertedId = parentSegments.join('/');
 
-      if (parentNode) {
-        parentNode.children.push(node);
+      // Find the original ID that corresponds to this parent path
+      const parentOriginalIndex = convertedIds.indexOf(parentConvertedId);
+      if (parentOriginalIndex >= 0) {
+        const parentOriginalId = sortedIds[parentOriginalIndex];
+        const parentNode = nodeMap.get(parentOriginalId);
+
+        if (parentNode) {
+          parentNode.children.push(node);
+        }
       }
     }
   }

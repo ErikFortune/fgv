@@ -2,13 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { ChevronRightIcon, ChevronDownIcon, FolderIcon, FolderOpenIcon } from '@heroicons/react/24/outline';
 import { ResourcePickerTreeProps } from './types';
 import { ResourceItem } from './ResourceItem';
-import {
-  buildResourceTree,
-  TreeNode,
-  filterTreeBranch,
-  searchResources,
-  mergeWithPendingResources
-} from './utils/treeNavigation';
+import { Runtime } from '@fgv/ts-res';
 
 /**
  * Tree view for the ResourcePicker component
@@ -28,38 +22,57 @@ export const ResourcePickerTree: React.FC<ResourcePickerTreeProps> = ({
 }) => {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
-  // Get all resource IDs from the resource manager
-  const allResourceIds = useMemo(() => {
-    if (!resources?.summary.resourceIds) {
-      return [];
+  // Build the tree structure from resources using the proper ts-res API
+  const treeData = useMemo(() => {
+    if (!resources) return null;
+
+    // Get the tree from the resource manager
+    const resourceManager = resources.system.resourceManager;
+    const treeResult = resourceManager.getBuiltResourceTree();
+    if (treeResult.isFailure()) {
+      console.error('Failed to build resource tree:', treeResult.message);
+      return null;
     }
 
-    // Merge with pending resources
-    const existingIds = resources.summary.resourceIds;
-    return mergeWithPendingResources(existingIds, pendingResources);
-  }, [resources?.summary.resourceIds, pendingResources]);
+    return treeResult.value;
+  }, [resources]);
 
-  // Apply search and branch filtering
-  const filteredResourceIds = useMemo(() => {
-    let ids = allResourceIds;
+  // Filter tree based on search term and root path
+  const filteredTree = useMemo(() => {
+    if (!treeData) return null;
 
-    // Apply branch isolation first
-    if (rootPath) {
-      ids = filterTreeBranch(ids, rootPath, hideRootNode);
+    // TODO: Implement rootPath filtering and hideRootNode logic
+    // For now, just handle search filtering similar to ResourceTreeView
+    if (!searchTerm) return treeData;
+
+    // Helper function to check if a node or its descendants match the search
+    const markMatchingNodes = (
+      node: Runtime.ResourceTree.IReadOnlyResourceTreeNode<any>,
+      searchLower: string
+    ): boolean => {
+      const nodeIdLower = node.id.toLowerCase();
+      let matches = nodeIdLower.includes(searchLower);
+
+      if (!node.isLeaf && node.children) {
+        // Check children recursively
+        for (const child of node.children.values()) {
+          if (markMatchingNodes(child, searchLower)) {
+            matches = true;
+          }
+        }
+      }
+
+      return matches;
+    };
+
+    // Mark all matching nodes
+    const searchLower = searchTerm.toLowerCase();
+    for (const child of treeData.children.values()) {
+      markMatchingNodes(child, searchLower);
     }
 
-    // Then apply search
-    if (searchTerm) {
-      ids = searchResources(ids, searchTerm, 'current-branch', rootPath);
-    }
-
-    return ids;
-  }, [allResourceIds, rootPath, hideRootNode, searchTerm]);
-
-  // Build tree structure
-  const treeNodes = useMemo(() => {
-    return buildResourceTree(filteredResourceIds, rootPath, hideRootNode, expandedNodes);
-  }, [filteredResourceIds, rootPath, hideRootNode, expandedNodes]);
+    return treeData;
+  }, [treeData, searchTerm]);
 
   // Create a map of pending resource IDs for quick lookup
   const pendingResourceMap = useMemo(() => {
@@ -84,31 +97,64 @@ export const ResourcePickerTree: React.FC<ResourcePickerTreeProps> = ({
     });
   }, []);
 
-  const renderTreeNode = (node: TreeNode, level: number = 0): React.ReactNode => {
-    const hasChildren = node.children.length > 0;
+  const renderTreeNode = (
+    node: Runtime.ResourceTree.IReadOnlyResourceTreeNode<any>,
+    level: number = 0
+  ): React.ReactElement | null => {
     const isExpanded = expandedNodes.has(node.id);
+    const isSelected = selectedResourceId === node.id;
+    const nodeIdLower = node.id.toLowerCase();
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = !searchTerm || nodeIdLower.includes(searchLower);
     const isPending = pendingResourceMap.has(node.id);
     const pendingResource = pendingResources?.find((pr) => pr.id === node.id);
-    const displayName = pendingResource?.displayName || node.displayName;
+    const displayName = pendingResource?.displayName || node.name;
+
+    // Check if any children match
+    let hasMatchingChildren = false;
+    if (!node.isLeaf && node.children && searchTerm) {
+      const checkChildren = (n: Runtime.ResourceTree.IReadOnlyResourceTreeNode<any>): boolean => {
+        if (n.id.toLowerCase().includes(searchLower)) return true;
+        if (!n.isLeaf && n.children) {
+          for (const child of n.children.values()) {
+            if (checkChildren(child)) return true;
+          }
+        }
+        return false;
+      };
+
+      for (const child of node.children.values()) {
+        if (checkChildren(child)) {
+          hasMatchingChildren = true;
+          break;
+        }
+      }
+    }
+
+    // Hide nodes that don't match search and don't have matching children
+    if (searchTerm && !matchesSearch && !hasMatchingChildren) {
+      return null;
+    }
 
     return (
       <div key={node.id} className="select-none">
         <div
           className={`
             flex items-center px-2 py-1.5 cursor-pointer hover:bg-gray-100
-            ${selectedResourceId === node.id ? 'bg-purple-50 border-l-2 border-purple-500' : ''}
-            ${searchTerm && node.id.toLowerCase().includes(searchTerm.toLowerCase()) ? 'bg-yellow-50' : ''}
+            ${isSelected ? 'bg-purple-50 border-l-2 border-purple-500' : ''}
+            ${matchesSearch && searchTerm ? 'bg-yellow-50' : ''}
           `}
           style={{ paddingLeft: `${level * 20 + 8}px` }}
           onClick={() => {
-            onResourceSelect(node.id);
-            if (hasChildren) {
+            if (node.isLeaf) {
+              onResourceSelect(node.id);
+            } else {
               toggleNode(node.id);
             }
           }}
         >
           {/* Expand/Collapse chevron */}
-          {hasChildren && (
+          {!node.isLeaf && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -125,27 +171,25 @@ export const ResourcePickerTree: React.FC<ResourcePickerTreeProps> = ({
           )}
 
           {/* Spacer for alignment when no children */}
-          {!hasChildren && <div className="w-5 mr-1" />}
+          {node.isLeaf && <div className="w-5 mr-1" />}
 
           {/* Folder/Document icon */}
           <div className="mr-2 flex-shrink-0">
-            {hasChildren ? (
-              isExpanded ? (
-                <FolderOpenIcon className="w-4 h-4 text-blue-500" />
-              ) : (
-                <FolderIcon className="w-4 h-4 text-blue-500" />
-              )
-            ) : (
+            {node.isLeaf ? (
               <ResourceItem
                 resourceId={node.id}
                 displayName={displayName}
                 isSelected={false}
                 isPending={isPending}
-                annotation={undefined}
+                annotation={resourceAnnotations?.[node.id]}
                 onClick={() => {}}
                 searchTerm=""
                 className="p-0 border-0 hover:bg-transparent"
               />
+            ) : isExpanded ? (
+              <FolderOpenIcon className="w-4 h-4 text-blue-500" />
+            ) : (
+              <FolderIcon className="w-4 h-4 text-blue-500" />
             )}
           </div>
 
@@ -153,25 +197,46 @@ export const ResourcePickerTree: React.FC<ResourcePickerTreeProps> = ({
           <span
             className={`
               text-sm truncate flex-1
-              ${selectedResourceId === node.id ? 'font-medium text-purple-900' : 'text-gray-700'}
+              ${isSelected ? 'font-medium text-purple-900' : 'text-gray-700'}
               ${isPending ? 'italic opacity-70' : ''}
+              ${matchesSearch && searchTerm ? 'font-medium' : ''}
             `}
             title={node.id}
           >
             {searchTerm ? <HighlightedText text={displayName} searchTerm={searchTerm} /> : displayName}
           </span>
 
-          {/* Annotations */}
-          {resourceAnnotations?.[node.id] && (
+          {/* Annotations for leaf nodes */}
+          {node.isLeaf && resourceAnnotations?.[node.id] && (
             <div className="flex items-center gap-2 ml-2">
               {renderAnnotation(resourceAnnotations[node.id])}
             </div>
           )}
+
+          {/* Show child count for branches */}
+          {!node.isLeaf && node.children && (
+            <span className="ml-2 text-xs text-gray-500">({node.children.size})</span>
+          )}
         </div>
 
         {/* Render children if expanded */}
-        {hasChildren && isExpanded && (
-          <div>{node.children.map((child) => renderTreeNode(child, level + 1))}</div>
+        {!node.isLeaf && node.children && isExpanded && (
+          <div>
+            {Array.from(node.children.values())
+              .sort(
+                (
+                  a: Runtime.ResourceTree.IReadOnlyResourceTreeNode<any>,
+                  b: Runtime.ResourceTree.IReadOnlyResourceTreeNode<any>
+                ) => {
+                  // Sort folders first, then by name
+                  if (a.isLeaf !== b.isLeaf) {
+                    return a.isLeaf ? 1 : -1;
+                  }
+                  return a.name.localeCompare(b.name);
+                }
+              )
+              .map((child) => renderTreeNode(child, level + 1))}
+          </div>
         )}
       </div>
     );
@@ -224,16 +289,31 @@ export const ResourcePickerTree: React.FC<ResourcePickerTreeProps> = ({
     return elements;
   };
 
-  if (treeNodes.length === 0) {
+  if (!filteredTree) {
     return (
       <div className={`${className} p-4 text-center text-gray-500`}>
-        <p>{searchTerm ? 'No resources match your search' : emptyMessage}</p>
+        <p>{emptyMessage}</p>
       </div>
     );
   }
 
   return (
-    <div className={`${className} overflow-y-auto`}>{treeNodes.map((node) => renderTreeNode(node))}</div>
+    <div className={`${className} overflow-y-auto`}>
+      {Array.from(filteredTree.children.values())
+        .sort(
+          (
+            a: Runtime.ResourceTree.IReadOnlyResourceTreeNode<any>,
+            b: Runtime.ResourceTree.IReadOnlyResourceTreeNode<any>
+          ) => {
+            // Sort folders first, then by name
+            if (a.isLeaf !== b.isLeaf) {
+              return a.isLeaf ? 1 : -1;
+            }
+            return a.name.localeCompare(b.name);
+          }
+        )
+        .map((child) => renderTreeNode(child))}
+    </div>
   );
 };
 
