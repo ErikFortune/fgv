@@ -18,6 +18,7 @@ export { ResourceOrchestrator } from './components/orchestrator/ResourceOrchestr
 export { QualifierTypeEditForm } from './components/forms/QualifierTypeEditForm';
 export { QualifierEditForm } from './components/forms/QualifierEditForm';
 export { ResourceTypeEditForm } from './components/forms/ResourceTypeEditForm';
+export { HierarchyEditor } from './components/forms/HierarchyEditor';
 
 // Export common components
 export { ResourceTreeView } from './components/common/ResourceTreeView';
@@ -26,10 +27,16 @@ export { QualifierContextControl } from './components/common/QualifierContextCon
 export { SourceResourceDetail } from './components/common/SourceResourceDetail';
 export { ResolutionResults } from './components/common/ResolutionResults';
 
+// Export resolution components
+export { EditableJsonView } from './components/views/ResolutionView/EditableJsonView';
+export { ResolutionEditControls } from './components/views/ResolutionView/ResolutionEditControls';
+export type { EditableJsonViewProps } from './components/views/ResolutionView/EditableJsonView';
+
 // Export pickers
 export { ResourcePicker } from './components/pickers/ResourcePicker';
 export type {
   ResourcePickerProps,
+  ResourceSelection,
   ResourceAnnotations,
   ResourceAnnotation,
   PendingResource
