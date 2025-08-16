@@ -44,21 +44,14 @@ class BrowserZipLoader implements IZipLoader {
     loadFromUrl(url: string, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
 }
 
-// @public (undocumented)
-export interface CandidateInfo {
-    // (undocumented)
+// @public
+interface CandidateInfo {
     candidate: Runtime.IResourceCandidate;
-    // (undocumented)
     candidateIndex: number;
-    // (undocumented)
     conditionEvaluations?: ConditionEvaluationResult[];
-    // (undocumented)
     conditionSetKey: string | null;
-    // (undocumented)
     isDefaultMatch: boolean;
-    // (undocumented)
     matched: boolean;
-    // (undocumented)
     matchType: 'match' | 'matchAsDefault' | 'noMatch';
 }
 
@@ -69,7 +62,7 @@ function cloneConfiguration(config: Config.Model.ISystemConfiguration): Config.M
 export const CompiledView: React_2.FC<CompiledViewProps>;
 
 // @public
-export interface CompiledViewProps extends ViewBaseProps {
+interface CompiledViewProps extends ViewBaseProps {
     filterResult?: FilterResult | null;
     filterState?: FilterState;
     onExport?: (data: ResourceJson.Compiled.ICompiledResourceCollection | Bundle.IBundle, type: 'json' | 'bundle') => void;
@@ -77,51 +70,40 @@ export interface CompiledViewProps extends ViewBaseProps {
     useNormalization?: boolean;
 }
 
-// @public (undocumented)
-export interface ConditionEvaluationResult {
-    // (undocumented)
+// @public
+interface ConditionEvaluationResult {
     conditionIndex: number;
-    // (undocumented)
     conditionValue: string | undefined;
-    // (undocumented)
     matched: boolean;
-    // (undocumented)
     matchType: 'match' | 'matchAsDefault' | 'noMatch';
-    // (undocumented)
     operator: string;
-    // (undocumented)
     qualifierName: string;
-    // (undocumented)
     qualifierValue: string | undefined;
-    // (undocumented)
     score: number;
-    // (undocumented)
     scoreAsDefault?: number;
 }
 
 declare namespace ConfigurationTools {
     export {
         ConfigurationView,
+        useConfigurationState,
         getDefaultConfiguration,
         validateConfiguration,
         cloneConfiguration,
         exportConfiguration,
-        importConfiguration
+        importConfiguration,
+        ConfigurationViewProps
     }
 }
 
 // @public
 export const ConfigurationView: React_2.FC<ConfigurationViewProps>;
 
-// @public (undocumented)
-export interface ConfigurationViewProps extends ViewBaseProps {
-    // (undocumented)
+// @public
+interface ConfigurationViewProps extends ViewBaseProps {
     configuration?: Config.Model.ISystemConfiguration | null;
-    // (undocumented)
     hasUnsavedChanges?: boolean;
-    // (undocumented)
     onConfigurationChange?: (config: Config.Model.ISystemConfiguration) => void;
-    // (undocumented)
     onSave?: (config: Config.Model.ISystemConfiguration) => void;
 }
 
@@ -172,7 +154,7 @@ export interface EditableJsonViewProps {
 }
 
 // @public
-export interface EditedResourceInfo {
+interface EditedResourceInfo {
     // (undocumented)
     editedValue: JsonValue;
     // (undocumented)
@@ -197,7 +179,7 @@ function exportConfiguration(config: Config.Model.ISystemConfiguration, options?
 function exportUsingFileSystemAPI(data: any, suggestedName: string, description?: string): Promise<boolean>;
 
 // @public
-export interface ExtendedProcessedResources extends ProcessedResources {
+interface ExtendedProcessedResources extends ProcessedResources {
     activeConfiguration?: Config.Model.ISystemConfiguration | null;
     bundleMetadata?: Bundle.IBundleMetadata | null;
     isLoadedFromBundle?: boolean;
@@ -211,12 +193,14 @@ declare namespace FileTools {
         readFilesFromInput,
         filesToDirectory,
         exportAsJson,
-        exportUsingFileSystemAPI
+        exportUsingFileSystemAPI,
+        ImportedFile,
+        ImportedDirectory
     }
 }
 
 // @public
-export interface FilterActions {
+interface FilterActions {
     applyFilterValues: () => void;
     resetFilterValues: () => void;
     updateFilterEnabled: (enabled: boolean) => void;
@@ -225,7 +209,7 @@ export interface FilterActions {
 }
 
 // @public (undocumented)
-export interface FilteredResource {
+interface FilteredResource {
     // (undocumented)
     filteredCandidateCount: number;
     // (undocumented)
@@ -247,7 +231,7 @@ interface FilterOptions {
 }
 
 // @public (undocumented)
-export interface FilterResult {
+interface FilterResult {
     // (undocumented)
     error?: string;
     // (undocumented)
@@ -261,7 +245,7 @@ export interface FilterResult {
 }
 
 // @public
-export interface FilterState {
+interface FilterState {
     appliedValues: Record<string, string | undefined>;
     enabled: boolean;
     hasPendingChanges: boolean;
@@ -272,11 +256,17 @@ export interface FilterState {
 declare namespace FilterTools {
     export {
         FilterView,
+        useFilterState,
         createFilteredResourceManagerSimple,
         analyzeFilteredResources,
         hasFilterValues,
         getFilterSummary,
-        FilterOptions
+        FilterOptions,
+        FilterState,
+        FilterActions,
+        FilterViewProps,
+        FilterResult,
+        FilteredResource
     }
 }
 
@@ -284,7 +274,7 @@ declare namespace FilterTools {
 export const FilterView: React_2.FC<FilterViewProps>;
 
 // @public
-export interface FilterViewProps extends ViewBaseProps {
+interface FilterViewProps extends ViewBaseProps {
     filterActions: FilterActions;
     filterResult?: FilterResult | null;
     filterState: FilterState;
@@ -331,7 +321,7 @@ export const HierarchyEditor: React_2.FC<HierarchyEditorProps>;
 function importConfiguration(data: string): Result<Config.Model.ISystemConfiguration>;
 
 // @public
-export interface ImportedDirectory {
+interface ImportedDirectory {
     files: ImportedFile[];
     name: string;
     path?: string;
@@ -339,7 +329,7 @@ export interface ImportedDirectory {
 }
 
 // @public
-export interface ImportedFile {
+interface ImportedFile {
     content: string;
     name: string;
     path?: string;
@@ -350,7 +340,7 @@ export interface ImportedFile {
 export const ImportView: React_2.FC<ImportViewProps>;
 
 // @public
-export interface ImportViewProps extends ViewBaseProps {
+interface ImportViewProps extends ViewBaseProps {
     acceptedFileTypes?: string[];
     onBundleImport?: (bundle: Bundle.IBundle) => void;
     onImport?: (data: ImportedDirectory | ImportedFile[]) => void;
@@ -383,14 +373,6 @@ function loadZipFile(file: File, options?: ZipLoadOptions, onProgress?: ZipProgr
 function loadZipFromUrl(url: string, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
 
 // @public
-export interface Message {
-    id: string;
-    message: string;
-    timestamp: Date;
-    type: 'info' | 'warning' | 'error' | 'success';
-}
-
-// @public
 interface Message_2 {
     id: string;
     message: string;
@@ -420,6 +402,8 @@ function normalizePath(path: string): string;
 
 // @public (undocumented)
 export interface OrchestratorActions {
+    // Warning: (ae-forgotten-export) The symbol "Message" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
     addMessage: (type: Message['type'], message: string) => void;
     // (undocumented)
@@ -516,7 +500,7 @@ function prepareZipData(files: ImportedFile[], options?: ZipArchiveOptions): Res
 function prepareZipDataFromDirectory(directory: ImportedDirectory, options?: ZipArchiveOptions): Result<BrowserZipData>;
 
 // @public
-export interface ProcessedResources {
+interface ProcessedResources {
     compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
     resolver: Runtime.ResourceResolver;
     resourceCount: number;
@@ -596,29 +580,18 @@ export const QualifierTypeEditForm: React_2.FC<QualifierTypeEditFormProps>;
 // @internal (undocumented)
 function readFilesFromInput(files: FileList): Promise<ImportedFile[]>;
 
-// @public (undocumented)
-export interface ResolutionActions {
-    // (undocumented)
+// @public
+interface ResolutionActions {
     applyContext: () => void;
-    // (undocumented)
     applyEdits: () => Promise<void>;
-    // (undocumented)
     clearEdits: () => void;
-    // (undocumented)
     discardEdits: () => void;
-    // (undocumented)
     getEditedValue: (resourceId: string) => JsonValue | undefined;
-    // (undocumented)
     hasEdit: (resourceId: string) => boolean;
-    // (undocumented)
     resetCache: () => void;
-    // (undocumented)
     saveEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
-    // (undocumented)
     selectResource: (resourceId: string) => void;
-    // (undocumented)
     setViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
-    // (undocumented)
     updateContextValue: (qualifierName: string, value: string | undefined) => void;
 }
 
@@ -635,23 +608,15 @@ interface ResolutionOptions {
     enableDebugLogging?: boolean;
 }
 
-// @public (undocumented)
-export interface ResolutionResult {
-    // (undocumented)
+// @public
+interface ResolutionResult {
     allCandidates?: readonly Runtime.IResourceCandidate[];
-    // (undocumented)
     bestCandidate?: Runtime.IResourceCandidate;
-    // (undocumented)
     candidateDetails?: CandidateInfo[];
-    // (undocumented)
     composedValue?: JsonValue;
-    // (undocumented)
     error?: string;
-    // (undocumented)
     resource?: Runtime.IResource;
-    // (undocumented)
     resourceId: string;
-    // (undocumented)
     success: boolean;
 }
 
@@ -660,39 +625,37 @@ export interface ResolutionResult {
 // @public (undocumented)
 export const ResolutionResults: React_2.FC<ResolutionResultsProps>;
 
-// @public (undocumented)
-export interface ResolutionState {
-    // (undocumented)
+// @public
+interface ResolutionState {
     contextValues: Record<string, string | undefined>;
-    // (undocumented)
     currentResolver: Runtime.ResourceResolver | null;
-    // (undocumented)
     editedResources: Map<string, JsonValue>;
-    // (undocumented)
     hasPendingChanges: boolean;
-    // (undocumented)
     hasUnsavedEdits: boolean;
-    // (undocumented)
     isApplyingEdits: boolean;
-    // (undocumented)
     pendingContextValues: Record<string, string | undefined>;
-    // (undocumented)
     resolutionResult: ResolutionResult | null;
-    // (undocumented)
     selectedResourceId: string | null;
-    // (undocumented)
     viewMode: 'composed' | 'best' | 'all' | 'raw';
 }
 
 declare namespace ResolutionTools {
     export {
         ResolutionView,
+        useResolutionState,
         createResolverWithContext,
         evaluateConditionsForCandidate,
         resolveResourceDetailed,
         getAvailableQualifiers,
         hasPendingContextChanges,
-        ResolutionOptions
+        ResolutionOptions,
+        ResolutionState,
+        ResolutionActions,
+        ResolutionViewProps,
+        ResolutionResult,
+        CandidateInfo,
+        ConditionEvaluationResult,
+        EditedResourceInfo
     }
 }
 
@@ -700,7 +663,7 @@ declare namespace ResolutionTools {
 export const ResolutionView: React_2.FC<ResolutionViewProps>;
 
 // @public
-export interface ResolutionViewProps extends ViewBaseProps {
+interface ResolutionViewProps extends ViewBaseProps {
     availableQualifiers?: string[];
     filterResult?: FilterResult | null;
     filterState?: FilterState;
@@ -733,11 +696,9 @@ export interface ResourceAnnotations {
     [resourceId: string]: ResourceAnnotation;
 }
 
-// @public (undocumented)
-export interface ResourceDetailData {
-    // (undocumented)
+// @public
+interface ResourceDetailData {
     candidateCount: number;
-    // (undocumented)
     candidates: Array<{
         json: JsonValue;
         conditions: Array<{
@@ -750,19 +711,17 @@ export interface ResourceDetailData {
         isPartial: boolean;
         mergeMethod: string;
     }>;
-    // (undocumented)
     id: string;
-    // (undocumented)
     resourceType: string;
 }
 
 // @public
-export interface ResourceEditorFactory {
+interface ResourceEditorFactory {
     createEditor(resourceId: string, resourceType: string, value: any): ResourceEditorResult;
 }
 
 // @public
-export interface ResourceEditorProps {
+interface ResourceEditorProps {
     className?: string;
     disabled?: boolean;
     editedValue?: any;
@@ -774,7 +733,7 @@ export interface ResourceEditorProps {
 }
 
 // @public
-export type ResourceEditorResult = {
+type ResourceEditorResult = {
     success: true;
     editor: React.ComponentType<ResourceEditorProps>;
 } | {
@@ -788,7 +747,7 @@ export type ResourceEditorResult = {
 export const ResourceListView: React_2.FC<ResourceListViewProps>;
 
 // @public
-export interface ResourceManagerState {
+interface ResourceManagerState {
     activeConfiguration: Config.Model.ISystemConfiguration | null;
     bundleMetadata: Bundle.IBundleMetadata | null;
     error: string | null;
@@ -832,6 +791,19 @@ export interface ResourceSelection<T = unknown> {
     resourceId: string | null;
 }
 
+declare namespace ResourceTools {
+    export {
+        useResourceData,
+        ProcessedResources,
+        ExtendedProcessedResources,
+        ResourceManagerState,
+        ResourceEditorFactory,
+        ResourceEditorResult,
+        ResourceEditorProps,
+        ResourceDetailData
+    }
+}
+
 // Warning: (ae-forgotten-export) The symbol "ResourceTreeViewProps" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
@@ -856,7 +828,7 @@ export const SourceResourceDetail: React_2.FC<SourceResourceDetailProps>;
 export const SourceView: React_2.FC<SourceViewProps>;
 
 // @public
-export interface SourceViewProps extends ViewBaseProps {
+interface SourceViewProps extends ViewBaseProps {
     onExport?: (data: unknown, type: 'json') => void;
     onResourceSelect?: (resourceId: string) => void;
     resources?: ExtendedProcessedResources | null;
@@ -878,28 +850,28 @@ declare namespace TsResTools {
 
 // Warning: (ae-forgotten-export) The symbol "UseConfigurationStateReturn" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
-export function useConfigurationState(initialConfiguration?: Config.Model.ISystemConfiguration, onConfigurationChange?: (config: Config.Model.ISystemConfiguration) => void, onUnsavedChanges?: (hasChanges: boolean) => void): UseConfigurationStateReturn;
+// @public
+function useConfigurationState(initialConfiguration?: Config.Model.ISystemConfiguration, onConfigurationChange?: (config: Config.Model.ISystemConfiguration) => void, onUnsavedChanges?: (hasChanges: boolean) => void): UseConfigurationStateReturn;
 
 // Warning: (ae-forgotten-export) The symbol "UseFilterStateReturn" needs to be exported by the entry point index.d.ts
 //
 // @public
-export function useFilterState(initialState?: Partial<FilterState>): UseFilterStateReturn;
+function useFilterState(initialState?: Partial<FilterState>): UseFilterStateReturn;
 
 // Warning: (ae-forgotten-export) The symbol "UseResolutionStateReturn" needs to be exported by the entry point index.d.ts
 //
 // @public
-export function useResolutionState(processedResources: ProcessedResources | null, onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void, onSystemUpdate?: (updatedResources: ProcessedResources) => void): UseResolutionStateReturn;
+function useResolutionState(processedResources: ProcessedResources | null, onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void, onSystemUpdate?: (updatedResources: ProcessedResources) => void): UseResolutionStateReturn;
 
 // Warning: (ae-forgotten-export) The symbol "UseResourceDataReturn" needs to be exported by the entry point index.d.ts
 //
 // @public
-export function useResourceData(): UseResourceDataReturn;
+function useResourceData(): UseResourceDataReturn;
 
 // Warning: (ae-forgotten-export) The symbol "UseViewStateReturn" needs to be exported by the entry point index.d.ts
 //
 // @public
-export function useViewState(): UseViewStateReturn;
+function useViewState(): UseViewStateReturn;
 
 // Warning: (ae-forgotten-export) The symbol "ConfigurationValidationResult" needs to be exported by the entry point index.d.ts
 //
@@ -907,7 +879,7 @@ export function useViewState(): UseViewStateReturn;
 function validateConfiguration(config: Config.Model.ISystemConfiguration): ConfigurationValidationResult;
 
 // @public
-export interface ViewBaseProps {
+interface ViewBaseProps {
     className?: string;
     onMessage?: (type: Message['type'], message: string) => void;
 }
@@ -915,8 +887,14 @@ export interface ViewBaseProps {
 declare namespace ViewTools {
     export {
         MessagesWindow,
+        useViewState,
         Message_2 as Message,
-        MessagesWindowProps
+        MessagesWindowProps,
+        ViewBaseProps,
+        ImportViewProps,
+        SourceViewProps,
+        CompiledViewProps,
+        ZipLoaderViewProps
     }
 }
 
@@ -966,17 +944,12 @@ interface ZipFileTree {
 // @public
 export const ZipLoaderView: React_2.FC<ZipLoaderViewProps>;
 
-// @public (undocumented)
-export interface ZipLoaderViewProps extends ViewBaseProps {
-    // (undocumented)
+// @public
+interface ZipLoaderViewProps extends ViewBaseProps {
     onConfigurationLoad?: (config: Config.Model.ISystemConfiguration) => void;
-    // (undocumented)
     onImport?: (data: ImportedDirectory | ImportedFile[]) => void;
-    // (undocumented)
     onLoadComplete?: () => void;
-    // (undocumented)
     zipFileUrl?: string;
-    // (undocumented)
     zipPath?: string;
 }
 

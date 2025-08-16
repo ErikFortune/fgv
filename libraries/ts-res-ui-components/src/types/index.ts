@@ -370,106 +370,211 @@ export interface EditedResourceInfo {
 }
 
 // Resolution types
-/** @public */
+/**
+ * Current state of resource resolution testing and debugging.
+ * Tracks context values, resolution results, and editing state.
+ *
+ * @public
+ */
 export interface ResolutionState {
+  /** Current context values applied for resolution */
   contextValues: Record<string, string | undefined>;
+  /** Context values being edited but not yet applied */
   pendingContextValues: Record<string, string | undefined>;
+  /** ID of the currently selected resource for resolution testing */
   selectedResourceId: string | null;
+  /** The resolver instance being used for testing */
   currentResolver: Runtime.ResourceResolver | null;
+  /** Result of the most recent resolution attempt */
   resolutionResult: ResolutionResult | null;
+  /** Current view mode for displaying resolution results */
   viewMode: 'composed' | 'best' | 'all' | 'raw';
+  /** Whether there are pending context changes not yet applied */
   hasPendingChanges: boolean;
-  // Edit state
+  /** Map of resource IDs to their edited values */
   editedResources: Map<string, JsonValue>;
+  /** Whether there are unsaved resource edits */
   hasUnsavedEdits: boolean;
+  /** Whether edits are currently being applied to the system */
   isApplyingEdits: boolean;
 }
 
-/** @public */
+/**
+ * Actions available for managing resource resolution testing and editing.
+ * Provides methods for context management, resource selection, and value editing.
+ *
+ * @public
+ */
 export interface ResolutionActions {
+  /** Update a context value for resolution testing */
   updateContextValue: (qualifierName: string, value: string | undefined) => void;
+  /** Apply pending context changes to the resolver */
   applyContext: () => void;
+  /** Select a resource for detailed resolution testing */
   selectResource: (resourceId: string) => void;
+  /** Change how resolution results are displayed */
   setViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
+  /** Clear the resolution cache to force fresh resolution */
   resetCache: () => void;
-  // Edit actions
+  /** Save an edit to a resource value */
   saveEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
+  /** Get the edited value for a resource, if any */
   getEditedValue: (resourceId: string) => JsonValue | undefined;
+  /** Check if a resource has been edited */
   hasEdit: (resourceId: string) => boolean;
+  /** Clear all pending edits */
   clearEdits: () => void;
+  /** Apply all edits to the resource system */
   applyEdits: () => Promise<void>;
+  /** Discard all pending edits */
   discardEdits: () => void;
 }
 
-/** @public */
+/**
+ * Result of attempting to resolve a specific resource with a given context.
+ * Contains the resolved value, matching candidates, and diagnostic information.
+ *
+ * @public
+ */
 export interface ResolutionResult {
+  /** Whether the resolution was successful */
   success: boolean;
+  /** ID of the resource that was resolved */
   resourceId: string;
+  /** The resolved resource object, if successful */
   resource?: Runtime.IResource;
+  /** The best matching candidate for this context */
   bestCandidate?: Runtime.IResourceCandidate;
+  /** All candidates that were considered during resolution */
   allCandidates?: readonly Runtime.IResourceCandidate[];
+  /** Detailed information about each candidate's matching process */
   candidateDetails?: CandidateInfo[];
+  /** The final composed/resolved value */
   composedValue?: JsonValue;
+  /** Error message if resolution failed */
   error?: string;
 }
 
-/** @public */
+/**
+ * Detailed information about how a resource candidate was evaluated during resolution.
+ * Provides diagnostic data for understanding why candidates matched or didn't match.
+ *
+ * @public
+ */
 export interface CandidateInfo {
+  /** The candidate that was evaluated */
   candidate: Runtime.IResourceCandidate;
+  /** Key identifying the condition set used for evaluation */
   conditionSetKey: string | null;
+  /** Index of this candidate within the resource */
   candidateIndex: number;
+  /** Whether this candidate matched the resolution context */
   matched: boolean;
+  /** Type of match that occurred */
   matchType: 'match' | 'matchAsDefault' | 'noMatch';
+  /** Whether this was a default match (fallback when no exact match) */
   isDefaultMatch: boolean;
+  /** Detailed evaluation results for each condition */
   conditionEvaluations?: ConditionEvaluationResult[];
 }
 
-/** @public */
+/**
+ * Result of evaluating a single condition during resource resolution.
+ * Shows how a specific qualifier value compared against a condition.
+ *
+ * @public
+ */
 export interface ConditionEvaluationResult {
+  /** Name of the qualifier being evaluated */
   qualifierName: string;
+  /** Value of the qualifier in the resolution context */
   qualifierValue: string | undefined;
+  /** Value specified in the resource condition */
   conditionValue: string | undefined;
+  /** Comparison operator used for evaluation */
   operator: string;
+  /** Numeric score for this condition evaluation */
   score: number;
+  /** Whether this condition matched */
   matched: boolean;
+  /** Type of match that occurred */
   matchType: 'match' | 'matchAsDefault' | 'noMatch';
+  /** Score when used as a default match */
   scoreAsDefault?: number;
+  /** Index of this condition within the candidate */
   conditionIndex: number;
 }
 
-/** @public */
+/**
+ * Props for the ConfigurationView component.
+ * Handles editing and managing system configuration including qualifiers, qualifier types, and resource types.
+ *
+ * @public
+ */
 export interface ConfigurationViewProps extends ViewBaseProps {
+  /** Current system configuration to display and edit */
   configuration?: Config.Model.ISystemConfiguration | null;
+  /** Callback when configuration changes (during editing) */
   onConfigurationChange?: (config: Config.Model.ISystemConfiguration) => void;
+  /** Callback when configuration should be saved/applied */
   onSave?: (config: Config.Model.ISystemConfiguration) => void;
+  /** Whether there are unsaved changes to the configuration */
   hasUnsavedChanges?: boolean;
 }
 
-/** @public */
+/**
+ * Props for the ZipLoaderView component.
+ * Handles loading and importing ZIP archives containing resource files and configurations.
+ *
+ * @public
+ */
 export interface ZipLoaderViewProps extends ViewBaseProps {
+  /** Optional URL to a ZIP file to load automatically */
   zipFileUrl?: string;
+  /** Optional file path within the ZIP to focus on */
   zipPath?: string;
+  /** Callback when resource files are imported from the ZIP */
   onImport?: (data: ImportedDirectory | ImportedFile[]) => void;
+  /** Callback when a configuration file is loaded from the ZIP */
   onConfigurationLoad?: (config: Config.Model.ISystemConfiguration) => void;
+  /** Callback when the ZIP loading process is complete */
   onLoadComplete?: () => void;
 }
 
 // Resource detail types for SourceView
-/** @public */
+/**
+ * Detailed information about a resource for display in source views.
+ * Contains the resource structure including all candidates and their conditions.
+ *
+ * @public
+ */
 export interface ResourceDetailData {
+  /** Unique identifier of the resource */
   id: string;
+  /** Type classification of the resource */
   resourceType: string;
+  /** Total number of candidates defined for this resource */
   candidateCount: number;
+  /** Array of all candidates with their conditions and values */
   candidates: Array<{
+    /** The JSON value for this candidate */
     json: JsonValue;
+    /** Conditions that determine when this candidate is selected */
     conditions: Array<{
+      /** Name of the qualifier this condition evaluates */
       qualifier: string;
+      /** Comparison operator for the condition */
       operator: string;
+      /** Value to compare against */
       value: string;
+      /** Priority/precedence of this condition */
       priority: number;
+      /** Score when used as a default match */
       scoreAsDefault?: number;
     }>;
+    /** Whether this candidate provides partial data that will be merged */
     isPartial: boolean;
+    /** Method used to merge this candidate with others */
     mergeMethod: string;
   }>;
 }

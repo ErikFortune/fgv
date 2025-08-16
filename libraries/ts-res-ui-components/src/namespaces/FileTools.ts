@@ -27,3 +27,6 @@ export {
   exportAsJson,
   exportUsingFileSystemAPI
 } from '../utils/fileProcessing';
+
+// Export types related to file handling and processing
+export type { ImportedFile, ImportedDirectory } from '../types';

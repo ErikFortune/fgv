@@ -29,6 +29,9 @@
 // Export the main ConfigurationView component
 export { ConfigurationView } from '../components/views/ConfigurationView';
 
+// Export domain-specific hook
+export { useConfigurationState } from '../hooks/useConfigurationState';
+
 // Export utility functions
 export {
   getDefaultConfiguration,
@@ -37,3 +40,6 @@ export {
   exportConfiguration,
   importConfiguration
 } from '../utils/configurationUtils';
+
+// Export types related to configuration management
+export type { ConfigurationViewProps } from '../types';

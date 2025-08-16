@@ -530,32 +530,20 @@ Most components in this library accept an `onMessage` callback prop that you can
 
 > 📚 **[See complete hooks documentation →](./docs/ts-res-ui-components.md)** for detailed examples and patterns
 
-### useViewState
+All hooks are organized within their respective namespaces alongside their related components and utilities for better discoverability and logical grouping.
 
-Manages common view state including messages and resource selection.
+### Core Data Management
 
-> 📚 **[useViewState documentation →](./docs/ts-res-ui-components.useviewstate.md)**
+#### ResourceTools.useResourceData
 
-```tsx
-const { messages, selectedResourceId, addMessage, clearMessages, selectResource } = useViewState();
+Main orchestrator hook for resource processing, configuration, and resolution.
 
-// Display operation feedback
-const handleOperation = async () => {
-  try {
-    await someAsyncOperation();
-    addMessage('success', 'Operation completed successfully');
-  } catch (error) {
-    addMessage('error', `Operation failed: ${error.message}`);
-  }
-};
-```
-
-### useResourceData
-
-Main hook for resource processing and management.
+> 📚 **[useResourceData documentation →](./docs/ts-res-ui-components.resourcetools.useresourcedata.md)**
 
 ```tsx
-const { state, actions } = useResourceData();
+import { ResourceTools } from '@fgv/ts-res-ui-components';
+
+const { state, actions } = ResourceTools.useResourceData();
 
 // Process files
 await actions.processFiles(importedFiles);
@@ -568,16 +556,64 @@ const result = await actions.resolveResource('my.resource', {
 
 // Apply configuration
 actions.applyConfiguration(newConfig);
+
+// Check processing state
+if (state.isProcessing) {
+  console.log('Processing resources...');
+} else if (state.error) {
+  console.error('Processing failed:', state.error);
+} else if (state.processedResources) {
+  console.log('Resources ready!');
+}
 ```
 
-### useFilterState
+### View State Management
+
+#### ViewTools.useViewState
+
+Manages view state including messages and resource selection.
+
+> 📚 **[useViewState documentation →](./docs/ts-res-ui-components.viewtools.useviewstate.md)**
+
+```tsx
+import { ViewTools } from '@fgv/ts-res-ui-components';
+
+const { messages, selectedResourceId, addMessage, clearMessages, selectResource } = ViewTools.useViewState();
+
+// Display operation feedback
+const handleOperation = async () => {
+  try {
+    await someAsyncOperation();
+    addMessage('success', 'Operation completed successfully');
+  } catch (error) {
+    addMessage('error', `Operation failed: ${error.message}`);
+  }
+};
+
+// Use with MessagesWindow component
+return (
+  <div>
+    <button onClick={handleOperation}>Run Operation</button>
+    <ViewTools.MessagesWindow 
+      messages={messages}
+      onClearMessages={clearMessages}
+    />
+  </div>
+);
+```
+
+### Domain-Specific Hooks
+
+#### FilterTools.useFilterState
 
 Manages resource filtering state with change tracking and validation.
 
-> 📚 **[useFilterState documentation →](./docs/ts-res-ui-components.usefilterstate.md)**
+> 📚 **[useFilterState documentation →](./docs/ts-res-ui-components.filtertools.usefilterstate.md)**
 
 ```tsx
-const { state, actions } = useFilterState({
+import { FilterTools } from '@fgv/ts-res-ui-components';
+
+const { state, actions } = FilterTools.useFilterState({
   enabled: true,
   values: { platform: 'web', locale: 'en' }
 });
@@ -592,14 +628,16 @@ if (state.hasPendingChanges) {
 }
 ```
 
-### useResolutionState
+#### ResolutionTools.useResolutionState
 
 Comprehensive state management for resource resolution and editing.
 
-> 📚 **[useResolutionState documentation →](./docs/ts-res-ui-components.useresolutionstate.md)**
+> 📚 **[useResolutionState documentation →](./docs/ts-res-ui-components.resolutiontools.useresolutionstate.md)**
 
 ```tsx
-const { state, actions, availableQualifiers } = useResolutionState(
+import { ResolutionTools } from '@fgv/ts-res-ui-components';
+
+const { state, actions, availableQualifiers } = ResolutionTools.useResolutionState(
   processedResources,
   (type, message) => addMessage(type, message),
   (updatedResources) => setProcessedResources(updatedResources)
@@ -616,21 +654,58 @@ actions.startEditing();
 actions.saveEdit(editedValue);
 ```
 
-### useConfigurationState
+#### ConfigurationTools.useConfigurationState
 
-Manages system configuration state with change tracking.
+Manages system configuration state with change tracking and import/export capabilities.
 
-> 📚 **[useConfigurationState documentation →](./docs/ts-res-ui-components.useconfigurationstate.md)**
+> 📚 **[useConfigurationState documentation →](./docs/ts-res-ui-components.configurationtools.useconfigurationstate.md)**
 
 ```tsx
-const { configuration, updateConfiguration, resetConfiguration } = useConfigurationState();
+import { ConfigurationTools } from '@fgv/ts-res-ui-components';
 
-// Update configuration with validation
-updateConfiguration({
-  ...configuration,
-  qualifierTypes: [...newQualifierTypes]
+const { state, actions, templates } = ConfigurationTools.useConfigurationState(
+  undefined,
+  (config) => console.log('Configuration changed:', config),
+  (hasChanges) => setHasUnsavedChanges(hasChanges)
+);
+
+// Load a template
+const loadResult = actions.loadTemplate('minimal');
+
+// Add a new qualifier with validation
+actions.addQualifier({
+  name: 'language',
+  typeName: 'language',
+  defaultPriority: 100
 });
+
+// Check for unsaved changes
+if (state.hasUnsavedChanges) {
+  actions.applyConfiguration();
+}
+
+// Export configuration
+const exportResult = actions.exportToJson({ pretty: true });
+if (exportResult.isSuccess()) {
+  downloadFile(exportResult.value, 'configuration.json');
+}
 ```
+
+### Hook Organization
+
+All hooks are organized within logical namespaces alongside their related components and utilities:
+
+- **`ResourceTools.useResourceData`** - Core data orchestration (import, processing, configuration, resolution)
+- **`ViewTools.useViewState`** - View state management (messages, resource selection)
+- **`FilterTools.useFilterState`** - Resource filtering with change tracking
+- **`ResolutionTools.useResolutionState`** - Resource resolution and editing
+- **`ConfigurationTools.useConfigurationState`** - System configuration management
+
+This organization provides:
+- **Better discoverability** - Related functionality grouped together
+- **Logical imports** - `FilterTools.useFilterState` is self-documenting
+- **Namespace consistency** - Matches the existing component organization pattern
+- **Clear separation of concerns** - Each namespace has a specific domain focus
 
 ## Styling
 

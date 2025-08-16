@@ -9,6 +9,7 @@
  * import {
  *   FilterTools,
  *   ResolutionTools,
+ *   ResourceTools,
  *   ViewTools,
  *   ZipTools
  * } from '@fgv/ts-res-ui-components';
@@ -18,6 +19,11 @@
  * <ResolutionTools.ResolutionView {...resolutionProps} />
  * <ViewTools.MessagesWindow {...messageProps} />
  * <ZipTools.ImportView {...importProps} />
+ *
+ * // Use hooks for state management
+ * const { state, actions } = ResourceTools.useResourceData();
+ * const { messages, addMessage } = ViewTools.useViewState();
+ * const { state: filterState } = FilterTools.useFilterState();
  *
  * // Or use utility functions
  * const hasFilters = FilterTools.hasFilterValues(filterState.values);
@@ -31,6 +37,7 @@
 export * as FilterTools from './FilterTools';
 export * as ResolutionTools from './ResolutionTools';
 export * as ConfigurationTools from './ConfigurationTools';
+export * as ResourceTools from './ResourceTools';
 export * as FileTools from './FileTools';
 export * as TsResTools from './TsResTools';
 export * as ViewTools from './ViewTools';

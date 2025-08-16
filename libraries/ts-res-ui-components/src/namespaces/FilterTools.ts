@@ -31,6 +31,9 @@
 // Export the main FilterView component
 export { FilterView } from '../components/views/FilterView';
 
+// Export domain-specific hook
+export { useFilterState } from '../hooks/useFilterState';
+
 // Export utility functions
 export {
   createFilteredResourceManagerSimple,
@@ -39,3 +42,6 @@ export {
   getFilterSummary,
   type FilterOptions
 } from '../utils/filterResources';
+
+// Export types related to filtering
+export type { FilterState, FilterActions, FilterViewProps, FilterResult, FilteredResource } from '../types';

@@ -81,5 +81,17 @@
 // Export the main MessagesWindow component
 export { MessagesWindow } from '../components/views/MessagesWindow';
 
+// Export view state management hook
+export { useViewState } from '../hooks/useViewState';
+
 // Export types for external consumption
 export type { Message, MessagesWindowProps } from '../components/views/MessagesWindow';
+
+// Export types related to view components and state
+export type {
+  ViewBaseProps,
+  ImportViewProps,
+  SourceViewProps,
+  CompiledViewProps,
+  ZipLoaderViewProps
+} from '../types';

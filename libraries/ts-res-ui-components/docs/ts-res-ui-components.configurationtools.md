@@ -60,6 +60,19 @@ Default system configuration
 </td></tr>
 <tr><td>
 
+[useConfigurationState(initialConfiguration, onConfigurationChange, onUnsavedChanges)](./ts-res-ui-components.configurationtools.useconfigurationstate.md)
+
+
+</td><td>
+
+Hook for managing system configuration state including qualifiers, qualifier types, and resource types.
+
+Provides comprehensive configuration management with validation, change tracking, and import/export capabilities. Supports both visual editing and JSON editing modes with real-time validation.
+
+
+</td></tr>
+<tr><td>
+
 [validateConfiguration(config)](./ts-res-ui-components.configurationtools.validateconfiguration.md)
 
 

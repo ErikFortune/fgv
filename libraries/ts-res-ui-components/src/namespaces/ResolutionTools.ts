@@ -31,6 +31,9 @@
 // Export the main ResolutionView component
 export { ResolutionView } from '../components/views/ResolutionView';
 
+// Export domain-specific hook
+export { useResolutionState } from '../hooks/useResolutionState';
+
 // Export utility functions
 export {
   createResolverWithContext,
@@ -40,3 +43,14 @@ export {
   hasPendingContextChanges,
   type ResolutionOptions
 } from '../utils/resolutionUtils';
+
+// Export types related to resource resolution
+export type {
+  ResolutionState,
+  ResolutionActions,
+  ResolutionViewProps,
+  ResolutionResult,
+  CandidateInfo,
+  ConditionEvaluationResult,
+  EditedResourceInfo
+} from '../types';

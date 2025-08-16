@@ -1,6 +1,17 @@
-// Export types
-export * from './types';
-export type { ResourceEditorFactory, ResourceEditorResult, ResourceEditorProps } from './types';
+// Export orchestrator types (main entry point types)
+export type { OrchestratorState, OrchestratorActions } from './types';
+
+// Export utility types that are commonly used across namespaces
+export type { Result } from '@fgv/ts-utils';
+export type { JsonValue } from '@fgv/ts-json-base';
+
+// Domain-specific types are now available through their respective namespaces:
+// - FilterTools: FilterState, FilterActions, FilterViewProps, FilterResult, FilteredResource
+// - ResolutionTools: ResolutionState, ResolutionActions, ResolutionViewProps, ResolutionResult, CandidateInfo, ConditionEvaluationResult, EditedResourceInfo
+// - ResourceTools: ProcessedResources, ExtendedProcessedResources, ResourceManagerState, ResourceEditorFactory, ResourceEditorResult, ResourceEditorProps, ResourceDetailData
+// - ViewTools: ViewBaseProps, ImportViewProps, SourceViewProps, CompiledViewProps, ZipLoaderViewProps, Message, MessagesWindowProps
+// - ConfigurationTools: ConfigurationViewProps
+// - FileTools: ImportedFile, ImportedDirectory
 
 // Export views
 export { ImportView } from './components/views/ImportView';
@@ -43,18 +54,19 @@ export type {
   PendingResource
 } from './components/pickers/ResourcePicker/types';
 
-// Export hooks
-export { useResourceData } from './hooks/useResourceData';
-export { useFilterState } from './hooks/useFilterState';
-export { useViewState } from './hooks/useViewState';
-export { useResolutionState } from './hooks/useResolutionState';
-export { useConfigurationState } from './hooks/useConfigurationState';
+// All hooks are now organized within their respective namespaces:
+// - useResourceData: ResourceTools.useResourceData (orchestrator data hook)
+// - useViewState: ViewTools.useViewState (view state and messages)
+// - useFilterState: FilterTools.useFilterState (filter management)
+// - useResolutionState: ResolutionTools.useResolutionState (resource resolution)
+// - useConfigurationState: ConfigurationTools.useConfigurationState (system configuration)
 
 // Export organized tool namespaces
 export {
   FilterTools,
   ResolutionTools,
   ConfigurationTools,
+  ResourceTools,
   FileTools,
   TsResTools,
   ZipTools,
