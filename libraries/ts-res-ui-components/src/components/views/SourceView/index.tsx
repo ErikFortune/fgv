@@ -5,48 +5,28 @@ import {
   DocumentArrowDownIcon,
   CodeBracketIcon,
   ChevronDownIcon,
-  ChevronUpIcon,
-  ListBulletIcon,
-  FolderIcon
+  ChevronUpIcon
 } from '@heroicons/react/24/outline';
 import { Resources, ResourceJson } from '@fgv/ts-res';
 import { Result } from '@fgv/ts-utils';
 import { SourceViewProps, ResourceDetailData } from '../../../types';
-import { ResourceTreeView } from '../../common/ResourceTreeView';
-import { ResourceListView } from '../../common/ResourceListView';
+import { ResourcePicker } from '../../pickers/ResourcePicker';
+import { ResourceSelection } from '../../pickers/ResourcePicker/types';
 
 export const SourceView: React.FC<SourceViewProps> = ({ resources, onExport, onMessage, className = '' }) => {
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [showJsonView, setShowJsonView] = useState(false);
-  const [viewMode, setViewMode] = useState<'tree' | 'list'>('list');
 
-  // Sort and filter resource IDs
-  const filteredResourceIds = useMemo(() => {
-    if (!resources?.summary.resourceIds) {
-      return [];
-    }
-
-    const resourceIds = resources.summary.resourceIds;
-
-    // Filter by search term
-    const filtered = searchTerm
-      ? resourceIds.filter((id: string) => id.toLowerCase().includes(searchTerm.toLowerCase()))
-      : resourceIds;
-
-    // Sort alphabetically
-    return filtered.sort();
-  }, [resources?.summary.resourceIds, searchTerm]);
-
-  const handleResourceSelect = (resourceId: string) => {
-    setSelectedResourceId(resourceId);
-    onMessage?.('info', `Selected resource: ${resourceId}`);
-  };
-
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
-    setSelectedResourceId(null); // Clear selection when searching
-  };
+  // Handle resource selection with new enhanced callback
+  const handleResourceSelect = useCallback(
+    (selection: ResourceSelection) => {
+      setSelectedResourceId(selection.resourceId);
+      if (selection.resourceId) {
+        onMessage?.('info', `Selected resource: ${selection.resourceId}`);
+      }
+    },
+    [onMessage]
+  );
 
   // Get full resource collection data using the new method
   const getResourceCollectionData = useCallback(() => {
@@ -190,72 +170,27 @@ export const SourceView: React.FC<SourceViewProps> = ({ resources, onExport, onM
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex flex-col lg:flex-row gap-6 h-[600px]">
-          {/* Left side: Resource List */}
+          {/* Left side: Resource Picker */}
           <div className="lg:w-1/2 flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Resources ({filteredResourceIds.length})
-              </h3>
-              {/* View Mode Toggle */}
-              <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`flex items-center px-2 py-1 text-xs font-medium rounded ${
-                    viewMode === 'list'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                  title="List View"
-                >
-                  <ListBulletIcon className="h-4 w-4" />
-                  <span className="ml-1">List</span>
-                </button>
-                <button
-                  onClick={() => setViewMode('tree')}
-                  className={`flex items-center px-2 py-1 text-xs font-medium rounded ${
-                    viewMode === 'tree'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                  title="Tree View"
-                >
-                  <FolderIcon className="h-4 w-4" />
-                  <span className="ml-1">Tree</span>
-                </button>
-              </div>
+            <div className="flex items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Resources</h3>
             </div>
 
-            {/* Search Box */}
-            <div className="relative mb-4">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search resources..."
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            {/* Enhanced Resource Picker */}
+            <div className="flex-1 min-h-0">
+              <ResourcePicker
+                resources={resources}
+                selectedResourceId={selectedResourceId}
+                onResourceSelect={handleResourceSelect}
+                defaultView="list"
+                showViewToggle={true}
+                enableSearch={true}
+                searchPlaceholder="Search resources..."
+                searchScope="all"
+                emptyMessage="No resources available"
+                height="560px"
+                onMessage={onMessage}
               />
-            </div>
-
-            {/* Resource List or Tree */}
-            <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg bg-gray-50">
-              {viewMode === 'tree' && resources?.system.resourceManager ? (
-                <ResourceTreeView
-                  resources={resources.system.resourceManager}
-                  selectedResourceId={selectedResourceId}
-                  onResourceSelect={handleResourceSelect}
-                  searchTerm={searchTerm}
-                  className=""
-                />
-              ) : (
-                <ResourceListView
-                  resourceIds={filteredResourceIds}
-                  selectedResourceId={selectedResourceId}
-                  onResourceSelect={handleResourceSelect}
-                  searchTerm={searchTerm}
-                  className=""
-                />
-              )}
             </div>
           </div>
 
