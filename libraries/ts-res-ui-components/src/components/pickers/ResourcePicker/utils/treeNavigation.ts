@@ -199,8 +199,11 @@ export function mergeWithPendingResources(
     (id) => !pendingResources.some((pr) => pr.id === id && pr.type === 'deleted')
   );
 
-  // Add new resources (modified resources are already in existingIds)
-  const newResourceIds = pendingResources.filter((pr) => pr.type === 'new').map((pr) => pr.id);
+  // Add new and modified resources (modified resources might not exist in existingIds yet)
+  const newResourceIds = pendingResources
+    .filter((pr) => pr.type === 'new' || pr.type === 'modified')
+    .map((pr) => pr.id)
+    .filter((id) => !filteredExisting.includes(id)); // Avoid duplicates
 
   // Combine and sort
   return [...filteredExisting, ...newResourceIds].sort();
