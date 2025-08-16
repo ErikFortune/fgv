@@ -787,13 +787,13 @@ const system = await TsResTools.createTsResSystemFromConfig(config);
 
 ### Namespace Contents
 
-- **FilterTools**: FilterView, filter analysis, filtered resource creation
-- **ResolutionTools**: ResolutionView, resolution testing, context management
-- **ConfigurationTools**: ConfigurationView, configuration validation, import/export
-- **TsResTools**: SourceView, CompiledView, ts-res system integration
-- **ViewTools**: MessagesWindow, message management, view state utilities
-- **ZipTools**: ImportView, ZipLoaderView, ZIP bundle management
-- **FileTools**: File processing, import/export utilities
+- **[FilterTools](./docs/ts-res-ui-components.filtertools.md)**: FilterView, filter analysis, filtered resource creation
+- **[ResolutionTools](./docs/ts-res-ui-components.resolutiontools.md)**: ResolutionView, resolution testing, context management
+- **[ConfigurationTools](./docs/ts-res-ui-components.configurationtools.md)**: ConfigurationView, configuration validation, import/export
+- **[TsResTools](./docs/ts-res-ui-components.tsrestools.md)**: SourceView, CompiledView, ts-res system integration
+- **[ViewTools](./docs/ts-res-ui-components.viewtools.md)**: MessagesWindow, message management, view state utilities
+- **[ZipTools](./docs/ts-res-ui-components.ziptools.md)**: ImportView, ZipLoaderView, ZIP bundle management
+- **[FileTools](./docs/ts-res-ui-components.filetools.md)**: File processing, import/export utilities
 
 All components are also available at the top level for backward compatibility.
 
@@ -887,23 +887,97 @@ class TypedResourceEditorFactory implements ResourceEditorFactory {
 
 ## Development
 
-### Building
+This library is part of a [Rush.js](https://rushjs.io/) monorepo. Rush is a build orchestrator for JavaScript monorepos that provides scalable build performance and consistent package management.
+
+### Rush Monorepo Setup
+
+If you're new to this monorepo, follow these steps to get started:
+
+1. **Install Rush globally** (if not already installed):
+   ```bash
+   npm install -g @microsoft/rush
+   ```
+
+2. **Clone the repository and install dependencies**:
+   ```bash
+   git clone <repository-url>
+   cd <repository-root>
+   rush install
+   ```
+
+3. **Build all projects** (including dependencies):
+   ```bash
+   rush build
+   ```
+
+> 📚 **Learn more about Rush**: [Official Rush Documentation](https://rushjs.io/pages/intro/get_started/)
+
+### Development Commands
+
+All development commands use Rush's `rushx` tool to run scripts within this specific project:
+
+#### Building
 
 ```bash
-npm run build
+# Build this project only
+rushx build
+
+# Build all projects in the monorepo (from root)
+rush build
 ```
 
-### Testing
+#### Testing
 
 ```bash
-npm test
+# Test this project only  
+rushx test
+
+# Test with coverage
+rushx coverage
+
+# Test all projects in the monorepo (from root)
+rush test
 ```
 
-### Linting
+#### Linting
 
 ```bash
-npm run lint
+# Lint this project
+rushx lint
+
+# Fix lint issues automatically
+rushx fixlint
+
+# Lint all projects in the monorepo (from root)  
+rush prettier
 ```
+
+#### Other Useful Commands
+
+```bash
+# Clean build artifacts
+rushx clean
+
+# Update dependencies (from repository root)
+rush update
+
+# Add a new dependency to this project (from repository root)
+rush add -p <package-name>
+
+# Check for security vulnerabilities (from repository root)
+rush audit
+```
+
+### Monorepo Structure
+
+This library is located at `libraries/ts-res-ui-components/` within the monorepo and depends on several other libraries in the workspace:
+
+- `@fgv/ts-res` - Core resource management library
+- `@fgv/ts-utils` - Utility functions and Result pattern
+- `@fgv/ts-json-base` - JSON validation and processing
+- `@fgv/ts-bcp47` - BCP47 language tag processing
+
+All workspace dependencies use `workspace:*` version ranges for automatic version resolution.
 
 ## License
 
