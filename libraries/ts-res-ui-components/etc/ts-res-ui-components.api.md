@@ -22,12 +22,10 @@ import { Runtime } from '@fgv/ts-res';
 // Warning: (ae-forgotten-export) The symbol "FilterResult_2" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export function analyzeFilteredResources(originalResourceIds: string[], filteredProcessedResources: ProcessedResources, originalProcessedResources: ProcessedResources): FilterResult_2;
+function analyzeFilteredResources(originalResourceIds: string[], filteredProcessedResources: ProcessedResources, originalProcessedResources: ProcessedResources): FilterResult_2;
 
-// Warning: (ae-internal-missing-underscore) The name "BrowserZipData" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export interface BrowserZipData {
+interface BrowserZipData {
     // (undocumented)
     config?: any;
     // (undocumented)
@@ -39,10 +37,8 @@ export interface BrowserZipData {
     manifest: ZipManifest;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "BrowserZipLoader" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export class BrowserZipLoader implements IZipLoader {
+class BrowserZipLoader implements IZipLoader {
     loadFromBuffer(buffer: ArrayBuffer, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
     loadFromFile(file: File, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
     loadFromUrl(url: string, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
@@ -67,12 +63,7 @@ export interface CandidateInfo {
 }
 
 // @public (undocumented)
-export function cloneConfiguration(config: Config.Model.ISystemConfiguration): Config.Model.ISystemConfiguration;
-
-// Warning: (ae-internal-missing-underscore) The name "compareConfigurations" should be prefixed with an underscore because the declaration is marked as @internal
-//
-// @internal (undocumented)
-export function compareConfigurations(config1: Config.Model.ISystemConfiguration, config2: Config.Model.ISystemConfiguration): boolean;
+function cloneConfiguration(config: Config.Model.ISystemConfiguration): Config.Model.ISystemConfiguration;
 
 // @public (undocumented)
 export const CompiledView: React_2.FC<CompiledViewProps>;
@@ -108,58 +99,14 @@ export interface ConditionEvaluationResult {
     scoreAsDefault?: number;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "ConfigurationChanges" should be prefixed with an underscore because the declaration is marked as @internal
-//
-// @internal
-export interface ConfigurationChanges {
-    // (undocumented)
-    changedSections: string[];
-    // (undocumented)
-    hasChanges: boolean;
-    // (undocumented)
-    timestamp: Date;
-}
-
-// Warning: (ae-internal-missing-underscore) The name "ConfigurationExportOptions" should be prefixed with an underscore because the declaration is marked as @internal
-//
-// @internal
-export interface ConfigurationExportOptions {
-    // (undocumented)
-    filename?: string;
-    // (undocumented)
-    format: 'json' | 'yaml';
-    // (undocumented)
-    includeComments?: boolean;
-    // (undocumented)
-    pretty: boolean;
-}
-
-// Warning: (ae-internal-missing-underscore) The name "ConfigurationTemplate" should be prefixed with an underscore because the declaration is marked as @internal
-//
-// @internal
-export interface ConfigurationTemplate {
-    // (undocumented)
-    category: 'basic' | 'intermediate' | 'advanced' | 'enterprise';
-    // (undocumented)
-    configuration: Config.Model.ISystemConfiguration;
-    // (undocumented)
-    description: string;
-    // (undocumented)
-    id: string;
-    // (undocumented)
-    name: string;
-}
-
-// Warning: (ae-internal-missing-underscore) The name "ConfigurationValidationResult" should be prefixed with an underscore because the declaration is marked as @internal
-//
-// @internal
-export interface ConfigurationValidationResult {
-    // (undocumented)
-    errors: string[];
-    // (undocumented)
-    isValid: boolean;
-    // (undocumented)
-    warnings: string[];
+declare namespace ConfigurationHelpers {
+    export {
+        getDefaultConfiguration,
+        validateConfiguration,
+        cloneConfiguration,
+        exportConfiguration,
+        importConfiguration
+    }
 }
 
 // @public (undocumented)
@@ -177,41 +124,29 @@ export interface ConfigurationViewProps extends ViewBaseProps {
     onSave?: (config: Config.Model.ISystemConfiguration) => void;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "convertImportedDirectoryToFileTree" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function convertImportedDirectoryToFileTree(directory: ImportedDirectory): FileTree.FileTree;
+function convertImportedDirectoryToFileTree(directory: ImportedDirectory): FileTree.FileTree;
 
-// Warning: (ae-internal-missing-underscore) The name "createBrowserZipLoader" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function createBrowserZipLoader(): IZipLoader;
+function createBrowserZipLoader(): IZipLoader;
 
 // @public (undocumented)
-export const createFilteredResourceManagerSimple: (originalSystem: ProcessedResources["system"], partialContext: Record<string, string | undefined>, options?: FilterOptions) => Promise<Result<ProcessedResources>>;
+const createFilteredResourceManagerSimple: (originalSystem: ProcessedResources["system"], partialContext: Record<string, string | undefined>, options?: FilterOptions) => Promise<Result<ProcessedResources>>;
 
-// Warning: (ae-internal-missing-underscore) The name "createManifest" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function createManifest(inputType: 'file' | 'directory', originalPath: string, archivePath: string, configPath?: string): ZipManifest;
+function createManifest(inputType: 'file' | 'directory', originalPath: string, archivePath: string, configPath?: string): ZipManifest;
 
-// Warning: (ae-internal-missing-underscore) The name "createNodeZipBuilder" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function createNodeZipBuilder(): IZipBuilder;
+function createNodeZipBuilder(): IZipBuilder;
 
 // @public (undocumented)
-export function createResolverWithContext(processedResources: ProcessedResources, contextValues: Record<string, string | undefined>, options?: ResolutionOptions): Result<Runtime.ResourceResolver>;
+function createResolverWithContext(processedResources: ProcessedResources, contextValues: Record<string, string | undefined>, options?: ResolutionOptions): Result<Runtime.ResourceResolver>;
 
-// Warning: (ae-internal-missing-underscore) The name "createSimpleContext" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function createSimpleContext(qualifiers: Qualifiers.IReadOnlyQualifierCollector, values: Record<string, string | undefined>): Result<Runtime.ValidatingSimpleContextQualifierProvider>;
+function createSimpleContext(qualifiers: Qualifiers.IReadOnlyQualifierCollector, values: Record<string, string | undefined>): Result<Runtime.ValidatingSimpleContextQualifierProvider>;
 
-// Warning: (ae-internal-missing-underscore) The name "createTsResSystemFromConfig" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemConfiguration): Result<{
+function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemConfiguration): Result<{
     qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
     qualifiers: Qualifiers.IReadOnlyQualifierCollector;
     resourceTypes: ResourceTypes.ReadOnlyResourceTypeCollector;
@@ -247,22 +182,18 @@ export interface EditedResourceInfo {
 }
 
 // @public (undocumented)
-export function evaluateConditionsForCandidate(resolver: Runtime.ResourceResolver, candidateIndex: number, compiledResource: any, compiledCollection: any): ConditionEvaluationResult[];
+function evaluateConditionsForCandidate(resolver: Runtime.ResourceResolver, candidateIndex: number, compiledResource: any, compiledCollection: any): ConditionEvaluationResult[];
 
-// Warning: (ae-internal-missing-underscore) The name "exportAsJson" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function exportAsJson(data: any, filename: string): void;
+function exportAsJson(data: any, filename: string): void;
 
-// Warning: (ae-incompatible-release-tags) The symbol "exportConfiguration" is marked as @public, but its signature references "ConfigurationExportOptions" which is marked as @internal
+// Warning: (ae-forgotten-export) The symbol "ConfigurationExportOptions" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export function exportConfiguration(config: Config.Model.ISystemConfiguration, options?: ConfigurationExportOptions): Result<string>;
+function exportConfiguration(config: Config.Model.ISystemConfiguration, options?: ConfigurationExportOptions): Result<string>;
 
-// Warning: (ae-internal-missing-underscore) The name "exportUsingFileSystemAPI" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function exportUsingFileSystemAPI(data: any, suggestedName: string, description?: string): Promise<boolean>;
+function exportUsingFileSystemAPI(data: any, suggestedName: string, description?: string): Promise<boolean>;
 
 // @public
 export interface ExtendedProcessedResources extends ProcessedResources {
@@ -271,10 +202,17 @@ export interface ExtendedProcessedResources extends ProcessedResources {
     isLoadedFromBundle?: boolean;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "filesToDirectory" should be prefixed with an underscore because the declaration is marked as @internal
-//
+declare namespace FileHelpers {
+    export {
+        readFilesFromInput,
+        filesToDirectory,
+        exportAsJson,
+        exportUsingFileSystemAPI
+    }
+}
+
 // @internal (undocumented)
-export function filesToDirectory(files: ImportedFile[]): ImportedDirectory;
+function filesToDirectory(files: ImportedFile[]): ImportedDirectory;
 
 // @public
 export interface FilterActions {
@@ -297,8 +235,18 @@ export interface FilteredResource {
     originalCandidateCount: number;
 }
 
+declare namespace FilterHelpers {
+    export {
+        createFilteredResourceManagerSimple,
+        analyzeFilteredResources,
+        hasFilterValues,
+        getFilterSummary,
+        FilterOptions
+    }
+}
+
 // @public (undocumented)
-export interface FilterOptions {
+interface FilterOptions {
     // (undocumented)
     enableDebugLogging?: boolean;
     // (undocumented)
@@ -342,55 +290,35 @@ export interface FilterViewProps extends ViewBaseProps {
     resources?: ProcessedResources | null;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "formatFileSize" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function formatFileSize(bytes: number): string;
+function formatFileSize(bytes: number): string;
 
-// Warning: (ae-internal-missing-underscore) The name "generateConfigurationFilename" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function generateConfigurationFilename(configName?: string, format?: 'json' | 'yaml'): string;
-
-// Warning: (ae-internal-missing-underscore) The name "generateZipFilename" should be prefixed with an underscore because the declaration is marked as @internal
-//
-// @internal (undocumented)
-export function generateZipFilename(customName?: string): string;
+function generateZipFilename(customName?: string): string;
 
 // @public (undocumented)
-export function getAvailableQualifiers(processedResources: ProcessedResources): string[];
+function getAvailableQualifiers(processedResources: ProcessedResources): string[];
 
-// Warning: (ae-internal-missing-underscore) The name "getBaseName" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function getBaseName(filename: string): string;
-
-// Warning: (ae-internal-missing-underscore) The name "getConfigurationTemplates" should be prefixed with an underscore because the declaration is marked as @internal
-//
-// @internal (undocumented)
-export function getConfigurationTemplates(): ConfigurationTemplate[];
+function getBaseName(filename: string): string;
 
 // @public
-export function getDefaultConfiguration(): Config.Model.ISystemConfiguration;
+function getDefaultConfiguration(): Config.Model.ISystemConfiguration;
 
-// Warning: (ae-internal-missing-underscore) The name "getDefaultSystemConfiguration" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function getDefaultSystemConfiguration(): Config.Model.ISystemConfiguration;
+function getDefaultSystemConfiguration(): Config.Model.ISystemConfiguration;
 
-// Warning: (ae-internal-missing-underscore) The name "getDirectoryName" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function getDirectoryName(path: string): string;
+function getDirectoryName(path: string): string;
 
 // @public (undocumented)
-export function getFilterSummary(values: Record<string, string | undefined>): string;
+function getFilterSummary(values: Record<string, string | undefined>): string;
 
 // @public (undocumented)
-export function hasFilterValues(values: Record<string, string | undefined>): boolean;
+function hasFilterValues(values: Record<string, string | undefined>): boolean;
 
 // @public (undocumented)
-export function hasPendingContextChanges(contextValues: Record<string, string | undefined>, pendingContextValues: Record<string, string | undefined>): boolean;
+function hasPendingContextChanges(contextValues: Record<string, string | undefined>, pendingContextValues: Record<string, string | undefined>): boolean;
 
 // Warning: (ae-forgotten-export) The symbol "HierarchyEditorProps" needs to be exported by the entry point index.d.ts
 //
@@ -398,7 +326,7 @@ export function hasPendingContextChanges(contextValues: Record<string, string | 
 export const HierarchyEditor: React_2.FC<HierarchyEditorProps>;
 
 // @public (undocumented)
-export function importConfiguration(data: string): Result<Config.Model.ISystemConfiguration>;
+function importConfiguration(data: string): Result<Config.Model.ISystemConfiguration>;
 
 // @public
 export interface ImportedDirectory {
@@ -427,24 +355,18 @@ export interface ImportViewProps extends ViewBaseProps {
     onZipImport?: (zipFile: File, config?: Config.Model.ISystemConfiguration) => void;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "isZipFile" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function isZipFile(filename: string): boolean;
+function isZipFile(filename: string): boolean;
 
-// Warning: (ae-internal-missing-underscore) The name "IZipBuilder" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export interface IZipBuilder {
+interface IZipBuilder {
     createFromDirectory(directory: ImportedDirectory, options?: ZipArchiveOptions): Promise<Result<ZipArchiveResult>>;
     createFromFiles(files: ImportedFile[], options?: ZipArchiveOptions): Promise<Result<ZipArchiveResult>>;
     createFromPath(path: string, options?: ZipArchiveOptions): Promise<Result<ZipArchiveResult>>;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "IZipLoader" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export interface IZipLoader {
+interface IZipLoader {
     loadFromBuffer(buffer: ArrayBuffer, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
     loadFromFile(file: File, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
     loadFromUrl(url: string, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
@@ -452,15 +374,11 @@ export interface IZipLoader {
 
 export { JsonValue }
 
-// Warning: (ae-internal-missing-underscore) The name "loadZipFile" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function loadZipFile(file: File, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
+function loadZipFile(file: File, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
 
-// Warning: (ae-internal-missing-underscore) The name "loadZipFromUrl" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function loadZipFromUrl(url: string, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
+function loadZipFromUrl(url: string, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
 
 // @public
 export interface Message {
@@ -470,19 +388,15 @@ export interface Message {
     type: 'info' | 'warning' | 'error' | 'success';
 }
 
-// Warning: (ae-internal-missing-underscore) The name "NodeZipBuilder" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export class NodeZipBuilder implements IZipBuilder {
+class NodeZipBuilder implements IZipBuilder {
     createFromDirectory(directory: ImportedDirectory, options?: ZipArchiveOptions): Promise<Result<ZipArchiveResult>>;
     createFromFiles(files: ImportedFile[], options?: ZipArchiveOptions): Promise<Result<ZipArchiveResult>>;
     createFromPath(path: string, options?: ZipArchiveOptions): Promise<Result<ZipArchiveResult>>;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "normalizePath" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function normalizePath(path: string): string;
+function normalizePath(path: string): string;
 
 // @public (undocumented)
 export interface OrchestratorActions {
@@ -560,15 +474,11 @@ export interface OrchestratorState {
     selectedResourceId: string | null;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "parseConfiguration" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function parseConfiguration(configData: string): Result<Config.Model.ISystemConfiguration>;
+function parseConfiguration(configData: string): Result<Config.Model.ISystemConfiguration>;
 
-// Warning: (ae-internal-missing-underscore) The name "parseManifest" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function parseManifest(manifestData: string): Result<ZipManifest>;
+function parseManifest(manifestData: string): Result<ZipManifest>;
 
 // @public
 export interface PendingResource<T = unknown> {
@@ -579,15 +489,11 @@ export interface PendingResource<T = unknown> {
     type: 'new' | 'modified' | 'deleted';
 }
 
-// Warning: (ae-internal-missing-underscore) The name "prepareZipData" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function prepareZipData(files: ImportedFile[], options?: ZipArchiveOptions): Result<BrowserZipData>;
+function prepareZipData(files: ImportedFile[], options?: ZipArchiveOptions): Result<BrowserZipData>;
 
-// Warning: (ae-internal-missing-underscore) The name "prepareZipDataFromDirectory" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function prepareZipDataFromDirectory(directory: ImportedDirectory, options?: ZipArchiveOptions): Result<BrowserZipData>;
+function prepareZipDataFromDirectory(directory: ImportedDirectory, options?: ZipArchiveOptions): Result<BrowserZipData>;
 
 // @public
 export interface ProcessedResources {
@@ -610,10 +516,8 @@ export interface ProcessedResources {
     };
 }
 
-// Warning: (ae-internal-missing-underscore) The name "processImportedDirectory" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function processImportedDirectory(directory: ImportedDirectory, systemConfig?: Config.Model.ISystemConfiguration): Result<{
+function processImportedDirectory(directory: ImportedDirectory, systemConfig?: Config.Model.ISystemConfiguration): Result<{
     system: {
         qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
         qualifiers: Qualifiers.IReadOnlyQualifierCollector;
@@ -633,10 +537,8 @@ export function processImportedDirectory(directory: ImportedDirectory, systemCon
     };
 }>;
 
-// Warning: (ae-internal-missing-underscore) The name "processImportedFiles" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function processImportedFiles(files: ImportedFile[], systemConfig?: Config.Model.ISystemConfiguration): Result<{
+function processImportedFiles(files: ImportedFile[], systemConfig?: Config.Model.ISystemConfiguration): Result<{
     system: {
         qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
         qualifiers: Qualifiers.IReadOnlyQualifierCollector;
@@ -671,10 +573,8 @@ export const QualifierEditForm: React_2.FC<QualifierEditFormProps>;
 // @public (undocumented)
 export const QualifierTypeEditForm: React_2.FC<QualifierTypeEditFormProps>;
 
-// Warning: (ae-internal-missing-underscore) The name "readFilesFromInput" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function readFilesFromInput(files: FileList): Promise<ImportedFile[]>;
+function readFilesFromInput(files: FileList): Promise<ImportedFile[]>;
 
 // @public (undocumented)
 export interface ResolutionActions {
@@ -707,8 +607,19 @@ export interface ResolutionActions {
 // @public (undocumented)
 export const ResolutionEditControls: React_2.FC<ResolutionEditControlsProps>;
 
+declare namespace ResolutionHelpers {
+    export {
+        createResolverWithContext,
+        evaluateConditionsForCandidate,
+        resolveResourceDetailed,
+        getAvailableQualifiers,
+        hasPendingContextChanges,
+        ResolutionOptions
+    }
+}
+
 // @public (undocumented)
-export interface ResolutionOptions {
+interface ResolutionOptions {
     // (undocumented)
     enableCaching?: boolean;
     // (undocumented)
@@ -779,7 +690,7 @@ export interface ResolutionViewProps extends ViewBaseProps {
 }
 
 // @public (undocumented)
-export function resolveResourceDetailed(resolver: Runtime.ResourceResolver, resourceId: string, processedResources: ProcessedResources, options?: ResolutionOptions): Result<ResolutionResult>;
+function resolveResourceDetailed(resolver: Runtime.ResourceResolver, resourceId: string, processedResources: ProcessedResources, options?: ResolutionOptions): Result<ResolutionResult>;
 
 // @public
 export interface ResourceAnnotation {
@@ -912,10 +823,8 @@ export const ResourceTypeEditForm: React_2.FC<ResourceTypeEditFormProps>;
 
 export { Result }
 
-// Warning: (ae-internal-missing-underscore) The name "sanitizeFilename" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function sanitizeFilename(filename: string): string;
+function sanitizeFilename(filename: string): string;
 
 // Warning: (ae-forgotten-export) The symbol "SourceResourceDetailProps" needs to be exported by the entry point index.d.ts
 //
@@ -933,10 +842,16 @@ export interface SourceViewProps extends ViewBaseProps {
     selectedResourceId?: string | null;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "trackConfigurationChanges" should be prefixed with an underscore because the declaration is marked as @internal
-//
-// @internal (undocumented)
-export function trackConfigurationChanges(original: Config.Model.ISystemConfiguration, current: Config.Model.ISystemConfiguration): ConfigurationChanges;
+declare namespace TsResHelpers {
+    export {
+        getDefaultSystemConfiguration,
+        createSimpleContext,
+        convertImportedDirectoryToFileTree,
+        createTsResSystemFromConfig,
+        processImportedFiles,
+        processImportedDirectory
+    }
+}
 
 // Warning: (ae-forgotten-export) The symbol "UseConfigurationStateReturn" needs to be exported by the entry point index.d.ts
 //
@@ -963,10 +878,10 @@ export function useResourceData(): UseResourceDataReturn;
 // @public
 export function useViewState(): UseViewStateReturn;
 
-// Warning: (ae-incompatible-release-tags) The symbol "validateConfiguration" is marked as @public, but its signature references "ConfigurationValidationResult" which is marked as @internal
+// Warning: (ae-forgotten-export) The symbol "ConfigurationValidationResult" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export function validateConfiguration(config: Config.Model.ISystemConfiguration): ConfigurationValidationResult;
+function validateConfiguration(config: Config.Model.ISystemConfiguration): ConfigurationValidationResult;
 
 // @public
 export interface ViewBaseProps {
@@ -974,10 +889,8 @@ export interface ViewBaseProps {
     onMessage?: (type: Message['type'], message: string) => void;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "ZipArchiveOptions" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export interface ZipArchiveOptions {
+interface ZipArchiveOptions {
     compressionLevel?: number;
     config?: Config.Model.ISystemConfiguration;
     filename?: string;
@@ -985,20 +898,16 @@ export interface ZipArchiveOptions {
     outputDir?: string;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "ZipArchiveResult" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export interface ZipArchiveResult {
+interface ZipArchiveResult {
     filePath: string;
     fileSize: number;
     manifest: ZipManifest;
     timestamp: string;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "ZipFileItem" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export interface ZipFileItem {
+interface ZipFileItem {
     // (undocumented)
     content?: string | ArrayBuffer;
     // (undocumented)
@@ -1013,16 +922,51 @@ export interface ZipFileItem {
     size: number;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "ZipFileTree" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export interface ZipFileTree {
+interface ZipFileTree {
     // (undocumented)
     directories: Set<string>;
     // (undocumented)
     files: Map<string, ZipFileItem>;
     // (undocumented)
     root: string;
+}
+
+declare namespace ZipHelpers {
+    export {
+        BrowserZipLoader,
+        createBrowserZipLoader,
+        loadZipFile,
+        loadZipFromUrl,
+        NodeZipBuilder,
+        createNodeZipBuilder,
+        BrowserZipData,
+        prepareZipData,
+        prepareZipDataFromDirectory,
+        generateZipFilename,
+        createManifest,
+        parseManifest,
+        parseConfiguration,
+        zipTreeToFiles,
+        zipTreeToDirectory,
+        normalizePath,
+        getDirectoryName,
+        sanitizeFilename,
+        formatFileSize,
+        isZipFile,
+        getBaseName,
+        ZipManifest,
+        ZipArchiveOptions,
+        ZipArchiveResult,
+        ZipLoadOptions,
+        ZipLoadResult,
+        ZipLoadingStage,
+        ZipProgressCallback,
+        IZipBuilder,
+        IZipLoader,
+        ZipFileItem,
+        ZipFileTree
+    }
 }
 
 // @public (undocumented)
@@ -1042,24 +986,18 @@ export interface ZipLoaderViewProps extends ViewBaseProps {
     zipPath?: string;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "ZipLoadingStage" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export type ZipLoadingStage = 'reading-file' | 'parsing-zip' | 'loading-manifest' | 'loading-config' | 'extracting-files' | 'processing-resources' | 'complete';
+type ZipLoadingStage = 'reading-file' | 'parsing-zip' | 'loading-manifest' | 'loading-config' | 'extracting-files' | 'processing-resources' | 'complete';
 
-// Warning: (ae-internal-missing-underscore) The name "ZipLoadOptions" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export interface ZipLoadOptions {
+interface ZipLoadOptions {
     autoApplyConfig?: boolean;
     autoProcessResources?: boolean;
     overrideConfig?: Config.Model.ISystemConfiguration;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "ZipLoadResult" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export interface ZipLoadResult {
+interface ZipLoadResult {
     config: Config.Model.ISystemConfiguration | null;
     directory: ImportedDirectory | null;
     files: ImportedFile[];
@@ -1068,10 +1006,8 @@ export interface ZipLoadResult {
     processedResources: ProcessedResources | null;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "ZipManifest" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export interface ZipManifest {
+interface ZipManifest {
     // (undocumented)
     config?: {
         type: 'file';
@@ -1088,23 +1024,17 @@ export interface ZipManifest {
     timestamp: string;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "ZipProgressCallback" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export interface ZipProgressCallback {
+interface ZipProgressCallback {
     // (undocumented)
     (stage: ZipLoadingStage, progress: number, message?: string): void;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "zipTreeToDirectory" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function zipTreeToDirectory(tree: ZipFileTree): ImportedDirectory | null;
+function zipTreeToDirectory(tree: ZipFileTree): ImportedDirectory | null;
 
-// Warning: (ae-internal-missing-underscore) The name "zipTreeToFiles" should be prefixed with an underscore because the declaration is marked as @internal
-//
 // @internal (undocumented)
-export function zipTreeToFiles(tree: ZipFileTree): ImportedFile[];
+function zipTreeToFiles(tree: ZipFileTree): ImportedFile[];
 
 // (No @packageDocumentation comment for this package)
 

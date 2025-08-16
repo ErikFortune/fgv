@@ -49,16 +49,12 @@ export { useViewState } from './hooks/useViewState';
 export { useResolutionState } from './hooks/useResolutionState';
 export { useConfigurationState } from './hooks/useConfigurationState';
 
-// Export utilities
-export * from './utils/tsResIntegration';
-export * from './utils/fileProcessing';
+// Export organized helper namespaces
 export {
-  createFilteredResourceManagerSimple,
-  analyzeFilteredResources,
-  hasFilterValues,
-  getFilterSummary,
-  type FilterOptions
-} from './utils/filterResources';
-export * from './utils/resolutionUtils';
-export * from './utils/zipLoader';
-export * from './utils/configurationUtils';
+  FilterHelpers,
+  ResolutionHelpers,
+  ConfigurationHelpers,
+  FileHelpers,
+  TsResHelpers,
+  ZipHelpers
+} from './namespaces';
