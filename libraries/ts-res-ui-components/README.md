@@ -216,7 +216,7 @@ Shows the compiled resource structure with detailed candidate information.
 
 ### ResolutionView
 
-Interactive resource resolution testing with context management.
+Interactive resource resolution testing with context management and support for custom resource editors.
 
 ```tsx
 <ResolutionView
@@ -224,8 +224,68 @@ Interactive resource resolution testing with context management.
   resolutionState={resolutionState}
   resolutionActions={resolutionActions}
   availableQualifiers={availableQualifiers}
+  resourceEditorFactory={myResourceEditorFactory}
 />
 ```
+
+#### Custom Resource Editors
+
+The ResolutionView supports custom editors for specific resource types through the `ResourceEditorFactory` interface:
+
+```tsx
+import { ResourceEditorFactory, ResourceEditorResult, ResourceEditorProps } from '@fgv/ts-res-ui-components';
+
+// Custom editor component
+const MarketInfoEditor: React.FC<ResourceEditorProps> = ({
+  value,
+  resourceId,
+  isEdited,
+  editedValue,
+  onSave,
+  onCancel,
+  disabled,
+  className
+}) => {
+  // Custom form-based editor implementation
+  return (
+    <div className={`market-info-editor ${className}`}>
+      {/* Custom editing interface for market information */}
+    </div>
+  );
+};
+
+// Resource editor factory
+class MyResourceEditorFactory implements ResourceEditorFactory {
+  createEditor(resourceId: string, resourceType: string, value: any): ResourceEditorResult {
+    if (resourceType === 'marketInfo') {
+      return {
+        success: true,
+        editor: MarketInfoEditor
+      };
+    }
+    
+    return {
+      success: false,
+      message: `No custom editor available for resource type '${resourceType}'`
+    };
+  }
+}
+
+// Usage
+const editorFactory = new MyResourceEditorFactory();
+
+<ResolutionView
+  resources={resources}
+  resourceEditorFactory={editorFactory}
+  // ... other props
+/>
+```
+
+**Benefits of Custom Editors:**
+- **Type-Specific UX**: Provide structured editing interfaces for different resource types
+- **Graceful Fallback**: Unknown resource types automatically fall back to JSON editor
+- **Extensible**: Easy to add new editors for new resource types
+- **Error Handling**: Factory failures are caught and reported to users
 
 ### ConfigurationView
 
@@ -447,7 +507,10 @@ import type {
   FilterState,
   ResolutionResult,
   Message,
-  ImportedFile
+  ImportedFile,
+  ResourceEditorFactory,
+  ResourceEditorResult,
+  ResourceEditorProps
 } from '@fgv/ts-res-ui-components';
 
 // Type-safe component props

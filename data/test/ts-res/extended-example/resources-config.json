@@ -142,6 +142,10 @@
     {
       "name": "json",
       "typeName": "json"
+    },
+    {
+      "name": "marketInfo",
+      "typeName": "json"
     }
   ]
 }

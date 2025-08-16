@@ -13,6 +13,7 @@ import {
 } from '@fgv/ts-res-ui-components';
 import NavigationWarningModal from './components/common/NavigationWarningModal';
 import ResourcePickerTool from './components/tools/ResourcePickerTool';
+import { playgroundResourceEditorFactory } from './components/editors/PlaygroundResourceEditorFactory';
 import { useNavigationWarning } from './hooks/useNavigationWarning';
 import { useUrlParams } from './hooks/useUrlParams';
 import { parseContextFilter } from './utils/urlParams';
@@ -437,6 +438,7 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
               state.configuration?.qualifiers?.map((q) => q.name) ||
               []
             }
+            resourceEditorFactory={playgroundResourceEditorFactory}
           />
         );
 

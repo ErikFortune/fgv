@@ -380,6 +380,34 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({
   resourceEditorFactory,
   onMessage
 }) => {
+  // Use a ref to store messages and useCallback to send them
+  const pendingMessagesRef = React.useRef<
+    Array<{ type: 'info' | 'warning' | 'error' | 'success'; message: string }>
+  >([]);
+
+  // Function to queue a message for later sending
+  const queueMessage = React.useCallback(
+    (type: 'info' | 'warning' | 'error' | 'success', message: string) => {
+      pendingMessagesRef.current.push({ type, message });
+    },
+    []
+  );
+
+  // Function to flush queued messages
+  const flushMessages = React.useCallback(() => {
+    if (pendingMessagesRef.current.length > 0 && onMessage) {
+      pendingMessagesRef.current.forEach(({ type, message }) => {
+        onMessage(type, message);
+      });
+      pendingMessagesRef.current = [];
+    }
+  }, [onMessage]);
+
+  // Flush messages after render is complete
+  React.useEffect(() => {
+    flushMessages();
+  });
+
   // Helper function to create the appropriate resource editor
   const createResourceEditor = useCallback(
     (
@@ -415,19 +443,19 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({
               />
             );
           } else {
-            // Factory couldn't create editor, show message and fall back to JSON editor
-            if (factoryResult.message && onMessage) {
-              onMessage('info', `Using default JSON editor: ${factoryResult.message}`);
+            // Factory couldn't create editor, queue message and fall back to JSON editor
+            if (factoryResult.message) {
+              queueMessage('info', `Using default JSON editor: ${factoryResult.message}`);
             }
+            // Continue to fallback JSON editor below
           }
         } catch (error) {
-          // Factory threw an error, log it and fall back to JSON editor
-          if (onMessage) {
-            onMessage(
-              'warning',
-              `Resource editor factory failed: ${error instanceof Error ? error.message : String(error)}`
-            );
-          }
+          // Factory threw an error, queue message and fall back to JSON editor
+          queueMessage(
+            'warning',
+            `Resource editor factory failed: ${error instanceof Error ? error.message : String(error)}`
+          );
+          // Continue to fallback JSON editor below
         }
       }
 
@@ -445,7 +473,7 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({
         />
       );
     },
-    [resourceEditorFactory, result, onMessage]
+    [resourceEditorFactory, result, queueMessage]
   );
 
   if (!result.success) {
