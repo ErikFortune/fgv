@@ -158,12 +158,14 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({
           />
         ) : (
           <ResourcePickerList
-            resourceIds={resourceIds}
+            resourceIds={resources.summary.resourceIds || []}
             pendingResources={pendingResources}
             selectedResourceId={selectedResourceId}
             onResourceSelect={handleResourceSelect}
             resourceAnnotations={resourceAnnotations}
             searchTerm={searchTerm}
+            rootPath={rootPath}
+            hideRootNode={hideRootNode}
             emptyMessage={emptyMessage}
           />
         )}

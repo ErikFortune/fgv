@@ -95,6 +95,8 @@ export interface ResourcePickerListProps {
   onResourceSelect: (resourceId: string) => void;
   resourceAnnotations?: ResourceAnnotations;
   searchTerm?: string;
+  rootPath?: string;
+  hideRootNode?: boolean;
   className?: string;
   emptyMessage?: string;
 }

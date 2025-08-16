@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { ResourcePickerListProps } from './types';
 import { ResourceItem } from './ResourceItem';
-import { mergeWithPendingResources } from './utils/treeNavigation';
+import { mergeWithPendingResources, filterTreeBranch } from './utils/treeNavigation';
 
 /**
  * List view for the ResourcePicker component
@@ -14,6 +14,8 @@ export const ResourcePickerList: React.FC<ResourcePickerListProps> = ({
   onResourceSelect,
   resourceAnnotations,
   searchTerm = '',
+  rootPath,
+  hideRootNode,
   className = '',
   emptyMessage = 'No resources available'
 }) => {
@@ -22,14 +24,41 @@ export const ResourcePickerList: React.FC<ResourcePickerListProps> = ({
     return mergeWithPendingResources(resourceIds, pendingResources);
   }, [resourceIds, pendingResources]);
 
+  // Apply branch isolation filtering
+  const branchFilteredIds = useMemo(() => {
+    return filterTreeBranch(allResourceIds, rootPath, hideRootNode);
+  }, [allResourceIds, rootPath, hideRootNode]);
+
   // Filter by search term and sort
   const filteredResourceIds = useMemo(() => {
     const filtered = searchTerm
-      ? allResourceIds.filter((id) => id.toLowerCase().includes(searchTerm.toLowerCase()))
-      : allResourceIds;
+      ? branchFilteredIds.filter((id) => id.toLowerCase().includes(searchTerm.toLowerCase()))
+      : branchFilteredIds;
 
     return filtered.sort();
-  }, [allResourceIds, searchTerm]);
+  }, [branchFilteredIds, searchTerm]);
+
+  // Helper function to get display name with prefix truncation
+  const getDisplayName = useMemo(() => {
+    return (resourceId: string, pendingDisplayName?: string) => {
+      // For all resources (existing and pending), apply prefix truncation to show full relative ID
+      if (rootPath) {
+        if (hideRootNode && resourceId.startsWith(rootPath + '.')) {
+          // Remove the root path prefix completely - show the full relative path
+          return resourceId.substring(rootPath.length + 1);
+        } else if (resourceId === rootPath) {
+          // For the root node itself, show the full path
+          return rootPath;
+        } else if (resourceId.startsWith(rootPath + '.')) {
+          // Show relative to root path - the full relative path
+          return resourceId.substring(rootPath.length + 1);
+        }
+      }
+
+      // Default: show the full resource ID
+      return resourceId;
+    };
+  }, [rootPath, hideRootNode]);
 
   // Create a map of pending resource IDs for quick lookup
   const pendingResourceMap = useMemo(() => {
@@ -55,13 +84,13 @@ export const ResourcePickerList: React.FC<ResourcePickerListProps> = ({
       {filteredResourceIds.map((resourceId) => {
         const isPending = pendingResourceMap.has(resourceId);
         const pendingResource = pendingResources?.find((pr) => pr.id === resourceId);
-        const displayName = pendingResource?.displayName;
+        const truncatedDisplayName = getDisplayName(resourceId, pendingResource?.displayName);
 
         return (
           <ResourceItem
             key={resourceId}
             resourceId={resourceId}
-            displayName={displayName}
+            displayName={truncatedDisplayName}
             isSelected={selectedResourceId === resourceId}
             isPending={isPending}
             annotation={resourceAnnotations?.[resourceId]}
