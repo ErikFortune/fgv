@@ -89,5 +89,5 @@ any
 
 **Returns:**
 
-[ConditionEvaluationResult](./ts-res-ui-components.conditionevaluationresult.md)<!-- -->\[\]
+[ConditionEvaluationResult](./ts-res-ui-components.resolutiontools.conditionevaluationresult.md)<!-- -->\[\]
 

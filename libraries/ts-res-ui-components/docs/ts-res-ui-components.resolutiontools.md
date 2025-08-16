@@ -99,11 +99,88 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[CandidateInfo](./ts-res-ui-components.resolutiontools.candidateinfo.md)
+
+
+</td><td>
+
+Detailed information about how a resource candidate was evaluated during resolution. Provides diagnostic data for understanding why candidates matched or didn't match.
+
+
+</td></tr>
+<tr><td>
+
+[ConditionEvaluationResult](./ts-res-ui-components.resolutiontools.conditionevaluationresult.md)
+
+
+</td><td>
+
+Result of evaluating a single condition during resource resolution. Shows how a specific qualifier value compared against a condition.
+
+
+</td></tr>
+<tr><td>
+
+[EditedResourceInfo](./ts-res-ui-components.resolutiontools.editedresourceinfo.md)
+
+
+</td><td>
+
+Information about a resource being edited in the resolution view. Tracks changes to resource values and states.
+
+
+</td></tr>
+<tr><td>
+
+[ResolutionActions](./ts-res-ui-components.resolutiontools.resolutionactions.md)
+
+
+</td><td>
+
+Actions available for managing resource resolution testing and editing. Provides methods for context management, resource selection, and value editing.
+
+
+</td></tr>
+<tr><td>
+
 [ResolutionOptions](./ts-res-ui-components.resolutiontools.resolutionoptions.md)
 
 
 </td><td>
 
+
+
+</td></tr>
+<tr><td>
+
+[ResolutionResult](./ts-res-ui-components.resolutiontools.resolutionresult.md)
+
+
+</td><td>
+
+Result of attempting to resolve a specific resource with a given context. Contains the resolved value, matching candidates, and diagnostic information.
+
+
+</td></tr>
+<tr><td>
+
+[ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)
+
+
+</td><td>
+
+Current state of resource resolution testing and debugging. Tracks context values, resolution results, and editing state.
+
+
+</td></tr>
+<tr><td>
+
+[ResolutionViewProps](./ts-res-ui-components.resolutiontools.resolutionviewprops.md)
+
+
+</td><td>
+
+Props for the ResolutionView component. Provides resource resolution testing and debugging.
 
 
 </td></tr>

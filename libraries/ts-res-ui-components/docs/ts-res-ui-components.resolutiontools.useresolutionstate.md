@@ -41,7 +41,7 @@ processedResources
 
 </td><td>
 
-[ProcessedResources](./ts-res-ui-components.processedresources.md) \| null
+[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md) \| null
 
 
 </td><td>
@@ -73,7 +73,7 @@ onSystemUpdate
 
 </td><td>
 
-(updatedResources: [ProcessedResources](./ts-res-ui-components.processedresources.md)<!-- -->) =&gt; void
+(updatedResources: [ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md)<!-- -->) =&gt; void
 
 
 </td><td>

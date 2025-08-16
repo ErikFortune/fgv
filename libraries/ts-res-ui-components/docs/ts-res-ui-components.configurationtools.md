@@ -83,6 +83,32 @@ Provides comprehensive configuration management with validation, change tracking
 </td></tr>
 </tbody></table>
 
+## Interfaces
+
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ConfigurationViewProps](./ts-res-ui-components.configurationtools.configurationviewprops.md)
+
+
+</td><td>
+
+Props for the ConfigurationView component. Handles editing and managing system configuration including qualifiers, qualifier types, and resource types.
+
+
+</td></tr>
+</tbody></table>
+
 ## Variables
 
 <table><thead><tr><th>

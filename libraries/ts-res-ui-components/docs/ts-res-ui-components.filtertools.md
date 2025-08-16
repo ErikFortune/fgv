@@ -89,11 +89,64 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[FilterActions](./ts-res-ui-components.filtertools.filteractions.md)
+
+
+</td><td>
+
+Actions available for managing filter state. Provides methods for updating all aspects of resource filtering.
+
+
+</td></tr>
+<tr><td>
+
+[FilteredResource](./ts-res-ui-components.filtertools.filteredresource.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
 [FilterOptions](./ts-res-ui-components.filtertools.filteroptions.md)
 
 
 </td><td>
 
+
+
+</td></tr>
+<tr><td>
+
+[FilterResult](./ts-res-ui-components.filtertools.filterresult.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[FilterState](./ts-res-ui-components.filtertools.filterstate.md)
+
+
+</td><td>
+
+Represents the current state of resource filtering. Tracks filter configuration, values, and application state.
+
+
+</td></tr>
+<tr><td>
+
+[FilterViewProps](./ts-res-ui-components.filtertools.filterviewprops.md)
+
+
+</td><td>
+
+Props for the FilterView component. Provides resource filtering functionality.
 
 
 </td></tr>

@@ -64,7 +64,7 @@ processedResources
 
 </td><td>
 
-[ProcessedResources](./ts-res-ui-components.processedresources.md)
+[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md)
 
 
 </td><td>
@@ -91,5 +91,5 @@ _(Optional)_
 
 **Returns:**
 
-Result&lt;[ResolutionResult](./ts-res-ui-components.resolutionresult.md)<!-- -->&gt;
+Result&lt;[ResolutionResult](./ts-res-ui-components.resolutiontools.resolutionresult.md)<!-- -->&gt;
 

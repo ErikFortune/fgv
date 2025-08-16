@@ -4,3 +4,40 @@
 
 ## FileTools namespace
 
+## Interfaces
+
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ImportedDirectory](./ts-res-ui-components.filetools.importeddirectory.md)
+
+
+</td><td>
+
+Represents a directory structure imported into the system. Supports nested directory hierarchies with files and subdirectories.
+
+
+</td></tr>
+<tr><td>
+
+[ImportedFile](./ts-res-ui-components.filetools.importedfile.md)
+
+
+</td><td>
+
+Represents a file imported into the system. Used for handling individual resource files and configurations.
+
+
+</td></tr>
+</tbody></table>
+

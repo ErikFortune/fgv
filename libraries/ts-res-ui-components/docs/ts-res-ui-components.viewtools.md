@@ -4,6 +4,34 @@
 
 ## ViewTools namespace
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[useViewState()](./ts-res-ui-components.viewtools.useviewstate.md)
+
+
+</td><td>
+
+Hook for managing view state including messages and resource selection.
+
+This hook provides a centralized way to manage common view state concerns like user messages (notifications) and resource selection. It's designed to be used by view components that need to display messages and track the currently selected resource.
+
+
+</td></tr>
+</tbody></table>
+
 ## Interfaces
 
 <table><thead><tr><th>
@@ -18,6 +46,28 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[CompiledViewProps](./ts-res-ui-components.viewtools.compiledviewprops.md)
+
+
+</td><td>
+
+Props for the CompiledView component. Displays the compiled resource collection structure.
+
+
+</td></tr>
+<tr><td>
+
+[ImportViewProps](./ts-res-ui-components.viewtools.importviewprops.md)
+
+
+</td><td>
+
+Props for the ImportView component. Handles importing resource configurations and bundles.
+
+
+</td></tr>
+<tr><td>
 
 [Message](./ts-res-ui-components.viewtools.message.md)
 
@@ -38,6 +88,39 @@ Extends the basic message structure with additional properties for enhanced mess
 </td><td>
 
 Props for the MessagesWindow component.
+
+
+</td></tr>
+<tr><td>
+
+[SourceViewProps](./ts-res-ui-components.viewtools.sourceviewprops.md)
+
+
+</td><td>
+
+Props for the SourceView component. Displays and manages the source resource collection.
+
+
+</td></tr>
+<tr><td>
+
+[ViewBaseProps](./ts-res-ui-components.viewtools.viewbaseprops.md)
+
+
+</td><td>
+
+Base properties shared by all view components. Provides common functionality for messaging and styling.
+
+
+</td></tr>
+<tr><td>
+
+[ZipLoaderViewProps](./ts-res-ui-components.viewtools.ziploaderviewprops.md)
+
+
+</td><td>
+
+Props for the ZipLoaderView component. Handles loading and importing ZIP archives containing resource files and configurations.
 
 
 </td></tr>

@@ -78,7 +78,7 @@ string \| null
 
 </td><td>
 
-[FilterResult](./ts-res-ui-components.filterresult.md) \| null
+[FilterResult](./ts-res-ui-components.filtertools.filterresult.md) \| null
 
 
 </td><td>
@@ -95,7 +95,7 @@ string \| null
 
 </td><td>
 
-[FilterState](./ts-res-ui-components.filterstate.md)
+[FilterState](./ts-res-ui-components.filtertools.filterstate.md)
 
 
 </td><td>
@@ -129,7 +129,7 @@ boolean
 
 </td><td>
 
-[Message](./ts-res-ui-components.message.md)<!-- -->\[\]
+Message\[\]
 
 
 </td><td>
@@ -146,7 +146,7 @@ boolean
 
 </td><td>
 
-[ResolutionState](./ts-res-ui-components.resolutionstate.md)
+[ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)
 
 
 </td><td>
@@ -163,7 +163,7 @@ boolean
 
 </td><td>
 
-[ExtendedProcessedResources](./ts-res-ui-components.extendedprocessedresources.md) \| null
+[ExtendedProcessedResources](./ts-res-ui-components.resourcetools.extendedprocessedresources.md) \| null
 
 
 </td><td>

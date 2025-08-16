@@ -13,7 +13,7 @@ The ResourcePicker is a comprehensive component for browsing and selecting resou
 ```typescript
 export interface ResourcePickerProps<T = unknown> extends ViewBaseProps 
 ```
-**Extends:** [ViewBaseProps](./ts-res-ui-components.viewbaseprops.md)
+**Extends:** [ViewBaseProps](./ts-res-ui-components.viewtools.viewbaseprops.md)
 
 ## Example
 
@@ -222,7 +222,7 @@ _(Optional)_ Annotations to display next to resource names (badges, indicators, 
 
 </td><td>
 
-[ProcessedResources](./ts-res-ui-components.processedresources.md) \| [ExtendedProcessedResources](./ts-res-ui-components.extendedprocessedresources.md) \| null
+[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md) \| [ExtendedProcessedResources](./ts-res-ui-components.resourcetools.extendedprocessedresources.md) \| null
 
 
 </td><td>

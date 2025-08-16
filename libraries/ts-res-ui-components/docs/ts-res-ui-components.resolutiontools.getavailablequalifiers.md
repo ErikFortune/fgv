@@ -36,7 +36,7 @@ processedResources
 
 </td><td>
 
-[ProcessedResources](./ts-res-ui-components.processedresources.md)
+[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md)
 
 
 </td><td>

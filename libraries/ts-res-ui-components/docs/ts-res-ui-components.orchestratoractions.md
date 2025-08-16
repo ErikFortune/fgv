@@ -44,7 +44,7 @@ Description
 
 </td><td>
 
-(type: [Message](./ts-res-ui-components.message.md)<!-- -->\['type'\], message: string) =&gt; void
+(type: Message\['type'\], message: string) =&gt; void
 
 
 </td><td>
@@ -78,7 +78,7 @@ Description
 
 </td><td>
 
-() =&gt; Promise&lt;[FilterResult](./ts-res-ui-components.filterresult.md) \| null&gt;
+() =&gt; Promise&lt;[FilterResult](./ts-res-ui-components.filtertools.filterresult.md) \| null&gt;
 
 
 </td><td>
@@ -248,7 +248,7 @@ Description
 
 </td><td>
 
-(directory: [ImportedDirectory](./ts-res-ui-components.importeddirectory.md)<!-- -->) =&gt; Promise&lt;void&gt;
+(directory: [ImportedDirectory](./ts-res-ui-components.filetools.importeddirectory.md)<!-- -->) =&gt; Promise&lt;void&gt;
 
 
 </td><td>
@@ -265,7 +265,7 @@ Description
 
 </td><td>
 
-(directory: [ImportedDirectory](./ts-res-ui-components.importeddirectory.md)<!-- -->, config: Config.Model.ISystemConfiguration) =&gt; Promise&lt;void&gt;
+(directory: [ImportedDirectory](./ts-res-ui-components.filetools.importeddirectory.md)<!-- -->, config: Config.Model.ISystemConfiguration) =&gt; Promise&lt;void&gt;
 
 
 </td><td>
@@ -282,7 +282,7 @@ Description
 
 </td><td>
 
-(files: [ImportedFile](./ts-res-ui-components.importedfile.md)<!-- -->\[\]) =&gt; Promise&lt;void&gt;
+(files: [ImportedFile](./ts-res-ui-components.filetools.importedfile.md)<!-- -->\[\]) =&gt; Promise&lt;void&gt;
 
 
 </td><td>
@@ -435,7 +435,7 @@ Description
 
 </td><td>
 
-(state: Partial&lt;[FilterState](./ts-res-ui-components.filterstate.md)<!-- -->&gt;) =&gt; void
+(state: Partial&lt;[FilterState](./ts-res-ui-components.filtertools.filterstate.md)<!-- -->&gt;) =&gt; void
 
 
 </td><td>

@@ -41,7 +41,7 @@ initialState
 
 </td><td>
 
-Partial&lt;[FilterState](./ts-res-ui-components.filterstate.md)<!-- -->&gt;
+Partial&lt;[FilterState](./ts-res-ui-components.filtertools.filterstate.md)<!-- -->&gt;
 
 
 </td><td>

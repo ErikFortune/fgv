@@ -36,7 +36,7 @@ originalSystem
 
 </td><td>
 
-[ProcessedResources](./ts-res-ui-components.processedresources.md)<!-- -->\["system"\]
+[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md)<!-- -->\["system"\]
 
 
 </td><td>
@@ -77,5 +77,5 @@ _(Optional)_
 
 **Returns:**
 
-Promise&lt;Result&lt;[ProcessedResources](./ts-res-ui-components.processedresources.md)<!-- -->&gt;&gt;
+Promise&lt;Result&lt;[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md)<!-- -->&gt;&gt;
 
