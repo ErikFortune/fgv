@@ -174,22 +174,67 @@ Handles importing resource files, directories, bundles, and ZIP files.
 />
 ```
 
+### ResourcePicker
+
+Core component for browsing and selecting resources with advanced features like search, annotations, and pending resource support.
+
+> 📚 **[See complete ResourcePicker documentation →](./docs/ts-res-ui-components.resourcepicker.md)**
+
+```tsx
+<ResourcePicker
+  resources={state.processedResources}
+  selectedResourceId={selectedId}
+  onResourceSelect={(selection) => {
+    setSelectedId(selection.resourceId);
+    // Access resource data directly without additional lookups
+    if (selection.resourceData) {
+      handleResourceData(selection.resourceData);
+    }
+    // Handle pending resources
+    if (selection.isPending) {
+      console.log(`Pending ${selection.pendingType} operation`);
+    }
+  }}
+  defaultView="tree"
+  enableSearch={true}
+  searchPlaceholder="Search resources..."
+  resourceAnnotations={{
+    'user.welcome': { 
+      badge: { text: '3', variant: 'info' },
+      suffix: '(3 candidates)'
+    }
+  }}
+  pendingResources={pendingChanges}
+  height="500px"
+/>
+```
+
+**Key features:**
+- **Enhanced callbacks**: Get resource data and metadata in selection callback
+- **Multiple view modes**: List and tree views with search
+- **Visual annotations**: Badges, indicators, and suffixes
+- **Pending resources**: Show unsaved changes with visual distinction
+- **Branch isolation**: Focus on specific parts of large resource trees
+- **Type safety**: Full TypeScript support with generic resource types
+
 ### SourceView
 
-Displays the source resource collection with search and navigation capabilities.
+Displays the source resource collection with search and navigation capabilities using the enhanced ResourcePicker.
 
 ```tsx
 <SourceView
   resources={state.processedResources}
   selectedResourceId={selectedId}
-  onResourceSelect={setSelectedId}
+  onResourceSelect={(selection) => setSelectedId(selection.resourceId)}
   onExport={actions.exportData}
 />
 ```
 
 ### FilterView
 
-Provides filtering capabilities with context value specification.
+Provides filtering capabilities with context value specification and dual-resource comparison.
+
+> 📚 **[See FilterView documentation →](./docs/ts-res-ui-components.filterview.md)**
 
 ```tsx
 <FilterView
@@ -198,12 +243,18 @@ Provides filtering capabilities with context value specification.
   filterActions={filterActions}
   filterResult={filterResult}
   onFilterResult={setFilterResult}
+  onResourceSelect={(selection) => {
+    setSelectedId(selection.resourceId);
+    // Enhanced callback provides comprehensive selection data
+  }}
 />
 ```
 
 ### CompiledView
 
-Shows the compiled resource structure with detailed candidate information.
+Shows the compiled resource structure with detailed candidate information using the enhanced ResourcePicker.
+
+> 📚 **[See CompiledView documentation →](./docs/ts-res-ui-components.compiledview.md)**
 
 ```tsx
 <CompiledView
@@ -211,12 +262,18 @@ Shows the compiled resource structure with detailed candidate information.
   filterResult={filterResult}
   useNormalization={true}
   onExport={(data, type) => exportData(data, type)}
+  onResourceSelect={(selection) => {
+    // Enhanced callback with comprehensive resource data
+    setSelectedId(selection.resourceId);
+  }}
 />
 ```
 
 ### ResolutionView
 
-Interactive resource resolution testing with context management and support for custom resource editors.
+Interactive resource resolution testing with context management and support for custom resource editors via the ResourceEditorFactory pattern.
+
+> 📚 **[See ResolutionView documentation →](./docs/ts-res-ui-components.resolutionview.md)**
 
 ```tsx
 <ResolutionView
@@ -301,6 +358,28 @@ Visual configuration management for the ts-res system.
 
 ## Hooks API
 
+> 📚 **[See complete hooks documentation →](./docs/ts-res-ui-components.md)** for detailed examples and patterns
+
+### useViewState
+
+Manages common view state including messages and resource selection.
+
+> 📚 **[useViewState documentation →](./docs/ts-res-ui-components.useviewstate.md)**
+
+```tsx
+const { messages, selectedResourceId, addMessage, clearMessages, selectResource } = useViewState();
+
+// Display operation feedback
+const handleOperation = async () => {
+  try {
+    await someAsyncOperation();
+    addMessage('success', 'Operation completed successfully');
+  } catch (error) {
+    addMessage('error', `Operation failed: ${error.message}`);
+  }
+};
+```
+
 ### useResourceData
 
 Main hook for resource processing and management.
@@ -323,48 +402,60 @@ actions.applyConfiguration(newConfig);
 
 ### useFilterState
 
-Manages resource filtering state and actions.
+Manages resource filtering state with change tracking and validation.
+
+> 📚 **[useFilterState documentation →](./docs/ts-res-ui-components.usefilterstate.md)**
 
 ```tsx
-const { filterState, filterActions } = useFilterState();
-
-// Update filter values
-filterActions.updateFilterValues({ 
-  language: 'en-US',
-  environment: 'prod' 
+const { state, actions } = useFilterState({
+  enabled: true,
+  values: { platform: 'web', locale: 'en' }
 });
 
-// Apply filters
-filterActions.applyFilterValues();
+// Update filter values with change tracking
+actions.updateFilterValue('language', 'en-US');
+actions.updateFilterValue('environment', 'prod');
 
-// Check if there are pending changes
-if (filterState.hasPendingChanges) {
-  // Show save prompt
+// Apply filters when ready
+if (state.hasPendingChanges) {
+  actions.applyFilters();
 }
 ```
 
 ### useResolutionState
 
-Manages resource resolution testing state.
+Comprehensive state management for resource resolution and editing.
+
+> 📚 **[useResolutionState documentation →](./docs/ts-res-ui-components.useresolutionstate.md)**
 
 ```tsx
-const { state, actions } = useResolutionState(processedResources);
+const { state, actions, availableQualifiers } = useResolutionState(
+  processedResources,
+  (type, message) => addMessage(type, message),
+  (updatedResources) => setProcessedResources(updatedResources)
+);
 
 // Set context for resolution testing
-actions.setContextValues({ language: 'en-US' });
+actions.updateContext({ language: 'en-US', platform: 'web' });
 
-// Test resource resolution
-const result = await actions.resolveResource('test.resource');
+// Start editing a resource
+actions.selectResource('user.welcome');
+actions.startEditing();
+
+// Save edits with validation
+actions.saveEdit(editedValue);
 ```
 
 ### useConfigurationState
 
-Manages system configuration state.
+Manages system configuration state with change tracking.
+
+> 📚 **[useConfigurationState documentation →](./docs/ts-res-ui-components.useconfigurationstate.md)**
 
 ```tsx
 const { configuration, updateConfiguration, resetConfiguration } = useConfigurationState();
 
-// Update qualifier types
+// Update configuration with validation
 updateConfiguration({
   ...configuration,
   qualifierTypes: [...newQualifierTypes]
@@ -499,7 +590,9 @@ The library provides comprehensive error handling through the state management s
 
 ## TypeScript Support
 
-This library is written in TypeScript and provides comprehensive type definitions:
+This library is written in TypeScript and provides comprehensive type definitions with enhanced support for resource selection and generic resource data.
+
+> 📚 **[See complete type documentation →](./docs/ts-res-ui-components.md)**
 
 ```tsx
 import type {
@@ -508,20 +601,57 @@ import type {
   ResolutionResult,
   Message,
   ImportedFile,
+  // Enhanced ResourcePicker types
+  ResourceSelection,
+  ResourcePickerProps,
+  ResourceAnnotation,
+  ResourceAnnotations,
+  PendingResource,
+  // Custom editor factory types
   ResourceEditorFactory,
   ResourceEditorResult,
-  ResourceEditorProps
+  ResourceEditorProps,
+  // Hook return types
+  UseViewStateReturn,
+  UseFilterStateReturn,
+  UseResolutionStateReturn
 } from '@fgv/ts-res-ui-components';
 
-// Type-safe component props
-interface MyComponentProps {
+// Type-safe component with enhanced resource selection
+interface MyResourceViewProps<T = unknown> {
   resources: ProcessedResources;
   onMessage: (type: Message['type'], message: string) => void;
+  onResourceSelect: (selection: ResourceSelection<T>) => void;
 }
 
-const MyComponent: React.FC<MyComponentProps> = ({ resources, onMessage }) => {
-  // Component implementation
+const MyResourceView = <T = unknown>({ resources, onMessage, onResourceSelect }: MyResourceViewProps<T>) => {
+  return (
+    <ResourcePicker<T>
+      resources={resources}
+      onResourceSelect={(selection) => {
+        // TypeScript knows selection has resourceId, resourceData, isPending, etc.
+        onResourceSelect(selection);
+      }}
+      resourceAnnotations={{
+        'user.welcome': {
+          badge: { text: 'NEW', variant: 'new' },
+          suffix: '(3 candidates)'
+        }
+      }}
+    />
+  );
 };
+
+// Type-safe custom editor factory
+class TypedResourceEditorFactory implements ResourceEditorFactory {
+  createEditor(resourceId: string, resourceType: string, value: any): ResourceEditorResult {
+    // Full type safety for factory pattern
+    if (resourceType === 'marketInfo') {
+      return { success: true, editor: MarketInfoEditor };
+    }
+    return { success: false, message: `No editor for ${resourceType}` };
+  }
+}
 ```
 
 ## Performance Considerations
