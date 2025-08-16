@@ -900,8 +900,8 @@ If you're new to this monorepo, follow these steps to get started:
 
 2. **Clone the repository and install dependencies**:
    ```bash
-   git clone <repository-url>
-   cd <repository-root>
+   git clone https://github.com/ErikFortune/fgv.git
+   cd fgv
    rush install
    ```
 
@@ -929,14 +929,17 @@ rush build
 #### Testing
 
 ```bash
-# Test this project only  
+# Test this project (includes coverage by default)
 rushx test
-
-# Test with coverage
-rushx coverage
 
 # Test all projects in the monorepo (from root)
 rush test
+
+# Test specific projects with dependencies
+rush test --to ts-res-ui-components
+
+# Test only this project without dependencies
+rush test --only ts-res-ui-components
 ```
 
 #### Linting

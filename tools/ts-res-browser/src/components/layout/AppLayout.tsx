@@ -1,19 +1,14 @@
 import React from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
-import MessagesWindow from './MessagesWindow';
+import { ViewTools } from '@fgv/ts-res-ui-components';
 import { Tool } from '../../types/app';
 
 interface AppLayoutProps {
   children: React.ReactNode;
   selectedTool: Tool;
   onToolSelect: (tool: Tool) => void;
-  messages: Array<{
-    id: string;
-    type: 'info' | 'warning' | 'error' | 'success';
-    message: string;
-    timestamp: Date;
-  }>;
+  messages: ViewTools.Message[];
   onClearMessages: () => void;
 }
 
@@ -35,7 +30,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
           <div className="h-full flex flex-col">
             <div className="flex-1 overflow-auto">{children}</div>
 
-            <MessagesWindow messages={messages} onClearMessages={onClearMessages} />
+            <ViewTools.MessagesWindow messages={messages} onClearMessages={onClearMessages} />
           </div>
         </main>
       </div>
