@@ -515,6 +515,12 @@ importers:
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../ts-utils-jest
+      '@microsoft/api-documenter':
+        specifier: ^7.26.31
+        version: 7.26.31(@types/node@20.19.11)
+      '@microsoft/api-extractor':
+        specifier: ^7.52.10
+        version: 7.52.10(@types/node@20.19.11)
       '@rushstack/eslint-config':
         specifier: ~4.4.0
         version: 4.4.0(eslint@8.57.1)(typescript@5.8.3)

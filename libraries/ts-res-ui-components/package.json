@@ -6,6 +6,8 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "build": "heft build --clean",
+    "build-docs": "api-documenter markdown --input-folder ./temp --output-folder docs",
+    "build-all": "rushx build && rushx build-docs",
     "clean": "heft clean",
     "test": "heft test --clean",
     "lint": "eslint src --ext .ts,.tsx",
@@ -64,6 +66,8 @@
     "@rushstack/heft": "~0.74.2",
     "@rushstack/heft-web-rig": "0.29.4",
     "@rushstack/eslint-config": "~4.4.0",
-    "@rushstack/heft-jest-plugin": "~0.16.11"
+    "@rushstack/heft-jest-plugin": "~0.16.11",
+    "@microsoft/api-documenter": "^7.26.31",
+    "@microsoft/api-extractor": "^7.52.10"
   }
 }
