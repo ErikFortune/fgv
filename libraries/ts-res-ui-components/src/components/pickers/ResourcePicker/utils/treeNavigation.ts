@@ -188,7 +188,7 @@ export function searchResources(
  */
 export function mergeWithPendingResources(
   existingIds: string[],
-  pendingResources?: Array<{ id: string; type: 'new' | 'deleted' }>
+  pendingResources?: Array<{ id: string; type: 'new' | 'modified' | 'deleted' }>
 ): string[] {
   if (!pendingResources || pendingResources.length === 0) {
     return existingIds;
@@ -199,7 +199,7 @@ export function mergeWithPendingResources(
     (id) => !pendingResources.some((pr) => pr.id === id && pr.type === 'deleted')
   );
 
-  // Add new resources
+  // Add new resources (modified resources are already in existingIds)
   const newResourceIds = pendingResources.filter((pr) => pr.type === 'new').map((pr) => pr.id);
 
   // Combine and sort

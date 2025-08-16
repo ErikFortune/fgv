@@ -65,10 +65,10 @@ export interface ResourceAnnotation {
  */
 export interface PendingResource {
   id: string;
-  type: 'new' | 'deleted';
+  type: 'new' | 'modified' | 'deleted';
   resourceType?: string;
-  parentPath?: string; // For tree placement
   displayName?: string; // Display name for the resource
+  // Note: parentPath removed - the id itself determines placement in the tree
 }
 
 /**

@@ -256,20 +256,23 @@ function filterTreeBranch(
 
 ## Implementation Phases
 
-### Phase 1: Core Picker (Days 1-3)
-- Create base `ResourcePicker` component
-- Integrate existing `ResourceListView` and enhance `ResourceTreeView`
-- Implement search functionality
-- Add tree branch isolation support
-- Basic annotation rendering
+### Phase 1: Core Picker ✅ COMPLETED
+- ✅ Create base `ResourcePicker` component
+- ✅ Integrate existing `ResourceListView` and enhance `ResourceTreeView`
+- ✅ Implement search functionality
+- ✅ Add tree branch isolation support (rootPath, hideRootNode)
+- ✅ Basic annotation rendering (badges, indicators, suffixes)
+- ✅ Create comprehensive playground for testing
+- ✅ Fix tree view to use proper ts-res API (`getBuiltResourceTree()`)
+- ✅ Implement simplified branch isolation approach
 
-### Phase 2: Edit Support (Days 4-5)
+### Phase 2: Edit Support (CURRENT PHASE)
 - Add pending resource support
 - Implement edit state indicators
 - Handle selection of pending resources
 - Test with various edit scenarios
 
-### Phase 3: Polish & Testing (Days 6-7)
+### Phase 3: Polish & Testing
 - Refine visual design and animations
 - Add comprehensive unit tests
 - Create usage documentation
