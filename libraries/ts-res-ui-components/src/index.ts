@@ -1,5 +1,6 @@
 // Export types
 export * from './types';
+export type { ResourceEditorFactory, ResourceEditorResult, ResourceEditorProps } from './types';
 
 // Export views
 export { ImportView } from './components/views/ImportView';

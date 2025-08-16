@@ -270,6 +270,69 @@ export interface CompiledViewProps extends ViewBaseProps {
 }
 
 /**
+ * Result of attempting to create a resource editor for a specific resource.
+ * Used by ResourceEditorFactory to provide type-specific editors.
+ *
+ * @public
+ */
+export type ResourceEditorResult =
+  | {
+      /** Indicates whether the factory was able to create an editor for the resource */
+      success: true;
+      /** The React component to render for editing this resource */
+      editor: React.ComponentType<ResourceEditorProps>;
+    }
+  | {
+      /** Indicates the factory could not create an editor for this resource */
+      success: false;
+      /** Optional message explaining why no editor could be created */
+      message?: string;
+    };
+
+/**
+ * Props that will be passed to custom resource editors created by ResourceEditorFactory.
+ * Custom editors should implement this interface to be compatible with ResolutionView.
+ *
+ * @public
+ */
+export interface ResourceEditorProps {
+  /** The original JSON value to edit */
+  value: any;
+  /** The resource ID for tracking edits */
+  resourceId: string;
+  /** Whether this resource has been edited */
+  isEdited?: boolean;
+  /** The current edited value if any */
+  editedValue?: any;
+  /** Callback when the user saves an edit */
+  onSave?: (resourceId: string, editedValue: any, originalValue: any) => void;
+  /** Callback when the user cancels an edit */
+  onCancel?: (resourceId: string) => void;
+  /** Whether editing is currently disabled */
+  disabled?: boolean;
+  /** Additional CSS classes */
+  className?: string;
+}
+
+/**
+ * Factory interface for creating type-specific resource editors.
+ * Allows ResolutionView to provide custom editing experiences for different resource types.
+ *
+ * @public
+ */
+export interface ResourceEditorFactory {
+  /**
+   * Attempts to create a resource editor for the given resource.
+   *
+   * @param resourceId - The ID of the resource to edit
+   * @param resourceType - The type/key of the resource
+   * @param value - The current value of the resource
+   * @returns ResourceEditorResult indicating success/failure and the editor component or error message
+   */
+  createEditor(resourceId: string, resourceType: string, value: any): ResourceEditorResult;
+}
+
+/**
  * Props for the ResolutionView component.
  * Provides resource resolution testing and debugging.
  *
@@ -288,6 +351,8 @@ export interface ResolutionViewProps extends ViewBaseProps {
   resolutionActions?: ResolutionActions;
   /** Available qualifiers for context building */
   availableQualifiers?: string[];
+  /** Optional factory for creating type-specific resource editors */
+  resourceEditorFactory?: ResourceEditorFactory;
 }
 
 /**

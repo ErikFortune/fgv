@@ -10,7 +10,14 @@ import {
   ListBulletIcon,
   FolderIcon
 } from '@heroicons/react/24/outline';
-import { ResolutionViewProps, CandidateInfo, ResolutionActions, ResolutionState } from '../../../types';
+import {
+  ResolutionViewProps,
+  CandidateInfo,
+  ResolutionActions,
+  ResolutionState,
+  ResourceEditorFactory,
+  ResourceEditorResult
+} from '../../../types';
 import { QualifierContextControl } from '../../common/QualifierContextControl';
 import { EditableJsonView } from './EditableJsonView';
 import { ResolutionEditControls } from './ResolutionEditControls';
@@ -24,6 +31,7 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
   resolutionState,
   resolutionActions,
   availableQualifiers = [],
+  resourceEditorFactory,
   onMessage,
   className = ''
 }) => {
@@ -340,6 +348,8 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
                   contextValues={resolutionState.contextValues}
                   resolutionActions={resolutionActions}
                   resolutionState={resolutionState}
+                  resourceEditorFactory={resourceEditorFactory}
+                  onMessage={onMessage}
                 />
               )}
             </div>
@@ -357,6 +367,8 @@ interface ResolutionResultsProps {
   contextValues: Record<string, string | undefined>;
   resolutionActions?: ResolutionActions;
   resolutionState?: ResolutionState;
+  resourceEditorFactory?: ResourceEditorFactory;
+  onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void;
 }
 
 const ResolutionResults: React.FC<ResolutionResultsProps> = ({
@@ -364,8 +376,78 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({
   viewMode,
   contextValues,
   resolutionActions,
-  resolutionState
+  resolutionState,
+  resourceEditorFactory,
+  onMessage
 }) => {
+  // Helper function to create the appropriate resource editor
+  const createResourceEditor = useCallback(
+    (
+      value: any,
+      resourceId: string,
+      isEdited: boolean,
+      editedValue: any,
+      onSave?: (resourceId: string, editedValue: any, originalValue: any) => void,
+      onCancel?: (resourceId: string) => void,
+      disabled?: boolean,
+      className?: string
+    ) => {
+      // Try to get resource type from the result
+      const resourceType =
+        result?.resource?.resourceType?.key || result?.resource?.resourceType?.name || 'unknown';
+
+      // Try the factory first if provided
+      if (resourceEditorFactory) {
+        try {
+          const factoryResult = resourceEditorFactory.createEditor(resourceId, resourceType, value);
+          if (factoryResult.success) {
+            const CustomEditor = factoryResult.editor;
+            return (
+              <CustomEditor
+                value={value}
+                resourceId={resourceId}
+                isEdited={isEdited}
+                editedValue={editedValue}
+                onSave={onSave}
+                onCancel={onCancel}
+                disabled={disabled}
+                className={className}
+              />
+            );
+          } else {
+            // Factory couldn't create editor, show message and fall back to JSON editor
+            if (factoryResult.message && onMessage) {
+              onMessage('info', `Using default JSON editor: ${factoryResult.message}`);
+            }
+          }
+        } catch (error) {
+          // Factory threw an error, log it and fall back to JSON editor
+          if (onMessage) {
+            onMessage(
+              'warning',
+              `Resource editor factory failed: ${error instanceof Error ? error.message : String(error)}`
+            );
+          }
+        }
+      }
+
+      // Fall back to the default JSON editor
+      return (
+        <EditableJsonView
+          value={value}
+          resourceId={resourceId}
+          isEdited={isEdited}
+          editedValue={editedValue}
+          onSave={onSave}
+          onCancel={onCancel}
+          disabled={disabled}
+          className={className}
+        />
+      );
+    },
+    [resourceEditorFactory, result, onMessage]
+  );
+
   if (!result.success) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -408,15 +490,15 @@ const ResolutionResults: React.FC<ResolutionResultsProps> = ({
     return (
       <div className="space-y-4">
         {result.composedValue ? (
-          <EditableJsonView
-            value={result.composedValue}
-            resourceId={result.resourceId}
-            isEdited={resolutionActions?.hasEdit?.(result.resourceId) || false}
-            editedValue={resolutionActions?.getEditedValue?.(result.resourceId)}
-            onSave={resolutionActions?.saveEdit}
-            onCancel={() => {}} // Could add cancel functionality if needed
-            disabled={resolutionState?.isApplyingEdits || false}
-          />
+          createResourceEditor(
+            result.composedValue,
+            result.resourceId,
+            resolutionActions?.hasEdit?.(result.resourceId) || false,
+            resolutionActions?.getEditedValue?.(result.resourceId),
+            resolutionActions?.saveEdit,
+            () => {}, // Could add cancel functionality if needed
+            resolutionState?.isApplyingEdits || false
+          )
         ) : (
           <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
             <p className="text-sm text-yellow-800">No composed value available for the current context.</p>
