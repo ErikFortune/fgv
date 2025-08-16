@@ -436,18 +436,14 @@ export const FilterView: React.FC<FilterViewProps> = ({
                 <h3 className="text-lg font-semibold text-gray-900">
                   {isFilteringActive ? 'Filtered Resources' : 'All Resources'}
                 </h3>
-                <div className="flex items-center space-x-2 text-sm text-gray-500 mt-1">
-                  <span>{displayResources.length} resources</span>
-                  {isFilteringActive && displayResources.some((r) => r.hasWarning) && (
-                    <>
-                      <span>•</span>
-                      <span className="text-amber-600 flex items-center">
-                        <ExclamationTriangleIcon className="h-4 w-4 mr-1" />
-                        {displayResources.filter((r) => r.hasWarning).length} warnings
-                      </span>
-                    </>
-                  )}
-                </div>
+                {isFilteringActive && displayResources.some((r) => r.hasWarning) && (
+                  <div className="flex items-center space-x-2 text-sm text-gray-500 mt-1">
+                    <span className="text-amber-600 flex items-center">
+                      <ExclamationTriangleIcon className="h-4 w-4 mr-1" />
+                      {displayResources.filter((r) => r.hasWarning).length} warnings
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
