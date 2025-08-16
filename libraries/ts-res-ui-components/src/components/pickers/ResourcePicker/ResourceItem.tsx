@@ -1,11 +1,11 @@
 import React from 'react';
 import { DocumentTextIcon, PlusCircleIcon } from '@heroicons/react/24/outline';
-import { ResourceItemProps } from './types';
+import { ResourceItemProps, ResourceSelection } from './types';
 
 /**
  * Individual resource item with annotation support
  */
-export const ResourceItem: React.FC<ResourceItemProps> = ({
+export const ResourceItem = <T = unknown,>({
   resourceId,
   displayName,
   isSelected,
@@ -13,8 +13,10 @@ export const ResourceItem: React.FC<ResourceItemProps> = ({
   annotation,
   onClick,
   searchTerm = '',
-  className = ''
-}) => {
+  className = '',
+  resourceData,
+  pendingType
+}: ResourceItemProps<T>) => {
   const name = displayName || resourceId;
 
   // Highlight search term in the name
@@ -66,7 +68,14 @@ export const ResourceItem: React.FC<ResourceItemProps> = ({
         ${annotation?.className || ''}
         ${className}
       `}
-      onClick={() => onClick(resourceId)}
+      onClick={() =>
+        onClick({
+          resourceId,
+          resourceData,
+          isPending,
+          pendingType
+        })
+      }
       title={resourceId}
     >
       {/* Icon */}

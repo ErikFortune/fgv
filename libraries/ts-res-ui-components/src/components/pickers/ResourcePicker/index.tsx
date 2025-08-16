@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { MagnifyingGlassIcon, ListBulletIcon, FolderIcon } from '@heroicons/react/24/outline';
-import { ResourcePickerProps } from './types';
+import { ResourcePickerProps, ResourceSelection } from './types';
 import { ResourcePickerList } from './ResourcePickerList';
 import { ResourcePickerTree } from './ResourcePickerTree';
 import { searchResources, filterTreeBranch } from './utils/treeNavigation';
@@ -8,7 +8,7 @@ import { searchResources, filterTreeBranch } from './utils/treeNavigation';
 /**
  * Comprehensive resource picker component with search, view modes, and annotation support
  */
-export const ResourcePicker: React.FC<ResourcePickerProps> = ({
+export const ResourcePicker = <T = unknown,>({
   resources,
   selectedResourceId,
   onResourceSelect,
@@ -25,7 +25,7 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({
   height = '600px',
   className = '',
   onMessage
-}) => {
+}: ResourcePickerProps<T>) => {
   const [viewMode, setViewMode] = useState<'list' | 'tree'>(defaultView);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -52,10 +52,10 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({
 
   // Handle resource selection
   const handleResourceSelect = useCallback(
-    (resourceId: string | null) => {
-      onResourceSelect(resourceId);
-      if (resourceId) {
-        onMessage?.('info', `Selected resource: ${resourceId}`);
+    (selection: ResourceSelection<T>) => {
+      onResourceSelect(selection);
+      if (selection.resourceId) {
+        onMessage?.('info', `Selected resource: ${selection.resourceId}`);
       }
     },
     [onResourceSelect, onMessage]
@@ -145,7 +145,7 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({
       {/* Resource List or Tree */}
       <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg bg-gray-50">
         {viewMode === 'tree' ? (
-          <ResourcePickerTree
+          <ResourcePickerTree<T>
             resources={resources}
             pendingResources={pendingResources}
             selectedResourceId={selectedResourceId}
@@ -157,7 +157,7 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({
             emptyMessage={emptyMessage}
           />
         ) : (
-          <ResourcePickerList
+          <ResourcePickerList<T>
             resourceIds={resources.summary.resourceIds || []}
             pendingResources={pendingResources}
             selectedResourceId={selectedResourceId}

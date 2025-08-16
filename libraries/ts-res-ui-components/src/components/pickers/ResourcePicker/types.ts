@@ -2,15 +2,25 @@ import React from 'react';
 import { ProcessedResources, ExtendedProcessedResources, ViewBaseProps } from '../../../types';
 
 /**
+ * Resource selection data returned by the onResourceSelect callback
+ */
+export interface ResourceSelection<T = unknown> {
+  resourceId: string | null;
+  resourceData?: T; // The actual resource data if available
+  isPending?: boolean; // Whether this is a pending resource
+  pendingType?: 'new' | 'modified' | 'deleted'; // Type of pending operation
+}
+
+/**
  * Props for the ResourcePicker component
  */
-export interface ResourcePickerProps extends ViewBaseProps {
+export interface ResourcePickerProps<T = unknown> extends ViewBaseProps {
   // Core data
   resources: ProcessedResources | ExtendedProcessedResources | null;
 
   // Selection
   selectedResourceId: string | null;
-  onResourceSelect: (resourceId: string | null) => void;
+  onResourceSelect: (selection: ResourceSelection<T>) => void;
 
   // View options
   defaultView?: 'list' | 'tree';
@@ -29,7 +39,7 @@ export interface ResourcePickerProps extends ViewBaseProps {
   resourceAnnotations?: ResourceAnnotations;
 
   // Pending resources (for editors)
-  pendingResources?: PendingResource[];
+  pendingResources?: PendingResource<T>[];
 
   // Optional customization
   emptyMessage?: string;
@@ -63,36 +73,39 @@ export interface ResourceAnnotation {
 /**
  * Represents a resource that hasn't been persisted yet
  */
-export interface PendingResource {
+export interface PendingResource<T = unknown> {
   id: string;
   type: 'new' | 'modified' | 'deleted';
   resourceType?: string;
   displayName?: string; // Display name for the resource
+  resourceData?: T; // The actual resource data
   // Note: parentPath removed - the id itself determines placement in the tree
 }
 
 /**
  * Props for individual resource items
  */
-export interface ResourceItemProps {
+export interface ResourceItemProps<T = unknown> {
   resourceId: string;
   displayName?: string;
   isSelected: boolean;
   isPending?: boolean;
   annotation?: ResourceAnnotation;
-  onClick: (resourceId: string) => void;
+  onClick: (selection: ResourceSelection<T>) => void;
   searchTerm?: string;
   className?: string;
+  resourceData?: T; // The actual resource data if available
+  pendingType?: 'new' | 'modified' | 'deleted'; // Type of pending operation
 }
 
 /**
  * Props for the list view component
  */
-export interface ResourcePickerListProps {
+export interface ResourcePickerListProps<T = unknown> {
   resourceIds: string[];
-  pendingResources?: PendingResource[];
+  pendingResources?: PendingResource<T>[];
   selectedResourceId: string | null;
-  onResourceSelect: (resourceId: string) => void;
+  onResourceSelect: (selection: ResourceSelection<T>) => void;
   resourceAnnotations?: ResourceAnnotations;
   searchTerm?: string;
   rootPath?: string;
@@ -104,11 +117,11 @@ export interface ResourcePickerListProps {
 /**
  * Props for the tree view component
  */
-export interface ResourcePickerTreeProps {
+export interface ResourcePickerTreeProps<T = unknown> {
   resources: ProcessedResources | ExtendedProcessedResources;
-  pendingResources?: PendingResource[];
+  pendingResources?: PendingResource<T>[];
   selectedResourceId: string | null;
-  onResourceSelect: (resourceId: string) => void;
+  onResourceSelect: (selection: ResourceSelection<T>) => void;
   resourceAnnotations?: ResourceAnnotations;
   searchTerm?: string;
   rootPath?: string;

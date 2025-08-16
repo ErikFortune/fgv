@@ -12,30 +12,30 @@ import { Runtime } from '@fgv/ts-res';
 /**
  * Virtual tree node that can represent both real and pending resources
  */
-interface VirtualTreeNode {
+interface VirtualTreeNode<T = unknown> {
   id: string;
   name: string;
   isLeaf: boolean;
   isPending: boolean;
-  pendingResource?: PendingResource;
+  pendingResource?: PendingResource<T>;
   realNode?: Runtime.ResourceTree.IReadOnlyResourceTreeNode<any>;
-  children: Map<string, VirtualTreeNode>;
+  children: Map<string, VirtualTreeNode<T>>;
 }
 
 /**
  * Creates a virtual tree by merging real resource tree with pending resources
  */
-function createVirtualTree(
+function createVirtualTree<T = unknown>(
   realTree: Runtime.ResourceTree.IReadOnlyResourceTreeRoot<any> | null,
-  pendingResources: PendingResource[] = []
-): VirtualTreeNode | null {
+  pendingResources: PendingResource<T>[] = []
+): VirtualTreeNode<T> | null {
   if (!realTree) return null;
 
   // Helper to convert real node to virtual node
   const convertRealNode = (
     realNode: Runtime.ResourceTree.IReadOnlyResourceTreeNode<any>
-  ): VirtualTreeNode => {
-    const virtualNode: VirtualTreeNode = {
+  ): VirtualTreeNode<T> => {
+    const virtualNode: VirtualTreeNode<T> = {
       id: realNode.id,
       name: realNode.name,
       isLeaf: realNode.isLeaf,
@@ -56,7 +56,7 @@ function createVirtualTree(
   };
 
   // Start with the real tree structure
-  const rootNode: VirtualTreeNode = {
+  const rootNode: VirtualTreeNode<T> = {
     id: '',
     name: 'root',
     isLeaf: false,
@@ -84,7 +84,7 @@ function createVirtualTree(
 
       if (!currentNode.children.has(partialPath)) {
         // Create virtual parent node
-        const parentNode: VirtualTreeNode = {
+        const parentNode: VirtualTreeNode<T> = {
           id: partialPath,
           name: pathParts[i],
           isLeaf: false,
@@ -99,7 +99,7 @@ function createVirtualTree(
     }
 
     // Create the pending resource node
-    const pendingNode: VirtualTreeNode = {
+    const pendingNode: VirtualTreeNode<T> = {
       id: pendingResource.id,
       name: displayName,
       isLeaf: true,
@@ -118,7 +118,7 @@ function createVirtualTree(
  * Tree view for the ResourcePicker component
  * Enhanced version of ResourceTreeView with branch isolation and annotation support
  */
-export const ResourcePickerTree: React.FC<ResourcePickerTreeProps> = ({
+export const ResourcePickerTree = <T = unknown,>({
   resources,
   pendingResources,
   selectedResourceId,
@@ -129,7 +129,7 @@ export const ResourcePickerTree: React.FC<ResourcePickerTreeProps> = ({
   hideRootNode,
   className = '',
   emptyMessage = 'No resources available'
-}) => {
+}: ResourcePickerTreeProps<T>) => {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   // Build the virtual tree structure from resources and pending resources
@@ -158,7 +158,7 @@ export const ResourcePickerTree: React.FC<ResourcePickerTreeProps> = ({
     }
 
     // Find the target node in the virtual tree
-    const findVirtualNodeById = (node: VirtualTreeNode, targetId: string): VirtualTreeNode | null => {
+    const findVirtualNodeById = (node: VirtualTreeNode<T>, targetId: string): VirtualTreeNode<T> | null => {
       if (node.id === targetId) {
         return node;
       }
@@ -174,7 +174,7 @@ export const ResourcePickerTree: React.FC<ResourcePickerTreeProps> = ({
     };
 
     // Search through all top-level children to find the target
-    let targetNode: VirtualTreeNode | null = null;
+    let targetNode: VirtualTreeNode<T> | null = null;
     for (const child of virtualTree.children.values()) {
       targetNode = findVirtualNodeById(child, rootPath);
       if (targetNode) break;
@@ -195,7 +195,7 @@ export const ResourcePickerTree: React.FC<ResourcePickerTreeProps> = ({
 
   // Create a map of pending resource IDs for quick lookup
   const pendingResourceMap = useMemo(() => {
-    const map = new Map<string, PendingResource>();
+    const map = new Map<string, PendingResource<T>>();
     pendingResources?.forEach((pr) => {
       map.set(pr.id, pr);
     });
@@ -214,7 +214,7 @@ export const ResourcePickerTree: React.FC<ResourcePickerTreeProps> = ({
     });
   }, []);
 
-  const renderTreeNode = (node: VirtualTreeNode, level: number = 0): React.ReactElement | null => {
+  const renderTreeNode = (node: VirtualTreeNode<T>, level: number = 0): React.ReactElement | null => {
     const isExpanded = expandedNodes.has(node.id);
     const isSelected = selectedResourceId === node.id;
     const nodeIdLower = node.id.toLowerCase();
@@ -277,7 +277,12 @@ export const ResourcePickerTree: React.FC<ResourcePickerTreeProps> = ({
           style={{ paddingLeft: `${level * 20 + 8}px` }}
           onClick={() => {
             if (node.isLeaf) {
-              onResourceSelect(node.id);
+              onResourceSelect({
+                resourceId: node.id,
+                resourceData: node.pendingResource?.resourceData,
+                isPending: node.isPending,
+                pendingType: node.pendingResource?.type
+              });
             } else {
               toggleNode(node.id);
             }
@@ -343,7 +348,7 @@ export const ResourcePickerTree: React.FC<ResourcePickerTreeProps> = ({
         {!node.isLeaf && node.children && isExpanded && (
           <div>
             {Array.from(node.children.values())
-              .sort((a: VirtualTreeNode, b: VirtualTreeNode) => {
+              .sort((a: VirtualTreeNode<T>, b: VirtualTreeNode<T>) => {
                 // Sort folders first, then by name
                 if (a.isLeaf !== b.isLeaf) {
                   return a.isLeaf ? 1 : -1;

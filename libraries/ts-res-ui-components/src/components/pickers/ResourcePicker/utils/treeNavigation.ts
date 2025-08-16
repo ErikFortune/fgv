@@ -186,9 +186,9 @@ export function searchResources(
 /**
  * Merges pending resources with existing resources
  */
-export function mergeWithPendingResources(
+export function mergeWithPendingResources<T = unknown>(
   existingIds: string[],
-  pendingResources?: Array<{ id: string; type: 'new' | 'modified' | 'deleted' }>
+  pendingResources?: Array<{ id: string; type: 'new' | 'modified' | 'deleted'; resourceData?: T }>
 ): string[] {
   if (!pendingResources || pendingResources.length === 0) {
     return existingIds;

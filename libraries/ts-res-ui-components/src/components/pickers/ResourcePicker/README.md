@@ -15,16 +15,25 @@ A comprehensive resource selection component that provides search, list/tree vie
 ## Quick Start
 
 ```typescript
-import { ResourcePicker } from '@fgv/ts-res-ui-components';
+import { ResourcePicker, ResourceSelection } from '@fgv/ts-res-ui-components';
 
 function MyComponent() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const handleResourceSelect = (selection: ResourceSelection) => {
+    setSelectedId(selection.resourceId);
+    
+    // Access resource data directly
+    if (selection.resourceData) {
+      console.log('Resource data:', selection.resourceData);
+    }
+  };
 
   return (
     <ResourcePicker
       resources={processedResources}
       selectedResourceId={selectedId}
-      onResourceSelect={setSelectedId}
+      onResourceSelect={handleResourceSelect}
     />
   );
 }
@@ -38,7 +47,7 @@ function MyComponent() {
 |------|------|----------|-------------|
 | `resources` | `ProcessedResources \| ExtendedProcessedResources \| null` | ✅ | The resource data to display |
 | `selectedResourceId` | `string \| null` | ✅ | Currently selected resource ID |
-| `onResourceSelect` | `(resourceId: string \| null) => void` | ✅ | Callback when selection changes |
+| `onResourceSelect` | `(selection: ResourceSelection<T>) => void` | ✅ | Enhanced callback with resource data when selection changes |
 
 ### View Configuration
 
@@ -78,6 +87,49 @@ function MyComponent() {
 |------|------|-------------|
 | `onMessage` | `(type: 'info' \| 'warning' \| 'error' \| 'success', message: string) => void` | Optional message callback |
 
+## Enhanced Resource Selection
+
+The `onResourceSelect` callback now returns a `ResourceSelection<T>` object that provides comprehensive information about the selected resource:
+
+```typescript
+interface ResourceSelection<T = unknown> {
+  resourceId: string | null;     // The resource ID (same as before)
+  resourceData?: T;              // The actual resource data if available
+  isPending?: boolean;           // Whether this is a pending resource
+  pendingType?: 'new' | 'modified' | 'deleted'; // Type of pending operation
+}
+```
+
+### Benefits of Enhanced Callback
+
+1. **Immediate Access to Resource Data**: No need to separately fetch resource data by ID
+2. **Pending Resource Information**: Easily distinguish between existing and pending resources
+3. **Type Safety**: Generic `T` parameter allows type-safe resource data handling
+4. **Reduced Bookkeeping**: Consumer applications need less state management logic
+
+### Example Usage
+
+```typescript
+const handleResourceSelect = (selection: ResourceSelection<MyResourceType>) => {
+  if (selection.resourceId) {
+    // Resource selected
+    if (selection.isPending) {
+      console.log(`Pending ${selection.pendingType} resource:`, selection.resourceData);
+    } else {
+      console.log('Existing resource selected:', selection.resourceId);
+    }
+    
+    // Use the resource data directly
+    if (selection.resourceData) {
+      processResourceData(selection.resourceData);
+    }
+  } else {
+    // No resource selected
+    console.log('Resource deselected');
+  }
+};
+```
+
 ## Type Definitions
 
 ### ResourceAnnotations
@@ -105,13 +157,19 @@ interface ResourceAnnotation {
 ### PendingResource
 
 ```typescript
-interface PendingResource {
+interface PendingResource<T = unknown> {
   id: string;
   type: 'new' | 'modified' | 'deleted';
   resourceType?: string;
   displayName?: string; // Custom display name
+  resourceData?: T; // The actual resource data
 }
 ```
+
+**Enhanced Features:**
+- **Generic Type Support**: Use `PendingResource<MyType>` for type-safe resource data
+- **Resource Data**: Include actual resource content for immediate access
+- **Backward Compatible**: All existing code continues to work unchanged
 
 ## Usage Examples
 

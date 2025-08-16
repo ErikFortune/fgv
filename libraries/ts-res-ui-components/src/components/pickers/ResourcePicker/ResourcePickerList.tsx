@@ -7,7 +7,7 @@ import { mergeWithPendingResources, filterTreeBranch } from './utils/treeNavigat
  * List view for the ResourcePicker component
  * Enhanced version of ResourceListView with annotation and pending resource support
  */
-export const ResourcePickerList: React.FC<ResourcePickerListProps> = ({
+export const ResourcePickerList = <T = unknown,>({
   resourceIds,
   pendingResources,
   selectedResourceId,
@@ -18,7 +18,7 @@ export const ResourcePickerList: React.FC<ResourcePickerListProps> = ({
   hideRootNode,
   className = '',
   emptyMessage = 'No resources available'
-}) => {
+}: ResourcePickerListProps<T>) => {
   // Merge existing and pending resources
   const allResourceIds = useMemo(() => {
     return mergeWithPendingResources(resourceIds, pendingResources);
@@ -60,13 +60,18 @@ export const ResourcePickerList: React.FC<ResourcePickerListProps> = ({
     };
   }, [rootPath, hideRootNode]);
 
-  // Create a map of pending resource IDs for quick lookup
+  // Create a map of pending resources for quick lookup
   const pendingResourceMap = useMemo(() => {
-    const map = new Map<string, boolean>();
+    const map = new Map<
+      string,
+      { isPending: boolean; type?: 'new' | 'modified' | 'deleted'; resourceData?: T }
+    >();
     pendingResources?.forEach((pr) => {
-      if (pr.type === 'new') {
-        map.set(pr.id, true);
-      }
+      map.set(pr.id, {
+        isPending: true,
+        type: pr.type,
+        resourceData: pr.resourceData
+      });
     });
     return map;
   }, [pendingResources]);
@@ -82,12 +87,13 @@ export const ResourcePickerList: React.FC<ResourcePickerListProps> = ({
   return (
     <div className={`${className} overflow-y-auto`}>
       {filteredResourceIds.map((resourceId) => {
-        const isPending = pendingResourceMap.has(resourceId);
+        const pendingInfo = pendingResourceMap.get(resourceId);
+        const isPending = Boolean(pendingInfo?.isPending);
         const pendingResource = pendingResources?.find((pr) => pr.id === resourceId);
         const truncatedDisplayName = getDisplayName(resourceId, pendingResource?.displayName);
 
         return (
-          <ResourceItem
+          <ResourceItem<T>
             key={resourceId}
             resourceId={resourceId}
             displayName={truncatedDisplayName}
@@ -96,6 +102,8 @@ export const ResourcePickerList: React.FC<ResourcePickerListProps> = ({
             annotation={resourceAnnotations?.[resourceId]}
             onClick={onResourceSelect}
             searchTerm={searchTerm}
+            resourceData={pendingInfo?.resourceData}
+            pendingType={pendingInfo?.type}
           />
         );
       })}
