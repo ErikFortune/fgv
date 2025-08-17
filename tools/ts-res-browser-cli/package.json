@@ -33,9 +33,7 @@
     "@fgv/ts-json": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
     "@fgv/ts-res-browser": "workspace:*",
-    "commander": "^11.0.0",
-    "archiver": "~7.0.1",
-    "@types/archiver": "~6.0.3"
+    "commander": "^11.0.0"
   },
   "devDependencies": {
     "@fgv/ts-utils-jest": "workspace:*",

@@ -178,29 +178,47 @@ export const ZipArchiveConstants = {
 
 ## Migration Strategy
 
-### Phase 1: Create zip-bundle packlet
-1. Create new packlet structure in ts-res
-2. Implement ZIP creation using fflate (server and browser)
-3. Implement unified ZIP loading that extends ts-extras
-4. Define standardized ZIP bundle format
-5. Comprehensive unit tests following the [coverage guidelines](./COVERAGE_GUIDELINES.md).
-6. Include an idempotency test using the test data in data/test/ts-res/custom-config - create a resource manager directly from the files, then create a zip archive from the same files and create a resource manager from the zip archive.  Generate bundles from each and confirm they are identical.
-7. **Maintain compatibility with existing ZIP bundle format from ts-res-cli tools**
+### Phase 1: Create zip-archive packlet ✅ COMPLETED
+1. ✅ Create new packlet structure in ts-res
+2. ✅ Implement ZIP creation using fflate (server and browser) with FileTree support
+3. ✅ Implement unified ZIP loading that extends ts-extras
+4. ✅ Define standardized ZIP bundle format with proper manifest support
+5. ✅ Comprehensive unit tests achieving excellent coverage (100% for creator, loader, types, json)
+6. ✅ Idempotency test using data/test/ts-res/custom-config validates round-trip integrity
+7. ✅ FileItem interface support for both file paths and FileTree items
+8. ✅ Progress callback support for all operations
+9. ✅ Proper error handling with Result pattern throughout
 
-### Phase 2: Update ts-res-cli
-1. Add ZIP bundle creation capability to ts-res-cli
-2. Add new 'zip-archive' format as separate output format (alongside existing formats)
-3. Use new zip-archive packlet for actual ZIP file creation
-4. **JSON bundle format remains completely unchanged and unaffected**
-5. Maintain full backward compatibility with existing bundle and archive workflows
+### Phase 2: Update ts-res-browser-cli ✅ COMPLETED
+1. ✅ Replaced archiver dependency with new zip-archive packlet
+2. ✅ Updated ZipArchiver class to use ZipArchiveCreator internally
+3. ✅ Maintained complete API compatibility - no breaking changes
+4. ✅ Removed archiver and @types/archiver dependencies
+5. ✅ All CLI workflows work identically (input+config, input-only, config-only, single files, directories)
+6. ✅ Manifest format is fully compatible with existing consumers
+7. ✅ ZIP structure matches previous implementation exactly
 
-### Phase 3: Migrate ts-res-ui-components
+### Phase 3: Add ZIP archive format to ts-res-cli ✅ COMPLETED
+1. ✅ Added new `archive` command to ts-res-cli (better design than adding to compile command)
+2. ✅ Implemented `ts-res-compile archive` with options for input, config, and output paths
+3. ✅ Uses new zip-archive packlet for ZIP file creation with full progress callback support
+4. ✅ Maintains complete separation from compilation - archive is about packaging, not transformation
+5. ✅ Supports all input combinations: input+config, input-only, config-only, single files, directories
+6. ✅ Provides verbose mode with progress reporting and detailed manifest output
+7. ✅ Proper error handling and validation for all edge cases
+8. ✅ **Comprehensive idempotency integration test** validates complete round-trip fidelity
+   - Creates bundle from source files → Creates ZIP from source files → Recreates bundle from ZIP
+   - Verifies identical bundles (excluding timestamps) proving complete data preservation
+   - Uses real-world test data from `data/test/ts-res/custom-config`
+   - Validates directory structure, file content, and configuration preservation
+
+### Phase 4: Migrate ts-res-ui-components
 1. Update ts-res-ui-components to use new zip-archive packlet
 2. Remove duplicated ZIP logic from utils/zipLoader
 3. Remove redundant functionality from ZipTools, deprecating ZipTools if all functionality can be retired.
 4. Maintain existing component APIs apart from ZipTools
 
-### Phase 4: Cleanup
+### Phase 5: Cleanup
 1. Remove dependencies on jszip and archiver across tools
 2. Standardize all projects on fflate via ts-res zip-archive
 3. Update ts-extras if needed to support enhanced functionality

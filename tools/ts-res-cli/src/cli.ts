@@ -86,6 +86,17 @@ interface IConfigCommandOptions {
   list?: boolean;
 }
 
+/**
+ * Command-line options for the archive command
+ */
+interface IArchiveCommandOptions {
+  input?: string;
+  config?: string;
+  output: string;
+  verbose?: boolean;
+  quiet?: boolean;
+}
+
 import { ResourceCompiler } from './compiler';
 
 /**
@@ -220,6 +231,18 @@ export class TsResCliApp {
       .option('-l, --list', 'List all available predefined configurations')
       .action(async (options) => {
         await this._handleConfigCommand(options);
+      });
+
+    this._program
+      .command('archive')
+      .description('Create ZIP archive of resources and configuration')
+      .option('-i, --input <path>', 'Input file or directory path')
+      .option('--config <path>', 'Configuration file path')
+      .requiredOption('-o, --output <path>', 'Output ZIP file path')
+      .option('-v, --verbose', 'Verbose output', false)
+      .option('-q, --quiet', 'Quiet output', false)
+      .action(async (options) => {
+        await this._handleArchiveCommand(options);
       });
   }
 
@@ -553,6 +576,71 @@ export class TsResCliApp {
       console.log(JSON.stringify(defaultConfig, null, 2));
     } catch (error) {
       console.error(`Error: ${error}`);
+      process.exit(1);
+    }
+  }
+
+  /**
+   * Handles the archive command
+   */
+  private async _handleArchiveCommand(options: IArchiveCommandOptions): Promise<void> {
+    try {
+      // Import ZipArchive dynamically to avoid loading if not needed
+      const { ZipArchive } = await import('@fgv/ts-res');
+
+      if (!options.input && !options.config) {
+        console.error('Error: At least one of --input or --config must be specified');
+        process.exit(1);
+      }
+
+      if (!options.quiet) {
+        console.log('Creating ZIP archive...');
+        if (options.input) console.log(`Input: ${options.input}`);
+        if (options.config) console.log(`Config: ${options.config}`);
+        console.log(`Output: ${options.output}`);
+      }
+
+      // Create ZIP archive using the new zip-archive packlet
+      const creator = new ZipArchive.ZipArchiveCreator();
+      const createResult = await creator.createFromBuffer(
+        {
+          inputPath: options.input,
+          configPath: options.config
+        },
+        options.verbose
+          ? (phase, progress, message) => {
+              console.log(`[${phase}] ${progress}% - ${message}`);
+            }
+          : undefined
+      );
+
+      if (createResult.isFailure()) {
+        console.error(`Error: Failed to create ZIP archive: ${createResult.message}`);
+        process.exit(1);
+      }
+
+      const { zipBuffer, manifest, size } = createResult.value;
+
+      // Write the ZIP buffer to the specified output file
+      const fs = await import('fs').then((m) => m.promises);
+      const path = await import('path');
+      const outputPath = path.resolve(options.output);
+      const outputDir = path.dirname(outputPath);
+
+      // Ensure output directory exists
+      await fs.mkdir(outputDir, { recursive: true });
+
+      // Write ZIP file
+      await fs.writeFile(outputPath, zipBuffer);
+
+      if (!options.quiet) {
+        console.log(`ZIP archive created successfully: ${outputPath}`);
+        console.log(`Archive size: ${(size / 1024).toFixed(2)} KB`);
+        console.log(`Manifest:`);
+        console.log(JSON.stringify(manifest, null, 2));
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
       process.exit(1);
     }
   }
