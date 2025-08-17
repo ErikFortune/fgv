@@ -102,6 +102,88 @@ describe('Condition', () => {
         expect(c.toString()).toBe('homeTerritory-[CA]@800(0.5)');
       });
     });
+
+    test('auto-calculates scoreAsDefault when qualifier has defaultValue and condition value matches', () => {
+      // Create a qualifier with a default value that will match our condition value
+      const qualifierTypesWithDefault = TsRes.QualifierTypes.QualifierTypeCollector.create({
+        qualifierTypes: [
+          TsRes.QualifierTypes.TerritoryQualifierType.create().orThrow(),
+          TsRes.QualifierTypes.LanguageQualifierType.create().orThrow()
+        ]
+      }).orThrow();
+
+      const qualifiersWithDefault = TsRes.Qualifiers.QualifierCollector.create({
+        qualifierTypes: qualifierTypesWithDefault,
+        qualifiers: [
+          {
+            name: 'language',
+            typeName: 'language',
+            defaultPriority: 600,
+            defaultValue: 'en-US' // This will be the default value
+          }
+        ]
+      }).orThrow();
+
+      // Create a condition where the value matches the qualifier's default value
+      const decl = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'language',
+            value: 'en-US' // This matches the defaultValue
+            // No scoreAsDefault provided - should be auto-calculated
+          },
+          { qualifiers: qualifiersWithDefault }
+        )
+        .orThrow();
+
+      expect(TsRes.Conditions.Condition.create(decl)).toSucceedAndSatisfy((c) => {
+        expect(c.qualifier.name).toBe('language');
+        expect(c.value).toBe('en-US');
+        expect(c.scoreAsDefault).toBe(TsRes.PerfectMatch); // Should be auto-calculated to PerfectMatch
+        expect(c.key).toBe('language-[en-US]@600(1)');
+      });
+    });
+
+    test('does not auto-calculate scoreAsDefault when condition value does not match qualifier defaultValue', () => {
+      // Create a qualifier with a default value that will NOT match our condition value
+      const qualifierTypesWithDefault = TsRes.QualifierTypes.QualifierTypeCollector.create({
+        qualifierTypes: [
+          TsRes.QualifierTypes.TerritoryQualifierType.create().orThrow(),
+          TsRes.QualifierTypes.LanguageQualifierType.create().orThrow()
+        ]
+      }).orThrow();
+
+      const qualifiersWithDefault = TsRes.Qualifiers.QualifierCollector.create({
+        qualifierTypes: qualifierTypesWithDefault,
+        qualifiers: [
+          {
+            name: 'language',
+            typeName: 'language',
+            defaultPriority: 600,
+            defaultValue: 'en-US' // This is the default value
+          }
+        ]
+      }).orThrow();
+
+      // Create a condition where the value does NOT match the qualifier's default value
+      const decl = TsRes.Conditions.Convert.validatedConditionDecl
+        .convert(
+          {
+            qualifierName: 'language',
+            value: 'fr-CA' // This does NOT match the defaultValue 'en-US'
+            // No scoreAsDefault provided
+          },
+          { qualifiers: qualifiersWithDefault }
+        )
+        .orThrow();
+
+      expect(TsRes.Conditions.Condition.create(decl)).toSucceedAndSatisfy((c) => {
+        expect(c.qualifier.name).toBe('language');
+        expect(c.value).toBe('fr-CA');
+        expect(c.scoreAsDefault).toBeUndefined(); // Should remain undefined since values don't match
+        expect(c.key).toBe('language-[fr-CA]@600');
+      });
+    });
   });
 
   describe('toToken method', () => {
