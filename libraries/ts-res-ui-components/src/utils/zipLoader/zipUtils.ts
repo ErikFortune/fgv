@@ -1,6 +1,3 @@
-import { Result, succeed, fail } from '@fgv/ts-utils';
-import { Config } from '@fgv/ts-res';
-
 /**
  * Generate a timestamp-based filename for ZIP archives
  */
@@ -8,54 +5,6 @@ import { Config } from '@fgv/ts-res';
 export function generateZipFilename(customName?: string): string {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, -5);
   return customName ? `${customName}-${timestamp}.zip` : `ts-res-bundle-${timestamp}.zip`;
-}
-
-/**
- * @deprecated Use zip-archive packlet directly
- */
-export function createManifest(): any {
-  console.warn('createManifest is deprecated - use ts-res zip-archive packlet directly');
-  return null;
-}
-
-/**
- * Parse JSON content safely
- */
-export function parseManifest(manifestData: string): Result<any> {
-  try {
-    const parsed = JSON.parse(manifestData);
-    return succeed(parsed);
-  } catch (error) {
-    return fail(`Failed to parse manifest: ${error instanceof Error ? error.message : String(error)}`);
-  }
-}
-
-/**
- * Parse and validate configuration JSON
- */
-export function parseConfiguration(configData: string): Result<Config.Model.ISystemConfiguration> {
-  try {
-    const parsed = JSON.parse(configData);
-    return Config.Convert.systemConfiguration.convert(parsed);
-  } catch (error) {
-    return fail(`Failed to parse configuration: ${error instanceof Error ? error.message : String(error)}`);
-  }
-}
-
-/**
- * @deprecated Files are returned directly from zip-archive packlet
- */
-export function zipTreeToFiles(): any[] {
-  console.warn('zipTreeToFiles is deprecated - files are returned directly from zip-archive packlet');
-  return [];
-}
-
-/**
- * @deprecated Directory is returned directly from zip-archive packlet
- */
-export function zipTreeToDirectory(): any {
-  console.warn('zipTreeToDirectory is deprecated - directory is returned directly from zip-archive packlet');
-  return null;
 }
 
 /**

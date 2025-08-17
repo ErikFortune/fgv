@@ -3,7 +3,3 @@ export { generateZipFilename, formatFileSize, isZipFile, normalizePath, getBaseN
 
 // ZIP processing helpers for integrating with ts-res-ui-components
 export { processZipResources, processZipLoadResult } from './zipProcessingHelpers';
-
-// Legacy compatibility exports (deprecated)
-export { createBrowserZipLoader } from './browserZipLoader';
-export { createNodeZipBuilder } from './nodeZipBuilder';

@@ -190,171 +190,51 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
             }}
             onBundleImport={actions.importBundle}
             onZipImport={async (zipFile, config) => {
-              // Handle ZIP file using BrowserZipFileTreeAccessors to create FileTree
-              const { BrowserZipFileTreeAccessors } = await import('./utils/zip/browserZipFileTreeAccessors');
-              const { FileTree } = await import('@fgv/ts-utils');
+              // Use ts-res zip-archive packlet for unified ZIP handling
+              const { ZipArchive } = await import('@fgv/ts-res');
 
-              const zipAccessorsResult = await BrowserZipFileTreeAccessors.fromFile(zipFile);
-              if (zipAccessorsResult.isFailure()) {
-                actions.addMessage('error', `Failed to read ZIP: ${zipAccessorsResult.message}`);
+              const loader = new ZipArchive.ZipArchiveLoader();
+              const loadResult = await loader.loadFromFile(zipFile, {
+                strictManifestValidation: false // Be lenient with manifests
+              });
+
+              if (loadResult.isFailure()) {
+                actions.addMessage('error', `Failed to load ZIP: ${loadResult.message}`);
                 return;
               }
 
-              const fileTreeResult = FileTree.FileTree.create(zipAccessorsResult.value);
-              if (fileTreeResult.isFailure()) {
-                actions.addMessage('error', `Failed to create file tree: ${fileTreeResult.message}`);
-                return;
-              }
+              const zipData = loadResult.value;
 
-              const fileTree = fileTreeResult.value;
-
-              // First, check for manifest to understand ZIP structure
-              let manifestData: any = null;
-              let configPath = '/config.json';
-              let inputPath = '/input';
-
-              const manifestResult = fileTree.getFile('/manifest.json');
-              if (manifestResult.isSuccess()) {
-                const manifestFile = manifestResult.value;
-                const manifestContent = manifestFile.getRawContents();
-                if (manifestContent.isSuccess()) {
-                  try {
-                    manifestData = JSON.parse(manifestContent.value);
-                    actions.addMessage(
-                      'info',
-                      `Manifest found: created ${new Date(manifestData.timestamp).toLocaleString()}`
-                    );
-
-                    // Get actual paths from manifest
-                    if (manifestData.config?.archivePath) {
-                      // Ensure path starts with /
-                      configPath = manifestData.config.archivePath.startsWith('/')
-                        ? manifestData.config.archivePath
-                        : `/${manifestData.config.archivePath}`;
-                      actions.addMessage('info', `Config path from manifest: ${configPath}`);
-                    }
-                    if (manifestData.input?.archivePath) {
-                      // Ensure path starts with /
-                      inputPath = manifestData.input.archivePath.startsWith('/')
-                        ? manifestData.input.archivePath
-                        : `/${manifestData.input.archivePath}`;
-                      actions.addMessage('info', `Input path from manifest: ${inputPath}`);
-                    }
-                  } catch (e) {
-                    actions.addMessage('warning', 'Could not parse manifest');
-                  }
-                }
+              // Check for manifest (now provided by zip-archive packlet)
+              if (zipData.manifest) {
+                const manifestData = zipData.manifest;
+                actions.addMessage(
+                  'info',
+                  `Manifest found: created ${new Date(manifestData.timestamp).toLocaleString()}`
+                );
               }
 
               // Load configuration FIRST, before processing resources
-              let loadedConfig = null;
-              const configResult = fileTree.getFile(configPath);
-              if (configResult.isSuccess()) {
-                const configFile = configResult.value;
-                const configContent = configFile.getRawContents();
-                if (configContent.isSuccess()) {
-                  try {
-                    loadedConfig = JSON.parse(configContent.value);
-                    // Apply configuration immediately before processing resources
-                    await actions.applyConfiguration(loadedConfig);
-                    actions.addMessage('success', `Configuration loaded and applied from ${configPath}`);
+              if (zipData.config) {
+                // Apply configuration immediately before processing resources
+                await actions.applyConfiguration(zipData.config);
+                actions.addMessage('success', 'Configuration loaded and applied from ZIP');
 
-                    // Add a small delay to ensure configuration is applied
-                    await new Promise((resolve) => setTimeout(resolve, 100));
-                  } catch (e) {
-                    actions.addMessage('error', `Failed to parse configuration from ${configPath}: ${e}`);
-                    return;
-                  }
-                } else {
-                  actions.addMessage(
-                    'error',
-                    `Could not read configuration content: ${configContent.message}`
-                  );
-                  return;
-                }
-              } else {
-                actions.addMessage(
-                  'warning',
-                  `No configuration found at ${configPath} - using default configuration`
-                );
-              }
-
-              // Now process the file tree with the configuration applied
-              const { FileTreeConverter } = await import('./utils/fileTreeConverter');
-
-              // Check if input path exists, otherwise try common patterns
-              const inputResult = fileTree.getItem(inputPath);
-              if (inputResult.isFailure()) {
-                actions.addMessage('info', `Input path ${inputPath} not found, checking alternatives...`);
-
-                // Try alternative paths
-                const alternatives = ['/resources', '/data', '/'];
-                for (const alt of alternatives) {
-                  const altResult = fileTree.getItem(alt);
-                  if (altResult.isSuccess() && altResult.value.type === 'directory') {
-                    inputPath = alt;
-                    actions.addMessage('info', `Using alternative path: ${inputPath}`);
-                    break;
-                  }
-                }
-              }
-
-              const importedDirResult = FileTreeConverter.convertDirectory(fileTree, inputPath);
-              if (importedDirResult.isSuccess()) {
-                const dir = importedDirResult.value;
-
-                // Debug: Show what we're actually importing
-                let totalFiles = 0;
-                const countFiles = (d: any): number => {
-                  let count = d.files?.length || 0;
-                  if (d.subdirectories) {
-                    for (const subdir of d.subdirectories) {
-                      count += countFiles(subdir);
-                    }
-                  }
-                  return count;
-                };
-                totalFiles = countFiles(dir);
-
-                actions.addMessage(
-                  'info',
-                  `Found ${dir.files.length} files and ${
-                    dir.subdirectories?.length || 0
-                  } subdirectories in ${inputPath}`
-                );
-                actions.addMessage('info', `Total files to import: ${totalFiles}`);
-
-                // List first few files for debugging
-                if (dir.files.length > 0) {
-                  const fileNames = dir.files
-                    .slice(0, 3)
-                    .map((f) => f.name)
-                    .join(', ');
-                  actions.addMessage(
-                    'info',
-                    `Sample files: ${fileNames}${dir.files.length > 3 ? '...' : ''}`
-                  );
-                }
-
-                // List subdirectories
-                if (dir.subdirectories && dir.subdirectories.length > 0) {
-                  const dirNames = dir.subdirectories.map((d) => d.name).join(', ');
-                  actions.addMessage('info', `Subdirectories: ${dirNames}`);
-                }
-
-                // Import with the loaded configuration
-                if (loadedConfig) {
-                  await actions.importDirectoryWithConfig(dir, loadedConfig);
-                } else {
-                  await actions.importDirectory(dir);
-                }
-
-                // Add a small delay to ensure state updates
+                // Add a small delay to ensure configuration is applied
                 await new Promise((resolve) => setTimeout(resolve, 100));
-
-                actions.addMessage('success', `ZIP contents imported from ${inputPath}`);
               } else {
-                actions.addMessage('error', `Failed to process ZIP contents: ${importedDirResult.message}`);
+                actions.addMessage('warning', 'No configuration found in ZIP - using default configuration');
+              }
+
+              // Process the ZIP data directly (no need for FileTreeConverter anymore)
+              if (zipData.directory) {
+                actions.importDirectory(zipData.directory);
+                actions.addMessage('success', 'ZIP directory structure imported successfully');
+              } else if (zipData.files.length > 0) {
+                actions.importFiles(zipData.files);
+                actions.addMessage('success', `${zipData.files.length} files imported from ZIP`);
+              } else {
+                actions.addMessage('error', 'No files or directory structure found in ZIP');
               }
             }}
           />
