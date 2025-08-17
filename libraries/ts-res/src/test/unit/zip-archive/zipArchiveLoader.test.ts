@@ -220,10 +220,11 @@ describe('ZipArchiveLoader', () => {
     test('should succeed when zip file has no manifest.json but with undefined manifest', async () => {
       // Create a valid ZIP file but without manifest.json
       // We'll create a simple ZIP with just a text file
-      const JSZip = require('jszip');
-      const zip = new JSZip();
-      zip.file('test.txt', 'Hello, world!');
-      const zipBuffer = await zip.generateAsync({ type: 'uint8array' });
+      const { zipSync } = await import('fflate');
+      const files = {
+        'test.txt': new TextEncoder().encode('Hello, world!')
+      };
+      const zipBuffer = zipSync(files);
 
       const progressCalls: Array<{ phase: string; progress: number; message: string }> = [];
 
@@ -257,8 +258,7 @@ describe('ZipArchiveLoader', () => {
 
     test('should fail when manifest specifies config but config file is missing', async () => {
       // Create a ZIP file with a manifest that specifies a config, but the config file is missing
-      const JSZip = require('jszip');
-      const zip = new JSZip();
+      const { zipSync } = await import('fflate');
 
       // Add a manifest that specifies a config file at a specific path
       const manifest = {
@@ -269,10 +269,12 @@ describe('ZipArchiveLoader', () => {
           archivePath: 'config/missing-config.json'
         }
       };
-      zip.file('manifest.json', JSON.stringify(manifest));
-      zip.file('test.txt', 'Hello, world!');
 
-      const zipBuffer = await zip.generateAsync({ type: 'uint8array' });
+      const files = {
+        'manifest.json': new TextEncoder().encode(JSON.stringify(manifest)),
+        'test.txt': new TextEncoder().encode('Hello, world!')
+      };
+      const zipBuffer = zipSync(files);
 
       const progressCalls: Array<{ phase: string; progress: number; message: string }> = [];
 
@@ -303,14 +305,14 @@ describe('ZipArchiveLoader', () => {
 
     test('should fail when manifest.json is present but malformed', async () => {
       // Create a ZIP file with malformed manifest.json
-      const JSZip = require('jszip');
-      const zip = new JSZip();
+      const { zipSync } = await import('fflate');
 
       // Add malformed JSON
-      zip.file('manifest.json', '{ "timestamp": "2025-01-15T10:30:00.000Z", "invalid":');
-      zip.file('test.txt', 'Hello, world!');
-
-      const zipBuffer = await zip.generateAsync({ type: 'uint8array' });
+      const files = {
+        'manifest.json': new TextEncoder().encode('{ "timestamp": "2025-01-15T10:30:00.000Z", "invalid":'),
+        'test.txt': new TextEncoder().encode('Hello, world!')
+      };
+      const zipBuffer = zipSync(files);
 
       const progressCalls: Array<{ phase: string; progress: number; message: string }> = [];
 
@@ -333,8 +335,7 @@ describe('ZipArchiveLoader', () => {
 
     test('should fail when config file is present but malformed', async () => {
       // Create a ZIP file with a valid manifest that specifies a config, but the config file is malformed
-      const JSZip = require('jszip');
-      const zip = new JSZip();
+      const { zipSync } = await import('fflate');
 
       // Add a valid manifest that specifies a config file
       const manifest = {
@@ -345,13 +346,14 @@ describe('ZipArchiveLoader', () => {
           archivePath: 'config/malformed-config.json'
         }
       };
-      zip.file('manifest.json', JSON.stringify(manifest));
 
       // Add malformed config file
-      zip.file('config/malformed-config.json', '{ "qualifierTypes": [{ "invalid json":');
-      zip.file('test.txt', 'Hello, world!');
-
-      const zipBuffer = await zip.generateAsync({ type: 'uint8array' });
+      const files = {
+        'manifest.json': new TextEncoder().encode(JSON.stringify(manifest)),
+        'config/malformed-config.json': new TextEncoder().encode('{ "qualifierTypes": [{ "invalid json":'),
+        'test.txt': new TextEncoder().encode('Hello, world!')
+      };
+      const zipBuffer = zipSync(files);
 
       const progressCalls: Array<{ phase: string; progress: number; message: string }> = [];
 
