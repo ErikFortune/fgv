@@ -929,7 +929,330 @@ function ComponentPreview({
 }
 ```
 
-This completes the comprehensive documentation set for the ResourcePicker component. Let me mark this task as completed and move on to the unit tests:
+## ResourcePickerOptionsControl Examples
+
+The ResourcePickerOptionsControl provides a debugging and configuration interface for ResourcePicker options. Here are practical examples of using it in different scenarios.
+
+### Development Mode Toggle
+
+Enable the options control only during development:
+
+```typescript
+import React, { useState } from 'react';
+import { PickerTools } from '@fgv/ts-res-ui-components';
+
+function DevelopmentResourceViewer({ resources }: { resources: ProcessedResources }) {
+  const [pickerOptions, setPickerOptions] = useState({
+    defaultView: 'list' as const,
+    enableSearch: true,
+    height: '400px'
+  });
+  
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  
+  // Determine presentation mode based on environment
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const showDebugControls = isDevelopment && window.location.search.includes('debug=true');
+  
+  return (
+    <div className="space-y-4">
+      <h2>Resource Viewer</h2>
+      
+      {/* Options control - only visible in development with debug param */}
+      <PickerTools.ResourcePickerOptionsControl
+        options={pickerOptions}
+        onOptionsChange={setPickerOptions}
+        presentation={showDebugControls ? 'collapsible' : 'hidden'}
+        title="Picker Debug Options"
+        showAdvanced={true}
+        quickBranchPaths={['strings', 'app.ui', 'images', 'config']}
+      />
+      
+      {/* Main picker */}
+      <PickerTools.ResourcePicker
+        resources={resources}
+        selectedResourceId={selectedId}
+        onResourceSelect={(selection) => setSelectedId(selection.resourceId)}
+        options={pickerOptions}
+      />
+    </div>
+  );
+}
+```
+
+### Popup Configuration Modal
+
+Use popup mode for quick access to options without taking up screen space:
+
+```typescript
+import React, { useState } from 'react';
+import { PickerTools } from '@fgv/ts-res-ui-components';
+
+function CompactResourceBrowser({ resources }: { resources: ProcessedResources }) {
+  const [pickerOptions, setPickerOptions] = useState({
+    defaultView: 'tree' as const,
+    enableSearch: true,
+    showViewToggle: true,
+    height: '300px'
+  });
+  
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  
+  return (
+    <div className="w-full max-w-md">
+      {/* Header with popup options control */}
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-medium">Select Resource</h3>
+        <PickerTools.ResourcePickerOptionsControl
+          options={pickerOptions}
+          onOptionsChange={setPickerOptions}
+          presentation="popup"
+          title="Picker Settings"
+          showAdvanced={false}
+        />
+      </div>
+      
+      {/* Compact picker */}
+      <PickerTools.ResourcePicker
+        resources={resources}
+        selectedResourceId={selectedId}
+        onResourceSelect={(selection) => setSelectedId(selection.resourceId)}
+        options={pickerOptions}
+      />
+    </div>
+  );
+}
+```
+
+### Advanced Configuration Dashboard
+
+Full inline configuration for development dashboards:
+
+```typescript
+import React, { useState } from 'react';
+import { PickerTools } from '@fgv/ts-res-ui-components';
+
+function ResourceConfigurationDashboard({ resources }: { resources: ProcessedResources }) {
+  const [pickerOptions, setPickerOptions] = useState({
+    defaultView: 'tree' as const,
+    enableSearch: true,
+    showViewToggle: true,
+    searchScope: 'all' as const,
+    rootPath: undefined,
+    hideRootNode: false,
+    height: '500px',
+    emptyMessage: 'No resources available'
+  });
+  
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Configuration Panel */}
+      <div className="lg:col-span-1">
+        <PickerTools.ResourcePickerOptionsControl
+          options={pickerOptions}
+          onOptionsChange={setPickerOptions}
+          presentation="inline"
+          title="Picker Configuration"
+          showAdvanced={true}
+          quickBranchPaths={['strings', 'app', 'images', 'config', 'ui', 'api']}
+        />
+      </div>
+      
+      {/* Picker Panel */}
+      <div className="lg:col-span-2">
+        <div className="border rounded-lg">
+          <div className="p-3 border-b bg-gray-50">
+            <h3 className="font-medium">Resource Browser</h3>
+            <p className="text-sm text-gray-600">
+              Selected: {selectedId || 'None'}
+            </p>
+          </div>
+          <div className="p-3">
+            <PickerTools.ResourcePicker
+              resources={resources}
+              selectedResourceId={selectedId}
+              onResourceSelect={(selection) => setSelectedId(selection.resourceId)}
+              options={pickerOptions}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+### A/B Testing Configuration
+
+Compare different picker configurations side by side:
+
+```typescript
+import React, { useState } from 'react';
+import { PickerTools } from '@fgv/ts-res-ui-components';
+
+function PickerComparisonTool({ resources }: { resources: ProcessedResources }) {
+  const [configA, setConfigA] = useState({
+    defaultView: 'list' as const,
+    enableSearch: true,
+    height: '300px'
+  });
+  
+  const [configB, setConfigB] = useState({
+    defaultView: 'tree' as const,
+    enableSearch: false,
+    height: '300px'
+  });
+  
+  const [selectedA, setSelectedA] = useState<string | null>(null);
+  const [selectedB, setSelectedB] = useState<string | null>(null);
+  
+  return (
+    <div className="space-y-6">
+      <h2 className="text-xl font-bold">Picker Configuration Comparison</h2>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Configuration A */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium">Configuration A</h3>
+            <PickerTools.ResourcePickerOptionsControl
+              options={configA}
+              onOptionsChange={setConfigA}
+              presentation="popover"
+              title="Config A"
+              showAdvanced={false}
+            />
+          </div>
+          <div className="border rounded-lg p-3">
+            <PickerTools.ResourcePicker
+              resources={resources}
+              selectedResourceId={selectedA}
+              onResourceSelect={(selection) => setSelectedA(selection.resourceId)}
+              options={configA}
+            />
+          </div>
+        </div>
+        
+        {/* Configuration B */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium">Configuration B</h3>
+            <PickerTools.ResourcePickerOptionsControl
+              options={configB}
+              onOptionsChange={setConfigB}
+              presentation="popover"
+              title="Config B"
+              showAdvanced={false}
+            />
+          </div>
+          <div className="border rounded-lg p-3">
+            <PickerTools.ResourcePicker
+              resources={resources}
+              selectedResourceId={selectedB}
+              onResourceSelect={(selection) => setSelectedB(selection.resourceId)}
+              options={configB}
+            />
+          </div>
+        </div>
+      </div>
+      
+      {/* Comparison Results */}
+      <div className="bg-gray-50 p-4 rounded-lg">
+        <h4 className="font-medium mb-2">Selection Results</h4>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <strong>Config A:</strong> {selectedA || 'None selected'}
+          </div>
+          <div>
+            <strong>Config B:</strong> {selectedB || 'None selected'}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+### View Component Integration
+
+Examples showing how the options control integrates with the main view components:
+
+```typescript
+import React, { useState } from 'react';
+import { SourceView, FilterView, CompiledView } from '@fgv/ts-res-ui-components';
+
+function MultiViewDashboard({ 
+  resources, 
+  filterState, 
+  filterActions 
+}: {
+  resources: ProcessedResources;
+  filterState: FilterState;
+  filterActions: FilterActions;
+}) {
+  const [currentView, setCurrentView] = useState<'source' | 'filter' | 'compiled'>('source');
+  
+  // Enable options for debugging
+  const enableDebugOptions = window.location.hostname === 'localhost';
+  
+  return (
+    <div className="space-y-4">
+      {/* View Switcher */}
+      <div className="flex space-x-2">
+        <button
+          onClick={() => setCurrentView('source')}
+          className={`px-3 py-1 rounded ${currentView === 'source' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+        >
+          Source
+        </button>
+        <button
+          onClick={() => setCurrentView('filter')}
+          className={`px-3 py-1 rounded ${currentView === 'filter' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+        >
+          Filter
+        </button>
+        <button
+          onClick={() => setCurrentView('compiled')}
+          className={`px-3 py-1 rounded ${currentView === 'compiled' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+        >
+          Compiled
+        </button>
+      </div>
+      
+      {/* Views with conditional debug options */}
+      {currentView === 'source' && (
+        <SourceView
+          resources={resources}
+          pickerOptionsPresentation={enableDebugOptions ? 'collapsible' : 'hidden'}
+          onMessage={(type, message) => console.log(`${type}: ${message}`)}
+        />
+      )}
+      
+      {currentView === 'filter' && (
+        <FilterView
+          resources={resources}
+          filterState={filterState}
+          filterActions={filterActions}
+          pickerOptionsPresentation={enableDebugOptions ? 'collapsible' : 'hidden'}
+          onMessage={(type, message) => console.log(`${type}: ${message}`)}
+        />
+      )}
+      
+      {currentView === 'compiled' && (
+        <CompiledView
+          resources={resources}
+          pickerOptionsPresentation={enableDebugOptions ? 'collapsible' : 'hidden'}
+          onMessage={(type, message) => console.log(`${type}: ${message}`)}
+        />
+      )}
+    </div>
+  );
+}
+```
+
+These examples demonstrate how the ResourcePickerOptionsControl can be integrated into different application scenarios, from simple development toggles to complex configuration dashboards. The key is choosing the right presentation mode for your use case and user interface constraints.
 
 <function_calls>
 <invoke name="TodoWrite">

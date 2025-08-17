@@ -13,7 +13,7 @@ Key features: - \*\*Multiple view modes\*\*: List view for simple browsing, tree
 **Signature:**
 
 ```typescript
-ResourcePicker: <T = unknown>({ resources, selectedResourceId, onResourceSelect, defaultView, showViewToggle, rootPath, hideRootNode, enableSearch, searchPlaceholder, searchScope, resourceAnnotations, pendingResources, emptyMessage, height, className, onMessage }: ResourcePickerProps<T>) => React.JSX.Element
+ResourcePicker: <T = unknown>({ resources, selectedResourceId, onResourceSelect, resourceAnnotations, pendingResources, options, className, onMessage }: ResourcePickerProps<T>) => React.JSX.Element
 ```
 
 ## Parameters
@@ -36,7 +36,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-{ resources, selectedResourceId, onResourceSelect, defaultView, showViewToggle, rootPath, hideRootNode, enableSearch, searchPlaceholder, searchScope, resourceAnnotations, pendingResources, emptyMessage, height, className, onMessage }
+{ resources, selectedResourceId, onResourceSelect, resourceAnnotations, pendingResources, options, className, onMessage }
 
 
 </td><td>

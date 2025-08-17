@@ -513,6 +513,108 @@ If migration causes issues:
 - Update documentation
 - Clean up unused code
 
+## ResourcePickerOptionsControl Integration
+
+As part of the migration to ResourcePicker, you may want to integrate the ResourcePickerOptionsControl for debugging and development purposes.
+
+### Adding Debug Options to Existing Views
+
+If you're using the main view components (SourceView, FilterView, etc.), you can enable picker options debugging by adding the `pickerOptionsPresentation` prop:
+
+```typescript
+// Before migration - no debug options
+<SourceView 
+  resources={processedResources}
+  onMessage={handleMessage}
+/>
+
+// After migration - with optional debug controls
+<SourceView 
+  resources={processedResources}
+  onMessage={handleMessage}
+  // Enable for development/debugging
+  pickerOptionsPresentation={process.env.NODE_ENV === 'development' ? 'collapsible' : 'hidden'}
+/>
+```
+
+### Custom Component Integration
+
+For custom components using ResourcePicker directly, you can add the options control:
+
+```typescript
+// Before - static configuration
+function CustomResourceBrowser({ resources }) {
+  return (
+    <ResourcePicker
+      resources={resources}
+      selectedResourceId={selectedId}
+      onResourceSelect={setSelectedId}
+      options={{
+        defaultView: 'list',
+        enableSearch: true,
+        height: '400px'
+      }}
+    />
+  );
+}
+
+// After - with configurable options
+function CustomResourceBrowser({ resources, enableDebugOptions = false }) {
+  const [pickerOptions, setPickerOptions] = useState({
+    defaultView: 'list' as const,
+    enableSearch: true,
+    height: '400px'
+  });
+
+  return (
+    <div className="space-y-4">
+      {/* Add debug options control */}
+      <PickerTools.ResourcePickerOptionsControl
+        options={pickerOptions}
+        onOptionsChange={setPickerOptions}
+        presentation={enableDebugOptions ? 'collapsible' : 'hidden'}
+        title="Picker Configuration"
+        showAdvanced={true}
+      />
+      
+      {/* Updated picker with dynamic options */}
+      <ResourcePicker
+        resources={resources}
+        selectedResourceId={selectedId}
+        onResourceSelect={setSelectedId}
+        options={pickerOptions}
+      />
+    </div>
+  );
+}
+```
+
+### Development Workflow Integration
+
+Consider adding these patterns to support development workflows:
+
+```typescript
+// Environment-based visibility
+const showPickerOptions = process.env.NODE_ENV === 'development';
+
+// URL parameter-based visibility
+const showPickerOptions = new URLSearchParams(window.location.search).has('debug');
+
+// Local storage preference
+const showPickerOptions = localStorage.getItem('showPickerDebug') === 'true';
+
+// User permission-based visibility
+const showPickerOptions = user.hasRole('developer') || user.hasRole('admin');
+```
+
+### Migration Benefits of ResourcePickerOptionsControl
+
+- **Faster debugging**: Quickly adjust picker behavior without code changes
+- **Design iteration**: Test different configurations during UI development
+- **User testing**: Allow stakeholders to experiment with different views
+- **Documentation**: Demonstrate picker capabilities in documentation
+- **Training**: Help team members understand available options
+
 ## Support and Resources
 
 ### Documentation

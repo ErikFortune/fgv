@@ -463,6 +463,99 @@ React.useEffect(() => {
 }, [resources, pendingResources]);
 ```
 
+## ResourcePickerOptionsControl
+
+A debugging and design tool for interactively configuring ResourcePicker behavior. This component is hidden by default for production use but can be enabled during development to easily adjust picker settings.
+
+### Basic Usage
+
+```typescript
+import { PickerTools } from '@fgv/ts-res-ui-components';
+
+function MyComponent() {
+  const [pickerOptions, setPickerOptions] = useState({
+    defaultView: 'list',
+    enableSearch: true,
+    height: '400px'
+  });
+
+  return (
+    <div>
+      {/* Enable the options control for debugging */}
+      <PickerTools.ResourcePickerOptionsControl
+        options={pickerOptions}
+        onOptionsChange={setPickerOptions}
+        presentation="collapsible"
+        title="Picker Settings"
+        showAdvanced={true}
+      />
+      
+      {/* ResourcePicker uses the options */}
+      <PickerTools.ResourcePicker
+        resources={resources}
+        selectedResourceId={selectedId}
+        onResourceSelect={setSelectedId}
+        options={pickerOptions}
+      />
+    </div>
+  );
+}
+```
+
+### Presentation Modes
+
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| `'hidden'` | Not displayed (default) | Production builds |
+| `'inline'` | Always visible with expanded controls | Development with lots of space |
+| `'collapsible'` | Expandable/collapsible section | Development with limited space |
+| `'popup'` | Full modal dialog overlay | Quick access without space constraints |
+| `'popover'` | Small dropdown overlay | Minimal space usage |
+
+### Integration with Views
+
+All view components support the `pickerOptionsPresentation` prop:
+
+```typescript
+// Enable in SourceView for debugging
+<SourceView
+  resources={processedResources}
+  pickerOptionsPresentation="collapsible"
+  onMessage={(type, message) => console.log(`${type}: ${message}`)}
+/>
+
+// Quick popup access in FilterView
+<FilterView
+  resources={processedResources}
+  filterState={filterState}
+  filterActions={filterActions}
+  pickerOptionsPresentation="popup"
+/>
+```
+
+### Features
+
+The options control provides interactive configuration for:
+
+- **View Settings**: Toggle between list/tree views, show/hide view switcher
+- **Search Configuration**: Enable/disable search, set placeholder text, choose search scope
+- **Branch Isolation**: Set root path, hide root node, enable branch isolation
+- **Display Options**: Configure height, empty message, visual settings
+- **Quick Paths**: One-click branch isolation for common paths (strings, app, images, etc.)
+
+### Development Workflow
+
+```typescript
+// During development
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+<SourceView
+  resources={resources}
+  pickerOptionsPresentation={isDevelopment ? 'collapsible' : 'hidden'}
+  onMessage={handleMessage}
+/>
+```
+
 ## Related Components
 
 - **ResourceItem** - Individual resource display component

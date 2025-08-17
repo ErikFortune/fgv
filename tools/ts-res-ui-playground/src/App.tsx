@@ -12,6 +12,7 @@ import {
   OrchestratorActions
 } from '@fgv/ts-res-ui-components';
 import NavigationWarningModal from './components/common/NavigationWarningModal';
+import ResourcePickerTool from './components/tools/ResourcePickerTool';
 import { useNavigationWarning } from './hooks/useNavigationWarning';
 import { useUrlParams } from './hooks/useUrlParams';
 import { parseContextFilter } from './utils/urlParams';
@@ -28,6 +29,21 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
   const [selectedTool, setSelectedTool] = useState<Tool>('import');
   const navigationWarning = useNavigationWarning();
   const { urlParams, hasUrlParams } = useUrlParams();
+
+  // Picker options presentation state for each view
+  const [pickerPresentation, setPickerPresentation] = useState<{
+    source: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
+    filter: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
+    compiled: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
+    resolution: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
+    picker: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
+  }>({
+    source: 'popover',
+    filter: 'popover',
+    compiled: 'popover',
+    resolution: 'popover',
+    picker: 'popover'
+  });
 
   // Ref to track if we've already initialized from URL parameters
   const initializedFromUrlRef = React.useRef(false);
@@ -245,8 +261,6 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
           <SourceView
             onMessage={actions.addMessage}
             resources={state.resources}
-            selectedResourceId={state.selectedResourceId}
-            onResourceSelect={actions.selectResource}
             onExport={(data, type) => {
               // TODO: Implement export functionality
               actions.addMessage('info', `Export ${type} requested`);
@@ -332,6 +346,9 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
             hasUnsavedChanges={navigationWarning.state.hasUnsavedChanges}
           />
         );
+
+      case 'picker':
+        return <ResourcePickerTool resources={state.resources} onMessage={actions.addMessage} />;
 
       default:
         return (
