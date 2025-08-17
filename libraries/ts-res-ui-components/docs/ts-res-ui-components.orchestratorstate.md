@@ -4,11 +4,73 @@
 
 ## OrchestratorState interface
 
+Complete state object for the resource orchestrator system.
+
+This interface represents the central state management for ts-res resources, encompassing all aspects of resource processing, configuration, filtering, and resolution. It serves as the primary state container for applications using the resource orchestrator.
 
 **Signature:**
 
 ```typescript
 export interface OrchestratorState 
+```
+
+## Example 1
+
+
+```typescript
+// Basic usage with the orchestrator hook
+import { ResourceTools } from '@fgv/ts-res-ui-components';
+
+function MyResourceApp() {
+  const { state, actions } = ResourceTools.useResourceData();
+
+  // Check if resources are loaded
+  if (!state.resources) {
+    return <div>No resources loaded</div>;
+  }
+
+  // Display current state information
+  return (
+    <div>
+      <p>Resources: {state.resources.summary?.resourceCount || 0}</p>
+      <p>Configuration: {state.configuration ? 'Loaded' : 'Default'}</p>
+      <p>Processing: {state.isProcessing ? 'Yes' : 'No'}</p>
+      <p>Selected: {state.selectedResourceId || 'None'}</p>
+    </div>
+  );
+}
+```
+
+## Example 2
+
+
+```typescript
+// Working with filter state
+const { state } = ResourceTools.useResourceData();
+
+// Check if filters are applied
+const hasActiveFilters = Object.keys(state.filterState.appliedValues).length > 0;
+const filteredResourceCount = state.filterResult?.resources?.summary?.resourceCount || 0;
+
+console.log(`Filters active: ${hasActiveFilters}`);
+console.log(`Filtered resources: ${filteredResourceCount}`);
+```
+
+## Example 3
+
+
+```typescript
+// Working with resolution state
+const { state } = ResourceTools.useResourceData();
+
+// Check resolution context
+const hasResolutionContext = Object.keys(state.resolutionState.context).length > 0;
+const currentMode = state.resolutionState.viewMode;
+const hasEdits = Object.keys(state.resolutionState.editedResources).length > 0;
+
+console.log(`Resolution mode: ${currentMode}`);
+console.log(`Has context: ${hasResolutionContext}`);
+console.log(`Has edits: ${hasEdits}`);
 ```
 
 ## Properties

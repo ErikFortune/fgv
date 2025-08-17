@@ -4,11 +4,120 @@
 
 ## OrchestratorActions interface
 
+Complete actions interface for the resource orchestrator system.
+
+This interface provides all the methods needed to manage and manipulate the orchestrator state, including resource import/export, configuration management, filtering, resolution, and UI state. All methods are designed to work seamlessly with the Result pattern for consistent error handling.
 
 **Signature:**
 
 ```typescript
 export interface OrchestratorActions 
+```
+
+## Example 1
+
+
+```typescript
+// Basic resource import workflow
+import { ResourceTools, FileTools } from '@fgv/ts-res-ui-components';
+
+function ResourceImporter() {
+  const { state, actions } = ResourceTools.useResourceData();
+
+  const handleDirectoryImport = async (files: File[]) => {
+    const directory = await FileTools.convertFilesToDirectory(files);
+    await actions.importDirectory(directory);
+
+    if (state.error) {
+      console.error('Import failed:', state.error);
+    } else {
+      console.log('Import successful:', state.resources?.summary);
+    }
+  };
+}
+```
+
+## Example 2
+
+
+```typescript
+// Configuration and filtering workflow
+const { state, actions } = ResourceTools.useResourceData();
+
+// Apply a new configuration
+actions.applyConfiguration(customConfig);
+
+// Set up filters
+actions.updateFilterState({
+  values: { language: 'en-US', platform: 'web' }
+});
+
+// Apply filters and get results
+const filterResult = await actions.applyFilter();
+if (filterResult) {
+  console.log('Filtered resources:', filterResult.resources.summary.resourceCount);
+}
+```
+
+## Example 3
+
+
+```typescript
+// Resolution context and resource editing
+const { state, actions } = ResourceTools.useResourceData();
+
+// Set resolution context
+actions.updateResolutionContext('language', 'en-US');
+actions.updateResolutionContext('platform', 'mobile');
+actions.applyResolutionContext();
+
+// Select a resource for resolution
+actions.selectResourceForResolution('user.welcome');
+
+// Edit a resolved resource value
+const newValue = { text: 'Updated welcome message' };
+actions.saveResourceEdit('user.welcome', newValue);
+
+// Apply all edits
+await actions.applyResourceEdits();
+```
+
+## Example 4
+
+
+```typescript
+// Resource resolution and error handling
+const { actions } = ResourceTools.useResourceData();
+
+const resolveUserMessage = async (messageId: string, userContext: Record<string, string>) => {
+  const result = await actions.resolveResource(messageId, userContext);
+
+  if (result.isSuccess()) {
+    console.log('Resolved message:', result.value);
+    return result.value;
+  } else {
+    console.error('Resolution failed:', result.message);
+    actions.addMessage('error', `Failed to resolve ${messageId}: ${result.message}`);
+    return null;
+  }
+};
+```
+
+## Example 5
+
+
+```typescript
+// Bundle import and advanced workflows
+const { actions } = ResourceTools.useResourceData();
+
+// Import from a pre-built bundle
+const bundleData = await loadBundleFromUrl('/api/resources/bundle');
+await actions.importBundle(bundleData);
+
+// Import directory with specific configuration
+const directory = await loadResourceDirectory();
+const customConfig = await loadConfiguration();
+await actions.importDirectoryWithConfig(directory, customConfig);
 ```
 
 ## Properties

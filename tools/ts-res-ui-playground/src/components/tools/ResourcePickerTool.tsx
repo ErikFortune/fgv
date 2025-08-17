@@ -1,10 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import {
-  ResourcePicker,
-  ResourceAnnotations,
-  PendingResource,
-  ResourceSelection
-} from '@fgv/ts-res-ui-components';
+import { PickerTools } from '@fgv/ts-res-ui-components';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 interface ResourcePickerToolProps {
@@ -23,7 +18,7 @@ const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({ resources, onMe
   const [usePendingResources, setUsePendingResources] = useState(false);
 
   // Interactive pending resources management
-  const [customPendingResources, setCustomPendingResources] = useState<PendingResource[]>([]);
+  const [customPendingResources, setCustomPendingResources] = useState<PickerTools.PendingResource[]>([]);
   const [showAddResourceModal, setShowAddResourceModal] = useState(false);
   const [newResourceForm, setNewResourceForm] = useState({
     id: '',
@@ -31,7 +26,7 @@ const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({ resources, onMe
   });
 
   const handleResourceSelect = useCallback(
-    (selection: ResourceSelection) => {
+    (selection: PickerTools.ResourceSelection) => {
       setSelectedResourceId(selection.resourceId);
 
       // Enhanced callback with resource data information
@@ -145,7 +140,7 @@ const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({ resources, onMe
   }, [onMessage]);
 
   // Sample annotations for demo
-  const resourceAnnotations: ResourceAnnotations = useAnnotations
+  const resourceAnnotations: PickerTools.ResourceAnnotations = useAnnotations
     ? {
         'dashboard-config': {
           badge: { text: 'multi', variant: 'info' },
@@ -478,7 +473,7 @@ const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({ resources, onMe
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-700 mb-4">ResourcePicker Component</h2>
               <div className="border border-gray-200 rounded-lg">
-                <ResourcePicker
+                <PickerTools.ResourcePicker
                   resources={resourcesForPicker}
                   selectedResourceId={selectedResourceId}
                   onResourceSelect={handleResourceSelect}

@@ -598,7 +598,68 @@ export interface FilterResult {
 }
 
 // Orchestrator types
-/** @public */
+/**
+ * Complete state object for the resource orchestrator system.
+ *
+ * This interface represents the central state management for ts-res resources, encompassing
+ * all aspects of resource processing, configuration, filtering, and resolution. It serves as
+ * the primary state container for applications using the resource orchestrator.
+ *
+ * @example
+ * ```typescript
+ * // Basic usage with the orchestrator hook
+ * import { ResourceTools } from '@fgv/ts-res-ui-components';
+ *
+ * function MyResourceApp() {
+ *   const { state, actions } = ResourceTools.useResourceData();
+ *
+ *   // Check if resources are loaded
+ *   if (!state.resources) {
+ *     return <div>No resources loaded</div>;
+ *   }
+ *
+ *   // Display current state information
+ *   return (
+ *     <div>
+ *       <p>Resources: {state.resources.summary?.resourceCount || 0}</p>
+ *       <p>Configuration: {state.configuration ? 'Loaded' : 'Default'}</p>
+ *       <p>Processing: {state.isProcessing ? 'Yes' : 'No'}</p>
+ *       <p>Selected: {state.selectedResourceId || 'None'}</p>
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Working with filter state
+ * const { state } = ResourceTools.useResourceData();
+ *
+ * // Check if filters are applied
+ * const hasActiveFilters = Object.keys(state.filterState.appliedValues).length > 0;
+ * const filteredResourceCount = state.filterResult?.resources?.summary?.resourceCount || 0;
+ *
+ * console.log(`Filters active: ${hasActiveFilters}`);
+ * console.log(`Filtered resources: ${filteredResourceCount}`);
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Working with resolution state
+ * const { state } = ResourceTools.useResourceData();
+ *
+ * // Check resolution context
+ * const hasResolutionContext = Object.keys(state.resolutionState.context).length > 0;
+ * const currentMode = state.resolutionState.viewMode;
+ * const hasEdits = Object.keys(state.resolutionState.editedResources).length > 0;
+ *
+ * console.log(`Resolution mode: ${currentMode}`);
+ * console.log(`Has context: ${hasResolutionContext}`);
+ * console.log(`Has edits: ${hasEdits}`);
+ * ```
+ *
+ * @public
+ */
 export interface OrchestratorState {
   resources: ExtendedProcessedResources | null;
   configuration: Config.Model.ISystemConfiguration | null;
@@ -611,7 +672,111 @@ export interface OrchestratorState {
   messages: Message[];
 }
 
-/** @public */
+/**
+ * Complete actions interface for the resource orchestrator system.
+ *
+ * This interface provides all the methods needed to manage and manipulate the orchestrator state,
+ * including resource import/export, configuration management, filtering, resolution, and UI state.
+ * All methods are designed to work seamlessly with the Result pattern for consistent error handling.
+ *
+ * @example
+ * ```typescript
+ * // Basic resource import workflow
+ * import { ResourceTools, FileTools } from '@fgv/ts-res-ui-components';
+ *
+ * function ResourceImporter() {
+ *   const { state, actions } = ResourceTools.useResourceData();
+ *
+ *   const handleDirectoryImport = async (files: File[]) => {
+ *     const directory = await FileTools.convertFilesToDirectory(files);
+ *     await actions.importDirectory(directory);
+ *
+ *     if (state.error) {
+ *       console.error('Import failed:', state.error);
+ *     } else {
+ *       console.log('Import successful:', state.resources?.summary);
+ *     }
+ *   };
+ * }
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Configuration and filtering workflow
+ * const { state, actions } = ResourceTools.useResourceData();
+ *
+ * // Apply a new configuration
+ * actions.applyConfiguration(customConfig);
+ *
+ * // Set up filters
+ * actions.updateFilterState({
+ *   values: { language: 'en-US', platform: 'web' }
+ * });
+ *
+ * // Apply filters and get results
+ * const filterResult = await actions.applyFilter();
+ * if (filterResult) {
+ *   console.log('Filtered resources:', filterResult.resources.summary.resourceCount);
+ * }
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Resolution context and resource editing
+ * const { state, actions } = ResourceTools.useResourceData();
+ *
+ * // Set resolution context
+ * actions.updateResolutionContext('language', 'en-US');
+ * actions.updateResolutionContext('platform', 'mobile');
+ * actions.applyResolutionContext();
+ *
+ * // Select a resource for resolution
+ * actions.selectResourceForResolution('user.welcome');
+ *
+ * // Edit a resolved resource value
+ * const newValue = { text: 'Updated welcome message' };
+ * actions.saveResourceEdit('user.welcome', newValue);
+ *
+ * // Apply all edits
+ * await actions.applyResourceEdits();
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Resource resolution and error handling
+ * const { actions } = ResourceTools.useResourceData();
+ *
+ * const resolveUserMessage = async (messageId: string, userContext: Record<string, string>) => {
+ *   const result = await actions.resolveResource(messageId, userContext);
+ *
+ *   if (result.isSuccess()) {
+ *     console.log('Resolved message:', result.value);
+ *     return result.value;
+ *   } else {
+ *     console.error('Resolution failed:', result.message);
+ *     actions.addMessage('error', `Failed to resolve ${messageId}: ${result.message}`);
+ *     return null;
+ *   }
+ * };
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Bundle import and advanced workflows
+ * const { actions } = ResourceTools.useResourceData();
+ *
+ * // Import from a pre-built bundle
+ * const bundleData = await loadBundleFromUrl('/api/resources/bundle');
+ * await actions.importBundle(bundleData);
+ *
+ * // Import directory with specific configuration
+ * const directory = await loadResourceDirectory();
+ * const customConfig = await loadConfiguration();
+ * await actions.importDirectoryWithConfig(directory, customConfig);
+ * ```
+ *
+ * @public
+ */
 export interface OrchestratorActions {
   // Resource management
   importDirectory: (directory: ImportedDirectory) => Promise<void>;

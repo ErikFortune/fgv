@@ -121,6 +121,16 @@ Result of evaluating a single condition during resource resolution. Shows how a 
 </td></tr>
 <tr><td>
 
+[EditableJsonViewProps](./ts-res-ui-components.resolutiontools.editablejsonviewprops.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
 [EditedResourceInfo](./ts-res-ui-components.resolutiontools.editedresourceinfo.md)
 
 
@@ -200,6 +210,39 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[EditableJsonView](./ts-res-ui-components.resolutiontools.editablejsonview.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[QualifierContextControl](./ts-res-ui-components.resolutiontools.qualifiercontextcontrol.md)
+
+
+</td><td>
+
+A control component for managing individual qualifier context values.
+
+QualifierContextControl provides an interface for setting and modifying qualifier values used in resource resolution context. It can optionally suggest values based on available resources and supports both manual input and selection from predefined options.
+
+
+</td></tr>
+<tr><td>
+
+[ResolutionEditControls](./ts-res-ui-components.resolutiontools.resolutioneditcontrols.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
 
 [ResolutionView](./ts-res-ui-components.resolutiontools.resolutionview.md)
 

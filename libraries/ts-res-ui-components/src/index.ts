@@ -26,33 +26,24 @@ export { MessagesWindow } from './components/views/MessagesWindow';
 // Export orchestrator
 export { ResourceOrchestrator } from './components/orchestrator/ResourceOrchestrator';
 
-// Export forms
-export { QualifierTypeEditForm } from './components/forms/QualifierTypeEditForm';
-export { QualifierEditForm } from './components/forms/QualifierEditForm';
-export { ResourceTypeEditForm } from './components/forms/ResourceTypeEditForm';
-export { HierarchyEditor } from './components/forms/HierarchyEditor';
-
-// Export common components
+// Export common components (likely to be used by consumers)
 export { ResourceTreeView } from './components/common/ResourceTreeView';
 export { ResourceListView } from './components/common/ResourceListView';
-export { QualifierContextControl } from './components/common/QualifierContextControl';
 export { SourceResourceDetail } from './components/common/SourceResourceDetail';
 export { ResolutionResults } from './components/common/ResolutionResults';
 
-// Export resolution components
-export { EditableJsonView } from './components/views/ResolutionView/EditableJsonView';
-export { ResolutionEditControls } from './components/views/ResolutionView/ResolutionEditControls';
-export type { EditableJsonViewProps } from './components/views/ResolutionView/EditableJsonView';
+// Form components are now available through FormTools namespace:
+// - FormTools.QualifierTypeEditForm
+// - FormTools.QualifierEditForm
+// - FormTools.ResourceTypeEditForm
+// - FormTools.HierarchyEditor
 
-// Export pickers
-export { ResourcePicker } from './components/pickers/ResourcePicker';
-export type {
-  ResourcePickerProps,
-  ResourceSelection,
-  ResourceAnnotations,
-  ResourceAnnotation,
-  PendingResource
-} from './components/pickers/ResourcePicker/types';
+// QualifierContextControl is now available through ResolutionTools namespace:
+// - ResolutionTools.QualifierContextControl
+
+// Resolution and picker components are now available through their respective namespaces:
+// - ResolutionTools.EditableJsonView, ResolutionTools.ResolutionEditControls, ResolutionTools.EditableJsonViewProps
+// - PickerTools.ResourcePicker, PickerTools.ResourcePickerProps, PickerTools.ResourceSelection, etc.
 
 // All hooks are now organized within their respective namespaces:
 // - useResourceData: ResourceTools.useResourceData (orchestrator data hook)
@@ -70,5 +61,7 @@ export {
   FileTools,
   TsResTools,
   ZipTools,
-  ViewTools
+  ViewTools,
+  PickerTools,
+  FormTools
 } from './namespaces';

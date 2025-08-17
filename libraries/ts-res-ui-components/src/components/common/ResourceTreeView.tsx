@@ -8,14 +8,29 @@ import {
 } from '@heroicons/react/24/outline';
 import { Resources, Runtime } from '@fgv/ts-res';
 
+/**
+ * Props for the ResourceTreeView component.
+ *
+ * @public
+ */
 interface ResourceTreeViewProps {
+  /** Resource manager or compiled collection to display as a tree */
   resources: Resources.ResourceManagerBuilder | Runtime.CompiledResourceCollection;
+  /** Currently selected resource ID for highlighting */
   selectedResourceId: string | null;
+  /** Callback fired when a resource is selected */
   onResourceSelect: (resourceId: string) => void;
+  /** Optional search term to filter and highlight resources */
   searchTerm?: string;
+  /** Optional CSS classes to apply to the container */
   className?: string;
 }
 
+/**
+ * Internal tree node structure for rendering.
+ *
+ * @internal
+ */
 interface TreeNode {
   id: string;
   name: string;
@@ -27,7 +42,137 @@ interface TreeNode {
   matchesSearch?: boolean;
 }
 
-/** @public */
+/**
+ * A hierarchical tree view component for displaying and navigating resource structures.
+ *
+ * ResourceTreeView provides an interactive tree interface for browsing resource hierarchies,
+ * with support for expansion/collapse, search filtering, selection highlighting, and intelligent
+ * tree navigation. It automatically builds the tree structure from ts-res resource managers
+ * and supports both builder and compiled resource collections.
+ *
+ * @example
+ * ```tsx
+ * import { ResourceTreeView } from '@fgv/ts-res-ui-components';
+ *
+ * function HierarchicalResourceBrowser() {
+ *   const [selectedId, setSelectedId] = useState<string | null>(null);
+ *   const [searchTerm, setSearchTerm] = useState('');
+ *
+ *   return (
+ *     <div className="flex flex-col h-full">
+ *       <div className="p-4 border-b">
+ *         <input
+ *           type="search"
+ *           placeholder="Search in tree..."
+ *           value={searchTerm}
+ *           onChange={(e) => setSearchTerm(e.target.value)}
+ *           className="w-full px-3 py-2 border rounded-md"
+ *         />
+ *       </div>
+ *       <ResourceTreeView
+ *         resources={resourceManager}
+ *         selectedResourceId={selectedId}
+ *         onResourceSelect={setSelectedId}
+ *         searchTerm={searchTerm}
+ *         className="flex-1 min-h-0 p-2"
+ *       />
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Using with orchestrator state for integrated navigation
+ * import { ResourceTools } from '@fgv/ts-res-ui-components';
+ *
+ * function OrchestratorTreeView() {
+ *   const { state, actions } = ResourceTools.useResourceData();
+ *   const [searchTerm, setSearchTerm] = useState('');
+ *
+ *   if (!state.resources) {
+ *     return <div className="p-4 text-gray-500">No resources loaded</div>;
+ *   }
+ *
+ *   return (
+ *     <div className="h-full flex flex-col">
+ *       <div className="flex items-center gap-2 p-2 border-b">
+ *         <input
+ *           type="search"
+ *           placeholder="Search resources..."
+ *           value={searchTerm}
+ *           onChange={(e) => setSearchTerm(e.target.value)}
+ *           className="flex-1 px-3 py-1 text-sm border rounded"
+ *         />
+ *         <span className="text-xs text-gray-500">
+ *           {state.resources.summary?.resourceCount || 0} resources
+ *         </span>
+ *       </div>
+ *       <ResourceTreeView
+ *         resources={state.resources.resourceManager}
+ *         selectedResourceId={state.selectedResourceId}
+ *         onResourceSelect={(id) => actions.selectResource(id)}
+ *         searchTerm={searchTerm}
+ *         className="flex-1 min-h-0 overflow-auto"
+ *       />
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Advanced usage with custom tree navigation
+ * function AdvancedResourceTree({ resources, onResourceAction }) {
+ *   const [selectedId, setSelectedId] = useState<string | null>(null);
+ *   const [searchTerm, setSearchTerm] = useState('');
+ *
+ *   const handleResourceSelect = (resourceId: string) => {
+ *     setSelectedId(resourceId);
+ *     onResourceAction('select', resourceId);
+ *   };
+ *
+ *   const handleKeyDown = (event: React.KeyboardEvent) => {
+ *     if (event.key === 'Enter' && selectedId) {
+ *       onResourceAction('open', selectedId);
+ *     }
+ *   };
+ *
+ *   return (
+ *     <div
+ *       className="resource-tree-container"
+ *       onKeyDown={handleKeyDown}
+ *       tabIndex={0}
+ *     >
+ *       <div className="tree-header">
+ *         <input
+ *           type="search"
+ *           placeholder="Find resources in tree..."
+ *           value={searchTerm}
+ *           onChange={(e) => setSearchTerm(e.target.value)}
+ *         />
+ *         <div className="tree-stats">
+ *           {resources && (
+ *             <span>
+ *               Tree: {resources.getBuiltResourceTree().isSuccess() ? 'Built' : 'Error'}
+ *             </span>
+ *           )}
+ *         </div>
+ *       </div>
+ *       <ResourceTreeView
+ *         resources={resources}
+ *         selectedResourceId={selectedId}
+ *         onResourceSelect={handleResourceSelect}
+ *         searchTerm={searchTerm}
+ *         className="tree-content"
+ *       />
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @public
+ */
 export const ResourceTreeView: React.FC<ResourceTreeViewProps> = ({
   resources,
   selectedResourceId,

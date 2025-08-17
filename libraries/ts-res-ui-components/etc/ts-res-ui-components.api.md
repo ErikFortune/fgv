@@ -139,10 +139,10 @@ function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemConfigur
 }>;
 
 // @public (undocumented)
-export const EditableJsonView: React_2.FC<EditableJsonViewProps>;
+const EditableJsonView: React_2.FC<EditableJsonViewProps>;
 
 // @public (undocumented)
-export interface EditableJsonViewProps {
+interface EditableJsonViewProps {
     className?: string;
     disabled?: boolean;
     editedValue?: any;
@@ -285,6 +285,15 @@ interface FilterViewProps extends ViewBaseProps {
 // @internal (undocumented)
 function formatFileSize(bytes: number): string;
 
+declare namespace FormTools {
+    export {
+        QualifierTypeEditForm,
+        QualifierEditForm,
+        ResourceTypeEditForm,
+        HierarchyEditor
+    }
+}
+
 // @internal (undocumented)
 function generateZipFilename(customName?: string): string;
 
@@ -315,7 +324,7 @@ function hasPendingContextChanges(contextValues: Record<string, string | undefin
 // Warning: (ae-forgotten-export) The symbol "HierarchyEditorProps" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export const HierarchyEditor: React_2.FC<HierarchyEditorProps>;
+const HierarchyEditor: React_2.FC<HierarchyEditorProps>;
 
 // @public (undocumented)
 function importConfiguration(data: string): Result<Config.Model.ISystemConfiguration>;
@@ -400,7 +409,7 @@ class NodeZipBuilder implements IZipBuilder {
 // @internal (undocumented)
 function normalizePath(path: string): string;
 
-// @public (undocumented)
+// @public
 export interface OrchestratorActions {
     // Warning: (ae-forgotten-export) The symbol "Message" needs to be exported by the entry point index.d.ts
     //
@@ -456,7 +465,7 @@ export interface OrchestratorActions {
     updateResolutionContext: (qualifierName: string, value: string | undefined) => void;
 }
 
-// @public (undocumented)
+// @public
 export interface OrchestratorState {
     // (undocumented)
     configuration: Config.Model.ISystemConfiguration | null;
@@ -485,12 +494,23 @@ function parseConfiguration(configData: string): Result<Config.Model.ISystemConf
 function parseManifest(manifestData: string): Result<ZipManifest>;
 
 // @public
-export interface PendingResource<T = unknown> {
+interface PendingResource<T = unknown> {
     displayName?: string;
     id: string;
     resourceData?: T;
     resourceType?: string;
     type: 'new' | 'modified' | 'deleted';
+}
+
+declare namespace PickerTools {
+    export {
+        ResourcePicker,
+        ResourcePickerProps,
+        ResourceSelection,
+        ResourceAnnotations,
+        ResourceAnnotation,
+        PendingResource
+    }
 }
 
 // @internal (undocumented)
@@ -564,18 +584,18 @@ function processImportedFiles(files: ImportedFile[], systemConfig?: Config.Model
 
 // Warning: (ae-forgotten-export) The symbol "QualifierContextControlProps" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
-export const QualifierContextControl: React_2.FC<QualifierContextControlProps>;
+// @public
+const QualifierContextControl: React_2.FC<QualifierContextControlProps>;
 
 // Warning: (ae-forgotten-export) The symbol "QualifierEditFormProps" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export const QualifierEditForm: React_2.FC<QualifierEditFormProps>;
+const QualifierEditForm: React_2.FC<QualifierEditFormProps>;
 
 // Warning: (ae-forgotten-export) The symbol "QualifierTypeEditFormProps" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export const QualifierTypeEditForm: React_2.FC<QualifierTypeEditFormProps>;
+const QualifierTypeEditForm: React_2.FC<QualifierTypeEditFormProps>;
 
 // @internal (undocumented)
 function readFilesFromInput(files: FileList): Promise<ImportedFile[]>;
@@ -598,7 +618,7 @@ interface ResolutionActions {
 // Warning: (ae-forgotten-export) The symbol "ResolutionEditControlsProps" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export const ResolutionEditControls: React_2.FC<ResolutionEditControlsProps>;
+const ResolutionEditControls: React_2.FC<ResolutionEditControlsProps>;
 
 // @public (undocumented)
 interface ResolutionOptions {
@@ -622,7 +642,7 @@ interface ResolutionResult {
 
 // Warning: (ae-forgotten-export) The symbol "ResolutionResultsProps" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 export const ResolutionResults: React_2.FC<ResolutionResultsProps>;
 
 // @public
@@ -642,6 +662,9 @@ interface ResolutionState {
 declare namespace ResolutionTools {
     export {
         ResolutionView,
+        EditableJsonView,
+        ResolutionEditControls,
+        QualifierContextControl,
         useResolutionState,
         createResolverWithContext,
         evaluateConditionsForCandidate,
@@ -655,7 +678,8 @@ declare namespace ResolutionTools {
         ResolutionResult,
         CandidateInfo,
         ConditionEvaluationResult,
-        EditedResourceInfo
+        EditedResourceInfo,
+        EditableJsonViewProps
     }
 }
 
@@ -677,7 +701,7 @@ interface ResolutionViewProps extends ViewBaseProps {
 function resolveResourceDetailed(resolver: Runtime.ResourceResolver, resourceId: string, processedResources: ProcessedResources, options?: ResolutionOptions): Result<ResolutionResult>;
 
 // @public
-export interface ResourceAnnotation {
+interface ResourceAnnotation {
     badge?: {
         text: string;
         variant: 'info' | 'warning' | 'success' | 'error' | 'edited' | 'new';
@@ -692,7 +716,7 @@ export interface ResourceAnnotation {
 }
 
 // @public
-export interface ResourceAnnotations {
+interface ResourceAnnotations {
     [resourceId: string]: ResourceAnnotation;
 }
 
@@ -743,7 +767,7 @@ type ResourceEditorResult = {
 
 // Warning: (ae-forgotten-export) The symbol "ResourceListViewProps" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 export const ResourceListView: React_2.FC<ResourceListViewProps>;
 
 // @public
@@ -763,10 +787,10 @@ interface ResourceManagerState {
 export const ResourceOrchestrator: React_2.FC<ResourceOrchestratorProps>;
 
 // @public
-export const ResourcePicker: <T = unknown>({ resources, selectedResourceId, onResourceSelect, defaultView, showViewToggle, rootPath, hideRootNode, enableSearch, searchPlaceholder, searchScope, resourceAnnotations, pendingResources, emptyMessage, height, className, onMessage }: ResourcePickerProps<T>) => React_2.JSX.Element;
+const ResourcePicker: <T = unknown>({ resources, selectedResourceId, onResourceSelect, defaultView, showViewToggle, rootPath, hideRootNode, enableSearch, searchPlaceholder, searchScope, resourceAnnotations, pendingResources, emptyMessage, height, className, onMessage }: ResourcePickerProps<T>) => React_2.JSX.Element;
 
 // @public
-export interface ResourcePickerProps<T = unknown> extends ViewBaseProps {
+interface ResourcePickerProps<T = unknown> extends ViewBaseProps {
     defaultView?: 'list' | 'tree';
     emptyMessage?: string;
     enableSearch?: boolean;
@@ -784,7 +808,7 @@ export interface ResourcePickerProps<T = unknown> extends ViewBaseProps {
 }
 
 // @public
-export interface ResourceSelection<T = unknown> {
+interface ResourceSelection<T = unknown> {
     isPending?: boolean;
     pendingType?: 'new' | 'modified' | 'deleted';
     resourceData?: T;
@@ -806,13 +830,13 @@ declare namespace ResourceTools {
 
 // Warning: (ae-forgotten-export) The symbol "ResourceTreeViewProps" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 export const ResourceTreeView: React_2.FC<ResourceTreeViewProps>;
 
 // Warning: (ae-forgotten-export) The symbol "ResourceTypeEditFormProps" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export const ResourceTypeEditForm: React_2.FC<ResourceTypeEditFormProps>;
+const ResourceTypeEditForm: React_2.FC<ResourceTypeEditFormProps>;
 
 export { Result }
 
@@ -821,7 +845,7 @@ function sanitizeFilename(filename: string): string;
 
 // Warning: (ae-forgotten-export) The symbol "SourceResourceDetailProps" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 export const SourceResourceDetail: React_2.FC<SourceResourceDetailProps>;
 
 // @public

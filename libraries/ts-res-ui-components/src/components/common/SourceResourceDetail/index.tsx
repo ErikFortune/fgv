@@ -1,22 +1,130 @@
 import React, { useState, useEffect } from 'react';
 import { ResourceDetailData } from '../../../types';
 
+/**
+ * Props for the SourceResourceDetail component.
+ *
+ * @public
+ */
 export interface SourceResourceDetailProps {
+  /** The resource ID to display details for */
   resourceId: string;
+  /** Processed resources containing the resource data */
   processedResources: any;
+  /** Optional callback for handling component messages */
   onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void;
+  /** Optional CSS classes to apply to the container */
   className?: string;
+  /** Optional title for the detail panel */
   title?: string;
   // Dual-resource comparison mode props
+  /** Optional original resources for comparison mode */
   originalProcessedResources?: any;
+  /** Optional filter context for comparison */
   filterContext?: Record<string, string | undefined>;
+  /** Whether to show comparison view */
   showComparison?: boolean;
   // Configurable toggle labels
+  /** Label for primary resource view (default: 'Current') */
   primaryLabel?: string;
+  /** Label for secondary resource view (default: 'Original') */
   secondaryLabel?: string;
 }
 
-/** @public */
+/**
+ * A comprehensive component for displaying detailed information about a specific resource.
+ *
+ * SourceResourceDetail provides an in-depth view of a resource's properties, candidates,
+ * conditions, and metadata. It supports both single resource display and comparison mode
+ * for viewing differences between filtered and original resources. The component automatically
+ * extracts and presents resource information in a structured, readable format.
+ *
+ * @example
+ * ```tsx
+ * import { SourceResourceDetail } from '@fgv/ts-res-ui-components';
+ *
+ * function ResourceInspector() {
+ *   const [selectedResourceId, setSelectedResourceId] = useState<string>('user.welcome');
+ *   const processedResources = useProcessedResources();
+ *
+ *   return (
+ *     <SourceResourceDetail
+ *       resourceId={selectedResourceId}
+ *       processedResources={processedResources}
+ *       title="Resource Inspector"
+ *       onMessage={(type, msg) => console.log(`${type}: ${msg}`)}
+ *       className="border rounded-lg p-4"
+ *     />
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Using comparison mode to show filtered vs original resources
+ * import { SourceResourceDetail, FilterTools } from '@fgv/ts-res-ui-components';
+ *
+ * function FilteredResourceComparison() {
+ *   const { state: filterState } = FilterTools.useFilterState();
+ *   const originalResources = useOriginalResources();
+ *   const filteredResources = filterState.filteredResources;
+ *   const [selectedId, setSelectedId] = useState<string | null>(null);
+ *
+ *   if (!selectedId) {
+ *     return <div>Select a resource to compare</div>;
+ *   }
+ *
+ *   return (
+ *     <SourceResourceDetail
+ *       resourceId={selectedId}
+ *       processedResources={filteredResources}
+ *       originalProcessedResources={originalResources}
+ *       filterContext={filterState.appliedValues}
+ *       showComparison={true}
+ *       primaryLabel="Filtered"
+ *       secondaryLabel="Original"
+ *       title="Resource Comparison"
+ *       className="comparison-panel"
+ *     />
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Integration with orchestrator for comprehensive resource details
+ * import { SourceResourceDetail, ResourceTools } from '@fgv/ts-res-ui-components';
+ *
+ * function OrchestratorResourceDetail() {
+ *   const { state, actions } = ResourceTools.useResourceData();
+ *
+ *   if (!state.selectedResourceId || !state.resources) {
+ *     return <div className="p-4 text-gray-500">No resource selected</div>;
+ *   }
+ *
+ *   return (
+ *     <div className="resource-detail-container">
+ *       <div className="detail-header">
+ *         <h2>Resource: {state.selectedResourceId}</h2>
+ *         <button onClick={() => actions.selectResource(null)}>Clear</button>
+ *       </div>
+ *       <SourceResourceDetail
+ *         resourceId={state.selectedResourceId}
+ *         processedResources={state.resources}
+ *         originalProcessedResources={state.filterResult ? state.resources : undefined}
+ *         filterContext={state.filterState.appliedValues}
+ *         showComparison={!!state.filterResult}
+ *         title="Resource Details"
+ *         onMessage={actions.addMessage}
+ *         className="detail-content"
+ *       />
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @public
+ */
 export const SourceResourceDetail: React.FC<SourceResourceDetailProps> = ({
   resourceId,
   processedResources,

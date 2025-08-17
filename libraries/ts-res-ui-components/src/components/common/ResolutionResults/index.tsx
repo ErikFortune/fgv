@@ -3,17 +3,140 @@ import { CubeIcon } from '@heroicons/react/24/outline';
 import { CandidateInfo, ResolutionActions, ResolutionState, ResourceEditorFactory } from '../../../types';
 import { EditableJsonView } from '../../views/ResolutionView/EditableJsonView';
 
+/**
+ * Props for the ResolutionResults component.
+ *
+ * @public
+ */
 export interface ResolutionResultsProps {
+  /** The resolution result data to display */
   result: any;
+  /** View mode determining how resolution results are presented */
   viewMode: 'composed' | 'best' | 'all' | 'raw';
+  /** Current context values used for resolution */
   contextValues: Record<string, string | undefined>;
+  /** Optional resolution actions for interactive features */
   resolutionActions?: ResolutionActions;
+  /** Optional resolution state for editing features */
   resolutionState?: ResolutionState;
+  /** Optional factory for creating custom resource editors */
   resourceEditorFactory?: ResourceEditorFactory;
+  /** Optional callback for handling component messages */
   onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void;
 }
 
-/** @public */
+/**
+ * A comprehensive component for displaying resource resolution results with multiple view modes.
+ *
+ * ResolutionResults provides a flexible interface for presenting resource resolution data
+ * in various formats including composed values, best candidate selection, all candidates,
+ * and raw resolution data. It supports interactive editing when provided with appropriate
+ * actions and state, and can be customized with resource editor factories.
+ *
+ * @example
+ * ```tsx
+ * import { ResolutionResults } from '@fgv/ts-res-ui-components';
+ *
+ * function BasicResolutionDisplay() {
+ *   const [viewMode, setViewMode] = useState<'composed' | 'best' | 'all' | 'raw'>('composed');
+ *   const resolutionResult = { value: 'Hello World', candidates: [...] };
+ *   const context = { language: 'en-US', platform: 'web' };
+ *
+ *   return (
+ *     <div>
+ *       <div className="view-controls">
+ *         <button onClick={() => setViewMode('composed')}>Composed</button>
+ *         <button onClick={() => setViewMode('best')}>Best</button>
+ *         <button onClick={() => setViewMode('all')}>All</button>
+ *         <button onClick={() => setViewMode('raw')}>Raw</button>
+ *       </div>
+ *       <ResolutionResults
+ *         result={resolutionResult}
+ *         viewMode={viewMode}
+ *         contextValues={context}
+ *         onMessage={(type, msg) => console.log(`${type}: ${msg}`)}
+ *       />
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Using with resolution state and editing capabilities
+ * import { ResolutionTools } from '@fgv/ts-res-ui-components';
+ *
+ * function InteractiveResolutionResults() {
+ *   const { state: resolutionState, actions: resolutionActions } = ResolutionTools.useResolutionState();
+ *
+ *   const customEditorFactory = {
+ *     createEditor: (resourceId: string, value: any) => ({
+ *       success: true,
+ *       editor: MyCustomEditor
+ *     })
+ *   };
+ *
+ *   return (
+ *     <ResolutionResults
+ *       result={resolutionState.currentResult}
+ *       viewMode={resolutionState.viewMode}
+ *       contextValues={resolutionState.context}
+ *       resolutionActions={resolutionActions}
+ *       resolutionState={resolutionState}
+ *       resourceEditorFactory={customEditorFactory}
+ *       onMessage={(type, message) => {
+ *         resolutionActions.addMessage(type, message);
+ *       }}
+ *     />
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Advanced usage with orchestrator integration
+ * import { ResourceTools } from '@fgv/ts-res-ui-components';
+ *
+ * function OrchestratorResolutionDisplay() {
+ *   const { state, actions } = ResourceTools.useResourceData();
+ *   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
+ *
+ *   const handleResourceResolve = async (resourceId: string) => {
+ *     const result = await actions.resolveResource(resourceId, state.resolutionState.context);
+ *     if (result.isSuccess()) {
+ *       setSelectedResourceId(resourceId);
+ *     }
+ *   };
+ *
+ *   if (!selectedResourceId || !state.resolutionState.currentResult) {
+ *     return <div>Select a resource to see resolution results</div>;
+ *   }
+ *
+ *   return (
+ *     <div className="resolution-display">
+ *       <div className="resource-info">
+ *         <h3>Resolution for: {selectedResourceId}</h3>
+ *         <p>Context: {JSON.stringify(state.resolutionState.context)}</p>
+ *       </div>
+ *       <ResolutionResults
+ *         result={state.resolutionState.currentResult}
+ *         viewMode={state.resolutionState.viewMode}
+ *         contextValues={state.resolutionState.context}
+ *         resolutionActions={{
+ *           ...state.resolutionState,
+ *           setViewMode: actions.setResolutionViewMode,
+ *           saveEdit: actions.saveResourceEdit
+ *         }}
+ *         resolutionState={state.resolutionState}
+ *         onMessage={actions.addMessage}
+ *       />
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @public
+ */
 export const ResolutionResults: React.FC<ResolutionResultsProps> = ({
   result,
   viewMode,

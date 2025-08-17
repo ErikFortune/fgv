@@ -11,7 +11,8 @@
  *   ResolutionTools,
  *   ResourceTools,
  *   ViewTools,
- *   ZipTools
+ *   ZipTools,
+ *   PickerTools
  * } from '@fgv/ts-res-ui-components';
  *
  * // Use view components
@@ -19,6 +20,7 @@
  * <ResolutionTools.ResolutionView {...resolutionProps} />
  * <ViewTools.MessagesWindow {...messageProps} />
  * <ZipTools.ImportView {...importProps} />
+ * <PickerTools.ResourcePicker {...pickerProps} />
  *
  * // Use hooks for state management
  * const { state, actions } = ResourceTools.useResourceData();
@@ -42,3 +44,5 @@ export * as FileTools from './FileTools';
 export * as TsResTools from './TsResTools';
 export * as ViewTools from './ViewTools';
 export * as ZipTools from './ZipTools';
+export * as PickerTools from './PickerTools';
+export * as FormTools from './FormTools';

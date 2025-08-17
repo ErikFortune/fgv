@@ -4,36 +4,6 @@
 
 ## ts-res-ui-components package
 
-## Functions
-
-<table><thead><tr><th>
-
-Function
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[ResourcePicker({ resources, selectedResourceId, onResourceSelect, defaultView, showViewToggle, rootPath, hideRootNode, enableSearch, searchPlaceholder, searchScope, resourceAnnotations, pendingResources, emptyMessage, height, className, onMessage })](./ts-res-ui-components.resourcepicker.md)
-
-
-</td><td>
-
-Comprehensive resource picker component with search, view modes, and annotation support.
-
-The ResourcePicker provides a flexible interface for browsing and selecting resources from processed resource collections. It supports both list and tree view modes, search functionality, visual annotations, and pending resource management.
-
-Key features: - \*\*Multiple view modes\*\*: List view for simple browsing, tree view for hierarchical navigation - \*\*Search functionality\*\*: Search across all resources or within a specific branch - \*\*Visual annotations\*\*: Display badges, indicators, and suffixes for enhanced UX - \*\*Pending resources\*\*: Show unsaved changes alongside persisted resources - \*\*Branch isolation\*\*: Focus on a specific branch node of the resource tree - \*\*Type safety\*\*: Full TypeScript support with generic resource data types
-
-
-</td></tr>
-</tbody></table>
-
 ## Interfaces
 
 <table><thead><tr><th>
@@ -49,21 +19,14 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[EditableJsonViewProps](./ts-res-ui-components.editablejsonviewprops.md)
-
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
 [OrchestratorActions](./ts-res-ui-components.orchestratoractions.md)
 
 
 </td><td>
 
+Complete actions interface for the resource orchestrator system.
+
+This interface provides all the methods needed to manage and manipulate the orchestrator state, including resource import/export, configuration management, filtering, resolution, and UI state. All methods are designed to work seamlessly with the Result pattern for consistent error handling.
 
 
 </td></tr>
@@ -74,71 +37,9 @@ Description
 
 </td><td>
 
+Complete state object for the resource orchestrator system.
 
-
-</td></tr>
-<tr><td>
-
-[PendingResource](./ts-res-ui-components.pendingresource.md)
-
-
-</td><td>
-
-Represents a resource that hasn't been persisted yet.
-
-Pending resources are displayed alongside persisted resources in the picker, allowing users to interact with unsaved changes. They are visually distinguished with appropriate styling and annotations.
-
-
-</td></tr>
-<tr><td>
-
-[ResourceAnnotation](./ts-res-ui-components.resourceannotation.md)
-
-
-</td><td>
-
-Individual resource annotation configuration.
-
-Supports multiple types of visual indicators that can be combined: - Badge: Small colored badge with text - Indicator: Dot, icon, or text indicator with optional tooltip - Suffix: Additional content displayed after the resource name
-
-
-</td></tr>
-<tr><td>
-
-[ResourceAnnotations](./ts-res-ui-components.resourceannotations.md)
-
-
-</td><td>
-
-Annotations that can be displayed next to resource names in the picker.
-
-This allows the host application to provide visual indicators for resources, such as candidate counts, editing status, or validation states.
-
-
-</td></tr>
-<tr><td>
-
-[ResourcePickerProps](./ts-res-ui-components.resourcepickerprops.md)
-
-
-</td><td>
-
-Props for the ResourcePicker component.
-
-The ResourcePicker is a comprehensive component for browsing and selecting resources with support for multiple view modes, search, annotations, and pending resources.
-
-
-</td></tr>
-<tr><td>
-
-[ResourceSelection](./ts-res-ui-components.resourceselection.md)
-
-
-</td><td>
-
-Resource selection data returned by the onResourceSelect callback.
-
-This interface provides comprehensive information about the selected resource, eliminating the need for consumers to perform additional lookups.
+This interface represents the central state management for ts-res resources, encompassing all aspects of resource processing, configuration, filtering, and resolution. It serves as the primary state container for applications using the resource orchestrator.
 
 
 </td></tr>
@@ -178,6 +79,24 @@ Description
 <tr><td>
 
 [FilterTools](./ts-res-ui-components.filtertools.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[FormTools](./ts-res-ui-components.formtools.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[PickerTools](./ts-res-ui-components.pickertools.md)
 
 
 </td><td>
@@ -276,16 +195,6 @@ Provides a comprehensive interface for creating, editing, and managing ts-res sy
 </td></tr>
 <tr><td>
 
-[EditableJsonView](./ts-res-ui-components.editablejsonview.md)
-
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
 [FilterView](./ts-res-ui-components.filterview.md)
 
 
@@ -296,16 +205,6 @@ FilterView component for context-based resource filtering and analysis.
 Provides a comprehensive interface for filtering resources based on qualifier values, displaying filtered results with candidate count comparisons, and exporting filtered resource collections. Supports partial context matching and qualifier reduction.
 
 \*\*Key Features:\*\* - \*\*Context-based filtering\*\*: Filter resources using qualifier values (language, territory, etc.) - \*\*Candidate analysis\*\*: Compare original vs filtered candidate counts for each resource - \*\*Visual indicators\*\*: Highlight resources with reduced candidates or warnings - \*\*Export functionality\*\*: Export filtered resource collections as JSON - \*\*Dual resource comparison\*\*: View original and filtered resource details side-by-side - \*\*Qualifier reduction\*\*: Option to remove perfectly matching qualifiers from results
-
-
-</td></tr>
-<tr><td>
-
-[HierarchyEditor](./ts-res-ui-components.hierarchyeditor.md)
-
-
-</td><td>
-
 
 
 </td></tr>
@@ -341,51 +240,14 @@ Provides a comprehensive interface for displaying, filtering, and managing appli
 </td></tr>
 <tr><td>
 
-[QualifierContextControl](./ts-res-ui-components.qualifiercontextcontrol.md)
-
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
-[QualifierEditForm](./ts-res-ui-components.qualifiereditform.md)
-
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
-[QualifierTypeEditForm](./ts-res-ui-components.qualifiertypeeditform.md)
-
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
-[ResolutionEditControls](./ts-res-ui-components.resolutioneditcontrols.md)
-
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
 [ResolutionResults](./ts-res-ui-components.resolutionresults.md)
 
 
 </td><td>
 
+A comprehensive component for displaying resource resolution results with multiple view modes.
+
+ResolutionResults provides a flexible interface for presenting resource resolution data in various formats including composed values, best candidate selection, all candidates, and raw resolution data. It supports interactive editing when provided with appropriate actions and state, and can be customized with resource editor factories.
 
 
 </td></tr>
@@ -411,6 +273,9 @@ Provides a comprehensive interface for testing resource resolution with differen
 
 </td><td>
 
+A flat list view component for displaying and selecting resources.
+
+ResourceListView provides a simple, scrollable list interface for browsing through resource IDs with built-in search filtering, selection highlighting, and hover effects. It's optimized for flat resource hierarchies and provides a clean, accessible interface.
 
 
 </td></tr>
@@ -436,16 +301,9 @@ Features: - Resource processing (files, directories, bundles) - Filtering and co
 
 </td><td>
 
+A hierarchical tree view component for displaying and navigating resource structures.
 
-
-</td></tr>
-<tr><td>
-
-[ResourceTypeEditForm](./ts-res-ui-components.resourcetypeeditform.md)
-
-
-</td><td>
-
+ResourceTreeView provides an interactive tree interface for browsing resource hierarchies, with support for expansion/collapse, search filtering, selection highlighting, and intelligent tree navigation. It automatically builds the tree structure from ts-res resource managers and supports both builder and compiled resource collections.
 
 
 </td></tr>
@@ -456,6 +314,9 @@ Features: - Resource processing (files, directories, bundles) - Filtering and co
 
 </td><td>
 
+A comprehensive component for displaying detailed information about a specific resource.
+
+SourceResourceDetail provides an in-depth view of a resource's properties, candidates, conditions, and metadata. It supports both single resource display and comparison mode for viewing differences between filtered and original resources. The component automatically extracts and presents resource information in a structured, readable format.
 
 
 </td></tr>
