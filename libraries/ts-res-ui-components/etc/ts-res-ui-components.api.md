@@ -21,7 +21,7 @@ import { Runtime } from '@fgv/ts-res';
 
 // Warning: (ae-forgotten-export) The symbol "FilterResult_2" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 function analyzeFilteredResources(originalResourceIds: string[], filteredProcessedResources: ProcessedResources, originalProcessedResources: ProcessedResources): FilterResult_2;
 
 // @internal (undocumented)
@@ -55,7 +55,7 @@ interface CandidateInfo {
     matchType: 'match' | 'matchAsDefault' | 'noMatch';
 }
 
-// @public (undocumented)
+// @public
 function cloneConfiguration(config: Config.Model.ISystemConfiguration): Config.Model.ISystemConfiguration;
 
 // @public
@@ -113,7 +113,7 @@ function convertImportedDirectoryToFileTree(directory: ImportedDirectory): FileT
 // @internal (undocumented)
 function createBrowserZipLoader(): IZipLoader;
 
-// @public (undocumented)
+// @public
 const createFilteredResourceManagerSimple: (originalSystem: ProcessedResources["system"], partialContext: Record<string, string | undefined>, options?: FilterOptions) => Promise<Result<ProcessedResources>>;
 
 // @internal (undocumented)
@@ -172,7 +172,7 @@ function exportAsJson(data: any, filename: string): void;
 
 // Warning: (ae-forgotten-export) The symbol "ConfigurationExportOptions" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 function exportConfiguration(config: Config.Model.ISystemConfiguration, options?: ConfigurationExportOptions): Result<string>;
 
 // @internal (undocumented)
@@ -220,13 +220,10 @@ interface FilteredResource {
     originalCandidateCount: number;
 }
 
-// @public (undocumented)
+// @public
 interface FilterOptions {
-    // (undocumented)
     enableDebugLogging?: boolean;
-    // (undocumented)
     partialContextMatch?: boolean;
-    // (undocumented)
     reduceQualifiers?: boolean;
 }
 
@@ -312,10 +309,10 @@ function getDefaultSystemConfiguration(): Config.Model.ISystemConfiguration;
 // @internal (undocumented)
 function getDirectoryName(path: string): string;
 
-// @public (undocumented)
+// @public
 function getFilterSummary(values: Record<string, string | undefined>): string;
 
-// @public (undocumented)
+// @public
 function hasFilterValues(values: Record<string, string | undefined>): boolean;
 
 // @public (undocumented)
@@ -326,7 +323,7 @@ function hasPendingContextChanges(contextValues: Record<string, string | undefin
 // @public (undocumented)
 const HierarchyEditor: React_2.FC<HierarchyEditorProps>;
 
-// @public (undocumented)
+// @public
 function importConfiguration(data: string): Result<Config.Model.ISystemConfiguration>;
 
 // @public
@@ -899,7 +896,7 @@ function useViewState(): UseViewStateReturn;
 
 // Warning: (ae-forgotten-export) The symbol "ConfigurationValidationResult" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 function validateConfiguration(config: Config.Model.ISystemConfiguration): ConfigurationValidationResult;
 
 // @public

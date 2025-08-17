@@ -90,7 +90,34 @@ export function getDefaultConfiguration(): Config.Model.ISystemConfiguration {
 /**
  * Validate a system configuration
  */
-/** @public */
+/**
+ * Validates a ts-res system configuration for completeness and correctness.
+ *
+ * Performs comprehensive validation of configuration structure, required fields,
+ * type relationships, and logical consistency. Returns detailed validation results
+ * with specific error and warning messages for debugging and user feedback.
+ *
+ * @example
+ * ```typescript
+ * import { ConfigurationTools } from '@fgv/ts-res-ui-components';
+ *
+ * const config = {
+ *   qualifierTypes: [{ name: 'language', systemType: 'language' }],
+ *   qualifiers: [{ name: 'en', typeName: 'language', defaultPriority: 100 }],
+ *   resourceTypes: [{ name: 'string', defaultValue: '' }]
+ * };
+ *
+ * const validation = ConfigurationTools.validateConfiguration(config);
+ * if (!validation.isValid) {
+ *   console.error('Configuration errors:', validation.errors);
+ *   console.warn('Configuration warnings:', validation.warnings);
+ * }
+ * ```
+ *
+ * @param config - The system configuration to validate
+ * @returns Validation result with errors, warnings, and validity status
+ * @public
+ */
 export function validateConfiguration(
   config: Config.Model.ISystemConfiguration
 ): ConfigurationValidationResult {
@@ -177,7 +204,30 @@ export function validateConfiguration(
 /**
  * Create a deep copy of a configuration
  */
-/** @public */
+/**
+ * Creates a deep copy of a system configuration object.
+ *
+ * Performs a deep clone of the configuration to ensure complete isolation
+ * from the original. Useful for creating editable copies, implementing undo/redo,
+ * or preserving original state during modifications.
+ *
+ * @example
+ * ```typescript
+ * import { ConfigurationTools } from '@fgv/ts-res-ui-components';
+ *
+ * const originalConfig = getSystemConfiguration();
+ * const editableConfig = ConfigurationTools.cloneConfiguration(originalConfig);
+ *
+ * // Modify the clone without affecting the original
+ * editableConfig.qualifiers.push(newQualifier);
+ * console.log('Original unchanged:', originalConfig.qualifiers.length);
+ * console.log('Clone modified:', editableConfig.qualifiers.length);
+ * ```
+ *
+ * @param config - The configuration to clone
+ * @returns A deep copy of the configuration
+ * @public
+ */
 export function cloneConfiguration(
   config: Config.Model.ISystemConfiguration
 ): Config.Model.ISystemConfiguration {
@@ -230,7 +280,49 @@ export function trackConfigurationChanges(
 /**
  * Export configuration to JSON string
  */
-/** @public */
+/**
+ * Exports a system configuration to a formatted string representation.
+ *
+ * Converts the configuration object to a serialized format (JSON or YAML) with
+ * optional formatting and metadata. Supports pretty-printing for human readability
+ * and can include comments and custom filenames for enhanced usability.
+ *
+ * @example
+ * ```typescript
+ * import { ConfigurationTools } from '@fgv/ts-res-ui-components';
+ *
+ * const config = getCurrentConfiguration();
+ *
+ * // Export as pretty-printed JSON
+ * const jsonResult = ConfigurationTools.exportConfiguration(config, {
+ *   format: 'json',
+ *   pretty: true,
+ *   includeComments: true
+ * });
+ *
+ * if (jsonResult.isSuccess()) {
+ *   downloadFile(jsonResult.value, 'my-config.json');
+ * }
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Export as compact JSON for API transmission
+ * const compactResult = ConfigurationTools.exportConfiguration(config, {
+ *   format: 'json',
+ *   pretty: false
+ * });
+ *
+ * if (compactResult.isSuccess()) {
+ *   await sendToApi(compactResult.value);
+ * }
+ * ```
+ *
+ * @param config - The configuration to export
+ * @param options - Export formatting options
+ * @returns Result containing the formatted configuration string or error message
+ * @public
+ */
 export function exportConfiguration(
   config: Config.Model.ISystemConfiguration,
   options: ConfigurationExportOptions = { format: 'json', pretty: true }
@@ -249,7 +341,55 @@ export function exportConfiguration(
 /**
  * Import configuration from JSON string
  */
-/** @public */
+/**
+ * Imports and validates a system configuration from a serialized string.
+ *
+ * Parses configuration data from JSON or YAML format and performs validation
+ * to ensure the imported configuration is structurally sound and contains
+ * required fields. Provides detailed error messages for parsing or validation failures.
+ *
+ * @example
+ * ```typescript
+ * import { ConfigurationTools } from '@fgv/ts-res-ui-components';
+ *
+ * // Import from JSON string
+ * const jsonData = '{"qualifierTypes": [...], "qualifiers": [...]}';
+ * const importResult = ConfigurationTools.importConfiguration(jsonData);
+ *
+ * if (importResult.isSuccess()) {
+ *   console.log('Configuration imported successfully');
+ *   applyConfiguration(importResult.value);
+ * } else {
+ *   console.error('Import failed:', importResult.message);
+ * }
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Import from file upload
+ * const handleFileImport = async (file: File) => {
+ *   const text = await file.text();
+ *   const result = ConfigurationTools.importConfiguration(text);
+ *
+ *   if (result.isFailure()) {
+ *     showError(`Failed to import ${file.name}: ${result.message}`);
+ *     return;
+ *   }
+ *
+ *   // Validate before applying
+ *   const validation = ConfigurationTools.validateConfiguration(result.value);
+ *   if (!validation.isValid) {
+ *     showWarning('Configuration has validation issues', validation.warnings);
+ *   }
+ *
+ *   setConfiguration(result.value);
+ * };
+ * ```
+ *
+ * @param data - The serialized configuration string (JSON or YAML)
+ * @returns Result containing the parsed configuration or error message
+ * @public
+ */
 export function importConfiguration(data: string): Result<Config.Model.ISystemConfiguration> {
   try {
     const parsed = JSON.parse(data);
