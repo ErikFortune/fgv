@@ -44,6 +44,8 @@ interface CompiledViewProps extends ViewBaseProps {
     filterResult?: FilterResult | null;
     filterState?: FilterState;
     onExport?: (data: ResourceJson.Compiled.ICompiledResourceCollection | Bundle.IBundle, type: 'json' | 'bundle') => void;
+    // Warning: (ae-forgotten-export) The symbol "ResourcePickerOptions" needs to be exported by the entry point index.d.ts
+    pickerOptions?: ResourcePickerOptions;
     resources?: ExtendedProcessedResources | null;
     useNormalization?: boolean;
 }
@@ -229,6 +231,7 @@ interface FilterViewProps extends ViewBaseProps {
     filterResult?: FilterResult | null;
     filterState: FilterState;
     onFilterResult?: (result: FilterResult | null) => void;
+    pickerOptions?: ResourcePickerOptions;
     resources?: ProcessedResources | null;
 }
 
@@ -599,6 +602,7 @@ interface ResolutionViewProps extends ViewBaseProps {
     availableQualifiers?: string[];
     filterResult?: FilterResult | null;
     filterState?: FilterState;
+    pickerOptions?: ResourcePickerOptions;
     resolutionActions?: ResolutionActions;
     resolutionState?: ResolutionState;
     resourceEditorFactory?: ResourceEditorFactory;
@@ -695,24 +699,16 @@ interface ResourceManagerState {
 export const ResourceOrchestrator: React_2.FC<ResourceOrchestratorProps>;
 
 // @public
-const ResourcePicker: <T = unknown>({ resources, selectedResourceId, onResourceSelect, defaultView, showViewToggle, rootPath, hideRootNode, enableSearch, searchPlaceholder, searchScope, resourceAnnotations, pendingResources, emptyMessage, height, className, onMessage }: ResourcePickerProps<T>) => React_2.JSX.Element;
+const ResourcePicker: <T = unknown>({ resources, selectedResourceId, onResourceSelect, resourceAnnotations, pendingResources, options, className, onMessage }: ResourcePickerProps<T>) => React_2.JSX.Element;
 
 // @public
 interface ResourcePickerProps<T = unknown> extends ViewBaseProps {
-    defaultView?: 'list' | 'tree';
-    emptyMessage?: string;
-    enableSearch?: boolean;
-    height?: string | number;
-    hideRootNode?: boolean;
     onResourceSelect: (selection: ResourceSelection<T>) => void;
+    options?: ResourcePickerOptions;
     pendingResources?: PendingResource<T>[];
     resourceAnnotations?: ResourceAnnotations;
     resources: ProcessedResources | ExtendedProcessedResources | null;
-    rootPath?: string;
-    searchPlaceholder?: string;
-    searchScope?: 'all' | 'current-branch';
     selectedResourceId: string | null;
-    showViewToggle?: boolean;
 }
 
 // @public
@@ -760,6 +756,7 @@ export const SourceView: React_2.FC<SourceViewProps>;
 interface SourceViewProps extends ViewBaseProps {
     onExport?: (data: unknown, type: 'json') => void;
     onResourceSelect?: (resourceId: string) => void;
+    pickerOptions?: ResourcePickerOptions;
     resources?: ExtendedProcessedResources | null;
     selectedResourceId?: string | null;
 }

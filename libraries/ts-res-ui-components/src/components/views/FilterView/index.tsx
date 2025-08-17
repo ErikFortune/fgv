@@ -82,11 +82,28 @@ export const FilterView: React.FC<FilterViewProps> = ({
   filterResult,
   onFilterResult,
   onMessage,
+  pickerOptions,
   className = ''
 }) => {
   // Local UI state
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [showFilteredJsonView, setShowFilteredJsonView] = useState(false);
+
+  // Merge picker options with filter-specific defaults
+  const effectivePickerOptions = useMemo(
+    () => ({
+      defaultView: 'list' as const,
+      showViewToggle: true,
+      enableSearch: true,
+      searchPlaceholder: 'Search resources...',
+      searchScope: 'all' as const,
+      height: '520px',
+      emptyMessage: 'No resources available',
+      // Override with user-provided options
+      ...pickerOptions
+    }),
+    [pickerOptions]
+  );
 
   // Available qualifiers from system configuration or compiled collection
   const availableQualifiers = useMemo(() => {
@@ -505,15 +522,15 @@ export const FilterView: React.FC<FilterViewProps> = ({
                 selectedResourceId={selectedResourceId}
                 onResourceSelect={handleResourceSelect}
                 resourceAnnotations={resourceAnnotations}
-                defaultView="list"
-                showViewToggle={true}
-                enableSearch={true}
-                searchPlaceholder={isFilteringActive ? 'Search filtered resources...' : 'Search resources...'}
-                searchScope="all"
-                emptyMessage={
-                  isFilteringActive ? 'No resources match the filter criteria' : 'No resources available'
-                }
-                height="520px"
+                options={{
+                  ...effectivePickerOptions,
+                  searchPlaceholder: isFilteringActive
+                    ? 'Search filtered resources...'
+                    : effectivePickerOptions.searchPlaceholder,
+                  emptyMessage: isFilteringActive
+                    ? 'No resources match the filter criteria'
+                    : effectivePickerOptions.emptyMessage
+                }}
                 onMessage={onMessage}
               />
             </div>

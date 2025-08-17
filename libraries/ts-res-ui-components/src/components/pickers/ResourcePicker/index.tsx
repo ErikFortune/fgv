@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { MagnifyingGlassIcon, ListBulletIcon, FolderIcon } from '@heroicons/react/24/outline';
-import { ResourcePickerProps, ResourceSelection } from './types';
+import { ResourcePickerProps, ResourceSelection, ResourcePickerOptions } from './types';
 import { ResourcePickerList } from './ResourcePickerList';
 import { ResourcePickerTree } from './ResourcePickerTree';
 import { searchResources, filterTreeBranch } from './utils/treeNavigation';
@@ -65,20 +65,24 @@ export const ResourcePicker = <T = unknown,>({
   resources,
   selectedResourceId,
   onResourceSelect,
-  defaultView = 'list',
-  showViewToggle = true,
-  rootPath,
-  hideRootNode = false,
-  enableSearch = true,
-  searchPlaceholder,
-  searchScope = 'current-branch',
   resourceAnnotations,
   pendingResources,
-  emptyMessage,
-  height = '600px',
+  options,
   className = '',
   onMessage
 }: ResourcePickerProps<T>) => {
+  // Extract options with defaults
+  const {
+    defaultView = 'list',
+    showViewToggle = true,
+    rootPath,
+    hideRootNode = false,
+    enableSearch = true,
+    searchPlaceholder,
+    searchScope = 'current-branch',
+    emptyMessage,
+    height = '600px'
+  } = options || {};
   const [viewMode, setViewMode] = useState<'list' | 'tree'>(defaultView);
   const [searchTerm, setSearchTerm] = useState('');
 

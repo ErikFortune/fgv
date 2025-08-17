@@ -82,11 +82,28 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
   availableQualifiers = [],
   resourceEditorFactory,
   onMessage,
+  pickerOptions,
   className = ''
 }) => {
   // Use filtered resources when filtering is active and successful
   const isFilteringActive = filterState?.enabled && filterResult?.success === true;
   const activeProcessedResources = isFilteringActive ? filterResult?.processedResources : resources;
+
+  // Merge picker options with resolution-specific defaults
+  const effectivePickerOptions = useMemo(
+    () => ({
+      defaultView: 'list' as const,
+      showViewToggle: true,
+      enableSearch: true,
+      searchPlaceholder: 'Search resources for resolution testing...',
+      searchScope: 'all' as const,
+      height: '520px',
+      emptyMessage: 'No resources available for resolution testing',
+      // Override with user-provided options
+      ...pickerOptions
+    }),
+    [pickerOptions]
+  );
 
   // Create resource annotations for resolution results and edit states
   const resourceAnnotations = useMemo(() => {
@@ -312,13 +329,7 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
                 selectedResourceId={resolutionState?.selectedResourceId || null}
                 onResourceSelect={handleResourceSelect}
                 resourceAnnotations={resourceAnnotations}
-                defaultView="list"
-                showViewToggle={true}
-                enableSearch={true}
-                searchPlaceholder="Search resources for resolution testing..."
-                searchScope="all"
-                emptyMessage="No resources available for resolution testing"
-                height="520px"
+                options={effectivePickerOptions}
                 onMessage={onMessage}
               />
             </div>

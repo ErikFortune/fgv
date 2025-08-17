@@ -36,10 +36,60 @@ export interface ResourceSelection<T = unknown> {
 }
 
 /**
+ * UI behavior configuration options for ResourcePicker.
+ *
+ * This interface groups all UI-related options that control how the ResourcePicker
+ * behaves and appears, separate from functional data like annotations and pending resources.
+ *
+ * @example
+ * ```tsx
+ * const pickerOptions: ResourcePickerOptions = {
+ *   defaultView: 'tree',
+ *   enableSearch: true,
+ *   searchPlaceholder: 'Find resources...',
+ *   rootPath: 'user.messages',
+ *   hideRootNode: true,
+ *   height: '400px'
+ * };
+ * ```
+ *
+ * @public
+ */
+export interface ResourcePickerOptions {
+  /** View and navigation options */
+  /** Default view mode to use on initial render */
+  defaultView?: 'list' | 'tree';
+  /** Whether to show the list/tree view toggle buttons */
+  showViewToggle?: boolean;
+
+  /** Branch isolation options */
+  /** Path to treat as root for tree branch isolation (e.g., "platform/territories") */
+  rootPath?: string;
+  /** Hide the root node itself, showing only its children */
+  hideRootNode?: boolean;
+
+  /** Search options */
+  /** Whether to enable the search input */
+  enableSearch?: boolean;
+  /** Placeholder text for the search input */
+  searchPlaceholder?: string;
+  /** Scope of search - entire tree or just the currently visible branch */
+  searchScope?: 'all' | 'current-branch';
+
+  /** Appearance options */
+  /** Message to display when no resources are available */
+  emptyMessage?: string;
+  /** Height of the picker component */
+  height?: string | number;
+}
+
+/**
  * Props for the ResourcePicker component.
  *
  * The ResourcePicker is a comprehensive component for browsing and selecting resources
  * with support for multiple view modes, search, annotations, and pending resources.
+ * UI behavior is controlled through the options object, while functional data is
+ * passed as separate props.
  *
  * @example
  * ```tsx
@@ -53,10 +103,14 @@ export interface ResourceSelection<T = unknown> {
  *       handleResourceData(selection.resourceData);
  *     }
  *   }}
- *   defaultView="tree"
- *   enableSearch={true}
  *   resourceAnnotations={{
  *     'res1': { badge: { text: '3', variant: 'info' } }
+ *   }}
+ *   options={{
+ *     defaultView: 'tree',
+ *     enableSearch: true,
+ *     searchPlaceholder: 'Find resources...',
+ *     height: '400px'
  *   }}
  * />
  * ```
@@ -64,41 +118,23 @@ export interface ResourceSelection<T = unknown> {
  * @public
  */
 export interface ResourcePickerProps<T = unknown> extends ViewBaseProps {
+  /** Core functionality */
   /** Processed resources to display in the picker */
   resources: ProcessedResources | ExtendedProcessedResources | null;
-
   /** Currently selected resource ID */
   selectedResourceId: string | null;
   /** Callback fired when a resource is selected, providing comprehensive selection data */
   onResourceSelect: (selection: ResourceSelection<T>) => void;
 
-  /** Default view mode to use on initial render */
-  defaultView?: 'list' | 'tree';
-  /** Whether to show the list/tree view toggle buttons */
-  showViewToggle?: boolean;
-
-  /** Path to treat as root for tree branch isolation (e.g., "platform/territories") */
-  rootPath?: string;
-  /** Hide the root node itself, showing only its children */
-  hideRootNode?: boolean;
-
-  /** Whether to enable the search input */
-  enableSearch?: boolean;
-  /** Placeholder text for the search input */
-  searchPlaceholder?: string;
-  /** Scope of search - entire tree or just the currently visible branch */
-  searchScope?: 'all' | 'current-branch';
-
+  /** Functional data */
   /** Annotations to display next to resource names (badges, indicators, etc.) */
   resourceAnnotations?: ResourceAnnotations;
-
   /** Pending (unsaved) resources to display alongside persisted resources */
   pendingResources?: PendingResource<T>[];
 
-  /** Message to display when no resources are available */
-  emptyMessage?: string;
-  /** Height of the picker component */
-  height?: string | number;
+  /** UI behavior configuration */
+  /** Options controlling picker appearance and behavior */
+  options?: ResourcePickerOptions;
 }
 
 /**

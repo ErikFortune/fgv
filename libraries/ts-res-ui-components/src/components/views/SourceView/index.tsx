@@ -50,9 +50,31 @@ import { SourceResourceDetail } from '../../common/SourceResourceDetail';
  *
  * @public
  */
-export const SourceView: React.FC<SourceViewProps> = ({ resources, onExport, onMessage, className = '' }) => {
+export const SourceView: React.FC<SourceViewProps> = ({
+  resources,
+  onExport,
+  onMessage,
+  pickerOptions,
+  className = ''
+}) => {
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [showJsonView, setShowJsonView] = useState(false);
+
+  // Merge picker options with view-specific defaults
+  const effectivePickerOptions = useMemo(
+    () => ({
+      defaultView: 'list' as const,
+      showViewToggle: true,
+      enableSearch: true,
+      searchPlaceholder: 'Search resources...',
+      searchScope: 'all' as const,
+      height: '560px',
+      emptyMessage: 'No resources available',
+      // Override with user-provided options
+      ...pickerOptions
+    }),
+    [pickerOptions]
+  );
 
   // Handle resource selection with new enhanced callback
   const handleResourceSelect = useCallback(
@@ -219,13 +241,7 @@ export const SourceView: React.FC<SourceViewProps> = ({ resources, onExport, onM
                 resources={resources}
                 selectedResourceId={selectedResourceId}
                 onResourceSelect={handleResourceSelect}
-                defaultView="list"
-                showViewToggle={true}
-                enableSearch={true}
-                searchPlaceholder="Search resources..."
-                searchScope="all"
-                emptyMessage="No resources available"
-                height="560px"
+                options={effectivePickerOptions}
                 onMessage={onMessage}
               />
             </div>

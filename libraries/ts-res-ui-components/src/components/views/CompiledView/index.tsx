@@ -70,6 +70,7 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
   useNormalization: useNormalizationProp = false,
   onExport,
   onMessage,
+  pickerOptions,
   className = ''
 }) => {
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
@@ -78,6 +79,22 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
   const [showJsonView, setShowJsonView] = useState(false);
   const [useNormalization, setUseNormalization] = useState(useNormalizationProp);
   const [activeTab, setActiveTab] = useState<'resources' | 'metadata'>('resources');
+
+  // Merge picker options with compiled view-specific defaults
+  const effectivePickerOptions = useMemo(
+    () => ({
+      defaultView: 'tree' as const,
+      showViewToggle: true,
+      enableSearch: true,
+      searchPlaceholder: 'Search compiled resources...',
+      searchScope: 'all' as const,
+      height: '500px',
+      emptyMessage: 'No compiled resources available',
+      // Override with user-provided options
+      ...pickerOptions
+    }),
+    [pickerOptions]
+  );
 
   // Update normalization default when bundle state changes
   useEffect(() => {
@@ -581,13 +598,7 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
                     selectedResourceId={selectedResourceId}
                     onResourceSelect={handleResourceSelect}
                     resourceAnnotations={resourceAnnotations}
-                    defaultView="list"
-                    showViewToggle={true}
-                    enableSearch={true}
-                    searchPlaceholder="Search compiled resources..."
-                    searchScope="all"
-                    emptyMessage="No compiled resources available"
-                    height="520px"
+                    options={effectivePickerOptions}
                     onMessage={onMessage}
                   />
                 </div>

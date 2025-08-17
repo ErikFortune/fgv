@@ -229,6 +229,8 @@ export interface SourceViewProps extends ViewBaseProps {
   onResourceSelect?: (resourceId: string) => void;
   /** Callback when exporting resource collection data */
   onExport?: (data: unknown, type: 'json') => void;
+  /** Optional configuration for the ResourcePicker behavior */
+  pickerOptions?: import('../components/pickers/ResourcePicker/types').ResourcePickerOptions;
 }
 
 /**
@@ -248,6 +250,8 @@ export interface FilterViewProps extends ViewBaseProps {
   filterResult?: FilterResult | null;
   /** Callback when filter results change */
   onFilterResult?: (result: FilterResult | null) => void;
+  /** Optional configuration for the ResourcePicker behavior */
+  pickerOptions?: import('../components/pickers/ResourcePicker/types').ResourcePickerOptions;
 }
 
 /**
@@ -270,6 +274,8 @@ export interface CompiledViewProps extends ViewBaseProps {
     data: ResourceJson.Compiled.ICompiledResourceCollection | Bundle.IBundle,
     type: 'json' | 'bundle'
   ) => void;
+  /** Optional configuration for the ResourcePicker behavior */
+  pickerOptions?: import('../components/pickers/ResourcePicker/types').ResourcePickerOptions;
 }
 
 /**
@@ -356,6 +362,8 @@ export interface ResolutionViewProps extends ViewBaseProps {
   availableQualifiers?: string[];
   /** Optional factory for creating type-specific resource editors */
   resourceEditorFactory?: ResourceEditorFactory;
+  /** Optional configuration for the ResourcePicker behavior */
+  pickerOptions?: import('../components/pickers/ResourcePicker/types').ResourcePickerOptions;
 }
 
 /**
