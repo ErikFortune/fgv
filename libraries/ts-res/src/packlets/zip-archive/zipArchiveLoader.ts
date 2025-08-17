@@ -172,17 +172,13 @@ export class ZipArchiveLoader {
 
     // Get the config path from the manifest
     const configPath = manifest!.config!.archivePath;
-    const configResult = zipAccessors.getFileContents(configPath);
-    if (configResult.isFailure()) {
-      return fail(`Manifest specifies config file at '${configPath}' but it was not found in archive`);
-    }
-
-    const parseResult = parseZipArchiveConfiguration(configResult.value);
-    if (parseResult.isFailure()) {
-      return fail(`Failed to parse config file '${configPath}': ${parseResult.message}`);
-    }
-
-    return succeed(parseResult.value);
+    return zipAccessors
+      .getFileContents(configPath)
+      .withErrorFormat(
+        () => `Manifest specifies config file at '${configPath}' but it was not found in archive`
+      )
+      .onSuccess((configContent) => parseZipArchiveConfiguration(configContent))
+      .withErrorFormat((e) => `Failed to parse config file '${configPath}': ${e}`);
   }
 
   /**
