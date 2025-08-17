@@ -84,7 +84,7 @@ The original resource system for comparison
 
 **Returns:**
 
-FilterResult
+[FilterResult](./ts-res-ui-components.filtertools.filterresult.md)
 
 Analysis result with per-resource filtering impact and warnings
 

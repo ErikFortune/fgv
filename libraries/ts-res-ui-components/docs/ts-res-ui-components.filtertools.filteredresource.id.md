@@ -4,6 +4,8 @@
 
 ## FilterTools.FilteredResource.id property
 
+The resource ID that was filtered
+
 **Signature:**
 
 ```typescript

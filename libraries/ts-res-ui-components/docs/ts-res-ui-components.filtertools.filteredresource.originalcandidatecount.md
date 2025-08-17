@@ -4,6 +4,8 @@
 
 ## FilterTools.FilteredResource.originalCandidateCount property
 
+Number of candidates before filtering was applied
+
 **Signature:**
 
 ```typescript

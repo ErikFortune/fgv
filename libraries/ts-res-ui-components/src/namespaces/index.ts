@@ -11,6 +11,7 @@
  *   ResolutionTools,
  *   ResourceTools,
  *   ViewTools,
+ *   ImportTools,
  *   ZipTools,
  *   PickerTools
  * } from '@fgv/ts-res-ui-components';
@@ -19,7 +20,7 @@
  * <FilterTools.FilterView {...filterProps} />
  * <ResolutionTools.ResolutionView {...resolutionProps} />
  * <ViewTools.MessagesWindow {...messageProps} />
- * <ZipTools.ImportView {...importProps} />
+ * <ImportTools.ImportView {...importProps} />
  * <PickerTools.ResourcePicker {...pickerProps} />
  *
  * // Use hooks for state management
@@ -30,6 +31,7 @@
  * // Or use utility functions
  * const hasFilters = FilterTools.hasFilterValues(filterState.values);
  * const resolver = ResolutionTools.createResolverWithContext(resources, context);
+ * const files = await ImportTools.readFilesFromInput(fileInput);
  * const zipLoader = ZipTools.createBrowserZipLoader();
  * ```
  *
@@ -40,7 +42,7 @@ export * as FilterTools from './FilterTools';
 export * as ResolutionTools from './ResolutionTools';
 export * as ConfigurationTools from './ConfigurationTools';
 export * as ResourceTools from './ResourceTools';
-export * as FileTools from './FileTools';
+export * as ImportTools from './ImportTools';
 export * as TsResTools from './TsResTools';
 export * as ViewTools from './ViewTools';
 export * as ZipTools from './ZipTools';

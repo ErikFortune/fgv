@@ -4,6 +4,8 @@
 
 ## FilterTools.FilterResult.success property
 
+Whether the filtering operation completed successfully
+
 **Signature:**
 
 ```typescript

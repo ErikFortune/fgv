@@ -19,10 +19,8 @@ import { ResourceTypes } from '@fgv/ts-res';
 import { Result } from '@fgv/ts-utils';
 import { Runtime } from '@fgv/ts-res';
 
-// Warning: (ae-forgotten-export) The symbol "FilterResult_2" needs to be exported by the entry point index.d.ts
-//
 // @public
-function analyzeFilteredResources(originalResourceIds: string[], filteredProcessedResources: ProcessedResources, originalProcessedResources: ProcessedResources): FilterResult_2;
+function analyzeFilteredResources(originalResourceIds: string[], filteredProcessedResources: ProcessedResources, originalProcessedResources: ProcessedResources): FilterResult;
 
 // @internal (undocumented)
 interface BrowserZipData {
@@ -192,17 +190,6 @@ interface ExtendedProcessedResources extends ProcessedResources {
 // @internal (undocumented)
 function filesToDirectory(files: ImportedFile[]): ImportedDirectory;
 
-declare namespace FileTools {
-    export {
-        readFilesFromInput,
-        filesToDirectory,
-        exportAsJson,
-        exportUsingFileSystemAPI,
-        ImportedFile,
-        ImportedDirectory
-    }
-}
-
 // @public
 interface FilterActions {
     applyFilterValues: () => void;
@@ -212,15 +199,11 @@ interface FilterActions {
     updateReduceQualifiers: (reduceQualifiers: boolean) => void;
 }
 
-// @public (undocumented)
+// @public
 interface FilteredResource {
-    // (undocumented)
     filteredCandidateCount: number;
-    // (undocumented)
     hasWarning: boolean;
-    // (undocumented)
     id: string;
-    // (undocumented)
     originalCandidateCount: number;
 }
 
@@ -231,18 +214,13 @@ interface FilterOptions {
     reduceQualifiers?: boolean;
 }
 
-// @public (undocumented)
+// @public
 interface FilterResult {
-    // (undocumented)
     error?: string;
-    // (undocumented)
-    filteredResources?: FilteredResource[];
-    // (undocumented)
+    filteredResources: FilteredResource[];
     processedResources?: ProcessedResources;
-    // (undocumented)
     success: boolean;
-    // (undocumented)
-    warnings?: string[];
+    warnings: string[];
 }
 
 // @public
@@ -335,6 +313,18 @@ interface ImportedFile {
     name: string;
     path?: string;
     type?: string;
+}
+
+declare namespace ImportTools {
+    export {
+        ImportView,
+        readFilesFromInput,
+        filesToDirectory,
+        exportAsJson,
+        exportUsingFileSystemAPI,
+        ImportedFile,
+        ImportedDirectory
+    }
 }
 
 // @public

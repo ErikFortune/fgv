@@ -11,7 +11,7 @@ export type { JsonValue } from '@fgv/ts-json-base';
 // - ResourceTools: ProcessedResources, ExtendedProcessedResources, ResourceManagerState, ResourceEditorFactory, ResourceEditorResult, ResourceEditorProps, ResourceDetailData
 // - ViewTools: ViewBaseProps, ImportViewProps, SourceViewProps, CompiledViewProps, ZipLoaderViewProps, Message, MessagesWindowProps
 // - ConfigurationTools: ConfigurationViewProps
-// - FileTools: ImportedFile, ImportedDirectory
+// - ImportTools: ImportedFile, ImportedDirectory
 
 // Export views
 export { ImportView } from './components/views/ImportView';
@@ -58,7 +58,7 @@ export {
   ResolutionTools,
   ConfigurationTools,
   ResourceTools,
-  FileTools,
+  ImportTools,
   TsResTools,
   ZipTools,
   ViewTools,

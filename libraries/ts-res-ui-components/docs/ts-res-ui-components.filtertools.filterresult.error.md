@@ -4,6 +4,8 @@
 
 ## FilterTools.FilterResult.error property
 
+Error message if the filtering operation failed
+
 **Signature:**
 
 ```typescript

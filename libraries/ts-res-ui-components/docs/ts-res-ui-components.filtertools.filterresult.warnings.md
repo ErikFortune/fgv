@@ -4,8 +4,10 @@
 
 ## FilterTools.FilterResult.warnings property
 
+Warning messages about potential filtering issues or edge cases
+
 **Signature:**
 
 ```typescript
-warnings?: string[];
+warnings: string[];
 ```

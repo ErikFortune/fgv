@@ -1,6 +1,6 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
 import { Runtime, Import, Resources } from '@fgv/ts-res';
-import { ProcessedResources } from '../types';
+import { ProcessedResources, FilteredResource, FilterResult } from '../types';
 
 /**
  * Options for configuring filtering behavior and output.
@@ -14,40 +14,6 @@ export interface FilterOptions {
   enableDebugLogging?: boolean;
   /** Attempt to reduce qualifier complexity during filtering */
   reduceQualifiers?: boolean;
-}
-
-/**
- * Information about a single resource after filtering has been applied.
- *
- * @public
- */
-export interface FilteredResource {
-  /** The resource ID */
-  id: string;
-  /** Number of candidates before filtering */
-  originalCandidateCount: number;
-  /** Number of candidates after filtering */
-  filteredCandidateCount: number;
-  /** Whether this resource has potential filtering issues */
-  hasWarning: boolean;
-}
-
-/**
- * Complete result of a filtering operation including processed data and analysis.
- *
- * @public
- */
-export interface FilterResult {
-  /** Whether the filtering operation completed successfully */
-  success: boolean;
-  /** Analysis of individual resources after filtering */
-  filteredResources: FilteredResource[];
-  /** The filtered processed resources, if successful */
-  processedResources?: ProcessedResources;
-  /** Error message if filtering failed */
-  error?: string;
-  /** Warning messages about potential filtering issues */
-  warnings: string[];
 }
 
 // Helper function for conditional debug logging

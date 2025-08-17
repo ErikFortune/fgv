@@ -69,7 +69,7 @@ Description
 </td></tr>
 <tr><td>
 
-[FileTools](./ts-res-ui-components.filetools.md)
+[FilterTools](./ts-res-ui-components.filtertools.md)
 
 
 </td><td>
@@ -78,7 +78,7 @@ Description
 </td></tr>
 <tr><td>
 
-[FilterTools](./ts-res-ui-components.filtertools.md)
+[ImportTools](./ts-res-ui-components.importtools.md)
 
 
 </td><td>

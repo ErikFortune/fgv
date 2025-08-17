@@ -84,7 +84,7 @@ _(Optional)_ Callback when a bundle file is imported
 
 </td><td>
 
-(data: [ImportedDirectory](./ts-res-ui-components.filetools.importeddirectory.md) \| [ImportedFile](./ts-res-ui-components.filetools.importedfile.md)<!-- -->\[\]) =&gt; void
+(data: [ImportedDirectory](./ts-res-ui-components.importtools.importeddirectory.md) \| [ImportedFile](./ts-res-ui-components.importtools.importedfile.md)<!-- -->\[\]) =&gt; void
 
 
 </td><td>

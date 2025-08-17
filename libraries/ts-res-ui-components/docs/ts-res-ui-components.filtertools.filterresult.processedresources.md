@@ -4,6 +4,8 @@
 
 ## FilterTools.FilterResult.processedResources property
 
+The filtered processed resources, available if filtering succeeded
+
 **Signature:**
 
 ```typescript

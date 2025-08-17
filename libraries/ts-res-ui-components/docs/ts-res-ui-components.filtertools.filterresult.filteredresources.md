@@ -4,8 +4,10 @@
 
 ## FilterTools.FilterResult.filteredResources property
 
+Analysis of individual resources after filtering, showing per-resource impact
+
 **Signature:**
 
 ```typescript
-filteredResources?: FilteredResource[];
+filteredResources: FilteredResource[];
 ```

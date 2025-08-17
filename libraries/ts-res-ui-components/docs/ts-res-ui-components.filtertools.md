@@ -117,6 +117,9 @@ Actions available for managing filter state. Provides methods for updating all a
 
 </td><td>
 
+Information about a single resource after filtering has been applied.
+
+FilteredResource provides detailed analytics about how filtering affected an individual resource, including candidate count changes and potential issues detected during the filtering process. This information is essential for understanding filtering effectiveness and diagnosing filtering problems.
 
 
 </td></tr>
@@ -138,6 +141,9 @@ Options for configuring filtering behavior and output.
 
 </td><td>
 
+Complete result of a filtering operation including processed data and analysis.
+
+FilterResult encapsulates the outcome of applying resource filtering, providing both the filtered resource system and detailed analytics about the filtering process. It includes success/failure status, processed resources, per-resource analysis, and any warnings or errors encountered during filtering.
 
 
 </td></tr>

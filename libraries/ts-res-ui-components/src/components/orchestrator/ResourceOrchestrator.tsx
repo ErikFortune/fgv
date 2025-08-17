@@ -19,8 +19,7 @@ import { createSimpleContext } from '../../utils/tsResIntegration';
 import {
   createFilteredResourceManagerSimple,
   analyzeFilteredResources,
-  hasFilterValues,
-  FilterResult as FilterUtilResult
+  hasFilterValues
 } from '../../utils/filterResources';
 import { Runtime } from '@fgv/ts-res';
 
@@ -180,7 +179,9 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
         if (filteredResult.isFailure()) {
           const result: FilterResult = {
             success: false,
-            error: `Filtering failed: ${filteredResult.message}`
+            error: `Filtering failed: ${filteredResult.message}`,
+            filteredResources: [],
+            warnings: []
           };
           setFilterResult(result);
           viewState.addMessage('error', `Filtering failed: ${filteredResult.message}`);
@@ -239,7 +240,9 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
         const errorMessage = error instanceof Error ? error.message : String(error);
         const result: FilterResult = {
           success: false,
-          error: errorMessage
+          error: errorMessage,
+          filteredResources: [],
+          warnings: []
         };
         setFilterResult(result);
         viewState.addMessage('error', `Filtering error: ${errorMessage}`);

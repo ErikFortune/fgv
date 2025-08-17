@@ -357,7 +357,7 @@ Description
 
 </td><td>
 
-(directory: [ImportedDirectory](./ts-res-ui-components.filetools.importeddirectory.md)<!-- -->) =&gt; Promise&lt;void&gt;
+(directory: [ImportedDirectory](./ts-res-ui-components.importtools.importeddirectory.md)<!-- -->) =&gt; Promise&lt;void&gt;
 
 
 </td><td>
@@ -374,7 +374,7 @@ Description
 
 </td><td>
 
-(directory: [ImportedDirectory](./ts-res-ui-components.filetools.importeddirectory.md)<!-- -->, config: Config.Model.ISystemConfiguration) =&gt; Promise&lt;void&gt;
+(directory: [ImportedDirectory](./ts-res-ui-components.importtools.importeddirectory.md)<!-- -->, config: Config.Model.ISystemConfiguration) =&gt; Promise&lt;void&gt;
 
 
 </td><td>
@@ -391,7 +391,7 @@ Description
 
 </td><td>
 
-(files: [ImportedFile](./ts-res-ui-components.filetools.importedfile.md)<!-- -->\[\]) =&gt; Promise&lt;void&gt;
+(files: [ImportedFile](./ts-res-ui-components.importtools.importedfile.md)<!-- -->\[\]) =&gt; Promise&lt;void&gt;
 
 
 </td><td>

@@ -4,6 +4,8 @@
 
 ## FilterTools.FilteredResource.hasWarning property
 
+Whether this resource has potential filtering issues or warnings
+
 **Signature:**
 
 ```typescript
