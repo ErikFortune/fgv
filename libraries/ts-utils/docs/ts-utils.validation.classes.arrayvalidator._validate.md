@@ -9,7 +9,7 @@ Static method which validates that a supplied `unknown` value is a `array` and t
 **Signature:**
 
 ```typescript
-protected _validate<T>(from: unknown, context?: TC): boolean | Failure<T>;
+protected _validate(from: unknown, context?: TC, self?: Validator<T[], TC>): boolean | Failure<T[]>;
 ```
 
 ## Parameters
@@ -62,11 +62,27 @@ _(Optional)_ Optional validation context will be propagated to element validator
 
 
 </td></tr>
+<tr><td>
+
+self
+
+
+</td><td>
+
+[Validator](./ts-utils.validator.md)<!-- -->&lt;T\[\], TC&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional self-reference for recursive validation.
+
+
+</td></tr>
 </tbody></table>
 
 **Returns:**
 
-boolean \| [Failure](./ts-utils.failure.md)<!-- -->&lt;T&gt;
+boolean \| [Failure](./ts-utils.failure.md)<!-- -->&lt;T\[\]&gt;
 
 Returns `true` if `from` is an `array` of valid elements, or [Failure](./ts-utils.failure.md) with an error message if not.
 

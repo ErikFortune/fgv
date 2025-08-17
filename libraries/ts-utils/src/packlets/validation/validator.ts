@@ -24,6 +24,18 @@ import { Brand, Failure, Result } from '../base';
 import { ConstraintTrait, ValidatorTraits } from './traits';
 
 /**
+ * Type for a validation function, which validates that a supplied `unknown`
+ * value is a valid value of type `<T>`, possibly as influenced by
+ * an optionally-supplied validation context of type `<TC>`.
+ * @public
+ */
+export type ValidatorFunc<T, TC> = (
+  from: unknown,
+  context?: TC,
+  self?: Validator<T, TC>
+) => boolean | Failure<T>;
+
+/**
  * Options that apply to any {@link Validation.Validator | Validator}.
  * @public
  */

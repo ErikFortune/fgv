@@ -27,7 +27,7 @@ class ArrayValidator<T, TC = unknown> extends ValidatorBase<T[], TC> {
     constructor(params: ArrayValidatorConstructorParams<T, TC>);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly options: ValidatorOptions<TC>;
-    protected _validate<T>(from: unknown, context?: TC): boolean | Failure<T>;
+    protected _validate(from: unknown, context?: TC, self?: Validator<T[], TC>): boolean | Failure<T[]>;
     // (undocumented)
     protected readonly _validateElement: Validator<T, TC>;
 }
@@ -43,7 +43,6 @@ interface ArrayValidatorConstructorParams<T, TC = unknown> extends ValidatorBase
 
 declare namespace Base {
     export {
-        ValidatorFunc,
         GenericValidatorConstructorParams,
         GenericValidator
     }
@@ -1799,7 +1798,7 @@ class ObjectValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // @internal (undocumented)
-    protected _validate(from: unknown, context?: TC): boolean | Failure<T>;
+    protected _validate(from: unknown, context?: TC, self?: Validator<T, TC>): boolean | Failure<T>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1842,7 +1841,7 @@ class OneOfValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
     constructor(params: OneOfValidatorConstructorParams<T, TC>);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly options: ValidatorOptions<TC>;
-    protected _validate<T>(from: unknown, context?: TC): boolean | Failure<T>;
+    protected _validate<T>(from: unknown, context?: TC, self?: Validator<T, TC>): boolean | Failure<T>;
     // (undocumented)
     protected readonly _validators: Validator<T, TC>[];
 }
@@ -2226,7 +2225,7 @@ class TypeGuardValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly options: ValidatorOptions<TC>;
     // @internal
-    protected _validate(from: unknown, context?: TC): boolean | Failure<T>;
+    protected _validate(from: unknown, context?: TC, self?: Validator<T, TC>): boolean | Failure<T>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2317,12 +2316,12 @@ declare namespace Validation {
         Classes,
         Validators,
         TypeGuardWithContext,
-        ValidatorFunc,
         FunctionConstraintTrait,
         ConstraintTrait,
         ValidatorTraitValues,
         defaultValidatorTraits,
         ValidatorTraits,
+        ValidatorFunc,
         ValidatorOptions,
         Constraint,
         ValidationErrorFormatter,
@@ -2359,7 +2358,7 @@ export interface Validator<T, TC = unknown> {
 }
 
 // @public
-type ValidatorFunc<T, TC> = (from: unknown, context?: TC) => boolean | Failure<T>;
+type ValidatorFunc<T, TC> = (from: unknown, context?: TC, self?: Validator<T, TC>) => boolean | Failure<T>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
