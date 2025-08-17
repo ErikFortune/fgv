@@ -11,7 +11,7 @@ Props for the ZipLoaderView component. Handles loading and importing ZIP archive
 ```typescript
 export interface ZipLoaderViewProps extends ViewBaseProps 
 ```
-**Extends:** [ViewBaseProps](./ts-res-ui-components.viewtools.viewbaseprops.md)
+**Extends:** [ViewBaseProps](./ts-res-ui-components.viewstatetools.viewbaseprops.md)
 
 ## Properties
 

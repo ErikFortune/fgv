@@ -13,7 +13,7 @@ The ResourcePicker is a comprehensive component for browsing and selecting resou
 ```typescript
 export interface ResourcePickerProps<T = unknown> extends ViewBaseProps 
 ```
-**Extends:** [ViewBaseProps](./ts-res-ui-components.viewtools.viewbaseprops.md)
+**Extends:** [ViewBaseProps](./ts-res-ui-components.viewstatetools.viewbaseprops.md)
 
 ## Example
 

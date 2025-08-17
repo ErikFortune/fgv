@@ -39,6 +39,17 @@ Represents a file imported into the system. Used for handling individual resourc
 
 
 </td></tr>
+<tr><td>
+
+[ImportViewProps](./ts-res-ui-components.importtools.importviewprops.md)
+
+
+</td><td>
+
+Props for the ImportView component. Handles importing resource configurations and bundles.
+
+
+</td></tr>
 </tbody></table>
 
 ## Variables

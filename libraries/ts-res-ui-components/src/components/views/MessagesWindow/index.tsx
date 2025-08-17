@@ -107,14 +107,14 @@ export interface MessagesWindowProps {
  * @example
  * ```typescript
  * // Integration with view state management
- * import { ViewTools } from '@fgv/ts-res-ui-components';
+ * import { ViewStateTools } from '@fgv/ts-res-ui-components';
  *
  * function MyTool() {
  *   const [viewState, setViewState] = useState({
- *     messages: [] as ViewTools.Message[]
+ *     messages: [] as ViewStateTools.Message[]
  *   });
  *
- *   const onMessage = (type: ViewTools.Message['type'], message: string) => {
+ *   const onMessage = (type: ViewStateTools.Message['type'], message: string) => {
  *     setViewState(prev => ({
  *       ...prev,
  *       messages: [...prev.messages, {
@@ -128,7 +128,7 @@ export interface MessagesWindowProps {
  *
  *   return React.createElement('div', { className: 'flex flex-col h-screen' },
  *     React.createElement('div', { className: 'flex-1' }),
- *     React.createElement(ViewTools.MessagesWindow, {
+ *     React.createElement(ViewStateTools.MessagesWindow, {
  *       messages: viewState.messages,
  *       onClearMessages: () => setViewState(prev => ({ ...prev, messages: [] }))
  *     })

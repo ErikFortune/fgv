@@ -11,7 +11,7 @@ Props for the ResolutionView component. Provides resource resolution testing and
 ```typescript
 export interface ResolutionViewProps extends ViewBaseProps 
 ```
-**Extends:** [ViewBaseProps](./ts-res-ui-components.viewtools.viewbaseprops.md)
+**Extends:** [ViewBaseProps](./ts-res-ui-components.viewstatetools.viewbaseprops.md)
 
 ## Properties
 

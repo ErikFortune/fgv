@@ -123,7 +123,7 @@ Description
 </td></tr>
 <tr><td>
 
-[ViewTools](./ts-res-ui-components.viewtools.md)
+[ViewStateTools](./ts-res-ui-components.viewstatetools.md)
 
 
 </td><td>

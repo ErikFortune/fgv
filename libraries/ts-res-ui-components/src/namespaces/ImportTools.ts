@@ -39,4 +39,4 @@ export {
 } from '../utils/fileProcessing';
 
 // Export types related to file handling and processing
-export type { ImportedFile, ImportedDirectory } from '../types';
+export type { ImportedFile, ImportedDirectory, ImportViewProps } from '../types';

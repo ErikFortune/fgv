@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ImportViewProps](./ts-res-ui-components.ziptools.importviewprops.md)
+
+
+</td><td>
+
+Props for the ImportView component. Handles importing resource configurations and bundles.
+
+
+</td></tr>
+<tr><td>
+
 [ZipLoaderViewProps](./ts-res-ui-components.ziptools.ziploaderviewprops.md)
 
 

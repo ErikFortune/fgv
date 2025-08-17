@@ -10,7 +10,7 @@
  *   FilterTools,
  *   ResolutionTools,
  *   ResourceTools,
- *   ViewTools,
+ *   ViewStateTools,
  *   ImportTools,
  *   ZipTools,
  *   PickerTools
@@ -19,13 +19,13 @@
  * // Use view components
  * <FilterTools.FilterView {...filterProps} />
  * <ResolutionTools.ResolutionView {...resolutionProps} />
- * <ViewTools.MessagesWindow {...messageProps} />
+ * <ViewStateTools.MessagesWindow {...messageProps} />
  * <ImportTools.ImportView {...importProps} />
  * <PickerTools.ResourcePicker {...pickerProps} />
  *
  * // Use hooks for state management
  * const { state, actions } = ResourceTools.useResourceData();
- * const { messages, addMessage } = ViewTools.useViewState();
+ * const { messages, addMessage } = ViewStateTools.useViewState();
  * const { state: filterState } = FilterTools.useFilterState();
  *
  * // Or use utility functions
@@ -44,6 +44,6 @@ export * as ConfigurationTools from './ConfigurationTools';
 export * as ResourceTools from './ResourceTools';
 export * as ImportTools from './ImportTools';
 export * as TsResTools from './TsResTools';
-export * as ViewTools from './ViewTools';
+export * as ViewStateTools from './ViewStateTools';
 export * as ZipTools from './ZipTools';
 export * as PickerTools from './PickerTools';

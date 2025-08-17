@@ -11,7 +11,7 @@ Props for the FilterView component. Provides resource filtering functionality.
 ```typescript
 export interface FilterViewProps extends ViewBaseProps 
 ```
-**Extends:** [ViewBaseProps](./ts-res-ui-components.viewtools.viewbaseprops.md)
+**Extends:** [ViewBaseProps](./ts-res-ui-components.viewstatetools.viewbaseprops.md)
 
 ## Properties
 

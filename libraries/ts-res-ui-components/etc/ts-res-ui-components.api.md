@@ -323,7 +323,8 @@ declare namespace ImportTools {
         exportAsJson,
         exportUsingFileSystemAPI,
         ImportedFile,
-        ImportedDirectory
+        ImportedDirectory,
+        ImportViewProps
     }
 }
 
@@ -848,7 +849,9 @@ declare namespace TsResTools {
         convertImportedDirectoryToFileTree,
         createTsResSystemFromConfig,
         processImportedFiles,
-        processImportedDirectory
+        processImportedDirectory,
+        SourceViewProps,
+        CompiledViewProps
     }
 }
 
@@ -888,16 +891,13 @@ interface ViewBaseProps {
     onMessage?: (type: Message['type'], message: string) => void;
 }
 
-declare namespace ViewTools {
+declare namespace ViewStateTools {
     export {
         MessagesWindow,
         useViewState,
         Message_2 as Message,
         MessagesWindowProps,
-        ViewBaseProps,
-        ImportViewProps,
-        SourceViewProps,
-        CompiledViewProps
+        ViewBaseProps
     }
 }
 
@@ -1036,7 +1036,8 @@ declare namespace ZipTools {
         IZipLoader,
         ZipFileItem,
         ZipFileTree,
-        ZipLoaderViewProps
+        ZipLoaderViewProps,
+        ImportViewProps
     }
 }
 

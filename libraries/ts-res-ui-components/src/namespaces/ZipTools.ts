@@ -85,5 +85,5 @@ export type {
   ZipFileTree
 } from '../utils/zipLoader/types';
 
-// Export ZipLoaderView component props
-export type { ZipLoaderViewProps } from '../types';
+// Export view component props
+export type { ZipLoaderViewProps, ImportViewProps } from '../types';

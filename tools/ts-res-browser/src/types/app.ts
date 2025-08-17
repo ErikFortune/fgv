@@ -1,7 +1,7 @@
 // Application state types
-import { ViewTools } from '@fgv/ts-res-ui-components';
+import { ViewStateTools } from '@fgv/ts-res-ui-components';
 
-export type Message = ViewTools.Message;
+export type Message = ViewStateTools.Message;
 
 export type Tool = 'import' | 'source' | 'filter' | 'compiled' | 'resolution' | 'configuration';
 

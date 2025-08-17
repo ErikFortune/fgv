@@ -4,6 +4,43 @@
 
 ## TsResTools namespace
 
+## Interfaces
+
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[CompiledViewProps](./ts-res-ui-components.tsrestools.compiledviewprops.md)
+
+
+</td><td>
+
+Props for the CompiledView component. Displays the compiled resource collection structure.
+
+
+</td></tr>
+<tr><td>
+
+[SourceViewProps](./ts-res-ui-components.tsrestools.sourceviewprops.md)
+
+
+</td><td>
+
+Props for the SourceView component. Displays and manages the source resource collection.
+
+
+</td></tr>
+</tbody></table>
+
 ## Variables
 
 <table><thead><tr><th>

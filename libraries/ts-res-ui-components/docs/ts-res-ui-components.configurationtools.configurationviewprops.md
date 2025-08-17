@@ -11,7 +11,7 @@ Props for the ConfigurationView component. Handles editing and managing system c
 ```typescript
 export interface ConfigurationViewProps extends ViewBaseProps 
 ```
-**Extends:** [ViewBaseProps](./ts-res-ui-components.viewtools.viewbaseprops.md)
+**Extends:** [ViewBaseProps](./ts-res-ui-components.viewstatetools.viewbaseprops.md)
 
 ## Properties
 

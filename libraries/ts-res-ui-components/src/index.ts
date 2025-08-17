@@ -9,7 +9,10 @@ export type { JsonValue } from '@fgv/ts-json-base';
 // - FilterTools: FilterState, FilterActions, FilterViewProps, FilterResult, FilteredResource
 // - ResolutionTools: ResolutionState, ResolutionActions, ResolutionViewProps, ResolutionResult, CandidateInfo, ConditionEvaluationResult, EditedResourceInfo
 // - ResourceTools: ProcessedResources, ExtendedProcessedResources, ResourceManagerState, ResourceEditorFactory, ResourceEditorResult, ResourceEditorProps, ResourceDetailData
-// - ViewTools: ViewBaseProps, ImportViewProps, SourceViewProps, CompiledViewProps, ZipLoaderViewProps, Message, MessagesWindowProps
+// - ViewStateTools: ViewBaseProps, Message, MessagesWindowProps
+// - ImportTools: ImportViewProps, ImportedFile, ImportedDirectory
+// - TsResTools: SourceViewProps, CompiledViewProps
+// - ZipTools: ZipLoaderViewProps, ImportViewProps (dual export)
 // - ConfigurationTools: ConfigurationViewProps
 // - ImportTools: ImportedFile, ImportedDirectory
 
@@ -47,7 +50,7 @@ export { ResolutionResults } from './components/common/ResolutionResults';
 
 // All hooks are now organized within their respective namespaces:
 // - useResourceData: ResourceTools.useResourceData (orchestrator data hook)
-// - useViewState: ViewTools.useViewState (view state and messages)
+// - useViewState: ViewStateTools.useViewState (view state and messages)
 // - useFilterState: FilterTools.useFilterState (filter management)
 // - useResolutionState: ResolutionTools.useResolutionState (resource resolution)
 // - useConfigurationState: ConfigurationTools.useConfigurationState (system configuration)
@@ -61,6 +64,6 @@ export {
   ImportTools,
   TsResTools,
   ZipTools,
-  ViewTools,
+  ViewStateTools,
   PickerTools
 } from './namespaces';

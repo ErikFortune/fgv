@@ -44,3 +44,6 @@ export {
   processImportedFiles,
   processImportedDirectory
 } from '../utils/tsResIntegration';
+
+// Export view component props
+export type { SourceViewProps, CompiledViewProps } from '../types';
