@@ -45,7 +45,7 @@ Description
 
 </td><td>
 
-[Model.ISystemConfiguration](./ts-res.config.model.isystemconfiguration.md) \| undefined
+[ConfigModel.ISystemConfiguration](./ts-res.config.model.isystemconfiguration.md) \| undefined
 
 
 </td><td>
@@ -64,7 +64,7 @@ Loaded configuration
 
 </td><td>
 
-[IImportedDirectory](./ts-res.ziparchive.iimporteddirectory.md) \| undefined
+IImportedDirectory \| undefined
 
 
 </td><td>
@@ -83,7 +83,7 @@ Directory structure if available
 
 </td><td>
 
-[IImportedFile](./ts-res.ziparchive.iimportedfile.md)<!-- -->\[\]
+IImportedFile\[\]
 
 
 </td><td>
@@ -102,7 +102,7 @@ All files extracted from the archive
 
 </td><td>
 
-[IZipArchiveManifest](./ts-res.ziparchive.iziparchivemanifest.md) \| undefined
+IZipArchiveManifest \| undefined
 
 
 </td><td>

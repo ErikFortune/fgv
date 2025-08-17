@@ -2,114 +2,12 @@
 
 [Home](./index.md) &gt; [@fgv/ts-res](./ts-res.md) &gt; [ZipArchive](./ts-res.ziparchive.md) &gt; [IImportedFile](./ts-res.ziparchive.iimportedfile.md)
 
-## ZipArchive.IImportedFile interface
+## ZipArchive.IImportedFile type
 
 Imported file representation
 
 **Signature:**
 
 ```typescript
-export interface IImportedFile 
+export type IImportedFile = Json.IImportedFile;
 ```
-
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[content](./ts-res.ziparchive.iimportedfile.content.md)
-
-
-</td><td>
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-File content as string
-
-
-</td></tr>
-<tr><td>
-
-[name](./ts-res.ziparchive.iimportedfile.name.md)
-
-
-</td><td>
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-File name
-
-
-</td></tr>
-<tr><td>
-
-[path](./ts-res.ziparchive.iimportedfile.path.md)
-
-
-</td><td>
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-Full path within archive
-
-
-</td></tr>
-<tr><td>
-
-[type](./ts-res.ziparchive.iimportedfile.type.md)
-
-
-</td><td>
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-MIME type
-
-
-</td></tr>
-</tbody></table>
-

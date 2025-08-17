@@ -9,7 +9,7 @@ Create a ZIP archive manifest object
 **Signature:**
 
 ```typescript
-export declare function createZipArchiveManifest(inputType: 'file' | 'directory', originalPath: string, archivePath: string, configPath?: string): IZipArchiveManifest;
+export declare function createZipArchiveManifest(inputType: 'file' | 'directory', originalPath: string, archivePath: string, configPath?: string): Json.IZipArchiveManifest;
 ```
 
 ## Parameters
@@ -98,7 +98,7 @@ _(Optional)_ Optional configuration file path
 
 **Returns:**
 
-[IZipArchiveManifest](./ts-res.ziparchive.iziparchivemanifest.md)
+Json.IZipArchiveManifest
 
 ZIP archive manifest
 

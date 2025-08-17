@@ -2,95 +2,12 @@
 
 [Home](./index.md) &gt; [@fgv/ts-res](./ts-res.md) &gt; [ZipArchive](./ts-res.ziparchive.md) &gt; [IImportedDirectory](./ts-res.ziparchive.iimporteddirectory.md)
 
-## ZipArchive.IImportedDirectory interface
+## ZipArchive.IImportedDirectory type
 
 Imported directory structure
 
 **Signature:**
 
 ```typescript
-export interface IImportedDirectory 
+export type IImportedDirectory = Json.IImportedDirectory;
 ```
-
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[files](./ts-res.ziparchive.iimporteddirectory.files.md)
-
-
-</td><td>
-
-
-</td><td>
-
-[IImportedFile](./ts-res.ziparchive.iimportedfile.md)<!-- -->\[\]
-
-
-</td><td>
-
-Files in this directory
-
-
-</td></tr>
-<tr><td>
-
-[name](./ts-res.ziparchive.iimporteddirectory.name.md)
-
-
-</td><td>
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-Directory name
-
-
-</td></tr>
-<tr><td>
-
-[subdirectories](./ts-res.ziparchive.iimporteddirectory.subdirectories.md)
-
-
-</td><td>
-
-
-</td><td>
-
-[IImportedDirectory](./ts-res.ziparchive.iimporteddirectory.md)<!-- -->\[\]
-
-
-</td><td>
-
-Subdirectories
-
-
-</td></tr>
-</tbody></table>
-

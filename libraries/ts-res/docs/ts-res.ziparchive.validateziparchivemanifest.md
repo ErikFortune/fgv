@@ -9,7 +9,7 @@ Validate a ZIP archive manifest object
 **Signature:**
 
 ```typescript
-export declare function validateZipArchiveManifest(manifest: unknown): Result<IZipArchiveManifest>;
+export declare function validateZipArchiveManifest(manifest: unknown): Result<Json.IZipArchiveManifest>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ Object to validate as manifest
 
 **Returns:**
 
-Result&lt;[IZipArchiveManifest](./ts-res.ziparchive.iziparchivemanifest.md)<!-- -->&gt;
+Result&lt;Json.IZipArchiveManifest&gt;
 
 Result containing validated manifest
 

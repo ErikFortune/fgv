@@ -9,5 +9,5 @@ Override configuration for processing
 **Signature:**
 
 ```typescript
-overrideConfig?: Model.ISystemConfiguration;
+overrideConfig?: ConfigModel.ISystemConfiguration;
 ```

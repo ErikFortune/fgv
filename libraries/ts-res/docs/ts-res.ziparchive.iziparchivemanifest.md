@@ -2,95 +2,12 @@
 
 [Home](./index.md) &gt; [@fgv/ts-res](./ts-res.md) &gt; [ZipArchive](./ts-res.ziparchive.md) &gt; [IZipArchiveManifest](./ts-res.ziparchive.iziparchivemanifest.md)
 
-## ZipArchive.IZipArchiveManifest interface
+## ZipArchive.IZipArchiveManifest type
 
 Standardized ZIP archive manifest format (compatible with existing tools)
 
 **Signature:**
 
 ```typescript
-export interface IZipArchiveManifest 
+export type IZipArchiveManifest = Json.IZipArchiveManifest;
 ```
-
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[config?](./ts-res.ziparchive.iziparchivemanifest.config.md)
-
-
-</td><td>
-
-
-</td><td>
-
-{ type: 'file'; originalPath: string; archivePath: string; }
-
-
-</td><td>
-
-_(Optional)_ Optional configuration file information
-
-
-</td></tr>
-<tr><td>
-
-[input?](./ts-res.ziparchive.iziparchivemanifest.input.md)
-
-
-</td><td>
-
-
-</td><td>
-
-{ type: 'file' \| 'directory'; originalPath: string; archivePath: string; }
-
-
-</td><td>
-
-_(Optional)_ Optional input source information
-
-
-</td></tr>
-<tr><td>
-
-[timestamp](./ts-res.ziparchive.iziparchivemanifest.timestamp.md)
-
-
-</td><td>
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-Archive creation timestamp
-
-
-</td></tr>
-</tbody></table>
-

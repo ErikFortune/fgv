@@ -9,7 +9,7 @@ Parse and validate configuration JSON
 **Signature:**
 
 ```typescript
-export declare function parseZipArchiveConfiguration(configData: string): Result<Model.ISystemConfiguration>;
+export declare function parseZipArchiveConfiguration(configData: string): Result<ConfigModel.ISystemConfiguration>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ JSON string containing configuration
 
 **Returns:**
 
-Result&lt;[Model.ISystemConfiguration](./ts-res.config.model.isystemconfiguration.md)<!-- -->&gt;
+Result&lt;[ConfigModel.ISystemConfiguration](./ts-res.config.model.isystemconfiguration.md)<!-- -->&gt;
 
 Result containing validated configuration
 

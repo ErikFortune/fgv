@@ -9,5 +9,5 @@ Loaded configuration
 **Signature:**
 
 ```typescript
-config: Model.ISystemConfiguration | undefined;
+config: ConfigModel.ISystemConfiguration | undefined;
 ```

@@ -170,28 +170,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IImportedDirectory](./ts-res.ziparchive.iimporteddirectory.md)
-
-
-</td><td>
-
-Imported directory structure
-
-
-</td></tr>
-<tr><td>
-
-[IImportedFile](./ts-res.ziparchive.iimportedfile.md)
-
-
-</td><td>
-
-Imported file representation
-
-
-</td></tr>
-<tr><td>
-
 [IZipArchiveLoadOptions](./ts-res.ziparchive.iziparchiveloadoptions.md)
 
 
@@ -214,17 +192,6 @@ Result of ZIP archive loading
 </td></tr>
 <tr><td>
 
-[IZipArchiveManifest](./ts-res.ziparchive.iziparchivemanifest.md)
-
-
-</td><td>
-
-Standardized ZIP archive manifest format (compatible with existing tools)
-
-
-</td></tr>
-<tr><td>
-
 [IZipArchiveOptions](./ts-res.ziparchive.iziparchiveoptions.md)
 
 
@@ -242,6 +209,39 @@ Options for creating a ZIP archive (compatible with existing ZipArchiver)
 </td><td>
 
 Result of ZIP archive creation
+
+
+</td></tr>
+</tbody></table>
+
+## Namespaces
+
+<table><thead><tr><th>
+
+Namespace
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Convert](./ts-res.ziparchive.convert.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Json](./ts-res.ziparchive.json.md)
+
+
+</td><td>
 
 
 </td></tr>
@@ -287,6 +287,39 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[IImportedDirectory](./ts-res.ziparchive.iimporteddirectory.md)
+
+
+</td><td>
+
+Imported directory structure
+
+
+</td></tr>
+<tr><td>
+
+[IImportedFile](./ts-res.ziparchive.iimportedfile.md)
+
+
+</td><td>
+
+Imported file representation
+
+
+</td></tr>
+<tr><td>
+
+[IZipArchiveManifest](./ts-res.ziparchive.iziparchivemanifest.md)
+
+
+</td><td>
+
+Standardized ZIP archive manifest format (compatible with existing tools)
+
+
+</td></tr>
+<tr><td>
 
 [ZipArchiveProgressCallback](./ts-res.ziparchive.ziparchiveprogresscallback.md)
 

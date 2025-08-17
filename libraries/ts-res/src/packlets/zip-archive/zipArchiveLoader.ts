@@ -33,20 +33,6 @@ import { Model as ConfigModel } from '../config';
 import * as Json from './json';
 import { parseZipArchiveManifest, parseZipArchiveConfiguration, isZipFile } from './zipArchiveFormat';
 
-// Node.js specific imports (conditionally loaded)
-let fs: typeof import('fs') | undefined;
-let path: typeof import('path') | undefined;
-
-// Dynamically import Node.js modules if available
-if (typeof require !== 'undefined') {
-  try {
-    fs = require('fs');
-    path = require('path');
-  } catch {
-    // Running in browser environment
-  }
-}
-
 /**
  * ZIP archive loader extending ts-extras foundation
  * @public
@@ -139,46 +125,6 @@ export class ZipArchiveLoader {
       directory,
       processedResources
     });
-  }
-
-  /**
-   * Load ZIP archive from file path (Node.js)
-   * @param filePath - Path to ZIP file
-   * @param options - Loading options
-   * @param onProgress - Optional progress callback
-   * @returns Result containing loaded archive data
-   */
-  public async loadFromPath(
-    filePath: string,
-    options: IZipArchiveLoadOptions = {},
-    onProgress?: ZipArchiveProgressCallback
-  ): Promise<Result<IZipArchiveLoadResult>> {
-    if (!fs || !path) {
-      return fail('File system operations not available in this environment');
-    }
-
-    onProgress?.('reading-file', 0, `Reading file: ${filePath}`);
-
-    if (!isZipFile(filePath)) {
-      return fail(`File ${filePath} is not a ZIP file`);
-    }
-
-    try {
-      const resolvedPath = path!.resolve(filePath);
-
-      if (!fs!.existsSync(resolvedPath)) {
-        return fail(`ZIP file does not exist: ${resolvedPath}`);
-      }
-
-      const buffer = fs!.readFileSync(resolvedPath);
-      onProgress?.('reading-file', 100, 'File read complete');
-
-      return await this.loadFromBuffer(buffer.buffer, options, onProgress);
-    } catch (error) {
-      return fail(
-        `Failed to read file ${filePath}: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
   }
 
   /**

@@ -64,7 +64,7 @@ _(Optional)_ Optional file path if saved to disk
 
 </td><td>
 
-[IZipArchiveManifest](./ts-res.ziparchive.iziparchivemanifest.md)
+IZipArchiveManifest
 
 
 </td><td>

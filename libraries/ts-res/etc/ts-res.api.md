@@ -3118,12 +3118,10 @@ type IZipArchiveManifest_2 = Json_2.IZipArchiveManifest;
 interface IZipArchiveOptions {
     config?: string;
     input?: string;
-    outputDir?: string;
 }
 
 // @public
 interface IZipArchiveResult {
-    filePath?: string;
     manifest: IZipArchiveManifest_2;
     size: number;
     zipBuffer: Uint8Array;
@@ -4923,7 +4921,7 @@ const ZipArchiveConstants: {
 
 // @public
 class ZipArchiveCreator {
-    create(options: IZipArchiveOptions, onProgress?: ZipArchiveProgressCallback): Promise<Result<IZipArchiveResult>>;
+    createBuffer(options: IZipArchiveOptions, onProgress?: ZipArchiveProgressCallback): Promise<Result<IZipArchiveResult>>;
 }
 
 // @public
@@ -4936,14 +4934,13 @@ const zipArchiveInputType: Validator<'file' | 'directory'>;
 class ZipArchiveLoader {
     loadFromBuffer(buffer: ArrayBuffer, options?: IZipArchiveLoadOptions, onProgress?: ZipArchiveProgressCallback): Promise<Result<IZipArchiveLoadResult>>;
     loadFromFile(file: File, options?: IZipArchiveLoadOptions, onProgress?: ZipArchiveProgressCallback): Promise<Result<IZipArchiveLoadResult>>;
-    loadFromPath(filePath: string, options?: IZipArchiveLoadOptions, onProgress?: ZipArchiveProgressCallback): Promise<Result<IZipArchiveLoadResult>>;
 }
 
 // @public
 const zipArchiveManifest: Validator<Json_2.IZipArchiveManifest>;
 
 // @public
-type ZipArchiveProgressCallback = (stage: 'reading-file' | 'parsing-zip' | 'loading-manifest' | 'loading-config' | 'extracting-files' | 'processing-resources' | 'creating-zip' | 'saving-file', progress: number, // 0-100
+type ZipArchiveProgressCallback = (stage: 'reading-file' | 'parsing-zip' | 'loading-manifest' | 'loading-config' | 'extracting-files' | 'processing-resources' | 'creating-zip', progress: number, // 0-100
 details: string) => void;
 
 // Warnings were encountered during analysis:

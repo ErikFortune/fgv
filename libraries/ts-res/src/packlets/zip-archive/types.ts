@@ -24,7 +24,7 @@ import { Model as ConfigModel } from '../config';
 import * as Json from './json';
 
 /**
- * Options for creating a ZIP archive (compatible with existing ZipArchiver)
+ * Options for creating a ZIP archive buffer
  * @public
  */
 export interface IZipArchiveOptions {
@@ -32,8 +32,6 @@ export interface IZipArchiveOptions {
   input?: string;
   /** Optional configuration file path */
   config?: string;
-  /** Optional output directory for saving the archive file */
-  outputDir?: string;
 }
 
 /**
@@ -43,7 +41,7 @@ export interface IZipArchiveOptions {
 export type IZipArchiveManifest = Json.IZipArchiveManifest;
 
 /**
- * Result of ZIP archive creation
+ * Result of ZIP archive buffer creation
  * @public
  */
 export interface IZipArchiveResult {
@@ -53,8 +51,6 @@ export interface IZipArchiveResult {
   manifest: IZipArchiveManifest;
   /** Total ZIP size in bytes */
   size: number;
-  /** Optional file path if saved to disk */
-  filePath?: string;
 }
 
 /**
@@ -113,8 +109,7 @@ export type ZipArchiveProgressCallback = (
     | 'loading-config'
     | 'extracting-files'
     | 'processing-resources'
-    | 'creating-zip'
-    | 'saving-file',
+    | 'creating-zip',
   progress: number, // 0-100
   details: string
 ) => void;

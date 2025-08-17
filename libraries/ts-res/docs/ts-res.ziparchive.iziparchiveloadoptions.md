@@ -64,7 +64,7 @@ _(Optional)_ Automatically process resources using ts-res
 
 </td><td>
 
-[Model.ISystemConfiguration](./ts-res.config.model.isystemconfiguration.md)
+[ConfigModel.ISystemConfiguration](./ts-res.config.model.isystemconfiguration.md)
 
 
 </td><td>

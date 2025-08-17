@@ -21,26 +21,10 @@
  */
 
 import { zipSync } from 'fflate';
-import { Result, succeed, fail } from '@fgv/ts-utils';
+import { Result, succeed, fail, FileTree } from '@fgv/ts-utils';
 import type { IZipArchiveOptions, IZipArchiveResult, ZipArchiveProgressCallback } from './types';
-import { createZipArchiveManifest, generateZipArchiveFilename, normalizePath } from './zipArchiveFormat';
+import { createZipArchiveManifest, normalizePath } from './zipArchiveFormat';
 import * as Json from './json';
-
-// Node.js specific imports (conditionally loaded)
-let fs: typeof import('fs') | undefined;
-let path: typeof import('path') | undefined;
-let os: typeof import('os') | undefined;
-
-// Dynamically import Node.js modules if available
-if (typeof require !== 'undefined') {
-  try {
-    fs = require('fs');
-    path = require('path');
-    os = require('os');
-  } catch {
-    // Running in browser environment
-  }
-}
 
 /**
  * ZIP archive creator using fflate for universal compatibility
@@ -48,84 +32,79 @@ if (typeof require !== 'undefined') {
  */
 export class ZipArchiveCreator {
   /**
-   * Create a ZIP archive from file system paths (compatible with existing ZipArchiver)
-   * @param options - Input paths and configuration (matches existing ZipArchiveOptions)
+   * Create a ZIP archive buffer from file system paths
+   * @param options - Input paths and configuration
    * @param onProgress - Optional progress callback
    * @returns Result containing ZIP buffer and manifest
    */
-  public async create(
+  public async createBuffer(
     options: IZipArchiveOptions,
     onProgress?: ZipArchiveProgressCallback
   ): Promise<Result<IZipArchiveResult>> {
     try {
       onProgress?.('creating-zip', 0, 'Starting ZIP archive creation');
 
-      // Validate environment for file system operations
-      if (!fs || !path || !os) {
-        return fail('File system operations not available in this environment');
-      }
-
       const files: Record<string, Uint8Array> = {};
       let manifest: Json.IZipArchiveManifest = createZipArchiveManifest('file', '', '');
 
-      // Process input files/directory
+      // Process input files/directory using FileTree
       if (options.input) {
         onProgress?.('reading-file', 10, `Processing input: ${options.input}`);
 
-        const inputPath = path.resolve(options.input);
-
-        if (!fs.existsSync(inputPath)) {
-          return fail(`Input path does not exist: ${inputPath}`);
+        const fileTreeResult = FileTree.forFilesystem();
+        if (fileTreeResult.isFailure()) {
+          return fail(`Failed to create file tree: ${fileTreeResult.message}`);
         }
+        const fileTree = fileTreeResult.value;
 
-        const stats = fs.statSync(inputPath);
+        const itemResult = fileTree.getItem(options.input);
+        if (itemResult.isFailure()) {
+          return fail(`Input path does not exist: ${options.input}`);
+        }
+        const item = itemResult.value;
 
-        if (stats.isDirectory()) {
+        if (item.type === 'directory') {
           // Add entire directory recursively, preserving structure
-          const dirName = path.basename(inputPath);
-          const archivePath = `input/${dirName}`;
+          const archivePath = `input/${item.name}`;
 
-          const addDirResult = this._addDirectoryToZip(files, inputPath, archivePath, onProgress);
+          const addDirResult = await this._addDirectoryTreeToZip(files, item, archivePath, onProgress);
           if (addDirResult.isFailure()) {
             return fail(addDirResult.message);
           }
 
-          manifest = createZipArchiveManifest('directory', inputPath, archivePath);
-        } else if (stats.isFile()) {
+          manifest = createZipArchiveManifest('directory', item.absolutePath, archivePath);
+        } else if (item.type === 'file') {
           // Add single file
-          const fileName = path.basename(inputPath);
-          const archivePath = `input/${fileName}`;
+          const archivePath = `input/${item.name}`;
 
-          const addFileResult = this._addFileToZip(files, inputPath, archivePath);
+          const addFileResult = await this._addFileTreeItemToZip(files, item, archivePath);
           if (addFileResult.isFailure()) {
             return fail(addFileResult.message);
           }
 
-          manifest = createZipArchiveManifest('file', inputPath, archivePath);
-        } else {
-          return fail(`Input path is not a file or directory: ${inputPath}`);
+          manifest = createZipArchiveManifest('file', item.absolutePath, archivePath);
         }
       }
 
-      // Process config file
+      // Process config file using FileTree
       if (options.config) {
         onProgress?.('reading-file', 40, `Processing config: ${options.config}`);
 
-        const configPath = path.resolve(options.config);
-
-        if (!fs.existsSync(configPath)) {
-          return fail(`Config file does not exist: ${configPath}`);
+        const fileTreeResult = FileTree.forFilesystem();
+        if (fileTreeResult.isFailure()) {
+          return fail(`Failed to create file tree: ${fileTreeResult.message}`);
         }
+        const fileTree = fileTreeResult.value;
 
-        const stats = fs.statSync(configPath);
-        if (!stats.isFile()) {
-          return fail(`Config path must be a file: ${configPath}`);
+        const fileResult = fileTree.getFile(options.config);
+        if (fileResult.isFailure()) {
+          return fail(`Config file does not exist or is not a file: ${options.config}`);
         }
+        const configFile = fileResult.value;
 
-        const fileName = path.basename(configPath);
-        const archivePath = `config/${fileName}`;
+        const archivePath = `config/${configFile.name}`;
 
-        const addConfigResult = this._addFileToZip(files, configPath, archivePath);
+        const addConfigResult = await this._addFileTreeItemToZip(files, configFile, archivePath);
         if (addConfigResult.isFailure()) {
           return fail(addConfigResult.message);
         }
@@ -133,7 +112,7 @@ export class ZipArchiveCreator {
         // Update manifest with config info
         manifest.config = {
           type: 'file',
-          originalPath: configPath,
+          originalPath: configFile.absolutePath,
           archivePath
         };
       }
@@ -153,27 +132,7 @@ export class ZipArchiveCreator {
         size: zipBuffer.length
       };
 
-      // Save to file if outputDir is specified
-      if (options.outputDir) {
-        onProgress?.('saving-file', 90, 'Saving ZIP file');
-
-        const outputDir = path.resolve(options.outputDir);
-
-        // Ensure output directory exists
-        if (!fs.existsSync(outputDir)) {
-          fs.mkdirSync(outputDir, { recursive: true });
-        }
-
-        const zipFileName = generateZipArchiveFilename();
-        const zipPath = path.join(outputDir, zipFileName);
-
-        fs.writeFileSync(zipPath, zipBuffer);
-        result.filePath = zipPath;
-
-        onProgress?.('saving-file', 100, `ZIP saved to: ${zipPath}`);
-      } else {
-        onProgress?.('creating-zip', 100, 'ZIP archive created in memory');
-      }
+      onProgress?.('creating-zip', 100, 'ZIP archive buffer created');
 
       return succeed(result);
     } catch (error) {
@@ -182,77 +141,65 @@ export class ZipArchiveCreator {
   }
 
   /**
-   * Add a single file to the ZIP archive
+   * Add a single FileTree item to the ZIP archive
    * @param files - ZIP files collection
-   * @param filePath - Path to the file to add
+   * @param fileItem - FileTree file item to add
    * @param archivePath - Path within the archive
    * @returns Result indicating success or failure
    */
-  private _addFileToZip(
+  private async _addFileTreeItemToZip(
     files: Record<string, Uint8Array>,
-    filePath: string,
+    fileItem: FileTree.IFileTreeFileItem,
     archivePath: string
-  ): Result<void> {
-    try {
-      if (!fs) {
-        return fail('File system not available');
-      }
-
-      const content = fs.readFileSync(filePath);
-      files[normalizePath(archivePath)] = content;
-      return succeed(undefined);
-    } catch (error) {
-      return fail(
-        `Failed to add file ${filePath}: ${error instanceof Error ? error.message : String(error)}`
-      );
+  ): Promise<Result<void>> {
+    const contentResult = fileItem.getRawContents();
+    if (contentResult.isFailure()) {
+      return fail(`Failed to read file ${fileItem.absolutePath}: ${contentResult.message}`);
     }
+
+    const content = new TextEncoder().encode(contentResult.value);
+    files[normalizePath(archivePath)] = content;
+    return succeed(undefined);
   }
 
   /**
-   * Add a directory recursively to the ZIP archive
+   * Add a directory recursively to the ZIP archive using FileTree
    * @param files - ZIP files collection
-   * @param dirPath - Path to the directory to add
+   * @param directoryItem - FileTree directory item to add
    * @param archivePrefix - Prefix path within the archive
    * @param onProgress - Optional progress callback
    * @returns Result indicating success or failure
    */
-  private _addDirectoryToZip(
+  private async _addDirectoryTreeToZip(
     files: Record<string, Uint8Array>,
-    dirPath: string,
+    directoryItem: FileTree.IFileTreeDirectoryItem,
     archivePrefix: string,
     onProgress?: ZipArchiveProgressCallback
-  ): Result<void> {
-    try {
-      if (!fs || !path) {
-        return fail('File system not available');
-      }
-
-      const addDirectoryRecursive = (currentPath: string, currentPrefix: string): void => {
-        const items = fs!.readdirSync(currentPath);
-
-        for (const item of items) {
-          const itemPath = path!.join(currentPath, item);
-          const itemArchivePath = normalizePath(`${currentPrefix}/${item}`);
-          const stats = fs!.statSync(itemPath);
-
-          if (stats.isDirectory()) {
-            // Recursively add subdirectory
-            addDirectoryRecursive(itemPath, itemArchivePath);
-          } else if (stats.isFile()) {
-            // Add file
-            const content = fs!.readFileSync(itemPath);
-            files[itemArchivePath] = content;
-            onProgress?.('reading-file', 0, `Added file: ${itemArchivePath}`);
-          }
-        }
-      };
-
-      addDirectoryRecursive(dirPath, archivePrefix);
-      return succeed(undefined);
-    } catch (error) {
-      return fail(
-        `Failed to add directory ${dirPath}: ${error instanceof Error ? error.message : String(error)}`
-      );
+  ): Promise<Result<void>> {
+    const childrenResult = directoryItem.getChildren();
+    if (childrenResult.isFailure()) {
+      return fail(`Failed to read directory ${directoryItem.absolutePath}: ${childrenResult.message}`);
     }
+
+    for (const child of childrenResult.value) {
+      const itemArchivePath = normalizePath(`${archivePrefix}/${child.name}`);
+
+      if (child.type === 'directory') {
+        // Recursively add subdirectory
+        const addDirResult = await this._addDirectoryTreeToZip(files, child, itemArchivePath, onProgress);
+        if (addDirResult.isFailure()) {
+          return fail(addDirResult.message);
+        }
+      } else if (child.type === 'file') {
+        // Add file
+        const addFileResult = await this._addFileTreeItemToZip(files, child, itemArchivePath);
+        if (addFileResult.isFailure()) {
+          return fail(addFileResult.message);
+        }
+        onProgress?.('reading-file', 0, `Added file: ${itemArchivePath}`);
+      }
+    }
+
+    return succeed(undefined);
   }
 }
