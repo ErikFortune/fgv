@@ -32,6 +32,7 @@ import * as Resources from './packlets/resources';
 import * as ResourceTypes from './packlets/resource-types';
 import * as Import from './packlets/import';
 import * as Runtime from './packlets/runtime';
+import * as ZipArchive from './packlets/zip-archive';
 
 export * from './packlets/common';
 
@@ -69,5 +70,6 @@ export {
   ResourceType,
   ResourceTypes,
   Resources,
-  Runtime
+  Runtime,
+  ZipArchive
 };

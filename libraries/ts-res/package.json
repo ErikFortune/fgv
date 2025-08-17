@@ -65,6 +65,7 @@
     "@fgv/ts-json-base": "workspace:*",
     "@fgv/ts-bcp47": "workspace:*",
     "@fgv/ts-json": "workspace:*",
-    "luxon": "^3.7.1"
+    "luxon": "^3.7.1",
+    "fflate": "~0.8.2"
   }
 }

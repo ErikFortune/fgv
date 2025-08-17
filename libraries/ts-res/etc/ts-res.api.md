@@ -20,6 +20,7 @@ import { ResultMap } from '@fgv/ts-utils';
 import { ValidatingCollector } from '@fgv/ts-utils';
 import { ValidatingConvertingCollector } from '@fgv/ts-utils';
 import { ValidatingResultMap } from '@fgv/ts-utils';
+import { Validator } from '@fgv/ts-utils';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -977,6 +978,20 @@ declare namespace Convert_11 {
     }
 }
 
+declare namespace Convert_12 {
+    export {
+        zipArchiveInputType,
+        zipArchiveConfigType,
+        zipArchiveInputInfo,
+        zipArchiveConfigInfo,
+        zipArchiveManifest,
+        mimeType,
+        importedFile,
+        importedDirectory,
+        systemConfiguration_2 as systemConfiguration
+    }
+}
+
 declare namespace Convert_2 {
     export {
         languageQualifierTypeConfig,
@@ -1085,6 +1100,9 @@ function createQualifierTypeFromSystemConfig(typeConfig: Config_2.ISystemQualifi
 //
 // @public
 function createResourceTypeFromConfig(config: IResourceTypeConfig): Result<ResourceType>;
+
+// @public
+function createZipArchiveManifest(inputType: 'file' | 'directory', originalPath: string, archivePath: string, configPath?: string): Json_2.IZipArchiveManifest;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1257,6 +1275,12 @@ class FsItemImporter implements IImporter {
 //
 // @public
 type FsItemResultDetail = 'failed' | 'skipped' | 'succeeded';
+
+// @public
+function generateZipArchiveFilename(customName?: string): string;
+
+// @public
+function getDirectoryName(path: string): string;
 
 // @public
 function getNameForResourceId(id: string | undefined): Result<ResourceName>;
@@ -1900,6 +1924,27 @@ interface IImportContext {
     readonly conditions?: ReadonlyArray<IConditionDecl>;
 }
 
+// @public
+interface IImportedDirectory {
+    files: IImportedFile[];
+    name: string;
+    subdirectories: IImportedDirectory[];
+}
+
+// @public
+type IImportedDirectory_2 = Json_2.IImportedDirectory;
+
+// @public
+interface IImportedFile {
+    content: string;
+    name: string;
+    path: string;
+    type: string;
+}
+
+// @public
+type IImportedFile_2 = Json_2.IImportedFile;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -2155,6 +2200,12 @@ class ImportContext implements IValidatedImportContext {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     withName(...names: string[]): Result<ImportContext>;
 }
+
+// @public
+const importedDirectory: Converter<Json_2.IImportedDirectory>;
+
+// @public
+const importedFile: Converter<Json_2.IImportedFile>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -2905,6 +2956,9 @@ interface ISystemTerritoryQualifierTypeConfig extends IQualifierTypeConfig<ITerr
     systemType: 'territory';
 }
 
+// @public
+function isZipFile(filename: string): boolean;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -3021,6 +3075,61 @@ interface IValidatingSimpleContextQualifierProviderCreateParams {
 }
 
 // @public
+interface IZipArchiveConfigInfo {
+    archivePath: string;
+    originalPath: string;
+    type: 'file';
+}
+
+// @public
+interface IZipArchiveInputInfo {
+    archivePath: string;
+    originalPath: string;
+    type: 'file' | 'directory';
+}
+
+// @public
+interface IZipArchiveLoadOptions {
+    autoProcessResources?: boolean;
+    overrideConfig?: Model.ISystemConfiguration;
+    strictManifestValidation?: boolean;
+}
+
+// @public
+interface IZipArchiveLoadResult {
+    config: Model.ISystemConfiguration | undefined;
+    directory: IImportedDirectory_2 | undefined;
+    files: IImportedFile_2[];
+    manifest: IZipArchiveManifest_2 | undefined;
+    processedResources?: unknown;
+}
+
+// @public
+interface IZipArchiveManifest {
+    config?: IZipArchiveConfigInfo;
+    input?: IZipArchiveInputInfo;
+    timestamp: string;
+}
+
+// @public
+type IZipArchiveManifest_2 = Json_2.IZipArchiveManifest;
+
+// @public
+interface IZipArchiveOptions {
+    config?: string;
+    input?: string;
+    outputDir?: string;
+}
+
+// @public
+interface IZipArchiveResult {
+    filePath?: string;
+    manifest: IZipArchiveManifest_2;
+    size: number;
+    zipBuffer: Uint8Array;
+}
+
+// @public
 function joinOptionalResourceIds(...ids: (string | undefined)[]): Result<ResourceId | undefined>;
 
 // @public
@@ -3046,6 +3155,16 @@ declare namespace Json {
         IResourceCollectionDecl,
         IImporterResourceDecl,
         IImporterResourceCollectionDecl
+    }
+}
+
+declare namespace Json_2 {
+    export {
+        IZipArchiveInputInfo,
+        IZipArchiveConfigInfo,
+        IZipArchiveManifest,
+        IImportedFile,
+        IImportedDirectory
     }
 }
 
@@ -3240,6 +3359,9 @@ function mergeLooseCandidate(candidate: Normalized.IImporterResourceCandidateDec
 function mergeLooseResource(resource: Normalized.IImporterResourceDecl, baseName?: string, baseConditions?: ReadonlyArray<Json.ILooseConditionDecl>): Result<Normalized.ILooseResourceDecl>;
 
 // @public
+const mimeType: Validator<string>;
+
+// @public
 export const MinConditionPriority: ConditionPriority;
 
 declare namespace Model {
@@ -3304,6 +3426,9 @@ declare namespace Normalized {
 }
 
 // @public
+function normalizePath(path: string): string;
+
+// @public
 type OverallCacheMetrics<TM extends ICacheMetrics = ICacheMetrics> = Record<ResourceResolverCacheType, TM>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3335,6 +3460,12 @@ function parseQualifierDefaultValuesTokenParts(token: string): Result<IQualifier
 //
 // @public
 function parseQualifierDefaultValueTokenParts(token: string): Result<IQualifierDefaultValueTokenParts>;
+
+// @public
+function parseZipArchiveConfiguration(configData: string): Result<Model.ISystemConfiguration>;
+
+// @public
+function parseZipArchiveManifest(manifestData: string): Result<Json_2.IZipArchiveManifest>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -4413,6 +4544,9 @@ declare namespace Runtime {
 }
 export { Runtime }
 
+// @public
+function sanitizeFilename(filename: string): string;
+
 // @internal (undocumented)
 const segmentedIdentifier: RegExp;
 
@@ -4477,6 +4611,9 @@ class SystemConfiguration {
 //
 // @public
 const systemConfiguration: ObjectConverter<ISystemConfiguration, unknown>;
+
+// @public
+const systemConfiguration_2: Validator<Model.ISystemConfiguration>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -4723,6 +4860,9 @@ const validatedContextQualifierValueDecl: Converter<IValidatedContextQualifierVa
 // @public
 const validatedQualifierDecl: Converter<IValidatedQualifierDecl, IQualifierDeclConvertContext>;
 
+// @public
+function validateZipArchiveManifest(manifest: unknown): Result<Json_2.IZipArchiveManifest>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -4738,6 +4878,73 @@ class ValidatingSimpleContextQualifierProvider extends SimpleContextQualifierPro
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly validating: IReadOnlyContextQualifierProviderValidator;
 }
+
+declare namespace ZipArchive {
+    export {
+        Json_2 as Json,
+        Convert_12 as Convert,
+        ZipArchiveCreator,
+        ZipArchiveLoader,
+        IZipArchiveOptions,
+        IZipArchiveResult,
+        IZipArchiveManifest_2 as IZipArchiveManifest,
+        IZipArchiveLoadOptions,
+        IZipArchiveLoadResult,
+        IImportedFile_2 as IImportedFile,
+        IImportedDirectory_2 as IImportedDirectory,
+        ZipArchiveProgressCallback,
+        createZipArchiveManifest,
+        parseZipArchiveManifest,
+        validateZipArchiveManifest,
+        parseZipArchiveConfiguration,
+        generateZipArchiveFilename,
+        normalizePath,
+        getDirectoryName,
+        sanitizeFilename,
+        isZipFile,
+        ZipArchiveConstants
+    }
+}
+export { ZipArchive }
+
+// @public
+const zipArchiveConfigInfo: Validator<Json_2.IZipArchiveConfigInfo>;
+
+// @public
+const zipArchiveConfigType: Validator<'file'>;
+
+// @public
+const ZipArchiveConstants: {
+    readonly MANIFEST_FILE: "manifest.json";
+    readonly CONFIG_FILE: "config.json";
+    readonly INPUT_DIR: "input";
+    readonly CONFIG_DIR: "config";
+};
+
+// @public
+class ZipArchiveCreator {
+    create(options: IZipArchiveOptions, onProgress?: ZipArchiveProgressCallback): Promise<Result<IZipArchiveResult>>;
+}
+
+// @public
+const zipArchiveInputInfo: Validator<Json_2.IZipArchiveInputInfo>;
+
+// @public
+const zipArchiveInputType: Validator<'file' | 'directory'>;
+
+// @public
+class ZipArchiveLoader {
+    loadFromBuffer(buffer: ArrayBuffer, options?: IZipArchiveLoadOptions, onProgress?: ZipArchiveProgressCallback): Promise<Result<IZipArchiveLoadResult>>;
+    loadFromFile(file: File, options?: IZipArchiveLoadOptions, onProgress?: ZipArchiveProgressCallback): Promise<Result<IZipArchiveLoadResult>>;
+    loadFromPath(filePath: string, options?: IZipArchiveLoadOptions, onProgress?: ZipArchiveProgressCallback): Promise<Result<IZipArchiveLoadResult>>;
+}
+
+// @public
+const zipArchiveManifest: Validator<Json_2.IZipArchiveManifest>;
+
+// @public
+type ZipArchiveProgressCallback = (stage: 'reading-file' | 'parsing-zip' | 'loading-manifest' | 'loading-config' | 'extracting-files' | 'processing-resources' | 'creating-zip' | 'saving-file', progress: number, // 0-100
+details: string) => void;
 
 // Warnings were encountered during analysis:
 //
