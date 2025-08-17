@@ -52,9 +52,11 @@ function MyComponent({ resources, selectedId, onSelect }) {
       resources={resources}
       selectedResourceId={selectedId}
       onResourceSelect={onSelect}
-      defaultView="list"
-      showViewToggle={false}
-      height="384px" // 96 * 4px = 384px
+      options={{
+        defaultView: "list",
+        showViewToggle: false,
+        height: "384px" // 96 * 4px = 384px
+      }}
       className="border"
     />
   );
@@ -99,9 +101,11 @@ function MyComponent({ resources, selectedId, onSelect }) {
       resources={resources}
       selectedResourceId={selectedId}
       onResourceSelect={onSelect}
-      defaultView="tree"
-      showViewToggle={false}
-      height="384px"
+      options={{
+        defaultView: "tree",
+        showViewToggle: false,
+        height: "384px"
+      }}
       className="border"
     />
   );
@@ -166,9 +170,11 @@ function CustomResourceSelector({ resources, onSelect }) {
       resources={resources}
       selectedResourceId={null}
       onResourceSelect={onSelect}
-      enableSearch={true}
-      showViewToggle={true}
-      searchPlaceholder="Search resources..."
+      options={{
+        enableSearch: true,
+        showViewToggle: true,
+        searchPlaceholder: "Search resources..."
+      }}
     />
   );
 }
@@ -214,10 +220,12 @@ function StringResourceView({ resources, selectedId, onSelect }) {
       resources={resources}
       selectedResourceId={selectedId}
       onResourceSelect={onSelect}
-      rootPath="strings"
-      hideRootNode={true}
-      defaultView="list"
-      showViewToggle={false}
+      options={{
+        rootPath: "strings",
+        hideRootNode: true,
+        defaultView: "list",
+        showViewToggle: false
+      }}
     />
   );
 }
@@ -272,7 +280,9 @@ function ResourceViewWithStatus({ resources, editedResources, selectedId, onSele
       selectedResourceId={selectedId}
       onResourceSelect={onSelect}
       resourceAnnotations={annotations}
-      defaultView="list"
+      options={{
+        defaultView: "list"
+      }}
     />
   );
 }
@@ -339,7 +349,7 @@ Start with simplest migrations (direct replacements) and work toward complex one
 <ResourcePicker resources={resources} />
 
 // ✅ Specify height explicitly
-<ResourcePicker resources={resources} height="400px" />
+<ResourcePicker resources={resources} options={{ height: "400px" }} />
 ```
 
 ### Issue: Resource ID Array vs Resources Object
@@ -366,8 +376,10 @@ const filtered = resources.summary.resourceIds.filter(customLogic);
 // ✅ Use branch isolation or search instead
 <ResourcePicker 
   resources={resources} 
-  rootPath="specific.branch"
-  enableSearch={true}
+  options={{
+    rootPath: "specific.branch",
+    enableSearch: true
+  }}
 />
 ```
 
@@ -415,8 +427,10 @@ const testProps = {
   resources: mockProcessedResources, // Not resourceIds array
   selectedResourceId: null,
   onResourceSelect: jest.fn(),
-  defaultView: 'list' as const,
-  showViewToggle: false
+  options: {
+    defaultView: 'list' as const,
+    showViewToggle: false
+  }
 };
 ```
 

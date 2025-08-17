@@ -247,9 +247,12 @@ is a generic component used by all of the views, which can also be used to power
       console.log(`Pending ${selection.pendingType} operation`);
     }
   }}
-  defaultView="tree"
-  enableSearch={true}
-  searchPlaceholder="Search resources..."
+  options={{
+    defaultView: "tree",
+    enableSearch: true,
+    searchPlaceholder: "Search resources...",
+    height: "500px"
+  }}
   resourceAnnotations={{
     'user.welcome': { 
       badge: { text: '3', variant: 'info' },
@@ -257,7 +260,6 @@ is a generic component used by all of the views, which can also be used to power
     }
   }}
   pendingResources={pendingChanges}
-  height="500px"
 />
 ```
 
@@ -278,9 +280,13 @@ Displays the source resource collection with search and navigation capabilities 
 ```tsx
 <SourceView
   resources={state.processedResources}
-  selectedResourceId={selectedId}
-  onResourceSelect={(selection) => setSelectedId(selection.resourceId)}
   onExport={actions.exportData}
+  onMessage={(type, message) => console.log(`${type}: ${message}`)}
+  pickerOptions={{
+    defaultView: "list",
+    enableSearch: true,
+    searchPlaceholder: "Search resources..."
+  }}
 />
 ```
 
@@ -297,9 +303,10 @@ Provides filtering capabilities with context value specification and dual-resour
   filterActions={filterActions}
   filterResult={filterResult}
   onFilterResult={setFilterResult}
-  onResourceSelect={(selection) => {
-    setSelectedId(selection.resourceId);
-    // Enhanced callback provides comprehensive selection data
+  onMessage={(type, message) => console.log(`${type}: ${message}`)}
+  pickerOptions={{
+    enableSearch: true,
+    searchPlaceholder: "Search resources..."
   }}
 />
 ```
@@ -316,9 +323,10 @@ Shows the compiled resource structure with detailed candidate information using 
   filterResult={filterResult}
   useNormalization={true}
   onExport={(data, type) => exportData(data, type)}
-  onResourceSelect={(selection) => {
-    // Enhanced callback with comprehensive resource data
-    setSelectedId(selection.resourceId);
+  onMessage={(type, message) => console.log(`${type}: ${message}`)}
+  pickerOptions={{
+    defaultView: "tree",
+    enableSearch: true
   }}
 />
 ```
@@ -336,6 +344,12 @@ Interactive resource resolution testing with context management and support for 
   resolutionActions={resolutionActions}
   availableQualifiers={availableQualifiers}
   resourceEditorFactory={myResourceEditorFactory}
+  onMessage={(type, message) => console.log(`${type}: ${message}`)}
+  pickerOptions={{
+    defaultView: "list",
+    enableSearch: true,
+    searchPlaceholder: "Search resources for resolution testing..."
+  }}
 />
 ```
 

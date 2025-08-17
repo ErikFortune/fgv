@@ -105,9 +105,11 @@ export function ResourceViewer({ configPath }: ResourceViewerProps) {
           selectedResourceId={selectedId}
           onResourceSelect={handleResourceSelect}
           resourceAnnotations={annotations}
-          defaultView="tree"
-          height="100%"
-          emptyMessage="No resources found. Check your configuration."
+          options={{
+            defaultView: "tree",
+            height: "100%",
+            emptyMessage: "No resources found. Check your configuration."
+          }}
         />
       </div>
       
@@ -301,8 +303,10 @@ export function ResourceEditor({ resources, onSave }: ResourceEditorProps) {
             onResourceSelect={setSelectedId}
             pendingResources={pendingChanges}
             resourceAnnotations={annotations}
-            defaultView="tree"
-            height="100%"
+            options={{
+              defaultView: "tree",
+              height: "100%"
+            }}
           />
         </div>
 
@@ -504,12 +508,14 @@ export function MultiPanelResourceManager({ resources }: MultiPanelManagerProps)
                 resources={resources}
                 selectedResourceId={selections[branch.key]}
                 onResourceSelect={handleSelectionChange(branch.key)}
-                rootPath={branch.rootPath}
-                hideRootNode={true}
-                showViewToggle={false}
-                defaultView="tree"
-                height="100%"
-                searchPlaceholder={`Search ${branch.title.toLowerCase()}...`}
+                options={{
+                  rootPath: branch.rootPath,
+                  hideRootNode: true,
+                  showViewToggle: false,
+                  defaultView: "tree",
+                  height: "100%",
+                  searchPlaceholder: `Search ${branch.title.toLowerCase()}...`
+                }}
               />
             </div>
           </div>
@@ -607,10 +613,12 @@ export function ConflictResolutionTool({
           selectedResourceId={selectedId}
           onResourceSelect={setSelectedId}
           resourceAnnotations={annotations}
-          defaultView="list"
-          showViewToggle={false}
-          height="calc(100% - 80px)"
-          emptyMessage="No conflicts found! All resources are resolved."
+          options={{
+            defaultView: "list",
+            showViewToggle: false,
+            height: "calc(100% - 80px)",
+            emptyMessage: "No conflicts found! All resources are resolved."
+          }}
         />
       </div>
 
@@ -816,12 +824,14 @@ export function ResourceForm({ resources, onSubmit }: ResourceFormProps) {
                     resources={resources}
                     selectedResourceId={field.value}
                     onResourceSelect={field.onChange}
-                    rootPath="images.icons"
-                    hideRootNode={true}
-                    showViewToggle={false}
-                    defaultView="list"
-                    height="100%"
-                    searchPlaceholder="Search icons..."
+                    options={{
+                      rootPath: "images.icons",
+                      hideRootNode: true,
+                      showViewToggle: false,
+                      defaultView: "list",
+                      height: "100%",
+                      searchPlaceholder: "Search icons..."
+                    }}
                   />
                 </div>
               )}
@@ -840,12 +850,14 @@ export function ResourceForm({ resources, onSubmit }: ResourceFormProps) {
                     resources={resources}
                     selectedResourceId={field.value}
                     onResourceSelect={field.onChange}
-                    rootPath="strings.labels"
-                    hideRootNode={true}
-                    showViewToggle={false}
-                    defaultView="list"
-                    height="100%"
-                    searchPlaceholder="Search labels..."
+                    options={{
+                      rootPath: "strings.labels",
+                      hideRootNode: true,
+                      showViewToggle: false,
+                      defaultView: "list",
+                      height: "100%",
+                      searchPlaceholder: "Search labels..."
+                    }}
                   />
                 </div>
               )}
