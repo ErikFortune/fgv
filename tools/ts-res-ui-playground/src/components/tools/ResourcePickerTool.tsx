@@ -477,15 +477,17 @@ const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({ resources, onMe
                   resources={resourcesForPicker}
                   selectedResourceId={selectedResourceId}
                   onResourceSelect={handleResourceSelect}
-                  defaultView={viewMode}
-                  showViewToggle={showViewToggle}
-                  rootPath={rootPath}
-                  hideRootNode={hideRootNode}
-                  enableSearch={enableSearch}
                   resourceAnnotations={resourceAnnotations}
                   pendingResources={allPendingResources}
+                  options={{
+                    defaultView: viewMode,
+                    showViewToggle: showViewToggle,
+                    rootPath: rootPath || undefined,
+                    hideRootNode: hideRootNode,
+                    enableSearch: enableSearch,
+                    height: 500
+                  }}
                   onMessage={onMessage}
-                  height={500}
                 />
               </div>
             </div>
