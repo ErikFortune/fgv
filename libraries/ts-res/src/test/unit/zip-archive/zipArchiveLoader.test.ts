@@ -40,7 +40,7 @@ describe('ZipArchiveLoader', () => {
     test('should load archive from buffer', async () => {
       // First create an archive
       const createResult = await creator.createFromBuffer({
-        input: customConfigPath
+        inputPath: customConfigPath
       });
 
       expect(createResult).toSucceed();
@@ -65,7 +65,7 @@ describe('ZipArchiveLoader', () => {
     test('should handle progress callbacks during loading', async () => {
       // First create an archive
       const createResult = await creator.createFromBuffer({
-        input: customConfigPath
+        inputPath: customConfigPath
       });
 
       expect(createResult).toSucceed();
@@ -128,7 +128,7 @@ describe('ZipArchiveLoader', () => {
     test('should load archive with basic options', async () => {
       // Create archive with mixed content
       const createResult = await creator.createFromBuffer({
-        input: customConfigPath
+        inputPath: customConfigPath
       });
 
       expect(createResult).toSucceed();
@@ -152,7 +152,7 @@ describe('ZipArchiveLoader', () => {
     test('should call progress callbacks with valid zip buffer', async () => {
       // First create an archive
       const createResult = await creator.createFromBuffer({
-        input: customConfigPath
+        inputPath: customConfigPath
       });
 
       expect(createResult).toSucceed();

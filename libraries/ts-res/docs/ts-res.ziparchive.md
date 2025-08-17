@@ -170,6 +170,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[IZipArchiveFileTreeOptions](./ts-res.ziparchive.iziparchivefiletreeoptions.md)
+
+
+</td><td>
+
+Options for creating a ZIP archive buffer from a file tree
+
+
+</td></tr>
+<tr><td>
+
 [IZipArchiveLoadOptions](./ts-res.ziparchive.iziparchiveloadoptions.md)
 
 
@@ -192,7 +203,7 @@ Result of ZIP archive loading
 </td></tr>
 <tr><td>
 
-[IZipArchiveOptions](./ts-res.ziparchive.iziparchiveoptions.md)
+[IZipArchivePathOptions](./ts-res.ziparchive.iziparchivepathoptions.md)
 
 
 </td><td>
@@ -316,6 +327,17 @@ Imported file representation
 </td><td>
 
 Standardized ZIP archive manifest format (compatible with existing tools)
+
+
+</td></tr>
+<tr><td>
+
+[ZipArchiveOptions](./ts-res.ziparchive.ziparchiveoptions.md)
+
+
+</td><td>
+
+Options for creating a ZIP archive buffer
 
 
 </td></tr>

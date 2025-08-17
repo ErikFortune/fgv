@@ -42,8 +42,8 @@ describe('ZipArchive Idempotency', () => {
     test('should maintain file integrity through archive/extract cycle - custom-config (path torture test)', async () => {
       // Create archive from custom-config directory (path torture test)
       const createResult = await creator.createFromBuffer({
-        input: inputPath,
-        config: configFilePath
+        inputPath: inputPath,
+        configPath: configFilePath
       });
 
       expect(createResult).toSucceed();
@@ -123,7 +123,7 @@ describe('ZipArchive Idempotency', () => {
       const singleFilePath = configFilePath;
 
       const createResult = await creator.createFromBuffer({
-        input: singleFilePath
+        inputPath: singleFilePath
       });
 
       expect(createResult).toSucceed();
@@ -157,7 +157,7 @@ describe('ZipArchive Idempotency', () => {
     test('should handle complex path structures with special characters', async () => {
       // Test with the complex custom-config structure that has various path patterns
       const createResult = await creator.createFromBuffer({
-        input: inputPath
+        inputPath: inputPath
       });
 
       expect(createResult).toSucceed();

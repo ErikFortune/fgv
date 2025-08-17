@@ -22,6 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import path from 'path';
+import { FileTree, fail } from '@fgv/ts-utils';
 import { ZipArchiveCreator } from '../../../packlets/zip-archive';
 
 describe('ZipArchiveCreator', () => {
@@ -39,7 +40,7 @@ describe('ZipArchiveCreator', () => {
       const singleFilePath = path.join(customConfigPath, 'resources-config.json');
 
       const result = await creator.createFromBuffer({
-        input: singleFilePath
+        inputPath: singleFilePath
       });
 
       expect(result).toSucceedAndSatisfy((archiveResult) => {
@@ -53,7 +54,7 @@ describe('ZipArchiveCreator', () => {
 
     test('should create archive from directory', async () => {
       const result = await creator.createFromBuffer({
-        input: customConfigPath
+        inputPath: customConfigPath
       });
 
       expect(result).toSucceedAndSatisfy((archiveResult) => {
@@ -70,7 +71,7 @@ describe('ZipArchiveCreator', () => {
 
       const result = await creator.createFromBuffer(
         {
-          input: customConfigPath
+          inputPath: customConfigPath
         },
         (phase, progress, message) => {
           progressCalls.push({ phase, progress, message });
@@ -118,7 +119,7 @@ describe('ZipArchiveCreator', () => {
 
     test('should work without progress callback', async () => {
       const result = await creator.createFromBuffer({
-        input: customConfigPath
+        inputPath: customConfigPath
       });
 
       expect(result).toSucceedAndSatisfy((archiveResult) => {
@@ -129,7 +130,7 @@ describe('ZipArchiveCreator', () => {
 
     test('should fail with non-existent input', async () => {
       const result = await creator.createFromBuffer({
-        input: '/non-existent/path'
+        inputPath: '/non-existent/path'
       });
 
       expect(result).toFailWith(/no such file/i);
@@ -138,8 +139,8 @@ describe('ZipArchiveCreator', () => {
     test('should create archive with custom config', async () => {
       const configPath = path.join(customConfigPath, 'resources-config.json');
       const result = await creator.createFromBuffer({
-        input: customConfigPath,
-        config: configPath
+        inputPath: customConfigPath,
+        configPath: configPath
       });
 
       expect(result).toSucceedAndSatisfy((archiveResult) => {
@@ -152,8 +153,8 @@ describe('ZipArchiveCreator', () => {
     test('should fail when config file does not exist', async () => {
       const nonExistentConfigPath = path.join(customConfigPath, 'non-existent-config.json');
       const result = await creator.createFromBuffer({
-        input: customConfigPath,
-        config: nonExistentConfigPath
+        inputPath: customConfigPath,
+        configPath: nonExistentConfigPath
       });
 
       expect(result).toFailWith(/Failed to get config file/i);
@@ -165,8 +166,8 @@ describe('ZipArchiveCreator', () => {
 
       const result = await creator.createFromBuffer(
         {
-          input: customConfigPath,
-          config: configPath
+          inputPath: customConfigPath,
+          configPath: configPath
         },
         (phase, progress, message) => {
           progressCalls.push({ phase, progress, message });
@@ -189,7 +190,7 @@ describe('ZipArchiveCreator', () => {
 
       const result = await creator.createFromBuffer(
         {
-          input: singleFilePath
+          inputPath: singleFilePath
         },
         (phase, progress, message) => {
           progressCalls.push({ phase, progress, message });
@@ -241,7 +242,7 @@ describe('ZipArchiveCreator', () => {
 
       const result = await creator.createFromBuffer(
         {
-          input: customConfigPath
+          inputPath: customConfigPath
         },
         (phase, progress, message) => {
           progressCalls.push({ phase, progress, message });
@@ -260,6 +261,203 @@ describe('ZipArchiveCreator', () => {
       for (const fileCall of fileAdditionCalls) {
         expect(fileCall.message).toMatch(/Added file: input\//);
       }
+    });
+  });
+
+  describe('createFromBuffer with FileTree items', () => {
+    test('should create archive from FileTree directory item', async () => {
+      // Create FileTree and get directory item
+      const fileTree = FileTree.forFilesystem().orThrow();
+      const directoryItem = fileTree.getItem(customConfigPath).orThrow();
+
+      // Verify it's a directory
+      expect(directoryItem.type).toBe('directory');
+
+      const result = await creator.createFromBuffer({
+        inputItem: directoryItem
+      });
+
+      expect(result).toSucceedAndSatisfy((archiveResult) => {
+        expect(archiveResult.zipBuffer).toBeInstanceOf(Uint8Array);
+        expect(archiveResult.zipBuffer.length).toBeGreaterThan(0);
+        expect(archiveResult.manifest.input?.type).toBe('directory');
+        expect(archiveResult.manifest.input?.originalPath).toBe(customConfigPath);
+        expect(archiveResult.manifest.input?.archivePath).toBe(`input/${path.basename(customConfigPath)}`);
+        expect(archiveResult.manifest.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      });
+    });
+
+    test('should create archive from FileTree file item', async () => {
+      const singleFilePath = path.join(customConfigPath, 'resources-config.json');
+
+      // Create FileTree and get file item
+      const fileTree = FileTree.forFilesystem().orThrow();
+      const fileItem = fileTree.getFile(singleFilePath).orThrow();
+
+      const result = await creator.createFromBuffer({
+        inputItem: fileItem
+      });
+
+      expect(result).toSucceedAndSatisfy((archiveResult) => {
+        expect(archiveResult.zipBuffer).toBeInstanceOf(Uint8Array);
+        expect(archiveResult.zipBuffer.length).toBeGreaterThan(0);
+        expect(archiveResult.manifest.input?.type).toBe('file');
+        expect(archiveResult.manifest.input?.originalPath).toBe(singleFilePath);
+        expect(archiveResult.manifest.input?.archivePath).toBe('input/resources-config.json');
+        expect(archiveResult.manifest.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      });
+    });
+
+    test('should create archive with FileTree config item', async () => {
+      const configPath = path.join(customConfigPath, 'resources-config.json');
+
+      // Create FileTree and get items
+      const fileTree = FileTree.forFilesystem().orThrow();
+      const directoryItem = fileTree.getItem(customConfigPath).orThrow();
+      const configItem = fileTree.getFile(configPath).orThrow();
+
+      const result = await creator.createFromBuffer({
+        inputItem: directoryItem,
+        configItem: configItem
+      });
+
+      expect(result).toSucceedAndSatisfy((archiveResult) => {
+        expect(archiveResult.manifest.config).toBeDefined();
+        expect(archiveResult.manifest.config?.type).toBe('file');
+        expect(archiveResult.manifest.config?.originalPath).toBe(configPath);
+        expect(archiveResult.manifest.config?.archivePath).toBe('config/resources-config.json');
+      });
+    });
+
+    test('should produce equivalent results with FileTree items vs paths', async () => {
+      const configPath = path.join(customConfigPath, 'resources-config.json');
+
+      // Create archive using paths
+      const pathResult = await creator.createFromBuffer({
+        inputPath: customConfigPath,
+        configPath: configPath
+      });
+
+      // Create archive using FileTree items
+      const fileTree = FileTree.forFilesystem().orThrow();
+      const directoryItem = fileTree.getItem(customConfigPath).orThrow();
+      const configItem = fileTree.getFile(configPath).orThrow();
+
+      const itemResult = await creator.createFromBuffer({
+        inputItem: directoryItem,
+        configItem: configItem
+      });
+
+      expect(pathResult).toSucceed();
+      expect(itemResult).toSucceed();
+
+      const pathArchive = pathResult.value!;
+      const itemArchive = itemResult.value!;
+
+      // Compare manifests (excluding timestamp which will differ)
+      expect(itemArchive.manifest.input?.type).toBe(pathArchive.manifest.input?.type);
+      expect(itemArchive.manifest.input?.originalPath).toBe(pathArchive.manifest.input?.originalPath);
+      expect(itemArchive.manifest.input?.archivePath).toBe(pathArchive.manifest.input?.archivePath);
+
+      expect(itemArchive.manifest.config?.type).toBe(pathArchive.manifest.config?.type);
+      expect(itemArchive.manifest.config?.originalPath).toBe(pathArchive.manifest.config?.originalPath);
+      expect(itemArchive.manifest.config?.archivePath).toBe(pathArchive.manifest.config?.archivePath);
+
+      // Compare ZIP sizes (should be very similar, allowing for slight timestamp differences)
+      const sizeDifference = Math.abs(itemArchive.size - pathArchive.size);
+      expect(sizeDifference).toBeLessThan(100); // Allow small difference due to timestamps
+    });
+
+    test('should call progress callbacks with FileTree items', async () => {
+      const configPath = path.join(customConfigPath, 'resources-config.json');
+
+      // Create FileTree and get items
+      const fileTree = FileTree.forFilesystem().orThrow();
+      const directoryItem = fileTree.getItem(customConfigPath).orThrow();
+      const configItem = fileTree.getFile(configPath).orThrow();
+
+      const progressCalls: Array<{ phase: string; progress: number; message: string }> = [];
+
+      const result = await creator.createFromBuffer(
+        {
+          inputItem: directoryItem,
+          configItem: configItem
+        },
+        (phase, progress, message) => {
+          progressCalls.push({ phase, progress, message });
+        }
+      );
+
+      expect(result).toSucceed();
+
+      // Verify progress callbacks are called
+      expect(progressCalls.length).toBeGreaterThan(3);
+
+      // Verify input processing callback
+      const inputProcessingCall = progressCalls.find(
+        (call) => call.phase === 'reading-file' && call.message.includes('Processing input')
+      );
+      expect(inputProcessingCall).toBeDefined();
+      expect(inputProcessingCall?.message).toContain(customConfigPath);
+
+      // Verify config processing callback
+      const configProcessingCall = progressCalls.find(
+        (call) => call.phase === 'reading-file' && call.message.includes('Processing config')
+      );
+      expect(configProcessingCall).toBeDefined();
+      expect(configProcessingCall?.message).toContain(configPath);
+    });
+
+    test('should work with only inputItem and no config', async () => {
+      // Create FileTree and get directory item
+      const fileTree = FileTree.forFilesystem().orThrow();
+      const directoryItem = fileTree.getItem(customConfigPath).orThrow();
+
+      const result = await creator.createFromBuffer({
+        inputItem: directoryItem
+      });
+
+      expect(result).toSucceedAndSatisfy((archiveResult) => {
+        expect(archiveResult.manifest.input?.type).toBe('directory');
+        expect(archiveResult.manifest.input?.originalPath).toBe(customConfigPath);
+        expect(archiveResult.manifest.config).toBeUndefined();
+      });
+    });
+
+    test('should work with only configItem and no input', async () => {
+      const configPath = path.join(customConfigPath, 'resources-config.json');
+
+      // Create FileTree and get config item
+      const fileTree = FileTree.forFilesystem().orThrow();
+      const configItem = fileTree.getFile(configPath).orThrow();
+
+      const result = await creator.createFromBuffer({
+        configItem: configItem
+      });
+
+      expect(result).toSucceedAndSatisfy((archiveResult) => {
+        expect(archiveResult.manifest.input).toBeUndefined();
+        expect(archiveResult.manifest.config?.type).toBe('file');
+        expect(archiveResult.manifest.config?.originalPath).toBe(configPath);
+      });
+    });
+
+    test('should fail gracefully when FileTree item operations fail', async () => {
+      // Create a mock FileTree item that will fail on getRawContents
+      const mockFileItem = {
+        name: 'test.json',
+        absolutePath: '/mock/test.json',
+        type: 'file' as const,
+        getRawContents: () => {
+          return fail('Mock file read error');
+        }
+      } as FileTree.IFileTreeFileItem;
+
+      const result = await creator.createFromBuffer({
+        inputItem: mockFileItem
+      });
+
+      expect(result).toFailWith(/Mock file read error/);
     });
   });
 });

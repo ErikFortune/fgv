@@ -3082,6 +3082,12 @@ interface IZipArchiveConfigInfo {
 }
 
 // @public
+interface IZipArchiveFileTreeOptions {
+    configItem?: FileTree.IFileTreeFileItem;
+    inputItem?: FileTree.FileTreeItem;
+}
+
+// @public
 interface IZipArchiveInputInfo {
     archivePath: string;
     originalPath: string;
@@ -3112,9 +3118,9 @@ interface IZipArchiveManifest {
 type IZipArchiveManifest_2 = Json_2.IZipArchiveManifest;
 
 // @public
-interface IZipArchiveOptions {
-    config?: string;
-    input?: string;
+interface IZipArchivePathOptions {
+    configPath?: string;
+    inputPath?: string;
 }
 
 // @public
@@ -4880,7 +4886,9 @@ declare namespace ZipArchive {
         Convert_12 as Convert,
         ZipArchiveCreator,
         ZipArchiveLoader,
-        IZipArchiveOptions,
+        IZipArchivePathOptions,
+        IZipArchiveFileTreeOptions,
+        ZipArchiveOptions,
         IZipArchiveResult,
         IZipArchiveManifest_2 as IZipArchiveManifest,
         IZipArchiveLoadOptions,
@@ -4918,7 +4926,7 @@ const ZipArchiveConstants: {
 
 // @public
 class ZipArchiveCreator {
-    createFromBuffer(options: IZipArchiveOptions, onProgress?: ZipArchiveProgressCallback): Promise<Result<IZipArchiveResult>>;
+    createFromBuffer(options: ZipArchiveOptions, onProgress?: ZipArchiveProgressCallback): Promise<Result<IZipArchiveResult>>;
 }
 
 // @public
@@ -4935,6 +4943,9 @@ class ZipArchiveLoader {
 
 // @public
 const zipArchiveManifest: Validator<Json_2.IZipArchiveManifest>;
+
+// @public
+type ZipArchiveOptions = IZipArchivePathOptions | IZipArchiveFileTreeOptions;
 
 // @public
 type ZipArchiveProgressCallback = (stage: 'reading-file' | 'parsing-zip' | 'loading-manifest' | 'loading-config' | 'extracting-files' | 'processing-resources' | 'creating-zip', progress: number, // 0-100

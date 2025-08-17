@@ -22,8 +22,8 @@
 
 import { zipSync } from 'fflate';
 import { Result, succeed, fail, FileTree } from '@fgv/ts-utils';
-import type { IZipArchiveOptions, IZipArchiveResult, ZipArchiveProgressCallback } from './types';
-import { createZipArchiveManifest, normalizePath } from './zipArchiveFormat';
+import type { IZipArchiveResult, ZipArchiveOptions, ZipArchiveProgressCallback } from './types';
+import { normalizePath } from './zipArchiveFormat';
 import * as Json from './json';
 
 /**
@@ -38,73 +38,69 @@ export class ZipArchiveCreator {
    * @returns Result containing ZIP buffer and manifest
    */
   public async createFromBuffer(
-    options: IZipArchiveOptions,
+    options: ZipArchiveOptions,
     onProgress?: ZipArchiveProgressCallback
   ): Promise<Result<IZipArchiveResult>> {
     try {
       onProgress?.('creating-zip', 0, 'Starting ZIP archive creation');
 
       const files: Record<string, Uint8Array> = {};
-      let manifest: Json.IZipArchiveManifest = createZipArchiveManifest('file', '', '');
+      const manifest: Json.IZipArchiveManifest = {
+        timestamp: new Date().toISOString()
+      };
 
-      // Process input files/directory using FileTree
-      if (options.input) {
-        onProgress?.('reading-file', 10, `Processing input: ${options.input}`);
+      const { value: inputItem, message: inputItemError } = this._getInputFileTreeItem(options);
+      if (inputItemError !== undefined) {
+        return fail(inputItemError);
+      }
 
-        const { value: item, message: itemError } = FileTree.forFilesystem()
-          .withErrorFormat((msg) => `Failed to create file tree: ${msg}`)
-          .onSuccess((fileTree) =>
-            fileTree.getItem(options.input!).withErrorFormat((msg) => `Failed to get item: ${msg}`)
-          );
+      if (inputItem !== undefined) {
+        onProgress?.('reading-file', 10, `Processing input: ${inputItem.absolutePath}`);
 
-        /* c8 ignore next 3 - defense in depth against internal error */
-        if (itemError !== undefined) {
-          return fail(itemError);
-        }
-
-        if (item.type === 'directory') {
+        if (inputItem.type === 'directory') {
           // Add entire directory recursively, preserving structure
-          const archivePath = `input/${item.name}`;
+          const archivePath = `input/${inputItem.name}`;
 
-          const addDirResult = await this._addDirectoryTreeToZip(files, item, archivePath, onProgress);
+          const addDirResult = await this._addDirectoryTreeToZip(files, inputItem, archivePath, onProgress);
           /* c8 ignore next 3 - defense in depth against internal error */
           if (addDirResult.isFailure()) {
             return fail(addDirResult.message);
           }
 
-          manifest = createZipArchiveManifest('directory', item.absolutePath, archivePath);
-        } else if (item.type === 'file') {
+          manifest.input = {
+            type: 'directory',
+            originalPath: inputItem.absolutePath,
+            archivePath
+          };
+        } else if (inputItem.type === 'file') {
           // Add single file
-          const archivePath = `input/${item.name}`;
+          const archivePath = `input/${inputItem.name}`;
 
-          const addFileResult = await this._addFileTreeItemToZip(files, item, archivePath);
+          const addFileResult = await this._addFileTreeItemToZip(files, inputItem, archivePath);
           /* c8 ignore next 3 - defense in depth against internal error */
           if (addFileResult.isFailure()) {
             return fail(addFileResult.message);
           }
 
-          manifest = createZipArchiveManifest('file', item.absolutePath, archivePath);
+          manifest.input = {
+            type: 'file',
+            originalPath: inputItem.absolutePath,
+            archivePath
+          };
         }
       }
 
-      // Process config file using FileTree
-      if (options.config) {
-        onProgress?.('reading-file', 40, `Processing config: ${options.config}`);
+      const { value: configItem, message: configItemError } = this._getConfigFileTreeItem(options);
+      if (configItemError !== undefined) {
+        return fail(configItemError);
+      }
 
-        const { value: configFile, message: configFileError } = FileTree.forFilesystem()
-          .withErrorFormat((msg) => `Failed to create file tree: ${msg}`)
-          .onSuccess((fileTree) =>
-            fileTree.getFile(options.config!).withErrorFormat((msg) => `Failed to get config file: ${msg}`)
-          );
+      if (configItem !== undefined) {
+        onProgress?.('reading-file', 40, `Processing config: ${configItem.absolutePath}`);
 
-        /* c8 ignore next 3 - defense in depth against internal error */
-        if (configFileError !== undefined) {
-          return fail(configFileError);
-        }
+        const archivePath = `config/${configItem.name}`;
 
-        const archivePath = `config/${configFile.name}`;
-
-        const addConfigResult = await this._addFileTreeItemToZip(files, configFile, archivePath);
+        const addConfigResult = await this._addFileTreeItemToZip(files, configItem, archivePath);
         /* c8 ignore next 3 - defense in depth against internal error */
         if (addConfigResult.isFailure()) {
           return fail(addConfigResult.message);
@@ -113,7 +109,7 @@ export class ZipArchiveCreator {
         // Update manifest with config info
         manifest.config = {
           type: 'file',
-          originalPath: configFile.absolutePath,
+          originalPath: configItem.absolutePath,
           archivePath
         };
       }
@@ -136,8 +132,8 @@ export class ZipArchiveCreator {
       onProgress?.('creating-zip', 100, 'ZIP archive buffer created');
 
       return succeed(result);
-    } catch (error) {
       /* c8 ignore next 3 - defense in depth against internal error */
+    } catch (error) {
       return fail(`Failed to create ZIP archive: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -202,6 +198,32 @@ export class ZipArchiveCreator {
       }
     }
 
+    return succeed(undefined);
+  }
+
+  private _getInputFileTreeItem(options: ZipArchiveOptions): Result<FileTree.FileTreeItem | undefined> {
+    if ('inputPath' in options && options.inputPath !== undefined) {
+      return FileTree.forFilesystem()
+        .withErrorFormat((msg) => `Failed to create file tree: ${msg}`)
+        .onSuccess((fileTree) =>
+          fileTree.getItem(options.inputPath!).withErrorFormat((msg) => `Failed to get item: ${msg}`)
+        );
+    } else if ('inputItem' in options) {
+      return succeed(options.inputItem);
+    }
+    return succeed(undefined);
+  }
+
+  private _getConfigFileTreeItem(options: ZipArchiveOptions): Result<FileTree.IFileTreeFileItem | undefined> {
+    if ('configPath' in options && options.configPath !== undefined) {
+      return FileTree.forFilesystem()
+        .withErrorFormat((msg) => `Failed to create file tree: ${msg}`)
+        .onSuccess((fileTree) =>
+          fileTree.getFile(options.configPath!).withErrorFormat((msg) => `Failed to get config file: ${msg}`)
+        );
+    } else if ('configItem' in options && options.configItem !== undefined) {
+      return succeed(options.configItem);
+    }
     return succeed(undefined);
   }
 }

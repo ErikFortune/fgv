@@ -9,7 +9,7 @@ Create a ZIP archive buffer from a supplied buffer
 **Signature:**
 
 ```typescript
-createFromBuffer(options: IZipArchiveOptions, onProgress?: ZipArchiveProgressCallback): Promise<Result<IZipArchiveResult>>;
+createFromBuffer(options: ZipArchiveOptions, onProgress?: ZipArchiveProgressCallback): Promise<Result<IZipArchiveResult>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ options
 
 </td><td>
 
-[IZipArchiveOptions](./ts-res.ziparchive.iziparchiveoptions.md)
+[ZipArchiveOptions](./ts-res.ziparchive.ziparchiveoptions.md)
 
 
 </td><td>

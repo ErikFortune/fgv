@@ -47,7 +47,9 @@ export { ZipArchiveLoader } from './zipArchiveLoader';
 
 // Types and interfaces
 export type {
-  IZipArchiveOptions,
+  IZipArchivePathOptions,
+  IZipArchiveFileTreeOptions,
+  ZipArchiveOptions,
   IZipArchiveResult,
   IZipArchiveManifest,
   IZipArchiveLoadOptions,

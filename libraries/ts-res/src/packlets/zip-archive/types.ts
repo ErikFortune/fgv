@@ -22,17 +22,35 @@
 
 import { Model as ConfigModel } from '../config';
 import * as Json from './json';
+import { FileTree } from '@fgv/ts-utils';
 
 /**
  * Options for creating a ZIP archive buffer
  * @public
  */
-export interface IZipArchiveOptions {
+export interface IZipArchivePathOptions {
   /** File or directory path to include in the archive */
-  input?: string;
+  inputPath?: string;
   /** Optional configuration file path */
-  config?: string;
+  configPath?: string;
 }
+
+/**
+ * Options for creating a ZIP archive buffer from a file tree
+ * @public
+ */
+export interface IZipArchiveFileTreeOptions {
+  /** Input file or directory */
+  inputItem?: FileTree.FileTreeItem;
+  /** Optional configuration file */
+  configItem?: FileTree.IFileTreeFileItem;
+}
+
+/**
+ * Options for creating a ZIP archive buffer
+ * @public
+ */
+export type ZipArchiveOptions = IZipArchivePathOptions | IZipArchiveFileTreeOptions;
 
 /**
  * Standardized ZIP archive manifest format (compatible with existing tools)

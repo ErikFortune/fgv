@@ -61,8 +61,8 @@ export class ZipArchiveLoader {
       onProgress?.('reading-file', 100, 'File read complete');
 
       return await this.loadFromBuffer(buffer, options, onProgress);
-    } catch (error) {
       /* c8 ignore next 3 - defense in depth against internal error */
+    } catch (error) {
       return fail(`Failed to read file: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -220,8 +220,8 @@ export class ZipArchiveLoader {
       const directory = this._buildDirectoryStructure(files, directories);
 
       return succeed({ files, directory });
-    } catch (error) {
       /* c8 ignore next 3 - defense in depth against internal error */
+    } catch (error) {
       return fail(`Failed to extract files: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
