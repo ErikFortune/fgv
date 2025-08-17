@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[isZipFile(filename)](./ts-res-ui-components.ziptools.iszipfile.md)
+
+
+</td><td>
+
+Validate ZIP file extension
+
+
+</td></tr>
+<tr><td>
+
 [processZipLoadResult(zipResult, overrideConfig)](./ts-res-ui-components.ziptools.processziploadresult.md)
 
 

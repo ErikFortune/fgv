@@ -232,17 +232,8 @@ interface FilterViewProps extends ViewBaseProps {
     resources?: ProcessedResources | null;
 }
 
-// @internal (undocumented)
-function formatFileSize(bytes: number): string;
-
-// @internal (undocumented)
-function generateZipFilename(customName?: string): string;
-
 // @public
 function getAvailableQualifiers(processedResources: ProcessedResources): string[];
-
-// @internal (undocumented)
-function getBaseName(filename: string): string;
 
 // @public
 function getDefaultConfiguration(): Config.Model.ISystemConfiguration;
@@ -307,7 +298,7 @@ interface ImportViewProps extends ViewBaseProps {
     onZipImport?: (zipData: ImportedDirectory | ImportedFile[], config?: Config.Model.ISystemConfiguration) => void;
 }
 
-// @internal (undocumented)
+// @public
 function isZipFile(filename: string): boolean;
 
 export { JsonValue }
@@ -329,9 +320,6 @@ interface MessagesWindowProps {
     messages: Message_2[];
     onClearMessages: () => void;
 }
-
-// @internal (undocumented)
-function normalizePath(path: string): string;
 
 // @public
 export interface OrchestratorActions {
@@ -840,11 +828,7 @@ declare namespace ViewStateTools {
 declare namespace ZipTools {
     export {
         ImportView,
-        generateZipFilename,
-        formatFileSize,
         isZipFile,
-        normalizePath,
-        getBaseName,
         processZipResources,
         processZipLoadResult,
         ImportViewProps

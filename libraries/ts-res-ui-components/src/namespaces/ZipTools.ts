@@ -31,7 +31,6 @@
  *
  * // Utility functions
  * const isZip = ZipTools.isZipFile('resources.zip');
- * const filename = ZipTools.generateZipFilename('my-resources');
  * ```
  *
  * @public
@@ -40,14 +39,8 @@
 // Export the import-related view components
 export { ImportView } from '../components/views/ImportView';
 
-// Minimal ZIP utilities (other functionality provided by ts-res zip-archive packlet)
-export {
-  generateZipFilename,
-  formatFileSize,
-  isZipFile,
-  normalizePath,
-  getBaseName
-} from '../utils/zipLoader/zipUtils';
+// Essential ZIP utilities (other functionality provided by ts-res zip-archive packlet)
+export { isZipFile } from '../utils/zipLoader/zipUtils';
 
 // ZIP processing helpers for integrating with ts-res-ui-components
 export { processZipResources, processZipLoadResult } from '../utils/zipLoader/zipProcessingHelpers';
