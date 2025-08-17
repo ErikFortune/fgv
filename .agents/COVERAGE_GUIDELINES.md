@@ -7,7 +7,7 @@ This document provides comprehensive guidance for achieving and maintaining 100%
 ### Primary: Functional Testing
 Start by writing tests that "make sense" functionally, focusing on the component's intended behavior:
 
-1. **Success Cases**: Test all main functionality with valid inputs
+1. **Success Cases**: Test all main functionality including positive and negative results with valid inputs
 2. **Error Cases**: Test expected error conditions and validation failures
 3. **Edge Cases**: Test boundary conditions, empty inputs, and reasonable corner cases
 4. **Integration**: Test how components interact with their dependencies

@@ -396,6 +396,9 @@ importers:
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../ts-utils
+      fflate:
+        specifier: ~0.8.2
+        version: 0.8.2
       luxon:
         specifier: ^3.7.1
         version: 3.7.1
