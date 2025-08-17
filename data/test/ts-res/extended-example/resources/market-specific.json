@@ -1,7 +1,7 @@
 {
   "resources": {
     "regional-features": {
-      "resourceTypeName": "json",
+      "resourceTypeName": "marketInfo",
       "candidates": [
         {
           "json": {

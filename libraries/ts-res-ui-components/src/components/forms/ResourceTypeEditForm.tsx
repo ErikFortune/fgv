@@ -2,10 +2,19 @@ import React, { useState, useCallback } from 'react';
 import { XMarkIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { ResourceTypes } from '@fgv/ts-res';
 
+/**
+ * Props for the ResourceTypeEditForm component.
+ *
+ * @public
+ */
 export interface ResourceTypeEditFormProps {
+  /** Existing resource type to edit (undefined for creating new type) */
   resourceType?: ResourceTypes.Config.IResourceTypeConfig;
+  /** Callback fired when resource type is saved */
   onSave: (resourceType: ResourceTypes.Config.IResourceTypeConfig) => void;
+  /** Callback fired when editing is cancelled */
   onCancel: () => void;
+  /** Names of existing resource types to prevent duplicates */
   existingNames?: string[];
 }
 
@@ -29,6 +38,103 @@ const COMMON_TYPE_NAMES = [
   'metadata'
 ];
 
+/**
+ * Modal form component for creating and editing resource types in a ts-res system configuration.
+ *
+ * The ResourceTypeEditForm provides an interface for defining resource types that categorize
+ * resources and determine their data handling behavior. It supports both common predefined
+ * types and custom types for specialized use cases, with automatic type suggestion based
+ * on resource type names.
+ *
+ * @example
+ * ```tsx
+ * import { ConfigurationTools } from '@fgv/ts-res-ui-components';
+ *
+ * // Creating a new resource type with common type
+ * const [showForm, setShowForm] = useState(false);
+ * const [resourceTypes, setResourceTypes] = useState([]);
+ *
+ * const handleSave = (resourceType) => {
+ *   setResourceTypes(prev => [...prev, resourceType]);
+ *   setShowForm(false);
+ * };
+ *
+ * {showForm && (
+ *   <ConfigurationTools.ResourceTypeEditForm
+ *     onSave={handleSave}
+ *     onCancel={() => setShowForm(false)}
+ *     existingNames={resourceTypes.map(rt => rt.name)}
+ *   />
+ * )}
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Editing an existing resource type
+ * const userSettingsType = {
+ *   name: 'userSettings',
+ *   typeName: 'object'  // Built-in object type for structured data
+ * };
+ *
+ * <ConfigurationTools.ResourceTypeEditForm
+ *   resourceType={userSettingsType}
+ *   onSave={updateResourceType}
+ *   onCancel={closeEditor}
+ *   existingNames={otherTypeNames}
+ * />
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Creating resource types for different content categories
+ * const contentTypes = [
+ *   { name: 'errorMessages', typeName: 'string' },
+ *   { name: 'uiLabels', typeName: 'localizedString' },
+ *   { name: 'navigationMenus', typeName: 'object' },
+ *   { name: 'permissionLists', typeName: 'array' },
+ *   { name: 'appConfig', typeName: 'config' },
+ *   { name: 'customValidator', typeName: 'customValidation' } // Custom type
+ * ];
+ *
+ * const CreateResourceTypesForm = () => {
+ *   const [currentType, setCurrentType] = useState(null);
+ *
+ *   return (
+ *     <div>
+ *       {currentType && (
+ *         <ConfigurationTools.ResourceTypeEditForm
+ *           resourceType={currentType}
+ *           onSave={handleSaveType}
+ *           onCancel={() => setCurrentType(null)}
+ *           existingNames={existingNames}
+ *         />
+ *       )}
+ *     </div>
+ *   );
+ * };
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Custom resource type for specialized processing
+ * const templateType = {
+ *   name: 'emailTemplates',
+ *   typeName: 'htmlTemplate'  // Custom type name for specialized handling
+ * };
+ *
+ * <ConfigurationTools.ResourceTypeEditForm
+ *   resourceType={templateType}
+ *   onSave={(updatedType) => {
+ *     // Handle custom type processing
+ *     console.log('Custom type saved:', updatedType.typeName);
+ *     saveToConfiguration(updatedType);
+ *   }}
+ *   onCancel={cancelEdit}
+ * />
+ * ```
+ *
+ * @public
+ */
 export const ResourceTypeEditForm: React.FC<ResourceTypeEditFormProps> = ({
   resourceType,
   onSave,

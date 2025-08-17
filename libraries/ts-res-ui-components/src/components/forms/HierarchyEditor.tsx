@@ -1,12 +1,93 @@
 import React, { useState } from 'react';
 
+/**
+ * Props for the HierarchyEditor component.
+ *
+ * @public
+ */
 export interface HierarchyEditorProps {
+  /** Current hierarchy mapping of child to parent relationships */
   hierarchy: Record<string, string>;
+  /** Callback fired when the hierarchy is modified */
   onChange: (hierarchy: Record<string, string>) => void;
+  /** Available values for child selection (when working with enumerated qualifier types) */
   availableValues: string[];
+  /** Optional CSS class name for styling */
   className?: string;
 }
 
+/**
+ * Interactive editor for defining hierarchical relationships between qualifier values.
+ *
+ * The HierarchyEditor allows users to define parent-child relationships between qualifier values,
+ * enabling hierarchical resolution in the ts-res system. It provides an intuitive interface for
+ * creating, viewing, and managing value hierarchies with visual tree representation.
+ *
+ * @example
+ * ```tsx
+ * import { ConfigurationTools } from '@fgv/ts-res-ui-components';
+ *
+ * // Basic hierarchy editing for region qualifiers
+ * const [regionHierarchy, setRegionHierarchy] = useState({
+ *   'quebec': 'canada',
+ *   'ontario': 'canada',
+ *   'california': 'usa',
+ *   'texas': 'usa'
+ * });
+ *
+ * <ConfigurationTools.HierarchyEditor
+ *   hierarchy={regionHierarchy}
+ *   onChange={setRegionHierarchy}
+ *   availableValues={['quebec', 'ontario', 'california', 'texas']}
+ * />
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Hierarchy editing for language qualifiers with dynamic values
+ * const [languageHierarchy, setLanguageHierarchy] = useState({
+ *   'en-CA': 'en',
+ *   'en-US': 'en',
+ *   'fr-CA': 'fr',
+ *   'fr-FR': 'fr'
+ * });
+ *
+ * <ConfigurationTools.HierarchyEditor
+ *   hierarchy={languageHierarchy}
+ *   onChange={setLanguageHierarchy}
+ *   availableValues={[]} // Allow free-form input
+ *   className="my-hierarchy-editor"
+ * />
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Integration with qualifier type configuration
+ * const QualifierTypeEditor = ({ qualifierType, onSave }) => {
+ *   const [hierarchy, setHierarchy] = useState(qualifierType.hierarchy || {});
+ *
+ *   const handleSave = () => {
+ *     onSave({
+ *       ...qualifierType,
+ *       hierarchy: Object.keys(hierarchy).length > 0 ? hierarchy : undefined
+ *     });
+ *   };
+ *
+ *   return (
+ *     <div>
+ *       <ConfigurationTools.HierarchyEditor
+ *         hierarchy={hierarchy}
+ *         onChange={setHierarchy}
+ *         availableValues={qualifierType.enumeratedValues || []}
+ *       />
+ *       <button onClick={handleSave}>Save Qualifier Type</button>
+ *     </div>
+ *   );
+ * };
+ * ```
+ *
+ * @public
+ */
 export const HierarchyEditor: React.FC<HierarchyEditorProps> = ({
   hierarchy,
   onChange,

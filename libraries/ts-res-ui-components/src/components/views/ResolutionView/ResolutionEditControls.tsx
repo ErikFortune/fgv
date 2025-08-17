@@ -7,6 +7,11 @@ import {
   DocumentTextIcon
 } from '@heroicons/react/24/outline';
 
+/**
+ * Props for the ResolutionEditControls component.
+ *
+ * @public
+ */
 export interface ResolutionEditControlsProps {
   /** Number of unsaved edits */
   editCount: number;
@@ -24,6 +29,134 @@ export interface ResolutionEditControlsProps {
   className?: string;
 }
 
+/**
+ * Control panel for managing pending resource edits during resolution testing.
+ *
+ * The ResolutionEditControls component provides a user interface for applying or discarding
+ * resource edits made during resolution testing. It shows the number of pending edits,
+ * provides clear actions for applying or discarding them, and includes safety confirmations
+ * to prevent accidental data loss.
+ *
+ * @example
+ * ```tsx
+ * import { ResolutionTools } from '@fgv/ts-res-ui-components';
+ *
+ * // Basic usage with resolution state
+ * const ResolutionInterface = () => {
+ *   const { state, actions } = useResolutionState(processedResources);
+ *
+ *   return (
+ *     <div>
+ *       <ResolutionTools.ResolutionEditControls
+ *         editCount={state.editedResources.size}
+ *         isApplying={state.isApplyingEdits}
+ *         hasEdits={state.hasUnsavedEdits}
+ *         onApplyEdits={actions.applyEdits}
+ *         onDiscardEdits={actions.discardEdits}
+ *       />
+ *     </div>
+ *   );
+ * };
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Advanced usage with custom handlers and state management
+ * const AdvancedResolutionEditor = () => {
+ *   const [edits, setEdits] = useState(new Map());
+ *   const [isApplying, setIsApplying] = useState(false);
+ *
+ *   const handleApplyEdits = async () => {
+ *     setIsApplying(true);
+ *     try {
+ *       // Apply each edit to the resource system
+ *       for (const [resourceId, editedValue] of edits.entries()) {
+ *         await applyResourceEdit(resourceId, editedValue);
+ *       }
+ *
+ *       // Rebuild the resource system
+ *       await rebuildResourceSystem();
+ *
+ *       // Clear edits after successful application
+ *       setEdits(new Map());
+ *       showSuccess('Edits applied successfully');
+ *     } catch (error) {
+ *       showError(`Failed to apply edits: ${error.message}`);
+ *     } finally {
+ *       setIsApplying(false);
+ *     }
+ *   };
+ *
+ *   const handleDiscardEdits = () => {
+ *     setEdits(new Map());
+ *     showInfo('All pending edits discarded');
+ *   };
+ *
+ *   return (
+ *     <ResolutionTools.ResolutionEditControls
+ *       editCount={edits.size}
+ *       isApplying={isApplying}
+ *       hasEdits={edits.size > 0}
+ *       onApplyEdits={handleApplyEdits}
+ *       onDiscardEdits={handleDiscardEdits}
+ *       className="my-custom-controls"
+ *     />
+ *   );
+ * };
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Integration with resource editing workflow
+ * const ResourceEditingWorkflow = () => {
+ *   const [selectedResource, setSelectedResource] = useState(null);
+ *   const [pendingEdits, setPendingEdits] = useState({});
+ *
+ *   const saveResourceEdit = (resourceId, editedValue, originalValue) => {
+ *     setPendingEdits(prev => ({
+ *       ...prev,
+ *       [resourceId]: { editedValue, originalValue, timestamp: new Date() }
+ *     }));
+ *   };
+ *
+ *   const applyAllEdits = async () => {
+ *     const resourceManager = getResourceManager();
+ *
+ *     // Apply edits as new candidates with current context
+ *     for (const [resourceId, edit] of Object.entries(pendingEdits)) {
+ *       await resourceManager.addCandidate(resourceId, {
+ *         value: edit.editedValue,
+ *         conditions: getCurrentResolutionContext(),
+ *         metadata: { editedAt: edit.timestamp }
+ *       });
+ *     }
+ *
+ *     // Clear pending edits
+ *     setPendingEdits({});
+ *   };
+ *
+ *   return (
+ *     <div className="resolution-workflow">
+ *       <ResolutionTools.EditableJsonView
+ *         resourceId={selectedResource}
+ *         value={getResourceValue(selectedResource)}
+ *         onSave={saveResourceEdit}
+ *       />
+ *
+ *       <ResolutionTools.ResolutionEditControls
+ *         editCount={Object.keys(pendingEdits).length}
+ *         isApplying={false}
+ *         hasEdits={Object.keys(pendingEdits).length > 0}
+ *         onApplyEdits={applyAllEdits}
+ *         onDiscardEdits={() => setPendingEdits({})}
+ *       />
+ *     </div>
+ *   );
+ * };
+ * ```
+ *
+ * @public
+ */
 export const ResolutionEditControls: React.FC<ResolutionEditControlsProps> = ({
   editCount,
   isApplying,

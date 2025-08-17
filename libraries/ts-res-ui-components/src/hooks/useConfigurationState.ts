@@ -77,6 +77,69 @@ export interface UseConfigurationStateReturn {
   templates: ConfigurationTemplate[];
 }
 
+/**
+ * Hook for managing system configuration state including qualifiers, qualifier types, and resource types.
+ *
+ * Provides comprehensive configuration management with validation, change tracking, and import/export capabilities.
+ * Supports both visual editing and JSON editing modes with real-time validation.
+ *
+ * @example
+ * Basic usage:
+ * ```typescript
+ * const { state, actions } = useConfigurationState();
+ *
+ * // Check for unsaved changes
+ * if (state.hasUnsavedChanges) {
+ *   console.log('Configuration has been modified');
+ * }
+ *
+ * // Add a new qualifier
+ * actions.addQualifier({
+ *   name: 'language',
+ *   typeName: 'language',
+ *   defaultPriority: 100
+ * });
+ * ```
+ *
+ * @example
+ * With change notifications:
+ * ```typescript
+ * const { state, actions } = useConfigurationState(
+ *   undefined,
+ *   (config) => console.log('Configuration changed:', config),
+ *   (hasChanges) => console.log('Has unsaved changes:', hasChanges)
+ * );
+ * ```
+ *
+ * @example
+ * JSON import/export:
+ * ```typescript
+ * const { actions } = useConfigurationState();
+ *
+ * // Export to JSON
+ * const exportResult = actions.exportToJson({ pretty: true });
+ * if (exportResult.isSuccess()) {
+ *   console.log(exportResult.value); // JSON string
+ * }
+ *
+ * // Import from JSON
+ * const importResult = actions.importFromJson(jsonString);
+ * if (importResult.isFailure()) {
+ *   console.error('Import failed:', importResult.message);
+ * }
+ * ```
+ *
+ * @param initialConfiguration - Optional initial configuration. Defaults to system default configuration
+ * @param onConfigurationChange - Optional callback invoked when configuration changes (not on first mount)
+ * @param onUnsavedChanges - Optional callback invoked when unsaved changes state changes
+ *
+ * @returns Object containing:
+ * - `state` - Current configuration state with change tracking and validation
+ * - `actions` - Methods for modifying and managing the configuration
+ * - `templates` - Available configuration templates for quick loading
+ *
+ * @public
+ */
 export function useConfigurationState(
   initialConfiguration?: Config.Model.ISystemConfiguration,
   onConfigurationChange?: (config: Config.Model.ISystemConfiguration) => void,

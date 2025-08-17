@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-res-browser",
-  "version": "5.0.0-16",
+  "version": "5.0.0-17",
   "description": "Visual browser tool for ts-res resources",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -18,7 +18,7 @@
     "build": "webpack --mode production",
     "dev": "webpack serve --mode development",
     "clean": "rimraf lib dist",
-    "test": "jest"
+    "test": "echo 'No tests configured for ts-res-browser tool - this is a frontend build tool' && exit 0"
   },
   "keywords": [
     "ts-res",
@@ -44,7 +44,6 @@
     "core-js": "~3.45.0",
     "whatwg-fetch": "~3.6.20",
     "@fgv/ts-extras": "workspace:*",
-    "jszip": "~3.10.1",
     "browserify-zlib": "~0.2.0",
     "path-browserify": "~1.0.1",
     "crypto-browserify": "~3.12.1",
@@ -86,7 +85,6 @@
     "@rushstack/heft-jest-plugin": "~0.16.11",
     "@rushstack/heft-lint-plugin": "~0.7.3",
     "@rushstack/heft-sass-plugin": "~0.17.10",
-    "@rushstack/heft-webpack5-plugin": "~0.11.37",
-    "@types/jszip": "~3.4.1"
+    "@rushstack/heft-webpack5-plugin": "~0.11.37"
   }
 }

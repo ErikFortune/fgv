@@ -1,5 +1,20 @@
-// Export types
-export * from './types';
+// Export orchestrator types (main entry point types)
+export type { OrchestratorState, OrchestratorActions } from './types';
+
+// Export utility types that are commonly used across namespaces
+export type { Result } from '@fgv/ts-utils';
+export type { JsonValue } from '@fgv/ts-json-base';
+
+// Domain-specific types are now available through their respective namespaces:
+// - FilterTools: FilterState, FilterActions, FilterViewProps, FilterResult, FilteredResource
+// - ResolutionTools: ResolutionState, ResolutionActions, ResolutionViewProps, ResolutionResult, CandidateInfo, ConditionEvaluationResult, EditedResourceInfo
+// - ResourceTools: ProcessedResources, ExtendedProcessedResources, ResourceManagerState, ResourceEditorFactory, ResourceEditorResult, ResourceEditorProps, ResourceDetailData
+// - ViewStateTools: ViewBaseProps, Message, MessagesWindowProps
+// - ImportTools: ImportViewProps, ImportedFile, ImportedDirectory
+// - TsResTools: SourceViewProps, CompiledViewProps
+// - ZipTools: ImportViewProps and ZIP utilities
+// - ConfigurationTools: ConfigurationViewProps
+// - ImportTools: ImportedFile, ImportedDirectory
 
 // Export views
 export { ImportView } from './components/views/ImportView';
@@ -7,39 +22,47 @@ export { SourceView } from './components/views/SourceView';
 export { FilterView } from './components/views/FilterView';
 export { CompiledView } from './components/views/CompiledView';
 export { ResolutionView } from './components/views/ResolutionView';
-export { ZipLoaderView } from './components/views/ZipLoaderView';
 export { ConfigurationView } from './components/views/ConfigurationView';
+export { MessagesWindow } from './components/views/MessagesWindow';
 
 // Export orchestrator
 export { ResourceOrchestrator } from './components/orchestrator/ResourceOrchestrator';
 
-// Export forms
-export { QualifierTypeEditForm } from './components/forms/QualifierTypeEditForm';
-export { QualifierEditForm } from './components/forms/QualifierEditForm';
-export { ResourceTypeEditForm } from './components/forms/ResourceTypeEditForm';
-
-// Export common components
+// Export common components (likely to be used by consumers)
 export { ResourceTreeView } from './components/common/ResourceTreeView';
 export { ResourceListView } from './components/common/ResourceListView';
-export { QualifierContextControl } from './components/common/QualifierContextControl';
+export { SourceResourceDetail } from './components/common/SourceResourceDetail';
+export { ResolutionResults } from './components/common/ResolutionResults';
 
-// Export hooks
-export { useResourceData } from './hooks/useResourceData';
-export { useFilterState } from './hooks/useFilterState';
-export { useViewState } from './hooks/useViewState';
-export { useResolutionState } from './hooks/useResolutionState';
-export { useConfigurationState } from './hooks/useConfigurationState';
+// Form components are now available through ConfigurationTools namespace:
+// - ConfigurationTools.QualifierTypeEditForm
+// - ConfigurationTools.QualifierEditForm
+// - ConfigurationTools.ResourceTypeEditForm
+// - ConfigurationTools.HierarchyEditor
 
-// Export utilities
-export * from './utils/tsResIntegration';
-export * from './utils/fileProcessing';
+// QualifierContextControl is now available through ResolutionTools namespace:
+// - ResolutionTools.QualifierContextControl
+
+// Resolution and picker components are now available through their respective namespaces:
+// - ResolutionTools.EditableJsonView, ResolutionTools.ResolutionEditControls, ResolutionTools.EditableJsonViewProps
+// - PickerTools.ResourcePicker, PickerTools.ResourcePickerProps, PickerTools.ResourceSelection, etc.
+
+// All hooks are now organized within their respective namespaces:
+// - useResourceData: ResourceTools.useResourceData (orchestrator data hook)
+// - useViewState: ViewStateTools.useViewState (view state and messages)
+// - useFilterState: FilterTools.useFilterState (filter management)
+// - useResolutionState: ResolutionTools.useResolutionState (resource resolution)
+// - useConfigurationState: ConfigurationTools.useConfigurationState (system configuration)
+
+// Export organized tool namespaces
 export {
-  createFilteredResourceManagerSimple,
-  analyzeFilteredResources,
-  hasFilterValues,
-  getFilterSummary,
-  type FilterOptions
-} from './utils/filterResources';
-export * from './utils/resolutionUtils';
-export * from './utils/zipLoader';
-export * from './utils/configurationUtils';
+  FilterTools,
+  ResolutionTools,
+  ConfigurationTools,
+  ResourceTools,
+  ImportTools,
+  TsResTools,
+  ZipTools,
+  ViewStateTools,
+  PickerTools
+} from './namespaces';

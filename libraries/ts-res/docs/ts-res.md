@@ -340,6 +340,15 @@ Description
 
 
 </td></tr>
+<tr><td>
+
+[ZipArchive](./ts-res.ziparchive.md)
+
+
+</td><td>
+
+
+</td></tr>
 </tbody></table>
 
 ## Variables

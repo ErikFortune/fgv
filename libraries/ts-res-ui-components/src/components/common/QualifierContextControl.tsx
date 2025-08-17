@@ -1,16 +1,92 @@
 import React, { useMemo } from 'react';
 import { ProcessedResources } from '../../types';
 
+/**
+ * Props for the QualifierContextControl component.
+ *
+ * @public
+ */
 export interface QualifierContextControlProps {
+  /** Name of the qualifier being controlled */
   qualifierName: string;
+  /** Current value of the qualifier */
   value: string | undefined;
+  /** Callback fired when the qualifier value changes */
   onChange: (qualifierName: string, value: string | undefined) => void;
+  /** Whether the control is disabled */
   disabled?: boolean;
+  /** Placeholder text for empty value */
   placeholder?: string;
+  /** Optional processed resources for auto-suggesting values */
   resources?: ProcessedResources | null;
+  /** Optional CSS classes to apply to the control */
   className?: string;
 }
 
+/**
+ * A control component for managing individual qualifier context values.
+ *
+ * QualifierContextControl provides an interface for setting and modifying qualifier values
+ * used in resource resolution context. It can optionally suggest values based on available
+ * resources and supports both manual input and selection from predefined options.
+ *
+ * @example
+ * ```tsx
+ * import { ResolutionTools } from '@fgv/ts-res-ui-components';
+ *
+ * function QualifierSettings() {
+ *   const [context, setContext] = useState<Record<string, string | undefined>>({
+ *     language: 'en-US',
+ *     platform: undefined
+ *   });
+ *
+ *   const handleQualifierChange = (name: string, value: string | undefined) => {
+ *     setContext(prev => ({ ...prev, [name]: value }));
+ *   };
+ *
+ *   return (
+ *     <div>
+ *       <ResolutionTools.QualifierContextControl
+ *         qualifierName="language"
+ *         value={context.language}
+ *         onChange={handleQualifierChange}
+ *         placeholder="Select language..."
+ *       />
+ *       <ResolutionTools.QualifierContextControl
+ *         qualifierName="platform"
+ *         value={context.platform}
+ *         onChange={handleQualifierChange}
+ *         placeholder="Select platform..."
+ *       />
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Using with processed resources for value suggestions
+ * import { ResolutionTools, ResourceTools } from '@fgv/ts-res-ui-components';
+ *
+ * function SmartQualifierControl() {
+ *   const { state } = ResourceTools.useResourceData();
+ *   const [qualifierValue, setQualifierValue] = useState<string | undefined>();
+ *
+ *   return (
+ *     <ResolutionTools.QualifierContextControl
+ *       qualifierName="region"
+ *       value={qualifierValue}
+ *       onChange={(name, value) => setQualifierValue(value)}
+ *       resources={state.resources}
+ *       placeholder="Auto-suggested regions..."
+ *       className="w-full"
+ *     />
+ *   );
+ * }
+ * ```
+ *
+ * @public
+ */
 export const QualifierContextControl: React.FC<QualifierContextControlProps> = ({
   qualifierName,
   value,

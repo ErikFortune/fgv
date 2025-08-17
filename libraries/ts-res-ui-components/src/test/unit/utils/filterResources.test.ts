@@ -27,10 +27,9 @@ import {
   getFilterSummary,
   createFilteredResourceManagerSimple,
   analyzeFilteredResources,
-  type FilterOptions,
-  type FilteredResource
+  type FilterOptions
 } from '../../../utils/filterResources';
-import { ProcessedResources } from '../../../types';
+import { ProcessedResources, FilteredResource } from '../../../types';
 
 // Mock the tsResIntegration module
 jest.mock('../../../utils/tsResIntegration', () => ({

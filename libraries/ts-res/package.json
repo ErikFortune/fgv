@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-res",
-  "version": "5.0.0-16",
+  "version": "5.0.0-17",
   "description": "Multi-dimensional Resource Runtime",
   "main": "lib/index.js",
   "types": "dist/ts-res.d.ts",
@@ -65,6 +65,7 @@
     "@fgv/ts-json-base": "workspace:*",
     "@fgv/ts-bcp47": "workspace:*",
     "@fgv/ts-json": "workspace:*",
-    "luxon": "^3.7.1"
+    "luxon": "^3.7.1",
+    "fflate": "~0.8.2"
   }
 }

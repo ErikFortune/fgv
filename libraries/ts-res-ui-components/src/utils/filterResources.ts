@@ -1,26 +1,19 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
 import { Runtime, Import, Resources } from '@fgv/ts-res';
-import { ProcessedResources } from '../types';
+import { ProcessedResources, FilteredResource, FilterResult } from '../types';
 
+/**
+ * Options for configuring filtering behavior and output.
+ *
+ * @public
+ */
 export interface FilterOptions {
+  /** Allow partial context matches when filtering resources */
   partialContextMatch?: boolean;
+  /** Enable detailed console logging for debugging filter operations */
   enableDebugLogging?: boolean;
+  /** Attempt to reduce qualifier complexity during filtering */
   reduceQualifiers?: boolean;
-}
-
-export interface FilteredResource {
-  id: string;
-  originalCandidateCount: number;
-  filteredCandidateCount: number;
-  hasWarning: boolean;
-}
-
-export interface FilterResult {
-  success: boolean;
-  filteredResources: FilteredResource[];
-  processedResources?: ProcessedResources;
-  error?: string;
-  warnings: string[];
 }
 
 // Helper function for conditional debug logging
@@ -31,14 +24,61 @@ const debugLog = (enableDebug: boolean, ...args: unknown[]) => {
 };
 
 /**
- * Check if filter values object has any meaningful values
+ * Checks if a filter values object contains any meaningful (non-empty) filter values.
+ *
+ * Utility function to determine whether filtering should be applied based on
+ * the presence of actual filter values. Ignores undefined and empty string values.
+ *
+ * @example
+ * ```typescript
+ * import { FilterTools } from '@fgv/ts-res-ui-components';
+ *
+ * const filterValues = { language: 'en-US', platform: '', region: undefined };
+ *
+ * if (FilterTools.hasFilterValues(filterValues)) {
+ *   console.log('Has active filters'); // Will print this
+ *   const result = await FilterTools.createFilteredResourceManagerSimple(resources, filterValues);
+ * } else {
+ *   console.log('No filters applied');
+ * }
+ * ```
+ *
+ * @param values - Object containing filter key-value pairs
+ * @returns True if any filter has a meaningful value, false otherwise
+ * @public
  */
 export function hasFilterValues(values: Record<string, string | undefined>): boolean {
   return Object.values(values).some((value) => value !== undefined && value !== '');
 }
 
 /**
- * Get a summary string of active filter values
+ * Creates a human-readable summary string of active filter values.
+ *
+ * Generates a comma-separated string representation of all non-empty filter values,
+ * useful for displaying current filter state to users or in debug output.
+ *
+ * @example
+ * ```typescript
+ * import { FilterTools } from '@fgv/ts-res-ui-components';
+ *
+ * const filterValues = {
+ *   language: 'en-US',
+ *   platform: 'web',
+ *   region: '',
+ *   theme: undefined
+ * };
+ *
+ * const summary = FilterTools.getFilterSummary(filterValues);
+ * console.log(summary); // "language=en-US, platform=web"
+ *
+ * // For empty filters
+ * const emptyFilters = {};
+ * console.log(FilterTools.getFilterSummary(emptyFilters)); // "No filters"
+ * ```
+ *
+ * @param values - Object containing filter key-value pairs
+ * @returns Human-readable string summarizing active filters
+ * @public
  */
 export function getFilterSummary(values: Record<string, string | undefined>): string {
   const activeFilters = Object.entries(values)
@@ -50,6 +90,61 @@ export function getFilterSummary(values: Record<string, string | undefined>): st
 /**
  * Creates a filtered resource manager using the ResourceManagerBuilder.clone() method.
  * This is a simplified implementation that leverages the built-in filtering functionality.
+ */
+/**
+ * Creates a filtered resource manager by applying context filters to reduce resource candidates.
+ *
+ * This function takes an original resource system and applies partial context filtering
+ * to create a new resource manager with reduced candidate sets. Useful for creating
+ * preview modes, testing specific configurations, or optimizing resource resolution.
+ *
+ * @example
+ * ```typescript
+ * import { FilterTools } from '@fgv/ts-res-ui-components';
+ *
+ * // Basic filtering with partial context
+ * const originalResources = getProcessedResources();
+ * const filterContext = { language: 'en-US', platform: 'web' };
+ *
+ * const filteredResult = await FilterTools.createFilteredResourceManagerSimple(
+ *   originalResources.system,
+ *   filterContext
+ * );
+ *
+ * if (filteredResult.isSuccess()) {
+ *   console.log('Filtered resources created successfully');
+ *   const analysis = FilterTools.analyzeFilteredResources(
+ *     originalResources.summary.resourceIds,
+ *     filteredResult.value,
+ *     originalResources
+ *   );
+ *   console.log(`Reduced candidates in ${analysis.filteredResources.length} resources`);
+ * }
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // With advanced options and debug logging
+ * const result = await FilterTools.createFilteredResourceManagerSimple(
+ *   originalSystem,
+ *   { language: 'fr-CA', region: 'quebec' },
+ *   {
+ *     partialContextMatch: true,
+ *     enableDebugLogging: true,
+ *     reduceQualifiers: false
+ *   }
+ * );
+ *
+ * if (result.isFailure()) {
+ *   console.error('Filtering failed:', result.message);
+ * }
+ * ```
+ *
+ * @param originalSystem - The original resource system to filter
+ * @param partialContext - Filter values to apply for candidate reduction
+ * @param options - Configuration options for filtering behavior
+ * @returns Result containing the filtered ProcessedResources or error message
+ * @public
  */
 export const createFilteredResourceManagerSimple = async (
   originalSystem: ProcessedResources['system'],
@@ -160,6 +255,61 @@ export const createFilteredResourceManagerSimple = async (
 
 /**
  * Analyze filtered resources compared to original resources
+ */
+/**
+ * Analyzes the impact of filtering on resources by comparing original and filtered resource sets.
+ *
+ * Compares original and filtered resources to provide detailed analysis of how filtering
+ * affected each resource's candidate count. Identifies resources with potential issues
+ * and provides warnings for resources that may have been over-filtered or have no candidates.
+ *
+ * @example
+ * ```typescript
+ * import { FilterTools } from '@fgv/ts-res-ui-components';
+ *
+ * // After creating filtered resources
+ * const originalIds = originalResources.summary.resourceIds;
+ * const analysis = FilterTools.analyzeFilteredResources(
+ *   originalIds,
+ *   filteredResources,
+ *   originalResources
+ * );
+ *
+ * if (analysis.success) {
+ *   console.log(`Analyzed ${analysis.filteredResources.length} resources`);
+ *
+ *   // Find resources with significant candidate reduction
+ *   const heavilyFiltered = analysis.filteredResources.filter(r =>
+ *     r.originalCandidateCount > 5 && r.filteredCandidateCount === 1
+ *   );
+ *   console.log(`${heavilyFiltered.length} resources heavily filtered`);
+ *
+ *   // Check for warnings
+ *   if (analysis.warnings.length > 0) {
+ *     console.warn('Filter warnings:', analysis.warnings);
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Using analysis for UI display
+ * const analysis = FilterTools.analyzeFilteredResources(resourceIds, filtered, original);
+ *
+ * const resourcesWithIssues = analysis.filteredResources.filter(r => r.hasWarning);
+ * if (resourcesWithIssues.length > 0) {
+ *   showWarningDialog(
+ *     `${resourcesWithIssues.length} resources may be over-filtered`,
+ *     resourcesWithIssues.map(r => r.id)
+ *   );
+ * }
+ * ```
+ *
+ * @param originalResourceIds - Array of resource IDs from the original system
+ * @param filteredProcessedResources - The filtered resource system to analyze
+ * @param originalProcessedResources - The original resource system for comparison
+ * @returns Analysis result with per-resource filtering impact and warnings
+ * @public
  */
 export function analyzeFilteredResources(
   originalResourceIds: string[],

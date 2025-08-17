@@ -10,13 +10,69 @@ import {
   ListBulletIcon,
   FolderIcon
 } from '@heroicons/react/24/outline';
-import { ResolutionViewProps, CandidateInfo, ResolutionActions, ResolutionState } from '../../../types';
+import {
+  ResolutionViewProps,
+  CandidateInfo,
+  ResolutionActions,
+  ResolutionState,
+  ResourceEditorFactory,
+  ResourceEditorResult
+} from '../../../types';
 import { QualifierContextControl } from '../../common/QualifierContextControl';
-import { EditableJsonView } from './EditableJsonView';
 import { ResolutionEditControls } from './ResolutionEditControls';
-import { ResourceTreeView } from '../../common/ResourceTreeView';
-import { ResourceListView } from '../../common/ResourceListView';
+import { ResourcePicker } from '../../pickers/ResourcePicker';
+import { ResourceSelection, ResourceAnnotations } from '../../pickers/ResourcePicker/types';
+import { ResolutionResults } from '../../common/ResolutionResults';
 
+/**
+ * ResolutionView component for resource resolution testing and editing.
+ *
+ * Provides a comprehensive interface for testing resource resolution with different
+ * qualifier contexts, viewing resolution results, and editing resource values with
+ * custom editors. Supports real-time resolution testing and conflict detection.
+ *
+ * **Key Features:**
+ * - **Context management**: Set and update resolution context (qualifier values)
+ * - **Real-time resolution**: See how resources resolve with current context
+ * - **Resource editing**: Edit resource values with custom type-specific editors
+ * - **Conflict detection**: Detect when edits would conflict with existing resources
+ * - **Preview mode**: See how edits affect resolution without committing changes
+ * - **Custom editors**: Support for type-specific resource editors via factory pattern
+ * - **Fallback editing**: JSON editor fallback when custom editors aren't available
+ *
+ * @example
+ * ```tsx
+ * import { ResolutionView } from '@fgv/ts-res-ui-components';
+ *
+ * // Custom editor factory for specific resource types
+ * const editorFactory = {
+ *   createEditor: (resourceId, resourceType, value) => {
+ *     if (resourceType === 'market-info') {
+ *       return {
+ *         success: true,
+ *         editor: MarketInfoEditor
+ *       };
+ *     }
+ *     return { success: false };
+ *   }
+ * };
+ *
+ * function MyResolutionTool() {
+ *   return (
+ *     <ResolutionView
+ *       resources={processedResources}
+ *       resolutionState={resolutionState}
+ *       resolutionActions={resolutionActions}
+ *       availableQualifiers={['language', 'territory', 'platform']}
+ *       resourceEditorFactory={editorFactory}
+ *       onMessage={(type, message) => console.log(`${type}: ${message}`)}
+ *     />
+ *   );
+ * }
+ * ```
+ *
+ * @public
+ */
 export const ResolutionView: React.FC<ResolutionViewProps> = ({
   resources,
   filterState,
@@ -24,23 +80,90 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
   resolutionState,
   resolutionActions,
   availableQualifiers = [],
+  resourceEditorFactory,
   onMessage,
   className = ''
 }) => {
-  // Local UI state
-  const [viewMode, setViewMode] = useState<'tree' | 'list'>('list');
-
   // Use filtered resources when filtering is active and successful
   const isFilteringActive = filterState?.enabled && filterResult?.success === true;
   const activeProcessedResources = isFilteringActive ? filterResult?.processedResources : resources;
 
-  // Available resources for selection
-  const availableResources = useMemo(() => {
+  // Create resource annotations for resolution results and edit states
+  const resourceAnnotations = useMemo(() => {
+    const annotations: ResourceAnnotations = {};
+
     if (!activeProcessedResources?.summary?.resourceIds) {
-      return [];
+      return annotations;
     }
-    return activeProcessedResources.summary.resourceIds.sort();
-  }, [activeProcessedResources?.summary?.resourceIds]);
+
+    activeProcessedResources.summary.resourceIds.forEach((resourceId) => {
+      const hasEdit = resolutionActions?.hasEdit?.(resourceId);
+      const isSelected = resolutionState?.selectedResourceId === resourceId;
+      const hasResolutionResult = isSelected && resolutionState?.resolutionResult;
+
+      // Base annotation with edit indicator
+      annotations[resourceId] = {
+        indicator: hasEdit
+          ? {
+              type: 'icon',
+              value: '✏️',
+              tooltip: 'Resource has unsaved edits'
+            }
+          : undefined
+      };
+
+      // Add resolution result annotations for selected resource
+      if (hasResolutionResult && resolutionState?.resolutionResult?.success) {
+        const result = resolutionState.resolutionResult;
+
+        // Show match status as badge
+        if (result.bestCandidate) {
+          annotations[resourceId].badge = {
+            text: 'Resolved',
+            variant: 'info'
+          };
+        } else if (result.candidateDetails) {
+          const matchingCount = result.candidateDetails.filter((c: CandidateInfo) => c.matched).length;
+          const totalCount = result.candidateDetails.length;
+
+          if (matchingCount === 0) {
+            annotations[resourceId].badge = {
+              text: 'No Match',
+              variant: 'error'
+            };
+          } else {
+            annotations[resourceId].badge = {
+              text: `${matchingCount}/${totalCount}`,
+              variant: 'warning'
+            };
+          }
+        }
+
+        // Add suffix with candidate count
+        if (result.resource) {
+          const totalCandidates = result.resource.candidates.length;
+          annotations[resourceId].suffix = `${totalCandidates} candidate${totalCandidates !== 1 ? 's' : ''}`;
+        }
+      } else if (
+        isSelected &&
+        resolutionState?.resolutionResult &&
+        !resolutionState.resolutionResult.success
+      ) {
+        // Show error state
+        annotations[resourceId].badge = {
+          text: 'Error',
+          variant: 'error'
+        };
+      }
+    });
+
+    return annotations;
+  }, [
+    activeProcessedResources?.summary?.resourceIds,
+    resolutionActions,
+    resolutionState?.selectedResourceId,
+    resolutionState?.resolutionResult
+  ]);
 
   // Handle context value changes using the shared component's callback pattern
   const handleQualifierChange = useCallback(
@@ -50,10 +173,12 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
     [resolutionActions]
   );
 
-  // Handle resource selection
+  // Handle resource selection from ResourcePicker
   const handleResourceSelect = useCallback(
-    (resourceId: string) => {
-      resolutionActions?.selectResource(resourceId);
+    (selection: ResourceSelection) => {
+      if (selection.resourceId) {
+        resolutionActions?.selectResource(selection.resourceId);
+      }
     },
     [resolutionActions]
   );
@@ -177,79 +302,25 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
         <div className="flex flex-col lg:flex-row gap-6 h-[600px]">
           {/* Left side: Resource Selection */}
           <div className="lg:w-1/2 flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Resources</h3>
-                <div className="text-sm text-gray-500">{availableResources.length} available</div>
-              </div>
-              {/* View Mode Toggle */}
-              <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`flex items-center px-2 py-1 text-xs font-medium rounded ${
-                    viewMode === 'list'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                  title="List View"
-                >
-                  <ListBulletIcon className="h-4 w-4" />
-                  <span className="ml-1">List</span>
-                </button>
-                <button
-                  onClick={() => setViewMode('tree')}
-                  className={`flex items-center px-2 py-1 text-xs font-medium rounded ${
-                    viewMode === 'tree'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                  title="Tree View"
-                >
-                  <FolderIcon className="h-4 w-4" />
-                  <span className="ml-1">Tree</span>
-                </button>
-              </div>
+            <div className="flex items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Resources</h3>
             </div>
 
-            <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg bg-gray-50">
-              {viewMode === 'tree' && activeProcessedResources?.system.resourceManager ? (
-                <ResourceTreeView
-                  resources={activeProcessedResources.system.resourceManager}
-                  selectedResourceId={resolutionState?.selectedResourceId || null}
-                  onResourceSelect={handleResourceSelect}
-                  searchTerm=""
-                  className=""
-                />
-              ) : (
-                availableResources.map((resourceId) => (
-                  <div
-                    key={resourceId}
-                    className={`flex items-center px-3 py-2 cursor-pointer hover:bg-gray-100 ${
-                      resolutionState?.selectedResourceId === resourceId
-                        ? 'bg-blue-50 border-r-2 border-blue-500'
-                        : ''
-                    }`}
-                    onClick={() => handleResourceSelect(resourceId)}
-                  >
-                    <DocumentTextIcon className="w-4 h-4 mr-2 text-green-500" />
-                    <span
-                      className={`text-sm ${
-                        resolutionState?.selectedResourceId === resourceId
-                          ? 'font-medium text-blue-900'
-                          : 'text-gray-700'
-                      }`}
-                    >
-                      {resourceId}
-                    </span>
-                    {/* Show edit indicator */}
-                    {resolutionActions?.hasEdit?.(resourceId) && (
-                      <span className="ml-auto">
-                        <PencilIcon className="h-3 w-3 text-blue-500" />
-                      </span>
-                    )}
-                  </div>
-                ))
-              )}
+            <div className="flex-1">
+              <ResourcePicker
+                resources={activeProcessedResources || null}
+                selectedResourceId={resolutionState?.selectedResourceId || null}
+                onResourceSelect={handleResourceSelect}
+                resourceAnnotations={resourceAnnotations}
+                defaultView="list"
+                showViewToggle={true}
+                enableSearch={true}
+                searchPlaceholder="Search resources for resolution testing..."
+                searchScope="all"
+                emptyMessage="No resources available for resolution testing"
+                height="520px"
+                onMessage={onMessage}
+              />
             </div>
           </div>
 
@@ -326,264 +397,14 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
                   contextValues={resolutionState.contextValues}
                   resolutionActions={resolutionActions}
                   resolutionState={resolutionState}
+                  resourceEditorFactory={resourceEditorFactory}
+                  onMessage={onMessage}
                 />
               )}
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-};
-
-// Resolution Results Component (simplified version)
-interface ResolutionResultsProps {
-  result: any;
-  viewMode: 'composed' | 'best' | 'all' | 'raw';
-  contextValues: Record<string, string | undefined>;
-  resolutionActions?: ResolutionActions;
-  resolutionState?: ResolutionState;
-}
-
-const ResolutionResults: React.FC<ResolutionResultsProps> = ({
-  result,
-  viewMode,
-  contextValues,
-  resolutionActions,
-  resolutionState
-}) => {
-  if (!result.success) {
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <h4 className="font-medium text-red-800 mb-2">Resolution Failed</h4>
-        <p className="text-sm text-red-600">{result.error}</p>
-      </div>
-    );
-  }
-
-  if (viewMode === 'raw') {
-    return (
-      <div className="space-y-4">
-        <div>
-          <h4 className="font-medium text-gray-800 mb-2">Raw Resolution Data</h4>
-          <pre className="text-xs bg-white p-3 rounded border overflow-x-auto">
-            {JSON.stringify(
-              {
-                context: contextValues,
-                resource: result.resource
-                  ? {
-                      id: result.resource.id,
-                      candidateCount: result.resource.candidates.length
-                    }
-                  : null,
-                bestCandidate: result.bestCandidate?.json,
-                allCandidates: result.allCandidates?.map((c: any) => c.json),
-                composedValue: result.composedValue,
-                error: result.error
-              },
-              null,
-              2
-            )}
-          </pre>
-        </div>
-      </div>
-    );
-  }
-
-  if (viewMode === 'composed') {
-    return (
-      <div className="space-y-4">
-        {result.composedValue ? (
-          <EditableJsonView
-            value={result.composedValue}
-            resourceId={result.resourceId}
-            isEdited={resolutionActions?.hasEdit?.(result.resourceId) || false}
-            editedValue={resolutionActions?.getEditedValue?.(result.resourceId)}
-            onSave={resolutionActions?.saveEdit}
-            onCancel={() => {}} // Could add cancel functionality if needed
-            disabled={resolutionState?.isApplyingEdits || false}
-          />
-        ) : (
-          <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
-            <p className="text-sm text-yellow-800">No composed value available for the current context.</p>
-            {result.error && <p className="text-xs text-yellow-600 mt-1">{result.error}</p>}
-          </div>
-        )}
-
-        {result.resource && (
-          <div>
-            <h4 className="font-medium text-gray-800 mb-2">Resource Info</h4>
-            <div className="bg-white p-3 rounded border text-sm">
-              <div>
-                <strong>ID:</strong> {result.resource.id}
-              </div>
-              <div>
-                <strong>Type:</strong> {result.resource.resourceType.key}
-              </div>
-              <div>
-                <strong>Total Candidates:</strong> {result.resource.candidates.length}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (viewMode === 'best') {
-    return (
-      <div className="space-y-4">
-        <div>
-          <h4 className="font-medium text-gray-800 mb-2">Best Match</h4>
-          {result.bestCandidate ? (
-            <div className="bg-white p-3 rounded border border-green-200">
-              <div className="text-sm font-medium text-gray-700 mb-2">
-                Selected candidate for current context
-              </div>
-              <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
-                {JSON.stringify(result.bestCandidate.json, null, 2)}
-              </pre>
-            </div>
-          ) : (
-            <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
-              <p className="text-sm text-yellow-800">No best candidate found for the current context.</p>
-              {result.error && <p className="text-xs text-yellow-600 mt-1">{result.error}</p>}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // 'all' view mode
-  const regularMatchingCandidates =
-    result.candidateDetails?.filter((c: CandidateInfo) => c.matched && !c.isDefaultMatch) || [];
-  const defaultMatchingCandidates =
-    result.candidateDetails?.filter((c: CandidateInfo) => c.matched && c.isDefaultMatch) || [];
-  const nonMatchingCandidates = result.candidateDetails?.filter((c: CandidateInfo) => !c.matched) || [];
-
-  const getMatchTypeColor = (type: string) => {
-    switch (type) {
-      case 'match':
-        return 'bg-green-100 text-green-800';
-      case 'matchAsDefault':
-        return 'bg-amber-100 text-amber-800';
-      case 'noMatch':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getMatchTypeIcon = (type: string) => {
-    switch (type) {
-      case 'match':
-        return '✓';
-      case 'matchAsDefault':
-        return '≈';
-      case 'noMatch':
-        return '✗';
-      default:
-        return '?';
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      {/* Regular Matching Candidates */}
-      {regularMatchingCandidates.length > 0 && (
-        <div>
-          <h4 className="font-medium text-gray-800 mb-2">Regular Matches</h4>
-          <div className="space-y-2">
-            {regularMatchingCandidates.map((candidateInfo: CandidateInfo, index: number) => (
-              <div
-                key={`regular-${candidateInfo.candidateIndex}`}
-                className="bg-white p-3 rounded border border-green-200"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium text-gray-700 flex items-center space-x-2">
-                    <span>
-                      Candidate {candidateInfo.candidateIndex + 1} {index === 0 ? '(Best Match)' : ''}
-                    </span>
-                    <span
-                      className={`px-2 py-1 rounded text-xs ${getMatchTypeColor(candidateInfo.matchType)}`}
-                    >
-                      {getMatchTypeIcon(candidateInfo.matchType)} {candidateInfo.matchType}
-                    </span>
-                  </div>
-                </div>
-                <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
-                  {JSON.stringify(candidateInfo.candidate.json, null, 2)}
-                </pre>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Default Matching Candidates */}
-      {defaultMatchingCandidates.length > 0 && (
-        <div>
-          <h4 className="font-medium text-gray-800 mb-2">Default Matches</h4>
-          <div className="space-y-2">
-            {defaultMatchingCandidates.map((candidateInfo: CandidateInfo) => (
-              <div
-                key={`default-${candidateInfo.candidateIndex}`}
-                className="bg-white p-3 rounded border border-amber-200"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium text-gray-700 flex items-center space-x-2">
-                    <span>Candidate {candidateInfo.candidateIndex + 1}</span>
-                    <span
-                      className={`px-2 py-1 rounded text-xs ${getMatchTypeColor(candidateInfo.matchType)}`}
-                    >
-                      {getMatchTypeIcon(candidateInfo.matchType)} {candidateInfo.matchType}
-                    </span>
-                  </div>
-                </div>
-                <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
-                  {JSON.stringify(candidateInfo.candidate.json, null, 2)}
-                </pre>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Show message when no matches */}
-      {regularMatchingCandidates.length === 0 && defaultMatchingCandidates.length === 0 && (
-        <div>
-          <h4 className="font-medium text-gray-800 mb-2">Matching Candidates</h4>
-          <p className="text-sm text-gray-600">No candidates matched the current context.</p>
-        </div>
-      )}
-
-      {/* Non-matching Candidates */}
-      {nonMatchingCandidates.length > 0 && (
-        <div>
-          <h4 className="font-medium text-gray-500 mb-2">Non-matching Candidates</h4>
-          <div className="space-y-2">
-            {nonMatchingCandidates.slice(0, 3).map((candidateInfo: CandidateInfo) => (
-              <div
-                key={`non-matching-${candidateInfo.candidateIndex}`}
-                className="bg-gray-50 p-3 rounded border border-gray-200 opacity-75"
-              >
-                <div className="text-sm font-medium text-gray-500 mb-2">
-                  Candidate {candidateInfo.candidateIndex + 1}
-                </div>
-                <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto text-gray-600">
-                  {JSON.stringify(candidateInfo.candidate.json, null, 2)}
-                </pre>
-              </div>
-            ))}
-            {nonMatchingCandidates.length > 3 && (
-              <div className="text-center text-sm text-gray-500">
-                ... and {nonMatchingCandidates.length - 3} more non-matching candidates
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

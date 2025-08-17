@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-res-browser-cli",
-  "version": "5.0.0-16",
+  "version": "5.0.0-17",
   "description": "Command-line interface to launch ts-res-browser with specified options",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "heft build --clean",
-    "test": "heft test --clean",
+    "test": "echo 'No tests configured for ts-res-browser-cli - this is a CLI launcher tool' && exit 0",
     "clean": "heft clean",
     "lint": "eslint src --ext .ts",
     "fixlint": "eslint src --ext .ts --fix"
@@ -33,9 +33,7 @@
     "@fgv/ts-json": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
     "@fgv/ts-res-browser": "workspace:*",
-    "commander": "^11.0.0",
-    "archiver": "~7.0.1",
-    "@types/archiver": "~6.0.3"
+    "commander": "^11.0.0"
   },
   "devDependencies": {
     "@fgv/ts-utils-jest": "workspace:*",

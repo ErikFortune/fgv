@@ -16,8 +16,19 @@ This packlet is largely AI written, and it shows.
 - **🎯 Resource Resolution**: Test resource resolution with dynamic context values
 - **📊 Visualization**: Multiple views for exploring resource structures and compiled output
 - **⚙️ Configuration**: Visual configuration management for qualifier types, qualifiers, and resource types
-- **📁 File Handling**: Support for directory imports, ZIP files, and bundle loading
+- **📁 File Handling**: Support for directory imports, ZIP files via ts-res zip-archive packlet, and bundle loading
 - **🎨 Modern UI**: Built with Tailwind CSS and Heroicons for a clean, responsive interface
+
+### ZIP Archive Integration
+
+This library now uses the **ts-res zip-archive packlet** as the single source of truth for all ZIP operations, providing:
+
+- **Universal compatibility**: Works in both browser and Node.js environments using fflate
+- **Standardized format**: Common ZIP bundle format across all ts-res tools  
+- **Simplified API**: Direct integration with ts-res ZIP archive functionality
+- **Processing helpers**: Utilities to integrate ZIP data with ts-res-ui-components workflows
+
+The `ImportView` component handles ZIP files automatically, and the `ZipTools` namespace provides processing helpers for custom ZIP workflows.
 
 ## Installation
 
@@ -116,24 +127,32 @@ function MyResourceViewer() {
 
 ```
 ResourceOrchestrator (state management)
-├── ImportView (file/bundle import)
+├── ImportView (file/bundle/ZIP import)
 ├── SourceView (resource collection display)
 ├── FilterView (context filtering)
 ├── CompiledView (compiled resource structure)
 ├── ResolutionView (resource resolution testing)
-├── ConfigurationView (system configuration)
-└── ZipLoaderView (ZIP file handling)
+└── ConfigurationView (system configuration)
 ```
 
 ### Data Flow
 
-1. **Import Phase**: Resources are imported via `ImportView` or programmatically
-2. **Processing Phase**: Raw files are processed into a `ProcessedResources` object containing:
+1. **Configuration Phase**: System configuration is created or managed via `ConfigurationView`
+   - Define qualifier types (language, territory, platform, etc.)
+   - Configure qualifiers and their default values
+   - Set up resource types and validation rules
+2. **Import Phase**: Resources are imported via `ImportView` or programmatically
+   - Individual JSON files, directories, ZIP bundles, or pre-compiled collections
+   - Configuration can be imported alongside resources or applied separately
+3. **Processing Phase**: Raw files are processed into a `ProcessedResources` object containing:
    - `ResourceManagerBuilder` for build-time operations
    - `CompiledResourceCollection` for runtime efficiency
    - `ResourceResolver` for resource resolution
-3. **Interaction Phase**: Users can filter, explore, and test resource resolution
-4. **Export Phase**: Processed resources can be exported as JSON or compiled bundles
+4. **Interaction Phase**: Users can filter, explore, and test resource resolution
+   - Filter resources with context values using `FilterView`
+   - Browse source and compiled structures with `SourceView` and `CompiledView`
+   - Test resolution with different contexts using `ResolutionView`
+5. **Export Phase**: Processed resources can be exported as JSON or compiled bundles
 
 ### Key Concepts
 
@@ -149,6 +168,8 @@ ResourceOrchestrator (state management)
 
 The main orchestration component that manages all state and provides actions via render props.
 
+> 📚 **[See ResourceOrchestrator documentation →](./docs/ts-res-ui-components.resourceorchestrator.md)**
+
 ```tsx
 <ResourceOrchestrator
   initialConfiguration={myConfig}
@@ -160,36 +181,114 @@ The main orchestration component that manages all state and provides actions via
 </ResourceOrchestrator>
 ```
 
+### ConfigurationView
+
+Visual configuration management for ts-res system settings including qualifier types, qualifiers, and resource types.
+
+> 📚 **[See ConfigurationView documentation →](./docs/ts-res-ui-components.configurationview.md)**
+
+```tsx
+<ConfigurationView
+  configuration={state.activeConfiguration}
+  onConfigurationChange={actions.applyConfiguration}
+  onSave={actions.saveConfiguration}
+  hasUnsavedChanges={state.hasConfigurationChanges}
+  onMessage={(type, message) => console.log(type, message)}
+/>
+```
+
+**Key features:**
+- **Qualifier type management**: Define language, territory, platform, and custom qualifier types
+- **Qualifier configuration**: Set up specific qualifiers with default values and validation
+- **Resource type management**: Configure resource types and their validation rules
+- **Import/export**: Load configurations from files or export current settings
+- **Real-time validation**: Validate configuration changes as you edit
+- **Change tracking**: Visual indicators for unsaved changes
+
 ### ImportView
 
-Handles importing resource files, directories, bundles, and ZIP files.
+Handles importing resource files, directories, bundles, and ZIP files. Uses the ts-res zip-archive packlet for all ZIP operations.
+
+> 📚 **[See ImportView documentation →](./docs/ts-res-ui-components.importview.md)**
 
 ```tsx
 <ImportView
   onImport={actions.importDirectory}
   onBundleImport={actions.importBundle}
-  onZipImport={actions.importZipWithConfig}
+  onZipImport={(zipData, config) => {
+    // zipData contains files and directory structure from ZIP
+    // config contains any configuration found in the ZIP
+    actions.importDirectory(zipData, config);
+  }}
   acceptedFileTypes={['.json', '.ts', '.js']}
   onMessage={(type, message) => console.log(type, message)}
 />
 ```
 
+### ResourcePicker
+
+Core component for browsing and selecting resources with advanced features like search, annotations, and pending resource support.  The resource picker
+is a generic component used by all of the views, which can also be used to power other application-specific views.
+
+> 📚 **[See complete ResourcePicker documentation →](./docs/ts-res-ui-components.resourcepicker.md)**
+
+```tsx
+<ResourcePicker
+  resources={state.processedResources}
+  selectedResourceId={selectedId}
+  onResourceSelect={(selection) => {
+    setSelectedId(selection.resourceId);
+    // Access resource data directly without additional lookups
+    if (selection.resourceData) {
+      handleResourceData(selection.resourceData);
+    }
+    // Handle pending resources
+    if (selection.isPending) {
+      console.log(`Pending ${selection.pendingType} operation`);
+    }
+  }}
+  defaultView="tree"
+  enableSearch={true}
+  searchPlaceholder="Search resources..."
+  resourceAnnotations={{
+    'user.welcome': { 
+      badge: { text: '3', variant: 'info' },
+      suffix: '(3 candidates)'
+    }
+  }}
+  pendingResources={pendingChanges}
+  height="500px"
+/>
+```
+
+**Key features:**
+- **Enhanced callbacks**: Get resource data and metadata in selection callback
+- **Multiple view modes**: List and tree views with search
+- **Visual annotations**: Badges, indicators, and suffixes
+- **Pending resources**: Show unsaved changes with visual distinction
+- **Branch isolation**: Focus on specific parts of large resource trees
+- **Type safety**: Full TypeScript support with generic resource types
+
 ### SourceView
 
-Displays the source resource collection with search and navigation capabilities.
+Displays the source resource collection with search and navigation capabilities using the enhanced ResourcePicker.
+
+> 📚 **[See SourceView documentation →](./docs/ts-res-ui-components.sourceview.md)**
 
 ```tsx
 <SourceView
   resources={state.processedResources}
   selectedResourceId={selectedId}
-  onResourceSelect={setSelectedId}
+  onResourceSelect={(selection) => setSelectedId(selection.resourceId)}
   onExport={actions.exportData}
 />
 ```
 
 ### FilterView
 
-Provides filtering capabilities with context value specification.
+Provides filtering capabilities with context value specification and dual-resource comparison.
+
+> 📚 **[See FilterView documentation →](./docs/ts-res-ui-components.filterview.md)**
 
 ```tsx
 <FilterView
@@ -198,12 +297,18 @@ Provides filtering capabilities with context value specification.
   filterActions={filterActions}
   filterResult={filterResult}
   onFilterResult={setFilterResult}
+  onResourceSelect={(selection) => {
+    setSelectedId(selection.resourceId);
+    // Enhanced callback provides comprehensive selection data
+  }}
 />
 ```
 
 ### CompiledView
 
-Shows the compiled resource structure with detailed candidate information.
+Shows the compiled resource structure with detailed candidate information using the enhanced ResourcePicker.
+
+> 📚 **[See CompiledView documentation →](./docs/ts-res-ui-components.compiledview.md)**
 
 ```tsx
 <CompiledView
@@ -211,12 +316,18 @@ Shows the compiled resource structure with detailed candidate information.
   filterResult={filterResult}
   useNormalization={true}
   onExport={(data, type) => exportData(data, type)}
+  onResourceSelect={(selection) => {
+    // Enhanced callback with comprehensive resource data
+    setSelectedId(selection.resourceId);
+  }}
 />
 ```
 
 ### ResolutionView
 
-Interactive resource resolution testing with context management.
+Interactive resource resolution testing with context management and support for custom resource editors via the ResourceEditorFactory pattern.
+
+> 📚 **[See ResolutionView documentation →](./docs/ts-res-ui-components.resolutionview.md)**
 
 ```tsx
 <ResolutionView
@@ -224,29 +335,229 @@ Interactive resource resolution testing with context management.
   resolutionState={resolutionState}
   resolutionActions={resolutionActions}
   availableQualifiers={availableQualifiers}
+  resourceEditorFactory={myResourceEditorFactory}
 />
 ```
 
-### ConfigurationView
+#### Custom Resource Editors
 
-Visual configuration management for the ts-res system.
+The ResolutionView supports custom editors for specific resource types through the `ResourceEditorFactory` interface:
 
 ```tsx
-<ConfigurationView
-  configuration={state.activeConfiguration}
-  onConfigurationChange={actions.applyConfiguration}
-  onMessage={(type, msg) => showMessage(type, msg)}
+import { ResourceEditorFactory, ResourceEditorResult, ResourceEditorProps } from '@fgv/ts-res-ui-components';
+
+// Custom editor component
+const MarketInfoEditor: React.FC<ResourceEditorProps> = ({
+  value,
+  resourceId,
+  isEdited,
+  editedValue,
+  onSave,
+  onCancel,
+  disabled,
+  className
+}) => {
+  // Custom form-based editor implementation
+  return (
+    <div className={`market-info-editor ${className}`}>
+      {/* Custom editing interface for market information */}
+    </div>
+  );
+};
+
+// Resource editor factory
+class MyResourceEditorFactory implements ResourceEditorFactory {
+  createEditor(resourceId: string, resourceType: string, value: any): ResourceEditorResult {
+    if (resourceType === 'marketInfo') {
+      return {
+        success: true,
+        editor: MarketInfoEditor
+      };
+    }
+    
+    return {
+      success: false,
+      message: `No custom editor available for resource type '${resourceType}'`
+    };
+  }
+}
+
+// Usage
+const editorFactory = new MyResourceEditorFactory();
+
+<ResolutionView
+  resources={resources}
+  resourceEditorFactory={editorFactory}
+  // ... other props
 />
 ```
+
+**Benefits of Custom Editors:**
+- **Type-Specific UX**: Provide structured editing interfaces for different resource types
+- **Graceful Fallback**: Unknown resource types automatically fall back to JSON editor
+- **Extensible**: Easy to add new editors for new resource types
+- **Error Handling**: Factory failures are caught and reported to users
+
+### MessagesWindow
+
+Displays and manages application messages with filtering, search, and copy functionality. Perfect for debugging interfaces and development tools where message visibility is critical.
+
+> 📚 **[See MessagesWindow documentation →](./docs/ts-res-ui-components.messageswindow.md)**
+
+```tsx
+import { MessagesWindow, ViewTools } from '@fgv/ts-res-ui-components';
+
+function MyApplication() {
+  const [messages, setMessages] = useState<ViewTools.Message[]>([]);
+
+  const addMessage = (type: ViewTools.Message['type'], text: string) => {
+    const newMessage: ViewTools.Message = {
+      id: `msg-${Date.now()}-${Math.random()}`,
+      type,
+      message: text,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, newMessage]);
+  };
+
+  const clearMessages = () => {
+    setMessages([]);
+  };
+
+  return (
+    <div className="flex flex-col h-screen">
+      <div className="flex-1">
+        {/* Main application content */}
+        <button onClick={() => addMessage('info', 'Processing started')}>
+          Add Info Message
+        </button>
+        <button onClick={() => addMessage('success', 'Operation completed')}>
+          Add Success Message  
+        </button>
+        <button onClick={() => addMessage('error', 'Something went wrong')}>
+          Add Error Message
+        </button>
+      </div>
+      
+      {/* Messages window at bottom */}
+      <MessagesWindow 
+        messages={messages}
+        onClearMessages={clearMessages}
+      />
+    </div>
+  );
+}
+```
+
+**Key features:**
+- **Message filtering**: Filter by type (info, warning, error, success) with count indicators
+- **Search functionality**: Full-text search across message content
+- **Copy functionality**: Copy all filtered messages to clipboard with timestamps
+- **Collapsible interface**: Minimize/maximize to save screen space
+- **Auto-hide when empty**: Component automatically hides when no messages exist
+- **Visual indicators**: Color-coded message types with appropriate icons
+- **Timestamp formatting**: Human-readable timestamp display
+
+#### Adding Messages to Your Application
+
+To integrate MessagesWindow into your application and provide user feedback during operations:
+
+```tsx
+import { ViewTools } from '@fgv/ts-res-ui-components';
+
+function useMessages() {
+  const [messages, setMessages] = useState<ViewTools.Message[]>([]);
+
+  const addMessage = useCallback((type: ViewTools.Message['type'], message: string) => {
+    const newMessage: ViewTools.Message = {
+      id: `msg-${Date.now()}-${Math.random()}`,
+      type,
+      message,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, newMessage]);
+  }, []);
+
+  const clearMessages = useCallback(() => {
+    setMessages([]);
+  }, []);
+
+  return { messages, addMessage, clearMessages };
+}
+
+function MyResourceTool() {
+  const { messages, addMessage, clearMessages } = useMessages();
+  const [resources, setResources] = useState(null);
+
+  const handleFileImport = async (files) => {
+    try {
+      addMessage('info', 'Starting file import...');
+      const processed = await processFiles(files);
+      setResources(processed);
+      addMessage('success', `Successfully imported ${files.length} files`);
+    } catch (error) {
+      addMessage('error', `Import failed: ${error.message}`);
+    }
+  };
+
+  const handleResourceFilter = (filterValues) => {
+    if (Object.keys(filterValues).length === 0) {
+      addMessage('warning', 'No filter values provided');
+      return;
+    }
+    
+    try {
+      const filtered = applyFilters(resources, filterValues);
+      addMessage('success', `Filtered to ${filtered.length} resources`);
+    } catch (error) {
+      addMessage('error', `Filter failed: ${error.message}`);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-screen">
+      <div className="flex-1">
+        <ImportView onImport={handleFileImport} onMessage={addMessage} />
+        <FilterView onFilter={handleResourceFilter} onMessage={addMessage} />
+        {/* Other components that use onMessage callback */}
+      </div>
+      
+      <ViewTools.MessagesWindow 
+        messages={messages}
+        onClearMessages={clearMessages}
+      />
+    </div>
+  );
+}
+```
+
+**Common patterns for adding messages:**
+- **info**: Operation started, processing steps, configuration loaded
+- **success**: Operations completed successfully, files imported, resources processed
+- **warning**: Non-critical issues, fallback behaviors, deprecated features used
+- **error**: Operation failures, validation errors, unexpected conditions
+
+**Message callback integration:**
+Most components in this library accept an `onMessage` callback prop that you can connect to your message system. This provides consistent feedback across all operations.
 
 ## Hooks API
 
-### useResourceData
+> 📚 **[See complete hooks documentation →](./docs/ts-res-ui-components.md)** for detailed examples and patterns
 
-Main hook for resource processing and management.
+All hooks are organized within their respective namespaces alongside their related components and utilities for better discoverability and logical grouping.
+
+### Core Data Management
+
+#### ResourceTools.useResourceData
+
+Main orchestrator hook for resource processing, configuration, and resolution.
+
+> 📚 **[useResourceData documentation →](./docs/ts-res-ui-components.resourcetools.useresourcedata.md)**
 
 ```tsx
-const { state, actions } = useResourceData();
+import { ResourceTools } from '@fgv/ts-res-ui-components';
+
+const { state, actions } = ResourceTools.useResourceData();
 
 // Process files
 await actions.processFiles(importedFiles);
@@ -259,57 +570,156 @@ const result = await actions.resolveResource('my.resource', {
 
 // Apply configuration
 actions.applyConfiguration(newConfig);
-```
 
-### useFilterState
-
-Manages resource filtering state and actions.
-
-```tsx
-const { filterState, filterActions } = useFilterState();
-
-// Update filter values
-filterActions.updateFilterValues({ 
-  language: 'en-US',
-  environment: 'prod' 
-});
-
-// Apply filters
-filterActions.applyFilterValues();
-
-// Check if there are pending changes
-if (filterState.hasPendingChanges) {
-  // Show save prompt
+// Check processing state
+if (state.isProcessing) {
+  console.log('Processing resources...');
+} else if (state.error) {
+  console.error('Processing failed:', state.error);
+} else if (state.processedResources) {
+  console.log('Resources ready!');
 }
 ```
 
-### useResolutionState
+### View State Management
 
-Manages resource resolution testing state.
+#### ViewTools.useViewState
+
+Manages view state including messages and resource selection.
+
+> 📚 **[useViewState documentation →](./docs/ts-res-ui-components.viewtools.useviewstate.md)**
 
 ```tsx
-const { state, actions } = useResolutionState(processedResources);
+import { ViewTools } from '@fgv/ts-res-ui-components';
+
+const { messages, selectedResourceId, addMessage, clearMessages, selectResource } = ViewTools.useViewState();
+
+// Display operation feedback
+const handleOperation = async () => {
+  try {
+    await someAsyncOperation();
+    addMessage('success', 'Operation completed successfully');
+  } catch (error) {
+    addMessage('error', `Operation failed: ${error.message}`);
+  }
+};
+
+// Use with MessagesWindow component
+return (
+  <div>
+    <button onClick={handleOperation}>Run Operation</button>
+    <ViewTools.MessagesWindow 
+      messages={messages}
+      onClearMessages={clearMessages}
+    />
+  </div>
+);
+```
+
+### Domain-Specific Hooks
+
+#### FilterTools.useFilterState
+
+Manages resource filtering state with change tracking and validation.
+
+> 📚 **[useFilterState documentation →](./docs/ts-res-ui-components.filtertools.usefilterstate.md)**
+
+```tsx
+import { FilterTools } from '@fgv/ts-res-ui-components';
+
+const { state, actions } = FilterTools.useFilterState({
+  enabled: true,
+  values: { platform: 'web', locale: 'en' }
+});
+
+// Update filter values with change tracking
+actions.updateFilterValue('language', 'en-US');
+actions.updateFilterValue('environment', 'prod');
+
+// Apply filters when ready
+if (state.hasPendingChanges) {
+  actions.applyFilters();
+}
+```
+
+#### ResolutionTools.useResolutionState
+
+Comprehensive state management for resource resolution and editing.
+
+> 📚 **[useResolutionState documentation →](./docs/ts-res-ui-components.resolutiontools.useresolutionstate.md)**
+
+```tsx
+import { ResolutionTools } from '@fgv/ts-res-ui-components';
+
+const { state, actions, availableQualifiers } = ResolutionTools.useResolutionState(
+  processedResources,
+  (type, message) => addMessage(type, message),
+  (updatedResources) => setProcessedResources(updatedResources)
+);
 
 // Set context for resolution testing
-actions.setContextValues({ language: 'en-US' });
+actions.updateContext({ language: 'en-US', platform: 'web' });
 
-// Test resource resolution
-const result = await actions.resolveResource('test.resource');
+// Start editing a resource
+actions.selectResource('user.welcome');
+actions.startEditing();
+
+// Save edits with validation
+actions.saveEdit(editedValue);
 ```
 
-### useConfigurationState
+#### ConfigurationTools.useConfigurationState
 
-Manages system configuration state.
+Manages system configuration state with change tracking and import/export capabilities.
+
+> 📚 **[useConfigurationState documentation →](./docs/ts-res-ui-components.configurationtools.useconfigurationstate.md)**
 
 ```tsx
-const { configuration, updateConfiguration, resetConfiguration } = useConfigurationState();
+import { ConfigurationTools } from '@fgv/ts-res-ui-components';
 
-// Update qualifier types
-updateConfiguration({
-  ...configuration,
-  qualifierTypes: [...newQualifierTypes]
+const { state, actions, templates } = ConfigurationTools.useConfigurationState(
+  undefined,
+  (config) => console.log('Configuration changed:', config),
+  (hasChanges) => setHasUnsavedChanges(hasChanges)
+);
+
+// Load a template
+const loadResult = actions.loadTemplate('minimal');
+
+// Add a new qualifier with validation
+actions.addQualifier({
+  name: 'language',
+  typeName: 'language',
+  defaultPriority: 100
 });
+
+// Check for unsaved changes
+if (state.hasUnsavedChanges) {
+  actions.applyConfiguration();
+}
+
+// Export configuration
+const exportResult = actions.exportToJson({ pretty: true });
+if (exportResult.isSuccess()) {
+  downloadFile(exportResult.value, 'configuration.json');
+}
 ```
+
+### Hook Organization
+
+All hooks are organized within logical namespaces alongside their related components and utilities:
+
+- **`ResourceTools.useResourceData`** - Core data orchestration (import, processing, configuration, resolution)
+- **`ViewTools.useViewState`** - View state management (messages, resource selection)
+- **`FilterTools.useFilterState`** - Resource filtering with change tracking
+- **`ResolutionTools.useResolutionState`** - Resource resolution and editing
+- **`ConfigurationTools.useConfigurationState`** - System configuration management
+
+This organization provides:
+- **Better discoverability** - Related functionality grouped together
+- **Logical imports** - `FilterTools.useFilterState` is self-documenting
+- **Namespace consistency** - Matches the existing component organization pattern
+- **Clear separation of concerns** - Each namespace has a specific domain focus
 
 ## Styling
 
@@ -353,7 +763,7 @@ All components accept a `className` prop for custom styling:
 ### Custom Resource Processing
 
 ```tsx
-import { processImportedDirectory, createTsResSystemFromConfig } from '@fgv/ts-res-ui-components';
+import { TsResTools } from '@fgv/ts-res-ui-components';
 
 // Custom processing pipeline
 const customProcessor = async (files: ImportedFile[]) => {
@@ -364,7 +774,7 @@ const customProcessor = async (files: ImportedFile[]) => {
   const config = await createConfigFromFiles(processedFiles);
   
   // Create ts-res system
-  const system = await createTsResSystemFromConfig(config);
+  const system = await TsResTools.createTsResSystemFromConfig(config);
   
   return system;
 };
@@ -437,9 +847,54 @@ The library provides comprehensive error handling through the state management s
 </ResourceOrchestrator>
 ```
 
+## Organized Tool Namespaces
+
+For better organization and discoverability, utility functions are organized into logical namespaces alongside their related view components:
+
+```tsx
+import { 
+  FilterTools,     // FilterView + filtering utilities
+  ResolutionTools, // ResolutionView + resolution utilities  
+  ConfigurationTools, // ConfigurationView + configuration utilities
+  TsResTools,      // SourceView, CompiledView + ts-res utilities
+  ViewTools,       // MessagesWindow + view state utilities
+  ZipTools,        // ImportView + ZIP processing helpers
+  FileTools        // File processing utilities
+} from '@fgv/ts-res-ui-components';
+
+// Use view components from namespaces
+<FilterTools.FilterView {...filterProps} />
+<ResolutionTools.ResolutionView {...resolutionProps} />
+<ViewTools.MessagesWindow {...messageProps} />
+<TsResTools.SourceView {...sourceProps} />
+<ZipTools.ImportView {...importProps} />
+
+// Use utility functions from namespaces  
+const hasFilters = FilterTools.hasFilterValues(filterState.values);
+const resolver = ResolutionTools.createResolverWithContext(resources, context);
+const system = await TsResTools.createTsResSystemFromConfig(config);
+
+// ZIP processing helpers for ts-res-ui-components integration
+const processResult = await ZipTools.processZipLoadResult(zipData, config);
+```
+
+### Namespace Contents
+
+- **[FilterTools](./docs/ts-res-ui-components.filtertools.md)**: FilterView, filter analysis, filtered resource creation
+- **[ResolutionTools](./docs/ts-res-ui-components.resolutiontools.md)**: ResolutionView, resolution testing, context management
+- **[ConfigurationTools](./docs/ts-res-ui-components.configurationtools.md)**: ConfigurationView, configuration validation, import/export
+- **[TsResTools](./docs/ts-res-ui-components.tsrestools.md)**: SourceView, CompiledView, ts-res system integration
+- **[ViewTools](./docs/ts-res-ui-components.viewtools.md)**: MessagesWindow, message management, view state utilities
+- **[ZipTools](./docs/ts-res-ui-components.ziptools.md)**: ImportView, ZIP processing helpers, uses ts-res zip-archive packlet
+- **[FileTools](./docs/ts-res-ui-components.filetools.md)**: File processing, import/export utilities
+
+All components are also available at the top level for backward compatibility.
+
 ## TypeScript Support
 
-This library is written in TypeScript and provides comprehensive type definitions:
+This library is written in TypeScript and provides comprehensive type definitions with enhanced support for resource selection and generic resource data.
+
+> 📚 **[See complete type documentation →](./docs/ts-res-ui-components.md)**
 
 ```tsx
 import type {
@@ -447,18 +902,66 @@ import type {
   FilterState,
   ResolutionResult,
   Message,
-  ImportedFile
+  ImportedFile,
+  // Enhanced ResourcePicker types
+  ResourceSelection,
+  ResourcePickerProps,
+  ResourceAnnotation,
+  ResourceAnnotations,
+  PendingResource,
+  // Custom editor factory types
+  ResourceEditorFactory,
+  ResourceEditorResult,
+  ResourceEditorProps,
+  // Hook return types
+  UseViewStateReturn,
+  UseFilterStateReturn,
+  UseResolutionStateReturn
 } from '@fgv/ts-res-ui-components';
 
-// Type-safe component props
-interface MyComponentProps {
+// Import organized namespaces for components and utilities
+import {
+  FilterTools,
+  ResolutionTools,
+  TsResTools,
+  ZipTools
+} from '@fgv/ts-res-ui-components';
+
+// Type-safe component with enhanced resource selection
+interface MyResourceViewProps<T = unknown> {
   resources: ProcessedResources;
   onMessage: (type: Message['type'], message: string) => void;
+  onResourceSelect: (selection: ResourceSelection<T>) => void;
 }
 
-const MyComponent: React.FC<MyComponentProps> = ({ resources, onMessage }) => {
-  // Component implementation
+const MyResourceView = <T = unknown>({ resources, onMessage, onResourceSelect }: MyResourceViewProps<T>) => {
+  return (
+    <ResourcePicker<T>
+      resources={resources}
+      onResourceSelect={(selection) => {
+        // TypeScript knows selection has resourceId, resourceData, isPending, etc.
+        onResourceSelect(selection);
+      }}
+      resourceAnnotations={{
+        'user.welcome': {
+          badge: { text: 'NEW', variant: 'new' },
+          suffix: '(3 candidates)'
+        }
+      }}
+    />
+  );
 };
+
+// Type-safe custom editor factory
+class TypedResourceEditorFactory implements ResourceEditorFactory {
+  createEditor(resourceId: string, resourceType: string, value: any): ResourceEditorResult {
+    // Full type safety for factory pattern
+    if (resourceType === 'marketInfo') {
+      return { success: true, editor: MarketInfoEditor };
+    }
+    return { success: false, message: `No editor for ${resourceType}` };
+  }
+}
 ```
 
 ## Performance Considerations
@@ -477,23 +980,100 @@ const MyComponent: React.FC<MyComponentProps> = ({ resources, onMessage }) => {
 
 ## Development
 
-### Building
+This library is part of a [Rush.js](https://rushjs.io/) monorepo. Rush is a build orchestrator for JavaScript monorepos that provides scalable build performance and consistent package management.
+
+### Rush Monorepo Setup
+
+If you're new to this monorepo, follow these steps to get started:
+
+1. **Install Rush globally** (if not already installed):
+   ```bash
+   npm install -g @microsoft/rush
+   ```
+
+2. **Clone the repository and install dependencies**:
+   ```bash
+   git clone https://github.com/ErikFortune/fgv.git
+   cd fgv
+   rush install
+   ```
+
+3. **Build all projects** (including dependencies):
+   ```bash
+   rush build
+   ```
+
+> 📚 **Learn more about Rush**: [Official Rush Documentation](https://rushjs.io/pages/intro/get_started/)
+
+### Development Commands
+
+All development commands use Rush's `rushx` tool to run scripts within this specific project:
+
+#### Building
 
 ```bash
-npm run build
+# Build this project only
+rushx build
+
+# Build all projects in the monorepo (from root)
+rush build
 ```
 
-### Testing
+#### Testing
 
 ```bash
-npm test
+# Test this project (includes coverage by default)
+rushx test
+
+# Test all projects in the monorepo (from root)
+rush test
+
+# Test specific projects with dependencies
+rush test --to ts-res-ui-components
+
+# Test only this project without dependencies
+rush test --only ts-res-ui-components
 ```
 
-### Linting
+#### Linting
 
 ```bash
-npm run lint
+# Lint this project
+rushx lint
+
+# Fix lint issues automatically
+rushx fixlint
+
+# Lint all projects in the monorepo (from root)  
+rush prettier
 ```
+
+#### Other Useful Commands
+
+```bash
+# Clean build artifacts
+rushx clean
+
+# Update dependencies (from repository root)
+rush update
+
+# Add a new dependency to this project (from repository root)
+rush add -p <package-name>
+
+# Check for security vulnerabilities (from repository root)
+rush audit
+```
+
+### Monorepo Structure
+
+This library is located at `libraries/ts-res-ui-components/` within the monorepo and depends on several other libraries in the workspace:
+
+- `@fgv/ts-res` - Core resource management library
+- `@fgv/ts-utils` - Utility functions and Result pattern
+- `@fgv/ts-json-base` - JSON validation and processing
+- `@fgv/ts-bcp47` - BCP47 language tag processing
+
+All workspace dependencies use `workspace:*` version ranges for automatic version resolution.
 
 ## License
 
@@ -503,10 +1083,23 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 
 Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
+## API Documentation
+
+Comprehensive API documentation is available in the [docs](./docs) directory:
+
+- **[API Overview](./docs/index.md)** - Complete API reference
+- **[Components](./docs/ts-res-ui-components.md)** - All available components and their props
+- **[Hooks](./docs/ts-res-ui-components.md)** - State management hooks (useViewState, useResolutionState, etc.)
+- **[Types](./docs/ts-res-ui-components.md)** - TypeScript interfaces and type definitions
+- **[Tool Namespaces](./docs/ts-res-ui-components.md)** - Organized tool namespaces with view components and utility functions
+
+The API documentation includes detailed examples, usage patterns, and type information for all public APIs.
+
 ## Support
 
 For questions and support, please:
 
-1. Check the [documentation](https://docs.ts-res.dev)
-2. Search [existing issues](https://github.com/fgv/ts-res/issues)
-3. Create a [new issue](https://github.com/fgv/ts-res/issues/new)
+1. Check the [API documentation](./docs/index.md) for detailed component usage
+2. Review the [ts-res documentation](https://docs.ts-res.dev) for core concepts
+3. Search [existing issues](https://github.com/fgv/ts-res/issues)
+4. Create a [new issue](https://github.com/fgv/ts-res/issues/new)

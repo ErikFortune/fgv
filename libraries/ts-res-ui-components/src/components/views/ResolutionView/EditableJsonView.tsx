@@ -3,6 +3,11 @@ import { JsonEditor } from 'json-edit-react';
 import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { validateEditedResource } from '../../../utils/resolutionEditing';
 
+/**
+ * Props for the EditableJsonView component.
+ *
+ * @public
+ */
 export interface EditableJsonViewProps {
   /** The original JSON value */
   value: any;
@@ -22,6 +27,172 @@ export interface EditableJsonViewProps {
   className?: string;
 }
 
+/**
+ * Interactive JSON editor for modifying resource values during resolution testing.
+ *
+ * The EditableJsonView component provides a rich JSON editing interface for modifying
+ * resource values during resolution testing and analysis. It supports syntax highlighting,
+ * validation, and seamless switching between view and edit modes. Changes are tracked
+ * and can be applied as new resource candidates with the current resolution context.
+ *
+ * @example
+ * ```tsx
+ * import { ResolutionTools } from '@fgv/ts-res-ui-components';
+ *
+ * // Basic usage with resource data
+ * const ResourceEditor = ({ resource }) => {
+ *   const [edits, setEdits] = useState({});
+ *
+ *   const handleSave = (resourceId, editedValue, originalValue) => {
+ *     setEdits(prev => ({
+ *       ...prev,
+ *       [resourceId]: { editedValue, originalValue, timestamp: new Date() }
+ *     }));
+ *   };
+ *
+ *   const handleCancel = (resourceId) => {
+ *     setEdits(prev => {
+ *       const newEdits = { ...prev };
+ *       delete newEdits[resourceId];
+ *       return newEdits;
+ *     });
+ *   };
+ *
+ *   return (
+ *     <ResolutionTools.EditableJsonView
+ *       resourceId={resource.id}
+ *       value={resource.resolvedValue}
+ *       isEdited={edits[resource.id] !== undefined}
+ *       editedValue={edits[resource.id]?.editedValue}
+ *       onSave={handleSave}
+ *       onCancel={handleCancel}
+ *     />
+ *   );
+ * };
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Advanced usage with validation and error handling
+ * const AdvancedResourceEditor = () => {
+ *   const [selectedResource, setSelectedResource] = useState('welcome-message');
+ *   const [pendingEdits, setPendingEdits] = useState({});
+ *   const [errors, setErrors] = useState({});
+ *
+ *   const handleSaveEdit = async (resourceId, editedValue, originalValue) => {
+ *     try {
+ *       // Validate the edited content
+ *       const validation = await validateResourceValue(editedValue, resourceId);
+ *       if (!validation.isValid) {
+ *         setErrors(prev => ({ ...prev, [resourceId]: validation.errors }));
+ *         return;
+ *       }
+ *
+ *       // Save the edit
+ *       setPendingEdits(prev => ({
+ *         ...prev,
+ *         [resourceId]: {
+ *           editedValue,
+ *           originalValue,
+ *           timestamp: new Date(),
+ *           metadata: { editedBy: getCurrentUser() }
+ *         }
+ *       }));
+ *
+ *       // Clear any previous errors
+ *       setErrors(prev => {
+ *         const newErrors = { ...prev };
+ *         delete newErrors[resourceId];
+ *         return newErrors;
+ *       });
+ *
+ *       showSuccess(`Changes saved for ${resourceId}`);
+ *     } catch (error) {
+ *       showError(`Failed to save changes: ${error.message}`);
+ *     }
+ *   };
+ *
+ *   return (
+ *     <div className="resource-editor">
+ *       <ResolutionTools.EditableJsonView
+ *         resourceId={selectedResource}
+ *         value={getResourceValue(selectedResource)}
+ *         isEdited={pendingEdits[selectedResource] !== undefined}
+ *         editedValue={pendingEdits[selectedResource]?.editedValue}
+ *         onSave={handleSaveEdit}
+ *         onCancel={(resourceId) => {
+ *           setPendingEdits(prev => {
+ *             const newEdits = { ...prev };
+ *             delete newEdits[resourceId];
+ *             return newEdits;
+ *           });
+ *         }}
+ *         disabled={isSystemLocked}
+ *         className="border-2 border-blue-200"
+ *       />
+ *
+ *       {errors[selectedResource] && (
+ *         <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded">
+ *           <h4 className="text-red-800 font-medium">Validation Errors:</h4>
+ *           <ul className="list-disc list-inside text-red-700">
+ *             {errors[selectedResource].map((error, i) => (
+ *               <li key={i}>{error}</li>
+ *             ))}
+ *           </ul>
+ *         </div>
+ *       )}
+ *     </div>
+ *   );
+ * };
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Integration with resolution workflow
+ * const ResolutionWorkflow = () => {
+ *   const { state, actions } = useResolutionState(processedResources);
+ *
+ *   return (
+ *     <div className="resolution-workflow">
+ *       <div className="resource-selection">
+ *         <PickerTools.ResourcePicker
+ *           resources={processedResources}
+ *           selectedResourceId={state.selectedResourceId}
+ *           onResourceSelect={(selection) => actions.selectResource(selection.resourceId)}
+ *         />
+ *       </div>
+ *
+ *       {state.selectedResourceId && (
+ *         <div className="resource-editing">
+ *           <ResolutionTools.EditableJsonView
+ *             resourceId={state.selectedResourceId}
+ *             value={state.resolutionResult?.composedValue}
+ *             isEdited={actions.hasEdit(state.selectedResourceId)}
+ *             editedValue={actions.getEditedValue(state.selectedResourceId)}
+ *             onSave={actions.saveEdit}
+ *             onCancel={(resourceId) => {
+ *               const newEdits = new Map(state.editedResources);
+ *               newEdits.delete(resourceId);
+ *               // Update state...
+ *             }}
+ *           />
+ *
+ *           <ResolutionTools.ResolutionEditControls
+ *             editCount={state.editedResources.size}
+ *             isApplying={state.isApplyingEdits}
+ *             hasEdits={state.hasUnsavedEdits}
+ *             onApplyEdits={actions.applyEdits}
+ *             onDiscardEdits={actions.clearEdits}
+ *           />
+ *         </div>
+ *       )}
+ *     </div>
+ *   );
+ * };
+ * ```
+ *
+ * @public
+ */
 export const EditableJsonView: React.FC<EditableJsonViewProps> = ({
   value,
   resourceId,

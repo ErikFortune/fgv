@@ -1,10 +1,7 @@
 // Application state types
-export interface Message {
-  id: string;
-  type: 'info' | 'warning' | 'error' | 'success';
-  message: string;
-  timestamp: Date;
-}
+import { ViewStateTools } from '@fgv/ts-res-ui-components';
+
+export type Message = ViewStateTools.Message;
 
 export type Tool = 'import' | 'source' | 'filter' | 'compiled' | 'resolution' | 'configuration';
 
