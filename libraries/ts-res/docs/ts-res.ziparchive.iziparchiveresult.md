@@ -4,7 +4,7 @@
 
 ## ZipArchive.IZipArchiveResult interface
 
-Result of ZIP archive creation
+Result of ZIP archive buffer creation
 
 **Signature:**
 
@@ -36,25 +36,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[filePath?](./ts-res.ziparchive.iziparchiveresult.filepath.md)
-
-
-</td><td>
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-_(Optional)_ Optional file path if saved to disk
-
-
-</td></tr>
-<tr><td>
 
 [manifest](./ts-res.ziparchive.iziparchiveresult.manifest.md)
 

@@ -37,44 +37,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[autoProcessResources?](./ts-res.ziparchive.iziparchiveloadoptions.autoprocessresources.md)
-
-
-</td><td>
-
-
-</td><td>
-
-boolean
-
-
-</td><td>
-
-_(Optional)_ Automatically process resources using ts-res
-
-
-</td></tr>
-<tr><td>
-
-[overrideConfig?](./ts-res.ziparchive.iziparchiveloadoptions.overrideconfig.md)
-
-
-</td><td>
-
-
-</td><td>
-
-[ConfigModel.ISystemConfiguration](./ts-res.config.model.isystemconfiguration.md)
-
-
-</td><td>
-
-_(Optional)_ Override configuration for processing
-
-
-</td></tr>
-<tr><td>
-
 [strictManifestValidation?](./ts-res.ziparchive.iziparchiveloadoptions.strictmanifestvalidation.md)
 
 

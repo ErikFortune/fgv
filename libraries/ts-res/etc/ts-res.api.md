@@ -3090,8 +3090,6 @@ interface IZipArchiveInputInfo {
 
 // @public
 interface IZipArchiveLoadOptions {
-    autoProcessResources?: boolean;
-    overrideConfig?: Model.ISystemConfiguration;
     strictManifestValidation?: boolean;
 }
 
@@ -3101,7 +3099,6 @@ interface IZipArchiveLoadResult {
     directory: IImportedDirectory_2 | undefined;
     files: IImportedFile_2[];
     manifest: IZipArchiveManifest_2 | undefined;
-    processedResources?: unknown;
 }
 
 // @public
@@ -4921,7 +4918,7 @@ const ZipArchiveConstants: {
 
 // @public
 class ZipArchiveCreator {
-    createBuffer(options: IZipArchiveOptions, onProgress?: ZipArchiveProgressCallback): Promise<Result<IZipArchiveResult>>;
+    createFromBuffer(options: IZipArchiveOptions, onProgress?: ZipArchiveProgressCallback): Promise<Result<IZipArchiveResult>>;
 }
 
 // @public

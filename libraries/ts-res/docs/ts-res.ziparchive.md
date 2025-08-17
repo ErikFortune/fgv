@@ -197,7 +197,7 @@ Result of ZIP archive loading
 
 </td><td>
 
-Options for creating a ZIP archive (compatible with existing ZipArchiver)
+Options for creating a ZIP archive buffer
 
 
 </td></tr>
@@ -208,7 +208,7 @@ Options for creating a ZIP archive (compatible with existing ZipArchiver)
 
 </td><td>
 
-Result of ZIP archive creation
+Result of ZIP archive buffer creation
 
 
 </td></tr>

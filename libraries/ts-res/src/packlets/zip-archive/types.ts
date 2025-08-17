@@ -58,12 +58,6 @@ export interface IZipArchiveResult {
  * @public
  */
 export interface IZipArchiveLoadOptions {
-  /** Automatically process resources using ts-res */
-  autoProcessResources?: boolean;
-
-  /** Override configuration for processing */
-  overrideConfig?: ConfigModel.ISystemConfiguration;
-
   /** Validate manifest strictly */
   strictManifestValidation?: boolean;
 }
@@ -81,8 +75,6 @@ export interface IZipArchiveLoadResult {
   files: IImportedFile[];
   /** Directory structure if available */
   directory: IImportedDirectory | undefined;
-  /** Auto-processed resources if requested */
-  processedResources?: unknown; // ProcessedResources type from ui-components
 }
 
 /**

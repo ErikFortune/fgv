@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[create(options, onProgress)](./ts-res.ziparchive.ziparchivecreator.create.md)
+[createFromBuffer(options, onProgress)](./ts-res.ziparchive.ziparchivecreator.createfrombuffer.md)
 
 
 </td><td>
@@ -40,7 +40,7 @@ Description
 
 </td><td>
 
-Create a ZIP archive from file system paths (compatible with existing ZipArchiver)
+Create a ZIP archive buffer from a supplied buffer
 
 
 </td></tr>

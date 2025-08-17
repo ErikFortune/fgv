@@ -111,24 +111,5 @@ Parsed archive manifest
 
 
 </td></tr>
-<tr><td>
-
-[processedResources?](./ts-res.ziparchive.iziparchiveloadresult.processedresources.md)
-
-
-</td><td>
-
-
-</td><td>
-
-unknown
-
-
-</td><td>
-
-_(Optional)_ Auto-processed resources if requested
-
-
-</td></tr>
 </tbody></table>
 

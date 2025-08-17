@@ -9,6 +9,6 @@ Progress callback for ZIP operations
 **Signature:**
 
 ```typescript
-export type ZipArchiveProgressCallback = (stage: 'reading-file' | 'parsing-zip' | 'loading-manifest' | 'loading-config' | 'extracting-files' | 'processing-resources' | 'creating-zip' | 'saving-file', progress: number, // 0-100
+export type ZipArchiveProgressCallback = (stage: 'reading-file' | 'parsing-zip' | 'loading-manifest' | 'loading-config' | 'extracting-files' | 'processing-resources' | 'creating-zip', progress: number, // 0-100
 details: string) => void;
 ```

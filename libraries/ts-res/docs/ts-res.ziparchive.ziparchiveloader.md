@@ -58,19 +58,5 @@ Load ZIP archive from File object (Browser)
 
 
 </td></tr>
-<tr><td>
-
-[loadFromPath(filePath, options, onProgress)](./ts-res.ziparchive.ziparchiveloader.loadfrompath.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Load ZIP archive from file path (Node.js)
-
-
-</td></tr>
 </tbody></table>
 

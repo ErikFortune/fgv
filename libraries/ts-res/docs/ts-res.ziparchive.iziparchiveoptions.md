@@ -4,7 +4,7 @@
 
 ## ZipArchive.IZipArchiveOptions interface
 
-Options for creating a ZIP archive (compatible with existing ZipArchiver)
+Options for creating a ZIP archive buffer
 
 **Signature:**
 
@@ -70,25 +70,6 @@ string
 </td><td>
 
 _(Optional)_ File or directory path to include in the archive
-
-
-</td></tr>
-<tr><td>
-
-[outputDir?](./ts-res.ziparchive.iziparchiveoptions.outputdir.md)
-
-
-</td><td>
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-_(Optional)_ Optional output directory for saving the archive file
 
 
 </td></tr>
