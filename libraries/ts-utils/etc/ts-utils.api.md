@@ -43,7 +43,6 @@ interface ArrayValidatorConstructorParams<T, TC = unknown> extends ValidatorBase
 
 declare namespace Base {
     export {
-        ValidatorFunc,
         GenericValidatorConstructorParams,
         GenericValidator
     }
@@ -2317,12 +2316,12 @@ declare namespace Validation {
         Classes,
         Validators,
         TypeGuardWithContext,
-        ValidatorFunc,
         FunctionConstraintTrait,
         ConstraintTrait,
         ValidatorTraitValues,
         defaultValidatorTraits,
         ValidatorTraits,
+        ValidatorFunc,
         ValidatorOptions,
         Constraint,
         ValidationErrorFormatter,

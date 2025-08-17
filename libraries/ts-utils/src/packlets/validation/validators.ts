@@ -26,12 +26,12 @@ import { FieldValidators, ObjectValidator, ObjectValidatorConstructorParams } fr
 import { TypeGuardValidator, TypeGuardValidatorConstructorParams } from './typeGuard';
 
 import { BooleanValidator } from './boolean';
-import { TypeGuardWithContext, ValidatorFunc } from './common';
+import { TypeGuardWithContext } from './common';
 import { GenericValidator } from './genericValidator';
 import { NumberValidator } from './number';
 import { OneOfValidator, OneOfValidatorConstructorParams } from './oneOf';
 import { StringValidator } from './string';
-import { Validator } from './validator';
+import { Validator, ValidatorFunc } from './validator';
 
 /**
  * A {@link Validation.Classes.StringValidator | StringValidator} which validates a string in place.

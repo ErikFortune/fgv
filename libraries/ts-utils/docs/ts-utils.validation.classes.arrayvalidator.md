@@ -134,7 +134,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_validate(from, context)](./ts-utils.validation.classes.arrayvalidator._validate.md)
+[\_validate(from, context, self)](./ts-utils.validation.classes.arrayvalidator._validate.md)
 
 
 </td><td>
