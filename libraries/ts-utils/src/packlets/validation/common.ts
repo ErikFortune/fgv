@@ -35,4 +35,8 @@ export type TypeGuardWithContext<T, TC = unknown> = (from: unknown, context?: TC
  * an optionally-supplied validation context of type `<TC>`.
  * @public
  */
-export type ValidatorFunc<T, TC> = (from: unknown, context?: TC) => boolean | Failure<T>;
+export type ValidatorFunc<T, TC> = (
+  from: unknown,
+  context?: TC,
+  self?: import('./validator').Validator<T, TC>
+) => boolean | Failure<T>;
