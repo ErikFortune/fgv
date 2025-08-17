@@ -4,6 +4,9 @@
 
 ## ResolutionTools.resolveResourceDetailed() function
 
+Resolve a resource and create detailed resolution result with comprehensive analysis.
+
+Performs complete resource resolution including best candidate selection, all candidate analysis, composed value resolution, and detailed condition evaluation for each candidate. This provides the most comprehensive view of how resource resolution works for a given resource and context.
 
 **Signature:**
 
@@ -41,6 +44,8 @@ Runtime.ResourceResolver
 
 </td><td>
 
+The configured ResourceResolver with context
+
 
 </td></tr>
 <tr><td>
@@ -54,6 +59,8 @@ string
 
 
 </td><td>
+
+The ID of the resource to resolve
 
 
 </td></tr>
@@ -69,6 +76,8 @@ processedResources
 
 </td><td>
 
+The processed resource system
+
 
 </td></tr>
 <tr><td>
@@ -83,7 +92,7 @@ options
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Configuration options for resolution behavior
 
 
 </td></tr>
@@ -92,4 +101,93 @@ _(Optional)_
 **Returns:**
 
 Result&lt;[ResolutionResult](./ts-res-ui-components.resolutiontools.resolutionresult.md)<!-- -->&gt;
+
+A Result containing detailed resolution information or an error
+
+## Example 1
+
+
+```typescript
+import { ResolutionTools } from '@fgv/ts-res-ui-components';
+
+// Detailed resolution of a welcome message
+const resolver = ResolutionTools.createResolverWithContext(
+  processedResources,
+  { language: 'en-US', platform: 'web', region: 'US' }
+).orThrow();
+
+const result = ResolutionTools.resolveResourceDetailed(
+  resolver,
+  'welcome-message',
+  processedResources
+);
+
+if (result.isSuccess() && result.value.success) {
+  const resolution = result.value;
+  console.log('Best candidate:', resolution.bestCandidate);
+  console.log('Composed value:', resolution.composedValue);
+
+  // Analyze each candidate
+  resolution.candidateDetails.forEach((candidate, index) => {
+    console.log(`Candidate ${index}: ${candidate.matched ? 'MATCHED' : 'no match'}`);
+    candidate.conditionEvaluations.forEach(eval => {
+      console.log(`  ${eval.qualifierName}: ${eval.matched ? '✓' : '✗'}`);
+    });
+  });
+}
+```
+
+## Example 2
+
+
+```typescript
+// Resolution with debugging for troubleshooting
+const debugResult = ResolutionTools.resolveResourceDetailed(
+  resolver,
+  'error-messages',
+  processedResources,
+  { enableDebugLogging: true }
+);
+
+// Debug output will show detailed resolution steps
+```
+
+## Example 3
+
+
+```typescript
+// Use in resolution testing workflow
+async function testResourceResolution(resourceId: string, context: Record<string, string>) {
+  const resolver = ResolutionTools.createResolverWithContext(
+    processedResources,
+    context
+  ).orThrow();
+
+  const result = ResolutionTools.resolveResourceDetailed(
+    resolver,
+    resourceId,
+    processedResources
+  );
+
+  if (result.isSuccess() && result.value.success) {
+    const resolution = result.value;
+
+    return {
+      resourceId,
+      context,
+      bestValue: resolution.bestCandidate?.value,
+      composedValue: resolution.composedValue,
+      matchedCandidates: resolution.candidateDetails.filter(c => c.matched).length,
+      totalCandidates: resolution.candidateDetails.length,
+      conditionAnalysis: resolution.candidateDetails.map(c => ({
+        matched: c.matched,
+        matchType: c.matchType,
+        conditions: c.conditionEvaluations.length
+      }))
+    };
+  }
+
+  throw new Error(`Resolution failed: ${result.value.error}`);
+}
+```
 

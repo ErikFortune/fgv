@@ -4,6 +4,9 @@
 
 ## FilterTools.getFilterSummary() function
 
+Creates a human-readable summary string of active filter values.
+
+Generates a comma-separated string representation of all non-empty filter values, useful for displaying current filter state to users or in debug output.
 
 **Signature:**
 
@@ -41,6 +44,8 @@ Record&lt;string, string \| undefined&gt;
 
 </td><td>
 
+Object containing filter key-value pairs
+
 
 </td></tr>
 </tbody></table>
@@ -48,4 +53,27 @@ Record&lt;string, string \| undefined&gt;
 **Returns:**
 
 string
+
+Human-readable string summarizing active filters
+
+## Example
+
+
+```typescript
+import { FilterTools } from '@fgv/ts-res-ui-components';
+
+const filterValues = {
+  language: 'en-US',
+  platform: 'web',
+  region: '',
+  theme: undefined
+};
+
+const summary = FilterTools.getFilterSummary(filterValues);
+console.log(summary); // "language=en-US, platform=web"
+
+// For empty filters
+const emptyFilters = {};
+console.log(FilterTools.getFilterSummary(emptyFilters)); // "No filters"
+```
 

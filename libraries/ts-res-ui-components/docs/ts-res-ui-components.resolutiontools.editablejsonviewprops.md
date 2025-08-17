@@ -4,6 +4,7 @@
 
 ## ResolutionTools.EditableJsonViewProps interface
 
+Props for the EditableJsonView component.
 
 **Signature:**
 

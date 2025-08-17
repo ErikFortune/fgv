@@ -24,6 +24,9 @@ Description
 
 </td><td>
 
+Create a resolver with context for resource resolution.
+
+Creates a fully configured ResourceResolver with the specified context values and options. The resolver can be used to resolve resources based on the provided qualification context, with optional caching and debugging features.
 
 
 </td></tr>
@@ -34,6 +37,9 @@ Description
 
 </td><td>
 
+Evaluate conditions for a specific candidate and return detailed evaluation results.
+
+Analyzes how each condition in a candidate's condition set evaluates against the current resolution context. This provides detailed insight into why a candidate matches or doesn't match, including qualification values, condition operators, match scores, and match types.
 
 
 </td></tr>
@@ -44,6 +50,9 @@ Description
 
 </td><td>
 
+Get available qualifiers from processed resources.
+
+Extracts all qualifier names from the compiled resource collection, providing a list of qualification dimensions available for context setting and resource resolution. This is useful for building dynamic UI controls and validation.
 
 
 </td></tr>
@@ -54,6 +63,9 @@ Description
 
 </td><td>
 
+Check if context has any pending changes by comparing current and pending values.
+
+Performs a deep comparison between current context values and pending context values to determine if there are unsaved changes. This is useful for UI state management and preventing data loss in resolution interfaces.
 
 
 </td></tr>
@@ -64,6 +76,9 @@ Description
 
 </td><td>
 
+Resolve a resource and create detailed resolution result with comprehensive analysis.
+
+Performs complete resource resolution including best candidate selection, all candidate analysis, composed value resolution, and detailed condition evaluation for each candidate. This provides the most comprehensive view of how resource resolution works for a given resource and context.
 
 
 </td></tr>
@@ -126,6 +141,7 @@ Result of evaluating a single condition during resource resolution. Shows how a 
 
 </td><td>
 
+Props for the EditableJsonView component.
 
 
 </td></tr>
@@ -158,6 +174,9 @@ Actions available for managing resource resolution testing and editing. Provides
 
 </td><td>
 
+Configuration options for resource resolution operations.
+
+ResolutionOptions provides control over performance and debugging features during resource resolution operations. These options affect resolver creation, resolution processing, and diagnostic output.
 
 
 </td></tr>
@@ -216,6 +235,9 @@ Description
 
 </td><td>
 
+Interactive JSON editor for modifying resource values during resolution testing.
+
+The EditableJsonView component provides a rich JSON editing interface for modifying resource values during resolution testing and analysis. It supports syntax highlighting, validation, and seamless switching between view and edit modes. Changes are tracked and can be applied as new resource candidates with the current resolution context.
 
 
 </td></tr>
@@ -239,6 +261,9 @@ QualifierContextControl provides an interface for setting and modifying qualifie
 
 </td><td>
 
+Control panel for managing pending resource edits during resolution testing.
+
+The ResolutionEditControls component provides a user interface for applying or discarding resource edits made during resolution testing. It shows the number of pending edits, provides clear actions for applying or discarding them, and includes safety confirmations to prevent accidental data loss.
 
 
 </td></tr>

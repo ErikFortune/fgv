@@ -4,6 +4,8 @@
 
 ## ResolutionTools.ResolutionOptions.enableDebugLogging property
 
+Enable detailed console logging for debugging resolution processes
+
 **Signature:**
 
 ```typescript

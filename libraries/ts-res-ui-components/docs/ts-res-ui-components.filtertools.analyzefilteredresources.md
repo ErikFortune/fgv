@@ -4,6 +4,9 @@
 
 ## FilterTools.analyzeFilteredResources() function
 
+Analyzes the impact of filtering on resources by comparing original and filtered resource sets.
+
+Compares original and filtered resources to provide detailed analysis of how filtering affected each resource's candidate count. Identifies resources with potential issues and provides warnings for resources that may have been over-filtered or have no candidates.
 
 **Signature:**
 
@@ -41,6 +44,8 @@ string\[\]
 
 </td><td>
 
+Array of resource IDs from the original system
+
 
 </td></tr>
 <tr><td>
@@ -54,6 +59,8 @@ filteredProcessedResources
 
 
 </td><td>
+
+The filtered resource system to analyze
 
 
 </td></tr>
@@ -69,6 +76,8 @@ originalProcessedResources
 
 </td><td>
 
+The original resource system for comparison
+
 
 </td></tr>
 </tbody></table>
@@ -76,4 +85,52 @@ originalProcessedResources
 **Returns:**
 
 FilterResult
+
+Analysis result with per-resource filtering impact and warnings
+
+## Example 1
+
+
+```typescript
+import { FilterTools } from '@fgv/ts-res-ui-components';
+
+// After creating filtered resources
+const originalIds = originalResources.summary.resourceIds;
+const analysis = FilterTools.analyzeFilteredResources(
+  originalIds,
+  filteredResources,
+  originalResources
+);
+
+if (analysis.success) {
+  console.log(`Analyzed ${analysis.filteredResources.length} resources`);
+
+  // Find resources with significant candidate reduction
+  const heavilyFiltered = analysis.filteredResources.filter(r =>
+    r.originalCandidateCount > 5 && r.filteredCandidateCount === 1
+  );
+  console.log(`${heavilyFiltered.length} resources heavily filtered`);
+
+  // Check for warnings
+  if (analysis.warnings.length > 0) {
+    console.warn('Filter warnings:', analysis.warnings);
+  }
+}
+```
+
+## Example 2
+
+
+```typescript
+// Using analysis for UI display
+const analysis = FilterTools.analyzeFilteredResources(resourceIds, filtered, original);
+
+const resourcesWithIssues = analysis.filteredResources.filter(r => r.hasWarning);
+if (resourcesWithIssues.length > 0) {
+  showWarningDialog(
+    `${resourcesWithIssues.length} resources may be over-filtered`,
+    resourcesWithIssues.map(r => r.id)
+  );
+}
+```
 

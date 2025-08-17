@@ -4,6 +4,8 @@
 
 ## FilterTools.FilterOptions.partialContextMatch property
 
+Allow partial context matches when filtering resources
+
 **Signature:**
 
 ```typescript

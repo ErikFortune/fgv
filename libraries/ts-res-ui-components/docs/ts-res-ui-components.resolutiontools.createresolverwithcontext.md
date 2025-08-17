@@ -4,6 +4,9 @@
 
 ## ResolutionTools.createResolverWithContext() function
 
+Create a resolver with context for resource resolution.
+
+Creates a fully configured ResourceResolver with the specified context values and options. The resolver can be used to resolve resources based on the provided qualification context, with optional caching and debugging features.
 
 **Signature:**
 
@@ -41,6 +44,8 @@ processedResources
 
 </td><td>
 
+The processed resource system containing all resources and configuration
+
 
 </td></tr>
 <tr><td>
@@ -54,6 +59,8 @@ Record&lt;string, string \| undefined&gt;
 
 
 </td><td>
+
+Context values for qualification (e.g., language, region, platform)
 
 
 </td></tr>
@@ -69,7 +76,7 @@ options
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Configuration options for resolution behavior
 
 
 </td></tr>
@@ -78,4 +85,64 @@ _(Optional)_
 **Returns:**
 
 Result&lt;Runtime.ResourceResolver&gt;
+
+A Result containing the configured ResourceResolver or an error message
+
+## Example 1
+
+
+```typescript
+import { ResolutionTools } from '@fgv/ts-res-ui-components';
+
+// Basic resolver creation for web platform
+const webResolver = ResolutionTools.createResolverWithContext(
+  processedResources,
+  {
+    language: 'en-US',
+    platform: 'web',
+    region: 'US'
+  }
+);
+
+if (webResolver.isSuccess()) {
+  const resolver = webResolver.value;
+  // Use resolver to resolve resources...
+}
+```
+
+## Example 2
+
+
+```typescript
+// Resolver with caching for performance-critical scenarios
+const performanceResolver = ResolutionTools.createResolverWithContext(
+  processedResources,
+  {
+    language: 'fr-CA',
+    platform: 'mobile',
+    deviceType: 'tablet'
+  },
+  { enableCaching: true }
+);
+```
+
+## Example 3
+
+
+```typescript
+// Resolver with debugging for troubleshooting resolution issues
+const debugResolver = ResolutionTools.createResolverWithContext(
+  processedResources,
+  {
+    language: 'es-MX',
+    region: 'MX',
+    platform: 'desktop'
+  },
+  { enableDebugLogging: true }
+).onSuccess((resolver) => {
+  // Debug output will show context creation and resolver setup
+  console.log('Resolver created with debug logging enabled');
+  return succeed(resolver);
+});
+```
 

@@ -4,6 +4,8 @@
 
 ## FilterTools.FilterOptions.enableDebugLogging property
 
+Enable detailed console logging for debugging filter operations
+
 **Signature:**
 
 ```typescript

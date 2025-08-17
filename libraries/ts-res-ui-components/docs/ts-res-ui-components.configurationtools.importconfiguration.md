@@ -4,6 +4,9 @@
 
 ## ConfigurationTools.importConfiguration() function
 
+Imports and validates a system configuration from a serialized string.
+
+Parses configuration data from JSON or YAML format and performs validation to ensure the imported configuration is structurally sound and contains required fields. Provides detailed error messages for parsing or validation failures.
 
 **Signature:**
 
@@ -41,6 +44,8 @@ string
 
 </td><td>
 
+The serialized configuration string (JSON or YAML)
+
 
 </td></tr>
 </tbody></table>
@@ -48,4 +53,48 @@ string
 **Returns:**
 
 Result&lt;Config.Model.ISystemConfiguration&gt;
+
+Result containing the parsed configuration or error message
+
+## Example 1
+
+
+```typescript
+import { ConfigurationTools } from '@fgv/ts-res-ui-components';
+
+// Import from JSON string
+const jsonData = '{"qualifierTypes": [...], "qualifiers": [...]}';
+const importResult = ConfigurationTools.importConfiguration(jsonData);
+
+if (importResult.isSuccess()) {
+  console.log('Configuration imported successfully');
+  applyConfiguration(importResult.value);
+} else {
+  console.error('Import failed:', importResult.message);
+}
+```
+
+## Example 2
+
+
+```typescript
+// Import from file upload
+const handleFileImport = async (file: File) => {
+  const text = await file.text();
+  const result = ConfigurationTools.importConfiguration(text);
+
+  if (result.isFailure()) {
+    showError(`Failed to import ${file.name}: ${result.message}`);
+    return;
+  }
+
+  // Validate before applying
+  const validation = ConfigurationTools.validateConfiguration(result.value);
+  if (!validation.isValid) {
+    showWarning('Configuration has validation issues', validation.warnings);
+  }
+
+  setConfiguration(result.value);
+};
+```
 

@@ -4,6 +4,9 @@
 
 ## ResolutionTools.evaluateConditionsForCandidate() function
 
+Evaluate conditions for a specific candidate and return detailed evaluation results.
+
+Analyzes how each condition in a candidate's condition set evaluates against the current resolution context. This provides detailed insight into why a candidate matches or doesn't match, including qualification values, condition operators, match scores, and match types.
 
 **Signature:**
 
@@ -41,6 +44,8 @@ Runtime.ResourceResolver
 
 </td><td>
 
+The configured ResourceResolver with context
+
 
 </td></tr>
 <tr><td>
@@ -54,6 +59,8 @@ number
 
 
 </td><td>
+
+Zero-based index of the candidate to evaluate
 
 
 </td></tr>
@@ -69,6 +76,8 @@ any
 
 </td><td>
 
+The compiled resource containing decision information
+
 
 </td></tr>
 <tr><td>
@@ -83,6 +92,8 @@ any
 
 </td><td>
 
+The compiled collection with condition and qualifier data
+
 
 </td></tr>
 </tbody></table>
@@ -90,4 +101,69 @@ any
 **Returns:**
 
 [ConditionEvaluationResult](./ts-res-ui-components.resolutiontools.conditionevaluationresult.md)<!-- -->\[\]
+
+Array of condition evaluation results showing how each condition performed
+
+## Example 1
+
+
+```typescript
+import { ResolutionTools } from '@fgv/ts-res-ui-components';
+
+// Evaluate conditions for the first candidate of a resource
+const resolver = ResolutionTools.createResolverWithContext(
+  processedResources,
+  { language: 'en-US', platform: 'web' }
+).orThrow();
+
+const compiledResource = processedResources.compiledCollection.resources
+  .find(r => r.id === 'welcome-message');
+
+const evaluations = ResolutionTools.evaluateConditionsForCandidate(
+  resolver,
+  0, // First candidate
+  compiledResource,
+  processedResources.compiledCollection
+);
+
+// Analyze the results
+evaluations.forEach(evaluation => {
+  console.log(`${evaluation.qualifierName}: ${evaluation.qualifierValue} ${evaluation.operator} ${evaluation.conditionValue}`);
+  console.log(`  Matched: ${evaluation.matched}, Score: ${evaluation.score}`);
+});
+```
+
+## Example 2
+
+
+```typescript
+// Use in resolution analysis to understand candidate selection
+function analyzeResourceResolution(resourceId: string) {
+  const resolver = ResolutionTools.createResolverWithContext(
+    processedResources,
+    getCurrentContext()
+  ).orThrow();
+
+  const resource = processedResources.system.resourceManager
+    .getBuiltResource(resourceId).orThrow();
+
+  const compiledResource = processedResources.compiledCollection.resources
+    .find(r => r.id === resourceId);
+
+  // Evaluate all candidates
+  resource.candidates.forEach((candidate, index) => {
+    const evaluations = ResolutionTools.evaluateConditionsForCandidate(
+      resolver,
+      index,
+      compiledResource,
+      processedResources.compiledCollection
+    );
+
+    console.log(`Candidate ${index}:`);
+    evaluations.forEach(eval => {
+      console.log(`  ${eval.qualifierName}: ${eval.matched ? '✓' : '✗'} (${eval.score})`);
+    });
+  });
+}
+```
 

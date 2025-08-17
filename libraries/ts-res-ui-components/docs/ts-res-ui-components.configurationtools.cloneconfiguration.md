@@ -4,6 +4,9 @@
 
 ## ConfigurationTools.cloneConfiguration() function
 
+Creates a deep copy of a system configuration object.
+
+Performs a deep clone of the configuration to ensure complete isolation from the original. Useful for creating editable copies, implementing undo/redo, or preserving original state during modifications.
 
 **Signature:**
 
@@ -41,6 +44,8 @@ Config.Model.ISystemConfiguration
 
 </td><td>
 
+The configuration to clone
+
 
 </td></tr>
 </tbody></table>
@@ -48,4 +53,21 @@ Config.Model.ISystemConfiguration
 **Returns:**
 
 Config.Model.ISystemConfiguration
+
+A deep copy of the configuration
+
+## Example
+
+
+```typescript
+import { ConfigurationTools } from '@fgv/ts-res-ui-components';
+
+const originalConfig = getSystemConfiguration();
+const editableConfig = ConfigurationTools.cloneConfiguration(originalConfig);
+
+// Modify the clone without affecting the original
+editableConfig.qualifiers.push(newQualifier);
+console.log('Original unchanged:', originalConfig.qualifiers.length);
+console.log('Clone modified:', editableConfig.qualifiers.length);
+```
 

@@ -4,6 +4,9 @@
 
 ## ConfigurationTools.validateConfiguration() function
 
+Validates a ts-res system configuration for completeness and correctness.
+
+Performs comprehensive validation of configuration structure, required fields, type relationships, and logical consistency. Returns detailed validation results with specific error and warning messages for debugging and user feedback.
 
 **Signature:**
 
@@ -41,6 +44,8 @@ Config.Model.ISystemConfiguration
 
 </td><td>
 
+The system configuration to validate
+
 
 </td></tr>
 </tbody></table>
@@ -48,4 +53,25 @@ Config.Model.ISystemConfiguration
 **Returns:**
 
 ConfigurationValidationResult
+
+Validation result with errors, warnings, and validity status
+
+## Example
+
+
+```typescript
+import { ConfigurationTools } from '@fgv/ts-res-ui-components';
+
+const config = {
+  qualifierTypes: [{ name: 'language', systemType: 'language' }],
+  qualifiers: [{ name: 'en', typeName: 'language', defaultPriority: 100 }],
+  resourceTypes: [{ name: 'string', defaultValue: '' }]
+};
+
+const validation = ConfigurationTools.validateConfiguration(config);
+if (!validation.isValid) {
+  console.error('Configuration errors:', validation.errors);
+  console.warn('Configuration warnings:', validation.warnings);
+}
+```
 

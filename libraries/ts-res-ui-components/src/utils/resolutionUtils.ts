@@ -2,9 +2,51 @@ import { Result, succeed, fail, MessageAggregator } from '@fgv/ts-utils';
 import { Runtime } from '@fgv/ts-res';
 import { ProcessedResources, ResolutionResult, CandidateInfo, ConditionEvaluationResult } from '../types';
 
-/** @public */
+/**
+ * Configuration options for resource resolution operations.
+ *
+ * ResolutionOptions provides control over performance and debugging features
+ * during resource resolution operations. These options affect resolver creation,
+ * resolution processing, and diagnostic output.
+ *
+ * @example
+ * ```typescript
+ * import { ResolutionTools } from '@fgv/ts-res-ui-components';
+ *
+ * // Basic resolution with default options
+ * const basicResolver = ResolutionTools.createResolverWithContext(
+ *   processedResources,
+ *   { language: 'en-US', platform: 'web' }
+ * );
+ *
+ * // Resolution with caching enabled for performance
+ * const cachedResolver = ResolutionTools.createResolverWithContext(
+ *   processedResources,
+ *   { language: 'en-US', region: 'US' },
+ *   { enableCaching: true }
+ * );
+ *
+ * // Resolution with debugging for troubleshooting
+ * const debugResolver = ResolutionTools.createResolverWithContext(
+ *   processedResources,
+ *   { language: 'fr-CA', platform: 'mobile' },
+ *   { enableDebugLogging: true }
+ * );
+ *
+ * // Full-featured resolution with both caching and debugging
+ * const fullResolver = ResolutionTools.createResolverWithContext(
+ *   processedResources,
+ *   { language: 'es-MX', region: 'MX', platform: 'desktop' },
+ *   { enableCaching: true, enableDebugLogging: true }
+ * );
+ * ```
+ *
+ * @public
+ */
 export interface ResolutionOptions {
+  /** Enable caching for improved performance during repeated resolutions */
   enableCaching?: boolean;
+  /** Enable detailed console logging for debugging resolution processes */
   enableDebugLogging?: boolean;
 }
 
@@ -16,9 +58,71 @@ const debugLog = (enableDebug: boolean, ...args: any[]) => {
 };
 
 /**
- * Create a resolver with context for resource resolution
+ * Create a resolver with context for resource resolution.
+ *
+ * Creates a fully configured ResourceResolver with the specified context values
+ * and options. The resolver can be used to resolve resources based on the provided
+ * qualification context, with optional caching and debugging features.
+ *
+ * @param processedResources - The processed resource system containing all resources and configuration
+ * @param contextValues - Context values for qualification (e.g., language, region, platform)
+ * @param options - Configuration options for resolution behavior
+ * @returns A Result containing the configured ResourceResolver or an error message
+ *
+ * @example
+ * ```typescript
+ * import { ResolutionTools } from '@fgv/ts-res-ui-components';
+ *
+ * // Basic resolver creation for web platform
+ * const webResolver = ResolutionTools.createResolverWithContext(
+ *   processedResources,
+ *   {
+ *     language: 'en-US',
+ *     platform: 'web',
+ *     region: 'US'
+ *   }
+ * );
+ *
+ * if (webResolver.isSuccess()) {
+ *   const resolver = webResolver.value;
+ *   // Use resolver to resolve resources...
+ * }
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Resolver with caching for performance-critical scenarios
+ * const performanceResolver = ResolutionTools.createResolverWithContext(
+ *   processedResources,
+ *   {
+ *     language: 'fr-CA',
+ *     platform: 'mobile',
+ *     deviceType: 'tablet'
+ *   },
+ *   { enableCaching: true }
+ * );
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Resolver with debugging for troubleshooting resolution issues
+ * const debugResolver = ResolutionTools.createResolverWithContext(
+ *   processedResources,
+ *   {
+ *     language: 'es-MX',
+ *     region: 'MX',
+ *     platform: 'desktop'
+ *   },
+ *   { enableDebugLogging: true }
+ * ).onSuccess((resolver) => {
+ *   // Debug output will show context creation and resolver setup
+ *   console.log('Resolver created with debug logging enabled');
+ *   return succeed(resolver);
+ * });
+ * ```
+ *
+ * @public
  */
-/** @public */
 export function createResolverWithContext(
   processedResources: ProcessedResources,
   contextValues: Record<string, string | undefined>,
@@ -77,9 +181,80 @@ export function createResolverWithContext(
 }
 
 /**
- * Evaluate conditions for a specific candidate
+ * Evaluate conditions for a specific candidate and return detailed evaluation results.
+ *
+ * Analyzes how each condition in a candidate's condition set evaluates against the
+ * current resolution context. This provides detailed insight into why a candidate
+ * matches or doesn't match, including qualification values, condition operators,
+ * match scores, and match types.
+ *
+ * @param resolver - The configured ResourceResolver with context
+ * @param candidateIndex - Zero-based index of the candidate to evaluate
+ * @param compiledResource - The compiled resource containing decision information
+ * @param compiledCollection - The compiled collection with condition and qualifier data
+ * @returns Array of condition evaluation results showing how each condition performed
+ *
+ * @example
+ * ```typescript
+ * import { ResolutionTools } from '@fgv/ts-res-ui-components';
+ *
+ * // Evaluate conditions for the first candidate of a resource
+ * const resolver = ResolutionTools.createResolverWithContext(
+ *   processedResources,
+ *   { language: 'en-US', platform: 'web' }
+ * ).orThrow();
+ *
+ * const compiledResource = processedResources.compiledCollection.resources
+ *   .find(r => r.id === 'welcome-message');
+ *
+ * const evaluations = ResolutionTools.evaluateConditionsForCandidate(
+ *   resolver,
+ *   0, // First candidate
+ *   compiledResource,
+ *   processedResources.compiledCollection
+ * );
+ *
+ * // Analyze the results
+ * evaluations.forEach(evaluation => {
+ *   console.log(`${evaluation.qualifierName}: ${evaluation.qualifierValue} ${evaluation.operator} ${evaluation.conditionValue}`);
+ *   console.log(`  Matched: ${evaluation.matched}, Score: ${evaluation.score}`);
+ * });
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Use in resolution analysis to understand candidate selection
+ * function analyzeResourceResolution(resourceId: string) {
+ *   const resolver = ResolutionTools.createResolverWithContext(
+ *     processedResources,
+ *     getCurrentContext()
+ *   ).orThrow();
+ *
+ *   const resource = processedResources.system.resourceManager
+ *     .getBuiltResource(resourceId).orThrow();
+ *
+ *   const compiledResource = processedResources.compiledCollection.resources
+ *     .find(r => r.id === resourceId);
+ *
+ *   // Evaluate all candidates
+ *   resource.candidates.forEach((candidate, index) => {
+ *     const evaluations = ResolutionTools.evaluateConditionsForCandidate(
+ *       resolver,
+ *       index,
+ *       compiledResource,
+ *       processedResources.compiledCollection
+ *     );
+ *
+ *     console.log(`Candidate ${index}:`);
+ *     evaluations.forEach(eval => {
+ *       console.log(`  ${eval.qualifierName}: ${eval.matched ? '✓' : '✗'} (${eval.score})`);
+ *     });
+ *   });
+ * }
+ * ```
+ *
+ * @public
  */
-/** @public */
 export function evaluateConditionsForCandidate(
   resolver: Runtime.ResourceResolver,
   candidateIndex: number,
@@ -138,9 +313,102 @@ export function evaluateConditionsForCandidate(
 }
 
 /**
- * Resolve a resource and create detailed resolution result
+ * Resolve a resource and create detailed resolution result with comprehensive analysis.
+ *
+ * Performs complete resource resolution including best candidate selection, all candidate
+ * analysis, composed value resolution, and detailed condition evaluation for each candidate.
+ * This provides the most comprehensive view of how resource resolution works for a given
+ * resource and context.
+ *
+ * @param resolver - The configured ResourceResolver with context
+ * @param resourceId - The ID of the resource to resolve
+ * @param processedResources - The processed resource system
+ * @param options - Configuration options for resolution behavior
+ * @returns A Result containing detailed resolution information or an error
+ *
+ * @example
+ * ```typescript
+ * import { ResolutionTools } from '@fgv/ts-res-ui-components';
+ *
+ * // Detailed resolution of a welcome message
+ * const resolver = ResolutionTools.createResolverWithContext(
+ *   processedResources,
+ *   { language: 'en-US', platform: 'web', region: 'US' }
+ * ).orThrow();
+ *
+ * const result = ResolutionTools.resolveResourceDetailed(
+ *   resolver,
+ *   'welcome-message',
+ *   processedResources
+ * );
+ *
+ * if (result.isSuccess() && result.value.success) {
+ *   const resolution = result.value;
+ *   console.log('Best candidate:', resolution.bestCandidate);
+ *   console.log('Composed value:', resolution.composedValue);
+ *
+ *   // Analyze each candidate
+ *   resolution.candidateDetails.forEach((candidate, index) => {
+ *     console.log(`Candidate ${index}: ${candidate.matched ? 'MATCHED' : 'no match'}`);
+ *     candidate.conditionEvaluations.forEach(eval => {
+ *       console.log(`  ${eval.qualifierName}: ${eval.matched ? '✓' : '✗'}`);
+ *     });
+ *   });
+ * }
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Resolution with debugging for troubleshooting
+ * const debugResult = ResolutionTools.resolveResourceDetailed(
+ *   resolver,
+ *   'error-messages',
+ *   processedResources,
+ *   { enableDebugLogging: true }
+ * );
+ *
+ * // Debug output will show detailed resolution steps
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Use in resolution testing workflow
+ * async function testResourceResolution(resourceId: string, context: Record<string, string>) {
+ *   const resolver = ResolutionTools.createResolverWithContext(
+ *     processedResources,
+ *     context
+ *   ).orThrow();
+ *
+ *   const result = ResolutionTools.resolveResourceDetailed(
+ *     resolver,
+ *     resourceId,
+ *     processedResources
+ *   );
+ *
+ *   if (result.isSuccess() && result.value.success) {
+ *     const resolution = result.value;
+ *
+ *     return {
+ *       resourceId,
+ *       context,
+ *       bestValue: resolution.bestCandidate?.value,
+ *       composedValue: resolution.composedValue,
+ *       matchedCandidates: resolution.candidateDetails.filter(c => c.matched).length,
+ *       totalCandidates: resolution.candidateDetails.length,
+ *       conditionAnalysis: resolution.candidateDetails.map(c => ({
+ *         matched: c.matched,
+ *         matchType: c.matchType,
+ *         conditions: c.conditionEvaluations.length
+ *       }))
+ *     };
+ *   }
+ *
+ *   throw new Error(`Resolution failed: ${result.value.error}`);
+ * }
+ * ```
+ *
+ * @public
  */
-/** @public */
 export function resolveResourceDetailed(
   resolver: Runtime.ResourceResolver,
   resourceId: string,
@@ -273,9 +541,75 @@ export function resolveResourceDetailed(
 }
 
 /**
- * Get available qualifiers from processed resources
+ * Get available qualifiers from processed resources.
+ *
+ * Extracts all qualifier names from the compiled resource collection, providing
+ * a list of qualification dimensions available for context setting and resource
+ * resolution. This is useful for building dynamic UI controls and validation.
+ *
+ * @param processedResources - The processed resource system
+ * @returns Array of qualifier names available in the system
+ *
+ * @example
+ * ```typescript
+ * import { ResolutionTools } from '@fgv/ts-res-ui-components';
+ *
+ * // Get all available qualifiers for UI generation
+ * const availableQualifiers = ResolutionTools.getAvailableQualifiers(processedResources);
+ * console.log('Available qualifiers:', availableQualifiers);
+ * // Output: ['language', 'region', 'platform', 'deviceType']
+ *
+ * // Use to build dynamic context controls
+ * const contextControls = availableQualifiers.map(qualifierName => (
+ *   <QualifierContextControl
+ *     key={qualifierName}
+ *     qualifierName={qualifierName}
+ *     value={context[qualifierName]}
+ *     onChange={handleContextChange}
+ *   />
+ * ));
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Validate context against available qualifiers
+ * function validateResolutionContext(
+ *   context: Record<string, string>,
+ *   processedResources: ProcessedResources
+ * ): string[] {
+ *   const availableQualifiers = ResolutionTools.getAvailableQualifiers(processedResources);
+ *   const errors: string[] = [];
+ *
+ *   // Check for unknown qualifiers
+ *   Object.keys(context).forEach(key => {
+ *     if (!availableQualifiers.includes(key)) {
+ *       errors.push(`Unknown qualifier: ${key}`);
+ *     }
+ *   });
+ *
+ *   return errors;
+ * }
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Build qualifier documentation
+ * function generateQualifierDocs(processedResources: ProcessedResources) {
+ *   const qualifiers = ResolutionTools.getAvailableQualifiers(processedResources);
+ *
+ *   return qualifiers.map(name => {
+ *     const qualifier = processedResources.system.qualifiers.validating.get(name).orThrow();
+ *     return {
+ *       name,
+ *       type: qualifier.type.systemType,
+ *       description: `Controls ${name} resolution behavior`
+ *     };
+ *   });
+ * }
+ * ```
+ *
+ * @public
  */
-/** @public */
 export function getAvailableQualifiers(processedResources: ProcessedResources): string[] {
   if (processedResources.compiledCollection.qualifiers) {
     return processedResources.compiledCollection.qualifiers.map((q) => q.name);
@@ -284,9 +618,120 @@ export function getAvailableQualifiers(processedResources: ProcessedResources): 
 }
 
 /**
- * Check if context has any pending changes
+ * Check if context has any pending changes by comparing current and pending values.
+ *
+ * Performs a deep comparison between current context values and pending context values
+ * to determine if there are unsaved changes. This is useful for UI state management
+ * and preventing data loss in resolution interfaces.
+ *
+ * @param contextValues - The current/saved context values
+ * @param pendingContextValues - The pending/unsaved context values
+ * @returns True if there are pending changes, false if contexts are identical
+ *
+ * @example
+ * ```typescript
+ * import { ResolutionTools } from '@fgv/ts-res-ui-components';
+ *
+ * // Check for unsaved context changes in resolution UI
+ * const ResolutionInterface = () => {
+ *   const [savedContext, setSavedContext] = useState({
+ *     language: 'en-US',
+ *     platform: 'web'
+ *   });
+ *
+ *   const [pendingContext, setPendingContext] = useState(savedContext);
+ *
+ *   const hasChanges = ResolutionTools.hasPendingContextChanges(
+ *     savedContext,
+ *     pendingContext
+ *   );
+ *
+ *   const handleApplyChanges = () => {
+ *     if (hasChanges) {
+ *       setSavedContext(pendingContext);
+ *       // Trigger re-resolution with new context...
+ *     }
+ *   };
+ *
+ *   return (
+ *     <div>
+ *       {hasChanges && (
+ *         <div className="warning">
+ *           You have unsaved context changes.
+ *           <button onClick={handleApplyChanges}>Apply Changes</button>
+ *         </div>
+ *       )}
+ *     </div>
+ *   );
+ * };
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Prevent navigation with unsaved changes
+ * function useUnsavedChangesWarning(
+ *   currentContext: Record<string, string | undefined>,
+ *   pendingContext: Record<string, string | undefined>
+ * ) {
+ *   const hasChanges = ResolutionTools.hasPendingContextChanges(
+ *     currentContext,
+ *     pendingContext
+ *   );
+ *
+ *   useEffect(() => {
+ *     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+ *       if (hasChanges) {
+ *         event.preventDefault();
+ *         event.returnValue = 'You have unsaved context changes. Are you sure you want to leave?';
+ *       }
+ *     };
+ *
+ *     window.addEventListener('beforeunload', handleBeforeUnload);
+ *     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+ *   }, [hasChanges]);
+ *
+ *   return hasChanges;
+ * }
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Context change management in resolution workflow
+ * class ResolutionContextManager {
+ *   private savedContext: Record<string, string | undefined> = {};
+ *   private pendingContext: Record<string, string | undefined> = {};
+ *
+ *   updatePendingValue(qualifier: string, value: string | undefined) {
+ *     this.pendingContext = { ...this.pendingContext, [qualifier]: value };
+ *   }
+ *
+ *   hasPendingChanges(): boolean {
+ *     return ResolutionTools.hasPendingContextChanges(
+ *       this.savedContext,
+ *       this.pendingContext
+ *     );
+ *   }
+ *
+ *   applyChanges(): boolean {
+ *     if (this.hasPendingChanges()) {
+ *       this.savedContext = { ...this.pendingContext };
+ *       return true; // Changes were applied
+ *     }
+ *     return false; // No changes to apply
+ *   }
+ *
+ *   discardChanges(): boolean {
+ *     if (this.hasPendingChanges()) {
+ *       this.pendingContext = { ...this.savedContext };
+ *       return true; // Changes were discarded
+ *     }
+ *     return false; // No changes to discard
+ *   }
+ * }
+ * ```
+ *
+ * @public
  */
-/** @public */
 export function hasPendingContextChanges(
   contextValues: Record<string, string | undefined>,
   pendingContextValues: Record<string, string | undefined>

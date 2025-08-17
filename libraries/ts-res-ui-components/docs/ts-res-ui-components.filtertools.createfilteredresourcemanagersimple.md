@@ -4,6 +4,9 @@
 
 ## FilterTools.createFilteredResourceManagerSimple() function
 
+Creates a filtered resource manager by applying context filters to reduce resource candidates.
+
+This function takes an original resource system and applies partial context filtering to create a new resource manager with reduced candidate sets. Useful for creating preview modes, testing specific configurations, or optimizing resource resolution.
 
 **Signature:**
 
@@ -41,6 +44,8 @@ originalSystem
 
 </td><td>
 
+The original resource system to filter
+
 
 </td></tr>
 <tr><td>
@@ -54,6 +59,8 @@ Record&lt;string, string \| undefined&gt;
 
 
 </td><td>
+
+Filter values to apply for candidate reduction
 
 
 </td></tr>
@@ -69,7 +76,7 @@ options
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Configuration options for filtering behavior
 
 
 </td></tr>
@@ -78,4 +85,52 @@ _(Optional)_
 **Returns:**
 
 Promise&lt;Result&lt;[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md)<!-- -->&gt;&gt;
+
+Result containing the filtered ProcessedResources or error message
+
+## Example 1
+
+
+```typescript
+import { FilterTools } from '@fgv/ts-res-ui-components';
+
+// Basic filtering with partial context
+const originalResources = getProcessedResources();
+const filterContext = { language: 'en-US', platform: 'web' };
+
+const filteredResult = await FilterTools.createFilteredResourceManagerSimple(
+  originalResources.system,
+  filterContext
+);
+
+if (filteredResult.isSuccess()) {
+  console.log('Filtered resources created successfully');
+  const analysis = FilterTools.analyzeFilteredResources(
+    originalResources.summary.resourceIds,
+    filteredResult.value,
+    originalResources
+  );
+  console.log(`Reduced candidates in ${analysis.filteredResources.length} resources`);
+}
+```
+
+## Example 2
+
+
+```typescript
+// With advanced options and debug logging
+const result = await FilterTools.createFilteredResourceManagerSimple(
+  originalSystem,
+  { language: 'fr-CA', region: 'quebec' },
+  {
+    partialContextMatch: true,
+    enableDebugLogging: true,
+    reduceQualifiers: false
+  }
+);
+
+if (result.isFailure()) {
+  console.error('Filtering failed:', result.message);
+}
+```
 

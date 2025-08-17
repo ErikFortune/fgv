@@ -24,6 +24,9 @@ Description
 
 </td><td>
 
+Analyzes the impact of filtering on resources by comparing original and filtered resource sets.
+
+Compares original and filtered resources to provide detailed analysis of how filtering affected each resource's candidate count. Identifies resources with potential issues and provides warnings for resources that may have been over-filtered or have no candidates.
 
 
 </td></tr>
@@ -34,6 +37,9 @@ Description
 
 </td><td>
 
+Creates a filtered resource manager by applying context filters to reduce resource candidates.
+
+This function takes an original resource system and applies partial context filtering to create a new resource manager with reduced candidate sets. Useful for creating preview modes, testing specific configurations, or optimizing resource resolution.
 
 
 </td></tr>
@@ -44,6 +50,9 @@ Description
 
 </td><td>
 
+Creates a human-readable summary string of active filter values.
+
+Generates a comma-separated string representation of all non-empty filter values, useful for displaying current filter state to users or in debug output.
 
 
 </td></tr>
@@ -54,6 +63,9 @@ Description
 
 </td><td>
 
+Checks if a filter values object contains any meaningful (non-empty) filter values.
+
+Utility function to determine whether filtering should be applied based on the presence of actual filter values. Ignores undefined and empty string values.
 
 
 </td></tr>
@@ -115,6 +127,7 @@ Actions available for managing filter state. Provides methods for updating all a
 
 </td><td>
 
+Options for configuring filtering behavior and output.
 
 
 </td></tr>

@@ -4,6 +4,8 @@
 
 ## ResolutionTools.ResolutionOptions.enableCaching property
 
+Enable caching for improved performance during repeated resolutions
+
 **Signature:**
 
 ```typescript

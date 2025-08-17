@@ -4,6 +4,9 @@
 
 ## FilterTools.hasFilterValues() function
 
+Checks if a filter values object contains any meaningful (non-empty) filter values.
+
+Utility function to determine whether filtering should be applied based on the presence of actual filter values. Ignores undefined and empty string values.
 
 **Signature:**
 
@@ -41,6 +44,8 @@ Record&lt;string, string \| undefined&gt;
 
 </td><td>
 
+Object containing filter key-value pairs
+
 
 </td></tr>
 </tbody></table>
@@ -48,4 +53,22 @@ Record&lt;string, string \| undefined&gt;
 **Returns:**
 
 boolean
+
+True if any filter has a meaningful value, false otherwise
+
+## Example
+
+
+```typescript
+import { FilterTools } from '@fgv/ts-res-ui-components';
+
+const filterValues = { language: 'en-US', platform: '', region: undefined };
+
+if (FilterTools.hasFilterValues(filterValues)) {
+  console.log('Has active filters'); // Will print this
+  const result = await FilterTools.createFilteredResourceManagerSimple(resources, filterValues);
+} else {
+  console.log('No filters applied');
+}
+```
 

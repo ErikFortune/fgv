@@ -87,15 +87,6 @@ Description
 </td></tr>
 <tr><td>
 
-[FormTools](./ts-res-ui-components.formtools.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
 [PickerTools](./ts-res-ui-components.pickertools.md)
 
 

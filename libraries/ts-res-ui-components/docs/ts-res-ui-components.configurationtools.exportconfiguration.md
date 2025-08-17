@@ -4,6 +4,9 @@
 
 ## ConfigurationTools.exportConfiguration() function
 
+Exports a system configuration to a formatted string representation.
+
+Converts the configuration object to a serialized format (JSON or YAML) with optional formatting and metadata. Supports pretty-printing for human readability and can include comments and custom filenames for enhanced usability.
 
 **Signature:**
 
@@ -41,6 +44,8 @@ Config.Model.ISystemConfiguration
 
 </td><td>
 
+The configuration to export
+
 
 </td></tr>
 <tr><td>
@@ -55,7 +60,7 @@ ConfigurationExportOptions
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Export formatting options
 
 
 </td></tr>
@@ -64,4 +69,41 @@ _(Optional)_
 **Returns:**
 
 Result&lt;string&gt;
+
+Result containing the formatted configuration string or error message
+
+## Example 1
+
+
+```typescript
+import { ConfigurationTools } from '@fgv/ts-res-ui-components';
+
+const config = getCurrentConfiguration();
+
+// Export as pretty-printed JSON
+const jsonResult = ConfigurationTools.exportConfiguration(config, {
+  format: 'json',
+  pretty: true,
+  includeComments: true
+});
+
+if (jsonResult.isSuccess()) {
+  downloadFile(jsonResult.value, 'my-config.json');
+}
+```
+
+## Example 2
+
+
+```typescript
+// Export as compact JSON for API transmission
+const compactResult = ConfigurationTools.exportConfiguration(config, {
+  format: 'json',
+  pretty: false
+});
+
+if (compactResult.isSuccess()) {
+  await sendToApi(compactResult.value);
+}
+```
 

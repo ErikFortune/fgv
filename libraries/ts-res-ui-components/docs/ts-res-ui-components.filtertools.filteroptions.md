@@ -4,6 +4,7 @@
 
 ## FilterTools.FilterOptions interface
 
+Options for configuring filtering behavior and output.
 
 **Signature:**
 
@@ -49,7 +50,7 @@ boolean
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Enable detailed console logging for debugging filter operations
 
 
 </td></tr>
@@ -68,7 +69,7 @@ boolean
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Allow partial context matches when filtering resources
 
 
 </td></tr>
@@ -87,7 +88,7 @@ boolean
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Attempt to reduce qualifier complexity during filtering
 
 
 </td></tr>

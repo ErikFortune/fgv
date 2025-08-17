@@ -24,6 +24,9 @@ Description
 
 </td><td>
 
+Creates a deep copy of a system configuration object.
+
+Performs a deep clone of the configuration to ensure complete isolation from the original. Useful for creating editable copies, implementing undo/redo, or preserving original state during modifications.
 
 
 </td></tr>
@@ -34,6 +37,9 @@ Description
 
 </td><td>
 
+Exports a system configuration to a formatted string representation.
+
+Converts the configuration object to a serialized format (JSON or YAML) with optional formatting and metadata. Supports pretty-printing for human readability and can include comments and custom filenames for enhanced usability.
 
 
 </td></tr>
@@ -55,6 +61,9 @@ Default system configuration
 
 </td><td>
 
+Imports and validates a system configuration from a serialized string.
+
+Parses configuration data from JSON or YAML format and performs validation to ensure the imported configuration is structurally sound and contains required fields. Provides detailed error messages for parsing or validation failures.
 
 
 </td></tr>
@@ -78,6 +87,9 @@ Provides comprehensive configuration management with validation, change tracking
 
 </td><td>
 
+Validates a ts-res system configuration for completeness and correctness.
+
+Performs comprehensive validation of configuration structure, required fields, type relationships, and logical consistency. Returns detailed validation results with specific error and warning messages for debugging and user feedback.
 
 
 </td></tr>
@@ -134,6 +146,58 @@ ConfigurationView component for managing ts-res system configurations.
 Provides a comprehensive interface for creating, editing, and managing ts-res system configurations including qualifier types, qualifiers, and resource types. Supports import/export functionality and real-time validation.
 
 \*\*Key Features:\*\* - \*\*Configuration editing\*\*: Create and modify system configurations - \*\*Qualifier type management\*\*: Add, edit, and remove qualifier types (language, territory, etc.) - \*\*Qualifier management\*\*: Configure specific qualifiers with default values - \*\*Resource type management\*\*: Define and manage resource types - \*\*Import/export\*\*: Load configurations from files or export current settings - \*\*Real-time validation\*\*: Validate configuration changes as you type - \*\*Change tracking\*\*: Track unsaved changes with visual indicators
+
+
+</td></tr>
+<tr><td>
+
+[HierarchyEditor](./ts-res-ui-components.configurationtools.hierarchyeditor.md)
+
+
+</td><td>
+
+Interactive editor for defining hierarchical relationships between qualifier values.
+
+The HierarchyEditor allows users to define parent-child relationships between qualifier values, enabling hierarchical resolution in the ts-res system. It provides an intuitive interface for creating, viewing, and managing value hierarchies with visual tree representation.
+
+
+</td></tr>
+<tr><td>
+
+[QualifierEditForm](./ts-res-ui-components.configurationtools.qualifiereditform.md)
+
+
+</td><td>
+
+Modal form component for creating and editing qualifiers in a ts-res system configuration.
+
+The QualifierEditForm provides a comprehensive interface for defining qualifiers that control resource resolution behavior. It includes validation, type-specific configuration options, and automatic token generation for streamlined qualifier creation.
+
+
+</td></tr>
+<tr><td>
+
+[QualifierTypeEditForm](./ts-res-ui-components.configurationtools.qualifiertypeeditform.md)
+
+
+</td><td>
+
+Modal form component for creating and editing qualifier types in a ts-res system configuration.
+
+The QualifierTypeEditForm provides a comprehensive interface for defining qualifier types that control the behavior and validation of qualifiers. It supports all three system types (language, territory, literal) with type-specific configuration options, enumerated values, and hierarchical relationships between values.
+
+
+</td></tr>
+<tr><td>
+
+[ResourceTypeEditForm](./ts-res-ui-components.configurationtools.resourcetypeeditform.md)
+
+
+</td><td>
+
+Modal form component for creating and editing resource types in a ts-res system configuration.
+
+The ResourceTypeEditForm provides an interface for defining resource types that categorize resources and determine their data handling behavior. It supports both common predefined types and custom types for specialized use cases, with automatic type suggestion based on resource type names.
 
 
 </td></tr>

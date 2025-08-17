@@ -126,7 +126,7 @@ function createManifest(inputType: 'file' | 'directory', originalPath: string, a
 // @internal (undocumented)
 function createNodeZipBuilder(): IZipBuilder;
 
-// @public (undocumented)
+// @public
 function createResolverWithContext(processedResources: ProcessedResources, contextValues: Record<string, string | undefined>, options?: ResolutionOptions): Result<Runtime.ResourceResolver>;
 
 // @internal (undocumented)
@@ -142,10 +142,10 @@ function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemConfigur
     contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
 }>;
 
-// @public (undocumented)
+// @public
 const EditableJsonView: React_2.FC<EditableJsonViewProps>;
 
-// @public (undocumented)
+// @public
 interface EditableJsonViewProps {
     className?: string;
     disabled?: boolean;
@@ -168,7 +168,7 @@ interface EditedResourceInfo {
     timestamp: Date;
 }
 
-// @public (undocumented)
+// @public
 function evaluateConditionsForCandidate(resolver: Runtime.ResourceResolver, candidateIndex: number, compiledResource: any, compiledCollection: any): ConditionEvaluationResult[];
 
 // @internal (undocumented)
@@ -289,7 +289,7 @@ function formatFileSize(bytes: number): string;
 // @internal (undocumented)
 function generateZipFilename(customName?: string): string;
 
-// @public (undocumented)
+// @public
 function getAvailableQualifiers(processedResources: ProcessedResources): string[];
 
 // @internal (undocumented)
@@ -310,7 +310,7 @@ function getFilterSummary(values: Record<string, string | undefined>): string;
 // @public
 function hasFilterValues(values: Record<string, string | undefined>): boolean;
 
-// @public (undocumented)
+// @public
 function hasPendingContextChanges(contextValues: Record<string, string | undefined>, pendingContextValues: Record<string, string | undefined>): boolean;
 
 // Warning: (ae-forgotten-export) The symbol "HierarchyEditorProps" needs to be exported by the entry point index.d.ts
@@ -609,14 +609,12 @@ interface ResolutionActions {
 
 // Warning: (ae-forgotten-export) The symbol "ResolutionEditControlsProps" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 const ResolutionEditControls: React_2.FC<ResolutionEditControlsProps>;
 
-// @public (undocumented)
+// @public
 interface ResolutionOptions {
-    // (undocumented)
     enableCaching?: boolean;
-    // (undocumented)
     enableDebugLogging?: boolean;
 }
 
@@ -689,7 +687,7 @@ interface ResolutionViewProps extends ViewBaseProps {
     resources?: ProcessedResources | null;
 }
 
-// @public (undocumented)
+// @public
 function resolveResourceDetailed(resolver: Runtime.ResourceResolver, resourceId: string, processedResources: ProcessedResources, options?: ResolutionOptions): Result<ResolutionResult>;
 
 // @public

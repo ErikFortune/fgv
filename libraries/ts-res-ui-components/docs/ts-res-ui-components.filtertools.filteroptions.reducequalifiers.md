@@ -4,6 +4,8 @@
 
 ## FilterTools.FilterOptions.reduceQualifiers property
 
+Attempt to reduce qualifier complexity during filtering
+
 **Signature:**
 
 ```typescript
