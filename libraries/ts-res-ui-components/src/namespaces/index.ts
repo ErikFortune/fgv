@@ -45,4 +45,3 @@ export * as TsResTools from './TsResTools';
 export * as ViewTools from './ViewTools';
 export * as ZipTools from './ZipTools';
 export * as PickerTools from './PickerTools';
-export * as FormTools from './FormTools';

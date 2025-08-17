@@ -86,6 +86,10 @@ interface ConditionEvaluationResult {
 declare namespace ConfigurationTools {
     export {
         ConfigurationView,
+        QualifierTypeEditForm,
+        QualifierEditForm,
+        ResourceTypeEditForm,
+        HierarchyEditor,
         useConfigurationState,
         getDefaultConfiguration,
         validateConfiguration,
@@ -282,15 +286,6 @@ interface FilterViewProps extends ViewBaseProps {
 // @internal (undocumented)
 function formatFileSize(bytes: number): string;
 
-declare namespace FormTools {
-    export {
-        QualifierTypeEditForm,
-        QualifierEditForm,
-        ResourceTypeEditForm,
-        HierarchyEditor
-    }
-}
-
 // @internal (undocumented)
 function generateZipFilename(customName?: string): string;
 
@@ -320,7 +315,7 @@ function hasPendingContextChanges(contextValues: Record<string, string | undefin
 
 // Warning: (ae-forgotten-export) The symbol "HierarchyEditorProps" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 const HierarchyEditor: React_2.FC<HierarchyEditorProps>;
 
 // @public
@@ -586,12 +581,12 @@ const QualifierContextControl: React_2.FC<QualifierContextControlProps>;
 
 // Warning: (ae-forgotten-export) The symbol "QualifierEditFormProps" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 const QualifierEditForm: React_2.FC<QualifierEditFormProps>;
 
 // Warning: (ae-forgotten-export) The symbol "QualifierTypeEditFormProps" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 const QualifierTypeEditForm: React_2.FC<QualifierTypeEditFormProps>;
 
 // @internal (undocumented)
@@ -832,7 +827,7 @@ export const ResourceTreeView: React_2.FC<ResourceTreeViewProps>;
 
 // Warning: (ae-forgotten-export) The symbol "ResourceTypeEditFormProps" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 const ResourceTypeEditForm: React_2.FC<ResourceTypeEditFormProps>;
 
 export { Result }

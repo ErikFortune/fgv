@@ -18,7 +18,15 @@
  *   onMessage={onMessage}
  * />
  *
- * // Or use utility functions
+ * // Use form components for editing individual configuration elements
+ * <ConfigurationTools.QualifierTypeEditForm
+ *   qualifierType={editingQualifierType}
+ *   onSave={handleSaveQualifierType}
+ *   onCancel={handleCancel}
+ *   existingNames={existingTypeNames}
+ * />
+ *
+ * // Use utility functions
  * const config = ConfigurationTools.getDefaultConfiguration();
  * const validation = ConfigurationTools.validateConfiguration(config);
  * ```
@@ -28,6 +36,12 @@
 
 // Export the main ConfigurationView component
 export { ConfigurationView } from '../components/views/ConfigurationView';
+
+// Export configuration editing form components
+export { QualifierTypeEditForm } from '../components/forms/QualifierTypeEditForm';
+export { QualifierEditForm } from '../components/forms/QualifierEditForm';
+export { ResourceTypeEditForm } from '../components/forms/ResourceTypeEditForm';
+export { HierarchyEditor } from '../components/forms/HierarchyEditor';
 
 // Export domain-specific hook
 export { useConfigurationState } from '../hooks/useConfigurationState';

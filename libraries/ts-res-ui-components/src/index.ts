@@ -32,11 +32,11 @@ export { ResourceListView } from './components/common/ResourceListView';
 export { SourceResourceDetail } from './components/common/SourceResourceDetail';
 export { ResolutionResults } from './components/common/ResolutionResults';
 
-// Form components are now available through FormTools namespace:
-// - FormTools.QualifierTypeEditForm
-// - FormTools.QualifierEditForm
-// - FormTools.ResourceTypeEditForm
-// - FormTools.HierarchyEditor
+// Form components are now available through ConfigurationTools namespace:
+// - ConfigurationTools.QualifierTypeEditForm
+// - ConfigurationTools.QualifierEditForm
+// - ConfigurationTools.ResourceTypeEditForm
+// - ConfigurationTools.HierarchyEditor
 
 // QualifierContextControl is now available through ResolutionTools namespace:
 // - ResolutionTools.QualifierContextControl
@@ -62,6 +62,5 @@ export {
   TsResTools,
   ZipTools,
   ViewTools,
-  PickerTools,
-  FormTools
+  PickerTools
 } from './namespaces';
