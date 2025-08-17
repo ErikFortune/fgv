@@ -907,8 +907,7 @@ declare namespace ViewTools {
         ViewBaseProps,
         ImportViewProps,
         SourceViewProps,
-        CompiledViewProps,
-        ZipLoaderViewProps
+        CompiledViewProps
     }
 }
 
@@ -1046,7 +1045,8 @@ declare namespace ZipTools {
         IZipBuilder,
         IZipLoader,
         ZipFileItem,
-        ZipFileTree
+        ZipFileTree,
+        ZipLoaderViewProps
     }
 }
 

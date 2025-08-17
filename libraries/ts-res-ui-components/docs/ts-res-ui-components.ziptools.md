@@ -4,6 +4,32 @@
 
 ## ZipTools namespace
 
+## Interfaces
+
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ZipLoaderViewProps](./ts-res-ui-components.ziptools.ziploaderviewprops.md)
+
+
+</td><td>
+
+Props for the ZipLoaderView component. Handles loading and importing ZIP archives containing resource files and configurations.
+
+
+</td></tr>
+</tbody></table>
+
 ## Variables
 
 <table><thead><tr><th>

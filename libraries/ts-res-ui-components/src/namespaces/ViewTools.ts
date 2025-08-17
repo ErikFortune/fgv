@@ -88,10 +88,4 @@ export { useViewState } from '../hooks/useViewState';
 export type { Message, MessagesWindowProps } from '../components/views/MessagesWindow';
 
 // Export types related to view components and state
-export type {
-  ViewBaseProps,
-  ImportViewProps,
-  SourceViewProps,
-  CompiledViewProps,
-  ZipLoaderViewProps
-} from '../types';
+export type { ViewBaseProps, ImportViewProps, SourceViewProps, CompiledViewProps } from '../types';

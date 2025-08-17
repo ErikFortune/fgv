@@ -113,17 +113,6 @@ Base properties shared by all view components. Provides common functionality for
 
 
 </td></tr>
-<tr><td>
-
-[ZipLoaderViewProps](./ts-res-ui-components.viewtools.ziploaderviewprops.md)
-
-
-</td><td>
-
-Props for the ZipLoaderView component. Handles loading and importing ZIP archives containing resource files and configurations.
-
-
-</td></tr>
 </tbody></table>
 
 ## Variables

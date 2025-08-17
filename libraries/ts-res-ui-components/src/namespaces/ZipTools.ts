@@ -84,3 +84,6 @@ export type {
   ZipFileItem,
   ZipFileTree
 } from '../utils/zipLoader/types';
+
+// Export ZipLoaderView component props
+export type { ZipLoaderViewProps } from '../types';
