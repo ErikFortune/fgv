@@ -1,26 +1,9 @@
-// Export types
-export * from './types';
+// Export essential utilities only (most functionality moved to ts-res zip-archive packlet)
+export { generateZipFilename, formatFileSize, isZipFile, normalizePath, getBaseName } from './zipUtils';
 
-// Export utilities
-export * from './zipUtils';
+// ZIP processing helpers for integrating with ts-res-ui-components
+export { processZipResources, processZipLoadResult } from './zipProcessingHelpers';
 
-// Export browser ZIP loader
-export * from './browserZipLoader';
-
-// Export Node.js ZIP builder (placeholder)
-export * from './nodeZipBuilder';
-
-// Re-export commonly used functions
-export { loadZipFile, loadZipFromUrl, createBrowserZipLoader } from './browserZipLoader';
-
-export { prepareZipData, prepareZipDataFromDirectory, createNodeZipBuilder } from './nodeZipBuilder';
-
-export {
-  generateZipFilename,
-  parseManifest,
-  parseConfiguration,
-  zipTreeToFiles,
-  zipTreeToDirectory,
-  formatFileSize,
-  isZipFile
-} from './zipUtils';
+// Legacy compatibility exports (deprecated)
+export { createBrowserZipLoader } from './browserZipLoader';
+export { createNodeZipBuilder } from './nodeZipBuilder';

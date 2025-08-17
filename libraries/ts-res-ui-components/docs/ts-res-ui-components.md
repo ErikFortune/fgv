@@ -326,20 +326,5 @@ Provides an interface for browsing source resources in their original form, view
 
 
 </td></tr>
-<tr><td>
-
-[ZipLoaderView](./ts-res-ui-components.ziploaderview.md)
-
-
-</td><td>
-
-ZipLoaderView component for loading ZIP-based resource bundles from URLs or files.
-
-Provides a specialized interface for loading ZIP archives containing ts-res resource collections, with progress tracking, auto-configuration loading, and bundle processing. Designed for loading distributed resource bundles.
-
-\*\*Key Features:\*\* - \*\*URL-based loading\*\*: Load ZIP bundles from remote URLs - \*\*File-based loading\*\*: Load ZIP bundles from local files - \*\*Progress tracking\*\*: Real-time progress updates during ZIP processing - \*\*Auto-configuration\*\*: Automatically extract and apply configurations from bundles - \*\*Bundle validation\*\*: Validate ZIP structure and manifest files - \*\*Error recovery\*\*: Graceful error handling with detailed error messages - \*\*Manifest support\*\*: Process ZIP manifests for metadata and configuration
-
-
-</td></tr>
 </tbody></table>
 

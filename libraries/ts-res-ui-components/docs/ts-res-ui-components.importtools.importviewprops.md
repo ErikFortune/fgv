@@ -103,7 +103,7 @@ _(Optional)_ Callback when resource files/directories are imported
 
 </td><td>
 
-(zipFile: File, config?: Config.Model.ISystemConfiguration) =&gt; void
+(zipData: [ImportedDirectory](./ts-res-ui-components.importtools.importeddirectory.md) \| [ImportedFile](./ts-res-ui-components.importtools.importedfile.md)<!-- -->\[\], config?: Config.Model.ISystemConfiguration) =&gt; void
 
 
 </td><td>

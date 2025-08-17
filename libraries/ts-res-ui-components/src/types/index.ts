@@ -206,7 +206,10 @@ export interface ImportViewProps extends ViewBaseProps {
   /** Callback when a bundle file is imported */
   onBundleImport?: (bundle: Bundle.IBundle) => void;
   /** Callback when a ZIP file is imported with optional configuration */
-  onZipImport?: (zipFile: File, config?: Config.Model.ISystemConfiguration) => void;
+  onZipImport?: (
+    zipData: ImportedDirectory | ImportedFile[],
+    config?: Config.Model.ISystemConfiguration
+  ) => void;
   /** File types accepted for import */
   acceptedFileTypes?: string[];
 }
@@ -520,25 +523,6 @@ export interface ConfigurationViewProps extends ViewBaseProps {
   onSave?: (config: Config.Model.ISystemConfiguration) => void;
   /** Whether there are unsaved changes to the configuration */
   hasUnsavedChanges?: boolean;
-}
-
-/**
- * Props for the ZipLoaderView component.
- * Handles loading and importing ZIP archives containing resource files and configurations.
- *
- * @public
- */
-export interface ZipLoaderViewProps extends ViewBaseProps {
-  /** Optional URL to a ZIP file to load automatically */
-  zipFileUrl?: string;
-  /** Optional file path within the ZIP to focus on */
-  zipPath?: string;
-  /** Callback when resource files are imported from the ZIP */
-  onImport?: (data: ImportedDirectory | ImportedFile[]) => void;
-  /** Callback when a configuration file is loaded from the ZIP */
-  onConfigurationLoad?: (config: Config.Model.ISystemConfiguration) => void;
-  /** Callback when the ZIP loading process is complete */
-  onLoadComplete?: () => void;
 }
 
 // Resource detail types for SourceView

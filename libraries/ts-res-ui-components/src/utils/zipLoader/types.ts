@@ -59,8 +59,6 @@ export interface ZipArchiveResult {
 export interface ZipLoadOptions {
   /** Whether to auto-apply configuration found in ZIP */
   autoApplyConfig?: boolean;
-  /** Whether to auto-process resources after loading */
-  autoProcessResources?: boolean;
   /** Custom configuration to use instead of ZIP config */
   overrideConfig?: Config.Model.ISystemConfiguration;
 }
@@ -71,17 +69,15 @@ export interface ZipLoadOptions {
 /** @internal */
 export interface ZipLoadResult {
   /** Manifest from the ZIP */
-  manifest: ZipManifest | null;
+  manifest?: ZipManifest;
   /** Configuration found in ZIP */
-  config: Config.Model.ISystemConfiguration | null;
+  config?: Config.Model.ISystemConfiguration;
   /** Loaded files */
   files: ImportedFile[];
   /** Loaded directory structure */
-  directory: ImportedDirectory | null;
+  directory?: ImportedDirectory;
   /** File tree for direct processing */
   fileTree?: any; // FileTree.FileTree from ts-utils
-  /** Processed resources if auto-processing was enabled */
-  processedResources: ProcessedResources | null;
 }
 
 /**

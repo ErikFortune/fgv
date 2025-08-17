@@ -1,20 +1,16 @@
 /**
  * Tools and components for ZIP-based resource bundle management and importing.
  *
- * This namespace contains ImportView and ZipLoaderView components, plus a comprehensive
- * API for creating, loading, and managing ZIP-based resource bundles. ZIP bundles are
- * a convenient way to distribute complete resource collections with configuration and metadata.
- *
- * The ZIP bundle format includes:
- * - Resource files in a structured directory layout
- * - Manifest file with metadata and configuration
- * - Optional compiled resource collections for runtime efficiency
+ * This namespace contains ImportView component and utilities for working with
+ * ZIP-based resource bundles. Uses the ts-res zip-archive packlet for all ZIP operations,
+ * and provides processing helpers for integrating ZIP data with ts-res-ui-components.
  *
  * @example
  * ```tsx
  * import { ZipTools } from '@fgv/ts-res-ui-components';
+ * import { ZipArchive } from '@fgv/ts-res';
  *
- * // Use the ImportView component
+ * // Use the ImportView component (handles ZIP files automatically)
  * <ZipTools.ImportView
  *   onImport={handleFileImport}
  *   onBundleImport={handleBundleImport}
@@ -22,12 +18,20 @@
  *   onMessage={onMessage}
  * />
  *
- * // Or use utility functions
- * const loader = ZipTools.createBrowserZipLoader();
- * const result = await loader.loadFromFile(zipFile, {
- *   autoProcessResources: true,
- *   autoapplyConfig: true
- * });
+ * // Or use zip-archive packlet directly with processing helpers
+ * const loader = new ZipArchive.ZipArchiveLoader();
+ * const zipResult = await loader.loadFromFile(zipFile);
+ *
+ * if (zipResult.isSuccess()) {
+ *   const processResult = await ZipTools.processZipLoadResult(zipResult.value);
+ *   if (processResult.isSuccess()) {
+ *     console.log('Processed resources:', processResult.value);
+ *   }
+ * }
+ *
+ * // Utility functions
+ * const isZip = ZipTools.isZipFile('resources.zip');
+ * const filename = ZipTools.generateZipFilename('my-resources');
  * ```
  *
  * @public
@@ -35,55 +39,18 @@
 
 // Export the import-related view components
 export { ImportView } from '../components/views/ImportView';
-export { ZipLoaderView } from '../components/views/ZipLoaderView';
 
-// Browser ZIP operations
-export {
-  BrowserZipLoader,
-  createBrowserZipLoader,
-  loadZipFile,
-  loadZipFromUrl
-} from '../utils/zipLoader/browserZipLoader';
-
-// Node ZIP operations (for server-side or build tools)
-export {
-  NodeZipBuilder,
-  createNodeZipBuilder,
-  type BrowserZipData,
-  prepareZipData,
-  prepareZipDataFromDirectory
-} from '../utils/zipLoader/nodeZipBuilder';
-
-// ZIP utilities and helpers
+// Minimal ZIP utilities (other functionality provided by ts-res zip-archive packlet)
 export {
   generateZipFilename,
-  createManifest,
-  parseManifest,
-  parseConfiguration,
-  zipTreeToFiles,
-  zipTreeToDirectory,
-  normalizePath,
-  getDirectoryName,
-  sanitizeFilename,
   formatFileSize,
   isZipFile,
+  normalizePath,
   getBaseName
 } from '../utils/zipLoader/zipUtils';
 
-// ZIP types and interfaces
-export type {
-  ZipManifest,
-  ZipArchiveOptions,
-  ZipArchiveResult,
-  ZipLoadOptions,
-  ZipLoadResult,
-  ZipLoadingStage,
-  ZipProgressCallback,
-  IZipBuilder,
-  IZipLoader,
-  ZipFileItem,
-  ZipFileTree
-} from '../utils/zipLoader/types';
+// ZIP processing helpers for integrating with ts-res-ui-components
+export { processZipResources, processZipLoadResult } from '../utils/zipLoader/zipProcessingHelpers';
 
 // Export view component props
-export type { ZipLoaderViewProps, ImportViewProps } from '../types';
+export type { ImportViewProps } from '../types';

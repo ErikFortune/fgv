@@ -16,8 +16,19 @@ This packlet is largely AI written, and it shows.
 - **🎯 Resource Resolution**: Test resource resolution with dynamic context values
 - **📊 Visualization**: Multiple views for exploring resource structures and compiled output
 - **⚙️ Configuration**: Visual configuration management for qualifier types, qualifiers, and resource types
-- **📁 File Handling**: Support for directory imports, ZIP files, and bundle loading
+- **📁 File Handling**: Support for directory imports, ZIP files via ts-res zip-archive packlet, and bundle loading
 - **🎨 Modern UI**: Built with Tailwind CSS and Heroicons for a clean, responsive interface
+
+### ZIP Archive Integration
+
+This library now uses the **ts-res zip-archive packlet** as the single source of truth for all ZIP operations, providing:
+
+- **Universal compatibility**: Works in both browser and Node.js environments using fflate
+- **Standardized format**: Common ZIP bundle format across all ts-res tools  
+- **Simplified API**: Direct integration with ts-res ZIP archive functionality
+- **Processing helpers**: Utilities to integrate ZIP data with ts-res-ui-components workflows
+
+The `ImportView` component handles ZIP files automatically, and the `ZipTools` namespace provides processing helpers for custom ZIP workflows.
 
 ## Installation
 
@@ -116,13 +127,12 @@ function MyResourceViewer() {
 
 ```
 ResourceOrchestrator (state management)
-├── ImportView (file/bundle import)
+├── ImportView (file/bundle/ZIP import)
 ├── SourceView (resource collection display)
 ├── FilterView (context filtering)
 ├── CompiledView (compiled resource structure)
 ├── ResolutionView (resource resolution testing)
-├── ConfigurationView (system configuration)
-└── ZipLoaderView (ZIP file handling)
+└── ConfigurationView (system configuration)
 ```
 
 ### Data Flow
@@ -197,7 +207,7 @@ Visual configuration management for ts-res system settings including qualifier t
 
 ### ImportView
 
-Handles importing resource files, directories, bundles, and ZIP files.
+Handles importing resource files, directories, bundles, and ZIP files. Uses the ts-res zip-archive packlet for all ZIP operations.
 
 > 📚 **[See ImportView documentation →](./docs/ts-res-ui-components.importview.md)**
 
@@ -205,7 +215,11 @@ Handles importing resource files, directories, bundles, and ZIP files.
 <ImportView
   onImport={actions.importDirectory}
   onBundleImport={actions.importBundle}
-  onZipImport={actions.importZipWithConfig}
+  onZipImport={(zipData, config) => {
+    // zipData contains files and directory structure from ZIP
+    // config contains any configuration found in the ZIP
+    actions.importDirectory(zipData, config);
+  }}
   acceptedFileTypes={['.json', '.ts', '.js']}
   onMessage={(type, message) => console.log(type, message)}
 />
@@ -844,7 +858,7 @@ import {
   ConfigurationTools, // ConfigurationView + configuration utilities
   TsResTools,      // SourceView, CompiledView + ts-res utilities
   ViewTools,       // MessagesWindow + view state utilities
-  ZipTools,        // ImportView, ZipLoaderView + ZIP utilities
+  ZipTools,        // ImportView + ZIP processing helpers
   FileTools        // File processing utilities
 } from '@fgv/ts-res-ui-components';
 
@@ -853,11 +867,15 @@ import {
 <ResolutionTools.ResolutionView {...resolutionProps} />
 <ViewTools.MessagesWindow {...messageProps} />
 <TsResTools.SourceView {...sourceProps} />
+<ZipTools.ImportView {...importProps} />
 
 // Use utility functions from namespaces  
 const hasFilters = FilterTools.hasFilterValues(filterState.values);
 const resolver = ResolutionTools.createResolverWithContext(resources, context);
 const system = await TsResTools.createTsResSystemFromConfig(config);
+
+// ZIP processing helpers for ts-res-ui-components integration
+const processResult = await ZipTools.processZipLoadResult(zipData, config);
 ```
 
 ### Namespace Contents
@@ -867,7 +885,7 @@ const system = await TsResTools.createTsResSystemFromConfig(config);
 - **[ConfigurationTools](./docs/ts-res-ui-components.configurationtools.md)**: ConfigurationView, configuration validation, import/export
 - **[TsResTools](./docs/ts-res-ui-components.tsrestools.md)**: SourceView, CompiledView, ts-res system integration
 - **[ViewTools](./docs/ts-res-ui-components.viewtools.md)**: MessagesWindow, message management, view state utilities
-- **[ZipTools](./docs/ts-res-ui-components.ziptools.md)**: ImportView, ZipLoaderView, ZIP bundle management
+- **[ZipTools](./docs/ts-res-ui-components.ziptools.md)**: ImportView, ZIP processing helpers, uses ts-res zip-archive packlet
 - **[FileTools](./docs/ts-res-ui-components.filetools.md)**: File processing, import/export utilities
 
 All components are also available at the top level for backward compatibility.

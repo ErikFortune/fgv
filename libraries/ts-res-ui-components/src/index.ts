@@ -12,7 +12,7 @@ export type { JsonValue } from '@fgv/ts-json-base';
 // - ViewStateTools: ViewBaseProps, Message, MessagesWindowProps
 // - ImportTools: ImportViewProps, ImportedFile, ImportedDirectory
 // - TsResTools: SourceViewProps, CompiledViewProps
-// - ZipTools: ZipLoaderViewProps, ImportViewProps (dual export)
+// - ZipTools: ImportViewProps and ZIP utilities
 // - ConfigurationTools: ConfigurationViewProps
 // - ImportTools: ImportedFile, ImportedDirectory
 
@@ -22,7 +22,6 @@ export { SourceView } from './components/views/SourceView';
 export { FilterView } from './components/views/FilterView';
 export { CompiledView } from './components/views/CompiledView';
 export { ResolutionView } from './components/views/ResolutionView';
-export { ZipLoaderView } from './components/views/ZipLoaderView';
 export { ConfigurationView } from './components/views/ConfigurationView';
 export { MessagesWindow } from './components/views/MessagesWindow';
 

@@ -22,26 +22,6 @@ import { Runtime } from '@fgv/ts-res';
 // @public
 function analyzeFilteredResources(originalResourceIds: string[], filteredProcessedResources: ProcessedResources, originalProcessedResources: ProcessedResources): FilterResult;
 
-// @internal (undocumented)
-interface BrowserZipData {
-    // (undocumented)
-    config?: any;
-    // (undocumented)
-    files: Array<{
-        path: string;
-        content: string;
-    }>;
-    // (undocumented)
-    manifest: ZipManifest;
-}
-
-// @internal (undocumented)
-class BrowserZipLoader implements IZipLoader {
-    loadFromBuffer(buffer: ArrayBuffer, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
-    loadFromFile(file: File, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
-    loadFromUrl(url: string, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
-}
-
 // @public
 interface CandidateInfo {
     candidate: Runtime.IResourceCandidate;
@@ -112,17 +92,8 @@ interface ConfigurationViewProps extends ViewBaseProps {
 // @internal (undocumented)
 function convertImportedDirectoryToFileTree(directory: ImportedDirectory): FileTree.FileTree;
 
-// @internal (undocumented)
-function createBrowserZipLoader(): IZipLoader;
-
 // @public
 const createFilteredResourceManagerSimple: (originalSystem: ProcessedResources["system"], partialContext: Record<string, string | undefined>, options?: FilterOptions) => Promise<Result<ProcessedResources>>;
-
-// @internal (undocumented)
-function createManifest(inputType: 'file' | 'directory', originalPath: string, archivePath: string, configPath?: string): ZipManifest;
-
-// @internal (undocumented)
-function createNodeZipBuilder(): IZipBuilder;
 
 // @public
 function createResolverWithContext(processedResources: ProcessedResources, contextValues: Record<string, string | undefined>, options?: ResolutionOptions): Result<Runtime.ResourceResolver>;
@@ -279,9 +250,6 @@ function getDefaultConfiguration(): Config.Model.ISystemConfiguration;
 // @internal (undocumented)
 function getDefaultSystemConfiguration(): Config.Model.ISystemConfiguration;
 
-// @internal (undocumented)
-function getDirectoryName(path: string): string;
-
 // @public
 function getFilterSummary(values: Record<string, string | undefined>): string;
 
@@ -336,33 +304,13 @@ interface ImportViewProps extends ViewBaseProps {
     acceptedFileTypes?: string[];
     onBundleImport?: (bundle: Bundle.IBundle) => void;
     onImport?: (data: ImportedDirectory | ImportedFile[]) => void;
-    onZipImport?: (zipFile: File, config?: Config.Model.ISystemConfiguration) => void;
+    onZipImport?: (zipData: ImportedDirectory | ImportedFile[], config?: Config.Model.ISystemConfiguration) => void;
 }
 
 // @internal (undocumented)
 function isZipFile(filename: string): boolean;
 
-// @internal (undocumented)
-interface IZipBuilder {
-    createFromDirectory(directory: ImportedDirectory, options?: ZipArchiveOptions): Promise<Result<ZipArchiveResult>>;
-    createFromFiles(files: ImportedFile[], options?: ZipArchiveOptions): Promise<Result<ZipArchiveResult>>;
-    createFromPath(path: string, options?: ZipArchiveOptions): Promise<Result<ZipArchiveResult>>;
-}
-
-// @internal (undocumented)
-interface IZipLoader {
-    loadFromBuffer(buffer: ArrayBuffer, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
-    loadFromFile(file: File, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
-    loadFromUrl(url: string, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
-}
-
 export { JsonValue }
-
-// @internal (undocumented)
-function loadZipFile(file: File, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
-
-// @internal (undocumented)
-function loadZipFromUrl(url: string, options?: ZipLoadOptions, onProgress?: ZipProgressCallback): Promise<Result<ZipLoadResult>>;
 
 // @public
 interface Message_2 {
@@ -380,13 +328,6 @@ interface MessagesWindowProps {
     className?: string;
     messages: Message_2[];
     onClearMessages: () => void;
-}
-
-// @internal (undocumented)
-class NodeZipBuilder implements IZipBuilder {
-    createFromDirectory(directory: ImportedDirectory, options?: ZipArchiveOptions): Promise<Result<ZipArchiveResult>>;
-    createFromFiles(files: ImportedFile[], options?: ZipArchiveOptions): Promise<Result<ZipArchiveResult>>;
-    createFromPath(path: string, options?: ZipArchiveOptions): Promise<Result<ZipArchiveResult>>;
 }
 
 // @internal (undocumented)
@@ -470,12 +411,6 @@ export interface OrchestratorState {
     selectedResourceId: string | null;
 }
 
-// @internal (undocumented)
-function parseConfiguration(configData: string): Result<Config.Model.ISystemConfiguration>;
-
-// @internal (undocumented)
-function parseManifest(manifestData: string): Result<ZipManifest>;
-
 // @public
 interface PendingResource<T = unknown> {
     displayName?: string;
@@ -495,12 +430,6 @@ declare namespace PickerTools {
         PendingResource
     }
 }
-
-// @internal (undocumented)
-function prepareZipData(files: ImportedFile[], options?: ZipArchiveOptions): Result<BrowserZipData>;
-
-// @internal (undocumented)
-function prepareZipDataFromDirectory(directory: ImportedDirectory, options?: ZipArchiveOptions): Result<BrowserZipData>;
 
 // @public
 interface ProcessedResources {
@@ -564,6 +493,16 @@ function processImportedFiles(files: ImportedFile[], systemConfig?: Config.Model
         warnings: string[];
     };
 }>;
+
+// @public
+function processZipLoadResult(zipResult: {
+    files: ImportedFile[];
+    directory?: ImportedDirectory;
+    config?: Config.Model.ISystemConfiguration;
+}, overrideConfig?: Config.Model.ISystemConfiguration): Promise<Result<ProcessedResources>>;
+
+// @public
+function processZipResources(files: ImportedFile[], directory: ImportedDirectory | undefined, config?: Config.Model.ISystemConfiguration): Promise<Result<ProcessedResources>>;
 
 // Warning: (ae-forgotten-export) The symbol "QualifierContextControlProps" needs to be exported by the entry point index.d.ts
 //
@@ -821,9 +760,6 @@ const ResourceTypeEditForm: React_2.FC<ResourceTypeEditFormProps>;
 
 export { Result }
 
-// @internal (undocumented)
-function sanitizeFilename(filename: string): string;
-
 // Warning: (ae-forgotten-export) The symbol "SourceResourceDetailProps" needs to be exported by the entry point index.d.ts
 //
 // @public
@@ -901,151 +837,19 @@ declare namespace ViewStateTools {
     }
 }
 
-// @internal (undocumented)
-interface ZipArchiveOptions {
-    compressionLevel?: number;
-    config?: Config.Model.ISystemConfiguration;
-    filename?: string;
-    includeConfig?: boolean;
-    outputDir?: string;
-}
-
-// @internal (undocumented)
-interface ZipArchiveResult {
-    filePath: string;
-    fileSize: number;
-    manifest: ZipManifest;
-    timestamp: string;
-}
-
-// @internal (undocumented)
-interface ZipFileItem {
-    // (undocumented)
-    content?: string | ArrayBuffer;
-    // (undocumented)
-    isDirectory: boolean;
-    // (undocumented)
-    lastModified?: Date;
-    // (undocumented)
-    name: string;
-    // (undocumented)
-    path: string;
-    // (undocumented)
-    size: number;
-}
-
-// @internal (undocumented)
-interface ZipFileTree {
-    // (undocumented)
-    directories: Set<string>;
-    // (undocumented)
-    files: Map<string, ZipFileItem>;
-    // (undocumented)
-    root: string;
-}
-
-// @public
-export const ZipLoaderView: React_2.FC<ZipLoaderViewProps>;
-
-// @public
-interface ZipLoaderViewProps extends ViewBaseProps {
-    onConfigurationLoad?: (config: Config.Model.ISystemConfiguration) => void;
-    onImport?: (data: ImportedDirectory | ImportedFile[]) => void;
-    onLoadComplete?: () => void;
-    zipFileUrl?: string;
-    zipPath?: string;
-}
-
-// @internal (undocumented)
-type ZipLoadingStage = 'reading-file' | 'parsing-zip' | 'loading-manifest' | 'loading-config' | 'extracting-files' | 'processing-resources' | 'complete';
-
-// @internal (undocumented)
-interface ZipLoadOptions {
-    autoApplyConfig?: boolean;
-    autoProcessResources?: boolean;
-    overrideConfig?: Config.Model.ISystemConfiguration;
-}
-
-// @internal (undocumented)
-interface ZipLoadResult {
-    config: Config.Model.ISystemConfiguration | null;
-    directory: ImportedDirectory | null;
-    files: ImportedFile[];
-    fileTree?: any;
-    manifest: ZipManifest | null;
-    processedResources: ProcessedResources | null;
-}
-
-// @internal (undocumented)
-interface ZipManifest {
-    // (undocumented)
-    config?: {
-        type: 'file';
-        originalPath: string;
-        archivePath: string;
-    };
-    // (undocumented)
-    input?: {
-        type: 'file' | 'directory';
-        originalPath: string;
-        archivePath: string;
-    };
-    // (undocumented)
-    timestamp: string;
-}
-
-// @internal (undocumented)
-interface ZipProgressCallback {
-    // (undocumented)
-    (stage: ZipLoadingStage, progress: number, message?: string): void;
-}
-
 declare namespace ZipTools {
     export {
         ImportView,
-        ZipLoaderView,
-        BrowserZipLoader,
-        createBrowserZipLoader,
-        loadZipFile,
-        loadZipFromUrl,
-        NodeZipBuilder,
-        createNodeZipBuilder,
-        BrowserZipData,
-        prepareZipData,
-        prepareZipDataFromDirectory,
         generateZipFilename,
-        createManifest,
-        parseManifest,
-        parseConfiguration,
-        zipTreeToFiles,
-        zipTreeToDirectory,
-        normalizePath,
-        getDirectoryName,
-        sanitizeFilename,
         formatFileSize,
         isZipFile,
+        normalizePath,
         getBaseName,
-        ZipManifest,
-        ZipArchiveOptions,
-        ZipArchiveResult,
-        ZipLoadOptions,
-        ZipLoadResult,
-        ZipLoadingStage,
-        ZipProgressCallback,
-        IZipBuilder,
-        IZipLoader,
-        ZipFileItem,
-        ZipFileTree,
-        ZipLoaderViewProps,
+        processZipResources,
+        processZipLoadResult,
         ImportViewProps
     }
 }
-
-// @internal (undocumented)
-function zipTreeToDirectory(tree: ZipFileTree): ImportedDirectory | null;
-
-// @internal (undocumented)
-function zipTreeToFiles(tree: ZipFileTree): ImportedFile[];
 
 // (No @packageDocumentation comment for this package)
 

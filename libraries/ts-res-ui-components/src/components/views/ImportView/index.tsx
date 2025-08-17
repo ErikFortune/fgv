@@ -7,7 +7,7 @@ import {
   FolderOpenIcon
 } from '@heroicons/react/24/outline';
 import { ImportViewProps, ImportedFile, ImportedDirectory, ExtendedProcessedResources } from '../../../types';
-import { Bundle, Config } from '@fgv/ts-res';
+import { Bundle, Config, ZipArchive } from '@fgv/ts-res';
 import { isZipFile } from '../../../utils/zipLoader';
 
 interface FileInputResult {
@@ -92,6 +92,43 @@ export const ImportView: React.FC<ImportViewProps> = ({
   // Check for File System Access API support
   const isFileSystemAccessSupported = 'showDirectoryPicker' in window || 'showOpenFilePicker' in window;
 
+  // Helper function to process ZIP files using zip-archive packlet
+  const processZipFile = useCallback(
+    async (file: File) => {
+      console.log(`[ImportView] Processing ZIP file: ${file.name}`);
+      onMessage?.('info', `Processing ZIP file: ${file.name}`);
+
+      const loader = new ZipArchive.ZipArchiveLoader();
+      const loadResult = await loader.loadFromFile(file, {
+        strictManifestValidation: false // Be lenient with manifests
+      });
+
+      if (loadResult.isFailure()) {
+        throw new Error(`Failed to load ZIP: ${loadResult.message}`);
+      }
+
+      const zipData = loadResult.value;
+      console.log(`[ImportView] ZIP loaded successfully:`, zipData);
+
+      // Pass the ZIP data to the appropriate handler
+      if (onZipImport) {
+        // Pass both the directory/files and any configuration found
+        if (zipData.directory) {
+          onZipImport(zipData.directory, zipData.config);
+        } else if (zipData.files.length > 0) {
+          onZipImport(zipData.files, zipData.config);
+        } else {
+          throw new Error('No files found in ZIP archive');
+        }
+      } else {
+        throw new Error('No ZIP import handler configured');
+      }
+
+      return zipData;
+    },
+    [onZipImport, onMessage]
+  );
+
   // Handle file selection
   const handleFileSelect = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,27 +146,20 @@ export const ImportView: React.FC<ImportViewProps> = ({
           // Check if it's a ZIP file first
           if (isZipFile(file.name)) {
             console.log(`[ImportView] ✅ ${file.name} detected as ZIP file`);
-            onMessage?.('info', `Processing ZIP file: ${file.name}`);
 
-            // Just pass the File object directly to onZipImport
-            // The App will handle creating the FileTree
-            if (onZipImport) {
-              setImportStatus({
-                hasImported: true,
-                fileCount: 1,
-                isDirectory: false,
-                isBundle: false,
-                isZip: true
-              });
+            const zipData = await processZipFile(file);
 
-              onMessage?.('success', `ZIP file detected: ${file.name}`);
-              onZipImport(file, undefined);
+            setImportStatus({
+              hasImported: true,
+              fileCount: zipData.files.length,
+              isDirectory: false,
+              isBundle: false,
+              isZip: true
+            });
 
-              setIsLoading(false);
-              return;
-            } else {
-              throw new Error('No ZIP import handler configured');
-            }
+            onMessage?.('success', `ZIP file processed: ${file.name} (${zipData.files.length} files)`);
+            setIsLoading(false);
+            return;
           }
         }
 
@@ -387,25 +417,20 @@ export const ImportView: React.FC<ImportViewProps> = ({
 
         if (isZipFile(file.name)) {
           console.log(`[ImportView] Modern API - ✅ ${file.name} detected as ZIP file`);
-          onMessage?.('info', `Processing ZIP file: ${file.name}`);
 
-          if (onZipImport) {
-            setImportStatus({
-              hasImported: true,
-              fileCount: 1,
-              isDirectory: false,
-              isBundle: false,
-              isZip: true
-            });
+          const zipData = await processZipFile(file);
 
-            onMessage?.('success', `ZIP file detected: ${file.name}`);
-            onZipImport(file, undefined);
+          setImportStatus({
+            hasImported: true,
+            fileCount: zipData.files.length,
+            isDirectory: false,
+            isBundle: false,
+            isZip: true
+          });
 
-            setIsLoading(false);
-            return;
-          } else {
-            throw new Error('No ZIP import handler configured');
-          }
+          onMessage?.('success', `ZIP file processed: ${file.name} (${zipData.files.length} files)`);
+          setIsLoading(false);
+          return;
         }
       }
 

@@ -4,6 +4,43 @@
 
 ## ZipTools namespace
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[processZipLoadResult(zipResult, overrideConfig)](./ts-res-ui-components.ziptools.processziploadresult.md)
+
+
+</td><td>
+
+Helper function to process resources from a ZIP load result
+
+
+</td></tr>
+<tr><td>
+
+[processZipResources(files, directory, config)](./ts-res-ui-components.ziptools.processzipresources.md)
+
+
+</td><td>
+
+Helper function to process resources from ZIP data using ts-res-ui-components integration
+
+
+</td></tr>
+</tbody></table>
+
 ## Interfaces
 
 <table><thead><tr><th>
@@ -25,17 +62,6 @@ Description
 </td><td>
 
 Props for the ImportView component. Handles importing resource configurations and bundles.
-
-
-</td></tr>
-<tr><td>
-
-[ZipLoaderViewProps](./ts-res-ui-components.ziptools.ziploaderviewprops.md)
-
-
-</td><td>
-
-Props for the ZipLoaderView component. Handles loading and importing ZIP archives containing resource files and configurations.
 
 
 </td></tr>
@@ -66,21 +92,6 @@ ImportView component for importing resource files, directories, and bundles.
 Provides a drag-and-drop interface for importing various resource formats including individual JSON files, directory structures, ZIP archives, and pre-compiled bundles. Automatically detects file types and processes them appropriately.
 
 \*\*Key Features:\*\* - \*\*Drag-and-drop import\*\*: Simple drag-and-drop interface for file import - \*\*Multiple format support\*\*: JSON files, directories, ZIP archives, and bundles - \*\*Auto-detection\*\*: Automatically detects and processes different file types - \*\*Bundle processing\*\*: Handles pre-compiled ts-res bundles - \*\*ZIP archive support\*\*: Extracts and processes ZIP-based resource collections - \*\*Progress tracking\*\*: Visual feedback during import operations - \*\*Error handling\*\*: Clear error messages for unsupported or corrupted files
-
-
-</td></tr>
-<tr><td>
-
-[ZipLoaderView](./ts-res-ui-components.ziptools.ziploaderview.md)
-
-
-</td><td>
-
-ZipLoaderView component for loading ZIP-based resource bundles from URLs or files.
-
-Provides a specialized interface for loading ZIP archives containing ts-res resource collections, with progress tracking, auto-configuration loading, and bundle processing. Designed for loading distributed resource bundles.
-
-\*\*Key Features:\*\* - \*\*URL-based loading\*\*: Load ZIP bundles from remote URLs - \*\*File-based loading\*\*: Load ZIP bundles from local files - \*\*Progress tracking\*\*: Real-time progress updates during ZIP processing - \*\*Auto-configuration\*\*: Automatically extract and apply configurations from bundles - \*\*Bundle validation\*\*: Validate ZIP structure and manifest files - \*\*Error recovery\*\*: Graceful error handling with detailed error messages - \*\*Manifest support\*\*: Process ZIP manifests for metadata and configuration
 
 
 </td></tr>

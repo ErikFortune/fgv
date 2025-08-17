@@ -212,17 +212,41 @@ export const ZipArchiveConstants = {
    - Uses real-world test data from `data/test/ts-res/custom-config`
    - Validates directory structure, file content, and configuration preservation
 
-### Phase 4: Migrate ts-res-ui-components
-1. Update ts-res-ui-components to use new zip-archive packlet
-2. Remove duplicated ZIP logic from utils/zipLoader
-3. Remove redundant functionality from ZipTools, deprecating ZipTools if all functionality can be retired.
-4. Maintain existing component APIs apart from ZipTools
+### Phase 4: Migrate ts-res-ui-components ✅ COMPLETED
+1. ✅ Updated ImportView to use zip-archive packlet directly for ZIP processing
+2. ✅ Replaced utils/zipLoader browserZipLoader with thin adapter over zip-archive packlet
+3. ✅ Removed ZipLoaderView component (functionality subsumed by ImportView)
+4. ✅ Simplified ZipTools namespace to essential utilities and processing helpers
+5. ✅ Created ZIP processing helpers (`processZipResources`, `processZipLoadResult`) for ts-res-ui-components integration
+6. ✅ Maintained backward compatibility for essential ZIP utilities (filename generation, file type checking, etc.)
+7. ✅ Updated type definitions to use `undefined` instead of `null` (following no-new-null rule)
+8. ✅ All builds and tests pass with clean API surface
+9. ✅ **Updated README documentation** to reflect ZIP consolidation architecture
+   - Added ZIP Archive Integration section explaining ts-res zip-archive packlet usage
+   - Updated component hierarchy to remove ZipLoaderView
+   - Updated ImportView documentation with new ZIP handling patterns
+   - Updated ZipTools namespace documentation to reflect processing helpers
+   - Updated namespace examples and descriptions throughout
+10. ✅ **Final verification**: All builds and tests pass successfully (217 tests passing, 0 failures)
+
+**Phase 4 Summary**: Complete migration of ts-res-ui-components to use the ts-res zip-archive packlet achieved successfully. The library now provides a clean, unified ZIP handling experience with direct integration to the ts-res ecosystem, processing helpers for custom workflows, and maintains all essential utility functions. The ImportView component handles ZIP files automatically, and the simplified ZipTools namespace provides the necessary integration points for custom applications.
 
 ### Phase 5: Cleanup
-1. Remove dependencies on jszip and archiver across tools
-2. Standardize all projects on fflate via ts-res zip-archive
-3. Update ts-extras if needed to support enhanced functionality
-4. Remove duplicated implementations
+1. **Audit ts-res-browser and playground**: Check ZIP handling for CLI startup integration
+   - Verify CLI→browser ZIP data passing uses common zip-archive implementation
+   - Remove any bespoke ZIP implementations in browser/playground
+   - Ensure consistent ZIP format handling across CLI→browser workflow
+2. **Remove legacy dependencies**: Clean up jszip and archiver references
+   - Remove jszip from browser tools where replaced
+   - Remove archiver from CLI tools (already completed in Phase 2)
+   - Update package.json files to remove unused ZIP dependencies
+3. **Standardize on ts-res zip-archive**: Ensure all projects use unified implementation
+   - Verify ts-extras integration is optimal
+   - Remove any remaining duplicated ZIP implementations
+   - Update any remaining bespoke ZIP code to use zip-archive packlet
+4. **Final validation**: End-to-end testing of complete ZIP workflow
+   - CLI archive creation → browser loading → playground usage
+   - Verify format compatibility and data integrity throughout pipeline
 
 ## Benefits of This Approach
 

@@ -1,158 +1,53 @@
-import { Result, succeed, fail } from '@fgv/ts-utils';
-import { IZipBuilder, ZipArchiveOptions, ZipArchiveResult, ZipManifest } from './types';
-import { ImportedDirectory, ImportedFile } from '../../types';
-import { generateZipFilename, createManifest, sanitizeFilename, normalizePath } from './zipUtils';
+/**
+ * @deprecated Use ts-res zip-archive packlet or ts-res-browser-cli for ZIP creation
+ */
+
+import { Result, fail } from '@fgv/ts-utils';
 
 /**
- * Node.js-based ZIP builder implementation
- *
- * Note: This is a placeholder implementation for interface compatibility.
- * The actual Node.js ZIP building functionality should be implemented
- * in a separate Node.js-specific package or tool.
+ * @deprecated Use ts-res zip-archive packlet directly
  */
-/** @internal */
-export class NodeZipBuilder implements IZipBuilder {
-  /**
-   * Create ZIP from files
-   */
-  async createFromFiles(
-    files: ImportedFile[],
-    options: ZipArchiveOptions = {}
-  ): Promise<Result<ZipArchiveResult>> {
-    return fail(
-      'Node.js ZIP building not implemented in browser library. Use @fgv/ts-res-browser-cli for ZIP creation.'
-    );
+export class NodeZipBuilder {
+  async createFromFiles(): Promise<Result<any>> {
+    return fail('NodeZipBuilder is deprecated - use ts-res zip-archive packlet or ts-res-browser-cli');
   }
 
-  /**
-   * Create ZIP from directory
-   */
-  async createFromDirectory(
-    directory: ImportedDirectory,
-    options: ZipArchiveOptions = {}
-  ): Promise<Result<ZipArchiveResult>> {
-    return fail(
-      'Node.js ZIP building not implemented in browser library. Use @fgv/ts-res-browser-cli for ZIP creation.'
-    );
+  async createFromDirectory(): Promise<Result<any>> {
+    return fail('NodeZipBuilder is deprecated - use ts-res zip-archive packlet or ts-res-browser-cli');
   }
 
-  /**
-   * Create ZIP from file system path
-   */
-  async createFromPath(path: string, options: ZipArchiveOptions = {}): Promise<Result<ZipArchiveResult>> {
-    return fail(
-      'Node.js ZIP building not implemented in browser library. Use @fgv/ts-res-browser-cli for ZIP creation.'
-    );
+  async createFromPath(): Promise<Result<any>> {
+    return fail('NodeZipBuilder is deprecated - use ts-res zip-archive packlet or ts-res-browser-cli');
   }
 }
 
 /**
- * Create a new Node.js ZIP builder instance
- *
- * Note: This returns a placeholder implementation.
- * For actual ZIP building, use the ts-res-browser-cli tool.
+ * @deprecated Use ts-res zip-archive packlet directly
  */
-/** @internal */
-export function createNodeZipBuilder(): IZipBuilder {
+export function createNodeZipBuilder(): NodeZipBuilder {
+  console.warn('createNodeZipBuilder is deprecated - use ts-res zip-archive packlet directly');
   return new NodeZipBuilder();
 }
 
 /**
- * Browser-compatible ZIP creation interface
- *
- * This provides a way to prepare ZIP data in the browser,
- * though actual ZIP file creation requires server-side processing
- * or a separate Node.js tool.
+ * @deprecated Use ts-res zip-archive packlet directly
  */
-/** @internal */
 export interface BrowserZipData {
-  files: Array<{
-    path: string;
-    content: string;
-  }>;
-  manifest: ZipManifest;
+  files: any[];
+  manifest: any;
   config?: any;
 }
 
 /**
- * Prepare ZIP data structure for browser download or server processing
+ * @deprecated Use ts-res zip-archive packlet directly
  */
-/** @internal */
-export function prepareZipData(
-  files: ImportedFile[],
-  options: ZipArchiveOptions = {}
-): Result<BrowserZipData> {
-  const timestamp = new Date().toISOString();
-  const filename = options.filename || 'ts-res-bundle';
-
-  // Create manifest
-  const manifest = createManifest(
-    'file',
-    'browser-files',
-    'files/',
-    options.includeConfig ? 'config.json' : undefined
-  );
-
-  // Prepare file data
-  const zipFiles = files.map((file) => ({
-    path: normalizePath(file.path || file.name),
-    content: file.content
-  }));
-
-  // Add manifest
-  zipFiles.push({
-    path: 'manifest.json',
-    content: JSON.stringify(manifest, null, 2)
-  });
-
-  // Add configuration if provided
-  if (options.includeConfig && options.config) {
-    zipFiles.push({
-      path: 'config.json',
-      content: JSON.stringify(options.config, null, 2)
-    });
-  }
-
-  return succeed({
-    files: zipFiles,
-    manifest,
-    config: options.config
-  });
+export function prepareZipData(): Result<BrowserZipData> {
+  return fail('prepareZipData is deprecated - use ts-res zip-archive packlet directly');
 }
 
 /**
- * Prepare ZIP data from directory structure
+ * @deprecated Use ts-res zip-archive packlet directly
  */
-/** @internal */
-export function prepareZipDataFromDirectory(
-  directory: ImportedDirectory,
-  options: ZipArchiveOptions = {}
-): Result<BrowserZipData> {
-  // Flatten directory to files
-  const files: ImportedFile[] = [];
-
-  const collectFiles = (dir: ImportedDirectory, basePath: string = '') => {
-    // Add files from current directory
-    dir.files.forEach((file) => {
-      files.push({
-        ...file,
-        path: basePath ? `${basePath}/${file.name}` : file.name
-      });
-    });
-
-    // Recursively collect from subdirectories
-    if (dir.subdirectories) {
-      dir.subdirectories.forEach((subdir) => {
-        const subdirPath = basePath ? `${basePath}/${subdir.name}` : subdir.name;
-        collectFiles(subdir, subdirPath);
-      });
-    }
-  };
-
-  collectFiles(directory);
-
-  return prepareZipData(files, {
-    ...options,
-    filename: options.filename || sanitizeFilename(directory.name)
-  });
+export function prepareZipDataFromDirectory(): Result<BrowserZipData> {
+  return fail('prepareZipDataFromDirectory is deprecated - use ts-res zip-archive packlet directly');
 }
