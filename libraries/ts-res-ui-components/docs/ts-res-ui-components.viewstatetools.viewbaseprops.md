@@ -73,5 +73,24 @@ _(Optional)_ Callback for displaying messages to the user
 
 
 </td></tr>
+<tr><td>
+
+[pickerOptionsPresentation?](./ts-res-ui-components.viewstatetools.viewbaseprops.pickeroptionspresentation.md)
+
+
+</td><td>
+
+
+</td><td>
+
+'hidden' \| 'inline' \| 'collapsible' \| 'popup' \| 'popover'
+
+
+</td><td>
+
+_(Optional)_ How to present the ResourcePicker options control (default: 'hidden' for production use)
+
+
+</td></tr>
 </tbody></table>
 

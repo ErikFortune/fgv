@@ -158,12 +158,49 @@ Information about a resource being edited in the resolution view. Tracks changes
 </td></tr>
 <tr><td>
 
+[QualifierControlOptions](./ts-res-ui-components.resolutiontools.qualifiercontroloptions.md)
+
+
+</td><td>
+
+Options for controlling individual qualifier context controls.
+
+Provides fine-grained control over the behavior, appearance, and editability of individual qualifier inputs. This allows hosts to customize which qualifiers are editable, provide external values, and control the presentation.
+
+
+</td></tr>
+<tr><td>
+
 [ResolutionActions](./ts-res-ui-components.resolutiontools.resolutionactions.md)
 
 
 </td><td>
 
 Actions available for managing resource resolution testing and editing. Provides methods for context management, resource selection, and value editing.
+
+
+</td></tr>
+<tr><td>
+
+[ResolutionContextOptions](./ts-res-ui-components.resolutiontools.resolutioncontextoptions.md)
+
+
+</td><td>
+
+Configuration options for the resolution context controls in ResolutionView.
+
+Controls the visibility and behavior of the context configuration panel, allowing hosts to customize which qualifiers are editable and provide externally managed context values. Uses QualifierControlOptions for per-qualifier customization.
+
+
+</td></tr>
+<tr><td>
+
+[ResolutionContextOptionsControlProps](./ts-res-ui-components.resolutiontools.resolutioncontextoptionscontrolprops.md)
+
+
+</td><td>
+
+Props for the ResolutionContextOptionsControl component.
 
 
 </td></tr>
@@ -251,6 +288,21 @@ The EditableJsonView component provides a rich JSON editing interface for modify
 A control component for managing individual qualifier context values.
 
 QualifierContextControl provides an interface for setting and modifying qualifier values used in resource resolution context. It can optionally suggest values based on available resources and supports both manual input and selection from predefined options.
+
+
+</td></tr>
+<tr><td>
+
+[ResolutionContextOptionsControl](./ts-res-ui-components.resolutiontools.resolutioncontextoptionscontrol.md)
+
+
+</td><td>
+
+Reusable control for configuring ResolutionView context options.
+
+Provides a clean interface for adjusting context behavior including: - Visibility of context controls, current context display, and action buttons - Per-qualifier options (visibility, editability, host values) - Global defaults and appearance customization
+
+Can be rendered in multiple presentation modes: - 'hidden': Not displayed (default for production) - 'inline': Always expanded with full controls visible - 'collapsible': Expandable/collapsible section - 'popover': Small dropdown overlay - 'popup': Full modal dialog
 
 
 </td></tr>

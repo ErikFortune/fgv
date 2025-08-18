@@ -57,6 +57,25 @@ _(Optional)_ Available qualifiers for context building
 </td></tr>
 <tr><td>
 
+[contextOptions?](./ts-res-ui-components.resolutiontools.resolutionviewprops.contextoptions.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[ResolutionContextOptions](./ts-res-ui-components.resolutiontools.resolutioncontextoptions.md)
+
+
+</td><td>
+
+_(Optional)_ Optional configuration for the resolution context controls
+
+
+</td></tr>
+<tr><td>
+
 [filterResult?](./ts-res-ui-components.resolutiontools.resolutionviewprops.filterresult.md)
 
 
