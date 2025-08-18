@@ -33,15 +33,15 @@ export interface ConfigurationExportOptions {
 }
 
 /**
- * Predefined configuration templates
+ * Configuration template using predefined configurations from ts-res
  * @internal
  */
 export interface ConfigurationTemplate {
-  id: string;
+  id: Config.PredefinedSystemConfiguration;
   name: string;
   description: string;
   configuration: Config.Model.ISystemConfiguration;
-  category: 'basic' | 'intermediate' | 'advanced' | 'enterprise';
+  category: 'basic' | 'intermediate' | 'advanced';
 }
 
 /**
@@ -49,42 +49,7 @@ export interface ConfigurationTemplate {
  * @public
  */
 export function getDefaultConfiguration(): Config.Model.ISystemConfiguration {
-  return {
-    qualifierTypes: [
-      {
-        name: 'language',
-        systemType: 'language'
-      },
-      {
-        name: 'territory',
-        systemType: 'territory'
-      }
-    ],
-    qualifiers: [
-      {
-        name: 'language',
-        typeName: 'language',
-        defaultPriority: 100,
-        token: 'lang'
-      },
-      {
-        name: 'territory',
-        typeName: 'territory',
-        defaultPriority: 90,
-        token: 'territory'
-      }
-    ],
-    resourceTypes: [
-      {
-        name: 'string',
-        typeName: 'string'
-      },
-      {
-        name: 'object',
-        typeName: 'object'
-      }
-    ]
-  };
+  return Config.getPredefinedDeclaration('default').orThrow();
 }
 
 /**
@@ -121,84 +86,20 @@ export function getDefaultConfiguration(): Config.Model.ISystemConfiguration {
 export function validateConfiguration(
   config: Config.Model.ISystemConfiguration
 ): ConfigurationValidationResult {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-
-  // Validate qualifierTypes
-  if (!config.qualifierTypes || config.qualifierTypes.length === 0) {
-    errors.push('Configuration must have at least one qualifier type');
+  const validate = Config.Convert.validateSystemConfiguration(config);
+  if (validate.isSuccess()) {
+    return {
+      isValid: true,
+      errors: [],
+      warnings: []
+    };
   } else {
-    const typeNames = new Set<string>();
-    (config.qualifierTypes as QualifierTypes.Config.ISystemQualifierTypeConfig[]).forEach((type, index) => {
-      const typeName = type.name || `<type-${index}>`;
-
-      if (!type.name) {
-        errors.push(`Qualifier type at index ${index} is missing a name`);
-      } else if (typeNames.has(type.name)) {
-        errors.push(`Duplicate qualifier type name: ${type.name}`);
-      } else {
-        typeNames.add(type.name);
-      }
-
-      if (!type.systemType) {
-        errors.push(`Qualifier type '${typeName}' is missing systemType`);
-      }
-    });
+    return {
+      isValid: false,
+      errors: [validate.message],
+      warnings: []
+    };
   }
-
-  // Validate qualifiers
-  if (!config.qualifiers || config.qualifiers.length === 0) {
-    warnings.push('Configuration has no qualifiers defined');
-  } else {
-    const qualifierNames = new Set<string>();
-    const qualifierTypeNames = new Set(config.qualifierTypes?.map((t) => t.name) || []);
-
-    (config.qualifiers as Qualifiers.IQualifierDecl[]).forEach((qualifier, index) => {
-      if (!qualifier.name) {
-        errors.push(`Qualifier at index ${index} is missing a name`);
-      } else if (qualifierNames.has(qualifier.name)) {
-        errors.push(`Duplicate qualifier name: ${qualifier.name}`);
-      } else {
-        qualifierNames.add(qualifier.name);
-      }
-
-      if (!qualifier.typeName) {
-        errors.push(`Qualifier '${qualifier.name}' is missing typeName`);
-      } else if (!qualifierTypeNames.has(qualifier.typeName)) {
-        errors.push(`Qualifier '${qualifier.name}' references unknown qualifier type: ${qualifier.typeName}`);
-      }
-
-      if (qualifier.defaultPriority === undefined || qualifier.defaultPriority < 0) {
-        errors.push(`Qualifier '${qualifier.name}' has invalid defaultPriority`);
-      }
-    });
-  }
-
-  // Validate resourceTypes
-  if (!config.resourceTypes || config.resourceTypes.length === 0) {
-    errors.push('Configuration must have at least one resource type');
-  } else {
-    const resourceTypeNames = new Set<string>();
-    (config.resourceTypes as ResourceTypes.Config.IResourceTypeConfig[]).forEach((type, index) => {
-      if (!type.name) {
-        errors.push(`Resource type at index ${index} is missing a name`);
-      } else if (resourceTypeNames.has(type.name)) {
-        errors.push(`Duplicate resource type name: ${type.name}`);
-      } else {
-        resourceTypeNames.add(type.name);
-      }
-
-      if (!type.typeName) {
-        errors.push(`Resource type '${type.name}' is missing typeName`);
-      }
-    });
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-    warnings
-  };
 }
 
 /**
@@ -393,177 +294,38 @@ export function exportConfiguration(
 export function importConfiguration(data: string): Result<Config.Model.ISystemConfiguration> {
   try {
     const parsed = JSON.parse(data);
-
-    // Basic structure validation
-    if (!parsed || typeof parsed !== 'object') {
-      return fail('Invalid configuration: not an object');
-    }
-
-    const validation = validateConfiguration(parsed);
-    if (!validation.isValid) {
-      return fail(`Invalid configuration: ${validation.errors.join(', ')}`);
-    }
-
-    return succeed(parsed as Config.Model.ISystemConfiguration);
+    return Config.Convert.validateSystemConfiguration(parsed);
   } catch (error) {
     return fail(`Failed to parse configuration: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
 /**
- * Get predefined configuration templates
+ * Get predefined configuration templates from ts-res
  */
 /** @internal */
 export function getConfigurationTemplates(): ConfigurationTemplate[] {
-  return [
-    {
-      id: 'basic',
-      name: 'Basic Configuration',
-      description: 'Simple language and territory-based configuration',
-      category: 'basic',
-      configuration: getDefaultConfiguration()
-    },
-    {
-      id: 'multilingual',
-      name: 'Multilingual Application',
-      description: 'Configuration for applications with multiple languages and regions',
-      category: 'intermediate',
-      configuration: {
-        qualifierTypes: [
-          {
-            name: 'language',
-            systemType: 'language'
-          },
-          {
-            name: 'territory',
-            systemType: 'territory'
-          },
-          {
-            name: 'platform',
-            systemType: 'literal'
-          }
-        ],
-        qualifiers: [
-          {
-            name: 'language',
-            typeName: 'language',
-            defaultPriority: 100,
-            token: 'lang'
-          },
-          {
-            name: 'territory',
-            typeName: 'territory',
-            defaultPriority: 90,
-            token: 'territory'
-          },
-          {
-            name: 'platform',
-            typeName: 'platform',
-            defaultPriority: 80,
-            token: 'platform'
-          }
-        ],
-        resourceTypes: [
-          {
-            name: 'string',
-            typeName: 'string'
-          },
-          {
-            name: 'object',
-            typeName: 'object'
-          },
-          {
-            name: 'array',
-            typeName: 'array'
-          }
-        ]
-      }
-    },
-    {
-      id: 'enterprise',
-      name: 'Enterprise Configuration',
-      description: 'Complex configuration for enterprise applications with roles and departments',
-      category: 'enterprise',
-      configuration: {
-        qualifierTypes: [
-          {
-            name: 'language',
-            systemType: 'language'
-          },
-          {
-            name: 'territory',
-            systemType: 'territory'
-          },
-          {
-            name: 'role',
-            systemType: 'literal'
-          },
-          {
-            name: 'department',
-            systemType: 'literal'
-          },
-          {
-            name: 'securityLevel',
-            systemType: 'literal'
-          }
-        ],
-        qualifiers: [
-          {
-            name: 'language',
-            typeName: 'language',
-            defaultPriority: 100,
-            token: 'lang'
-          },
-          {
-            name: 'territory',
-            typeName: 'territory',
-            defaultPriority: 95,
-            token: 'territory'
-          },
-          {
-            name: 'role',
-            typeName: 'role',
-            defaultPriority: 90,
-            token: 'role'
-          },
-          {
-            name: 'department',
-            typeName: 'department',
-            defaultPriority: 85,
-            token: 'dept'
-          },
-          {
-            name: 'securityLevel',
-            typeName: 'securityLevel',
-            defaultPriority: 80,
-            token: 'security'
-          }
-        ],
-        resourceTypes: [
-          {
-            name: 'string',
-            typeName: 'string'
-          },
-          {
-            name: 'localizedString',
-            typeName: 'string'
-          },
-          {
-            name: 'config',
-            typeName: 'object'
-          },
-          {
-            name: 'permissions',
-            typeName: 'array'
-          },
-          {
-            name: 'settings',
-            typeName: 'object'
-          }
-        ]
-      }
+  return Config.allPredefinedSystemConfigurations.map((configId) => {
+    const config = Config.getPredefinedDeclaration(configId).orThrow();
+
+    // Determine category based on configuration complexity
+    let category: 'basic' | 'intermediate' | 'advanced';
+    if (configId === 'default') {
+      category = 'basic';
+    } else if (configId === 'extended-example') {
+      category = 'advanced';
+    } else {
+      category = 'intermediate';
     }
-  ];
+
+    return {
+      id: configId,
+      name: config.name || `${configId.charAt(0).toUpperCase() + configId.slice(1).replace(/-/g, ' ')}`,
+      description: config.description || `Predefined ${configId} system configuration`,
+      category,
+      configuration: config
+    };
+  });
 }
 
 /**

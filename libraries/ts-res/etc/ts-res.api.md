@@ -1075,6 +1075,7 @@ declare namespace Convert_8 {
 
 declare namespace Convert_9 {
     export {
+        validateSystemConfiguration,
         systemConfiguration,
         predefinedSystemConfiguration
     }
@@ -4860,6 +4861,11 @@ const validatedContextQualifierValueDecl: Converter<IValidatedContextQualifierVa
 //
 // @public
 const validatedQualifierDecl: Converter<IValidatedQualifierDecl, IQualifierDeclConvertContext>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function validateSystemConfiguration(config: unknown): Result<ISystemConfiguration>;
 
 // @public
 function validateZipArchiveManifest(manifest: unknown): Result<Json_2.IZipArchiveManifest>;

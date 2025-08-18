@@ -10,7 +10,6 @@ import {
   exportConfiguration,
   importConfiguration,
   getConfigurationTemplates,
-  generateConfigurationFilename,
   ConfigurationChanges,
   ConfigurationValidationResult,
   ConfigurationExportOptions,
