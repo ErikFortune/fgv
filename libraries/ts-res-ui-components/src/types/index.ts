@@ -192,6 +192,8 @@ export interface ViewBaseProps {
   onMessage?: (type: Message['type'], message: string) => void;
   /** Additional CSS class names for styling */
   className?: string;
+  /** How to present the ResourcePicker options control (default: 'hidden' for production use) */
+  pickerOptionsPresentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
 }
 
 /**

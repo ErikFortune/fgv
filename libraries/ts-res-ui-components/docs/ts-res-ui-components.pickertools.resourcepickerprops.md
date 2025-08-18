@@ -6,7 +6,7 @@
 
 Props for the ResourcePicker component.
 
-The ResourcePicker is a comprehensive component for browsing and selecting resources with support for multiple view modes, search, annotations, and pending resources.
+The ResourcePicker is a comprehensive component for browsing and selecting resources with support for multiple view modes, search, annotations, and pending resources. UI behavior is controlled through the options object, while functional data is passed as separate props.
 
 **Signature:**
 
@@ -29,10 +29,14 @@ export interface ResourcePickerProps<T = unknown> extends ViewBaseProps
       handleResourceData(selection.resourceData);
     }
   }}
-  defaultView="tree"
-  enableSearch={true}
   resourceAnnotations={{
     'res1': { badge: { text: '3', variant: 'info' } }
+  }}
+  options={{
+    defaultView: 'tree',
+    enableSearch: true,
+    searchPlaceholder: 'Find resources...',
+    height: '400px'
   }}
 />
 ```
@@ -62,101 +66,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[defaultView?](./ts-res-ui-components.pickertools.resourcepickerprops.defaultview.md)
-
-
-</td><td>
-
-
-</td><td>
-
-'list' \| 'tree'
-
-
-</td><td>
-
-_(Optional)_ Default view mode to use on initial render
-
-
-</td></tr>
-<tr><td>
-
-[emptyMessage?](./ts-res-ui-components.pickertools.resourcepickerprops.emptymessage.md)
-
-
-</td><td>
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-_(Optional)_ Message to display when no resources are available
-
-
-</td></tr>
-<tr><td>
-
-[enableSearch?](./ts-res-ui-components.pickertools.resourcepickerprops.enablesearch.md)
-
-
-</td><td>
-
-
-</td><td>
-
-boolean
-
-
-</td><td>
-
-_(Optional)_ Whether to enable the search input
-
-
-</td></tr>
-<tr><td>
-
-[height?](./ts-res-ui-components.pickertools.resourcepickerprops.height.md)
-
-
-</td><td>
-
-
-</td><td>
-
-string \| number
-
-
-</td><td>
-
-_(Optional)_ Height of the picker component
-
-
-</td></tr>
-<tr><td>
-
-[hideRootNode?](./ts-res-ui-components.pickertools.resourcepickerprops.hiderootnode.md)
-
-
-</td><td>
-
-
-</td><td>
-
-boolean
-
-
-</td><td>
-
-_(Optional)_ Hide the root node itself, showing only its children
-
-
-</td></tr>
-<tr><td>
-
 [onResourceSelect](./ts-res-ui-components.pickertools.resourcepickerprops.onresourceselect.md)
 
 
@@ -171,6 +80,25 @@ _(Optional)_ Hide the root node itself, showing only its children
 </td><td>
 
 Callback fired when a resource is selected, providing comprehensive selection data
+
+
+</td></tr>
+<tr><td>
+
+[options?](./ts-res-ui-components.pickertools.resourcepickerprops.options.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[ResourcePickerOptions](./ts-res-ui-components.pickertools.resourcepickeroptions.md)
+
+
+</td><td>
+
+_(Optional)_ Options controlling picker appearance and behavior
 
 
 </td></tr>
@@ -233,63 +161,6 @@ Processed resources to display in the picker
 </td></tr>
 <tr><td>
 
-[rootPath?](./ts-res-ui-components.pickertools.resourcepickerprops.rootpath.md)
-
-
-</td><td>
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-_(Optional)_ Path to treat as root for tree branch isolation (e.g., "platform/territories")
-
-
-</td></tr>
-<tr><td>
-
-[searchPlaceholder?](./ts-res-ui-components.pickertools.resourcepickerprops.searchplaceholder.md)
-
-
-</td><td>
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-_(Optional)_ Placeholder text for the search input
-
-
-</td></tr>
-<tr><td>
-
-[searchScope?](./ts-res-ui-components.pickertools.resourcepickerprops.searchscope.md)
-
-
-</td><td>
-
-
-</td><td>
-
-'all' \| 'current-branch'
-
-
-</td><td>
-
-_(Optional)_ Scope of search - entire tree or just the currently visible branch
-
-
-</td></tr>
-<tr><td>
-
 [selectedResourceId](./ts-res-ui-components.pickertools.resourcepickerprops.selectedresourceid.md)
 
 
@@ -304,25 +175,6 @@ string \| null
 </td><td>
 
 Currently selected resource ID
-
-
-</td></tr>
-<tr><td>
-
-[showViewToggle?](./ts-res-ui-components.pickertools.resourcepickerprops.showviewtoggle.md)
-
-
-</td><td>
-
-
-</td><td>
-
-boolean
-
-
-</td><td>
-
-_(Optional)_ Whether to show the list/tree view toggle buttons
 
 
 </td></tr>

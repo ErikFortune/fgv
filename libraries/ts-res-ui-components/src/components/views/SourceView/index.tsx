@@ -11,8 +11,9 @@ import { Resources, ResourceJson } from '@fgv/ts-res';
 import { Result } from '@fgv/ts-utils';
 import { SourceViewProps } from '../../../types';
 import { ResourcePicker } from '../../pickers/ResourcePicker';
-import { ResourceSelection } from '../../pickers/ResourcePicker/types';
+import { ResourceSelection, ResourcePickerOptions } from '../../pickers/ResourcePicker/types';
 import { SourceResourceDetail } from '../../common/SourceResourceDetail';
+import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptionsControl';
 
 /**
  * SourceView component for browsing and managing source resource collections.
@@ -55,10 +56,16 @@ export const SourceView: React.FC<SourceViewProps> = ({
   onExport,
   onMessage,
   pickerOptions,
+  pickerOptionsPresentation = 'hidden',
   className = ''
 }) => {
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [showJsonView, setShowJsonView] = useState(false);
+
+  // State for picker options control
+  const [currentPickerOptions, setCurrentPickerOptions] = useState<ResourcePickerOptions>(
+    pickerOptions || {}
+  );
 
   // Merge picker options with view-specific defaults
   const effectivePickerOptions = useMemo(
@@ -71,9 +78,11 @@ export const SourceView: React.FC<SourceViewProps> = ({
       height: '560px',
       emptyMessage: 'No resources available',
       // Override with user-provided options
-      ...pickerOptions
+      ...pickerOptions,
+      // Override with current picker options from control
+      ...currentPickerOptions
     }),
-    [pickerOptions]
+    [pickerOptions, currentPickerOptions]
   );
 
   // Handle resource selection with new enhanced callback
@@ -187,6 +196,15 @@ export const SourceView: React.FC<SourceViewProps> = ({
           </div>
         )}
       </div>
+
+      {/* ResourcePicker Options Control */}
+      <ResourcePickerOptionsControl
+        options={currentPickerOptions}
+        onOptionsChange={setCurrentPickerOptions}
+        presentation={pickerOptionsPresentation}
+        title="Source Browser Picker Options"
+        className="mb-6"
+      />
 
       {/* JSON View Toggle */}
       {resources && (

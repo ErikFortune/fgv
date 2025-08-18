@@ -19,7 +19,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[ResourcePicker({ resources, selectedResourceId, onResourceSelect, defaultView, showViewToggle, rootPath, hideRootNode, enableSearch, searchPlaceholder, searchScope, resourceAnnotations, pendingResources, emptyMessage, height, className, onMessage })](./ts-res-ui-components.pickertools.resourcepicker.md)
+[ResourcePicker({ resources, selectedResourceId, onResourceSelect, resourceAnnotations, pendingResources, options, className, onMessage })](./ts-res-ui-components.pickertools.resourcepicker.md)
 
 
 </td><td>
@@ -88,6 +88,30 @@ This allows the host application to provide visual indicators for resources, suc
 </td></tr>
 <tr><td>
 
+[ResourcePickerOptions](./ts-res-ui-components.pickertools.resourcepickeroptions.md)
+
+
+</td><td>
+
+UI behavior configuration options for ResourcePicker.
+
+This interface groups all UI-related options that control how the ResourcePicker behaves and appears, separate from functional data like annotations and pending resources.
+
+
+</td></tr>
+<tr><td>
+
+[ResourcePickerOptionsControlProps](./ts-res-ui-components.pickertools.resourcepickeroptionscontrolprops.md)
+
+
+</td><td>
+
+Props for the ResourcePickerOptionsControl component.
+
+
+</td></tr>
+<tr><td>
+
 [ResourcePickerProps](./ts-res-ui-components.pickertools.resourcepickerprops.md)
 
 
@@ -95,7 +119,7 @@ This allows the host application to provide visual indicators for resources, suc
 
 Props for the ResourcePicker component.
 
-The ResourcePicker is a comprehensive component for browsing and selecting resources with support for multiple view modes, search, annotations, and pending resources.
+The ResourcePicker is a comprehensive component for browsing and selecting resources with support for multiple view modes, search, annotations, and pending resources. UI behavior is controlled through the options object, while functional data is passed as separate props.
 
 
 </td></tr>
@@ -109,6 +133,36 @@ The ResourcePicker is a comprehensive component for browsing and selecting resou
 Resource selection data returned by the onResourceSelect callback.
 
 This interface provides comprehensive information about the selected resource, eliminating the need for consumers to perform additional lookups.
+
+
+</td></tr>
+</tbody></table>
+
+## Variables
+
+<table><thead><tr><th>
+
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ResourcePickerOptionsControl](./ts-res-ui-components.pickertools.resourcepickeroptionscontrol.md)
+
+
+</td><td>
+
+Reusable control for configuring ResourcePicker options.
+
+Provides a clean interface for adjusting picker behavior including: - View mode selection (list/tree) - Search and view toggle settings - Branch isolation configuration - Quick path selection buttons
+
+Can be rendered inline, collapsible, or as a popover depending on the mode.
 
 
 </td></tr>

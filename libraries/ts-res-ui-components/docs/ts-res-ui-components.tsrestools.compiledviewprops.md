@@ -95,6 +95,25 @@ _(Optional)_ Callback for exporting compiled data or bundles
 </td></tr>
 <tr><td>
 
+[pickerOptions?](./ts-res-ui-components.tsrestools.compiledviewprops.pickeroptions.md)
+
+
+</td><td>
+
+
+</td><td>
+
+import('../components/pickers/ResourcePicker/types').[ResourcePickerOptions](./ts-res-ui-components.pickertools.resourcepickeroptions.md)
+
+
+</td><td>
+
+_(Optional)_ Optional configuration for the ResourcePicker behavior
+
+
+</td></tr>
+<tr><td>
+
 [resources?](./ts-res-ui-components.tsrestools.compiledviewprops.resources.md)
 
 
