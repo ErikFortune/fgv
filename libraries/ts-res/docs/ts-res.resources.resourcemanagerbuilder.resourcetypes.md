@@ -4,6 +4,8 @@
 
 ## Resources.ResourceManagerBuilder.resourceTypes property
 
+The [resource types](./ts-res.resourcetypes.readonlyresourcetypecollector.md) used by this resource manager.
+
 **Signature:**
 
 ```typescript

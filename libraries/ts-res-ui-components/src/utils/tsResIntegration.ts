@@ -125,7 +125,17 @@ export function convertImportedDirectoryToFileTree(directory: ImportedDirectory)
  * Create ts-res system from configuration
  */
 /** @internal */
-export function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemConfiguration): Result<{
+export function createTsResSystemFromConfig(
+  systemConfig?: Config.Model.ISystemConfiguration,
+  qualifierTypeFactory?: Config.IConfigInitFactory<
+    QualifierTypes.Config.IAnyQualifierTypeConfig,
+    QualifierTypes.QualifierType
+  >,
+  resourceTypeFactory?: Config.IConfigInitFactory<
+    ResourceTypes.Config.IResourceTypeConfig,
+    ResourceTypes.ResourceType
+  >
+): Result<{
   qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
   qualifiers: Qualifiers.IReadOnlyQualifierCollector;
   resourceTypes: ResourceTypes.ReadOnlyResourceTypeCollector;
@@ -135,7 +145,10 @@ export function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemC
 }> {
   const configToUse = systemConfig ?? getDefaultSystemConfiguration();
 
-  return Config.SystemConfiguration.create(configToUse)
+  return Config.SystemConfiguration.create(configToUse, {
+    qualifierTypeFactory,
+    resourceTypeFactory
+  })
     .onSuccess((systemConfiguration) => {
       return Resources.ResourceManagerBuilder.create({
         qualifiers: systemConfiguration.qualifiers,
@@ -174,7 +187,15 @@ export function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemC
 /** @internal */
 export function processImportedFiles(
   files: ImportedFile[],
-  systemConfig?: Config.Model.ISystemConfiguration
+  systemConfig?: Config.Model.ISystemConfiguration,
+  qualifierTypeFactory?: Config.IConfigInitFactory<
+    QualifierTypes.Config.IAnyQualifierTypeConfig,
+    QualifierTypes.QualifierType
+  >,
+  resourceTypeFactory?: Config.IConfigInitFactory<
+    ResourceTypes.Config.IResourceTypeConfig,
+    ResourceTypes.ResourceType
+  >
 ): Result<{
   system: {
     qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
@@ -198,7 +219,7 @@ export function processImportedFiles(
     return fail('No files provided for processing');
   }
 
-  return createTsResSystemFromConfig(systemConfig)
+  return createTsResSystemFromConfig(systemConfig, qualifierTypeFactory, resourceTypeFactory)
     .onSuccess<{
       system: {
         qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
@@ -257,7 +278,15 @@ export function processImportedFiles(
 /** @internal */
 export function processImportedDirectory(
   directory: ImportedDirectory,
-  systemConfig?: Config.Model.ISystemConfiguration
+  systemConfig?: Config.Model.ISystemConfiguration,
+  qualifierTypeFactory?: Config.IConfigInitFactory<
+    QualifierTypes.Config.IAnyQualifierTypeConfig,
+    QualifierTypes.QualifierType
+  >,
+  resourceTypeFactory?: Config.IConfigInitFactory<
+    ResourceTypes.Config.IResourceTypeConfig,
+    ResourceTypes.ResourceType
+  >
 ): Result<{
   system: {
     qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
@@ -277,7 +306,7 @@ export function processImportedDirectory(
     warnings: string[];
   };
 }> {
-  return createTsResSystemFromConfig(systemConfig)
+  return createTsResSystemFromConfig(systemConfig, qualifierTypeFactory, resourceTypeFactory)
     .onSuccess<{
       system: {
         qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;

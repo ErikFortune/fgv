@@ -35,6 +35,7 @@ export { ResolutionView } from '../components/views/ResolutionView';
 export { EditableJsonView } from '../components/views/ResolutionView/EditableJsonView';
 export { ResolutionEditControls } from '../components/views/ResolutionView/ResolutionEditControls';
 export { QualifierContextControl } from '../components/common/QualifierContextControl';
+export { ResolutionContextOptionsControl } from '../components/common/ResolutionContextOptionsControl';
 
 // Export domain-specific hook
 export { useResolutionState } from '../hooks/useResolutionState';
@@ -57,8 +58,11 @@ export type {
   ResolutionResult,
   CandidateInfo,
   ConditionEvaluationResult,
-  EditedResourceInfo
+  EditedResourceInfo,
+  ResolutionContextOptions,
+  QualifierControlOptions
 } from '../types';
 
 // Export types for resolution components
 export type { EditableJsonViewProps } from '../components/views/ResolutionView/EditableJsonView';
+export type { ResolutionContextOptionsControlProps } from '../components/common/ResolutionContextOptionsControl';

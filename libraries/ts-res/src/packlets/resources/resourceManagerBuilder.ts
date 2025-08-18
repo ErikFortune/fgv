@@ -58,6 +58,7 @@ import * as ResourceJson from '../resource-json';
 import * as Context from '../context';
 import * as Config from '../config';
 import { JsonEditor } from '@fgv/ts-json';
+import { ReadOnlyQualifierTypeCollector } from '../qualifier-types';
 
 /**
  * Interface for parameters to the {@link Resources.ResourceManagerBuilder.create | ResourceManagerBuilder create method}.
@@ -84,17 +85,64 @@ export type ResourceManagerBuilderResultDetail =
  * @public
  */
 export class ResourceManagerBuilder implements IResourceManager<Resource> {
+  /**
+   * The {@link Qualifiers.IReadOnlyQualifierCollector | qualifiers} used by this resource manager.
+   */
   public readonly qualifiers: IReadOnlyQualifierCollector;
+
+  /**
+   * The {@link ResourceTypes.ReadOnlyResourceTypeCollector | resource types} used by this resource manager.
+   */
   public readonly resourceTypes: ReadOnlyResourceTypeCollector;
 
+  /**
+   * The {@link Conditions.ConditionCollector | condition collector} used by this resource manager.
+   * @internal
+   */
   protected readonly _conditions: ConditionCollector;
-  protected readonly _conditionSets: ConditionSetCollector;
-  protected readonly _decisions: AbstractDecisionCollector;
-  protected readonly _resources: ValidatingResultMap<ResourceId, ResourceBuilder>;
-  public readonly _builtResources: ValidatingResultMap<ResourceId, Resource>;
 
+  /**
+   * The {@link Conditions.ConditionSetCollector | condition set collector} used by this resource manager.
+   * @internal
+   */
+  protected readonly _conditionSets: ConditionSetCollector;
+
+  /**
+   * The {@link Decisions.AbstractDecisionCollector | abstract decision collector} used by this resource manager.
+   * @internal
+   */
+  protected readonly _decisions: AbstractDecisionCollector;
+
+  /**
+   * The {@link Resources.ResourceBuilder | resource builders} used by this resource manager.
+   * @internal
+   */
+  protected readonly _resources: ValidatingResultMap<ResourceId, ResourceBuilder>;
+
+  /**
+   * The {@link Resources.Resource | resources} built by this resource manager.
+   * @internal
+   */
+  protected readonly _builtResources: ValidatingResultMap<ResourceId, Resource>;
+
+  /**
+   * Whether the resources have been built.
+   * @internal
+   */
   protected _built: boolean;
+
+  /**
+   * The cached resource tree for this resource manager.
+   * @internal
+   */
   protected _cachedResourceTree?: ResourceTree.IReadOnlyResourceTreeRoot<Resource>;
+
+  /**
+   * The {@link QualifierTypes.ReadOnlyQualifierTypeCollector | qualifier types} used by this resource manager.
+   */
+  public get qualifierTypes(): ReadOnlyQualifierTypeCollector {
+    return this.qualifiers.qualifierTypes;
+  }
 
   /**
    * A {@link Conditions.ConditionCollector | ConditionCollector} which
@@ -646,20 +694,25 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
   }
 
   /**
-   * Creates a filtered clone of this ResourceManagerBuilder using the specified context.
-   * This is a convenience method that creates a new ResourceManagerBuilder with the same
-   * configuration but filtered to include only candidates that match the provided context.
-   * If candidates are provided for editing, they will be applied with collision detection.
-   * @param options - Options for the cloning operation, including the strongly-typed filterForContext property and optional candidates for edits.
-   * @returns A Result containing the new filtered ResourceManagerBuilder.
+   * Creates a clone of this ResourceManagerBuilder with optional configuration overrides.
+   * This method creates a new ResourceManagerBuilder that can optionally use different
+   * qualifiers and/or resource types than the original. It can also be filtered to include
+   * only candidates that match the provided context and apply candidate edits.
+   *
+   * @param options - Options for the cloning operation:
+   *   - `qualifiers`: Optional qualifier collector to use instead of the original
+   *   - `resourceTypes`: Optional resource type collector to use instead of the original
+   *   - `filterForContext`: Optional context filter for candidates
+   *   - `candidates`: Optional candidate edits to apply during cloning
+   * @returns A Result containing the new ResourceManagerBuilder with the specified configuration.
    * @public
    */
   /* c8 ignore next 21 - functional code path tested but coverage intermittently missed */
   public clone(options?: IResourceManagerCloneOptions): Result<ResourceManagerBuilder> {
     return this.getResourceCollectionDecl(options).onSuccess((collection) => {
       return ResourceManagerBuilder.create({
-        qualifiers: this.qualifiers,
-        resourceTypes: this.resourceTypes
+        qualifiers: options?.qualifiers ?? this.qualifiers,
+        resourceTypes: options?.resourceTypes ?? this.resourceTypes
       }).onSuccess((newManager) => {
         // Check if we have candidates to apply as edits
         const editCandidates = options?.candidates || [];

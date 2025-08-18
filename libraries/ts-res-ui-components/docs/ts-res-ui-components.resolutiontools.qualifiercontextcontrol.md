@@ -73,3 +73,63 @@ function SmartQualifierControl() {
 }
 ```
 
+## Example 3
+
+
+```tsx
+// Using with host-managed values and custom options
+import { ResolutionTools } from '@fgv/ts-res-ui-components';
+
+function HostControlledQualifier() {
+  return (
+    <ResolutionTools.QualifierContextControl
+      qualifierName="platform"
+      value={undefined} // Ignored when hostValue is set
+      onChange={() => {}} // Called only when editable
+      options={{
+        editable: false,
+        hostValue: 'web',
+        showHostValue: true,
+        placeholder: 'Platform controlled by application',
+        className: 'border-blue-300'
+      }}
+    />
+  );
+}
+```
+
+## Example 4
+
+
+```tsx
+// Using for selective visibility and editability
+function ConditionalQualifierControls() {
+  const [userRole, setUserRole] = useState<'admin' | 'user'>('user');
+
+  return (
+    <div>
+      <ResolutionTools.QualifierContextControl
+        qualifierName="environment"
+        value={envValue}
+        onChange={handleEnvChange}
+        options={{
+          visible: userRole === 'admin', // Only visible to admins
+          editable: true,
+          placeholder: 'Select environment...'
+        }}
+      />
+      <ResolutionTools.QualifierContextControl
+        qualifierName="language"
+        value={langValue}
+        onChange={handleLangChange}
+        options={{
+          visible: true,
+          editable: userRole === 'admin', // Only editable by admins
+          placeholder: userRole === 'admin' ? 'Select language...' : 'Language locked'
+        }}
+      />
+    </div>
+  );
+}
+```
+

@@ -55,6 +55,44 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
     picker: 'popover'
   });
 
+  // Playground toggle: lock ResolutionView to a specific mode (or keep unlocked)
+  const [resolutionLockedMode, setResolutionLockedMode] = useState<
+    'none' | 'composed' | 'best' | 'all' | 'raw'
+  >('none');
+
+  // Playground toggle: customize section titles
+  const [customSectionTitles, setCustomSectionTitles] = useState<{
+    resources: string;
+    results: string;
+  }>({
+    resources: 'Resources',
+    results: 'Results'
+  });
+
+  // Playground context options for FilterView
+  const [filterContextOptions, setFilterContextOptions] = useState<{
+    showDemo: boolean;
+    hostManagedLanguage: string;
+    hideTerritory: boolean;
+  }>({
+    showDemo: false,
+    hostManagedLanguage: '',
+    hideTerritory: false
+  });
+
+  // Factory options for demonstrating custom types
+  const [factoryOptions, setFactoryOptions] = useState<{
+    useCustomFactories: boolean;
+    customQualifierType: string;
+    customResourceType: string;
+  }>({
+    useCustomFactories: false,
+    customQualifierType: '',
+    customResourceType: ''
+  });
+
+  // Note: Custom factories are now configured at the ResourceOrchestrator level
+
   // Ref to track if we've already initialized from URL parameters
   const initializedFromUrlRef = React.useRef(false);
 
@@ -309,6 +347,63 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 }
               />
             </div>
+
+            {/* Playground Controls */}
+            <div className="px-6">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-yellow-800">Context Options Demo</span>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={filterContextOptions.showDemo}
+                      onChange={(e) =>
+                        setFilterContextOptions((prev) => ({ ...prev, showDemo: e.target.checked }))
+                      }
+                      className="rounded border-yellow-300 text-yellow-600 focus:ring-yellow-500"
+                    />
+                    <span className="ml-2 text-sm text-yellow-700">Enable</span>
+                  </label>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm text-yellow-700" htmlFor="host-language">
+                      Host language:
+                    </label>
+                    <input
+                      id="host-language"
+                      type="text"
+                      value={filterContextOptions.hostManagedLanguage}
+                      onChange={(e) =>
+                        setFilterContextOptions((prev) => ({
+                          ...prev,
+                          hostManagedLanguage: e.target.value
+                        }))
+                      }
+                      placeholder="e.g., en-US"
+                      className="px-2 py-1 text-sm border border-yellow-300 rounded bg-white text-gray-700 w-24"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <label className="flex items-center text-sm text-yellow-700">
+                      <input
+                        type="checkbox"
+                        checked={filterContextOptions.hideTerritory}
+                        onChange={(e) =>
+                          setFilterContextOptions((prev) => ({
+                            ...prev,
+                            hideTerritory: e.target.checked
+                          }))
+                        }
+                        className="mr-2 rounded border-yellow-300 text-yellow-600 focus:ring-yellow-500"
+                      />
+                      Hide territory
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* View content - hide original title */}
             <div className="[&>div]:pt-0 [&>div>div:first-child]:hidden">
               <FilterView
@@ -325,6 +420,24 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 }}
                 filterResult={state.filterResult}
                 pickerOptionsPresentation={pickerPresentation.filter}
+                contextOptions={
+                  filterContextOptions.showDemo
+                    ? {
+                        contextPanelTitle: 'Filter Context (Demo Mode)',
+                        globalPlaceholder: 'Filter by {qualifierName}...',
+                        qualifierOptions: {
+                          territory: {
+                            visible: !filterContextOptions.hideTerritory
+                          }
+                        },
+                        hostManagedValues: filterContextOptions.hostManagedLanguage
+                          ? {
+                              language: filterContextOptions.hostManagedLanguage
+                            }
+                          : undefined
+                      }
+                    : undefined
+                }
                 onFilterResult={(result) => {
                   // The orchestrator manages filter results internally
                 }}
@@ -378,6 +491,57 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                   setPickerPresentation((prev) => ({ ...prev, resolution: presentation }))
                 }
               />
+              <div className="ml-auto flex items-center space-x-4">
+                {/* Section Titles Configuration */}
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm text-gray-600" htmlFor="resources-title">
+                    Resources:
+                  </label>
+                  <input
+                    id="resources-title"
+                    type="text"
+                    value={customSectionTitles.resources}
+                    onChange={(e) =>
+                      setCustomSectionTitles((prev) => ({ ...prev, resources: e.target.value }))
+                    }
+                    className="px-2 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700 w-24"
+                    placeholder="Resources"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm text-gray-600" htmlFor="results-title">
+                    Results:
+                  </label>
+                  <input
+                    id="results-title"
+                    type="text"
+                    value={customSectionTitles.results}
+                    onChange={(e) => setCustomSectionTitles((prev) => ({ ...prev, results: e.target.value }))}
+                    className="px-2 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700 w-24"
+                    placeholder="Results"
+                  />
+                </div>
+                {/* View Mode Lock */}
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm text-gray-600" htmlFor="locked-view-mode">
+                    Lock view:
+                  </label>
+                  <select
+                    id="locked-view-mode"
+                    value={resolutionLockedMode}
+                    onChange={(e) =>
+                      setResolutionLockedMode(e.target.value as 'none' | 'composed' | 'best' | 'all' | 'raw')
+                    }
+                    className="px-2 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700"
+                  >
+                    <option value="none">Unlocked</option>
+                    <option value="composed">Composed</option>
+                    <option value="best">Best</option>
+                    <option value="all">All</option>
+                    <option value="raw">Raw</option>
+                  </select>
+                </div>
+              </div>
             </div>
             {/* View content - hide original title */}
             <div className="[&>div]:pt-0 [&>div>div:first-child]:hidden">
@@ -407,6 +571,8 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                   []
                 }
                 pickerOptionsPresentation={pickerPresentation.resolution}
+                lockedViewMode={resolutionLockedMode === 'none' ? undefined : resolutionLockedMode}
+                sectionTitles={customSectionTitles}
               />
             </div>
           </div>
@@ -487,8 +653,47 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
 };
 
 const App: React.FC = () => {
+  // For demonstration, we'll use simple default custom factories
+  const demoQualifierTypeFactory = React.useMemo(() => {
+    return TsRes.Config.createConfigInitFactory<
+      TsRes.QualifierTypes.Config.IAnyQualifierTypeConfig,
+      TsRes.QualifierTypes.QualifierType
+    >({
+      // Example: Custom 'version' qualifier type that accepts semver-style versions
+      version: (config: any) => {
+        return TsRes.succeed(
+          TsRes.QualifierTypes.LiteralQualifierType.create({
+            name: 'version',
+            caseSensitive: true,
+            enumeratedValues: ['1.0.0', '1.1.0', '2.0.0', '2.1.0', '3.0.0'],
+            allowContextList: false
+          }).orThrow()
+        );
+      }
+    });
+  }, []);
+
+  const demoResourceTypeFactory = React.useMemo(() => {
+    return TsRes.Config.createConfigInitFactory<
+      TsRes.ResourceTypes.Config.IResourceTypeConfig,
+      TsRes.ResourceTypes.ResourceType
+    >({
+      // Example: Custom 'markdown' resource type
+      markdown: (config: any) => {
+        return TsRes.succeed(
+          TsRes.ResourceTypes.JsonResourceType.create({
+            name: 'markdown'
+          }).orThrow()
+        );
+      }
+    });
+  }, []);
+
   return (
-    <ResourceOrchestrator>
+    <ResourceOrchestrator
+      qualifierTypeFactory={demoQualifierTypeFactory}
+      resourceTypeFactory={demoResourceTypeFactory}
+    >
       {(orchestrator) => <AppContent orchestrator={orchestrator} />}
     </ResourceOrchestrator>
   );

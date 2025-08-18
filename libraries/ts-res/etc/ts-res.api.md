@@ -2673,6 +2673,8 @@ interface IResourceManagerBuilderCreateParams {
 // @public
 interface IResourceManagerCloneOptions extends IResourceDeclarationOptions {
     readonly candidates?: ReadonlyArray<ResourceJson.Json.ILooseResourceCandidateDecl>;
+    readonly qualifiers?: IReadOnlyQualifierCollector;
+    readonly resourceTypes?: ReadOnlyResourceTypeCollector;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -4161,28 +4163,34 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     build(): Result<this>;
-    // (undocumented)
+    // @internal
     protected _built: boolean;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     get builtResources(): Collections.IReadOnlyValidatingResultMap<ResourceId, Resource>;
-    // (undocumented)
-    readonly _builtResources: ValidatingResultMap<ResourceId, Resource>;
-    // (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
+    protected readonly _builtResources: ValidatingResultMap<ResourceId, Resource>;
+    // @internal
     protected _cachedResourceTree?: ResourceTree.IReadOnlyResourceTreeRoot<Resource>;
     clone(options?: IResourceManagerCloneOptions): Result<ResourceManagerBuilder>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get conditions(): ReadOnlyConditionCollector;
-    // (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
     protected readonly _conditions: ConditionCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get conditionSets(): ReadOnlyConditionSetCollector;
-    // (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
     protected readonly _conditionSets: ConditionSetCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -4198,7 +4206,9 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get decisions(): ReadOnlyAbstractDecisionCollector;
-    // (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
     protected readonly _decisions: AbstractDecisionCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getAllBuiltCandidates(): Result<ReadonlyArray<ResourceCandidate>>;
@@ -4247,13 +4257,17 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
     get numResources(): number;
     // @internal
     _performBuild(): Result<Collections.IReadOnlyValidatingResultMap<ResourceId, Resource>>;
-    // (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly qualifiers: IReadOnlyQualifierCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get qualifierTypes(): ReadOnlyQualifierTypeCollector;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get resources(): Collections.IReadOnlyValidatingResultMap<ResourceId, ResourceBuilder>;
-    // (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
     protected readonly _resources: ValidatingResultMap<ResourceId, ResourceBuilder>;
-    // (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly resourceTypes: ReadOnlyResourceTypeCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get size(): number;

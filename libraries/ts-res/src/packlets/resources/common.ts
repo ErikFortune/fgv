@@ -22,6 +22,8 @@
 
 import * as ResourceJson from '../resource-json';
 import { IValidatedContextDecl } from '../context';
+import { IReadOnlyQualifierCollector } from '../qualifiers';
+import { ReadOnlyResourceTypeCollector } from '../resource-types';
 
 /**
  * Options for resource declaration operations with strongly-typed context filtering.
@@ -95,4 +97,18 @@ export interface IResourceManagerCloneOptions extends IResourceDeclarationOption
    * These conditions can modify or extend the resource candidates in the cloned manager.
    */
   readonly candidates?: ReadonlyArray<ResourceJson.Json.ILooseResourceCandidateDecl>;
+
+  /**
+   * Optional qualifier collector to use for the cloned manager.
+   * If not provided, uses the same qualifiers as the original manager.
+   * This allows creating clones with different qualifier configurations.
+   */
+  readonly qualifiers?: IReadOnlyQualifierCollector;
+
+  /**
+   * Optional resource type collector to use for the cloned manager.
+   * If not provided, uses the same resource types as the original manager.
+   * This allows creating clones with different resource type configurations.
+   */
+  readonly resourceTypes?: ReadOnlyResourceTypeCollector;
 }
