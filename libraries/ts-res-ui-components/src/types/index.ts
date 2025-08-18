@@ -366,6 +366,8 @@ export interface ResolutionViewProps extends ViewBaseProps {
   resourceEditorFactory?: ResourceEditorFactory;
   /** Optional configuration for the ResourcePicker behavior */
   pickerOptions?: import('../components/pickers/ResourcePicker/types').ResourcePickerOptions;
+  /** Optional configuration for the resolution context controls */
+  contextOptions?: ResolutionContextOptions;
 }
 
 /**
@@ -441,6 +443,103 @@ export interface ResolutionActions {
   applyEdits: () => Promise<void>;
   /** Discard all pending edits */
   discardEdits: () => void;
+}
+
+/**
+ * Options for controlling individual qualifier context controls.
+ *
+ * Provides fine-grained control over the behavior, appearance, and editability
+ * of individual qualifier inputs. This allows hosts to customize which qualifiers
+ * are editable, provide external values, and control the presentation.
+ *
+ * @example
+ * ```tsx
+ * // Make a qualifier readonly with external value
+ * const languageOptions: QualifierControlOptions = {
+ *   visible: true,
+ *   editable: false,
+ *   hostValue: 'en-US',
+ *   showHostValue: true,
+ *   placeholder: 'Language managed externally'
+ * };
+ * ```
+ *
+ * @public
+ */
+export interface QualifierControlOptions {
+  /** Whether this qualifier should be visible at all */
+  visible?: boolean;
+  /** Whether this qualifier is editable by the user */
+  editable?: boolean;
+  /** External/host-managed value that overrides user input */
+  hostValue?: string | undefined;
+  /** Whether to show host-managed values in the display */
+  showHostValue?: boolean;
+  /** Custom placeholder text for this qualifier */
+  placeholder?: string;
+  /** Custom CSS classes for this qualifier control */
+  className?: string;
+}
+
+/**
+ * Configuration options for the resolution context controls in ResolutionView.
+ *
+ * Controls the visibility and behavior of the context configuration panel,
+ * allowing hosts to customize which qualifiers are editable and provide
+ * externally managed context values. Uses QualifierControlOptions for
+ * per-qualifier customization.
+ *
+ * @example
+ * ```tsx
+ * // Hide context UI entirely - host controls context externally
+ * <ResolutionView
+ *   contextOptions={{ showContextControls: false }}
+ *   // ... other props
+ * />
+ *
+ * // Fine-grained qualifier control
+ * <ResolutionView
+ *   contextOptions={{
+ *     showContextControls: true,
+ *     qualifierOptions: {
+ *       language: { editable: true, placeholder: 'Select language...' },
+ *       platform: { editable: false, hostValue: 'web', showHostValue: true },
+ *       env: { visible: false } // Hidden from UI entirely
+ *     },
+ *     hostManagedValues: { env: 'production' } // Invisible but active
+ *   }}
+ *   // ... other props
+ * />
+ * ```
+ *
+ * @public
+ */
+export interface ResolutionContextOptions {
+  /** Visibility options */
+  /** Whether to show the context configuration panel at all */
+  showContextControls?: boolean;
+  /** Whether to show the current context display */
+  showCurrentContext?: boolean;
+  /** Whether to show the Apply/Reset buttons */
+  showContextActions?: boolean;
+
+  /** Per-qualifier control options */
+  qualifierOptions?: Record<string, QualifierControlOptions>;
+
+  /** Global defaults for qualifiers not specifically configured */
+  defaultQualifierEditable?: boolean;
+  defaultQualifierVisible?: boolean;
+
+  /** Host-managed values that override all user input for invisible qualifiers */
+  hostManagedValues?: Record<string, string | undefined>;
+
+  /** Appearance options */
+  /** Custom title for the context configuration panel */
+  contextPanelTitle?: string;
+  /** Global placeholder text pattern for qualifier inputs */
+  globalPlaceholder?: string | ((qualifierName: string) => string);
+  /** Additional CSS classes for the context panel */
+  contextPanelClassName?: string;
 }
 
 /**

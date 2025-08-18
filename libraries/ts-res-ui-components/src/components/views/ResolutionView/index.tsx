@@ -16,7 +16,8 @@ import {
   ResolutionActions,
   ResolutionState,
   ResourceEditorFactory,
-  ResourceEditorResult
+  ResourceEditorResult,
+  ResolutionContextOptions
 } from '../../../types';
 import { QualifierContextControl } from '../../common/QualifierContextControl';
 import { ResolutionEditControls } from './ResolutionEditControls';
@@ -27,6 +28,7 @@ import {
   ResourcePickerOptions
 } from '../../pickers/ResourcePicker/types';
 import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptionsControl';
+import { ResolutionContextOptionsControl } from '../../common/ResolutionContextOptionsControl';
 import { ResolutionResults } from '../../common/ResolutionResults';
 
 /**
@@ -89,11 +91,17 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
   onMessage,
   pickerOptions,
   pickerOptionsPresentation = 'hidden',
+  contextOptions,
   className = ''
 }) => {
   // State for picker options control
   const [currentPickerOptions, setCurrentPickerOptions] = useState<ResourcePickerOptions>(
     pickerOptions || {}
+  );
+
+  // State for context options control
+  const [currentContextOptions, setCurrentContextOptions] = useState<ResolutionContextOptions>(
+    contextOptions || {}
   );
 
   // Use filtered resources when filtering is active and successful
@@ -195,13 +203,47 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
     resolutionState?.resolutionResult
   ]);
 
+  // Merge context options with current options from control
+  const effectiveContextOptions = useMemo(
+    () => ({
+      ...contextOptions,
+      ...currentContextOptions
+    }),
+    [contextOptions, currentContextOptions]
+  );
+
   // Handle context value changes using the shared component's callback pattern
   const handleQualifierChange = useCallback(
     (qualifierName: string, value: string | undefined) => {
-      resolutionActions?.updateContextValue(qualifierName, value);
+      // Don't update context if this qualifier is host-managed
+      const qualifierOptions = effectiveContextOptions?.qualifierOptions?.[qualifierName];
+      const isHostManaged = qualifierOptions?.hostValue !== undefined;
+
+      if (!isHostManaged) {
+        resolutionActions?.updateContextValue(qualifierName, value);
+      }
     },
-    [resolutionActions]
+    [resolutionActions, effectiveContextOptions?.qualifierOptions]
   );
+
+  // Determine which qualifiers to show and their options
+  const visibleQualifiers = useMemo(() => {
+    if (!effectiveContextOptions?.qualifierOptions) {
+      return availableQualifiers;
+    }
+
+    return availableQualifiers.filter((qualifierName) => {
+      const options = effectiveContextOptions.qualifierOptions![qualifierName];
+      return options?.visible !== false;
+    });
+  }, [availableQualifiers, effectiveContextOptions?.qualifierOptions]);
+
+  // Get effective context values including host-managed values
+  const effectiveContextValues = useMemo(() => {
+    const baseValues = resolutionState?.contextValues || {};
+    const hostValues = effectiveContextOptions?.hostManagedValues || {};
+    return { ...baseValues, ...hostValues };
+  }, [resolutionState?.contextValues, effectiveContextOptions?.hostManagedValues]);
 
   // Handle resource selection from ResourcePicker
   const handleResourceSelect = useCallback(
@@ -268,60 +310,98 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
         className="mb-6"
       />
 
+      {/* ResolutionContext Options Control */}
+      <ResolutionContextOptionsControl
+        options={currentContextOptions}
+        onOptionsChange={setCurrentContextOptions}
+        availableQualifiers={availableQualifiers}
+        presentation={pickerOptionsPresentation}
+        title="Resolution Context Options"
+        className="mb-6"
+      />
+
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         {/* Context Configuration Panel */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Context Configuration</h3>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="mb-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {availableQualifiers.map((qualifierName) => (
-                  <QualifierContextControl
-                    key={qualifierName}
-                    qualifierName={qualifierName}
-                    value={resolutionState?.pendingContextValues[qualifierName]}
-                    onChange={handleQualifierChange}
-                    placeholder={`Enter ${qualifierName} value`}
-                    resources={activeProcessedResources}
-                  />
-                ))}
-              </div>
-            </div>
+        {effectiveContextOptions?.showContextControls !== false && (
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              {effectiveContextOptions?.contextPanelTitle || 'Context Configuration'}
+            </h3>
+            <div
+              className={`bg-gray-50 rounded-lg p-4 ${effectiveContextOptions?.contextPanelClassName || ''}`}
+            >
+              <div className="mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {visibleQualifiers.map((qualifierName) => {
+                    const qualifierOptions = effectiveContextOptions?.qualifierOptions?.[qualifierName];
+                    const hostManagedValue = effectiveContextOptions?.hostManagedValues?.[qualifierName];
+                    const globalPlaceholder =
+                      typeof effectiveContextOptions?.globalPlaceholder === 'function'
+                        ? effectiveContextOptions.globalPlaceholder(qualifierName)
+                        : effectiveContextOptions?.globalPlaceholder;
 
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                Current:{' '}
-                {Object.entries(resolutionState?.contextValues || {})
-                  .map(([key, value]) => `${key}=${value === undefined ? '(undefined)' : value}`)
-                  .join(', ')}
+                    // Merge host-managed values with qualifier options
+                    const mergedOptions = {
+                      ...qualifierOptions,
+                      // Host-managed values override qualifier-specific host values
+                      hostValue:
+                        hostManagedValue !== undefined ? hostManagedValue : qualifierOptions?.hostValue
+                    };
+
+                    return (
+                      <QualifierContextControl
+                        key={qualifierName}
+                        qualifierName={qualifierName}
+                        value={resolutionState?.pendingContextValues[qualifierName]}
+                        onChange={handleQualifierChange}
+                        placeholder={globalPlaceholder || `Enter ${qualifierName} value`}
+                        resources={activeProcessedResources}
+                        options={mergedOptions}
+                      />
+                    );
+                  })}
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={resolutionActions?.resetCache}
-                  className="px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                  title="Clear resolution cache"
-                >
-                  Clear Cache
-                </button>
-                <button
-                  onClick={resolutionActions?.applyContext}
-                  disabled={!resolutionState?.hasPendingChanges}
-                  className={`px-4 py-2 rounded-md text-sm font-medium ${
-                    resolutionState?.hasPendingChanges
-                      ? 'bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
-                >
-                  {resolutionState?.hasPendingChanges
-                    ? 'Apply Changes'
-                    : resolutionState?.currentResolver
-                    ? 'Context Applied'
-                    : 'Apply Context'}
-                </button>
-              </div>
+
+              {effectiveContextOptions?.showCurrentContext !== false && (
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Current:{' '}
+                    {Object.entries(effectiveContextValues)
+                      .map(([key, value]) => `${key}=${value === undefined ? '(undefined)' : value}`)
+                      .join(', ')}
+                  </div>
+                  {effectiveContextOptions?.showContextActions !== false && (
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={resolutionActions?.resetCache}
+                        className="px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                        title="Clear resolution cache"
+                      >
+                        Clear Cache
+                      </button>
+                      <button
+                        onClick={resolutionActions?.applyContext}
+                        disabled={!resolutionState?.hasPendingChanges}
+                        className={`px-4 py-2 rounded-md text-sm font-medium ${
+                          resolutionState?.hasPendingChanges
+                            ? 'bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                      >
+                        {resolutionState?.hasPendingChanges
+                          ? 'Apply Changes'
+                          : resolutionState?.currentResolver
+                          ? 'Context Applied'
+                          : 'Apply Context'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        )}
 
         {/* Edit Controls - Show when there are unsaved edits */}
         {resolutionState?.hasUnsavedEdits && (

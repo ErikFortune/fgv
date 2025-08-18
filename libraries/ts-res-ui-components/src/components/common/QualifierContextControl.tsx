@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ProcessedResources } from '../../types';
+import { ProcessedResources, QualifierControlOptions } from '../../types';
 
 /**
  * Props for the QualifierContextControl component.
@@ -21,6 +21,8 @@ export interface QualifierContextControlProps {
   resources?: ProcessedResources | null;
   /** Optional CSS classes to apply to the control */
   className?: string;
+  /** Extended options for controlling the qualifier behavior */
+  options?: QualifierControlOptions;
 }
 
 /**
@@ -85,6 +87,62 @@ export interface QualifierContextControlProps {
  * }
  * ```
  *
+ * @example
+ * ```tsx
+ * // Using with host-managed values and custom options
+ * import { ResolutionTools } from '@fgv/ts-res-ui-components';
+ *
+ * function HostControlledQualifier() {
+ *   return (
+ *     <ResolutionTools.QualifierContextControl
+ *       qualifierName="platform"
+ *       value={undefined} // Ignored when hostValue is set
+ *       onChange={() => {}} // Called only when editable
+ *       options={{
+ *         editable: false,
+ *         hostValue: 'web',
+ *         showHostValue: true,
+ *         placeholder: 'Platform controlled by application',
+ *         className: 'border-blue-300'
+ *       }}
+ *     />
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Using for selective visibility and editability
+ * function ConditionalQualifierControls() {
+ *   const [userRole, setUserRole] = useState<'admin' | 'user'>('user');
+ *
+ *   return (
+ *     <div>
+ *       <ResolutionTools.QualifierContextControl
+ *         qualifierName="environment"
+ *         value={envValue}
+ *         onChange={handleEnvChange}
+ *         options={{
+ *           visible: userRole === 'admin', // Only visible to admins
+ *           editable: true,
+ *           placeholder: 'Select environment...'
+ *         }}
+ *       />
+ *       <ResolutionTools.QualifierContextControl
+ *         qualifierName="language"
+ *         value={langValue}
+ *         onChange={handleLangChange}
+ *         options={{
+ *           visible: true,
+ *           editable: userRole === 'admin', // Only editable by admins
+ *           placeholder: userRole === 'admin' ? 'Select language...' : 'Language locked'
+ *         }}
+ *       />
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
  * @public
  */
 export const QualifierContextControl: React.FC<QualifierContextControlProps> = ({
@@ -94,7 +152,8 @@ export const QualifierContextControl: React.FC<QualifierContextControlProps> = (
   disabled = false,
   placeholder,
   resources,
-  className = ''
+  className = '',
+  options
 }) => {
   // Extract qualifier type information from system configuration
   const qualifierInfo = useMemo(() => {
@@ -144,19 +203,45 @@ export const QualifierContextControl: React.FC<QualifierContextControlProps> = (
     }
   }, [qualifierName, resources?.system?.qualifiers]);
 
+  // Apply options with defaults
+  const isVisible = options?.visible ?? true;
+  const isEditable = options?.editable ?? true;
+  const hostValue = options?.hostValue;
+  const showHostValue = options?.showHostValue ?? true;
+  const customPlaceholder = options?.placeholder;
+  const customClassName = options?.className || '';
+
+  // Determine effective values
+  const isEffectivelyDisabled = disabled || !isEditable;
+  const effectiveValue = hostValue !== undefined ? hostValue ?? '' : value ?? '';
+  const isHostManaged = hostValue !== undefined;
+
+  // Determine placeholder text
+  const effectivePlaceholder = customPlaceholder || placeholder || `Enter ${qualifierName} value`;
+
   const handleChange = (newValue: string) => {
-    onChange(qualifierName, newValue || undefined);
+    // Only allow changes if not host-managed and editable
+    if (!isHostManaged && isEditable) {
+      onChange(qualifierName, newValue || undefined);
+    }
   };
 
   const handleClear = () => {
-    onChange(qualifierName, undefined);
+    // Only allow clearing if not host-managed and editable
+    if (!isHostManaged && isEditable) {
+      onChange(qualifierName, undefined);
+    }
   };
 
-  const effectiveValue = value ?? '';
   const hasEnumeratedValues = qualifierInfo.hasEnumeratedValues && qualifierInfo.enumeratedValues.length > 0;
 
+  // Don't render if not visible
+  if (!isVisible) {
+    return null;
+  }
+
   return (
-    <div className={`bg-white rounded border border-gray-200 p-2 ${className}`}>
+    <div className={`bg-white rounded border border-gray-200 p-2 ${className} ${customClassName}`}>
       <div className="flex items-center gap-2">
         <label className="text-sm font-medium text-gray-700 min-w-0 flex-shrink-0">{qualifierName}:</label>
         <div className="flex-1 flex items-center gap-1">
@@ -165,17 +250,22 @@ export const QualifierContextControl: React.FC<QualifierContextControlProps> = (
             <select
               value={effectiveValue}
               onChange={(e) => handleChange(e.target.value)}
-              disabled={disabled}
+              disabled={isEffectivelyDisabled}
+              title={isHostManaged ? 'Host-managed value - controlled externally' : undefined}
               className={`flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm min-w-0 ${
-                disabled ? 'bg-gray-100 text-gray-400' : ''
-              }`}
+                isEffectivelyDisabled ? 'bg-gray-100 text-gray-400' : ''
+              } ${isHostManaged ? 'border-blue-300 bg-blue-50' : ''}`}
             >
               <option value="">
-                {disabled
+                {isHostManaged
+                  ? effectiveValue !== ''
+                    ? effectiveValue
+                    : '(undefined)'
+                  : isEffectivelyDisabled
                   ? 'Disabled'
-                  : value === undefined
+                  : effectiveValue === ''
                   ? '(undefined)'
-                  : placeholder || 'Select value...'}
+                  : effectivePlaceholder}
               </option>
               {qualifierInfo.enumeratedValues.map((enumValue: string) => (
                 <option key={enumValue} value={enumValue}>
@@ -189,20 +279,23 @@ export const QualifierContextControl: React.FC<QualifierContextControlProps> = (
               type="text"
               value={effectiveValue}
               onChange={(e) => handleChange(e.target.value)}
-              disabled={disabled}
+              disabled={isEffectivelyDisabled}
+              title={isHostManaged ? 'Host-managed value - controlled externally' : undefined}
               className={`flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm min-w-0 ${
-                disabled ? 'bg-gray-100 text-gray-400' : ''
-              }`}
+                isEffectivelyDisabled ? 'bg-gray-100 text-gray-400' : ''
+              } ${isHostManaged ? 'border-blue-300 bg-blue-50' : ''}`}
               placeholder={
-                disabled
-                  ? 'Disabled'
-                  : value === undefined
+                isHostManaged && effectiveValue === ''
                   ? '(undefined)'
-                  : placeholder || `Enter ${qualifierName} value`
+                  : isEffectivelyDisabled
+                  ? 'Disabled'
+                  : effectiveValue === ''
+                  ? '(undefined)'
+                  : effectivePlaceholder
               }
             />
           )}
-          {!disabled && value !== undefined && (
+          {!isEffectivelyDisabled && !isHostManaged && effectiveValue !== '' && (
             <button
               type="button"
               onClick={handleClear}
