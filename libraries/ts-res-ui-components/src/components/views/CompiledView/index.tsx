@@ -14,7 +14,12 @@ import {
 import { CompiledViewProps, ProcessedResources, FilterState, FilterResult } from '../../../types';
 import { ResourceJson, Config, Bundle, Resources } from '@fgv/ts-res';
 import { ResourcePicker } from '../../pickers/ResourcePicker';
-import { ResourceSelection, ResourceAnnotations } from '../../pickers/ResourcePicker/types';
+import {
+  ResourceSelection,
+  ResourceAnnotations,
+  ResourcePickerOptions
+} from '../../pickers/ResourcePicker/types';
+import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptionsControl';
 
 interface TreeNode {
   id: string;
@@ -71,6 +76,7 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
   onExport,
   onMessage,
   pickerOptions,
+  pickerOptionsPresentation = 'hidden',
   className = ''
 }) => {
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
@@ -78,6 +84,11 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['metadata']));
   const [showJsonView, setShowJsonView] = useState(false);
   const [useNormalization, setUseNormalization] = useState(useNormalizationProp);
+
+  // State for picker options control
+  const [currentPickerOptions, setCurrentPickerOptions] = useState<ResourcePickerOptions>(
+    pickerOptions || {}
+  );
   const [activeTab, setActiveTab] = useState<'resources' | 'metadata'>('resources');
 
   // Merge picker options with compiled view-specific defaults
@@ -91,9 +102,11 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
       height: '500px',
       emptyMessage: 'No compiled resources available',
       // Override with user-provided options
-      ...pickerOptions
+      ...pickerOptions,
+      // Override with current picker options from control
+      ...currentPickerOptions
     }),
-    [pickerOptions]
+    [pickerOptions, currentPickerOptions]
   );
 
   // Update normalization default when bundle state changes
@@ -485,6 +498,15 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
           </div>
         )}
       </div>
+
+      {/* ResourcePicker Options Control */}
+      <ResourcePickerOptionsControl
+        options={currentPickerOptions}
+        onOptionsChange={setCurrentPickerOptions}
+        presentation={pickerOptionsPresentation}
+        title="Compiled View Picker Options"
+        className="mb-6"
+      />
 
       {/* Controls Panel */}
       {activeProcessedResources && (

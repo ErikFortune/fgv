@@ -13,6 +13,7 @@ import {
 } from '@fgv/ts-res-ui-components';
 import NavigationWarningModal from './components/common/NavigationWarningModal';
 import ResourcePickerTool from './components/tools/ResourcePickerTool';
+import ViewWithPresentationSelector from './components/common/ViewWithPresentationSelector';
 import { useNavigationWarning } from './hooks/useNavigationWarning';
 import { useUrlParams } from './hooks/useUrlParams';
 import { parseContextFilter } from './utils/urlParams';
@@ -258,79 +259,111 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
 
       case 'source':
         return (
-          <SourceView
-            onMessage={actions.addMessage}
-            resources={state.resources}
-            onExport={(data, type) => {
-              // TODO: Implement export functionality
-              actions.addMessage('info', `Export ${type} requested`);
-            }}
-          />
+          <ViewWithPresentationSelector
+            currentPresentation={pickerPresentation.source}
+            onPresentationChange={(presentation) =>
+              setPickerPresentation((prev) => ({ ...prev, source: presentation }))
+            }
+          >
+            <SourceView
+              onMessage={actions.addMessage}
+              resources={state.resources}
+              pickerOptionsPresentation={pickerPresentation.source}
+              onExport={(data, type) => {
+                // TODO: Implement export functionality
+                actions.addMessage('info', `Export ${type} requested`);
+              }}
+            />
+          </ViewWithPresentationSelector>
         );
 
       case 'filter':
         return (
-          <FilterView
-            onMessage={actions.addMessage}
-            resources={state.resources}
-            filterState={state.filterState}
-            filterActions={{
-              updateFilterEnabled: (enabled) => actions.updateFilterState({ enabled }),
-              updateFilterValues: (values) => actions.updateFilterState({ values }),
-              applyFilterValues: () => actions.applyFilter(),
-              resetFilterValues: () => actions.resetFilter(),
-              updateReduceQualifiers: (reduceQualifiers) => actions.updateFilterState({ reduceQualifiers })
-            }}
-            filterResult={state.filterResult}
-            onFilterResult={(result) => {
-              // The orchestrator manages filter results internally
-            }}
-          />
+          <ViewWithPresentationSelector
+            currentPresentation={pickerPresentation.filter}
+            onPresentationChange={(presentation) =>
+              setPickerPresentation((prev) => ({ ...prev, filter: presentation }))
+            }
+          >
+            <FilterView
+              onMessage={actions.addMessage}
+              resources={state.resources}
+              filterState={state.filterState}
+              filterActions={{
+                updateFilterEnabled: (enabled) => actions.updateFilterState({ enabled }),
+                updateFilterValues: (values) => actions.updateFilterState({ values }),
+                applyFilterValues: () => actions.applyFilter(),
+                resetFilterValues: () => actions.resetFilter(),
+                updateReduceQualifiers: (reduceQualifiers) => actions.updateFilterState({ reduceQualifiers })
+              }}
+              filterResult={state.filterResult}
+              pickerOptionsPresentation={pickerPresentation.filter}
+              onFilterResult={(result) => {
+                // The orchestrator manages filter results internally
+              }}
+            />
+          </ViewWithPresentationSelector>
         );
 
       case 'compiled':
         return (
-          <CompiledView
-            onMessage={actions.addMessage}
-            resources={state.resources}
-            filterState={state.filterState}
-            filterResult={state.filterResult}
-            useNormalization={true}
-            onExport={(data, type) => {
-              // TODO: Implement export functionality
-              actions.addMessage('info', `Export ${type} requested`);
-            }}
-          />
+          <ViewWithPresentationSelector
+            currentPresentation={pickerPresentation.compiled}
+            onPresentationChange={(presentation) =>
+              setPickerPresentation((prev) => ({ ...prev, compiled: presentation }))
+            }
+          >
+            <CompiledView
+              onMessage={actions.addMessage}
+              resources={state.resources}
+              filterState={state.filterState}
+              filterResult={state.filterResult}
+              useNormalization={true}
+              pickerOptionsPresentation={pickerPresentation.compiled}
+              onExport={(data, type) => {
+                // TODO: Implement export functionality
+                actions.addMessage('info', `Export ${type} requested`);
+              }}
+            />
+          </ViewWithPresentationSelector>
         );
 
       case 'resolution':
         return (
-          <ResolutionView
-            onMessage={actions.addMessage}
-            resources={state.resources}
-            filterState={state.filterState}
-            filterResult={state.filterResult}
-            resolutionState={state.resolutionState}
-            resolutionActions={{
-              updateContextValue: actions.updateResolutionContext,
-              applyContext: actions.applyResolutionContext,
-              selectResource: actions.selectResourceForResolution,
-              setViewMode: actions.setResolutionViewMode,
-              resetCache: actions.resetResolutionCache,
-              // Edit actions
-              saveEdit: actions.saveResourceEdit,
-              getEditedValue: actions.getEditedValue,
-              hasEdit: actions.hasResourceEdit,
-              clearEdits: actions.clearResourceEdits,
-              applyEdits: actions.applyResourceEdits,
-              discardEdits: actions.discardResourceEdits
-            }}
-            availableQualifiers={
-              state.resources?.compiledCollection.qualifiers?.map((q: any) => q.name) ||
-              state.configuration?.qualifiers?.map((q) => q.name) ||
-              []
+          <ViewWithPresentationSelector
+            currentPresentation={pickerPresentation.resolution}
+            onPresentationChange={(presentation) =>
+              setPickerPresentation((prev) => ({ ...prev, resolution: presentation }))
             }
-          />
+          >
+            <ResolutionView
+              onMessage={actions.addMessage}
+              resources={state.resources}
+              filterState={state.filterState}
+              filterResult={state.filterResult}
+              resolutionState={state.resolutionState}
+              resolutionActions={{
+                updateContextValue: actions.updateResolutionContext,
+                applyContext: actions.applyResolutionContext,
+                selectResource: actions.selectResourceForResolution,
+                setViewMode: actions.setResolutionViewMode,
+                resetCache: actions.resetResolutionCache,
+                // Edit actions
+                saveEdit: actions.saveResourceEdit,
+                getEditedValue: actions.getEditedValue,
+                hasEdit: actions.hasResourceEdit,
+                clearEdits: actions.clearResourceEdits,
+                applyEdits: actions.applyResourceEdits,
+                discardEdits: actions.discardResourceEdits
+              }}
+              availableQualifiers={
+                state.resources?.compiledCollection.qualifiers?.map((q: any) => q.name) ||
+                state.configuration?.qualifiers?.map((q) => q.name) ||
+                []
+              }
+              pickerOptionsPresentation={pickerPresentation.resolution}
+            />
+          </ViewWithPresentationSelector>
         );
 
       case 'configuration':
@@ -348,7 +381,16 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
         );
 
       case 'picker':
-        return <ResourcePickerTool resources={state.resources} onMessage={actions.addMessage} />;
+        return (
+          <ViewWithPresentationSelector
+            currentPresentation={pickerPresentation.picker}
+            onPresentationChange={(presentation) =>
+              setPickerPresentation((prev) => ({ ...prev, picker: presentation }))
+            }
+          >
+            <ResourcePickerTool resources={state.resources} onMessage={actions.addMessage} />
+          </ViewWithPresentationSelector>
+        );
 
       default:
         return (

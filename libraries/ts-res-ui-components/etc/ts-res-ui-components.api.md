@@ -839,6 +839,7 @@ function validateConfiguration(config: Config.Model.ISystemConfiguration): Confi
 interface ViewBaseProps {
     className?: string;
     onMessage?: (type: Message['type'], message: string) => void;
+    pickerOptionsPresentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
 }
 
 declare namespace ViewStateTools {
