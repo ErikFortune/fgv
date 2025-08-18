@@ -103,7 +103,7 @@ function createResolverWithContext(processedResources: ProcessedResources, conte
 function createSimpleContext(qualifiers: Qualifiers.IReadOnlyQualifierCollector, values: Record<string, string | undefined>): Result<Runtime.ValidatingSimpleContextQualifierProvider>;
 
 // @internal (undocumented)
-function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemConfiguration): Result<{
+function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>): Result<{
     qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
     qualifiers: Qualifiers.IReadOnlyQualifierCollector;
     resourceTypes: ResourceTypes.ReadOnlyResourceTypeCollector;
@@ -447,7 +447,7 @@ interface ProcessedResources {
 }
 
 // @internal (undocumented)
-function processImportedDirectory(directory: ImportedDirectory, systemConfig?: Config.Model.ISystemConfiguration): Result<{
+function processImportedDirectory(directory: ImportedDirectory, systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>): Result<{
     system: {
         qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
         qualifiers: Qualifiers.IReadOnlyQualifierCollector;
@@ -468,7 +468,7 @@ function processImportedDirectory(directory: ImportedDirectory, systemConfig?: C
 }>;
 
 // @internal (undocumented)
-function processImportedFiles(files: ImportedFile[], systemConfig?: Config.Model.ISystemConfiguration): Result<{
+function processImportedFiles(files: ImportedFile[], systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>): Result<{
     system: {
         qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
         qualifiers: Qualifiers.IReadOnlyQualifierCollector;
@@ -869,10 +869,11 @@ function useFilterState(initialState?: Partial<FilterState>): UseFilterStateRetu
 // @public
 function useResolutionState(processedResources: ProcessedResources | null, onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void, onSystemUpdate?: (updatedResources: ProcessedResources) => void): UseResolutionStateReturn;
 
+// Warning: (ae-forgotten-export) The symbol "UseResourceDataParams" needs to be exported by the entry point index.d.ts
 // Warning: (ae-forgotten-export) The symbol "UseResourceDataReturn" needs to be exported by the entry point index.d.ts
 //
 // @public
-function useResourceData(): UseResourceDataReturn;
+function useResourceData(params?: UseResourceDataParams): UseResourceDataReturn;
 
 // Warning: (ae-forgotten-export) The symbol "UseViewStateReturn" needs to be exported by the entry point index.d.ts
 //

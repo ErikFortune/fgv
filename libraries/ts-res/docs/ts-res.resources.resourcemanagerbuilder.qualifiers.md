@@ -4,6 +4,8 @@
 
 ## Resources.ResourceManagerBuilder.qualifiers property
 
+The [qualifiers](./ts-res.qualifiers.ireadonlyqualifiercollector.md) used by this resource manager.
+
 **Signature:**
 
 ```typescript

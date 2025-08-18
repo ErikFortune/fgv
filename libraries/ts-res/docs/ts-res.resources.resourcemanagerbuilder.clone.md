@@ -4,7 +4,7 @@
 
 ## Resources.ResourceManagerBuilder.clone() method
 
-Creates a filtered clone of this ResourceManagerBuilder using the specified context. This is a convenience method that creates a new ResourceManagerBuilder with the same configuration but filtered to include only candidates that match the provided context. If candidates are provided for editing, they will be applied with collision detection.
+Creates a clone of this ResourceManagerBuilder with optional configuration overrides. This method creates a new ResourceManagerBuilder that can optionally use different qualifiers and/or resource types than the original. It can also be filtered to include only candidates that match the provided context and apply candidate edits.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ options
 
 </td><td>
 
-_(Optional)_ Options for the cloning operation, including the strongly-typed filterForContext property and optional candidates for edits.
+_(Optional)_ Options for the cloning operation: - `qualifiers`<!-- -->: Optional qualifier collector to use instead of the original - `resourceTypes`<!-- -->: Optional resource type collector to use instead of the original - `filterForContext`<!-- -->: Optional context filter for candidates - `candidates`<!-- -->: Optional candidate edits to apply during cloning
 
 
 </td></tr>
@@ -52,5 +52,5 @@ _(Optional)_ Options for the cloning operation, including the strongly-typed fil
 
 Result&lt;[ResourceManagerBuilder](./ts-res.resourcemanagerbuilder.md)<!-- -->&gt;
 
-A Result containing the new filtered ResourceManagerBuilder.
+A Result containing the new ResourceManagerBuilder with the specified configuration.
 

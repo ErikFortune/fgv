@@ -1,6 +1,6 @@
 import React, { ReactNode, useCallback, useMemo, useState } from 'react';
 import { Result } from '@fgv/ts-utils';
-import { Config, Bundle } from '@fgv/ts-res';
+import { Config, Bundle, QualifierTypes, ResourceTypes } from '@fgv/ts-res';
 import {
   OrchestratorState,
   OrchestratorActions,
@@ -34,6 +34,16 @@ export interface ResourceOrchestratorProps {
   children: (orchestrator: { state: OrchestratorState; actions: OrchestratorActions }) => ReactNode;
   /** Optional initial configuration to apply on mount */
   initialConfiguration?: Config.Model.ISystemConfiguration;
+  /** Optional qualifier type factory for creating custom qualifier types */
+  qualifierTypeFactory?: Config.IConfigInitFactory<
+    QualifierTypes.Config.IAnyQualifierTypeConfig,
+    QualifierTypes.QualifierType
+  >;
+  /** Optional resource type factory for creating custom resource types */
+  resourceTypeFactory?: Config.IConfigInitFactory<
+    ResourceTypes.Config.IResourceTypeConfig,
+    ResourceTypes.ResourceType
+  >;
   /** Callback fired when orchestrator state changes */
   onStateChange?: (state: Partial<OrchestratorState>) => void;
 }
@@ -80,10 +90,15 @@ export interface ResourceOrchestratorProps {
 export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
   children,
   initialConfiguration,
+  qualifierTypeFactory,
+  resourceTypeFactory,
   onStateChange
 }) => {
   // Core hooks
-  const resourceData = useResourceData();
+  const resourceData = useResourceData({
+    qualifierTypeFactory,
+    resourceTypeFactory
+  });
   const filterState = useFilterState();
   const viewState = useViewState();
   // System update handler for resolution editing

@@ -57,5 +57,47 @@ _(Optional)_ Optional array of loose condition declarations to be applied as edi
 
 
 </td></tr>
+<tr><td>
+
+[qualifiers?](./ts-res.resources.iresourcemanagercloneoptions.qualifiers.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IReadOnlyQualifierCollector](./ts-res.qualifiers.ireadonlyqualifiercollector.md)
+
+
+</td><td>
+
+_(Optional)_ Optional qualifier collector to use for the cloned manager. If not provided, uses the same qualifiers as the original manager. This allows creating clones with different qualifier configurations.
+
+
+</td></tr>
+<tr><td>
+
+[resourceTypes?](./ts-res.resources.iresourcemanagercloneoptions.resourcetypes.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ReadOnlyResourceTypeCollector](./ts-res.resourcetypes.readonlyresourcetypecollector.md)
+
+
+</td><td>
+
+_(Optional)_ Optional resource type collector to use for the cloned manager. If not provided, uses the same resource types as the original manager. This allows creating clones with different resource type configurations.
+
+
+</td></tr>
 </tbody></table>
 

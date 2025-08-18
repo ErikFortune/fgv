@@ -25,6 +25,25 @@ import {
 } from '../utils/tsResIntegration';
 
 /**
+ * Parameters for the useResourceData hook.
+ * Allows customization of type factories for extended functionality.
+ *
+ * @public
+ */
+export interface UseResourceDataParams {
+  /** Optional qualifier type factory for creating custom qualifier types */
+  qualifierTypeFactory?: Config.IConfigInitFactory<
+    QualifierTypes.Config.IAnyQualifierTypeConfig,
+    QualifierTypes.QualifierType
+  >;
+  /** Optional resource type factory for creating custom resource types */
+  resourceTypeFactory?: Config.IConfigInitFactory<
+    ResourceTypes.Config.IResourceTypeConfig,
+    ResourceTypes.ResourceType
+  >;
+}
+
+/**
  * Return type for the useResourceData hook.
  * Provides state and actions for managing ts-res data processing.
  *
@@ -106,7 +125,7 @@ const initialState: ResourceManagerState = {
  *
  * @public
  */
-export function useResourceData(): UseResourceDataReturn {
+export function useResourceData(params?: UseResourceDataParams): UseResourceDataReturn {
   const [state, setState] = useState<ResourceManagerState>(initialState);
 
   const processDirectory = useCallback(
@@ -114,7 +133,12 @@ export function useResourceData(): UseResourceDataReturn {
       setState((prev) => ({ ...prev, isProcessing: true, error: null }));
 
       try {
-        const result = processImportedDirectory(directory, state.activeConfiguration || undefined);
+        const result = processImportedDirectory(
+          directory,
+          state.activeConfiguration || undefined,
+          params?.qualifierTypeFactory,
+          params?.resourceTypeFactory
+        );
 
         if (result.isSuccess()) {
           setState((prev) => ({
@@ -136,7 +160,7 @@ export function useResourceData(): UseResourceDataReturn {
         }));
       }
     },
-    [state.activeConfiguration]
+    [state.activeConfiguration, params?.qualifierTypeFactory, params?.resourceTypeFactory]
   );
 
   const processDirectoryWithConfig = useCallback(
@@ -144,7 +168,12 @@ export function useResourceData(): UseResourceDataReturn {
       setState((prev) => ({ ...prev, isProcessing: true, error: null, activeConfiguration: config }));
 
       try {
-        const result = processImportedDirectory(directory, config);
+        const result = processImportedDirectory(
+          directory,
+          config,
+          params?.qualifierTypeFactory,
+          params?.resourceTypeFactory
+        );
 
         if (result.isSuccess()) {
           setState((prev) => ({
@@ -167,7 +196,7 @@ export function useResourceData(): UseResourceDataReturn {
         }));
       }
     },
-    []
+    [params?.qualifierTypeFactory, params?.resourceTypeFactory]
   );
 
   const processFiles = useCallback(
@@ -175,7 +204,12 @@ export function useResourceData(): UseResourceDataReturn {
       setState((prev) => ({ ...prev, isProcessing: true, error: null }));
 
       try {
-        const result = processImportedFiles(files, state.activeConfiguration || undefined);
+        const result = processImportedFiles(
+          files,
+          state.activeConfiguration || undefined,
+          params?.qualifierTypeFactory,
+          params?.resourceTypeFactory
+        );
 
         if (result.isSuccess()) {
           setState((prev) => ({
@@ -197,7 +231,7 @@ export function useResourceData(): UseResourceDataReturn {
         }));
       }
     },
-    [state.activeConfiguration]
+    [state.activeConfiguration, params?.qualifierTypeFactory, params?.resourceTypeFactory]
   );
 
   const processBundleFile = useCallback(async (bundle: Bundle.IBundle) => {

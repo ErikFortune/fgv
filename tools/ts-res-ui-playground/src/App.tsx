@@ -80,6 +80,19 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
     hideTerritory: false
   });
 
+  // Factory options for demonstrating custom types
+  const [factoryOptions, setFactoryOptions] = useState<{
+    useCustomFactories: boolean;
+    customQualifierType: string;
+    customResourceType: string;
+  }>({
+    useCustomFactories: false,
+    customQualifierType: '',
+    customResourceType: ''
+  });
+
+  // Note: Custom factories are now configured at the ResourceOrchestrator level
+
   // Ref to track if we've already initialized from URL parameters
   const initializedFromUrlRef = React.useRef(false);
 
@@ -640,8 +653,47 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
 };
 
 const App: React.FC = () => {
+  // For demonstration, we'll use simple default custom factories
+  const demoQualifierTypeFactory = React.useMemo(() => {
+    return TsRes.Config.createConfigInitFactory<
+      TsRes.QualifierTypes.Config.IAnyQualifierTypeConfig,
+      TsRes.QualifierTypes.QualifierType
+    >({
+      // Example: Custom 'version' qualifier type that accepts semver-style versions
+      version: (config: any) => {
+        return TsRes.succeed(
+          TsRes.QualifierTypes.LiteralQualifierType.create({
+            name: 'version',
+            caseSensitive: true,
+            enumeratedValues: ['1.0.0', '1.1.0', '2.0.0', '2.1.0', '3.0.0'],
+            allowContextList: false
+          }).orThrow()
+        );
+      }
+    });
+  }, []);
+
+  const demoResourceTypeFactory = React.useMemo(() => {
+    return TsRes.Config.createConfigInitFactory<
+      TsRes.ResourceTypes.Config.IResourceTypeConfig,
+      TsRes.ResourceTypes.ResourceType
+    >({
+      // Example: Custom 'markdown' resource type
+      markdown: (config: any) => {
+        return TsRes.succeed(
+          TsRes.ResourceTypes.JsonResourceType.create({
+            name: 'markdown'
+          }).orThrow()
+        );
+      }
+    });
+  }, []);
+
   return (
-    <ResourceOrchestrator>
+    <ResourceOrchestrator
+      qualifierTypeFactory={demoQualifierTypeFactory}
+      resourceTypeFactory={demoResourceTypeFactory}
+    >
       {(orchestrator) => <AppContent orchestrator={orchestrator} />}
     </ResourceOrchestrator>
   );
