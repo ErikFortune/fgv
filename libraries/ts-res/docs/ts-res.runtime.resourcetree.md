@@ -61,6 +61,21 @@ Implementation of a read-only resource tree root that organizes resources hierar
 
 
 </td></tr>
+<tr><td>
+
+[ResourceTreeChildrenValidator](./ts-res.runtime.resourcetree.resourcetreechildrenvalidator.md)
+
+
+</td><td>
+
+A validator wrapper for resource tree children that validates string inputs before delegating to the underlying tree children collection.
+
+This class implements [IReadOnlyValidatingResourceTreeChildren](./ts-res.runtime.resourcetree.ireadonlyvalidatingresourcetreechildren.md) by wrapping an [IReadOnlyResourceTreeChildren](./ts-res.runtime.resourcetree.ireadonlyresourcetreechildren.md) instance and providing string-based access to all tree operations. All string inputs are validated using the library's validation utilities before being passed to the underlying collection.
+
+The validator acts as a bridge between string-based external APIs and the strongly-typed internal tree operations, ensuring type safety and consistent error handling throughout the resource tree navigation.
+
+
+</td></tr>
 </tbody></table>
 
 ## Functions

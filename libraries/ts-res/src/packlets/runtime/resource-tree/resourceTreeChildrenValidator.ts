@@ -43,7 +43,7 @@ import {
  * strongly-typed internal tree operations, ensuring type safety and consistent
  * error handling throughout the resource tree navigation.
  *
- * @internal
+ * @public
  */
 export class ResourceTreeChildrenValidator<T> implements IReadOnlyResourceTreeChildren<T, string, string> {
   private readonly _inner: IReadOnlyResourceTreeChildren<T>;
@@ -141,13 +141,11 @@ export class ResourceTreeChildrenValidator<T> implements IReadOnlyResourceTreeCh
   }
 
   /**
-   * Gets a child node by its ResourceName key with detailed error information.
-   * @param key - The ResourceName key to look up
+   * Gets a child node by its string key with detailed error information.
+   * @param key - The string key to look up
    * @returns DetailedResult containing the node if found, or failure with details
    */
-  public get(
-    key: ResourceName
-  ): DetailedResult<IReadOnlyResourceTreeNode<T>, Collections.ResultMapResultDetail> {
+  public get(key: string): DetailedResult<IReadOnlyResourceTreeNode<T>, Collections.ResultMapResultDetail> {
     if (Validate.isValidResourceName(key)) {
       return this._inner.get(key);
     }
@@ -155,11 +153,11 @@ export class ResourceTreeChildrenValidator<T> implements IReadOnlyResourceTreeCh
   }
 
   /**
-   * Checks if a child node exists at the given ResourceName key.
-   * @param key - The ResourceName key to check
+   * Checks if a child node exists at the given string key.
+   * @param key - The string key to check
    * @returns True if a child node exists at the key, false otherwise
    */
-  public has(key: ResourceName): boolean {
+  public has(key: string): boolean {
     return this._inner.has(key as ResourceName);
   }
 
