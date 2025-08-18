@@ -19,11 +19,22 @@
  *       handleResourceData(selection.resourceData);
  *     }
  *   }}
- *   defaultView="tree"
- *   enableSearch={true}
+ *   options={{
+ *     defaultView: "tree",
+ *     enableSearch: true
+ *   }}
  *   resourceAnnotations={{
  *     'res1': { badge: { text: '3', variant: 'info' } }
  *   }}
+ * />
+ *
+ * // Use the ResourcePickerOptionsControl for interactive configuration
+ * <PickerTools.ResourcePickerOptionsControl
+ *   options={pickerOptions}
+ *   onOptionsChange={setPickerOptions}
+ *   mode="collapsible"
+ *   title="Picker Settings"
+ *   showAdvanced={true}
  * />
  * ```
  *
@@ -76,11 +87,18 @@
 // Export the main ResourcePicker component
 export { ResourcePicker } from '../components/pickers/ResourcePicker';
 
+// Export ResourcePicker configuration control
+export { ResourcePickerOptionsControl } from '../components/common/ResourcePickerOptionsControl';
+
 // Export types related to resource picking and selection
 export type {
   ResourcePickerProps,
+  ResourcePickerOptions,
   ResourceSelection,
   ResourceAnnotations,
   ResourceAnnotation,
   PendingResource
 } from '../components/pickers/ResourcePicker/types';
+
+// Export types for the options control
+export type { ResourcePickerOptionsControlProps } from '../components/common/ResourcePickerOptionsControl';

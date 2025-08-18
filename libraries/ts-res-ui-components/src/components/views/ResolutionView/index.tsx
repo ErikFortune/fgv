@@ -21,7 +21,12 @@ import {
 import { QualifierContextControl } from '../../common/QualifierContextControl';
 import { ResolutionEditControls } from './ResolutionEditControls';
 import { ResourcePicker } from '../../pickers/ResourcePicker';
-import { ResourceSelection, ResourceAnnotations } from '../../pickers/ResourcePicker/types';
+import {
+  ResourceSelection,
+  ResourceAnnotations,
+  ResourcePickerOptions
+} from '../../pickers/ResourcePicker/types';
+import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptionsControl';
 import { ResolutionResults } from '../../common/ResolutionResults';
 
 /**
@@ -83,8 +88,14 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
   resourceEditorFactory,
   onMessage,
   pickerOptions,
+  pickerOptionsPresentation = 'hidden',
   className = ''
 }) => {
+  // State for picker options control
+  const [currentPickerOptions, setCurrentPickerOptions] = useState<ResourcePickerOptions>(
+    pickerOptions || {}
+  );
+
   // Use filtered resources when filtering is active and successful
   const isFilteringActive = filterState?.enabled && filterResult?.success === true;
   const activeProcessedResources = isFilteringActive ? filterResult?.processedResources : resources;
@@ -100,9 +111,11 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
       height: '520px',
       emptyMessage: 'No resources available for resolution testing',
       // Override with user-provided options
-      ...pickerOptions
+      ...pickerOptions,
+      // Override with current picker options from control
+      ...currentPickerOptions
     }),
-    [pickerOptions]
+    [pickerOptions, currentPickerOptions]
   );
 
   // Create resource annotations for resolution results and edit states
@@ -245,6 +258,15 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
           </span>
         )}
       </div>
+
+      {/* ResourcePicker Options Control */}
+      <ResourcePickerOptionsControl
+        options={currentPickerOptions}
+        onOptionsChange={setCurrentPickerOptions}
+        presentation={pickerOptionsPresentation}
+        title="Resolution Viewer Picker Options"
+        className="mb-6"
+      />
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         {/* Context Configuration Panel */}

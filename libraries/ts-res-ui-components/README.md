@@ -270,6 +270,36 @@ is a generic component used by all of the views, which can also be used to power
 - **Pending resources**: Show unsaved changes with visual distinction
 - **Branch isolation**: Focus on specific parts of large resource trees
 - **Type safety**: Full TypeScript support with generic resource types
+- **Debug controls**: Optional ResourcePickerOptionsControl for development and debugging
+
+#### ResourcePickerOptionsControl
+
+A debugging/design tool for interactively configuring ResourcePicker behavior. Hidden by default for production use, but can be enabled in development:
+
+```tsx
+// All view components support pickerOptionsPresentation
+<SourceView
+  resources={state.processedResources}
+  pickerOptionsPresentation="collapsible"  // Enable picker options UI
+  onMessage={(type, message) => console.log(`${type}: ${message}`)}
+/>
+
+// Direct usage in custom components
+<PickerTools.ResourcePickerOptionsControl
+  options={pickerOptions}
+  onOptionsChange={setPickerOptions}
+  presentation="popup"  // 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover'
+  title="Picker Configuration"
+  showAdvanced={true}
+/>
+```
+
+**Presentation modes:**
+- `'hidden'`: Not displayed (default for production)
+- `'inline'`: Always visible with expanded controls
+- `'collapsible'`: Expandable/collapsible section
+- `'popup'`: Full modal dialog overlay
+- `'popover'`: Small dropdown overlay
 
 ### SourceView
 

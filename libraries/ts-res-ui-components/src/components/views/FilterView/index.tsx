@@ -16,8 +16,13 @@ import { FilterViewProps } from '../../../types';
 import { Config } from '@fgv/ts-res';
 import { QualifierContextControl } from '../../common/QualifierContextControl';
 import { ResourcePicker } from '../../pickers/ResourcePicker';
-import { ResourceSelection, ResourceAnnotations } from '../../pickers/ResourcePicker/types';
+import {
+  ResourceSelection,
+  ResourceAnnotations,
+  ResourcePickerOptions
+} from '../../pickers/ResourcePicker/types';
 import { SourceResourceDetail } from '../../common/SourceResourceDetail';
+import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptionsControl';
 
 // Import FilteredResource type from the utils
 interface FilteredResource {
@@ -83,11 +88,17 @@ export const FilterView: React.FC<FilterViewProps> = ({
   onFilterResult,
   onMessage,
   pickerOptions,
+  pickerOptionsPresentation = 'hidden',
   className = ''
 }) => {
   // Local UI state
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [showFilteredJsonView, setShowFilteredJsonView] = useState(false);
+
+  // State for picker options control
+  const [currentPickerOptions, setCurrentPickerOptions] = useState<ResourcePickerOptions>(
+    pickerOptions || {}
+  );
 
   // Merge picker options with filter-specific defaults
   const effectivePickerOptions = useMemo(
@@ -100,9 +111,11 @@ export const FilterView: React.FC<FilterViewProps> = ({
       height: '520px',
       emptyMessage: 'No resources available',
       // Override with user-provided options
-      ...pickerOptions
+      ...pickerOptions,
+      // Override with current picker options from control
+      ...currentPickerOptions
     }),
-    [pickerOptions]
+    [pickerOptions, currentPickerOptions]
   );
 
   // Available qualifiers from system configuration or compiled collection
@@ -378,6 +391,15 @@ export const FilterView: React.FC<FilterViewProps> = ({
         <FunnelIcon className="h-8 w-8 text-purple-600" />
         <h2 className="text-2xl font-bold text-gray-900">Filter Tool</h2>
       </div>
+
+      {/* ResourcePicker Options Control */}
+      <ResourcePickerOptionsControl
+        options={currentPickerOptions}
+        onOptionsChange={setCurrentPickerOptions}
+        presentation={pickerOptionsPresentation}
+        title="Filter Tool Picker Options"
+        className="mb-6"
+      />
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         {/* Filter Controls */}

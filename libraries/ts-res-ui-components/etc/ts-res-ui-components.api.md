@@ -44,7 +44,6 @@ interface CompiledViewProps extends ViewBaseProps {
     filterResult?: FilterResult | null;
     filterState?: FilterState;
     onExport?: (data: ResourceJson.Compiled.ICompiledResourceCollection | Bundle.IBundle, type: 'json' | 'bundle') => void;
-    // Warning: (ae-forgotten-export) The symbol "ResourcePickerOptions" needs to be exported by the entry point index.d.ts
     pickerOptions?: ResourcePickerOptions;
     resources?: ExtendedProcessedResources | null;
     useNormalization?: boolean;
@@ -414,11 +413,14 @@ interface PendingResource<T = unknown> {
 declare namespace PickerTools {
     export {
         ResourcePicker,
+        ResourcePickerOptionsControl,
         ResourcePickerProps,
+        ResourcePickerOptions,
         ResourceSelection,
         ResourceAnnotations,
         ResourceAnnotation,
-        PendingResource
+        PendingResource,
+        ResourcePickerOptionsControlProps
     }
 }
 
@@ -702,6 +704,33 @@ export const ResourceOrchestrator: React_2.FC<ResourceOrchestratorProps>;
 const ResourcePicker: <T = unknown>({ resources, selectedResourceId, onResourceSelect, resourceAnnotations, pendingResources, options, className, onMessage }: ResourcePickerProps<T>) => React_2.JSX.Element;
 
 // @public
+interface ResourcePickerOptions {
+    defaultView?: 'list' | 'tree';
+    emptyMessage?: string;
+    enableSearch?: boolean;
+    height?: string | number;
+    hideRootNode?: boolean;
+    rootPath?: string;
+    searchPlaceholder?: string;
+    searchScope?: 'all' | 'current-branch';
+    showViewToggle?: boolean;
+}
+
+// @public
+const ResourcePickerOptionsControl: React_2.FC<ResourcePickerOptionsControlProps>;
+
+// @public
+interface ResourcePickerOptionsControlProps {
+    className?: string;
+    onOptionsChange: (options: ResourcePickerOptions) => void;
+    options: ResourcePickerOptions;
+    presentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
+    quickBranchPaths?: string[];
+    showAdvanced?: boolean;
+    title?: string;
+}
+
+// @public
 interface ResourcePickerProps<T = unknown> extends ViewBaseProps {
     onResourceSelect: (selection: ResourceSelection<T>) => void;
     options?: ResourcePickerOptions;
@@ -810,6 +839,7 @@ function validateConfiguration(config: Config.Model.ISystemConfiguration): Confi
 interface ViewBaseProps {
     className?: string;
     onMessage?: (type: Message['type'], message: string) => void;
+    pickerOptionsPresentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
 }
 
 declare namespace ViewStateTools {
