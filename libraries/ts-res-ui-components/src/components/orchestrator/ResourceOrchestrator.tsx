@@ -1,5 +1,4 @@
 import React, { ReactNode, useCallback, useMemo, useState } from 'react';
-import { Result } from '@fgv/ts-utils';
 import { Config, Bundle, QualifierTypes, ResourceTypes } from '@fgv/ts-res';
 import {
   OrchestratorState,
@@ -8,19 +7,13 @@ import {
   ImportedFile,
   ProcessedResources,
   FilterState,
-  FilterResult,
-  Message
+  FilterResult
 } from '../../types';
 import { useResourceData } from '../../hooks/useResourceData';
 import { useFilterState } from '../../hooks/useFilterState';
 import { useViewState } from '../../hooks/useViewState';
 import { useResolutionState } from '../../hooks/useResolutionState';
-import { createSimpleContext } from '../../utils/tsResIntegration';
-import {
-  createFilteredResourceManagerSimple,
-  analyzeFilteredResources,
-  hasFilterValues
-} from '../../utils/filterResources';
+import { createFilteredResourceManagerSimple, analyzeFilteredResources } from '../../utils/filterResources';
 import { Runtime } from '@fgv/ts-res';
 
 /**

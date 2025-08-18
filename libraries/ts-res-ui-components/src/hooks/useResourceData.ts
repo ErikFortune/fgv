@@ -168,26 +168,22 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
       setState((prev) => ({ ...prev, isProcessing: true, error: null, activeConfiguration: config }));
 
       try {
-        const result = processImportedDirectory(
+        const processedResources = processImportedDirectory(
           directory,
           config,
           params?.qualifierTypeFactory,
           params?.resourceTypeFactory
-        );
+        ).orThrow();
 
-        if (result.isSuccess()) {
-          setState((prev) => ({
-            ...prev,
-            isProcessing: false,
-            processedResources: result.value,
-            hasProcessedData: true,
-            isLoadedFromBundle: false,
-            bundleMetadata: null,
-            activeConfiguration: config
-          }));
-        } else {
-          throw new Error(result.message);
-        }
+        setState((prev) => ({
+          ...prev,
+          isProcessing: false,
+          processedResources,
+          hasProcessedData: true,
+          isLoadedFromBundle: false,
+          bundleMetadata: null,
+          activeConfiguration: config
+        }));
       } catch (error) {
         setState((prev) => ({
           ...prev,
@@ -204,25 +200,21 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
       setState((prev) => ({ ...prev, isProcessing: true, error: null }));
 
       try {
-        const result = processImportedFiles(
+        const processedResources = processImportedFiles(
           files,
           state.activeConfiguration || undefined,
           params?.qualifierTypeFactory,
           params?.resourceTypeFactory
-        );
+        ).orThrow();
 
-        if (result.isSuccess()) {
-          setState((prev) => ({
-            ...prev,
-            isProcessing: false,
-            processedResources: result.value,
-            hasProcessedData: true,
-            isLoadedFromBundle: false,
-            bundleMetadata: null
-          }));
-        } else {
-          throw new Error(result.message);
-        }
+        setState((prev) => ({
+          ...prev,
+          isProcessing: false,
+          processedResources,
+          hasProcessedData: true,
+          isLoadedFromBundle: false,
+          bundleMetadata: null
+        }));
       } catch (error) {
         setState((prev) => ({
           ...prev,
