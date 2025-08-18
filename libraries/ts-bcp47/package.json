@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-bcp47",
-  "version": "5.0.0-17",
+  "version": "5.0.0-18",
   "description": "BCP-47 Tag Utilities",
   "main": "lib/index.js",
   "types": "dist/ts-bcp47.d.ts",
