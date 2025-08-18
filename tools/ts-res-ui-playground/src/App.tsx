@@ -1,4 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import {
+  DocumentTextIcon,
+  FunnelIcon,
+  CodeBracketIcon,
+  MagnifyingGlassIcon,
+  CubeIcon
+} from '@heroicons/react/24/outline';
 import AppLayout from './components/layout/AppLayout';
 import {
   ImportView,
@@ -13,7 +20,9 @@ import {
 } from '@fgv/ts-res-ui-components';
 import NavigationWarningModal from './components/common/NavigationWarningModal';
 import ResourcePickerTool from './components/tools/ResourcePickerTool';
-import ViewWithPresentationSelector from './components/common/ViewWithPresentationSelector';
+import ViewWithPresentationSelector, {
+  PresentationGearIcon
+} from './components/common/ViewWithPresentationSelector';
 import { useNavigationWarning } from './hooks/useNavigationWarning';
 import { useUrlParams } from './hooks/useUrlParams';
 import { parseContextFilter } from './utils/urlParams';
@@ -259,111 +268,148 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
 
       case 'source':
         return (
-          <ViewWithPresentationSelector
-            currentPresentation={pickerPresentation.source}
-            onPresentationChange={(presentation) =>
-              setPickerPresentation((prev) => ({ ...prev, source: presentation }))
-            }
-          >
-            <SourceView
-              onMessage={actions.addMessage}
-              resources={state.resources}
-              pickerOptionsPresentation={pickerPresentation.source}
-              onExport={(data, type) => {
-                // TODO: Implement export functionality
-                actions.addMessage('info', `Export ${type} requested`);
-              }}
-            />
-          </ViewWithPresentationSelector>
+          <div>
+            {/* Title with gear icon */}
+            <div className="flex items-center space-x-3 p-6 pb-0">
+              <DocumentTextIcon className="h-8 w-8 text-blue-600" />
+              <h2 className="text-2xl font-bold text-gray-900">Source Browser</h2>
+              <PresentationGearIcon
+                currentPresentation={pickerPresentation.source}
+                onPresentationChange={(presentation) =>
+                  setPickerPresentation((prev) => ({ ...prev, source: presentation }))
+                }
+              />
+            </div>
+            {/* View content - hide original title */}
+            <div className="[&>div]:pt-0 [&>div>div:first-child]:hidden">
+              <SourceView
+                onMessage={actions.addMessage}
+                resources={state.resources}
+                pickerOptionsPresentation={pickerPresentation.source}
+                onExport={(data, type) => {
+                  // TODO: Implement export functionality
+                  actions.addMessage('info', `Export ${type} requested`);
+                }}
+              />
+            </div>
+          </div>
         );
 
       case 'filter':
         return (
-          <ViewWithPresentationSelector
-            currentPresentation={pickerPresentation.filter}
-            onPresentationChange={(presentation) =>
-              setPickerPresentation((prev) => ({ ...prev, filter: presentation }))
-            }
-          >
-            <FilterView
-              onMessage={actions.addMessage}
-              resources={state.resources}
-              filterState={state.filterState}
-              filterActions={{
-                updateFilterEnabled: (enabled) => actions.updateFilterState({ enabled }),
-                updateFilterValues: (values) => actions.updateFilterState({ values }),
-                applyFilterValues: () => actions.applyFilter(),
-                resetFilterValues: () => actions.resetFilter(),
-                updateReduceQualifiers: (reduceQualifiers) => actions.updateFilterState({ reduceQualifiers })
-              }}
-              filterResult={state.filterResult}
-              pickerOptionsPresentation={pickerPresentation.filter}
-              onFilterResult={(result) => {
-                // The orchestrator manages filter results internally
-              }}
-            />
-          </ViewWithPresentationSelector>
+          <div>
+            {/* Title with gear icon */}
+            <div className="flex items-center space-x-3 p-6 pb-0">
+              <FunnelIcon className="h-8 w-8 text-purple-600" />
+              <h2 className="text-2xl font-bold text-gray-900">Filter Tool</h2>
+              <PresentationGearIcon
+                currentPresentation={pickerPresentation.filter}
+                onPresentationChange={(presentation) =>
+                  setPickerPresentation((prev) => ({ ...prev, filter: presentation }))
+                }
+              />
+            </div>
+            {/* View content - hide original title */}
+            <div className="[&>div]:pt-0 [&>div>div:first-child]:hidden">
+              <FilterView
+                onMessage={actions.addMessage}
+                resources={state.resources}
+                filterState={state.filterState}
+                filterActions={{
+                  updateFilterEnabled: (enabled) => actions.updateFilterState({ enabled }),
+                  updateFilterValues: (values) => actions.updateFilterState({ values }),
+                  applyFilterValues: () => actions.applyFilter(),
+                  resetFilterValues: () => actions.resetFilter(),
+                  updateReduceQualifiers: (reduceQualifiers) =>
+                    actions.updateFilterState({ reduceQualifiers })
+                }}
+                filterResult={state.filterResult}
+                pickerOptionsPresentation={pickerPresentation.filter}
+                onFilterResult={(result) => {
+                  // The orchestrator manages filter results internally
+                }}
+              />
+            </div>
+          </div>
         );
 
       case 'compiled':
         return (
-          <ViewWithPresentationSelector
-            currentPresentation={pickerPresentation.compiled}
-            onPresentationChange={(presentation) =>
-              setPickerPresentation((prev) => ({ ...prev, compiled: presentation }))
-            }
-          >
-            <CompiledView
-              onMessage={actions.addMessage}
-              resources={state.resources}
-              filterState={state.filterState}
-              filterResult={state.filterResult}
-              useNormalization={true}
-              pickerOptionsPresentation={pickerPresentation.compiled}
-              onExport={(data, type) => {
-                // TODO: Implement export functionality
-                actions.addMessage('info', `Export ${type} requested`);
-              }}
-            />
-          </ViewWithPresentationSelector>
+          <div>
+            {/* Title with gear icon */}
+            <div className="flex items-center space-x-3 p-6 pb-0">
+              <CodeBracketIcon className="h-8 w-8 text-green-600" />
+              <h2 className="text-2xl font-bold text-gray-900">Compiled View</h2>
+              <PresentationGearIcon
+                currentPresentation={pickerPresentation.compiled}
+                onPresentationChange={(presentation) =>
+                  setPickerPresentation((prev) => ({ ...prev, compiled: presentation }))
+                }
+              />
+            </div>
+            {/* View content - hide original title */}
+            <div className="[&>div]:pt-0 [&>div>div:first-child]:hidden">
+              <CompiledView
+                onMessage={actions.addMessage}
+                resources={state.resources}
+                filterState={state.filterState}
+                filterResult={state.filterResult}
+                useNormalization={true}
+                pickerOptionsPresentation={pickerPresentation.compiled}
+                onExport={(data, type) => {
+                  // TODO: Implement export functionality
+                  actions.addMessage('info', `Export ${type} requested`);
+                }}
+              />
+            </div>
+          </div>
         );
 
       case 'resolution':
         return (
-          <ViewWithPresentationSelector
-            currentPresentation={pickerPresentation.resolution}
-            onPresentationChange={(presentation) =>
-              setPickerPresentation((prev) => ({ ...prev, resolution: presentation }))
-            }
-          >
-            <ResolutionView
-              onMessage={actions.addMessage}
-              resources={state.resources}
-              filterState={state.filterState}
-              filterResult={state.filterResult}
-              resolutionState={state.resolutionState}
-              resolutionActions={{
-                updateContextValue: actions.updateResolutionContext,
-                applyContext: actions.applyResolutionContext,
-                selectResource: actions.selectResourceForResolution,
-                setViewMode: actions.setResolutionViewMode,
-                resetCache: actions.resetResolutionCache,
-                // Edit actions
-                saveEdit: actions.saveResourceEdit,
-                getEditedValue: actions.getEditedValue,
-                hasEdit: actions.hasResourceEdit,
-                clearEdits: actions.clearResourceEdits,
-                applyEdits: actions.applyResourceEdits,
-                discardEdits: actions.discardResourceEdits
-              }}
-              availableQualifiers={
-                state.resources?.compiledCollection.qualifiers?.map((q: any) => q.name) ||
-                state.configuration?.qualifiers?.map((q) => q.name) ||
-                []
-              }
-              pickerOptionsPresentation={pickerPresentation.resolution}
-            />
-          </ViewWithPresentationSelector>
+          <div>
+            {/* Title with gear icon */}
+            <div className="flex items-center space-x-3 p-6 pb-0">
+              <MagnifyingGlassIcon className="h-8 w-8 text-blue-600" />
+              <h2 className="text-2xl font-bold text-gray-900">Resolution Viewer</h2>
+              <PresentationGearIcon
+                currentPresentation={pickerPresentation.resolution}
+                onPresentationChange={(presentation) =>
+                  setPickerPresentation((prev) => ({ ...prev, resolution: presentation }))
+                }
+              />
+            </div>
+            {/* View content - hide original title */}
+            <div className="[&>div]:pt-0 [&>div>div:first-child]:hidden">
+              <ResolutionView
+                onMessage={actions.addMessage}
+                resources={state.resources}
+                filterState={state.filterState}
+                filterResult={state.filterResult}
+                resolutionState={state.resolutionState}
+                resolutionActions={{
+                  updateContextValue: actions.updateResolutionContext,
+                  applyContext: actions.applyResolutionContext,
+                  selectResource: actions.selectResourceForResolution,
+                  setViewMode: actions.setResolutionViewMode,
+                  resetCache: actions.resetResolutionCache,
+                  // Edit actions
+                  saveEdit: actions.saveResourceEdit,
+                  getEditedValue: actions.getEditedValue,
+                  hasEdit: actions.hasResourceEdit,
+                  clearEdits: actions.clearResourceEdits,
+                  applyEdits: actions.applyResourceEdits,
+                  discardEdits: actions.discardResourceEdits
+                }}
+                availableQualifiers={
+                  state.resources?.compiledCollection.qualifiers?.map((q: any) => q.name) ||
+                  state.configuration?.qualifiers?.map((q) => q.name) ||
+                  []
+                }
+                pickerOptionsPresentation={pickerPresentation.resolution}
+              />
+            </div>
+          </div>
         );
 
       case 'configuration':
@@ -382,14 +428,23 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
 
       case 'picker':
         return (
-          <ViewWithPresentationSelector
-            currentPresentation={pickerPresentation.picker}
-            onPresentationChange={(presentation) =>
-              setPickerPresentation((prev) => ({ ...prev, picker: presentation }))
-            }
-          >
-            <ResourcePickerTool resources={state.resources} onMessage={actions.addMessage} />
-          </ViewWithPresentationSelector>
+          <div>
+            {/* Title with gear icon */}
+            <div className="flex items-center space-x-3 p-6 pb-0">
+              <CubeIcon className="h-8 w-8 text-indigo-600" />
+              <h2 className="text-2xl font-bold text-gray-900">Resource Picker</h2>
+              <PresentationGearIcon
+                currentPresentation={pickerPresentation.picker}
+                onPresentationChange={(presentation) =>
+                  setPickerPresentation((prev) => ({ ...prev, picker: presentation }))
+                }
+              />
+            </div>
+            {/* View content - hide original title */}
+            <div className="[&>div]:pt-0 [&>div>div:first-child]:hidden">
+              <ResourcePickerTool resources={state.resources} onMessage={actions.addMessage} />
+            </div>
+          </div>
         );
 
       default:

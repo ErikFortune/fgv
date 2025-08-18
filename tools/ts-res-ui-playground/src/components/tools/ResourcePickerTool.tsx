@@ -1,6 +1,89 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { PickerTools } from '@fgv/ts-res-ui-components';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+
+// Quick Branch Selector Component
+interface QuickBranchSelectorProps {
+  resources: any;
+  currentRootPath: string;
+  onRootPathChange: (path: string) => void;
+}
+
+const QuickBranchSelector: React.FC<QuickBranchSelectorProps> = ({
+  resources,
+  currentRootPath,
+  onRootPathChange
+}) => {
+  // Extract available branches from resource tree
+  const availableBranches = useMemo(() => {
+    if (!resources?.system?.resourceManager) return [];
+
+    const treeResult = resources.system.resourceManager.getBuiltResourceTree();
+    if (treeResult.isFailure()) return [];
+
+    const tree = treeResult.value;
+    const branches: string[] = [];
+
+    // Get top-level branches (direct children of root that have children themselves)
+    const collectBranches = (node: any, path: string = '') => {
+      if (!node.isLeaf && node.children) {
+        for (const [key, child] of node.children.entries()) {
+          const childPath = path ? `${path}.${key}` : key;
+
+          // Add this as a branch if it has children (non-leaf)
+          if (!child.isLeaf && child.children && child.children.size > 0) {
+            branches.push(childPath);
+
+            // Also collect deeper branches if they're reasonably short
+            if (childPath.split('.').length < 3) {
+              collectBranches(child, childPath);
+            }
+          }
+        }
+      }
+    };
+
+    collectBranches(tree);
+
+    // Sort and limit to most useful branches
+    return branches
+      .sort()
+      .filter((branch) => branch.split('.').length <= 2) // Keep it to reasonable depth
+      .slice(0, 8); // Limit to 8 branches max
+  }, [resources]);
+
+  if (availableBranches.length === 0) {
+    return <div className="text-xs text-gray-500 italic">No branches available in current resource tree</div>;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {availableBranches.map((path) => (
+        <button
+          key={path}
+          onClick={() => onRootPathChange(path)}
+          className={`px-3 py-1 text-xs rounded border ${
+            currentRootPath === path
+              ? 'bg-blue-100 border-blue-300 text-blue-700'
+              : 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          {path}
+        </button>
+      ))}
+      <button
+        onClick={() => onRootPathChange('')}
+        className={`px-3 py-1 text-xs rounded border ${
+          !currentRootPath
+            ? 'bg-blue-100 border-blue-300 text-blue-700'
+            : 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100'
+        }`}
+      >
+        Clear
+      </button>
+    </div>
+  );
+};
 
 interface ResourcePickerToolProps {
   resources: any; // Using the orchestrator state.resources
@@ -369,34 +452,14 @@ const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({ resources, onMe
                 </p>
               </div>
 
-              {/* Quick Branch Selection */}
+              {/* Quick Branch Selection - Dynamic based on actual resource tree */}
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-2">Quick Branch Selection</label>
-                <div className="flex flex-wrap gap-2">
-                  {['strings', 'app', 'images', 'app.ui'].map((path) => (
-                    <button
-                      key={path}
-                      onClick={() => setRootPath(path)}
-                      className={`px-3 py-1 text-xs rounded border ${
-                        rootPath === path
-                          ? 'bg-blue-100 border-blue-300 text-blue-700'
-                          : 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      {path}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setRootPath('')}
-                    className={`px-3 py-1 text-xs rounded border ${
-                      !rootPath
-                        ? 'bg-blue-100 border-blue-300 text-blue-700'
-                        : 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    Clear
-                  </button>
-                </div>
+                <QuickBranchSelector
+                  resources={resources}
+                  currentRootPath={rootPath}
+                  onRootPathChange={setRootPath}
+                />
               </div>
             </div>
 
