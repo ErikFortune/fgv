@@ -479,6 +479,19 @@ ResolutionView provides comprehensive control over the context configuration UI,
 />
 ```
 
+**Custom Section Titles:**
+```tsx
+<ResolutionView
+  resources={processedResources}
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+  sectionTitles={{
+    resources: "Available Items",  // Custom title for resources picker
+    results: "Resolution Output"   // Custom title for results section
+  }}
+/>
+```
+
 **Fine-Grained Qualifier Control:**
 ```tsx
 <ResolutionView

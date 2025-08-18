@@ -93,6 +93,7 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
   pickerOptionsPresentation = 'hidden',
   contextOptions,
   lockedViewMode,
+  sectionTitles,
   className = ''
 }) => {
   // State for picker options control
@@ -433,7 +434,9 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
           {/* Left side: Resource Selection */}
           <div className="lg:w-1/2 flex flex-col">
             <div className="flex items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Resources</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {sectionTitles?.resources || 'Resources'}
+              </h3>
             </div>
 
             <div className="flex-1">
@@ -452,7 +455,7 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
           <div className="lg:w-1/2 flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
-                Results
+                {sectionTitles?.results || 'Results'}
                 {lockedViewMode && (
                   <span className="ml-2 inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
                     {lockedViewMode.charAt(0).toUpperCase() + lockedViewMode.slice(1)} View

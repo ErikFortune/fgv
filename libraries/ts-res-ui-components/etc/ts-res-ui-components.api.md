@@ -653,6 +653,10 @@ interface ResolutionViewProps extends ViewBaseProps {
     resolutionState?: ResolutionState;
     resourceEditorFactory?: ResourceEditorFactory;
     resources?: ProcessedResources | null;
+    sectionTitles?: {
+        resources?: string;
+        results?: string;
+    };
 }
 
 // @public

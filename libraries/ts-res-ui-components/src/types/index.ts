@@ -370,6 +370,13 @@ export interface ResolutionViewProps extends ViewBaseProps {
   contextOptions?: ResolutionContextOptions;
   /** Lock to a single view state and suppress the view state selector */
   lockedViewMode?: 'composed' | 'best' | 'all' | 'raw';
+  /** Custom titles for the main sections */
+  sectionTitles?: {
+    /** Title for the resources picker section (default: "Resources") */
+    resources?: string;
+    /** Title for the results section (default: "Results") */
+    results?: string;
+  };
 }
 
 /**

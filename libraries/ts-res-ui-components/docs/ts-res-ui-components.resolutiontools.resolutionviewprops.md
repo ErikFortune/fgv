@@ -226,5 +226,24 @@ _(Optional)_ The resource system for resolution testing
 
 
 </td></tr>
+<tr><td>
+
+[sectionTitles?](./ts-res-ui-components.resolutiontools.resolutionviewprops.sectiontitles.md)
+
+
+</td><td>
+
+
+</td><td>
+
+{ resources?: string; results?: string; }
+
+
+</td><td>
+
+_(Optional)_ Custom titles for the main sections
+
+
+</td></tr>
 </tbody></table>
 

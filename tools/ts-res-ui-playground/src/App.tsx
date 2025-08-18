@@ -60,6 +60,15 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
     'none' | 'composed' | 'best' | 'all' | 'raw'
   >('none');
 
+  // Playground toggle: customize section titles
+  const [customSectionTitles, setCustomSectionTitles] = useState<{
+    resources: string;
+    results: string;
+  }>({
+    resources: 'Resources',
+    results: 'Results'
+  });
+
   // Ref to track if we've already initialized from URL parameters
   const initializedFromUrlRef = React.useRef(false);
 
@@ -383,24 +392,56 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                   setPickerPresentation((prev) => ({ ...prev, resolution: presentation }))
                 }
               />
-              <div className="ml-auto flex items-center space-x-2">
-                <label className="text-sm text-gray-600" htmlFor="locked-view-mode">
-                  Lock view:
-                </label>
-                <select
-                  id="locked-view-mode"
-                  value={resolutionLockedMode}
-                  onChange={(e) =>
-                    setResolutionLockedMode(e.target.value as 'none' | 'composed' | 'best' | 'all' | 'raw')
-                  }
-                  className="px-2 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700"
-                >
-                  <option value="none">Unlocked</option>
-                  <option value="composed">Composed</option>
-                  <option value="best">Best</option>
-                  <option value="all">All</option>
-                  <option value="raw">Raw</option>
-                </select>
+              <div className="ml-auto flex items-center space-x-4">
+                {/* Section Titles Configuration */}
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm text-gray-600" htmlFor="resources-title">
+                    Resources:
+                  </label>
+                  <input
+                    id="resources-title"
+                    type="text"
+                    value={customSectionTitles.resources}
+                    onChange={(e) =>
+                      setCustomSectionTitles((prev) => ({ ...prev, resources: e.target.value }))
+                    }
+                    className="px-2 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700 w-24"
+                    placeholder="Resources"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm text-gray-600" htmlFor="results-title">
+                    Results:
+                  </label>
+                  <input
+                    id="results-title"
+                    type="text"
+                    value={customSectionTitles.results}
+                    onChange={(e) => setCustomSectionTitles((prev) => ({ ...prev, results: e.target.value }))}
+                    className="px-2 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700 w-24"
+                    placeholder="Results"
+                  />
+                </div>
+                {/* View Mode Lock */}
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm text-gray-600" htmlFor="locked-view-mode">
+                    Lock view:
+                  </label>
+                  <select
+                    id="locked-view-mode"
+                    value={resolutionLockedMode}
+                    onChange={(e) =>
+                      setResolutionLockedMode(e.target.value as 'none' | 'composed' | 'best' | 'all' | 'raw')
+                    }
+                    className="px-2 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700"
+                  >
+                    <option value="none">Unlocked</option>
+                    <option value="composed">Composed</option>
+                    <option value="best">Best</option>
+                    <option value="all">All</option>
+                    <option value="raw">Raw</option>
+                  </select>
+                </div>
               </div>
             </div>
             {/* View content - hide original title */}
@@ -432,6 +473,7 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 }
                 pickerOptionsPresentation={pickerPresentation.resolution}
                 lockedViewMode={resolutionLockedMode === 'none' ? undefined : resolutionLockedMode}
+                sectionTitles={customSectionTitles}
               />
             </div>
           </div>
