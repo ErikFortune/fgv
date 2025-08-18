@@ -11,6 +11,7 @@ module.exports = {
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
+    symlinks: true,
     fallback: {
       // Only keep the polyfills we actually need
       crypto: require.resolve('crypto-browserify'),
