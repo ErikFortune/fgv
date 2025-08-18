@@ -368,6 +368,8 @@ export interface ResolutionViewProps extends ViewBaseProps {
   pickerOptions?: import('../components/pickers/ResourcePicker/types').ResourcePickerOptions;
   /** Optional configuration for the resolution context controls */
   contextOptions?: ResolutionContextOptions;
+  /** Lock to a single view state and suppress the view state selector */
+  lockedViewMode?: 'composed' | 'best' | 'all' | 'raw';
 }
 
 /**

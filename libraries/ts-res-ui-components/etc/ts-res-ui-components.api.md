@@ -647,6 +647,7 @@ interface ResolutionViewProps extends ViewBaseProps {
     contextOptions?: ResolutionContextOptions;
     filterResult?: FilterResult | null;
     filterState?: FilterState;
+    lockedViewMode?: 'composed' | 'best' | 'all' | 'raw';
     pickerOptions?: ResourcePickerOptions;
     resolutionActions?: ResolutionActions;
     resolutionState?: ResolutionState;

@@ -114,6 +114,25 @@ _(Optional)_ Optional filter state
 </td></tr>
 <tr><td>
 
+[lockedViewMode?](./ts-res-ui-components.resolutiontools.resolutionviewprops.lockedviewmode.md)
+
+
+</td><td>
+
+
+</td><td>
+
+'composed' \| 'best' \| 'all' \| 'raw'
+
+
+</td><td>
+
+_(Optional)_ Lock to a single view state and suppress the view state selector
+
+
+</td></tr>
+<tr><td>
+
 [pickerOptions?](./ts-res-ui-components.resolutiontools.resolutionviewprops.pickeroptions.md)
 
 

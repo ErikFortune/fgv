@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   MagnifyingGlassIcon,
   DocumentTextIcon,
@@ -92,6 +92,7 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
   pickerOptions,
   pickerOptionsPresentation = 'hidden',
   contextOptions,
+  lockedViewMode,
   className = ''
 }) => {
   // State for picker options control
@@ -255,12 +256,22 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
     [resolutionActions]
   );
 
+  // Automatically set locked view mode when provided
+  useEffect(() => {
+    if (lockedViewMode && resolutionActions?.setViewMode) {
+      resolutionActions.setViewMode(lockedViewMode);
+    }
+  }, [lockedViewMode, resolutionActions]);
+
   // Handle view mode change
   const handleViewModeChange = useCallback(
     (mode: 'composed' | 'best' | 'all' | 'raw') => {
-      resolutionActions?.setViewMode(mode);
+      // Don't allow view mode changes when locked
+      if (!lockedViewMode) {
+        resolutionActions?.setViewMode(mode);
+      }
     },
-    [resolutionActions]
+    [resolutionActions, lockedViewMode]
   );
 
   if (!resources) {
@@ -440,8 +451,15 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
           {/* Right side: Resolution Results */}
           <div className="lg:w-1/2 flex flex-col">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Results</h3>
-              {resolutionState?.selectedResourceId && (
+              <h3 className="text-lg font-semibold text-gray-900">
+                Results
+                {lockedViewMode && (
+                  <span className="ml-2 inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                    {lockedViewMode.charAt(0).toUpperCase() + lockedViewMode.slice(1)} View
+                  </span>
+                )}
+              </h3>
+              {resolutionState?.selectedResourceId && !lockedViewMode && (
                 <div className="flex space-x-2">
                   <button
                     onClick={() => handleViewModeChange('composed')}

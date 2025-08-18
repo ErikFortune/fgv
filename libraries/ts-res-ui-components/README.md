@@ -14,6 +14,7 @@ This packlet is largely AI written, and it shows.
 - **🔄 Resource Management**: Import, process, and manage ts-res configurations and bundles
 - **🔍 Advanced Filtering**: Filter resources by context with qualifier reduction
 - **🎯 Resource Resolution**: Test resource resolution with dynamic context values
+- **🔒 View Mode Locking**: Lock to single view mode for simplified interfaces
 - **📊 Visualization**: Multiple views for exploring resource structures and compiled output
 - **⚙️ Configuration**: Visual configuration management for qualifier types, qualifiers, and resource types
 - **📁 File Handling**: Support for directory imports, ZIP files via ts-res zip-archive packlet, and bundle loading
@@ -363,7 +364,7 @@ Shows the compiled resource structure with detailed candidate information using 
 
 ### ResolutionView
 
-Interactive resource resolution testing with context management and support for custom resource editors via the ResourceEditorFactory pattern.
+Interactive resource resolution testing with context management and support for custom resource editors via the ResourceEditorFactory pattern. Supports locking to a single view mode to simplify the interface for specific use cases.
 
 > 📚 **[See ResolutionView documentation →](./docs/ts-res-ui-components.resolutionview.md)**
 
@@ -441,6 +442,113 @@ const editorFactory = new MyResourceEditorFactory();
 - **Graceful Fallback**: Unknown resource types automatically fall back to JSON editor
 - **Extensible**: Easy to add new editors for new resource types
 - **Error Handling**: Factory failures are caught and reported to users
+
+#### Context Control Extensibility
+
+ResolutionView provides comprehensive control over the context configuration UI, allowing hosts to customize which qualifiers are editable, provide external values, and control the presentation. This is especially useful for applications that need to drive context externally or provide selective user control.
+
+**Hide Context UI Entirely (Host-Driven Context):**
+```tsx
+<ResolutionView
+  resources={processedResources}
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+  contextOptions={{
+    showContextControls: false  // Hide all context UI
+  }}
+/>
+```
+
+**Lock to Single View Mode:**
+```tsx
+<ResolutionView
+  resources={processedResources}
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+  lockedViewMode="composed"  // Lock to composed view, hide view selector
+/>
+```
+
+**Lock to Best View Mode:**
+```tsx
+<ResolutionView
+  resources={processedResources}
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+  lockedViewMode="best"  // Lock to best view, hide view selector
+/>
+```
+
+**Fine-Grained Qualifier Control:**
+```tsx
+<ResolutionView
+  resources={processedResources}
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+  contextOptions={{
+    // Panel visibility control
+    showContextControls: true,
+    showCurrentContext: true,
+    showContextActions: true,
+    
+    // Per-qualifier configuration
+    qualifierOptions: {
+      language: { 
+        editable: true, 
+        placeholder: "Select language..." 
+      },
+      platform: { 
+        editable: false, 
+        hostValue: "web", 
+        showHostValue: true 
+      },
+      environment: { 
+        visible: false  // Hidden from UI entirely
+      }
+    },
+    
+    // Host-managed values (invisible but active in context)
+    hostManagedValues: { 
+      environment: "production",
+      deployment: "us-east-1"
+    },
+    
+    // Appearance customization
+    contextPanelTitle: "Resolution Context",
+    globalPlaceholder: "Enter {qualifierName}..."
+  }}
+/>
+```
+
+**Visual Indicators:**
+- **🔵 Blue border + light blue background** - Host-managed qualifiers have subtle visual styling
+- **🖱️ Hover tooltip** - "Host-managed value - controlled externally" appears on hover
+- **🎯 Actual values displayed** - Shows real host values instead of generic "Disabled" text
+- **📋 Current context** - Displays combined user + host-managed values
+
+**Development & Debug Controls:**
+Enable the context options gear icon during development for interactive configuration:
+
+```tsx
+<ResolutionView
+  resources={processedResources}
+  pickerOptionsPresentation="collapsible"  // Shows both picker & context gear icons
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+/>
+```
+
+The gear icon provides a live configuration interface for:
+- **Context Panel Visibility** - Show/hide controls, current context display, action buttons
+- **Global Defaults** - Set default visibility and editability for all qualifiers
+- **Per-Qualifier Settings** - Configure visibility, editability, host values, and custom placeholders
+- **Host-Managed Values** - Set external values that override user input
+
+This extensibility is perfect for:
+- **Embedded applications** where the host drives context from sidebar controls
+- **Guided workflows** where only specific qualifiers should be user-editable
+- **Multi-tenant applications** where some context is determined by tenant configuration
+- **Progressive disclosure** where advanced qualifiers are hidden from basic users
 
 ### MessagesWindow
 
