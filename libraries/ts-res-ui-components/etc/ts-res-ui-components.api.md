@@ -226,6 +226,7 @@ export const FilterView: React_2.FC<FilterViewProps>;
 
 // @public
 interface FilterViewProps extends ViewBaseProps {
+    contextOptions?: ResolutionContextOptions;
     filterActions: FilterActions;
     filterResult?: FilterResult | null;
     filterState: FilterState;

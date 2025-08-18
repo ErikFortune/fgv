@@ -563,6 +563,151 @@ This extensibility is perfect for:
 - **Multi-tenant applications** where some context is determined by tenant configuration
 - **Progressive disclosure** where advanced qualifiers are hidden from basic users
 
+### FilterView
+
+Provides context-based resource filtering with candidate count analysis and export functionality.
+
+> 📚 **[See FilterView documentation →](./docs/ts-res-ui-components.filterview.md)**
+
+```tsx
+import { FilterView, ResourceTools } from '@fgv/ts-res-ui-components';
+
+function MyFilterTool() {
+  const { state, actions } = ResourceTools.useResourceData();
+
+  return (
+    <FilterView
+      resources={state.resources}
+      filterState={state.filterState}
+      filterActions={{
+        updateFilterEnabled: (enabled) => actions.updateFilterState({ enabled }),
+        updateFilterValues: (values) => actions.updateFilterState({ values }),
+        applyFilterValues: () => actions.applyFilter(),
+        resetFilterValues: () => actions.resetFilter(),
+        updateReduceQualifiers: (reduce) => actions.updateFilterState({ reduceQualifiers: reduce })
+      }}
+      filterResult={state.filterResult}
+      onMessage={(type, message) => console.log(`${type}: ${message}`)}
+    />
+  );
+}
+```
+
+#### FilterView Context Control Extensibility
+
+FilterView provides the same comprehensive context control features as ResolutionView, allowing hosts to customize which qualifiers are editable for filtering, provide external values, and control the presentation. This is especially useful for filtering applications that need to drive filter context externally or provide selective user control.
+
+**Hide Context UI Entirely (Host-Driven Filtering):**
+```tsx
+<FilterView
+  resources={processedResources}
+  filterState={filterState}
+  filterActions={filterActions}
+  filterResult={filterResult}
+  contextOptions={{
+    showContextControls: false  // Hide all context filter controls
+  }}
+/>
+```
+
+**Fine-Grained Filter Context Control:**
+```tsx
+<FilterView
+  resources={processedResources}
+  filterState={filterState}
+  filterActions={filterActions}
+  filterResult={filterResult}
+  contextOptions={{
+    // Panel appearance
+    contextPanelTitle: "Filter Criteria",
+    globalPlaceholder: "Filter by {qualifierName}...",
+    
+    // Per-qualifier configuration
+    qualifierOptions: {
+      language: { 
+        editable: true, 
+        placeholder: "Filter by language..." 
+      },
+      platform: { 
+        editable: false, 
+        hostValue: "web", 
+        showHostValue: true 
+      },
+      environment: { 
+        visible: false  // Hidden from filter UI entirely
+      }
+    },
+    
+    // Host-managed filter values (invisible but active in filter context)
+    hostManagedValues: { 
+      environment: "production",
+      deployment: "us-east-1"
+    },
+    
+    // UI visibility control
+    showCurrentContext: true,  // Show pending/applied filter summary
+    showContextActions: true   // Show filter reset/apply buttons
+  }}
+/>
+```
+
+**Combined with External Filter Logic:**
+```tsx
+function SmartFilterView() {
+  const [externalContext, setExternalContext] = useState({
+    userRole: 'admin',
+    tenant: 'enterprise'
+  });
+
+  return (
+    <FilterView
+      resources={processedResources}
+      filterState={filterState}
+      filterActions={filterActions}
+      contextOptions={{
+        contextPanelTitle: "Available Filters",
+        qualifierOptions: {
+          // Hide sensitive qualifiers from basic users
+          environment: { 
+            visible: externalContext.userRole === 'admin' 
+          },
+          // Lock tenant-specific qualifiers
+          tenant: { 
+            editable: false,
+            hostValue: externalContext.tenant
+          }
+        }
+      }}
+    />
+  );
+}
+```
+
+**Development & Debug Controls:**
+Enable the context options gear icon during development for interactive filter configuration:
+
+```tsx
+<FilterView
+  resources={processedResources}
+  pickerOptionsPresentation="collapsible"  // Shows both picker & context gear icons
+  filterState={filterState}
+  filterActions={filterActions}
+/>
+```
+
+The gear icon provides a live configuration interface for:
+- **Context Panel Visibility** - Show/hide filter controls, current context display, action buttons
+- **Global Defaults** - Set default visibility and editability for all filter qualifiers
+- **Per-Qualifier Settings** - Configure visibility, editability, host values, and custom placeholders
+- **Host-Managed Values** - Set external filter values that override user input
+
+This filter extensibility is perfect for:
+- **Dashboard applications** where filters are driven from external controls
+- **Multi-tenant systems** where filter options vary by tenant or user role
+- **Guided filter workflows** where only specific criteria should be user-selectable
+- **Advanced/basic user modes** where filter complexity adapts to user expertise
+- **Integration scenarios** where filter context comes from external systems
+
 ### MessagesWindow
 
 Displays and manages application messages with filtering, search, and copy functionality. Perfect for debugging interfaces and development tools where message visibility is critical.

@@ -254,6 +254,8 @@ export interface FilterViewProps extends ViewBaseProps {
   onFilterResult?: (result: FilterResult | null) => void;
   /** Optional configuration for the ResourcePicker behavior */
   pickerOptions?: import('../components/pickers/ResourcePicker/types').ResourcePickerOptions;
+  /** Optional configuration for context control behavior */
+  contextOptions?: ResolutionContextOptions;
 }
 
 /**

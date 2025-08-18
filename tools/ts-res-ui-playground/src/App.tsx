@@ -69,6 +69,17 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
     results: 'Results'
   });
 
+  // Playground context options for FilterView
+  const [filterContextOptions, setFilterContextOptions] = useState<{
+    showDemo: boolean;
+    hostManagedLanguage: string;
+    hideTerritory: boolean;
+  }>({
+    showDemo: false,
+    hostManagedLanguage: '',
+    hideTerritory: false
+  });
+
   // Ref to track if we've already initialized from URL parameters
   const initializedFromUrlRef = React.useRef(false);
 
@@ -323,6 +334,63 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 }
               />
             </div>
+
+            {/* Playground Controls */}
+            <div className="px-6">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-yellow-800">Context Options Demo</span>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={filterContextOptions.showDemo}
+                      onChange={(e) =>
+                        setFilterContextOptions((prev) => ({ ...prev, showDemo: e.target.checked }))
+                      }
+                      className="rounded border-yellow-300 text-yellow-600 focus:ring-yellow-500"
+                    />
+                    <span className="ml-2 text-sm text-yellow-700">Enable</span>
+                  </label>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm text-yellow-700" htmlFor="host-language">
+                      Host language:
+                    </label>
+                    <input
+                      id="host-language"
+                      type="text"
+                      value={filterContextOptions.hostManagedLanguage}
+                      onChange={(e) =>
+                        setFilterContextOptions((prev) => ({
+                          ...prev,
+                          hostManagedLanguage: e.target.value
+                        }))
+                      }
+                      placeholder="e.g., en-US"
+                      className="px-2 py-1 text-sm border border-yellow-300 rounded bg-white text-gray-700 w-24"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <label className="flex items-center text-sm text-yellow-700">
+                      <input
+                        type="checkbox"
+                        checked={filterContextOptions.hideTerritory}
+                        onChange={(e) =>
+                          setFilterContextOptions((prev) => ({
+                            ...prev,
+                            hideTerritory: e.target.checked
+                          }))
+                        }
+                        className="mr-2 rounded border-yellow-300 text-yellow-600 focus:ring-yellow-500"
+                      />
+                      Hide territory
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* View content - hide original title */}
             <div className="[&>div]:pt-0 [&>div>div:first-child]:hidden">
               <FilterView
@@ -339,6 +407,24 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 }}
                 filterResult={state.filterResult}
                 pickerOptionsPresentation={pickerPresentation.filter}
+                contextOptions={
+                  filterContextOptions.showDemo
+                    ? {
+                        contextPanelTitle: 'Filter Context (Demo Mode)',
+                        globalPlaceholder: 'Filter by {qualifierName}...',
+                        qualifierOptions: {
+                          territory: {
+                            visible: !filterContextOptions.hideTerritory
+                          }
+                        },
+                        hostManagedValues: filterContextOptions.hostManagedLanguage
+                          ? {
+                              language: filterContextOptions.hostManagedLanguage
+                            }
+                          : undefined
+                      }
+                    : undefined
+                }
                 onFilterResult={(result) => {
                   // The orchestrator manages filter results internally
                 }}
