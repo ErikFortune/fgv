@@ -11,8 +11,45 @@ Provides comprehensive functionality for: - Importing and processing resource fi
 **Signature:**
 
 ```typescript
-export declare function useResourceData(): UseResourceDataReturn;
+export declare function useResourceData(params?: UseResourceDataParams): UseResourceDataReturn;
 ```
+
+## Parameters
+
+<table><thead><tr><th>
+
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+params
+
+
+</td><td>
+
+UseResourceDataParams
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+</tbody></table>
+
 **Returns:**
 
 UseResourceDataReturn

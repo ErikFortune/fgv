@@ -12,7 +12,7 @@ import {
   ChevronUpIcon
 } from '@heroicons/react/24/outline';
 import { Resources } from '@fgv/ts-res';
-import { FilterViewProps } from '../../../types';
+import { FilterViewProps, ResolutionContextOptions } from '../../../types';
 import { Config } from '@fgv/ts-res';
 import { QualifierContextControl } from '../../common/QualifierContextControl';
 import { ResourcePicker } from '../../pickers/ResourcePicker';
@@ -23,6 +23,7 @@ import {
 } from '../../pickers/ResourcePicker/types';
 import { SourceResourceDetail } from '../../common/SourceResourceDetail';
 import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptionsControl';
+import { ResolutionContextOptionsControl } from '../../common/ResolutionContextOptionsControl';
 
 // Import FilteredResource type from the utils
 interface FilteredResource {
@@ -89,6 +90,7 @@ export const FilterView: React.FC<FilterViewProps> = ({
   onMessage,
   pickerOptions,
   pickerOptionsPresentation = 'hidden',
+  contextOptions,
   className = ''
 }) => {
   // Local UI state
@@ -98,6 +100,11 @@ export const FilterView: React.FC<FilterViewProps> = ({
   // State for picker options control
   const [currentPickerOptions, setCurrentPickerOptions] = useState<ResourcePickerOptions>(
     pickerOptions || {}
+  );
+
+  // State for context options control
+  const [currentContextOptions, setCurrentContextOptions] = useState<ResolutionContextOptions>(
+    contextOptions || {}
   );
 
   // Merge picker options with filter-specific defaults
@@ -128,13 +135,28 @@ export const FilterView: React.FC<FilterViewProps> = ({
     return ['language', 'territory', 'currentTerritory', 'role', 'env'];
   }, [resources?.compiledCollection.qualifiers]);
 
+  // Merge context options with current options from control
+  const effectiveContextOptions = useMemo(
+    () => ({
+      ...contextOptions,
+      ...currentContextOptions
+    }),
+    [contextOptions, currentContextOptions]
+  );
+
   // Handle filter value changes using the shared component's callback pattern
   const handleQualifierChange = useCallback(
     (qualifierName: string, value: string | undefined) => {
-      const newValues = { ...filterState.values, [qualifierName]: value };
-      filterActions.updateFilterValues(newValues);
+      // Don't update filter values if this qualifier is host-managed
+      const qualifierOptions = effectiveContextOptions?.qualifierOptions?.[qualifierName];
+      const isHostManaged = qualifierOptions?.hostValue !== undefined;
+
+      if (!isHostManaged) {
+        const newValues = { ...filterState.values, [qualifierName]: value };
+        filterActions.updateFilterValues(newValues);
+      }
     },
-    [filterState.values, filterActions]
+    [filterState.values, filterActions, effectiveContextOptions?.qualifierOptions]
   );
 
   // Check if we have any applied filter values set
@@ -320,6 +342,25 @@ export const FilterView: React.FC<FilterViewProps> = ({
     return annotations;
   }, [displayResources, isFilteringActive]);
 
+  // Determine which qualifiers to show and their options
+  const visibleQualifiers = useMemo(() => {
+    if (!effectiveContextOptions?.qualifierOptions) {
+      return availableQualifiers;
+    }
+
+    return availableQualifiers.filter((qualifierName) => {
+      const options = effectiveContextOptions.qualifierOptions![qualifierName];
+      return options?.visible !== false;
+    });
+  }, [availableQualifiers, effectiveContextOptions?.qualifierOptions]);
+
+  // Get effective filter values including host-managed values
+  const effectiveFilterValues = useMemo(() => {
+    const baseValues = filterState.values || {};
+    const hostValues = effectiveContextOptions?.hostManagedValues || {};
+    return { ...baseValues, ...hostValues };
+  }, [filterState.values, effectiveContextOptions?.hostManagedValues]);
+
   // Handle filter value changes
   const handleFilterChange = useCallback(
     (qualifierName: string, value: string | undefined) => {
@@ -401,6 +442,16 @@ export const FilterView: React.FC<FilterViewProps> = ({
         className="mb-6"
       />
 
+      {/* FilterContext Options Control */}
+      <ResolutionContextOptionsControl
+        options={currentContextOptions}
+        onOptionsChange={setCurrentContextOptions}
+        availableQualifiers={availableQualifiers}
+        presentation={pickerOptionsPresentation}
+        title="Filter Context Options"
+        className="mb-6"
+      />
+
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         {/* Filter Controls */}
         <div className="mb-6">
@@ -474,45 +525,71 @@ export const FilterView: React.FC<FilterViewProps> = ({
         </div>
 
         {/* Qualifier Selection Panel */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Context Filters</h3>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {availableQualifiers.map((qualifierName) => (
-                <QualifierContextControl
-                  key={qualifierName}
-                  qualifierName={qualifierName}
-                  value={filterState.values[qualifierName]}
-                  onChange={handleQualifierChange}
-                  disabled={!filterState.enabled}
-                  placeholder={`Filter by ${qualifierName}`}
-                  resources={resources}
-                />
-              ))}
-            </div>
-            {filterState.enabled && (
-              <div className="mt-3 text-sm text-gray-600">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p>
-                      <strong>Pending:</strong> {getFilterSummary(filterState.values)}
-                    </p>
-                    {isFilteringActive && (
-                      <p>
-                        <strong>Applied:</strong> {getFilterSummary(filterState.appliedValues)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                {filterResult && !filterResult.success && filterResult.error && (
-                  <p className="text-red-600 text-xs mt-1">
-                    <strong>Error:</strong> {filterResult.error}
-                  </p>
-                )}
+        {effectiveContextOptions?.showContextControls !== false && (
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              {effectiveContextOptions?.contextPanelTitle || 'Context Filters'}
+            </h3>
+            <div
+              className={`bg-gray-50 rounded-lg p-4 ${effectiveContextOptions?.contextPanelClassName || ''}`}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {visibleQualifiers.map((qualifierName) => {
+                  const qualifierOptions = effectiveContextOptions?.qualifierOptions?.[qualifierName];
+                  const hostManagedValue = effectiveContextOptions?.hostManagedValues?.[qualifierName];
+                  const globalPlaceholder =
+                    typeof effectiveContextOptions?.globalPlaceholder === 'function'
+                      ? effectiveContextOptions.globalPlaceholder(qualifierName)
+                      : effectiveContextOptions?.globalPlaceholder;
+
+                  // Merge host-managed values with qualifier options
+                  const mergedOptions = {
+                    ...qualifierOptions,
+                    // Host-managed values override qualifier-specific host values
+                    hostValue:
+                      hostManagedValue !== undefined ? hostManagedValue : qualifierOptions?.hostValue,
+                    // Apply filter-enabled state to editability
+                    editable: filterState.enabled && qualifierOptions?.editable !== false
+                  };
+
+                  return (
+                    <QualifierContextControl
+                      key={qualifierName}
+                      qualifierName={qualifierName}
+                      value={filterState.values[qualifierName]}
+                      onChange={handleQualifierChange}
+                      disabled={!filterState.enabled}
+                      placeholder={globalPlaceholder || `Filter by ${qualifierName}`}
+                      resources={resources}
+                      options={mergedOptions}
+                    />
+                  );
+                })}
               </div>
-            )}
+              {filterState.enabled && effectiveContextOptions?.showCurrentContext !== false && (
+                <div className="mt-3 text-sm text-gray-600">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p>
+                        <strong>Pending:</strong> {getFilterSummary(effectiveFilterValues)}
+                      </p>
+                      {isFilteringActive && (
+                        <p>
+                          <strong>Applied:</strong> {getFilterSummary(filterState.appliedValues)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {filterResult && !filterResult.success && filterResult.error && (
+                    <p className="text-red-600 text-xs mt-1">
+                      <strong>Error:</strong> {filterResult.error}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Main Browser/Details Layout */}
         <div className="flex flex-col md:flex-row gap-6 h-[600px]">

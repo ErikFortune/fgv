@@ -22,7 +22,7 @@
 
 /* eslint-disable @rushstack/typedef-var */
 
-import { Converters } from '@fgv/ts-utils';
+import { Converters, Result } from '@fgv/ts-utils';
 import { ISystemConfiguration } from './json';
 import * as QualifierTypes from '../qualifier-types';
 import * as Qualifiers from '../qualifiers';
@@ -48,3 +48,14 @@ export const systemConfiguration = Converters.strictObject<ISystemConfiguration>
  * @public
  */
 export const predefinedSystemConfiguration = Converters.enumeratedValue(allPredefinedSystemConfigurations);
+
+/**
+ * Validate a {@link Config.Model.ISystemConfiguration | ISystemConfiguration} object.
+ * @param config - The system configuration to validate
+ * @returns `Success` with the validated system configuration if successful,
+ * or `Failure` with an error message if validation fails.
+ * @public
+ */
+export function validateSystemConfiguration(config: unknown): Result<ISystemConfiguration> {
+  return systemConfiguration.convert(config);
+}

@@ -4,6 +4,32 @@
 
 ## Config.Convert namespace
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[validateSystemConfiguration(config)](./ts-res.config.convert.validatesystemconfiguration.md)
+
+
+</td><td>
+
+Validate a [ISystemConfiguration](./ts-res.config.model.isystemconfiguration.md) object.
+
+
+</td></tr>
+</tbody></table>
+
 ## Variables
 
 <table><thead><tr><th>

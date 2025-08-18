@@ -19,7 +19,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[useResourceData()](./ts-res-ui-components.resourcetools.useresourcedata.md)
+[useResourceData(params)](./ts-res-ui-components.resourcetools.useresourcedata.md)
 
 
 </td><td>

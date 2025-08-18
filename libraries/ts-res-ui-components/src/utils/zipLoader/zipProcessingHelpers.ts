@@ -14,19 +14,13 @@ export async function processZipResources(
 ): Promise<Result<ProcessedResources>> {
   try {
     if (directory) {
-      const processResult = await processImportedDirectory(directory, config);
-      if (processResult.isSuccess()) {
-        return succeed(processResult.value);
-      } else {
-        return fail(`Failed to process resources from directory: ${processResult.message}`);
-      }
+      return processImportedDirectory(directory, config).withErrorFormat(
+        (message) => `Failed to process resources from directory: ${message}`
+      );
     } else if (files.length > 0) {
-      const processResult = await processImportedFiles(files, config);
-      if (processResult.isSuccess()) {
-        return succeed(processResult.value);
-      } else {
-        return fail(`Failed to process resources from files: ${processResult.message}`);
-      }
+      return processImportedFiles(files, config).withErrorFormat(
+        (message) => `Failed to process resources from files: ${message}`
+      );
     } else {
       return fail('No files or directory structure found to process');
     }

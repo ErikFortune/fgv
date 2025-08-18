@@ -74,128 +74,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_built](./ts-res.resources.resourcemanagerbuilder._built.md)
-
-
-</td><td>
-
-`protected`
-
-
-</td><td>
-
-boolean
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[\_builtResources](./ts-res.resources.resourcemanagerbuilder._builtresources.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [Resource](./ts-res.resource.md)<!-- -->&gt;
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[\_cachedResourceTree?](./ts-res.resources.resourcemanagerbuilder._cachedresourcetree.md)
-
-
-</td><td>
-
-`protected`
-
-
-</td><td>
-
-[ResourceTree.IReadOnlyResourceTreeRoot](./ts-res.runtime.resourcetree.ireadonlyresourcetreeroot.md)<!-- -->&lt;[Resource](./ts-res.resource.md)<!-- -->&gt;
-
-
-</td><td>
-
-_(Optional)_
-
-
-</td></tr>
-<tr><td>
-
-[\_conditions](./ts-res.resources.resourcemanagerbuilder._conditions.md)
-
-
-</td><td>
-
-`protected`
-
-`readonly`
-
-
-</td><td>
-
-[ConditionCollector](./ts-res.conditions.conditioncollector.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[\_conditionSets](./ts-res.resources.resourcemanagerbuilder._conditionsets.md)
-
-
-</td><td>
-
-`protected`
-
-`readonly`
-
-
-</td><td>
-
-[ConditionSetCollector](./ts-res.conditions.conditionsetcollector.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[\_decisions](./ts-res.resources.resourcemanagerbuilder._decisions.md)
-
-
-</td><td>
-
-`protected`
-
-`readonly`
-
-
-</td><td>
-
-[AbstractDecisionCollector](./ts-res.decisions.abstractdecisioncollector.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
 [\_numCandidates?](./ts-res.resources.resourcemanagerbuilder._numcandidates.md)
 
 
@@ -212,27 +90,6 @@ number
 </td><td>
 
 _(Optional)_ The number of candidates in this resource manager.
-
-
-</td></tr>
-<tr><td>
-
-[\_resources](./ts-res.resources.resourcemanagerbuilder._resources.md)
-
-
-</td><td>
-
-`protected`
-
-`readonly`
-
-
-</td><td>
-
-ValidatingResultMap&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->, [ResourceBuilder](./ts-res.resources.resourcebuilder.md)<!-- -->&gt;
-
-
-</td><td>
 
 
 </td></tr>
@@ -379,6 +236,29 @@ The number of resources in this resource manager.
 
 </td><td>
 
+The [qualifiers](./ts-res.qualifiers.ireadonlyqualifiercollector.md) used by this resource manager.
+
+
+</td></tr>
+<tr><td>
+
+[qualifierTypes](./ts-res.resources.resourcemanagerbuilder.qualifiertypes.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ReadOnlyQualifierTypeCollector](./ts-res.qualifiertypes.readonlyqualifiertypecollector.md)
+
+
+</td><td>
+
+The [qualifier types](./ts-res.qualifiertypes.readonlyqualifiertypecollector.md) used by this resource manager.
+
 
 </td></tr>
 <tr><td>
@@ -418,6 +298,8 @@ A read-only map of [resource builders](./ts-res.resources.resourcebuilder.md) us
 
 
 </td><td>
+
+The [resource types](./ts-res.resourcetypes.readonlyresourcetypecollector.md) used by this resource manager.
 
 
 </td></tr>
@@ -540,7 +422,7 @@ Builds the [resources](./ts-res.resources.resource.md) from the collected [candi
 
 </td><td>
 
-Creates a filtered clone of this ResourceManagerBuilder using the specified context. This is a convenience method that creates a new ResourceManagerBuilder with the same configuration but filtered to include only candidates that match the provided context. If candidates are provided for editing, they will be applied with collision detection.
+Creates a clone of this ResourceManagerBuilder with optional configuration overrides. This method creates a new ResourceManagerBuilder that can optionally use different qualifiers and/or resource types than the original. It can also be filtered to include only candidates that match the provided context and apply candidate edits.
 
 
 </td></tr>

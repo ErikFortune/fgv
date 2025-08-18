@@ -56,25 +56,6 @@ _(Optional)_ Custom class name
 </td></tr>
 <tr><td>
 
-[mode?](./ts-res-ui-components.pickertools.resourcepickeroptionscontrolprops.mode.md)
-
-
-</td><td>
-
-
-</td><td>
-
-'inline' \| 'collapsible' \| 'popover'
-
-
-</td><td>
-
-_(Optional)_ Whether to show as inline expanded controls or collapsible
-
-
-</td></tr>
-<tr><td>
-
 [onOptionsChange](./ts-res-ui-components.pickertools.resourcepickeroptionscontrolprops.onoptionschange.md)
 
 
@@ -108,6 +89,25 @@ Callback when options change
 </td><td>
 
 Current picker options
+
+
+</td></tr>
+<tr><td>
+
+[presentation?](./ts-res-ui-components.pickertools.resourcepickeroptionscontrolprops.presentation.md)
+
+
+</td><td>
+
+
+</td><td>
+
+'hidden' \| 'inline' \| 'collapsible' \| 'popup' \| 'popover'
+
+
+</td><td>
+
+_(Optional)_ How to present the options control (default: 'hidden' for production use)
 
 
 </td></tr>

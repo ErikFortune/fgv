@@ -38,6 +38,25 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[contextOptions?](./ts-res-ui-components.filtertools.filterviewprops.contextoptions.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[ResolutionContextOptions](./ts-res-ui-components.resolutiontools.resolutioncontextoptions.md)
+
+
+</td><td>
+
+_(Optional)_ Optional configuration for context control behavior
+
+
+</td></tr>
+<tr><td>
+
 [filterActions](./ts-res-ui-components.filtertools.filterviewprops.filteractions.md)
 
 

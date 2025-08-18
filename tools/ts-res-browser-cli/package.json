@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-res-browser-cli",
-  "version": "5.0.0-18",
+  "version": "5.0.0-19",
   "description": "Command-line interface to launch ts-res-browser with specified options",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

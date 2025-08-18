@@ -57,6 +57,25 @@ _(Optional)_ Available qualifiers for context building
 </td></tr>
 <tr><td>
 
+[contextOptions?](./ts-res-ui-components.resolutiontools.resolutionviewprops.contextoptions.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[ResolutionContextOptions](./ts-res-ui-components.resolutiontools.resolutioncontextoptions.md)
+
+
+</td><td>
+
+_(Optional)_ Optional configuration for the resolution context controls
+
+
+</td></tr>
+<tr><td>
+
 [filterResult?](./ts-res-ui-components.resolutiontools.resolutionviewprops.filterresult.md)
 
 
@@ -90,6 +109,25 @@ _(Optional)_ Filter results if applied
 </td><td>
 
 _(Optional)_ Optional filter state
+
+
+</td></tr>
+<tr><td>
+
+[lockedViewMode?](./ts-res-ui-components.resolutiontools.resolutionviewprops.lockedviewmode.md)
+
+
+</td><td>
+
+
+</td><td>
+
+'composed' \| 'best' \| 'all' \| 'raw'
+
+
+</td><td>
+
+_(Optional)_ Lock to a single view state and suppress the view state selector
 
 
 </td></tr>
@@ -185,6 +223,25 @@ _(Optional)_ Optional factory for creating type-specific resource editors
 </td><td>
 
 _(Optional)_ The resource system for resolution testing
+
+
+</td></tr>
+<tr><td>
+
+[sectionTitles?](./ts-res-ui-components.resolutiontools.resolutionviewprops.sectiontitles.md)
+
+
+</td><td>
+
+
+</td><td>
+
+{ resources?: string; results?: string; }
+
+
+</td><td>
+
+_(Optional)_ Custom titles for the main sections
 
 
 </td></tr>

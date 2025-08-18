@@ -103,7 +103,7 @@ function createResolverWithContext(processedResources: ProcessedResources, conte
 function createSimpleContext(qualifiers: Qualifiers.IReadOnlyQualifierCollector, values: Record<string, string | undefined>): Result<Runtime.ValidatingSimpleContextQualifierProvider>;
 
 // @internal (undocumented)
-function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemConfiguration): Result<{
+function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>): Result<{
     qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
     qualifiers: Qualifiers.IReadOnlyQualifierCollector;
     resourceTypes: ResourceTypes.ReadOnlyResourceTypeCollector;
@@ -226,6 +226,7 @@ export const FilterView: React_2.FC<FilterViewProps>;
 
 // @public
 interface FilterViewProps extends ViewBaseProps {
+    contextOptions?: ResolutionContextOptions;
     filterActions: FilterActions;
     filterResult?: FilterResult | null;
     filterState: FilterState;
@@ -446,7 +447,7 @@ interface ProcessedResources {
 }
 
 // @internal (undocumented)
-function processImportedDirectory(directory: ImportedDirectory, systemConfig?: Config.Model.ISystemConfiguration): Result<{
+function processImportedDirectory(directory: ImportedDirectory, systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>): Result<{
     system: {
         qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
         qualifiers: Qualifiers.IReadOnlyQualifierCollector;
@@ -467,7 +468,7 @@ function processImportedDirectory(directory: ImportedDirectory, systemConfig?: C
 }>;
 
 // @internal (undocumented)
-function processImportedFiles(files: ImportedFile[], systemConfig?: Config.Model.ISystemConfiguration): Result<{
+function processImportedFiles(files: ImportedFile[], systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>): Result<{
     system: {
         qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
         qualifiers: Qualifiers.IReadOnlyQualifierCollector;
@@ -502,6 +503,16 @@ function processZipResources(files: ImportedFile[], directory: ImportedDirectory
 // @public
 const QualifierContextControl: React_2.FC<QualifierContextControlProps>;
 
+// @public
+interface QualifierControlOptions {
+    className?: string;
+    editable?: boolean;
+    hostValue?: string | undefined;
+    placeholder?: string;
+    showHostValue?: boolean;
+    visible?: boolean;
+}
+
 // Warning: (ae-forgotten-export) The symbol "QualifierEditFormProps" needs to be exported by the entry point index.d.ts
 //
 // @public
@@ -528,6 +539,34 @@ interface ResolutionActions {
     selectResource: (resourceId: string) => void;
     setViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
     updateContextValue: (qualifierName: string, value: string | undefined) => void;
+}
+
+// @public
+interface ResolutionContextOptions {
+    contextPanelClassName?: string;
+    contextPanelTitle?: string;
+    defaultQualifierEditable?: boolean;
+    // (undocumented)
+    defaultQualifierVisible?: boolean;
+    globalPlaceholder?: string | ((qualifierName: string) => string);
+    hostManagedValues?: Record<string, string | undefined>;
+    qualifierOptions?: Record<string, QualifierControlOptions>;
+    showContextActions?: boolean;
+    showContextControls?: boolean;
+    showCurrentContext?: boolean;
+}
+
+// @public
+const ResolutionContextOptionsControl: React_2.FC<ResolutionContextOptionsControlProps>;
+
+// @public
+interface ResolutionContextOptionsControlProps {
+    availableQualifiers?: string[];
+    className?: string;
+    onOptionsChange: (options: ResolutionContextOptions) => void;
+    options: ResolutionContextOptions;
+    presentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
+    title?: string;
 }
 
 // Warning: (ae-forgotten-export) The symbol "ResolutionEditControlsProps" needs to be exported by the entry point index.d.ts
@@ -578,6 +617,7 @@ declare namespace ResolutionTools {
         EditableJsonView,
         ResolutionEditControls,
         QualifierContextControl,
+        ResolutionContextOptionsControl,
         useResolutionState,
         createResolverWithContext,
         evaluateConditionsForCandidate,
@@ -592,7 +632,10 @@ declare namespace ResolutionTools {
         CandidateInfo,
         ConditionEvaluationResult,
         EditedResourceInfo,
-        EditableJsonViewProps
+        ResolutionContextOptions,
+        QualifierControlOptions,
+        EditableJsonViewProps,
+        ResolutionContextOptionsControlProps
     }
 }
 
@@ -602,13 +645,19 @@ export const ResolutionView: React_2.FC<ResolutionViewProps>;
 // @public
 interface ResolutionViewProps extends ViewBaseProps {
     availableQualifiers?: string[];
+    contextOptions?: ResolutionContextOptions;
     filterResult?: FilterResult | null;
     filterState?: FilterState;
+    lockedViewMode?: 'composed' | 'best' | 'all' | 'raw';
     pickerOptions?: ResourcePickerOptions;
     resolutionActions?: ResolutionActions;
     resolutionState?: ResolutionState;
     resourceEditorFactory?: ResourceEditorFactory;
     resources?: ProcessedResources | null;
+    sectionTitles?: {
+        resources?: string;
+        results?: string;
+    };
 }
 
 // @public
@@ -820,10 +869,11 @@ function useFilterState(initialState?: Partial<FilterState>): UseFilterStateRetu
 // @public
 function useResolutionState(processedResources: ProcessedResources | null, onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void, onSystemUpdate?: (updatedResources: ProcessedResources) => void): UseResolutionStateReturn;
 
+// Warning: (ae-forgotten-export) The symbol "UseResourceDataParams" needs to be exported by the entry point index.d.ts
 // Warning: (ae-forgotten-export) The symbol "UseResourceDataReturn" needs to be exported by the entry point index.d.ts
 //
 // @public
-function useResourceData(): UseResourceDataReturn;
+function useResourceData(params?: UseResourceDataParams): UseResourceDataReturn;
 
 // Warning: (ae-forgotten-export) The symbol "UseViewStateReturn" needs to be exported by the entry point index.d.ts
 //
