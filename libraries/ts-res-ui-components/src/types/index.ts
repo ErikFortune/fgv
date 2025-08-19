@@ -434,8 +434,8 @@ export interface ResolutionState {
 export interface ResolutionActions {
   /** Update a context value for resolution testing */
   updateContextValue: (qualifierName: string, value: string | undefined) => void;
-  /** Apply pending context changes to the resolver */
-  applyContext: () => void;
+  /** Apply pending context changes to the resolver (with optional host-managed values) */
+  applyContext: (hostManagedValues?: Record<string, string | undefined>) => void;
   /** Select a resource for detailed resolution testing */
   selectResource: (resourceId: string) => void;
   /** Change how resolution results are displayed */

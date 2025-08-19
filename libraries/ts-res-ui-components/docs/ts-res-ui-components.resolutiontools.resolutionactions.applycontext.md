@@ -4,10 +4,10 @@
 
 ## ResolutionTools.ResolutionActions.applyContext property
 
-Apply pending context changes to the resolver
+Apply pending context changes to the resolver (with optional host-managed values)
 
 **Signature:**
 
 ```typescript
-applyContext: () => void;
+applyContext: (hostManagedValues?: Record<string, string | undefined>) => void;
 ```

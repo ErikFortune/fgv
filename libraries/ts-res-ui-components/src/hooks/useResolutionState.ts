@@ -118,13 +118,30 @@ export function useResolutionState(
     return defaults;
   }, [availableQualifiers]);
 
-  // Resolution state
-  const [contextValues, setContextValues] = useState<Record<string, string | undefined>>({});
-  const [pendingContextValues, setPendingContextValues] = useState<Record<string, string | undefined>>({});
+  // Resolution state - Three layers:
+  // 1. appliedUserValues: User values that have been applied (via Apply button)
+  // 2. pendingUserValues: User values that haven't been applied yet
+  // 3. hostManagedValues: Values controlled by the host (passed as prop)
+  // Effective context = appliedUserValues + hostManagedValues (host overrides user)
+
+  const [appliedUserValues, setAppliedUserValues] = useState<Record<string, string | undefined>>({});
+  const [pendingUserValues, setPendingUserValues] = useState<Record<string, string | undefined>>({});
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [currentResolver, setCurrentResolver] = useState<Runtime.ResourceResolver | null>(null);
   const [resolutionResult, setResolutionResult] = useState<ResolutionResult | null>(null);
   const [viewMode, setViewMode] = useState<'composed' | 'best' | 'all' | 'raw'>('composed');
+
+  // Store host-managed values that can be updated via applyContext
+  const [hostManagedValues, setHostManagedValues] = useState<Record<string, string | undefined>>({});
+
+  // Compute effective context: user values + host values (host wins)
+  const effectiveContext = useMemo(
+    () => ({
+      ...appliedUserValues,
+      ...hostManagedValues
+    }),
+    [appliedUserValues, hostManagedValues]
+  );
 
   // Edit state - stores original, edited, and delta for each resource
   const [editedResources, setEditedResources] = useState<
@@ -134,74 +151,91 @@ export function useResolutionState(
 
   // Update context state when defaults change
   React.useEffect(() => {
-    setContextValues(defaultContextValues);
-    setPendingContextValues(defaultContextValues);
+    setAppliedUserValues(defaultContextValues);
+    setPendingUserValues(defaultContextValues);
   }, [defaultContextValues]);
 
-  // Check for pending changes
+  // Check for pending changes - only user values, not host values
   const hasPendingChanges = useMemo(() => {
-    return hasPendingContextChanges(contextValues, pendingContextValues);
-  }, [contextValues, pendingContextValues]);
+    return hasPendingContextChanges(appliedUserValues, pendingUserValues);
+  }, [appliedUserValues, pendingUserValues]);
 
   // Check for unsaved edits
   const hasUnsavedEdits = useMemo(() => {
     return editedResources.size > 0;
   }, [editedResources]);
 
-  // Update context value
+  // Update context value (only updates pending user values, not host values)
   const updateContextValue = useCallback((qualifierName: string, value: string | undefined) => {
-    setPendingContextValues((prev) => ({
+    setPendingUserValues((prev) => ({
       ...prev,
       [qualifierName]: value
     }));
   }, []);
 
-  // Apply context changes
-  const applyContext = useCallback(() => {
-    if (!processedResources) {
-      onMessage?.('error', 'No resources loaded');
-      return;
-    }
-
-    try {
-      // Create resolver with new context
-      const resolverResult = createResolverWithContext(processedResources, pendingContextValues, {
-        enableCaching: true,
-        enableDebugLogging: false
-      });
-
-      if (resolverResult.isFailure()) {
-        onMessage?.('error', `Failed to create resolver: ${resolverResult.message}`);
+  // Apply context changes - applies pending user values and/or updates host values
+  const applyContext = useCallback(
+    (newHostManagedValues?: Record<string, string | undefined>) => {
+      if (!processedResources) {
+        onMessage?.('error', 'No resources loaded');
         return;
       }
 
-      // Update state
-      setContextValues({ ...pendingContextValues });
-      setCurrentResolver(resolverResult.value);
-
-      // If a resource is selected, resolve it with the new context
-      if (selectedResourceId) {
-        const resolutionResult = resolveResourceDetailed(
-          resolverResult.value,
-          selectedResourceId,
-          processedResources
-        );
-
-        if (resolutionResult.isSuccess()) {
-          setResolutionResult(resolutionResult.value);
+      try {
+        if (newHostManagedValues !== undefined) {
+          // When called with host values, ONLY update host values
+          console.log('Applying host managed values:', newHostManagedValues);
+          setHostManagedValues(newHostManagedValues);
         } else {
-          onMessage?.('error', `Failed to resolve resource: ${resolutionResult.message}`);
-        }
-      }
+          // When called without arguments (from Apply button), apply pending user values
+          console.log('Applying pending user values:', pendingUserValues);
+          setAppliedUserValues(pendingUserValues);
 
-      onMessage?.('success', 'Context applied successfully');
-    } catch (error) {
-      onMessage?.(
-        'error',
-        `Failed to apply context: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }, [processedResources, pendingContextValues, selectedResourceId, onMessage]);
+          // Create resolver with the new effective context
+          const newEffectiveContext = {
+            ...pendingUserValues,
+            ...hostManagedValues
+          };
+
+          // Create resolver with effective context
+          const resolverResult = createResolverWithContext(processedResources, newEffectiveContext, {
+            enableCaching: true,
+            enableDebugLogging: false
+          });
+
+          if (resolverResult.isFailure()) {
+            onMessage?.('error', `Failed to create resolver: ${resolverResult.message}`);
+            return;
+          }
+
+          setCurrentResolver(resolverResult.value);
+
+          // If a resource is selected, resolve it with the new context
+          if (selectedResourceId) {
+            const resolutionResult = resolveResourceDetailed(
+              resolverResult.value,
+              selectedResourceId,
+              processedResources
+            );
+
+            if (resolutionResult.isSuccess()) {
+              setResolutionResult(resolutionResult.value);
+            } else {
+              onMessage?.('error', `Failed to resolve resource: ${resolutionResult.message}`);
+            }
+          }
+
+          onMessage?.('success', 'Context applied successfully');
+        }
+      } catch (error) {
+        onMessage?.(
+          'error',
+          `Failed to apply context: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    },
+    [processedResources, pendingUserValues, selectedResourceId, onMessage, hostManagedValues]
+  );
 
   // Select resource and resolve it
   const selectResource = useCallback(
@@ -231,12 +265,44 @@ export function useResolutionState(
     }
   }, [currentResolver, onMessage]);
 
-  // Auto-apply default context when resources are loaded
+  // Auto-apply when resources are loaded or host values change
   React.useEffect(() => {
-    if (processedResources && Object.keys(defaultContextValues).length > 0) {
-      applyContext();
+    if (!processedResources) return;
+
+    console.log('Auto-applying effective context:', effectiveContext);
+    console.log('Host managed values in hook:', hostManagedValues);
+    console.log('Applied user values in hook:', appliedUserValues);
+
+    // Create resolver with effective context whenever host values change
+    const resolverResult = createResolverWithContext(processedResources, effectiveContext, {
+      enableCaching: true,
+      enableDebugLogging: false
+    });
+
+    if (resolverResult.isSuccess()) {
+      setCurrentResolver(resolverResult.value);
+      console.log('Resolver created successfully with context:', effectiveContext);
+
+      // Re-resolve selected resource if any
+      if (selectedResourceId) {
+        console.log('Re-resolving resource:', selectedResourceId);
+        const resolutionResult = resolveResourceDetailed(
+          resolverResult.value,
+          selectedResourceId,
+          processedResources
+        );
+
+        if (resolutionResult.isSuccess()) {
+          console.log('Resolution successful for resource:', selectedResourceId);
+          setResolutionResult(resolutionResult.value);
+        } else {
+          console.error('Resolution failed:', resolutionResult.message);
+        }
+      }
+    } else {
+      console.error('Failed to create resolver with effective context:', resolverResult.message);
     }
-  }, [processedResources, defaultContextValues]);
+  }, [processedResources, effectiveContext, selectedResourceId, hostManagedValues, appliedUserValues]);
 
   // Edit management functions
   const saveEdit = useCallback(
@@ -337,7 +403,7 @@ export function useResolutionState(
     try {
       // Extract current resolution context (filter out undefined values)
       const cleanedContextValues: Record<string, string> = {};
-      Object.entries(contextValues).forEach(([key, value]) => {
+      Object.entries(effectiveContext).forEach(([key, value]) => {
         if (value !== undefined) {
           cleanedContextValues[key] = value;
         }
@@ -387,11 +453,11 @@ export function useResolutionState(
     } finally {
       setIsApplyingEdits(false);
     }
-  }, [processedResources, editedResources, onSystemUpdate, currentResolver, contextValues, onMessage]);
+  }, [processedResources, editedResources, onSystemUpdate, currentResolver, onMessage]);
 
   const state: ResolutionState = {
-    contextValues,
-    pendingContextValues,
+    contextValues: effectiveContext, // Effective context (user + host)
+    pendingContextValues: pendingUserValues, // Only user's pending values
     selectedResourceId,
     currentResolver,
     resolutionResult,
@@ -403,20 +469,35 @@ export function useResolutionState(
     isApplyingEdits
   };
 
-  const actions: ResolutionActions = {
-    updateContextValue,
-    applyContext,
-    selectResource,
-    setViewMode,
-    resetCache,
-    // Edit actions
-    saveEdit,
-    getEditedValue,
-    hasEdit,
-    clearEdits,
-    applyEdits,
-    discardEdits
-  };
+  const actions: ResolutionActions = useMemo(
+    () => ({
+      updateContextValue,
+      applyContext,
+      selectResource,
+      setViewMode,
+      resetCache,
+      // Edit actions
+      saveEdit,
+      getEditedValue,
+      hasEdit,
+      clearEdits,
+      applyEdits,
+      discardEdits
+    }),
+    [
+      updateContextValue,
+      applyContext,
+      selectResource,
+      setViewMode,
+      resetCache,
+      saveEdit,
+      getEditedValue,
+      hasEdit,
+      clearEdits,
+      applyEdits,
+      discardEdits
+    ]
+  );
 
   return {
     state,

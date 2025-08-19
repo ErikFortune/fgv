@@ -45,12 +45,12 @@ Description
 
 </td><td>
 
-() =&gt; void
+(hostManagedValues?: Record&lt;string, string \| undefined&gt;) =&gt; void
 
 
 </td><td>
 
-Apply pending context changes to the resolver
+Apply pending context changes to the resolver (with optional host-managed values)
 
 
 </td></tr>

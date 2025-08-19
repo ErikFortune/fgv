@@ -364,7 +364,7 @@ Shows the compiled resource structure with detailed candidate information using 
 
 ### ResolutionView
 
-Interactive resource resolution testing with context management and support for custom resource editors via the ResourceEditorFactory pattern. Supports locking to a single view mode to simplify the interface for specific use cases.
+Interactive resource resolution testing with context management and support for custom resource editors via the ResourceEditorFactory pattern. Supports locking to a single view mode to simplify the interface for specific use cases. Now includes host-controlled resolution support for programmatic qualifier value management.
 
 > 📚 **[See ResolutionView documentation →](./docs/ts-res-ui-components.resolutionview.md)**
 
@@ -381,8 +381,79 @@ Interactive resource resolution testing with context management and support for 
     enableSearch: true,
     searchPlaceholder: "Search resources for resolution testing..."
   }}
+  // Optional: Host-controlled resolution
+  contextOptions={{
+    hostManagedValues: {
+      language: 'en-US',
+      platform: 'web',
+      market: 'eastern-europe'
+    },
+    showContextControls: true  // Can hide controls for host-only resolution
+  }}
 />
 ```
+
+#### Host-Controlled Resolution
+
+The ResolutionView now supports a three-layer context system that allows host applications to programmatically control qualifier values while still allowing user interaction:
+
+1. **Host-Managed Values**: Values controlled by the host application that are applied automatically
+2. **Applied User Values**: User values that have been explicitly applied via the "Apply Changes" button
+3. **Pending User Values**: User edits that haven't been applied yet
+
+This is particularly useful when:
+- The UI needs to be hidden but resolution still needs to work
+- Certain qualifier values should be controlled by the application logic
+- You want to provide default values that users can optionally override
+
+```tsx
+// Example: Host-controlled resolution with hidden UI
+<ResolutionView
+  resources={state.processedResources}
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+  availableQualifiers={['language', 'platform', 'market']}
+  contextOptions={{
+    hostManagedValues: {
+      language: userProfile.language,
+      platform: detectPlatform(),
+      market: userProfile.region
+    },
+    showContextControls: false,  // Hide the context controls
+    qualifierOptions: {
+      language: { visible: false },  // Hide specific qualifiers
+      platform: { visible: false }
+    }
+  }}
+/>
+
+// Example: Mixed host and user control
+<ResolutionView
+  resources={state.processedResources}
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+  availableQualifiers={availableQualifiers}
+  contextOptions={{
+    hostManagedValues: {
+      platform: 'web'  // Platform is always controlled by host
+    },
+    qualifierOptions: {
+      platform: { 
+        visible: true,
+        hostValue: 'web',  // Shows as read-only in UI
+        disabled: true
+      }
+    }
+  }}
+/>
+```
+
+**Key features of host-controlled resolution:**
+- Host values are applied automatically when they change
+- User values require explicit "Apply Changes" action
+- Host values override user values when both are set
+- Flexible UI control - can hide all controls, specific qualifiers, or show as read-only
+- Works seamlessly with the existing resolution state management
 
 #### Custom Resource Editors
 

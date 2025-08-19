@@ -3,7 +3,15 @@ import { ViewStateTools } from '@fgv/ts-res-ui-components';
 
 export type Message = ViewStateTools.Message;
 
-export type Tool = 'import' | 'source' | 'filter' | 'compiled' | 'resolution' | 'configuration' | 'picker';
+export type Tool =
+  | 'import'
+  | 'source'
+  | 'filter'
+  | 'compiled'
+  | 'resolution'
+  | 'configuration'
+  | 'picker'
+  | 'host-resolution';
 
 export interface FilterState {
   enabled: boolean;

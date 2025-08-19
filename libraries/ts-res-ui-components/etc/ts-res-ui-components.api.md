@@ -528,7 +528,7 @@ function readFilesFromInput(files: FileList): Promise<ImportedFile[]>;
 
 // @public
 interface ResolutionActions {
-    applyContext: () => void;
+    applyContext: (hostManagedValues?: Record<string, string | undefined>) => void;
     applyEdits: () => Promise<void>;
     clearEdits: () => void;
     discardEdits: () => void;
