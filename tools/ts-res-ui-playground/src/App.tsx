@@ -20,6 +20,7 @@ import {
 } from '@fgv/ts-res-ui-components';
 import NavigationWarningModal from './components/common/NavigationWarningModal';
 import ResourcePickerTool from './components/tools/ResourcePickerTool';
+import HostControlledResolution from './components/tools/HostControlledResolution';
 import ViewWithPresentationSelector, {
   PresentationGearIcon
 } from './components/common/ViewWithPresentationSelector';
@@ -78,6 +79,15 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
     showDemo: false,
     hostManagedLanguage: '',
     hideTerritory: false
+  });
+
+  // Host-controlled qualifiers for ResolutionView
+  const [hostControlledQualifiers, setHostControlledQualifiers] = useState<{
+    enabled: boolean;
+    values: Record<string, string | undefined>;
+  }>({
+    enabled: false,
+    values: {}
   });
 
   // Factory options for demonstrating custom types
@@ -613,6 +623,9 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
           </div>
         );
 
+      case 'host-resolution':
+        return <HostControlledResolution state={state} actions={actions} />;
+
       default:
         return (
           <ImportView
@@ -653,41 +666,10 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
 };
 
 const App: React.FC = () => {
-  // For demonstration, we'll use simple default custom factories
-  const demoQualifierTypeFactory = React.useMemo(() => {
-    return TsRes.Config.createConfigInitFactory<
-      TsRes.QualifierTypes.Config.IAnyQualifierTypeConfig,
-      TsRes.QualifierTypes.QualifierType
-    >({
-      // Example: Custom 'version' qualifier type that accepts semver-style versions
-      version: (config: any) => {
-        return TsRes.succeed(
-          TsRes.QualifierTypes.LiteralQualifierType.create({
-            name: 'version',
-            caseSensitive: true,
-            enumeratedValues: ['1.0.0', '1.1.0', '2.0.0', '2.1.0', '3.0.0'],
-            allowContextList: false
-          }).orThrow()
-        );
-      }
-    });
-  }, []);
-
-  const demoResourceTypeFactory = React.useMemo(() => {
-    return TsRes.Config.createConfigInitFactory<
-      TsRes.ResourceTypes.Config.IResourceTypeConfig,
-      TsRes.ResourceTypes.ResourceType
-    >({
-      // Example: Custom 'markdown' resource type
-      markdown: (config: any) => {
-        return TsRes.succeed(
-          TsRes.ResourceTypes.JsonResourceType.create({
-            name: 'markdown'
-          }).orThrow()
-        );
-      }
-    });
-  }, []);
+  // For demonstration, we'll use undefined factories (no custom types)
+  // Custom factories can be added by extending QualifierTypeFactory or ResourceTypeFactory
+  const demoQualifierTypeFactory = undefined;
+  const demoResourceTypeFactory = undefined;
 
   return (
     <ResourceOrchestrator

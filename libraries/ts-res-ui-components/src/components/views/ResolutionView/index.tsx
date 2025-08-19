@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import {
   MagnifyingGlassIcon,
   DocumentTextIcon,
@@ -106,6 +106,17 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
     contextOptions || {}
   );
 
+  // Update currentContextOptions when contextOptions prop changes
+  // This is important for host-managed values
+  React.useEffect(() => {
+    if (contextOptions?.hostManagedValues) {
+      setCurrentContextOptions((prev) => ({
+        ...prev,
+        hostManagedValues: contextOptions.hostManagedValues
+      }));
+    }
+  }, [contextOptions?.hostManagedValues]);
+
   // Use filtered resources when filtering is active and successful
   const isFilteringActive = filterState?.enabled && filterResult?.success === true;
   const activeProcessedResources = isFilteringActive ? filterResult?.processedResources : resources;
@@ -206,13 +217,26 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
   ]);
 
   // Merge context options with current options from control
-  const effectiveContextOptions = useMemo(
-    () => ({
+  const effectiveContextOptions = useMemo(() => {
+    // Deep merge to preserve hostManagedValues from contextOptions
+    const merged = {
       ...contextOptions,
-      ...currentContextOptions
-    }),
-    [contextOptions, currentContextOptions]
-  );
+      ...currentContextOptions,
+      // Preserve hostManagedValues from contextOptions if currentContextOptions doesn't explicitly set it
+      hostManagedValues:
+        currentContextOptions?.hostManagedValues !== undefined
+          ? currentContextOptions.hostManagedValues
+          : contextOptions?.hostManagedValues
+    };
+    console.log('ResolutionView - effectiveContextOptions:', merged);
+    console.log('ResolutionView - contextOptions hostManagedValues:', contextOptions?.hostManagedValues);
+    console.log(
+      'ResolutionView - currentContextOptions hostManagedValues:',
+      currentContextOptions?.hostManagedValues
+    );
+    console.log('ResolutionView - final hostManagedValues:', merged.hostManagedValues);
+    return merged;
+  }, [contextOptions, currentContextOptions]);
 
   // Handle context value changes using the shared component's callback pattern
   const handleQualifierChange = useCallback(
@@ -228,6 +252,23 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
     [resolutionActions, effectiveContextOptions?.qualifierOptions]
   );
 
+  // Apply host-managed values when they change
+  const prevHostValuesRef = useRef<string | undefined>(undefined);
+  React.useEffect(() => {
+    if (!effectiveContextOptions?.hostManagedValues || !resolutionActions?.applyContext) return;
+
+    const hostValuesStr = JSON.stringify(effectiveContextOptions.hostManagedValues);
+    if (prevHostValuesRef.current !== hostValuesStr) {
+      console.log(
+        'ResolutionView: Host values changed, applying:',
+        effectiveContextOptions.hostManagedValues
+      );
+      prevHostValuesRef.current = hostValuesStr;
+      // Pass host values to the resolution state
+      resolutionActions.applyContext(effectiveContextOptions.hostManagedValues);
+    }
+  }, [effectiveContextOptions?.hostManagedValues, resolutionActions]);
+
   // Determine which qualifiers to show and their options
   const visibleQualifiers = useMemo(() => {
     if (!effectiveContextOptions?.qualifierOptions) {
@@ -240,12 +281,12 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
     });
   }, [availableQualifiers, effectiveContextOptions?.qualifierOptions]);
 
-  // Get effective context values including host-managed values
+  // Get effective context values - contextValues already includes host values from the hook
   const effectiveContextValues = useMemo(() => {
-    const baseValues = resolutionState?.contextValues || {};
-    const hostValues = effectiveContextOptions?.hostManagedValues || {};
-    return { ...baseValues, ...hostValues };
-  }, [resolutionState?.contextValues, effectiveContextOptions?.hostManagedValues]);
+    // contextValues from state already includes host values (it's effectiveContext from the hook)
+    // Don't double-apply host values here
+    return resolutionState?.contextValues || {};
+  }, [resolutionState?.contextValues]);
 
   // Handle resource selection from ResourcePicker
   const handleResourceSelect = useCallback(
@@ -393,7 +434,7 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
                         Clear Cache
                       </button>
                       <button
-                        onClick={resolutionActions?.applyContext}
+                        onClick={() => resolutionActions?.applyContext()}
                         disabled={!resolutionState?.hasPendingChanges}
                         className={`px-4 py-2 rounded-md text-sm font-medium ${
                           resolutionState?.hasPendingChanges
