@@ -769,9 +769,12 @@ export function useResolutionState(
 
       // Add pending new resources to the resource manager
       pendingResources.forEach((resource) => {
+        console.log('Adding resource to manager:', resource);
         const addResult = resourceManager.addResource(resource);
         if (addResult.isFailure()) {
           onMessage?.('error', `Failed to add resource ${resource.id}: ${addResult.message}`);
+        } else {
+          console.log('Successfully added resource:', resource.id);
         }
       });
 
@@ -781,6 +784,13 @@ export function useResolutionState(
         onMessage?.('error', `Failed to compile resources: ${compileResult.message}`);
         return;
       }
+
+      // Debug: Log what's in the compiled collection
+      console.log(
+        'Compiled collection resources:',
+        compileResult.value.resources?.map((r) => r.id)
+      );
+      console.log('Resource manager resources:', Array.from(resourceManager.resources.keys()));
 
       // Create a new resolver with the updated collection
       const { Runtime } = await import('@fgv/ts-res');
@@ -808,6 +818,10 @@ export function useResolutionState(
           ...processedResources.summary,
           totalResources: resourceIds.length,
           resourceIds
+        },
+        system: {
+          ...processedResources.system,
+          resourceManager: resourceManager // Include the updated resource manager
         }
       };
 

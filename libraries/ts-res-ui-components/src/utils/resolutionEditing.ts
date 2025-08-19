@@ -1,5 +1,5 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
-import { ResourceJson, Resources, Runtime } from '@fgv/ts-res';
+import { ConditionSet, ResourceJson, Resources, Runtime } from '@fgv/ts-res';
 import { Diff } from '@fgv/ts-json';
 import { JsonObject } from '@fgv/ts-json-base';
 import { ProcessedResources, JsonValue } from '../types';
@@ -34,30 +34,6 @@ export function validateEditedResource(editedValue: JsonValue): EditValidationRe
     JSON.stringify(editedValue);
   } catch (error) {
     errors.push(`Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-
-  // Type-specific validation
-  if (typeof editedValue === 'object' && editedValue !== null) {
-    // Object validation - check for circular references
-    const seen = new Set<unknown>();
-    const checkCircular = (obj: unknown): boolean => {
-      if (seen.has(obj)) return true;
-      seen.add(obj);
-      if (typeof obj === 'object' && obj !== null) {
-        for (const key in obj as Record<string, unknown>) {
-          const objTyped = obj as Record<string, unknown>;
-          if (typeof objTyped[key] === 'object' && objTyped[key] !== null) {
-            if (checkCircular(objTyped[key])) return true;
-          }
-        }
-      }
-      seen.delete(obj);
-      return false;
-    };
-
-    if (checkCircular(editedValue)) {
-      errors.push('Resource contains circular references');
-    }
   }
 
   return {
@@ -193,56 +169,51 @@ export async function rebuildSystemWithEdits(
   try {
     const candidateDeclarations = createCandidateDeclarations(editedResources, currentContext);
 
-    const clonedManager = originalSystem.resourceManager.clone({
-      candidates: candidateDeclarations
-    });
+    return originalSystem.resourceManager
+      .clone({ candidates: candidateDeclarations })
+      .withErrorFormat((message) => `Failed to clone manager: ${message}`)
+      .onSuccess((clonedManager) => {
+        // Get compiled collection from the updated manager
+        return clonedManager
+          .getCompiledResourceCollection({ includeMetadata: true })
+          .withErrorFormat((message) => `Failed to get compiled collection: ${message}`)
+          .onSuccess((compiledCollection) => {
+            // Create resolver for the updated system
+            return Runtime.ResourceResolver.create({
+              resourceManager: clonedManager,
+              qualifierTypes: originalSystem.qualifierTypes,
+              contextQualifierProvider: originalSystem.contextQualifierProvider
+            })
+              .withErrorFormat((message) => `Failed to create resolver: ${message}`)
+              .onSuccess((resolver) => {
+                // Create summary
+                const resourceIds = Array.from(clonedManager.resources.keys());
+                const summary = {
+                  totalResources: resourceIds.length,
+                  resourceIds,
+                  errorCount: 0,
+                  warnings: []
+                };
 
-    if (clonedManager.isFailure()) {
-      return fail(`Failed to clone manager: ${clonedManager.message}`);
-    }
+                const updatedSystem: ProcessedResources = {
+                  system: {
+                    qualifierTypes: originalSystem.qualifierTypes,
+                    qualifiers: originalSystem.qualifiers,
+                    resourceTypes: originalSystem.resourceTypes,
+                    resourceManager: clonedManager,
+                    importManager: originalSystem.importManager,
+                    contextQualifierProvider: originalSystem.contextQualifierProvider
+                  },
+                  compiledCollection,
+                  resolver,
+                  resourceCount: resourceIds.length,
+                  summary
+                };
 
-    // Get compiled collection from the updated manager
-    const compiledResult = clonedManager.value.getCompiledResourceCollection({ includeMetadata: true });
-    if (compiledResult.isFailure()) {
-      return fail(`Failed to get compiled collection: ${compiledResult.message}`);
-    }
-
-    // Create resolver for the updated system
-    const resolverResult = Runtime.ResourceResolver.create({
-      resourceManager: clonedManager.value,
-      qualifierTypes: originalSystem.qualifierTypes,
-      contextQualifierProvider: originalSystem.contextQualifierProvider
-    });
-
-    if (resolverResult.isFailure()) {
-      return fail(`Failed to create resolver: ${resolverResult.message}`);
-    }
-
-    // Create summary
-    const resourceIds = Array.from(clonedManager.value.resources.keys());
-    const summary = {
-      totalResources: resourceIds.length,
-      resourceIds,
-      errorCount: 0,
-      warnings: []
-    };
-
-    const updatedSystem: ProcessedResources = {
-      system: {
-        qualifierTypes: originalSystem.qualifierTypes,
-        qualifiers: originalSystem.qualifiers,
-        resourceTypes: originalSystem.resourceTypes,
-        resourceManager: clonedManager.value,
-        importManager: originalSystem.importManager,
-        contextQualifierProvider: originalSystem.contextQualifierProvider
-      },
-      compiledCollection: compiledResult.value,
-      resolver: resolverResult.value,
-      resourceCount: resourceIds.length,
-      summary
-    };
-
-    return succeed(updatedSystem);
+                return succeed(updatedSystem);
+              });
+          });
+      });
   } catch (error) {
     return fail(
       `Failed to rebuild system with edits: ${error instanceof Error ? error.message : String(error)}`
