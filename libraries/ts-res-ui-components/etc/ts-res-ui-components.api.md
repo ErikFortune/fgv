@@ -331,19 +331,29 @@ export interface OrchestratorActions {
     // (undocumented)
     addMessage: (type: Message['type'], message: string) => void;
     // (undocumented)
+    applyAllPendingChanges: () => Promise<void>;
+    // (undocumented)
     applyConfiguration: (config: Config.Model.ISystemConfiguration) => void;
     // (undocumented)
     applyFilter: () => Promise<FilterResult | null>;
     // (undocumented)
+    applyPendingResources: () => Promise<void>;
+    // (undocumented)
     applyResolutionContext: () => void;
     // (undocumented)
     applyResourceEdits: () => Promise<void>;
+    // (undocumented)
+    cancelNewResource: () => void;
     // (undocumented)
     clearMessages: () => void;
     // (undocumented)
     clearResourceEdits: () => void;
     // (undocumented)
     clearResources: () => void;
+    // (undocumented)
+    discardAllPendingChanges: () => void;
+    // (undocumented)
+    discardPendingResources: () => void;
     // (undocumented)
     discardResourceEdits: () => void;
     // (undocumented)
@@ -359,11 +369,17 @@ export interface OrchestratorActions {
     // (undocumented)
     importFiles: (files: ImportedFile[]) => Promise<void>;
     // (undocumented)
+    markResourceForDeletion: (resourceId: string) => void;
+    // (undocumented)
+    removePendingResource: (resourceId: string) => void;
+    // (undocumented)
     resetFilter: () => void;
     // (undocumented)
     resetResolutionCache: () => void;
     // (undocumented)
     resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<JsonValue>>;
+    // (undocumented)
+    saveNewResourceAsPending: () => void;
     // (undocumented)
     saveResourceEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
     // (undocumented)
@@ -371,11 +387,17 @@ export interface OrchestratorActions {
     // (undocumented)
     selectResourceForResolution: (resourceId: string) => void;
     // (undocumented)
+    selectResourceType: (type: string) => void;
+    // (undocumented)
     setResolutionViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
+    // (undocumented)
+    startNewResource: () => void;
     // (undocumented)
     updateConfiguration: (config: Config.Model.ISystemConfiguration) => void;
     // (undocumented)
     updateFilterState: (state: Partial<FilterState>) => void;
+    // (undocumented)
+    updateNewResourceId: (id: string) => void;
     // (undocumented)
     updateResolutionContext: (qualifierName: string, value: string | undefined) => void;
 }
@@ -530,15 +552,24 @@ function readFilesFromInput(files: FileList): Promise<ImportedFile[]>;
 interface ResolutionActions {
     applyContext: (hostManagedValues?: Record<string, string | undefined>) => void;
     applyEdits: () => Promise<void>;
+    applyPendingResources: () => Promise<void>;
+    cancelNewResource: () => void;
     clearEdits: () => void;
     discardEdits: () => void;
+    discardPendingResources: () => void;
     getEditedValue: (resourceId: string) => JsonValue | undefined;
     hasEdit: (resourceId: string) => boolean;
+    markResourceForDeletion: (resourceId: string) => void;
+    removePendingResource: (resourceId: string) => void;
     resetCache: () => void;
     saveEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
+    saveNewResourceAsPending: () => void;
     selectResource: (resourceId: string) => void;
+    selectResourceType: (type: string) => void;
     setViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
+    startNewResource: () => void;
     updateContextValue: (qualifierName: string, value: string | undefined) => void;
+    updateNewResourceId: (id: string) => void;
 }
 
 // @public
@@ -599,13 +630,23 @@ export const ResolutionResults: React_2.FC<ResolutionResultsProps>;
 
 // @public
 interface ResolutionState {
+    availableResourceTypes: ResourceTypes.IResourceType[];
     contextValues: Record<string, string | undefined>;
     currentResolver: Runtime.ResourceResolver | null;
     editedResources: Map<string, JsonValue>;
     hasPendingChanges: boolean;
+    hasPendingResourceChanges: boolean;
     hasUnsavedEdits: boolean;
     isApplyingEdits: boolean;
+    newResourceDraft?: {
+        resourceId: string;
+        resourceType: string;
+        template: ResourceJson.Json.ILooseResourceDecl;
+        isValid: boolean;
+    };
     pendingContextValues: Record<string, string | undefined>;
+    pendingResourceDeletions: Set<string>;
+    pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>;
     resolutionResult: ResolutionResult | null;
     selectedResourceId: string | null;
     viewMode: 'composed' | 'best' | 'all' | 'raw';
@@ -644,20 +685,25 @@ export const ResolutionView: React_2.FC<ResolutionViewProps>;
 
 // @public
 interface ResolutionViewProps extends ViewBaseProps {
+    allowResourceCreation?: boolean;
     availableQualifiers?: string[];
     contextOptions?: ResolutionContextOptions;
+    defaultResourceType?: string;
     filterResult?: FilterResult | null;
     filterState?: FilterState;
     lockedViewMode?: 'composed' | 'best' | 'all' | 'raw';
+    onPendingResourcesApplied?: (added: ResourceJson.Json.ILooseResourceDecl[], deleted: string[]) => void;
     pickerOptions?: ResourcePickerOptions;
     resolutionActions?: ResolutionActions;
     resolutionState?: ResolutionState;
     resourceEditorFactory?: ResourceEditorFactory;
     resources?: ProcessedResources | null;
+    resourceTypeFactory?: ResourceTypes.IResourceType[];
     sectionTitles?: {
         resources?: string;
         results?: string;
     };
+    showPendingResourcesInList?: boolean;
 }
 
 // @public

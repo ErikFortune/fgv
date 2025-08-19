@@ -11,7 +11,8 @@ export type Tool =
   | 'resolution'
   | 'configuration'
   | 'picker'
-  | 'host-resolution';
+  | 'host-resolution'
+  | 'resource-creation';
 
 export interface FilterState {
   enabled: boolean;

@@ -14,9 +14,11 @@ This packlet is largely AI written, and it shows.
 - **🔄 Resource Management**: Import, process, and manage ts-res configurations and bundles
 - **🔍 Advanced Filtering**: Filter resources by context with qualifier reduction
 - **🎯 Resource Resolution**: Test resource resolution with dynamic context values
+- **➕ Resource Creation**: Create new resources with pending/apply workflow and template support
 - **🔒 View Mode Locking**: Lock to single view mode for simplified interfaces
 - **📊 Visualization**: Multiple views for exploring resource structures and compiled output
 - **⚙️ Configuration**: Visual configuration management for qualifier types, qualifiers, and resource types
+- **🎛️ Host Control**: Programmatic control of qualifier values and resource types
 - **📁 File Handling**: Support for directory imports, ZIP files via ts-res zip-archive packlet, and bundle loading
 - **🎨 Modern UI**: Built with Tailwind CSS and Heroicons for a clean, responsive interface
 
@@ -364,7 +366,7 @@ Shows the compiled resource structure with detailed candidate information using 
 
 ### ResolutionView
 
-Interactive resource resolution testing with context management and support for custom resource editors via the ResourceEditorFactory pattern. Supports locking to a single view mode to simplify the interface for specific use cases. Now includes host-controlled resolution support for programmatic qualifier value management.
+Interactive resource resolution testing with context management and support for custom resource editors via the ResourceEditorFactory pattern. Supports locking to a single view mode to simplify the interface for specific use cases. Now includes host-controlled resolution support for programmatic qualifier value management and the ability to create new resources with a pending/apply workflow.
 
 > 📚 **[See ResolutionView documentation →](./docs/ts-res-ui-components.resolutionview.md)**
 
@@ -389,6 +391,13 @@ Interactive resource resolution testing with context management and support for 
       market: 'eastern-europe'
     },
     showContextControls: true  // Can hide controls for host-only resolution
+  }}
+  // Optional: Resource creation with pending/apply workflow
+  allowResourceCreation={true}
+  defaultResourceType="json"  // Optional: Host-controlled resource type
+  showPendingResourcesInList={true}  // Show pending resources in the picker (default: true)
+  onPendingResourcesApplied={(added, deleted) => {
+    console.log(`Applied ${added.length} new resources, ${deleted.length} deletions`);
   }}
 />
 ```
@@ -454,6 +463,64 @@ This is particularly useful when:
 - Host values override user values when both are set
 - Flexible UI control - can hide all controls, specific qualifiers, or show as read-only
 - Works seamlessly with the existing resolution state management
+
+#### Resource Creation
+
+ResolutionView now supports creating new resources directly in the UI with a pending/apply workflow similar to context management:
+
+```tsx
+// Basic resource creation - user selects resource type
+<ResolutionView
+  resources={state.processedResources}
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+  allowResourceCreation={true}
+  onPendingResourcesApplied={(added, deleted) => {
+    // Rebuild resource manager with new resources
+    const updatedResources = rebuildWithResources(added, deleted);
+    setState({ processedResources: updatedResources });
+  }}
+/>
+
+// Host-controlled resource type
+<ResolutionView
+  resources={state.processedResources}
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+  allowResourceCreation={true}
+  defaultResourceType="json"  // Type selector hidden, always creates JSON resources
+  onPendingResourcesApplied={(added, deleted) => {
+    console.log(`Applied ${added.length} additions, ${deleted.length} deletions`);
+  }}
+/>
+
+// With custom resource types
+<ResolutionView
+  resources={state.processedResources}
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+  allowResourceCreation={true}
+  resourceTypeFactory={[customType1, customType2]}  // Provide custom resource types
+  showPendingResourcesInList={true}  // Show pending resources with visual distinction
+/>
+```
+
+**Resource Creation Workflow:**
+1. Click "Add Resource" button in the resource picker header
+2. Enter a unique resource ID
+3. Select resource type (unless host-controlled)
+4. Resource is added to pending list (not yet in the system)
+5. Create multiple resources before applying
+6. Click "Apply Resources" to commit all pending additions
+7. Or click "Discard" to remove all pending changes
+
+**Key features:**
+- **Template-based creation**: Resource types provide default templates for new resources
+- **Pending workflow**: Resources aren't added immediately, allowing review before applying
+- **Host control**: Can specify a default resource type to hide the type selector
+- **Batch operations**: Create multiple resources before applying
+- **Visual feedback**: Pending resources shown with distinct styling
+- **Validation**: Resource IDs are validated for uniqueness
 
 #### Custom Resource Editors
 

@@ -21,6 +21,7 @@ import {
 import NavigationWarningModal from './components/common/NavigationWarningModal';
 import ResourcePickerTool from './components/tools/ResourcePickerTool';
 import HostControlledResolution from './components/tools/HostControlledResolution';
+import ResourceCreationTest from './components/tools/ResourceCreationTest';
 import ViewWithPresentationSelector, {
   PresentationGearIcon
 } from './components/common/ViewWithPresentationSelector';
@@ -573,7 +574,17 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                   hasEdit: actions.hasResourceEdit,
                   clearEdits: actions.clearResourceEdits,
                   applyEdits: actions.applyResourceEdits,
-                  discardEdits: actions.discardResourceEdits
+                  discardEdits: actions.discardResourceEdits,
+                  // Resource creation actions
+                  startNewResource: actions.startNewResource,
+                  updateNewResourceId: actions.updateNewResourceId,
+                  selectResourceType: actions.selectResourceType,
+                  saveNewResourceAsPending: actions.saveNewResourceAsPending,
+                  cancelNewResource: actions.cancelNewResource,
+                  removePendingResource: actions.removePendingResource,
+                  markResourceForDeletion: actions.markResourceForDeletion,
+                  applyPendingResources: actions.applyPendingResources,
+                  discardPendingResources: actions.discardPendingResources
                 }}
                 availableQualifiers={
                   state.resources?.compiledCollection.qualifiers?.map((q: any) => q.name) ||
@@ -625,6 +636,9 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
 
       case 'host-resolution':
         return <HostControlledResolution state={state} actions={actions} />;
+
+      case 'resource-creation':
+        return <ResourceCreationTest state={state} actions={actions} />;
 
       default:
         return (

@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { JsonValue } from '@fgv/ts-json-base';
+import { JsonValue, JsonObject } from '@fgv/ts-json-base';
 import { Collections, ICollectible, Result } from '@fgv/ts-utils';
 import {
   CandidateCompleteness,
@@ -31,6 +31,7 @@ import {
   ResourceValueMergeMethod,
   ResourceId
 } from '../common';
+import * as ResourceJson from '../resource-json';
 
 /**
  * Parameters used to validate a {@link ResourceJson.Json.ILooseResourceCandidateDecl | resource candidate declaration}.
@@ -123,6 +124,15 @@ export interface IResourceType<T = unknown> extends ICollectible<ResourceTypeNam
    * Sets the index for this resource type.  Once set, the index cannot be changed.
    */
   setIndex(index: number): Result<ResourceTypeIndex>;
+
+  /**
+   * Creates a template for a new resource of this type.
+   * The template provides a default structure for creating new resource instances.
+   * @param resourceId - The id for the new resource
+   * @returns A loose resource declaration with default values for this resource type
+   * @public
+   */
+  createTemplate(resourceId: ResourceId): ResourceJson.Json.ILooseResourceDecl;
 }
 
 /**
@@ -211,5 +221,39 @@ export abstract class ResourceType<T = unknown> implements IResourceType<T> {
    */
   public setIndex(index: number): Result<ResourceTypeIndex> {
     return this._collectible.setIndex(index);
+  }
+
+  /**
+   * Creates a template for a new resource of this type.
+   * Default implementation provides a basic template.
+   * Subclasses can override to provide type-specific templates.
+   * @param resourceId - The id for the new resource
+   * @returns A loose resource declaration with default values for this resource type
+   * @public
+   */
+  public createTemplate(resourceId: ResourceId): ResourceJson.Json.ILooseResourceDecl {
+    return {
+      id: resourceId,
+      resourceTypeName: this.key,
+      candidates: [
+        {
+          json: this.getDefaultTemplateValue(),
+          conditions: undefined,
+          isPartial: false,
+          mergeMethod: 'replace'
+        }
+      ]
+    };
+  }
+
+  /**
+   * Gets the default template value for this resource type.
+   * Subclasses should override this to provide type-specific default values.
+   * @returns The default JSON value for a new resource of this type
+   */
+  protected getDefaultTemplateValue(): JsonObject {
+    // Default implementation returns an empty object
+    // Subclasses should override for type-specific defaults
+    return {};
   }
 }

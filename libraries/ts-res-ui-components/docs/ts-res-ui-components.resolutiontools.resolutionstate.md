@@ -37,6 +37,25 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[availableResourceTypes](./ts-res-ui-components.resolutiontools.resolutionstate.availableresourcetypes.md)
+
+
+</td><td>
+
+
+</td><td>
+
+ResourceTypes.IResourceType\[\]
+
+
+</td><td>
+
+Available resource types for creation
+
+
+</td></tr>
+<tr><td>
+
 [contextValues](./ts-res-ui-components.resolutiontools.resolutionstate.contextvalues.md)
 
 
@@ -113,6 +132,25 @@ Whether there are pending context changes not yet applied
 </td></tr>
 <tr><td>
 
+[hasPendingResourceChanges](./ts-res-ui-components.resolutiontools.resolutionstate.haspendingresourcechanges.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+Whether there are pending resource additions or deletions
+
+
+</td></tr>
+<tr><td>
+
 [hasUnsavedEdits](./ts-res-ui-components.resolutiontools.resolutionstate.hasunsavededits.md)
 
 
@@ -151,6 +189,25 @@ Whether edits are currently being applied to the system
 </td></tr>
 <tr><td>
 
+[newResourceDraft?](./ts-res-ui-components.resolutiontools.resolutionstate.newresourcedraft.md)
+
+
+</td><td>
+
+
+</td><td>
+
+{ resourceId: string; resourceType: string; template: ResourceJson.Json.ILooseResourceDecl; isValid: boolean; }
+
+
+</td><td>
+
+_(Optional)_ Draft of a new resource being created
+
+
+</td></tr>
+<tr><td>
+
 [pendingContextValues](./ts-res-ui-components.resolutiontools.resolutionstate.pendingcontextvalues.md)
 
 
@@ -165,6 +222,44 @@ Record&lt;string, string \| undefined&gt;
 </td><td>
 
 Context values being edited but not yet applied
+
+
+</td></tr>
+<tr><td>
+
+[pendingResourceDeletions](./ts-res-ui-components.resolutiontools.resolutionstate.pendingresourcedeletions.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Set&lt;string&gt;
+
+
+</td><td>
+
+IDs of resources marked for deletion
+
+
+</td></tr>
+<tr><td>
+
+[pendingResources](./ts-res-ui-components.resolutiontools.resolutionstate.pendingresources.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Map&lt;string, ResourceJson.Json.ILooseResourceDecl&gt;
+
+
+</td><td>
+
+Resources waiting to be added to the system
 
 
 </td></tr>

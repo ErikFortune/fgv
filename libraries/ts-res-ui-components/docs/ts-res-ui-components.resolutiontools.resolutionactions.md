@@ -75,6 +75,44 @@ Apply all edits to the resource system
 </td></tr>
 <tr><td>
 
+[applyPendingResources](./ts-res-ui-components.resolutiontools.resolutionactions.applypendingresources.md)
+
+
+</td><td>
+
+
+</td><td>
+
+() =&gt; Promise&lt;void&gt;
+
+
+</td><td>
+
+Apply all pending resource additions and deletions
+
+
+</td></tr>
+<tr><td>
+
+[cancelNewResource](./ts-res-ui-components.resolutiontools.resolutionactions.cancelnewresource.md)
+
+
+</td><td>
+
+
+</td><td>
+
+() =&gt; void
+
+
+</td><td>
+
+Cancel the new resource creation
+
+
+</td></tr>
+<tr><td>
+
 [clearEdits](./ts-res-ui-components.resolutiontools.resolutionactions.clearedits.md)
 
 
@@ -108,6 +146,25 @@ Clear all pending edits
 </td><td>
 
 Discard all pending edits
+
+
+</td></tr>
+<tr><td>
+
+[discardPendingResources](./ts-res-ui-components.resolutiontools.resolutionactions.discardpendingresources.md)
+
+
+</td><td>
+
+
+</td><td>
+
+() =&gt; void
+
+
+</td><td>
+
+Discard all pending resource changes
 
 
 </td></tr>
@@ -151,6 +208,44 @@ Check if a resource has been edited
 </td></tr>
 <tr><td>
 
+[markResourceForDeletion](./ts-res-ui-components.resolutiontools.resolutionactions.markresourcefordeletion.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(resourceId: string) =&gt; void
+
+
+</td><td>
+
+Mark an existing resource for deletion
+
+
+</td></tr>
+<tr><td>
+
+[removePendingResource](./ts-res-ui-components.resolutiontools.resolutionactions.removependingresource.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(resourceId: string) =&gt; void
+
+
+</td><td>
+
+Remove a pending resource
+
+
+</td></tr>
+<tr><td>
+
 [resetCache](./ts-res-ui-components.resolutiontools.resolutionactions.resetcache.md)
 
 
@@ -189,6 +284,25 @@ Save an edit to a resource value
 </td></tr>
 <tr><td>
 
+[saveNewResourceAsPending](./ts-res-ui-components.resolutiontools.resolutionactions.savenewresourceaspending.md)
+
+
+</td><td>
+
+
+</td><td>
+
+() =&gt; void
+
+
+</td><td>
+
+Add the new resource to pending resources (not applied yet)
+
+
+</td></tr>
+<tr><td>
+
 [selectResource](./ts-res-ui-components.resolutiontools.resolutionactions.selectresource.md)
 
 
@@ -203,6 +317,25 @@ Save an edit to a resource value
 </td><td>
 
 Select a resource for detailed resolution testing
+
+
+</td></tr>
+<tr><td>
+
+[selectResourceType](./ts-res-ui-components.resolutiontools.resolutionactions.selectresourcetype.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(type: string) =&gt; void
+
+
+</td><td>
+
+Select a resource type for the new resource
 
 
 </td></tr>
@@ -227,6 +360,25 @@ Change how resolution results are displayed
 </td></tr>
 <tr><td>
 
+[startNewResource](./ts-res-ui-components.resolutiontools.resolutionactions.startnewresource.md)
+
+
+</td><td>
+
+
+</td><td>
+
+() =&gt; void
+
+
+</td><td>
+
+Start creating a new resource
+
+
+</td></tr>
+<tr><td>
+
 [updateContextValue](./ts-res-ui-components.resolutiontools.resolutionactions.updatecontextvalue.md)
 
 
@@ -241,6 +393,25 @@ Change how resolution results are displayed
 </td><td>
 
 Update a context value for resolution testing
+
+
+</td></tr>
+<tr><td>
+
+[updateNewResourceId](./ts-res-ui-components.resolutiontools.resolutionactions.updatenewresourceid.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(id: string) =&gt; void
+
+
+</td><td>
+
+Update the resource ID for the new resource being created
 
 
 </td></tr>

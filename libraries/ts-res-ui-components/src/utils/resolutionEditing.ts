@@ -154,8 +154,7 @@ export function createCandidateDeclarations(
         conditions.push({
           qualifierName,
           operator: 'matches',
-          value: qualifierValue,
-          priority: 900 // High priority for user edits
+          value: qualifierValue
         });
       }
     }

@@ -8,7 +8,8 @@ import {
   PencilIcon,
   TrashIcon,
   ListBulletIcon,
-  FolderIcon
+  FolderIcon,
+  PlusIcon
 } from '@heroicons/react/24/outline';
 import {
   ResolutionViewProps,
@@ -19,17 +20,21 @@ import {
   ResourceEditorResult,
   ResolutionContextOptions
 } from '../../../types';
+import { ResourceId } from '@fgv/ts-res';
 import { QualifierContextControl } from '../../common/QualifierContextControl';
 import { ResolutionEditControls } from './ResolutionEditControls';
 import { ResourcePicker } from '../../pickers/ResourcePicker';
 import {
   ResourceSelection,
   ResourceAnnotations,
-  ResourcePickerOptions
+  ResourcePickerOptions,
+  PendingResource
 } from '../../pickers/ResourcePicker/types';
 import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptionsControl';
 import { ResolutionContextOptionsControl } from '../../common/ResolutionContextOptionsControl';
 import { ResolutionResults } from '../../common/ResolutionResults';
+import { NewResourceModal } from './NewResourceModal';
+import { PendingResourceControls } from './PendingResourceControls';
 
 /**
  * ResolutionView component for resource resolution testing and editing.
@@ -94,6 +99,11 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
   contextOptions,
   lockedViewMode,
   sectionTitles,
+  allowResourceCreation = false,
+  defaultResourceType,
+  resourceTypeFactory,
+  onPendingResourcesApplied,
+  showPendingResourcesInList = true,
   className = ''
 }) => {
   // State for picker options control
@@ -105,6 +115,9 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
   const [currentContextOptions, setCurrentContextOptions] = useState<ResolutionContextOptions>(
     contextOptions || {}
   );
+
+  // State for new resource modal
+  const [showNewResourceModal, setShowNewResourceModal] = useState(false);
 
   // Update currentContextOptions when contextOptions prop changes
   // This is important for host-managed values
@@ -119,7 +132,11 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
 
   // Use filtered resources when filtering is active and successful
   const isFilteringActive = filterState?.enabled && filterResult?.success === true;
-  const activeProcessedResources = isFilteringActive ? filterResult?.processedResources : resources;
+  const baseProcessedResources = isFilteringActive ? filterResult?.processedResources : resources;
+
+  // For now, just use the base processed resources directly
+  // TODO: Implement merging of pending resources for display
+  const activeProcessedResources = baseProcessedResources;
 
   // Merge picker options with resolution-specific defaults
   const effectivePickerOptions = useMemo(
@@ -143,24 +160,49 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
   const resourceAnnotations = useMemo(() => {
     const annotations: ResourceAnnotations = {};
 
-    if (!activeProcessedResources?.summary?.resourceIds) {
-      return annotations;
+    // Get all resource IDs (existing + pending)
+    const allResourceIds = new Set<string>();
+
+    if (activeProcessedResources?.summary?.resourceIds) {
+      activeProcessedResources.summary.resourceIds.forEach((id) => allResourceIds.add(id));
     }
 
-    activeProcessedResources.summary.resourceIds.forEach((resourceId) => {
+    // Add pending resource IDs
+    if (resolutionState?.pendingResources) {
+      resolutionState.pendingResources.forEach((_, id) => allResourceIds.add(id));
+    }
+
+    allResourceIds.forEach((resourceId) => {
       const hasEdit = resolutionActions?.hasEdit?.(resourceId);
+      const isPending = resolutionState?.pendingResources?.has(resourceId);
+      const isMarkedForDeletion = resolutionState?.pendingResourceDeletions?.has(resourceId);
       const isSelected = resolutionState?.selectedResourceId === resourceId;
       const hasResolutionResult = isSelected && resolutionState?.resolutionResult;
 
-      // Base annotation with edit indicator
+      // Base annotation with appropriate indicator
+      let indicator = undefined;
+      if (isPending) {
+        indicator = {
+          type: 'icon' as const,
+          value: '➕',
+          tooltip: 'New resource (pending)'
+        };
+      } else if (isMarkedForDeletion) {
+        indicator = {
+          type: 'icon' as const,
+          value: '🗑️',
+          tooltip: 'Marked for deletion'
+        };
+      } else if (hasEdit) {
+        indicator = {
+          type: 'icon' as const,
+          value: '✏️',
+          tooltip: 'Resource has unsaved edits'
+        };
+      }
+
       annotations[resourceId] = {
-        indicator: hasEdit
-          ? {
-              type: 'icon',
-              value: '✏️',
-              tooltip: 'Resource has unsaved edits'
-            }
-          : undefined
+        indicator
       };
 
       // Add resolution result annotations for selected resource
@@ -213,7 +255,9 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
     activeProcessedResources?.summary?.resourceIds,
     resolutionActions,
     resolutionState?.selectedResourceId,
-    resolutionState?.resolutionResult
+    resolutionState?.resolutionResult,
+    resolutionState?.pendingResources,
+    resolutionState?.pendingResourceDeletions
   ]);
 
   // Merge context options with current options from control
@@ -288,6 +332,54 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
     return resolutionState?.contextValues || {};
   }, [resolutionState?.contextValues]);
 
+  // Convert pending resources to PendingResource format for ResourcePicker
+  const pendingResourcesList = useMemo<PendingResource[]>(() => {
+    const pending: PendingResource[] = [];
+
+    // Add new pending resources
+    if (resolutionState?.pendingResources) {
+      resolutionState.pendingResources.forEach((resource, id) => {
+        pending.push({
+          id,
+          type: 'new',
+          resourceType: resource.resourceTypeName,
+          displayName: id // Use the resource ID as display name
+        });
+      });
+    }
+
+    // Add deleted resources
+    if (resolutionState?.pendingResourceDeletions) {
+      resolutionState.pendingResourceDeletions.forEach((id) => {
+        pending.push({
+          id,
+          type: 'deleted',
+          displayName: id
+        });
+      });
+    }
+
+    // Add edited resources
+    if (resolutionState?.editedResources) {
+      resolutionState.editedResources.forEach((_, id) => {
+        // Only add if not already in pending as new
+        if (!resolutionState.pendingResources?.has(id)) {
+          pending.push({
+            id,
+            type: 'modified',
+            displayName: id
+          });
+        }
+      });
+    }
+
+    return pending;
+  }, [
+    resolutionState?.pendingResources,
+    resolutionState?.pendingResourceDeletions,
+    resolutionState?.editedResources
+  ]);
+
   // Handle resource selection from ResourcePicker
   const handleResourceSelect = useCallback(
     (selection: ResourceSelection) => {
@@ -297,6 +389,26 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
     },
     [resolutionActions]
   );
+
+  // Handle new resource creation
+  const handleStartNewResource = useCallback(() => {
+    resolutionActions?.startNewResource();
+    setShowNewResourceModal(true);
+  }, [resolutionActions]);
+
+  const handleCloseNewResourceModal = useCallback(() => {
+    setShowNewResourceModal(false);
+    resolutionActions?.cancelNewResource();
+  }, [resolutionActions]);
+
+  const handleApplyPendingResources = useCallback(async () => {
+    await resolutionActions?.applyPendingResources();
+    if (onPendingResourcesApplied && resolutionState) {
+      const added = Array.from(resolutionState.pendingResources.values());
+      const deleted = Array.from(resolutionState.pendingResourceDeletions);
+      onPendingResourcesApplied(added, deleted);
+    }
+  }, [resolutionActions, resolutionState, onPendingResourcesApplied]);
 
   // Automatically set locked view mode when provided
   useEffect(() => {
@@ -470,14 +582,37 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
           </div>
         )}
 
+        {/* Pending Resource Controls - Show when there are pending resource changes */}
+        {resolutionState?.hasPendingResourceChanges && (
+          <div className="mt-6">
+            <PendingResourceControls
+              pendingAddCount={resolutionState.pendingResources.size}
+              pendingDeleteCount={resolutionState.pendingResourceDeletions.size}
+              onApply={handleApplyPendingResources}
+              onDiscard={resolutionActions?.discardPendingResources || (() => {})}
+              disabled={!resolutionState.currentResolver}
+            />
+          </div>
+        )}
+
         {/* Main Browser/Details Layout */}
         <div className="flex flex-col lg:flex-row gap-6 h-[600px]">
           {/* Left side: Resource Selection */}
           <div className="lg:w-1/2 flex flex-col">
-            <div className="flex items-center mb-4">
+            <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
                 {sectionTitles?.resources || 'Resources'}
               </h3>
+              {allowResourceCreation && (
+                <button
+                  onClick={handleStartNewResource}
+                  className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  title="Create a new resource"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                  <span>Add Resource</span>
+                </button>
+              )}
             </div>
 
             <div className="flex-1">
@@ -486,6 +621,7 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
                 selectedResourceId={resolutionState?.selectedResourceId || null}
                 onResourceSelect={handleResourceSelect}
                 resourceAnnotations={resourceAnnotations}
+                pendingResources={showPendingResourcesInList ? pendingResourcesList : undefined}
                 options={effectivePickerOptions}
                 onMessage={onMessage}
               />
@@ -580,6 +716,22 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* New Resource Modal */}
+      {resolutionState?.newResourceDraft && (
+        <NewResourceModal
+          isOpen={showNewResourceModal}
+          onClose={handleCloseNewResourceModal}
+          resourceId={resolutionState.newResourceDraft.resourceId}
+          resourceType={resolutionState.newResourceDraft.resourceType}
+          availableResourceTypes={resolutionState.availableResourceTypes}
+          isValid={resolutionState.newResourceDraft.isValid}
+          defaultResourceType={defaultResourceType}
+          onUpdateResourceId={resolutionActions?.updateNewResourceId || (() => {})}
+          onSelectResourceType={resolutionActions?.selectResourceType || (() => {})}
+          onSave={resolutionActions?.saveNewResourceAsPending || (() => {})}
+        />
+      )}
     </div>
   );
 };
