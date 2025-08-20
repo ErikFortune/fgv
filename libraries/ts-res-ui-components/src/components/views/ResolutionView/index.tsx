@@ -119,6 +119,22 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
   // State for new resource modal
   const [showNewResourceModal, setShowNewResourceModal] = useState(false);
 
+  // Local toggles for editing/creation features (controllable via options dialog)
+  const [allowResourceCreationInternal, setAllowResourceCreationInternal] = useState<boolean>(
+    !!allowResourceCreation
+  );
+  const [showPendingResourcesInListInternal, setShowPendingResourcesInListInternal] = useState<boolean>(
+    !!showPendingResourcesInList
+  );
+
+  // Sync internal toggles when props change
+  useEffect(() => {
+    setAllowResourceCreationInternal(!!allowResourceCreation);
+  }, [allowResourceCreation]);
+  useEffect(() => {
+    setShowPendingResourcesInListInternal(!!showPendingResourcesInList);
+  }, [showPendingResourcesInList]);
+
   // Update currentContextOptions when contextOptions prop changes
   // This is important for host-managed values
   React.useEffect(() => {
@@ -483,6 +499,10 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
         presentation={pickerOptionsPresentation}
         title="Resolution Context Options"
         className="mb-6"
+        allowResourceCreation={allowResourceCreationInternal}
+        onAllowResourceCreationChange={setAllowResourceCreationInternal}
+        showPendingResourcesInList={showPendingResourcesInListInternal}
+        onShowPendingResourcesInListChange={setShowPendingResourcesInListInternal}
       />
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -603,7 +623,7 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
               <h3 className="text-lg font-semibold text-gray-900">
                 {sectionTitles?.resources || 'Resources'}
               </h3>
-              {allowResourceCreation && (
+              {allowResourceCreationInternal && (
                 <button
                   onClick={handleStartNewResource}
                   className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -621,7 +641,7 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
                 selectedResourceId={resolutionState?.selectedResourceId || null}
                 onResourceSelect={handleResourceSelect}
                 resourceAnnotations={resourceAnnotations}
-                pendingResources={showPendingResourcesInList ? pendingResourcesList : undefined}
+                pendingResources={showPendingResourcesInListInternal ? pendingResourcesList : undefined}
                 options={effectivePickerOptions}
                 onMessage={onMessage}
               />

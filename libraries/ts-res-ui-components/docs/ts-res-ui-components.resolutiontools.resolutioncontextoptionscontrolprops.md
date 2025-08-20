@@ -37,6 +37,25 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[allowResourceCreation?](./ts-res-ui-components.resolutiontools.resolutioncontextoptionscontrolprops.allowresourcecreation.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_ Editing/creation toggle - when provided, show UI to control it
+
+
+</td></tr>
+<tr><td>
+
 [availableQualifiers?](./ts-res-ui-components.resolutiontools.resolutioncontextoptionscontrolprops.availablequalifiers.md)
 
 
@@ -75,6 +94,25 @@ _(Optional)_ Custom class name
 </td></tr>
 <tr><td>
 
+[onAllowResourceCreationChange?](./ts-res-ui-components.resolutiontools.resolutioncontextoptionscontrolprops.onallowresourcecreationchange.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(allow: boolean) =&gt; void
+
+
+</td><td>
+
+_(Optional)_ Callback for editing/creation toggle
+
+
+</td></tr>
+<tr><td>
+
 [onOptionsChange](./ts-res-ui-components.resolutiontools.resolutioncontextoptionscontrolprops.onoptionschange.md)
 
 
@@ -89,6 +127,25 @@ _(Optional)_ Custom class name
 </td><td>
 
 Callback when options change
+
+
+</td></tr>
+<tr><td>
+
+[onShowPendingResourcesInListChange?](./ts-res-ui-components.resolutiontools.resolutioncontextoptionscontrolprops.onshowpendingresourcesinlistchange.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(show: boolean) =&gt; void
+
+
+</td><td>
+
+_(Optional)_ Callback for pending resources list visibility
 
 
 </td></tr>
@@ -127,6 +184,25 @@ Current context options
 </td><td>
 
 _(Optional)_ How to present the options control (default: 'hidden' for production use)
+
+
+</td></tr>
+<tr><td>
+
+[showPendingResourcesInList?](./ts-res-ui-components.resolutiontools.resolutioncontextoptionscontrolprops.showpendingresourcesinlist.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_ Pending resources list visibility - when provided, show UI to control it
 
 
 </td></tr>

@@ -243,7 +243,25 @@ export const QualifierContextControl: React.FC<QualifierContextControlProps> = (
   return (
     <div className={`bg-white rounded border border-gray-200 p-2 ${className} ${customClassName}`}>
       <div className="flex items-center gap-2">
-        <label className="text-sm font-medium text-gray-700 min-w-0 flex-shrink-0">{qualifierName}:</label>
+        <label className="text-sm font-medium text-gray-700 min-w-0 flex-shrink-0 flex items-center gap-1">
+          {qualifierName}:
+          {isHostManaged && showHostValue && (
+            <span
+              className="text-[10px] px-1 py-0.5 rounded bg-blue-100 text-blue-700"
+              title="Host-managed value"
+            >
+              HOST
+            </span>
+          )}
+          {!isHostManaged && !isEditable && (
+            <span
+              className="text-[10px] px-1 py-0.5 rounded bg-gray-200 text-gray-700"
+              title="Locked by host or configuration"
+            >
+              LOCKED
+            </span>
+          )}
+        </label>
         <div className="flex-1 flex items-center gap-1">
           {hasEnumeratedValues ? (
             // Dropdown for enumerated values

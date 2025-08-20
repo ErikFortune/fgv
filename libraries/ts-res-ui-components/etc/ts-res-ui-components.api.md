@@ -592,11 +592,15 @@ const ResolutionContextOptionsControl: React_2.FC<ResolutionContextOptionsContro
 
 // @public
 interface ResolutionContextOptionsControlProps {
+    allowResourceCreation?: boolean;
     availableQualifiers?: string[];
     className?: string;
+    onAllowResourceCreationChange?: (allow: boolean) => void;
     onOptionsChange: (options: ResolutionContextOptions) => void;
+    onShowPendingResourcesInListChange?: (show: boolean) => void;
     options: ResolutionContextOptions;
     presentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
+    showPendingResourcesInList?: boolean;
     title?: string;
 }
 

@@ -19,6 +19,14 @@ export interface ResolutionContextOptionsControlProps {
   className?: string;
   /** Title for the control section */
   title?: string;
+  /** Editing/creation toggle - when provided, show UI to control it */
+  allowResourceCreation?: boolean;
+  /** Callback for editing/creation toggle */
+  onAllowResourceCreationChange?: (allow: boolean) => void;
+  /** Pending resources list visibility - when provided, show UI to control it */
+  showPendingResourcesInList?: boolean;
+  /** Callback for pending resources list visibility */
+  onShowPendingResourcesInListChange?: (show: boolean) => void;
 }
 
 /**
@@ -63,7 +71,11 @@ export const ResolutionContextOptionsControl: React.FC<ResolutionContextOptionsC
   availableQualifiers = [],
   presentation = 'hidden',
   className = '',
-  title = 'Context Options'
+  title = 'Context Options',
+  allowResourceCreation,
+  onAllowResourceCreationChange,
+  showPendingResourcesInList,
+  onShowPendingResourcesInListChange
 }) => {
   // Early return for hidden presentation
   if (presentation === 'hidden') {
@@ -204,6 +216,35 @@ export const ResolutionContextOptionsControl: React.FC<ResolutionContextOptionsC
           <p className="text-xs text-gray-500 mt-1">Use {'{qualifierName}'} for dynamic qualifier names</p>
         </div>
       </div>
+
+      {/* Editing & Creation (optional, when props provided) */}
+      {(allowResourceCreation !== undefined || showPendingResourcesInList !== undefined) && (
+        <div className="space-y-3 pt-3 border-t border-gray-200">
+          <h4 className="text-sm font-medium text-gray-700">Editing & Creation</h4>
+          {allowResourceCreation !== undefined && (
+            <label className="flex items-center text-xs">
+              <input
+                type="checkbox"
+                checked={!!allowResourceCreation}
+                onChange={(e) => onAllowResourceCreationChange?.(e.target.checked)}
+                className="mr-2 rounded"
+              />
+              Allow Resource Creation
+            </label>
+          )}
+          {showPendingResourcesInList !== undefined && (
+            <label className="flex items-center text-xs">
+              <input
+                type="checkbox"
+                checked={!!showPendingResourcesInList}
+                onChange={(e) => onShowPendingResourcesInListChange?.(e.target.checked)}
+                className="mr-2 rounded"
+              />
+              Show Pending Resources In List
+            </label>
+          )}
+        </div>
+      )}
 
       {/* Per-Qualifier Configuration */}
       {availableQualifiers.length > 0 && (

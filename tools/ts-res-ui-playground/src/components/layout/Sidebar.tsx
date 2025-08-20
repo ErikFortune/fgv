@@ -6,9 +6,7 @@ import {
   CubeIcon,
   MagnifyingGlassIcon,
   CogIcon,
-  RectangleStackIcon,
-  AdjustmentsHorizontalIcon,
-  PlusCircleIcon
+  RectangleStackIcon
 } from '@heroicons/react/24/outline';
 import { Tool } from '../../types/app';
 
@@ -59,18 +57,6 @@ const tools = [
     name: 'Resource Picker',
     icon: RectangleStackIcon,
     description: 'Interactive ResourcePicker component demo and testing'
-  },
-  {
-    id: 'host-resolution',
-    name: 'Host-Controlled Resolution',
-    icon: AdjustmentsHorizontalIcon,
-    description: 'Test resolution with host-controlled qualifier values'
-  },
-  {
-    id: 'resource-creation',
-    name: 'Resource Creation',
-    icon: PlusCircleIcon,
-    description: 'Test adding new resources with pending/apply workflow'
   }
 ];
 
