@@ -425,18 +425,7 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
       applyPendingResources: resolutionData.actions.applyPendingResources,
       discardPendingResources: resolutionData.actions.discardPendingResources,
 
-      // Combined apply changes action (applies both edits and new resources)
-      applyAllPendingChanges: async () => {
-        // Apply both resource edits and new resources in one operation
-        await resolutionData.actions.applyEdits();
-        await resolutionData.actions.applyPendingResources();
-        viewState.addMessage('success', 'All pending changes applied');
-      },
-      discardAllPendingChanges: () => {
-        resolutionData.actions.discardEdits();
-        resolutionData.actions.discardPendingResources();
-        viewState.addMessage('info', 'All pending changes discarded');
-      },
+      // Combined apply/discard removed; use applyPendingResources/discard* directly
 
       // UI state management
       selectResource: viewState.selectResource,

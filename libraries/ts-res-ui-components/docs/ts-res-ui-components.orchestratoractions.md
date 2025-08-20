@@ -162,23 +162,6 @@ Description
 </td></tr>
 <tr><td>
 
-[applyAllPendingChanges](./ts-res-ui-components.orchestratoractions.applyallpendingchanges.md)
-
-
-</td><td>
-
-
-</td><td>
-
-() =&gt; Promise&lt;void&gt;
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
 [applyConfiguration](./ts-res-ui-components.orchestratoractions.applyconfiguration.md)
 
 
@@ -316,23 +299,6 @@ Description
 <tr><td>
 
 [clearResources](./ts-res-ui-components.orchestratoractions.clearresources.md)
-
-
-</td><td>
-
-
-</td><td>
-
-() =&gt; void
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[discardAllPendingChanges](./ts-res-ui-components.orchestratoractions.discardallpendingchanges.md)
 
 
 </td><td>

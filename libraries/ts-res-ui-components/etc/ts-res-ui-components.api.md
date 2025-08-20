@@ -331,8 +331,6 @@ export interface OrchestratorActions {
     // (undocumented)
     addMessage: (type: Message['type'], message: string) => void;
     // (undocumented)
-    applyAllPendingChanges: () => Promise<void>;
-    // (undocumented)
     applyConfiguration: (config: Config.Model.ISystemConfiguration) => void;
     // (undocumented)
     applyFilter: () => Promise<FilterResult | null>;
@@ -350,8 +348,6 @@ export interface OrchestratorActions {
     clearResourceEdits: () => void;
     // (undocumented)
     clearResources: () => void;
-    // (undocumented)
-    discardAllPendingChanges: () => void;
     // (undocumented)
     discardPendingResources: () => void;
     // (undocumented)

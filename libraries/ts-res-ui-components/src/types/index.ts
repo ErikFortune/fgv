@@ -1259,9 +1259,7 @@ export interface OrchestratorActions {
   applyPendingResources: () => Promise<void>;
   discardPendingResources: () => void;
 
-  // Combined pending changes actions
-  applyAllPendingChanges: () => Promise<void>;
-  discardAllPendingChanges: () => void;
+  // Combined pending changes actions removed in favor of unified applyPendingResources
 
   // UI state management
   selectResource: (resourceId: string | null) => void;
