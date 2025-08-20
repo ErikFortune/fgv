@@ -33,7 +33,7 @@ export { ResolutionView } from '../components/views/ResolutionView';
 
 // Export resolution-related sub-components
 export { EditableJsonView } from '../components/views/ResolutionView/EditableJsonView';
-export { ResolutionEditControls } from '../components/views/ResolutionView/ResolutionEditControls';
+export { UnifiedChangeControls } from '../components/views/ResolutionView/UnifiedChangeControls';
 export { QualifierContextControl } from '../components/common/QualifierContextControl';
 export { ResolutionContextOptionsControl } from '../components/common/ResolutionContextOptionsControl';
 

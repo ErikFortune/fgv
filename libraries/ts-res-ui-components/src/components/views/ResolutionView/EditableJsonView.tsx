@@ -177,7 +177,7 @@ export interface EditableJsonViewProps {
  *             }}
  *           />
  *
- *           <ResolutionTools.ResolutionEditControls
+ *           <ResolutionTools.UnifiedChangeControls
  *             editCount={state.editedResources.size}
  *             isApplying={state.isApplyingEdits}
  *             hasEdits={state.hasUnsavedEdits}

@@ -434,6 +434,13 @@ export function useResolutionState(
         const pendingResource = pendingResources.get(resourceId);
         if (pendingResource) {
           // Update the pending resource's template directly
+          // Always stamp conditions from the current effective context for pending resources
+          const contextConditions: ResourceJson.Json.ILooseConditionDecl[] = [];
+          Object.entries(effectiveContext).forEach(([qualifierName, qualifierValue]) => {
+            if (typeof qualifierValue === 'string' && qualifierValue.trim() !== '') {
+              contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
+            }
+          });
           const updatedResource = {
             ...pendingResource,
             candidates: [
@@ -441,7 +448,7 @@ export function useResolutionState(
                 json: (typeof editedValue === 'object' && editedValue !== null && !Array.isArray(editedValue)
                   ? editedValue
                   : { value: editedValue }) as ResourceJsonObject,
-                conditions: undefined,
+                conditions: contextConditions.length > 0 ? contextConditions : undefined,
                 isPartial: false,
                 mergeMethod: 'replace' as const
               }
@@ -518,7 +525,7 @@ export function useResolutionState(
         );
       }
     },
-    [onMessage, pendingResources, selectedResourceId]
+    [onMessage, pendingResources, selectedResourceId, effectiveContext]
   );
 
   const getEditedValue = useCallback(
@@ -710,13 +717,29 @@ export function useResolutionState(
 
     setPendingResources((prev) => {
       const newMap = new Map(prev);
-      newMap.set(newResourceDraft.resourceId, newResourceDraft.template);
+      // Stamp conditions from current effective context onto all candidates for the new resource
+      const contextConditions: ResourceJson.Json.ILooseConditionDecl[] = [];
+      Object.entries(effectiveContext).forEach(([qualifierName, qualifierValue]) => {
+        if (typeof qualifierValue === 'string' && qualifierValue.trim() !== '') {
+          contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
+        }
+      });
+
+      const stampedTemplate: ResourceJson.Json.ILooseResourceDecl = {
+        ...newResourceDraft.template,
+        candidates: (newResourceDraft.template.candidates || []).map((c) => ({
+          ...c,
+          conditions: contextConditions.length > 0 ? contextConditions : c.conditions
+        }))
+      };
+
+      newMap.set(newResourceDraft.resourceId, stampedTemplate);
       return newMap;
     });
 
     setNewResourceDraft(undefined);
     onMessage?.('info', `Resource ${newResourceDraft.resourceId} added to pending`);
-  }, [newResourceDraft, onMessage]);
+  }, [newResourceDraft, onMessage, effectiveContext]);
 
   const cancelNewResource = useCallback(() => {
     setNewResourceDraft(undefined);

@@ -22,7 +22,7 @@ import {
 } from '../../../types';
 import { ResourceId } from '@fgv/ts-res';
 import { QualifierContextControl } from '../../common/QualifierContextControl';
-import { ResolutionEditControls } from './ResolutionEditControls';
+import { UnifiedChangeControls } from './UnifiedChangeControls';
 import { ResourcePicker } from '../../pickers/ResourcePicker';
 import {
   ResourceSelection,
@@ -34,7 +34,6 @@ import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptions
 import { ResolutionContextOptionsControl } from '../../common/ResolutionContextOptionsControl';
 import { ResolutionResults } from '../../common/ResolutionResults';
 import { NewResourceModal } from './NewResourceModal';
-import { PendingResourceControls } from './PendingResourceControls';
 
 /**
  * ResolutionView component for resource resolution testing and editing.
@@ -588,29 +587,22 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
           </div>
         )}
 
-        {/* Edit Controls - Show when there are unsaved edits */}
-        {resolutionState?.hasUnsavedEdits && (
+        {/* Unified Change Controls - replaces separate edit/pending controls */}
+        {(resolutionState?.hasUnsavedEdits || resolutionState?.hasPendingResourceChanges) && (
           <div className="mt-6">
-            <ResolutionEditControls
-              editCount={resolutionState.editedResources.size}
-              isApplying={resolutionState.isApplyingEdits}
-              hasEdits={resolutionState.hasUnsavedEdits}
-              onApplyEdits={resolutionActions?.applyEdits}
-              onDiscardEdits={resolutionActions?.discardEdits}
-              disabled={!resolutionState.currentResolver}
-            />
-          </div>
-        )}
-
-        {/* Pending Resource Controls - Show when there are pending resource changes */}
-        {resolutionState?.hasPendingResourceChanges && (
-          <div className="mt-6">
-            <PendingResourceControls
-              pendingAddCount={resolutionState.pendingResources.size}
-              pendingDeleteCount={resolutionState.pendingResourceDeletions.size}
-              onApply={handleApplyPendingResources}
-              onDiscard={resolutionActions?.discardPendingResources || (() => {})}
-              disabled={!resolutionState.currentResolver}
+            <UnifiedChangeControls
+              editCount={resolutionState?.editedResources?.size || 0}
+              addCount={resolutionState?.pendingResources?.size || 0}
+              deleteCount={resolutionState?.pendingResourceDeletions?.size || 0}
+              isApplying={resolutionState?.isApplyingEdits}
+              disabled={!resolutionState?.currentResolver}
+              onApplyAll={async () => {
+                await handleApplyPendingResources();
+              }}
+              onDiscardAll={() => {
+                resolutionActions?.discardEdits?.();
+                resolutionActions?.discardPendingResources?.();
+              }}
             />
           </div>
         )}

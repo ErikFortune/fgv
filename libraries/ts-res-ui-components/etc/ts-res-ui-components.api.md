@@ -604,11 +604,6 @@ interface ResolutionContextOptionsControlProps {
     title?: string;
 }
 
-// Warning: (ae-forgotten-export) The symbol "ResolutionEditControlsProps" needs to be exported by the entry point index.d.ts
-//
-// @public
-const ResolutionEditControls: React_2.FC<ResolutionEditControlsProps>;
-
 // @public
 interface ResolutionOptions {
     enableCaching?: boolean;
@@ -660,7 +655,7 @@ declare namespace ResolutionTools {
     export {
         ResolutionView,
         EditableJsonView,
-        ResolutionEditControls,
+        UnifiedChangeControls,
         QualifierContextControl,
         ResolutionContextOptionsControl,
         useResolutionState,
@@ -903,6 +898,11 @@ declare namespace TsResTools {
         CompiledViewProps
     }
 }
+
+// Warning: (ae-forgotten-export) The symbol "UnifiedChangeControlsProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+const UnifiedChangeControls: React_2.FC<UnifiedChangeControlsProps>;
 
 // Warning: (ae-forgotten-export) The symbol "UseConfigurationStateReturn" needs to be exported by the entry point index.d.ts
 //

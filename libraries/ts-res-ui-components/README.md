@@ -505,14 +505,13 @@ ResolutionView now supports creating new resources directly in the UI with a pen
 />
 ```
 
-**Resource Creation Workflow:**
-1. Click "Add Resource" button in the resource picker header
-2. Enter a unique resource ID
-3. Select resource type (unless host-controlled)
-4. Resource is added to pending list (not yet in the system)
-5. Create multiple resources before applying
-6. Click "Apply Resources" to commit all pending additions
-7. Or click "Discard" to remove all pending changes
+**Unified Change Workflow (Edits, Additions, Deletions):**
+1. Click "Add Resource" in the picker header to create new resources (if enabled)
+2. Edit existing resources from the results pane using the JSON or custom editors
+3. Mark resources for deletion where supported
+4. All changes appear in a single "Pending Changes" bar with counts (edits/additions/deletions)
+5. Click "Apply Changes" to commit everything in one atomic rebuild
+6. Or click "Discard Changes" to remove all pending changes
 
 **Key features:**
 - **Template-based creation**: Resource types provide default templates for new resources
