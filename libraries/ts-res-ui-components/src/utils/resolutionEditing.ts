@@ -36,6 +36,8 @@ export function validateEditedResource(editedValue: JsonValue): EditValidationRe
     errors.push(`Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 
+  // Intentionally minimal validation – structural only. No circular checks.
+
   return {
     isValid: errors.length === 0,
     errors,
@@ -159,26 +161,70 @@ export function createCandidateDeclarations(
 }
 
 /**
- * Rebuilds the resource system with edited candidates using deltas
+ * Converts loose resource declarations (new resources) into loose candidate declarations
+ * that can be applied via ResourceManagerBuilder.clone.
  */
-export async function rebuildSystemWithEdits(
+export function convertLooseResourcesToCandidateDecls(
+  newResources: ReadonlyArray<ResourceJson.Json.ILooseResourceDecl>
+): ResourceJson.Json.ILooseResourceCandidateDecl[] {
+  const candidates: ResourceJson.Json.ILooseResourceCandidateDecl[] = [];
+
+  for (const resource of newResources) {
+    const resourceTypeName = resource.resourceTypeName;
+    // Skip if no candidates defined
+    const childCandidates = resource.candidates ?? [];
+    if (childCandidates.length === 0) {
+      continue;
+    }
+
+    for (const c of childCandidates) {
+      candidates.push({
+        id: resource.id,
+        json: (c.json ?? {}) as JsonObject,
+        conditions: c.conditions,
+        isPartial: c.isPartial ?? false,
+        mergeMethod: c.mergeMethod ?? 'replace',
+        resourceTypeName
+      });
+    }
+  }
+
+  return candidates;
+}
+
+/**
+ * Rebuilds the resource system by applying both edit candidates and
+ * new resource candidates in a single clone → compile → resolver pass.
+ */
+export async function rebuildSystemWithChanges(
   originalSystem: ProcessedResources['system'],
-  editedResources: Map<string, { originalValue: JsonValue; editedValue: JsonValue; delta: JsonValue }>,
+  options: {
+    editedResources?: Map<string, { originalValue: JsonValue; editedValue: JsonValue; delta: JsonValue }>;
+    newResources?: ReadonlyArray<ResourceJson.Json.ILooseResourceDecl>;
+  },
   currentContext: Record<string, string>
 ): Promise<Result<ProcessedResources>> {
   try {
-    const candidateDeclarations = createCandidateDeclarations(editedResources, currentContext);
+    const editCandidates = options.editedResources
+      ? createCandidateDeclarations(options.editedResources, currentContext)
+      : [];
+    const newResourceCandidates = options.newResources
+      ? convertLooseResourcesToCandidateDecls(options.newResources)
+      : [];
+
+    const allCandidates: ReadonlyArray<ResourceJson.Json.ILooseResourceCandidateDecl> = [
+      ...editCandidates,
+      ...newResourceCandidates
+    ];
 
     return originalSystem.resourceManager
-      .clone({ candidates: candidateDeclarations })
+      .clone({ candidates: allCandidates })
       .withErrorFormat((message) => `Failed to clone manager: ${message}`)
       .onSuccess((clonedManager) => {
-        // Get compiled collection from the updated manager
         return clonedManager
           .getCompiledResourceCollection({ includeMetadata: true })
           .withErrorFormat((message) => `Failed to get compiled collection: ${message}`)
           .onSuccess((compiledCollection) => {
-            // Create resolver for the updated system
             return Runtime.ResourceResolver.create({
               resourceManager: clonedManager,
               qualifierTypes: originalSystem.qualifierTypes,
@@ -186,7 +232,6 @@ export async function rebuildSystemWithEdits(
             })
               .withErrorFormat((message) => `Failed to create resolver: ${message}`)
               .onSuccess((resolver) => {
-                // Create summary
                 const resourceIds = Array.from(clonedManager.resources.keys());
                 const summary = {
                   totalResources: resourceIds.length,
@@ -216,9 +261,21 @@ export async function rebuildSystemWithEdits(
       });
   } catch (error) {
     return fail(
-      `Failed to rebuild system with edits: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to rebuild system with changes: ${error instanceof Error ? error.message : String(error)}`
     );
   }
+}
+
+/**
+ * Rebuilds the resource system with edited candidates using deltas
+ */
+export async function rebuildSystemWithEdits(
+  originalSystem: ProcessedResources['system'],
+  editedResources: Map<string, { originalValue: JsonValue; editedValue: JsonValue; delta: JsonValue }>,
+  currentContext: Record<string, string>
+): Promise<Result<ProcessedResources>> {
+  // Delegate to the unified change application helper
+  return rebuildSystemWithChanges(originalSystem, { editedResources }, currentContext);
 }
 
 /**

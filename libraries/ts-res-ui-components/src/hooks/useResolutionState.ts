@@ -18,6 +18,7 @@ import {
   validateEditedResource,
   computeResourceDelta,
   rebuildSystemWithEdits,
+  rebuildSystemWithChanges,
   extractResolutionContext,
   checkEditConflicts
 } from '../utils/resolutionEditing';
@@ -758,86 +759,68 @@ export function useResolutionState(
     }
 
     try {
-      // Get the current resource manager
-      const resourceManager = processedResources.system.resourceManager;
-
-      // Apply deletions
-      pendingResourceDeletions.forEach((resourceId) => {
-        // TODO: Add remove resource functionality to resource manager
-        onMessage?.('warning', `Resource deletion not yet implemented for ${resourceId}`);
-      });
-
-      // Add pending new resources to the resource manager
-      pendingResources.forEach((resource) => {
-        console.log('Adding resource to manager:', resource);
-        const addResult = resourceManager.addResource(resource);
-        if (addResult.isFailure()) {
-          onMessage?.('error', `Failed to add resource ${resource.id}: ${addResult.message}`);
-        } else {
-          console.log('Successfully added resource:', resource.id);
+      // Extract current resolution context (filter out undefined values)
+      const cleanedContextValues: Record<string, string> = {};
+      Object.entries(effectiveContext).forEach(([key, value]) => {
+        if (value !== undefined) {
+          cleanedContextValues[key] = value as string;
         }
       });
 
-      // Compile the updated collection
-      const compileResult = resourceManager.getCompiledResourceCollection({ includeMetadata: true });
-      if (compileResult.isFailure()) {
-        onMessage?.('error', `Failed to compile resources: ${compileResult.message}`);
-        return;
+      // Ensure we have a resolver instance to extract context
+      let resolverForContext = currentResolver as Runtime.ResourceResolver | null;
+      if (!resolverForContext) {
+        const resolverCreateResult = Runtime.ResourceResolver.create({
+          resourceManager: processedResources.system.resourceManager,
+          qualifierTypes: processedResources.system.qualifierTypes,
+          contextQualifierProvider: processedResources.system.contextQualifierProvider
+        });
+        if (resolverCreateResult.isFailure()) {
+          onMessage?.('error', `Failed to create resolver: ${resolverCreateResult.message}`);
+          return;
+        }
+        resolverForContext = resolverCreateResult.value;
       }
 
-      // Debug: Log what's in the compiled collection
-      console.log(
-        'Compiled collection resources:',
-        compileResult.value.resources?.map((r) => r.id)
-      );
-      console.log('Resource manager resources:', Array.from(resourceManager.resources.keys()));
+      const currentContext = extractResolutionContext(resolverForContext, cleanedContextValues);
 
-      // Create a new resolver with the updated collection
-      const { Runtime } = await import('@fgv/ts-res');
-      const resolverResult = Runtime.ResourceResolver.create({
-        resourceManager: resourceManager,
-        qualifierTypes: processedResources.system.qualifierTypes,
-        contextQualifierProvider: processedResources.system.contextQualifierProvider
-      });
+      // Convert pending new resources (map → array)
+      const newResourcesArray = Array.from(pendingResources.values());
 
-      if (resolverResult.isFailure()) {
-        onMessage?.('error', `Failed to create resolver: ${resolverResult.message}`);
-        return;
-      }
-
-      // Get updated resource count and IDs from the resource manager
-      const resourceIds = Array.from(resourceManager.resources.keys());
-
-      // Update the system with the new compiled collection and resolver
-      const updatedProcessedResources: ProcessedResources = {
-        ...processedResources,
-        compiledCollection: compileResult.value,
-        resolver: resolverResult.value,
-        resourceCount: resourceIds.length,
-        summary: {
-          ...processedResources.summary,
-          totalResources: resourceIds.length,
-          resourceIds
+      // Rebuild system with both edits and new resources in one pass
+      const rebuildResult = await rebuildSystemWithChanges(
+        processedResources.system,
+        {
+          editedResources: editedResourcesInternal,
+          newResources: newResourcesArray
         },
-        system: {
-          ...processedResources.system,
-          resourceManager: resourceManager // Include the updated resource manager
-        }
-      };
+        currentContext
+      );
 
-      // Call the system update handler
-      onSystemUpdate(updatedProcessedResources);
+      if (rebuildResult.isFailure()) {
+        onMessage?.('error', `Failed to apply changes: ${rebuildResult.message}`);
+        return;
+      }
+
+      onSystemUpdate(rebuildResult.value);
 
       onMessage?.(
         'success',
-        `Applied ${pendingResources.size} additions and ${pendingResourceDeletions.size} deletions`
+        `Applied ${newResourcesArray.length} additions and ${pendingResourceDeletions.size} deletions`
       );
 
-      // Clear pending after successful application
+      // Clear pending additions after successful application (deletions still deferred)
       setPendingResources(new Map());
       setPendingResourceDeletions(new Set());
+      // Clear edits as well if we applied them
+      if (editedResourcesInternal.size > 0) {
+        setEditedResourcesInternal(new Map());
+      }
     } catch (error) {
-      onMessage?.('error', `Failed to apply pending resources: ${error}`);
+      onMessage?.(
+        'error',
+        `Failed to apply pending resources: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }, [
     hasPendingResourceChanges,
@@ -845,7 +828,10 @@ export function useResolutionState(
     pendingResourceDeletions,
     processedResources,
     onSystemUpdate,
-    onMessage
+    onMessage,
+    effectiveContext,
+    currentResolver,
+    editedResourcesInternal
   ]);
 
   const discardPendingResources = useCallback(() => {
