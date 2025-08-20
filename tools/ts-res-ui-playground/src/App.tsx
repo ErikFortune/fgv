@@ -613,7 +613,6 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                       getEditedValue: actions.getEditedValue,
                       hasEdit: actions.hasResourceEdit,
                       clearEdits: actions.clearResourceEdits,
-                      applyEdits: actions.applyResourceEdits,
                       discardEdits: actions.discardResourceEdits,
                       // Resource creation actions
                       startNewResource: actions.startNewResource,

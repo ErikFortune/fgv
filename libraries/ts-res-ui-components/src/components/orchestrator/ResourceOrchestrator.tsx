@@ -411,7 +411,7 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
       getEditedValue: resolutionData.actions.getEditedValue,
       hasResourceEdit: resolutionData.actions.hasEdit,
       clearResourceEdits: resolutionData.actions.clearEdits,
-      applyResourceEdits: resolutionData.actions.applyEdits,
+      // Edits applied through unified applyPendingResources
       discardResourceEdits: resolutionData.actions.discardEdits,
 
       // Resource creation actions

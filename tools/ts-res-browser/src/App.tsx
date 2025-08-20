@@ -308,8 +308,17 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
               getEditedValue: actions.getEditedValue,
               hasEdit: actions.hasResourceEdit,
               clearEdits: actions.clearResourceEdits,
-              applyEdits: actions.applyResourceEdits,
-              discardEdits: actions.discardResourceEdits
+              discardEdits: actions.discardResourceEdits,
+              // Creation + unified apply
+              startNewResource: actions.startNewResource,
+              updateNewResourceId: actions.updateNewResourceId,
+              selectResourceType: actions.selectResourceType,
+              saveNewResourceAsPending: actions.saveNewResourceAsPending,
+              cancelNewResource: actions.cancelNewResource,
+              removePendingResource: actions.removePendingResource,
+              markResourceForDeletion: actions.markResourceForDeletion,
+              applyPendingResources: actions.applyPendingResources,
+              discardPendingResources: actions.discardPendingResources
             }}
             availableQualifiers={
               state.resources?.compiledCollection.qualifiers?.map((q: any) => q.name) ||

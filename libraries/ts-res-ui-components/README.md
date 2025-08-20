@@ -55,6 +55,51 @@ This library requires the following peer dependencies:
 
 ## Quick Start
 
+### Minimal Editing App (Unified Apply)
+
+```tsx
+import React from 'react';
+import { ResourceOrchestrator, ResolutionView } from '@fgv/ts-res-ui-components';
+
+export default function App() {
+  return (
+    <ResourceOrchestrator>
+      {({ state, actions }) => (
+        <ResolutionView
+          resources={state.resources}
+          resolutionState={state.resolutionState}
+          resolutionActions={{
+            updateContextValue: actions.updateResolutionContext,
+            applyContext: actions.applyResolutionContext,
+            selectResource: actions.selectResourceForResolution,
+            setViewMode: actions.setResolutionViewMode,
+            resetCache: actions.resetResolutionCache,
+            saveEdit: actions.saveResourceEdit,
+            getEditedValue: actions.getEditedValue,
+            hasEdit: actions.hasResourceEdit,
+            clearEdits: actions.clearResourceEdits,
+            discardEdits: actions.discardResourceEdits,
+            startNewResource: actions.startNewResource,
+            updateNewResourceId: actions.updateNewResourceId,
+            selectResourceType: actions.selectResourceType,
+            saveNewResourceAsPending: actions.saveNewResourceAsPending,
+            cancelNewResource: actions.cancelNewResource,
+            removePendingResource: actions.removePendingResource,
+            markResourceForDeletion: actions.markResourceForDeletion,
+            applyPendingResources: actions.applyPendingResources,
+            discardPendingResources: actions.discardPendingResources
+          }}
+          allowResourceCreation
+          defaultResourceType="json"
+          showPendingResourcesInList
+          onMessage={actions.addMessage}
+        />
+      )}
+    </ResourceOrchestrator>
+  );
+}
+```
+
 ### Basic Usage with ResourceOrchestrator
 
 The `ResourceOrchestrator` component provides centralized state management for all ts-res UI functionality:
@@ -75,7 +120,11 @@ function App() {
               <ImportView
                 onImport={actions.importDirectory}
                 onBundleImport={actions.importBundle}
-                onZipImport={actions.importZipWithConfig}
+                onZipImport={(zipData, config) => {
+                  if (config) actions.applyConfiguration(config);
+                  if (zipData.directory) actions.importDirectory(zipData.directory);
+                  else if (zipData.files?.length) actions.importFiles(zipData.files);
+                }}
               />
             ) : (
               <SourceView

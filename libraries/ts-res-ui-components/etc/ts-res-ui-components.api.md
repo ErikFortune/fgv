@@ -339,8 +339,6 @@ export interface OrchestratorActions {
     // (undocumented)
     applyResolutionContext: () => void;
     // (undocumented)
-    applyResourceEdits: () => Promise<void>;
-    // (undocumented)
     cancelNewResource: () => void;
     // (undocumented)
     clearMessages: () => void;
@@ -547,7 +545,6 @@ function readFilesFromInput(files: FileList): Promise<ImportedFile[]>;
 // @public
 interface ResolutionActions {
     applyContext: (hostManagedValues?: Record<string, string | undefined>) => void;
-    applyEdits: () => Promise<void>;
     applyPendingResources: () => Promise<void>;
     cancelNewResource: () => void;
     clearEdits: () => void;

@@ -475,8 +475,6 @@ export interface ResolutionActions {
   hasEdit: (resourceId: string) => boolean;
   /** Clear all pending edits */
   clearEdits: () => void;
-  /** Apply all edits to the resource system */
-  applyEdits: () => Promise<void>;
   /** Discard all pending edits */
   discardEdits: () => void;
   /** Start creating a new resource */
@@ -1173,8 +1171,8 @@ export interface OrchestratorState {
  * const newValue = { text: 'Updated welcome message' };
  * actions.saveResourceEdit('user.welcome', newValue);
  *
- * // Apply all edits
- * await actions.applyResourceEdits();
+ * // Apply all pending changes (edits + new resources)
+ * await actions.applyPendingResources();
  * ```
  *
  * @example
@@ -1245,7 +1243,7 @@ export interface OrchestratorActions {
   getEditedValue: (resourceId: string) => JsonValue | undefined;
   hasResourceEdit: (resourceId: string) => boolean;
   clearResourceEdits: () => void;
-  applyResourceEdits: () => Promise<void>;
+  // Removed: unified apply via applyPendingResources
   discardResourceEdits: () => void;
 
   // Resource creation actions

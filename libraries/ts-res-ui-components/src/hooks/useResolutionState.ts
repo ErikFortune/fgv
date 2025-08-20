@@ -568,80 +568,7 @@ export function useResolutionState(
     }
   }, [hasUnsavedEdits, onMessage]);
 
-  const applyEdits = useCallback(async () => {
-    if (!processedResources || editedResources.size === 0) {
-      onMessage?.('warning', 'No edits to apply');
-      return;
-    }
-
-    if (!onSystemUpdate) {
-      onMessage?.('error', 'System update callback not provided');
-      return;
-    }
-
-    setIsApplyingEdits(true);
-
-    try {
-      // Extract current resolution context (filter out undefined values)
-      const cleanedContextValues: Record<string, string> = {};
-      Object.entries(effectiveContext).forEach(([key, value]) => {
-        if (value !== undefined) {
-          cleanedContextValues[key] = value;
-        }
-      });
-
-      const currentContext = extractResolutionContext(
-        currentResolver as Runtime.ResourceResolver,
-        cleanedContextValues
-      );
-
-      // Check for potential conflicts
-      const conflictCheck = checkEditConflicts(
-        processedResources.system.resourceManager,
-        editedResourcesInternal,
-        currentContext
-      );
-
-      // Show warnings about potential conflicts
-      conflictCheck.warnings.forEach((warning) => onMessage?.('warning', warning));
-
-      if (conflictCheck.conflicts.length > 0) {
-        onMessage?.('error', `Conflicts detected: ${conflictCheck.conflicts.join(', ')}`);
-        return;
-      }
-
-      // Rebuild the system with edits
-      const rebuildResult = await rebuildSystemWithEdits(
-        processedResources.system,
-        editedResourcesInternal,
-        currentContext
-      );
-
-      if (rebuildResult.isFailure()) {
-        onMessage?.('error', `Failed to apply edits: ${rebuildResult.message}`);
-        return;
-      }
-
-      // Update the system through the callback
-      onSystemUpdate(rebuildResult.value);
-
-      // Clear edits after successful application
-      setEditedResourcesInternal(new Map());
-
-      onMessage?.('success', `Successfully applied ${editedResourcesInternal.size} edit(s)`);
-    } catch (error) {
-      onMessage?.('error', `Error applying edits: ${error instanceof Error ? error.message : String(error)}`);
-    } finally {
-      setIsApplyingEdits(false);
-    }
-  }, [
-    processedResources,
-    editedResourcesInternal,
-    onSystemUpdate,
-    currentResolver,
-    onMessage,
-    effectiveContext
-  ]);
+  // Removed applyEdits in favor of unified applyPendingResources
 
   // Resource creation actions
   const startNewResource = useCallback(
@@ -792,9 +719,11 @@ export function useResolutionState(
   );
 
   const applyPendingResources = useCallback(async () => {
-    if (!hasPendingResourceChanges || !processedResources || !onSystemUpdate) {
-      if (!hasPendingResourceChanges) {
-        onMessage?.('warning', 'No pending resource changes to apply');
+    const hasAnyChanges =
+      editedResourcesInternal.size > 0 || pendingResources.size > 0 || pendingResourceDeletions.size > 0;
+    if (!hasAnyChanges || !processedResources || !onSystemUpdate) {
+      if (!hasAnyChanges) {
+        onMessage?.('warning', 'No pending changes to apply');
       } else if (!processedResources) {
         onMessage?.('error', 'No resource system available');
       } else if (!onSystemUpdate) {
@@ -804,6 +733,7 @@ export function useResolutionState(
     }
 
     try {
+      setIsApplyingEdits(true);
       // Extract current resolution context (filter out undefined values)
       const cleanedContextValues: Record<string, string> = {};
       Object.entries(effectiveContext).forEach(([key, value]) => {
@@ -851,7 +781,7 @@ export function useResolutionState(
 
       onMessage?.(
         'success',
-        `Applied ${newResourcesArray.length} additions and ${pendingResourceDeletions.size} deletions`
+        `Applied ${editedResourcesInternal.size} edits, ${newResourcesArray.length} additions, and ${pendingResourceDeletions.size} deletions`
       );
 
       // Clear pending additions after successful application (deletions still deferred)
@@ -866,9 +796,10 @@ export function useResolutionState(
         'error',
         `Failed to apply pending resources: ${error instanceof Error ? error.message : String(error)}`
       );
+    } finally {
+      setIsApplyingEdits(false);
     }
   }, [
-    hasPendingResourceChanges,
     pendingResources,
     pendingResourceDeletions,
     processedResources,
@@ -919,7 +850,6 @@ export function useResolutionState(
       getEditedValue,
       hasEdit,
       clearEdits,
-      applyEdits,
       discardEdits,
       // Resource creation actions
       startNewResource,
@@ -942,7 +872,6 @@ export function useResolutionState(
       getEditedValue,
       hasEdit,
       clearEdits,
-      applyEdits,
       discardEdits,
       startNewResource,
       updateNewResourceId,

@@ -78,8 +78,8 @@ actions.selectResourceForResolution('user.welcome');
 const newValue = { text: 'Updated welcome message' };
 actions.saveResourceEdit('user.welcome', newValue);
 
-// Apply all edits
-await actions.applyResourceEdits();
+// Apply all pending changes (edits + new resources)
+await actions.applyPendingResources();
 ```
 
 ## Example 4
@@ -222,23 +222,6 @@ Description
 </td><td>
 
 () =&gt; void
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[applyResourceEdits](./ts-res-ui-components.orchestratoractions.applyresourceedits.md)
-
-
-</td><td>
-
-
-</td><td>
-
-() =&gt; Promise&lt;void&gt;
 
 
 </td><td>

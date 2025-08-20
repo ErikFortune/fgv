@@ -56,25 +56,6 @@ Apply pending context changes to the resolver (with optional host-managed values
 </td></tr>
 <tr><td>
 
-[applyEdits](./ts-res-ui-components.resolutiontools.resolutionactions.applyedits.md)
-
-
-</td><td>
-
-
-</td><td>
-
-() =&gt; Promise&lt;void&gt;
-
-
-</td><td>
-
-Apply all edits to the resource system
-
-
-</td></tr>
-<tr><td>
-
 [applyPendingResources](./ts-res-ui-components.resolutiontools.resolutionactions.applypendingresources.md)
 
 

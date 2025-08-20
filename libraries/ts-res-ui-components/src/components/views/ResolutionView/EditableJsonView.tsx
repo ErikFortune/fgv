@@ -180,9 +180,10 @@ export interface EditableJsonViewProps {
  *           <ResolutionTools.UnifiedChangeControls
  *             editCount={state.editedResources.size}
  *             isApplying={state.isApplyingEdits}
- *             hasEdits={state.hasUnsavedEdits}
- *             onApplyEdits={actions.applyEdits}
- *             onDiscardEdits={actions.clearEdits}
+ *             addCount={state.pendingResources.size}
+ *             deleteCount={state.pendingResourceDeletions.size}
+ *             onApplyAll={actions.applyPendingResources}
+ *             onDiscardAll={() => { actions.clearEdits(); actions.discardPendingResources(); }}
  *           />
  *         </div>
  *       )}
