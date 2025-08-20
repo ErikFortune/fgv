@@ -379,6 +379,16 @@ export interface ResolutionViewProps extends ViewBaseProps {
     /** Title for the results section (default: "Results") */
     results?: string;
   };
+  /** Allow creating new resources in the UI */
+  allowResourceCreation?: boolean;
+  /** Default resource type for new resources (hides type selector if provided) */
+  defaultResourceType?: string;
+  /** Factory for creating custom resource types */
+  resourceTypeFactory?: ResourceTypes.IResourceType[];
+  /** Callback when pending resources are applied */
+  onPendingResourcesApplied?: (added: ResourceJson.Json.ILooseResourceDecl[], deleted: string[]) => void;
+  /** Show pending resources in the resource list with visual distinction */
+  showPendingResourcesInList?: boolean;
 }
 
 /**
@@ -423,6 +433,21 @@ export interface ResolutionState {
   hasUnsavedEdits: boolean;
   /** Whether edits are currently being applied to the system */
   isApplyingEdits: boolean;
+  /** Resources waiting to be added to the system */
+  pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>;
+  /** IDs of resources marked for deletion */
+  pendingResourceDeletions: Set<string>;
+  /** Draft of a new resource being created */
+  newResourceDraft?: {
+    resourceId: string;
+    resourceType: string;
+    template: ResourceJson.Json.ILooseResourceDecl;
+    isValid: boolean;
+  };
+  /** Available resource types for creation */
+  availableResourceTypes: ResourceTypes.IResourceType[];
+  /** Whether there are pending resource additions or deletions */
+  hasPendingResourceChanges: boolean;
 }
 
 /**
@@ -454,6 +479,24 @@ export interface ResolutionActions {
   applyEdits: () => Promise<void>;
   /** Discard all pending edits */
   discardEdits: () => void;
+  /** Start creating a new resource */
+  startNewResource: (defaultTypeName?: string) => void;
+  /** Update the resource ID for the new resource being created */
+  updateNewResourceId: (id: string) => void;
+  /** Select a resource type for the new resource */
+  selectResourceType: (type: string) => void;
+  /** Add the new resource to pending resources (not applied yet) */
+  saveNewResourceAsPending: () => void;
+  /** Cancel the new resource creation */
+  cancelNewResource: () => void;
+  /** Remove a pending resource */
+  removePendingResource: (resourceId: string) => void;
+  /** Mark an existing resource for deletion */
+  markResourceForDeletion: (resourceId: string) => void;
+  /** Apply all pending resource additions and deletions */
+  applyPendingResources: () => Promise<void>;
+  /** Discard all pending resource changes */
+  discardPendingResources: () => void;
 }
 
 /**
@@ -1204,6 +1247,19 @@ export interface OrchestratorActions {
   clearResourceEdits: () => void;
   applyResourceEdits: () => Promise<void>;
   discardResourceEdits: () => void;
+
+  // Resource creation actions
+  startNewResource: (defaultTypeName?: string) => void;
+  updateNewResourceId: (id: string) => void;
+  selectResourceType: (type: string) => void;
+  saveNewResourceAsPending: () => void;
+  cancelNewResource: () => void;
+  removePendingResource: (resourceId: string) => void;
+  markResourceForDeletion: (resourceId: string) => void;
+  applyPendingResources: () => Promise<void>;
+  discardPendingResources: () => void;
+
+  // Combined pending changes actions removed in favor of unified applyPendingResources
 
   // UI state management
   selectResource: (resourceId: string | null) => void;

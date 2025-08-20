@@ -93,4 +93,12 @@ export class JsonResourceType extends ResourceType<JsonObject> {
   public validate(json: JsonObject, __completeness?: CandidateCompleteness): Result<JsonObject> {
     return JsonConverters.jsonObject.convert(json);
   }
+
+  /**
+   * Gets the default template value for a JSON resource type.
+   * @returns An empty object as the default JSON value
+   */
+  protected getDefaultTemplateValue(): JsonObject {
+    return {};
+  }
 }

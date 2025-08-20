@@ -810,7 +810,7 @@ const containerContextDecl: Converter<Normalized.IContainerContextDecl>;
 
 declare namespace Context {
     export {
-        Convert_7 as Convert,
+        Convert_8 as Convert,
         IContextMatchOptions,
         IContextQualifierValueDecl,
         IContextDecl,
@@ -1047,16 +1047,6 @@ declare namespace Convert_6 {
 
 declare namespace Convert_7 {
     export {
-        contextQualifierValueDecl,
-        contextDecl,
-        IContextDeclConvertContext,
-        validatedContextQualifierValueDecl,
-        validatedContextDecl
-    }
-}
-
-declare namespace Convert_8 {
-    export {
         looseConditionDecl,
         childConditionDecl,
         conditionSetDecl,
@@ -1070,6 +1060,16 @@ declare namespace Convert_8 {
         resourceTreeRootDecl,
         resourceCollectionDecl,
         importerResourceCollectionDecl
+    }
+}
+
+declare namespace Convert_8 {
+    export {
+        contextQualifierValueDecl,
+        contextDecl,
+        IContextDeclConvertContext,
+        validatedContextQualifierValueDecl,
+        validatedContextDecl
     }
 }
 
@@ -2779,6 +2779,7 @@ interface IResourceTreeRootInit<T> {
 
 // @public
 interface IResourceType<T = unknown> extends ICollectible<ResourceTypeName, ResourceTypeIndex> {
+    createTemplate(resourceId: ResourceId): ResourceJson.Json.ILooseResourceDecl;
     readonly index: ResourceTypeIndex | undefined;
     readonly key: ResourceTypeName;
     setIndex(index: number): Result<ResourceTypeIndex>;
@@ -3204,6 +3205,7 @@ class JsonResourceType extends ResourceType<JsonObject> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IJsonResourceTypeCreateParams): Result<JsonResourceType>;
+    protected getDefaultTemplateValue(): JsonObject;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -4130,7 +4132,7 @@ const resourceIndex: Converter<ResourceIndex, unknown>;
 declare namespace ResourceJson {
     export {
         Compiled,
-        Convert_8 as Convert,
+        Convert_7 as Convert,
         Helpers_2 as Helpers,
         Json,
         Normalized,
@@ -4448,6 +4450,8 @@ const resourceTreeRootDecl: Converter<Normalized.IResourceTreeRootDecl>;
 // @public
 export abstract class ResourceType<T = unknown> implements IResourceType<T> {
     protected constructor(key: ResourceTypeName, index?: number);
+    createTemplate(resourceId: ResourceId): ResourceJson.Json.ILooseResourceDecl;
+    protected getDefaultTemplateValue(): JsonObject;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)

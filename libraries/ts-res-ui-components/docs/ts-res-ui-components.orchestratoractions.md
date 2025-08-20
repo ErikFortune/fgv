@@ -196,6 +196,23 @@ Description
 </td></tr>
 <tr><td>
 
+[applyPendingResources](./ts-res-ui-components.orchestratoractions.applypendingresources.md)
+
+
+</td><td>
+
+
+</td><td>
+
+() =&gt; Promise&lt;void&gt;
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [applyResolutionContext](./ts-res-ui-components.orchestratoractions.applyresolutioncontext.md)
 
 
@@ -222,6 +239,23 @@ Description
 </td><td>
 
 () =&gt; Promise&lt;void&gt;
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[cancelNewResource](./ts-res-ui-components.orchestratoractions.cancelnewresource.md)
+
+
+</td><td>
+
+
+</td><td>
+
+() =&gt; void
 
 
 </td><td>
@@ -265,6 +299,23 @@ Description
 <tr><td>
 
 [clearResources](./ts-res-ui-components.orchestratoractions.clearresources.md)
+
+
+</td><td>
+
+
+</td><td>
+
+() =&gt; void
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[discardPendingResources](./ts-res-ui-components.orchestratoractions.discardpendingresources.md)
 
 
 </td><td>
@@ -400,6 +451,40 @@ Description
 </td></tr>
 <tr><td>
 
+[markResourceForDeletion](./ts-res-ui-components.orchestratoractions.markresourcefordeletion.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(resourceId: string) =&gt; void
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[removePendingResource](./ts-res-ui-components.orchestratoractions.removependingresource.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(resourceId: string) =&gt; void
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [resetFilter](./ts-res-ui-components.orchestratoractions.resetfilter.md)
 
 
@@ -443,6 +528,23 @@ Description
 </td><td>
 
 (resourceId: string, context?: Record&lt;string, string&gt;) =&gt; Promise&lt;Result&lt;JsonValue&gt;&gt;
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[saveNewResourceAsPending](./ts-res-ui-components.orchestratoractions.savenewresourceaspending.md)
+
+
+</td><td>
+
+
+</td><td>
+
+() =&gt; void
 
 
 </td><td>
@@ -502,6 +604,23 @@ Description
 </td></tr>
 <tr><td>
 
+[selectResourceType](./ts-res-ui-components.orchestratoractions.selectresourcetype.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(type: string) =&gt; void
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [setResolutionViewMode](./ts-res-ui-components.orchestratoractions.setresolutionviewmode.md)
 
 
@@ -511,6 +630,23 @@ Description
 </td><td>
 
 (mode: 'composed' \| 'best' \| 'all' \| 'raw') =&gt; void
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[startNewResource](./ts-res-ui-components.orchestratoractions.startnewresource.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(defaultTypeName?: string) =&gt; void
 
 
 </td><td>
@@ -545,6 +681,23 @@ Description
 </td><td>
 
 (state: Partial&lt;[FilterState](./ts-res-ui-components.filtertools.filterstate.md)<!-- -->&gt;) =&gt; void
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[updateNewResourceId](./ts-res-ui-components.orchestratoractions.updatenewresourceid.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(id: string) =&gt; void
 
 
 </td><td>

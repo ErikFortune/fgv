@@ -335,15 +335,21 @@ export interface OrchestratorActions {
     // (undocumented)
     applyFilter: () => Promise<FilterResult | null>;
     // (undocumented)
+    applyPendingResources: () => Promise<void>;
+    // (undocumented)
     applyResolutionContext: () => void;
     // (undocumented)
     applyResourceEdits: () => Promise<void>;
+    // (undocumented)
+    cancelNewResource: () => void;
     // (undocumented)
     clearMessages: () => void;
     // (undocumented)
     clearResourceEdits: () => void;
     // (undocumented)
     clearResources: () => void;
+    // (undocumented)
+    discardPendingResources: () => void;
     // (undocumented)
     discardResourceEdits: () => void;
     // (undocumented)
@@ -359,11 +365,17 @@ export interface OrchestratorActions {
     // (undocumented)
     importFiles: (files: ImportedFile[]) => Promise<void>;
     // (undocumented)
+    markResourceForDeletion: (resourceId: string) => void;
+    // (undocumented)
+    removePendingResource: (resourceId: string) => void;
+    // (undocumented)
     resetFilter: () => void;
     // (undocumented)
     resetResolutionCache: () => void;
     // (undocumented)
     resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<JsonValue>>;
+    // (undocumented)
+    saveNewResourceAsPending: () => void;
     // (undocumented)
     saveResourceEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
     // (undocumented)
@@ -371,11 +383,17 @@ export interface OrchestratorActions {
     // (undocumented)
     selectResourceForResolution: (resourceId: string) => void;
     // (undocumented)
+    selectResourceType: (type: string) => void;
+    // (undocumented)
     setResolutionViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
+    // (undocumented)
+    startNewResource: (defaultTypeName?: string) => void;
     // (undocumented)
     updateConfiguration: (config: Config.Model.ISystemConfiguration) => void;
     // (undocumented)
     updateFilterState: (state: Partial<FilterState>) => void;
+    // (undocumented)
+    updateNewResourceId: (id: string) => void;
     // (undocumented)
     updateResolutionContext: (qualifierName: string, value: string | undefined) => void;
 }
@@ -530,15 +548,24 @@ function readFilesFromInput(files: FileList): Promise<ImportedFile[]>;
 interface ResolutionActions {
     applyContext: (hostManagedValues?: Record<string, string | undefined>) => void;
     applyEdits: () => Promise<void>;
+    applyPendingResources: () => Promise<void>;
+    cancelNewResource: () => void;
     clearEdits: () => void;
     discardEdits: () => void;
+    discardPendingResources: () => void;
     getEditedValue: (resourceId: string) => JsonValue | undefined;
     hasEdit: (resourceId: string) => boolean;
+    markResourceForDeletion: (resourceId: string) => void;
+    removePendingResource: (resourceId: string) => void;
     resetCache: () => void;
     saveEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
+    saveNewResourceAsPending: () => void;
     selectResource: (resourceId: string) => void;
+    selectResourceType: (type: string) => void;
     setViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
+    startNewResource: (defaultTypeName?: string) => void;
     updateContextValue: (qualifierName: string, value: string | undefined) => void;
+    updateNewResourceId: (id: string) => void;
 }
 
 // @public
@@ -561,18 +588,17 @@ const ResolutionContextOptionsControl: React_2.FC<ResolutionContextOptionsContro
 
 // @public
 interface ResolutionContextOptionsControlProps {
+    allowResourceCreation?: boolean;
     availableQualifiers?: string[];
     className?: string;
+    onAllowResourceCreationChange?: (allow: boolean) => void;
     onOptionsChange: (options: ResolutionContextOptions) => void;
+    onShowPendingResourcesInListChange?: (show: boolean) => void;
     options: ResolutionContextOptions;
     presentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
+    showPendingResourcesInList?: boolean;
     title?: string;
 }
-
-// Warning: (ae-forgotten-export) The symbol "ResolutionEditControlsProps" needs to be exported by the entry point index.d.ts
-//
-// @public
-const ResolutionEditControls: React_2.FC<ResolutionEditControlsProps>;
 
 // @public
 interface ResolutionOptions {
@@ -599,13 +625,23 @@ export const ResolutionResults: React_2.FC<ResolutionResultsProps>;
 
 // @public
 interface ResolutionState {
+    availableResourceTypes: ResourceTypes.IResourceType[];
     contextValues: Record<string, string | undefined>;
     currentResolver: Runtime.ResourceResolver | null;
     editedResources: Map<string, JsonValue>;
     hasPendingChanges: boolean;
+    hasPendingResourceChanges: boolean;
     hasUnsavedEdits: boolean;
     isApplyingEdits: boolean;
+    newResourceDraft?: {
+        resourceId: string;
+        resourceType: string;
+        template: ResourceJson.Json.ILooseResourceDecl;
+        isValid: boolean;
+    };
     pendingContextValues: Record<string, string | undefined>;
+    pendingResourceDeletions: Set<string>;
+    pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>;
     resolutionResult: ResolutionResult | null;
     selectedResourceId: string | null;
     viewMode: 'composed' | 'best' | 'all' | 'raw';
@@ -615,7 +651,7 @@ declare namespace ResolutionTools {
     export {
         ResolutionView,
         EditableJsonView,
-        ResolutionEditControls,
+        UnifiedChangeControls,
         QualifierContextControl,
         ResolutionContextOptionsControl,
         useResolutionState,
@@ -644,20 +680,25 @@ export const ResolutionView: React_2.FC<ResolutionViewProps>;
 
 // @public
 interface ResolutionViewProps extends ViewBaseProps {
+    allowResourceCreation?: boolean;
     availableQualifiers?: string[];
     contextOptions?: ResolutionContextOptions;
+    defaultResourceType?: string;
     filterResult?: FilterResult | null;
     filterState?: FilterState;
     lockedViewMode?: 'composed' | 'best' | 'all' | 'raw';
+    onPendingResourcesApplied?: (added: ResourceJson.Json.ILooseResourceDecl[], deleted: string[]) => void;
     pickerOptions?: ResourcePickerOptions;
     resolutionActions?: ResolutionActions;
     resolutionState?: ResolutionState;
     resourceEditorFactory?: ResourceEditorFactory;
     resources?: ProcessedResources | null;
+    resourceTypeFactory?: ResourceTypes.IResourceType[];
     sectionTitles?: {
         resources?: string;
         results?: string;
     };
+    showPendingResourcesInList?: boolean;
 }
 
 // @public
@@ -853,6 +894,11 @@ declare namespace TsResTools {
         CompiledViewProps
     }
 }
+
+// Warning: (ae-forgotten-export) The symbol "UnifiedChangeControlsProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+const UnifiedChangeControls: React_2.FC<UnifiedChangeControlsProps>;
 
 // Warning: (ae-forgotten-export) The symbol "UseConfigurationStateReturn" needs to be exported by the entry point index.d.ts
 //

@@ -44,7 +44,7 @@ export { ResolutionResults } from './components/common/ResolutionResults';
 // - ResolutionTools.QualifierContextControl
 
 // Resolution and picker components are now available through their respective namespaces:
-// - ResolutionTools.EditableJsonView, ResolutionTools.ResolutionEditControls, ResolutionTools.EditableJsonViewProps
+// - ResolutionTools.EditableJsonView, ResolutionTools.UnifiedChangeControls, ResolutionTools.EditableJsonViewProps
 // - PickerTools.ResourcePicker, PickerTools.ResourcePickerProps, PickerTools.ResourceSelection, etc.
 
 // All hooks are now organized within their respective namespaces:

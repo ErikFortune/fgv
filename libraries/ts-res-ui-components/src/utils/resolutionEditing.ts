@@ -1,5 +1,5 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
-import { ResourceJson, Resources, Runtime } from '@fgv/ts-res';
+import { ConditionSet, ResourceJson, Resources, Runtime } from '@fgv/ts-res';
 import { Diff } from '@fgv/ts-json';
 import { JsonObject } from '@fgv/ts-json-base';
 import { ProcessedResources, JsonValue } from '../types';
@@ -36,29 +36,7 @@ export function validateEditedResource(editedValue: JsonValue): EditValidationRe
     errors.push(`Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 
-  // Type-specific validation
-  if (typeof editedValue === 'object' && editedValue !== null) {
-    // Object validation - check for circular references
-    const seen = new Set<unknown>();
-    const checkCircular = (obj: unknown): boolean => {
-      if (seen.has(obj)) return true;
-      seen.add(obj);
-      if (typeof obj === 'object' && obj !== null) {
-        for (const key in obj as Record<string, unknown>) {
-          const objTyped = obj as Record<string, unknown>;
-          if (typeof objTyped[key] === 'object' && objTyped[key] !== null) {
-            if (checkCircular(objTyped[key])) return true;
-          }
-        }
-      }
-      seen.delete(obj);
-      return false;
-    };
-
-    if (checkCircular(editedValue)) {
-      errors.push('Resource contains circular references');
-    }
-  }
+  // Intentionally minimal validation – structural only. No circular checks.
 
   return {
     isValid: errors.length === 0,
@@ -154,8 +132,7 @@ export function createCandidateDeclarations(
         conditions.push({
           qualifierName,
           operator: 'matches',
-          value: qualifierValue,
-          priority: 900 // High priority for user edits
+          value: qualifierValue
         });
       }
     }
@@ -184,6 +161,112 @@ export function createCandidateDeclarations(
 }
 
 /**
+ * Converts loose resource declarations (new resources) into loose candidate declarations
+ * that can be applied via ResourceManagerBuilder.clone.
+ */
+export function convertLooseResourcesToCandidateDecls(
+  newResources: ReadonlyArray<ResourceJson.Json.ILooseResourceDecl>
+): ResourceJson.Json.ILooseResourceCandidateDecl[] {
+  const candidates: ResourceJson.Json.ILooseResourceCandidateDecl[] = [];
+
+  for (const resource of newResources) {
+    const resourceTypeName = resource.resourceTypeName;
+    // Skip if no candidates defined
+    const childCandidates = resource.candidates ?? [];
+    if (childCandidates.length === 0) {
+      continue;
+    }
+
+    for (const c of childCandidates) {
+      candidates.push({
+        id: resource.id,
+        json: (c.json ?? {}) as JsonObject,
+        conditions: c.conditions,
+        isPartial: c.isPartial ?? false,
+        mergeMethod: c.mergeMethod ?? 'replace',
+        resourceTypeName
+      });
+    }
+  }
+
+  return candidates;
+}
+
+/**
+ * Rebuilds the resource system by applying both edit candidates and
+ * new resource candidates in a single clone → compile → resolver pass.
+ */
+export async function rebuildSystemWithChanges(
+  originalSystem: ProcessedResources['system'],
+  options: {
+    editedResources?: Map<string, { originalValue: JsonValue; editedValue: JsonValue; delta: JsonValue }>;
+    newResources?: ReadonlyArray<ResourceJson.Json.ILooseResourceDecl>;
+  },
+  currentContext: Record<string, string>
+): Promise<Result<ProcessedResources>> {
+  try {
+    const editCandidates = options.editedResources
+      ? createCandidateDeclarations(options.editedResources, currentContext)
+      : [];
+    const newResourceCandidates = options.newResources
+      ? convertLooseResourcesToCandidateDecls(options.newResources)
+      : [];
+
+    const allCandidates: ReadonlyArray<ResourceJson.Json.ILooseResourceCandidateDecl> = [
+      ...editCandidates,
+      ...newResourceCandidates
+    ];
+
+    return originalSystem.resourceManager
+      .clone({ candidates: allCandidates })
+      .withErrorFormat((message) => `Failed to clone manager: ${message}`)
+      .onSuccess((clonedManager) => {
+        return clonedManager
+          .getCompiledResourceCollection({ includeMetadata: true })
+          .withErrorFormat((message) => `Failed to get compiled collection: ${message}`)
+          .onSuccess((compiledCollection) => {
+            return Runtime.ResourceResolver.create({
+              resourceManager: clonedManager,
+              qualifierTypes: originalSystem.qualifierTypes,
+              contextQualifierProvider: originalSystem.contextQualifierProvider
+            })
+              .withErrorFormat((message) => `Failed to create resolver: ${message}`)
+              .onSuccess((resolver) => {
+                const resourceIds = Array.from(clonedManager.resources.keys());
+                const summary = {
+                  totalResources: resourceIds.length,
+                  resourceIds,
+                  errorCount: 0,
+                  warnings: []
+                };
+
+                const updatedSystem: ProcessedResources = {
+                  system: {
+                    qualifierTypes: originalSystem.qualifierTypes,
+                    qualifiers: originalSystem.qualifiers,
+                    resourceTypes: originalSystem.resourceTypes,
+                    resourceManager: clonedManager,
+                    importManager: originalSystem.importManager,
+                    contextQualifierProvider: originalSystem.contextQualifierProvider
+                  },
+                  compiledCollection,
+                  resolver,
+                  resourceCount: resourceIds.length,
+                  summary
+                };
+
+                return succeed(updatedSystem);
+              });
+          });
+      });
+  } catch (error) {
+    return fail(
+      `Failed to rebuild system with changes: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+/**
  * Rebuilds the resource system with edited candidates using deltas
  */
 export async function rebuildSystemWithEdits(
@@ -191,64 +274,8 @@ export async function rebuildSystemWithEdits(
   editedResources: Map<string, { originalValue: JsonValue; editedValue: JsonValue; delta: JsonValue }>,
   currentContext: Record<string, string>
 ): Promise<Result<ProcessedResources>> {
-  try {
-    const candidateDeclarations = createCandidateDeclarations(editedResources, currentContext);
-
-    const clonedManager = originalSystem.resourceManager.clone({
-      candidates: candidateDeclarations
-    });
-
-    if (clonedManager.isFailure()) {
-      return fail(`Failed to clone manager: ${clonedManager.message}`);
-    }
-
-    // Get compiled collection from the updated manager
-    const compiledResult = clonedManager.value.getCompiledResourceCollection({ includeMetadata: true });
-    if (compiledResult.isFailure()) {
-      return fail(`Failed to get compiled collection: ${compiledResult.message}`);
-    }
-
-    // Create resolver for the updated system
-    const resolverResult = Runtime.ResourceResolver.create({
-      resourceManager: clonedManager.value,
-      qualifierTypes: originalSystem.qualifierTypes,
-      contextQualifierProvider: originalSystem.contextQualifierProvider
-    });
-
-    if (resolverResult.isFailure()) {
-      return fail(`Failed to create resolver: ${resolverResult.message}`);
-    }
-
-    // Create summary
-    const resourceIds = Array.from(clonedManager.value.resources.keys());
-    const summary = {
-      totalResources: resourceIds.length,
-      resourceIds,
-      errorCount: 0,
-      warnings: []
-    };
-
-    const updatedSystem: ProcessedResources = {
-      system: {
-        qualifierTypes: originalSystem.qualifierTypes,
-        qualifiers: originalSystem.qualifiers,
-        resourceTypes: originalSystem.resourceTypes,
-        resourceManager: clonedManager.value,
-        importManager: originalSystem.importManager,
-        contextQualifierProvider: originalSystem.contextQualifierProvider
-      },
-      compiledCollection: compiledResult.value,
-      resolver: resolverResult.value,
-      resourceCount: resourceIds.length,
-      summary
-    };
-
-    return succeed(updatedSystem);
-  } catch (error) {
-    return fail(
-      `Failed to rebuild system with edits: ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
+  // Delegate to the unified change application helper
+  return rebuildSystemWithChanges(originalSystem, { editedResources }, currentContext);
 }
 
 /**

@@ -20,7 +20,8 @@ import {
 } from '@fgv/ts-res-ui-components';
 import NavigationWarningModal from './components/common/NavigationWarningModal';
 import ResourcePickerTool from './components/tools/ResourcePickerTool';
-import HostControlledResolution from './components/tools/HostControlledResolution';
+// Unified tool: HostControlledResolution and ResourceCreationTest functionality
+// will be merged into the main Resolution Viewer via mode and panels
 import ViewWithPresentationSelector, {
   PresentationGearIcon
 } from './components/common/ViewWithPresentationSelector';
@@ -502,6 +503,40 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 }
               />
               <div className="ml-auto flex items-center space-x-4">
+                {/* Mode selector */}
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm text-gray-600" htmlFor="mode-select">
+                    Mode:
+                  </label>
+                  <select
+                    id="mode-select"
+                    value={
+                      hostControlledQualifiers.enabled
+                        ? 'host'
+                        : resolutionLockedMode === 'none'
+                        ? 'edit'
+                        : 'edit'
+                    }
+                    onChange={(e) => {
+                      const mode = e.target.value;
+                      if (mode === 'host') {
+                        setHostControlledQualifiers((prev) => ({ ...prev, enabled: true }));
+                      } else {
+                        // disable host-controlled to return to user-controlled modes
+                        setHostControlledQualifiers((prev) => ({ ...prev, enabled: false }));
+                        // For 'create' we just rely on props below to enable creation UI
+                      }
+                      // Store chosen mode in a data-attr via state if needed (simple approach: reuse sectionTitles state key)
+                      // No-op here; rendering below will pass props based on select value
+                      (window as any).__resolutionMode = mode;
+                    }}
+                    className="px-2 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700"
+                  >
+                    <option value="edit">Resolve & Edit</option>
+                    <option value="host">Host-controlled</option>
+                    <option value="create">Editing & Creation</option>
+                  </select>
+                </div>
                 {/* Section Titles Configuration */}
                 <div className="flex items-center space-x-2">
                   <label className="text-sm text-gray-600" htmlFor="resources-title">
@@ -555,35 +590,65 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
             </div>
             {/* View content - hide original title */}
             <div className="[&>div]:pt-0 [&>div>div:first-child]:hidden">
-              <ResolutionView
-                onMessage={actions.addMessage}
-                resources={state.resources}
-                filterState={state.filterState}
-                filterResult={state.filterResult}
-                resolutionState={state.resolutionState}
-                resolutionActions={{
-                  updateContextValue: actions.updateResolutionContext,
-                  applyContext: actions.applyResolutionContext,
-                  selectResource: actions.selectResourceForResolution,
-                  setViewMode: actions.setResolutionViewMode,
-                  resetCache: actions.resetResolutionCache,
-                  // Edit actions
-                  saveEdit: actions.saveResourceEdit,
-                  getEditedValue: actions.getEditedValue,
-                  hasEdit: actions.hasResourceEdit,
-                  clearEdits: actions.clearResourceEdits,
-                  applyEdits: actions.applyResourceEdits,
-                  discardEdits: actions.discardResourceEdits
-                }}
-                availableQualifiers={
-                  state.resources?.compiledCollection.qualifiers?.map((q: any) => q.name) ||
-                  state.configuration?.qualifiers?.map((q) => q.name) ||
-                  []
-                }
-                pickerOptionsPresentation={pickerPresentation.resolution}
-                lockedViewMode={resolutionLockedMode === 'none' ? undefined : resolutionLockedMode}
-                sectionTitles={customSectionTitles}
-              />
+              {(() => {
+                const mode =
+                  (window as any).__resolutionMode || (hostControlledQualifiers.enabled ? 'host' : 'edit');
+                const allowCreation = mode === 'create';
+                const showPendingInList = mode === 'create';
+                return (
+                  <ResolutionView
+                    onMessage={actions.addMessage}
+                    resources={state.resources}
+                    filterState={state.filterState}
+                    filterResult={state.filterResult}
+                    resolutionState={state.resolutionState}
+                    resolutionActions={{
+                      updateContextValue: actions.updateResolutionContext,
+                      applyContext: actions.applyResolutionContext,
+                      selectResource: actions.selectResourceForResolution,
+                      setViewMode: actions.setResolutionViewMode,
+                      resetCache: actions.resetResolutionCache,
+                      // Edit actions
+                      saveEdit: actions.saveResourceEdit,
+                      getEditedValue: actions.getEditedValue,
+                      hasEdit: actions.hasResourceEdit,
+                      clearEdits: actions.clearResourceEdits,
+                      applyEdits: actions.applyResourceEdits,
+                      discardEdits: actions.discardResourceEdits,
+                      // Resource creation actions
+                      startNewResource: actions.startNewResource,
+                      updateNewResourceId: actions.updateNewResourceId,
+                      selectResourceType: actions.selectResourceType,
+                      saveNewResourceAsPending: actions.saveNewResourceAsPending,
+                      cancelNewResource: actions.cancelNewResource,
+                      removePendingResource: actions.removePendingResource,
+                      markResourceForDeletion: actions.markResourceForDeletion,
+                      applyPendingResources: actions.applyPendingResources,
+                      discardPendingResources: actions.discardPendingResources
+                    }}
+                    availableQualifiers={
+                      state.resources?.compiledCollection.qualifiers?.map((q: any) => q.name) ||
+                      state.configuration?.qualifiers?.map((q) => q.name) ||
+                      []
+                    }
+                    pickerOptionsPresentation={pickerPresentation.resolution}
+                    lockedViewMode={resolutionLockedMode === 'none' ? undefined : resolutionLockedMode}
+                    sectionTitles={customSectionTitles}
+                    contextOptions={
+                      hostControlledQualifiers.enabled
+                        ? {
+                            showContextControls: true,
+                            hostManagedValues: hostControlledQualifiers.values,
+                            qualifierOptions: {},
+                            contextPanelTitle: 'Context (Host-controlled)'
+                          }
+                        : undefined
+                    }
+                    allowResourceCreation={allowCreation}
+                    showPendingResourcesInList={showPendingInList}
+                  />
+                );
+              })()}
             </div>
           </div>
         );
@@ -623,8 +688,7 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
           </div>
         );
 
-      case 'host-resolution':
-        return <HostControlledResolution state={state} actions={actions} />;
+      // Removed dedicated tools: unified into Resolution Viewer
 
       default:
         return (

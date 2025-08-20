@@ -50,6 +50,9 @@ global.URL = {
   revokeObjectURL: jest.fn()
 };
 
+// Extend jest matchers (toBeInTheDocument, etc.)
+require('@testing-library/jest-dom');
+
 // Mock document methods for file export
 global.document = {
   createElement: jest.fn(() => ({

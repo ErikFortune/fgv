@@ -38,6 +38,25 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[allowResourceCreation?](./ts-res-ui-components.resolutiontools.resolutionviewprops.allowresourcecreation.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_ Allow creating new resources in the UI
+
+
+</td></tr>
+<tr><td>
+
 [availableQualifiers?](./ts-res-ui-components.resolutiontools.resolutionviewprops.availablequalifiers.md)
 
 
@@ -71,6 +90,25 @@ _(Optional)_ Available qualifiers for context building
 </td><td>
 
 _(Optional)_ Optional configuration for the resolution context controls
+
+
+</td></tr>
+<tr><td>
+
+[defaultResourceType?](./ts-res-ui-components.resolutiontools.resolutionviewprops.defaultresourcetype.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ Default resource type for new resources (hides type selector if provided)
 
 
 </td></tr>
@@ -128,6 +166,25 @@ _(Optional)_ Optional filter state
 </td><td>
 
 _(Optional)_ Lock to a single view state and suppress the view state selector
+
+
+</td></tr>
+<tr><td>
+
+[onPendingResourcesApplied?](./ts-res-ui-components.resolutiontools.resolutionviewprops.onpendingresourcesapplied.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(added: ResourceJson.Json.ILooseResourceDecl\[\], deleted: string\[\]) =&gt; void
+
+
+</td><td>
+
+_(Optional)_ Callback when pending resources are applied
 
 
 </td></tr>
@@ -228,6 +285,25 @@ _(Optional)_ The resource system for resolution testing
 </td></tr>
 <tr><td>
 
+[resourceTypeFactory?](./ts-res-ui-components.resolutiontools.resolutionviewprops.resourcetypefactory.md)
+
+
+</td><td>
+
+
+</td><td>
+
+ResourceTypes.IResourceType\[\]
+
+
+</td><td>
+
+_(Optional)_ Factory for creating custom resource types
+
+
+</td></tr>
+<tr><td>
+
 [sectionTitles?](./ts-res-ui-components.resolutiontools.resolutionviewprops.sectiontitles.md)
 
 
@@ -242,6 +318,25 @@ _(Optional)_ The resource system for resolution testing
 </td><td>
 
 _(Optional)_ Custom titles for the main sections
+
+
+</td></tr>
+<tr><td>
+
+[showPendingResourcesInList?](./ts-res-ui-components.resolutiontools.resolutionviewprops.showpendingresourcesinlist.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_ Show pending resources in the resource list with visual distinction
 
 
 </td></tr>
