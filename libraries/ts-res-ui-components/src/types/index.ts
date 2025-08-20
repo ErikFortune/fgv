@@ -480,7 +480,7 @@ export interface ResolutionActions {
   /** Discard all pending edits */
   discardEdits: () => void;
   /** Start creating a new resource */
-  startNewResource: () => void;
+  startNewResource: (defaultTypeName?: string) => void;
   /** Update the resource ID for the new resource being created */
   updateNewResourceId: (id: string) => void;
   /** Select a resource type for the new resource */
@@ -1249,7 +1249,7 @@ export interface OrchestratorActions {
   discardResourceEdits: () => void;
 
   // Resource creation actions
-  startNewResource: () => void;
+  startNewResource: (defaultTypeName?: string) => void;
   updateNewResourceId: (id: string) => void;
   selectResourceType: (type: string) => void;
   saveNewResourceAsPending: () => void;

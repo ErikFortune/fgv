@@ -368,7 +368,7 @@ Change how resolution results are displayed
 
 </td><td>
 
-() =&gt; void
+(defaultTypeName?: string) =&gt; void
 
 
 </td><td>

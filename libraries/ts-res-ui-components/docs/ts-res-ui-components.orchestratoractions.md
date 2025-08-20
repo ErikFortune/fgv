@@ -646,7 +646,7 @@ Description
 
 </td><td>
 
-() =&gt; void
+(defaultTypeName?: string) =&gt; void
 
 
 </td><td>

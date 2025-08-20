@@ -407,7 +407,7 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
 
   // Handle new resource creation
   const handleStartNewResource = useCallback(() => {
-    resolutionActions?.startNewResource();
+    resolutionActions?.startNewResource(defaultResourceType);
     setShowNewResourceModal(true);
   }, [resolutionActions]);
 

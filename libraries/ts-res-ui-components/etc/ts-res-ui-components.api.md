@@ -387,7 +387,7 @@ export interface OrchestratorActions {
     // (undocumented)
     setResolutionViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
     // (undocumented)
-    startNewResource: () => void;
+    startNewResource: (defaultTypeName?: string) => void;
     // (undocumented)
     updateConfiguration: (config: Config.Model.ISystemConfiguration) => void;
     // (undocumented)
@@ -563,7 +563,7 @@ interface ResolutionActions {
     selectResource: (resourceId: string) => void;
     selectResourceType: (type: string) => void;
     setViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
-    startNewResource: () => void;
+    startNewResource: (defaultTypeName?: string) => void;
     updateContextValue: (qualifierName: string, value: string | undefined) => void;
     updateNewResourceId: (id: string) => void;
 }

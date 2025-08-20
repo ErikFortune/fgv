@@ -644,23 +644,45 @@ export function useResolutionState(
   ]);
 
   // Resource creation actions
-  const startNewResource = useCallback(() => {
-    const defaultType = availableResourceTypes[0];
-    if (!defaultType) {
-      onMessage?.('error', 'No resource types available');
-      return;
-    }
+  const startNewResource = useCallback(
+    (defaultTypeName?: string) => {
+      const defaultType = defaultTypeName
+        ? availableResourceTypes.find((t) => t.key === defaultTypeName) || availableResourceTypes[0]
+        : availableResourceTypes[0];
+      if (!defaultType) {
+        onMessage?.('error', 'No resource types available');
+        return;
+      }
 
-    const resourceId = ('new-resource-' + Date.now()) as unknown as ResourceId;
-    const template = defaultType.createTemplate(resourceId);
+      const resourceId = ('new-resource-' + Date.now()) as unknown as ResourceId;
+      let template = defaultType.createTemplate(resourceId);
 
-    setNewResourceDraft({
-      resourceId: resourceId as string,
-      resourceType: defaultType.key,
-      template,
-      isValid: true
-    });
-  }, [availableResourceTypes, onMessage]);
+      // Stamp conditions from current effective context at creation time (include host-managed values)
+      const contextConditions: ResourceJson.Json.ILooseConditionDecl[] = [];
+      Object.entries(effectiveContext).forEach(([qualifierName, qualifierValue]) => {
+        if (typeof qualifierValue === 'string' && qualifierValue.trim() !== '') {
+          contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
+        }
+      });
+      if (contextConditions.length > 0) {
+        template = {
+          ...template,
+          candidates: (template.candidates || []).map((c) => ({
+            ...c,
+            conditions: contextConditions
+          }))
+        };
+      }
+
+      setNewResourceDraft({
+        resourceId: resourceId as string,
+        resourceType: defaultType.key,
+        template,
+        isValid: true
+      });
+    },
+    [availableResourceTypes, onMessage, effectiveContext]
+  );
 
   const updateNewResourceId = useCallback(
     (id: string) => {

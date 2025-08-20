@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-startNewResource: () => void;
+startNewResource: (defaultTypeName?: string) => void;
 ```
