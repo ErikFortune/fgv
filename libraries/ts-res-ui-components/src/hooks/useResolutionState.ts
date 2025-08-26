@@ -104,6 +104,46 @@ export interface UseResolutionStateReturn {
  * @returns Object containing resolution state, actions, and available qualifiers
  * @public
  */
+
+/**
+ * Helper function to find and validate a resource type by name.
+ *
+ * @param typeName - The resource type name to find
+ * @param availableResourceTypes - Array of available resource types
+ * @param onMessage - Optional callback for error messages
+ * @returns Result containing the found resource type or error
+ */
+function findResourceType(
+  typeName: string,
+  availableResourceTypes: ResourceTypes.IResourceType[],
+  onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void
+): Result<ResourceTypes.IResourceType> {
+  const resourceType = availableResourceTypes.find((t) => t.key === typeName);
+
+  if (!resourceType) {
+    const availableTypes = availableResourceTypes.map((t) => t.key).join(', ');
+    const error = `Resource type '${typeName}' not found`;
+    onMessage?.('error', error);
+    return fail(`${error}\nAvailable types: ${availableTypes}`);
+  }
+
+  return succeed(resourceType);
+}
+
+/**
+ * Hook for managing resource resolution state and editing operations.
+ *
+ * This hook provides comprehensive state management for resource resolution,
+ * including context management, resource editing, and conflict detection.
+ * It integrates with the ts-res library to provide real-time resolution
+ * results and supports editing resources with validation and preview functionality.
+ *
+ * @param processedResources - The processed resources to work with
+ * @param onMessage - Optional callback for displaying messages to the user
+ * @param onSystemUpdate - Optional callback when the resource system is updated with edits
+ * @returns Object containing resolution state, actions, and available qualifiers
+ * @public
+ */
 export function useResolutionState(
   processedResources: ProcessedResources | null,
   onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void,
@@ -608,13 +648,15 @@ export function useResolutionState(
         }
 
         // Validate resource type exists
-        const resourceType = availableResourceTypes.find((t) => t.key === params.resourceTypeName);
-        if (!resourceType) {
-          const availableTypes = availableResourceTypes.map((t) => t.key).join(', ');
-          return fail(
-            `Resource type '${params.resourceTypeName}' not found. Available types: ${availableTypes}`
-          );
+        const resourceTypeResult = findResourceType(
+          params.resourceTypeName,
+          availableResourceTypes,
+          onMessage
+        );
+        if (resourceTypeResult.isFailure()) {
+          return fail(resourceTypeResult.message);
         }
+        const resourceType = resourceTypeResult.value;
 
         // Validate JSON content
         if (params.json === undefined || params.json === null) {
@@ -780,8 +822,8 @@ export function useResolutionState(
         }
 
         // Validate ID format
-        if (!id || id.trim().length === 0) {
-          const error = 'Resource ID cannot be empty';
+        if (!Validate.isValidResourceId(id)) {
+          const error = `Invalid resource ID '${id}'. Resource IDs must be dot-separated identifiers and cannot be empty.`;
           onMessage?.('error', error);
           return fail(error);
         }
@@ -851,13 +893,11 @@ export function useResolutionState(
           return fail(`${error}\nUse startNewResource() to begin creating a new resource`);
         }
 
-        const type = availableResourceTypes.find((t) => t.key === typeName);
-        if (!type) {
-          const availableTypes = availableResourceTypes.map((t) => t.key).join(', ');
-          const error = `Resource type '${typeName}' not found`;
-          onMessage?.('error', error);
-          return fail(`${error}\nAvailable types: ${availableTypes}`);
+        const typeResult = findResourceType(typeName, availableResourceTypes, onMessage);
+        if (typeResult.isFailure()) {
+          return fail(typeResult.message);
         }
+        const type = typeResult.value;
 
         const template = type.createTemplate(newResourceDraft.resourceId as unknown as ResourceId);
 
@@ -983,14 +1023,19 @@ export function useResolutionState(
       }
 
       // Check resource type exists
-      if (
-        !newResourceDraft.resourceType ||
-        !availableResourceTypes.find((t) => t.key === newResourceDraft.resourceType)
-      ) {
-        const error = `Resource type '${newResourceDraft.resourceType}' is not available`;
-        const availableTypes = availableResourceTypes.map((t) => t.key).join(', ');
+      if (!newResourceDraft.resourceType) {
+        const error = `Resource type is required`;
         onMessage?.('error', error);
-        return fail(`${error}\nAvailable types: ${availableTypes}`);
+        return fail(error);
+      }
+
+      const resourceTypeResult = findResourceType(
+        newResourceDraft.resourceType,
+        availableResourceTypes,
+        onMessage
+      );
+      if (resourceTypeResult.isFailure()) {
+        return fail(resourceTypeResult.message);
       }
 
       // Check candidates exist
