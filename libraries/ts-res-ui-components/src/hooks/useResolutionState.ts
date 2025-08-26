@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { Runtime, ResourceJson, ResourceTypes, ResourceId, Validate } from '@fgv/ts-res';
 import { Result, succeed, fail } from '@fgv/ts-utils';
 import type { JsonObject as ResourceJsonObject } from '@fgv/ts-json-base';
+import { isJsonObject } from '@fgv/ts-json-base';
 import {
   ResolutionState,
   ResolutionActions,
@@ -448,7 +449,7 @@ export function useResolutionState(
             ...pendingResource,
             candidates: [
               {
-                json: (typeof editedValue === 'object' && editedValue !== null && !Array.isArray(editedValue)
+                json: (isJsonObject(editedValue)
                   ? editedValue
                   : { value: editedValue }) as ResourceJsonObject,
                 conditions: contextConditions.length > 0 ? contextConditions : undefined,
@@ -638,9 +639,7 @@ export function useResolutionState(
           resourceTypeName: params.resourceTypeName,
           candidates: [
             {
-              json: (typeof params.json === 'object' && params.json !== null && !Array.isArray(params.json)
-                ? params.json
-                : { value: params.json }) as ResourceJsonObject,
+              json: (isJsonObject(params.json) ? params.json : { value: params.json }) as ResourceJsonObject,
               conditions: contextConditions.length > 0 ? contextConditions : undefined,
               isPartial: false,
               mergeMethod: 'replace' as const
@@ -714,7 +713,7 @@ export function useResolutionState(
             ...template,
             candidates: [
               {
-                json: (typeof params.json === 'object' && params.json !== null && !Array.isArray(params.json)
+                json: (isJsonObject(params.json)
                   ? params.json
                   : { value: params.json }) as ResourceJsonObject,
                 isPartial: false,
@@ -908,9 +907,7 @@ export function useResolutionState(
           ...newResourceDraft.template,
           candidates: [
             {
-              json: (typeof json === 'object' && json !== null && !Array.isArray(json)
-                ? json
-                : { value: json }) as ResourceJsonObject,
+              json: (isJsonObject(json) ? json : { value: json }) as ResourceJsonObject,
               // Preserve existing conditions if any
               conditions: newResourceDraft.template.candidates?.[0]?.conditions,
               isPartial: false,
