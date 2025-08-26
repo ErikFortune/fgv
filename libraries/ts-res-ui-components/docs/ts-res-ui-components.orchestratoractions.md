@@ -306,7 +306,7 @@ Description
 
 </td><td>
 
-(params: CreatePendingResourceParams) =&gt; Promise&lt;Result&lt;void&gt;&gt;
+(params: CreatePendingResourceParams) =&gt; Result&lt;void&gt;
 
 
 </td><td>

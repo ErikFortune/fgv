@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-createPendingResource: (params: CreatePendingResourceParams) => Promise<Result<void>>;
+createPendingResource: (params: CreatePendingResourceParams) => Result<void>;
 ```
