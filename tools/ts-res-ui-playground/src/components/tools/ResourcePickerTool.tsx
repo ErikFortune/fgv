@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { PickerTools } from '@fgv/ts-res-ui-components';
-import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, TrashIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 
 // Quick Branch Selector Component
 interface QuickBranchSelectorProps {
@@ -88,7 +88,7 @@ const QuickBranchSelector: React.FC<QuickBranchSelectorProps> = ({
 interface ResourcePickerToolProps {
   resources: any; // Using the orchestrator state.resources
   onMessage: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void;
-  presentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
+  presentation?: 'hidden' | 'inline' | 'collapsible';
 }
 
 const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({
@@ -108,6 +108,7 @@ const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({
   // Interactive pending resources management
   const [customPendingResources, setCustomPendingResources] = useState<PickerTools.PendingResource[]>([]);
   const [showAddResourceModal, setShowAddResourceModal] = useState(false);
+  const [isConfigExpanded, setIsConfigExpanded] = useState(true);
   const [newResourceForm, setNewResourceForm] = useState({
     id: '',
     isAbsolute: false
@@ -370,177 +371,199 @@ const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({
           )}
         </div>
 
-        {/* Configuration Panel - only show when presentation is 'inline' */}
-        {presentation === 'inline' && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-700 mb-4">Component Configuration</h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Basic Settings */}
-              <div className="space-y-4">
-                <h3 className="text-md font-medium text-gray-700">Basic Settings</h3>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Default View</label>
-                  <select
-                    value={viewMode}
-                    onChange={(e) => setViewMode(e.target.value as 'list' | 'tree')}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="list">List</option>
-                    <option value="tree">Tree</option>
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="flex items-center text-sm">
-                    <input
-                      type="checkbox"
-                      checked={enableSearch}
-                      onChange={(e) => setEnableSearch(e.target.checked)}
-                      className="mr-2 rounded"
-                    />
-                    Enable Search
-                  </label>
-                  <label className="flex items-center text-sm">
-                    <input
-                      type="checkbox"
-                      checked={showViewToggle}
-                      onChange={(e) => setShowViewToggle(e.target.checked)}
-                      className="mr-2 rounded"
-                    />
-                    Show View Toggle
-                  </label>
-                  <label className="flex items-center text-sm">
-                    <input
-                      type="checkbox"
-                      checked={useAnnotations}
-                      onChange={(e) => setUseAnnotations(e.target.checked)}
-                      className="mr-2 rounded"
-                    />
-                    Show Annotations
-                  </label>
-                  <label className="flex items-center text-sm">
-                    <input
-                      type="checkbox"
-                      checked={usePendingResources}
-                      onChange={(e) => setUsePendingResources(e.target.checked)}
-                      className="mr-2 rounded"
-                    />
-                    Show Pending Resources
-                  </label>
-                </div>
+        {/* Configuration Panel */}
+        {(presentation === 'inline' || presentation === 'collapsible') && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            {presentation === 'inline' ? (
+              <div className="p-6">
+                <h2 className="text-lg font-semibold text-gray-700 mb-4">Component Configuration</h2>
               </div>
+            ) : (
+              <button
+                onClick={() => setIsConfigExpanded(!isConfigExpanded)}
+                className="flex items-center justify-between w-full p-4 text-left hover:bg-gray-50 rounded-t-lg transition-colors"
+              >
+                <span className="text-sm font-medium text-gray-700">Component Configuration</span>
+                <ChevronDownIcon
+                  className={`w-4 h-4 text-gray-500 transition-transform ${
+                    isConfigExpanded ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+            )}
 
-              {/* Branch Isolation Settings */}
-              <div className="space-y-4">
-                <h3 className="text-md font-medium text-gray-700">Branch Isolation</h3>
+            {(presentation === 'inline' || (presentation === 'collapsible' && isConfigExpanded)) && (
+              <div className={presentation === 'collapsible' ? 'px-4 pb-4 border-t border-gray-200' : ''}>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Basic Settings */}
+                  <div className="space-y-4">
+                    <h3 className="text-md font-medium text-gray-700">Basic Settings</h3>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Root Path</label>
-                  <input
-                    type="text"
-                    value={rootPath}
-                    onChange={(e) => setRootPath(e.target.value)}
-                    placeholder="e.g., strings or app.ui"
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Enter a resource path to show only that branch</p>
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Default View</label>
+                      <select
+                        value={viewMode}
+                        onChange={(e) => setViewMode(e.target.value as 'list' | 'tree')}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="list">List</option>
+                        <option value="tree">Tree</option>
+                      </select>
+                    </div>
 
-                <div>
-                  <label className="flex items-center text-sm">
-                    <input
-                      type="checkbox"
-                      checked={hideRootNode}
-                      onChange={(e) => setHideRootNode(e.target.checked)}
-                      className="mr-2 rounded"
-                      disabled={!rootPath}
-                    />
-                    Hide Root Node
-                  </label>
-                  <p className="text-xs text-gray-500 mt-1 ml-6">
-                    Show only children of the root path (requires Root Path)
-                  </p>
-                </div>
-
-                {/* Quick Branch Selection - Dynamic based on actual resource tree */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-2">
-                    Quick Branch Selection
-                  </label>
-                  <QuickBranchSelector
-                    resources={resources}
-                    currentRootPath={rootPath}
-                    onRootPathChange={setRootPath}
-                  />
-                </div>
-              </div>
-
-              {/* Pending Resources Management */}
-              <div className="space-y-4">
-                <h3 className="text-md font-medium text-gray-700">Pending Resources</h3>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="flex items-center text-sm">
-                      <input
-                        type="checkbox"
-                        checked={usePendingResources}
-                        onChange={(e) => setUsePendingResources(e.target.checked)}
-                        className="mr-2 rounded"
-                      />
-                      Show Demo Resources
-                    </label>
-                    <button
-                      onClick={() => setShowAddResourceModal(true)}
-                      className="flex items-center px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-                    >
-                      <PlusIcon className="w-3 h-3 mr-1" />
-                      Add Resource
-                    </button>
+                    <div className="space-y-2">
+                      <label className="flex items-center text-sm">
+                        <input
+                          type="checkbox"
+                          checked={enableSearch}
+                          onChange={(e) => setEnableSearch(e.target.checked)}
+                          className="mr-2 rounded"
+                        />
+                        Enable Search
+                      </label>
+                      <label className="flex items-center text-sm">
+                        <input
+                          type="checkbox"
+                          checked={showViewToggle}
+                          onChange={(e) => setShowViewToggle(e.target.checked)}
+                          className="mr-2 rounded"
+                        />
+                        Show View Toggle
+                      </label>
+                      <label className="flex items-center text-sm">
+                        <input
+                          type="checkbox"
+                          checked={useAnnotations}
+                          onChange={(e) => setUseAnnotations(e.target.checked)}
+                          className="mr-2 rounded"
+                        />
+                        Show Annotations
+                      </label>
+                      <label className="flex items-center text-sm">
+                        <input
+                          type="checkbox"
+                          checked={usePendingResources}
+                          onChange={(e) => setUsePendingResources(e.target.checked)}
+                          className="mr-2 rounded"
+                        />
+                        Show Pending Resources
+                      </label>
+                    </div>
                   </div>
 
-                  {/* Custom pending resources list */}
-                  {customPendingResources.length > 0 && (
-                    <div className="space-y-2">
+                  {/* Branch Isolation Settings */}
+                  <div className="space-y-4">
+                    <h3 className="text-md font-medium text-gray-700">Branch Isolation</h3>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Root Path</label>
+                      <input
+                        type="text"
+                        value={rootPath}
+                        onChange={(e) => setRootPath(e.target.value)}
+                        placeholder="e.g., strings or app.ui"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Enter a resource path to show only that branch
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="flex items-center text-sm">
+                        <input
+                          type="checkbox"
+                          checked={hideRootNode}
+                          onChange={(e) => setHideRootNode(e.target.checked)}
+                          className="mr-2 rounded"
+                          disabled={!rootPath}
+                        />
+                        Hide Root Node
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1 ml-6">
+                        Show only children of the root path (requires Root Path)
+                      </p>
+                    </div>
+
+                    {/* Quick Branch Selection - Dynamic based on actual resource tree */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-2">
+                        Quick Branch Selection
+                      </label>
+                      <QuickBranchSelector
+                        resources={resources}
+                        currentRootPath={rootPath}
+                        onRootPathChange={setRootPath}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Pending Resources Management */}
+                  <div className="space-y-4">
+                    <h3 className="text-md font-medium text-gray-700">Pending Resources</h3>
+
+                    <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-gray-600">
-                          Custom Resources ({customPendingResources.length})
-                        </span>
+                        <label className="flex items-center text-sm">
+                          <input
+                            type="checkbox"
+                            checked={usePendingResources}
+                            onChange={(e) => setUsePendingResources(e.target.checked)}
+                            className="mr-2 rounded"
+                          />
+                          Show Demo Resources
+                        </label>
                         <button
-                          onClick={handleClearAllPendingResources}
-                          className="text-xs text-red-500 hover:text-red-700"
+                          onClick={() => setShowAddResourceModal(true)}
+                          className="flex items-center px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
                         >
-                          Clear All
+                          <PlusIcon className="w-3 h-3 mr-1" />
+                          Add Resource
                         </button>
                       </div>
-                      <div className="max-h-32 overflow-y-auto space-y-1">
-                        {customPendingResources.map((pr) => (
-                          <div
-                            key={pr.id}
-                            className="flex items-center justify-between p-2 bg-gray-50 rounded text-xs"
-                          >
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate">{pr.id}</div>
-                              <div className="text-gray-500">
-                                {pr.type} • {pr.displayName}
-                              </div>
-                            </div>
+
+                      {/* Custom pending resources list */}
+                      {customPendingResources.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-gray-600">
+                              Custom Resources ({customPendingResources.length})
+                            </span>
                             <button
-                              onClick={() => handleRemovePendingResource(pr.id)}
-                              className="ml-2 p-1 text-red-500 hover:text-red-700"
+                              onClick={handleClearAllPendingResources}
+                              className="text-xs text-red-500 hover:text-red-700"
                             >
-                              <TrashIcon className="w-3 h-3" />
+                              Clear All
                             </button>
                           </div>
-                        ))}
-                      </div>
+                          <div className="max-h-32 overflow-y-auto space-y-1">
+                            {customPendingResources.map((pr) => (
+                              <div
+                                key={pr.id}
+                                className="flex items-center justify-between p-2 bg-gray-50 rounded text-xs"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium truncate">{pr.id}</div>
+                                  <div className="text-gray-500">
+                                    {pr.type} • {pr.displayName}
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => handleRemovePendingResource(pr.id)}
+                                  className="ml-2 p-1 text-red-500 hover:text-red-700"
+                                >
+                                  <TrashIcon className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
