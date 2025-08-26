@@ -9,5 +9,5 @@ Update the resource ID for the new resource being created
 **Signature:**
 
 ```typescript
-updateNewResourceId: (id: string) => void;
+updateNewResourceId: (id: string) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
 ```

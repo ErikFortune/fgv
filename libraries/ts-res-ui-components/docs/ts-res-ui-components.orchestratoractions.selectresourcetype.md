@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-selectResourceType: (type: string) => void;
+selectResourceType: (type: string) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
 ```

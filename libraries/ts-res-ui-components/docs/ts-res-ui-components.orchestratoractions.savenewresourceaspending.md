@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-saveNewResourceAsPending: () => void;
+saveNewResourceAsPending: () => ResolutionActionResult<Map<string, ResourceJson.Json.ILooseResourceDecl>>;
 ```

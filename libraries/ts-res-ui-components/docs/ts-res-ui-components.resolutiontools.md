@@ -32,6 +32,28 @@ Creates a fully configured ResourceResolver with the specified context values an
 </td></tr>
 <tr><td>
 
+[deriveFullId(rootPath, leafId)](./ts-res-ui-components.resolutiontools.derivefullid.md)
+
+
+</td><td>
+
+Constructs a full resource ID from a root path and leaf ID.
+
+
+</td></tr>
+<tr><td>
+
+[deriveLeafId(fullResourceId)](./ts-res-ui-components.resolutiontools.deriveleafid.md)
+
+
+</td><td>
+
+Derives a leaf ID from a full resource ID. Extracts the last segment after the final dot.
+
+
+</td></tr>
+<tr><td>
+
 [evaluateConditionsForCandidate(resolver, candidateIndex, compiledResource, compiledCollection)](./ts-res-ui-components.resolutiontools.evaluateconditionsforcandidate.md)
 
 
@@ -58,6 +80,39 @@ Extracts all qualifier names from the compiled resource collection, providing a 
 </td></tr>
 <tr><td>
 
+[getPendingAdditionsByType(pendingResources, resourceType)](./ts-res-ui-components.resolutiontools.getpendingadditionsbytype.md)
+
+
+</td><td>
+
+Gets pending resources filtered by resource type.
+
+
+</td></tr>
+<tr><td>
+
+[getPendingResourceStats(pendingResources)](./ts-res-ui-components.resolutiontools.getpendingresourcestats.md)
+
+
+</td><td>
+
+Gets statistics about pending resources. Provides summary information useful for UI displays.
+
+
+</td></tr>
+<tr><td>
+
+[getPendingResourceTypes(pendingResources)](./ts-res-ui-components.resolutiontools.getpendingresourcetypes.md)
+
+
+</td><td>
+
+Gets all unique resource types from pending resources.
+
+
+</td></tr>
+<tr><td>
+
 [hasPendingContextChanges(contextValues, pendingContextValues)](./ts-res-ui-components.resolutiontools.haspendingcontextchanges.md)
 
 
@@ -66,6 +121,17 @@ Extracts all qualifier names from the compiled resource collection, providing a 
 Check if context has any pending changes by comparing current and pending values.
 
 Performs a deep comparison between current context values and pending context values to determine if there are unsaved changes. This is useful for UI state management and preventing data loss in resolution interfaces.
+
+
+</td></tr>
+<tr><td>
+
+[isPendingAddition(resourceId, pendingResources)](./ts-res-ui-components.resolutiontools.ispendingaddition.md)
+
+
+</td><td>
+
+Checks if a resource ID corresponds to a pending addition.
 
 
 </td></tr>
@@ -94,6 +160,17 @@ Hook for managing resource resolution state and editing operations.
 This hook provides comprehensive state management for resource resolution, including context management, resource editing, and conflict detection. It integrates with the ts-res library to provide real-time resolution results and supports editing resources with validation and preview functionality.
 
 Key features: - \*\*Context Management\*\*: Set and update resolution context (qualifiers) - \*\*Resource Resolution\*\*: Real-time resolution with detailed results - \*\*Resource Editing\*\*: Edit resources with validation and conflict detection - \*\*Preview Mode\*\*: See how edits affect resolution without committing - \*\*Change Tracking\*\*: Track pending changes and detect conflicts
+
+
+</td></tr>
+<tr><td>
+
+[validatePendingResourceKeys(pendingResources)](./ts-res-ui-components.resolutiontools.validatependingresourcekeys.md)
+
+
+</td><td>
+
+Validates that all keys in a pending resources map are properly formatted as full resource IDs. This is a diagnostic function to ensure the pending resource key invariant is maintained.
 
 
 </td></tr>

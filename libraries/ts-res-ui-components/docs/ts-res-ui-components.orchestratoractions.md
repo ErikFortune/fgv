@@ -298,6 +298,23 @@ Description
 </td></tr>
 <tr><td>
 
+[createPendingResource](./ts-res-ui-components.orchestratoractions.creatependingresource.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(params: CreatePendingResourceParams) =&gt; Promise&lt;Result&lt;void&gt;&gt;
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [discardPendingResources](./ts-res-ui-components.orchestratoractions.discardpendingresources.md)
 
 
@@ -527,7 +544,7 @@ Description
 
 </td><td>
 
-() =&gt; void
+() =&gt; ResolutionActionResult&lt;Map&lt;string, ResourceJson.Json.ILooseResourceDecl&gt;&gt;
 
 
 </td><td>
@@ -595,7 +612,7 @@ Description
 
 </td><td>
 
-(type: string) =&gt; void
+(type: string) =&gt; ResolutionActionResult&lt;[ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]&gt;
 
 
 </td><td>
@@ -629,7 +646,7 @@ Description
 
 </td><td>
 
-(defaultTypeName?: string) =&gt; void
+(params?: StartNewResourceParams) =&gt; ResolutionActionResult&lt;[ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]&gt;
 
 
 </td><td>
@@ -680,7 +697,24 @@ Description
 
 </td><td>
 
-(id: string) =&gt; void
+(id: string) =&gt; ResolutionActionResult&lt;[ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]&gt;
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[updateNewResourceJson](./ts-res-ui-components.orchestratoractions.updatenewresourcejson.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(json: JsonValue) =&gt; ResolutionActionResult&lt;[ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]&gt;
 
 
 </td><td>

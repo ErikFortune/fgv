@@ -113,6 +113,25 @@ Clear all pending edits
 </td></tr>
 <tr><td>
 
+[createPendingResource](./ts-res-ui-components.resolutiontools.resolutionactions.creatependingresource.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(params: CreatePendingResourceParams) =&gt; Promise&lt;Result&lt;void&gt;&gt;
+
+
+</td><td>
+
+Create a pending resource atomically with validation
+
+
+</td></tr>
+<tr><td>
+
 [discardEdits](./ts-res-ui-components.resolutiontools.resolutionactions.discardedits.md)
 
 
@@ -273,7 +292,7 @@ Save an edit to a resource value
 
 </td><td>
 
-() =&gt; void
+() =&gt; ResolutionActionResult&lt;Map&lt;string, ResourceJson.Json.ILooseResourceDecl&gt;&gt;
 
 
 </td><td>
@@ -311,7 +330,7 @@ Select a resource for detailed resolution testing
 
 </td><td>
 
-(type: string) =&gt; void
+(type: string) =&gt; ResolutionActionResult&lt;[ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]&gt;
 
 
 </td><td>
@@ -349,12 +368,12 @@ Change how resolution results are displayed
 
 </td><td>
 
-(defaultTypeName?: string) =&gt; void
+(params?: StartNewResourceParams) =&gt; ResolutionActionResult&lt;[ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]&gt;
 
 
 </td><td>
 
-Start creating a new resource
+Start creating a new resource (enhanced with optional pre-seeding)
 
 
 </td></tr>
@@ -387,12 +406,31 @@ Update a context value for resolution testing
 
 </td><td>
 
-(id: string) =&gt; void
+(id: string) =&gt; ResolutionActionResult&lt;[ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]&gt;
 
 
 </td><td>
 
 Update the resource ID for the new resource being created
+
+
+</td></tr>
+<tr><td>
+
+[updateNewResourceJson](./ts-res-ui-components.resolutiontools.resolutionactions.updatenewresourcejson.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(json: JsonValue) =&gt; ResolutionActionResult&lt;[ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]&gt;
+
+
+</td><td>
+
+Update the JSON content for the new resource being created
 
 
 </td></tr>
