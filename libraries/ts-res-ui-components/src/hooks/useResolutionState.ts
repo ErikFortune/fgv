@@ -143,15 +143,11 @@ function createContextConditions(
   qualifierTypes: any | undefined, // TODO: Replace with proper type when available
   onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void
 ): Result<ResourceJson.Json.ILooseConditionDecl[]> {
-  // If qualifier types are not available, fall back to basic validation
+  // Qualifier types are required for proper validation
   if (!qualifierTypes) {
-    const contextConditions: ResourceJson.Json.ILooseConditionDecl[] = [];
-    for (const [qualifierName, qualifierValue] of Object.entries(effectiveContext)) {
-      if (typeof qualifierValue === 'string' && qualifierValue.trim() !== '') {
-        contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
-      }
-    }
-    return succeed(contextConditions);
+    const error = 'Qualifier types not available - cannot validate context values';
+    onMessage?.('error', error);
+    return fail(error);
   }
   const contextConditions: ResourceJson.Json.ILooseConditionDecl[] = [];
 
@@ -160,11 +156,25 @@ function createContextConditions(
       continue; // Skip undefined/null values
     }
 
-    // Basic validation - ensure value is a non-empty string
-    // TODO: Use proper qualifier type validation when API is clarified
-    if (typeof qualifierValue === 'string' && qualifierValue.trim() !== '') {
-      contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
+    // Get the qualifier type for validation
+    const qualifierType = qualifierTypes.get(qualifierName);
+    if (!qualifierType) {
+      // Unknown qualifiers should not happen in a properly configured system
+      const error = `Unknown qualifier '${qualifierName}' in context`;
+      onMessage?.('error', error);
+      return fail(error);
     }
+
+    // Validate the qualifier value using the qualifier type
+    // Let the qualifier type determine if empty strings or other values are valid
+    if (qualifierType.isValidConditionValue && !qualifierType.isValidConditionValue(qualifierValue)) {
+      const error = `Invalid value '${qualifierValue}' for qualifier '${qualifierName}'`;
+      onMessage?.('warning', error);
+      continue; // Skip invalid values
+    }
+
+    // Add the qualifier value as a condition - defer all validation to the qualifier type
+    contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
   }
 
   return succeed(contextConditions);
