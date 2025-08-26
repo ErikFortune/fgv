@@ -867,7 +867,7 @@ const HierarchyEditor: React.FC<HierarchyEditorProps> = ({ hierarchy, onChange, 
     return nodes.map((node) => (
       <div key={node.value} className="ml-4">
         <div className="flex items-center space-x-2 py-1">
-          <span className="text-sm text-gray-700" style={{ marginLeft: `${node.level * 20}px` }}>
+          <span className="text-sm text-gray-700" style={{ paddingLeft: `${node.level * 1.25}rem` }}>
             {node.level > 0 && '└─ '}
             {node.value}
           </span>

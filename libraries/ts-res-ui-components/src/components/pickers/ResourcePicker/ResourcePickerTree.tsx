@@ -29,7 +29,9 @@ function createVirtualTree<T = unknown>(
   realTree: Runtime.ResourceTree.IReadOnlyResourceTreeRoot<any> | null,
   pendingResources: PendingResource<T>[] = []
 ): VirtualTreeNode<T> | null {
-  if (!realTree) return null;
+  if (!realTree) {
+    return null;
+  }
 
   // Helper to convert real node to virtual node
   const convertRealNode = (
@@ -134,27 +136,43 @@ export const ResourcePickerTree = <T = unknown,>({
 
   // Build the virtual tree structure from resources and pending resources
   const virtualTree = useMemo(() => {
-    if (!resources) return null;
+    if (!resources) {
+      return null;
+    }
 
     // Get the tree from the resource manager
     const resourceManager = resources.system.resourceManager;
     const treeResult = resourceManager.getBuiltResourceTree();
     if (treeResult.isFailure()) {
-      console.error('Failed to build resource tree:', treeResult.message);
+      console.error('ResourcePickerTree: Failed to build resource tree:', treeResult.message);
       return null;
     }
 
     // Create virtual tree that includes pending resources
-    return createVirtualTree(treeResult.value, pendingResources);
+    try {
+      const virtualTree = createVirtualTree(treeResult.value, pendingResources);
+      return virtualTree;
+    } catch (error) {
+      console.error('ResourcePickerTree: Error in createVirtualTree:', error);
+      return null;
+    }
   }, [resources, pendingResources]);
 
   // Find the effective root node(s) to display
   const effectiveRootNodes = useMemo(() => {
-    if (!virtualTree) return [];
+    try {
+      if (!virtualTree) {
+        return [];
+      }
 
-    // If no rootPath, show all top-level nodes
-    if (!rootPath) {
-      return Array.from(virtualTree.children.values());
+      // If no rootPath, show all top-level nodes
+      if (!rootPath) {
+        const nodes = Array.from(virtualTree.children.values());
+        return nodes;
+      }
+    } catch (error) {
+      console.error('ResourcePickerTree: Error in effectiveRootNodes calculation:', error);
+      return [];
     }
 
     // Find the target node in the virtual tree
@@ -418,7 +436,7 @@ export const ResourcePickerTree = <T = unknown,>({
   }
 
   return (
-    <div className={`${className} overflow-y-auto`}>
+    <div className={`${className} overflow-y-auto !relative !z-auto !min-h-[200px]`}>
       {effectiveRootNodes
         .sort((a: VirtualTreeNode, b: VirtualTreeNode) => {
           // Sort folders first, then by name
@@ -427,7 +445,9 @@ export const ResourcePickerTree = <T = unknown,>({
           }
           return a.name.localeCompare(b.name);
         })
-        .map((child) => renderTreeNode(child))}
+        .map((child) => {
+          return renderTreeNode(child);
+        })}
     </div>
   );
 };

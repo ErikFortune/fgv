@@ -680,9 +680,13 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 }
               />
             </div>
-            {/* View content - hide original title */}
-            <div className="[&>div]:pt-0 [&>div>div:first-child]:hidden">
-              <ResourcePickerTool resources={state.resources} onMessage={actions.addMessage} />
+            {/* View content */}
+            <div className="[&>div]:pt-0">
+              <ResourcePickerTool
+                resources={state.resources}
+                onMessage={actions.addMessage}
+                presentation={pickerPresentation.picker}
+              />
             </div>
           </div>
         );

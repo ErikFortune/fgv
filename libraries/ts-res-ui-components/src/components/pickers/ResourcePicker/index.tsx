@@ -143,7 +143,12 @@ export const ResourcePicker = <T = unknown,>({
   const containerHeight = typeof height === 'number' ? `${height}px` : height;
 
   return (
-    <div className={`flex flex-col ${className}`} style={{ height: containerHeight }}>
+    <div
+      className={`flex flex-col !relative !z-auto !min-h-[400px] ${className}`}
+      style={{
+        height: containerHeight
+      }}
+    >
       {/* Header with search and view toggle */}
       {(enableSearch || showViewToggle) && (
         <div className="flex flex-col gap-3 mb-4">
@@ -200,7 +205,7 @@ export const ResourcePicker = <T = unknown,>({
       )}
 
       {/* Resource List or Tree */}
-      <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg bg-gray-50">
+      <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg bg-gray-50 !relative !z-auto !min-h-[300px]">
         {viewMode === 'tree' ? (
           <ResourcePickerTree<T>
             resources={resources}
