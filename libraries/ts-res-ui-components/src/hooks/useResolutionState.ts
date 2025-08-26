@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Runtime, ResourceJson, ResourceTypes, ResourceId } from '@fgv/ts-res';
+import { Runtime, ResourceJson, ResourceTypes, ResourceId, Validate } from '@fgv/ts-res';
 import { Result, succeed, fail } from '@fgv/ts-utils';
 import type { JsonObject as ResourceJsonObject } from '@fgv/ts-json-base';
 import {
@@ -575,7 +575,7 @@ export function useResolutionState(
 
   // Atomic resource creation API
   const createPendingResource = useCallback(
-    async (params: CreatePendingResourceParams): Promise<Result<void>> => {
+    (params: CreatePendingResourceParams): Result<void> => {
       try {
         if (!processedResources) {
           return fail('No resource system available');
@@ -587,9 +587,11 @@ export function useResolutionState(
         }
 
         // Prevent temporary IDs from being persisted
-        if (params.id.startsWith('new-resource-')) {
+        if (params.id.startsWith('new-resource-') || !Validate.isValidResourceId(params.id)) {
           return fail(
-            `Cannot save resource with temporary ID '${params.id}'. Please provide a final resource ID.`
+            params.id.startsWith('new-resource-')
+              ? `Cannot save resource with temporary ID '${params.id}'. Please provide a final resource ID.`
+              : `Invalid resource ID format '${params.id}'. Resource IDs must be dot-separated identifiers.`
           );
         }
 
@@ -673,7 +675,7 @@ export function useResolutionState(
     ): Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }> => {
       try {
         // Determine resource type to use
-        let targetTypeName = params?.defaultTypeName || params?.resourceTypeName;
+        let targetTypeName = params?.resourceTypeName || params?.defaultTypeName;
         const targetType = targetTypeName
           ? availableResourceTypes.find((t) => t.key === targetTypeName) || availableResourceTypes[0]
           : availableResourceTypes[0];
@@ -741,10 +743,10 @@ export function useResolutionState(
         }
 
         const draft = {
-          resourceId: resourceId as string,
+          resourceId,
           resourceType: targetType.key,
           template,
-          isValid: !resourceId.startsWith('new-resource-') // Valid if not temporary
+          isValid: !resourceId.startsWith('new-resource-') && Validate.isValidResourceId(resourceId)
         };
 
         setNewResourceDraft(draft);
@@ -803,6 +805,9 @@ export function useResolutionState(
         } else if (id.startsWith('new-resource-')) {
           isValid = false;
           validationError = `Resource ID '${id}' appears to be a temporary ID. Please provide a final resource ID.`;
+        } else if (!Validate.isValidResourceId(id)) {
+          isValid = false;
+          validationError = `Resource ID '${id}' has invalid format. Resource IDs must be dot-separated identifiers.`;
           diagnostics.push('Temporary ID detected - not suitable for saving');
         } else {
           diagnostics.push('ID validation passed');
@@ -953,6 +958,8 @@ export function useResolutionState(
         const errors = [];
         if (newResourceDraft.resourceId.startsWith('new-resource-')) {
           errors.push('Resource ID is temporary - please set a final resource ID');
+        } else if (!Validate.isValidResourceId(newResourceDraft.resourceId)) {
+          errors.push('Resource ID has invalid format - must be dot-separated identifiers');
         }
         if (!newResourceDraft.resourceType) {
           errors.push('Resource type is not selected');
@@ -967,8 +974,13 @@ export function useResolutionState(
       }
 
       // Prevent temporary IDs from being persisted (additional safety check)
-      if (newResourceDraft.resourceId.startsWith('new-resource-')) {
-        const error = `Cannot save resource with temporary ID '${newResourceDraft.resourceId}'. Please set a final resource ID first.`;
+      if (
+        newResourceDraft.resourceId.startsWith('new-resource-') ||
+        !Validate.isValidResourceId(newResourceDraft.resourceId)
+      ) {
+        const error = newResourceDraft.resourceId.startsWith('new-resource-')
+          ? `Cannot save resource with temporary ID '${newResourceDraft.resourceId}'. Please set a final resource ID first.`
+          : `Cannot save resource with invalid ID '${newResourceDraft.resourceId}'. Resource IDs must be dot-separated identifiers.`;
         onMessage?.('error', error);
         return fail(`${error}\nUse updateNewResourceId() to set a final resource ID before saving`);
       }

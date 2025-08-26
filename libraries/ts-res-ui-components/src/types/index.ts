@@ -534,7 +534,7 @@ export interface ResolutionActions {
 
   // Enhanced resource creation actions with Result pattern return values
   /** Create a pending resource atomically with validation */
-  createPendingResource: (params: CreatePendingResourceParams) => Promise<Result<void>>;
+  createPendingResource: (params: CreatePendingResourceParams) => Result<void>;
   /** Start creating a new resource (enhanced with optional pre-seeding) */
   startNewResource: (
     params?: StartNewResourceParams
@@ -1318,7 +1318,7 @@ export interface OrchestratorActions {
   discardResourceEdits: () => void;
 
   // Resource creation actions (enhanced with atomic API and Result pattern return values)
-  createPendingResource: (params: CreatePendingResourceParams) => Promise<Result<void>>;
+  createPendingResource: (params: CreatePendingResourceParams) => Result<void>;
   startNewResource: (
     params?: StartNewResourceParams
   ) => Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }>;

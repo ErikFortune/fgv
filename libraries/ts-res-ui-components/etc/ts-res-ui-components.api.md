@@ -374,7 +374,7 @@ export interface OrchestratorActions {
     // Warning: (ae-forgotten-export) The symbol "CreatePendingResourceParams" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
-    createPendingResource: (params: CreatePendingResourceParams) => Promise<Result<void>>;
+    createPendingResource: (params: CreatePendingResourceParams) => Result<void>;
     // (undocumented)
     discardPendingResources: () => void;
     // (undocumented)
@@ -596,7 +596,7 @@ interface ResolutionActions {
     applyPendingResources: () => Promise<void>;
     cancelNewResource: () => void;
     clearEdits: () => void;
-    createPendingResource: (params: CreatePendingResourceParams) => Promise<Result<void>>;
+    createPendingResource: (params: CreatePendingResourceParams) => Result<void>;
     discardEdits: () => void;
     discardPendingResources: () => void;
     getEditedValue: (resourceId: string) => JsonValue | undefined;
