@@ -451,6 +451,71 @@ export interface ResolutionState {
 }
 
 /**
+ * Parameters for creating a pending resource atomically.
+ *
+ * @public
+ */
+export interface CreatePendingResourceParams {
+  /** Full resource ID (e.g., 'platform.languages.en-US') */
+  id: string;
+  /** Resource type name (e.g., 'languageConfig') */
+  resourceTypeName: string;
+  /** JSON value for the resource */
+  json: JsonValue;
+}
+
+/**
+ * Parameters for pre-seeding a new resource draft.
+ *
+ * @public
+ */
+export interface StartNewResourceParams {
+  /** Optional resource ID to pre-populate */
+  id?: string;
+  /** Optional resource type name to pre-select */
+  resourceTypeName?: string;
+  /** Optional JSON value to pre-populate */
+  json?: JsonValue;
+}
+
+/**
+ * Callback for draft update notifications.
+ *
+ * @public
+ */
+export type DraftUpdateCallback = (draft: ResolutionState['newResourceDraft'] | undefined) => void;
+
+/**
+ * Draft lifecycle events configuration.
+ *
+ * @public
+ */
+export interface DraftLifecycleOptions {
+  /** Callback invoked when draft is updated */
+  onDraftUpdate?: DraftUpdateCallback;
+  /** Enable verbose logging for debugging */
+  enableDebugLogging?: boolean;
+}
+
+/**
+ * Result of an orchestrator action with state snapshot.
+ *
+ * @public
+ */
+export interface OrchestratorActionResult<T = void> {
+  /** Success/failure indicator */
+  success: boolean;
+  /** Result value on success */
+  value?: T;
+  /** Error message on failure */
+  error?: string;
+  /** Current draft state after action */
+  draft?: ResolutionState['newResourceDraft'];
+  /** Pending resources snapshot after action */
+  pendingResources?: Map<string, ResourceJson.Json.ILooseResourceDecl>;
+}
+
+/**
  * Actions available for managing resource resolution testing and editing.
  * Provides methods for context management, resource selection, and value editing.
  *
@@ -468,7 +533,7 @@ export interface ResolutionActions {
   /** Clear the resolution cache to force fresh resolution */
   resetCache: () => void;
   /** Save an edit to a resource value */
-  saveEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
+  saveEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => Result<void>;
   /** Get the edited value for a resource, if any */
   getEditedValue: (resourceId: string) => JsonValue | undefined;
   /** Check if a resource has been edited */
@@ -477,22 +542,32 @@ export interface ResolutionActions {
   clearEdits: () => void;
   /** Discard all pending edits */
   discardEdits: () => void;
-  /** Start creating a new resource */
-  startNewResource: (defaultTypeName?: string) => void;
+
+  // New resource creation actions (multi-step)
+  /** Start creating a new resource with optional pre-seed values */
+  startNewResource: (params?: StartNewResourceParams) => Result<OrchestratorActionResult>;
   /** Update the resource ID for the new resource being created */
-  updateNewResourceId: (id: string) => void;
+  updateNewResourceId: (id: string) => Result<OrchestratorActionResult>;
   /** Select a resource type for the new resource */
-  selectResourceType: (type: string) => void;
+  selectResourceType: (type: string) => Result<OrchestratorActionResult>;
+  /** Update the JSON content of the new resource draft */
+  updateNewResourceJson: (json: JsonValue) => Result<void>;
   /** Add the new resource to pending resources (not applied yet) */
-  saveNewResourceAsPending: () => void;
+  saveNewResourceAsPending: () => Result<OrchestratorActionResult>;
   /** Cancel the new resource creation */
   cancelNewResource: () => void;
+
+  // Atomic resource creation (preferred)
+  /** Create a pending resource atomically in one call */
+  createPendingResource: (params: CreatePendingResourceParams) => Promise<Result<void>>;
+
+  // Pending resource management
   /** Remove a pending resource */
   removePendingResource: (resourceId: string) => void;
   /** Mark an existing resource for deletion */
   markResourceForDeletion: (resourceId: string) => void;
   /** Apply all pending resource additions and deletions */
-  applyPendingResources: () => Promise<void>;
+  applyPendingResources: () => Promise<Result<void>>;
   /** Discard all pending resource changes */
   discardPendingResources: () => void;
 }
@@ -1239,22 +1314,28 @@ export interface OrchestratorActions {
   resetResolutionCache: () => void;
 
   // Resolution editing
-  saveResourceEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
+  saveResourceEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => Result<void>;
   getEditedValue: (resourceId: string) => JsonValue | undefined;
   hasResourceEdit: (resourceId: string) => boolean;
   clearResourceEdits: () => void;
   // Removed: unified apply via applyPendingResources
   discardResourceEdits: () => void;
 
-  // Resource creation actions
-  startNewResource: (defaultTypeName?: string) => void;
-  updateNewResourceId: (id: string) => void;
-  selectResourceType: (type: string) => void;
-  saveNewResourceAsPending: () => void;
+  // Resource creation actions (multi-step)
+  startNewResource: (params?: StartNewResourceParams) => Result<OrchestratorActionResult>;
+  updateNewResourceId: (id: string) => Result<OrchestratorActionResult>;
+  selectResourceType: (type: string) => Result<OrchestratorActionResult>;
+  updateNewResourceJson: (json: JsonValue) => Result<void>;
+  saveNewResourceAsPending: () => Result<OrchestratorActionResult>;
   cancelNewResource: () => void;
+
+  // Atomic resource creation (preferred)
+  createPendingResource: (params: CreatePendingResourceParams) => Promise<Result<void>>;
+
+  // Pending resource management
   removePendingResource: (resourceId: string) => void;
   markResourceForDeletion: (resourceId: string) => void;
-  applyPendingResources: () => Promise<void>;
+  applyPendingResources: () => Promise<Result<void>>;
   discardPendingResources: () => void;
 
   // Combined pending changes actions removed in favor of unified applyPendingResources
@@ -1271,3 +1352,4 @@ export interface OrchestratorActions {
 // Export utility types
 export type { Result } from '@fgv/ts-utils';
 export type { JsonValue } from '@fgv/ts-json-base';
+export type { ResourceJson } from '@fgv/ts-res';

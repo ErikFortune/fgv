@@ -94,6 +94,14 @@ interface ConfigurationViewProps extends ViewBaseProps {
 function convertImportedDirectoryToFileTree(directory: ImportedDirectory): FileTree.FileTree;
 
 // @public
+function countPendingChanges(state: ResolutionState): {
+    additions: number;
+    deletions: number;
+    edits: number;
+    total: number;
+};
+
+// @public
 const createFilteredResourceManagerSimple: (originalSystem: ProcessedResources["system"], partialContext: Record<string, string | undefined>, options?: FilterOptions) => Promise<Result<ProcessedResources>>;
 
 // @public
@@ -111,6 +119,15 @@ function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemConfigur
     importManager: Import.ImportManager;
     contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
 }>;
+
+// @public
+function deriveFullId(rootSegments: string[], leafId: string): string;
+
+// @public
+function deriveFullIdFromPath(rootPath: string, leafId: string): string;
+
+// @public
+function deriveLeafId(fullResourceId: string): string;
 
 // @public
 const EditableJsonView: React_2.FC<EditableJsonViewProps>;
@@ -248,6 +265,18 @@ function getDefaultSystemConfiguration(): Config.Model.ISystemConfiguration;
 function getFilterSummary(values: Record<string, string | undefined>): string;
 
 // @public
+function getParentPath(fullResourceId: string): string;
+
+// @public
+function getPendingAdditionsByType(pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>, resourceTypeName: string): Array<[string, ResourceJson.Json.ILooseResourceDecl]>;
+
+// @public
+function getPendingResourceDisplayName(resourceId: string): string;
+
+// @public
+function getSortedPendingResourceIds(state: ResolutionState): string[];
+
+// @public
 function hasFilterValues(values: Record<string, string | undefined>): boolean;
 
 // @public
@@ -302,9 +331,21 @@ interface ImportViewProps extends ViewBaseProps {
 }
 
 // @public
+function isPendingAddition(resourceId: string, state: ResolutionState): boolean;
+
+// @public
+function isPendingDeletion(resourceId: string, state: ResolutionState): boolean;
+
+// @public
+function isValidResourceId(resourceId: string): boolean;
+
+// @public
 function isZipFile(filename: string): boolean;
 
 export { JsonValue }
+
+// @public
+function mergeResourceListWithPending(existingIds: string[], state: ResolutionState): string[];
 
 // @public
 interface Message_2 {
@@ -335,7 +376,7 @@ export interface OrchestratorActions {
     // (undocumented)
     applyFilter: () => Promise<FilterResult | null>;
     // (undocumented)
-    applyPendingResources: () => Promise<void>;
+    applyPendingResources: () => Promise<Result<void>>;
     // (undocumented)
     applyResolutionContext: () => void;
     // (undocumented)
@@ -346,6 +387,10 @@ export interface OrchestratorActions {
     clearResourceEdits: () => void;
     // (undocumented)
     clearResources: () => void;
+    // Warning: (ae-forgotten-export) The symbol "CreatePendingResourceParams" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    createPendingResource: (params: CreatePendingResourceParams) => Promise<Result<void>>;
     // (undocumented)
     discardPendingResources: () => void;
     // (undocumented)
@@ -373,25 +418,30 @@ export interface OrchestratorActions {
     // (undocumented)
     resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<JsonValue>>;
     // (undocumented)
-    saveNewResourceAsPending: () => void;
+    saveNewResourceAsPending: () => Result<OrchestratorActionResult>;
     // (undocumented)
-    saveResourceEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
+    saveResourceEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => Result<void>;
     // (undocumented)
     selectResource: (resourceId: string | null) => void;
     // (undocumented)
     selectResourceForResolution: (resourceId: string) => void;
     // (undocumented)
-    selectResourceType: (type: string) => void;
+    selectResourceType: (type: string) => Result<OrchestratorActionResult>;
     // (undocumented)
     setResolutionViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
+    // Warning: (ae-forgotten-export) The symbol "StartNewResourceParams" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "OrchestratorActionResult" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
-    startNewResource: (defaultTypeName?: string) => void;
+    startNewResource: (params?: StartNewResourceParams) => Result<OrchestratorActionResult>;
     // (undocumented)
     updateConfiguration: (config: Config.Model.ISystemConfiguration) => void;
     // (undocumented)
     updateFilterState: (state: Partial<FilterState>) => void;
     // (undocumented)
-    updateNewResourceId: (id: string) => void;
+    updateNewResourceId: (id: string) => Result<OrchestratorActionResult>;
+    // (undocumented)
+    updateNewResourceJson: (json: JsonValue) => Result<void>;
     // (undocumented)
     updateResolutionContext: (qualifierName: string, value: string | undefined) => void;
 }
@@ -545,9 +595,10 @@ function readFilesFromInput(files: FileList): Promise<ImportedFile[]>;
 // @public
 interface ResolutionActions {
     applyContext: (hostManagedValues?: Record<string, string | undefined>) => void;
-    applyPendingResources: () => Promise<void>;
+    applyPendingResources: () => Promise<Result<void>>;
     cancelNewResource: () => void;
     clearEdits: () => void;
+    createPendingResource: (params: CreatePendingResourceParams) => Promise<Result<void>>;
     discardEdits: () => void;
     discardPendingResources: () => void;
     getEditedValue: (resourceId: string) => JsonValue | undefined;
@@ -555,14 +606,15 @@ interface ResolutionActions {
     markResourceForDeletion: (resourceId: string) => void;
     removePendingResource: (resourceId: string) => void;
     resetCache: () => void;
-    saveEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
-    saveNewResourceAsPending: () => void;
+    saveEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => Result<void>;
+    saveNewResourceAsPending: () => Result<OrchestratorActionResult>;
     selectResource: (resourceId: string) => void;
-    selectResourceType: (type: string) => void;
+    selectResourceType: (type: string) => Result<OrchestratorActionResult>;
     setViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
-    startNewResource: (defaultTypeName?: string) => void;
+    startNewResource: (params?: StartNewResourceParams) => Result<OrchestratorActionResult>;
     updateContextValue: (qualifierName: string, value: string | undefined) => void;
-    updateNewResourceId: (id: string) => void;
+    updateNewResourceId: (id: string) => Result<OrchestratorActionResult>;
+    updateNewResourceJson: (json: JsonValue) => Result<void>;
 }
 
 // @public
@@ -668,7 +720,19 @@ declare namespace ResolutionTools {
         ResolutionContextOptions,
         QualifierControlOptions,
         EditableJsonViewProps,
-        ResolutionContextOptionsControlProps
+        ResolutionContextOptionsControlProps,
+        getPendingAdditionsByType,
+        isPendingAddition,
+        isPendingDeletion,
+        deriveLeafId,
+        deriveFullId,
+        deriveFullIdFromPath,
+        getParentPath,
+        countPendingChanges,
+        getPendingResourceDisplayName,
+        isValidResourceId,
+        getSortedPendingResourceIds,
+        mergeResourceListWithPending
     }
 }
 
@@ -907,10 +971,11 @@ function useConfigurationState(initialConfiguration?: Config.Model.ISystemConfig
 // @public
 function useFilterState(initialState?: Partial<FilterState>): UseFilterStateReturn;
 
+// Warning: (ae-forgotten-export) The symbol "DraftLifecycleOptions" needs to be exported by the entry point index.d.ts
 // Warning: (ae-forgotten-export) The symbol "UseResolutionStateReturn" needs to be exported by the entry point index.d.ts
 //
 // @public
-function useResolutionState(processedResources: ProcessedResources | null, onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void, onSystemUpdate?: (updatedResources: ProcessedResources) => void): UseResolutionStateReturn;
+function useResolutionState(processedResources: ProcessedResources | null, onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void, onSystemUpdate?: (updatedResources: ProcessedResources) => void, lifecycleOptions?: DraftLifecycleOptions): UseResolutionStateReturn;
 
 // Warning: (ae-forgotten-export) The symbol "UseResourceDataParams" needs to be exported by the entry point index.d.ts
 // Warning: (ae-forgotten-export) The symbol "UseResourceDataReturn" needs to be exported by the entry point index.d.ts

@@ -66,3 +66,19 @@ export type {
 // Export types for resolution components
 export type { EditableJsonViewProps } from '../components/views/ResolutionView/EditableJsonView';
 export type { ResolutionContextOptionsControlProps } from '../components/common/ResolutionContextOptionsControl';
+
+// Export orchestrator helper utilities
+export {
+  getPendingAdditionsByType,
+  isPendingAddition,
+  isPendingDeletion,
+  deriveLeafId,
+  deriveFullId,
+  deriveFullIdFromPath,
+  getParentPath,
+  countPendingChanges,
+  getPendingResourceDisplayName,
+  isValidResourceId,
+  getSortedPendingResourceIds,
+  mergeResourceListWithPending
+} from '../utils/orchestratorHelpers';

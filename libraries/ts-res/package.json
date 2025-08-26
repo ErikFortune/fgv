@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-res",
-  "version": "5.0.0-21",
+  "version": "5.0.0-22",
   "description": "Multi-dimensional Resource Runtime",
   "main": "lib/index.js",
   "types": "dist/ts-res.d.ts",

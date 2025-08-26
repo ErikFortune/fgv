@@ -1,12 +1,17 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Runtime, ResourceJson, ResourceTypes, ResourceId } from '@fgv/ts-res';
 import type { JsonObject as ResourceJsonObject } from '@fgv/ts-json-base';
+import { Result, succeed, fail } from '@fgv/ts-utils';
 import {
   ResolutionState,
   ResolutionActions,
   ResolutionResult,
   ProcessedResources,
-  JsonValue
+  JsonValue,
+  CreatePendingResourceParams,
+  StartNewResourceParams,
+  OrchestratorActionResult,
+  DraftLifecycleOptions
 } from '../types';
 import {
   createResolverWithContext,
@@ -51,6 +56,8 @@ export interface UseResolutionStateReturn {
  * - **Resource Editing**: Edit resources with validation and conflict detection
  * - **Preview Mode**: See how edits affect resolution without committing
  * - **Change Tracking**: Track pending changes and detect conflicts
+ * - **Draft Lifecycle**: Optional callbacks for draft state changes
+ * - **Debug Logging**: Optional verbose logging for development
  *
  * @example
  * ```tsx
@@ -97,14 +104,28 @@ export interface UseResolutionStateReturn {
  * @param processedResources - The processed resources to work with
  * @param onMessage - Optional callback for displaying messages to the user
  * @param onSystemUpdate - Optional callback when the resource system is updated with edits
+ * @param lifecycleOptions - Optional draft lifecycle callbacks and debug options
  * @returns Object containing resolution state, actions, and available qualifiers
  * @public
  */
 export function useResolutionState(
   processedResources: ProcessedResources | null,
   onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void,
-  onSystemUpdate?: (updatedResources: ProcessedResources) => void
+  onSystemUpdate?: (updatedResources: ProcessedResources) => void,
+  lifecycleOptions?: DraftLifecycleOptions
 ): UseResolutionStateReturn {
+  // Extract lifecycle options
+  const { onDraftUpdate, enableDebugLogging } = lifecycleOptions || {};
+
+  // Debug logging helper
+  const debugLog = useCallback(
+    (message: string, data?: any) => {
+      if (enableDebugLogging) {
+        console.log(`[ResolutionState] ${message}`, data || '');
+      }
+    },
+    [enableDebugLogging]
+  );
   // Get available qualifiers
   const availableQualifiers = useMemo(() => {
     if (!processedResources) return [];
@@ -416,13 +437,14 @@ export function useResolutionState(
 
   // Edit management functions
   const saveEdit = useCallback(
-    (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => {
+    (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue): Result<void> => {
       try {
         // Validate the edited value
         const validation = validateEditedResource(editedValue);
         if (!validation.isValid) {
-          onMessage?.('error', `Invalid edit: ${validation.errors.join(', ')}`);
-          return;
+          const errorMsg = `Invalid edit: ${validation.errors.join(', ')}`;
+          onMessage?.('error', errorMsg);
+          return fail(errorMsg);
         }
 
         // Show warnings if any
@@ -485,7 +507,7 @@ export function useResolutionState(
           }
 
           onMessage?.('info', `Updated pending resource: ${resourceId}`);
-          return;
+          return succeed(undefined);
         }
 
         // For existing resources, compute the delta and save as edit
@@ -518,11 +540,11 @@ export function useResolutionState(
         } else {
           onMessage?.('info', `Edit saved for resource ${resourceId}`);
         }
+        return succeed(undefined);
       } catch (error) {
-        onMessage?.(
-          'error',
-          `Failed to save edit: ${error instanceof Error ? error.message : String(error)}`
-        );
+        const errorMsg = `Failed to save edit: ${error instanceof Error ? error.message : String(error)}`;
+        onMessage?.('error', errorMsg);
+        return fail(errorMsg);
       }
     },
     [onMessage, pendingResources, selectedResourceId, effectiveContext]
@@ -572,59 +594,132 @@ export function useResolutionState(
 
   // Resource creation actions
   const startNewResource = useCallback(
-    (defaultTypeName?: string) => {
-      const defaultType = defaultTypeName
-        ? availableResourceTypes.find((t) => t.key === defaultTypeName) || availableResourceTypes[0]
-        : availableResourceTypes[0];
-      if (!defaultType) {
-        onMessage?.('error', 'No resource types available');
-        return;
-      }
+    (params?: StartNewResourceParams): Result<OrchestratorActionResult> => {
+      try {
+        // Handle both legacy string parameter and new params object
+        let defaultTypeName: string | undefined;
+        let presetId: string | undefined;
+        let presetJson: JsonValue | undefined;
 
-      const resourceId = ('new-resource-' + Date.now()) as unknown as ResourceId;
-      let template = defaultType.createTemplate(resourceId);
-
-      // Stamp conditions from current effective context at creation time (include host-managed values)
-      const contextConditions: ResourceJson.Json.ILooseConditionDecl[] = [];
-      Object.entries(effectiveContext).forEach(([qualifierName, qualifierValue]) => {
-        if (typeof qualifierValue === 'string' && qualifierValue.trim() !== '') {
-          contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
+        if (typeof params === 'string') {
+          // Legacy support - will be removed
+          defaultTypeName = params;
+        } else if (params) {
+          defaultTypeName = params.resourceTypeName;
+          presetId = params.id;
+          presetJson = params.json;
         }
-      });
-      if (contextConditions.length > 0) {
-        template = {
-          ...template,
-          candidates: (template.candidates || []).map((c) => ({
-            ...c,
-            conditions: contextConditions
-          }))
-        };
-      }
 
-      setNewResourceDraft({
-        resourceId: resourceId as string,
-        resourceType: defaultType.key,
-        template,
-        isValid: true
-      });
+        const defaultType = defaultTypeName
+          ? availableResourceTypes.find((t) => t.key === defaultTypeName) || availableResourceTypes[0]
+          : availableResourceTypes[0];
+        if (!defaultType) {
+          const errorMsg = 'No resource types available';
+          onMessage?.('error', errorMsg);
+          return fail(errorMsg);
+        }
+
+        // Use preset ID or generate temporary ID
+        const resourceId = (presetId || 'new-resource-' + Date.now()) as unknown as ResourceId;
+        let template = defaultType.createTemplate(resourceId);
+
+        // Apply preset JSON if provided
+        if (presetJson !== undefined) {
+          template = {
+            ...template,
+            candidates: [
+              {
+                json: (typeof presetJson === 'object' && presetJson !== null && !Array.isArray(presetJson)
+                  ? presetJson
+                  : { value: presetJson }) as ResourceJsonObject,
+                conditions: undefined,
+                isPartial: false,
+                mergeMethod: 'replace' as const
+              }
+            ]
+          };
+        }
+
+        // Stamp conditions from current effective context at creation time (include host-managed values)
+        const contextConditions: ResourceJson.Json.ILooseConditionDecl[] = [];
+        Object.entries(effectiveContext).forEach(([qualifierName, qualifierValue]) => {
+          if (typeof qualifierValue === 'string' && qualifierValue.trim() !== '') {
+            contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
+          }
+        });
+        if (contextConditions.length > 0) {
+          template = {
+            ...template,
+            candidates: (template.candidates || []).map((c) => ({
+              ...c,
+              conditions: contextConditions
+            }))
+          };
+        }
+
+        const draft = {
+          resourceId: resourceId as string,
+          resourceType: defaultType.key,
+          template,
+          isValid: !presetId || !isResourceIdTaken(presetId)
+        };
+
+        setNewResourceDraft(draft);
+        debugLog('Draft created', draft);
+        onDraftUpdate?.(draft);
+
+        return succeed({
+          success: true,
+          draft,
+          pendingResources: new Map(pendingResources)
+        });
+      } catch (error) {
+        const errorMsg = `Failed to start new resource: ${
+          error instanceof Error ? error.message : String(error)
+        }`;
+        onMessage?.('error', errorMsg);
+        return fail(errorMsg);
+      }
     },
-    [availableResourceTypes, onMessage, effectiveContext]
+    [availableResourceTypes, onMessage, effectiveContext, pendingResources, debugLog, onDraftUpdate]
   );
 
-  const updateNewResourceId = useCallback(
-    (id: string) => {
-      if (!newResourceDraft) return;
-
-      // Check if ID already exists
+  // Helper to check if resource ID is taken
+  const isResourceIdTaken = useCallback(
+    (id: string): boolean => {
       const existingIds = new Set<string>();
       if (processedResources?.summary?.resourceIds) {
         processedResources.summary.resourceIds.forEach((rid) => existingIds.add(rid));
       }
       pendingResources.forEach((_, rid) => existingIds.add(rid));
+      return existingIds.has(id);
+    },
+    [processedResources, pendingResources]
+  );
 
-      const isValid = id.length > 0 && !existingIds.has(id);
+  const updateNewResourceId = useCallback(
+    (id: string): Result<OrchestratorActionResult> => {
+      if (!newResourceDraft) {
+        const errorMsg = 'No resource draft to update';
+        return fail(errorMsg);
+      }
 
-      setNewResourceDraft({
+      // Validate ID is not temporary
+      if (id.startsWith('new-resource-')) {
+        const errorMsg = `Cannot use temporary ID: ${id}. Please provide a permanent resource ID.`;
+        onMessage?.('error', errorMsg);
+        return fail(errorMsg);
+      }
+
+      // Check if ID already exists
+      const isValid = id.length > 0 && !isResourceIdTaken(id);
+
+      if (!isValid && id.length > 0) {
+        const errorMsg = `Resource ID '${id}' already exists`;
+        onMessage?.('warning', errorMsg);
+      }
+
+      const draft = {
         ...newResourceDraft,
         resourceId: id,
         template: {
@@ -632,67 +727,170 @@ export function useResolutionState(
           id
         },
         isValid
+      };
+
+      setNewResourceDraft(draft);
+      debugLog('Draft ID updated', draft);
+      onDraftUpdate?.(draft);
+
+      return succeed({
+        success: true,
+        draft,
+        pendingResources: new Map(pendingResources)
       });
     },
-    [newResourceDraft, processedResources, pendingResources]
+    [newResourceDraft, isResourceIdTaken, pendingResources, onMessage, debugLog, onDraftUpdate]
   );
 
   const selectResourceType = useCallback(
-    (typeName: string) => {
-      if (!newResourceDraft) return;
+    (typeName: string): Result<OrchestratorActionResult> => {
+      if (!newResourceDraft) {
+        const errorMsg = 'No resource draft to update';
+        return fail(errorMsg);
+      }
 
       const type = availableResourceTypes.find((t) => t.key === typeName);
       if (!type) {
-        onMessage?.('error', `Resource type ${typeName} not found`);
-        return;
+        const errorMsg = `Resource type '${typeName}' not found. Available types: ${availableResourceTypes
+          .map((t) => t.key)
+          .join(', ')}`;
+        onMessage?.('error', errorMsg);
+        return fail(errorMsg);
       }
 
       const template = type.createTemplate(newResourceDraft.resourceId as unknown as ResourceId);
 
-      setNewResourceDraft({
+      const draft = {
         ...newResourceDraft,
         resourceType: typeName,
         template
+      };
+
+      setNewResourceDraft(draft);
+      debugLog('Draft type selected', draft);
+      onDraftUpdate?.(draft);
+
+      return succeed({
+        success: true,
+        draft,
+        pendingResources: new Map(pendingResources)
       });
     },
-    [newResourceDraft, availableResourceTypes, onMessage]
+    [newResourceDraft, availableResourceTypes, onMessage, pendingResources, debugLog, onDraftUpdate]
   );
 
-  const saveNewResourceAsPending = useCallback(() => {
-    if (!newResourceDraft || !newResourceDraft.isValid) {
-      onMessage?.('error', 'Cannot save invalid resource');
-      return;
+  // New action: Update JSON content of draft
+  const updateNewResourceJson = useCallback(
+    (json: JsonValue): Result<void> => {
+      if (!newResourceDraft) {
+        return fail('No resource draft to update');
+      }
+
+      const updatedTemplate = {
+        ...newResourceDraft.template,
+        candidates: [
+          {
+            json: (typeof json === 'object' && json !== null && !Array.isArray(json)
+              ? json
+              : { value: json }) as ResourceJsonObject,
+            conditions: undefined,
+            isPartial: false,
+            mergeMethod: 'replace' as const
+          }
+        ]
+      };
+
+      const updatedDraft = {
+        ...newResourceDraft,
+        template: updatedTemplate
+      };
+
+      setNewResourceDraft(updatedDraft);
+      debugLog('Draft JSON updated', updatedDraft);
+      onDraftUpdate?.(updatedDraft);
+
+      return succeed(undefined);
+    },
+    [newResourceDraft, debugLog, onDraftUpdate]
+  );
+
+  const saveNewResourceAsPending = useCallback((): Result<OrchestratorActionResult> => {
+    if (!newResourceDraft) {
+      const errorMsg = 'No resource draft to save';
+      return fail(errorMsg);
     }
+
+    // Validate not using temporary ID
+    if (newResourceDraft.resourceId.startsWith('new-resource-')) {
+      const errorMsg = `Cannot save resource with temporary ID '${newResourceDraft.resourceId}'. Please set a permanent resource ID first.`;
+      onMessage?.('error', errorMsg);
+      return fail(errorMsg);
+    }
+
+    // Validate resource type is set
+    if (!newResourceDraft.resourceType) {
+      const errorMsg = 'Cannot save resource without a resource type. Please select a resource type.';
+      onMessage?.('error', errorMsg);
+      return fail(errorMsg);
+    }
+
+    // Validate candidates exist
+    if (!newResourceDraft.template.candidates || newResourceDraft.template.candidates.length === 0) {
+      const errorMsg = 'Cannot save resource without candidates. Please add resource content.';
+      onMessage?.('error', errorMsg);
+      return fail(errorMsg);
+    }
+
+    if (!newResourceDraft.isValid) {
+      const errorMsg = 'Cannot save invalid resource. Please fix validation errors.';
+      onMessage?.('error', errorMsg);
+      return fail(errorMsg);
+    }
+
+    // Ensure resourceTypeName is included in the template
+    const stampedTemplate: ResourceJson.Json.ILooseResourceDecl = {
+      ...newResourceDraft.template,
+      resourceTypeName: newResourceDraft.resourceType,
+      candidates: (newResourceDraft.template.candidates || []).map((c) => {
+        // Stamp conditions from current effective context
+        const contextConditions: ResourceJson.Json.ILooseConditionDecl[] = [];
+        Object.entries(effectiveContext).forEach(([qualifierName, qualifierValue]) => {
+          if (typeof qualifierValue === 'string' && qualifierValue.trim() !== '') {
+            contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
+          }
+        });
+
+        return {
+          ...c,
+          conditions: contextConditions.length > 0 ? contextConditions : c.conditions
+        };
+      })
+    };
 
     setPendingResources((prev) => {
       const newMap = new Map(prev);
-      // Stamp conditions from current effective context onto all candidates for the new resource
-      const contextConditions: ResourceJson.Json.ILooseConditionDecl[] = [];
-      Object.entries(effectiveContext).forEach(([qualifierName, qualifierValue]) => {
-        if (typeof qualifierValue === 'string' && qualifierValue.trim() !== '') {
-          contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
-        }
-      });
-
-      const stampedTemplate: ResourceJson.Json.ILooseResourceDecl = {
-        ...newResourceDraft.template,
-        candidates: (newResourceDraft.template.candidates || []).map((c) => ({
-          ...c,
-          conditions: contextConditions.length > 0 ? contextConditions : c.conditions
-        }))
-      };
-
-      newMap.set(newResourceDraft.resourceId, stampedTemplate);
+      // Always use full resource ID as key
+      const fullResourceId = newResourceDraft.resourceId;
+      newMap.set(fullResourceId, stampedTemplate);
       return newMap;
     });
 
     setNewResourceDraft(undefined);
+    debugLog('Draft saved to pending', newResourceDraft);
+    onDraftUpdate?.(undefined);
     onMessage?.('info', `Resource ${newResourceDraft.resourceId} added to pending`);
-  }, [newResourceDraft, onMessage, effectiveContext]);
+
+    return succeed({
+      success: true,
+      pendingResources: new Map(pendingResources).set(newResourceDraft.resourceId, stampedTemplate)
+    });
+  }, [newResourceDraft, onMessage, effectiveContext, pendingResources, debugLog, onDraftUpdate]);
 
   const cancelNewResource = useCallback(() => {
     setNewResourceDraft(undefined);
-  }, []);
+    debugLog('Draft cancelled');
+    onDraftUpdate?.(undefined);
+  }, [debugLog, onDraftUpdate]);
 
   const removePendingResource = useCallback(
     (resourceId: string) => {
@@ -718,18 +916,106 @@ export function useResolutionState(
     [onMessage]
   );
 
-  const applyPendingResources = useCallback(async () => {
+  // NEW: Atomic API to create a pending resource in one call
+  const createPendingResource = useCallback(
+    async (params: CreatePendingResourceParams): Promise<Result<void>> => {
+      try {
+        const { id, resourceTypeName, json } = params;
+
+        // Validate ID is not temporary
+        if (id.startsWith('new-resource-')) {
+          return fail(
+            `Cannot create resource with temporary ID '${id}'. Please provide a permanent resource ID.`
+          );
+        }
+
+        // Validate ID is not already taken
+        if (isResourceIdTaken(id)) {
+          return fail(`Resource ID '${id}' already exists`);
+        }
+
+        // Validate resource type exists
+        const resourceType = availableResourceTypes.find((t) => t.key === resourceTypeName);
+        if (!resourceType) {
+          return fail(
+            `Resource type '${resourceTypeName}' not found. Available types: ${availableResourceTypes
+              .map((t) => t.key)
+              .join(', ')}`
+          );
+        }
+
+        // Create the ILooseResourceDecl with proper structure
+        let resourceDecl: ResourceJson.Json.ILooseResourceDecl = {
+          id,
+          resourceTypeName,
+          candidates: [
+            {
+              json: (typeof json === 'object' && json !== null && !Array.isArray(json)
+                ? json
+                : { value: json }) as ResourceJsonObject,
+              conditions: undefined,
+              isPartial: false,
+              mergeMethod: 'replace'
+            }
+          ]
+        };
+
+        // Stamp current context conditions if any
+        const contextConditions: ResourceJson.Json.ILooseConditionDecl[] = [];
+        Object.entries(effectiveContext).forEach(([qualifierName, qualifierValue]) => {
+          if (typeof qualifierValue === 'string' && qualifierValue.trim() !== '') {
+            contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
+          }
+        });
+
+        if (contextConditions.length > 0 && resourceDecl.candidates) {
+          // Update the resource declaration with new candidates array
+          resourceDecl = {
+            ...resourceDecl,
+            candidates: [
+              {
+                ...resourceDecl.candidates[0],
+                conditions: contextConditions
+              },
+              ...resourceDecl.candidates.slice(1)
+            ]
+          };
+        }
+
+        // Add to pending resources with full ID as key
+        setPendingResources((prev) => {
+          const newMap = new Map(prev);
+          newMap.set(id, resourceDecl);
+          return newMap;
+        });
+
+        onMessage?.('success', `Resource '${id}' created and added to pending`);
+        return succeed(undefined);
+      } catch (error) {
+        const errorMsg = `Failed to create pending resource: ${
+          error instanceof Error ? error.message : String(error)
+        }`;
+        return fail(errorMsg);
+      }
+    },
+    [availableResourceTypes, isResourceIdTaken, effectiveContext, onMessage]
+  );
+
+  const applyPendingResources = useCallback(async (): Promise<Result<void>> => {
     const hasAnyChanges =
       editedResourcesInternal.size > 0 || pendingResources.size > 0 || pendingResourceDeletions.size > 0;
     if (!hasAnyChanges || !processedResources || !onSystemUpdate) {
       if (!hasAnyChanges) {
         onMessage?.('warning', 'No pending changes to apply');
+        return fail('No pending changes to apply');
       } else if (!processedResources) {
         onMessage?.('error', 'No resource system available');
+        return fail('No resource system available');
       } else if (!onSystemUpdate) {
         onMessage?.('error', 'No system update handler provided');
+        return fail('No system update handler provided');
       }
-      return;
+      return fail('Unable to apply pending resources');
     }
 
     try {
@@ -751,8 +1037,9 @@ export function useResolutionState(
           contextQualifierProvider: processedResources.system.contextQualifierProvider
         });
         if (resolverCreateResult.isFailure()) {
-          onMessage?.('error', `Failed to create resolver: ${resolverCreateResult.message}`);
-          return;
+          const errorMsg = `Failed to create resolver: ${resolverCreateResult.message}`;
+          onMessage?.('error', errorMsg);
+          return fail(errorMsg);
         }
         resolverForContext = resolverCreateResult.value;
       }
@@ -773,8 +1060,9 @@ export function useResolutionState(
       );
 
       if (rebuildResult.isFailure()) {
-        onMessage?.('error', `Failed to apply changes: ${rebuildResult.message}`);
-        return;
+        const errorMsg = `Failed to apply changes: ${rebuildResult.message}`;
+        onMessage?.('error', errorMsg);
+        return fail(errorMsg);
       }
 
       onSystemUpdate(rebuildResult.value);
@@ -791,11 +1079,14 @@ export function useResolutionState(
       if (editedResourcesInternal.size > 0) {
         setEditedResourcesInternal(new Map());
       }
+
+      return succeed(undefined);
     } catch (error) {
-      onMessage?.(
-        'error',
-        `Failed to apply pending resources: ${error instanceof Error ? error.message : String(error)}`
-      );
+      const errorMsg = `Failed to apply pending resources: ${
+        error instanceof Error ? error.message : String(error)
+      }`;
+      onMessage?.('error', errorMsg);
+      return fail(errorMsg);
     } finally {
       setIsApplyingEdits(false);
     }
@@ -851,12 +1142,16 @@ export function useResolutionState(
       hasEdit,
       clearEdits,
       discardEdits,
-      // Resource creation actions
+      // Resource creation actions (multi-step)
       startNewResource,
       updateNewResourceId,
       selectResourceType,
+      updateNewResourceJson,
       saveNewResourceAsPending,
       cancelNewResource,
+      // Atomic resource creation
+      createPendingResource,
+      // Pending resource management
       removePendingResource,
       markResourceForDeletion,
       applyPendingResources,
@@ -876,8 +1171,10 @@ export function useResolutionState(
       startNewResource,
       updateNewResourceId,
       selectResourceType,
+      updateNewResourceJson,
       saveNewResourceAsPending,
       cancelNewResource,
+      createPendingResource,
       removePendingResource,
       markResourceForDeletion,
       applyPendingResources,
