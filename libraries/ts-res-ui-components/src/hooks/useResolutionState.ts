@@ -131,6 +131,72 @@ function findResourceType(
 }
 
 /**
+ * Helper function to create condition declarations from context with proper validation.
+ *
+ * @param effectiveContext - The context values to create conditions from
+ * @param qualifierTypes - The qualifier type collection for validation
+ * @param onMessage - Optional callback for error messages
+ * @returns Result containing condition declarations or error
+ */
+function createContextConditions(
+  effectiveContext: Record<string, string | undefined>,
+  qualifierTypes: any | undefined, // TODO: Replace with proper type when available
+  onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void
+): Result<ResourceJson.Json.ILooseConditionDecl[]> {
+  // If qualifier types are not available, fall back to basic validation
+  if (!qualifierTypes) {
+    const contextConditions: ResourceJson.Json.ILooseConditionDecl[] = [];
+    for (const [qualifierName, qualifierValue] of Object.entries(effectiveContext)) {
+      if (typeof qualifierValue === 'string' && qualifierValue.trim() !== '') {
+        contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
+      }
+    }
+    return succeed(contextConditions);
+  }
+  const contextConditions: ResourceJson.Json.ILooseConditionDecl[] = [];
+
+  for (const [qualifierName, qualifierValue] of Object.entries(effectiveContext)) {
+    if (qualifierValue === undefined || qualifierValue === null) {
+      continue; // Skip undefined/null values
+    }
+
+    // Basic validation - ensure value is a non-empty string
+    // TODO: Use proper qualifier type validation when API is clarified
+    if (typeof qualifierValue === 'string' && qualifierValue.trim() !== '') {
+      contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
+    }
+  }
+
+  return succeed(contextConditions);
+}
+
+/**
+ * Helper function to check if a resource ID already exists.
+ *
+ * @param resourceId - The resource ID to check
+ * @param processedResources - The processed resources (may be null)
+ * @param pendingResources - Map of pending resources
+ * @returns true if the ID already exists, false otherwise
+ */
+function isResourceIdTaken(
+  resourceId: string,
+  processedResources: ProcessedResources | null,
+  pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>
+): boolean {
+  const existingIds = new Set<string>();
+
+  // Add existing resource IDs from the processed resources
+  if (processedResources?.summary?.resourceIds) {
+    processedResources.summary.resourceIds.forEach((rid) => existingIds.add(rid));
+  }
+
+  // Add pending resource IDs
+  pendingResources.forEach((_, rid) => existingIds.add(rid));
+
+  return existingIds.has(resourceId);
+}
+
+/**
  * Hook for managing resource resolution state and editing operations.
  *
  * This hook provides comprehensive state management for resource resolution,
@@ -479,12 +545,16 @@ export function useResolutionState(
         if (pendingResource) {
           // Update the pending resource's template directly
           // Always stamp conditions from the current effective context for pending resources
-          const contextConditions: ResourceJson.Json.ILooseConditionDecl[] = [];
-          Object.entries(effectiveContext).forEach(([qualifierName, qualifierValue]) => {
-            if (typeof qualifierValue === 'string' && qualifierValue.trim() !== '') {
-              contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
-            }
-          });
+          const contextConditionsResult = createContextConditions(
+            effectiveContext,
+            processedResources?.system.qualifierTypes,
+            onMessage
+          );
+          if (contextConditionsResult.isFailure()) {
+            console.warn(`Failed to create context conditions: ${contextConditionsResult.message}`);
+            return; // Skip stamping conditions if validation fails
+          }
+          const contextConditions = contextConditionsResult.value;
           const updatedResource = {
             ...pendingResource,
             candidates: [
@@ -622,28 +692,22 @@ export function useResolutionState(
           return fail('No resource system available');
         }
 
-        // Validate resource ID format (should be full resource ID)
-        if (!params.id || params.id.trim().length === 0) {
-          return fail('Resource ID is required and cannot be empty');
+        // Validate resource ID format first (catches empty, null, and invalid formats)
+        if (!Validate.isValidResourceId(params.id)) {
+          return fail(
+            `Invalid resource ID format '${params.id}'. Resource IDs must be dot-separated identifiers and cannot be empty.`
+          );
         }
 
         // Prevent temporary IDs from being persisted
-        if (params.id.startsWith('new-resource-') || !Validate.isValidResourceId(params.id)) {
+        if (params.id.startsWith('new-resource-')) {
           return fail(
-            params.id.startsWith('new-resource-')
-              ? `Cannot save resource with temporary ID '${params.id}'. Please provide a final resource ID.`
-              : `Invalid resource ID format '${params.id}'. Resource IDs must be dot-separated identifiers.`
+            `Cannot save resource with temporary ID '${params.id}'. Please provide a final resource ID.`
           );
         }
 
         // Validate resource ID uniqueness
-        const existingIds = new Set<string>();
-        if (processedResources?.summary?.resourceIds) {
-          processedResources.summary.resourceIds.forEach((rid) => existingIds.add(rid));
-        }
-        pendingResources.forEach((_, rid) => existingIds.add(rid));
-
-        if (existingIds.has(params.id)) {
+        if (isResourceIdTaken(params.id, processedResources, pendingResources)) {
           return fail(`Resource ID '${params.id}' already exists. Resource IDs must be unique.`);
         }
 
@@ -664,15 +728,18 @@ export function useResolutionState(
         }
 
         // Create resource template using the resource type
-        const template = resourceType.createTemplate(params.id as unknown as ResourceId);
+        const template = resourceType.createTemplate(params.id);
 
         // Create conditions from current effective context
-        const contextConditions: ResourceJson.Json.ILooseConditionDecl[] = [];
-        Object.entries(effectiveContext).forEach(([qualifierName, qualifierValue]) => {
-          if (typeof qualifierValue === 'string' && qualifierValue.trim() !== '') {
-            contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
-          }
-        });
+        const contextConditionsResult = createContextConditions(
+          effectiveContext,
+          processedResources?.system.qualifierTypes,
+          onMessage
+        );
+        if (contextConditionsResult.isFailure()) {
+          return fail(contextConditionsResult.message);
+        }
+        const contextConditions = contextConditionsResult.value;
 
         // Create the loose resource declaration
         const looseResourceDecl: ResourceJson.Json.ILooseResourceDecl = {
@@ -733,13 +800,7 @@ export function useResolutionState(
 
         // If pre-seeded with an ID, validate it
         if (params?.id) {
-          const existingIds = new Set<string>();
-          if (processedResources?.summary?.resourceIds) {
-            processedResources.summary.resourceIds.forEach((rid) => existingIds.add(rid));
-          }
-          pendingResources.forEach((_, rid) => existingIds.add(rid));
-
-          if (existingIds.has(params.id)) {
+          if (isResourceIdTaken(params.id, processedResources, pendingResources)) {
             const error = `Resource ID '${params.id}' already exists. Resource IDs must be unique.`;
             onMessage?.('error', error);
             return fail(`${error}\nUse a different resource ID or let the system generate a temporary one`);
@@ -766,12 +827,15 @@ export function useResolutionState(
         }
 
         // Stamp conditions from current effective context at creation time
-        const contextConditions: ResourceJson.Json.ILooseConditionDecl[] = [];
-        Object.entries(effectiveContext).forEach(([qualifierName, qualifierValue]) => {
-          if (typeof qualifierValue === 'string' && qualifierValue.trim() !== '') {
-            contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
-          }
-        });
+        const contextConditionsResult = createContextConditions(
+          effectiveContext,
+          processedResources?.system.qualifierTypes,
+          onMessage
+        );
+        if (contextConditionsResult.isFailure()) {
+          return fail(contextConditionsResult.message);
+        }
+        const contextConditions = contextConditionsResult.value;
 
         if (contextConditions.length > 0) {
           template = {
@@ -829,17 +893,11 @@ export function useResolutionState(
         }
 
         // Check if ID already exists
-        const existingIds = new Set<string>();
-        if (processedResources?.summary?.resourceIds) {
-          processedResources.summary.resourceIds.forEach((rid) => existingIds.add(rid));
-        }
-        pendingResources.forEach((_, rid) => existingIds.add(rid));
-
         const diagnostics = [];
         let isValid = true;
         let validationError: string | undefined;
 
-        if (existingIds.has(id)) {
+        if (isResourceIdTaken(id, processedResources, pendingResources)) {
           isValid = false;
           validationError = `Resource ID '${id}' already exists. Resource IDs must be unique.`;
           diagnostics.push('ID uniqueness validation failed');
@@ -1050,12 +1108,16 @@ export function useResolutionState(
       setPendingResources((prev) => {
         const newMap = new Map(prev);
         // Stamp conditions from current effective context onto all candidates for the new resource
-        const contextConditions: ResourceJson.Json.ILooseConditionDecl[] = [];
-        Object.entries(effectiveContext).forEach(([qualifierName, qualifierValue]) => {
-          if (typeof qualifierValue === 'string' && qualifierValue.trim() !== '') {
-            contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
-          }
-        });
+        const contextConditionsResult = createContextConditions(
+          effectiveContext,
+          processedResources?.system.qualifierTypes,
+          onMessage
+        );
+        if (contextConditionsResult.isFailure()) {
+          console.warn(`Failed to create context conditions: ${contextConditionsResult.message}`);
+          return prev; // Return previous state if validation fails
+        }
+        const contextConditions = contextConditionsResult.value;
 
         const stampedTemplate: ResourceJson.Json.ILooseResourceDecl = {
           ...newResourceDraft.template,
