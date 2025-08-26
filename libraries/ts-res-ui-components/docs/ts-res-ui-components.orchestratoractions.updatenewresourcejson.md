@@ -7,5 +7,8 @@
 **Signature:**
 
 ```typescript
-updateNewResourceJson: (json: JsonValue) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+updateNewResourceJson: (json: JsonValue) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
 ```

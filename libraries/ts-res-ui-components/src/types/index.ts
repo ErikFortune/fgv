@@ -474,23 +474,6 @@ export interface CreatePendingResourceParams {
 }
 
 /**
- * Result returned by enhanced resolution actions.
- * Provides success/error status and current state snapshots.
- *
- * @public
- */
-export interface ResolutionActionResult<T = unknown> {
-  /** Whether the action completed successfully */
-  success: boolean;
-  /** Error message if the action failed */
-  error?: string;
-  /** Current state snapshot after the action */
-  state?: T;
-  /** Additional diagnostic information */
-  diagnostics?: string[];
-}
-
-/**
  * Parameters for starting a new resource with optional pre-seeding.
  *
  * @example
@@ -549,21 +532,30 @@ export interface ResolutionActions {
   /** Discard all pending edits */
   discardEdits: () => void;
 
-  // Enhanced resource creation actions with improved return values
+  // Enhanced resource creation actions with Result pattern return values
   /** Create a pending resource atomically with validation */
   createPendingResource: (params: CreatePendingResourceParams) => Promise<Result<void>>;
   /** Start creating a new resource (enhanced with optional pre-seeding) */
   startNewResource: (
     params?: StartNewResourceParams
-  ) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+  ) => Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }>;
   /** Update the resource ID for the new resource being created */
-  updateNewResourceId: (id: string) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+  updateNewResourceId: (
+    id: string
+  ) => Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }>;
   /** Select a resource type for the new resource */
-  selectResourceType: (type: string) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+  selectResourceType: (
+    type: string
+  ) => Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }>;
   /** Update the JSON content for the new resource being created */
-  updateNewResourceJson: (json: JsonValue) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+  updateNewResourceJson: (
+    json: JsonValue
+  ) => Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }>;
   /** Add the new resource to pending resources (not applied yet) */
-  saveNewResourceAsPending: () => ResolutionActionResult<Map<string, ResourceJson.Json.ILooseResourceDecl>>;
+  saveNewResourceAsPending: () => Result<{
+    pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>;
+    diagnostics: string[];
+  }>;
   /** Cancel the new resource creation */
   cancelNewResource: () => void;
   /** Remove a pending resource */
@@ -1325,15 +1317,24 @@ export interface OrchestratorActions {
   // Removed: unified apply via applyPendingResources
   discardResourceEdits: () => void;
 
-  // Resource creation actions (enhanced with atomic API and better return values)
+  // Resource creation actions (enhanced with atomic API and Result pattern return values)
   createPendingResource: (params: CreatePendingResourceParams) => Promise<Result<void>>;
   startNewResource: (
     params?: StartNewResourceParams
-  ) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
-  updateNewResourceId: (id: string) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
-  selectResourceType: (type: string) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
-  updateNewResourceJson: (json: JsonValue) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
-  saveNewResourceAsPending: () => ResolutionActionResult<Map<string, ResourceJson.Json.ILooseResourceDecl>>;
+  ) => Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }>;
+  updateNewResourceId: (
+    id: string
+  ) => Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }>;
+  selectResourceType: (
+    type: string
+  ) => Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }>;
+  updateNewResourceJson: (
+    json: JsonValue
+  ) => Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }>;
+  saveNewResourceAsPending: () => Result<{
+    pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>;
+    diagnostics: string[];
+  }>;
   cancelNewResource: () => void;
   removePendingResource: (resourceId: string) => void;
   markResourceForDeletion: (resourceId: string) => void;

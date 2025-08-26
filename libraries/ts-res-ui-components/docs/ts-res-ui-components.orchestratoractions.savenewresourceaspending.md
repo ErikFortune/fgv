@@ -7,5 +7,8 @@
 **Signature:**
 
 ```typescript
-saveNewResourceAsPending: () => ResolutionActionResult<Map<string, ResourceJson.Json.ILooseResourceDecl>>;
+saveNewResourceAsPending: () => Result<{
+        pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>;
+        diagnostics: string[];
+    }>;
 ```

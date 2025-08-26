@@ -7,5 +7,8 @@
 **Signature:**
 
 ```typescript
-updateNewResourceId: (id: string) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+updateNewResourceId: (id: string) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
 ```

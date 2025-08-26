@@ -402,7 +402,10 @@ export interface OrchestratorActions {
     // (undocumented)
     resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<JsonValue>>;
     // (undocumented)
-    saveNewResourceAsPending: () => ResolutionActionResult<Map<string, ResourceJson.Json.ILooseResourceDecl>>;
+    saveNewResourceAsPending: () => Result<{
+        pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>;
+        diagnostics: string[];
+    }>;
     // (undocumented)
     saveResourceEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
     // (undocumented)
@@ -410,22 +413,33 @@ export interface OrchestratorActions {
     // (undocumented)
     selectResourceForResolution: (resourceId: string) => void;
     // (undocumented)
-    selectResourceType: (type: string) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+    selectResourceType: (type: string) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
     // (undocumented)
     setResolutionViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
     // Warning: (ae-forgotten-export) The symbol "StartNewResourceParams" needs to be exported by the entry point index.d.ts
-    // Warning: (ae-forgotten-export) The symbol "ResolutionActionResult" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
-    startNewResource: (params?: StartNewResourceParams) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+    startNewResource: (params?: StartNewResourceParams) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
     // (undocumented)
     updateConfiguration: (config: Config.Model.ISystemConfiguration) => void;
     // (undocumented)
     updateFilterState: (state: Partial<FilterState>) => void;
     // (undocumented)
-    updateNewResourceId: (id: string) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+    updateNewResourceId: (id: string) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
     // (undocumented)
-    updateNewResourceJson: (json: JsonValue) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+    updateNewResourceJson: (json: JsonValue) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
     // (undocumented)
     updateResolutionContext: (qualifierName: string, value: string | undefined) => void;
 }
@@ -591,14 +605,29 @@ interface ResolutionActions {
     removePendingResource: (resourceId: string) => void;
     resetCache: () => void;
     saveEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
-    saveNewResourceAsPending: () => ResolutionActionResult<Map<string, ResourceJson.Json.ILooseResourceDecl>>;
+    saveNewResourceAsPending: () => Result<{
+        pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>;
+        diagnostics: string[];
+    }>;
     selectResource: (resourceId: string) => void;
-    selectResourceType: (type: string) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+    selectResourceType: (type: string) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
     setViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
-    startNewResource: (params?: StartNewResourceParams) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+    startNewResource: (params?: StartNewResourceParams) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
     updateContextValue: (qualifierName: string, value: string | undefined) => void;
-    updateNewResourceId: (id: string) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
-    updateNewResourceJson: (json: JsonValue) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+    updateNewResourceId: (id: string) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
+    updateNewResourceJson: (json: JsonValue) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
 }
 
 // @public

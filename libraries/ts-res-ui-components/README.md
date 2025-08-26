@@ -607,15 +607,15 @@ The traditional step-by-step workflow is still available:
 ```tsx
 // Step 1: Start a new resource
 const startResult = actions.startNewResource({ defaultTypeName: 'json' });
-if (!startResult.success) {
-  console.error('Failed to start resource:', startResult.error);
+if (startResult.isFailure()) {
+  console.error('Failed to start resource:', startResult.message);
   return;
 }
 
 // Step 2: Set the final resource ID
 const idResult = actions.updateNewResourceId('platform.languages.az-AZ');
-if (!idResult.success) {
-  console.error('Invalid resource ID:', idResult.error);
+if (idResult.isFailure()) {
+  console.error('Invalid resource ID:', idResult.message);
   return;
 }
 
@@ -624,15 +624,15 @@ const jsonResult = actions.updateNewResourceJson({
   text: 'Welcome', 
   locale: 'az-AZ' 
 });
-if (!jsonResult.success) {
-  console.error('Invalid JSON:', jsonResult.error);
+if (jsonResult.isFailure()) {
+  console.error('Invalid JSON:', jsonResult.message);
   return;
 }
 
 // Step 4: Save as pending
 const saveResult = actions.saveNewResourceAsPending();
-if (!saveResult.success) {
-  console.error('Failed to save:', saveResult.error);
+if (saveResult.isFailure()) {
+  console.error('Failed to save:', saveResult.message);
   return;
 }
 
@@ -642,11 +642,22 @@ await actions.applyPendingResources();
 
 **Enhanced Action Return Values:**
 
-All resource creation actions now return `ResolutionActionResult<T>` objects with:
-- `success: boolean` - Whether the action completed successfully
-- `error?: string` - Error message if the action failed
-- `state?: T` - Current state snapshot after the action
-- `diagnostics?: string[]` - Additional diagnostic information
+All resource creation actions now return `Result<T>` objects following the standard Result pattern:
+- Use `.isSuccess()` and `.isFailure()` to check status
+- Access success values with `.value` property (contains `draft`/`pendingResources` and `diagnostics`)
+- Access error messages with `.message` property
+- Multiline error messages include diagnostic information
+
+```tsx
+// Example: Working with Result values
+const startResult = actions.startNewResource({ defaultTypeName: 'json' });
+if (startResult.isSuccess()) {
+  console.log('Started draft:', startResult.value.draft);
+  console.log('Diagnostics:', startResult.value.diagnostics);
+} else {
+  console.error('Error:', startResult.message); // May include diagnostics
+}
+```
 
 ##### UI Integration Example
 

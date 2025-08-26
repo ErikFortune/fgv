@@ -544,7 +544,7 @@ Description
 
 </td><td>
 
-() =&gt; ResolutionActionResult&lt;Map&lt;string, ResourceJson.Json.ILooseResourceDecl&gt;&gt;
+() =&gt; Result&lt;{ pendingResources: Map&lt;string, ResourceJson.Json.ILooseResourceDecl&gt;; diagnostics: string\[\]; }&gt;
 
 
 </td><td>
@@ -612,7 +612,7 @@ Description
 
 </td><td>
 
-(type: string) =&gt; ResolutionActionResult&lt;[ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]&gt;
+(type: string) =&gt; Result&lt;{ draft: [ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]; diagnostics: string\[\]; }&gt;
 
 
 </td><td>
@@ -646,7 +646,7 @@ Description
 
 </td><td>
 
-(params?: StartNewResourceParams) =&gt; ResolutionActionResult&lt;[ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]&gt;
+(params?: StartNewResourceParams) =&gt; Result&lt;{ draft: [ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]; diagnostics: string\[\]; }&gt;
 
 
 </td><td>
@@ -697,7 +697,7 @@ Description
 
 </td><td>
 
-(id: string) =&gt; ResolutionActionResult&lt;[ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]&gt;
+(id: string) =&gt; Result&lt;{ draft: [ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]; diagnostics: string\[\]; }&gt;
 
 
 </td><td>
@@ -714,7 +714,7 @@ Description
 
 </td><td>
 
-(json: JsonValue) =&gt; ResolutionActionResult&lt;[ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]&gt;
+(json: JsonValue) =&gt; Result&lt;{ draft: [ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]; diagnostics: string\[\]; }&gt;
 
 
 </td><td>

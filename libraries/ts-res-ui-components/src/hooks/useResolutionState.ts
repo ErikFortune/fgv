@@ -9,7 +9,6 @@ import {
   ProcessedResources,
   JsonValue,
   CreatePendingResourceParams,
-  ResolutionActionResult,
   StartNewResourceParams
 } from '../types';
 import {
@@ -667,9 +666,11 @@ export function useResolutionState(
     [processedResources, pendingResources, availableResourceTypes, effectiveContext, onMessage]
   );
 
-  // Resource creation actions (enhanced with better return values)
+  // Resource creation actions (enhanced with Result pattern return values)
   const startNewResource = useCallback(
-    (params?: StartNewResourceParams): ResolutionActionResult<ResolutionState['newResourceDraft']> => {
+    (
+      params?: StartNewResourceParams
+    ): Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }> => {
       try {
         // Determine resource type to use
         let targetTypeName = params?.defaultTypeName || params?.resourceTypeName;
@@ -680,11 +681,8 @@ export function useResolutionState(
         if (!targetType) {
           const error = 'No resource types available for resource creation';
           onMessage?.('error', error);
-          return {
-            success: false,
-            error,
-            diagnostics: [`Available types: ${availableResourceTypes.map((t) => t.key).join(', ')}`]
-          };
+          const diagnostics = `Available types: ${availableResourceTypes.map((t) => t.key).join(', ')}`;
+          return fail(`${error}\n${diagnostics}`);
         }
 
         // Determine resource ID (pre-seeded or generate temporary)
@@ -701,11 +699,7 @@ export function useResolutionState(
           if (existingIds.has(params.id)) {
             const error = `Resource ID '${params.id}' already exists. Resource IDs must be unique.`;
             onMessage?.('error', error);
-            return {
-              success: false,
-              error,
-              diagnostics: ['Use a different resource ID or let the system generate a temporary one']
-            };
+            return fail(`${error}\nUse a different resource ID or let the system generate a temporary one`);
           }
         }
 
@@ -763,47 +757,32 @@ export function useResolutionState(
           diagnostics.push(`Stamped with ${contextConditions.length} context conditions`);
 
         onMessage?.('info', `Started new ${targetType.key} resource: ${resourceId}`);
-        return {
-          success: true,
-          state: draft,
-          diagnostics
-        };
+        return succeed({ draft, diagnostics });
       } catch (error) {
         const errorMessage = `Failed to start new resource: ${
           error instanceof Error ? error.message : String(error)
         }`;
         onMessage?.('error', errorMessage);
-        return {
-          success: false,
-          error: errorMessage
-        };
+        return fail(errorMessage);
       }
     },
     [availableResourceTypes, onMessage, effectiveContext, processedResources, pendingResources]
   );
 
   const updateNewResourceId = useCallback(
-    (id: string): ResolutionActionResult<ResolutionState['newResourceDraft']> => {
+    (id: string): Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }> => {
       try {
         if (!newResourceDraft) {
           const error = 'No resource draft in progress. Call startNewResource first.';
           onMessage?.('error', error);
-          return {
-            success: false,
-            error,
-            diagnostics: ['Use startNewResource() to begin creating a new resource']
-          };
+          return fail(`${error}\nUse startNewResource() to begin creating a new resource`);
         }
 
         // Validate ID format
         if (!id || id.trim().length === 0) {
           const error = 'Resource ID cannot be empty';
           onMessage?.('error', error);
-          return {
-            success: false,
-            error,
-            state: newResourceDraft
-          };
+          return fail(error);
         }
 
         // Check if ID already exists
@@ -843,41 +822,29 @@ export function useResolutionState(
 
         if (validationError) {
           onMessage?.('warning', validationError);
+          return fail(`${validationError}\n${diagnostics.join('\n')}`);
         } else {
           onMessage?.('info', `Updated resource ID to: ${id}`);
+          return succeed({ draft: updatedDraft, diagnostics });
         }
-
-        return {
-          success: true,
-          state: updatedDraft,
-          diagnostics,
-          ...(validationError ? { error: validationError } : {})
-        };
       } catch (error) {
         const errorMessage = `Failed to update resource ID: ${
           error instanceof Error ? error.message : String(error)
         }`;
         onMessage?.('error', errorMessage);
-        return {
-          success: false,
-          error: errorMessage
-        };
+        return fail(errorMessage);
       }
     },
     [newResourceDraft, processedResources, pendingResources, onMessage]
   );
 
   const selectResourceType = useCallback(
-    (typeName: string): ResolutionActionResult<ResolutionState['newResourceDraft']> => {
+    (typeName: string): Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }> => {
       try {
         if (!newResourceDraft) {
           const error = 'No resource draft in progress. Call startNewResource first.';
           onMessage?.('error', error);
-          return {
-            success: false,
-            error,
-            diagnostics: ['Use startNewResource() to begin creating a new resource']
-          };
+          return fail(`${error}\nUse startNewResource() to begin creating a new resource`);
         }
 
         const type = availableResourceTypes.find((t) => t.key === typeName);
@@ -885,12 +852,7 @@ export function useResolutionState(
           const availableTypes = availableResourceTypes.map((t) => t.key).join(', ');
           const error = `Resource type '${typeName}' not found`;
           onMessage?.('error', error);
-          return {
-            success: false,
-            error,
-            state: newResourceDraft,
-            diagnostics: [`Available types: ${availableTypes}`]
-          };
+          return fail(`${error}\nAvailable types: ${availableTypes}`);
         }
 
         const template = type.createTemplate(newResourceDraft.resourceId as unknown as ResourceId);
@@ -904,20 +866,16 @@ export function useResolutionState(
         setNewResourceDraft(updatedDraft);
         onMessage?.('info', `Selected resource type: ${typeName}`);
 
-        return {
-          success: true,
-          state: updatedDraft,
+        return succeed({
+          draft: updatedDraft,
           diagnostics: [`Created ${typeName} template for resource ${newResourceDraft.resourceId}`]
-        };
+        });
       } catch (error) {
         const errorMessage = `Failed to select resource type: ${
           error instanceof Error ? error.message : String(error)
         }`;
         onMessage?.('error', errorMessage);
-        return {
-          success: false,
-          error: errorMessage
-        };
+        return fail(errorMessage);
       }
     },
     [newResourceDraft, availableResourceTypes, onMessage]
@@ -925,27 +883,19 @@ export function useResolutionState(
 
   // New public updateNewResourceJson action
   const updateNewResourceJson = useCallback(
-    (json: JsonValue): ResolutionActionResult<ResolutionState['newResourceDraft']> => {
+    (json: JsonValue): Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }> => {
       try {
         if (!newResourceDraft) {
           const error = 'No resource draft in progress. Call startNewResource first.';
           onMessage?.('error', error);
-          return {
-            success: false,
-            error,
-            diagnostics: ['Use startNewResource() to begin creating a new resource']
-          };
+          return fail(`${error}\nUse startNewResource() to begin creating a new resource`);
         }
 
         // Validate JSON content
         if (json === undefined || json === null) {
           const error = 'JSON content cannot be null or undefined';
           onMessage?.('error', error);
-          return {
-            success: false,
-            error,
-            state: newResourceDraft
-          };
+          return fail(error);
         }
 
         // Update the template with new JSON content
@@ -972,38 +922,31 @@ export function useResolutionState(
         setNewResourceDraft(updatedDraft);
         onMessage?.('info', `Updated JSON content for resource ${newResourceDraft.resourceId}`);
 
-        return {
-          success: true,
-          state: updatedDraft,
+        return succeed({
+          draft: updatedDraft,
           diagnostics: ['JSON content updated successfully', 'Resource is ready for saving as pending']
-        };
+        });
       } catch (error) {
         const errorMessage = `Failed to update resource JSON: ${
           error instanceof Error ? error.message : String(error)
         }`;
         onMessage?.('error', errorMessage);
-        return {
-          success: false,
-          error: errorMessage
-        };
+        return fail(errorMessage);
       }
     },
     [newResourceDraft, onMessage]
   );
 
-  const saveNewResourceAsPending = useCallback((): ResolutionActionResult<
-    Map<string, ResourceJson.Json.ILooseResourceDecl>
-  > => {
+  const saveNewResourceAsPending = useCallback((): Result<{
+    pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>;
+    diagnostics: string[];
+  }> => {
     try {
       // Enhanced validation with specific error messages
       if (!newResourceDraft) {
         const error = 'No resource draft in progress. Call startNewResource first.';
         onMessage?.('error', error);
-        return {
-          success: false,
-          error,
-          diagnostics: ['Use startNewResource() to begin creating a new resource']
-        };
+        return fail(`${error}\nUse startNewResource() to begin creating a new resource`);
       }
 
       if (!newResourceDraft.isValid) {
@@ -1020,22 +963,14 @@ export function useResolutionState(
 
         const error = `Cannot save resource with validation errors: ${errors.join(', ')}`;
         onMessage?.('error', error);
-        return {
-          success: false,
-          error,
-          diagnostics: errors
-        };
+        return fail(`${error}\n${errors.join('\n')}`);
       }
 
       // Prevent temporary IDs from being persisted (additional safety check)
       if (newResourceDraft.resourceId.startsWith('new-resource-')) {
         const error = `Cannot save resource with temporary ID '${newResourceDraft.resourceId}'. Please set a final resource ID first.`;
         onMessage?.('error', error);
-        return {
-          success: false,
-          error,
-          diagnostics: ['Use updateNewResourceId() to set a final resource ID before saving']
-        };
+        return fail(`${error}\nUse updateNewResourceId() to set a final resource ID before saving`);
       }
 
       // Check resource type exists
@@ -1046,22 +981,14 @@ export function useResolutionState(
         const error = `Resource type '${newResourceDraft.resourceType}' is not available`;
         const availableTypes = availableResourceTypes.map((t) => t.key).join(', ');
         onMessage?.('error', error);
-        return {
-          success: false,
-          error,
-          diagnostics: [`Available types: ${availableTypes}`]
-        };
+        return fail(`${error}\nAvailable types: ${availableTypes}`);
       }
 
       // Check candidates exist
       if (!newResourceDraft.template.candidates || newResourceDraft.template.candidates.length === 0) {
         const error = 'Resource template must have at least one candidate';
         onMessage?.('error', error);
-        return {
-          success: false,
-          error,
-          diagnostics: ['Use updateNewResourceJson() to add JSON content to the resource']
-        };
+        return fail(`${error}\nUse updateNewResourceJson() to add JSON content to the resource`);
       }
 
       let updatedPendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>;
@@ -1102,20 +1029,16 @@ export function useResolutionState(
 
       onMessage?.('success', `Resource '${newResourceDraft.resourceId}' added to pending resources`);
 
-      return {
-        success: true,
-        state: updatedPendingResources!,
+      return succeed({
+        pendingResources: updatedPendingResources!,
         diagnostics
-      };
+      });
     } catch (error) {
       const errorMessage = `Failed to save resource as pending: ${
         error instanceof Error ? error.message : String(error)
       }`;
       onMessage?.('error', errorMessage);
-      return {
-        success: false,
-        error: errorMessage
-      };
+      return fail(errorMessage);
     }
   }, [newResourceDraft, onMessage, effectiveContext, availableResourceTypes]);
 

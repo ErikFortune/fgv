@@ -9,5 +9,8 @@ Update the JSON content for the new resource being created
 **Signature:**
 
 ```typescript
-updateNewResourceJson: (json: JsonValue) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+updateNewResourceJson: (json: JsonValue) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
 ```

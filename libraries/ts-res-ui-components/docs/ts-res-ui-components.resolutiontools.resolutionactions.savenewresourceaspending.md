@@ -9,5 +9,8 @@ Add the new resource to pending resources (not applied yet)
 **Signature:**
 
 ```typescript
-saveNewResourceAsPending: () => ResolutionActionResult<Map<string, ResourceJson.Json.ILooseResourceDecl>>;
+saveNewResourceAsPending: () => Result<{
+        pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>;
+        diagnostics: string[];
+    }>;
 ```

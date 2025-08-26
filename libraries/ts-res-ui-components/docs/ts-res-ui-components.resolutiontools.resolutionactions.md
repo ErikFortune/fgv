@@ -292,7 +292,7 @@ Save an edit to a resource value
 
 </td><td>
 
-() =&gt; ResolutionActionResult&lt;Map&lt;string, ResourceJson.Json.ILooseResourceDecl&gt;&gt;
+() =&gt; Result&lt;{ pendingResources: Map&lt;string, ResourceJson.Json.ILooseResourceDecl&gt;; diagnostics: string\[\]; }&gt;
 
 
 </td><td>
@@ -330,7 +330,7 @@ Select a resource for detailed resolution testing
 
 </td><td>
 
-(type: string) =&gt; ResolutionActionResult&lt;[ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]&gt;
+(type: string) =&gt; Result&lt;{ draft: [ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]; diagnostics: string\[\]; }&gt;
 
 
 </td><td>
@@ -368,7 +368,7 @@ Change how resolution results are displayed
 
 </td><td>
 
-(params?: StartNewResourceParams) =&gt; ResolutionActionResult&lt;[ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]&gt;
+(params?: StartNewResourceParams) =&gt; Result&lt;{ draft: [ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]; diagnostics: string\[\]; }&gt;
 
 
 </td><td>
@@ -406,7 +406,7 @@ Update a context value for resolution testing
 
 </td><td>
 
-(id: string) =&gt; ResolutionActionResult&lt;[ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]&gt;
+(id: string) =&gt; Result&lt;{ draft: [ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]; diagnostics: string\[\]; }&gt;
 
 
 </td><td>
@@ -425,7 +425,7 @@ Update the resource ID for the new resource being created
 
 </td><td>
 
-(json: JsonValue) =&gt; ResolutionActionResult&lt;[ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]&gt;
+(json: JsonValue) =&gt; Result&lt;{ draft: [ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]; diagnostics: string\[\]; }&gt;
 
 
 </td><td>
