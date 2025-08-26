@@ -55,6 +55,58 @@ This library requires the following peer dependencies:
 
 ## Quick Start
 
+### Canonical New Resource Flow
+
+The recommended approach for programmatic resource creation:
+
+```tsx
+import { ResolutionTools } from '@fgv/ts-res-ui-components';
+
+// Single atomic operation (recommended)
+async function createResourceAtomic(actions) {
+  const result = await actions.createPendingResource({
+    id: 'platform.languages.az-AZ',
+    resourceTypeName: 'json',
+    json: { text: 'Welcome', locale: 'az-AZ' }
+  });
+
+  if (result.isSuccess()) {
+    console.log('Resource created successfully');
+    await actions.applyPendingResources();
+  } else {
+    console.error('Creation failed:', result.message);
+  }
+}
+
+// Step-by-step workflow (if needed)
+function createResourceStepByStep(actions) {
+  // 1) Start new resource
+  const startResult = actions.startNewResource({ defaultTypeName: 'json' });
+  if (!startResult.success) return;
+
+  // 2) Update resource ID  
+  const idResult = actions.updateNewResourceId('platform.languages.az-AZ');
+  if (!idResult.success) return;
+
+  // 3) Select resource type (if step 1 didn't set it)
+  const typeResult = actions.selectResourceType('json');
+  if (!typeResult.success) return;
+
+  // 4) Update JSON content (optional, recommended)
+  const jsonResult = actions.updateNewResourceJson({ 
+    text: 'Welcome', 
+    locale: 'az-AZ' 
+  });
+  if (!jsonResult.success) return;
+
+  // 5) Save as pending
+  const saveResult = actions.saveNewResourceAsPending();
+  if (!saveResult.success) return;
+
+  // Note: Do NOT call saveResourceEdit for brand-new resources
+}
+```
+
 ### Minimal Editing App (Unified Apply)
 
 ```tsx
@@ -79,9 +131,12 @@ export default function App() {
             hasEdit: actions.hasResourceEdit,
             clearEdits: actions.clearResourceEdits,
             discardEdits: actions.discardResourceEdits,
+            // Enhanced resource creation actions with atomic API
+            createPendingResource: actions.createPendingResource,
             startNewResource: actions.startNewResource,
             updateNewResourceId: actions.updateNewResourceId,
             selectResourceType: actions.selectResourceType,
+            updateNewResourceJson: actions.updateNewResourceJson,
             saveNewResourceAsPending: actions.saveNewResourceAsPending,
             cancelNewResource: actions.cancelNewResource,
             removePendingResource: actions.removePendingResource,
@@ -515,47 +570,105 @@ This is particularly useful when:
 
 #### Resource Creation
 
-ResolutionView now supports creating new resources directly in the UI with a pending/apply workflow similar to context management:
+ResolutionView supports both atomic and sequential resource creation workflows:
+
+##### Atomic Resource Creation (Recommended)
+
+Use the new `createPendingResource` API for simple, robust resource creation:
 
 ```tsx
-// Basic resource creation - user selects resource type
+// Single atomic call to create a pending resource
+const result = await actions.createPendingResource({
+  id: 'platform.languages.az-AZ',           // Full resource ID (required)
+  resourceTypeName: 'json',                 // Resource type (required)
+  json: { text: 'Welcome', locale: 'az-AZ' } // JSON content (required)
+});
+
+if (result.isSuccess()) {
+  console.log('Resource created and added to pending resources');
+  // Apply all pending changes when ready
+  await actions.applyPendingResources();
+} else {
+  console.error('Failed to create resource:', result.message);
+}
+```
+
+**Benefits of the atomic API:**
+- **Single Operation**: No multi-step sequencing required
+- **Better Error Handling**: Returns `Result<void>` with detailed error messages
+- **Validation**: Comprehensive validation of ID, type, and JSON content
+- **Safe**: Prevents temporary IDs and ensures uniqueness
+- **Context Stamping**: Automatically applies current context as conditions
+
+##### Sequential Resource Creation (Legacy)
+
+The traditional step-by-step workflow is still available:
+
+```tsx
+// Step 1: Start a new resource
+const startResult = actions.startNewResource({ defaultTypeName: 'json' });
+if (!startResult.success) {
+  console.error('Failed to start resource:', startResult.error);
+  return;
+}
+
+// Step 2: Set the final resource ID
+const idResult = actions.updateNewResourceId('platform.languages.az-AZ');
+if (!idResult.success) {
+  console.error('Invalid resource ID:', idResult.error);
+  return;
+}
+
+// Step 3: Update JSON content (optional)
+const jsonResult = actions.updateNewResourceJson({ 
+  text: 'Welcome', 
+  locale: 'az-AZ' 
+});
+if (!jsonResult.success) {
+  console.error('Invalid JSON:', jsonResult.error);
+  return;
+}
+
+// Step 4: Save as pending
+const saveResult = actions.saveNewResourceAsPending();
+if (!saveResult.success) {
+  console.error('Failed to save:', saveResult.error);
+  return;
+}
+
+// Step 5: Apply all pending changes
+await actions.applyPendingResources();
+```
+
+**Enhanced Action Return Values:**
+
+All resource creation actions now return `ResolutionActionResult<T>` objects with:
+- `success: boolean` - Whether the action completed successfully
+- `error?: string` - Error message if the action failed
+- `state?: T` - Current state snapshot after the action
+- `diagnostics?: string[]` - Additional diagnostic information
+
+##### UI Integration Example
+
+```tsx
 <ResolutionView
   resources={state.processedResources}
   resolutionState={resolutionState}
   resolutionActions={resolutionActions}
   allowResourceCreation={true}
+  defaultResourceType="json"  // Optional: Host-controlled resource type
+  showPendingResourcesInList={true}  // Show pending resources with visual distinction
   onPendingResourcesApplied={(added, deleted) => {
+    console.log(`Applied ${added.length} additions, ${deleted.length} deletions`);
     // Rebuild resource manager with new resources
     const updatedResources = rebuildWithResources(added, deleted);
     setState({ processedResources: updatedResources });
   }}
 />
-
-// Host-controlled resource type
-<ResolutionView
-  resources={state.processedResources}
-  resolutionState={resolutionState}
-  resolutionActions={resolutionActions}
-  allowResourceCreation={true}
-  defaultResourceType="json"  // Type selector hidden, always creates JSON resources
-  onPendingResourcesApplied={(added, deleted) => {
-    console.log(`Applied ${added.length} additions, ${deleted.length} deletions`);
-  }}
-/>
-
-// With custom resource types
-<ResolutionView
-  resources={state.processedResources}
-  resolutionState={resolutionState}
-  resolutionActions={resolutionActions}
-  allowResourceCreation={true}
-  resourceTypeFactory={[customType1, customType2]}  // Provide custom resource types
-  showPendingResourcesInList={true}  // Show pending resources with visual distinction
-/>
 ```
 
 **Unified Change Workflow (Edits, Additions, Deletions):**
-1. Click "Add Resource" in the picker header to create new resources (if enabled)
+1. Use `createPendingResource()` or the traditional UI workflow to create resources
 2. Edit existing resources from the results pane using the JSON or custom editors
 3. Mark resources for deletion where supported
 4. All changes appear in a single "Pending Changes" bar with counts (edits/additions/deletions)
@@ -563,12 +676,70 @@ ResolutionView now supports creating new resources directly in the UI with a pen
 6. Or click "Discard Changes" to remove all pending changes
 
 **Key features:**
+- **Atomic Creation**: Single API call creates complete resources
+- **Enhanced Error Handling**: Detailed validation and error messages
 - **Template-based creation**: Resource types provide default templates for new resources
 - **Pending workflow**: Resources aren't added immediately, allowing review before applying
 - **Host control**: Can specify a default resource type to hide the type selector
 - **Batch operations**: Create multiple resources before applying
 - **Visual feedback**: Pending resources shown with distinct styling
-- **Validation**: Resource IDs are validated for uniqueness
+- **ID Validation**: Comprehensive resource ID validation and uniqueness checking
+
+##### Resource ID Requirements
+
+**IMPORTANT**: All pending resources use **full resource IDs** as keys, never leaf IDs:
+
+```tsx
+// ✅ Correct: Full resource IDs
+createPendingResource({
+  id: 'platform.languages.az-AZ',    // Full path
+  resourceTypeName: 'json',
+  json: { text: 'Azərbaycan dili' }
+});
+
+// ❌ Wrong: Leaf IDs
+createPendingResource({
+  id: 'az-AZ',                       // Just the leaf - will be rejected
+  resourceTypeName: 'json', 
+  json: { text: 'Azərbaycan dili' }
+});
+```
+
+##### Helper Functions for Pending Resources
+
+```tsx
+import { ResolutionTools } from '@fgv/ts-res-ui-components';
+
+// Get pending resources by type
+const jsonResources = ResolutionTools.getPendingAdditionsByType(
+  resolutionState.pendingResources, 
+  'json'
+);
+
+// Check if a resource is pending
+const isPending = ResolutionTools.isPendingAddition(
+  'platform.languages.az-AZ', 
+  resolutionState.pendingResources
+);
+
+// Work with resource IDs
+const leafIdResult = ResolutionTools.deriveLeafId('platform.languages.az-AZ');
+console.log(leafIdResult.value); // 'az-AZ'
+
+const fullIdResult = ResolutionTools.deriveFullId('platform.languages', 'az-AZ');
+console.log(fullIdResult.value); // 'platform.languages.az-AZ'
+
+// Get statistics
+const stats = ResolutionTools.getPendingResourceStats(resolutionState.pendingResources);
+console.log(`${stats.totalCount} pending resources`);
+console.log(`Types: ${Object.keys(stats.byType).join(', ')}`);
+
+// Validate pending resource keys (diagnostic)
+const validation = ResolutionTools.validatePendingResourceKeys(resolutionState.pendingResources);
+if (validation.isFailure()) {
+  console.error('Key validation failed:', validation.message);
+}
+```
 
 #### Custom Resource Editors
 

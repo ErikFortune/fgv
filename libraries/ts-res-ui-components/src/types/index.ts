@@ -451,6 +451,77 @@ export interface ResolutionState {
 }
 
 /**
+ * Parameters for creating a pending resource atomically.
+ *
+ * @example
+ * ```typescript
+ * const params: CreatePendingResourceParams = {
+ *   id: 'platform.languages.az-AZ',
+ *   resourceTypeName: 'json',
+ *   json: { text: 'Welcome', locale: 'az-AZ' }
+ * };
+ * ```
+ *
+ * @public
+ */
+export interface CreatePendingResourceParams {
+  /** Full resource ID (e.g., 'platform.languages.az-AZ') - must be unique */
+  id: string;
+  /** Name of the resource type to use for validation and template creation */
+  resourceTypeName: string;
+  /** JSON content for the resource candidate */
+  json: JsonValue;
+}
+
+/**
+ * Result returned by enhanced resolution actions.
+ * Provides success/error status and current state snapshots.
+ *
+ * @public
+ */
+export interface ResolutionActionResult<T = unknown> {
+  /** Whether the action completed successfully */
+  success: boolean;
+  /** Error message if the action failed */
+  error?: string;
+  /** Current state snapshot after the action */
+  state?: T;
+  /** Additional diagnostic information */
+  diagnostics?: string[];
+}
+
+/**
+ * Parameters for starting a new resource with optional pre-seeding.
+ *
+ * @example
+ * ```typescript
+ * // Basic start with just type
+ * const basicParams: StartNewResourceParams = {
+ *   defaultTypeName: 'json'
+ * };
+ *
+ * // Pre-seeded start with full data
+ * const preSeededParams: StartNewResourceParams = {
+ *   id: 'user.welcome',
+ *   resourceTypeName: 'json',
+ *   json: { text: 'Welcome!' }
+ * };
+ * ```
+ *
+ * @public
+ */
+export interface StartNewResourceParams {
+  /** Resource type to use (optional - will use first available if not provided) */
+  defaultTypeName?: string;
+  /** Pre-seed with specific ID (optional) */
+  id?: string;
+  /** Pre-seed with specific resource type name (optional) */
+  resourceTypeName?: string;
+  /** Pre-seed with specific JSON content (optional) */
+  json?: JsonValue;
+}
+
+/**
  * Actions available for managing resource resolution testing and editing.
  * Provides methods for context management, resource selection, and value editing.
  *
@@ -477,14 +548,22 @@ export interface ResolutionActions {
   clearEdits: () => void;
   /** Discard all pending edits */
   discardEdits: () => void;
-  /** Start creating a new resource */
-  startNewResource: (defaultTypeName?: string) => void;
+
+  // Enhanced resource creation actions with improved return values
+  /** Create a pending resource atomically with validation */
+  createPendingResource: (params: CreatePendingResourceParams) => Promise<Result<void>>;
+  /** Start creating a new resource (enhanced with optional pre-seeding) */
+  startNewResource: (
+    params?: StartNewResourceParams
+  ) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
   /** Update the resource ID for the new resource being created */
-  updateNewResourceId: (id: string) => void;
+  updateNewResourceId: (id: string) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
   /** Select a resource type for the new resource */
-  selectResourceType: (type: string) => void;
+  selectResourceType: (type: string) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+  /** Update the JSON content for the new resource being created */
+  updateNewResourceJson: (json: JsonValue) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
   /** Add the new resource to pending resources (not applied yet) */
-  saveNewResourceAsPending: () => void;
+  saveNewResourceAsPending: () => ResolutionActionResult<Map<string, ResourceJson.Json.ILooseResourceDecl>>;
   /** Cancel the new resource creation */
   cancelNewResource: () => void;
   /** Remove a pending resource */
@@ -1246,11 +1325,15 @@ export interface OrchestratorActions {
   // Removed: unified apply via applyPendingResources
   discardResourceEdits: () => void;
 
-  // Resource creation actions
-  startNewResource: (defaultTypeName?: string) => void;
-  updateNewResourceId: (id: string) => void;
-  selectResourceType: (type: string) => void;
-  saveNewResourceAsPending: () => void;
+  // Resource creation actions (enhanced with atomic API and better return values)
+  createPendingResource: (params: CreatePendingResourceParams) => Promise<Result<void>>;
+  startNewResource: (
+    params?: StartNewResourceParams
+  ) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+  updateNewResourceId: (id: string) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+  selectResourceType: (type: string) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+  updateNewResourceJson: (json: JsonValue) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+  saveNewResourceAsPending: () => ResolutionActionResult<Map<string, ResourceJson.Json.ILooseResourceDecl>>;
   cancelNewResource: () => void;
   removePendingResource: (resourceId: string) => void;
   markResourceForDeletion: (resourceId: string) => void;
@@ -1271,3 +1354,14 @@ export interface OrchestratorActions {
 // Export utility types
 export type { Result } from '@fgv/ts-utils';
 export type { JsonValue } from '@fgv/ts-json-base';
+
+// Resource selector utility functions
+export {
+  getPendingAdditionsByType,
+  isPendingAddition,
+  deriveLeafId,
+  deriveFullId,
+  getPendingResourceTypes,
+  getPendingResourceStats,
+  validatePendingResourceKeys
+} from '../utils/resourceSelectors';

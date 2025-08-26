@@ -50,6 +50,17 @@ export {
   type ResolutionOptions
 } from '../utils/resolutionUtils';
 
+// Export resource selector utility functions for pending resource management
+export {
+  getPendingAdditionsByType,
+  isPendingAddition,
+  deriveLeafId,
+  deriveFullId,
+  getPendingResourceTypes,
+  getPendingResourceStats,
+  validatePendingResourceKeys
+} from '../utils/resourceSelectors';
+
 // Export types related to resource resolution
 export type {
   ResolutionState,

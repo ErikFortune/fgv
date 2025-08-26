@@ -113,6 +113,12 @@ function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemConfigur
 }>;
 
 // @public
+function deriveFullId(rootPath: string, leafId: string): Result<string>;
+
+// @public
+function deriveLeafId(fullResourceId: string): Result<string>;
+
+// @public
 const EditableJsonView: React_2.FC<EditableJsonViewProps>;
 
 // @public
@@ -248,6 +254,22 @@ function getDefaultSystemConfiguration(): Config.Model.ISystemConfiguration;
 function getFilterSummary(values: Record<string, string | undefined>): string;
 
 // @public
+function getPendingAdditionsByType(pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>, resourceType: string): Array<{
+    id: string;
+    resource: ResourceJson.Json.ILooseResourceDecl;
+}>;
+
+// @public
+function getPendingResourceStats(pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>): {
+    totalCount: number;
+    byType: Record<string, number>;
+    resourceIds: string[];
+};
+
+// @public
+function getPendingResourceTypes(pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>): string[];
+
+// @public
 function hasFilterValues(values: Record<string, string | undefined>): boolean;
 
 // @public
@@ -302,6 +324,9 @@ interface ImportViewProps extends ViewBaseProps {
 }
 
 // @public
+function isPendingAddition(resourceId: string, pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>): boolean;
+
+// @public
 function isZipFile(filename: string): boolean;
 
 export { JsonValue }
@@ -346,6 +371,10 @@ export interface OrchestratorActions {
     clearResourceEdits: () => void;
     // (undocumented)
     clearResources: () => void;
+    // Warning: (ae-forgotten-export) The symbol "CreatePendingResourceParams" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    createPendingResource: (params: CreatePendingResourceParams) => Promise<Result<void>>;
     // (undocumented)
     discardPendingResources: () => void;
     // (undocumented)
@@ -373,7 +402,7 @@ export interface OrchestratorActions {
     // (undocumented)
     resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<JsonValue>>;
     // (undocumented)
-    saveNewResourceAsPending: () => void;
+    saveNewResourceAsPending: () => ResolutionActionResult<Map<string, ResourceJson.Json.ILooseResourceDecl>>;
     // (undocumented)
     saveResourceEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
     // (undocumented)
@@ -381,17 +410,22 @@ export interface OrchestratorActions {
     // (undocumented)
     selectResourceForResolution: (resourceId: string) => void;
     // (undocumented)
-    selectResourceType: (type: string) => void;
+    selectResourceType: (type: string) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
     // (undocumented)
     setResolutionViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
+    // Warning: (ae-forgotten-export) The symbol "StartNewResourceParams" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "ResolutionActionResult" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
-    startNewResource: (defaultTypeName?: string) => void;
+    startNewResource: (params?: StartNewResourceParams) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
     // (undocumented)
     updateConfiguration: (config: Config.Model.ISystemConfiguration) => void;
     // (undocumented)
     updateFilterState: (state: Partial<FilterState>) => void;
     // (undocumented)
-    updateNewResourceId: (id: string) => void;
+    updateNewResourceId: (id: string) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+    // (undocumented)
+    updateNewResourceJson: (json: JsonValue) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
     // (undocumented)
     updateResolutionContext: (qualifierName: string, value: string | undefined) => void;
 }
@@ -548,6 +582,7 @@ interface ResolutionActions {
     applyPendingResources: () => Promise<void>;
     cancelNewResource: () => void;
     clearEdits: () => void;
+    createPendingResource: (params: CreatePendingResourceParams) => Promise<Result<void>>;
     discardEdits: () => void;
     discardPendingResources: () => void;
     getEditedValue: (resourceId: string) => JsonValue | undefined;
@@ -556,13 +591,14 @@ interface ResolutionActions {
     removePendingResource: (resourceId: string) => void;
     resetCache: () => void;
     saveEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
-    saveNewResourceAsPending: () => void;
+    saveNewResourceAsPending: () => ResolutionActionResult<Map<string, ResourceJson.Json.ILooseResourceDecl>>;
     selectResource: (resourceId: string) => void;
-    selectResourceType: (type: string) => void;
+    selectResourceType: (type: string) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
     setViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
-    startNewResource: (defaultTypeName?: string) => void;
+    startNewResource: (params?: StartNewResourceParams) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
     updateContextValue: (qualifierName: string, value: string | undefined) => void;
-    updateNewResourceId: (id: string) => void;
+    updateNewResourceId: (id: string) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
+    updateNewResourceJson: (json: JsonValue) => ResolutionActionResult<ResolutionState['newResourceDraft']>;
 }
 
 // @public
@@ -658,6 +694,13 @@ declare namespace ResolutionTools {
         getAvailableQualifiers,
         hasPendingContextChanges,
         ResolutionOptions,
+        getPendingAdditionsByType,
+        isPendingAddition,
+        deriveLeafId,
+        deriveFullId,
+        getPendingResourceTypes,
+        getPendingResourceStats,
+        validatePendingResourceKeys,
         ResolutionState,
         ResolutionActions,
         ResolutionViewProps,
@@ -927,6 +970,9 @@ function useViewState(): UseViewStateReturn;
 //
 // @public
 function validateConfiguration(config: Config.Model.ISystemConfiguration): ConfigurationValidationResult;
+
+// @public
+function validatePendingResourceKeys(pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>): Result<void>;
 
 // @public
 interface ViewBaseProps {
