@@ -20,6 +20,8 @@
  * SOFTWARE.
  */
 
+import { JsonObject } from '@fgv/ts-json-base';
+
 /**
  * Configuration for a {@link ResourceTypes.ResourceType | resource type}.
  * @public
@@ -27,4 +29,5 @@
 export interface IResourceTypeConfig {
   name: string;
   typeName: string;
+  template?: JsonObject;
 }

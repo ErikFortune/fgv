@@ -2806,6 +2806,8 @@ interface IResourceTypeConfig {
     // (undocumented)
     name: string;
     // (undocumented)
+    template?: JsonObject;
+    // (undocumented)
     typeName: string;
 }
 
@@ -4333,7 +4335,7 @@ export class ResourceResolver implements IResourceResolver {
     resolveResource(resource: IResource): Result<IResourceCandidate>;
     resolveResource(resource: string): Result<IResourceCandidate>;
     readonly resourceManager: IResourceManager;
-    withContext(context: Record<string, string>): Result<IResourceResolver>;
+    withContext(context: Record<string, string>): Result<ResourceResolver>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

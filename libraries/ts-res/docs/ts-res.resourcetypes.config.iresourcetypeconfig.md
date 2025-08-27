@@ -54,6 +54,25 @@ string
 </td></tr>
 <tr><td>
 
+[template?](./ts-res.resourcetypes.config.iresourcetypeconfig.template.md)
+
+
+</td><td>
+
+
+</td><td>
+
+JsonObject
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
 [typeName](./ts-res.resourcetypes.config.iresourcetypeconfig.typename.md)
 
 

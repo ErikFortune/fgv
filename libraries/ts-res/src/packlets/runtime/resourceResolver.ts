@@ -652,7 +652,7 @@ export class ResourceResolver implements IResourceResolver {
   /**
    * {@inheritDoc IResourceResolver.withContext}
    */
-  public withContext(context: Record<string, string>): Result<IResourceResolver> {
+  public withContext(context: Record<string, string>): Result<ResourceResolver> {
     const { resourceManager, qualifierTypes, options } = this;
     return ValidatingSimpleContextQualifierProvider.create({
       qualifiers: this.qualifiers,

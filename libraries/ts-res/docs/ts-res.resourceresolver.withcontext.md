@@ -9,7 +9,7 @@ Creates a new [resource resolver](./ts-res.iresourceresolver.md) with the given 
 **Signature:**
 
 ```typescript
-withContext(context: Record<string, string>): Result<IResourceResolver>;
+withContext(context: Record<string, string>): Result<ResourceResolver>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The context to use for the new resource resolver.
 
 **Returns:**
 
-Result&lt;[IResourceResolver](./ts-res.iresourceresolver.md)<!-- -->&gt;
+Result&lt;[ResourceResolver](./ts-res.resourceresolver.md)<!-- -->&gt;
 
 `Success` with the new resource resolver if successful, or `Failure` with an error message if the context is invalid.
 
