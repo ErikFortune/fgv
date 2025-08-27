@@ -96,16 +96,33 @@ describe('Resource Creation Workflows', () => {
         expect(createResult).toFailWith(/resource type.*not found/i);
       });
 
-      // Missing JSON content - this should fail at JSON validation since resource type is provided
+      // JSON content can now be omitted to use resource type's base template
+      // Apply context first since context is used for condition creation
+      act(() => {
+        const applyResult = result.current.actions.applyContext();
+        expect(applyResult).toSucceed();
+      });
+
       await act(async () => {
         const createResult = await result.current.actions.createPendingResource({
-          id: 'platform.test.invalid2',
-          resourceTypeName: 'json',
-          json: null
-        } as any);
+          id: 'platform.test.template',
+          resourceTypeName: 'json'
+          // json is optional - should use resource type's base template
+        });
 
-        expect(createResult).toFailWith(/JSON content.*required/i);
+        // If this succeeds, it means the API change works and the resource type can provide base template
+        expect(createResult).toSucceed();
       });
+
+      // Check the state after the act() has completed
+      expect(result.current.state.pendingResources.has('platform.test.template')).toBe(true);
+
+      // Verify that the base template contains an empty object as expected
+      const createdResource = result.current.state.pendingResources.get('platform.test.template');
+      expect(createdResource).toBeDefined();
+      expect(createdResource!.candidates).toBeDefined();
+      expect(createdResource!.candidates!.length).toBeGreaterThan(0);
+      expect(createdResource!.candidates![0].json).toEqual({}); // Base template should be empty object
 
       // Invalid resource ID format - test with actually invalid format
       await act(async () => {
@@ -401,15 +418,48 @@ describe('Resource Creation Workflows', () => {
         expect(missingTypeResult).toFailWith(/resource type.*not found/i);
       });
 
+      // Test that omitting json now uses base template (changed behavior)
       await act(async () => {
-        const invalidJsonResult = await result.current.actions.createPendingResource({
-          id: 'platform.test.invalidJson',
-          resourceTypeName: 'json',
-          json: null as any
+        const baseTemplateResult = await result.current.actions.createPendingResource({
+          id: 'platform.test.baseTemplate',
+          resourceTypeName: 'json'
+          // json omitted - should use resource type's base template
         });
 
-        expect(invalidJsonResult).toFailWith(/JSON content.*required/i);
+        expect(baseTemplateResult).toSucceed();
       });
+    });
+
+    test('creates resources using base template when json is omitted', async () => {
+      const processed = buildProcessedResources();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+
+      // Apply context first
+      act(() => {
+        const applyResult = result.current.actions.applyContext();
+        expect(applyResult).toSucceed();
+      });
+
+      // Create resource without specifying json - should use base template
+      await act(async () => {
+        const createResult = await result.current.actions.createPendingResource({
+          id: 'platform.test.baseTemplate',
+          resourceTypeName: 'json'
+          // No json provided - resource type should provide base template
+        });
+
+        expect(createResult).toSucceed();
+      });
+
+      // Verify the resource was created and is in pending state
+      expect(result.current.state.pendingResources.has('platform.test.baseTemplate')).toBe(true);
+
+      // The resource should have some default JSON content from the base template
+      const pendingResource = result.current.state.pendingResources.get('platform.test.baseTemplate');
+      expect(pendingResource).toBeDefined();
+      expect(pendingResource!.candidates).toBeDefined();
+      expect(pendingResource!.candidates!.length).toBeGreaterThan(0);
+      expect(pendingResource!.candidates![0].json).toBeDefined();
     });
 
     test('handles template creation failures gracefully', async () => {

@@ -6,8 +6,6 @@ React components for building user interfaces that work with the [ts-res](https:
 
 This library provides a complete set of React components, hooks, and utilities for creating applications that visualize, manage, and interact with ts-res resource systems. It supports the full workflow from importing configurations to resolving resources with dynamic context.
 
-**Latest Update**: Now compatible with enhanced ts-res template creation APIs that support passing context conditions and resolvers directly to template creation, eliminating the need for manual post-processing.
-
 ## Warning
 This packlet is largely AI written, and it shows.
 
@@ -584,7 +582,7 @@ Use the new `createPendingResource` API for simple, robust resource creation:
 const result = await actions.createPendingResource({
   id: 'platform.languages.az-AZ',           // Full resource ID (required)
   resourceTypeName: 'json',                 // Resource type (required)
-  json: { text: 'Welcome', locale: 'az-AZ' } // JSON content (required)
+  json: { text: 'Welcome', locale: 'az-AZ' } // JSON content (optional - uses base template if omitted)
 });
 
 if (result.isSuccess()) {
@@ -593,6 +591,18 @@ if (result.isSuccess()) {
   await actions.applyPendingResources();
 } else {
   console.error('Failed to create resource:', result.message);
+}
+
+// Example: Creating a resource with base template (no JSON content)
+const baseTemplateResult = await actions.createPendingResource({
+  id: 'platform.languages.fr-FR',
+  resourceTypeName: 'json'
+  // json omitted - resource type will provide base template (typically {})
+});
+
+if (baseTemplateResult.isSuccess()) {
+  console.log('Resource created using base template from resource type');
+  // You can then edit the resource using the UI or saveEdit()
 }
 ```
 

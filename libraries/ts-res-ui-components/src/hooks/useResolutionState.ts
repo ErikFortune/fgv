@@ -918,11 +918,6 @@ export function useResolutionState(
         }
         const resourceType = resourceTypeResult.value;
 
-        // Validate JSON content
-        if (params.json === undefined || params.json === null) {
-          return fail('JSON content is required for resource creation');
-        }
-
         // Create conditions from current effective context
         const contextConditionsResult = createContextConditions(
           effectiveContext,
@@ -934,10 +929,16 @@ export function useResolutionState(
         }
         const contextConditions = contextConditionsResult.value;
 
-        // Prepare initial JSON value
-        const initialJson = isJsonObject(params.json) ? params.json : { value: params.json };
+        // Prepare initial JSON value - if no json provided, let resource type use its base template
+        const initialJson =
+          params.json !== undefined
+            ? isJsonObject(params.json)
+              ? params.json
+              : { value: params.json }
+            : undefined;
 
         // Create resource template using the new API with conditions and resolver
+        // Pass undefined initialJson to allow resource type to provide base template
         const templateResult = resourceType.createTemplate(
           params.id,
           initialJson,

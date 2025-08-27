@@ -469,8 +469,8 @@ export interface CreatePendingResourceParams {
   id: string;
   /** Name of the resource type to use for validation and template creation */
   resourceTypeName: string;
-  /** JSON content for the resource candidate */
-  json: JsonValue;
+  /** JSON content for the resource candidate. If undefined, the resource type's base template will be used. */
+  json?: JsonValue;
 }
 
 /**

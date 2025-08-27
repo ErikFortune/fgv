@@ -97,6 +97,13 @@ function convertImportedDirectoryToFileTree(directory: ImportedDirectory): FileT
 const createFilteredResourceManagerSimple: (originalSystem: ProcessedResources["system"], partialContext: Record<string, string | undefined>, options?: FilterOptions) => Promise<Result<ProcessedResources>>;
 
 // @public
+interface CreatePendingResourceParams {
+    id: string;
+    json?: JsonValue;
+    resourceTypeName: string;
+}
+
+// @public
 function createResolverWithContext(processedResources: ProcessedResources, contextValues: Record<string, string | undefined>, options?: ResolutionOptions): Result<Runtime.ResourceResolver>;
 
 // @internal (undocumented)
@@ -377,8 +384,6 @@ export interface OrchestratorActions {
     clearResourceEdits: () => void;
     // (undocumented)
     clearResources: () => void;
-    // Warning: (ae-forgotten-export) The symbol "CreatePendingResourceParams" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     createPendingResource: (params: CreatePendingResourceParams) => Result<void>;
     // (undocumented)
@@ -755,6 +760,7 @@ declare namespace ResolutionTools {
         EditedResourceInfo,
         ResolutionContextOptions,
         QualifierControlOptions,
+        CreatePendingResourceParams,
         EditableJsonViewProps,
         ResolutionContextOptionsControlProps
     }

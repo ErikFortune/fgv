@@ -306,7 +306,7 @@ Description
 
 </td><td>
 
-(params: CreatePendingResourceParams) =&gt; Result&lt;void&gt;
+(params: [CreatePendingResourceParams](./ts-res-ui-components.resolutiontools.creatependingresourceparams.md)<!-- -->) =&gt; Result&lt;void&gt;
 
 
 </td><td>

@@ -71,7 +71,8 @@ export type {
   ConditionEvaluationResult,
   EditedResourceInfo,
   ResolutionContextOptions,
-  QualifierControlOptions
+  QualifierControlOptions,
+  CreatePendingResourceParams
 } from '../types';
 
 // Export types for resolution components

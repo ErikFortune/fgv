@@ -213,6 +213,17 @@ Result of evaluating a single condition during resource resolution. Shows how a 
 </td></tr>
 <tr><td>
 
+[CreatePendingResourceParams](./ts-res-ui-components.resolutiontools.creatependingresourceparams.md)
+
+
+</td><td>
+
+Parameters for creating a pending resource atomically.
+
+
+</td></tr>
+<tr><td>
+
 [EditableJsonViewProps](./ts-res-ui-components.resolutiontools.editablejsonviewprops.md)
 
 
