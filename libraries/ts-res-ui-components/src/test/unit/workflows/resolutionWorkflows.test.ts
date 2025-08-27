@@ -301,10 +301,16 @@ describe('Resolution Core Workflows', () => {
         expect(editResult).toSucceed();
       });
 
-      // Check that the pending resource was updated
-      const editedResource = result.current.state.pendingResources.get('platform.test.editing');
-      expect(editedResource).toBeDefined();
-      expect(editedResource!.candidates![0].json).toEqual({
+      // Check that the original pending resource is unchanged (new architecture)
+      const originalResource = result.current.state.pendingResources.get('platform.test.editing');
+      expect(originalResource).toBeDefined();
+      expect(originalResource!.candidates![0].json).toEqual({
+        message: 'Original message'
+      });
+
+      // Check that the edit is tracked separately and returns the edited value
+      expect(result.current.actions.hasEdit('platform.test.editing')).toBe(true);
+      expect(result.current.actions.getEditedValue('platform.test.editing')).toEqual({
         message: 'Edited message',
         newField: 'added value'
       });

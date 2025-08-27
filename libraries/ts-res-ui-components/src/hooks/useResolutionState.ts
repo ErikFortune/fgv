@@ -256,14 +256,27 @@ export function useResolutionState(
     Map<string, { originalValue: JsonValue; editedValue: JsonValue; delta: JsonValue }>
   >(new Map());
 
+  // Pending resource edit state - tracks edits to pending resources separately from templates
+  const [pendingResourceEdits, setPendingResourceEdits] = useState<
+    Map<string, { originalValue: JsonValue; editedValue: JsonValue }>
+  >(new Map());
+
   // Convert to the simpler Map format expected by ResolutionState
   const editedResources = useMemo(() => {
     const simpleMap = new Map<string, JsonValue>();
+
+    // Include existing resource edits
     editedResourcesInternal.forEach((value, key) => {
       simpleMap.set(key, value.editedValue);
     });
+
+    // Include pending resource edits
+    pendingResourceEdits.forEach((value, key) => {
+      simpleMap.set(key, value.editedValue);
+    });
+
     return simpleMap;
-  }, [editedResourcesInternal]);
+  }, [editedResourcesInternal, pendingResourceEdits]);
   const [isApplyingEdits, setIsApplyingEdits] = useState(false);
 
   // Pending resource state
@@ -304,8 +317,8 @@ export function useResolutionState(
 
   // Check for unsaved edits
   const hasUnsavedEdits = useMemo(() => {
-    return editedResources.size > 0;
-  }, [editedResources]);
+    return editedResourcesInternal.size > 0 || pendingResourceEdits.size > 0;
+  }, [editedResourcesInternal, pendingResourceEdits]);
 
   // Check for pending resource changes
   const hasPendingResourceChanges = useMemo(() => {
@@ -670,36 +683,17 @@ export function useResolutionState(
         // Check if this is a pending new resource
         const pendingResource = pendingResources.get(resourceId);
         if (pendingResource) {
-          // Update the pending resource's template directly
-          // Always stamp conditions from the current effective context for pending resources
-          const contextConditionsResult = createContextConditions(
-            effectiveContext,
-            processedResources?.system.qualifiers,
-            onMessage
-          );
-          if (contextConditionsResult.isFailure()) {
-            const error = `Failed to create context conditions: ${contextConditionsResult.message}`;
-            onMessage?.('error', error);
-            return fail(error);
-          }
-          const contextConditions = contextConditionsResult.value;
-          const updatedResource = {
-            ...pendingResource,
-            candidates: [
-              {
-                json: (isJsonObject(editedValue)
-                  ? editedValue
-                  : { value: editedValue }) as ResourceJsonObject,
-                conditions: contextConditions.length > 0 ? contextConditions : undefined,
-                isPartial: false,
-                mergeMethod: 'replace' as const
-              }
-            ]
-          };
+          // For pending resources, track the edit separately from the original template
+          const originalCandidate = pendingResource.candidates?.[0];
+          const originalValue = originalCandidate?.json || {};
 
-          setPendingResources((prev) => {
+          // Store the edit in pending resource edits
+          setPendingResourceEdits((prev) => {
             const newMap = new Map(prev);
-            newMap.set(resourceId, updatedResource);
+            newMap.set(resourceId, {
+              originalValue,
+              editedValue
+            });
             return newMap;
           });
 
@@ -708,25 +702,29 @@ export function useResolutionState(
             const mockResult: ResolutionResult = {
               success: true,
               resourceId,
-              composedValue: updatedResource.candidates[0].json,
-              candidateDetails: updatedResource.candidates.map((c, index) => ({
-                candidate: {
-                  json: c.json || {},
-                  conditions: c.conditions,
-                  isPartial: c.isPartial || false,
-                  mergeMethod: c.mergeMethod || 'replace'
-                } as Runtime.IResourceCandidate,
-                conditionSetKey: null,
-                candidateIndex: index,
-                matched: true,
-                matchType: 'match' as const,
-                isDefaultMatch: false
-              }))
+              composedValue: isJsonObject(editedValue) ? editedValue : { value: editedValue },
+              candidateDetails: [
+                {
+                  candidate: {
+                    json: (isJsonObject(editedValue)
+                      ? editedValue
+                      : { value: editedValue }) as ResourceJsonObject,
+                    conditions: originalCandidate?.conditions,
+                    isPartial: false,
+                    mergeMethod: 'replace'
+                  } as Runtime.IResourceCandidate,
+                  conditionSetKey: null,
+                  candidateIndex: 0,
+                  matched: true,
+                  matchType: 'match' as const,
+                  isDefaultMatch: false
+                }
+              ]
             };
             setResolutionResult(mockResult);
           }
 
-          onMessage?.('info', `Updated pending resource: ${resourceId}`);
+          onMessage?.('info', `Edit saved for pending resource: ${resourceId}`);
           return succeed(undefined);
         }
 
@@ -780,64 +778,97 @@ export function useResolutionState(
 
   const getEditedValue = useCallback(
     (resourceId: string) => {
-      // Check if this is a pending new resource
+      // Check pending resource edits first
+      const pendingEdit = pendingResourceEdits.get(resourceId);
+      if (pendingEdit) {
+        return pendingEdit.editedValue;
+      }
+
+      // Check existing resource edits
+      const existingEdit = editedResourcesInternal.get(resourceId);
+      if (existingEdit) {
+        return existingEdit.editedValue;
+      }
+
+      // Fall back to original pending resource value if no edits
       const pendingResource = pendingResources.get(resourceId);
       if (pendingResource) {
-        // Return the JSON value from the first candidate
         return pendingResource.candidates?.[0]?.json;
       }
 
-      // For existing resources, check for edits
-      const edit = editedResourcesInternal.get(resourceId);
-      return edit?.editedValue;
+      return undefined;
     },
-    [editedResourcesInternal, pendingResources]
+    [pendingResourceEdits, editedResourcesInternal, pendingResources]
   );
 
   const hasEdit = useCallback(
     (resourceId: string) => {
-      // Pending new resources are considered "edited" if they exist
-      // since they represent unsaved changes
-      if (pendingResources.has(resourceId)) {
-        return false; // Don't show edit indicator for pending new resources (they have their own indicator)
+      // Check if there are pending resource edits
+      if (pendingResourceEdits.has(resourceId)) {
+        return true;
       }
-      return editedResourcesInternal.has(resourceId);
+
+      // Check if there are existing resource edits
+      if (editedResourcesInternal.has(resourceId)) {
+        return true;
+      }
+
+      // No edits found
+      return false;
     },
-    [editedResourcesInternal, pendingResources]
+    [pendingResourceEdits, editedResourcesInternal]
   );
 
   const clearEdits = useCallback((): Result<{ clearedCount: number }> => {
     try {
-      const currentCount = editedResources.size;
+      const existingResourceEditCount = editedResourcesInternal.size;
+      const pendingResourceEditCount = pendingResourceEdits.size;
+      const totalCount = existingResourceEditCount + pendingResourceEditCount;
+
+      // Clear both types of edits
       setEditedResourcesInternal(new Map());
+      setPendingResourceEdits(new Map());
 
       const message =
-        currentCount > 0
-          ? `Cleared ${currentCount} pending edit${currentCount === 1 ? '' : 's'}`
+        totalCount > 0
+          ? `Cleared ${totalCount} pending edit${
+              totalCount === 1 ? '' : 's'
+            } (${existingResourceEditCount} existing resource${
+              existingResourceEditCount === 1 ? '' : 's'
+            }, ${pendingResourceEditCount} pending resource${pendingResourceEditCount === 1 ? '' : 's'})`
           : 'No pending edits to clear';
 
       onMessage?.('info', message);
-      return succeed({ clearedCount: currentCount });
+      return succeed({ clearedCount: totalCount });
     } catch (error) {
       const errorMessage = `Failed to clear edits: ${error instanceof Error ? error.message : String(error)}`;
       onMessage?.('error', errorMessage);
       return fail(errorMessage);
     }
-  }, [editedResources, onMessage]);
+  }, [editedResourcesInternal, pendingResourceEdits, onMessage]);
 
   const discardEdits = useCallback((): Result<{ discardedCount: number }> => {
     try {
-      const currentCount = editedResources.size;
+      const existingResourceEditCount = editedResourcesInternal.size;
+      const pendingResourceEditCount = pendingResourceEdits.size;
+      const totalCount = existingResourceEditCount + pendingResourceEditCount;
 
-      if (!hasUnsavedEdits || currentCount === 0) {
+      if (!hasUnsavedEdits || totalCount === 0) {
         onMessage?.('info', 'No unsaved edits to discard');
         return succeed({ discardedCount: 0 });
       }
 
+      // Clear both types of edits
       setEditedResourcesInternal(new Map());
-      const message = `Discarded ${currentCount} unsaved edit${currentCount === 1 ? '' : 's'}`;
+      setPendingResourceEdits(new Map());
+
+      const message = `Discarded ${totalCount} unsaved edit${
+        totalCount === 1 ? '' : 's'
+      } (${existingResourceEditCount} existing resource${
+        existingResourceEditCount === 1 ? '' : 's'
+      }, ${pendingResourceEditCount} pending resource${pendingResourceEditCount === 1 ? '' : 's'})`;
       onMessage?.('info', message);
-      return succeed({ discardedCount: currentCount });
+      return succeed({ discardedCount: totalCount });
     } catch (error) {
       const errorMessage = `Failed to discard edits: ${
         error instanceof Error ? error.message : String(error)
@@ -845,7 +876,7 @@ export function useResolutionState(
       onMessage?.('error', errorMessage);
       return fail(errorMessage);
     }
-  }, [editedResources, hasUnsavedEdits, onMessage]);
+  }, [editedResourcesInternal, pendingResourceEdits, hasUnsavedEdits, onMessage]);
 
   // Removed applyEdits in favor of unified applyPendingResources
 
@@ -1353,6 +1384,13 @@ export function useResolutionState(
           return newMap;
         });
 
+        // Also remove any edits for this pending resource
+        setPendingResourceEdits((prev) => {
+          const newMap = new Map(prev);
+          newMap.delete(resourceId);
+          return newMap;
+        });
+
         // Clear selection if this resource was selected
         if (selectedResourceId === resourceId) {
           setSelectedResourceId(null);
@@ -1384,18 +1422,37 @@ export function useResolutionState(
     [onMessage]
   );
 
-  const applyPendingResources = useCallback(async () => {
+  const applyPendingResources = useCallback(async (): Promise<
+    Result<{
+      appliedCount: number;
+      existingResourceEditCount: number;
+      pendingResourceEditCount: number;
+      newResourceCount: number;
+      deletionCount: number;
+    }>
+  > => {
     const hasAnyChanges =
-      editedResourcesInternal.size > 0 || pendingResources.size > 0 || pendingResourceDeletions.size > 0;
-    if (!hasAnyChanges || !processedResources || !onSystemUpdate) {
-      if (!hasAnyChanges) {
-        onMessage?.('warning', 'No pending changes to apply');
-      } else if (!processedResources) {
-        onMessage?.('error', 'No resource system available');
-      } else if (!onSystemUpdate) {
-        onMessage?.('error', 'No system update handler provided');
-      }
-      return;
+      editedResourcesInternal.size > 0 ||
+      pendingResourceEdits.size > 0 ||
+      pendingResources.size > 0 ||
+      pendingResourceDeletions.size > 0;
+
+    if (!hasAnyChanges) {
+      const error = 'No pending changes to apply';
+      onMessage?.('warning', error);
+      return fail(error);
+    }
+
+    if (!processedResources) {
+      const error = 'No resource system available';
+      onMessage?.('error', error);
+      return fail(error);
+    }
+
+    if (!onSystemUpdate) {
+      const error = 'No system update handler provided';
+      onMessage?.('error', error);
+      return fail(error);
     }
 
     try {
@@ -1417,16 +1474,39 @@ export function useResolutionState(
           contextQualifierProvider: processedResources.system.contextQualifierProvider
         });
         if (resolverCreateResult.isFailure()) {
-          onMessage?.('error', `Failed to create resolver: ${resolverCreateResult.message}`);
-          return;
+          const error = `Failed to create resolver: ${resolverCreateResult.message}`;
+          onMessage?.('error', error);
+          return fail(error);
         }
         resolverForContext = resolverCreateResult.value;
       }
 
       const currentContext = extractResolutionContext(resolverForContext, cleanedContextValues);
 
-      // Convert pending new resources (map → array)
-      const newResourcesArray = Array.from(pendingResources.values());
+      // Convert pending new resources (map → array) and apply any edits to them
+      const newResourcesArray: ResourceJson.Json.ILooseResourceDecl[] = [];
+      for (const [resourceId, resource] of pendingResources.entries()) {
+        const pendingEdit = pendingResourceEdits.get(resourceId);
+        if (pendingEdit) {
+          // Apply the edit to the pending resource
+          const updatedResource = {
+            ...resource,
+            candidates: [
+              {
+                json: (isJsonObject(pendingEdit.editedValue)
+                  ? pendingEdit.editedValue
+                  : { value: pendingEdit.editedValue }) as ResourceJsonObject,
+                conditions: resource.candidates?.[0]?.conditions,
+                isPartial: false,
+                mergeMethod: 'replace' as const
+              }
+            ]
+          };
+          newResourcesArray.push(updatedResource);
+        } else {
+          newResourcesArray.push(resource);
+        }
+      }
 
       // Rebuild system with both edits and new resources in one pass
       const rebuildResult = await rebuildSystemWithChanges(
@@ -1439,34 +1519,51 @@ export function useResolutionState(
       );
 
       if (rebuildResult.isFailure()) {
-        onMessage?.('error', `Failed to apply changes: ${rebuildResult.message}`);
-        return;
+        const error = `Failed to apply changes: ${rebuildResult.message}`;
+        onMessage?.('error', error);
+        return fail(error);
       }
+
+      // Capture counts before clearing the state
+      const existingResourceEditCount = editedResourcesInternal.size;
+      const pendingResourceEditCount = pendingResourceEdits.size;
+      const newResourceCount = newResourcesArray.length;
+      const deletionCount = pendingResourceDeletions.size;
+      const appliedCount =
+        existingResourceEditCount + pendingResourceEditCount + newResourceCount + deletionCount;
 
       onSystemUpdate(rebuildResult.value);
 
       onMessage?.(
         'success',
-        `Applied ${editedResourcesInternal.size} edits, ${newResourcesArray.length} additions, and ${pendingResourceDeletions.size} deletions`
+        `Applied ${existingResourceEditCount} existing resource edits, ${pendingResourceEditCount} pending resource edits, ${newResourceCount} additions, and ${deletionCount} deletions`
       );
 
-      // Clear pending additions after successful application (deletions still deferred)
+      // Clear pending additions and edits after successful application
       setPendingResources(new Map());
+      setPendingResourceEdits(new Map());
       setPendingResourceDeletions(new Set());
-      // Clear edits as well if we applied them
-      if (editedResourcesInternal.size > 0) {
-        setEditedResourcesInternal(new Map());
-      }
+      setEditedResourcesInternal(new Map());
+
+      return succeed({
+        appliedCount,
+        existingResourceEditCount,
+        pendingResourceEditCount,
+        newResourceCount,
+        deletionCount
+      });
     } catch (error) {
-      onMessage?.(
-        'error',
-        `Failed to apply pending resources: ${error instanceof Error ? error.message : String(error)}`
-      );
+      const errorMessage = `Failed to apply pending resources: ${
+        error instanceof Error ? error.message : String(error)
+      }`;
+      onMessage?.('error', errorMessage);
+      return fail(errorMessage);
     } finally {
       setIsApplyingEdits(false);
     }
   }, [
     pendingResources,
+    pendingResourceEdits,
     pendingResourceDeletions,
     processedResources,
     onSystemUpdate,
@@ -1477,12 +1574,13 @@ export function useResolutionState(
   ]);
 
   const discardPendingResources = useCallback(() => {
-    if (hasPendingResourceChanges) {
+    if (hasPendingResourceChanges || pendingResourceEdits.size > 0) {
       setPendingResources(new Map());
+      setPendingResourceEdits(new Map());
       setPendingResourceDeletions(new Set());
-      onMessage?.('info', 'Discarded all pending resource changes');
+      onMessage?.('info', 'Discarded all pending resource changes and edits');
     }
-  }, [hasPendingResourceChanges, onMessage]);
+  }, [hasPendingResourceChanges, pendingResourceEdits, onMessage]);
 
   const state: ResolutionState = {
     contextValues: effectiveContext, // Effective context (user + host)

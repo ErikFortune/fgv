@@ -360,7 +360,13 @@ export interface OrchestratorActions {
     // (undocumented)
     applyFilter: () => Promise<FilterResult | null>;
     // (undocumented)
-    applyPendingResources: () => Promise<void>;
+    applyPendingResources: () => Promise<Result<{
+        appliedCount: number;
+        existingResourceEditCount: number;
+        pendingResourceEditCount: number;
+        newResourceCount: number;
+        deletionCount: number;
+    }>>;
     // (undocumented)
     applyResolutionContext: () => void;
     // (undocumented)
@@ -593,7 +599,13 @@ function readFilesFromInput(files: FileList): Promise<ImportedFile[]>;
 // @public
 interface ResolutionActions {
     applyContext: (hostManagedValues?: Record<string, string | undefined>) => Result<void>;
-    applyPendingResources: () => Promise<void>;
+    applyPendingResources: () => Promise<Result<{
+        appliedCount: number;
+        existingResourceEditCount: number;
+        pendingResourceEditCount: number;
+        newResourceCount: number;
+        deletionCount: number;
+    }>>;
     cancelNewResource: () => void;
     clearEdits: () => Result<{
         clearedCount: number;

@@ -64,7 +64,7 @@ describe('Result Pattern Extensions', () => {
   });
 
   describe('Enhanced Edit Management', () => {
-    test('demonstrates clearEdits bug with pending resources', async () => {
+    test('clearEdits now works correctly with pending resources', async () => {
       const processed = buildProcessedResources();
       const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
 
@@ -97,22 +97,20 @@ describe('Result Pattern Extensions', () => {
         expect(editResult).toSucceed();
       });
 
-      // BUG: This should clear the pending resource edit but doesn't
+      // FIXED: This now clears the pending resource edit correctly
       act(() => {
         const clearResult = result.current.actions.clearEdits();
         expect(clearResult).toSucceedAndSatisfy((data) => {
-          // This demonstrates the bug - count is 0 instead of 1
-          expect(data.clearedCount).toBe(0); // Should be 1 when bug is fixed
+          // Bug is fixed - count is now 1 as expected
+          expect(data.clearedCount).toBe(1);
         });
       });
 
-      // Verify the pending resource edit is still there (bug confirmation)
-      expect(result.current.state.pendingResources.get('platform.test.bug')?.candidates?.[0]?.json).toEqual({
-        edited: true
-      });
+      // Verify the pending resource edit is now cleared (falls back to original value)
+      expect(result.current.actions.getEditedValue('platform.test.bug')).toEqual({ original: true });
     });
 
-    test('demonstrates discardEdits bug with pending resources', async () => {
+    test('discardEdits now works correctly with pending resources', async () => {
       const processed = buildProcessedResources();
       const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
 
@@ -145,12 +143,12 @@ describe('Result Pattern Extensions', () => {
         expect(editResult).toSucceed();
       });
 
-      // BUG: This should discard the pending resource edit but doesn't
+      // FIXED: This now discards the pending resource edit correctly
       act(() => {
         const discardResult = result.current.actions.discardEdits();
         expect(discardResult).toSucceedAndSatisfy((data) => {
-          // This demonstrates the bug - count is 0 instead of 1
-          expect(data.discardedCount).toBe(0); // Should be 1 when bug is fixed
+          // Bug is fixed - count is now 1 as expected
+          expect(data.discardedCount).toBe(1);
         });
       });
     });
@@ -233,6 +231,108 @@ describe('Result Pattern Extensions', () => {
       // Selection should be cleared
       expect(result.current.state.selectedResourceId).toBeNull();
       expect(result.current.state.resolutionResult).toBeNull();
+    });
+  });
+
+  describe('Enhanced Pending Resource Application', () => {
+    test('applyPendingResources provides detailed diagnostics', async () => {
+      const processed = buildProcessedResources();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+
+      // Apply context first
+      act(() => {
+        const applyResult = result.current.actions.applyContext();
+        expect(applyResult).toSucceed();
+      });
+
+      // Initially no changes to apply - should fail
+      await act(async () => {
+        const applyResult = await result.current.actions.applyPendingResources();
+        expect(applyResult).toFailWith(/no pending changes/i);
+      });
+
+      // Create some pending resources and edits
+      await act(async () => {
+        const createResult1 = await result.current.actions.createPendingResource({
+          id: 'platform.test.apply1',
+          resourceTypeName: 'json',
+          json: { message: 'First resource' }
+        });
+        expect(createResult1).toSucceed();
+
+        const createResult2 = await result.current.actions.createPendingResource({
+          id: 'platform.test.apply2',
+          resourceTypeName: 'json',
+          json: { message: 'Second resource' }
+        });
+        expect(createResult2).toSucceed();
+      });
+
+      // Add an edit to one of the pending resources
+      act(() => {
+        const editResult = result.current.actions.saveEdit('platform.test.apply1', {
+          message: 'Edited first resource'
+        });
+        expect(editResult).toSucceed();
+      });
+
+      // Add an edit to an existing resource (if any exist)
+      const existingResourceIds = Array.from(processed.system.resourceManager.resources.keys());
+      if (existingResourceIds.length > 0) {
+        act(() => {
+          const editResult = result.current.actions.saveEdit(existingResourceIds[0], { edited: true });
+          expect(editResult).toSucceed();
+        });
+      }
+
+      // Now apply all changes - should provide detailed diagnostics
+      await act(async () => {
+        const applyResult = await result.current.actions.applyPendingResources();
+        expect(applyResult).toSucceedAndSatisfy((data) => {
+          expect(data.appliedCount).toBeGreaterThan(0);
+          expect(data.newResourceCount).toBe(2); // Two new resources created
+          expect(data.pendingResourceEditCount).toBe(1); // One pending resource edit
+          expect(data.deletionCount).toBe(0); // No deletions
+          // May have existing resource edits if existing resources were found
+          expect(data.existingResourceEditCount).toBeGreaterThanOrEqual(0);
+
+          // Verify total count matches sum
+          expect(data.appliedCount).toBe(
+            data.existingResourceEditCount +
+              data.pendingResourceEditCount +
+              data.newResourceCount +
+              data.deletionCount
+          );
+        });
+      });
+
+      // After successful application, another attempt should fail with no changes
+      await act(async () => {
+        const applyResult = await result.current.actions.applyPendingResources();
+        expect(applyResult).toFailWith(/no pending changes/i);
+      });
+    });
+
+    test('applyPendingResources fails gracefully with system errors', async () => {
+      const processed = buildProcessedResources();
+      // Pass undefined for system update handler to trigger error
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, undefined));
+
+      // Create a pending resource
+      await act(async () => {
+        const createResult = await result.current.actions.createPendingResource({
+          id: 'platform.test.error',
+          resourceTypeName: 'json',
+          json: { message: 'Will cause error' }
+        });
+        expect(createResult).toSucceed();
+      });
+
+      // Apply should fail with proper error message for missing handler
+      await act(async () => {
+        const applyResult = await result.current.actions.applyPendingResources();
+        expect(applyResult).toFailWith(/no system update handler/i);
+      });
     });
   });
 

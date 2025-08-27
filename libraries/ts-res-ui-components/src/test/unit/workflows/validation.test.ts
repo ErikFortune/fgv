@@ -97,7 +97,7 @@ describe('Validation Behavior Investigation', () => {
 
       // Verify the resource was created
       expect(pendingResource).toBeDefined();
-      expect(pendingResource!.candidates).toHaveLength(1);
+      expect(pendingResource!.candidates?.length).toBe(1);
 
       // Log any messages from the process
       console.log('Hook messages:', mockOnMessage.mock.calls);

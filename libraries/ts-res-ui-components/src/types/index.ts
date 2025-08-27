@@ -563,7 +563,15 @@ export interface ResolutionActions {
   /** Mark an existing resource for deletion */
   markResourceForDeletion: (resourceId: string) => void;
   /** Apply all pending resource additions and deletions */
-  applyPendingResources: () => Promise<void>;
+  applyPendingResources: () => Promise<
+    Result<{
+      appliedCount: number;
+      existingResourceEditCount: number;
+      pendingResourceEditCount: number;
+      newResourceCount: number;
+      deletionCount: number;
+    }>
+  >;
   /** Discard all pending resource changes */
   discardPendingResources: () => void;
 }
@@ -1338,7 +1346,15 @@ export interface OrchestratorActions {
   cancelNewResource: () => void;
   removePendingResource: (resourceId: string) => void;
   markResourceForDeletion: (resourceId: string) => void;
-  applyPendingResources: () => Promise<void>;
+  applyPendingResources: () => Promise<
+    Result<{
+      appliedCount: number;
+      existingResourceEditCount: number;
+      pendingResourceEditCount: number;
+      newResourceCount: number;
+      deletionCount: number;
+    }>
+  >;
   discardPendingResources: () => void;
 
   // Combined pending changes actions removed in favor of unified applyPendingResources
