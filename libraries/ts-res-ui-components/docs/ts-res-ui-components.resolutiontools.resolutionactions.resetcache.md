@@ -9,5 +9,5 @@ Clear the resolution cache to force fresh resolution
 **Signature:**
 
 ```typescript
-resetCache: () => void;
+resetCache: () => Result<void>;
 ```

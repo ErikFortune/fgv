@@ -204,7 +204,7 @@ Description
 
 </td><td>
 
-() =&gt; Promise&lt;void&gt;
+() =&gt; Promise&lt;Result&lt;{ appliedCount: number; existingResourceEditCount: number; pendingResourceEditCount: number; newResourceCount: number; deletionCount: number; }&gt;&gt;
 
 
 </td><td>

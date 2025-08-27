@@ -9,5 +9,7 @@ Clear all pending edits
 **Signature:**
 
 ```typescript
-clearEdits: () => void;
+clearEdits: () => Result<{
+        clearedCount: number;
+    }>;
 ```

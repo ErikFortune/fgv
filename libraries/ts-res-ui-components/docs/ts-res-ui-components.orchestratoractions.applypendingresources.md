@@ -7,5 +7,11 @@
 **Signature:**
 
 ```typescript
-applyPendingResources: () => Promise<void>;
+applyPendingResources: () => Promise<Result<{
+        appliedCount: number;
+        existingResourceEditCount: number;
+        pendingResourceEditCount: number;
+        newResourceCount: number;
+        deletionCount: number;
+    }>>;
 ```

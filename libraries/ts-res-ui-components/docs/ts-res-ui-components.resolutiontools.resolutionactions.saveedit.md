@@ -9,5 +9,5 @@ Save an edit to a resource value
 **Signature:**
 
 ```typescript
-saveEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
+saveEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => Result<void>;
 ```

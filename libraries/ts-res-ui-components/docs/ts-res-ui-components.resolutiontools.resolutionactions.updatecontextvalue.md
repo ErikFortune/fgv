@@ -9,5 +9,5 @@ Update a context value for resolution testing
 **Signature:**
 
 ```typescript
-updateContextValue: (qualifierName: string, value: string | undefined) => void;
+updateContextValue: (qualifierName: string, value: string | undefined) => Result<void>;
 ```
