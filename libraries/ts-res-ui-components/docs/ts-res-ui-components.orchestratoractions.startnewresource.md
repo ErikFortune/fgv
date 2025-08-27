@@ -7,5 +7,8 @@
 **Signature:**
 
 ```typescript
-startNewResource: (defaultTypeName?: string) => void;
+startNewResource: (params?: StartNewResourceParams) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
 ```

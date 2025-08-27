@@ -37,7 +37,7 @@ describe('useResolutionState basic', () => {
 
     // start new resource
     act(() => {
-      result.current.actions.startNewResource('json');
+      result.current.actions.startNewResource({ defaultTypeName: 'json' });
     });
 
     const draft = result.current.state.newResourceDraft!;
@@ -48,6 +48,11 @@ describe('useResolutionState basic', () => {
       result.current.actions.applyContext();
     });
 
+    // Set a proper resource ID (no longer allow temporary IDs to be saved)
+    act(() => {
+      result.current.actions.updateNewResourceId('platform.test.testResource');
+    });
+
     // Save to pending
     act(() => {
       result.current.actions.saveNewResourceAsPending();
@@ -55,7 +60,7 @@ describe('useResolutionState basic', () => {
 
     // Ensure a candidate exists and gets stamped by editing the pending resource
     act(() => {
-      result.current.actions.saveEdit(draft.resourceId, {} as any);
+      result.current.actions.saveEdit('platform.test.testResource', {} as any);
     });
 
     // Verify pending resource has conditions stamped

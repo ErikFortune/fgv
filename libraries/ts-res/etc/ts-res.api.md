@@ -2025,6 +2025,8 @@ interface IJsonResourceTypeCreateParams {
     index?: number;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     key?: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    template?: JsonObject;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2677,6 +2679,12 @@ interface IResourceManagerCloneOptions extends IResourceDeclarationOptions {
     readonly resourceTypes?: ReadOnlyResourceTypeCollector;
 }
 
+// @public
+export interface IResourceResolver {
+    resolveComposedResourceValue(resource: string): Result<JsonValue>;
+    withContext(context: Record<string, string>): Result<IResourceResolver>;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -2779,7 +2787,7 @@ interface IResourceTreeRootInit<T> {
 
 // @public
 interface IResourceType<T = unknown> extends ICollectible<ResourceTypeName, ResourceTypeIndex> {
-    createTemplate(resourceId: ResourceId): ResourceJson.Json.ILooseResourceDecl;
+    createTemplate(resourceId: ResourceId, init?: JsonValue, conditions?: ResourceJson.Json.ConditionSetDecl, resolver?: IResourceResolver): Result<ResourceJson.Json.ILooseResourceDecl>;
     readonly index: ResourceTypeIndex | undefined;
     readonly key: ResourceTypeName;
     setIndex(index: number): Result<ResourceTypeIndex>;
@@ -2797,6 +2805,8 @@ interface IResourceType<T = unknown> extends ICollectible<ResourceTypeName, Reso
 interface IResourceTypeConfig {
     // (undocumented)
     name: string;
+    // (undocumented)
+    template?: JsonObject;
     // (undocumented)
     typeName: string;
 }
@@ -3200,12 +3210,11 @@ class JsonResourceType extends ResourceType<JsonObject> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor(key: ResourceTypeName, index?: number);
+    protected constructor(key: ResourceTypeName, index?: number, template?: JsonObject);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IJsonResourceTypeCreateParams): Result<JsonResourceType>;
-    protected getDefaultTemplateValue(): JsonObject;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -4288,7 +4297,7 @@ export type ResourceName = Brand<string, 'ResourceName'>;
 const resourceName: Converter<ResourceName, unknown>;
 
 // @public
-export class ResourceResolver {
+export class ResourceResolver implements IResourceResolver {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(params: IResourceResolverCreateParams);
@@ -4306,11 +4315,14 @@ export class ResourceResolver {
     get decisionCache(): ReadonlyArray<DecisionResolutionResult | undefined>;
     get decisionCacheSize(): number;
     readonly options: IResourceResolverOptions;
+    get qualifiers(): IReadOnlyQualifierCollector;
     readonly qualifierTypes: ReadOnlyQualifierTypeCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resolveAllResourceCandidates(resource: IResource): Result<ReadonlyArray<IResourceCandidate>>;
+    resolveAllResourceCandidates(resource: string): Result<ReadonlyArray<IResourceCandidate>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resolveComposedResourceValue(resource: IResource): Result<JsonValue>;
+    resolveComposedResourceValue(resource: string): Result<JsonValue>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resolveCondition(condition: Condition): Result<IConditionMatchResult>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -4321,7 +4333,9 @@ export class ResourceResolver {
     resolveDecision(decision: AbstractDecision): Result<DecisionResolutionResult>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resolveResource(resource: IResource): Result<IResourceCandidate>;
+    resolveResource(resource: string): Result<IResourceCandidate>;
     readonly resourceManager: IResourceManager;
+    withContext(context: Record<string, string>): Result<ResourceResolver>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -4449,9 +4463,9 @@ const resourceTreeRootDecl: Converter<Normalized.IResourceTreeRootDecl>;
 
 // @public
 export abstract class ResourceType<T = unknown> implements IResourceType<T> {
-    protected constructor(key: ResourceTypeName, index?: number);
-    createTemplate(resourceId: ResourceId): ResourceJson.Json.ILooseResourceDecl;
-    protected getDefaultTemplateValue(): JsonObject;
+    protected constructor(key: ResourceTypeName, index?: number, template?: JsonObject);
+    createTemplate(resourceId: ResourceId, init?: JsonValue, conditions?: ResourceJson.Json.ConditionSetDecl, resolver?: IResourceResolver): Result<ResourceJson.Json.ILooseResourceDecl>;
+    getDefaultTemplateCandidate(json?: JsonValue, conditions?: ResourceJson.Json.ConditionSetDecl, __resolver?: IResourceResolver): Result<ResourceJson.Json.IChildResourceCandidateDecl>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -4996,7 +5010,7 @@ details: string) => void;
 // src/packlets/resources/resource.ts:265:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resourceCandidate.ts:271:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/conditionSetResolutionResult.ts:56:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/runtime/resourceResolver.ts:170:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/runtime/resourceResolver.ts:178:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 

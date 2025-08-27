@@ -9,5 +9,7 @@ Discard all pending edits
 **Signature:**
 
 ```typescript
-discardEdits: () => void;
+discardEdits: () => Result<{
+        discardedCount: number;
+    }>;
 ```

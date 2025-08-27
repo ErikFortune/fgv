@@ -23,11 +23,11 @@
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { JsonValue, JsonObject, isJsonObject } from '@fgv/ts-json-base';
 import { JsonEditor } from '@fgv/ts-json';
-import { NoMatch } from '../common';
+import { IResourceResolver, NoMatch } from '../common';
 import { Condition, ConditionSet } from '../conditions';
 import { AbstractDecision } from '../decisions';
 import { ReadOnlyQualifierTypeCollector } from '../qualifier-types';
-import { IContextQualifierProvider } from './context';
+import { IContextQualifierProvider, ValidatingSimpleContextQualifierProvider } from './context';
 import { IResourceManager, IResource, IResourceCandidate } from './iResourceManager';
 import {
   ConditionMatchType,
@@ -35,6 +35,7 @@ import {
   IConditionMatchResult
 } from './conditionSetResolutionResult';
 import { IResourceResolverCacheListener } from './cacheListener';
+import { IReadOnlyQualifierCollector } from '../qualifiers';
 
 /**
  * Represents the cached result of resolving a decision.
@@ -100,7 +101,7 @@ export interface IResourceResolverCreateParams {
  * and caching results for optimal performance.
  * @public
  */
-export class ResourceResolver {
+export class ResourceResolver implements IResourceResolver {
   /**
    * The resource manager that defines available resources and provides condition access.
    */
@@ -120,6 +121,13 @@ export class ResourceResolver {
    * The configuration options for this resource resolver.
    */
   public readonly options: IResourceResolverOptions;
+
+  /**
+   * The readonly qualifier collector that provides qualifier implementations.
+   */
+  public get qualifiers(): IReadOnlyQualifierCollector {
+    return this.contextQualifierProvider.qualifiers;
+  }
 
   /**
    * The cache array for resolved conditions, indexed by condition index for O(1) lookup.
@@ -412,7 +420,26 @@ export class ResourceResolver {
    * or `Failure` with an error message if no candidates match or resolution fails.
    * @public
    */
-  public resolveResource(resource: IResource): Result<IResourceCandidate> {
+  public resolveResource(resource: IResource): Result<IResourceCandidate>;
+
+  /**
+   * Resolves a resource by finding the best matching candidate.
+   * Uses the resource's associated decision to determine the best match based on the current context.
+   * @param resource - The string id of the resource to resolve.
+   * @returns `Success` with the best matching candidate if successful,
+   * or `Failure` with an error message if no candidates match or resolution fails.
+   * @public
+   */
+  public resolveResource(resource: string): Result<IResourceCandidate>;
+  public resolveResource(idOrResource: string | IResource): Result<IResourceCandidate> {
+    if (typeof idOrResource === 'string') {
+      return this.resourceManager
+        .getBuiltResource(idOrResource)
+        .onSuccess((resource) => this.resolveResource(resource));
+    }
+
+    const resource = idOrResource;
+
     // Get the abstract decision from the resource's concrete decision
     const abstractDecision = resource.decision.baseDecision;
 
@@ -455,7 +482,28 @@ export class ResourceResolver {
    * or `Failure` with an error message if no candidates match or resolution fails.
    * @public
    */
-  public resolveAllResourceCandidates(resource: IResource): Result<ReadonlyArray<IResourceCandidate>> {
+  public resolveAllResourceCandidates(resource: IResource): Result<ReadonlyArray<IResourceCandidate>>;
+
+  /**
+   * Resolves all matching resource candidates in priority order.
+   * Uses the resource's associated decision to determine all matching candidates based on the current context.
+   * @param resource - The string id of the resource to resolve.
+   * @returns `Success` with an array of all matching candidates in priority order if successful,
+   * or `Failure` with an error message if no candidates match or resolution fails.
+   * @public
+   */
+  public resolveAllResourceCandidates(resource: string): Result<ReadonlyArray<IResourceCandidate>>;
+  public resolveAllResourceCandidates(
+    idOrResource: string | IResource
+  ): Result<ReadonlyArray<IResourceCandidate>> {
+    if (typeof idOrResource === 'string') {
+      return this.resourceManager
+        .getBuiltResource(idOrResource)
+        .onSuccess((resource) => this.resolveAllResourceCandidates(resource));
+    }
+
+    const resource = idOrResource;
+
     // Get the abstract decision from the resource's concrete decision
     const abstractDecision = resource.decision.baseDecision;
 
@@ -510,7 +558,27 @@ export class ResourceResolver {
    * or `Failure` with an error message if no candidates match or resolution fails.
    * @public
    */
-  public resolveComposedResourceValue(resource: IResource): Result<JsonValue> {
+  public resolveComposedResourceValue(resource: IResource): Result<JsonValue>;
+
+  /**
+   * Resolves a resource to a composed value by merging matching candidates according to their merge methods.
+   * Starting from the highest priority candidates, finds the first "full" candidate and merges all higher
+   * priority "partial" candidates into it in ascending order of priority.
+   * @param resource - The string id of the resource to resolve.
+   * @returns `Success` with the composed JsonValue if successful,
+   * or `Failure` with an error message if no candidates match or resolution fails.
+   * @public
+   */
+  public resolveComposedResourceValue(resource: string): Result<JsonValue>;
+  public resolveComposedResourceValue(idOrResource: string | IResource): Result<JsonValue> {
+    if (typeof idOrResource === 'string') {
+      return this.resourceManager
+        .getBuiltResource(idOrResource)
+        .onSuccess((resource) => this.resolveComposedResourceValue(resource));
+    }
+
+    const resource = idOrResource;
+
     return this.resolveAllResourceCandidates(resource).onSuccess((candidates) => {
       /* c8 ignore next 3 - defense in depth should never occur */
       if (candidates.length === 0) {
@@ -578,6 +646,24 @@ export class ResourceResolver {
       return editor
         .mergeObjectsInPlace({}, allCandidates)
         .withErrorFormat((err) => `${resource.id}: Composition failed: ${err}`);
+    });
+  }
+
+  /**
+   * {@inheritDoc IResourceResolver.withContext}
+   */
+  public withContext(context: Record<string, string>): Result<ResourceResolver> {
+    const { resourceManager, qualifierTypes, options } = this;
+    return ValidatingSimpleContextQualifierProvider.create({
+      qualifiers: this.qualifiers,
+      qualifierValues: context
+    }).onSuccess((contextQualifierProvider) => {
+      return ResourceResolver.create({
+        resourceManager,
+        qualifierTypes,
+        options,
+        contextQualifierProvider
+      });
     });
   }
 

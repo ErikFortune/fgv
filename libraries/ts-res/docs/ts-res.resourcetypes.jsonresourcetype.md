@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)(key, index)](./ts-res.resourcetypes.jsonresourcetype._constructor_.md)
+[(constructor)(key, index, template)](./ts-res.resourcetypes.jsonresourcetype._constructor_.md)
 
 
 </td><td>

@@ -1,7 +1,7 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
 import { ConditionSet, ResourceJson, Resources, Runtime } from '@fgv/ts-res';
 import { Diff } from '@fgv/ts-json';
-import { JsonObject } from '@fgv/ts-json-base';
+import { JsonObject, isJsonObject } from '@fgv/ts-json-base';
 import { ProcessedResources, JsonValue } from '../types';
 
 export interface EditedResourceInfo {
@@ -100,7 +100,7 @@ export function computeResourceDelta(
  * Recursively adds null values to delta for all properties in the deleted object
  */
 function addDeletionsAsNull(deleted: JsonValue, delta: Record<string, JsonValue>): void {
-  if (typeof deleted === 'object' && deleted !== null && !Array.isArray(deleted)) {
+  if (isJsonObject(deleted)) {
     const deletedObj = deleted as Record<string, JsonValue>;
     for (const key in deletedObj) {
       if (deletedObj.hasOwnProperty(key)) {

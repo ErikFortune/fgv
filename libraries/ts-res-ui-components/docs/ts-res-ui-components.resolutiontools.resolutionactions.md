@@ -45,7 +45,7 @@ Description
 
 </td><td>
 
-(hostManagedValues?: Record&lt;string, string \| undefined&gt;) =&gt; void
+(hostManagedValues?: Record&lt;string, string \| undefined&gt;) =&gt; Result&lt;void&gt;
 
 
 </td><td>
@@ -64,7 +64,7 @@ Apply pending context changes to the resolver (with optional host-managed values
 
 </td><td>
 
-() =&gt; Promise&lt;void&gt;
+() =&gt; Promise&lt;Result&lt;{ appliedCount: number; existingResourceEditCount: number; pendingResourceEditCount: number; newResourceCount: number; deletionCount: number; }&gt;&gt;
 
 
 </td><td>
@@ -102,12 +102,31 @@ Cancel the new resource creation
 
 </td><td>
 
-() =&gt; void
+() =&gt; Result&lt;{ clearedCount: number; }&gt;
 
 
 </td><td>
 
 Clear all pending edits
+
+
+</td></tr>
+<tr><td>
+
+[createPendingResource](./ts-res-ui-components.resolutiontools.resolutionactions.creatependingresource.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(params: [CreatePendingResourceParams](./ts-res-ui-components.resolutiontools.creatependingresourceparams.md)<!-- -->) =&gt; Result&lt;void&gt;
+
+
+</td><td>
+
+Create a pending resource atomically with validation
 
 
 </td></tr>
@@ -121,7 +140,7 @@ Clear all pending edits
 
 </td><td>
 
-() =&gt; void
+() =&gt; Result&lt;{ discardedCount: number; }&gt;
 
 
 </td><td>
@@ -216,7 +235,7 @@ Mark an existing resource for deletion
 
 </td><td>
 
-(resourceId: string) =&gt; void
+(resourceId: string) =&gt; Result&lt;void&gt;
 
 
 </td><td>
@@ -235,7 +254,7 @@ Remove a pending resource
 
 </td><td>
 
-() =&gt; void
+() =&gt; Result&lt;void&gt;
 
 
 </td><td>
@@ -254,7 +273,7 @@ Clear the resolution cache to force fresh resolution
 
 </td><td>
 
-(resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) =&gt; void
+(resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) =&gt; Result&lt;void&gt;
 
 
 </td><td>
@@ -273,7 +292,7 @@ Save an edit to a resource value
 
 </td><td>
 
-() =&gt; void
+() =&gt; Result&lt;{ pendingResources: Map&lt;string, ResourceJson.Json.ILooseResourceDecl&gt;; diagnostics: string\[\]; }&gt;
 
 
 </td><td>
@@ -292,7 +311,7 @@ Add the new resource to pending resources (not applied yet)
 
 </td><td>
 
-(resourceId: string) =&gt; void
+(resourceId: string) =&gt; Result&lt;void&gt;
 
 
 </td><td>
@@ -311,7 +330,7 @@ Select a resource for detailed resolution testing
 
 </td><td>
 
-(type: string) =&gt; void
+(type: string) =&gt; Result&lt;{ draft: [ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]; diagnostics: string\[\]; }&gt;
 
 
 </td><td>
@@ -349,12 +368,12 @@ Change how resolution results are displayed
 
 </td><td>
 
-(defaultTypeName?: string) =&gt; void
+(params?: StartNewResourceParams) =&gt; Result&lt;{ draft: [ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]; diagnostics: string\[\]; }&gt;
 
 
 </td><td>
 
-Start creating a new resource
+Start creating a new resource (enhanced with optional pre-seeding)
 
 
 </td></tr>
@@ -368,7 +387,7 @@ Start creating a new resource
 
 </td><td>
 
-(qualifierName: string, value: string \| undefined) =&gt; void
+(qualifierName: string, value: string \| undefined) =&gt; Result&lt;void&gt;
 
 
 </td><td>
@@ -387,12 +406,31 @@ Update a context value for resolution testing
 
 </td><td>
 
-(id: string) =&gt; void
+(id: string) =&gt; Result&lt;{ draft: [ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]; diagnostics: string\[\]; }&gt;
 
 
 </td><td>
 
 Update the resource ID for the new resource being created
+
+
+</td></tr>
+<tr><td>
+
+[updateNewResourceJson](./ts-res-ui-components.resolutiontools.resolutionactions.updatenewresourcejson.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(json: JsonValue) =&gt; Result&lt;{ draft: [ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]; diagnostics: string\[\]; }&gt;
+
+
+</td><td>
+
+Update the JSON content for the new resource being created
 
 
 </td></tr>

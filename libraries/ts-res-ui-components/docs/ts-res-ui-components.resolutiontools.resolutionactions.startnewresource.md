@@ -4,10 +4,13 @@
 
 ## ResolutionTools.ResolutionActions.startNewResource property
 
-Start creating a new resource
+Start creating a new resource (enhanced with optional pre-seeding)
 
 **Signature:**
 
 ```typescript
-startNewResource: (defaultTypeName?: string) => void;
+startNewResource: (params?: StartNewResourceParams) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
 ```

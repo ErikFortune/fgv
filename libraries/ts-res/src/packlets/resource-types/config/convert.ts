@@ -23,6 +23,7 @@
 /* eslint-disable @rushstack/typedef-var */
 
 import { Converters } from '@fgv/ts-utils';
+import { Converters as JsonConverters } from '@fgv/ts-json-base';
 import { IResourceTypeConfig } from './json';
 
 /**
@@ -32,5 +33,6 @@ import { IResourceTypeConfig } from './json';
  */
 export const resourceTypeConfig = Converters.strictObject<IResourceTypeConfig>({
   name: Converters.string,
-  typeName: Converters.string
+  typeName: Converters.string,
+  template: JsonConverters.jsonObject.optional()
 });

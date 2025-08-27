@@ -9,7 +9,7 @@ Protected [JsonResourceType](./ts-res.resourcetypes.jsonresourcetype.md) constru
 **Signature:**
 
 ```typescript
-protected constructor(key: ResourceTypeName, index?: number);
+protected constructor(key: ResourceTypeName, index?: number, template?: JsonObject);
 ```
 
 ## Parameters
@@ -59,6 +59,22 @@ number
 </td><td>
 
 _(Optional)_ Optional index for the new [JsonResourceType](./ts-res.resourcetypes.jsonresourcetype.md) instance.
+
+
+</td></tr>
+<tr><td>
+
+template
+
+
+</td><td>
+
+JsonObject
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>

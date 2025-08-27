@@ -20,7 +20,8 @@
  * SOFTWARE.
  */
 
-import { Brand } from '@fgv/ts-utils';
+import { JsonValue } from '@fgv/ts-json-base';
+import { Brand, Result } from '@fgv/ts-utils';
 
 /**
  * Branded string representing a validated resource id.  A resource ID
@@ -76,3 +77,29 @@ export const allResourceValueMergeMethods: ResourceValueMergeMethod[] = ['augmen
  * @public
  */
 export type CandidateCompleteness = 'full' | 'partial';
+
+/**
+ * Minimal resource resolver
+ * @public
+ */
+export interface IResourceResolver {
+  /**
+   * Resolves a resource to a composed value by merging matching candidates according to their merge methods.
+   * Starting from the highest priority candidates, finds the first "full" candidate and merges all higher
+   * priority "partial" candidates into it in ascending order of priority.
+   * @param resource - The string id of the resource to resolve.
+   * @returns `Success` with the composed JsonValue if successful,
+   * or `Failure` with an error message if no candidates match or resolution fails.
+   * @public
+   */
+  resolveComposedResourceValue(resource: string): Result<JsonValue>;
+
+  /**
+   * Creates a new {@link IResourceResolver | resource resolver} with the given context.
+   * @param context - The context to use for the new resource resolver.
+   * @returns `Success` with the new resource resolver if successful,
+   * or `Failure` with an error message if the context is invalid.
+   * @public
+   */
+  withContext(context: Record<string, string>): Result<IResourceResolver>;
+}

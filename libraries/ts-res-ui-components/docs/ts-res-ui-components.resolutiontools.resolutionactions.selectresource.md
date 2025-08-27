@@ -9,5 +9,5 @@ Select a resource for detailed resolution testing
 **Signature:**
 
 ```typescript
-selectResource: (resourceId: string) => void;
+selectResource: (resourceId: string) => Result<void>;
 ```

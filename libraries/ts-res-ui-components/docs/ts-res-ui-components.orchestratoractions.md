@@ -204,7 +204,7 @@ Description
 
 </td><td>
 
-() =&gt; Promise&lt;void&gt;
+() =&gt; Promise&lt;Result&lt;{ appliedCount: number; existingResourceEditCount: number; pendingResourceEditCount: number; newResourceCount: number; deletionCount: number; }&gt;&gt;
 
 
 </td><td>
@@ -290,6 +290,23 @@ Description
 </td><td>
 
 () =&gt; void
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[createPendingResource](./ts-res-ui-components.orchestratoractions.creatependingresource.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(params: [CreatePendingResourceParams](./ts-res-ui-components.resolutiontools.creatependingresourceparams.md)<!-- -->) =&gt; Result&lt;void&gt;
 
 
 </td><td>
@@ -527,7 +544,7 @@ Description
 
 </td><td>
 
-() =&gt; void
+() =&gt; Result&lt;{ pendingResources: Map&lt;string, ResourceJson.Json.ILooseResourceDecl&gt;; diagnostics: string\[\]; }&gt;
 
 
 </td><td>
@@ -595,7 +612,7 @@ Description
 
 </td><td>
 
-(type: string) =&gt; void
+(type: string) =&gt; Result&lt;{ draft: [ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]; diagnostics: string\[\]; }&gt;
 
 
 </td><td>
@@ -629,7 +646,7 @@ Description
 
 </td><td>
 
-(defaultTypeName?: string) =&gt; void
+(params?: StartNewResourceParams) =&gt; Result&lt;{ draft: [ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]; diagnostics: string\[\]; }&gt;
 
 
 </td><td>
@@ -680,7 +697,24 @@ Description
 
 </td><td>
 
-(id: string) =&gt; void
+(id: string) =&gt; Result&lt;{ draft: [ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]; diagnostics: string\[\]; }&gt;
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[updateNewResourceJson](./ts-res-ui-components.orchestratoractions.updatenewresourcejson.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(json: JsonValue) =&gt; Result&lt;{ draft: [ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)<!-- -->\['newResourceDraft'\]; diagnostics: string\[\]; }&gt;
 
 
 </td><td>

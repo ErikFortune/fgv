@@ -414,10 +414,12 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
       // Edits applied through unified applyPendingResources
       discardResourceEdits: resolutionData.actions.discardEdits,
 
-      // Resource creation actions
+      // Resource creation actions (enhanced with atomic API)
+      createPendingResource: resolutionData.actions.createPendingResource,
       startNewResource: resolutionData.actions.startNewResource,
       updateNewResourceId: resolutionData.actions.updateNewResourceId,
       selectResourceType: resolutionData.actions.selectResourceType,
+      updateNewResourceJson: resolutionData.actions.updateNewResourceJson,
       saveNewResourceAsPending: resolutionData.actions.saveNewResourceAsPending,
       cancelNewResource: resolutionData.actions.cancelNewResource,
       removePendingResource: resolutionData.actions.removePendingResource,

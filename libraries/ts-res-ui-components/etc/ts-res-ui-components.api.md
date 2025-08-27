@@ -97,6 +97,13 @@ function convertImportedDirectoryToFileTree(directory: ImportedDirectory): FileT
 const createFilteredResourceManagerSimple: (originalSystem: ProcessedResources["system"], partialContext: Record<string, string | undefined>, options?: FilterOptions) => Promise<Result<ProcessedResources>>;
 
 // @public
+interface CreatePendingResourceParams {
+    id: string;
+    json?: JsonValue;
+    resourceTypeName: string;
+}
+
+// @public
 function createResolverWithContext(processedResources: ProcessedResources, contextValues: Record<string, string | undefined>, options?: ResolutionOptions): Result<Runtime.ResourceResolver>;
 
 // @internal (undocumented)
@@ -111,6 +118,12 @@ function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemConfigur
     importManager: Import.ImportManager;
     contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
 }>;
+
+// @public
+function deriveFullId(rootPath: string, leafId: string): Result<string>;
+
+// @public
+function deriveLeafId(fullResourceId: string): Result<string>;
 
 // @public
 const EditableJsonView: React_2.FC<EditableJsonViewProps>;
@@ -248,6 +261,22 @@ function getDefaultSystemConfiguration(): Config.Model.ISystemConfiguration;
 function getFilterSummary(values: Record<string, string | undefined>): string;
 
 // @public
+function getPendingAdditionsByType(pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>, resourceType: string): Array<{
+    id: string;
+    resource: ResourceJson.Json.ILooseResourceDecl;
+}>;
+
+// @public
+function getPendingResourceStats(pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>): {
+    totalCount: number;
+    byType: Record<string, number>;
+    resourceIds: string[];
+};
+
+// @public
+function getPendingResourceTypes(pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>): string[];
+
+// @public
 function hasFilterValues(values: Record<string, string | undefined>): boolean;
 
 // @public
@@ -302,6 +331,9 @@ interface ImportViewProps extends ViewBaseProps {
 }
 
 // @public
+function isPendingAddition(resourceId: string, pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>): boolean;
+
+// @public
 function isZipFile(filename: string): boolean;
 
 export { JsonValue }
@@ -335,7 +367,13 @@ export interface OrchestratorActions {
     // (undocumented)
     applyFilter: () => Promise<FilterResult | null>;
     // (undocumented)
-    applyPendingResources: () => Promise<void>;
+    applyPendingResources: () => Promise<Result<{
+        appliedCount: number;
+        existingResourceEditCount: number;
+        pendingResourceEditCount: number;
+        newResourceCount: number;
+        deletionCount: number;
+    }>>;
     // (undocumented)
     applyResolutionContext: () => void;
     // (undocumented)
@@ -346,6 +384,8 @@ export interface OrchestratorActions {
     clearResourceEdits: () => void;
     // (undocumented)
     clearResources: () => void;
+    // (undocumented)
+    createPendingResource: (params: CreatePendingResourceParams) => Result<void>;
     // (undocumented)
     discardPendingResources: () => void;
     // (undocumented)
@@ -373,7 +413,10 @@ export interface OrchestratorActions {
     // (undocumented)
     resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<JsonValue>>;
     // (undocumented)
-    saveNewResourceAsPending: () => void;
+    saveNewResourceAsPending: () => Result<{
+        pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>;
+        diagnostics: string[];
+    }>;
     // (undocumented)
     saveResourceEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
     // (undocumented)
@@ -381,17 +424,33 @@ export interface OrchestratorActions {
     // (undocumented)
     selectResourceForResolution: (resourceId: string) => void;
     // (undocumented)
-    selectResourceType: (type: string) => void;
+    selectResourceType: (type: string) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
     // (undocumented)
     setResolutionViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
+    // Warning: (ae-forgotten-export) The symbol "StartNewResourceParams" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
-    startNewResource: (defaultTypeName?: string) => void;
+    startNewResource: (params?: StartNewResourceParams) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
     // (undocumented)
     updateConfiguration: (config: Config.Model.ISystemConfiguration) => void;
     // (undocumented)
     updateFilterState: (state: Partial<FilterState>) => void;
     // (undocumented)
-    updateNewResourceId: (id: string) => void;
+    updateNewResourceId: (id: string) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
+    // (undocumented)
+    updateNewResourceJson: (json: JsonValue) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
     // (undocumented)
     updateResolutionContext: (qualifierName: string, value: string | undefined) => void;
 }
@@ -544,25 +603,52 @@ function readFilesFromInput(files: FileList): Promise<ImportedFile[]>;
 
 // @public
 interface ResolutionActions {
-    applyContext: (hostManagedValues?: Record<string, string | undefined>) => void;
-    applyPendingResources: () => Promise<void>;
+    applyContext: (hostManagedValues?: Record<string, string | undefined>) => Result<void>;
+    applyPendingResources: () => Promise<Result<{
+        appliedCount: number;
+        existingResourceEditCount: number;
+        pendingResourceEditCount: number;
+        newResourceCount: number;
+        deletionCount: number;
+    }>>;
     cancelNewResource: () => void;
-    clearEdits: () => void;
-    discardEdits: () => void;
+    clearEdits: () => Result<{
+        clearedCount: number;
+    }>;
+    createPendingResource: (params: CreatePendingResourceParams) => Result<void>;
+    discardEdits: () => Result<{
+        discardedCount: number;
+    }>;
     discardPendingResources: () => void;
     getEditedValue: (resourceId: string) => JsonValue | undefined;
     hasEdit: (resourceId: string) => boolean;
     markResourceForDeletion: (resourceId: string) => void;
-    removePendingResource: (resourceId: string) => void;
-    resetCache: () => void;
-    saveEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
-    saveNewResourceAsPending: () => void;
-    selectResource: (resourceId: string) => void;
-    selectResourceType: (type: string) => void;
+    removePendingResource: (resourceId: string) => Result<void>;
+    resetCache: () => Result<void>;
+    saveEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => Result<void>;
+    saveNewResourceAsPending: () => Result<{
+        pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>;
+        diagnostics: string[];
+    }>;
+    selectResource: (resourceId: string) => Result<void>;
+    selectResourceType: (type: string) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
     setViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
-    startNewResource: (defaultTypeName?: string) => void;
-    updateContextValue: (qualifierName: string, value: string | undefined) => void;
-    updateNewResourceId: (id: string) => void;
+    startNewResource: (params?: StartNewResourceParams) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
+    updateContextValue: (qualifierName: string, value: string | undefined) => Result<void>;
+    updateNewResourceId: (id: string) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
+    updateNewResourceJson: (json: JsonValue) => Result<{
+        draft: ResolutionState['newResourceDraft'];
+        diagnostics: string[];
+    }>;
 }
 
 // @public
@@ -658,6 +744,13 @@ declare namespace ResolutionTools {
         getAvailableQualifiers,
         hasPendingContextChanges,
         ResolutionOptions,
+        getPendingAdditionsByType,
+        isPendingAddition,
+        deriveLeafId,
+        deriveFullId,
+        getPendingResourceTypes,
+        getPendingResourceStats,
+        validatePendingResourceKeys,
         ResolutionState,
         ResolutionActions,
         ResolutionViewProps,
@@ -667,6 +760,7 @@ declare namespace ResolutionTools {
         EditedResourceInfo,
         ResolutionContextOptions,
         QualifierControlOptions,
+        CreatePendingResourceParams,
         EditableJsonViewProps,
         ResolutionContextOptionsControlProps
     }
@@ -927,6 +1021,9 @@ function useViewState(): UseViewStateReturn;
 //
 // @public
 function validateConfiguration(config: Config.Model.ISystemConfiguration): ConfigurationValidationResult;
+
+// @public
+function validatePendingResourceKeys(pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>): Result<void>;
 
 // @public
 interface ViewBaseProps {
