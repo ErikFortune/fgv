@@ -122,4 +122,259 @@ describe('JsonResourceType', () => {
       expect(rt.setIndex(1)).toSucceedWith(1 as TsRes.ResourceTypeIndex);
     });
   });
+
+  describe('createTemplate method', () => {
+    const resourceId = 'test.resource' as TsRes.ResourceId;
+
+    test('creates a template with default empty object when no parameters are provided', () => {
+      const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
+      expect(rt.createTemplate(resourceId)).toSucceedAndSatisfy((template) => {
+        expect(template).toEqual({
+          id: resourceId,
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: {},
+              mergeMethod: 'replace',
+              isPartial: false
+            }
+          ]
+        });
+      });
+    });
+
+    test('creates a template with provided JSON init value', () => {
+      const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
+      const init = { title: 'Test Resource', value: 42 };
+
+      expect(rt.createTemplate(resourceId, init)).toSucceedAndSatisfy((template) => {
+        expect(template).toEqual({
+          id: resourceId,
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: init,
+              mergeMethod: 'replace',
+              isPartial: false
+            }
+          ]
+        });
+      });
+    });
+
+    test('creates a template with conditions', () => {
+      const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
+      const init = { content: 'localized content' };
+      const conditions = { language: 'en-US', territory: 'US' };
+
+      expect(rt.createTemplate(resourceId, init, conditions)).toSucceedAndSatisfy((template) => {
+        expect(template).toEqual({
+          id: resourceId,
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: init,
+              conditions,
+              mergeMethod: 'replace',
+              isPartial: false
+            }
+          ]
+        });
+      });
+    });
+
+    test('creates a template with array-style conditions', () => {
+      const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
+      const init = { message: 'Hello' };
+      const conditions = [
+        { qualifierName: 'language', value: 'en' },
+        { qualifierName: 'territory', value: 'US', operator: 'matches' as TsRes.ConditionOperator }
+      ];
+
+      expect(rt.createTemplate(resourceId, init, conditions)).toSucceedAndSatisfy((template) => {
+        expect(template).toEqual({
+          id: resourceId,
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: init,
+              conditions,
+              mergeMethod: 'replace',
+              isPartial: false
+            }
+          ]
+        });
+      });
+    });
+
+    test('fails when init value is not a JSON object', () => {
+      const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
+      const invalidInit = 'not an object';
+
+      expect(rt.createTemplate(resourceId, invalidInit)).toFailWith(
+        /Invalid initial value.*must be JSON object/
+      );
+    });
+
+    test('uses default template when init value is null', () => {
+      const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
+      const invalidInit = null;
+
+      expect(rt.createTemplate(resourceId, invalidInit)).toSucceedAndSatisfy((template) => {
+        expect(template.candidates![0].json).toEqual({}); // Should use default empty object
+      });
+    });
+
+    test('uses default template when init value is undefined', () => {
+      const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
+      const invalidInit = undefined;
+
+      expect(rt.createTemplate(resourceId, invalidInit)).toSucceedAndSatisfy((template) => {
+        expect(template.candidates![0].json).toEqual({}); // Should use default empty object
+      });
+    });
+
+    test('fails when init value is an array', () => {
+      const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
+      const invalidInit = ['not', 'an', 'object'];
+
+      expect(rt.createTemplate(resourceId, invalidInit)).toFailWith(
+        /Invalid initial value.*must be JSON object/
+      );
+    });
+
+    test('fails when init value contains non-JSON-serializable content', () => {
+      const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
+      const invalidInit = { func: () => 'test' } as unknown as JsonObject;
+
+      expect(rt.createTemplate(resourceId, invalidInit)).toFailWith(/not a valid JSON object/);
+    });
+  });
+
+  describe('template parameter in create method', () => {
+    test('uses provided template as default for createTemplate calls', () => {
+      const template = { defaultTitle: 'Default Template', version: 1 };
+      const rt = TsRes.ResourceTypes.JsonResourceType.create({ template }).orThrow();
+      const resourceId = 'test.resource' as TsRes.ResourceId;
+
+      expect(rt.createTemplate(resourceId)).toSucceedAndSatisfy((result) => {
+        expect(result).toEqual({
+          id: resourceId,
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: template,
+              mergeMethod: 'replace',
+              isPartial: false
+            }
+          ]
+        });
+      });
+    });
+
+    test('init value overrides template when provided', () => {
+      const template = { defaultTitle: 'Default Template', version: 1 };
+      const init = { title: 'Custom Title', data: 'test' };
+      const rt = TsRes.ResourceTypes.JsonResourceType.create({ template }).orThrow();
+      const resourceId = 'test.resource' as TsRes.ResourceId;
+
+      expect(rt.createTemplate(resourceId, init)).toSucceedAndSatisfy((result) => {
+        expect(result).toEqual({
+          id: resourceId,
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: init,
+              mergeMethod: 'replace',
+              isPartial: false
+            }
+          ]
+        });
+      });
+    });
+
+    test('works with custom key and template', () => {
+      const template = { schema: 'v2', config: { enabled: true } };
+      const rt = TsRes.ResourceTypes.JsonResourceType.create({ key: 'custom-json', template }).orThrow();
+      const resourceId = 'test.resource' as TsRes.ResourceId;
+
+      expect(rt.createTemplate(resourceId)).toSucceedAndSatisfy((result) => {
+        expect(result).toEqual({
+          id: resourceId,
+          resourceTypeName: 'custom-json',
+          candidates: [
+            {
+              json: template,
+              mergeMethod: 'replace',
+              isPartial: false
+            }
+          ]
+        });
+      });
+    });
+  });
+
+  describe('getDefaultTemplateCandidate method', () => {
+    test('returns default template candidate with empty object when no parameters', () => {
+      const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
+
+      expect(rt.getDefaultTemplateCandidate()).toSucceedAndSatisfy((candidate) => {
+        expect(candidate).toEqual({
+          json: {},
+          mergeMethod: 'replace',
+          isPartial: false
+        });
+      });
+    });
+
+    test('returns candidate with provided JSON', () => {
+      const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
+      const json = { test: 'value', number: 123 };
+
+      expect(rt.getDefaultTemplateCandidate(json)).toSucceedAndSatisfy((candidate) => {
+        expect(candidate).toEqual({
+          json,
+          mergeMethod: 'replace',
+          isPartial: false
+        });
+      });
+    });
+
+    test('returns candidate with conditions when provided', () => {
+      const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
+      const json = { localized: true };
+      const conditions = { language: 'fr', region: 'CA' };
+
+      expect(rt.getDefaultTemplateCandidate(json, conditions)).toSucceedAndSatisfy((candidate) => {
+        expect(candidate).toEqual({
+          json,
+          conditions,
+          mergeMethod: 'replace',
+          isPartial: false
+        });
+      });
+    });
+
+    test('uses constructor template when no JSON provided', () => {
+      const template = { fromConstructor: true, id: 'default' };
+      const rt = TsRes.ResourceTypes.JsonResourceType.create({ template }).orThrow();
+
+      expect(rt.getDefaultTemplateCandidate()).toSucceedAndSatisfy((candidate) => {
+        expect(candidate).toEqual({
+          json: template,
+          mergeMethod: 'replace',
+          isPartial: false
+        });
+      });
+    });
+
+    test('fails for invalid JSON values', () => {
+      const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
+      const invalidJson = 'not an object';
+
+      expect(rt.getDefaultTemplateCandidate(invalidJson)).toFailWith(
+        /Invalid initial value.*must be JSON object/
+      );
+    });
+  });
 });
