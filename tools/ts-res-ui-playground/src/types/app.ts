@@ -11,6 +11,8 @@ export type Tool =
   | 'resolution'
   | 'configuration'
   | 'picker'
+  | 'grid'
+  | 'multi-grid'
   | 'host-resolution'
   | 'resource-creation';
 

@@ -1368,6 +1368,254 @@ export interface OrchestratorActions {
   resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<JsonValue>>;
 }
 
+// GridView types
+/**
+ * Dropdown option for cell editing.
+ *
+ * @public
+ */
+export interface GridDropdownOption {
+  /** The value to store when this option is selected */
+  value: string;
+  /** The label to display for this option */
+  label: string;
+  /** Whether this option is disabled */
+  disabled?: boolean;
+}
+
+/**
+ * Validation configuration for grid cells.
+ *
+ * @public
+ */
+export interface GridCellValidation {
+  /** Whether the field is required */
+  required?: boolean;
+  /** Regex pattern for validation */
+  pattern?: RegExp;
+  /** Minimum length for string values */
+  minLength?: number;
+  /** Maximum length for string values */
+  maxLength?: number;
+  /** Custom validation function that returns error message or null */
+  custom?: (value: JsonValue) => string | null;
+}
+
+/**
+ * Configuration for a single column in a resource grid.
+ * Defines how to extract, display, and edit values from resolved resources.
+ *
+ * @public
+ */
+export interface GridColumnDefinition {
+  /** Unique identifier for this column */
+  id: string;
+  /** Display title for the column header */
+  title: string;
+  /** Path to the property in the resolved resource value (JSONPath-like) */
+  dataPath: string | string[];
+  /** Optional fixed width for the column */
+  width?: number;
+  /** Whether this column can be sorted */
+  sortable?: boolean;
+  /** Whether values in this column can be edited */
+  editable?: boolean;
+  /** Type of cell editor to use */
+  cellType?: 'string' | 'boolean' | 'tristate' | 'dropdown' | 'custom';
+  /** Custom component for rendering cell content */
+  cellRenderer?: React.ComponentType<GridCellProps>;
+  /** Custom component for editing cell content */
+  cellEditor?: React.ComponentType<GridCellEditorProps>;
+  /** Validation configuration for this column */
+  validation?: GridCellValidation;
+  /** Options for dropdown/combobox cells */
+  dropdownOptions?: GridDropdownOption[] | (() => Promise<GridDropdownOption[]>);
+  /** Whether to allow custom values in dropdown (combobox behavior) */
+  allowCustomValue?: boolean;
+}
+
+/**
+ * Props passed to custom grid cell renderers.
+ *
+ * @public
+ */
+export interface GridCellProps {
+  /** The extracted value for this cell */
+  value: JsonValue;
+  /** The resource ID for this row */
+  resourceId: string;
+  /** The column definition for this cell */
+  column: GridColumnDefinition;
+  /** The complete resolved resource value */
+  resolvedValue: JsonValue;
+  /** Whether this cell has been edited */
+  isEdited: boolean;
+  /** Additional CSS classes */
+  className?: string;
+}
+
+/**
+ * Props passed to custom grid cell editors.
+ *
+ * @public
+ */
+export interface GridCellEditorProps extends GridCellProps {
+  /** The current edited value if any */
+  editedValue?: JsonValue;
+  /** Callback when the user saves an edit */
+  onSave: (resourceId: string, newValue: JsonValue, originalValue: JsonValue) => void;
+  /** Callback when the user cancels an edit */
+  onCancel: () => void;
+  /** Whether editing is currently disabled */
+  disabled?: boolean;
+}
+
+/**
+ * Column mapping configuration for a specific resource type.
+ * Defines how resources of a given type should be displayed in the grid.
+ *
+ * @public
+ */
+export interface ResourceTypeColumnMapping {
+  /** The resource type this mapping applies to */
+  resourceType: string;
+  /** Column definitions for this resource type */
+  columns: GridColumnDefinition[];
+  /** Optional default column for unmapped properties */
+  defaultColumn?: GridColumnDefinition;
+}
+
+/**
+ * Custom resource selector for advanced filtering logic.
+ * Allows hosts to define complex resource selection criteria.
+ *
+ * @public
+ */
+export interface CustomResourceSelector {
+  /** Unique identifier for this selector */
+  id: string;
+  /** Function that returns resource IDs to include in the grid */
+  select: (resources: ProcessedResources) => string[];
+  /** Optional display name for debugging/logging */
+  displayName?: string;
+}
+
+/**
+ * Resource selection configuration for grid views.
+ * Supports simple built-in selectors and custom selection logic.
+ *
+ * @public
+ */
+export type GridResourceSelector =
+  | { type: 'ids'; resourceIds: string[] }
+  | { type: 'prefix'; prefix: string }
+  | { type: 'suffix'; suffix: string }
+  | { type: 'resourceTypes'; types: string[] }
+  | { type: 'pattern'; pattern: string }
+  | { type: 'all' }
+  | { type: 'custom'; selector: CustomResourceSelector };
+
+/**
+ * Presentation options for grid display.
+ *
+ * @public
+ */
+export interface GridPresentationOptions {
+  /** Enable sorting of grid rows */
+  enableSorting?: boolean;
+  /** Enable filtering of grid rows */
+  enableFiltering?: boolean;
+  /** Number of rows per page (0 for no pagination) */
+  pageSize?: number;
+  /** Whether to show row numbers */
+  showRowNumbers?: boolean;
+  /** Whether to show a summary row */
+  showSummaryRow?: boolean;
+  /** Additional CSS classes for the grid container */
+  className?: string;
+}
+
+/**
+ * Configuration for a single grid instance.
+ * Defines resource selection, column mapping, and presentation options.
+ *
+ * @public
+ */
+export interface GridViewInitParams {
+  /** Unique identifier for this grid */
+  id: string;
+  /** Display title for this grid */
+  title: string;
+  /** Optional description for this grid */
+  description?: string;
+  /** How to select resources for this grid */
+  resourceSelection: GridResourceSelector;
+  /** Column mappings for resource types in this grid */
+  columnMapping: ResourceTypeColumnMapping[];
+  /** Optional presentation overrides */
+  presentationOptions?: GridPresentationOptions;
+}
+
+/**
+ * Props for the GridView component.
+ * Displays a single grid instance with resource editing capabilities.
+ *
+ * @public
+ */
+export interface GridViewProps extends ViewBaseProps {
+  /** Grid configuration defining what and how to display */
+  gridConfig: GridViewInitParams;
+  /** The resource system for resolution */
+  resources?: ProcessedResources | null;
+  /** Current resolution state (shared with other views) */
+  resolutionState?: ResolutionState;
+  /** Actions for managing resolution state (shared with other views) */
+  resolutionActions?: ResolutionActions;
+  /** Available qualifiers for context building */
+  availableQualifiers?: string[];
+  /** Optional configuration for context controls */
+  contextOptions?: ResolutionContextOptions;
+  /** Optional filter state integration */
+  filterState?: FilterState;
+  /** Filter results if applied */
+  filterResult?: FilterResult | null;
+  /** Whether to show context controls (default: true) */
+  showContextControls?: boolean;
+  /** Whether to show change controls (default: true) */
+  showChangeControls?: boolean;
+}
+
+/**
+ * Props for the MultiGridView component.
+ * Container for multiple grid instances with shared context and batch operations.
+ *
+ * @public
+ */
+export interface MultiGridViewProps extends ViewBaseProps {
+  /** Multiple grid configurations to display */
+  gridConfigurations: GridViewInitParams[];
+  /** The resource system for all grids */
+  resources?: ProcessedResources | null;
+  /** Shared resolution state across all grids */
+  resolutionState?: ResolutionState;
+  /** Shared resolution actions across all grids */
+  resolutionActions?: ResolutionActions;
+  /** Available qualifiers for context building */
+  availableQualifiers?: string[];
+  /** Shared context options for all grids */
+  contextOptions?: ResolutionContextOptions;
+  /** Optional filter state integration */
+  filterState?: FilterState;
+  /** Filter results if applied */
+  filterResult?: FilterResult | null;
+  /** How to present the grid selector */
+  tabsPresentation?: 'tabs' | 'cards' | 'accordion' | 'dropdown';
+  /** ID of the initially active grid */
+  defaultActiveGrid?: string;
+  /** Whether users can reorder grid tabs */
+  allowGridReordering?: boolean;
+}
+
 // Export utility types
 export type { Result } from '@fgv/ts-utils';
 export type { JsonValue } from '@fgv/ts-json-base';

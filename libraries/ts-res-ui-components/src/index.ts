@@ -14,6 +14,7 @@ export type { JsonValue } from '@fgv/ts-json-base';
 // - TsResTools: SourceViewProps, CompiledViewProps
 // - ZipTools: ImportViewProps and ZIP utilities
 // - ConfigurationTools: ConfigurationViewProps
+// - GridTools: GridViewProps, MultiGridViewProps, GridColumnDefinition, GridResourceSelector, GridDropdownOption, GridCellValidation
 // - ImportTools: ImportedFile, ImportedDirectory
 
 // Export views
@@ -24,6 +25,8 @@ export { CompiledView } from './components/views/CompiledView';
 export { ResolutionView } from './components/views/ResolutionView';
 export { ConfigurationView } from './components/views/ConfigurationView';
 export { MessagesWindow } from './components/views/MessagesWindow';
+export { GridView } from './components/views/GridView';
+export { MultiGridView } from './components/views/GridView/MultiGridView';
 
 // Export orchestrator
 export { ResourceOrchestrator } from './components/orchestrator/ResourceOrchestrator';
@@ -64,5 +67,6 @@ export {
   TsResTools,
   ZipTools,
   ViewStateTools,
-  PickerTools
+  PickerTools,
+  GridTools
 } from './namespaces';

@@ -22,6 +22,11 @@ import { Runtime } from '@fgv/ts-res';
 // @public
 function analyzeFilteredResources(originalResourceIds: string[], filteredProcessedResources: ProcessedResources, originalProcessedResources: ProcessedResources): FilterResult;
 
+// Warning: (ae-forgotten-export) The symbol "BooleanCellProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+const BooleanCell: React_2.FC<BooleanCellProps>;
+
 // @public
 interface CandidateInfo {
     candidate: Runtime.IResourceCandidate;
@@ -32,6 +37,9 @@ interface CandidateInfo {
     matched: boolean;
     matchType: 'match' | 'matchAsDefault' | 'noMatch';
 }
+
+// @public
+const clearAllGridValidationErrors: () => void;
 
 // @public
 function cloneConfiguration(config: Config.Model.ISystemConfiguration): Config.Model.ISystemConfiguration;
@@ -120,10 +128,30 @@ function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemConfigur
 }>;
 
 // @public
+interface CustomResourceSelector {
+    displayName?: string;
+    id: string;
+    select: (resources: ProcessedResources) => string[];
+}
+
+// @public
+const defaultResourceSelector: ResourceSelector;
+
+// @public
 function deriveFullId(rootPath: string, leafId: string): Result<string>;
 
 // @public
 function deriveLeafId(fullResourceId: string): Result<string>;
+
+// Warning: (ae-forgotten-export) The symbol "DropdownCellProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+const DropdownCell: React_2.FC<DropdownCellProps>;
+
+// Warning: (ae-forgotten-export) The symbol "EditableGridCellProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+const EditableGridCell: React_2.FC<EditableGridCellProps>;
 
 // @public
 const EditableJsonView: React_2.FC<EditableJsonViewProps>;
@@ -249,6 +277,13 @@ interface FilterViewProps extends ViewBaseProps {
 }
 
 // @public
+const getAllGridValidationErrors: () => {
+    resourceId: string;
+    columnId: string;
+    error: string;
+}[];
+
+// @public
 function getAvailableQualifiers(processedResources: ProcessedResources): string[];
 
 // @public
@@ -277,7 +312,180 @@ function getPendingResourceStats(pendingResources: Map<string, ResourceJson.Json
 function getPendingResourceTypes(pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>): string[];
 
 // @public
+interface GridCellEditorProps extends GridCellProps {
+    disabled?: boolean;
+    editedValue?: JsonValue;
+    onCancel: () => void;
+    onSave: (resourceId: string, newValue: JsonValue, originalValue: JsonValue) => void;
+}
+
+// @public
+interface GridCellProps {
+    className?: string;
+    column: GridColumnDefinition;
+    isEdited: boolean;
+    resolvedValue: JsonValue;
+    resourceId: string;
+    value: JsonValue;
+}
+
+// @public
+interface GridCellValidation {
+    custom?: (value: JsonValue) => string | null;
+    maxLength?: number;
+    minLength?: number;
+    pattern?: RegExp;
+    required?: boolean;
+}
+
+// @public
+interface GridColumnDefinition {
+    allowCustomValue?: boolean;
+    cellEditor?: React.ComponentType<GridCellEditorProps>;
+    cellRenderer?: React.ComponentType<GridCellProps>;
+    cellType?: 'string' | 'boolean' | 'tristate' | 'dropdown' | 'custom';
+    dataPath: string | string[];
+    dropdownOptions?: GridDropdownOption[] | (() => Promise<GridDropdownOption[]>);
+    editable?: boolean;
+    id: string;
+    sortable?: boolean;
+    title: string;
+    validation?: GridCellValidation;
+    width?: number;
+}
+
+// @public
+interface GridDropdownOption {
+    disabled?: boolean;
+    label: string;
+    value: string;
+}
+
+// @public
+interface GridPresentationOptions {
+    className?: string;
+    enableFiltering?: boolean;
+    enableSorting?: boolean;
+    pageSize?: number;
+    showRowNumbers?: boolean;
+    showSummaryRow?: boolean;
+}
+
+// @public
+type GridResourceSelector = {
+    type: 'ids';
+    resourceIds: string[];
+} | {
+    type: 'prefix';
+    prefix: string;
+} | {
+    type: 'suffix';
+    suffix: string;
+} | {
+    type: 'resourceTypes';
+    types: string[];
+} | {
+    type: 'pattern';
+    pattern: string;
+} | {
+    type: 'all';
+} | {
+    type: 'custom';
+    selector: CustomResourceSelector;
+};
+
+// Warning: (ae-forgotten-export) The symbol "GridSelectorProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+const GridSelector: React_2.FC<GridSelectorProps>;
+
+declare namespace GridTools {
+    export {
+        GridView,
+        MultiGridView,
+        ResourceGrid,
+        EditableGridCell,
+        SharedContextControls,
+        GridSelector,
+        StringCell,
+        BooleanCell,
+        TriStateCell,
+        DropdownCell,
+        ResourceSelector,
+        defaultResourceSelector,
+        selectResources,
+        validateCellValue,
+        ValidationPatterns,
+        ValidationFunctions,
+        GridValidationState,
+        hasGridValidationErrors,
+        getAllGridValidationErrors,
+        clearAllGridValidationErrors,
+        GridViewProps,
+        MultiGridViewProps,
+        GridViewInitParams,
+        GridColumnDefinition,
+        GridDropdownOption,
+        GridCellValidation,
+        GridResourceSelector,
+        CustomResourceSelector,
+        GridPresentationOptions,
+        ResourceTypeColumnMapping,
+        GridCellProps,
+        GridCellEditorProps
+    }
+}
+
+// @public
+class GridValidationState {
+    clearAll(): void;
+    clearCell(resourceId: string, columnId: string): void;
+    clearResource(resourceId: string): void;
+    get errorCount(): number;
+    getAllErrors(): Array<{
+        resourceId: string;
+        columnId: string;
+        error: string;
+    }>;
+    getCellError(resourceId: string, columnId: string): string | null;
+    getResourceErrors(resourceId: string): Map<string, string>;
+    hasCellError(resourceId: string, columnId: string): boolean;
+    get hasErrors(): boolean;
+    setCellError(resourceId: string, columnId: string, error: string | null): void;
+}
+
+// @public
+export const GridView: React_2.FC<GridViewProps>;
+
+// @public
+interface GridViewInitParams {
+    columnMapping: ResourceTypeColumnMapping[];
+    description?: string;
+    id: string;
+    presentationOptions?: GridPresentationOptions;
+    resourceSelection: GridResourceSelector;
+    title: string;
+}
+
+// @public
+interface GridViewProps extends ViewBaseProps {
+    availableQualifiers?: string[];
+    contextOptions?: ResolutionContextOptions;
+    filterResult?: FilterResult | null;
+    filterState?: FilterState;
+    gridConfig: GridViewInitParams;
+    resolutionActions?: ResolutionActions;
+    resolutionState?: ResolutionState;
+    resources?: ProcessedResources | null;
+    showChangeControls?: boolean;
+    showContextControls?: boolean;
+}
+
+// @public
 function hasFilterValues(values: Record<string, string | undefined>): boolean;
+
+// @public
+const hasGridValidationErrors: () => boolean;
 
 // @public
 function hasPendingContextChanges(contextValues: Record<string, string | undefined>, pendingContextValues: Record<string, string | undefined>): boolean;
@@ -354,6 +562,24 @@ interface MessagesWindowProps {
     className?: string;
     messages: Message_2[];
     onClearMessages: () => void;
+}
+
+// @public
+export const MultiGridView: React_2.FC<MultiGridViewProps>;
+
+// @public
+interface MultiGridViewProps extends ViewBaseProps {
+    allowGridReordering?: boolean;
+    availableQualifiers?: string[];
+    contextOptions?: ResolutionContextOptions;
+    defaultActiveGrid?: string;
+    filterResult?: FilterResult | null;
+    filterState?: FilterState;
+    gridConfigurations: GridViewInitParams[];
+    resolutionActions?: ResolutionActions;
+    resolutionState?: ResolutionState;
+    resources?: ProcessedResources | null;
+    tabsPresentation?: 'tabs' | 'cards' | 'accordion' | 'dropdown';
 }
 
 // @public
@@ -860,6 +1086,11 @@ type ResourceEditorResult = {
     message?: string;
 };
 
+// Warning: (ae-forgotten-export) The symbol "ResourceGridProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+const ResourceGrid: React_2.FC<ResourceGridProps>;
+
 // Warning: (ae-forgotten-export) The symbol "ResourceListViewProps" needs to be exported by the entry point index.d.ts
 //
 // @public
@@ -929,6 +1160,15 @@ interface ResourceSelection<T = unknown> {
     resourceId: string | null;
 }
 
+// @public
+class ResourceSelector {
+    constructor();
+    getRegisteredTypes(): string[];
+    // Warning: (ae-forgotten-export) The symbol "SelectorHandler" needs to be exported by the entry point index.d.ts
+    registerSelector(type: string, handler: SelectorHandler): void;
+    select(selector: GridResourceSelector, resources: ProcessedResources): Result<string[]>;
+}
+
 declare namespace ResourceTools {
     export {
         useResourceData,
@@ -947,12 +1187,27 @@ declare namespace ResourceTools {
 // @public
 export const ResourceTreeView: React_2.FC<ResourceTreeViewProps>;
 
+// @public
+interface ResourceTypeColumnMapping {
+    columns: GridColumnDefinition[];
+    defaultColumn?: GridColumnDefinition;
+    resourceType: string;
+}
+
 // Warning: (ae-forgotten-export) The symbol "ResourceTypeEditFormProps" needs to be exported by the entry point index.d.ts
 //
 // @public
 const ResourceTypeEditForm: React_2.FC<ResourceTypeEditFormProps>;
 
 export { Result }
+
+// @public
+function selectResources(selector: GridResourceSelector, resources: ProcessedResources): Result<string[]>;
+
+// Warning: (ae-forgotten-export) The symbol "SharedContextControlsProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+const SharedContextControls: React_2.FC<SharedContextControlsProps>;
 
 // Warning: (ae-forgotten-export) The symbol "SourceResourceDetailProps" needs to be exported by the entry point index.d.ts
 //
@@ -970,6 +1225,16 @@ interface SourceViewProps extends ViewBaseProps {
     resources?: ExtendedProcessedResources | null;
     selectedResourceId?: string | null;
 }
+
+// Warning: (ae-forgotten-export) The symbol "StringCellProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+const StringCell: React_2.FC<StringCellProps>;
+
+// Warning: (ae-forgotten-export) The symbol "TriStateCellProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+const TriStateCell: React_2.FC<TriStateCellProps>;
 
 declare namespace TsResTools {
     export {
@@ -1017,6 +1282,11 @@ function useResourceData(params?: UseResourceDataParams): UseResourceDataReturn;
 // @public
 function useViewState(): UseViewStateReturn;
 
+// Warning: (ae-forgotten-export) The symbol "CellValidationResult" needs to be exported by the entry point index.d.ts
+//
+// @public
+function validateCellValue(value: JsonValue, validation?: GridCellValidation): Result<CellValidationResult>;
+
 // Warning: (ae-forgotten-export) The symbol "ConfigurationValidationResult" needs to be exported by the entry point index.d.ts
 //
 // @public
@@ -1024,6 +1294,25 @@ function validateConfiguration(config: Config.Model.ISystemConfiguration): Confi
 
 // @public
 function validatePendingResourceKeys(pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>): Result<void>;
+
+// @public
+const ValidationFunctions: {
+    validJson: (value: JsonValue) => string | null;
+    numberRange: (min: number, max: number) => (value: JsonValue) => string | null;
+    oneOf: (allowedValues: JsonValue[]) => (value: JsonValue) => string | null;
+    excludeCharacters: (forbiddenChars: string) => (value: JsonValue) => string | null;
+};
+
+// @public
+const ValidationPatterns: {
+    email: RegExp;
+    url: RegExp;
+    phone: RegExp;
+    alphanumeric: RegExp;
+    noWhitespace: RegExp;
+    positiveInteger: RegExp;
+    nonNegativeInteger: RegExp;
+};
 
 // @public
 interface ViewBaseProps {

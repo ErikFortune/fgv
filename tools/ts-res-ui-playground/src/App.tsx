@@ -4,7 +4,9 @@ import {
   FunnelIcon,
   CodeBracketIcon,
   MagnifyingGlassIcon,
-  CubeIcon
+  CubeIcon,
+  TableCellsIcon,
+  Squares2X2Icon
 } from '@heroicons/react/24/outline';
 import AppLayout from './components/layout/AppLayout';
 import {
@@ -16,7 +18,8 @@ import {
   ConfigurationView,
   ResourceOrchestrator,
   OrchestratorState,
-  OrchestratorActions
+  OrchestratorActions,
+  GridTools
 } from '@fgv/ts-res-ui-components';
 import NavigationWarningModal from './components/common/NavigationWarningModal';
 import ResourcePickerTool from './components/tools/ResourcePickerTool';
@@ -30,6 +33,11 @@ import { useUrlParams } from './hooks/useUrlParams';
 import { parseContextFilter } from './utils/urlParams';
 import { Tool } from './types/app';
 import * as TsRes from '@fgv/ts-res';
+import {
+  sampleGridConfigurations,
+  multiGridConfigurations,
+  demonstrationGridConfig
+} from './utils/gridConfigurations';
 
 // Separate component to handle initialization logic
 interface AppContentProps {
@@ -49,12 +57,16 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
     compiled: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
     resolution: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
     picker: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
+    grid: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
+    multiGrid: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
   }>({
     source: 'popover',
     filter: 'popover',
     compiled: 'popover',
     resolution: 'popover',
-    picker: 'popover'
+    picker: 'popover',
+    grid: 'popover',
+    multiGrid: 'popover'
   });
 
   // Playground toggle: lock ResolutionView to a specific mode (or keep unlocked)
@@ -101,6 +113,10 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
     customQualifierType: '',
     customResourceType: ''
   });
+
+  // Grid configuration selection
+  const [selectedGridConfig, setSelectedGridConfig] = useState<string>('app-config');
+  const [selectedMultiGridTabs, setSelectedMultiGridTabs] = useState<'tabs' | 'cards'>('tabs');
 
   // Note: Custom factories are now configured at the ResourceOrchestrator level
 
@@ -686,6 +702,170 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 resources={state.resources}
                 onMessage={actions.addMessage}
                 presentation={pickerPresentation.picker}
+              />
+            </div>
+          </div>
+        );
+
+      case 'grid':
+        const selectedConfig =
+          sampleGridConfigurations.find((config) => config.id === selectedGridConfig) ||
+          sampleGridConfigurations[0];
+
+        return (
+          <div>
+            {/* Title with controls */}
+            <div className="flex items-center space-x-3 p-6 pb-0">
+              <TableCellsIcon className="h-8 w-8 text-emerald-600" />
+              <h2 className="text-2xl font-bold text-gray-900">Grid View</h2>
+              <PresentationGearIcon
+                currentPresentation={pickerPresentation.grid}
+                onPresentationChange={(presentation) =>
+                  setPickerPresentation((prev) => ({ ...prev, grid: presentation }))
+                }
+              />
+              <div className="ml-auto flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm text-gray-600" htmlFor="grid-config-select">
+                    Configuration:
+                  </label>
+                  <select
+                    id="grid-config-select"
+                    value={selectedGridConfig}
+                    onChange={(e) => setSelectedGridConfig(e.target.value)}
+                    className="px-2 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700"
+                  >
+                    {sampleGridConfigurations.map((config) => (
+                      <option key={config.id} value={config.id}>
+                        {config.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Configuration description */}
+            {selectedConfig.description && (
+              <div className="px-6 pb-4">
+                <p className="text-sm text-gray-600">{selectedConfig.description}</p>
+              </div>
+            )}
+
+            {/* View content - hide original title */}
+            <div className="[&>div]:pt-0 [&>div>div:first-child]:hidden">
+              <GridTools.GridView
+                gridConfig={selectedConfig}
+                resources={state.resources}
+                resolutionState={state.resolutionState}
+                resolutionActions={{
+                  updateContextValue: actions.updateResolutionContext,
+                  applyContext: actions.applyResolutionContext,
+                  selectResource: actions.selectResourceForResolution,
+                  setViewMode: actions.setResolutionViewMode,
+                  resetCache: actions.resetResolutionCache,
+                  // Edit actions
+                  saveEdit: actions.saveResourceEdit,
+                  getEditedValue: actions.getEditedValue,
+                  hasEdit: actions.hasResourceEdit,
+                  clearEdits: actions.clearResourceEdits,
+                  discardEdits: actions.discardResourceEdits,
+                  // Resource creation actions
+                  startNewResource: actions.startNewResource,
+                  updateNewResourceId: actions.updateNewResourceId,
+                  selectResourceType: actions.selectResourceType,
+                  saveNewResourceAsPending: actions.saveNewResourceAsPending,
+                  cancelNewResource: actions.cancelNewResource,
+                  removePendingResource: actions.removePendingResource,
+                  markResourceForDeletion: actions.markResourceForDeletion,
+                  applyPendingResources: actions.applyPendingResources,
+                  discardPendingResources: actions.discardPendingResources
+                }}
+                availableQualifiers={
+                  state.resources?.compiledCollection.qualifiers?.map((q: any) => q.name) ||
+                  state.configuration?.qualifiers?.map((q) => q.name) ||
+                  []
+                }
+                pickerOptionsPresentation={pickerPresentation.grid}
+                onMessage={actions.addMessage}
+              />
+            </div>
+          </div>
+        );
+
+      case 'multi-grid':
+        return (
+          <div>
+            {/* Title with controls */}
+            <div className="flex items-center space-x-3 p-6 pb-0">
+              <Squares2X2Icon className="h-8 w-8 text-purple-600" />
+              <h2 className="text-2xl font-bold text-gray-900">Multi-Grid View</h2>
+              <PresentationGearIcon
+                currentPresentation={pickerPresentation.multiGrid}
+                onPresentationChange={(presentation) =>
+                  setPickerPresentation((prev) => ({ ...prev, multiGrid: presentation }))
+                }
+              />
+              <div className="ml-auto flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm text-gray-600">Presentation:</label>
+                  <select
+                    value={selectedMultiGridTabs}
+                    onChange={(e) => setSelectedMultiGridTabs(e.target.value as 'tabs' | 'cards')}
+                    className="px-2 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700"
+                  >
+                    <option value="tabs">Tabs</option>
+                    <option value="cards">Cards</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="px-6 pb-4">
+              <p className="text-sm text-gray-600">
+                Administrative workflow demonstrating shared context across multiple grids for territory
+                setup.
+              </p>
+            </div>
+
+            {/* View content - hide original title */}
+            <div className="[&>div]:pt-0 [&>div>div:first-child]:hidden">
+              <GridTools.MultiGridView
+                gridConfigurations={multiGridConfigurations}
+                resources={state.resources}
+                resolutionState={state.resolutionState}
+                resolutionActions={{
+                  updateContextValue: actions.updateResolutionContext,
+                  applyContext: actions.applyResolutionContext,
+                  selectResource: actions.selectResourceForResolution,
+                  setViewMode: actions.setResolutionViewMode,
+                  resetCache: actions.resetResolutionCache,
+                  // Edit actions
+                  saveEdit: actions.saveResourceEdit,
+                  getEditedValue: actions.getEditedValue,
+                  hasEdit: actions.hasResourceEdit,
+                  clearEdits: actions.clearResourceEdits,
+                  discardEdits: actions.discardResourceEdits,
+                  // Resource creation actions
+                  startNewResource: actions.startNewResource,
+                  updateNewResourceId: actions.updateNewResourceId,
+                  selectResourceType: actions.selectResourceType,
+                  saveNewResourceAsPending: actions.saveNewResourceAsPending,
+                  cancelNewResource: actions.cancelNewResource,
+                  removePendingResource: actions.removePendingResource,
+                  markResourceForDeletion: actions.markResourceForDeletion,
+                  applyPendingResources: actions.applyPendingResources,
+                  discardPendingResources: actions.discardPendingResources
+                }}
+                availableQualifiers={
+                  state.resources?.compiledCollection.qualifiers?.map((q: any) => q.name) ||
+                  state.configuration?.qualifiers?.map((q) => q.name) ||
+                  []
+                }
+                tabsPresentation={selectedMultiGridTabs}
+                pickerOptionsPresentation={pickerPresentation.multiGrid}
+                onMessage={actions.addMessage}
               />
             </div>
           </div>

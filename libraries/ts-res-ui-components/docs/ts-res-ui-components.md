@@ -78,6 +78,15 @@ Description
 </td></tr>
 <tr><td>
 
+[GridTools](./ts-res-ui-components.gridtools.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [ImportTools](./ts-res-ui-components.importtools.md)
 
 
@@ -201,6 +210,21 @@ Provides a comprehensive interface for filtering resources based on qualifier va
 </td></tr>
 <tr><td>
 
+[GridView](./ts-res-ui-components.gridview.md)
+
+
+</td><td>
+
+GridView component for displaying multiple resources in a tabular format.
+
+Provides a grid-based interface for viewing and editing multiple resources simultaneously, with configurable column mappings and shared context management. Leverages the same state management and batch processing as ResolutionView.
+
+\*\*Key Features:\*\* - \*\*Multi-resource display\*\*: View multiple resources in rows with configurable columns - \*\*Column mapping\*\*: Host-defined extraction of properties from resolved resources - \*\*Batch editing\*\*: Edit multiple resource values with unified batch application - \*\*Context integration\*\*: Same context management as ResolutionView - \*\*Resource filtering\*\*: Flexible resource selection via built-in and custom selectors - \*\*Change management\*\*: Leverages existing UnifiedChangeControls for batch operations
+
+
+</td></tr>
+<tr><td>
+
 [ImportView](./ts-res-ui-components.importview.md)
 
 
@@ -226,6 +250,21 @@ MessagesWindow component for displaying and managing application messages.
 Provides a comprehensive interface for displaying, filtering, and managing application messages with advanced features like search, filtering by type, and copy functionality. Designed for use in development tools and debugging interfaces where message visibility and management are critical.
 
 \*\*Key Features:\*\* - \*\*Message filtering\*\*: Filter messages by type (info, warning, error, success) - \*\*Search functionality\*\*: Full-text search across message content - \*\*Copy functionality\*\*: Copy all filtered messages to clipboard - \*\*Collapsible interface\*\*: Minimize/maximize the message window - \*\*Message count display\*\*: Shows filtered vs total message counts - \*\*Timestamp formatting\*\*: Human-readable timestamp display - \*\*Visual indicators\*\*: Color-coded message types with appropriate icons - \*\*Auto-hide when empty\*\*: Component hides automatically when no messages exist
+
+
+</td></tr>
+<tr><td>
+
+[MultiGridView](./ts-res-ui-components.multigridview.md)
+
+
+</td><td>
+
+MultiGridView component for managing multiple grid instances with shared context.
+
+Provides a comprehensive interface for displaying multiple related grids that share the same resolution context and batch operations. Perfect for administrative workflows where users need to configure related data across multiple resource types.
+
+\*\*Key Features:\*\* - \*\*Multiple Grids\*\*: Display multiple grid configurations with different resource selections - \*\*Shared Context\*\*: Single context management that applies to all grids simultaneously - \*\*Unified Changes\*\*: Batch operations work across all grids and resource types - \*\*Flexible Presentation\*\*: Support for tabs, cards, accordion, and dropdown grid selection - \*\*Validation Integration\*\*: Prevents batch operations when validation errors exist
 
 
 </td></tr>
