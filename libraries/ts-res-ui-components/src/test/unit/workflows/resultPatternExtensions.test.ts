@@ -168,7 +168,7 @@ describe('Result Pattern Extensions', () => {
       // Try with empty resource ID
       act(() => {
         const removeResult = result.current.actions.removePendingResource('');
-        expect(removeResult).toFailWith(/cannot be empty/i);
+        expect(removeResult).toFailWith(/not a valid resource ID/i);
       });
 
       // Create a pending resource
@@ -345,11 +345,11 @@ describe('Result Pattern Extensions', () => {
       act(() => {
         // Empty resource ID
         const removeResult = result.current.actions.removePendingResource('');
-        expect(removeResult).toFailWith(/cannot be empty/i);
+        expect(removeResult).toFailWith(/not a valid resource ID/i);
 
         // Whitespace-only resource ID
         const removeResult2 = result.current.actions.removePendingResource('   ');
-        expect(removeResult2).toFailWith(/cannot be empty/i);
+        expect(removeResult2).toFailWith(/not a valid resource ID/i);
 
         // Apply context first to create resolver
         const applyResult = result.current.actions.applyContext();

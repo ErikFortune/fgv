@@ -328,18 +328,22 @@ export function useResolutionState(
   // Update context value (only updates pending user values, not host values)
   const updateContextValue = useCallback(
     (qualifierName: string, value: string | undefined): Result<void> => {
+      let validatedQualifierName: QualifierName | undefined;
       try {
-        // Validate inputs
-        if (!qualifierName || qualifierName.trim().length === 0) {
-          const error = 'Qualifier name cannot be empty';
+        // Validate qualifier name using proper ts-res validator
+        const qualifierNameResult = Validate.toQualifierName(qualifierName);
+        if (qualifierNameResult.isFailure()) {
+          const error = `Invalid qualifier name: ${qualifierNameResult.message}`;
           onMessage?.('error', error);
           return fail(error);
         }
 
+        validatedQualifierName = qualifierNameResult.value;
+
         // Validate qualifier exists in system (if available)
         if (processedResources?.system?.qualifiers) {
           const availableQualifiers = Array.from(processedResources.system.qualifiers.keys());
-          if (!availableQualifiers.includes(qualifierName as unknown as QualifierName)) {
+          if (!availableQualifiers.includes(validatedQualifierName)) {
             const error = `Unknown qualifier '${qualifierName}'. Available qualifiers: ${availableQualifiers.join(
               ', '
             )}`;
@@ -350,13 +354,13 @@ export function useResolutionState(
 
         setPendingUserValues((prev) => ({
           ...prev,
-          [qualifierName]: value
+          [validatedQualifierName as string]: value
         }));
 
-        onMessage?.('info', `Updated context value: ${qualifierName} = ${value ?? 'undefined'}`);
+        onMessage?.('info', `Updated context value: ${validatedQualifierName} = ${value ?? 'undefined'}`);
         return succeed(undefined);
       } catch (error) {
-        const errorMessage = `Failed to update context value '${qualifierName}': ${
+        const errorMessage = `Failed to update context value '${validatedQualifierName ?? qualifierName}': ${
           error instanceof Error ? error.message : String(error)
         }`;
         onMessage?.('error', errorMessage);
@@ -475,12 +479,15 @@ export function useResolutionState(
   const selectResource = useCallback(
     (resourceId: string): Result<void> => {
       try {
-        // Validate inputs
-        if (!resourceId || resourceId.trim().length === 0) {
-          const error = 'Resource ID cannot be empty';
+        // Validate resource ID using proper ts-res validator
+        const resourceIdResult = Validate.toResourceId(resourceId);
+        if (resourceIdResult.isFailure()) {
+          const error = `Invalid resource ID: ${resourceIdResult.message}`;
           onMessage?.('error', error);
           return fail(error);
         }
+
+        const validatedResourceId = resourceIdResult.value;
 
         // Check if this is a pending new resource
         const pendingResource = pendingResources.get(resourceId);
@@ -519,11 +526,8 @@ export function useResolutionState(
           return fail(error);
         }
 
-        // Check if resource exists in compiled collection or base resources
-        const resourceExists =
-          processedResources.summary.resourceIds.includes(resourceId) ||
-          (processedResources.system?.resourceManager?.resources?.has(resourceId as unknown as ResourceId) ??
-            false);
+        // Check if resource exists in the system
+        const resourceExists = processedResources.summary.resourceIds.includes(resourceId);
 
         if (!resourceExists) {
           // Resource doesn't exist - create error result but still set selection for UI consistency
@@ -544,33 +548,30 @@ export function useResolutionState(
         setResolutionResult(null);
 
         // For existing resources, resolve normally
-        if (currentResolver) {
-          const resolutionResult = resolveResourceDetailed(
-            currentResolver,
-            resourceId as unknown as ResourceId,
-            processedResources
-          );
-          if (resolutionResult.isSuccess()) {
-            setResolutionResult(resolutionResult.value);
-            onMessage?.('info', `Selected resource: ${resourceId}`);
-            return succeed(undefined);
-          } else {
-            // Create error result
-            const errorResult: ResolutionResult = {
-              success: false,
-              resourceId,
-              error: resolutionResult.message
-            };
-            setResolutionResult(errorResult);
-            const error = `Failed to resolve resource '${resourceId}': ${resolutionResult.message}`;
-            onMessage?.('error', error);
-            return fail(error);
-          }
-        } else {
+        if (!currentResolver) {
           const error = 'No resolver available for resource resolution';
           onMessage?.('error', error);
           return fail(error);
         }
+
+        return resolveResourceDetailed(currentResolver, validatedResourceId, processedResources)
+          .onSuccess((resolvedResult) => {
+            setResolutionResult(resolvedResult);
+            onMessage?.('info', `Selected resource: ${resourceId}`);
+            return succeed(undefined);
+          })
+          .onFailure((resolutionError) => {
+            // Create error result
+            const errorResult: ResolutionResult = {
+              success: false,
+              resourceId,
+              error: resolutionError
+            };
+            setResolutionResult(errorResult);
+            const error = `Failed to resolve resource '${resourceId}': ${resolutionError}`;
+            onMessage?.('error', error);
+            return fail(error);
+          });
       } catch (error) {
         const errorMessage = `Unexpected error selecting resource '${resourceId}': ${
           error instanceof Error ? error.message : String(error)
@@ -654,13 +655,15 @@ export function useResolutionState(
   const saveEdit = useCallback(
     (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue): Result<void> => {
       try {
-        // Validate inputs
-        if (!resourceId || resourceId.trim().length === 0) {
-          const error = 'Resource ID cannot be empty';
+        // Validate inputs using proper validators
+        const resourceIdResult = Validate.toResourceId(resourceId);
+        if (resourceIdResult.isFailure()) {
+          const error = `Invalid resource ID: ${resourceIdResult.message}`;
           onMessage?.('error', error);
           return fail(error);
         }
 
+        // Validate edited value is not null/undefined (JsonValue allows null, but we need a real value)
         if (editedValue === null || editedValue === undefined) {
           const error = 'Edited value cannot be null or undefined';
           onMessage?.('error', error);
@@ -889,11 +892,12 @@ export function useResolutionState(
         }
 
         // Validate resource ID format first (catches empty, null, and invalid formats)
-        if (!Validate.isValidResourceId(params.id)) {
-          return fail(
-            `Invalid resource ID format '${params.id}'. Resource IDs must be dot-separated identifiers and cannot be empty.`
-          );
+        const resourceIdResult = Validate.toResourceId(params.id);
+        if (resourceIdResult.isFailure()) {
+          return fail(`Invalid resource ID format '${params.id}': ${resourceIdResult.message}`);
         }
+
+        const validatedResourceId = resourceIdResult.value;
 
         // Prevent temporary IDs from being persisted
         if (params.id.startsWith('new-resource-')) {
@@ -940,7 +944,7 @@ export function useResolutionState(
         // Create resource template using the new API with conditions and resolver
         // Pass undefined initialJson to allow resource type to provide base template
         const templateResult = resourceType.createTemplate(
-          params.id,
+          validatedResourceId,
           initialJson,
           contextConditions.length > 0 ? contextConditions : undefined,
           processedResources?.resolver
@@ -1021,8 +1025,13 @@ export function useResolutionState(
             : undefined;
 
         // Create template using new API with context conditions and resolver
+        // For pre-seeded IDs, use the validated one; for temporary IDs, convert to ResourceId
+        const templateResourceId = Validate.isValidResourceId(resourceId)
+          ? resourceId // Type guard ensures this is ResourceId
+          : Validate.toResourceId(resourceId).orDefault(resourceId as any); // Fallback for temporary IDs
+
         const templateResult = targetType.createTemplate(
-          resourceId as unknown as ResourceId,
+          templateResourceId,
           initialJson,
           contextConditions.length > 0 ? contextConditions : undefined,
           processedResources?.resolver
@@ -1042,8 +1051,9 @@ export function useResolutionState(
         setNewResourceDraft(draft);
 
         const diagnostics = [];
-        if (params?.id) diagnostics.push('Pre-seeded with resource ID');
-        if (params?.resourceTypeName) diagnostics.push('Pre-seeded with resource type');
+        if (params?.id) diagnostics.push(`Pre-seeded with resource ID '${params.id}'`);
+        if (params?.resourceTypeName)
+          diagnostics.push(`Pre-seeded with resource type '${params.resourceTypeName}'`);
         if (params?.json) diagnostics.push('Pre-seeded with JSON content');
         if (contextConditions.length > 0)
           diagnostics.push(`Stamped with ${contextConditions.length} context conditions`);
@@ -1148,8 +1158,13 @@ export function useResolutionState(
         const existingConditions = existingCandidate?.conditions;
 
         // Create template with new API, preserving existing content and conditions
+        // Validate the resource ID or use as-is for temporary IDs
+        const templateResourceId = Validate.isValidResourceId(newResourceDraft.resourceId)
+          ? newResourceDraft.resourceId // Type guard ensures this is ResourceId
+          : Validate.toResourceId(newResourceDraft.resourceId).orDefault(newResourceDraft.resourceId as any);
+
         const templateResult = type.createTemplate(
-          newResourceDraft.resourceId as unknown as ResourceId,
+          templateResourceId,
           existingJson,
           existingConditions,
           processedResources?.resolver
@@ -1192,9 +1207,21 @@ export function useResolutionState(
           return fail(`${error}\nUse startNewResource() to begin creating a new resource`);
         }
 
-        // Validate JSON content
+        // Validate JSON content using proper validation
         if (json === undefined || json === null) {
           const error = 'JSON content cannot be null or undefined';
+          onMessage?.('error', error);
+          return fail(error);
+        }
+
+        // Validate that the JSON content is a valid structure
+        try {
+          // Ensure the JSON can be serialized and is valid
+          JSON.stringify(json);
+        } catch (jsonError) {
+          const error = `Invalid JSON content: ${
+            jsonError instanceof Error ? jsonError.message : String(jsonError)
+          }`;
           onMessage?.('error', error);
           return fail(error);
         }
@@ -1364,9 +1391,10 @@ export function useResolutionState(
   const removePendingResource = useCallback(
     (resourceId: string): Result<void> => {
       try {
-        // Validate input
-        if (!resourceId || resourceId.trim().length === 0) {
-          const error = 'Resource ID cannot be empty';
+        // Validate resource ID using proper ts-res validator
+        const resourceIdResult = Validate.toResourceId(resourceId);
+        if (resourceIdResult.isFailure()) {
+          const error = `Invalid resource ID: ${resourceIdResult.message}`;
           onMessage?.('error', error);
           return fail(error);
         }
@@ -1467,7 +1495,7 @@ export function useResolutionState(
       });
 
       // Ensure we have a resolver instance to extract context
-      let resolverForContext = currentResolver as Runtime.ResourceResolver | null;
+      let resolverForContext = currentResolver;
       if (!resolverForContext) {
         const resolverCreateResult = Runtime.ResourceResolver.create({
           resourceManager: processedResources.system.resourceManager,
