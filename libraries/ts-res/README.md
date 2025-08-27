@@ -29,70 +29,46 @@ npm install @fgv/ts-res
 ```typescript
 import * as TsRes from '@fgv/ts-res';
 
-// 1. Set up qualifier types
-const qualifierTypes = TsRes.QualifierTypes.QualifierTypeCollector.create({
-  qualifierTypes: [
-    TsRes.QualifierTypes.LanguageQualifierType.create().orThrow(),
-    TsRes.QualifierTypes.TerritoryQualifierType.create().orThrow()
-  ]
-}).orThrow();
+// 1. Create a resource manager using predefined configuration
+const manager = TsRes.Resources.ResourceManagerBuilder.createPredefined('default').orThrow();
 
-// 2. Define qualifiers with priorities
-const qualifiers = TsRes.Qualifiers.QualifierCollector.create({
-  qualifierTypes,
-  qualifiers: [
-    { name: 'language', typeName: 'language', defaultPriority: 600 },
-    { name: 'territory', typeName: 'territory', defaultPriority: 700 }
-  ]
-}).orThrow();
-
-// 3. Set up resource types
-const resourceTypes = TsRes.ResourceTypes.ResourceTypeCollector.create({
-  resourceTypes: [
-    TsRes.ResourceTypes.JsonResourceType.create().orThrow()
-  ]
-}).orThrow();
-
-// 4. Create resource manager
-const manager = TsRes.Resources.ResourceManager.create({
-  qualifiers,
-  resourceTypes
-}).orThrow();
-
-// 5. Add resources
-const resources = [
-  {
-    id: 'greeting.message',
-    json: { message: 'Hello' },
-    conditions: { language: 'en' }
-  },
-  {
-    id: 'greeting.message',
-    json: { message: 'Bonjour' },
-    conditions: { language: 'fr' }
-  },
-  {
-    id: 'greeting.message',
-    json: { message: 'Hello from Canada' },
-    conditions: { 
-      language: 'en-CA',
-      territory: 'CA'
+// 2. Add resources with different language/territory conditions
+manager.addResource({
+  id: 'greeting.message',
+  resourceTypeName: 'json',
+  candidates: [
+    {
+      json: { message: 'Hello' },
+      conditions: { language: 'en' }
+    },
+    {
+      json: { message: 'Bonjour' },
+      conditions: { language: 'fr' }
+    },
+    {
+      json: { message: 'Hello from Canada' },
+      conditions: { 
+        language: 'en-CA',
+        currentTerritory: 'CA'
+      }
     }
-  }
-];
+  ]
+}).orThrow();
 
-resources.forEach(resource => {
-  manager.addLooseCandidate(resource).orThrow();
-});
-
-// 6. Build and resolve resources
+// 3. Build the resource manager to prepare for resolution
 manager.build().orThrow();
 
-const greetingResource = manager.getBuiltResource('greeting.message').orThrow();
-const context = { language: 'en-CA', territory: 'CA' };
-const candidates = greetingResource.getCandidatesForContext(context);
+// 4. Resolve resources for specific contexts
+const resolver = TsRes.ResourceResolver.create(manager).orThrow();
 
-// Returns the most specific match: "Hello from Canada"
+// Get resolver for Canadian English context
+const caResolver = resolver.withContext({ 
+  language: 'en-CA', 
+  currentTerritory: 'CA' 
+}).orThrow();
+
+// Resolve the greeting message - returns: { message: "Hello from Canada" }
+const greeting = caResolver.resolveComposedResourceValue('greeting.message').orThrow();
 ```
 
 ## Core Concepts
@@ -130,35 +106,34 @@ The library automatically selects the most appropriate resource based on:
 ### Resource Building with ResourceBuilder
 
 ```typescript
-const builder = TsRes.Resources.ResourceBuilder.create({
-  qualifiers,
-  resourceTypes
+// Using the resource manager's builder for individual resources
+const manager = TsRes.Resources.ResourceManagerBuilder.createPredefined('default').orThrow();
+
+manager.addResource({
+  id: 'user.profile',
+  resourceTypeName: 'json',
+  candidates: [
+    {
+      json: { title: 'Profile', button: 'Edit' },
+      conditions: { language: 'en' }
+    },
+    {
+      json: { title: 'Profil', button: 'Modifier' },
+      conditions: { language: 'fr' }
+    }
+  ]
 }).orThrow();
-
-const resource = builder
-  .withId('user.profile')
-  .withResourceTypeName('json')
-  .withCandidate({
-    json: { title: 'Profile', button: 'Edit' },
-    conditions: { language: 'en' }
-  })
-  .withCandidate({
-    json: { title: 'Profil', button: 'Modifier' },
-    conditions: { language: 'fr' }
-  })
-  .build()
-  .orThrow();
-
-manager.addResource(resource).orThrow();
 ```
 
 ### File System Integration
 
 ```typescript
-// Import resources from file system
+// Create a resource manager and import from file system
+const manager = TsRes.Resources.ResourceManagerBuilder.createPredefined('default').orThrow();
+
 const importManager = TsRes.Import.ImportManager.create({
   filetree: fileTree,
-  resources: resourceManager,
+  resources: manager,
   importers: TsRes.Import.ImportManager.getDefaultImporters(),
   initialContext: TsRes.Import.ImportContext.create().orThrow()
 }).orThrow();
@@ -182,16 +157,36 @@ Resources support different merge strategies:
 }
 ```
 
-### Custom Qualifier Types
+### Custom System Configuration
 
 ```typescript
-const customType = TsRes.QualifierTypes.LiteralQualifierType.create({
-  key: 'userType',
-  values: ['admin', 'user', 'guest'],
-  hierarchy: {
-    'admin': ['user', 'guest'],
-    'user': ['guest']
-  }
+// Create a system configuration with custom qualifiers and types
+const customConfig = TsRes.Config.SystemConfiguration.create({
+  name: 'custom-config',
+  description: 'Custom configuration with user types',
+  qualifierTypes: [
+    TsRes.QualifierTypes.LanguageQualifierType.create().orThrow(),
+    TsRes.QualifierTypes.LiteralQualifierType.create({
+      key: 'userType',
+      values: ['admin', 'user', 'guest'],
+      hierarchy: {
+        'admin': ['user', 'guest'],
+        'user': ['guest']
+      }
+    }).orThrow()
+  ],
+  qualifiers: [
+    { name: 'language', typeName: 'language', defaultPriority: 600 },
+    { name: 'userType', typeName: 'userType', defaultPriority: 500 }
+  ],
+  resourceTypes: [
+    TsRes.ResourceTypes.JsonResourceType.create().orThrow()
+  ]
+}).orThrow();
+
+const manager = TsRes.Resources.ResourceManagerBuilder.create({
+  qualifiers: customConfig.qualifiers,
+  resourceTypes: customConfig.resourceTypes
 }).orThrow();
 ```
 
@@ -199,22 +194,26 @@ const customType = TsRes.QualifierTypes.LiteralQualifierType.create({
 
 ### Core Classes
 
-- **ResourceManager**: Central orchestrator for resource operations
+- **ResourceManagerBuilder**: Central builder for resource management systems
+- **ResourceResolver**: Runtime resolver for getting resources in specific contexts
 - **Resource**: Individual resource with candidates for different contexts
 - **ResourceCandidate**: Specific resource variant with conditions
-- **ResourceBuilder**: Builder pattern for constructing resources
-- **QualifierCollector**: Manages qualifier definitions
+- **SystemConfiguration**: Configuration defining qualifiers, types, and defaults
+- **Condition**: Individual condition with qualifier, operator, and value
 - **ConditionSet**: Collection of conditions for resource matching
 
 ### Namespaces
 
-- **Resources**: Core resource management classes
+- **Resources**: Core resource management classes (`ResourceManagerBuilder`, etc.)
+- **Config**: System configuration classes (`SystemConfiguration`, predefined configs)
 - **Qualifiers**: Qualifier definition and management
 - **Conditions**: Condition and condition set management
 - **QualifierTypes**: Built-in and custom qualifier type definitions
 - **Context**: Context definition for resource resolution
 - **Import**: File system and external resource import utilities
 - **ResourceJson**: JSON serialization and deserialization
+- **Bundle**: Resource bundling and deployment utilities
+- **Runtime**: Runtime resolution classes (`ResourceResolver`, etc.)
 
 ## Context Filtering and Qualifier Reduction
 
@@ -299,6 +298,10 @@ const completeBundle = resourceManager.getResourceCollectionDecl().orThrow();
 Filter for a specific environment (e.g., production):
 
 ```typescript
+const resourceManager = TsRes.Resources.ResourceManagerBuilder.createPredefined('default').orThrow();
+// ... add feature flag resources ...
+resourceManager.build().orThrow();
+
 const productionContext = resourceManager.validateContext({ 
   environment: 'production' 
 }).orThrow();
@@ -475,33 +478,58 @@ const result = resource.toLooseResourceDecl({
 ### Web Application Localization
 
 ```typescript
-// Set up for multi-language, multi-region application
-const qualifiers = [
-  { name: 'language', typeName: 'language', defaultPriority: 600 },
-  { name: 'homeTerritory', typeName: 'territory', defaultPriority: 700 },
-  { name: 'currentTerritory', typeName: 'territory', defaultPriority: 800 }
-];
+// Use predefined configuration or create custom one with territories
+const manager = TsRes.Resources.ResourceManagerBuilder.createPredefined('territoryPriority').orThrow();
 
-// Resources with fallback chains
-const resources = [
-  // Default English
-  { id: 'app.title', json: { title: 'My App' }, conditions: { language: 'en' } },
-  // Canadian English variant
-  { id: 'app.title', json: { title: 'My App, eh!' }, conditions: { language: 'en-CA' } },
-  // French
-  { id: 'app.title', json: { title: 'Mon App' }, conditions: { language: 'fr' } }
-];
+manager.addResource({
+  id: 'app.title',
+  resourceTypeName: 'json',
+  candidates: [
+    // Default English
+    { json: { title: 'My App' }, conditions: { language: 'en' } },
+    // Canadian English variant
+    { json: { title: 'My App, eh!' }, conditions: { language: 'en-CA' } },
+    // French
+    { json: { title: 'Mon App' }, conditions: { language: 'fr' } }
+  ]
+}).orThrow();
+
+manager.build().orThrow();
+
+// Create resolver for Canadian user
+const resolver = TsRes.ResourceResolver.create(manager).orThrow();
+const canadianResolver = resolver.withContext({ 
+  language: 'en-CA', 
+  currentTerritory: 'CA' 
+}).orThrow();
+
+const title = canadianResolver.resolveComposedResourceValue('app.title').orThrow();
+// Returns: { title: 'My App, eh!' }
 ```
 
 ### Configuration Management
 
 ```typescript
-// Environment-specific configurations
-const configs = [
-  { id: 'api.config', json: { url: 'localhost:3000' }, conditions: { env: 'development' } },
-  { id: 'api.config', json: { url: 'api.staging.com' }, conditions: { env: 'staging' } },
-  { id: 'api.config', json: { url: 'api.production.com' }, conditions: { env: 'production' } }
-];
+// Create manager with custom environment qualifier
+const manager = TsRes.Resources.ResourceManagerBuilder.createPredefined('default').orThrow();
+
+manager.addResource({
+  id: 'api.config',
+  resourceTypeName: 'json',
+  candidates: [
+    { json: { url: 'localhost:3000' }, conditions: { environment: 'development' } },
+    { json: { url: 'api.staging.com' }, conditions: { environment: 'staging' } },
+    { json: { url: 'api.production.com' }, conditions: { environment: 'production' } }
+  ]
+}).orThrow();
+
+manager.build().orThrow();
+
+// Resolve configuration for production
+const resolver = TsRes.ResourceResolver.create(manager).orThrow();
+const prodResolver = resolver.withContext({ environment: 'production' }).orThrow();
+const config = prodResolver.resolveComposedResourceValue('api.config').orThrow();
+// Returns: { url: 'api.production.com' }
 ```
 
 ## Dependencies
@@ -515,24 +543,32 @@ const configs = [
 
 ## Development
 
-```bash
-# Install dependencies
-npm install
+This library is part of a Rush monorepo. Development commands:
 
-# Build the project
-npm run build
+```bash
+# Install dependencies (from repository root)
+rush install
+
+# Build the project 
+rushx build
 
 # Run tests
-npm run test
+rushx test
 
 # Run tests with coverage
-npm run coverage
+rushx coverage
 
 # Lint code
-npm run lint
+rushx lint
 
-# Generate documentation
-npm run build-docs
+# Fix linting issues
+rushx fixlint
+
+# Generate API documentation
+rushx build-docs
+
+# Build project and docs together
+rushx build-all
 ```
 
 ## License

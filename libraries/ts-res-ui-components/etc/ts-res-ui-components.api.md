@@ -592,24 +592,28 @@ function readFilesFromInput(files: FileList): Promise<ImportedFile[]>;
 
 // @public
 interface ResolutionActions {
-    applyContext: (hostManagedValues?: Record<string, string | undefined>) => void;
+    applyContext: (hostManagedValues?: Record<string, string | undefined>) => Result<void>;
     applyPendingResources: () => Promise<void>;
     cancelNewResource: () => void;
-    clearEdits: () => void;
+    clearEdits: () => Result<{
+        clearedCount: number;
+    }>;
     createPendingResource: (params: CreatePendingResourceParams) => Result<void>;
-    discardEdits: () => void;
+    discardEdits: () => Result<{
+        discardedCount: number;
+    }>;
     discardPendingResources: () => void;
     getEditedValue: (resourceId: string) => JsonValue | undefined;
     hasEdit: (resourceId: string) => boolean;
     markResourceForDeletion: (resourceId: string) => void;
-    removePendingResource: (resourceId: string) => void;
-    resetCache: () => void;
-    saveEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
+    removePendingResource: (resourceId: string) => Result<void>;
+    resetCache: () => Result<void>;
+    saveEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => Result<void>;
     saveNewResourceAsPending: () => Result<{
         pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>;
         diagnostics: string[];
     }>;
-    selectResource: (resourceId: string) => void;
+    selectResource: (resourceId: string) => Result<void>;
     selectResourceType: (type: string) => Result<{
         draft: ResolutionState['newResourceDraft'];
         diagnostics: string[];
@@ -619,7 +623,7 @@ interface ResolutionActions {
         draft: ResolutionState['newResourceDraft'];
         diagnostics: string[];
     }>;
-    updateContextValue: (qualifierName: string, value: string | undefined) => void;
+    updateContextValue: (qualifierName: string, value: string | undefined) => Result<void>;
     updateNewResourceId: (id: string) => Result<{
         draft: ResolutionState['newResourceDraft'];
         diagnostics: string[];

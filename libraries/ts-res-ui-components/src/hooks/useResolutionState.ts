@@ -313,19 +313,53 @@ export function useResolutionState(
   }, [pendingResources, pendingResourceDeletions]);
 
   // Update context value (only updates pending user values, not host values)
-  const updateContextValue = useCallback((qualifierName: string, value: string | undefined) => {
-    setPendingUserValues((prev) => ({
-      ...prev,
-      [qualifierName]: value
-    }));
-  }, []);
+  const updateContextValue = useCallback(
+    (qualifierName: string, value: string | undefined): Result<void> => {
+      try {
+        // Validate inputs
+        if (!qualifierName || qualifierName.trim().length === 0) {
+          const error = 'Qualifier name cannot be empty';
+          onMessage?.('error', error);
+          return fail(error);
+        }
+
+        // Validate qualifier exists in system (if available)
+        if (processedResources?.system?.qualifiers) {
+          const availableQualifiers = Array.from(processedResources.system.qualifiers.keys());
+          if (!availableQualifiers.includes(qualifierName as unknown as QualifierName)) {
+            const error = `Unknown qualifier '${qualifierName}'. Available qualifiers: ${availableQualifiers.join(
+              ', '
+            )}`;
+            onMessage?.('warning', error);
+            // Continue anyway for flexibility, but warn user
+          }
+        }
+
+        setPendingUserValues((prev) => ({
+          ...prev,
+          [qualifierName]: value
+        }));
+
+        onMessage?.('info', `Updated context value: ${qualifierName} = ${value ?? 'undefined'}`);
+        return succeed(undefined);
+      } catch (error) {
+        const errorMessage = `Failed to update context value '${qualifierName}': ${
+          error instanceof Error ? error.message : String(error)
+        }`;
+        onMessage?.('error', errorMessage);
+        return fail(errorMessage);
+      }
+    },
+    [processedResources, onMessage]
+  );
 
   // Apply context changes - applies pending user values and/or updates host values
   const applyContext = useCallback(
-    (newHostManagedValues?: Record<string, string | undefined>) => {
+    (newHostManagedValues?: Record<string, string | undefined>): Result<void> => {
       if (!processedResources) {
-        onMessage?.('error', 'No resources loaded');
-        return;
+        const error = 'No resources loaded - cannot apply context';
+        onMessage?.('error', error);
+        return fail(error);
       }
 
       try {
@@ -333,6 +367,8 @@ export function useResolutionState(
           // When called with host values, ONLY update host values
           console.log('Applying host managed values:', newHostManagedValues);
           setHostManagedValues(newHostManagedValues);
+          onMessage?.('success', 'Host-managed context values updated');
+          return succeed(undefined);
         } else {
           // When called without arguments (from Apply button), apply pending user values
           console.log('Applying pending user values:', pendingUserValues);
@@ -351,8 +387,9 @@ export function useResolutionState(
           });
 
           if (resolverResult.isFailure()) {
-            onMessage?.('error', `Failed to create resolver: ${resolverResult.message}`);
-            return;
+            const error = `Failed to create resolver: ${resolverResult.message}`;
+            onMessage?.('error', error);
+            return fail(error);
           }
 
           setCurrentResolver(resolverResult.value);
@@ -368,7 +405,11 @@ export function useResolutionState(
             if (resolutionResult.isSuccess()) {
               setResolutionResult(resolutionResult.value);
             } else {
-              onMessage?.('error', `Failed to resolve resource: ${resolutionResult.message}`);
+              onMessage?.(
+                'warning',
+                `Failed to resolve selected resource after context change: ${resolutionResult.message}`
+              );
+              // Don't fail the context apply just because selected resource failed
             }
           } else if (selectedResourceId && pendingResources.has(selectedResourceId)) {
             // Re-create the mock result for pending resource with new context
@@ -397,12 +438,14 @@ export function useResolutionState(
           }
 
           onMessage?.('success', 'Context applied successfully');
+          return succeed(undefined);
         }
       } catch (error) {
-        onMessage?.(
-          'error',
-          `Failed to apply context: ${error instanceof Error ? error.message : String(error)}`
-        );
+        const errorMessage = `Failed to apply context: ${
+          error instanceof Error ? error.message : String(error)
+        }`;
+        onMessage?.('error', errorMessage);
+        return fail(errorMessage);
       }
     },
     [
@@ -417,57 +460,131 @@ export function useResolutionState(
 
   // Select resource and resolve it
   const selectResource = useCallback(
-    (resourceId: string) => {
-      setSelectedResourceId(resourceId);
-      setResolutionResult(null);
-
-      // Check if this is a pending new resource
-      const pendingResource = pendingResources.get(resourceId);
-      if (pendingResource) {
-        // For pending new resources, create a mock resolution result
-        const mockResult: ResolutionResult = {
-          success: true,
-          resourceId,
-          composedValue: pendingResource.candidates?.[0]?.json || {},
-          candidateDetails: (pendingResource.candidates || []).map((c, index) => ({
-            candidate: {
-              json: c.json || {},
-              conditions: c.conditions,
-              isPartial: c.isPartial || false,
-              mergeMethod: c.mergeMethod || 'replace'
-            } as Runtime.IResourceCandidate,
-            conditionSetKey: null,
-            candidateIndex: index,
-            matched: true,
-            matchType: 'match' as const,
-            isDefaultMatch: false
-          }))
-        };
-        setResolutionResult(mockResult);
-        onMessage?.('info', `Selected pending resource: ${resourceId}`);
-        return;
-      }
-
-      // For existing resources, resolve normally
-      if (currentResolver && processedResources) {
-        const resolutionResult = resolveResourceDetailed(currentResolver, resourceId, processedResources);
-
-        if (resolutionResult.isSuccess()) {
-          setResolutionResult(resolutionResult.value);
-          onMessage?.('info', `Selected resource: ${resourceId}`);
-        } else {
-          onMessage?.('error', `Failed to resolve resource: ${resolutionResult.message}`);
+    (resourceId: string): Result<void> => {
+      try {
+        // Validate inputs
+        if (!resourceId || resourceId.trim().length === 0) {
+          const error = 'Resource ID cannot be empty';
+          onMessage?.('error', error);
+          return fail(error);
         }
+
+        // Check if this is a pending new resource
+        const pendingResource = pendingResources.get(resourceId);
+        if (pendingResource) {
+          setSelectedResourceId(resourceId);
+          setResolutionResult(null);
+
+          // For pending new resources, create a mock resolution result
+          const mockResult: ResolutionResult = {
+            success: true,
+            resourceId,
+            composedValue: pendingResource.candidates?.[0]?.json || {},
+            candidateDetails: (pendingResource.candidates || []).map((c, index) => ({
+              candidate: {
+                json: c.json || {},
+                conditions: c.conditions,
+                isPartial: c.isPartial || false,
+                mergeMethod: c.mergeMethod || 'replace'
+              } as Runtime.IResourceCandidate,
+              conditionSetKey: null,
+              candidateIndex: index,
+              matched: true,
+              matchType: 'match' as const,
+              isDefaultMatch: false
+            }))
+          };
+          setResolutionResult(mockResult);
+          onMessage?.('info', `Selected pending resource: ${resourceId}`);
+          return succeed(undefined);
+        }
+
+        // Check if resource exists in the system before setting selection
+        if (!processedResources) {
+          const error = 'No resource system available for resource lookup';
+          onMessage?.('error', error);
+          return fail(error);
+        }
+
+        // Check if resource exists in compiled collection or base resources
+        const resourceExists =
+          processedResources.summary.resourceIds.includes(resourceId) ||
+          (processedResources.system?.resourceManager?.resources?.has(resourceId as unknown as ResourceId) ??
+            false);
+
+        if (!resourceExists) {
+          // Resource doesn't exist - create error result but still set selection for UI consistency
+          setSelectedResourceId(resourceId);
+          const errorResult: ResolutionResult = {
+            success: false,
+            resourceId,
+            error: `Failed to get resource: ${resourceId}: not found.`
+          };
+          setResolutionResult(errorResult);
+          const error = `Resource '${resourceId}' not found in the system`;
+          onMessage?.('error', error);
+          return fail(error);
+        }
+
+        // Resource exists, proceed with selection and resolution
+        setSelectedResourceId(resourceId);
+        setResolutionResult(null);
+
+        // For existing resources, resolve normally
+        if (currentResolver) {
+          const resolutionResult = resolveResourceDetailed(
+            currentResolver,
+            resourceId as unknown as ResourceId,
+            processedResources
+          );
+          if (resolutionResult.isSuccess()) {
+            setResolutionResult(resolutionResult.value);
+            onMessage?.('info', `Selected resource: ${resourceId}`);
+            return succeed(undefined);
+          } else {
+            // Create error result
+            const errorResult: ResolutionResult = {
+              success: false,
+              resourceId,
+              error: resolutionResult.message
+            };
+            setResolutionResult(errorResult);
+            const error = `Failed to resolve resource '${resourceId}': ${resolutionResult.message}`;
+            onMessage?.('error', error);
+            return fail(error);
+          }
+        } else {
+          const error = 'No resolver available for resource resolution';
+          onMessage?.('error', error);
+          return fail(error);
+        }
+      } catch (error) {
+        const errorMessage = `Unexpected error selecting resource '${resourceId}': ${
+          error instanceof Error ? error.message : String(error)
+        }`;
+        onMessage?.('error', errorMessage);
+        return fail(errorMessage);
       }
     },
     [currentResolver, processedResources, pendingResources, onMessage]
   );
 
   // Reset cache
-  const resetCache = useCallback(() => {
-    if (currentResolver) {
+  const resetCache = useCallback((): Result<void> => {
+    if (!currentResolver) {
+      const error = 'No resolver available - cache cannot be cleared';
+      onMessage?.('warning', error);
+      return fail(error);
+    }
+
+    try {
       currentResolver.clearConditionCache();
-      onMessage?.('info', 'Cache cleared');
+      onMessage?.('info', 'Resolution cache cleared successfully');
+      return succeed(undefined);
+    } catch (error) {
+      const errorMessage = `Failed to clear cache: ${error instanceof Error ? error.message : String(error)}`;
+      onMessage?.('error', errorMessage);
+      return fail(errorMessage);
     }
   }, [currentResolver, onMessage]);
 
@@ -522,13 +639,27 @@ export function useResolutionState(
 
   // Edit management functions
   const saveEdit = useCallback(
-    (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => {
+    (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue): Result<void> => {
       try {
+        // Validate inputs
+        if (!resourceId || resourceId.trim().length === 0) {
+          const error = 'Resource ID cannot be empty';
+          onMessage?.('error', error);
+          return fail(error);
+        }
+
+        if (editedValue === null || editedValue === undefined) {
+          const error = 'Edited value cannot be null or undefined';
+          onMessage?.('error', error);
+          return fail(error);
+        }
+
         // Validate the edited value
         const validation = validateEditedResource(editedValue);
         if (!validation.isValid) {
-          onMessage?.('error', `Invalid edit: ${validation.errors.join(', ')}`);
-          return;
+          const error = `Invalid edit: ${validation.errors.join(', ')}`;
+          onMessage?.('error', error);
+          return fail(error);
         }
 
         // Show warnings if any
@@ -547,8 +678,9 @@ export function useResolutionState(
             onMessage
           );
           if (contextConditionsResult.isFailure()) {
-            console.warn(`Failed to create context conditions: ${contextConditionsResult.message}`);
-            return; // Skip stamping conditions if validation fails
+            const error = `Failed to create context conditions: ${contextConditionsResult.message}`;
+            onMessage?.('error', error);
+            return fail(error);
           }
           const contextConditions = contextConditionsResult.value;
           const updatedResource = {
@@ -595,7 +727,14 @@ export function useResolutionState(
           }
 
           onMessage?.('info', `Updated pending resource: ${resourceId}`);
-          return;
+          return succeed(undefined);
+        }
+
+        // Check if resource exists (for existing resources)
+        if (!processedResources?.summary.resourceIds.includes(resourceId)) {
+          const error = `Resource '${resourceId}' not found in the system`;
+          onMessage?.('error', error);
+          return fail(error);
         }
 
         // For existing resources, compute the delta and save as edit
@@ -628,14 +767,15 @@ export function useResolutionState(
         } else {
           onMessage?.('info', `Edit saved for resource ${resourceId}`);
         }
+
+        return succeed(undefined);
       } catch (error) {
-        onMessage?.(
-          'error',
-          `Failed to save edit: ${error instanceof Error ? error.message : String(error)}`
-        );
+        const errorMessage = `Failed to save edit: ${error instanceof Error ? error.message : String(error)}`;
+        onMessage?.('error', errorMessage);
+        return fail(errorMessage);
       }
     },
-    [onMessage, pendingResources, selectedResourceId, effectiveContext]
+    [onMessage, pendingResources, selectedResourceId, effectiveContext, processedResources]
   );
 
   const getEditedValue = useCallback(
@@ -666,17 +806,46 @@ export function useResolutionState(
     [editedResourcesInternal, pendingResources]
   );
 
-  const clearEdits = useCallback(() => {
-    setEditedResourcesInternal(new Map());
-    onMessage?.('info', 'All edits cleared');
-  }, [onMessage]);
-
-  const discardEdits = useCallback(() => {
-    if (hasUnsavedEdits) {
+  const clearEdits = useCallback((): Result<{ clearedCount: number }> => {
+    try {
+      const currentCount = editedResources.size;
       setEditedResourcesInternal(new Map());
-      onMessage?.('info', 'All unsaved edits discarded');
+
+      const message =
+        currentCount > 0
+          ? `Cleared ${currentCount} pending edit${currentCount === 1 ? '' : 's'}`
+          : 'No pending edits to clear';
+
+      onMessage?.('info', message);
+      return succeed({ clearedCount: currentCount });
+    } catch (error) {
+      const errorMessage = `Failed to clear edits: ${error instanceof Error ? error.message : String(error)}`;
+      onMessage?.('error', errorMessage);
+      return fail(errorMessage);
     }
-  }, [hasUnsavedEdits, onMessage]);
+  }, [editedResources, onMessage]);
+
+  const discardEdits = useCallback((): Result<{ discardedCount: number }> => {
+    try {
+      const currentCount = editedResources.size;
+
+      if (!hasUnsavedEdits || currentCount === 0) {
+        onMessage?.('info', 'No unsaved edits to discard');
+        return succeed({ discardedCount: 0 });
+      }
+
+      setEditedResourcesInternal(new Map());
+      const message = `Discarded ${currentCount} unsaved edit${currentCount === 1 ? '' : 's'}`;
+      onMessage?.('info', message);
+      return succeed({ discardedCount: currentCount });
+    } catch (error) {
+      const errorMessage = `Failed to discard edits: ${
+        error instanceof Error ? error.message : String(error)
+      }`;
+      onMessage?.('error', errorMessage);
+      return fail(errorMessage);
+    }
+  }, [editedResources, hasUnsavedEdits, onMessage]);
 
   // Removed applyEdits in favor of unified applyPendingResources
 
@@ -723,9 +892,6 @@ export function useResolutionState(
           return fail('JSON content is required for resource creation');
         }
 
-        // Create resource template using the resource type
-        const template = resourceType.createTemplate(params.id);
-
         // Create conditions from current effective context
         const contextConditionsResult = createContextConditions(
           effectiveContext,
@@ -737,20 +903,20 @@ export function useResolutionState(
         }
         const contextConditions = contextConditionsResult.value;
 
-        // Create the loose resource declaration
-        const looseResourceDecl: ResourceJson.Json.ILooseResourceDecl = {
-          ...template,
-          id: params.id,
-          resourceTypeName: params.resourceTypeName,
-          candidates: [
-            {
-              json: (isJsonObject(params.json) ? params.json : { value: params.json }) as ResourceJsonObject,
-              conditions: contextConditions.length > 0 ? contextConditions : undefined,
-              isPartial: false,
-              mergeMethod: 'replace' as const
-            }
-          ]
-        };
+        // Prepare initial JSON value
+        const initialJson = isJsonObject(params.json) ? params.json : { value: params.json };
+
+        // Create resource template using the new API with conditions and resolver
+        const templateResult = resourceType.createTemplate(
+          params.id,
+          initialJson,
+          contextConditions.length > 0 ? contextConditions : undefined,
+          processedResources?.resolver
+        );
+        if (templateResult.isFailure()) {
+          return fail(templateResult.message);
+        }
+        const looseResourceDecl = templateResult.value;
 
         // Add to pending resources
         setPendingResources((prev) => {
@@ -944,11 +1110,16 @@ export function useResolutionState(
         }
         const type = typeResult.value;
 
-        // Create template with new API
+        // Extract existing JSON content and conditions from current template
+        const existingCandidate = newResourceDraft.template.candidates?.[0];
+        const existingJson = existingCandidate?.json;
+        const existingConditions = existingCandidate?.conditions;
+
+        // Create template with new API, preserving existing content and conditions
         const templateResult = type.createTemplate(
           newResourceDraft.resourceId as unknown as ResourceId,
-          undefined, // no initial json
-          undefined, // no conditions for type selection
+          existingJson,
+          existingConditions,
           processedResources?.resolver
         );
         if (templateResult.isFailure()) {
@@ -1159,15 +1330,46 @@ export function useResolutionState(
   }, []);
 
   const removePendingResource = useCallback(
-    (resourceId: string) => {
-      setPendingResources((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(resourceId);
-        return newMap;
-      });
-      onMessage?.('info', `Removed pending resource ${resourceId}`);
+    (resourceId: string): Result<void> => {
+      try {
+        // Validate input
+        if (!resourceId || resourceId.trim().length === 0) {
+          const error = 'Resource ID cannot be empty';
+          onMessage?.('error', error);
+          return fail(error);
+        }
+
+        // Check if the pending resource exists
+        if (!pendingResources.has(resourceId)) {
+          const error = `Pending resource '${resourceId}' not found`;
+          onMessage?.('warning', error);
+          return fail(error);
+        }
+
+        // Remove the pending resource
+        setPendingResources((prev) => {
+          const newMap = new Map(prev);
+          newMap.delete(resourceId);
+          return newMap;
+        });
+
+        // Clear selection if this resource was selected
+        if (selectedResourceId === resourceId) {
+          setSelectedResourceId(null);
+          setResolutionResult(null);
+        }
+
+        onMessage?.('info', `Removed pending resource: ${resourceId}`);
+        return succeed(undefined);
+      } catch (error) {
+        const errorMessage = `Failed to remove pending resource '${resourceId}': ${
+          error instanceof Error ? error.message : String(error)
+        }`;
+        onMessage?.('error', errorMessage);
+        return fail(errorMessage);
+      }
     },
-    [onMessage]
+    [pendingResources, selectedResourceId, onMessage]
   );
 
   const markResourceForDeletion = useCallback(

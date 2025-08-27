@@ -512,25 +512,25 @@ export interface StartNewResourceParams {
  */
 export interface ResolutionActions {
   /** Update a context value for resolution testing */
-  updateContextValue: (qualifierName: string, value: string | undefined) => void;
+  updateContextValue: (qualifierName: string, value: string | undefined) => Result<void>;
   /** Apply pending context changes to the resolver (with optional host-managed values) */
-  applyContext: (hostManagedValues?: Record<string, string | undefined>) => void;
+  applyContext: (hostManagedValues?: Record<string, string | undefined>) => Result<void>;
   /** Select a resource for detailed resolution testing */
-  selectResource: (resourceId: string) => void;
+  selectResource: (resourceId: string) => Result<void>;
   /** Change how resolution results are displayed */
   setViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
   /** Clear the resolution cache to force fresh resolution */
-  resetCache: () => void;
+  resetCache: () => Result<void>;
   /** Save an edit to a resource value */
-  saveEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
+  saveEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => Result<void>;
   /** Get the edited value for a resource, if any */
   getEditedValue: (resourceId: string) => JsonValue | undefined;
   /** Check if a resource has been edited */
   hasEdit: (resourceId: string) => boolean;
   /** Clear all pending edits */
-  clearEdits: () => void;
+  clearEdits: () => Result<{ clearedCount: number }>;
   /** Discard all pending edits */
-  discardEdits: () => void;
+  discardEdits: () => Result<{ discardedCount: number }>;
 
   // Enhanced resource creation actions with Result pattern return values
   /** Create a pending resource atomically with validation */
@@ -559,7 +559,7 @@ export interface ResolutionActions {
   /** Cancel the new resource creation */
   cancelNewResource: () => void;
   /** Remove a pending resource */
-  removePendingResource: (resourceId: string) => void;
+  removePendingResource: (resourceId: string) => Result<void>;
   /** Mark an existing resource for deletion */
   markResourceForDeletion: (resourceId: string) => void;
   /** Apply all pending resource additions and deletions */
