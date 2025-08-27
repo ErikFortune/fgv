@@ -73,5 +73,24 @@ _(Optional)_ Optional key for the new [JsonResourceType](./ts-res.resourcetypes.
 
 
 </td></tr>
+<tr><td>
+
+[template?](./ts-res.resourcetypes.ijsonresourcetypecreateparams.template.md)
+
+
+</td><td>
+
+
+</td><td>
+
+JsonObject
+
+
+</td><td>
+
+_(Optional)_ Optional template for new instances of [JsonResourceType](./ts-res.resourcetypes.jsonresourcetype.md) resources.
+
+
+</td></tr>
 </tbody></table>
 

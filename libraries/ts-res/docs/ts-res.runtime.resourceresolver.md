@@ -9,8 +9,9 @@ High-performance runtime resource resolver with O(1) condition caching. Resolves
 **Signature:**
 
 ```typescript
-export declare class ResourceResolver 
+export declare class ResourceResolver implements IResourceResolver 
 ```
+**Implements:** [IResourceResolver](./ts-res.iresourceresolver.md)
 
 ## Constructors
 
@@ -241,6 +242,27 @@ The configuration options for this resource resolver.
 </td></tr>
 <tr><td>
 
+[qualifiers](./ts-res.runtime.resourceresolver.qualifiers.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IReadOnlyQualifierCollector](./ts-res.qualifiers.ireadonlyqualifiercollector.md)
+
+
+</td><td>
+
+The readonly qualifier collector that provides qualifier implementations.
+
+
+</td></tr>
+<tr><td>
+
 [qualifierTypes](./ts-res.runtime.resourceresolver.qualifiertypes.md)
 
 
@@ -347,7 +369,35 @@ Resolves all matching resource candidates in priority order. Uses the resource's
 </td></tr>
 <tr><td>
 
+[resolveAllResourceCandidates(resource)](./ts-res.runtime.resourceresolver.resolveallresourcecandidates_1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Resolves all matching resource candidates in priority order. Uses the resource's associated decision to determine all matching candidates based on the current context.
+
+
+</td></tr>
+<tr><td>
+
 [resolveComposedResourceValue(resource)](./ts-res.runtime.resourceresolver.resolvecomposedresourcevalue.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Resolves a resource to a composed value by merging matching candidates according to their merge methods. Starting from the highest priority candidates, finds the first "full" candidate and merges all higher priority "partial" candidates into it in ascending order of priority.
+
+
+</td></tr>
+<tr><td>
+
+[resolveComposedResourceValue(resource)](./ts-res.runtime.resourceresolver.resolvecomposedresourcevalue_1.md)
 
 
 </td><td>
@@ -412,6 +462,34 @@ Resolves a decision by evaluating all its constituent condition sets against the
 </td><td>
 
 Resolves a resource by finding the best matching candidate. Uses the resource's associated decision to determine the best match based on the current context.
+
+
+</td></tr>
+<tr><td>
+
+[resolveResource(resource)](./ts-res.runtime.resourceresolver.resolveresource_1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Resolves a resource by finding the best matching candidate. Uses the resource's associated decision to determine the best match based on the current context.
+
+
+</td></tr>
+<tr><td>
+
+[withContext(context)](./ts-res.runtime.resourceresolver.withcontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a new [resource resolver](./ts-res.iresourceresolver.md) with the given context.
 
 
 </td></tr>

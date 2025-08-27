@@ -41,6 +41,12 @@ export interface IJsonResourceTypeCreateParams {
    * instance.
    */
   index?: number;
+
+  /**
+   * Optional template for new instances of {@link ResourceTypes.JsonResourceType | JsonResourceType}
+   * resources.
+   */
+  template?: JsonObject;
 }
 
 /**
@@ -54,8 +60,8 @@ export class JsonResourceType extends ResourceType<JsonObject> {
    * @param key - The key for the new {@link ResourceTypes.JsonResourceType | JsonResourceType} instance.
    * @param index - Optional index for the new {@link ResourceTypes.JsonResourceType | JsonResourceType} instance.
    */
-  protected constructor(key: ResourceTypeName, index?: number) {
-    super(key, index);
+  protected constructor(key: ResourceTypeName, index?: number, template?: JsonObject) {
+    super(key, index, template);
   }
 
   /**
@@ -66,7 +72,7 @@ export class JsonResourceType extends ResourceType<JsonObject> {
    */
   public static create(params?: IJsonResourceTypeCreateParams): Result<JsonResourceType> {
     return Convert.resourceTypeName.convert(params?.key ?? 'json').onSuccess((key) => {
-      return captureResult(() => new JsonResourceType(key, params?.index));
+      return captureResult(() => new JsonResourceType(key, params?.index, params?.template));
     });
   }
 
@@ -92,13 +98,5 @@ export class JsonResourceType extends ResourceType<JsonObject> {
   public validate(json: JsonObject, completeness: 'partial'): Result<JsonObject>;
   public validate(json: JsonObject, __completeness?: CandidateCompleteness): Result<JsonObject> {
     return JsonConverters.jsonObject.convert(json);
-  }
-
-  /**
-   * Gets the default template value for a JSON resource type.
-   * @returns An empty object as the default JSON value
-   */
-  protected getDefaultTemplateValue(): JsonObject {
-    return {};
   }
 }

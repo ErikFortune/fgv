@@ -9,7 +9,7 @@ Constructs a new instance of the `ResourceType` class
 **Signature:**
 
 ```typescript
-protected constructor(key: ResourceTypeName, index?: number);
+protected constructor(key: ResourceTypeName, index?: number, template?: JsonObject);
 ```
 
 ## Parameters
@@ -52,6 +52,22 @@ index
 </td><td>
 
 number
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+template
+
+
+</td><td>
+
+JsonObject
 
 
 </td><td>

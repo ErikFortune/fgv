@@ -95,6 +95,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[createTemplate(resourceId, init, conditions, resolver)](./ts-res.resourcetypes.iresourcetype.createtemplate.md)
+
+
+</td><td>
+
+Creates a template for a new resource of this type. The template provides a default structure for creating new resource instances.
+
+
+</td></tr>
+<tr><td>
+
 [setIndex(index)](./ts-res.resourcetypes.iresourcetype.setindex.md)
 
 

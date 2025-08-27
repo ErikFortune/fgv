@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
-import { JsonValue, JsonObject } from '@fgv/ts-json-base';
-import { Collections, ICollectible, Result } from '@fgv/ts-utils';
+import { isJsonObject, JsonObject, JsonValue } from '@fgv/ts-json-base';
+import { Collections, fail, ICollectible, Result, succeed } from '@fgv/ts-utils';
 import {
   CandidateCompleteness,
   Convert as CommonConvert,
@@ -29,7 +29,8 @@ import {
   ResourceTypeIndex,
   ResourceTypeName,
   ResourceValueMergeMethod,
-  ResourceId
+  ResourceId,
+  IResourceResolver
 } from '../common';
 import * as ResourceJson from '../resource-json';
 
@@ -128,11 +129,19 @@ export interface IResourceType<T = unknown> extends ICollectible<ResourceTypeNam
   /**
    * Creates a template for a new resource of this type.
    * The template provides a default structure for creating new resource instances.
-   * @param resourceId - The id for the new resource
-   * @returns A loose resource declaration with default values for this resource type
+   * @param resourceId - The id for the new resource.
+   * @param init - An optional initial value for the resource.
+   * @param resolver - An optional resource resolver that can be used to create the template.
+   * @param conditions - An optional set of conditions that must be met for the resource to be selected.
+   * @returns A loose resource declaration with default values for this resource type.
    * @public
    */
-  createTemplate(resourceId: ResourceId): ResourceJson.Json.ILooseResourceDecl;
+  createTemplate(
+    resourceId: ResourceId,
+    init?: JsonValue,
+    conditions?: ResourceJson.Json.ConditionSetDecl,
+    resolver?: IResourceResolver
+  ): Result<ResourceJson.Json.ILooseResourceDecl>;
 }
 
 /**
@@ -143,6 +152,7 @@ export interface IResourceType<T = unknown> extends ICollectible<ResourceTypeNam
  */
 export abstract class ResourceType<T = unknown> implements IResourceType<T> {
   private _collectible: Collections.Collectible<ResourceTypeName, ResourceTypeIndex>;
+  private _template: JsonObject;
   /**
    * {@inheritdoc ResourceTypes.IResourceType.key}
    */
@@ -157,13 +167,14 @@ export abstract class ResourceType<T = unknown> implements IResourceType<T> {
     return this._collectible.index;
   }
 
-  protected constructor(key: ResourceTypeName, index?: number) {
+  protected constructor(key: ResourceTypeName, index?: number, template?: JsonObject) {
     this._collectible = new Collections.Collectible<ResourceTypeName, ResourceTypeIndex>({
       key,
       /* c8 ignore next 1 - coverage having a rough time */
       index: index !== undefined ? Validate.toResourceTypeIndex(index).orThrow() : undefined,
       indexConverter: CommonConvert.resourceTypeIndex
     });
+    this._template = template ?? {};
   }
 
   /**
@@ -228,32 +239,54 @@ export abstract class ResourceType<T = unknown> implements IResourceType<T> {
    * Default implementation provides a basic template.
    * Subclasses can override to provide type-specific templates.
    * @param resourceId - The id for the new resource
+   * @param init - An optional initial value for the resource.
+   * @param conditions - An optional set of conditions that must be met for the resource to be selected.
+   * @param resolver - An optional resource resolver that can be used to create the template.
    * @returns A loose resource declaration with default values for this resource type
    * @public
    */
-  public createTemplate(resourceId: ResourceId): ResourceJson.Json.ILooseResourceDecl {
-    return {
-      id: resourceId,
-      resourceTypeName: this.key,
-      candidates: [
-        {
-          json: this.getDefaultTemplateValue(),
-          conditions: undefined,
-          isPartial: false,
-          mergeMethod: 'replace'
-        }
-      ]
-    };
+  public createTemplate(
+    resourceId: ResourceId,
+    init?: JsonValue,
+    conditions?: ResourceJson.Json.ConditionSetDecl,
+    resolver?: IResourceResolver
+  ): Result<ResourceJson.Json.ILooseResourceDecl> {
+    return this.getDefaultTemplateCandidate(init, conditions, resolver).onSuccess((candidate) =>
+      succeed({
+        id: resourceId,
+        resourceTypeName: this.key,
+        candidates: [candidate]
+      })
+    );
   }
 
   /**
    * Gets the default template value for this resource type.
    * Subclasses should override this to provide type-specific default values.
    * @returns The default JSON value for a new resource of this type
+   * @public
    */
-  protected getDefaultTemplateValue(): JsonObject {
-    // Default implementation returns an empty object
-    // Subclasses should override for type-specific defaults
-    return {};
+  public getDefaultTemplateCandidate(
+    json?: JsonValue,
+    conditions?: ResourceJson.Json.ConditionSetDecl,
+    __resolver?: IResourceResolver
+  ): Result<ResourceJson.Json.IChildResourceCandidateDecl> {
+    json = json ?? this._template;
+
+    if (!isJsonObject(json)) {
+      return fail(`${this.key}: Invalid initial value "${json}" must be JSON object.`);
+    }
+
+    const candidate: ResourceJson.Json.IChildResourceCandidateDecl = {
+      json,
+      ...(conditions ? { conditions } : {}),
+      mergeMethod: 'replace'
+    };
+
+    return this.validate(json, 'full')
+      .onSuccess((json) => succeed({ ...candidate, isPartial: false }))
+      .onFailure(() =>
+        this.validate(json, 'partial').onSuccess((json) => succeed({ ...candidate, isPartial: true }))
+      );
   }
 }

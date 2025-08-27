@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Runtime, ResourceJson, ResourceTypes, ResourceId, Validate } from '@fgv/ts-res';
+import { QualifierTypes, Qualifiers, Runtime, ResourceJson, ResourceTypes, ResourceId, Validate } from '@fgv/ts-res';
 import { Result, succeed, fail } from '@fgv/ts-utils';
 import type { JsonObject as ResourceJsonObject } from '@fgv/ts-json-base';
 import { isJsonObject } from '@fgv/ts-json-base';
@@ -70,18 +70,18 @@ function findResourceType(
  * Helper function to create condition declarations from context with proper validation.
  *
  * @param effectiveContext - The context values to create conditions from
- * @param qualifierTypes - The qualifier type collection for validation
+ * @param qualifiers - The qualifiers collection for validation
  * @param onMessage - Optional callback for error messages
  * @returns Result containing condition declarations or error
  */
 function createContextConditions(
   effectiveContext: Record<string, string | undefined>,
-  qualifierTypes: any | undefined, // TODO: Replace with proper type when available
+  qualifiers: Qualifiers.IReadOnlyQualifierCollector | undefined,
   onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void
 ): Result<ResourceJson.Json.ILooseConditionDecl[]> {
-  // Qualifier types are required for proper validation
-  if (!qualifierTypes) {
-    const error = 'Qualifier types not available - cannot validate context values';
+  // Qualifiers are required for proper validation
+  if (!qualifiers) {
+    const error = 'Qualifiers not available - cannot validate context values';
     onMessage?.('error', error);
     return fail(error);
   }
@@ -92,18 +92,19 @@ function createContextConditions(
       continue; // Skip undefined/null values
     }
 
-    // Get the qualifier type for validation
-    const qualifierType = qualifierTypes.get(qualifierName);
-    if (!qualifierType) {
+    // Get the qualifier for validation (get returns a Result)
+    const qualifierResult = qualifiers.get(qualifierName as unknown as any);
+    if (qualifierResult.isFailure()) {
       // Unknown qualifiers should not happen in a properly configured system
       const error = `Unknown qualifier '${qualifierName}' in context`;
       onMessage?.('error', error);
       return fail(error);
     }
+    const qualifier = qualifierResult.value;
 
-    // Validate the qualifier value using the qualifier type
-    // Let the qualifier type determine if empty strings or other values are valid
-    if (qualifierType.isValidConditionValue && !qualifierType.isValidConditionValue(qualifierValue)) {
+    // Validate the qualifier value using the qualifier's validation
+    // Let the qualifier determine if empty strings or other values are valid
+    if (qualifier.isValidConditionValue && !qualifier.isValidConditionValue(qualifierValue)) {
       const error = `Invalid value '${qualifierValue}' for qualifier '${qualifierName}'`;
       onMessage?.('warning', error);
       continue; // Skip invalid values
@@ -542,7 +543,7 @@ export function useResolutionState(
           // Always stamp conditions from the current effective context for pending resources
           const contextConditionsResult = createContextConditions(
             effectiveContext,
-            processedResources?.system.qualifierTypes,
+            processedResources?.system.qualifiers,
             onMessage
           );
           if (contextConditionsResult.isFailure()) {
@@ -728,7 +729,7 @@ export function useResolutionState(
         // Create conditions from current effective context
         const contextConditionsResult = createContextConditions(
           effectiveContext,
-          processedResources?.system.qualifierTypes,
+          processedResources?.system.qualifiers,
           onMessage
         );
         if (contextConditionsResult.isFailure()) {
@@ -824,7 +825,7 @@ export function useResolutionState(
         // Stamp conditions from current effective context at creation time
         const contextConditionsResult = createContextConditions(
           effectiveContext,
-          processedResources?.system.qualifierTypes,
+          processedResources?.system.qualifiers,
           onMessage
         );
         if (contextConditionsResult.isFailure()) {
@@ -1105,7 +1106,7 @@ export function useResolutionState(
         // Stamp conditions from current effective context onto all candidates for the new resource
         const contextConditionsResult = createContextConditions(
           effectiveContext,
-          processedResources?.system.qualifierTypes,
+          processedResources?.system.qualifiers,
           onMessage
         );
         if (contextConditionsResult.isFailure()) {

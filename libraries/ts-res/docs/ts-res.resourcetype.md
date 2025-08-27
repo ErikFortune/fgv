@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)(key, index)](./ts-res.resourcetype._constructor_.md)
+[(constructor)(key, index, template)](./ts-res.resourcetype._constructor_.md)
 
 
 </td><td>
@@ -135,6 +135,34 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[createTemplate(resourceId, init, conditions, resolver)](./ts-res.resourcetype.createtemplate.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a template for a new resource of this type. Default implementation provides a basic template. Subclasses can override to provide type-specific templates.
+
+
+</td></tr>
+<tr><td>
+
+[getDefaultTemplateCandidate(json, conditions, \_\_resolver)](./ts-res.resourcetype.getdefaulttemplatecandidate.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the default template value for this resource type. Subclasses should override this to provide type-specific default values.
+
+
+</td></tr>
+<tr><td>
 
 [setIndex(index)](./ts-res.resourcetype.setindex.md)
 

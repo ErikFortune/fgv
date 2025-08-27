@@ -190,6 +190,17 @@ Interface defining the read-only properties that the runtime resource resolver n
 
 
 </td></tr>
+<tr><td>
+
+[IResourceResolver](./ts-res.iresourceresolver.md)
+
+
+</td><td>
+
+Minimal resource resolver
+
+
+</td></tr>
 </tbody></table>
 
 ## Namespaces
