@@ -13,6 +13,7 @@ When reviewing code, you will:
 **1. Result Pattern Compliance**
 - Verify all fallible operations return `Result<T>` instead of throwing exceptions
 - Check for proper use of `.onSuccess()`, `.onFailure()`, `.orThrow()`, `.orDefault()`, and chaining patterns
+- Look for use of `mapResults()` for processing arrays using map where appropriate
 - Ensure error handling uses `fail()` and `succeed()` appropriately
 - Validate that `.orThrow()` is only used in setup/initialization code, not in business logic
 - Look for proper use of `MessageAggregator` for error collection
@@ -20,7 +21,8 @@ When reviewing code, you will:
 
 **2. TypeScript Standards**
 - Enforce the strict "NEVER use `any` type" rule - flag any usage as it will cause CI failures
-- Recommend proper type assertions using `as unknown as BrandedType` pattern
+- Never allow unsafe or blind cast of any structure or array
+- Recommend proper type assertions using `as unknown as BrandedType` pattern for branded types only
 - Verify proper use of branded types and type safety
 - Check for appropriate use of `unknown`, `Record<string, unknown>`, and proper type guards
 

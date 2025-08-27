@@ -1,10 +1,12 @@
 # @fgv/ts-res-ui-components
 
-React components for building user interfaces that work with the [ts-res](https://github.com/fgv/ts-res) multidimensional resource management library.
+React components for building user interfaces that work with the [ts-res](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res) multidimensional resource management library.
 
 ## Overview
 
 This library provides a complete set of React components, hooks, and utilities for creating applications that visualize, manage, and interact with ts-res resource systems. It supports the full workflow from importing configurations to resolving resources with dynamic context.
+
+**Latest Update**: Now compatible with enhanced ts-res template creation APIs that support passing context conditions and resolvers directly to template creation, eliminating the need for manual post-processing.
 
 ## Warning
 This packlet is largely AI written, and it shows.
@@ -45,11 +47,12 @@ This library requires the following peer dependencies:
 
 ```json
 {
-  "@fgv/ts-res": "^5.0.0",
-  "@fgv/ts-utils": "^5.0.0",
-  "@fgv/ts-json-base": "^5.0.0",
-  "react": "^18.0.0",
-  "react-dom": "^18.0.0"
+  "@fgv/ts-res": ">=5.0.0",
+  "@fgv/ts-utils": ">=5.0.0", 
+  "@fgv/ts-json-base": ">=5.0.0",
+  "@fgv/ts-json": ">=5.0.0",
+  "react": ">=18.0.0",
+  "react-dom": ">=18.0.0"
 }
 ```
 
@@ -1778,6 +1781,6 @@ The API documentation includes detailed examples, usage patterns, and type infor
 For questions and support, please:
 
 1. Check the [API documentation](./docs/index.md) for detailed component usage
-2. Review the [ts-res documentation](https://docs.ts-res.dev) for core concepts
-3. Search [existing issues](https://github.com/fgv/ts-res/issues)
-4. Create a [new issue](https://github.com/fgv/ts-res/issues/new)
+2. Review the [ts-res documentation](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res) for core concepts
+3. Search [existing issues](https://github.com/ErikFortune/fgv/issues)
+4. Create a [new issue](https://github.com/ErikFortune/fgv/issues/new)

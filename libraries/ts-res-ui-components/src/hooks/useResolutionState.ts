@@ -1,6 +1,15 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { QualifierTypes, Qualifiers, Runtime, ResourceJson, ResourceTypes, ResourceId, Validate } from '@fgv/ts-res';
-import { Result, succeed, fail } from '@fgv/ts-utils';
+import {
+  QualifierTypes,
+  Qualifiers,
+  Runtime,
+  ResourceJson,
+  ResourceTypes,
+  ResourceId,
+  Validate,
+  QualifierName
+} from '@fgv/ts-res';
+import { Result, succeed, fail, MessageAggregator } from '@fgv/ts-utils';
 import type { JsonObject as ResourceJsonObject } from '@fgv/ts-json-base';
 import { isJsonObject } from '@fgv/ts-json-base';
 import {
@@ -86,35 +95,33 @@ function createContextConditions(
     return fail(error);
   }
   const contextConditions: ResourceJson.Json.ILooseConditionDecl[] = [];
+  const errors: MessageAggregator = new MessageAggregator();
 
   for (const [qualifierName, qualifierValue] of Object.entries(effectiveContext)) {
     if (qualifierValue === undefined || qualifierValue === null) {
       continue; // Skip undefined/null values
     }
 
-    // Get the qualifier for validation (get returns a Result)
-    const qualifierResult = qualifiers.get(qualifierName as unknown as any);
-    if (qualifierResult.isFailure()) {
-      // Unknown qualifiers should not happen in a properly configured system
-      const error = `Unknown qualifier '${qualifierName}' in context`;
-      onMessage?.('error', error);
-      return fail(error);
-    }
-    const qualifier = qualifierResult.value;
-
-    // Validate the qualifier value using the qualifier's validation
-    // Let the qualifier determine if empty strings or other values are valid
-    if (qualifier.isValidConditionValue && !qualifier.isValidConditionValue(qualifierValue)) {
-      const error = `Invalid value '${qualifierValue}' for qualifier '${qualifierName}'`;
-      onMessage?.('warning', error);
-      continue; // Skip invalid values
-    }
-
-    // Add the qualifier value as a condition - defer all validation to the qualifier type
-    contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
+    qualifiers
+      .get(qualifierName as QualifierName)
+      .asResult.withErrorFormat((error) => `${qualifierName}: unknown qualifier': ${error}`)
+      .onSuccess((qualifier) => {
+        return qualifier
+          .validateCondition(qualifierValue)
+          .withErrorFormat((error) => `${qualifierName}: invalid value '${qualifierValue}': ${error}`);
+      })
+      .onSuccess((qualifier) => {
+        contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
+        return succeed(qualifier);
+      })
+      .onFailure((error) => {
+        onMessage?.('error', error);
+        return fail(error);
+      })
+      .aggregateError(errors);
   }
 
-  return succeed(contextConditions);
+  return errors.returnOrReport(succeed(contextConditions));
 }
 
 /**
@@ -130,17 +137,10 @@ function isResourceIdTaken(
   processedResources: ProcessedResources | null,
   pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>
 ): boolean {
-  const existingIds = new Set<string>();
-
-  // Add existing resource IDs from the processed resources
-  if (processedResources?.summary?.resourceIds) {
-    processedResources.summary.resourceIds.forEach((rid) => existingIds.add(rid));
-  }
-
-  // Add pending resource IDs
-  pendingResources.forEach((_, rid) => existingIds.add(rid));
-
-  return existingIds.has(resourceId);
+  return (
+    processedResources?.summary?.resourceIds?.find((rid) => rid === resourceId) !== undefined ||
+    pendingResources.has(resourceId)
+  );
 }
 
 /**
@@ -803,25 +803,6 @@ export function useResolutionState(
           }
         }
 
-        // Create template
-        let template = targetType.createTemplate(resourceId as unknown as ResourceId);
-
-        // Pre-seed with JSON if provided
-        if (params?.json !== undefined) {
-          template = {
-            ...template,
-            candidates: [
-              {
-                json: (isJsonObject(params.json)
-                  ? params.json
-                  : { value: params.json }) as ResourceJsonObject,
-                isPartial: false,
-                mergeMethod: 'replace' as const
-              }
-            ]
-          };
-        }
-
         // Stamp conditions from current effective context at creation time
         const contextConditionsResult = createContextConditions(
           effectiveContext,
@@ -833,15 +814,25 @@ export function useResolutionState(
         }
         const contextConditions = contextConditionsResult.value;
 
-        if (contextConditions.length > 0) {
-          template = {
-            ...template,
-            candidates: (template.candidates || []).map((c) => ({
-              ...c,
-              conditions: contextConditions
-            }))
-          };
+        // Prepare initial JSON value if provided
+        const initialJson =
+          params?.json !== undefined
+            ? isJsonObject(params.json)
+              ? params.json
+              : { value: params.json }
+            : undefined;
+
+        // Create template using new API with context conditions and resolver
+        const templateResult = targetType.createTemplate(
+          resourceId as unknown as ResourceId,
+          initialJson,
+          contextConditions.length > 0 ? contextConditions : undefined,
+          processedResources?.resolver
+        );
+        if (templateResult.isFailure()) {
+          return fail(templateResult.message);
         }
+        const template = templateResult.value;
 
         const draft = {
           resourceId,
@@ -953,12 +944,21 @@ export function useResolutionState(
         }
         const type = typeResult.value;
 
-        const template = type.createTemplate(newResourceDraft.resourceId as unknown as ResourceId);
+        // Create template with new API
+        const templateResult = type.createTemplate(
+          newResourceDraft.resourceId as unknown as ResourceId,
+          undefined, // no initial json
+          undefined, // no conditions for type selection
+          processedResources?.resolver
+        );
+        if (templateResult.isFailure()) {
+          return fail(templateResult.message);
+        }
 
         const updatedDraft = {
           ...newResourceDraft,
           resourceType: typeName,
-          template
+          template: templateResult.value
         };
 
         setNewResourceDraft(updatedDraft);
