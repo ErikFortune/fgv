@@ -35,6 +35,8 @@ import { Tool } from './types/app';
 import * as TsRes from '@fgv/ts-res';
 import {
   sampleGridConfigurations,
+  flexibleGridConfigurations,
+  allGridConfigurations,
   multiGridConfigurations,
   demonstrationGridConfig
 } from './utils/gridConfigurations';
@@ -709,8 +711,8 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
 
       case 'grid':
         const selectedConfig =
-          sampleGridConfigurations.find((config) => config.id === selectedGridConfig) ||
-          sampleGridConfigurations[0];
+          allGridConfigurations.find((config) => config.id === selectedGridConfig) ||
+          allGridConfigurations[0];
 
         return (
           <div>
@@ -735,7 +737,7 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                     onChange={(e) => setSelectedGridConfig(e.target.value)}
                     className="px-2 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700"
                   >
-                    {sampleGridConfigurations.map((config) => (
+                    {allGridConfigurations.map((config) => (
                       <option key={config.id} value={config.id}>
                         {config.title}
                       </option>

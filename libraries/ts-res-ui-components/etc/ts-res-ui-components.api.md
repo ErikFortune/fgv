@@ -350,6 +350,12 @@ interface GridColumnDefinition {
     id: string;
     sortable?: boolean;
     title: string;
+    triStateLabels?: {
+        trueLabel: string;
+        falseLabel: string;
+        undefinedLabel: string;
+    };
+    triStatePresentation?: 'checkbox' | 'dropdown';
     validation?: GridCellValidation;
     width?: number;
 }

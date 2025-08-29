@@ -17,6 +17,12 @@ export interface TriStateCellProps {
   disabled?: boolean;
   /** Presentation mode: 'checkbox' for 3-state checkbox, 'dropdown' for select */
   presentation?: 'checkbox' | 'dropdown';
+  /** Custom labels for tristate values */
+  labels?: {
+    trueLabel: string;
+    falseLabel: string;
+    undefinedLabel: string;
+  };
   /** Callback when the value changes */
   onChange: (value: boolean | null) => void;
   /** Callback when the value should be saved */
@@ -52,6 +58,7 @@ export const TriStateCell: React.FC<TriStateCellProps> = ({
   column,
   disabled = false,
   presentation = 'dropdown',
+  labels,
   onChange,
   onSave,
   onValidationChange
@@ -144,18 +151,14 @@ export const TriStateCell: React.FC<TriStateCellProps> = ({
     );
   }
 
-  // Dropdown presentation
-  const getValueLabel = (val: boolean | null): string => {
-    if (val === true) return 'Yes';
-    if (val === false) return 'No';
-    return 'Unset';
+  // Default labels (can be overridden)
+  const defaultLabels = {
+    trueLabel: 'Yes',
+    falseLabel: 'No',
+    undefinedLabel: 'Unset'
   };
 
-  const getValueIcon = (val: boolean | null): React.ReactNode => {
-    if (val === true) return <CheckIcon className="h-4 w-4 text-green-600" />;
-    if (val === false) return <XMarkIcon className="h-4 w-4 text-red-600" />;
-    return <span className="h-4 w-4 flex items-center justify-center text-gray-400">—</span>;
-  };
+  const effectiveLabels = labels || defaultLabels;
 
   return (
     <div className="px-3 py-2">
@@ -168,20 +171,14 @@ export const TriStateCell: React.FC<TriStateCellProps> = ({
             disabled ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'cursor-pointer'
           }`}
         >
-          <option value="null">Unset</option>
-          <option value="true">Yes</option>
-          <option value="false">No</option>
+          <option value="null">{effectiveLabels.undefinedLabel}</option>
+          <option value="true">{effectiveLabels.trueLabel}</option>
+          <option value="false">{effectiveLabels.falseLabel}</option>
         </select>
 
         <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
           <ChevronDownIcon className="h-4 w-4 text-gray-400" />
         </div>
-      </div>
-
-      {/* Visual indicator */}
-      <div className="mt-1 flex items-center space-x-1 text-xs text-gray-500">
-        {getValueIcon(triStateValue)}
-        <span>{getValueLabel(triStateValue)}</span>
       </div>
     </div>
   );

@@ -1432,6 +1432,14 @@ export interface GridColumnDefinition {
   dropdownOptions?: GridDropdownOption[] | (() => Promise<GridDropdownOption[]>);
   /** Whether to allow custom values in dropdown (combobox behavior) */
   allowCustomValue?: boolean;
+  /** Presentation mode for tristate cells */
+  triStatePresentation?: 'checkbox' | 'dropdown';
+  /** Custom labels for tristate values */
+  triStateLabels?: {
+    trueLabel: string;
+    falseLabel: string;
+    undefinedLabel: string;
+  };
 }
 
 /**

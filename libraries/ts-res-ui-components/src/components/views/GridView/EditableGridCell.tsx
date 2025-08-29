@@ -83,10 +83,32 @@ export const EditableGridCell: React.FC<EditableGridCellProps> = ({
     return resolutionActions?.getEditedValue?.(resourceId);
   }, [resolutionActions, resourceId]);
 
-  // Determine the display value (edited value takes precedence)
+  // Extract field-specific value from edited object using the same logic as ResourceGrid
+  const extractedEditedValue = useMemo(() => {
+    if (editedValue === undefined) return undefined;
+
+    // Use the same extractValueByPath logic as ResourceGrid
+    const dataPath = column.dataPath;
+    if (typeof dataPath === 'string') {
+      return (editedValue as any)?.[dataPath];
+    }
+
+    if (Array.isArray(dataPath)) {
+      let current = editedValue;
+      for (const segment of dataPath) {
+        if (current == null) return undefined;
+        current = (current as any)[segment];
+      }
+      return current;
+    }
+
+    return undefined;
+  }, [editedValue, column.dataPath]);
+
+  // Determine the display value (edited field value takes precedence)
   const displayValue = useMemo(() => {
-    return editedValue !== undefined ? editedValue : value;
-  }, [editedValue, value]);
+    return extractedEditedValue !== undefined ? extractedEditedValue : value;
+  }, [extractedEditedValue, value]);
 
   // Start editing
   const handleStartEdit = useCallback(() => {
@@ -115,8 +137,33 @@ export const EditableGridCell: React.FC<EditableGridCellProps> = ({
         return;
       }
 
-      // Save the edit using existing resolution actions
-      const saveResult = resolutionActions.saveEdit(resourceId, newValue, resolvedValue);
+      // Create updated object by setting only the specific field identified by dataPath
+      // Ensure resolvedValue is an object before spreading it
+      const baseObject =
+        resolvedValue && typeof resolvedValue === 'object' && !Array.isArray(resolvedValue)
+          ? resolvedValue
+          : {};
+      const updatedObject = { ...baseObject } as Record<string, JsonValue>;
+
+      // Handle both string and array data paths
+      const dataPath = column.dataPath;
+      if (typeof dataPath === 'string') {
+        updatedObject[dataPath] = newValue;
+      } else if (Array.isArray(dataPath) && dataPath.length > 0) {
+        // For nested paths, we need to deep update
+        let current = updatedObject;
+        for (let i = 0; i < dataPath.length - 1; i++) {
+          const segment = dataPath[i];
+          if (current[segment] == null || typeof current[segment] !== 'object') {
+            current[segment] = {};
+          }
+          current = current[segment] as Record<string, JsonValue>;
+        }
+        current[dataPath[dataPath.length - 1]] = newValue;
+      }
+
+      // Save the edit using existing resolution actions with the complete updated object
+      const saveResult = resolutionActions.saveEdit(resourceId, updatedObject, resolvedValue);
 
       if (saveResult.isSuccess()) {
         setIsEditing(false);
@@ -127,7 +174,16 @@ export const EditableGridCell: React.FC<EditableGridCellProps> = ({
         onMessage?.('error', `Failed to save: ${saveResult.message}`);
       }
     },
-    [resolutionActions, resourceId, resolvedValue, column.id, column.title, currentValidationError, onMessage]
+    [
+      resolutionActions,
+      resourceId,
+      resolvedValue,
+      column.dataPath,
+      column.id,
+      column.title,
+      currentValidationError,
+      onMessage
+    ]
   );
 
   // Handle value changes during editing
@@ -206,6 +262,8 @@ export const EditableGridCell: React.FC<EditableGridCellProps> = ({
             resourceId={resourceId}
             column={column}
             disabled={isDisabled}
+            presentation={column.triStatePresentation}
+            labels={column.triStateLabels}
             onChange={handleChange}
             onSave={handleSave}
             onValidationChange={handleValidationChange}
