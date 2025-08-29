@@ -5,6 +5,13 @@ import { GridValidationState } from '../../../utils/cellValidation';
 import { StringCell, BooleanCell, TriStateCell, DropdownCell } from './cells';
 
 /**
+ * Prevent prototype pollution by disallowing dangerous keys.
+ */
+function isSafeKey(key: string): boolean {
+  return key !== '__proto__' && key !== 'constructor' && key !== 'prototype';
+}
+
+/**
  * Props for the EditableGridCell component.
  */
 export interface EditableGridCellProps {
@@ -148,18 +155,33 @@ export const EditableGridCell: React.FC<EditableGridCellProps> = ({
       // Handle both string and array data paths
       const dataPath = column.dataPath;
       if (typeof dataPath === 'string') {
-        updatedObject[dataPath] = newValue;
+        if (isSafeKey(dataPath)) {
+          updatedObject[dataPath] = newValue;
+        } else {
+          onMessage?.('error', `Invalid field name: "${dataPath}"`);
+          return;
+        }
       } else if (Array.isArray(dataPath) && dataPath.length > 0) {
         // For nested paths, we need to deep update
         let current = updatedObject;
         for (let i = 0; i < dataPath.length - 1; i++) {
           const segment = dataPath[i];
+          if (!isSafeKey(segment)) {
+            onMessage?.('error', `Invalid nested field name: "${segment}"`);
+            return;
+          }
           if (current[segment] == null || typeof current[segment] !== 'object') {
             current[segment] = {};
           }
           current = current[segment] as Record<string, JsonValue>;
         }
-        current[dataPath[dataPath.length - 1]] = newValue;
+        const lastSegment = dataPath[dataPath.length - 1];
+        if (isSafeKey(lastSegment)) {
+          current[lastSegment] = newValue;
+        } else {
+          onMessage?.('error', `Invalid nested field name: "${lastSegment}"`);
+          return;
+        }
       }
 
       // Save the edit using existing resolution actions with the complete updated object
