@@ -47,3 +47,4 @@ export * as TsResTools from './TsResTools';
 export * as ViewStateTools from './ViewStateTools';
 export * as ZipTools from './ZipTools';
 export * as PickerTools from './PickerTools';
+export * as GridTools from './GridTools';

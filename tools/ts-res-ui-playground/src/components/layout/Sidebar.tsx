@@ -6,7 +6,9 @@ import {
   CubeIcon,
   MagnifyingGlassIcon,
   CogIcon,
-  RectangleStackIcon
+  RectangleStackIcon,
+  TableCellsIcon,
+  Squares2X2Icon
 } from '@heroicons/react/24/outline';
 import { Tool } from '../../types/app';
 
@@ -57,6 +59,18 @@ const tools = [
     name: 'Resource Picker',
     icon: RectangleStackIcon,
     description: 'Interactive ResourcePicker component demo and testing'
+  },
+  {
+    id: 'grid',
+    name: 'Grid View',
+    icon: TableCellsIcon,
+    description: 'Edit multiple resources simultaneously in grid format'
+  },
+  {
+    id: 'multi-grid',
+    name: 'Multi-Grid View',
+    icon: Squares2X2Icon,
+    description: 'Administrative workflows with multiple resource grids'
   }
 ];
 
