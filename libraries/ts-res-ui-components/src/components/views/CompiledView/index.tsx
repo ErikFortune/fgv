@@ -149,49 +149,49 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
       // Collectors section - showing from compiled collection
       tree.children!.push({
         id: 'qualifiers',
-        name: `Qualifiers (${activeCompiledCollection.qualifiers?.length || 0})`,
+        name: `Qualifiers (${activeCompiledCollection.qualifiers?.length ?? 0})`,
         type: 'section',
         data: { type: 'qualifiers', items: activeCompiledCollection.qualifiers }
       });
 
       tree.children!.push({
         id: 'qualifier-types',
-        name: `Qualifier Types (${activeCompiledCollection.qualifierTypes?.length || 0})`,
+        name: `Qualifier Types (${activeCompiledCollection.qualifierTypes?.length ?? 0})`,
         type: 'section',
         data: { type: 'qualifier-types', items: activeCompiledCollection.qualifierTypes }
       });
 
       tree.children!.push({
         id: 'resource-types',
-        name: `Resource Types (${activeCompiledCollection.resourceTypes?.length || 0})`,
+        name: `Resource Types (${activeCompiledCollection.resourceTypes?.length ?? 0})`,
         type: 'section',
         data: { type: 'resource-types', items: activeCompiledCollection.resourceTypes }
       });
 
       tree.children!.push({
         id: 'conditions',
-        name: `Conditions (${activeCompiledCollection.conditions?.length || 0})`,
+        name: `Conditions (${activeCompiledCollection.conditions?.length ?? 0})`,
         type: 'section',
         data: { type: 'conditions', items: activeCompiledCollection.conditions }
       });
 
       tree.children!.push({
         id: 'condition-sets',
-        name: `Condition Sets (${activeCompiledCollection.conditionSets?.length || 0})`,
+        name: `Condition Sets (${activeCompiledCollection.conditionSets?.length ?? 0})`,
         type: 'section',
         data: { type: 'condition-sets', items: activeCompiledCollection.conditionSets }
       });
 
       tree.children!.push({
         id: 'decisions',
-        name: `Decisions (${activeCompiledCollection.decisions?.length || 0})`,
+        name: `Decisions (${activeCompiledCollection.decisions?.length ?? 0})`,
         type: 'section',
         data: { type: 'decisions', items: activeCompiledCollection.decisions }
       });
 
       tree.children!.push({
         id: 'candidate-values',
-        name: `Candidate Values (${activeCompiledCollection.candidateValues?.length || 0})`,
+        name: `Candidate Values (${activeCompiledCollection.candidateValues?.length ?? 0})`,
         type: 'section',
         data: { type: 'candidate-values', items: activeCompiledCollection.candidateValues }
       });
@@ -215,14 +215,14 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
 
         // Get compiled resource metadata
         const decision = activeCompiledCollection.decisions?.[resource.decision];
-        const candidateCount = decision?.conditionSets?.length || 0;
+        const candidateCount = decision?.conditionSets?.length ?? 0;
         const resourceType = activeCompiledCollection.resourceTypes?.[resource.type];
 
         annotations[resourceId] = {
           suffix: `${candidateCount} candidate${candidateCount !== 1 ? 's' : ''}`,
           badge: resourceType
             ? {
-                text: resourceType.name || 'unknown',
+                text: resourceType.name ?? 'unknown',
                 variant: 'info'
               }
             : undefined
