@@ -23,6 +23,7 @@
     "TCONV",
     "TDEST",
     "TELEM",
+    "TITEM",
     "TNAME",
     "tsdoc",
     "TSRC",

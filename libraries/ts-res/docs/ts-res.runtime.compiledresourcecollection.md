@@ -84,6 +84,27 @@ A read-only result map of all built resources, keyed by resource ID. Resources a
 </td></tr>
 <tr><td>
 
+[candidateValues](./ts-res.runtime.compiledresourcecollection.candidatevalues.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+JsonValue\[\]
+
+
+</td><td>
+
+The candidate values in the collection.
+
+
+</td></tr>
+<tr><td>
+
 [conditions](./ts-res.runtime.compiledresourcecollection.conditions.md)
 
 

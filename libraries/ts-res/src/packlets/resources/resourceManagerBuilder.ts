@@ -34,7 +34,7 @@ import {
   succeedWithDetail,
   ValidatingResultMap
 } from '@fgv/ts-utils';
-import { Converters as JsonConverters } from '@fgv/ts-json-base';
+import { Converters as JsonConverters, JsonValue } from '@fgv/ts-json-base';
 import {
   ConditionCollector,
   ConditionSetCollector,
@@ -1102,7 +1102,8 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
         compiledResource,
         decision,
         resourceType,
-        builder
+        builder,
+        compiledCollection.candidateValues
       ).aggregateError(errors);
     }
 
@@ -1115,6 +1116,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
    * @param decision - The decision containing condition sets.
    * @param resourceType - The resource type for the candidates.
    * @param builder - The builder to add candidates to.
+   * @param candidateValues - Array of candidate values indexed by valueIndex.
    * @returns `Success` if all candidates were added successfully, `Failure` otherwise.
    * @internal
    */
@@ -1122,7 +1124,8 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
     compiledResource: ResourceJson.Compiled.ICompiledResource,
     decision: AbstractDecision,
     resourceType: ResourceType,
-    builder: ResourceManagerBuilder
+    builder: ResourceManagerBuilder,
+    candidateValues: ReadonlyArray<JsonValue>
   ): Result<boolean> {
     const errors = new MessageAggregator();
 
@@ -1144,9 +1147,9 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
         }
       }
 
-      // Convert json value to JsonObject, handling undefined case
+      // Get json value from candidateValues array using valueIndex
       /* c8 ignore next 1 - defense in depth */
-      const rawJson = candidate.json ?? {};
+      const rawJson = candidateValues[candidate.valueIndex as unknown as number] ?? {};
       JsonConverters.jsonObject
         .convert(rawJson)
         .onSuccess((json) => {

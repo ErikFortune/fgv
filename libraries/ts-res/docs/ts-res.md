@@ -469,6 +469,28 @@ The completeness of a resource candidate value. A full value is one that contain
 </td></tr>
 <tr><td>
 
+[CandidateValueIndex](./ts-res.candidatevalueindex.md)
+
+
+</td><td>
+
+Branded number representing a validated candidate value index. Candidate value indices are used to identify candidate values within a resource set and to enable sharing of like values.
+
+
+</td></tr>
+<tr><td>
+
+[CandidateValueKey](./ts-res.candidatevaluekey.md)
+
+
+</td><td>
+
+Branded string representing a validated candidate value key. Candidate value keys are used to identify candidate values within a resource set and to enable sharing of like values.
+
+
+</td></tr>
+<tr><td>
+
 [ConditionIndex](./ts-res.conditionindex.md)
 
 

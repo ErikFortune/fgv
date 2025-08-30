@@ -154,6 +154,18 @@ export const resourceTypeName = Converters.string.map(Validate.toResourceTypeNam
 export const resourceTypeIndex = Converters.number.map(Validate.toResourceTypeIndex);
 
 /**
+ * `Converter` which validates an `unknown` value as a {@link CandidateValueKey | CandidateValueKey}.
+ * @public
+ */
+export const candidateValueKey = Converters.string.map(Validate.toCandidateValueKey);
+
+/**
+ * `Converter` which validates an `unknown` value as a {@link CandidateValueIndex | CandidateValueIndex}.
+ * @public
+ */
+export const candidateValueIndex = Converters.number.map(Validate.toCandidateValueIndex);
+
+/**
  * `Converter` for a resource value merge method.
  * @public
  */

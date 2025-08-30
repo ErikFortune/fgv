@@ -301,6 +301,10 @@ export class Collector<TITEM extends ICollectible<any, any>> implements IReadOnl
     //
     // (undocumented)
     values(): IterableIterator<TITEM>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    valuesByIndex(): ReadonlyArray<TITEM>;
 }
 
 // @public
@@ -1268,6 +1272,7 @@ class InMemoryTreeAccessors implements IFileTreeAccessors {
 // @public
 interface IReadOnlyCollector<TITEM extends ICollectible<any, any>> extends IReadOnlyResultMap<CollectibleKey<TITEM>, TITEM> {
     getAt(index: number): Result<TITEM>;
+    valuesByIndex(): ReadonlyArray<TITEM>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1358,11 +1363,15 @@ interface IReadOnlyValidatingCollector<TITEM extends ICollectible<any, any>> ext
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    readonly getAt: (index: number) => Result<TITEM>;
+    getAt(index: number): Result<TITEM>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     readonly validating: IReadOnlyCollectorValidator<TITEM>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    valuesByIndex(): ReadonlyArray<TITEM>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

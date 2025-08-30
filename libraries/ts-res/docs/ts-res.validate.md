@@ -19,6 +19,28 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[isValidCandidateValueIndex(index)](./ts-res.validate.isvalidcandidatevalueindex.md)
+
+
+</td><td>
+
+Checks if the given index is a valid candidate value index.
+
+
+</td></tr>
+<tr><td>
+
+[isValidCandidateValueKey(key)](./ts-res.validate.isvalidcandidatevaluekey.md)
+
+
+</td><td>
+
+Checks if the given key is a valid candidate value key.
+
+
+</td></tr>
+<tr><td>
+
 [isValidConditionIndex(index)](./ts-res.validate.isvalidconditionindex.md)
 
 
@@ -289,6 +311,28 @@ Checks if the given index is a valid resource type index.
 </td><td>
 
 Checks if the given name is a valid resource type name.
+
+
+</td></tr>
+<tr><td>
+
+[toCandidateValueIndex(index)](./ts-res.validate.tocandidatevalueindex.md)
+
+
+</td><td>
+
+Converts a number to a [candidate value index](./ts-res.candidatevalueindex.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[toCandidateValueKey(key)](./ts-res.validate.tocandidatevaluekey.md)
+
+
+</td><td>
+
+Converts a string to a [candidate value key](./ts-res.candidatevaluekey.md)<!-- -->.
 
 
 </td></tr>

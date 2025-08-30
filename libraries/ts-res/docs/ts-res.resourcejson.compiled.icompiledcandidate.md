@@ -56,25 +56,6 @@ Indicates if this is a partial resource that needs to be merged.
 </td></tr>
 <tr><td>
 
-[json](./ts-res.resourcejson.compiled.icompiledcandidate.json.md)
-
-
-</td><td>
-
-
-</td><td>
-
-JsonValue
-
-
-</td><td>
-
-The JSON value of the candidate.
-
-
-</td></tr>
-<tr><td>
-
 [mergeMethod](./ts-res.resourcejson.compiled.icompiledcandidate.mergemethod.md)
 
 
@@ -89,6 +70,25 @@ The JSON value of the candidate.
 </td><td>
 
 The method to use when merging this candidate with others.
+
+
+</td></tr>
+<tr><td>
+
+[valueIndex](./ts-res.resourcejson.compiled.icompiledcandidate.valueindex.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[Common.CandidateValueIndex](./ts-res.candidatevalueindex.md)
+
+
+</td><td>
+
+The global index of the JSON value of the candidate.
 
 
 </td></tr>

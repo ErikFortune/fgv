@@ -37,5 +37,16 @@ Gets the item at a specified index.
 
 
 </td></tr>
+<tr><td>
+
+[valuesByIndex()](./ts-utils.collections.ireadonlycollector.valuesbyindex.md)
+
+
+</td><td>
+
+Gets all items in the collection, ordered by index.
+
+
+</td></tr>
 </tbody></table>
 

@@ -311,13 +311,14 @@ describe('CompiledResourceCollection class', () => {
             decision: 0 as unknown as TsRes.DecisionIndex,
             candidates: [
               {
-                json: null, // Invalid JSON (null instead of undefined to satisfy JsonValue type)
+                valueIndex: 0 as unknown as TsRes.CandidateValueIndex,
                 isPartial: false,
                 mergeMethod: 'replace' as TsRes.ResourceValueMergeMethod
               }
             ]
           }
-        ]
+        ],
+        candidateValues: [null] // Invalid JSON value at index 0
       };
 
       const corruptedParams = {
@@ -402,13 +403,14 @@ describe('CompiledResourceCollection class', () => {
             decision: 0 as unknown as TsRes.DecisionIndex,
             candidates: [
               {
-                json: { test: 'value' },
+                valueIndex: 0 as unknown as TsRes.CandidateValueIndex,
                 isPartial: false,
                 mergeMethod: 'replace' as TsRes.ResourceValueMergeMethod
               }
             ]
           }
-        ]
+        ],
+        candidateValues: [{ test: 'value' }]
       };
 
       const validParams = {

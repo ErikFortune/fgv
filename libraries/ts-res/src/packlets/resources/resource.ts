@@ -21,7 +21,7 @@
  */
 
 import { MessageAggregator, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
-import { Helpers, ResourceId, ResourceName, Validate } from '../common';
+import { CandidateValueIndex, Helpers, ResourceId, ResourceName, Validate } from '../common';
 import { ResourceCandidate } from './resourceCandidate';
 import { CandidateReducer } from './candidateReducer';
 import { ResourceType } from '../resource-types';
@@ -191,9 +191,9 @@ export class Resource implements IResource {
   ): ResourceJson.Compiled.ICompiledResource {
     const candidates: ResourceJson.Compiled.ICompiledCandidate[] = this._getMatchingCandidates(options).map(
       (c) => ({
-        json: c.json,
         isPartial: c.isPartial,
-        mergeMethod: c.mergeMethod
+        mergeMethod: c.mergeMethod,
+        valueIndex: 0 as unknown as CandidateValueIndex // TEMPORARY: Will be fixed when integrating CandidateValueCollector
       })
     );
 

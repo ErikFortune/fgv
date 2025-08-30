@@ -19,6 +19,28 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[candidateValueIndex](./ts-res.convert.candidatevalueindex.md)
+
+
+</td><td>
+
+`Converter` which validates an `unknown` value as a [CandidateValueIndex](./ts-res.candidatevalueindex.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[candidateValueKey](./ts-res.convert.candidatevaluekey.md)
+
+
+</td><td>
+
+`Converter` which validates an `unknown` value as a [CandidateValueKey](./ts-res.candidatevaluekey.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [conditionIndex](./ts-res.convert.conditionindex.md)
 
 

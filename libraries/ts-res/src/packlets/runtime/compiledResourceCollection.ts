@@ -41,7 +41,7 @@ import { QualifierCollector } from '../qualifiers';
 import { ResourceType, ResourceTypeCollector } from '../resource-types';
 import { QualifierType, QualifierTypeCollector } from '../qualifier-types';
 import { Convert, ResourceId, Helpers } from '../common';
-import { Converters } from '@fgv/ts-json-base';
+import { JsonObject, JsonValue, isJsonObject } from '@fgv/ts-json-base';
 import { IResourceManager, IResource, IResourceCandidate } from './iResourceManager';
 import { ConcreteDecision } from '../decisions';
 import * as Validate from './validate';
@@ -82,6 +82,7 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
   private readonly _qualifierTypes: QualifierTypeCollector;
   private readonly _qualifiers: QualifierCollector;
   private readonly _resourceTypes: ResourceTypeCollector;
+  private readonly _candidateValues: JsonValue[];
   private readonly _builtResources: ValidatingResultMap<ResourceId, IResource>;
   private _cachedResourceTree?: ReadOnlyResourceTreeRoot<IResource>;
 
@@ -107,6 +108,13 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
    */
   public get resourceTypes(): ResourceTypeCollector {
     return this._resourceTypes;
+  }
+
+  /**
+   * The candidate values in the collection.
+   */
+  public get candidateValues(): JsonValue[] {
+    return this._candidateValues;
   }
 
   /**
@@ -166,6 +174,7 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
     this.conditions = conditionCollector;
     this.conditionSets = conditionSetCollector;
     this.decisions = decisionCollector;
+    this._candidateValues = [...params.compiledCollection.candidateValues];
 
     // Build resources from compiled data
     this._builtResources = this._buildResources(
@@ -491,6 +500,22 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
   }
 
   /**
+   * Gets a candidate value from the collection.
+   * @param valueIndex - The index of the candidate value to get.
+   * @returns
+   */
+  private _getCandidateValue(valueIndex: number): Result<JsonObject> {
+    if (valueIndex < 0 || valueIndex >= this._candidateValues.length) {
+      return fail(`Invalid candidate value index ${valueIndex}`);
+    }
+    /* c8 ignore next 3 - defensive coding for invalid candidate value conversion */
+    if (!isJsonObject(this._candidateValues[valueIndex])) {
+      return fail(`${valueIndex}: candidate value not a JSON object.`);
+    }
+    return succeed(this._candidateValues[valueIndex]);
+  }
+
+  /**
    * Reconstructs a ValidatingResultMap of resources from compiled data.
    * @param compiled - The compiled resource collection
    * @param resourceTypes - The reconstructed ResourceTypeCollector
@@ -536,7 +561,7 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
       // Build candidates from compiled data
       const candidateDeclsResult = mapResults(
         compiledResource.candidates.map((compiledCandidate) =>
-          Converters.jsonObject.convert(compiledCandidate.json).onSuccess((json) => {
+          this._getCandidateValue(compiledCandidate.valueIndex).onSuccess((json) => {
             return succeed({
               json,
               isPartial: compiledCandidate.isPartial,
@@ -545,6 +570,7 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
           })
         )
       );
+
       if (candidateDeclsResult.isFailure()) {
         errors.addMessage(
           `Failed to convert candidate JSON for resource ${compiledResource.id}: ${candidateDeclsResult.message}`

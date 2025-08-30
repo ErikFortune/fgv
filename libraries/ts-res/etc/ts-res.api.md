@@ -258,6 +258,48 @@ class CandidateReducer {
 }
 
 // @public
+class CandidateValue implements ICandidateValue {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
+    protected constructor(params: ICandidateValueCreateParams);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params: ICandidateValueCreateParams): Result<CandidateValue>;
+    get index(): CandidateValueIndex | undefined;
+    get json(): JsonValue;
+    get key(): CandidateValueKey;
+    setIndex(index: number): Result<CandidateValueIndex>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class CandidateValueCollector extends ValidatingCollector<CandidateValue> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
+    protected constructor(params?: ICandidateValueCollectorCreateParams);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params?: ICandidateValueCollectorCreateParams): Result<CandidateValueCollector>;
+}
+
+// @public
+export type CandidateValueIndex = Brand<number, 'CandidateValueIndex'>;
+
+// @public
+const candidateValueIndex: Converter<CandidateValueIndex, unknown>;
+
+// @public
+export type CandidateValueKey = Brand<string, 'CandidateValueKey'>;
+
+// @public
+const candidateValueKey: Converter<CandidateValueKey, unknown>;
+
+// @internal (undocumented)
+const candidateValueKey_2: RegExp;
+
+// @public
 class ChainedConfigInitFactory<TConfig, T> implements IConfigInitFactory<TConfig, T> {
     constructor(factories: IConfigInitFactory<TConfig, T>[]);
     create(config: TConfig): Result<T>;
@@ -384,6 +426,7 @@ class CompiledResourceCollection implements IResourceManager<IResource> {
     //
     // (undocumented)
     get builtResources(): Collections.IReadOnlyValidatingResultMap<ResourceId, IResource>;
+    get candidateValues(): JsonValue[];
     // (undocumented)
     readonly conditions: ReadOnlyConditionCollector;
     // (undocumented)
@@ -948,6 +991,8 @@ declare namespace Convert {
         resourceIndex,
         resourceTypeName,
         resourceTypeIndex,
+        candidateValueKey,
+        candidateValueIndex,
         resourceValueMergeMethod,
         contextQualifierToken,
         contextToken,
@@ -1468,6 +1513,31 @@ interface ICandidateInfo {
     readonly originalCandidate: ResourceCandidate;
 }
 
+// @public
+interface ICandidateValue extends Collections.ICollectible<CandidateValueKey, CandidateValueIndex> {
+    readonly index: CandidateValueIndex | undefined;
+    readonly json: JsonValue;
+    readonly key: CandidateValueKey;
+    setIndex(index: number): Result<CandidateValueIndex>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface ICandidateValueCollectorCreateParams {
+    candidateValues?: (CandidateValue | JsonValue)[];
+    normalizer?: Hash.Crc32Normalizer;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface ICandidateValueCreateParams {
+    index?: number;
+    json: JsonValue;
+    normalizer?: Hash.Crc32Normalizer;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -1523,8 +1593,8 @@ interface ICompiledAbstractDecision {
 // @public
 interface ICompiledCandidate {
     isPartial: boolean;
-    json: JsonValue;
     mergeMethod: Common.ResourceValueMergeMethod;
+    valueIndex: Common.CandidateValueIndex;
 }
 
 // @public
@@ -1581,6 +1651,7 @@ interface ICompiledResource {
 
 // @public
 interface ICompiledResourceCollection {
+    candidateValues: ReadonlyArray<JsonValue>;
     conditions: ReadonlyArray<ICompiledCondition>;
     conditionSets: ReadonlyArray<ICompiledConditionSet>;
     decisions: ReadonlyArray<ICompiledAbstractDecision>;
@@ -2847,6 +2918,12 @@ function isResourceTreeRootOrNodeInit<T>(init: ResourceTreeNodeInit<T> | IResour
 function isSystemQualifierTypeConfig(config: IAnyQualifierTypeConfig): config is ISystemQualifierTypeConfig;
 
 // @public
+function isValidCandidateValueIndex(index: number): index is CandidateValueIndex;
+
+// @public
+function isValidCandidateValueKey(key: string): key is CandidateValueKey;
+
+// @public
 function isValidConditionIndex(index: number): index is ConditionIndex;
 
 // @public
@@ -3938,6 +4015,7 @@ declare namespace RegularExpressions {
         contextToken_2 as contextToken,
         conditionSetHash_2 as conditionSetHash,
         decisionKey_2 as decisionKey,
+        candidateValueKey_2 as candidateValueKey,
         qualifierDefaultValueToken_2 as qualifierDefaultValueToken,
         qualifierDefaultValuesToken_2 as qualifierDefaultValuesToken,
         territoryCode
@@ -4386,6 +4464,12 @@ declare namespace Resources {
         ICandidateInfo,
         IReducedCandidate,
         CandidateReducer,
+        toCandidateValueKey_2 as toCandidateValueKey,
+        ICandidateValue,
+        ICandidateValueCreateParams,
+        CandidateValue,
+        ICandidateValueCollectorCreateParams,
+        CandidateValueCollector,
         IResourceCandidateCreateParams,
         ICandidateDeclOptions,
         ResourceCandidate,
@@ -4717,6 +4801,15 @@ class TerritoryQualifierType extends QualifierType {
 const territoryQualifierTypeConfig: ObjectConverter<Model_2.ITerritoryQualifierTypeConfig, unknown>;
 
 // @public
+function toCandidateValueIndex(index: number): Result<CandidateValueIndex>;
+
+// @public
+function toCandidateValueKey(key: string): Result<CandidateValueKey>;
+
+// @public
+function toCandidateValueKey_2(key: string): Result<CandidateValueKey>;
+
+// @public
 function toConditionIndex(index: number): Result<ConditionIndex>;
 
 // @public
@@ -4849,12 +4942,16 @@ declare namespace Validate {
         isValidResourceIndex,
         isValidResourceTypeName,
         isValidResourceTypeIndex,
+        isValidCandidateValueIndex,
+        isValidCandidateValueKey,
         toResourceName,
         toResourceId,
         toOptionalResourceId,
         toResourceIndex,
         toResourceTypeName,
-        toResourceTypeIndex
+        toResourceTypeIndex,
+        toCandidateValueKey,
+        toCandidateValueIndex
     }
 }
 export { Validate }
