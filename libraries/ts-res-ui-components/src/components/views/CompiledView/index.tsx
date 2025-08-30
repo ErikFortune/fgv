@@ -1003,15 +1003,14 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, activeCompiledCollection 
         try {
           const normalizer = new Hash.Crc32Normalizer();
           const hashResult = normalizer.computeHash(item);
+          const jsonStr = JSON.stringify(item);
           if (hashResult.isSuccess()) {
-            return `${index}: ${String(hashResult.value)} (${typeof item})`;
+            return `${index}: ${typeof item}, ${jsonStr.length} chars (CRC32: ${String(hashResult.value)})`;
           } else {
-            return `${index}: hash-error (${typeof item})`;
+            return `${index}: ${typeof item}, ${jsonStr.length} chars`;
           }
         } catch (error) {
-          return `${index}: ${
-            typeof item === 'object' ? JSON.stringify(item).substring(0, 20) + '...' : String(item)
-          }`;
+          return `${index}: ${typeof item}, size unknown`;
         }
       default:
         return `${index}: Item ${index}`;
@@ -1037,18 +1036,7 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, activeCompiledCollection 
             (item?.conditionSets?.length ?? 0) !== 1 ? 's' : ''
           }`;
         case 'candidate-values':
-          try {
-            const normalizer = new Hash.Crc32Normalizer();
-            const hashResult = normalizer.computeHash(item);
-            const jsonStr = JSON.stringify(item);
-            if (hashResult.isSuccess()) {
-              return `hash: ${String(hashResult.value)}, type: ${typeof item}, size: ${jsonStr.length} chars`;
-            } else {
-              return `type: ${typeof item}, size: ${jsonStr.length} chars`;
-            }
-          } catch (error) {
-            return `type: ${typeof item}, size: ${JSON.stringify(item).length} chars`;
-          }
+          return ''; // All info now in main header
         default:
           return '';
       }
@@ -1189,37 +1177,11 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, activeCompiledCollection 
           </div>
         );
       case 'candidate-values':
-        const normalizer = new Hash.Crc32Normalizer();
-        const hashResult = normalizer.computeHash(item);
-        const jsonStr = JSON.stringify(item);
-
         return (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="font-medium">Candidate Value:</span>
-              {hashResult.isSuccess() && (
-                <span className="text-xs font-mono bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                  CRC32: {String(hashResult.value)}
-                </span>
-              )}
-            </div>
-            {hashResult.isSuccess() && (
-              <div className="text-xs text-blue-600 bg-blue-50 rounded p-2">
-                <span className="font-medium">Normalized Hash:</span> {String(hashResult.value)}
-                <br />
-                <span className="text-xs text-blue-500">
-                  This is the key used for deduplication in the unified value system
-                </span>
-              </div>
-            )}
-            <div className="bg-gray-50 rounded p-3">
-              <pre className="text-sm font-mono text-gray-800 whitespace-pre-wrap overflow-x-auto max-h-48 overflow-y-auto">
-                {JSON.stringify(item, null, 2)}
-              </pre>
-            </div>
-            <div className="text-xs text-gray-500">
-              Type: {typeof item} | Size: {jsonStr.length} characters
-            </div>
+          <div className="bg-gray-50 rounded p-3">
+            <pre className="text-sm font-mono text-gray-800 whitespace-pre-wrap overflow-x-auto max-h-48 overflow-y-auto">
+              {JSON.stringify(item, null, 2)}
+            </pre>
           </div>
         );
       default:
@@ -1365,14 +1327,7 @@ const CompiledResourceDetail: React.FC<CompiledResourceDetailProps> = ({
                     return (
                       <div key={candidateIdx} className="bg-white rounded-lg border p-4">
                         <div className="mb-3 flex items-center justify-between">
-                          <h4 className="font-semibold text-gray-900">
-                            Candidate {candidateIdx}
-                            {candidate.isPartial && (
-                              <span className="ml-2 bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">
-                                Partial
-                              </span>
-                            )}
-                          </h4>
+                          <h4 className="font-semibold text-gray-900">Candidate {candidateIdx}</h4>
                           {conditionSetIndex !== undefined && (
                             <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
                               ConditionSet: {conditionSetIndex}
@@ -1380,54 +1335,38 @@ const CompiledResourceDetail: React.FC<CompiledResourceDetailProps> = ({
                           )}
                         </div>
 
-                        {/* Candidate Value Index and JSON Data */}
-                        <div className="space-y-3 mb-3">
-                          {/* Show Value Index */}
-                          {candidate.valueIndex !== undefined && (
-                            <div className="bg-blue-50 rounded p-3">
-                              <div className="flex items-center justify-between mb-2">
-                                <h6 className="text-sm font-semibold text-blue-700">
-                                  Candidate Value Reference:
-                                </h6>
-                                <span className="text-xs font-mono bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                  Index: {candidate.valueIndex}
-                                </span>
-                              </div>
-                              <div className="text-xs text-blue-600">
-                                This candidate references candidateValues[{candidate.valueIndex}] from the
-                                compiled collection
-                              </div>
-                            </div>
-                          )}
+                        {/* Candidate metadata banner */}
+                        {(candidate.isPartial || candidate.mergeMethod) && (
+                          <div className="mb-3 flex items-center gap-2 text-xs">
+                            {candidate.isPartial && (
+                              <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Partial</span>
+                            )}
+                            {candidate.mergeMethod && (
+                              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                Merge: {candidate.mergeMethod}
+                              </span>
+                            )}
+                          </div>
+                        )}
 
-                          {/* Show Actual JSON Content */}
-                          {(candidate || typeof candidate === 'object') && (
-                            <div className="bg-gray-50 rounded p-3">
-                              <h6 className="text-sm font-semibold text-gray-700 mb-2">
-                                {candidate.valueIndex !== undefined
-                                  ? 'Resolved Resource Content:'
-                                  : 'Resource Content:'}
-                              </h6>
-                              <pre className="text-sm font-mono text-gray-800 whitespace-pre-wrap overflow-x-auto max-h-48 overflow-y-auto">
-                                {JSON.stringify(candidate, null, 2)}
-                              </pre>
-                              {candidate.valueIndex !== undefined &&
-                                activeCompiledCollection?.candidateValues && (
-                                  <div className="mt-2 pt-2 border-t border-gray-200">
-                                    <div className="text-xs text-gray-600 mb-1">
-                                      From candidateValues array:
-                                    </div>
-                                    <pre className="text-xs font-mono text-gray-700 bg-white p-2 rounded border overflow-x-auto max-h-32 overflow-y-auto">
-                                      {JSON.stringify(
-                                        activeCompiledCollection.candidateValues[candidate.valueIndex],
-                                        null,
-                                        2
-                                      )}
-                                    </pre>
-                                  </div>
-                                )}
-                            </div>
-                          )}
+                        {/* Resource Value */}
+                        <div className="mb-3">
+                          <div className="text-xs text-gray-600 mb-1">
+                            Value
+                            {candidate.valueIndex !== undefined
+                              ? ` (candidateValues[${candidate.valueIndex}])`
+                              : ''}
+                            :
+                          </div>
+                          <pre className="text-xs font-mono text-gray-700 bg-white p-2 rounded border overflow-x-auto max-h-32 overflow-y-auto">
+                            {candidate.valueIndex !== undefined && activeCompiledCollection?.candidateValues
+                              ? JSON.stringify(
+                                  activeCompiledCollection.candidateValues[candidate.valueIndex],
+                                  null,
+                                  2
+                                )
+                              : JSON.stringify(candidate, null, 2)}
+                          </pre>
                         </div>
 
                         {/* Conditions from the condition set */}
