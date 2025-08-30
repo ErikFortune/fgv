@@ -754,48 +754,10 @@ interface ProcessedResources {
 }
 
 // @internal (undocumented)
-function processImportedDirectory(directory: ImportedDirectory, systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>): Result<{
-    system: {
-        qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
-        qualifiers: Qualifiers.IReadOnlyQualifierCollector;
-        resourceTypes: ResourceTypes.ReadOnlyResourceTypeCollector;
-        resourceManager: Resources.ResourceManagerBuilder;
-        importManager: Import.ImportManager;
-        contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
-    };
-    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
-    resolver: Runtime.ResourceResolver;
-    resourceCount: number;
-    summary: {
-        totalResources: number;
-        resourceIds: string[];
-        errorCount: number;
-        warnings: string[];
-    };
-    activeConfiguration?: Config.Model.ISystemConfiguration;
-}>;
+function processImportedDirectory(directory: ImportedDirectory, systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>): Result<ExtendedProcessedResources>;
 
 // @internal (undocumented)
-function processImportedFiles(files: ImportedFile[], systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>): Result<{
-    system: {
-        qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
-        qualifiers: Qualifiers.IReadOnlyQualifierCollector;
-        resourceTypes: ResourceTypes.ReadOnlyResourceTypeCollector;
-        resourceManager: Resources.ResourceManagerBuilder;
-        importManager: Import.ImportManager;
-        contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
-    };
-    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
-    resolver: Runtime.ResourceResolver;
-    resourceCount: number;
-    summary: {
-        totalResources: number;
-        resourceIds: string[];
-        errorCount: number;
-        warnings: string[];
-    };
-    activeConfiguration?: Config.Model.ISystemConfiguration;
-}>;
+function processImportedFiles(files: ImportedFile[], systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>): Result<ExtendedProcessedResources>;
 
 // @public
 function processZipLoadResult(zipResult: {

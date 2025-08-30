@@ -9,7 +9,7 @@ import {
   ResourceJson,
   Config
 } from '@fgv/ts-res';
-import { ImportedDirectory, ImportedFile } from '../types';
+import { ImportedDirectory, ImportedFile, ExtendedProcessedResources } from '../types';
 
 /**
  * Get the default system configuration from ts-res library
@@ -196,50 +196,13 @@ export function processImportedFiles(
     ResourceTypes.Config.IResourceTypeConfig,
     ResourceTypes.ResourceType
   >
-): Result<{
-  system: {
-    qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
-    qualifiers: Qualifiers.IReadOnlyQualifierCollector;
-    resourceTypes: ResourceTypes.ReadOnlyResourceTypeCollector;
-    resourceManager: Resources.ResourceManagerBuilder;
-    importManager: Import.ImportManager;
-    contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
-  };
-  compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
-  resolver: Runtime.ResourceResolver;
-  resourceCount: number;
-  summary: {
-    totalResources: number;
-    resourceIds: string[];
-    errorCount: number;
-    warnings: string[];
-  };
-  activeConfiguration?: Config.Model.ISystemConfiguration;
-}> {
+): Result<ExtendedProcessedResources> {
   if (files.length === 0) {
     return fail('No files provided for processing');
   }
 
   return createTsResSystemFromConfig(systemConfig, qualifierTypeFactory, resourceTypeFactory)
-    .onSuccess<{
-      system: {
-        qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
-        qualifiers: Qualifiers.IReadOnlyQualifierCollector;
-        resourceTypes: ResourceTypes.ReadOnlyResourceTypeCollector;
-        resourceManager: Resources.ResourceManagerBuilder;
-        importManager: Import.ImportManager;
-        contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
-      };
-      compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
-      resolver: Runtime.ResourceResolver;
-      resourceCount: number;
-      summary: {
-        totalResources: number;
-        resourceIds: string[];
-        errorCount: number;
-        warnings: string[];
-      };
-    }>((tsResSystem) => {
+    .onSuccess<ExtendedProcessedResources>((tsResSystem) => {
       // Convert ImportedFile[] to IInMemoryFile[] format
       const inMemoryFiles = files.map((file) => ({
         path: file.path || file.name,
@@ -289,46 +252,9 @@ export function processImportedDirectory(
     ResourceTypes.Config.IResourceTypeConfig,
     ResourceTypes.ResourceType
   >
-): Result<{
-  system: {
-    qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
-    qualifiers: Qualifiers.IReadOnlyQualifierCollector;
-    resourceTypes: ResourceTypes.ReadOnlyResourceTypeCollector;
-    resourceManager: Resources.ResourceManagerBuilder;
-    importManager: Import.ImportManager;
-    contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
-  };
-  compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
-  resolver: Runtime.ResourceResolver;
-  resourceCount: number;
-  summary: {
-    totalResources: number;
-    resourceIds: string[];
-    errorCount: number;
-    warnings: string[];
-  };
-  activeConfiguration?: Config.Model.ISystemConfiguration;
-}> {
+): Result<ExtendedProcessedResources> {
   return createTsResSystemFromConfig(systemConfig, qualifierTypeFactory, resourceTypeFactory)
-    .onSuccess<{
-      system: {
-        qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
-        qualifiers: Qualifiers.IReadOnlyQualifierCollector;
-        resourceTypes: ResourceTypes.ReadOnlyResourceTypeCollector;
-        resourceManager: Resources.ResourceManagerBuilder;
-        importManager: Import.ImportManager;
-        contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
-      };
-      compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
-      resolver: Runtime.ResourceResolver;
-      resourceCount: number;
-      summary: {
-        totalResources: number;
-        resourceIds: string[];
-        errorCount: number;
-        warnings: string[];
-      };
-    }>((tsResSystem) => {
+    .onSuccess<ExtendedProcessedResources>((tsResSystem) => {
       // Convert directory to file tree
       const fileTree = convertImportedDirectoryToFileTree(directory);
 
@@ -436,19 +362,7 @@ function finalizeProcessing(
     contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
   },
   systemConfig?: Config.Model.ISystemConfiguration
-): Result<{
-  system: typeof system;
-  compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
-  resolver: Runtime.ResourceResolver;
-  resourceCount: number;
-  summary: {
-    totalResources: number;
-    resourceIds: string[];
-    errorCount: number;
-    warnings: string[];
-  };
-  activeConfiguration?: Config.Model.ISystemConfiguration;
-}> {
+): Result<ExtendedProcessedResources> {
   return system.resourceManager
     .getCompiledResourceCollection({ includeMetadata: true })
     .onSuccess((compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection) => {
