@@ -302,20 +302,6 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
   ]);
 
   const handleExportBundle = useCallback(async () => {
-    // Debug logging to verify the fix
-    console.log('Bundle Export Debug - After Fix:', {
-      hasActiveProcessedResources: !!activeProcessedResources,
-      hasResourceManager: !!activeProcessedResources?.system?.resourceManager,
-      hasResourcesConfig: !!resources?.activeConfiguration,
-      resourcesKeys: resources ? Object.keys(resources).sort() : [],
-      activeProcessedResourcesKeys: activeProcessedResources
-        ? Object.keys(activeProcessedResources).sort()
-        : [],
-      resourcesActiveConfigType: resources?.activeConfiguration
-        ? typeof resources.activeConfiguration
-        : 'undefined'
-    });
-
     if (!activeProcessedResources?.system?.resourceManager || !resources?.activeConfiguration) {
       onMessage?.('error', 'No resource manager or configuration available to create bundle');
       return;
