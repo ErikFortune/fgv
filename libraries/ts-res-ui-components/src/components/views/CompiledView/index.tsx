@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { CompiledViewProps, ProcessedResources, FilterState, FilterResult } from '../../../types';
 import { ResourceJson, Config, Bundle, Resources } from '@fgv/ts-res';
+import { Hash } from '@fgv/ts-utils';
 import { ResourcePicker } from '../../pickers/ResourcePicker';
 import {
   ResourceSelection,
@@ -187,6 +188,13 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
         type: 'section',
         data: { type: 'decisions', items: activeCompiledCollection.decisions }
       });
+
+      tree.children!.push({
+        id: 'candidate-values',
+        name: `Candidate Values (${activeCompiledCollection.candidateValues?.length || 0})`,
+        type: 'section',
+        data: { type: 'candidate-values', items: activeCompiledCollection.candidateValues }
+      });
     } catch (error) {
       onMessage?.(
         'error',
@@ -294,6 +302,20 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
   ]);
 
   const handleExportBundle = useCallback(async () => {
+    // Debug logging to verify the fix
+    console.log('Bundle Export Debug - After Fix:', {
+      hasActiveProcessedResources: !!activeProcessedResources,
+      hasResourceManager: !!activeProcessedResources?.system?.resourceManager,
+      hasResourcesConfig: !!resources?.activeConfiguration,
+      resourcesKeys: resources ? Object.keys(resources).sort() : [],
+      activeProcessedResourcesKeys: activeProcessedResources
+        ? Object.keys(activeProcessedResources).sort()
+        : [],
+      resourcesActiveConfigType: resources?.activeConfiguration
+        ? typeof resources.activeConfiguration
+        : 'undefined'
+    });
+
     if (!activeProcessedResources?.system?.resourceManager || !resources?.activeConfiguration) {
       onMessage?.('error', 'No resource manager or configuration available to create bundle');
       return;
@@ -712,6 +734,7 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, activeCompiledCollection 
       case 'conditions':
       case 'condition-sets':
       case 'decisions':
+      case 'candidate-values':
         return renderCompiledCollection(type, items);
 
       default:
@@ -794,15 +817,53 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, activeCompiledCollection 
                       )}
                     </div>
 
-                    {/* Candidate JSON Data - The actual resource content */}
-                    {(candidate || typeof candidate === 'object') && (
-                      <div className="bg-gray-50 rounded p-3 mb-3">
-                        <h6 className="text-sm font-semibold text-gray-700 mb-2">Resource Content:</h6>
-                        <pre className="text-sm font-mono text-gray-800 whitespace-pre-wrap overflow-x-auto max-h-48 overflow-y-auto">
-                          {JSON.stringify(candidate, null, 2)}
-                        </pre>
-                      </div>
-                    )}
+                    {/* Candidate Value Index and JSON Data */}
+                    <div className="space-y-3 mb-3">
+                      {/* Show Value Index */}
+                      {candidate.valueIndex !== undefined && (
+                        <div className="bg-blue-50 rounded p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <h6 className="text-sm font-semibold text-blue-700">
+                              Candidate Value Reference:
+                            </h6>
+                            <span className="text-xs font-mono bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                              Index: {candidate.valueIndex}
+                            </span>
+                          </div>
+                          <div className="text-xs text-blue-600">
+                            This candidate references candidateValues[{candidate.valueIndex}] from the
+                            compiled collection
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Show Actual JSON Content */}
+                      {(candidate || typeof candidate === 'object') && (
+                        <div className="bg-gray-50 rounded p-3">
+                          <h6 className="text-sm font-semibold text-gray-700 mb-2">
+                            {candidate.valueIndex !== undefined
+                              ? 'Resolved Resource Content:'
+                              : 'Resource Content:'}
+                          </h6>
+                          <pre className="text-sm font-mono text-gray-800 whitespace-pre-wrap overflow-x-auto max-h-48 overflow-y-auto">
+                            {JSON.stringify(candidate, null, 2)}
+                          </pre>
+                          {candidate.valueIndex !== undefined &&
+                            activeCompiledCollection?.candidateValues && (
+                              <div className="mt-2 pt-2 border-t border-gray-200">
+                                <div className="text-xs text-gray-600 mb-1">From candidateValues array:</div>
+                                <pre className="text-xs font-mono text-gray-700 bg-white p-2 rounded border overflow-x-auto max-h-32 overflow-y-auto">
+                                  {JSON.stringify(
+                                    activeCompiledCollection.candidateValues[candidate.valueIndex],
+                                    null,
+                                    2
+                                  )}
+                                </pre>
+                              </div>
+                            )}
+                        </div>
+                      )}
+                    </div>
 
                     {/* Conditions from the condition set */}
                     {conditionSet && conditionSet.conditions && conditionSet.conditions.length > 0 && (
@@ -886,6 +947,9 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, activeCompiledCollection 
       case 'decisions':
         title = 'Decisions';
         break;
+      case 'candidate-values':
+        title = 'Candidate Values';
+        break;
       default:
         title = collectionType;
     }
@@ -949,6 +1013,20 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, activeCompiledCollection 
         }`;
       case 'decisions':
         return `${index}: Decision with ${item?.conditionSets?.length || 0} condition sets`;
+      case 'candidate-values':
+        try {
+          const normalizer = new Hash.Crc32Normalizer();
+          const hashResult = normalizer.computeHash(item);
+          if (hashResult.isSuccess()) {
+            return `${index}: ${String(hashResult.value)} (${typeof item})`;
+          } else {
+            return `${index}: hash-error (${typeof item})`;
+          }
+        } catch (error) {
+          return `${index}: ${
+            typeof item === 'object' ? JSON.stringify(item).substring(0, 20) + '...' : String(item)
+          }`;
+        }
       default:
         return `${index}: Item ${index}`;
     }
@@ -972,6 +1050,19 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, activeCompiledCollection 
           return `${item?.conditionSets?.length ?? 0} condition set${
             (item?.conditionSets?.length ?? 0) !== 1 ? 's' : ''
           }`;
+        case 'candidate-values':
+          try {
+            const normalizer = new Hash.Crc32Normalizer();
+            const hashResult = normalizer.computeHash(item);
+            const jsonStr = JSON.stringify(item);
+            if (hashResult.isSuccess()) {
+              return `hash: ${String(hashResult.value)}, type: ${typeof item}, size: ${jsonStr.length} chars`;
+            } else {
+              return `type: ${typeof item}, size: ${jsonStr.length} chars`;
+            }
+          } catch (error) {
+            return `type: ${typeof item}, size: ${JSON.stringify(item).length} chars`;
+          }
         default:
           return '';
       }
@@ -1109,6 +1200,40 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, activeCompiledCollection 
                 </div>
               </div>
             )}
+          </div>
+        );
+      case 'candidate-values':
+        const normalizer = new Hash.Crc32Normalizer();
+        const hashResult = normalizer.computeHash(item);
+        const jsonStr = JSON.stringify(item);
+
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-medium">Candidate Value:</span>
+              {hashResult.isSuccess() && (
+                <span className="text-xs font-mono bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                  CRC32: {String(hashResult.value)}
+                </span>
+              )}
+            </div>
+            {hashResult.isSuccess() && (
+              <div className="text-xs text-blue-600 bg-blue-50 rounded p-2">
+                <span className="font-medium">Normalized Hash:</span> {String(hashResult.value)}
+                <br />
+                <span className="text-xs text-blue-500">
+                  This is the key used for deduplication in the unified value system
+                </span>
+              </div>
+            )}
+            <div className="bg-gray-50 rounded p-3">
+              <pre className="text-sm font-mono text-gray-800 whitespace-pre-wrap overflow-x-auto max-h-48 overflow-y-auto">
+                {JSON.stringify(item, null, 2)}
+              </pre>
+            </div>
+            <div className="text-xs text-gray-500">
+              Type: {typeof item} | Size: {jsonStr.length} characters
+            </div>
           </div>
         );
       default:
@@ -1269,15 +1394,55 @@ const CompiledResourceDetail: React.FC<CompiledResourceDetailProps> = ({
                           )}
                         </div>
 
-                        {/* Candidate JSON Data */}
-                        {(candidate || typeof candidate === 'object') && (
-                          <div className="bg-gray-50 rounded p-3 mb-3">
-                            <h6 className="text-sm font-semibold text-gray-700 mb-2">Resource Content:</h6>
-                            <pre className="text-sm font-mono text-gray-800 whitespace-pre-wrap overflow-x-auto max-h-48 overflow-y-auto">
-                              {JSON.stringify(candidate, null, 2)}
-                            </pre>
-                          </div>
-                        )}
+                        {/* Candidate Value Index and JSON Data */}
+                        <div className="space-y-3 mb-3">
+                          {/* Show Value Index */}
+                          {candidate.valueIndex !== undefined && (
+                            <div className="bg-blue-50 rounded p-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <h6 className="text-sm font-semibold text-blue-700">
+                                  Candidate Value Reference:
+                                </h6>
+                                <span className="text-xs font-mono bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                  Index: {candidate.valueIndex}
+                                </span>
+                              </div>
+                              <div className="text-xs text-blue-600">
+                                This candidate references candidateValues[{candidate.valueIndex}] from the
+                                compiled collection
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Show Actual JSON Content */}
+                          {(candidate || typeof candidate === 'object') && (
+                            <div className="bg-gray-50 rounded p-3">
+                              <h6 className="text-sm font-semibold text-gray-700 mb-2">
+                                {candidate.valueIndex !== undefined
+                                  ? 'Resolved Resource Content:'
+                                  : 'Resource Content:'}
+                              </h6>
+                              <pre className="text-sm font-mono text-gray-800 whitespace-pre-wrap overflow-x-auto max-h-48 overflow-y-auto">
+                                {JSON.stringify(candidate, null, 2)}
+                              </pre>
+                              {candidate.valueIndex !== undefined &&
+                                activeCompiledCollection?.candidateValues && (
+                                  <div className="mt-2 pt-2 border-t border-gray-200">
+                                    <div className="text-xs text-gray-600 mb-1">
+                                      From candidateValues array:
+                                    </div>
+                                    <pre className="text-xs font-mono text-gray-700 bg-white p-2 rounded border overflow-x-auto max-h-32 overflow-y-auto">
+                                      {JSON.stringify(
+                                        activeCompiledCollection.candidateValues[candidate.valueIndex],
+                                        null,
+                                        2
+                                      )}
+                                    </pre>
+                                  </div>
+                                )}
+                            </div>
+                          )}
+                        </div>
 
                         {/* Conditions from the condition set */}
                         {conditionSet && conditionSet.conditions && conditionSet.conditions.length > 0 && (

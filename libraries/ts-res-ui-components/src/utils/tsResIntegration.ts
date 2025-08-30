@@ -214,6 +214,7 @@ export function processImportedFiles(
     errorCount: number;
     warnings: string[];
   };
+  activeConfiguration?: Config.Model.ISystemConfiguration;
 }> {
   if (files.length === 0) {
     return fail('No files provided for processing');
@@ -266,7 +267,8 @@ export function processImportedFiles(
             ...tsResSystem,
             importManager
           };
-          return finalizeProcessing(updatedSystem);
+          const configToUse = systemConfig ?? getDefaultSystemConfiguration();
+          return finalizeProcessing(updatedSystem, configToUse);
         });
     })
     .withErrorFormat((message) => `processImportedFiles failed: ${message}`);
@@ -305,6 +307,7 @@ export function processImportedDirectory(
     errorCount: number;
     warnings: string[];
   };
+  activeConfiguration?: Config.Model.ISystemConfiguration;
 }> {
   return createTsResSystemFromConfig(systemConfig, qualifierTypeFactory, resourceTypeFactory)
     .onSuccess<{
@@ -413,7 +416,8 @@ export function processImportedDirectory(
           ...tsResSystem,
           importManager
         };
-        return finalizeProcessing(updatedSystem);
+        const configToUse = systemConfig ?? getDefaultSystemConfiguration();
+        return finalizeProcessing(updatedSystem, configToUse);
       });
     })
     .withErrorFormat((message) => `processImportedDirectory failed: ${message}`);
@@ -422,14 +426,17 @@ export function processImportedDirectory(
 /**
  * Finalizes processing and creates compiled resources
  */
-function finalizeProcessing(system: {
-  qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
-  qualifiers: Qualifiers.IReadOnlyQualifierCollector;
-  resourceTypes: ResourceTypes.ReadOnlyResourceTypeCollector;
-  resourceManager: Resources.ResourceManagerBuilder;
-  importManager: Import.ImportManager;
-  contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
-}): Result<{
+function finalizeProcessing(
+  system: {
+    qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
+    qualifiers: Qualifiers.IReadOnlyQualifierCollector;
+    resourceTypes: ResourceTypes.ReadOnlyResourceTypeCollector;
+    resourceManager: Resources.ResourceManagerBuilder;
+    importManager: Import.ImportManager;
+    contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
+  },
+  systemConfig?: Config.Model.ISystemConfiguration
+): Result<{
   system: typeof system;
   compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
   resolver: Runtime.ResourceResolver;
@@ -440,6 +447,7 @@ function finalizeProcessing(system: {
     errorCount: number;
     warnings: string[];
   };
+  activeConfiguration?: Config.Model.ISystemConfiguration;
 }> {
   return system.resourceManager
     .getCompiledResourceCollection({ includeMetadata: true })
@@ -464,7 +472,8 @@ function finalizeProcessing(system: {
           compiledCollection,
           resolver,
           resourceCount: resourceIds.length,
-          summary
+          summary,
+          ...(systemConfig && { activeConfiguration: systemConfig })
         });
       });
     })

@@ -772,6 +772,7 @@ function processImportedDirectory(directory: ImportedDirectory, systemConfig?: C
         errorCount: number;
         warnings: string[];
     };
+    activeConfiguration?: Config.Model.ISystemConfiguration;
 }>;
 
 // @internal (undocumented)
@@ -793,6 +794,7 @@ function processImportedFiles(files: ImportedFile[], systemConfig?: Config.Model
         errorCount: number;
         warnings: string[];
     };
+    activeConfiguration?: Config.Model.ISystemConfiguration;
 }>;
 
 // @public
