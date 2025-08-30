@@ -51,5 +51,19 @@ Creates a new [Resources.CandidateValueCollector](./ts-res.resources.candidateva
 
 
 </td></tr>
+<tr><td>
+
+[getValuesByIndex()](./ts-res.resources.candidatevaluecollector.getvaluesbyindex.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Returns an array of JSON values ordered by their indices.
+
+
+</td></tr>
 </tbody></table>
 

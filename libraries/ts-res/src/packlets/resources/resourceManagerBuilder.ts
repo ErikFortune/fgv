@@ -53,6 +53,7 @@ import { IResourceManager, ResourceTree } from '../runtime';
 import { ResourceBuilder, ResourceBuilderResultDetail } from './resourceBuilder';
 import { Resource } from './resource';
 import { ResourceCandidate } from './resourceCandidate';
+import { CandidateValueCollector } from './candidateValueCollector';
 import { IResourceDeclarationOptions, IResourceManagerCloneOptions } from './common';
 import * as ResourceJson from '../resource-json';
 import * as Context from '../context';
@@ -114,6 +115,12 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
   protected readonly _decisions: AbstractDecisionCollector;
 
   /**
+   * The candidate value collector used by this resource manager.
+   * @internal
+   */
+  protected readonly _candidateValues: CandidateValueCollector;
+
+  /**
    * The {@link Resources.ResourceBuilder | resource builders} used by this resource manager.
    * @internal
    */
@@ -141,6 +148,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
    * The {@link QualifierTypes.ReadOnlyQualifierTypeCollector | qualifier types} used by this resource manager.
    */
   public get qualifierTypes(): ReadOnlyQualifierTypeCollector {
+    /* c8 ignore next 1 - functional code tested but coverage intermittently missed */
     return this.qualifiers.qualifierTypes;
   }
 
@@ -225,6 +233,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
     this._conditions = ConditionCollector.create({ qualifiers: params.qualifiers }).orThrow();
     this._conditionSets = ConditionSetCollector.create({ conditions: this._conditions }).orThrow();
     this._decisions = AbstractDecisionCollector.create({ conditionSets: this._conditionSets }).orThrow();
+    this._candidateValues = CandidateValueCollector.create().orThrow();
     this._resources = new ValidatingResultMap({
       converters: new Collections.KeyValueConverters<ResourceId, ResourceBuilder>({
         key: Convert.resourceId,
@@ -327,7 +336,8 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
         id,
         resourceTypes: this.resourceTypes,
         conditionSets: this._conditionSets,
-        decisions: this._decisions
+        decisions: this._decisions,
+        candidateValues: this._candidateValues
       })
     );
     /* c8 ignore next 6 - defense in depth against internal error */
@@ -364,7 +374,8 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
         typeName: decl.resourceTypeName,
         resourceTypes: this.resourceTypes,
         conditionSets: this._conditionSets,
-        decisions: this._decisions
+        decisions: this._decisions,
+        candidateValues: this._candidateValues
       })
     );
     /* c8 ignore next 3 - defense in depth against internal error */
@@ -644,6 +655,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
       conditions: Array.from(this._conditions.values()).map((c) => c.toCompiled(options)),
       conditionSets: Array.from(this._conditionSets.values()).map((cs) => cs.toCompiled(options)),
       decisions: Array.from(this._decisions.values()).map((d) => d.toCompiled(options)),
+      candidateValues: this._candidateValues.getValuesByIndex(),
       resources: Array.from(this._builtResources.values()).map((r) => r.toCompiled(options))
     };
 

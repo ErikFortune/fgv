@@ -32,7 +32,9 @@ import {
 import { Condition, ConditionSet, ConditionSetCollector } from '../conditions';
 import * as ResourceJson from '../resource-json';
 import { ResourceType } from '../resource-types';
-import { captureResult, mapResults, Hash, MessageAggregator, Result, fail, succeed } from '@fgv/ts-utils';
+import { CandidateValue } from './candidateValue';
+import { CandidateValueCollector } from './candidateValueCollector';
+import { captureResult, mapResults, MessageAggregator, Result, fail, succeed } from '@fgv/ts-utils';
 import * as Context from '../context';
 import { IResourceCandidate } from '../runtime';
 
@@ -46,6 +48,7 @@ export interface IResourceCandidateCreateParams {
   resourceType?: ResourceType;
   parentConditions?: ReadonlyArray<Condition>;
   conditionSets: ConditionSetCollector;
+  candidateValues: CandidateValueCollector;
 }
 
 /**
@@ -77,9 +80,18 @@ export class ResourceCandidate implements IResourceCandidate {
   public readonly id: ResourceId;
 
   /**
-   * The JSON representation of the instance data to be applied.
+   * The candidate value that contains the JSON representation of the instance data.
    */
-  public readonly json: JsonObject;
+  public readonly candidateValue: CandidateValue;
+
+  /**
+   * The JSON representation of the instance data to be applied.
+   * @remarks
+   * This property provides access to the JSON data from the underlying candidate value.
+   */
+  public get json(): JsonObject {
+    return this.candidateValue.json as JsonObject;
+  }
 
   /**
    * The conditions under which this candidate applies.
@@ -116,7 +128,7 @@ export class ResourceCandidate implements IResourceCandidate {
    */
   protected constructor(params: IResourceCandidateCreateParams) {
     this.id = Validate.toResourceId(params.id).orThrow();
-    this.json = params.decl.json;
+    this.candidateValue = params.candidateValues.validating.getOrAdd(params.decl.json).orThrow();
     this.conditions = ResourceCandidate._mergeConditions(
       params.conditionSets,
       params.decl.conditions,
@@ -251,10 +263,8 @@ export class ResourceCandidate implements IResourceCandidate {
       rc1.mergeMethod === rc2.mergeMethod &&
       ConditionSet.compare(rc1.conditions, rc2.conditions) === 0;
     if (equal) {
-      const normalizer = new Hash.Crc32Normalizer();
-      const n1 = normalizer.computeHash(rc1.json).orDefault('(n1 normalization failed)');
-      const n2 = normalizer.computeHash(rc2.json).orDefault('(n2 normalization failed)');
-      equal = n1 === n2;
+      // Compare candidate values by their keys for efficient JSON comparison
+      equal = rc1.candidateValue.key === rc2.candidateValue.key;
     }
     return equal;
   }

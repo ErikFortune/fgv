@@ -282,6 +282,7 @@ class CandidateValueCollector extends ValidatingCollector<CandidateValue> {
     protected constructor(params?: ICandidateValueCollectorCreateParams);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: ICandidateValueCollectorCreateParams): Result<CandidateValueCollector>;
+    getValuesByIndex(): JsonValue[];
 }
 
 // @public
@@ -2595,6 +2596,8 @@ interface IResource {
 // @public
 interface IResourceBuilderCreateParams {
     // (undocumented)
+    candidateValues: CandidateValueCollector;
+    // (undocumented)
     conditionSets: ConditionSetCollector;
     // (undocumented)
     decisions: AbstractDecisionCollector;
@@ -2617,6 +2620,8 @@ interface IResourceCandidate {
 //
 // @public
 interface IResourceCandidateCreateParams {
+    // (undocumented)
+    candidateValues: CandidateValueCollector;
     // (undocumented)
     conditionSets: ConditionSetCollector;
     // (undocumented)
@@ -4083,6 +4088,7 @@ class ResourceBuilder {
     get candidates(): ReadonlyArray<ResourceCandidate>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected _candidates: ResultMap<string, ResourceCandidate>;
+    protected _candidateValues: CandidateValueCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected _conditionSets: ConditionSetCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -4120,6 +4126,7 @@ export class ResourceCandidate implements IResourceCandidate {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(params: IResourceCandidateCreateParams);
+    readonly candidateValue: CandidateValue;
     canMatchPartialContext(context: Context.IValidatedContextDecl, options?: Context.IContextMatchOptions): boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static compare(rc1: ResourceCandidate, rc2: ResourceCandidate): number;
@@ -4134,7 +4141,7 @@ export class ResourceCandidate implements IResourceCandidate {
     static findReducibleQualifiers(candidates: ReadonlyArray<ResourceCandidate>, filterForContext: Context.IValidatedContextDecl): ReadonlySet<QualifierName> | undefined;
     readonly id: ResourceId;
     readonly isPartial: boolean;
-    readonly json: JsonObject;
+    get json(): JsonObject;
     readonly mergeMethod: ResourceValueMergeMethod;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly resourceType: ResourceType | undefined;
@@ -4264,6 +4271,8 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
     protected readonly _builtResources: ValidatingResultMap<ResourceId, Resource>;
     // @internal
     protected _cachedResourceTree?: ResourceTree.IReadOnlyResourceTreeRoot<Resource>;
+    // @internal
+    protected readonly _candidateValues: CandidateValueCollector;
     clone(options?: IResourceManagerCloneOptions): Result<ResourceManagerBuilder>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -4464,7 +4473,6 @@ declare namespace Resources {
         ICandidateInfo,
         IReducedCandidate,
         CandidateReducer,
-        toCandidateValueKey_2 as toCandidateValueKey,
         ICandidateValue,
         ICandidateValueCreateParams,
         CandidateValue,
@@ -4807,9 +4815,6 @@ function toCandidateValueIndex(index: number): Result<CandidateValueIndex>;
 function toCandidateValueKey(key: string): Result<CandidateValueKey>;
 
 // @public
-function toCandidateValueKey_2(key: string): Result<CandidateValueKey>;
-
-// @public
 function toConditionIndex(index: number): Result<ConditionIndex>;
 
 // @public
@@ -5105,7 +5110,7 @@ details: string) => void;
 // src/packlets/resources/resource.ts:242:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resource.ts:242:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resource.ts:265:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/resources/resourceCandidate.ts:271:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/resources/resourceCandidate.ts:281:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/conditionSetResolutionResult.ts:56:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/resourceResolver.ts:178:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 

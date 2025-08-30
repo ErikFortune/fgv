@@ -33,6 +33,7 @@ describe('Resource', () => {
   let otherType: TsRes.ResourceTypes.ResourceType;
   let conditions: TsRes.Conditions.ConditionCollector;
   let conditionSets: TsRes.Conditions.ConditionSetCollector;
+  let candidateValues: TsRes.Resources.CandidateValueCollector;
   let decisions: TsRes.Decisions.AbstractDecisionCollector;
   let someDecls: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl[];
   let candidates: TsRes.Resources.ResourceCandidate[];
@@ -70,6 +71,7 @@ describe('Resource', () => {
   beforeEach(() => {
     conditions = TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow();
     conditionSets = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
+    candidateValues = TsRes.Resources.CandidateValueCollector.create().orThrow();
     decisions = TsRes.Decisions.AbstractDecisionCollector.create({ conditionSets }).orThrow();
     someDecls = [
       {
@@ -104,7 +106,9 @@ describe('Resource', () => {
       }
     ];
     candidates = mapResults(
-      someDecls.map((decl) => TsRes.Resources.ResourceCandidate.create({ id: decl.id, decl, conditionSets }))
+      someDecls.map((decl) =>
+        TsRes.Resources.ResourceCandidate.create({ id: decl.id, decl, conditionSets, candidateValues })
+      )
     ).orThrow();
   });
 
@@ -114,6 +118,7 @@ describe('Resource', () => {
         TsRes.Resources.ResourceCandidate.create({
           id: 'some.resource.path',
           conditionSets,
+          candidateValues,
           resourceType: jsonType,
           decl: {
             json: { at: 'Antarctica' },
@@ -152,6 +157,7 @@ describe('Resource', () => {
         TsRes.Resources.ResourceCandidate.create({
           id: 'some.other.resource.path',
           conditionSets,
+          candidateValues,
           decl: { ...someDecls[0] }
         }).orThrow()
       );
@@ -164,6 +170,7 @@ describe('Resource', () => {
         TsRes.Resources.ResourceCandidate.create({
           id: someDecls[0].id,
           conditionSets,
+          candidateValues,
           resourceType: jsonType,
           decl: someDecls[0]
         }).orThrow()
@@ -172,6 +179,7 @@ describe('Resource', () => {
         TsRes.Resources.ResourceCandidate.create({
           id: someDecls[1].id,
           conditionSets,
+          candidateValues,
           resourceType: otherType,
           decl: someDecls[1]
         }).orThrow()
@@ -219,6 +227,7 @@ describe('Resource', () => {
         TsRes.Resources.ResourceCandidate.create({
           id: someDecls[0].id,
           conditionSets,
+          candidateValues,
           resourceType: jsonType,
           decl: someDecls[0]
         }).orThrow()
@@ -237,6 +246,7 @@ describe('Resource', () => {
         TsRes.Resources.ResourceCandidate.create({
           id: someDecls[0].id,
           conditionSets,
+          candidateValues,
           resourceType: jsonType,
           decl: { ...someDecls[0], json: { some_other: 'property' } }
         }).orThrow()
@@ -250,6 +260,7 @@ describe('Resource', () => {
         TsRes.Resources.ResourceCandidate.create({
           id: someDecls[0].id,
           conditionSets,
+          candidateValues,
           decl: { ...someDecls[0] }
         }).orThrow()
       );
@@ -271,12 +282,14 @@ describe('Resource', () => {
       const c1 = TsRes.Resources.ResourceCandidate.create({
         id: 'id',
         conditionSets,
+        candidateValues,
         decl,
         resourceType: jsonType
       }).orThrow();
       const c2 = TsRes.Resources.ResourceCandidate.create({
         id: 'id',
         conditionSets,
+        candidateValues,
         decl,
         resourceType: jsonType
       }).orThrow();
@@ -301,12 +314,14 @@ describe('Resource', () => {
       const c1 = TsRes.Resources.ResourceCandidate.create({
         id: 'id',
         conditionSets,
+        candidateValues,
         decl: decl1,
         resourceType: jsonType
       }).orThrow();
       const c2 = TsRes.Resources.ResourceCandidate.create({
         id: 'id',
         conditionSets,
+        candidateValues,
         decl: decl2,
         resourceType: jsonType
       }).orThrow();
@@ -322,7 +337,13 @@ describe('Resource', () => {
       ];
       const cs = mapResults(
         decls.map((decl) =>
-          TsRes.Resources.ResourceCandidate.create({ id: 'id', conditionSets, decl, resourceType: jsonType })
+          TsRes.Resources.ResourceCandidate.create({
+            id: 'id',
+            conditionSets,
+            candidateValues,
+            decl,
+            resourceType: jsonType
+          })
         )
       ).orThrow();
       const resource = TsRes.Resources.Resource.create({ decisions, candidates: cs });
@@ -460,7 +481,12 @@ describe('Resource', () => {
         json: { a: 1 },
         conditions: { homeTerritory: 'US' }
       };
-      const c = TsRes.Resources.ResourceCandidate.create({ id: 'id', conditionSets, decl }).orThrow();
+      const c = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets,
+        candidateValues,
+        decl
+      }).orThrow();
       const resource = TsRes.Resources.Resource.create({
         decisions,
         candidates: [c],
@@ -485,7 +511,12 @@ describe('Resource', () => {
         json: { a: 1 },
         conditions: { homeTerritory: 'US' }
       };
-      const c = TsRes.Resources.ResourceCandidate.create({ id: 'id', conditionSets, decl }).orThrow();
+      const c = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets,
+        candidateValues,
+        decl
+      }).orThrow();
       const resource = TsRes.Resources.Resource.create({
         decisions,
         candidates: [c],
@@ -522,7 +553,7 @@ describe('Resource', () => {
         decision: resource.decision.baseDecision.index!,
         candidates: [
           {
-            json: candidates[0].json,
+            valueIndex: candidates[0].candidateValue.index!,
             isPartial: candidates[0].isPartial,
             mergeMethod: candidates[0].mergeMethod
           }
@@ -542,7 +573,7 @@ describe('Resource', () => {
       // Note: candidates may be reordered by the Resource constructor, so we compare against the resource's actual candidates
       compiled.candidates.forEach((compiledCandidate, index) => {
         expect(compiledCandidate).toEqual({
-          json: resource.candidates[index].json,
+          valueIndex: resource.candidates[index].candidateValue.index!,
           isPartial: resource.candidates[index].isPartial,
           mergeMethod: resource.candidates[index].mergeMethod
         });

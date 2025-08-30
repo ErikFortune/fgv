@@ -331,6 +331,7 @@ describe('reduceQualifiers functionality', () => {
       const conditionSets = TsRes.Conditions.ConditionSetCollector.create({
         conditions: TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow()
       }).orThrow();
+      const candidateValues = TsRes.Resources.CandidateValueCollector.create().orThrow();
 
       const decl1 = { json: { value: 'value1' }, conditions: { language: 'en', territory: 'US' } };
       const decl2 = { json: { value: 'value2' }, conditions: { language: 'en', territory: 'GB' } };
@@ -339,12 +340,14 @@ describe('reduceQualifiers functionality', () => {
         TsRes.Resources.ResourceCandidate.create({
           id: 'candidate1',
           conditionSets,
+          candidateValues,
           resourceType: resourceTypes.validating.get('string' as TsRes.ResourceTypeName).orThrow(),
           decl: decl1
         }).orThrow(),
         TsRes.Resources.ResourceCandidate.create({
           id: 'candidate2',
           conditionSets,
+          candidateValues,
           resourceType: resourceTypes.validating.get('string' as TsRes.ResourceTypeName).orThrow(),
           decl: decl2
         }).orThrow()
@@ -364,6 +367,7 @@ describe('reduceQualifiers functionality', () => {
       const conditionSets = TsRes.Conditions.ConditionSetCollector.create({
         conditions: TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow()
       }).orThrow();
+      const candidateValues = TsRes.Resources.CandidateValueCollector.create().orThrow();
 
       const decl1 = { json: { value: 'value1' }, conditions: { language: 'en', territory: 'US' } };
       const decl2 = { json: { value: 'value2' }, conditions: { language: 'fr', territory: 'US' } };
@@ -372,12 +376,14 @@ describe('reduceQualifiers functionality', () => {
         TsRes.Resources.ResourceCandidate.create({
           id: 'candidate1',
           conditionSets,
+          candidateValues,
           resourceType: resourceTypes.validating.get('string' as TsRes.ResourceTypeName).orThrow(),
           decl: decl1
         }).orThrow(),
         TsRes.Resources.ResourceCandidate.create({
           id: 'candidate2',
           conditionSets,
+          candidateValues,
           resourceType: resourceTypes.validating.get('string' as TsRes.ResourceTypeName).orThrow(),
           decl: decl2
         }).orThrow()

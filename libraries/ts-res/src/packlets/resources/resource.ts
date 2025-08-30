@@ -21,7 +21,7 @@
  */
 
 import { MessageAggregator, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
-import { CandidateValueIndex, Helpers, ResourceId, ResourceName, Validate } from '../common';
+import { Helpers, ResourceId, ResourceName, Validate } from '../common';
 import { ResourceCandidate } from './resourceCandidate';
 import { CandidateReducer } from './candidateReducer';
 import { ResourceType } from '../resource-types';
@@ -193,7 +193,7 @@ export class Resource implements IResource {
       (c) => ({
         isPartial: c.isPartial,
         mergeMethod: c.mergeMethod,
-        valueIndex: 0 as unknown as CandidateValueIndex // TEMPORARY: Will be fixed when integrating CandidateValueCollector
+        valueIndex: c.candidateValue.index!
       })
     );
 

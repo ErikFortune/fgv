@@ -22,7 +22,7 @@
 
 import { JsonValue, Validators as JsonValidators } from '@fgv/ts-json-base';
 import { Collections, Hash, Result, captureResult, succeed, ValidatingCollector } from '@fgv/ts-utils';
-import { Convert as CommonConvert, CandidateValueIndex, CandidateValueKey } from '../common';
+import { Convert as CommonConvert, CandidateValueKey } from '../common';
 import { CandidateValue } from './candidateValue';
 
 /**
@@ -50,7 +50,6 @@ export interface ICandidateValueCollectorCreateParams {
  */
 export class CandidateValueCollector extends ValidatingCollector<CandidateValue> {
   private readonly _normalizer: Hash.Crc32Normalizer;
-  private readonly _indexToValue: Map<CandidateValueIndex, CandidateValue> = new Map();
 
   /**
    * Constructor for a {@link Resources.CandidateValueCollector} object.
@@ -80,12 +79,24 @@ export class CandidateValueCollector extends ValidatingCollector<CandidateValue>
   }
 
   /**
+   * Returns an array of JSON values ordered by their indices.
+   * @returns Array of JsonValue objects in index order.
+   * @public
+   */
+  public getValuesByIndex(): JsonValue[] {
+    // Use the base class valuesByIndex() method to get CandidateValues in index order,
+    // then extract their JSON values
+    return this.valuesByIndex().map((candidateValue) => candidateValue.json);
+  }
+
+  /**
    * Converter method to handle CandidateValue | JsonValue.
    * @param from - The value to convert.
    * @returns `Success` with the CandidateValue if successful, or `Failure` with an error message if not.
    * @internal
    */
   private _toCandidateValue(from: unknown): Result<CandidateValue> {
+    /* c8 ignore next 3 - functional code tested but coverage intermittently missed */
     if (from instanceof CandidateValue) {
       return succeed(from);
     }

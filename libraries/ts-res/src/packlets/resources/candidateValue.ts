@@ -21,7 +21,7 @@
  */
 
 import { JsonValue } from '@fgv/ts-json-base';
-import { Collections, Hash, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import { Collections, Hash, Result, captureResult } from '@fgv/ts-utils';
 import { CandidateValueIndex, CandidateValueKey } from '../common';
 import * as Common from '../common';
 
@@ -152,20 +152,4 @@ export class CandidateValue implements ICandidateValue {
   public setIndex(index: number): Result<CandidateValueIndex> {
     return this._collectible.setIndex(index);
   }
-}
-
-/**
- * Converts a string to a {@link CandidateValueKey | candidate value key}.
- *
- * @param key - The string to convert.
- * @returns `Success` with the converted key if valid, or `Failure` with an error message
- * if not.
- * @public
- */
-export function toCandidateValueKey(key: string): Result<CandidateValueKey> {
-  // CandidateValueKey is a hash string, so any non-empty string is valid
-  if (key.length === 0) {
-    return fail('Candidate value key cannot be empty');
-  }
-  return succeed(key as unknown as CandidateValueKey);
 }
