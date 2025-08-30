@@ -96,32 +96,6 @@ Builder for a collection of [resources](./ts-res.resources.resource.md)<!-- -->.
 </td></tr>
 </tbody></table>
 
-## Functions
-
-<table><thead><tr><th>
-
-Function
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[toCandidateValueKey(key)](./ts-res.resources.tocandidatevaluekey.md)
-
-
-</td><td>
-
-Converts a string to a [candidate value key](./ts-res.candidatevaluekey.md)<!-- -->.
-
-
-</td></tr>
-</tbody></table>
-
 ## Interfaces
 
 <table><thead><tr><th>
