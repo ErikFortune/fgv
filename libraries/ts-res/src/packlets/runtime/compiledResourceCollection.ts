@@ -560,7 +560,6 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
         mergeMethod: candidateDecl.mergeMethod
       }));
 
-      // Create a ConcreteDecision from the abstract decision and candidate values
       const candidatesWithConditionSets = decision.candidates.map((baseCandidate, idx) => ({
         conditionSet: baseCandidate.conditionSet,
         value: candidates[idx].json
