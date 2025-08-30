@@ -22,7 +22,7 @@
 
 import { JsonValue } from '@fgv/ts-json-base';
 import { Collections, Hash, Result, captureResult } from '@fgv/ts-utils';
-import { CandidateValueIndex, CandidateValueKey } from '../common';
+import { CandidateValueIndex, CandidateValueKey, Convert as CommonConverters } from '../common';
 import * as Common from '../common';
 
 /**
@@ -122,7 +122,7 @@ export class CandidateValue implements ICandidateValue {
 
     // Generate key from the normalized value using computeHash
     const keyResult = normalizer.computeHash(this._json);
-    const key = keyResult.orThrow() as unknown as CandidateValueKey;
+    const key = CommonConverters.candidateValueKey.convert(keyResult.orThrow()).orThrow();
 
     // Create the collectible with the key and optional index
     this._collectible = new Collections.Collectible({

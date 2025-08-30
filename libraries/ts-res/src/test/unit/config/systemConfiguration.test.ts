@@ -464,7 +464,7 @@ describe('SystemConfiguration', () => {
         expect(SystemConfiguration.loadFromFile(configPath)).toSucceedAndSatisfy((systemConfig) => {
           expect(systemConfig.qualifierTypes.size).toBe(6); // Has 6 qualifier types
           expect(systemConfig.qualifiers.size).toBe(7); // Has 7 qualifiers
-          expect(systemConfig.resourceTypes.size).toBe(1);
+          expect(systemConfig.resourceTypes.size).toBe(2);
         });
       });
     });
