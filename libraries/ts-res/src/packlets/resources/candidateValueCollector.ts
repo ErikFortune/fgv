@@ -34,7 +34,7 @@ export interface ICandidateValueCollectorCreateParams {
    * Optional normalizer to use for normalizing JSON values.
    * If not provided, a default Crc32Normalizer will be used.
    */
-  normalizer?: Hash.Crc32Normalizer;
+  normalizer?: Hash.HashingNormalizer;
 
   /**
    * Optional initial candidate values to add to the collection.
@@ -49,7 +49,7 @@ export interface ICandidateValueCollectorCreateParams {
  * @public
  */
 export class CandidateValueCollector extends ValidatingCollector<CandidateValue> {
-  private readonly _normalizer: Hash.Crc32Normalizer;
+  public readonly normalizer: Hash.HashingNormalizer;
 
   /**
    * Constructor for a {@link Resources.CandidateValueCollector} object.
@@ -63,7 +63,7 @@ export class CandidateValueCollector extends ValidatingCollector<CandidateValue>
         value: (from: unknown) => this._toCandidateValue(from)
       })
     });
-    this._normalizer = params?.normalizer ?? new Hash.Crc32Normalizer();
+    this.normalizer = params?.normalizer ?? new Hash.Crc32Normalizer();
     params.candidateValues?.forEach((candidateValue) => this.validating.add(candidateValue));
   }
 
@@ -108,7 +108,7 @@ export class CandidateValueCollector extends ValidatingCollector<CandidateValue>
       .onSuccess((jsonValue) => {
         return CandidateValue.create({
           json: jsonValue,
-          normalizer: this._normalizer
+          normalizer: this.normalizer
         });
       });
   }

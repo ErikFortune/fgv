@@ -283,6 +283,8 @@ class CandidateValueCollector extends ValidatingCollector<CandidateValue> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: ICandidateValueCollectorCreateParams): Result<CandidateValueCollector>;
     getValuesByIndex(): JsonValue[];
+    // (undocumented)
+    readonly normalizer: Hash.HashingNormalizer;
 }
 
 // @public
@@ -1527,7 +1529,7 @@ interface ICandidateValue extends Collections.ICollectible<CandidateValueKey, Ca
 // @public
 interface ICandidateValueCollectorCreateParams {
     candidateValues?: (CandidateValue | JsonValue)[];
-    normalizer?: Hash.Crc32Normalizer;
+    normalizer?: Hash.HashingNormalizer;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

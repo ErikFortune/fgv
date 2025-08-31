@@ -22,6 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import { Hash } from '@fgv/ts-utils';
+import { Hash as ExtrasHash } from '@fgv/ts-extras';
 import { CandidateValueCollector } from '../../../packlets/resources';
 import { CandidateValueKey } from '../../../packlets/common';
 
@@ -33,11 +34,21 @@ describe('CandidateValueCollector', () => {
       });
     });
 
-    test('should create collector with normalizer', () => {
+    test('should create collector with CRC32 normalizer', () => {
       const normalizer = new Hash.Crc32Normalizer();
 
       expect(CandidateValueCollector.create({ normalizer })).toSucceedAndSatisfy((collector) => {
         expect(collector.size).toBe(0);
+        expect(collector.normalizer).toBe(normalizer);
+      });
+    });
+
+    test('should create collector with MD5 normalizer', () => {
+      const normalizer = new ExtrasHash.Md5Normalizer();
+
+      expect(CandidateValueCollector.create({ normalizer })).toSucceedAndSatisfy((collector) => {
+        expect(collector.size).toBe(0);
+        expect(collector.normalizer).toBe(normalizer);
       });
     });
 
@@ -343,6 +354,252 @@ describe('CandidateValueCollector', () => {
         // Empty collector has no values
         expect(collector.size).toBe(0);
         expect(Array.from(collector.values())).toHaveLength(0);
+      });
+    });
+  });
+
+  describe('normalizer comparison', () => {
+    test('should produce different keys with different normalizers for same JSON', () => {
+      const json = { test: 'value', number: 42, nested: { key: 'data' } };
+
+      // Create collector with CRC32 normalizer
+      expect(CandidateValueCollector.create()).toSucceedAndSatisfy((crc32Collector) => {
+        // Create collector with MD5 normalizer
+        const md5Normalizer = new ExtrasHash.Md5Normalizer();
+        expect(CandidateValueCollector.create({ normalizer: md5Normalizer })).toSucceedAndSatisfy(
+          (md5Collector) => {
+            // Add the same JSON to both collectors
+            expect(crc32Collector.validating.add(json)).toSucceedAndSatisfy((crc32Value) => {
+              expect(md5Collector.validating.add(json)).toSucceedAndSatisfy((md5Value) => {
+                // Keys should be different due to different hash algorithms
+                expect(crc32Value.key).not.toBe(md5Value.key);
+
+                // But the JSON content should be the same
+                expect(crc32Value.json).toEqual(md5Value.json);
+                expect(md5Value.json).toEqual(json);
+
+                // Both should have the same index (0) in their respective collectors
+                expect(crc32Value.index).toBe(0);
+                expect(md5Value.index).toBe(0);
+              });
+            });
+          }
+        );
+      });
+    });
+
+    test('should produce consistent keys with same normalizer', () => {
+      const json = { a: 1, b: 2, c: 3 };
+      const md5Normalizer = new ExtrasHash.Md5Normalizer();
+
+      // Create two collectors with the same MD5 normalizer type
+      expect(CandidateValueCollector.create({ normalizer: md5Normalizer })).toSucceedAndSatisfy(
+        (collector1) => {
+          const anotherMd5Normalizer = new ExtrasHash.Md5Normalizer();
+          expect(CandidateValueCollector.create({ normalizer: anotherMd5Normalizer })).toSucceedAndSatisfy(
+            (collector2) => {
+              // Add the same JSON to both collectors
+              expect(collector1.validating.add(json)).toSucceedAndSatisfy((value1) => {
+                expect(collector2.validating.add(json)).toSucceedAndSatisfy((value2) => {
+                  // Keys should be the same since using same normalizer algorithm
+                  expect(value1.key).toBe(value2.key);
+                  expect(value1.json).toEqual(value2.json);
+                });
+              });
+            }
+          );
+        }
+      );
+    });
+
+    test('should handle property order normalization with MD5', () => {
+      const md5Normalizer = new ExtrasHash.Md5Normalizer();
+
+      expect(CandidateValueCollector.create({ normalizer: md5Normalizer })).toSucceedAndSatisfy(
+        (collector) => {
+          const json1 = { b: 2, a: 1, c: 3 };
+          const json2 = { a: 1, b: 2, c: 3 };
+          const json3 = { c: 3, b: 2, a: 1 };
+
+          expect(collector.validating.add(json1)).toSucceedAndSatisfy((value1) => {
+            // Adding json2 should fail because it normalizes to the same key
+            expect(collector.validating.add(json2)).toFailWith(/already exists/);
+
+            // Adding json3 should also fail for the same reason
+            expect(collector.validating.add(json3)).toFailWith(/already exists/);
+
+            // Verify only one value in the collector
+            expect(collector.size).toBe(1);
+            expect(Array.from(collector.values())[0]).toBe(value1);
+          });
+        }
+      );
+    });
+  });
+
+  describe('MD5 normalizer deduplication', () => {
+    test('should deduplicate values correctly with MD5 normalizer', () => {
+      const md5Normalizer = new ExtrasHash.Md5Normalizer();
+
+      expect(CandidateValueCollector.create({ normalizer: md5Normalizer })).toSucceedAndSatisfy(
+        (collector) => {
+          // Add different values
+          const values = [
+            { id: 1, name: 'first' },
+            { id: 2, name: 'second' },
+            { id: 1, name: 'first' }, // Duplicate
+            { name: 'first', id: 1 }, // Same but different property order
+            { id: 3, name: 'third' }
+          ];
+
+          const addedKeys: string[] = [];
+
+          // First value should succeed
+          expect(collector.validating.add(values[0])).toSucceedAndSatisfy((value) => {
+            addedKeys.push(value.key);
+            expect(value.index).toBe(0);
+          });
+
+          // Second value should succeed (different)
+          expect(collector.validating.add(values[1])).toSucceedAndSatisfy((value) => {
+            addedKeys.push(value.key);
+            expect(value.index).toBe(1);
+          });
+
+          // Third value should fail (exact duplicate)
+          expect(collector.validating.add(values[2])).toFailWith(/already exists/);
+
+          // Fourth value should fail (same after normalization)
+          expect(collector.validating.add(values[3])).toFailWith(/already exists/);
+
+          // Fifth value should succeed (different)
+          expect(collector.validating.add(values[4])).toSucceedAndSatisfy((value) => {
+            addedKeys.push(value.key);
+            expect(value.index).toBe(2);
+          });
+
+          // Verify final state
+          expect(collector.size).toBe(3);
+          const allValues = Array.from(collector.values());
+          expect(allValues).toHaveLength(3);
+
+          // Verify all keys are unique
+          expect(new Set(addedKeys).size).toBe(3);
+        }
+      );
+    });
+
+    test('should handle various JSON types with MD5 normalizer', () => {
+      const md5Normalizer = new ExtrasHash.Md5Normalizer();
+
+      expect(CandidateValueCollector.create({ normalizer: md5Normalizer })).toSucceedAndSatisfy(
+        (collector) => {
+          const testValues = [
+            null,
+            true,
+            false,
+            42,
+            3.14159,
+            'string value',
+            '',
+            [1, 2, 3],
+            { nested: { deep: { object: true } } }
+          ];
+
+          const keys: string[] = [];
+
+          testValues.forEach((json, expectedIndex) => {
+            expect(collector.validating.add(json)).toSucceedAndSatisfy((candidateValue) => {
+              expect(candidateValue.json).toEqual(json);
+              expect(candidateValue.index).toBe(expectedIndex);
+              keys.push(candidateValue.key);
+            });
+          });
+
+          expect(collector.size).toBe(testValues.length);
+
+          // All keys should be unique
+          expect(new Set(keys).size).toBe(testValues.length);
+
+          // Keys should be different from what CRC32 would produce
+          expect(CandidateValueCollector.create()).toSucceedAndSatisfy((crc32Collector) => {
+            const crc32Keys: string[] = [];
+            testValues.forEach((json) => {
+              expect(crc32Collector.validating.add(json)).toSucceedAndSatisfy((value) => {
+                crc32Keys.push(value.key);
+              });
+            });
+
+            // Each corresponding key should be different
+            keys.forEach((md5Key, index) => {
+              expect(md5Key).not.toBe(crc32Keys[index]);
+            });
+          });
+        }
+      );
+    });
+
+    test('should handle empty array and empty object as different values', () => {
+      // After the fix, MD5 and CRC32 normalizers now treat empty array and empty object as different
+      const md5Normalizer = new ExtrasHash.Md5Normalizer();
+
+      expect(CandidateValueCollector.create({ normalizer: md5Normalizer })).toSucceedAndSatisfy(
+        (md5Collector) => {
+          // Add empty array first
+          expect(md5Collector.validating.add([])).toSucceedAndSatisfy((arrayValue) => {
+            // Add empty object - this should now succeed since they have different hashes
+            expect(md5Collector.validating.add({})).toSucceedAndSatisfy((objectValue) => {
+              // Verify that they are different values with different keys
+              expect(arrayValue.key).not.toBe(objectValue.key);
+              expect(md5Collector.size).toBe(2);
+            });
+          });
+        }
+      );
+
+      // CRC32 has the same (now fixed) behavior
+      expect(CandidateValueCollector.create()).toSucceedAndSatisfy((crc32Collector) => {
+        expect(crc32Collector.validating.add([])).toSucceedAndSatisfy((arrayValue) => {
+          // Empty object should now be accepted as different from empty array
+          expect(crc32Collector.validating.add({})).toSucceedAndSatisfy((objectValue) => {
+            expect(arrayValue.key).not.toBe(objectValue.key);
+            expect(crc32Collector.size).toBe(2);
+          });
+        });
+      });
+    });
+
+    test('should work with initial values using MD5 normalizer', () => {
+      const md5Normalizer = new ExtrasHash.Md5Normalizer();
+      const json1 = { test: 'value1' };
+      const json2 = { test: 'value2' };
+      const json3 = { test: 'value3' };
+
+      expect(
+        CandidateValueCollector.create({
+          normalizer: md5Normalizer,
+          candidateValues: [json1, json2, json3]
+        })
+      ).toSucceedAndSatisfy((collector) => {
+        expect(collector.size).toBe(3);
+        expect(collector.normalizer).toBe(md5Normalizer);
+
+        // Values should already be in the collector
+        const values = Array.from(collector.values());
+        expect(values).toHaveLength(3);
+
+        // Should find existing values
+        const firstValue = values.find((cv) => JSON.stringify(cv.json) === JSON.stringify(json1));
+        const secondValue = values.find((cv) => JSON.stringify(cv.json) === JSON.stringify(json2));
+        const thirdValue = values.find((cv) => JSON.stringify(cv.json) === JSON.stringify(json3));
+
+        expect(firstValue).toBeDefined();
+        expect(secondValue).toBeDefined();
+        expect(thirdValue).toBeDefined();
+
+        // Adding duplicates should fail
+        expect(collector.validating.add(json1)).toFailWith(/already exists/);
+        expect(collector.validating.add(json2)).toFailWith(/already exists/);
       });
     });
   });

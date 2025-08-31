@@ -9,5 +9,5 @@ Optional normalizer to use for normalizing JSON values. If not provided, a defau
 **Signature:**
 
 ```typescript
-normalizer?: Hash.Crc32Normalizer;
+normalizer?: Hash.HashingNormalizer;
 ```

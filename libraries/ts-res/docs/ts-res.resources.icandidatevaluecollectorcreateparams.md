@@ -64,7 +64,7 @@ _(Optional)_ Optional initial candidate values to add to the collection.
 
 </td><td>
 
-Hash.Crc32Normalizer
+Hash.HashingNormalizer
 
 
 </td><td>

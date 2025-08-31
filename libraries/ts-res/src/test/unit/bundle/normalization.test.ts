@@ -245,10 +245,10 @@ describe('Bundle Normalization', () => {
 
       // Candidates should be in the same order in both bundles due to normalization
       const bundle1CandidateValues = bundle1.compiledCollection.resources[0].candidates.map(
-        (c) => bundle1.compiledCollection.candidateValues[c.valueIndex as unknown as number]
+        (c) => bundle1.compiledCollection.candidateValues[c.valueIndex]
       );
       const bundle2CandidateValues = bundle2.compiledCollection.resources[0].candidates.map(
-        (c) => bundle2.compiledCollection.candidateValues[c.valueIndex as unknown as number]
+        (c) => bundle2.compiledCollection.candidateValues[c.valueIndex]
       );
       expect(bundle1CandidateValues).toEqual(bundle2CandidateValues);
     });

@@ -180,16 +180,6 @@ describe('CandidateValue', () => {
     });
   });
 
-  describe('error handling', () => {
-    test('should handle normalization errors gracefully', () => {
-      // This test assumes there could be normalization errors in edge cases
-      // Currently Hash.Crc32Normalizer is very robust, so this mainly tests the pattern
-      const json = { test: 'value' };
-
-      expect(CandidateValue.create({ json })).toSucceed();
-    });
-  });
-
   describe('ICandidateValue interface compliance', () => {
     test('should implement ICandidateValue interface correctly', () => {
       const json = { test: 'interface test' };

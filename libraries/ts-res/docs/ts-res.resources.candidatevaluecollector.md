@@ -17,6 +17,50 @@ export declare class CandidateValueCollector extends ValidatingCollector<Candida
 
 The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `CandidateValueCollector` class.
 
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[normalizer](./ts-res.resources.candidatevaluecollector.normalizer.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Hash.HashingNormalizer
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
+
 ## Methods
 
 <table><thead><tr><th>
