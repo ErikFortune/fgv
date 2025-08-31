@@ -1161,7 +1161,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
 
       // Get json value from candidateValues array using valueIndex
       /* c8 ignore next 1 - defense in depth */
-      const rawJson = candidateValues[candidate.valueIndex as unknown as number] ?? {};
+      const rawJson = candidateValues[candidate.valueIndex] ?? {};
       JsonConverters.jsonObject
         .convert(rawJson)
         .onSuccess((json) => {
