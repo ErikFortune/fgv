@@ -2525,7 +2525,7 @@ interface IReadOnlyResourceTreeBranch<T> {
 }
 
 // @public
-interface IReadOnlyResourceTreeChildren<T, TID extends string = ResourceId, TNAME extends string = ResourceName> extends IReadOnlyResultMap<ResourceName, IReadOnlyResourceTreeNode<T>> {
+interface IReadOnlyResourceTreeChildren<T, TID extends string = ResourceId, TNAME extends string = ResourceName> extends IReadOnlyResultMap<TNAME, IReadOnlyResourceTreeNode<T>> {
     getBranch(name: TNAME): Result<IReadOnlyResourceTreeNode<T>>;
     getBranchById(id: TID): Result<IReadOnlyResourceTreeBranch<T>>;
     getById(id: TID): Result<IReadOnlyResourceTreeNode<T>>;

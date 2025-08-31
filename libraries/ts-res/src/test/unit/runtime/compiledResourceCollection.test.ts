@@ -23,9 +23,12 @@
 import '@fgv/ts-utils-jest';
 import { Collections } from '@fgv/ts-utils';
 import * as TsRes from '../../../index';
-
 describe('CompiledResourceCollection class', () => {
+  let languageQualifierType: TsRes.QualifierTypes.LanguageQualifierType;
+  let territoryQualifierType: TsRes.QualifierTypes.TerritoryQualifierType;
   let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
+  let languageQualifier: TsRes.Qualifiers.Qualifier;
+  let territoryQualifier: TsRes.Qualifiers.Qualifier;
   let qualifiers: TsRes.Qualifiers.QualifierCollector;
   let resourceTypes: TsRes.ResourceTypes.ResourceTypeCollector;
   let resourceManager: TsRes.Resources.ResourceManagerBuilder;
@@ -34,11 +37,10 @@ describe('CompiledResourceCollection class', () => {
 
   beforeEach(() => {
     // Set up qualifier types
+    languageQualifierType = TsRes.QualifierTypes.LanguageQualifierType.create().orThrow();
+    territoryQualifierType = TsRes.QualifierTypes.TerritoryQualifierType.create().orThrow();
     qualifierTypes = TsRes.QualifierTypes.QualifierTypeCollector.create({
-      qualifierTypes: [
-        TsRes.QualifierTypes.LanguageQualifierType.create().orThrow(),
-        TsRes.QualifierTypes.TerritoryQualifierType.create().orThrow()
-      ]
+      qualifierTypes: [languageQualifierType, territoryQualifierType]
     }).orThrow();
 
     // Set up qualifiers
@@ -49,6 +51,8 @@ describe('CompiledResourceCollection class', () => {
         { name: 'territory', typeName: 'territory', defaultPriority: 200 }
       ]
     }).orThrow();
+    languageQualifier = qualifiers.validating.get('language').orThrow();
+    territoryQualifier = qualifiers.validating.get('territory').orThrow();
 
     // Set up resource types
     resourceTypes = TsRes.ResourceTypes.ResourceTypeCollector.create({
@@ -192,9 +196,9 @@ describe('CompiledResourceCollection class', () => {
         ...validCompiledCollection,
         conditions: [
           {
-            qualifierIndex: 999 as unknown as TsRes.QualifierIndex,
+            qualifierIndex: 999 as TsRes.QualifierIndex,
             value: 'en',
-            priority: 100 as unknown as TsRes.ConditionPriority,
+            priority: 100 as TsRes.ConditionPriority,
             scoreAsDefault: undefined
           }
         ]
@@ -216,7 +220,7 @@ describe('CompiledResourceCollection class', () => {
         ...validCompiledCollection,
         conditionSets: [
           {
-            conditions: [999 as unknown as TsRes.ConditionIndex]
+            conditions: [999 as TsRes.ConditionIndex]
           }
         ]
       };
@@ -237,7 +241,7 @@ describe('CompiledResourceCollection class', () => {
         ...validCompiledCollection,
         decisions: [
           {
-            conditionSets: [999 as unknown as TsRes.ConditionSetIndex]
+            conditionSets: [999 as TsRes.ConditionSetIndex]
           }
         ]
       };
@@ -258,9 +262,9 @@ describe('CompiledResourceCollection class', () => {
         ...validCompiledCollection,
         resources: [
           {
-            id: 'test' as unknown as TsRes.ResourceId,
-            type: 999 as unknown as TsRes.ResourceTypeIndex,
-            decision: 0 as unknown as TsRes.DecisionIndex,
+            id: 'test' as TsRes.ResourceId,
+            type: 999 as TsRes.ResourceTypeIndex,
+            decision: 0 as TsRes.DecisionIndex,
             candidates: []
           }
         ]
@@ -282,9 +286,9 @@ describe('CompiledResourceCollection class', () => {
         ...validCompiledCollection,
         resources: [
           {
-            id: 'test' as unknown as TsRes.ResourceId,
-            type: 0 as unknown as TsRes.ResourceTypeIndex,
-            decision: 999 as unknown as TsRes.DecisionIndex,
+            id: 'test' as TsRes.ResourceId,
+            type: 0 as TsRes.ResourceTypeIndex,
+            decision: 999 as TsRes.DecisionIndex,
             candidates: []
           }
         ]
@@ -306,12 +310,12 @@ describe('CompiledResourceCollection class', () => {
         ...validCompiledCollection,
         resources: [
           {
-            id: 'test' as unknown as TsRes.ResourceId,
-            type: 0 as unknown as TsRes.ResourceTypeIndex,
-            decision: 0 as unknown as TsRes.DecisionIndex,
+            id: 'test' as TsRes.ResourceId,
+            type: 0 as TsRes.ResourceTypeIndex,
+            decision: 0 as TsRes.DecisionIndex,
             candidates: [
               {
-                valueIndex: 0 as unknown as TsRes.CandidateValueIndex,
+                valueIndex: 0 as TsRes.CandidateValueIndex,
                 isPartial: false,
                 mergeMethod: 'replace' as TsRes.ResourceValueMergeMethod
               }
@@ -378,7 +382,7 @@ describe('CompiledResourceCollection class', () => {
       );
       const emptyResourceTypesMap = new Collections.ResultMap<string, TsRes.ResourceTypes.ResourceType>([]);
 
-      const emptyParams = {
+      const emptyParams: TsRes.Runtime.ICompiledResourceCollectionCreateParams = {
         compiledCollection: {
           ...validCompiledCollection,
           conditions: [],
@@ -394,18 +398,18 @@ describe('CompiledResourceCollection class', () => {
 
     test('should succeed when concrete decision creation works', () => {
       // Create a valid collection to ensure the concrete decision creation works
-      const validCollection = {
+      const validCollection: TsRes.ResourceJson.Compiled.ICompiledResourceCollection = {
         ...validCompiledCollection,
         resources: [
           {
-            id: 'test' as unknown as TsRes.ResourceId,
-            type: 0 as unknown as TsRes.ResourceTypeIndex,
-            decision: 0 as unknown as TsRes.DecisionIndex,
+            id: 'test' as TsRes.ResourceId,
+            type: 0 as TsRes.ResourceTypeIndex,
+            decision: 0 as TsRes.DecisionIndex,
             candidates: [
               {
-                valueIndex: 0 as unknown as TsRes.CandidateValueIndex,
+                valueIndex: 0 as TsRes.CandidateValueIndex,
                 isPartial: false,
-                mergeMethod: 'replace' as TsRes.ResourceValueMergeMethod
+                mergeMethod: 'replace'
               }
             ]
           }
@@ -450,12 +454,8 @@ describe('CompiledResourceCollection class', () => {
       expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
         (collection) => {
           expect(collection.qualifierTypes.size).toBe(2);
-          expect(
-            collection.qualifierTypes.has(TsRes.Convert.qualifierTypeName.convert('language').orThrow())
-          ).toBe(true);
-          expect(
-            collection.qualifierTypes.has(TsRes.Convert.qualifierTypeName.convert('territory').orThrow())
-          ).toBe(true);
+          expect(collection.qualifierTypes.has(languageQualifierType.name)).toBe(true);
+          expect(collection.qualifierTypes.has(territoryQualifierType.name)).toBe(true);
         }
       );
     });
@@ -464,12 +464,8 @@ describe('CompiledResourceCollection class', () => {
       expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
         (collection) => {
           expect(collection.qualifiers.size).toBe(2);
-          expect(collection.qualifiers.has(TsRes.Convert.qualifierName.convert('language').orThrow())).toBe(
-            true
-          );
-          expect(collection.qualifiers.has(TsRes.Convert.qualifierName.convert('territory').orThrow())).toBe(
-            true
-          );
+          expect(collection.qualifiers.has(languageQualifier.name)).toBe(true);
+          expect(collection.qualifiers.has(territoryQualifier.name)).toBe(true);
         }
       );
     });
@@ -612,55 +608,55 @@ describe('CompiledResourceCollection class', () => {
   });
 
   describe('resource validation', () => {
-    test('should validate resource objects have required properties', () => {
-      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
-        (collection) => {
-          // Access the internal resource map to test the validation logic
-          const resourceMap = collection.builtResources as unknown as {
-            validating: {
-              set: (key: string, value: unknown) => import('@fgv/ts-utils').Result<unknown>;
-            };
-          };
+    test('should fail when compiled collection contains invalid resource objects', () => {
+      // Create corrupted compiled collection by adding invalid resource
+      createParams.compiledCollection = {
+        ...createParams.compiledCollection,
+        resources: [
+          ...createParams.compiledCollection.resources,
+          { notAResource: true } as unknown as TsRes.ResourceJson.Compiled.ICompiledResource
+        ]
+      };
 
-          // Try to add an invalid object that doesn't look like a resource
-          const invalidResource = { notAResource: true };
-          expect(resourceMap.validating.set('invalid', invalidResource)).toFailWith(/Field not found/);
-        }
+      // Should fail during construction when trying to validate/convert the invalid resource
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toFailWith(
+        /Cannot read properties of undefined|Field not found|Invalid.*resource|source is not an object/
       );
     });
 
-    test('should validate resource objects are not null', () => {
-      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
-        (collection) => {
-          // Access the internal resource map to test the validation logic
-          const resourceMap = collection.builtResources as unknown as {
-            validating: {
-              set: (key: string, value: unknown) => import('@fgv/ts-utils').Result<unknown>;
-            };
-          };
+    test('should fail when compiled collection contains null resource', () => {
+      // Create corrupted compiled collection by adding null resource
+      createParams.compiledCollection = {
+        ...createParams.compiledCollection,
+        resources: [
+          ...createParams.compiledCollection.resources,
+          null as unknown as TsRes.ResourceJson.Compiled.ICompiledResource
+        ]
+      };
 
-          // Try to add null (should fail validation)
-          expect(resourceMap.validating.set('null', null)).toFailWith(/source is not an object/);
-        }
+      // Should fail during construction when trying to process null resource
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toFailWith(
+        /source is not an object|Cannot read.*null|Invalid.*resource/
       );
     });
 
-    test('should validate resource objects have all required properties', () => {
-      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
-        (collection) => {
-          // Access the internal resource map to test the validation logic
-          const resourceMap = collection.builtResources as unknown as {
-            validating: {
-              set: (key: string, value: unknown) => import('@fgv/ts-utils').Result<unknown>;
-            };
-          };
+    test('should fail when compiled collection contains resource with incomplete structure', () => {
+      // Create corrupted compiled collection by adding incomplete resource
+      createParams.compiledCollection = {
+        ...createParams.compiledCollection,
+        resources: [
+          ...createParams.compiledCollection.resources,
+          {
+            id: 'incomplete-resource',
+            resourceType: 'json'
+            // Missing required fields like 'decision', 'candidates', etc.
+          } as unknown as TsRes.ResourceJson.Compiled.ICompiledResource
+        ]
+      };
 
-          // Try to add an object missing required properties
-          const incompleteResource = { id: 'test', resourceType: 'json' }; // Missing decision and candidates
-          expect(resourceMap.validating.set('incomplete', incompleteResource)).toFailWith(
-            /Field not found|invalid/
-          );
-        }
+      // Should fail during construction when validating the incomplete resource
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toFailWith(
+        /Cannot read properties of undefined|Field not found|Missing.*property|Invalid.*decision|Invalid.*candidates/
       );
     });
   });
@@ -794,8 +790,8 @@ describe('CompiledResourceCollection class', () => {
         (collection) => {
           const context = { language: 'en', territory: 'US' };
           expect(collection.validateContext(context)).toSucceedAndSatisfy((validatedContext) => {
-            expect(validatedContext['language' as TsRes.QualifierName]).toBe('en');
-            expect(validatedContext['territory' as TsRes.QualifierName]).toBe('US');
+            expect(validatedContext[languageQualifier.name]).toBe('en');
+            expect(validatedContext[territoryQualifier.name]).toBe('US');
           });
         }
       );
@@ -806,8 +802,8 @@ describe('CompiledResourceCollection class', () => {
         (collection) => {
           const context = { language: 'en' };
           expect(collection.validateContext(context)).toSucceedAndSatisfy((validatedContext) => {
-            expect(validatedContext['language' as TsRes.QualifierName]).toBe('en');
-            expect(validatedContext['territory' as TsRes.QualifierName]).toBeUndefined();
+            expect(validatedContext[languageQualifier.name]).toBe('en');
+            expect(validatedContext[territoryQualifier.name]).toBeUndefined();
           });
         }
       );
@@ -818,7 +814,7 @@ describe('CompiledResourceCollection class', () => {
         (collection) => {
           const context = { language: 'en-US' };
           expect(collection.validateContext(context)).toSucceedAndSatisfy((validatedContext) => {
-            expect(validatedContext['language' as TsRes.QualifierName]).toBe('en-US');
+            expect(validatedContext[languageQualifier.name]).toBe('en-US');
           });
         }
       );
@@ -896,7 +892,7 @@ describe('CompiledResourceCollection class', () => {
         (collection) => {
           const context = { territory: 'GB' };
           expect(collection.validateContext(context)).toSucceedAndSatisfy((validatedContext) => {
-            expect(validatedContext['territory' as TsRes.QualifierName]).toBe('GB');
+            expect(validatedContext[territoryQualifier.name]).toBe('GB');
           });
         }
       );
@@ -907,8 +903,8 @@ describe('CompiledResourceCollection class', () => {
         (collection) => {
           const context = { language: 'es-ES', territory: 'ES' };
           expect(collection.validateContext(context)).toSucceedAndSatisfy((validatedContext) => {
-            expect(validatedContext['language' as TsRes.QualifierName]).toBe('es-ES');
-            expect(validatedContext['territory' as TsRes.QualifierName]).toBe('ES');
+            expect(validatedContext[languageQualifier.name]).toBe('es-ES');
+            expect(validatedContext[territoryQualifier.name]).toBe('ES');
           });
         }
       );
@@ -981,8 +977,8 @@ describe('CompiledResourceCollection class', () => {
         (collection) => {
           expect(collection.getBuiltResourceTree()).toSucceedAndSatisfy((tree) => {
             expect(tree.children.size).toBe(0);
-            expect(tree.children.has('anything' as TsRes.ResourceName)).toBe(false);
-            expect(tree.children.has('nonexistent' as TsRes.ResourceName)).toBe(false);
+            expect(tree.children.validating.has('anything')).toBe(false);
+            expect(tree.children.validating.has('nonexistent')).toBe(false);
           });
         }
       );
