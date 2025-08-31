@@ -9,5 +9,5 @@ A [ResourceTypeCollector](./ts-res.resourcetypes.resourcetypecollector.md) which
 **Signature:**
 
 ```typescript
-get resourceTypes(): ResourceTypeCollector;
+get resourceTypes(): ReadOnlyResourceTypeCollector;
 ```

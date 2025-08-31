@@ -4,10 +4,10 @@
 
 ## Runtime.CompiledResourceCollection.qualifierTypes property
 
-A [QualifierTypeCollector](./ts-res.qualifiertypes.qualifiertypecollector.md) which contains the [qualifier types](./ts-res.qualifiertypes.qualifiertype.md) used in this collection.
+A [ReadOnlyQualifierTypeCollector](./ts-res.qualifiertypes.readonlyqualifiertypecollector.md) which contains the [qualifier types](./ts-res.qualifiertypes.qualifiertype.md) used in this collection.
 
 **Signature:**
 
 ```typescript
-get qualifierTypes(): QualifierTypeCollector;
+get qualifierTypes(): ReadOnlyQualifierTypeCollector;
 ```

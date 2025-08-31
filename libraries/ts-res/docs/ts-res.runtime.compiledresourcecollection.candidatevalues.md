@@ -9,5 +9,5 @@ The candidate values in the collection.
 **Signature:**
 
 ```typescript
-get candidateValues(): JsonValue[];
+get candidateValues(): ReadonlyArray<JsonValue>;
 ```

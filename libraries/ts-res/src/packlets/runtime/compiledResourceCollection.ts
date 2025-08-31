@@ -37,9 +37,9 @@ import {
   ReadOnlyConditionSetCollector
 } from '../conditions';
 import { AbstractDecisionCollector, ReadOnlyAbstractDecisionCollector } from '../decisions';
-import { QualifierCollector } from '../qualifiers';
-import { ResourceType, ResourceTypeCollector } from '../resource-types';
-import { QualifierType, QualifierTypeCollector } from '../qualifier-types';
+import { QualifierCollector, IReadOnlyQualifierCollector } from '../qualifiers';
+import { ResourceType, ResourceTypeCollector, ReadOnlyResourceTypeCollector } from '../resource-types';
+import { QualifierType, QualifierTypeCollector, ReadOnlyQualifierTypeCollector } from '../qualifier-types';
 import { Convert, ResourceId, Helpers } from '../common';
 import { JsonObject, JsonValue, isJsonObject } from '@fgv/ts-json-base';
 import { IResourceManager, IResource, IResourceCandidate } from './iResourceManager';
@@ -87,18 +87,18 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
   private _cachedResourceTree?: ReadOnlyResourceTreeRoot<IResource>;
 
   /**
-   * A {@link QualifierTypes.QualifierTypeCollector | QualifierTypeCollector} which
+   * A {@link QualifierTypes.ReadOnlyQualifierTypeCollector | ReadOnlyQualifierTypeCollector} which
    * contains the {@link QualifierTypes.QualifierType | qualifier types} used in this collection.
    */
-  public get qualifierTypes(): QualifierTypeCollector {
+  public get qualifierTypes(): ReadOnlyQualifierTypeCollector {
     return this._qualifierTypes;
   }
 
   /**
-   * A {@link Qualifiers.QualifierCollector | QualifierCollector} which
+   * A {@link Qualifiers.IReadOnlyQualifierCollector | ReadOnlyQualifierCollector} which
    * contains the {@link Qualifiers.Qualifier | qualifiers} used in this collection.
    */
-  public get qualifiers(): QualifierCollector {
+  public get qualifiers(): IReadOnlyQualifierCollector {
     return this._qualifiers;
   }
 
@@ -106,14 +106,14 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
    * A {@link ResourceTypes.ResourceTypeCollector | ResourceTypeCollector} which
    * contains the {@link ResourceTypes.ResourceType | resource types} used in this collection.
    */
-  public get resourceTypes(): ResourceTypeCollector {
+  public get resourceTypes(): ReadOnlyResourceTypeCollector {
     return this._resourceTypes;
   }
 
   /**
    * The candidate values in the collection.
    */
-  public get candidateValues(): JsonValue[] {
+  public get candidateValues(): ReadonlyArray<JsonValue> {
     return this._candidateValues;
   }
 

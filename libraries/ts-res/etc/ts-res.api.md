@@ -427,7 +427,7 @@ class CompiledResourceCollection implements IResourceManager<IResource> {
     //
     // (undocumented)
     get builtResources(): Collections.IReadOnlyValidatingResultMap<ResourceId, IResource>;
-    get candidateValues(): JsonValue[];
+    get candidateValues(): ReadonlyArray<JsonValue>;
     // (undocumented)
     readonly conditions: ReadOnlyConditionCollector;
     // (undocumented)
@@ -455,13 +455,13 @@ class CompiledResourceCollection implements IResourceManager<IResource> {
     get numResources(): number;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    get qualifiers(): QualifierCollector;
+    get qualifiers(): IReadOnlyQualifierCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    get qualifierTypes(): QualifierTypeCollector;
+    get qualifierTypes(): ReadOnlyQualifierTypeCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    get resourceTypes(): ResourceTypeCollector;
+    get resourceTypes(): ReadOnlyResourceTypeCollector;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)

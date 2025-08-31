@@ -4,10 +4,10 @@
 
 ## Runtime.CompiledResourceCollection.qualifiers property
 
-A [QualifierCollector](./ts-res.qualifiers.qualifiercollector.md) which contains the [qualifiers](./ts-res.qualifiers.qualifier.md) used in this collection.
+A [ReadOnlyQualifierCollector](./ts-res.qualifiers.ireadonlyqualifiercollector.md) which contains the [qualifiers](./ts-res.qualifiers.qualifier.md) used in this collection.
 
 **Signature:**
 
 ```typescript
-get qualifiers(): QualifierCollector;
+get qualifiers(): IReadOnlyQualifierCollector;
 ```
