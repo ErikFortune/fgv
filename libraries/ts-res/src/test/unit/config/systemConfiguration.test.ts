@@ -296,7 +296,7 @@ describe('SystemConfiguration', () => {
         qualifierTypes: [
           {
             name: 'invalid',
-            systemType: 'unknown' as unknown as 'language' // Invalid system type
+            systemType: 'unknown' // Invalid system type - testing error case
           }
         ],
         qualifiers: [],
@@ -579,7 +579,7 @@ describe('SystemConfiguration', () => {
           qualifierTypes: [
             {
               name: 'custom',
-              systemType: 'custom' as unknown as 'language'
+              systemType: 'custom'
             },
             {
               name: 'language',
@@ -647,7 +647,7 @@ describe('SystemConfiguration', () => {
           qualifierTypes: [
             {
               name: 'unknown',
-              systemType: 'unknownType' as unknown as 'language'
+              systemType: 'unknownType' // Testing factory failure with invalid type
             }
           ],
           qualifiers: [],
@@ -796,7 +796,7 @@ describe('SystemConfiguration', () => {
           qualifierTypes: [
             {
               name: 'customQualifier',
-              systemType: 'custom' as unknown as 'language'
+              systemType: 'custom'
             }
           ],
           qualifiers: [],

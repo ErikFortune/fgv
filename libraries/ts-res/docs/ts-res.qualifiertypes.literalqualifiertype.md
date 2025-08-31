@@ -135,6 +135,27 @@ _(Optional)_ Optional [hierarchy](./ts-res.qualifiertypes.literalvaluehierarchy.
 
 
 </td></tr>
+<tr><td>
+
+[systemTypeName](./ts-res.qualifiertypes.literalqualifiertype.systemtypename.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[QualifierTypeName](./ts-res.qualifiertypename.md)
+
+
+</td><td>
+
+Name of the underlying system type.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods
@@ -200,6 +221,34 @@ Creates a new [LiteralQualifierType](./ts-res.qualifiertypes.literalqualifiertyp
 </td><td>
 
 Creates a new [LiteralQualifierType](./ts-res.qualifiertypes.literalqualifiertype.md) from a configuration object.
+
+
+</td></tr>
+<tr><td>
+
+[getConfiguration()](./ts-res.qualifiertypes.literalqualifiertype.getconfiguration.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a [strongly typed configuration object](./ts-res.qualifiertypes.config.isystemliteralqualifiertypeconfig.md) for this qualifier type.
+
+
+</td></tr>
+<tr><td>
+
+[getConfigurationJson()](./ts-res.qualifiertypes.literalqualifiertype.getconfigurationjson.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the configuration for this qualifier type.
 
 
 </td></tr>

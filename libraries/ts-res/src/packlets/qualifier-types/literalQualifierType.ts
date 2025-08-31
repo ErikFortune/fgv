@@ -29,12 +29,13 @@ import {
   QualifierConditionValue,
   QualifierContextValue,
   QualifierMatchScore,
+  QualifierTypeName,
   Validate
 } from '../common';
 import { QualifierType } from './qualifierType';
 import { LiteralValueHierarchy, LiteralValueHierarchyDecl } from './literalValueHierarchy';
 import * as Config from './config';
-import { sanitizeJsonObject } from '@fgv/ts-json-base';
+import { JsonObject, sanitizeJsonObject } from '@fgv/ts-json-base';
 
 /**
  * Interface defining the parameters that can be used to create a new
@@ -83,6 +84,11 @@ export interface ILiteralQualifierTypeCreateParams {
  * @public
  */
 export class LiteralQualifierType extends QualifierType {
+  /**
+   * {@inheritdoc QualifierTypes.IQualifierType.systemTypeName}
+   */
+  public readonly systemTypeName: QualifierTypeName = Convert.qualifierTypeName.convert('literal').orThrow();
+
   /**
    * Indicates whether the qualifier match is case-sensitive.
    */
@@ -165,6 +171,35 @@ export class LiteralQualifierType extends QualifierType {
       }
     }
     return false;
+  }
+
+  /**
+   * Gets a {@link QualifierTypes.Config.ISystemLiteralQualifierTypeConfig | strongly typed configuration object}
+   * for this qualifier type.
+   * @returns `Success` with the configuration if successful, `Failure` with an error message otherwise.
+   */
+  public getConfiguration(): Result<Config.ISystemLiteralQualifierTypeConfig> {
+    return this.getConfigurationJson().onSuccess(Config.Convert.systemLiteralQualifierTypeConfig.convert);
+  }
+
+  /**
+   * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
+   */
+  public getConfigurationJson(): Result<JsonObject> {
+    const hierarchy: JsonObject = this.hierarchy ? { hierarchy: this.hierarchy.asRecord() } : {};
+    const enumeratedValues: JsonObject = this.enumeratedValues
+      ? { enumeratedValues: [...this.enumeratedValues] }
+      : {};
+    return succeed({
+      name: this.name,
+      systemType: 'literal',
+      configuration: {
+        allowContextList: this.allowContextList,
+        caseSensitive: this.caseSensitive,
+        ...enumeratedValues,
+        ...hierarchy
+      }
+    });
   }
 
   /**

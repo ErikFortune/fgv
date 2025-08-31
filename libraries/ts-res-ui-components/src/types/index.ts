@@ -1359,10 +1359,18 @@ export interface OrchestratorActions {
 
   // Combined pending changes actions removed in favor of unified applyPendingResources
 
+  // Export functionality
+  exportBundle: () => void;
+  exportSource: () => void;
+  exportCompiled: () => void;
+
   // UI state management
   selectResource: (resourceId: string | null) => void;
   addMessage: (type: Message['type'], message: string) => void;
   clearMessages: () => void;
+
+  // Logging (for dependency injection)
+  log: (level: 'info' | 'warn' | 'error', message: string, ...args: unknown[]) => void;
 
   // Resource resolution
   resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<JsonValue>>;

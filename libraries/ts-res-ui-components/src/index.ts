@@ -31,6 +31,9 @@ export { MultiGridView } from './components/views/GridView/MultiGridView';
 // Export orchestrator
 export { ResourceOrchestrator } from './components/orchestrator/ResourceOrchestrator';
 
+// Export utilities
+export { DownloadUtils } from './utils/downloadHelper';
+
 // Export common components (likely to be used by consumers)
 export { ResourceTreeView } from './components/common/ResourceTreeView';
 export { ResourceListView } from './components/common/ResourceListView';

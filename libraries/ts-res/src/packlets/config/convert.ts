@@ -37,7 +37,7 @@ import { allPredefinedSystemConfigurations } from './common';
 export const systemConfiguration = Converters.strictObject<ISystemConfiguration>({
   name: Converters.optionalString,
   description: Converters.optionalString,
-  qualifierTypes: Converters.arrayOf(QualifierTypes.Config.Convert.systemQualifierTypeConfig),
+  qualifierTypes: Converters.arrayOf(QualifierTypes.Config.Convert.anyQualifierTypeConfig),
   qualifiers: Converters.arrayOf(Qualifiers.Convert.qualifierDecl),
   resourceTypes: Converters.arrayOf(ResourceTypes.Config.Convert.resourceTypeConfig)
 });

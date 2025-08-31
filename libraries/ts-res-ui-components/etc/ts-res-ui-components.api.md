@@ -143,6 +143,26 @@ function deriveFullId(rootPath: string, leafId: string): Result<string>;
 // @public
 function deriveLeafId(fullResourceId: string): Result<string>;
 
+// @public
+export namespace DownloadUtils {
+    export function createTimestamp(customFormat?: string): string;
+    export function downloadBundle(data: unknown, resourceCount?: number, configName?: string): Result<void>;
+    export function downloadCompiledResources(data: unknown, resourceCount?: number): Result<void>;
+    export function downloadFile(data: unknown, type: string, options?: DownloadOptions): Result<void>;
+    export interface DownloadOptions {
+        baseFilename?: string;
+        extension?: string;
+        filenameTransformer?: (baseFilename: string) => string;
+        includeTimestamp?: boolean;
+        mimeType?: string;
+        timestampFormat?: string;
+    }
+    export function downloadResources(data: unknown, resourceCount?: number, collectionName?: string): Result<void>;
+    export function downloadSourceResources(data: unknown, resourceCount?: number): Result<void>;
+    export function downloadTsResJson(data: unknown, type: string): Result<void>;
+    export function generateFilename(baseFilename: string, type?: string, options?: DownloadOptions): Result<string>;
+}
+
 // Warning: (ae-forgotten-export) The symbol "DropdownCellProps" needs to be exported by the entry point index.d.ts
 //
 // @public
@@ -623,6 +643,12 @@ export interface OrchestratorActions {
     // (undocumented)
     discardResourceEdits: () => void;
     // (undocumented)
+    exportBundle: () => void;
+    // (undocumented)
+    exportCompiled: () => void;
+    // (undocumented)
+    exportSource: () => void;
+    // (undocumented)
     getEditedValue: (resourceId: string) => JsonValue | undefined;
     // (undocumented)
     hasResourceEdit: (resourceId: string) => boolean;
@@ -634,6 +660,8 @@ export interface OrchestratorActions {
     importDirectoryWithConfig: (directory: ImportedDirectory, config: Config.Model.ISystemConfiguration) => Promise<void>;
     // (undocumented)
     importFiles: (files: ImportedFile[]) => Promise<void>;
+    // (undocumented)
+    log: (level: 'info' | 'warn' | 'error', message: string, ...args: unknown[]) => void;
     // (undocumented)
     markResourceForDeletion: (resourceId: string) => void;
     // (undocumented)

@@ -329,4 +329,15 @@ export class LiteralValueHierarchy<T extends string = string> {
 
     return errors.returnOrReport(succeed(valueMap));
   }
+
+  /**
+   * Converts the hierarchy to a record of parent-child relationships.
+   * @returns A record of parent-child relationships.
+   */
+  public asRecord(): Record<string, string> {
+    const entries = Array.from(this.values.values())
+      .filter((v) => v.parent !== undefined)
+      .map((v) => [v.name, v.parent!.name]);
+    return Object.fromEntries(entries);
+  }
 }

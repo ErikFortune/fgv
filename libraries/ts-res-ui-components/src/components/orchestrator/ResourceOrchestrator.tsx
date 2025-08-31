@@ -14,6 +14,7 @@ import { useFilterState } from '../../hooks/useFilterState';
 import { useViewState } from '../../hooks/useViewState';
 import { useResolutionState } from '../../hooks/useResolutionState';
 import { createFilteredResourceManagerSimple, analyzeFilteredResources } from '../../utils/filterResources';
+import { DownloadUtils } from '../../utils/downloadHelper';
 import { Runtime } from '@fgv/ts-res';
 
 /**
@@ -39,6 +40,8 @@ export interface ResourceOrchestratorProps {
   >;
   /** Callback fired when orchestrator state changes */
   onStateChange?: (state: Partial<OrchestratorState>) => void;
+  /** Logger function for dependency injection (defaults to console.log) */
+  logger?: (level: 'info' | 'warn' | 'error', message: string, ...args: unknown[]) => void;
 }
 
 /**
@@ -85,7 +88,8 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
   initialConfiguration,
   qualifierTypeFactory,
   resourceTypeFactory,
-  onStateChange
+  onStateChange,
+  logger = console.log
 }) => {
   // Core hooks
   const resourceData = useResourceData({
@@ -150,7 +154,7 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
     async (filterValues: Record<string, string | undefined>): Promise<FilterResult | null> => {
       // Prevent concurrent filtering operations
       if (isFilteringInProgress.current) {
-        console.log('Filtering already in progress, skipping...');
+        logger('info', 'Filtering already in progress, skipping...');
         return null;
       }
 
@@ -174,13 +178,13 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
         const { system } = resourceData.state.processedResources;
 
         viewState.addMessage('info', 'Starting filtering process...');
-        console.log('Filtering with values:', filterValues);
-        console.log('Filter state:', filterState.state);
+        logger('info', 'Filtering with values:', filterValues);
+        logger('info', 'Filter state:', filterState.state);
 
         // Try the simplified filtering approach using provided values
         let filteredResult = await createFilteredResourceManagerSimple(system, filterValues, {
           partialContextMatch: true,
-          enableDebugLogging: true, // Enable debug logging to see what's happening
+          enableDebugLogging: false, // Disable debug logging to reduce console output
           reduceQualifiers: filterState.state.reduceQualifiers
         });
 
@@ -198,7 +202,7 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
 
         // Analyze filtered resources compared to original
         const originalResources = resourceData.state.processedResources.summary.resourceIds || [];
-        console.log('Original resources count:', originalResources.length);
+        logger('info', 'Original resources count:', originalResources.length);
 
         const analysis = analyzeFilteredResources(
           originalResources,
@@ -206,14 +210,15 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
           resourceData.state.processedResources
         );
 
-        console.log('Analysis result:', {
+        logger('info', 'Analysis result:', {
           success: analysis.success,
           filteredResourcesCount: analysis.filteredResources.length,
           warningsCount: analysis.warnings.length,
           hasProcessedResources: !!analysis.processedResources
         });
 
-        console.log(
+        logger(
+          'info',
           'Filtered resources breakdown:',
           analysis.filteredResources.map((r) => ({
             id: r.id,
@@ -231,7 +236,7 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
           warnings: analysis.warnings
         };
 
-        console.log('Setting filter result:', result);
+        logger('info', 'Setting filter result:', result);
         setFilterResult(result);
 
         if (analysis.warnings.length > 0) {
@@ -429,10 +434,78 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
 
       // Combined apply/discard removed; use applyPendingResources/discard* directly
 
+      // Export functionality
+      exportBundle: () => {
+        const resources = resourceData.state.processedResources;
+        if (!resources || !resources.activeConfiguration) {
+          viewState.addMessage(
+            'error',
+            'Export bundle failed: No resource manager or configuration available'
+          );
+          return;
+        }
+
+        // Use proper Result chaining with side effects
+        const result = Config.SystemConfiguration.create(resources.activeConfiguration)
+          .onSuccess((systemConfig) =>
+            Bundle.BundleBuilder.create(resources.system.resourceManager, systemConfig)
+          )
+          .onSuccess((bundle) => DownloadUtils.downloadBundle(bundle, resources.resourceCount));
+
+        // Handle final result with side effects
+        if (result.isSuccess()) {
+          viewState.addMessage('success', 'Bundle exported successfully');
+        } else {
+          viewState.addMessage('error', `Export bundle failed: ${result.message}`);
+        }
+      },
+
+      exportSource: () => {
+        const resources = resourceData.state.processedResources;
+        if (!resources) {
+          viewState.addMessage('error', 'Export source failed: No processed resources available');
+          return;
+        }
+
+        // Use proper Result chaining with side effects
+        const result = DownloadUtils.downloadSourceResources(resources, resources.resourceCount);
+
+        // Handle result with side effects
+        if (result.isSuccess()) {
+          viewState.addMessage('success', 'Source resources exported successfully');
+        } else {
+          viewState.addMessage('error', `Export source failed: ${result.message}`);
+        }
+      },
+
+      exportCompiled: () => {
+        const resources = resourceData.state.processedResources;
+        if (!resources || !resources.compiledCollection) {
+          viewState.addMessage('error', 'Export compiled failed: No compiled resources available');
+          return;
+        }
+
+        // Use proper Result chaining with side effects
+        const result = DownloadUtils.downloadCompiledResources(
+          resources.compiledCollection,
+          resources.resourceCount
+        );
+
+        // Handle result with side effects
+        if (result.isSuccess()) {
+          viewState.addMessage('success', 'Compiled resources exported successfully');
+        } else {
+          viewState.addMessage('error', `Export compiled failed: ${result.message}`);
+        }
+      },
+
       // UI state management
       selectResource: viewState.selectResource,
       addMessage: viewState.addMessage,
       clearMessages: viewState.clearMessages,
+
+      // Logging (for dependency injection)
+      log: logger,
 
       // Resource resolution
       resolveResource: resourceData.actions.resolveResource

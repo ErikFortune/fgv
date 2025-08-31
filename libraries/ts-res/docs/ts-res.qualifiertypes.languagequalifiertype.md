@@ -49,6 +49,52 @@ Creates a new instance of a [language qualifier type](./ts-res.qualifiertypes.la
 </td></tr>
 </tbody></table>
 
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[systemTypeName](./ts-res.qualifiertypes.languagequalifiertype.systemtypename.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[QualifierTypeName](./ts-res.qualifiertypename.md)
+
+
+</td><td>
+
+Name of the underlying system type.
+
+
+</td></tr>
+</tbody></table>
+
 ## Methods
 
 <table><thead><tr><th>
@@ -112,6 +158,34 @@ Creates a new instance of a [language qualifier type](./ts-res.qualifiertypes.la
 </td><td>
 
 Creates a new [LanguageQualifierType](./ts-res.qualifiertypes.languagequalifiertype.md) from a configuration object.
+
+
+</td></tr>
+<tr><td>
+
+[getConfiguration()](./ts-res.qualifiertypes.languagequalifiertype.getconfiguration.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a [strongly typed configuration object](./ts-res.qualifiertypes.config.isystemlanguagequalifiertypeconfig.md) for this qualifier type.
+
+
+</td></tr>
+<tr><td>
+
+[getConfigurationJson()](./ts-res.qualifiertypes.languagequalifiertype.getconfigurationjson.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the configuration for this qualifier type.
 
 
 </td></tr>

@@ -349,6 +349,57 @@ Description
 </td></tr>
 <tr><td>
 
+[exportBundle](./ts-res-ui-components.orchestratoractions.exportbundle.md)
+
+
+</td><td>
+
+
+</td><td>
+
+() =&gt; void
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[exportCompiled](./ts-res-ui-components.orchestratoractions.exportcompiled.md)
+
+
+</td><td>
+
+
+</td><td>
+
+() =&gt; void
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[exportSource](./ts-res-ui-components.orchestratoractions.exportsource.md)
+
+
+</td><td>
+
+
+</td><td>
+
+() =&gt; void
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [getEditedValue](./ts-res-ui-components.orchestratoractions.geteditedvalue.md)
 
 
@@ -443,6 +494,23 @@ Description
 </td><td>
 
 (files: [ImportedFile](./ts-res-ui-components.importtools.importedfile.md)<!-- -->\[\]) =&gt; Promise&lt;void&gt;
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[log](./ts-res-ui-components.orchestratoractions.log.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(level: 'info' \| 'warn' \| 'error', message: string, ...args: unknown\[\]) =&gt; void
 
 
 </td><td>

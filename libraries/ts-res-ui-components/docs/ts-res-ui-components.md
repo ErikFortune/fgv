@@ -69,6 +69,17 @@ Description
 </td></tr>
 <tr><td>
 
+[DownloadUtils](./ts-res-ui-components.downloadutils.md)
+
+
+</td><td>
+
+Download utilities namespace for file export functionality
+
+
+</td></tr>
+<tr><td>
+
 [FilterTools](./ts-res-ui-components.filtertools.md)
 
 

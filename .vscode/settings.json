@@ -20,6 +20,7 @@
     "rushx",
     "subdir",
     "Subtag",
+    "TCONFIG",
     "TCONV",
     "TDEST",
     "TELEM",
@@ -29,6 +30,7 @@
     "TSRC",
     "TTAG",
     "TTOELEM",
+    "TTYPECONFIG",
     "xval",
     "xyzzy",
     "zval"

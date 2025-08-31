@@ -248,38 +248,23 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
             selectedResourceId={state.selectedResourceId}
             onResourceSelect={actions.selectResource}
             onExport={(data, type) => {
-              try {
-                // Create filename with timestamp
-                const timestamp = new Date().toISOString().replace(/[:]/g, '-').split('.')[0];
-                const filename = `ts-res-${type}-${timestamp}.json`;
-
-                // Convert data to JSON string
-                const jsonString = JSON.stringify(data, null, 2);
-
-                // Create blob and download
-                const blob = new Blob([jsonString], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-
-                // Create temporary download link
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = filename;
-                link.style.display = 'none';
-
-                // Trigger download
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-
-                // Clean up URL object
-                URL.revokeObjectURL(url);
-
-                actions.addMessage('success', `${type} exported successfully as ${filename}`);
-              } catch (error) {
-                actions.addMessage(
-                  'error',
-                  `Failed to export ${type}: ${error instanceof Error ? error.message : String(error)}`
-                );
+              switch (type) {
+                case 'bundle':
+                  actions.exportBundle();
+                  break;
+                case 'compiled':
+                  actions.exportCompiled();
+                  break;
+                case 'source':
+                  actions.exportSource();
+                  break;
+                default:
+                  // For any other type, fall back to the generic export
+                  actions.addMessage(
+                    'warning',
+                    `Unknown export type: ${type}. Using source export as fallback.`
+                  );
+                  actions.exportSource();
               }
             }}
           />
@@ -314,38 +299,23 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
             filterResult={state.filterResult}
             useNormalization={true}
             onExport={(data, type) => {
-              try {
-                // Create filename with timestamp
-                const timestamp = new Date().toISOString().replace(/[:]/g, '-').split('.')[0];
-                const filename = `ts-res-${type}-${timestamp}.json`;
-
-                // Convert data to JSON string
-                const jsonString = JSON.stringify(data, null, 2);
-
-                // Create blob and download
-                const blob = new Blob([jsonString], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-
-                // Create temporary download link
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = filename;
-                link.style.display = 'none';
-
-                // Trigger download
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-
-                // Clean up URL object
-                URL.revokeObjectURL(url);
-
-                actions.addMessage('success', `${type} exported successfully as ${filename}`);
-              } catch (error) {
-                actions.addMessage(
-                  'error',
-                  `Failed to export ${type}: ${error instanceof Error ? error.message : String(error)}`
-                );
+              switch (type) {
+                case 'bundle':
+                  actions.exportBundle();
+                  break;
+                case 'compiled':
+                  actions.exportCompiled();
+                  break;
+                case 'source':
+                  actions.exportSource();
+                  break;
+                default:
+                  // For any other type, fall back to the generic export
+                  actions.addMessage(
+                    'warning',
+                    `Unknown export type: ${type}. Using source export as fallback.`
+                  );
+                  actions.exportSource();
               }
             }}
           />
@@ -383,7 +353,11 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
               discardPendingResources: actions.discardPendingResources
             }}
             availableQualifiers={
-              state.resources?.compiledCollection.qualifiers?.map((q: any) => q.name) ||
+              state.resources?.compiledCollection.qualifiers
+                ?.map((q) =>
+                  typeof q === 'object' && q && 'name' in q && typeof q.name === 'string' ? q.name : ''
+                )
+                .filter(Boolean) ||
               state.configuration?.qualifiers?.map((q) => q.name) ||
               []
             }

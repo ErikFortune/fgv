@@ -354,8 +354,23 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 resources={state.resources}
                 pickerOptionsPresentation={pickerPresentation.source}
                 onExport={(data, type) => {
-                  // TODO: Implement export functionality
-                  actions.addMessage('info', `Export ${type} requested`);
+                  switch (type) {
+                    case 'bundle':
+                      actions.exportBundle();
+                      break;
+                    case 'compiled':
+                      actions.exportCompiled();
+                      break;
+                    case 'source':
+                      actions.exportSource();
+                      break;
+                    default:
+                      actions.addMessage(
+                        'warning',
+                        `Unknown export type: ${type}. Using source export as fallback.`
+                      );
+                      actions.exportSource();
+                  }
                 }}
               />
             </div>
@@ -499,8 +514,23 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 useNormalization={true}
                 pickerOptionsPresentation={pickerPresentation.compiled}
                 onExport={(data, type) => {
-                  // TODO: Implement export functionality
-                  actions.addMessage('info', `Export ${type} requested`);
+                  switch (type) {
+                    case 'bundle':
+                      actions.exportBundle();
+                      break;
+                    case 'compiled':
+                      actions.exportCompiled();
+                      break;
+                    case 'source':
+                      actions.exportSource();
+                      break;
+                    default:
+                      actions.addMessage(
+                        'warning',
+                        `Unknown export type: ${type}. Using source export as fallback.`
+                      );
+                      actions.exportSource();
+                  }
                 }}
               />
             </div>

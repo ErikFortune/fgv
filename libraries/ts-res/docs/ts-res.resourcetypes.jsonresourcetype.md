@@ -49,6 +49,52 @@ Protected [JsonResourceType](./ts-res.resourcetypes.jsonresourcetype.md) constru
 </td></tr>
 </tbody></table>
 
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[systemTypeName](./ts-res.resourcetypes.jsonresourcetype.systemtypename.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ResourceTypeName](./ts-res.resourcetypename.md)
+
+
+</td><td>
+
+Name of the underlying system type.
+
+
+</td></tr>
+</tbody></table>
+
 ## Methods
 
 <table><thead><tr><th>

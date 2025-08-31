@@ -29,11 +29,12 @@ import {
   QualifierConditionValue,
   QualifierContextValue,
   QualifierMatchScore,
+  QualifierTypeName,
   Validate
 } from '../common';
 import { IQualifierTypeCreateParams, QualifierType } from './qualifierType';
 import * as Config from './config';
-import { sanitizeJsonObject } from '@fgv/ts-json-base';
+import { JsonObject, sanitizeJsonObject } from '@fgv/ts-json-base';
 
 /**
  * Interface defining the parameters that can be used to create a new
@@ -60,6 +61,11 @@ export interface ILanguageQualifierTypeCreateParams extends Partial<IQualifierTy
  * @public
  */
 export class LanguageQualifierType extends QualifierType {
+  /**
+   * {@inheritdoc QualifierTypes.IQualifierType.systemTypeName}
+   */
+  public readonly systemTypeName: QualifierTypeName = Convert.qualifierTypeName.convert('language').orThrow();
+
   /**
    * Creates a new instance of a {@link QualifierTypes.LanguageQualifierType | language qualifier type}.
    * @param name - Optional name for the qualifier type. Defaults to 'language'.
@@ -117,6 +123,28 @@ export class LanguageQualifierType extends QualifierType {
     return Bcp47.tag(value)
       .onSuccess((tag) => succeed(tag.isValid))
       .orDefault(false);
+  }
+
+  /**
+   * Gets a {@link QualifierTypes.Config.ISystemLanguageQualifierTypeConfig | strongly typed configuration object}
+   * for this qualifier type.
+   * @returns `Success` with the configuration if successful, `Failure` with an error message otherwise.
+   */
+  public getConfiguration(): Result<Config.ISystemLanguageQualifierTypeConfig> {
+    return this.getConfigurationJson().onSuccess(Config.Convert.systemLanguageQualifierTypeConfig.convert);
+  }
+
+  /**
+   * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
+   */
+  public getConfigurationJson(): Result<JsonObject> {
+    return succeed({
+      name: this.name,
+      systemType: 'language',
+      configuration: {
+        allowContextList: this.allowContextList
+      }
+    });
   }
 
   /**

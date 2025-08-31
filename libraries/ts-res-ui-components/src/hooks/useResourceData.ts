@@ -3,6 +3,7 @@ import { Result, succeed, fail } from '@fgv/ts-utils';
 import {
   ResourceManagerState,
   ProcessedResources,
+  ExtendedProcessedResources,
   ImportedDirectory,
   ImportedFile,
   JsonValue
@@ -574,7 +575,14 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
   const updateProcessedResources = useCallback((processedResources: ProcessedResources) => {
     setState((prev) => ({
       ...prev,
-      processedResources,
+      processedResources: {
+        // Preserve activeConfiguration and bundle metadata from existing state as defaults
+        ...(prev.processedResources?.activeConfiguration && { activeConfiguration: prev.processedResources.activeConfiguration }),
+        ...(prev.processedResources?.isLoadedFromBundle !== undefined && { isLoadedFromBundle: prev.processedResources.isLoadedFromBundle }),
+        ...(prev.processedResources?.bundleMetadata && { bundleMetadata: prev.processedResources.bundleMetadata }),
+        // Then spread the new processedResources, which can override the defaults above
+        ...processedResources
+      } as ExtendedProcessedResources,
       hasProcessedData: true
     }));
   }, []);
