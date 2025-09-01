@@ -5,13 +5,15 @@ A visual tool for loading, browsing, and experimenting with ts-res resources. Bu
 ## Features
 
 ### Core Tools
-- **Import Tool**: Load resources from files or directories using File System Access API
-- **ZIP Loader**: Load pre-bundled ZIP archives created by ts-res-browser-cli
-- **Source Browser**: Browse and explore built resources in alphabetical order
-- **Compiled Browser**: Navigate compiled resource collections in tree view
-- **Filter Tool**: Filter resources by context for focused analysis
-- **Resolution Viewer**: Test resource resolution with different qualifiers and contexts
-- **Configuration Tool**: Manage qualifier types, qualifiers, and resource types
+- **Import View**: Load resources from files, directories, or ZIP archives using File System Access API
+- **Source View**: Browse and explore built resources in alphabetical order with export capabilities
+- **Filter View**: Filter resources by context for focused analysis with advanced options
+- **Compiled View**: Navigate compiled resource collections in tree view
+- **Resolution View**: Test resource resolution with different qualifiers and contexts, including editing and creation
+- **Configuration View**: Manage qualifier types, qualifiers, and resource types
+- **Resource Picker**: Interactive resource selection component
+- **Grid View**: Tabular view of resources with advanced filtering and configuration options
+- **Multi-Grid View**: Administrative workflow with shared context across multiple grids
 
 ### Advanced Features
 - **ZIP Archive Support**: Direct loading of ZIP bundles with automatic configuration application
@@ -98,19 +100,17 @@ src/
 ├── components/
 │   ├── layout/          # Layout components (Header, Sidebar, etc.)
 │   ├── tools/           # Tool-specific components
-│   │   ├── ImportTool.tsx           # File/directory import
-│   │   ├── ZipLoader.tsx            # ZIP archive loader
-│   │   ├── SourceBrowser.tsx        # Resource browsing
-│   │   ├── CompiledBrowser.tsx      # Tree view navigation  
-│   │   ├── FilterTool.tsx           # Context filtering
-│   │   ├── ResolutionViewer.tsx     # Resolution testing
-│   │   └── ConfigurationTool.tsx    # Configuration management
+│   │   ├── ResourcePickerTool.tsx   # Resource picker component
+│   │   ├── ResourceCreationTest.tsx # Resource creation testing
+│   │   └── HostControlledResolution.tsx # Host-controlled resolution demo
+│   ├── editors/         # Resource editors
+│   │   ├── PlaygroundResourceEditorFactory.tsx # Editor factory
+│   │   └── MarketInfoEditor.tsx     # Custom market info editor
 │   └── common/          # Shared components
 ├── hooks/               # Custom React hooks
-│   ├── useAppState.ts               # Main application state
-│   ├── useResourceManager.ts        # Resource processing
 │   ├── useFileImport.ts             # File system operations
-│   └── useUrlParams.ts              # URL parameter parsing
+│   ├── useUrlParams.ts              # URL parameter parsing
+│   └── useNavigationWarning.ts      # Navigation warning handling
 ├── utils/               # Utility functions
 │   ├── zip/                         # Browser-specific ZIP utilities
 │   ├── fileImport.ts                # File system integration
@@ -127,8 +127,8 @@ src/
 - **Webpack 5** for bundling with browser polyfills
 - **Tailwind CSS** for styling
 - **Heroicons** for iconography  
-- **JSZip** for browser-based ZIP processing
-- **@fgv/ts-res** for resource management
+- **@fgv/ts-res** for resource management and ZIP archive processing
+- **@fgv/ts-res-ui-components** for UI components and orchestration
 - **@fgv/ts-utils** for Result pattern and FileTree abstraction
 
 ## Architecture
@@ -136,11 +136,13 @@ src/
 The application follows a component-based architecture with:
 
 ### Core Systems
-- **State Management**: React hooks with centralized state management
+- **State Management**: ResourceOrchestrator component from @fgv/ts-res-ui-components with centralized state management
+- **UI Components**: Views and tools from @fgv/ts-res-ui-components library for consistent user experience
 - **File Access**: File System Access API with fallback to input elements
-- **ZIP Processing**: Browser-compatible ZIP implementation using JSZip
-- **Resource Processing**: FileTree abstraction for unified file access
+- **ZIP Processing**: ZipArchive packlet from @fgv/ts-res for unified ZIP handling
+- **Resource Processing**: Direct integration with ts-res library and FileTree abstraction
 - **Error Handling**: Result pattern from @fgv/ts-utils throughout
+- **Observability**: Enhanced diagnostic logging and observability context
 
 ### Integration Points
 - **CLI Integration**: Seamless workflow with ts-res-browser-cli via ZIP archives
