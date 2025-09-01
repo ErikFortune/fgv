@@ -41,7 +41,13 @@ import {
   multiGridConfigurations,
   demonstrationGridConfig
 } from './utils/gridConfigurations';
-import { contrastQualifierTypeFactory } from './factories';
+import { createObservableContrastFactory } from './factories';
+import {
+  createPlaygroundObservabilityContext,
+  logImportStage,
+  logConfigurationProcessing,
+  logDiagnosticSummary
+} from './utils/observability';
 
 // Separate component to handle initialization logic
 interface AppContentProps {
@@ -154,9 +160,18 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
               );
 
               if (configResult.isSuccess()) {
+                logConfigurationProcessing(o11y, configResult.value);
                 actions.updateConfiguration(configResult.value);
                 actions.addMessage('success', `Loaded predefined configuration: ${urlParams.config}`);
+                o11y.diag.info(
+                  '[URL_PARAMS] Successfully loaded predefined configuration:',
+                  urlParams.config
+                );
               } else {
+                o11y.diag.error(
+                  '[URL_PARAMS] Failed to load predefined configuration:',
+                  configResult.message
+                );
                 actions.addMessage(
                   'error',
                   `Failed to load predefined configuration '${urlParams.config}': ${configResult.message}`
@@ -279,11 +294,22 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
         return (
           <ImportView
             onMessage={actions.addMessage}
-            onImport={(data) => {
-              if (Array.isArray(data)) {
-                actions.importFiles(data);
-              } else {
-                actions.importDirectory(data);
+            importError={state.error}
+            onImport={async (data) => {
+              logImportStage(o11y, 'start');
+              try {
+                if (Array.isArray(data)) {
+                  logImportStage(o11y, 'resource-load', { fileCount: data.length });
+                  await actions.importFiles(data);
+                  logImportStage(o11y, 'complete', { filesImported: data.length });
+                } else {
+                  logImportStage(o11y, 'resource-load', { type: 'directory' });
+                  await actions.importDirectory(data);
+                  logImportStage(o11y, 'complete', { type: 'directory' });
+                }
+              } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                logImportStage(o11y, 'error', { error: errorMessage });
               }
             }}
             onBundleImport={actions.importBundle}
@@ -314,13 +340,19 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
 
               // Load configuration FIRST, before processing resources
               if (zipData.config) {
+                logImportStage(o11y, 'config-load', { source: 'ZIP archive' });
+                logConfigurationProcessing(o11y, zipData.config);
+
                 // Apply configuration immediately before processing resources
+                logImportStage(o11y, 'config-apply');
                 await actions.applyConfiguration(zipData.config);
                 actions.addMessage('success', 'Configuration loaded and applied from ZIP');
+                o11y.diag.info('[ZIP_IMPORT] Configuration applied successfully');
 
                 // Add a small delay to ensure configuration is applied
                 await new Promise((resolve) => setTimeout(resolve, 100));
               } else {
+                o11y.diag.warn('[ZIP_IMPORT] No configuration found in ZIP - using default configuration');
                 actions.addMessage('warning', 'No configuration found in ZIP - using default configuration');
               }
 
@@ -914,11 +946,22 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
         return (
           <ImportView
             onMessage={actions.addMessage}
-            onImport={(data) => {
-              if (Array.isArray(data)) {
-                actions.importFiles(data);
-              } else {
-                actions.importDirectory(data);
+            importError={state.error}
+            onImport={async (data) => {
+              logImportStage(o11y, 'start');
+              try {
+                if (Array.isArray(data)) {
+                  logImportStage(o11y, 'resource-load', { fileCount: data.length });
+                  await actions.importFiles(data);
+                  logImportStage(o11y, 'complete', { filesImported: data.length });
+                } else {
+                  logImportStage(o11y, 'resource-load', { type: 'directory' });
+                  await actions.importDirectory(data);
+                  logImportStage(o11y, 'complete', { type: 'directory' });
+                }
+              } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                logImportStage(o11y, 'error', { error: errorMessage });
               }
             }}
             onBundleImport={actions.importBundle}
@@ -950,20 +993,28 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
 };
 
 const App: React.FC = () => {
-  // Custom qualifier type factory to support "contrast" qualifier type for accessibility theming
-  const demoQualifierTypeFactory = contrastQualifierTypeFactory;
+  // Create enhanced observability context with diagnostic logging
+  const appO11yContext = createPlaygroundObservabilityContext();
+
+  // Create observable custom factory and wrap in QualifierTypeFactory for proper chaining
+  const observableContrastFactory = createObservableContrastFactory(appO11yContext);
+  const qualifierTypeFactory = new TsRes.Config.QualifierTypeFactory([observableContrastFactory]);
   const demoResourceTypeFactory = undefined;
 
-  // Create observability context for ResourceOrchestrator
-  const appO11yContext = ObservabilityTools.createConsoleObservabilityContext('info', 'info');
+  // Log initialization
+  appO11yContext.diag.info('[PLAYGROUND] Initializing ts-res-ui-playground with observable factory chain');
 
   return (
     <ResourceOrchestrator
-      qualifierTypeFactory={demoQualifierTypeFactory}
+      qualifierTypeFactory={qualifierTypeFactory}
       resourceTypeFactory={demoResourceTypeFactory}
       observabilityContext={appO11yContext}
     >
-      {(orchestrator) => <AppContent orchestrator={orchestrator} />}
+      {(orchestrator) => {
+        // Log when orchestrator is ready
+        appO11yContext.diag.info('[PLAYGROUND] ResourceOrchestrator initialized and ready');
+        return <AppContent orchestrator={orchestrator} />;
+      }}
     </ResourceOrchestrator>
   );
 };

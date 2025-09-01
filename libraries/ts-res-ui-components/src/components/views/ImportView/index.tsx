@@ -70,7 +70,8 @@ export const ImportView: React.FC<ImportViewProps> = ({
   onZipImport,
   acceptedFileTypes = ['.json', '.zip'],
   onMessage,
-  className = ''
+  className = '',
+  importError
 }) => {
   // Get observability context
   const o11y = useObservability();
@@ -703,20 +704,20 @@ export const ImportView: React.FC<ImportViewProps> = ({
           </div>
 
           {/* Error Display */}
-          {error && (
+          {(error || importError) && (
             <div className="bg-white rounded-lg shadow-sm border border-red-200 p-6">
               <div className="flex items-start space-x-2">
                 <ExclamationTriangleIcon className="w-5 h-5 text-red-600 mt-0.5" />
                 <div className="text-sm text-red-800">
                   <p className="font-medium">Error</p>
-                  <p>{error}</p>
+                  <p>{importError || error}</p>
                 </div>
               </div>
             </div>
           )}
 
           {/* Success Message */}
-          {importStatus.hasImported && !error && (
+          {importStatus.hasImported && !error && !importError && (
             <div className="bg-white rounded-lg shadow-sm border border-green-200 p-6">
               <div className="flex items-start space-x-2">
                 <CheckCircleIcon className="w-5 h-5 text-green-600 mt-0.5" />

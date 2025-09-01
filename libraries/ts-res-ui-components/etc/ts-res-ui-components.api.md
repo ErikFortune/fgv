@@ -583,6 +583,7 @@ export const ImportView: React_2.FC<ImportViewProps>;
 // @public
 interface ImportViewProps extends ViewBaseProps {
     acceptedFileTypes?: string[];
+    importError?: string | null;
     onBundleImport?: (bundle: Bundle.IBundle) => void;
     onImport?: (data: ImportedDirectory | ImportedFile[]) => void;
     onZipImport?: (zipData: ImportedDirectory | ImportedFile[], config?: Config.Model.ISystemConfiguration) => void;

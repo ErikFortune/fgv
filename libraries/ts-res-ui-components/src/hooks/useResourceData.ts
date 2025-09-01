@@ -54,14 +54,14 @@ export interface UseResourceDataReturn {
   /** Available actions for processing and managing resources */
   actions: {
     /** Process an imported directory structure into a resource system */
-    processDirectory: (directory: ImportedDirectory) => Promise<void>;
+    processDirectory: (directory: ImportedDirectory) => Promise<Result<void>>;
     /** Process a directory with an explicit configuration */
     processDirectoryWithConfig: (
       directory: ImportedDirectory,
       config: Config.Model.ISystemConfiguration
-    ) => Promise<void>;
+    ) => Promise<Result<void>>;
     /** Process an array of imported files into a resource system */
-    processFiles: (files: ImportedFile[]) => Promise<void>;
+    processFiles: (files: ImportedFile[]) => Promise<Result<void>>;
     /** Process a pre-compiled bundle file */
     processBundleFile: (bundle: Bundle.IBundle) => Promise<void>;
     /** Clear any current error state */
@@ -129,12 +129,126 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
   const o11y = params?.o11y ?? ObservabilityTools.DefaultObservabilityContext;
 
   const processDirectory = useCallback(
-    async (directory: ImportedDirectory) => {
+    async (directory: ImportedDirectory): Promise<Result<void>> => {
       setState((prev) => ({ ...prev, isProcessing: true, error: null }));
 
       try {
         const result = processImportedDirectory(
           directory,
+          state.activeConfiguration || undefined,
+          params?.qualifierTypeFactory,
+          params?.resourceTypeFactory,
+          o11y
+        );
+
+        if (result.isSuccess()) {
+          o11y.diag.info(
+            `[useResourceData] Directory processing succeeded, resources found: ${
+              result.value.summary?.totalResources || 0
+            }`
+          );
+          o11y.diag.info(
+            `[useResourceData] Resource IDs: ${JSON.stringify(result.value.summary?.resourceIds || [])}`
+          );
+
+          setState((prev) => ({
+            ...prev,
+            isProcessing: false,
+            processedResources: result.value,
+            hasProcessedData: true,
+            isLoadedFromBundle: false,
+            bundleMetadata: null
+          }));
+          o11y.diag.info(
+            `[useResourceData] State updated with ${result.value.summary?.totalResources || 0} resources`
+          );
+          return succeed(undefined);
+        } else {
+          const errorMessage = result.message;
+          o11y.diag.error(`[useResourceData] Directory processing failed: ${errorMessage}`);
+          o11y.user.error(`Directory import failed: ${errorMessage}`);
+
+          setState((prev) => ({
+            ...prev,
+            isProcessing: false,
+            error: errorMessage
+          }));
+          return fail(errorMessage);
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        o11y.diag.error(`[useResourceData] Exception during directory processing: ${errorMessage}`);
+        o11y.user.error(`Directory import failed: ${errorMessage}`);
+
+        setState((prev) => ({
+          ...prev,
+          isProcessing: false,
+          error: errorMessage
+        }));
+        return fail(errorMessage);
+      }
+    },
+    [state.activeConfiguration, params?.qualifierTypeFactory, params?.resourceTypeFactory, o11y]
+  );
+
+  const processDirectoryWithConfig = useCallback(
+    async (
+      directory: ImportedDirectory,
+      config: Config.Model.ISystemConfiguration
+    ): Promise<Result<void>> => {
+      setState((prev) => ({ ...prev, isProcessing: true, error: null, activeConfiguration: config }));
+
+      try {
+        const result = processImportedDirectory(
+          directory,
+          config,
+          params?.qualifierTypeFactory,
+          params?.resourceTypeFactory,
+          o11y
+        );
+
+        if (result.isSuccess()) {
+          setState((prev) => ({
+            ...prev,
+            isProcessing: false,
+            processedResources: result.value,
+            hasProcessedData: true,
+            isLoadedFromBundle: false,
+            bundleMetadata: null,
+            activeConfiguration: config
+          }));
+          return succeed(undefined);
+        } else {
+          const errorMessage = result.message;
+          o11y.user.error(`Directory import with config failed: ${errorMessage}`);
+          setState((prev) => ({
+            ...prev,
+            isProcessing: false,
+            error: errorMessage
+          }));
+          return fail(errorMessage);
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        o11y.user.error(`Directory import with config failed: ${errorMessage}`);
+        setState((prev) => ({
+          ...prev,
+          isProcessing: false,
+          error: errorMessage
+        }));
+        return fail(errorMessage);
+      }
+    },
+    [params?.qualifierTypeFactory, params?.resourceTypeFactory, o11y]
+  );
+
+  const processFiles = useCallback(
+    async (files: ImportedFile[]): Promise<Result<void>> => {
+      setState((prev) => ({ ...prev, isProcessing: true, error: null }));
+
+      try {
+        const result = processImportedFiles(
+          files,
           state.activeConfiguration || undefined,
           params?.qualifierTypeFactory,
           params?.resourceTypeFactory,
@@ -150,80 +264,26 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
             isLoadedFromBundle: false,
             bundleMetadata: null
           }));
+          return succeed(undefined);
         } else {
-          throw new Error(result.message);
+          const errorMessage = result.message;
+          o11y.user.error(`Files import failed: ${errorMessage}`);
+          setState((prev) => ({
+            ...prev,
+            isProcessing: false,
+            error: errorMessage
+          }));
+          return fail(errorMessage);
         }
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        o11y.user.error(`Files import failed: ${errorMessage}`);
         setState((prev) => ({
           ...prev,
           isProcessing: false,
-          error: error instanceof Error ? error.message : String(error)
+          error: errorMessage
         }));
-      }
-    },
-    [state.activeConfiguration, params?.qualifierTypeFactory, params?.resourceTypeFactory, o11y]
-  );
-
-  const processDirectoryWithConfig = useCallback(
-    async (directory: ImportedDirectory, config: Config.Model.ISystemConfiguration) => {
-      setState((prev) => ({ ...prev, isProcessing: true, error: null, activeConfiguration: config }));
-
-      try {
-        const processedResources = processImportedDirectory(
-          directory,
-          config,
-          params?.qualifierTypeFactory,
-          params?.resourceTypeFactory,
-          o11y
-        ).orThrow();
-
-        setState((prev) => ({
-          ...prev,
-          isProcessing: false,
-          processedResources,
-          hasProcessedData: true,
-          isLoadedFromBundle: false,
-          bundleMetadata: null,
-          activeConfiguration: config
-        }));
-      } catch (error) {
-        setState((prev) => ({
-          ...prev,
-          isProcessing: false,
-          error: error instanceof Error ? error.message : String(error)
-        }));
-      }
-    },
-    [params?.qualifierTypeFactory, params?.resourceTypeFactory, o11y]
-  );
-
-  const processFiles = useCallback(
-    async (files: ImportedFile[]) => {
-      setState((prev) => ({ ...prev, isProcessing: true, error: null }));
-
-      try {
-        const processedResources = processImportedFiles(
-          files,
-          state.activeConfiguration || undefined,
-          params?.qualifierTypeFactory,
-          params?.resourceTypeFactory,
-          o11y
-        ).orThrow();
-
-        setState((prev) => ({
-          ...prev,
-          isProcessing: false,
-          processedResources,
-          hasProcessedData: true,
-          isLoadedFromBundle: false,
-          bundleMetadata: null
-        }));
-      } catch (error) {
-        setState((prev) => ({
-          ...prev,
-          isProcessing: false,
-          error: error instanceof Error ? error.message : String(error)
-        }));
+        return fail(errorMessage);
       }
     },
     [state.activeConfiguration, params?.qualifierTypeFactory, params?.resourceTypeFactory, o11y]

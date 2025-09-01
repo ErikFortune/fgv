@@ -308,11 +308,11 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
       // Resource management
       importDirectory: async (directory: ImportedDirectory) => {
         viewState.addMessage('info', 'Importing directory...');
-        await resourceData.actions.processDirectory(directory);
-        if (!resourceData.state.error) {
+        const result = await resourceData.actions.processDirectory(directory);
+        if (result.isSuccess()) {
           viewState.addMessage('success', 'Directory imported successfully');
         } else {
-          viewState.addMessage('error', resourceData.state.error);
+          viewState.addMessage('error', result.message);
         }
       },
       importDirectoryWithConfig: async (

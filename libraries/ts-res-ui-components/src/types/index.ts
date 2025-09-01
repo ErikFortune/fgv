@@ -214,6 +214,8 @@ export interface ImportViewProps extends ViewBaseProps {
   ) => void;
   /** File types accepted for import */
   acceptedFileTypes?: string[];
+  /** External error state to override local import status */
+  importError?: string | null;
 }
 
 /**

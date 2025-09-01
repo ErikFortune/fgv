@@ -10,3 +10,11 @@ export type {
 } from './ContrastQualifierType';
 
 export { ContrastQualifierTypeFactory, contrastQualifierTypeFactory } from './ContrastQualifierTypeFactory';
+export {
+  ObservableContrastQualifierTypeFactory,
+  createObservableContrastFactory
+} from './ObservableContrastQualifierTypeFactory';
+export {
+  CompositeQualifierTypeFactory,
+  createCompositeQualifierTypeFactory
+} from './CompositeQualifierTypeFactory';

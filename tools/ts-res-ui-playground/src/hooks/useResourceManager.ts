@@ -14,6 +14,7 @@ import { FileTreeConverter } from '../utils/fileTreeConverter';
 import { Config, Bundle } from '@fgv/ts-res';
 import { reconstructSystemFromBundle } from '../utils/bundleReconstruction';
 import { ObservabilityTools } from '@fgv/ts-res-ui-components';
+import { logResourceProcessingResult, logResourceStateUpdate, logImportStage } from '../utils/observability';
 
 export interface ResourceManagerState {
   isProcessing: boolean;
@@ -94,16 +95,34 @@ export const useResourceManager = (
                 console.log('   Resource count:', result.value.summary.resourceIds.length);
                 console.log('   Resource IDs:', result.value.summary.resourceIds);
 
-                setState((prev) => ({
-                  ...prev,
-                  isProcessing: false,
-                  processedResources: result.value,
-                  hasProcessedData: true
-                }));
+                // Log successful processing with observability
+                logResourceProcessingResult(o11y, true, result.value.summary.resourceIds.length);
+
+                setState((prev) => {
+                  const newState = {
+                    ...prev,
+                    isProcessing: false,
+                    processedResources: result.value,
+                    hasProcessedData: true
+                  };
+
+                  // Log resource state update
+                  logResourceStateUpdate(
+                    o11y,
+                    true,
+                    result.value.summary.resourceIds.length,
+                    false // no errors since processing succeeded
+                  );
+
+                  return newState;
+                });
                 console.log('5. State updated successfully');
                 resolve();
               } else {
                 console.error('4. Processing failed with error:', result.message);
+
+                // Log failed processing with observability
+                logResourceProcessingResult(o11y, false, 0, result.message);
                 setState((prev) => ({
                   ...prev,
                   isProcessing: false,
