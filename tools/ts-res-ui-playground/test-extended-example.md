@@ -30,8 +30,7 @@ Testing with data from `/data/test/ts-res/extended-example/`
 ## What to Look For in Console:
 
 ### Success Indicators:
-- `[PLAYGROUND] Initializing ts-res-ui-playground with composite factory chain`
-- `[CompositeQualifierTypeFactory] Initialized with factory chain`
+- `[PLAYGROUND] Initializing ts-res-ui-playground with observable factory chain`
 - `[CONFIG] Processing system configuration`
 - `[QUALIFIER_TYPES] Starting creation of qualifier types`
 - `✅ Created "language" (language)`

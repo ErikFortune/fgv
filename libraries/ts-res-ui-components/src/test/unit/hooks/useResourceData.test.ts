@@ -29,6 +29,23 @@ const createMockProcessedResources = (): ProcessedResources => ({
 
 const createMockConfiguration = (): Config.Model.ISystemConfiguration => getDefaultSystemConfiguration();
 
+const createMockProcessedResourcesWithUpdatedSystem = (
+  originalResources: ProcessedResources
+): ProcessedResources => ({
+  ...originalResources,
+  system: {
+    ...originalResources.system,
+    // Simulate updated resource manager with new candidates
+    resourceManager: { ...originalResources.system.resourceManager, updated: true } as any
+  },
+  resourceCount: originalResources.resourceCount + 1,
+  summary: {
+    ...originalResources.summary,
+    totalResources: originalResources.summary.totalResources + 1,
+    resourceIds: [...originalResources.summary.resourceIds, 'new-candidate']
+  }
+});
+
 describe('useResourceData', () => {
   describe('updateProcessedResources', () => {
     test('should preserve activeConfiguration when updating processed resources', () => {
@@ -214,6 +231,65 @@ describe('useResourceData', () => {
 
       // Resources should reflect the edits
       expect(finalState.processedResources?.resourceCount).toBe(8);
+    });
+  });
+
+  describe('resource editing workflow regression test', () => {
+    test('should preserve updated resource system when applying edits with extended metadata', () => {
+      const { result } = renderHook(() => useResourceData({}));
+
+      // 1. Set up initial configuration and resources (like loading from files)
+      const mockConfig = createMockConfiguration();
+      const mockBundleMetadata = {
+        version: '1.0.0',
+        description: 'Test bundle',
+        dateBuilt: new Date('2024-01-01').toISOString(),
+        checksum: 'mock-checksum-123'
+      };
+
+      act(() => {
+        result.current.actions.applyConfiguration(mockConfig);
+      });
+
+      // 2. Load initial resources with extended properties
+      const initialResources: ExtendedProcessedResources = {
+        ...createMockProcessedResources(),
+        activeConfiguration: mockConfig,
+        isLoadedFromBundle: true,
+        bundleMetadata: mockBundleMetadata
+      };
+
+      act(() => {
+        result.current.actions.updateProcessedResources(initialResources);
+      });
+
+      // Verify initial state
+      expect(result.current.state.processedResources?.resourceCount).toBe(5);
+      expect(result.current.state.processedResources?.summary.resourceIds).toHaveLength(2);
+      expect(result.current.state.processedResources?.activeConfiguration).toBe(mockConfig);
+
+      // 3. Simulate resource editing workflow (what was broken)
+      // The resolution system applies edits and returns updated ProcessedResources
+      const originalResources = result.current.state.processedResources!;
+      const updatedResources = createMockProcessedResourcesWithUpdatedSystem(originalResources);
+
+      act(() => {
+        result.current.actions.updateProcessedResources(updatedResources);
+      });
+
+      // 4. Verify the fix: updated system should be preserved, extended properties maintained
+      const finalState = result.current.state.processedResources!;
+
+      // The core resource system should be updated (this was the bug)
+      expect(finalState.resourceCount).toBe(6); // Updated count
+      expect(finalState.summary.totalResources).toBe(6);
+      expect(finalState.summary.resourceIds).toContain('new-candidate'); // New candidate added
+      expect((finalState.system.resourceManager as any).updated).toBe(true); // System updated
+
+      // Extended metadata should still be preserved
+      expect(finalState.activeConfiguration).toBe(mockConfig);
+      expect(finalState.isLoadedFromBundle).toBe(true);
+      expect(finalState.bundleMetadata).toBe(mockBundleMetadata);
     });
   });
 });

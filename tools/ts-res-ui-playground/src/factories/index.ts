@@ -14,7 +14,3 @@ export {
   ObservableContrastQualifierTypeFactory,
   createObservableContrastFactory
 } from './ObservableContrastQualifierTypeFactory';
-export {
-  CompositeQualifierTypeFactory,
-  createCompositeQualifierTypeFactory
-} from './CompositeQualifierTypeFactory';

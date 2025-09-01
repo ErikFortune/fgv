@@ -552,18 +552,42 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
   }, []);
 
   const updateProcessedResources = useCallback((processedResources: ProcessedResources) => {
-    setState((prev) => ({
-      ...prev,
-      processedResources: {
-        // Start with the new processedResources (core data)
-        ...processedResources,
-        // Then preserve extended properties from existing state if they exist
-        activeConfiguration: prev.processedResources?.activeConfiguration || null,
-        isLoadedFromBundle: prev.processedResources?.isLoadedFromBundle || false,
-        bundleMetadata: prev.processedResources?.bundleMetadata || null
-      },
-      hasProcessedData: true
-    }));
+    setState((prev) => {
+      const incomingExtended = processedResources as ExtendedProcessedResources;
+      const existingExtended = prev.processedResources;
+
+      // Build the extended properties object, only including defined values
+      const extendedProps: Partial<ExtendedProcessedResources> = {};
+
+      // Handle activeConfiguration - prefer incoming, then existing, then leave undefined
+      const activeConfig = incomingExtended.activeConfiguration ?? existingExtended?.activeConfiguration;
+      if (activeConfig !== undefined) {
+        extendedProps.activeConfiguration = activeConfig;
+      }
+
+      // Handle isLoadedFromBundle - prefer incoming, then existing, then leave undefined
+      const isLoaded = incomingExtended.isLoadedFromBundle ?? existingExtended?.isLoadedFromBundle;
+      if (isLoaded !== undefined) {
+        extendedProps.isLoadedFromBundle = isLoaded;
+      }
+
+      // Handle bundleMetadata - prefer incoming, then existing, then leave undefined
+      const bundleMeta = incomingExtended.bundleMetadata ?? existingExtended?.bundleMetadata;
+      if (bundleMeta !== undefined) {
+        extendedProps.bundleMetadata = bundleMeta;
+      }
+
+      return {
+        ...prev,
+        processedResources: {
+          // Start with the new processedResources (core data)
+          ...processedResources,
+          // Then add any extended properties that have values
+          ...extendedProps
+        },
+        hasProcessedData: true
+      };
+    });
   }, []);
 
   return {
