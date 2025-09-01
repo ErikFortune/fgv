@@ -71,5 +71,6 @@ export {
   ZipTools,
   ViewStateTools,
   PickerTools,
-  GridTools
+  GridTools,
+  ObservabilityTools
 } from './namespaces';

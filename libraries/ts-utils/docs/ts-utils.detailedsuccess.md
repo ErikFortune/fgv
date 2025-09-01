@@ -176,6 +176,20 @@ Invokes the supplied [success callback](./ts-utils.detailedsuccesscontinuation.m
 </td></tr>
 <tr><td>
 
+[report(reporter, options)](./ts-utils.detailedsuccess.report.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Reports the result to the supplied reporter
+
+
+</td></tr>
+<tr><td>
+
 [with(value, detail)](./ts-utils.detailedsuccess.with.md)
 
 

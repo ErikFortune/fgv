@@ -13,6 +13,7 @@ import { ImportedDirectory, ImportedFile } from '../utils/fileImport';
 import { FileTreeConverter } from '../utils/fileTreeConverter';
 import { Config, Bundle } from '@fgv/ts-res';
 import { reconstructSystemFromBundle } from '../utils/bundleReconstruction';
+import { ObservabilityTools } from '@fgv/ts-res-ui-components';
 
 export interface ResourceManagerState {
   isProcessing: boolean;
@@ -58,7 +59,9 @@ const initialState: ResourceManagerState = {
   bundleMetadata: null
 };
 
-export const useResourceManager = (): UseResourceManagerReturn => {
+export const useResourceManager = (
+  o11y: ObservabilityTools.IObservabilityContext = ObservabilityTools.DefaultObservabilityContext
+): UseResourceManagerReturn => {
   const [state, setState] = useState<ResourceManagerState>(initialState);
 
   const processDirectory = useCallback(
@@ -76,7 +79,11 @@ export const useResourceManager = (): UseResourceManagerReturn => {
           setTimeout(() => {
             try {
               console.log('2. Inside setTimeout, calling processImportedDirectory...');
-              const result = processImportedDirectory(directory, state.activeConfiguration || undefined);
+              const result = processImportedDirectory(
+                directory,
+                state.activeConfiguration || undefined,
+                o11y
+              );
               console.log(
                 '3. processImportedDirectory returned:',
                 result.isSuccess() ? 'SUCCESS' : 'FAILURE'
@@ -129,19 +136,11 @@ export const useResourceManager = (): UseResourceManagerReturn => {
         }));
       }
     },
-    [state.activeConfiguration]
+    [state.activeConfiguration, o11y]
   );
 
   const processFiles = useCallback(
     async (files: ImportedFile[]) => {
-      console.log('=== STARTING FILES PROCESSING ===');
-      console.log('useResourceManager.processFiles called');
-      console.log('Files count:', files.length);
-      console.log(
-        'Files:',
-        files.map((f) => f.name)
-      );
-
       setState((prev) => ({ ...prev, isProcessing: true, error: null }));
 
       try {
@@ -152,7 +151,7 @@ export const useResourceManager = (): UseResourceManagerReturn => {
           setTimeout(() => {
             try {
               console.log('2. Inside setTimeout, calling processImportedFiles...');
-              const result = processImportedFiles(files, state.activeConfiguration || undefined);
+              const result = processImportedFiles(files, state.activeConfiguration || undefined, o11y);
               console.log('3. processImportedFiles returned:', result.isSuccess() ? 'SUCCESS' : 'FAILURE');
 
               if (result.isSuccess()) {
@@ -202,7 +201,7 @@ export const useResourceManager = (): UseResourceManagerReturn => {
         }));
       }
     },
-    [state.activeConfiguration]
+    [state.activeConfiguration, o11y]
   );
 
   const clearError = useCallback(() => {
@@ -285,7 +284,7 @@ export const useResourceManager = (): UseResourceManagerReturn => {
           // Use provided config or fall back to state config
           const configToUse = systemConfig || state.activeConfiguration || undefined;
 
-          const result = processImportedFiles(converted, configToUse);
+          const result = processImportedFiles(converted, configToUse, o11y);
           if (result.isSuccess()) {
             setState((prev) => ({
               ...prev,
@@ -307,7 +306,7 @@ export const useResourceManager = (): UseResourceManagerReturn => {
           // Use provided config or fall back to state config
           const configToUse = systemConfig || state.activeConfiguration || undefined;
 
-          const result = processImportedDirectory(converted, configToUse);
+          const result = processImportedDirectory(converted, configToUse, o11y);
           if (result.isSuccess()) {
             setState((prev) => ({
               ...prev,
@@ -335,7 +334,7 @@ export const useResourceManager = (): UseResourceManagerReturn => {
         }));
       }
     },
-    [state.activeConfiguration]
+    [state.activeConfiguration, o11y]
   );
 
   const applyConfiguration = useCallback((config: Config.Model.ISystemConfiguration) => {
@@ -380,7 +379,7 @@ export const useResourceManager = (): UseResourceManagerReturn => {
         // Use provided config or fall back to state config
         const configToUse = systemConfig || state.activeConfiguration || undefined;
 
-        const result = processFileTreeDirectly(fileTree, rootPath, configToUse);
+        const result = processFileTreeDirectly(fileTree, rootPath, configToUse, o11y);
         if (result.isSuccess()) {
           setState((prev) => ({
             ...prev,
@@ -406,7 +405,7 @@ export const useResourceManager = (): UseResourceManagerReturn => {
         }));
       }
     },
-    [state.activeConfiguration]
+    [state.activeConfiguration, o11y]
   );
 
   const processBundleFile = useCallback(async (file: ImportedFile) => {
@@ -459,7 +458,7 @@ export const useResourceManager = (): UseResourceManagerReturn => {
       console.log('System reconstructed from bundle');
 
       // Create ProcessedResources from the reconstructed system
-      const processedResourcesResult = finalizeProcessing(reconstructedSystem);
+      const processedResourcesResult = finalizeProcessing(reconstructedSystem, o11y);
 
       if (processedResourcesResult.isFailure()) {
         setState((prev) => ({

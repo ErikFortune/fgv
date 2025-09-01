@@ -4,12 +4,12 @@
 
 ## Logging.InMemoryLogger.(constructor)
 
-Constructs a new instance of the `InMemoryLogger` class
+Creates a new in-memory logger.
 
 **Signature:**
 
 ```typescript
-constructor(logLevel?: LogLevel);
+constructor(logLevel?: ReporterLogLevel);
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ logLevel
 
 </td><td>
 
-[LogLevel](./ts-utils.logging.loglevel.md)
+[ReporterLogLevel](./ts-utils.logging.reporterloglevel.md)
 
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ The level of logging to be used.
 
 
 </td></tr>

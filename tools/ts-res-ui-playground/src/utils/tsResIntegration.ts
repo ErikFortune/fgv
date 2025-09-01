@@ -11,6 +11,7 @@ import {
 } from '@fgv/ts-res';
 import { ImportedDirectory, ImportedFile } from './fileImport';
 import { BrowserFileTreeAccessors } from './browserFileTreeAccessors';
+import { ObservabilityTools } from '@fgv/ts-res-ui-components';
 
 /**
  * Configuration for setting up ts-res system
@@ -199,12 +200,8 @@ export function createTsResSystemFromConfig(
   systemConfig?: Config.Model.ISystemConfiguration
 ): Result<TsResSystem> {
   const configToUse = systemConfig ?? DEFAULT_SYSTEM_CONFIGURATION;
-  console.log('=== CREATE TSRES SYSTEM FROM CONFIG ===');
-  console.log('Using config:', configToUse.name || 'Unnamed config');
-  console.log('Qualifier types in config:', configToUse.qualifierTypes?.length || 0);
 
   return Config.SystemConfiguration.create(configToUse).onSuccess((systemConfiguration) => {
-    console.log('SystemConfiguration created successfully');
     try {
       // Set up resource manager
       const resourceManager = Resources.ResourceManagerBuilder.create({
@@ -303,12 +300,17 @@ export function createTsResSystem(config: TsResConfig = {}): Result<TsResSystem>
  */
 export function processImportedFiles(
   files: ImportedFile[],
-  systemConfigOrSystem?: Config.Model.ISystemConfiguration | TsResSystem
+  systemConfigOrSystem?: Config.Model.ISystemConfiguration | TsResSystem,
+  o11y: ObservabilityTools.IObservabilityContext = ObservabilityTools.DefaultObservabilityContext
 ): Result<ProcessedResources> {
-  // DEBUG: Use alerts temporarily since console might be disabled
-  alert(`processImportedFiles called with ${files.length} files: ${files.map((f) => f.name).join(', ')}`);
+  o11y.diag.info(
+    `processImportedFiles: Processing ${files.length} files:`,
+    files.map((f) => f.name)
+  );
+  o11y.user.info(`Processing ${files.length} resource files...`);
 
   if (files.length === 0) {
+    o11y.diag.error('processImportedFiles: No files provided');
     return fail('No files provided for processing');
   }
 
@@ -321,9 +323,9 @@ export function processImportedFiles(
       : createTsResSystemFromConfig(systemConfigOrSystem as Config.Model.ISystemConfiguration);
 
   return systemResult.onSuccess((tsResSystem) => {
-    console.log('System created successfully');
-    console.log('Qualifier types count:', tsResSystem.qualifierTypes.size);
-    console.log('Qualifiers count:', tsResSystem.qualifiers.size);
+    o11y.diag.info('processImportedFiles: System created successfully');
+    o11y.diag.info('Qualifier types count:', tsResSystem.qualifierTypes.size);
+    o11y.diag.info('Qualifiers count:', tsResSystem.qualifiers.size);
 
     // Convert ImportedFile[] to IInMemoryFile[] format
     const inMemoryFiles = files.map((file) => ({
@@ -331,46 +333,51 @@ export function processImportedFiles(
       contents: file.content
     }));
 
-    console.log(
-      'InMemory files created:',
-      inMemoryFiles.map((f) => ({ path: f.path, contentLength: f.contents.length }))
-    );
+    o11y.diag.info('processImportedFiles: Creating FileTree from in-memory files');
 
     return FileTree.inMemory(inMemoryFiles)
       .onSuccess((fileTree) => {
-        console.log('FileTree created successfully');
+        o11y.diag.info('processImportedFiles: FileTree created, creating ImportManager');
         return Import.ImportManager.create({
           fileTree,
           resources: tsResSystem.resourceManager
         });
       })
       .onSuccess<ProcessedResources>((importManager) => {
-        console.log('ImportManager created successfully');
+        o11y.diag.info('processImportedFiles: ImportManager created, importing files');
         // Import each file using its filesystem path
         for (const file of files) {
-          console.log(`Attempting to import file: ${file.path}`);
+          o11y.diag.info(`processImportedFiles: Importing file ${file.path}`);
           const importResult = importManager.importFromFileSystem(file.path);
           if (importResult.isFailure()) {
-            console.log(`FAILED to import file ${file.path}:`, importResult.message);
+            o11y.diag.error(`processImportedFiles: Failed to import ${file.path}:`, importResult.message);
+            o11y.user.error(`Failed to import ${file.name}: ${importResult.message}`);
             return fail(`Failed to import file ${file.path}: ${importResult.message}`);
           }
-          console.log(`Successfully imported file: ${file.path}`);
+          o11y.diag.info(`processImportedFiles: Successfully imported ${file.path}`);
         }
         // Update the system with the new ImportManager
         const updatedSystem = {
           ...tsResSystem,
           importManager
         };
-        return finalizeProcessing(updatedSystem);
+        o11y.diag.info('processImportedFiles: All files imported, finalizing processing');
+        return finalizeProcessing(updatedSystem, o11y);
       })
-      .withErrorFormat((message) => `processImportedFiles failed: ${message}`);
+      .withErrorFormat((message) => {
+        o11y.diag.error('processImportedFiles failed:', message);
+        return `processImportedFiles failed: ${message}`;
+      });
   });
 }
 
 export function processImportedDirectory(
   directory: ImportedDirectory,
-  systemConfigOrSystem?: Config.Model.ISystemConfiguration | TsResSystem
+  systemConfigOrSystem?: Config.Model.ISystemConfiguration | TsResSystem,
+  o11y: ObservabilityTools.IObservabilityContext = ObservabilityTools.DefaultObservabilityContext
 ): Result<ProcessedResources> {
+  o11y.diag.info(`processImportedDirectory: Processing directory:`, directory.name);
+  o11y.user.info(`Processing directory ${directory.name}...`);
   // Determine if we have a system or a config
   const systemResult =
     systemConfigOrSystem &&
@@ -396,6 +403,11 @@ export function processImportedDirectory(
         // The importer will traverse the tree structure and extract qualifiers from directory names
         const importResult = importManager.importFromFileSystem('/');
         if (importResult.isFailure()) {
+          o11y.diag.error(
+            `processImportedDirectory: Failed to import directory ${directory.name}:`,
+            importResult.message
+          );
+          o11y.user.error(`Failed to import directory ${directory.name}: ${importResult.message}`);
           return fail(`Failed to import directory ${directory.name}: ${importResult.message}`);
         }
 
@@ -404,9 +416,12 @@ export function processImportedDirectory(
           ...tsResSystem,
           importManager
         };
-        return finalizeProcessing(updatedSystem);
+        return finalizeProcessing(updatedSystem, o11y);
       })
-      .withErrorFormat((message) => `processImportedDirectory failed: ${message}`);
+      .withErrorFormat((message) => {
+        o11y.diag.error('processImportedDirectory failed:', message);
+        return `processImportedDirectory failed: ${message}`;
+      });
   });
 }
 
@@ -416,8 +431,11 @@ export function processImportedDirectory(
 export function processFileTreeDirectly(
   fileTree: FileTree.FileTree,
   rootPath: string = '/',
-  systemConfigOrSystem?: Config.Model.ISystemConfiguration | TsResSystem
+  systemConfigOrSystem?: Config.Model.ISystemConfiguration | TsResSystem,
+  o11y: ObservabilityTools.IObservabilityContext = ObservabilityTools.DefaultObservabilityContext
 ): Result<ProcessedResources> {
+  o11y.diag.info(`processFileTreeDirectly: Processing FileTree at root path:`, rootPath);
+  o11y.user.info(`Processing resources from file tree...`);
   // Determine if we have a system or a config
   const systemResult =
     systemConfigOrSystem &&
@@ -435,6 +453,11 @@ export function processFileTreeDirectly(
         // Import from the specified root path
         const importResult = importManager.importFromFileSystem(rootPath);
         if (importResult.isFailure()) {
+          o11y.diag.error(
+            `processFileTreeDirectly: Failed to import from FileTree at ${rootPath}:`,
+            importResult.message
+          );
+          o11y.user.error(`Failed to import from file tree at ${rootPath}: ${importResult.message}`);
           return fail(`Failed to import from FileTree at ${rootPath}: ${importResult.message}`);
         }
 
@@ -443,29 +466,34 @@ export function processFileTreeDirectly(
           ...tsResSystem,
           importManager
         };
-        return finalizeProcessing(updatedSystem);
+        return finalizeProcessing(updatedSystem, o11y);
       })
-      .withErrorFormat((message) => `processFileTreeDirectly failed: ${message}`);
+      .withErrorFormat((message) => {
+        o11y.diag.error('processFileTreeDirectly failed:', message);
+        return `processFileTreeDirectly failed: ${message}`;
+      });
   });
 }
 
 /**
  * Finalizes processing and creates compiled resources
  */
-export function finalizeProcessing(system: TsResSystem): Result<ProcessedResources> {
-  console.log('=== FINALIZING PROCESSING ===');
-  console.log('Resource manager resources:', system.resourceManager.resources.size);
-  console.log('Resource manager resource keys:', Array.from(system.resourceManager.resources.keys()));
+export function finalizeProcessing(
+  system: TsResSystem,
+  o11y: ObservabilityTools.IObservabilityContext = ObservabilityTools.DefaultObservabilityContext
+): Result<ProcessedResources> {
+  o11y.diag.info('finalizeProcessing: Starting finalization');
+  o11y.diag.info('Resource manager resources:', system.resourceManager.resources.size);
+  o11y.diag.info('Resource manager resource keys:', Array.from(system.resourceManager.resources.keys()));
 
   return system.resourceManager
     .getCompiledResourceCollection({ includeMetadata: true })
     .onSuccess((compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection) => {
-      console.log('=== COMPILED COLLECTION CREATED ===');
-      console.log('Compiled collection data:', compiledCollection);
-      console.log('Decisions length:', compiledCollection.decisions?.length);
-      console.log('ConditionSets length:', compiledCollection.conditionSets?.length);
-      console.log('Conditions length:', compiledCollection.conditions?.length);
-      console.log('Resources length:', compiledCollection.resources?.length);
+      o11y.diag.info('finalizeProcessing: Compiled collection created');
+      o11y.diag.info('Decisions length:', compiledCollection.decisions?.length);
+      o11y.diag.info('ConditionSets length:', compiledCollection.conditionSets?.length);
+      o11y.diag.info('Conditions length:', compiledCollection.conditions?.length);
+      o11y.diag.info('Resources length:', compiledCollection.resources?.length);
 
       return Runtime.ResourceResolver.create({
         resourceManager: system.resourceManager,
@@ -481,9 +509,10 @@ export function finalizeProcessing(system: TsResSystem): Result<ProcessedResourc
           warnings: [] // TODO: Collect warnings during processing
         };
 
-        console.log('=== FINALIZATION COMPLETE ===');
-        console.log('Resource count:', resourceIds.length);
-        console.log('Resource IDs:', resourceIds);
+        o11y.diag.info('finalizeProcessing: Finalization complete');
+        o11y.diag.info('Resource count:', resourceIds.length);
+        o11y.diag.info('Resource IDs:', resourceIds);
+        o11y.user.success(`Successfully processed ${resourceIds.length} resources`);
 
         return succeed({
           system,
@@ -504,9 +533,11 @@ export function finalizeProcessing(system: TsResSystem): Result<ProcessedResourc
 export function createProcessedResourcesFromManager(
   resourceManager: Runtime.IResourceManager,
   systemConfig: Config.Model.ISystemConfiguration,
-  compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
+  compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection,
+  o11y: ObservabilityTools.IObservabilityContext = ObservabilityTools.DefaultObservabilityContext
 ): Result<ProcessedResources> {
-  console.log('=== CREATING PROCESSED RESOURCES FROM MANAGER ===');
+  o11y.diag.info('=== CREATING PROCESSED RESOURCES FROM MANAGER ===');
+  o11y.user.info('Reconstructing system from bundle...');
 
   return Config.SystemConfiguration.create(systemConfig).onSuccess((systemConfiguration) => {
     try {
@@ -515,7 +546,7 @@ export function createProcessedResourcesFromManager(
         qualifiers: systemConfiguration.qualifiers
       }).orThrow();
 
-      console.log('Using compiled collection from bundle');
+      o11y.diag.info('Using compiled collection from bundle');
 
       // Create a new resolver
       return Runtime.ResourceResolver.create({
@@ -556,9 +587,10 @@ export function createProcessedResourcesFromManager(
           contextQualifierProvider
         };
 
-        console.log('=== PROCESSED RESOURCES FROM MANAGER COMPLETE ===');
-        console.log('Resource count:', resourceIds.length);
-        console.log('Resource IDs:', resourceIds);
+        o11y.diag.info('=== PROCESSED RESOURCES FROM MANAGER COMPLETE ===');
+        o11y.diag.info('Resource count:', resourceIds.length);
+        o11y.diag.info('Resource IDs:', resourceIds);
+        o11y.user.success(`Successfully reconstructed ${resourceIds.length} resources from bundle`);
 
         return succeed({
           system,
@@ -583,8 +615,10 @@ export function createProcessedResourcesFromManager(
  */
 export function createSimpleContext(
   contextValues: Record<string, string | undefined>,
-  system: TsResSystem
+  system: TsResSystem,
+  o11y: ObservabilityTools.IObservabilityContext = ObservabilityTools.DefaultObservabilityContext
 ): Result<Runtime.ValidatingSimpleContextQualifierProvider> {
+  o11y.diag.info('createSimpleContext: Creating context with values:', contextValues);
   return Runtime.ValidatingSimpleContextQualifierProvider.create({
     qualifiers: system.qualifiers
   })

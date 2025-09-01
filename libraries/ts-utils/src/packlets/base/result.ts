@@ -70,6 +70,37 @@ export interface IResultLogger<TD = unknown> {
 }
 
 /**
+ * The severity level at which a message should be logged.
+ * @public
+ */
+export type MessageLogLevel = 'quiet' | 'detail' | 'info' | 'warning' | 'error';
+
+/**
+ * Options for reporting a result.
+ * @public
+ */
+export interface IResultReportOptions {
+  /**
+   * The level of reporting to be used for failure results.  Default is 'error'.
+   */
+  failure?: MessageLogLevel;
+
+  /**
+   * The level of reporting to be used for success results.  Default is 'quiet'.
+   */
+  success?: MessageLogLevel;
+}
+
+/**
+ * Interface for reporting a result.
+ * @public
+ */
+export interface IResultReporter<T, TD = unknown> {
+  reportSuccess(level: MessageLogLevel, value: T, detail?: TD): void;
+  reportFailure(level: MessageLogLevel, message: string, detail?: TD): void;
+}
+
+/**
  * Simple error aggregator to simplify collecting all errors in
  * a flow.
  * @public
@@ -287,6 +318,13 @@ export interface IResult<T> {
    * errors will be aggregated.
    */
   aggregateError(errors: IMessageAggregator): this;
+
+  /**
+   * Reports the result to the supplied reporter
+   * @param reporter - The {@link IResultReporter | reporter} to which the result will be reported.
+   * @param options - The {@link IResultReportOptions | options} for reporting the result.
+   */
+  report(reporter: IResultReporter<T>, options?: IResultReportOptions): this;
 }
 
 /**
@@ -419,6 +457,15 @@ export class Success<T> implements IResult<T> {
    * {@inheritdoc IResult.aggregateError}
    */
   public aggregateError(__errors: IMessageAggregator): this {
+    return this;
+  }
+
+  /**
+   * {@inheritdoc IResult.report}
+   */
+  public report(reporter: IResultReporter<T>, options?: IResultReportOptions): this {
+    const level = options?.success ?? 'quiet';
+    reporter.reportSuccess(level, this._value);
     return this;
   }
 
@@ -572,6 +619,15 @@ export class Failure<T> implements IResult<T> {
    */
   public aggregateError(errors: IMessageAggregator): this {
     errors.addMessage(this._message);
+    return this;
+  }
+
+  /**
+   * {@inheritdoc IResult.report}
+   */
+  public report(reporter: IResultReporter<T>, options?: IResultReportOptions): this {
+    const level = options?.failure ?? 'error';
+    reporter.reportFailure(level, this._message);
     return this;
   }
 
@@ -741,6 +797,15 @@ export class DetailedSuccess<T, TD> extends Success<T> {
   }
 
   /**
+   * {@inheritdoc IResult.report}
+   */
+  public report(reporter: IResultReporter<T, TD>, options?: IResultReportOptions): this {
+    const level = options?.success ?? 'quiet';
+    reporter.reportSuccess(level, this._value, this._detail);
+    return this;
+  }
+
+  /**
    * Creates a {@link DetailedSuccess | DetailedSuccess<T, TD>} with the supplied value and
    * optional detail.
    */
@@ -826,6 +891,15 @@ export class DetailedFailure<T, TD> extends Failure<T> {
    */
   public withErrorFormat(cb: ErrorFormatter<TD>): DetailedResult<T, TD> {
     return failWithDetail(cb(this._message, this._detail), this._detail);
+  }
+
+  /**
+   * {@inheritdoc IResult.report}
+   */
+  public report(reporter: IResultReporter<T, TD>, options?: IResultReportOptions): this {
+    const level = options?.failure ?? 'error';
+    reporter.reportFailure(level, this._message, this._detail);
+    return this;
   }
 
   public orThrow(logOrFormat?: IResultLogger<TD> | ErrorFormatter<TD>): never;

@@ -19,7 +19,8 @@ import {
   ResourceOrchestrator,
   OrchestratorState,
   OrchestratorActions,
-  GridTools
+  GridTools,
+  ObservabilityTools
 } from '@fgv/ts-res-ui-components';
 import NavigationWarningModal from './components/common/NavigationWarningModal';
 import ResourcePickerTool from './components/tools/ResourcePickerTool';
@@ -49,6 +50,9 @@ interface AppContentProps {
 
 const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
   const { state, actions } = orchestrator;
+
+  // Create observability context for systematic logging
+  const observabilityContext = ObservabilityTools.createConsoleObservabilityContext('info', 'info');
   const [selectedTool, setSelectedTool] = useState<Tool>('import');
   const navigationWarning = useNavigationWarning();
   const { urlParams, hasUrlParams } = useUrlParams();
@@ -276,18 +280,9 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
           <ImportView
             onMessage={actions.addMessage}
             onImport={(data) => {
-              // Use message system instead of console since logging might be disabled
               if (Array.isArray(data)) {
-                actions.addMessage(
-                  'info',
-                  `onImport called with ${data.length} files: ${data.map((f) => f.name).join(', ')}`
-                );
                 actions.importFiles(data);
               } else {
-                actions.addMessage(
-                  'info',
-                  `onImport called with directory: ${data.name} containing ${data.files?.length || 0} files`
-                );
                 actions.importDirectory(data);
               }
             }}
@@ -920,18 +915,9 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
           <ImportView
             onMessage={actions.addMessage}
             onImport={(data) => {
-              // Use message system instead of console since logging might be disabled
               if (Array.isArray(data)) {
-                actions.addMessage(
-                  'info',
-                  `onImport called with ${data.length} files: ${data.map((f) => f.name).join(', ')}`
-                );
                 actions.importFiles(data);
               } else {
-                actions.addMessage(
-                  'info',
-                  `onImport called with directory: ${data.name} containing ${data.files?.length || 0} files`
-                );
                 actions.importDirectory(data);
               }
             }}
@@ -968,10 +954,14 @@ const App: React.FC = () => {
   const demoQualifierTypeFactory = contrastQualifierTypeFactory;
   const demoResourceTypeFactory = undefined;
 
+  // Create observability context for ResourceOrchestrator
+  const appObservabilityContext = ObservabilityTools.createConsoleObservabilityContext('info', 'info');
+
   return (
     <ResourceOrchestrator
       qualifierTypeFactory={demoQualifierTypeFactory}
       resourceTypeFactory={demoResourceTypeFactory}
+      logger={appObservabilityContext.console}
     >
       {(orchestrator) => <AppContent orchestrator={orchestrator} />}
     </ResourceOrchestrator>

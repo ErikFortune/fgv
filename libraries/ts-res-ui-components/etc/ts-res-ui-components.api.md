@@ -9,6 +9,8 @@ import { Config } from '@fgv/ts-res';
 import { FileTree } from '@fgv/ts-utils';
 import { Import } from '@fgv/ts-res';
 import { JsonValue } from '@fgv/ts-json-base';
+import { Logging } from '@fgv/ts-utils';
+import { MessageLogLevel } from '@fgv/ts-utils';
 import { Qualifiers } from '@fgv/ts-res';
 import { QualifierTypes } from '@fgv/ts-res';
 import { default as React_2 } from 'react';
@@ -18,6 +20,7 @@ import { Resources } from '@fgv/ts-res';
 import { ResourceTypes } from '@fgv/ts-res';
 import { Result } from '@fgv/ts-utils';
 import { Runtime } from '@fgv/ts-res';
+import { Success } from '@fgv/ts-utils';
 
 // @public
 function analyzeFilteredResources(originalResourceIds: string[], filteredProcessedResources: ProcessedResources, originalProcessedResources: ProcessedResources): FilterResult;
@@ -98,11 +101,30 @@ interface ConfigurationViewProps extends ViewBaseProps {
     onSave?: (config: Config.Model.ISystemConfiguration) => void;
 }
 
+// @public
+class ConsoleUserLogger extends Logging.LoggerBase implements IUserLogger {
+    constructor(logLevel?: Logging.ReporterLogLevel);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res-ui-components" does not have an export "LoggerBase"
+    //
+    // (undocumented)
+    protected _log(message: string, level: MessageLogLevel): Success<string | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res-ui-components" does not have an export "IUserLogger"
+    //
+    // (undocumented)
+    success(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+}
+
 // @internal (undocumented)
 function convertImportedDirectoryToFileTree(directory: ImportedDirectory): FileTree.FileTree;
 
 // @public
+function createConsoleObservabilityContext(diagLogLevel?: Logging.ReporterLogLevel, userLogLevel?: Logging.ReporterLogLevel): IObservabilityContext;
+
+// @public
 const createFilteredResourceManagerSimple: (originalSystem: ProcessedResources["system"], partialContext: Record<string, string | undefined>, options?: FilterOptions) => Promise<Result<ProcessedResources>>;
+
+// @public
+function createNoOpObservabilityContext(diagLogLevel?: Logging.ReporterLogLevel, userLogLevel?: Logging.ReporterLogLevel): IObservabilityContext;
 
 // @public
 interface CreatePendingResourceParams {
@@ -133,6 +155,9 @@ interface CustomResourceSelector {
     id: string;
     select: (resources: ProcessedResources) => string[];
 }
+
+// @public
+const DefaultObservabilityContext: IObservabilityContext;
 
 // @public
 const defaultResourceSelector: ResourceSelector;
@@ -565,10 +590,21 @@ interface ImportViewProps extends ViewBaseProps {
 }
 
 // @public
+interface IObservabilityContext {
+    readonly diag: Logging.ILogger;
+    readonly user: IUserLogger;
+}
+
+// @public
 function isPendingAddition(resourceId: string, pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>): boolean;
 
 // @public
 function isZipFile(filename: string): boolean;
+
+// @public
+interface IUserLogger extends Logging.ILogger {
+    success(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+}
 
 export { JsonValue }
 
@@ -606,6 +642,46 @@ interface MultiGridViewProps extends ViewBaseProps {
     resolutionState?: ResolutionState;
     resources?: ProcessedResources | null;
     tabsPresentation?: 'tabs' | 'cards' | 'accordion' | 'dropdown';
+}
+
+// @public
+class NoOpUserLogger extends Logging.LoggerBase implements IUserLogger {
+    constructor(logLevel?: Logging.ReporterLogLevel);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res-ui-components" does not have an export "LoggerBase"
+    //
+    // (undocumented)
+    protected _log(message: string, __level: MessageLogLevel): Success<string | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res-ui-components" does not have an export "IUserLogger"
+    //
+    // (undocumented)
+    success(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+}
+
+// @public
+class ObservabilityContext implements IObservabilityContext {
+    constructor(diag: Logging.ILogger, user: IUserLogger);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res-ui-components" does not have an export "IObservabilityContext"
+    //
+    // (undocumented)
+    readonly diag: Logging.ILogger;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res-ui-components" does not have an export "IObservabilityContext"
+    //
+    // (undocumented)
+    readonly user: IUserLogger;
+}
+
+declare namespace ObservabilityTools {
+    export {
+        IUserLogger,
+        IObservabilityContext,
+        ConsoleUserLogger,
+        NoOpUserLogger,
+        ObservabilityContext,
+        createConsoleObservabilityContext,
+        createNoOpObservabilityContext,
+        DefaultObservabilityContext,
+        TestObservabilityContext
+    }
 }
 
 // @public
@@ -1228,6 +1304,9 @@ interface SourceViewProps extends ViewBaseProps {
 //
 // @public
 const StringCell: React_2.FC<StringCellProps>;
+
+// @public
+const TestObservabilityContext: IObservabilityContext;
 
 // Warning: (ae-forgotten-export) The symbol "TriStateCellProps" needs to be exported by the entry point index.d.ts
 //
