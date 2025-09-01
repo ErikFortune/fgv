@@ -4,9 +4,6 @@ import {
   ProcessedResources,
   processImportedDirectory,
   processImportedFiles,
-  processFileTreeDirectly,
-  createSimpleContext,
-  createProcessedResourcesFromManager,
   finalizeProcessing
 } from '../utils/tsResIntegration';
 import { ImportedDirectory, ImportedFile } from '../utils/fileImport';

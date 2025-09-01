@@ -1,9 +1,31 @@
-import { Result, succeed, fail } from '@fgv/ts-utils';
+import { Result, Converters, fail, succeed } from '@fgv/ts-utils';
 import { QualifierTypes } from '@fgv/ts-res';
 import { JsonObject } from '@fgv/ts-json-base';
 import { ObservabilityTools } from '@fgv/ts-res-ui-components';
 import { ContrastQualifierType, IContrastQualifierTypeConfig } from './ContrastQualifierType';
 import { logFactoryAttempt, logFactorySuccess, logFactoryFailure } from '../utils/observability';
+
+/**
+ * Converter for ContrastQualifierType configuration objects.
+ */
+const contrastQualifierTypeConfig = Converters.strictObject<IContrastQualifierTypeConfig>({
+  allowContextList: Converters.boolean.optional(),
+  highContrastValues: Converters.arrayOf(Converters.string).optional(),
+  defaultValue: Converters.string.optional()
+});
+
+/**
+ * Converter for system contrast qualifier type configuration.
+ */
+const systemContrastQualifierTypeConfig = Converters.strictObject<{
+  name: string;
+  systemType: 'contrast';
+  configuration?: IContrastQualifierTypeConfig;
+}>({
+  name: Converters.string,
+  systemType: Converters.literal('contrast'),
+  configuration: contrastQualifierTypeConfig.optional()
+});
 
 /**
  * Observable factory for creating ContrastQualifierType instances with detailed diagnostic logging.
@@ -47,83 +69,51 @@ export class ObservableContrastQualifierTypeFactory implements QualifierTypes.IC
     // Log the factory attempt
     logFactoryAttempt(this.o11y, this.factoryName, config);
 
-    // Validate that this is a contrast configuration
-    if (config.systemType !== 'contrast') {
-      const reason = `Factory only handles 'contrast' types, not '${config.systemType}'`;
-      logFactoryFailure(this.o11y, this.factoryName, config, reason);
-      return fail(`${this.factoryName} can only create 'contrast' types, received '${config.systemType}'`);
-    }
+    // Use the converter to validate and extract the configuration
+    return systemContrastQualifierTypeConfig
+      .convert(config)
+      .onSuccess((validatedConfig) => {
+        this.o11y.diag.info(
+          `[${this.factoryName}] Processing contrast configuration for "${validatedConfig.name}"`
+        );
+        this.o11y.diag.info(`[${this.factoryName}] Validated configuration:`, validatedConfig.configuration);
 
-    this.o11y.diag.info(`[${this.factoryName}] Processing contrast configuration for "${config.name}"`);
-
-    // Extract and validate configuration
-    const contrastConfig: IContrastQualifierTypeConfig = {};
-
-    if (config.configuration && typeof config.configuration === 'object') {
-      const cfg = config.configuration as Record<string, unknown>;
-
-      this.o11y.diag.info(`[${this.factoryName}] Parsing configuration:`, cfg);
-
-      // Extract allowContextList
-      if (cfg.allowContextList !== undefined) {
-        if (typeof cfg.allowContextList === 'boolean') {
-          contrastConfig.allowContextList = cfg.allowContextList;
-          this.o11y.diag.info(`[${this.factoryName}] Set allowContextList: ${cfg.allowContextList}`);
-        } else {
-          const error = 'allowContextList must be a boolean';
-          this.o11y.diag.error(`[${this.factoryName}] Configuration error: ${error}`);
-          logFactoryFailure(this.o11y, this.factoryName, config, error);
-          return fail(error);
+        // Log individual config properties if present
+        if (validatedConfig.configuration) {
+          const cfg = validatedConfig.configuration;
+          if (cfg.allowContextList !== undefined) {
+            this.o11y.diag.info(`[${this.factoryName}] Set allowContextList: ${cfg.allowContextList}`);
+          }
+          if (cfg.highContrastValues) {
+            this.o11y.diag.info(`[${this.factoryName}] Set highContrastValues:`, cfg.highContrastValues);
+          }
+          if (cfg.defaultValue) {
+            this.o11y.diag.info(`[${this.factoryName}] Set defaultValue: ${cfg.defaultValue}`);
+          }
         }
-      }
 
-      // Extract highContrastValues
-      if (cfg.highContrastValues !== undefined) {
-        if (
-          Array.isArray(cfg.highContrastValues) &&
-          cfg.highContrastValues.every((v) => typeof v === 'string')
-        ) {
-          contrastConfig.highContrastValues = cfg.highContrastValues as string[];
-          this.o11y.diag.info(`[${this.factoryName}] Set highContrastValues:`, cfg.highContrastValues);
-        } else {
-          const error = 'highContrastValues must be an array of strings';
-          this.o11y.diag.error(`[${this.factoryName}] Configuration error: ${error}`);
-          logFactoryFailure(this.o11y, this.factoryName, config, error);
-          return fail(error);
-        }
-      }
+        // Create the qualifier type
+        this.o11y.diag.info(`[${this.factoryName}] Creating ContrastQualifierType`);
 
-      // Extract defaultValue
-      if (cfg.defaultValue !== undefined) {
-        if (typeof cfg.defaultValue === 'string') {
-          contrastConfig.defaultValue = cfg.defaultValue;
-          this.o11y.diag.info(`[${this.factoryName}] Set defaultValue: ${cfg.defaultValue}`);
-        } else {
-          const error = 'defaultValue must be a string';
-          this.o11y.diag.error(`[${this.factoryName}] Configuration error: ${error}`);
-          logFactoryFailure(this.o11y, this.factoryName, config, error);
-          return fail(error);
-        }
-      }
-    }
-
-    // Create the qualifier type
-    this.o11y.diag.info(`[${this.factoryName}] Creating ContrastQualifierType with config:`, contrastConfig);
-
-    const result = ContrastQualifierType.create({
-      name: config.name,
-      configuration: contrastConfig
-    });
-
-    if (result.isSuccess()) {
-      logFactorySuccess(this.o11y, this.factoryName, config.name, 'contrast');
-      this.o11y.user.info(`Created custom contrast qualifier type: ${config.name}`);
-    } else {
-      this.o11y.diag.error(`[${this.factoryName}] Failed to create ContrastQualifierType:`, result.message);
-      logFactoryFailure(this.o11y, this.factoryName, config, result.message);
-    }
-
-    return result;
+        return ContrastQualifierType.create({
+          name: validatedConfig.name,
+          configuration: validatedConfig.configuration || {}
+        })
+          .onSuccess((qualifierType) => {
+            logFactorySuccess(this.o11y, this.factoryName, validatedConfig.name, 'contrast');
+            this.o11y.user.info(`Created custom contrast qualifier type: ${validatedConfig.name}`);
+            return succeed(qualifierType);
+          })
+          .onFailure((error) => {
+            this.o11y.diag.error(`[${this.factoryName}] Failed to create ContrastQualifierType:`, error);
+            logFactoryFailure(this.o11y, this.factoryName, config, error);
+            return fail(error);
+          });
+      })
+      .onFailure((error) => {
+        logFactoryFailure(this.o11y, this.factoryName, config, error);
+        return fail(error);
+      });
   }
 }
 
