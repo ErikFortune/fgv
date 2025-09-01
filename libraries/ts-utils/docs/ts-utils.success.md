@@ -311,6 +311,20 @@ Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- 
 </td></tr>
 <tr><td>
 
+[report(reporter, options)](./ts-utils.success.report.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Reports the result to the supplied reporter
+
+
+</td></tr>
+<tr><td>
+
 [with(value)](./ts-utils.success.with.md)
 
 

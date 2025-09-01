@@ -7,6 +7,7 @@ import {
   FolderOpenIcon
 } from '@heroicons/react/24/outline';
 import { Resources, Runtime } from '@fgv/ts-res';
+import { useObservability } from '../../contexts';
 
 /**
  * Props for the ResourceTreeView component.
@@ -180,6 +181,9 @@ export const ResourceTreeView: React.FC<ResourceTreeViewProps> = ({
   searchTerm = '',
   className = ''
 }) => {
+  // Get observability context
+  const o11y = useObservability();
+
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   // Build the tree structure from resources
@@ -189,7 +193,7 @@ export const ResourceTreeView: React.FC<ResourceTreeViewProps> = ({
     // Get the tree from the resources
     const treeResult = resources.getBuiltResourceTree();
     if (treeResult.isFailure()) {
-      console.error('Failed to build resource tree:', treeResult.message);
+      o11y.diag.error('Failed to build resource tree:', treeResult.message);
       return null;
     }
 

@@ -3,6 +3,8 @@
   "version": "5.0.0-16",
   "description": "Development playground for ts-res UI components",
   "private": true,
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
     "build": "webpack --mode production",
     "dev": "webpack serve --mode development",

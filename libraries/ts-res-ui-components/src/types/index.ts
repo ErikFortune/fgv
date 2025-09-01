@@ -214,6 +214,8 @@ export interface ImportViewProps extends ViewBaseProps {
   ) => void;
   /** File types accepted for import */
   acceptedFileTypes?: string[];
+  /** External error state to override local import status */
+  importError?: string | null;
 }
 
 /**
@@ -1359,13 +1361,21 @@ export interface OrchestratorActions {
 
   // Combined pending changes actions removed in favor of unified applyPendingResources
 
+  // Export functionality
+  exportBundle: () => void;
+  exportSource: () => void;
+  exportCompiled: () => void;
+
   // UI state management
   selectResource: (resourceId: string | null) => void;
   addMessage: (type: Message['type'], message: string) => void;
   clearMessages: () => void;
 
+  // Observability context for diagnostic and user logging
+  o11y: import('../utils/observability').IObservabilityContext;
+
   // Resource resolution
-  resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<JsonValue>>;
+  resolveResource: (resourceId: string, context?: Record<string, string>) => Result<JsonValue>;
 }
 
 // GridView types

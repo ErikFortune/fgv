@@ -111,7 +111,7 @@ export const compiledAbstractDecision = Converters.strictObject<Model.ICompiledA
  * @public
  */
 export const compiledCandidate = Converters.strictObject<Model.ICompiledCandidate>({
-  json: JsonConverters.jsonValue,
+  valueIndex: Common.Convert.candidateValueIndex,
   isPartial: Converters.boolean,
   mergeMethod: Common.Convert.resourceValueMergeMethod
 });
@@ -139,5 +139,6 @@ export const compiledResourceCollection = Converters.strictObject<Model.ICompile
   conditions: Converters.arrayOf(compiledCondition),
   conditionSets: Converters.arrayOf(compiledConditionSet),
   decisions: Converters.arrayOf(compiledAbstractDecision),
+  candidateValues: Converters.arrayOf(JsonConverters.jsonValue),
   resources: Converters.arrayOf(compiledResource)
 });

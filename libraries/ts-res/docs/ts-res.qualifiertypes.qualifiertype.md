@@ -177,6 +177,29 @@ The name of the qualifier type.
 
 
 </td></tr>
+<tr><td>
+
+[systemTypeName](./ts-res.qualifiertypes.qualifiertype.systemtypename.md)
+
+
+</td><td>
+
+`abstract`
+
+`readonly`
+
+
+</td><td>
+
+[QualifierTypeName](./ts-res.qualifiertypename.md)
+
+
+</td><td>
+
+Name of the underlying system type.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods
@@ -262,6 +285,22 @@ Splits a comma-separated [context value](./ts-res.qualifiercontextvalue.md) into
 </td><td>
 
 Compares two qualifier types by index.
+
+
+</td></tr>
+<tr><td>
+
+[getConfigurationJson()](./ts-res.qualifiertypes.qualifiertype.getconfigurationjson.md)
+
+
+</td><td>
+
+`abstract`
+
+
+</td><td>
+
+Gets the configuration for this qualifier type.
 
 
 </td></tr>
@@ -380,6 +419,22 @@ Sets the index for this qualifier type. Once set, index is immutable.
 </td><td>
 
 Validates that a value and optional operator are valid for use in a condition for qualifiers of this type.
+
+
+</td></tr>
+<tr><td>
+
+[validateConfigurationJson(from)](./ts-res.qualifiertypes.qualifiertype.validateconfigurationjson.md)
+
+
+</td><td>
+
+`abstract`
+
+
+</td><td>
+
+Validates configuration JSON data for this qualifier type.
 
 
 </td></tr>

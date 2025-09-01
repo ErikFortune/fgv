@@ -30,6 +30,28 @@ Manages candidate reduction logic for filtering and qualifier reduction operatio
 </td></tr>
 <tr><td>
 
+[CandidateValue](./ts-res.resources.candidatevalue.md)
+
+
+</td><td>
+
+Implementation of a candidate value that stores normalized JSON data. The value is normalized on creation and a hash-based key is generated for efficient deduplication.
+
+
+</td></tr>
+<tr><td>
+
+[CandidateValueCollector](./ts-res.resources.candidatevaluecollector.md)
+
+
+</td><td>
+
+A `ValidatingCollector` for [CandidateValues](./ts-res.resources.candidatevalue.md)<!-- -->, which collects candidate values supplied as either [CandidateValue](./ts-res.resources.candidatevalue.md) or `JsonValue`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [Resource](./ts-res.resources.resource.md)
 
 
@@ -106,6 +128,39 @@ Options for creating a [ResourceCandidate](./ts-res.resources.resourcecandidate.
 </td><td>
 
 Information about a candidate being processed by the reducer.
+
+
+</td></tr>
+<tr><td>
+
+[ICandidateValue](./ts-res.resources.icandidatevalue.md)
+
+
+</td><td>
+
+Interface for a candidate value that can be collected and indexed. Candidate values are normalized JSON values that can be shared across multiple resource candidates to reduce duplication.
+
+
+</td></tr>
+<tr><td>
+
+[ICandidateValueCollectorCreateParams](./ts-res.resources.icandidatevaluecollectorcreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a [Resources.CandidateValueCollector](./ts-res.resources.candidatevaluecollector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ICandidateValueCreateParams](./ts-res.resources.icandidatevaluecreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a [CandidateValue](./ts-res.resources.candidatevalue.md)<!-- -->.
 
 
 </td></tr>

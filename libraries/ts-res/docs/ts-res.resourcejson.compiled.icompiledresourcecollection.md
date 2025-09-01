@@ -37,6 +37,25 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[candidateValues](./ts-res.resourcejson.compiled.icompiledresourcecollection.candidatevalues.md)
+
+
+</td><td>
+
+
+</td><td>
+
+ReadonlyArray&lt;JsonValue&gt;
+
+
+</td><td>
+
+Array of all candidate values in the collection.
+
+
+</td></tr>
+<tr><td>
+
 [conditions](./ts-res.resourcejson.compiled.icompiledresourcecollection.conditions.md)
 
 

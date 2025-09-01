@@ -349,6 +349,57 @@ Description
 </td></tr>
 <tr><td>
 
+[exportBundle](./ts-res-ui-components.orchestratoractions.exportbundle.md)
+
+
+</td><td>
+
+
+</td><td>
+
+() =&gt; void
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[exportCompiled](./ts-res-ui-components.orchestratoractions.exportcompiled.md)
+
+
+</td><td>
+
+
+</td><td>
+
+() =&gt; void
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[exportSource](./ts-res-ui-components.orchestratoractions.exportsource.md)
+
+
+</td><td>
+
+
+</td><td>
+
+() =&gt; void
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [getEditedValue](./ts-res-ui-components.orchestratoractions.geteditedvalue.md)
 
 
@@ -468,6 +519,23 @@ Description
 </td></tr>
 <tr><td>
 
+[o11y](./ts-res-ui-components.orchestratoractions.o11y.md)
+
+
+</td><td>
+
+
+</td><td>
+
+import('../utils/observability').[IObservabilityContext](./ts-res-ui-components.observabilitytools.iobservabilitycontext.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [removePendingResource](./ts-res-ui-components.orchestratoractions.removependingresource.md)
 
 
@@ -527,7 +595,7 @@ Description
 
 </td><td>
 
-(resourceId: string, context?: Record&lt;string, string&gt;) =&gt; Promise&lt;Result&lt;JsonValue&gt;&gt;
+(resourceId: string, context?: Record&lt;string, string&gt;) =&gt; Result&lt;JsonValue&gt;
 
 
 </td><td>

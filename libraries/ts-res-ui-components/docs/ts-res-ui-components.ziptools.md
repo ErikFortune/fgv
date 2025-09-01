@@ -30,7 +30,7 @@ Validate ZIP file extension
 </td></tr>
 <tr><td>
 
-[processZipLoadResult(zipResult, overrideConfig)](./ts-res-ui-components.ziptools.processziploadresult.md)
+[processZipLoadResult(zipResult, overrideConfig, o11y)](./ts-res-ui-components.ziptools.processziploadresult.md)
 
 
 </td><td>
@@ -41,7 +41,7 @@ Helper function to process resources from a ZIP load result
 </td></tr>
 <tr><td>
 
-[processZipResources(files, directory, config)](./ts-res-ui-components.ziptools.processzipresources.md)
+[processZipResources(files, directory, config, o11y)](./ts-res-ui-components.ziptools.processzipresources.md)
 
 
 </td><td>

@@ -4,6 +4,34 @@
 
 ## ts-res-ui-components package
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[useObservability()](./ts-res-ui-components.useobservability.md)
+
+
+</td><td>
+
+Hook to access the current observability context.
+
+Provides access to both diagnostic logging (for developers/debugging) and user logging (for user-facing messages and feedback).
+
+
+</td></tr>
+</tbody></table>
+
 ## Interfaces
 
 <table><thead><tr><th>
@@ -18,6 +46,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[ObservabilityProviderProps](./ts-res-ui-components.observabilityproviderprops.md)
+
+
+</td><td>
+
+Props for the ObservabilityProvider component.
+
+
+</td></tr>
+<tr><td>
 
 [OrchestratorActions](./ts-res-ui-components.orchestratoractions.md)
 
@@ -69,6 +108,17 @@ Description
 </td></tr>
 <tr><td>
 
+[DownloadUtils](./ts-res-ui-components.downloadutils.md)
+
+
+</td><td>
+
+Download utilities namespace for file export functionality
+
+
+</td></tr>
+<tr><td>
+
 [FilterTools](./ts-res-ui-components.filtertools.md)
 
 
@@ -88,6 +138,15 @@ Description
 <tr><td>
 
 [ImportTools](./ts-res-ui-components.importtools.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[ObservabilityTools](./ts-res-ui-components.observabilitytools.md)
 
 
 </td><td>
@@ -265,6 +324,17 @@ MultiGridView component for managing multiple grid instances with shared context
 Provides a comprehensive interface for displaying multiple related grids that share the same resolution context and batch operations. Perfect for administrative workflows where users need to configure related data across multiple resource types.
 
 \*\*Key Features:\*\* - \*\*Multiple Grids\*\*: Display multiple grid configurations with different resource selections - \*\*Shared Context\*\*: Single context management that applies to all grids simultaneously - \*\*Unified Changes\*\*: Batch operations work across all grids and resource types - \*\*Flexible Presentation\*\*: Support for tabs, cards, accordion, and dropdown grid selection - \*\*Validation Integration\*\*: Prevents batch operations when validation errors exist
+
+
+</td></tr>
+<tr><td>
+
+[ObservabilityProvider](./ts-res-ui-components.observabilityprovider.md)
+
+
+</td><td>
+
+Provider component that makes observability context available to all child components.
 
 
 </td></tr>

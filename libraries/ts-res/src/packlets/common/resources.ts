@@ -79,6 +79,22 @@ export const allResourceValueMergeMethods: ResourceValueMergeMethod[] = ['augmen
 export type CandidateCompleteness = 'full' | 'partial';
 
 /**
+ * Branded number representing a validated candidate value index.
+ * Candidate value indices are used to identify candidate values
+ * within a resource set and to enable sharing of like values.
+ * @public
+ */
+export type CandidateValueIndex = Brand<number, 'CandidateValueIndex'>;
+
+/**
+ * Branded string representing a validated candidate value key.
+ * Candidate value keys are used to identify candidate values
+ * within a resource set and to enable sharing of like values.
+ * @public
+ */
+export type CandidateValueKey = Brand<string, 'CandidateValueKey'>;
+
+/**
  * Minimal resource resolver
  * @public
  */

@@ -135,6 +135,27 @@ _(Optional)_ Optional [hierarchy](./ts-res.qualifiertypes.literalvaluehierarchy.
 
 
 </td></tr>
+<tr><td>
+
+[systemTypeName](./ts-res.qualifiertypes.literalqualifiertype.systemtypename.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[QualifierTypeName](./ts-res.qualifiertypename.md)
+
+
+</td><td>
+
+Name of the underlying system type.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods
@@ -205,6 +226,34 @@ Creates a new [LiteralQualifierType](./ts-res.qualifiertypes.literalqualifiertyp
 </td></tr>
 <tr><td>
 
+[getConfiguration()](./ts-res.qualifiertypes.literalqualifiertype.getconfiguration.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a [strongly typed configuration object](./ts-res.qualifiertypes.config.isystemliteralqualifiertypeconfig.md) for this qualifier type.
+
+
+</td></tr>
+<tr><td>
+
+[getConfigurationJson()](./ts-res.qualifiertypes.literalqualifiertype.getconfigurationjson.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the configuration for this qualifier type.
+
+
+</td></tr>
+<tr><td>
+
 [isPotentialMatch(conditionValue, contextValue)](./ts-res.qualifiertypes.literalqualifiertype.ispotentialmatch.md)
 
 
@@ -260,6 +309,34 @@ Checks if the given value is a valid literal condition value.
 </td><td>
 
 Converts a string to a [literal condition value](./ts-res.qualifierconditionvalue.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[validateConfiguration(from)](./ts-res.qualifiertypes.literalqualifiertype.validateconfiguration.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Validates a [strongly typed configuration object](./ts-res.qualifiertypes.config.isystemliteralqualifiertypeconfig.md) for this qualifier type.
+
+
+</td></tr>
+<tr><td>
+
+[validateConfigurationJson(from)](./ts-res.qualifiertypes.literalqualifiertype.validateconfigurationjson.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Validates configuration JSON data for this qualifier type.
 
 
 </td></tr>

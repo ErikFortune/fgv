@@ -99,6 +99,27 @@ The name of the qualifier type.
 
 
 </td></tr>
+<tr><td>
+
+[systemTypeName](./ts-res.qualifiertypes.iqualifiertype.systemtypename.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[QualifierTypeName](./ts-res.qualifiertypename.md)
+
+
+</td><td>
+
+Name of the underlying system type.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods
@@ -115,6 +136,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[getConfigurationJson()](./ts-res.qualifiertypes.iqualifiertype.getconfigurationjson.md)
+
+
+</td><td>
+
+Gets the configuration for this qualifier type.
+
+
+</td></tr>
+<tr><td>
 
 [isPotentialMatch(conditionValue, contextValue)](./ts-res.qualifiertypes.iqualifiertype.ispotentialmatch.md)
 
@@ -177,6 +209,17 @@ Sets the index for this qualifier type. Once set, index is immutable.
 </td><td>
 
 Validates that a value and optional operator are valid for use in a condition for qualifiers of this type.
+
+
+</td></tr>
+<tr><td>
+
+[validateConfigurationJson(from)](./ts-res.qualifiertypes.iqualifiertype.validateconfigurationjson.md)
+
+
+</td><td>
+
+Validates configuration JSON data for this qualifier type.
 
 
 </td></tr>

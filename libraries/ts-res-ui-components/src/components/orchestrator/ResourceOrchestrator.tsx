@@ -1,4 +1,5 @@
 import React, { ReactNode, useCallback, useMemo, useState } from 'react';
+import { ObservabilityProvider, useObservability } from '../../contexts';
 import { Config, Bundle, QualifierTypes, ResourceTypes } from '@fgv/ts-res';
 import {
   OrchestratorState,
@@ -9,11 +10,13 @@ import {
   FilterState,
   FilterResult
 } from '../../types';
+import * as ObservabilityTools from '../../utils/observability';
 import { useResourceData } from '../../hooks/useResourceData';
 import { useFilterState } from '../../hooks/useFilterState';
 import { useViewState } from '../../hooks/useViewState';
 import { useResolutionState } from '../../hooks/useResolutionState';
 import { createFilteredResourceManagerSimple, analyzeFilteredResources } from '../../utils/filterResources';
+import { DownloadUtils } from '../../utils/downloadHelper';
 import { Runtime } from '@fgv/ts-res';
 
 /**
@@ -39,58 +42,28 @@ export interface ResourceOrchestratorProps {
   >;
   /** Callback fired when orchestrator state changes */
   onStateChange?: (state: Partial<OrchestratorState>) => void;
+  /** Optional observability context for logging and user feedback */
+  observabilityContext?: ObservabilityTools.IObservabilityContext;
 }
 
 /**
- * Main orchestrator component for ts-res resource management UI.
- *
- * This component provides a centralized state management and action coordination
- * for all ts-res UI functionality. It uses the render props pattern to provide
- * state and actions to child components.
- *
- * Features:
- * - Resource processing (files, directories, bundles)
- * - Filtering and context management
- * - Resource resolution testing
- * - Configuration management
- * - View state coordination
- *
- * @param props - ResourceOrchestrator configuration
- * @returns JSX element using render props pattern
- *
- * @example
- * ```typescript
- * <ResourceOrchestrator>
- *   {({ state, actions }) => (
- *     <div>
- *       <ImportView
- *         onImport={actions.importDirectory}
- *         onBundleImport={actions.importBundle}
- *       />
- *       {state.processedResources && (
- *         <SourceView
- *           resources={state.processedResources}
- *           onExport={actions.exportData}
- *         />
- *       )}
- *     </div>
- *   )}
- * </ResourceOrchestrator>
- * ```
- *
- * @public
+ * Internal orchestrator component that has access to observability context via hook.
  */
-export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
+const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'observabilityContext'>> = ({
   children,
   initialConfiguration,
   qualifierTypeFactory,
   resourceTypeFactory,
   onStateChange
 }) => {
+  // Get observability context from provider
+  const o11y = useObservability();
+
   // Core hooks
   const resourceData = useResourceData({
     qualifierTypeFactory,
-    resourceTypeFactory
+    resourceTypeFactory,
+    o11y
   });
   const filterState = useFilterState();
   const viewState = useViewState();
@@ -150,7 +123,7 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
     async (filterValues: Record<string, string | undefined>): Promise<FilterResult | null> => {
       // Prevent concurrent filtering operations
       if (isFilteringInProgress.current) {
-        console.log('Filtering already in progress, skipping...');
+        o11y.diag.info('Filtering already in progress, skipping...');
         return null;
       }
 
@@ -174,13 +147,13 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
         const { system } = resourceData.state.processedResources;
 
         viewState.addMessage('info', 'Starting filtering process...');
-        console.log('Filtering with values:', filterValues);
-        console.log('Filter state:', filterState.state);
+        o11y.diag.info('Filtering with values:', filterValues);
+        o11y.diag.info('Filter state:', filterState.state);
 
         // Try the simplified filtering approach using provided values
         let filteredResult = await createFilteredResourceManagerSimple(system, filterValues, {
           partialContextMatch: true,
-          enableDebugLogging: true, // Enable debug logging to see what's happening
+          enableDebugLogging: false, // Disable debug logging to reduce console output
           reduceQualifiers: filterState.state.reduceQualifiers
         });
 
@@ -198,7 +171,7 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
 
         // Analyze filtered resources compared to original
         const originalResources = resourceData.state.processedResources.summary.resourceIds || [];
-        console.log('Original resources count:', originalResources.length);
+        o11y.diag.info('Original resources count:', originalResources.length);
 
         const analysis = analyzeFilteredResources(
           originalResources,
@@ -206,14 +179,14 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
           resourceData.state.processedResources
         );
 
-        console.log('Analysis result:', {
+        o11y.diag.info('Analysis result:', {
           success: analysis.success,
           filteredResourcesCount: analysis.filteredResources.length,
           warningsCount: analysis.warnings.length,
           hasProcessedResources: !!analysis.processedResources
         });
 
-        console.log(
+        o11y.diag.info(
           'Filtered resources breakdown:',
           analysis.filteredResources.map((r) => ({
             id: r.id,
@@ -231,7 +204,7 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
           warnings: analysis.warnings
         };
 
-        console.log('Setting filter result:', result);
+        o11y.diag.info('Setting filter result:', result);
         setFilterResult(result);
 
         if (analysis.warnings.length > 0) {
@@ -335,11 +308,11 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
       // Resource management
       importDirectory: async (directory: ImportedDirectory) => {
         viewState.addMessage('info', 'Importing directory...');
-        await resourceData.actions.processDirectory(directory);
-        if (!resourceData.state.error) {
+        const result = await resourceData.actions.processDirectory(directory);
+        if (result.isSuccess()) {
           viewState.addMessage('success', 'Directory imported successfully');
         } else {
-          viewState.addMessage('error', resourceData.state.error);
+          viewState.addMessage('error', result.message);
         }
       },
       importDirectoryWithConfig: async (
@@ -429,10 +402,78 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
 
       // Combined apply/discard removed; use applyPendingResources/discard* directly
 
+      // Export functionality
+      exportBundle: () => {
+        const resources = resourceData.state.processedResources;
+        if (!resources || !resources.activeConfiguration) {
+          viewState.addMessage(
+            'error',
+            'Export bundle failed: No resource manager or configuration available'
+          );
+          return;
+        }
+
+        // Use proper Result chaining with side effects
+        const result = Config.SystemConfiguration.create(resources.activeConfiguration)
+          .onSuccess((systemConfig) =>
+            Bundle.BundleBuilder.create(resources.system.resourceManager, systemConfig)
+          )
+          .onSuccess((bundle) => DownloadUtils.downloadBundle(bundle, resources.resourceCount));
+
+        // Handle final result with side effects
+        if (result.isSuccess()) {
+          viewState.addMessage('success', 'Bundle exported successfully');
+        } else {
+          viewState.addMessage('error', `Export bundle failed: ${result.message}`);
+        }
+      },
+
+      exportSource: () => {
+        const resources = resourceData.state.processedResources;
+        if (!resources) {
+          viewState.addMessage('error', 'Export source failed: No processed resources available');
+          return;
+        }
+
+        // Use proper Result chaining with side effects
+        const result = DownloadUtils.downloadSourceResources(resources, resources.resourceCount);
+
+        // Handle result with side effects
+        if (result.isSuccess()) {
+          viewState.addMessage('success', 'Source resources exported successfully');
+        } else {
+          viewState.addMessage('error', `Export source failed: ${result.message}`);
+        }
+      },
+
+      exportCompiled: () => {
+        const resources = resourceData.state.processedResources;
+        if (!resources || !resources.compiledCollection) {
+          viewState.addMessage('error', 'Export compiled failed: No compiled resources available');
+          return;
+        }
+
+        // Use proper Result chaining with side effects
+        const result = DownloadUtils.downloadCompiledResources(
+          resources.compiledCollection,
+          resources.resourceCount
+        );
+
+        // Handle result with side effects
+        if (result.isSuccess()) {
+          viewState.addMessage('success', 'Compiled resources exported successfully');
+        } else {
+          viewState.addMessage('error', `Export compiled failed: ${result.message}`);
+        }
+      },
+
       // UI state management
       selectResource: viewState.selectResource,
       addMessage: viewState.addMessage,
       clearMessages: viewState.clearMessages,
+
+      // Observability context
+      o11y,
 
       // Resource resolution
       resolveResource: resourceData.actions.resolveResource
@@ -442,5 +483,53 @@ export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
 
   return <>{children({ state, actions })}</>;
 };
+
+/**
+ * Main orchestrator component for ts-res resource management UI.
+ *
+ * This component provides a centralized state management and action coordination
+ * for all ts-res UI functionality. It uses the render props pattern to provide
+ * state and actions to child components.
+ *
+ * Features:
+ * - Resource processing (files, directories, bundles)
+ * - Filtering and context management
+ * - Resource resolution testing
+ * - Configuration management
+ * - View state coordination
+ *
+ * @param props - ResourceOrchestrator configuration
+ * @returns JSX element using render props pattern
+ *
+ * @example
+ * ```typescript
+ * <ResourceOrchestrator>
+ *   {({ state, actions }) => (
+ *     <div>
+ *       <ImportView
+ *         onImport={actions.importDirectory}
+ *         onBundleImport={actions.importBundle}
+ *       />
+ *       {state.processedResources && (
+ *         <SourceView
+ *           resources={state.processedResources}
+ *           onExport={actions.exportData}
+ *         />
+ *       )}
+ *     </div>
+ *   )}
+ * </ResourceOrchestrator>
+ * ```
+ *
+ * @public
+ */
+export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
+  observabilityContext = ObservabilityTools.DefaultObservabilityContext,
+  ...props
+}) => (
+  <ObservabilityProvider observabilityContext={observabilityContext}>
+    <ResourceOrchestratorInternal {...props} />
+  </ObservabilityProvider>
+);
 
 export default ResourceOrchestrator;

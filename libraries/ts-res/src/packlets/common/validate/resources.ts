@@ -21,8 +21,16 @@
  */
 
 import { fail, succeed, Result } from '@fgv/ts-utils';
-import { ResourceId, ResourceIndex, ResourceName, ResourceTypeIndex, ResourceTypeName } from '../resources';
-import { identifier, segmentedIdentifier } from './regularExpressions';
+import { candidateValueKey, identifier, segmentedIdentifier } from './regularExpressions';
+import {
+  CandidateValueIndex,
+  CandidateValueKey,
+  ResourceId,
+  ResourceIndex,
+  ResourceName,
+  ResourceTypeIndex,
+  ResourceTypeName
+} from '../resources';
 
 /**
  * Checks if the given name is a valid resource name.
@@ -77,6 +85,28 @@ export function isValidResourceTypeName(name: string): name is ResourceTypeName 
  */
 export function isValidResourceTypeIndex(index: number): index is ResourceTypeIndex {
   return index >= 0;
+}
+
+/**
+ * Checks if the given index is a valid candidate value index.
+ *
+ * @param index - The index to validate.
+ * @returns `true` if the index is a valid candidate value index, otherwise `false`.
+ * @public
+ */
+export function isValidCandidateValueIndex(index: number): index is CandidateValueIndex {
+  return index >= 0;
+}
+
+/**
+ * Checks if the given key is a valid candidate value key.
+ *
+ * @param key - The key to validate.
+ * @returns `true` if the key is a valid candidate value key, otherwise `false`.
+ * @public
+ */
+export function isValidCandidateValueKey(key: string): key is CandidateValueKey {
+  return candidateValueKey.test(key);
 }
 
 /**
@@ -165,6 +195,38 @@ export function toResourceTypeIndex(index: number): Result<ResourceTypeIndex> {
   /* c8 ignore next 3 - coverage having issues */
   if (!isValidResourceTypeIndex(index)) {
     return fail(`${index}: not a valid resource type index.`);
+  }
+  return succeed(index);
+}
+
+/**
+ * Converts a string to a {@link CandidateValueKey | candidate value key}.
+ *
+ * @param key - The key to convert.
+ * @returns `Success` with the converted key if valid, or `Failure` with an error message
+ * if not.
+ * @public
+ */
+export function toCandidateValueKey(key: string): Result<CandidateValueKey> {
+  /* c8 ignore next 3 - coverage having issues */
+  if (!isValidCandidateValueKey(key)) {
+    return fail(`${key}: not a valid candidate value key.`);
+  }
+  return succeed(key);
+}
+
+/**
+ * Converts a number to a {@link CandidateValueIndex | candidate value index}.
+ *
+ * @param index - The number to convert.
+ * @returns `Success` with the converted index if valid, or `Failure` with an error message
+ * if not.
+ * @public
+ */
+export function toCandidateValueIndex(index: number): Result<CandidateValueIndex> {
+  /* c8 ignore next 3 - coverage having issues */
+  if (!isValidCandidateValueIndex(index)) {
+    return fail(`${index}: not a valid candidate value index.`);
   }
   return succeed(index);
 }

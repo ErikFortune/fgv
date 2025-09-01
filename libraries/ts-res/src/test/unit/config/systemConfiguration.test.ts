@@ -296,7 +296,7 @@ describe('SystemConfiguration', () => {
         qualifierTypes: [
           {
             name: 'invalid',
-            systemType: 'unknown' as unknown as 'language' // Invalid system type
+            systemType: 'unknown' // Invalid system type - testing error case
           }
         ],
         qualifiers: [],
@@ -464,7 +464,7 @@ describe('SystemConfiguration', () => {
         expect(SystemConfiguration.loadFromFile(configPath)).toSucceedAndSatisfy((systemConfig) => {
           expect(systemConfig.qualifierTypes.size).toBe(6); // Has 6 qualifier types
           expect(systemConfig.qualifiers.size).toBe(7); // Has 7 qualifiers
-          expect(systemConfig.resourceTypes.size).toBe(1);
+          expect(systemConfig.resourceTypes.size).toBe(2);
         });
       });
     });
@@ -579,7 +579,7 @@ describe('SystemConfiguration', () => {
           qualifierTypes: [
             {
               name: 'custom',
-              systemType: 'custom' as unknown as 'language'
+              systemType: 'custom'
             },
             {
               name: 'language',
@@ -647,7 +647,7 @@ describe('SystemConfiguration', () => {
           qualifierTypes: [
             {
               name: 'unknown',
-              systemType: 'unknownType' as unknown as 'language'
+              systemType: 'unknownType' // Testing factory failure with invalid type
             }
           ],
           qualifiers: [],
@@ -796,7 +796,7 @@ describe('SystemConfiguration', () => {
           qualifierTypes: [
             {
               name: 'customQualifier',
-              systemType: 'custom' as unknown as 'language'
+              systemType: 'custom'
             }
           ],
           qualifiers: [],

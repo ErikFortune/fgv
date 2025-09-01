@@ -11,6 +11,7 @@ import {
   MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 import { CheckIcon } from '@heroicons/react/24/solid';
+import { useObservability } from '../../../contexts';
 
 /**
  * Message type definition for the MessagesWindow component.
@@ -143,6 +144,9 @@ export const MessagesWindow: React.FC<MessagesWindowProps> = ({
   onClearMessages,
   className = ''
 }) => {
+  // Get observability context
+  const o11y = useObservability();
+
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [filter, setFilter] = useState<Message['type'] | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -171,7 +175,7 @@ export const MessagesWindow: React.FC<MessagesWindowProps> = ({
         setTimeout(() => setCopySuccess(false), 2000);
       })
       .catch((err) => {
-        console.error('Failed to copy messages:', err);
+        o11y.diag.error('Failed to copy messages:', err);
       });
   };
 

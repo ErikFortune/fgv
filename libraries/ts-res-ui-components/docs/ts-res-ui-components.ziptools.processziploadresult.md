@@ -13,7 +13,7 @@ export declare function processZipLoadResult(zipResult: {
     files: ImportedFile[];
     directory?: ImportedDirectory;
     config?: Config.Model.ISystemConfiguration;
-}, overrideConfig?: Config.Model.ISystemConfiguration): Promise<Result<ProcessedResources>>;
+}, overrideConfig?: Config.Model.ISystemConfiguration, o11y?: ObservabilityTools.IObservabilityContext): Promise<Result<ProcessedResources>>;
 ```
 
 ## Parameters
@@ -56,6 +56,22 @@ overrideConfig
 </td><td>
 
 Config.Model.ISystemConfiguration
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+o11y
+
+
+</td><td>
+
+[ObservabilityTools.IObservabilityContext](./ts-res-ui-components.observabilitytools.iobservabilitycontext.md)
 
 
 </td><td>

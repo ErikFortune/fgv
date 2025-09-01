@@ -80,7 +80,7 @@ export interface IReadOnlyResourceTreeChildren<
   T,
   TID extends string = ResourceId,
   TNAME extends string = ResourceName
-> extends IReadOnlyResultMap<ResourceName, IReadOnlyResourceTreeNode<T>> {
+> extends IReadOnlyResultMap<TNAME, IReadOnlyResourceTreeNode<T>> {
   /**
    * Gets a tree node by its full ResourceId path.
    * @param id - The ResourceId path to look up

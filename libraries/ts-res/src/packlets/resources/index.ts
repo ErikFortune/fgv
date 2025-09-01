@@ -21,6 +21,8 @@
  */
 
 export * from './candidateReducer';
+export * from './candidateValue';
+export * from './candidateValueCollector';
 export * from './resourceCandidate';
 export * from './resource';
 export * from './resourceBuilder';

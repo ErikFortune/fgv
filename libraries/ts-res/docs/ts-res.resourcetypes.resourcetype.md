@@ -114,6 +114,29 @@ The key for this resource type.
 
 
 </td></tr>
+<tr><td>
+
+[systemTypeName](./ts-res.resourcetypes.resourcetype.systemtypename.md)
+
+
+</td><td>
+
+`abstract`
+
+`readonly`
+
+
+</td><td>
+
+[ResourceTypeName](./ts-res.resourcetypename.md)
+
+
+</td><td>
+
+Name of the underlying system type.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods

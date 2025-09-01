@@ -31,6 +31,7 @@ describe('CandidateReducer', () => {
   let qualifiers: TsRes.Qualifiers.QualifierCollector;
   let resourceTypes: TsRes.ResourceTypes.ResourceTypeCollector;
   let conditionSets: TsRes.Conditions.ConditionSetCollector;
+  let candidateValues: TsRes.Resources.CandidateValueCollector;
   let jsonType: TsRes.ResourceTypes.ResourceType;
 
   beforeEach(() => {
@@ -59,6 +60,7 @@ describe('CandidateReducer', () => {
 
     const conditions = TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow();
     conditionSets = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
+    candidateValues = TsRes.Resources.CandidateValueCollector.create().orThrow();
   });
 
   function createCandidate(
@@ -71,6 +73,7 @@ describe('CandidateReducer', () => {
     return TsRes.Resources.ResourceCandidate.create({
       id,
       conditionSets,
+      candidateValues,
       resourceType: jsonType,
       decl: {
         json,

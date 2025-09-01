@@ -9,9 +9,9 @@ Interface for a read-only result-based resource tree with navigation methods.
 **Signature:**
 
 ```typescript
-export interface IReadOnlyResourceTreeChildren<T, TID extends string = ResourceId, TNAME extends string = ResourceName> extends IReadOnlyResultMap<ResourceName, IReadOnlyResourceTreeNode<T>> 
+export interface IReadOnlyResourceTreeChildren<T, TID extends string = ResourceId, TNAME extends string = ResourceName> extends IReadOnlyResultMap<TNAME, IReadOnlyResourceTreeNode<T>> 
 ```
-**Extends:** IReadOnlyResultMap&lt;[ResourceName](./ts-res.resourcename.md)<!-- -->, [IReadOnlyResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.md)<!-- -->&lt;T&gt;&gt;
+**Extends:** IReadOnlyResultMap&lt;TNAME, [IReadOnlyResourceTreeNode](./ts-res.runtime.resourcetree.ireadonlyresourcetreenode.md)<!-- -->&lt;T&gt;&gt;
 
 ## Methods
 

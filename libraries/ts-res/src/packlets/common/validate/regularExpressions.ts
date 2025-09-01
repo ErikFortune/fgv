@@ -70,6 +70,11 @@ export const conditionSetHash: RegExp = /^[a-zA-Z0-9]{8}$/;
 export const decisionKey: RegExp = /^[a-zA-Z0-9]{8}(?:\+[a-zA-Z0-9]{8})*(?:\|[a-zA-Z0-9]{8})?$/;
 
 /**
+ * @internal
+ */
+export const candidateValueKey: RegExp = /^[a-zA-Z0-9]+$/;
+
+/**
  * A {@link QualifierDefaultValueToken | qualifier default value token} has the form
  * `<qualifierName>=<value>` or `<qualifierName>=` (to remove default).
  * Default values allow broader character set including commas for comma-separated values.

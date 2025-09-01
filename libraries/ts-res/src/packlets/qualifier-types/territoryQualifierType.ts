@@ -29,12 +29,13 @@ import {
   QualifierContextValue,
   QualifierMatchScore,
   Validate,
-  ConditionOperator
+  ConditionOperator,
+  QualifierTypeName
 } from '../common';
 import { QualifierType } from './qualifierType';
-import { LiteralValueHierarchy, LiteralValueHierarchyDecl } from './literalValueHierarchy';
+import { LiteralValueHierarchy } from './literalValueHierarchy';
 import * as Config from './config';
-import { sanitizeJsonObject } from '@fgv/ts-json-base';
+import { JsonObject, sanitizeJsonObject } from '@fgv/ts-json-base';
 
 /**
  * Parameters used to create a new {@link QualifierTypes.TerritoryQualifierType | TerritoryQualifierType} instance.
@@ -68,10 +69,10 @@ export interface ITerritoryQualifierTypeCreateParams {
   acceptLowercase?: boolean;
 
   /**
-   * Optional {@link QualifierTypes.LiteralValueHierarchyDecl | hierarchy declaration}
+   * Optional {@link QualifierTypes.Config.LiteralValueHierarchyDecl | hierarchy declaration}
    * of territory values to use for matching. If not provided, no hierarchy will be used.
    */
-  hierarchy?: LiteralValueHierarchyDecl<string>;
+  hierarchy?: Config.LiteralValueHierarchyDecl<string>;
 }
 
 /**
@@ -81,6 +82,13 @@ export interface ITerritoryQualifierTypeCreateParams {
  * @public
  */
 export class TerritoryQualifierType extends QualifierType {
+  /**
+   * {@inheritdoc QualifierTypes.IQualifierType.systemTypeName}
+   */
+  public readonly systemTypeName: QualifierTypeName = Convert.qualifierTypeName
+    .convert('territory')
+    .orThrow();
+
   /**
    * Optional array enumerating allowed territories to further constrain the type.
    */
@@ -186,6 +194,56 @@ export class TerritoryQualifierType extends QualifierType {
       acceptLowercase: territoryConfig.acceptLowercase === true,
       hierarchy: territoryConfig.hierarchy
     }).onSuccess(TerritoryQualifierType.create);
+  }
+
+  /**
+   * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
+   */
+  public getConfiguration(): Result<Config.ISystemTerritoryQualifierTypeConfig> {
+    return this.getConfigurationJson().onSuccess((json) =>
+      Config.Convert.systemTerritoryQualifierTypeConfig.convert(json)
+    );
+  }
+
+  /**
+   * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
+   */
+  public getConfigurationJson(): Result<JsonObject> {
+    const hierarchy: JsonObject = this.hierarchy ? { hierarchy: this.hierarchy.asRecord() } : {};
+    const allowedTerritories: JsonObject = this.allowedTerritories
+      ? { allowedTerritories: [...this.allowedTerritories] }
+      : {};
+    return succeed({
+      name: this.name,
+      systemType: 'territory',
+      configuration: {
+        allowContextList: this.allowContextList,
+        acceptLowercase: this.acceptLowercase,
+        ...allowedTerritories,
+        ...hierarchy
+      }
+    });
+  }
+
+  /**
+   * {@inheritdoc QualifierTypes.IQualifierType.validateConfigurationJson}
+   */
+  public validateConfigurationJson(from: unknown): Result<JsonObject> {
+    return Config.Convert.systemTerritoryQualifierTypeConfig
+      .convert(from)
+      .onSuccess((config) => succeed(config as unknown as JsonObject));
+  }
+
+  /**
+   * Validates a {@link QualifierTypes.Config.ISystemTerritoryQualifierTypeConfig | strongly typed configuration object}
+   * for this qualifier type.
+   * @param from - The unknown data to validate as a configuration object.
+   * @returns `Success` with the validated configuration if successful, `Failure` with an error message otherwise.
+   */
+  public validateConfiguration(from: unknown): Result<Config.ISystemTerritoryQualifierTypeConfig> {
+    return this.validateConfigurationJson(from).onSuccess((json) =>
+      Config.Convert.systemTerritoryQualifierTypeConfig.convert(json)
+    );
   }
 
   /**

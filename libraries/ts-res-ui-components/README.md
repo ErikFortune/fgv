@@ -19,19 +19,9 @@ This packlet is largely AI written, and it shows.
 - **📊 Visualization**: Multiple views for exploring resource structures and compiled output
 - **⚙️ Configuration**: Visual configuration management for qualifier types, qualifiers, and resource types
 - **🎛️ Host Control**: Programmatic control of qualifier values and resource types
-- **📁 File Handling**: Support for directory imports, ZIP files via ts-res zip-archive packlet, and bundle loading
+- **📁 File Handling**: Support for directory imports, ZIP files, and bundle loading
+- **🐛 Built-in Debugging**: Comprehensive logging and observability throughout operations
 - **🎨 Modern UI**: Built with Tailwind CSS and Heroicons for a clean, responsive interface
-
-### ZIP Archive Integration
-
-This library now uses the **ts-res zip-archive packlet** as the single source of truth for all ZIP operations, providing:
-
-- **Universal compatibility**: Works in both browser and Node.js environments using fflate
-- **Standardized format**: Common ZIP bundle format across all ts-res tools  
-- **Simplified API**: Direct integration with ts-res ZIP archive functionality
-- **Processing helpers**: Utilities to integrate ZIP data with ts-res-ui-components workflows
-
-The `ImportView` component handles ZIP files automatically, and the `ZipTools` namespace provides processing helpers for custom ZIP workflows.
 
 ## Installation
 
@@ -56,178 +46,51 @@ This library requires the following peer dependencies:
 
 ## Quick Start
 
-### Canonical New Resource Flow
-
-The recommended approach for programmatic resource creation:
-
-```tsx
-import { ResolutionTools } from '@fgv/ts-res-ui-components';
-
-// Single atomic operation (recommended)
-async function createResourceAtomic(actions) {
-  const result = await actions.createPendingResource({
-    id: 'platform.languages.az-AZ',
-    resourceTypeName: 'json',
-    json: { text: 'Welcome', locale: 'az-AZ' }
-  });
-
-  if (result.isSuccess()) {
-    console.log('Resource created successfully');
-    await actions.applyPendingResources();
-  } else {
-    console.error('Creation failed:', result.message);
-  }
-}
-
-// Step-by-step workflow (if needed)
-function createResourceStepByStep(actions) {
-  // 1) Start new resource
-  const startResult = actions.startNewResource({ defaultTypeName: 'json' });
-  if (!startResult.success) return;
-
-  // 2) Update resource ID  
-  const idResult = actions.updateNewResourceId('platform.languages.az-AZ');
-  if (!idResult.success) return;
-
-  // 3) Select resource type (if step 1 didn't set it)
-  const typeResult = actions.selectResourceType('json');
-  if (!typeResult.success) return;
-
-  // 4) Update JSON content (optional, recommended)
-  const jsonResult = actions.updateNewResourceJson({ 
-    text: 'Welcome', 
-    locale: 'az-AZ' 
-  });
-  if (!jsonResult.success) return;
-
-  // 5) Save as pending
-  const saveResult = actions.saveNewResourceAsPending();
-  if (!saveResult.success) return;
-
-  // Note: Do NOT call saveResourceEdit for brand-new resources
-}
-```
-
-### Minimal Editing App (Unified Apply)
+### Basic Setup
 
 ```tsx
 import React from 'react';
-import { ResourceOrchestrator, ResolutionView } from '@fgv/ts-res-ui-components';
-
-export default function App() {
-  return (
-    <ResourceOrchestrator>
-      {({ state, actions }) => (
-        <ResolutionView
-          resources={state.resources}
-          resolutionState={state.resolutionState}
-          resolutionActions={{
-            updateContextValue: actions.updateResolutionContext,
-            applyContext: actions.applyResolutionContext,
-            selectResource: actions.selectResourceForResolution,
-            setViewMode: actions.setResolutionViewMode,
-            resetCache: actions.resetResolutionCache,
-            saveEdit: actions.saveResourceEdit,
-            getEditedValue: actions.getEditedValue,
-            hasEdit: actions.hasResourceEdit,
-            clearEdits: actions.clearResourceEdits,
-            discardEdits: actions.discardResourceEdits,
-            // Enhanced resource creation actions with atomic API
-            createPendingResource: actions.createPendingResource,
-            startNewResource: actions.startNewResource,
-            updateNewResourceId: actions.updateNewResourceId,
-            selectResourceType: actions.selectResourceType,
-            updateNewResourceJson: actions.updateNewResourceJson,
-            saveNewResourceAsPending: actions.saveNewResourceAsPending,
-            cancelNewResource: actions.cancelNewResource,
-            removePendingResource: actions.removePendingResource,
-            markResourceForDeletion: actions.markResourceForDeletion,
-            applyPendingResources: actions.applyPendingResources,
-            discardPendingResources: actions.discardPendingResources
-          }}
-          allowResourceCreation
-          defaultResourceType="json"
-          showPendingResourcesInList
-          onMessage={actions.addMessage}
-        />
-      )}
-    </ResourceOrchestrator>
-  );
-}
-```
-
-### Basic Usage with ResourceOrchestrator
-
-The `ResourceOrchestrator` component provides centralized state management for all ts-res UI functionality:
-
-```tsx
-import React from 'react';
-import { ResourceOrchestrator, ImportView, SourceView } from '@fgv/ts-res-ui-components';
+import { ResourceOrchestrator, ObservabilityProvider } from '@fgv/ts-res-ui-components';
 
 function App() {
   return (
-    <ResourceOrchestrator>
-      {({ state, actions }) => (
-        <div className="min-h-screen bg-gray-50">
-          <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-8">Resource Manager</h1>
-            
-            {!state.processedResources ? (
-              <ImportView
-                onImport={actions.importDirectory}
-                onBundleImport={actions.importBundle}
-                onZipImport={(zipData, config) => {
-                  if (config) actions.applyConfiguration(config);
-                  if (zipData.directory) actions.importDirectory(zipData.directory);
-                  else if (zipData.files?.length) actions.importFiles(zipData.files);
-                }}
-              />
-            ) : (
-              <SourceView
-                resources={state.processedResources}
-                onExport={actions.exportData}
-              />
-            )}
-          </div>
-        </div>
-      )}
-    </ResourceOrchestrator>
-  );
-}
-
-export default App;
-```
-
-### Using Individual Hooks
-
-For more granular control, you can use individual hooks:
-
-```tsx
-import React from 'react';
-import { useResourceData, SourceView } from '@fgv/ts-res-ui-components';
-
-function MyResourceViewer() {
-  const { state, actions } = useResourceData();
-
-  const handleFileImport = async (files: File[]) => {
-    const importedFiles = await processFiles(files); // Your file processing logic
-    await actions.processFiles(importedFiles);
-  };
-
-  return (
-    <div>
-      {state.isProcessing && <div>Processing...</div>}
-      {state.error && <div className="error">{state.error}</div>}
-      {state.processedResources && (
-        <SourceView 
-          resources={state.processedResources}
-          onExport={(data) => console.log('Export:', data)}
-        />
-      )}
-    </div>
+    <ObservabilityProvider>
+      <ResourceOrchestrator />
+    </ObservabilityProvider>
   );
 }
 ```
+
+The `ResourceOrchestrator` provides a complete resource management interface with import, filtering, resolution, and editing capabilities. The `ObservabilityProvider` enables built-in logging and debugging features throughout the component tree.
+
+## Core Concepts
+
+### Resource Orchestrator
+The central component that coordinates all resource operations. It manages the complete workflow:
+
+- **Configuration Management**: Set up qualifier types, qualifiers, and resource types
+- **Resource Import**: Load resources from files, ZIP archives, or bundles
+- **Resource Filtering**: Filter resources by context to create deployment subsets
+- **Resource Resolution**: Test how resources resolve for different contexts
+- **Resource Editing**: Create and modify resources with real-time validation
+
+### Component Architecture
+The library is organized into specialized namespaces, each containing related components and utilities:
+
+- **FilterTools**: Resource filtering with context-aware capabilities
+- **ResolutionTools**: Resource resolution testing and editing
+- **ConfigurationTools**: System configuration management
+- **GridTools**: Advanced data grid for tabular resource management
+- **ImportTools**: File and archive import capabilities
+- **ObservabilityTools**: Logging and debugging infrastructure
+
+### Built-in Observability
+All operations include comprehensive logging for debugging and user feedback:
+
+- **Diagnostic Logging**: Developer-focused information for troubleshooting
+- **User Messaging**: User-friendly success/error notifications
+- **Configurable Loggers**: Console output for development, silent for production
+- **React Integration**: Observability context available throughout the component tree
 
 ## Architecture
 
@@ -1449,6 +1312,181 @@ All components accept a `className` prop for custom styling:
 />
 ```
 
+## Detailed Examples
+
+### Canonical New Resource Flow
+
+The recommended approach for programmatic resource creation:
+
+```tsx
+import { ResolutionTools } from '@fgv/ts-res-ui-components';
+
+// Single atomic operation (recommended)
+async function createResourceAtomic(actions) {
+  const result = await actions.createPendingResource({
+    id: 'platform.languages.az-AZ',
+    resourceTypeName: 'json',
+    json: { text: 'Welcome', locale: 'az-AZ' }
+  });
+
+  if (result.isSuccess()) {
+    console.log('Resource created successfully');
+    await actions.applyPendingResources();
+  } else {
+    console.error('Creation failed:', result.message);
+  }
+}
+
+// Step-by-step workflow (if needed)
+function createResourceStepByStep(actions) {
+  // 1) Start new resource
+  const startResult = actions.startNewResource({ defaultTypeName: 'json' });
+  if (!startResult.success) return;
+
+  // 2) Update resource ID  
+  const idResult = actions.updateNewResourceId('platform.languages.az-AZ');
+  if (!idResult.success) return;
+
+  // 3) Select resource type (if step 1 didn't set it)
+  const typeResult = actions.selectResourceType('json');
+  if (!typeResult.success) return;
+
+  // 4) Update JSON content (optional, recommended)
+  const jsonResult = actions.updateNewResourceJson({ 
+    text: 'Welcome', 
+    locale: 'az-AZ' 
+  });
+  if (!jsonResult.success) return;
+
+  // 5) Save as pending
+  const saveResult = actions.saveNewResourceAsPending();
+  if (!saveResult.success) return;
+
+  // Note: Do NOT call saveResourceEdit for brand-new resources
+}
+```
+
+### Minimal Editing App (Unified Apply)
+
+```tsx
+import React from 'react';
+import { ResourceOrchestrator, ResolutionView } from '@fgv/ts-res-ui-components';
+
+export default function App() {
+  return (
+    <ResourceOrchestrator>
+      {({ state, actions }) => (
+        <ResolutionView
+          resources={state.resources}
+          resolutionState={state.resolutionState}
+          resolutionActions={{
+            updateContextValue: actions.updateResolutionContext,
+            applyContext: actions.applyResolutionContext,
+            selectResource: actions.selectResourceForResolution,
+            setViewMode: actions.setResolutionViewMode,
+            resetCache: actions.resetResolutionCache,
+            saveEdit: actions.saveResourceEdit,
+            getEditedValue: actions.getEditedValue,
+            hasEdit: actions.hasResourceEdit,
+            clearEdits: actions.clearResourceEdits,
+            discardEdits: actions.discardResourceEdits,
+            // Enhanced resource creation actions with atomic API
+            createPendingResource: actions.createPendingResource,
+            startNewResource: actions.startNewResource,
+            updateNewResourceId: actions.updateNewResourceId,
+            selectResourceType: actions.selectResourceType,
+            updateNewResourceJson: actions.updateNewResourceJson,
+            saveNewResourceAsPending: actions.saveNewResourceAsPending,
+            cancelNewResource: actions.cancelNewResource,
+            removePendingResource: actions.removePendingResource,
+            markResourceForDeletion: actions.markResourceForDeletion,
+            applyPendingResources: actions.applyPendingResources,
+            discardPendingResources: actions.discardPendingResources
+          }}
+          allowResourceCreation
+          defaultResourceType="json"
+          showPendingResourcesInList
+          onMessage={actions.addMessage}
+        />
+      )}
+    </ResourceOrchestrator>
+  );
+}
+```
+
+### Basic Usage with ResourceOrchestrator
+
+The `ResourceOrchestrator` component provides centralized state management for all ts-res UI functionality:
+
+```tsx
+import React from 'react';
+import { ResourceOrchestrator, ImportView, SourceView } from '@fgv/ts-res-ui-components';
+
+function App() {
+  return (
+    <ResourceOrchestrator>
+      {({ state, actions }) => (
+        <div className="min-h-screen bg-gray-50">
+          <div className="container mx-auto px-4 py-8">
+            <h1 className="text-3xl font-bold mb-8">Resource Manager</h1>
+            
+            {!state.processedResources ? (
+              <ImportView
+                onImport={actions.importDirectory}
+                onBundleImport={actions.importBundle}
+                onZipImport={(zipData, config) => {
+                  if (config) actions.applyConfiguration(config);
+                  if (zipData.directory) actions.importDirectory(zipData.directory);
+                  else if (zipData.files?.length) actions.importFiles(zipData.files);
+                }}
+              />
+            ) : (
+              <SourceView
+                resources={state.processedResources}
+                onExport={actions.exportData}
+              />
+            )}
+          </div>
+        </div>
+      )}
+    </ResourceOrchestrator>
+  );
+}
+
+export default App;
+```
+
+### Using Individual Hooks
+
+For more granular control, you can use individual hooks:
+
+```tsx
+import React from 'react';
+import { useResourceData, SourceView } from '@fgv/ts-res-ui-components';
+
+function MyResourceViewer() {
+  const { state, actions } = useResourceData();
+
+  const handleFileImport = async (files: File[]) => {
+    const importedFiles = await processFiles(files); // Your file processing logic
+    await actions.processFiles(importedFiles);
+  };
+
+  return (
+    <div>
+      {state.isProcessing && <div>Processing...</div>}
+      {state.error && <div className="error">{state.error}</div>}
+      {state.processedResources && (
+        <SourceView 
+          resources={state.processedResources}
+          onExport={(data) => console.log('Export:', data)}
+        />
+      )}
+    </div>
+  );
+}
+```
+
 ## Advanced Usage
 
 ### Custom Resource Processing
@@ -1544,21 +1582,25 @@ For better organization and discoverability, utility functions are organized int
 
 ```tsx
 import { 
-  FilterTools,     // FilterView + filtering utilities
-  ResolutionTools, // ResolutionView + resolution utilities  
+  FilterTools,        // FilterView + filtering utilities
+  ResolutionTools,    // ResolutionView + resolution utilities  
   ConfigurationTools, // ConfigurationView + configuration utilities
-  TsResTools,      // SourceView, CompiledView + ts-res utilities
-  ViewTools,       // MessagesWindow + view state utilities
-  ZipTools,        // ImportView + ZIP processing helpers
-  FileTools        // File processing utilities
+  TsResTools,         // SourceView, CompiledView + ts-res utilities
+  ViewStateTools,     // MessagesWindow + view state utilities
+  ZipTools,           // ImportView + ZIP processing helpers
+  ObservabilityTools, // Observability context and loggers
+  GridTools,          // GridView + data grid utilities
+  PickerTools,        // ResourcePicker + picker utilities
+  ImportTools         // Import utilities and types
 } from '@fgv/ts-res-ui-components';
 
 // Use view components from namespaces
 <FilterTools.FilterView {...filterProps} />
 <ResolutionTools.ResolutionView {...resolutionProps} />
-<ViewTools.MessagesWindow {...messageProps} />
+<ViewStateTools.MessagesWindow {...messageProps} />
 <TsResTools.SourceView {...sourceProps} />
 <ZipTools.ImportView {...importProps} />
+<GridTools.GridView {...gridProps} />
 
 // Use utility functions from namespaces  
 const hasFilters = FilterTools.hasFilterValues(filterState.values);
@@ -1567,6 +1609,15 @@ const system = await TsResTools.createTsResSystemFromConfig(config);
 
 // ZIP processing helpers for ts-res-ui-components integration
 const processResult = await ZipTools.processZipLoadResult(zipData, config);
+
+// Observability context and loggers
+const consoleContext = ObservabilityTools.createConsoleObservabilityContext('debug', 'info');
+const noOpContext = ObservabilityTools.createNoOpObservabilityContext();
+const customLogger = new ObservabilityTools.ConsoleUserLogger('info');
+
+// Grid utilities and selectors
+const gridSelector = new GridTools.ResourceSelector();
+const validation = GridTools.validateCellValue(value, rules);
 ```
 
 ### Namespace Contents

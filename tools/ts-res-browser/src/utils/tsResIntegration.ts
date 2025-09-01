@@ -11,6 +11,7 @@ import {
 } from '@fgv/ts-res';
 import { ImportedDirectory, ImportedFile } from './fileImport';
 import { BrowserFileTreeAccessors } from './browserFileTreeAccessors';
+import { isTsResSystem, extractSystemConfiguration } from './typeGuards';
 
 /**
  * Configuration for setting up ts-res system
@@ -305,15 +306,19 @@ export function processImportedFiles(
     return fail('No files provided for processing');
   }
 
-  // Determine if we have a system or a config
+  // Determine if we have a system or a config using proper type checking
   const systemResult =
-    systemConfigOrSystem &&
-    'qualifierTypes' in systemConfigOrSystem &&
-    'resourceManager' in systemConfigOrSystem
-      ? succeed(systemConfigOrSystem as TsResSystem)
-      : createTsResSystemFromConfig(systemConfigOrSystem as Config.Model.ISystemConfiguration);
+    systemConfigOrSystem && isTsResSystem(systemConfigOrSystem)
+      ? succeed(systemConfigOrSystem)
+      : createTsResSystemFromConfig(systemConfigOrSystem);
+
+  // Keep track of the original config for passing to finalizeProcessing
+  const originalConfig = extractSystemConfiguration(systemConfigOrSystem);
 
   return systemResult.onSuccess((tsResSystem) => {
+    // If no config was provided, we need to get the DEFAULT_SYSTEM_CONFIGURATION
+    // that was used to create the system
+    const configToUse = originalConfig ?? DEFAULT_SYSTEM_CONFIGURATION;
     // Convert ImportedFile[] to IInMemoryFile[] format
     const inMemoryFiles = files.map((file) => ({
       path: file.path,
@@ -340,7 +345,7 @@ export function processImportedFiles(
           ...tsResSystem,
           importManager
         };
-        return finalizeProcessing(updatedSystem);
+        return finalizeProcessing(updatedSystem, configToUse);
       })
       .withErrorFormat((message) => `processImportedFiles failed: ${message}`);
   });
@@ -350,15 +355,19 @@ export function processImportedDirectory(
   directory: ImportedDirectory,
   systemConfigOrSystem?: Config.Model.ISystemConfiguration | TsResSystem
 ): Result<ProcessedResources> {
-  // Determine if we have a system or a config
+  // Determine if we have a system or a config using proper type checking
   const systemResult =
-    systemConfigOrSystem &&
-    'qualifierTypes' in systemConfigOrSystem &&
-    'resourceManager' in systemConfigOrSystem
-      ? succeed(systemConfigOrSystem as TsResSystem)
-      : createTsResSystemFromConfig(systemConfigOrSystem as Config.Model.ISystemConfiguration);
+    systemConfigOrSystem && isTsResSystem(systemConfigOrSystem)
+      ? succeed(systemConfigOrSystem)
+      : createTsResSystemFromConfig(systemConfigOrSystem);
+
+  // Keep track of the original config for passing to finalizeProcessing
+  const originalConfig = extractSystemConfiguration(systemConfigOrSystem);
 
   return systemResult.onSuccess((tsResSystem) => {
+    // If no config was provided, we need to get the DEFAULT_SYSTEM_CONFIGURATION
+    // that was used to create the system
+    const configToUse = originalConfig ?? DEFAULT_SYSTEM_CONFIGURATION;
     // Create custom FileTree that preserves directory structure
     return BrowserFileTreeAccessors.create(directory)
       .onSuccess((accessors) => {
@@ -383,7 +392,7 @@ export function processImportedDirectory(
           ...tsResSystem,
           importManager
         };
-        return finalizeProcessing(updatedSystem);
+        return finalizeProcessing(updatedSystem, configToUse);
       })
       .withErrorFormat((message) => `processImportedDirectory failed: ${message}`);
   });
@@ -422,7 +431,7 @@ export function processFileTreeDirectly(
           ...tsResSystem,
           importManager
         };
-        return finalizeProcessing(updatedSystem);
+        return finalizeProcessing(updatedSystem, configToUse);
       })
       .withErrorFormat((message) => `processFileTreeDirectly failed: ${message}`);
   });
@@ -431,7 +440,10 @@ export function processFileTreeDirectly(
 /**
  * Finalizes processing and creates compiled resources
  */
-export function finalizeProcessing(system: TsResSystem): Result<ProcessedResources> {
+export function finalizeProcessing(
+  system: TsResSystem,
+  systemConfiguration?: Config.Model.ISystemConfiguration
+): Result<ProcessedResources> {
   console.log('=== FINALIZING PROCESSING ===');
   console.log('Resource manager resources:', system.resourceManager.resources.size);
   console.log('Resource manager resource keys:', Array.from(system.resourceManager.resources.keys()));
@@ -464,13 +476,16 @@ export function finalizeProcessing(system: TsResSystem): Result<ProcessedResourc
         console.log('Resource count:', resourceIds.length);
         console.log('Resource IDs:', resourceIds);
 
-        return succeed({
+        const result = {
           system,
           compiledCollection,
           resolver,
           resourceCount: resourceIds.length,
-          summary
-        });
+          summary,
+          ...(systemConfiguration && { activeConfiguration: systemConfiguration })
+        };
+
+        return succeed(result);
       });
     })
     .withErrorFormat((message: string) => `Failed to finalize processing: ${message}`);
@@ -544,7 +559,8 @@ export function createProcessedResourcesFromManager(
           compiledCollection,
           resolver,
           resourceCount: resourceIds.length,
-          summary
+          summary,
+          activeConfiguration: systemConfiguration
         });
       });
     } catch (error) {

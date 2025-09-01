@@ -10,12 +10,14 @@ import {
   CheckCircleIcon,
   InformationCircleIcon,
   EyeIcon,
-  PencilIcon
+  PencilIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 import { ConfigurationViewProps } from '../../../types';
 import { useConfigurationState } from '../../../hooks/useConfigurationState';
 import { Config, QualifierTypes, Qualifiers, ResourceTypes } from '@fgv/ts-res';
 import { QualifierTypeEditForm } from '../../forms/QualifierTypeEditForm';
+import { GenericQualifierTypeEditForm } from '../../forms/GenericQualifierTypeEditForm';
 import { QualifierEditForm } from '../../forms/QualifierEditForm';
 import { ResourceTypeEditForm } from '../../forms/ResourceTypeEditForm';
 
@@ -75,7 +77,7 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editingQualifierType, setEditingQualifierType] = useState<{
-    item: QualifierTypes.Config.ISystemQualifierTypeConfig;
+    item: QualifierTypes.Config.IAnyQualifierTypeConfig;
     index: number;
   } | null>(null);
   const [editingQualifier, setEditingQualifier] = useState<{
@@ -87,6 +89,7 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
     index: number;
   } | null>(null);
   const [showAddQualifierType, setShowAddQualifierType] = useState(false);
+  const [addQualifierTypeMode, setAddQualifierTypeMode] = useState<'system' | 'custom' | null>(null);
   const [showAddQualifier, setShowAddQualifier] = useState(false);
   const [showAddResourceType, setShowAddResourceType] = useState(false);
 
@@ -439,36 +442,129 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
       />
 
       {/* Edit Modals */}
-      {showAddQualifierType && (
+      {/* Qualifier Type Choice Modal */}
+      {showAddQualifierType && addQualifierTypeMode === null && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Add Qualifier Type</h3>
+                <p className="text-sm text-gray-600 mt-1">Choose the type of qualifier to create</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowAddQualifierType(false);
+                  setAddQualifierTypeMode(null);
+                }}
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <button
+                onClick={() => setAddQualifierTypeMode('system')}
+                className="w-full p-4 text-left border-2 border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
+              >
+                <div className="flex items-center">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-gray-900 mb-1">System Qualifier Type</h4>
+                    <p className="text-sm text-gray-600">
+                      Built-in types: language, territory, or literal with predefined configuration options
+                    </p>
+                  </div>
+                  <CogIcon className="w-6 h-6 text-gray-400 ml-3" />
+                </div>
+              </button>
+
+              <button
+                onClick={() => setAddQualifierTypeMode('custom')}
+                className="w-full p-4 text-left border-2 border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors"
+              >
+                <div className="flex items-center">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-gray-900 mb-1">Custom Qualifier Type</h4>
+                    <p className="text-sm text-gray-600">
+                      Custom type with JSON configuration for specialized validation logic
+                    </p>
+                  </div>
+                  <DocumentTextIcon className="w-6 h-6 text-gray-400 ml-3" />
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* System Qualifier Type Form */}
+      {showAddQualifierType && addQualifierTypeMode === 'system' && (
         <QualifierTypeEditForm
           onSave={(qualifierType) => {
             actions.addQualifierType(qualifierType);
             setShowAddQualifierType(false);
-            onMessage?.('success', `Added qualifier type: ${qualifierType.name}`);
+            setAddQualifierTypeMode(null);
+            onMessage?.('success', `Added system qualifier type: ${qualifierType.name}`);
           }}
-          onCancel={() => setShowAddQualifierType(false)}
+          onCancel={() => {
+            setShowAddQualifierType(false);
+            setAddQualifierTypeMode(null);
+          }}
           existingNames={(state.currentConfiguration.qualifierTypes || []).map((qt) => qt.name)}
         />
       )}
 
-      {editingQualifierType && (
-        <QualifierTypeEditForm
-          qualifierType={editingQualifierType.item}
+      {/* Custom Qualifier Type Form */}
+      {showAddQualifierType && addQualifierTypeMode === 'custom' && (
+        <GenericQualifierTypeEditForm
           onSave={(qualifierType) => {
-            actions.updateQualifierType(editingQualifierType.index, qualifierType);
-            setEditingQualifierType(null);
-            onMessage?.('success', `Updated qualifier type: ${qualifierType.name}`);
+            actions.addQualifierType(qualifierType);
+            setShowAddQualifierType(false);
+            setAddQualifierTypeMode(null);
+            onMessage?.('success', `Added custom qualifier type: ${qualifierType.name}`);
           }}
-          onCancel={() => setEditingQualifierType(null)}
-          existingNames={(state.currentConfiguration.qualifierTypes || [])
-            .filter((_, i) => i !== editingQualifierType.index)
-            .map((qt) => qt.name)}
+          onCancel={() => {
+            setShowAddQualifierType(false);
+            setAddQualifierTypeMode(null);
+          }}
+          existingNames={(state.currentConfiguration.qualifierTypes || []).map((qt) => qt.name)}
         />
       )}
 
+      {editingQualifierType &&
+        (QualifierTypes.Config.isSystemQualifierTypeConfig(editingQualifierType.item) ? (
+          <QualifierTypeEditForm
+            qualifierType={editingQualifierType.item}
+            onSave={(qualifierType) => {
+              actions.updateQualifierType(editingQualifierType.index, qualifierType);
+              setEditingQualifierType(null);
+              onMessage?.('success', `Updated qualifier type: ${qualifierType.name}`);
+            }}
+            onCancel={() => setEditingQualifierType(null)}
+            existingNames={(state.currentConfiguration.qualifierTypes || [])
+              .filter((_, i) => i !== editingQualifierType.index)
+              .map((qt) => qt.name)}
+          />
+        ) : (
+          <GenericQualifierTypeEditForm
+            qualifierType={editingQualifierType.item}
+            onSave={(qualifierType) => {
+              actions.updateQualifierType(editingQualifierType.index, qualifierType);
+              setEditingQualifierType(null);
+              onMessage?.('success', `Updated custom qualifier type: ${qualifierType.name}`);
+            }}
+            onCancel={() => setEditingQualifierType(null)}
+            existingNames={(state.currentConfiguration.qualifierTypes || [])
+              .filter((_, i) => i !== editingQualifierType.index)
+              .map((qt) => qt.name)}
+          />
+        ))}
+
       {showAddQualifier && (
         <QualifierEditForm
-          qualifierTypes={state.currentConfiguration.qualifierTypes || []}
+          qualifierTypes={(state.currentConfiguration.qualifierTypes || []).filter(
+            QualifierTypes.Config.isSystemQualifierTypeConfig
+          )}
           onSave={(qualifier) => {
             actions.addQualifier(qualifier);
             setShowAddQualifier(false);
@@ -482,7 +578,9 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
       {editingQualifier && (
         <QualifierEditForm
           qualifier={editingQualifier.item}
-          qualifierTypes={state.currentConfiguration.qualifierTypes || []}
+          qualifierTypes={(state.currentConfiguration.qualifierTypes || []).filter(
+            QualifierTypes.Config.isSystemQualifierTypeConfig
+          )}
           onSave={(qualifier) => {
             actions.updateQualifier(editingQualifier.index, qualifier);
             setEditingQualifier(null);
@@ -527,11 +625,11 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
 
 // Comprehensive panel components with full editing capabilities
 interface QualifierTypesPanelProps {
-  qualifierTypes: QualifierTypes.Config.ISystemQualifierTypeConfig[];
-  onUpdateItem: (index: number, qualifierType: QualifierTypes.Config.ISystemQualifierTypeConfig) => void;
+  qualifierTypes: QualifierTypes.Config.IAnyQualifierTypeConfig[];
+  onUpdateItem: (index: number, qualifierType: QualifierTypes.Config.IAnyQualifierTypeConfig) => void;
   onRemove: (index: number) => void;
   onShowAdd: () => void;
-  onEdit: (item: QualifierTypes.Config.ISystemQualifierTypeConfig, index: number) => void;
+  onEdit: (item: QualifierTypes.Config.IAnyQualifierTypeConfig, index: number) => void;
 }
 
 const QualifierTypesPanel: React.FC<QualifierTypesPanelProps> = ({
@@ -540,24 +638,36 @@ const QualifierTypesPanel: React.FC<QualifierTypesPanelProps> = ({
   onShowAdd,
   onEdit
 }) => {
-  const getConfigurationSummary = (type: QualifierTypes.Config.ISystemQualifierTypeConfig): string => {
+  const getConfigurationSummary = (type: QualifierTypes.Config.IAnyQualifierTypeConfig): string => {
     if (!type.configuration) return 'No configuration';
-    const config = type.configuration as Record<string, unknown>;
-    const details: string[] = [];
 
-    if (config?.allowContextList) details.push('Context List');
-    if (type.systemType === 'literal') {
-      if (config?.caseSensitive === false) details.push('Case Insensitive');
-      const enumValues = config?.enumeratedValues as string[] | undefined;
-      if (enumValues?.length) details.push(`${enumValues.length} values`);
-    }
-    if (type.systemType === 'territory') {
-      if (config?.acceptLowercase) details.push('Accept Lowercase');
-      const territories = config?.allowedTerritories as string[] | undefined;
-      if (territories?.length) details.push(`${territories.length} territories`);
+    // Handle system qualifier types
+    if (QualifierTypes.Config.isSystemQualifierTypeConfig(type)) {
+      const config = type.configuration as Record<string, unknown>;
+      const details: string[] = [];
+
+      if (config?.allowContextList) details.push('Context List');
+      if (type.systemType === 'literal') {
+        if (config?.caseSensitive === false) details.push('Case Insensitive');
+        const enumValues = config?.enumeratedValues as string[] | undefined;
+        if (enumValues?.length) details.push(`${enumValues.length} values`);
+      }
+      if (type.systemType === 'territory') {
+        if (config?.acceptLowercase) details.push('Accept Lowercase');
+        const territories = config?.allowedTerritories as string[] | undefined;
+        if (territories?.length) details.push(`${territories.length} territories`);
+      }
+
+      return details.length > 0 ? details.join(', ') : 'Default settings';
     }
 
-    return details.length > 0 ? details.join(', ') : 'Default settings';
+    // Handle custom qualifier types
+    const config = type.configuration;
+    if (typeof config === 'object' && config !== null) {
+      const keys = Object.keys(config);
+      return keys.length > 0 ? `${keys.length} properties` : 'Empty configuration';
+    }
+    return 'Custom configuration';
   };
 
   return (
@@ -592,14 +702,16 @@ const QualifierTypesPanel: React.FC<QualifierTypesPanelProps> = ({
                     <h4 className="font-medium text-gray-900">{type.name}</h4>
                     <span
                       className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        type.systemType === 'language'
-                          ? 'bg-blue-100 text-blue-800'
-                          : type.systemType === 'territory'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-purple-100 text-purple-800'
+                        QualifierTypes.Config.isSystemQualifierTypeConfig(type)
+                          ? type.systemType === 'language'
+                            ? 'bg-blue-100 text-blue-800'
+                            : type.systemType === 'territory'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-purple-100 text-purple-800'
+                          : 'bg-orange-100 text-orange-800 border border-orange-300'
                       }`}
                     >
-                      {type.systemType}
+                      {QualifierTypes.Config.isSystemQualifierTypeConfig(type) ? type.systemType : 'custom'}
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 mb-2">{getConfigurationSummary(type)}</p>
@@ -631,7 +743,7 @@ const QualifierTypesPanel: React.FC<QualifierTypesPanelProps> = ({
 
 interface QualifiersPanelProps {
   qualifiers: Qualifiers.IQualifierDecl[];
-  qualifierTypes: QualifierTypes.Config.ISystemQualifierTypeConfig[];
+  qualifierTypes: QualifierTypes.Config.IAnyQualifierTypeConfig[];
   onUpdateItem: (index: number, qualifier: Qualifiers.IQualifierDecl) => void;
   onRemove: (index: number) => void;
   onShowAdd: () => void;

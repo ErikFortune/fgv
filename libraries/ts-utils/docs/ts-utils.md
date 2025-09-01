@@ -590,6 +590,28 @@ Simple logger interface used by [orThrow(logger)](./ts-utils.iresult.orthrow.md)
 </td></tr>
 <tr><td>
 
+[IResultReporter](./ts-utils.iresultreporter.md)
+
+
+</td><td>
+
+Interface for reporting a result.
+
+
+</td></tr>
+<tr><td>
+
+[IResultReportOptions](./ts-utils.iresultreportoptions.md)
+
+
+</td><td>
+
+Options for reporting a result.
+
+
+</td></tr>
+<tr><td>
+
 [PopulateObjectOptions](./ts-utils.populateobjectoptions.md)
 
 
@@ -786,6 +808,17 @@ Continuation callback to be called in the event that an [Result](./ts-utils.resu
 </td><td>
 
 String-keyed record of initialization functions to be passed to [populateObject()](./ts-utils.populateobject.md) or [populateObject()](./ts-utils.populateobject_1.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[MessageLogLevel](./ts-utils.messageloglevel.md)
+
+
+</td><td>
+
+The severity level at which a message should be logged.
 
 
 </td></tr>

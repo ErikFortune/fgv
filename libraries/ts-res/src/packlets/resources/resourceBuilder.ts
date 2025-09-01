@@ -37,6 +37,7 @@ import { ReadOnlyResourceTypeCollector, ResourceType } from '../resource-types';
 import { Resource } from './resource';
 import { ConditionSetCollector } from '../conditions';
 import { AbstractDecisionCollector } from '../decisions';
+import { CandidateValueCollector } from './candidateValueCollector';
 import * as ResourceJson from '../resource-json';
 import * as Context from '../context';
 
@@ -50,6 +51,7 @@ export interface IResourceBuilderCreateParams {
   conditionSets: ConditionSetCollector;
   resourceTypes: ReadOnlyResourceTypeCollector;
   decisions: AbstractDecisionCollector;
+  candidateValues: CandidateValueCollector;
 }
 
 /**
@@ -114,6 +116,11 @@ export class ResourceBuilder {
   protected _decisions: AbstractDecisionCollector;
 
   /**
+   * Collector for candidate values.
+   */
+  protected _candidateValues: CandidateValueCollector;
+
+  /**
    * Constructor for a {@link Resources.ResourceBuilder | ResourceBuilder} object.
    * @param params - Parameters to construct the new {@link Resources.ResourceBuilder | ResourceBuilder}.
    */
@@ -122,6 +129,7 @@ export class ResourceBuilder {
     this._resourceTypes = params.resourceTypes;
     this._conditionSets = params.conditionSets;
     this._decisions = params.decisions;
+    this._candidateValues = params.candidateValues;
     this._candidates = new ResultMap<string, ResourceCandidate>();
     if (params.typeName) {
       this._resourceType = this._resourceTypes.validating.get(params.typeName).orThrow();
@@ -169,7 +177,8 @@ export class ResourceBuilder {
       id: this.id,
       resourceType: this._resourceType,
       decl: childDecl,
-      conditionSets: this._conditionSets
+      conditionSets: this._conditionSets,
+      candidateValues: this._candidateValues
     })
       .withDetail<ResourceBuilderResultDetail>('failure', 'success')
       .onSuccess((candidate) => {

@@ -22,7 +22,7 @@
 
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import * as TsRes from '../../../index';
-
+import { JsonObject } from '@fgv/ts-json-base';
 export interface ITestQualifierTypeConstructorParams {
   name?: string;
   allowContextList?: string;
@@ -30,6 +30,10 @@ export interface ITestQualifierTypeConstructorParams {
 }
 
 export class TestQualifierType extends TsRes.QualifierTypes.QualifierType {
+  public readonly systemTypeName: TsRes.QualifierTypeName = TsRes.Convert.qualifierTypeName
+    .convert('test')
+    .orThrow();
+
   public constructor(params?: ITestQualifierTypeConstructorParams) {
     super({
       name: params?.name ?? 'test',
@@ -51,6 +55,29 @@ export class TestQualifierType extends TsRes.QualifierTypes.QualifierType {
     operator?: TsRes.ConditionOperator
   ): Result<TsRes.QualifierConditionValue> {
     return this.isValidConditionValue(value) ? succeed(value) : fail(`Invalid condition value: ${value}`);
+  }
+
+  public getConfigurationJson(): Result<JsonObject> {
+    return succeed({
+      name: this.name,
+      systemType: 'test',
+      configuration: {}
+    });
+  }
+
+  public validateConfigurationJson(from: unknown): Result<JsonObject> {
+    // Simple validation for test class
+    if (typeof from !== 'object' || from === null) {
+      return fail('Expected object');
+    }
+    const obj = from as Record<string, unknown>;
+    if (typeof obj.name !== 'string') {
+      return fail('name must be string');
+    }
+    if (obj.systemType !== 'test') {
+      return fail('systemType must be test');
+    }
+    return succeed(from as JsonObject);
   }
 
   protected _matchOne(

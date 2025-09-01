@@ -9,5 +9,5 @@ A `Converter` for [SystemQualifierTypeConfig](./ts-res.qualifiertypes.config.isy
 **Signature:**
 
 ```typescript
-systemQualifierTypeConfig: import("@fgv/ts-utils").Converter<Model.ISystemQualifierTypeConfig, unknown>
+systemQualifierTypeConfig: Converter<Model.ISystemQualifierTypeConfig, unknown>
 ```

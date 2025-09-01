@@ -9,5 +9,5 @@ Qualifier type configurations that define the available qualifier types in the s
 **Signature:**
 
 ```typescript
-qualifierTypes: QualifierTypes.Config.ISystemQualifierTypeConfig[];
+qualifierTypes: QualifierTypes.Config.IAnyQualifierTypeConfig[];
 ```

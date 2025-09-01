@@ -22,6 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import { Result, fail, succeed } from '@fgv/ts-utils';
+import { JsonObject } from '@fgv/ts-json-base';
 import * as TsRes from '../../../index';
 
 /**
@@ -31,6 +32,10 @@ import * as TsRes from '../../../index';
 class BaseQualifierTypeTest extends TsRes.QualifierTypes.QualifierType {
   private _validValues: string[];
   private _allowInvalidConditions: boolean;
+
+  public readonly systemTypeName: TsRes.QualifierTypeName = TsRes.Convert.qualifierTypeName
+    .convert('base-test')
+    .orThrow();
 
   public constructor(
     validValues: string[] = ['valid', 'test'],
@@ -60,6 +65,29 @@ class BaseQualifierTypeTest extends TsRes.QualifierTypes.QualifierType {
 
   public isValidConditionValue(value: string): value is TsRes.QualifierConditionValue {
     return this._allowInvalidConditions || this._validValues.includes(value);
+  }
+
+  public getConfigurationJson(): Result<JsonObject> {
+    return succeed({
+      name: this.name,
+      systemType: 'base-test',
+      configuration: {}
+    });
+  }
+
+  public validateConfigurationJson(from: unknown): Result<JsonObject> {
+    // Simple validation for test class
+    if (typeof from !== 'object' || from === null) {
+      return fail('Expected object');
+    }
+    const obj = from as Record<string, unknown>;
+    if (typeof obj.name !== 'string') {
+      return fail('name must be string');
+    }
+    if (obj.systemType !== 'base-test') {
+      return fail('systemType must be base-test');
+    }
+    return succeed(from as JsonObject);
   }
 
   protected _matchOne(

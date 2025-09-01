@@ -53,6 +53,16 @@ global.URL = {
 // Extend jest matchers (toBeInTheDocument, etc.)
 require('@testing-library/jest-dom');
 
+// Suppress console output in tests by providing a no-op logger
+// This affects both direct console calls and components that use logger dependency injection
+global.testLogger = () => {}; // No-op logger for tests
+global.console = {
+  ...console,
+  log: global.testLogger,
+  warn: global.testLogger,
+  error: console.error // Keep error for actual test failures
+};
+
 // Mock document methods for file export
 global.document = {
   createElement: jest.fn(() => ({

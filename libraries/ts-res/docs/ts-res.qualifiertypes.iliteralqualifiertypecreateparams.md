@@ -102,12 +102,12 @@ _(Optional)_ Optional array of enumerated values to further constrain the type. 
 
 </td><td>
 
-[LiteralValueHierarchyDecl](./ts-res.qualifiertypes.literalvaluehierarchydecl.md)<!-- -->&lt;string&gt;
+Config.LiteralValueHierarchyDecl&lt;string&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional [hierarchy declaration](./ts-res.qualifiertypes.literalvaluehierarchydecl.md) of literal values to use for matching. If not provided, no hierarchy will be used.
+_(Optional)_ Optional [hierarchy declaration](./ts-res.qualifiertypes.config.literalvaluehierarchydecl.md) of literal values to use for matching. If not provided, no hierarchy will be used.
 
 
 </td></tr>

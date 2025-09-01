@@ -9,7 +9,7 @@ Creates a [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) from a confi
 **Signature:**
 
 ```typescript
-export declare function createQualifierTypeFromConfig(typeConfig: Config.IQualifierTypeConfig<JsonObject>): Result<QualifierType>;
+export declare function createQualifierTypeFromConfig(typeConfig: Config.IAnyQualifierTypeConfig): Result<QualifierType>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ typeConfig
 
 </td><td>
 
-Config.IQualifierTypeConfig&lt;JsonObject&gt;
+Config.IAnyQualifierTypeConfig
 
 
 </td><td>

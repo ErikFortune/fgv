@@ -200,6 +200,20 @@ Propagates the error message and detail from this result.
 </td></tr>
 <tr><td>
 
+[report(reporter, options)](./ts-utils.detailedfailure.report.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Reports the result to the supplied reporter
+
+
+</td></tr>
+<tr><td>
+
 [with(message, detail)](./ts-utils.detailedfailure.with.md)
 
 

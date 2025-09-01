@@ -37,11 +37,11 @@ import {
   ReadOnlyConditionSetCollector
 } from '../conditions';
 import { AbstractDecisionCollector, ReadOnlyAbstractDecisionCollector } from '../decisions';
-import { QualifierCollector } from '../qualifiers';
-import { ResourceType, ResourceTypeCollector } from '../resource-types';
-import { QualifierType, QualifierTypeCollector } from '../qualifier-types';
+import { QualifierCollector, IReadOnlyQualifierCollector } from '../qualifiers';
+import { ResourceType, ResourceTypeCollector, ReadOnlyResourceTypeCollector } from '../resource-types';
+import { QualifierType, QualifierTypeCollector, ReadOnlyQualifierTypeCollector } from '../qualifier-types';
 import { Convert, ResourceId, Helpers } from '../common';
-import { Converters } from '@fgv/ts-json-base';
+import { JsonObject, JsonValue, isJsonObject } from '@fgv/ts-json-base';
 import { IResourceManager, IResource, IResourceCandidate } from './iResourceManager';
 import { ConcreteDecision } from '../decisions';
 import * as Validate from './validate';
@@ -82,22 +82,23 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
   private readonly _qualifierTypes: QualifierTypeCollector;
   private readonly _qualifiers: QualifierCollector;
   private readonly _resourceTypes: ResourceTypeCollector;
+  private readonly _candidateValues: JsonValue[];
   private readonly _builtResources: ValidatingResultMap<ResourceId, IResource>;
   private _cachedResourceTree?: ReadOnlyResourceTreeRoot<IResource>;
 
   /**
-   * A {@link QualifierTypes.QualifierTypeCollector | QualifierTypeCollector} which
+   * A {@link QualifierTypes.ReadOnlyQualifierTypeCollector | ReadOnlyQualifierTypeCollector} which
    * contains the {@link QualifierTypes.QualifierType | qualifier types} used in this collection.
    */
-  public get qualifierTypes(): QualifierTypeCollector {
+  public get qualifierTypes(): ReadOnlyQualifierTypeCollector {
     return this._qualifierTypes;
   }
 
   /**
-   * A {@link Qualifiers.QualifierCollector | QualifierCollector} which
+   * A {@link Qualifiers.IReadOnlyQualifierCollector | ReadOnlyQualifierCollector} which
    * contains the {@link Qualifiers.Qualifier | qualifiers} used in this collection.
    */
-  public get qualifiers(): QualifierCollector {
+  public get qualifiers(): IReadOnlyQualifierCollector {
     return this._qualifiers;
   }
 
@@ -105,8 +106,15 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
    * A {@link ResourceTypes.ResourceTypeCollector | ResourceTypeCollector} which
    * contains the {@link ResourceTypes.ResourceType | resource types} used in this collection.
    */
-  public get resourceTypes(): ResourceTypeCollector {
+  public get resourceTypes(): ReadOnlyResourceTypeCollector {
     return this._resourceTypes;
+  }
+
+  /**
+   * The candidate values in the collection.
+   */
+  public get candidateValues(): ReadonlyArray<JsonValue> {
+    return this._candidateValues;
   }
 
   /**
@@ -166,6 +174,7 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
     this.conditions = conditionCollector;
     this.conditionSets = conditionSetCollector;
     this.decisions = decisionCollector;
+    this._candidateValues = [...params.compiledCollection.candidateValues];
 
     // Build resources from compiled data
     this._builtResources = this._buildResources(
@@ -491,6 +500,22 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
   }
 
   /**
+   * Gets a candidate value from the collection.
+   * @param valueIndex - The index of the candidate value to get.
+   * @returns
+   */
+  private _getCandidateValue(valueIndex: number): Result<JsonObject> {
+    if (valueIndex < 0 || valueIndex >= this._candidateValues.length) {
+      return fail(`Invalid candidate value index ${valueIndex}`);
+    }
+    /* c8 ignore next 3 - defensive coding for invalid candidate value conversion */
+    if (!isJsonObject(this._candidateValues[valueIndex])) {
+      return fail(`${valueIndex}: candidate value not a JSON object.`);
+    }
+    return succeed(this._candidateValues[valueIndex]);
+  }
+
+  /**
    * Reconstructs a ValidatingResultMap of resources from compiled data.
    * @param compiled - The compiled resource collection
    * @param resourceTypes - The reconstructed ResourceTypeCollector
@@ -536,7 +561,7 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
       // Build candidates from compiled data
       const candidateDeclsResult = mapResults(
         compiledResource.candidates.map((compiledCandidate) =>
-          Converters.jsonObject.convert(compiledCandidate.json).onSuccess((json) => {
+          this._getCandidateValue(compiledCandidate.valueIndex).onSuccess((json) => {
             return succeed({
               json,
               isPartial: compiledCandidate.isPartial,
@@ -545,6 +570,7 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
           })
         )
       );
+
       if (candidateDeclsResult.isFailure()) {
         errors.addMessage(
           `Failed to convert candidate JSON for resource ${compiledResource.id}: ${candidateDeclsResult.message}`
@@ -560,7 +586,6 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
         mergeMethod: candidateDecl.mergeMethod
       }));
 
-      // Create a ConcreteDecision from the abstract decision and candidate values
       const candidatesWithConditionSets = decision.candidates.map((baseCandidate, idx) => ({
         conditionSet: baseCandidate.conditionSet,
         value: candidates[idx].json

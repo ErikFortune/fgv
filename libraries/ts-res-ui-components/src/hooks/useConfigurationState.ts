@@ -35,16 +35,13 @@ export interface ConfigurationActions {
   applyConfiguration: () => void;
 
   // Editing operations
-  updateQualifierTypes: (qualifierTypes: QualifierTypes.Config.ISystemQualifierTypeConfig[]) => void;
+  updateQualifierTypes: (qualifierTypes: QualifierTypes.Config.IAnyQualifierTypeConfig[]) => void;
   updateQualifiers: (qualifiers: Qualifiers.IQualifierDecl[]) => void;
   updateResourceTypes: (resourceTypes: ResourceTypes.Config.IResourceTypeConfig[]) => void;
 
   // Individual item operations
-  addQualifierType: (qualifierType: QualifierTypes.Config.ISystemQualifierTypeConfig) => void;
-  updateQualifierType: (
-    index: number,
-    qualifierType: QualifierTypes.Config.ISystemQualifierTypeConfig
-  ) => void;
+  addQualifierType: (qualifierType: QualifierTypes.Config.IAnyQualifierTypeConfig) => void;
+  updateQualifierType: (index: number, qualifierType: QualifierTypes.Config.IAnyQualifierTypeConfig) => void;
   removeQualifierType: (index: number) => void;
 
   addQualifier: (qualifier: Qualifiers.IQualifierDecl) => void;
@@ -225,7 +222,7 @@ export function useConfigurationState(
 
   // Qualifier Types operations
   const updateQualifierTypes = useCallback(
-    (qualifierTypes: QualifierTypes.Config.ISystemQualifierTypeConfig[]) => {
+    (qualifierTypes: QualifierTypes.Config.IAnyQualifierTypeConfig[]) => {
       setCurrentConfiguration((prev) => ({
         ...prev,
         qualifierTypes
@@ -234,7 +231,7 @@ export function useConfigurationState(
     []
   );
 
-  const addQualifierType = useCallback((qualifierType: QualifierTypes.Config.ISystemQualifierTypeConfig) => {
+  const addQualifierType = useCallback((qualifierType: QualifierTypes.Config.IAnyQualifierTypeConfig) => {
     setCurrentConfiguration((prev) => ({
       ...prev,
       qualifierTypes: [...(prev.qualifierTypes || []), qualifierType]
@@ -242,7 +239,7 @@ export function useConfigurationState(
   }, []);
 
   const updateQualifierType = useCallback(
-    (index: number, qualifierType: QualifierTypes.Config.ISystemQualifierTypeConfig) => {
+    (index: number, qualifierType: QualifierTypes.Config.IAnyQualifierTypeConfig) => {
       setCurrentConfiguration((prev) => ({
         ...prev,
         qualifierTypes: prev.qualifierTypes?.map((qt, i) => (i === index ? qualifierType : qt)) || []

@@ -22,8 +22,10 @@
 
 /* eslint-disable @rushstack/typedef-var */
 
-import { Converters } from '@fgv/ts-utils';
+import { Converter, Converters } from '@fgv/ts-utils';
 import * as Model from './json';
+import * as Common from '../../common';
+import { Converters as JsonConverters } from '@fgv/ts-json-base';
 
 /**
  * A `Converter` for {@link QualifierTypes.Config.ILanguageQualifierTypeConfig | LanguageQualifierTypeConfig} objects.
@@ -42,7 +44,8 @@ export const languageQualifierTypeConfig = Converters.strictObject<Model.ILangua
 export const territoryQualifierTypeConfig = Converters.strictObject<Model.ITerritoryQualifierTypeConfig>({
   allowContextList: Converters.boolean,
   acceptLowercase: Converters.boolean.optional(),
-  allowedTerritories: Converters.arrayOf(Converters.string).optional()
+  allowedTerritories: Converters.arrayOf(Converters.string).optional(),
+  hierarchy: Converters.recordOf(Converters.string).optional()
 });
 
 /**
@@ -106,3 +109,36 @@ export const systemQualifierTypeConfig = Converters.discriminatedObject<Model.IS
     literal: systemLiteralQualifierTypeConfig
   }
 );
+
+/**
+ * A `Converter` for {@link QualifierTypes.Config.IQualifierTypeConfig | QualifierTypeConfig} objects.
+ * @returns A `Converter` for {@link QualifierTypes.Config.IQualifierTypeConfig | QualifierTypeConfig} objects.
+ * @param config - A `Converter` for the configuration object.
+ * @public
+ */
+export function qualifierTypeConfig<T, TD = unknown>(
+  config: Converter<T, TD>
+): Converter<Model.IQualifierTypeConfig<T>, TD> {
+  return Converters.strictObject<Model.IQualifierTypeConfig<T>, TD>({
+    name: Common.Convert.qualifierTypeName,
+    systemType: Common.Convert.qualifierTypeName,
+    configuration: config.optional()
+  });
+}
+
+/**
+ * A `Converter` for {@link QualifierTypes.Config.IQualifierTypeConfig | QualifierTypeConfig} objects.
+ * @returns A `Converter` for {@link QualifierTypes.Config.IQualifierTypeConfig | QualifierTypeConfig} objects.
+ * @public
+ */
+export const jsonQualifierTypeConfig = qualifierTypeConfig(JsonConverters.jsonObject);
+
+/**
+ * A `Converter` for {@link QualifierTypes.Config.IAnyQualifierTypeConfig | AnyQualifierTypeConfig} objects.
+ * @returns A `Converter` for {@link QualifierTypes.Config.IAnyQualifierTypeConfig | AnyQualifierTypeConfig} objects.
+ * @public
+ */
+export const anyQualifierTypeConfig = Converters.oneOf<Model.IAnyQualifierTypeConfig>([
+  jsonQualifierTypeConfig,
+  systemQualifierTypeConfig
+]);

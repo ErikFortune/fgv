@@ -33,6 +33,7 @@ import {
   QualifierTypeName,
   Validate
 } from '../common';
+import { JsonObject } from '@fgv/ts-json-base';
 
 /**
  * Interface for a qualifier type. A qualifier type implements the build and
@@ -45,6 +46,11 @@ export interface IQualifierType extends ICollectible<QualifierTypeName, Qualifie
    * The name of the qualifier type.
    */
   readonly name: QualifierTypeName;
+
+  /**
+   * Name of the underlying system type.
+   */
+  readonly systemTypeName: QualifierTypeName;
 
   /**
    * Unique key for this qualifier.
@@ -120,6 +126,19 @@ export interface IQualifierType extends ICollectible<QualifierTypeName, Qualifie
    * Sets the index for this qualifier type. Once set, index is immutable.
    */
   setIndex(index: number): Result<QualifierTypeIndex>;
+
+  /**
+   * Gets the configuration for this qualifier type.
+   * @returns `Success` with the configuration if successful, `Failure` with an error message otherwise.
+   */
+  getConfigurationJson(): Result<JsonObject>;
+
+  /**
+   * Validates configuration JSON data for this qualifier type.
+   * @param from - The unknown data to validate as configuration JSON.
+   * @returns `Success` with validated JSON configuration if valid, `Failure` with an error message otherwise.
+   */
+  validateConfigurationJson(from: unknown): Result<JsonObject>;
 }
 
 /**
@@ -154,6 +173,11 @@ export abstract class QualifierType implements IQualifierType {
    * {@inheritdoc QualifierTypes.IQualifierType.name}
    */
   public readonly name: QualifierTypeName;
+
+  /**
+   * {@inheritdoc QualifierTypes.IQualifierType.systemTypeName}
+   */
+  public abstract readonly systemTypeName: QualifierTypeName;
 
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.key}
@@ -262,6 +286,16 @@ export abstract class QualifierType implements IQualifierType {
     }
     return this._matchOne(condition, context, operator);
   }
+
+  /**
+   * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
+   */
+  public abstract getConfigurationJson(): Result<JsonObject>;
+
+  /**
+   * {@inheritdoc QualifierTypes.IQualifierType.validateConfigurationJson}
+   */
+  public abstract validateConfigurationJson(from: unknown): Result<JsonObject>;
 
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.setIndex}

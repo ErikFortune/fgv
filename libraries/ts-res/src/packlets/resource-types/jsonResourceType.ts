@@ -55,6 +55,11 @@ export interface IJsonResourceTypeCreateParams {
  */
 export class JsonResourceType extends ResourceType<JsonObject> {
   /**
+   * {@inheritdoc ResourceTypes.ResourceType.systemTypeName}
+   */
+  public readonly systemTypeName: ResourceTypeName = Convert.resourceTypeName.convert('json').orThrow();
+
+  /**
    * Protected {@link ResourceTypes.JsonResourceType | JsonResourceType} constructor for use by subclasses.
    * Use {@link ResourceTypes.JsonResourceType.create | JsonResourceType.create} to create a new instance.
    * @param key - The key for the new {@link ResourceTypes.JsonResourceType | JsonResourceType} instance.

@@ -17,7 +17,7 @@ tsconfig.json
 
 # Source files (if publishing only built output)
 # Uncomment if you only want to publish dist/lib
-# src/
+src/
 
 # Rush/Heft temporary files
 .heft/

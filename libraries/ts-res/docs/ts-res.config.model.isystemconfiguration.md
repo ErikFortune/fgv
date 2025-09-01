@@ -102,7 +102,7 @@ Qualifier declarations that define the available qualifiers in the system.
 
 </td><td>
 
-QualifierTypes.Config.ISystemQualifierTypeConfig\[\]
+QualifierTypes.Config.IAnyQualifierTypeConfig\[\]
 
 
 </td><td>
