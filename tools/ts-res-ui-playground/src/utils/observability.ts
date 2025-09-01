@@ -90,73 +90,6 @@ export function logConfigurationProcessing(
 }
 
 /**
- * Logs the start of qualifier type creation.
- */
-export function logQualifierTypeCreationStart(
-  o11y: ObservabilityTools.IObservabilityContext,
-  qualifierTypes: Config.Model.IQualifierTypeDecl[]
-): void {
-  o11y.diag.info('[QUALIFIER_TYPES] Starting creation of qualifier types:', {
-    count: qualifierTypes.length,
-    types: qualifierTypes.map((qt) => `${qt.name} (${qt.systemType})`)
-  });
-}
-
-/**
- * Logs individual qualifier type creation.
- */
-export function logQualifierTypeCreation(
-  o11y: ObservabilityTools.IObservabilityContext,
-  index: number,
-  total: number,
-  qualifierType: Config.Model.IQualifierTypeDecl,
-  success: boolean,
-  error?: string
-): void {
-  if (success) {
-    o11y.diag.info(
-      `[QUALIFIER_TYPES] [${index + 1}/${total}] ✅ Created "${qualifierType.name}" (${
-        qualifierType.systemType
-      })`
-    );
-  } else {
-    o11y.diag.error(
-      `[QUALIFIER_TYPES] [${index + 1}/${total}] ❌ Failed to create "${qualifierType.name}" (${
-        qualifierType.systemType
-      }):`,
-      error
-    );
-    // Also log as user-facing error
-    o11y.user.error(`Failed to create qualifier type "${qualifierType.name}": ${error}`);
-  }
-}
-
-/**
- * Logs factory chain resolution details.
- */
-export function logFactoryChainResolution(
-  o11y: ObservabilityTools.IObservabilityContext,
-  systemType: string,
-  triedFactories: string[],
-  successfulFactory?: string
-): void {
-  if (successfulFactory) {
-    o11y.diag.info(`[FACTORY_CHAIN] Resolved "${systemType}" type:`, {
-      triedFactories,
-      successfulFactory,
-      message: `Factory chain resolved "${systemType}" using ${successfulFactory} after trying ${triedFactories.length} factories`
-    });
-  } else {
-    o11y.diag.error(`[FACTORY_CHAIN] Failed to resolve "${systemType}" type:`, {
-      triedFactories,
-      message: `No factory in chain could handle "${systemType}" after trying: ${triedFactories.join(', ')}`
-    });
-    // User-facing error
-    o11y.user.error(`Configuration error: No factory available to handle "${systemType}" qualifier type`);
-  }
-}
-
-/**
  * Logs import process stages.
  */
 export function logImportStage(
@@ -201,43 +134,6 @@ export function logImportStage(
       o11y.user.info(message);
     }
   }
-}
-
-/**
- * Logs resource processing results.
- */
-export function logResourceProcessingResult(
-  o11y: ObservabilityTools.IObservabilityContext,
-  success: boolean,
-  resourceCount?: number,
-  error?: string
-): void {
-  if (success) {
-    o11y.diag.info(`[RESOURCES] ✅ Successfully processed ${resourceCount || 0} resources`);
-    o11y.user.success(`Processed ${resourceCount || 0} resources successfully`);
-  } else {
-    o11y.diag.error(`[RESOURCES] ❌ Failed to process resources: ${error}`);
-    o11y.user.error(`Resource processing failed: ${error}`);
-  }
-}
-
-/**
- * Logs resource state updates.
- */
-export function logResourceStateUpdate(
-  o11y: ObservabilityTools.IObservabilityContext,
-  hasResources: boolean,
-  resourceCount: number,
-  hasErrors: boolean
-): void {
-  o11y.diag.info(`[RESOURCE_STATE] Resource state updated:`, {
-    hasResources,
-    resourceCount,
-    hasErrors,
-    message: `Resources: ${hasResources ? `${resourceCount} loaded` : 'none'}, Errors: ${
-      hasErrors ? 'yes' : 'no'
-    }`
-  });
 }
 
 /**
