@@ -1375,7 +1375,7 @@ export interface OrchestratorActions {
   o11y: import('../utils/observability').IObservabilityContext;
 
   // Resource resolution
-  resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<JsonValue>>;
+  resolveResource: (resourceId: string, context?: Record<string, string>) => Result<JsonValue>;
 }
 
 // GridView types

@@ -49,7 +49,7 @@ export const GenericQualifierTypeEditForm: React.FC<GenericQualifierTypeEditForm
     if (qualifierType) {
       return {
         name: qualifierType.name,
-        systemType: qualifierType.systemType as string,
+        systemType: qualifierType.systemType,
         configuration: JSON.stringify(qualifierType.configuration || {}, null, 2)
       };
     }
@@ -137,7 +137,7 @@ export const GenericQualifierTypeEditForm: React.FC<GenericQualifierTypeEditForm
       const configuration = JSON.parse(formData.configuration) as JsonObject;
       const newQualifierType: QualifierTypes.Config.IAnyQualifierTypeConfig = {
         name: formData.name.trim(),
-        systemType: formData.systemType.trim() as string,
+        systemType: formData.systemType.trim(),
         configuration
       };
 

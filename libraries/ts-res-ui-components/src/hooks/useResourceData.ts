@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Result, succeed, fail } from '@fgv/ts-utils';
+import { Result, succeed, fail, mapResults } from '@fgv/ts-utils';
 import {
   ResourceManagerState,
   ProcessedResources,
@@ -19,6 +19,7 @@ import {
   ResourceTypes
 } from '@fgv/ts-res';
 import { processImportedFiles, processImportedDirectory } from '../utils/tsResIntegration';
+import { createResolverWithContext, resolveResourceDetailed } from '../utils/resolutionUtils';
 import * as ObservabilityTools from '../utils/observability';
 
 /**
@@ -69,7 +70,7 @@ export interface UseResourceDataReturn {
     /** Reset the entire resource management state */
     reset: () => void;
     /** Resolve a specific resource with optional context */
-    resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<JsonValue>>;
+    resolveResource: (resourceId: string, context?: Record<string, string>) => Result<JsonValue>;
     /** Apply a new configuration to the current system */
     applyConfiguration: (config: Config.Model.ISystemConfiguration) => void;
     /** Update the processed resources state directly */
@@ -133,48 +134,47 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
       setState((prev) => ({ ...prev, isProcessing: true, error: null }));
 
       try {
-        const result = processImportedDirectory(
+        return processImportedDirectory(
           directory,
           state.activeConfiguration || undefined,
           params?.qualifierTypeFactory,
           params?.resourceTypeFactory,
           o11y
-        );
+        )
+          .onSuccess((value) => {
+            o11y.diag.info(
+              `[useResourceData] Directory processing succeeded, resources found: ${
+                value.summary?.totalResources || 0
+              }`
+            );
+            o11y.diag.info(
+              `[useResourceData] Resource IDs: ${JSON.stringify(value.summary?.resourceIds || [])}`
+            );
 
-        if (result.isSuccess()) {
-          o11y.diag.info(
-            `[useResourceData] Directory processing succeeded, resources found: ${
-              result.value.summary?.totalResources || 0
-            }`
-          );
-          o11y.diag.info(
-            `[useResourceData] Resource IDs: ${JSON.stringify(result.value.summary?.resourceIds || [])}`
-          );
+            setState((prev) => ({
+              ...prev,
+              isProcessing: false,
+              processedResources: value,
+              hasProcessedData: true,
+              isLoadedFromBundle: false,
+              bundleMetadata: null
+            }));
+            o11y.diag.info(
+              `[useResourceData] State updated with ${value.summary?.totalResources || 0} resources`
+            );
+            return succeed(undefined);
+          })
+          .onFailure((errorMessage) => {
+            o11y.diag.error(`[useResourceData] Directory processing failed: ${errorMessage}`);
+            o11y.user.error(`Directory import failed: ${errorMessage}`);
 
-          setState((prev) => ({
-            ...prev,
-            isProcessing: false,
-            processedResources: result.value,
-            hasProcessedData: true,
-            isLoadedFromBundle: false,
-            bundleMetadata: null
-          }));
-          o11y.diag.info(
-            `[useResourceData] State updated with ${result.value.summary?.totalResources || 0} resources`
-          );
-          return succeed(undefined);
-        } else {
-          const errorMessage = result.message;
-          o11y.diag.error(`[useResourceData] Directory processing failed: ${errorMessage}`);
-          o11y.user.error(`Directory import failed: ${errorMessage}`);
-
-          setState((prev) => ({
-            ...prev,
-            isProcessing: false,
-            error: errorMessage
-          }));
-          return fail(errorMessage);
-        }
+            setState((prev) => ({
+              ...prev,
+              isProcessing: false,
+              error: errorMessage
+            }));
+            return fail(errorMessage);
+          });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         o11y.diag.error(`[useResourceData] Exception during directory processing: ${errorMessage}`);
@@ -199,35 +199,34 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
       setState((prev) => ({ ...prev, isProcessing: true, error: null, activeConfiguration: config }));
 
       try {
-        const result = processImportedDirectory(
+        return processImportedDirectory(
           directory,
           config,
           params?.qualifierTypeFactory,
           params?.resourceTypeFactory,
           o11y
-        );
-
-        if (result.isSuccess()) {
-          setState((prev) => ({
-            ...prev,
-            isProcessing: false,
-            processedResources: result.value,
-            hasProcessedData: true,
-            isLoadedFromBundle: false,
-            bundleMetadata: null,
-            activeConfiguration: config
-          }));
-          return succeed(undefined);
-        } else {
-          const errorMessage = result.message;
-          o11y.user.error(`Directory import with config failed: ${errorMessage}`);
-          setState((prev) => ({
-            ...prev,
-            isProcessing: false,
-            error: errorMessage
-          }));
-          return fail(errorMessage);
-        }
+        )
+          .onSuccess((value) => {
+            setState((prev) => ({
+              ...prev,
+              isProcessing: false,
+              processedResources: value,
+              hasProcessedData: true,
+              isLoadedFromBundle: false,
+              bundleMetadata: null,
+              activeConfiguration: config
+            }));
+            return succeed(undefined);
+          })
+          .onFailure((errorMessage) => {
+            o11y.user.error(`Directory import with config failed: ${errorMessage}`);
+            setState((prev) => ({
+              ...prev,
+              isProcessing: false,
+              error: errorMessage
+            }));
+            return fail(errorMessage);
+          });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         o11y.user.error(`Directory import with config failed: ${errorMessage}`);
@@ -247,34 +246,33 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
       setState((prev) => ({ ...prev, isProcessing: true, error: null }));
 
       try {
-        const result = processImportedFiles(
+        return processImportedFiles(
           files,
           state.activeConfiguration || undefined,
           params?.qualifierTypeFactory,
           params?.resourceTypeFactory,
           o11y
-        );
-
-        if (result.isSuccess()) {
-          setState((prev) => ({
-            ...prev,
-            isProcessing: false,
-            processedResources: result.value,
-            hasProcessedData: true,
-            isLoadedFromBundle: false,
-            bundleMetadata: null
-          }));
-          return succeed(undefined);
-        } else {
-          const errorMessage = result.message;
-          o11y.user.error(`Files import failed: ${errorMessage}`);
-          setState((prev) => ({
-            ...prev,
-            isProcessing: false,
-            error: errorMessage
-          }));
-          return fail(errorMessage);
-        }
+        )
+          .onSuccess((value) => {
+            setState((prev) => ({
+              ...prev,
+              isProcessing: false,
+              processedResources: value,
+              hasProcessedData: true,
+              isLoadedFromBundle: false,
+              bundleMetadata: null
+            }));
+            return succeed(undefined);
+          })
+          .onFailure((errorMessage) => {
+            o11y.user.error(`Files import failed: ${errorMessage}`);
+            setState((prev) => ({
+              ...prev,
+              isProcessing: false,
+              error: errorMessage
+            }));
+            return fail(errorMessage);
+          });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         o11y.user.error(`Files import failed: ${errorMessage}`);
@@ -298,17 +296,11 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
         o11y.diag.info('[Bundle Processing] Attempting to extract bundle components...');
 
         // Extract bundle components (configuration and compiled collection)
-        const componentsResult = Bundle.BundleUtils.extractBundleComponents(bundle);
-        o11y.diag.info(
-          '[Bundle Processing] Component extraction result:',
-          componentsResult.isSuccess() ? 'SUCCESS' : `FAILED: ${componentsResult.message}`
-        );
+        const { systemConfiguration, compiledCollection, metadata } =
+          Bundle.BundleUtils.extractBundleComponents(bundle).orThrow(
+            (msg) => `Failed to extract bundle components: ${msg}`
+          );
 
-        if (componentsResult.isFailure()) {
-          throw new Error(`Failed to extract bundle components: ${componentsResult.message}`);
-        }
-
-        const { systemConfiguration, compiledCollection, metadata } = componentsResult.value;
         o11y.diag.info('[Bundle Processing] Extracted components:', {
           hasSystemConfiguration: !!systemConfiguration,
           hasCompiledCollection: !!compiledCollection,
@@ -319,18 +311,12 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
         // Use BundleLoader to create a fully functional resource manager from the bundle
         o11y.diag.info('[Bundle Processing] Using BundleLoader to create resource manager from bundle');
 
-        const bundleManagerResult = Bundle.BundleLoader.createManagerFromBundle({
-          bundle: bundle,
-          skipChecksumVerification: true // Skip for now since we're in a browser environment
-        });
-
-        if (bundleManagerResult.isFailure()) {
-          throw new Error(`Failed to create resource manager from bundle: ${bundleManagerResult.message}`);
-        }
-
         // The bundle's IResourceManager contains all the resources and candidates
         // We'll use it directly for both UI and resolution
-        const bundleResourceManager = bundleManagerResult.value;
+        const bundleResourceManager = Bundle.BundleLoader.createManagerFromBundle({
+          bundle: bundle,
+          skipChecksumVerification: true // Skip for now since we're in a browser environment
+        }).orThrow((msg) => `Failed to create resource manager from bundle: ${msg}`);
 
         // Debug: Check what resources are in the original bundle manager
         o11y.diag.info('[Bundle Processing] Original bundle manager resources:', {
@@ -341,18 +327,11 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
 
         // Convert the compiled collection to an editable ResourceManagerBuilder
         // using createFromCompiledResourceCollection for exact reconstruction
-        const reconstructedBuilderResult =
-          Resources.ResourceManagerBuilder.createFromCompiledResourceCollection(
-            compiledCollection,
-            systemConfiguration
-          );
-        if (reconstructedBuilderResult.isFailure()) {
-          throw new Error(
-            `Failed to reconstruct builder from compiled collection: ${reconstructedBuilderResult.message}`
-          );
-        }
+        const editableResourceManager = Resources.ResourceManagerBuilder.createFromCompiledResourceCollection(
+          compiledCollection,
+          systemConfiguration
+        ).orThrow((msg) => `Failed to reconstruct builder from compiled collection: ${msg}`);
 
-        const editableResourceManager = reconstructedBuilderResult.value;
         o11y.diag.info('[Bundle Processing] Normalized builder resources:', {
           numResources: editableResourceManager.resources.size,
           numCandidates: Array.from(editableResourceManager.getAllCandidates()).length,
@@ -377,28 +356,16 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
         };
 
         // Extract configuration for UI display using the new getConfigurationJson method
-        const qualifierTypesResult = Array.from(system.qualifierTypes.values()).map((qt) =>
-          qt
-            .getConfigurationJson()
-            .onSuccess((jsonConfig) =>
-              QualifierTypes.Config.Convert.anyQualifierTypeConfig.convert(jsonConfig)
-            )
-        );
+        const allQualifierTypes = mapResults(
+          Array.from(system.qualifierTypes.values()).map((qt) =>
+            qt
+              .getConfigurationJson()
+              .onSuccess((jsonConfig) =>
+                QualifierTypes.Config.Convert.anyQualifierTypeConfig.convert(jsonConfig)
+              )
+          )
+        ).orThrow((msg) => `Failed to extract qualifier type configurations: ${msg}`);
 
-        // Check if any qualifier type extraction failed
-        const failedQualifierTypes = qualifierTypesResult.filter((result) => result.isFailure());
-        if (failedQualifierTypes.length > 0) {
-          throw new Error(
-            `Failed to extract qualifier type configurations: ${failedQualifierTypes
-              .map((r) => r.message)
-              .join(', ')}`
-          );
-        }
-
-        // Filter to only system qualifier types for UI compatibility
-        const allQualifierTypes = qualifierTypesResult
-          .map((result) => result.value)
-          .filter((config): config is QualifierTypes.Config.IAnyQualifierTypeConfig => config !== undefined);
         const systemQualifierTypes = allQualifierTypes.filter(
           QualifierTypes.Config.isSystemQualifierTypeConfig
         );
@@ -454,15 +421,11 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
         o11y.diag.info(`Bundle loaded with ${resourceCount} resources (with candidates):`, resourceIds);
 
         // Create a resolver using the bundle's resource manager
-        const resolverResult = Runtime.ResourceResolver.create({
+        const resolver = Runtime.ResourceResolver.create({
           resourceManager: system.resourceManager,
           qualifierTypes: system.qualifierTypes,
           contextQualifierProvider: system.contextQualifierProvider
-        });
-
-        if (resolverResult.isFailure()) {
-          throw new Error(`Failed to create resolver: ${resolverResult.message}`);
-        }
+        }).orThrow((msg) => `Failed to create resolver: ${msg}`);
 
         // No longer create a separate CompiledResourceCollection manager
         // We'll derive the compiled collection from ResourceManagerBuilder when needed
@@ -478,7 +441,7 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
             contextQualifierProvider: system.contextQualifierProvider
           },
           compiledCollection,
-          resolver: resolverResult.value,
+          resolver,
           resourceCount,
           summary: {
             totalResources: resourceCount,
@@ -527,78 +490,56 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
   }, []);
 
   const resolveResource = useCallback(
-    async (resourceId: string, context?: Record<string, string>): Promise<Result<JsonValue>> => {
+    (resourceId: string, context?: Record<string, string>): Result<JsonValue> => {
       if (!state.processedResources?.system?.resourceManager) {
         return fail('No resources loaded');
       }
 
       try {
-        // Get the resource from the resource manager
-        const resourceResult = state.processedResources.system.resourceManager.getBuiltResource(resourceId);
-        if (resourceResult.isFailure()) {
-          return fail(`Resource not found: ${resourceId}`);
-        }
-
-        // Get the resource and convert to JSON
-        const resource = resourceResult.value;
-
-        // Import resolution utilities for detailed resolution
-        const { createResolverWithContext, resolveResourceDetailed } = await import(
-          '../utils/resolutionUtils'
-        );
-
         // Use provided context or empty context
         const contextValues = context || {};
 
-        // Create resolver with context
-        const resolverResult = createResolverWithContext(state.processedResources, contextValues, {
-          enableDebugLogging: false
-        });
+        return state.processedResources.system.resourceManager
+          .getBuiltResource(resourceId)
+          .onFailure(() => fail(`Resource not found: ${resourceId}`))
+          .onSuccess(() =>
+            createResolverWithContext(state.processedResources!, contextValues, {
+              enableDebugLogging: false
+            }).withErrorFormat((msg) => `Failed to create resolver: ${msg}`)
+          )
+          .onSuccess((resolver) =>
+            resolveResourceDetailed(resolver, resourceId, state.processedResources!, {
+              enableDebugLogging: false
+            }).withErrorFormat((msg) => `Failed to resolve resource details: ${msg}`)
+          )
+          .onSuccess((resolutionResult) => {
+            // Return the detailed resolution result as JsonValue
+            const detailedJson = {
+              success: resolutionResult.success,
+              resourceId: resolutionResult.resourceId,
+              resource: resolutionResult.resource
+                ? {
+                    id: resolutionResult.resource.id,
+                    resourceType: resolutionResult.resource.resourceType?.key || 'unknown',
+                    candidateCount: resolutionResult.resource.candidates.length
+                  }
+                : null,
+              bestCandidate: resolutionResult.bestCandidate?.json,
+              allCandidates: resolutionResult.allCandidates?.map((c: any) => c.json),
+              candidateDetails: resolutionResult.candidateDetails?.map((cd: any) => ({
+                candidateIndex: cd.candidateIndex,
+                matched: cd.matched,
+                matchType: cd.matchType,
+                isDefaultMatch: cd.isDefaultMatch,
+                conditionEvaluations: cd.conditionEvaluations,
+                candidateJson: cd.candidate?.json
+              })),
+              composedValue: resolutionResult.composedValue,
+              error: resolutionResult.error
+            };
 
-        if (resolverResult.isFailure()) {
-          return fail(`Failed to create resolver: ${resolverResult.message}`);
-        }
-
-        // Resolve resource with detailed information
-        const detailedResult = resolveResourceDetailed(
-          resolverResult.value,
-          resourceId,
-          state.processedResources,
-          { enableDebugLogging: false }
-        );
-
-        if (detailedResult.isFailure()) {
-          return fail(`Failed to resolve resource details: ${detailedResult.message}`);
-        }
-
-        const resolutionResult = detailedResult.value;
-
-        // Return the detailed resolution result as JsonValue
-        const detailedJson = {
-          success: resolutionResult.success,
-          resourceId: resolutionResult.resourceId,
-          resource: resolutionResult.resource
-            ? {
-                id: resolutionResult.resource.id,
-                resourceType: resolutionResult.resource.resourceType?.key || 'unknown',
-                candidateCount: resolutionResult.resource.candidates.length
-              }
-            : null,
-          bestCandidate: resolutionResult.bestCandidate?.json,
-          allCandidates: resolutionResult.allCandidates?.map((c: any) => c.json),
-          candidateDetails: resolutionResult.candidateDetails?.map((cd: any) => ({
-            candidateIndex: cd.candidateIndex,
-            matched: cd.matched,
-            matchType: cd.matchType,
-            isDefaultMatch: cd.isDefaultMatch,
-            conditionEvaluations: cd.conditionEvaluations,
-            candidateJson: cd.candidate?.json
-          })),
-          composedValue: resolutionResult.composedValue,
-          error: resolutionResult.error
-        };
-
-        return succeed(detailedJson as unknown as JsonValue);
+            return succeed(detailedJson as unknown as JsonValue);
+          });
       } catch (error) {
         return fail(`Failed to resolve resource: ${error instanceof Error ? error.message : String(error)}`);
       }
@@ -614,18 +555,12 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
     setState((prev) => ({
       ...prev,
       processedResources: {
-        // Preserve activeConfiguration and bundle metadata from existing state as defaults
-        ...(prev.processedResources?.activeConfiguration && {
-          activeConfiguration: prev.processedResources.activeConfiguration
-        }),
-        ...(prev.processedResources?.isLoadedFromBundle !== undefined && {
-          isLoadedFromBundle: prev.processedResources.isLoadedFromBundle
-        }),
-        ...(prev.processedResources?.bundleMetadata && {
-          bundleMetadata: prev.processedResources.bundleMetadata
-        }),
-        // Then spread the new processedResources, which can override the defaults above
-        ...processedResources
+        // Start with the new processedResources (core data)
+        ...processedResources,
+        // Then preserve extended properties from existing state if they exist
+        activeConfiguration: prev.processedResources?.activeConfiguration || null,
+        isLoadedFromBundle: prev.processedResources?.isLoadedFromBundle || false,
+        bundleMetadata: prev.processedResources?.bundleMetadata || null
       },
       hasProcessedData: true
     }));

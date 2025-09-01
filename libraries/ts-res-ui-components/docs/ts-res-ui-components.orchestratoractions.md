@@ -595,7 +595,7 @@ import('../utils/observability').[IObservabilityContext](./ts-res-ui-components.
 
 </td><td>
 
-(resourceId: string, context?: Record&lt;string, string&gt;) =&gt; Promise&lt;Result&lt;JsonValue&gt;&gt;
+(resourceId: string, context?: Record&lt;string, string&gt;) =&gt; Result&lt;JsonValue&gt;
 
 
 </td><td>

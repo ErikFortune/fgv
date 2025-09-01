@@ -753,7 +753,7 @@ export interface OrchestratorActions {
     // (undocumented)
     resetResolutionCache: () => void;
     // (undocumented)
-    resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<JsonValue>>;
+    resolveResource: (resourceId: string, context?: Record<string, string>) => Result<JsonValue>;
     // (undocumented)
     saveNewResourceAsPending: () => Result<{
         pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>;
