@@ -24,6 +24,7 @@ import {
 import { SourceResourceDetail } from '../../common/SourceResourceDetail';
 import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptionsControl';
 import { ResolutionContextOptionsControl } from '../../common/ResolutionContextOptionsControl';
+import { useObservability } from '../../../contexts';
 
 // Import FilteredResource type from the utils
 interface FilteredResource {
@@ -93,6 +94,9 @@ export const FilterView: React.FC<FilterViewProps> = ({
   contextOptions,
   className = ''
 }) => {
+  // Get observability context
+  const o11y = useObservability();
+
   // Local UI state
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [showFilteredJsonView, setShowFilteredJsonView] = useState(false);
@@ -247,7 +251,7 @@ export const FilterView: React.FC<FilterViewProps> = ({
 
   // Get resources to display (filtered or original) - now uses orchestrator's filterResult
   const displayResources = useMemo(() => {
-    console.log('FilterView displayResources calculation:', {
+    o11y.diag.info('FilterView displayResources calculation:', {
       hasResources: !!resources,
       isFilteringActive,
       filterResultExists: !!filterResult,
@@ -262,8 +266,8 @@ export const FilterView: React.FC<FilterViewProps> = ({
     let resourceList: FilteredResource[] = [];
 
     if (isFilteringActive && filterResult?.success && filterResult.filteredResources) {
-      console.log('Using filtered resources:', filterResult.filteredResources.length);
-      console.log(
+      o11y.diag.info('Using filtered resources:', filterResult.filteredResources.length);
+      o11y.diag.info(
         'Filtered resource details:',
         filterResult.filteredResources.map((r) => ({
           id: r.id,
@@ -275,7 +279,7 @@ export const FilterView: React.FC<FilterViewProps> = ({
       resourceList = filterResult.filteredResources;
     } else {
       // Return original resources
-      console.log('Using original resources');
+      o11y.diag.info('Using original resources');
       const originalResources = resources.summary.resourceIds || [];
       resourceList = originalResources.map((id) => {
         const resourceResult = resources.system.resourceManager.getBuiltResource(id);

@@ -231,15 +231,15 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
 
   const processBundleFile = useCallback(
     async (bundle: Bundle.IBundle) => {
-      console.log('[Bundle Processing] Starting bundle processing...', bundle);
+      o11y.diag.info('[Bundle Processing] Starting bundle processing...', bundle);
       setState((prev) => ({ ...prev, isProcessing: true, error: null }));
 
       try {
-        console.log('[Bundle Processing] Attempting to extract bundle components...');
+        o11y.diag.info('[Bundle Processing] Attempting to extract bundle components...');
 
         // Extract bundle components (configuration and compiled collection)
         const componentsResult = Bundle.BundleUtils.extractBundleComponents(bundle);
-        console.log(
+        o11y.diag.info(
           '[Bundle Processing] Component extraction result:',
           componentsResult.isSuccess() ? 'SUCCESS' : `FAILED: ${componentsResult.message}`
         );
@@ -249,7 +249,7 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
         }
 
         const { systemConfiguration, compiledCollection, metadata } = componentsResult.value;
-        console.log('[Bundle Processing] Extracted components:', {
+        o11y.diag.info('[Bundle Processing] Extracted components:', {
           hasSystemConfiguration: !!systemConfiguration,
           hasCompiledCollection: !!compiledCollection,
           hasMetadata: !!metadata,
@@ -257,7 +257,7 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
         });
 
         // Use BundleLoader to create a fully functional resource manager from the bundle
-        console.log('[Bundle Processing] Using BundleLoader to create resource manager from bundle');
+        o11y.diag.info('[Bundle Processing] Using BundleLoader to create resource manager from bundle');
 
         const bundleManagerResult = Bundle.BundleLoader.createManagerFromBundle({
           bundle: bundle,
@@ -273,7 +273,7 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
         const bundleResourceManager = bundleManagerResult.value;
 
         // Debug: Check what resources are in the original bundle manager
-        console.log('[Bundle Processing] Original bundle manager resources:', {
+        o11y.diag.info('[Bundle Processing] Original bundle manager resources:', {
           numResources: bundleResourceManager.numResources,
           numCandidates: bundleResourceManager.numCandidates,
           resourceIds: Array.from(bundleResourceManager.builtResources.keys())
@@ -293,7 +293,7 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
         }
 
         const editableResourceManager = reconstructedBuilderResult.value;
-        console.log('[Bundle Processing] Normalized builder resources:', {
+        o11y.diag.info('[Bundle Processing] Normalized builder resources:', {
           numResources: editableResourceManager.resources.size,
           numCandidates: Array.from(editableResourceManager.getAllCandidates()).length,
           resourceIds: Array.from(editableResourceManager.resources.keys())
@@ -348,11 +348,11 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
           description: metadata?.description || 'Configuration extracted from bundle',
           qualifierTypes: systemQualifierTypes as QualifierTypes.Config.ISystemQualifierTypeConfig[],
           qualifiers: Array.from(system.qualifiers.values()).map((q) => {
-            console.log('[Bundle Processing] Extracting qualifier:', q);
+            o11y.diag.info('[Bundle Processing] Extracting qualifier:', q);
             // Instantiated Qualifier objects have .type property which is a QualifierType object
             const typeName = q.type.name;
             if (!typeName) {
-              console.error('[Bundle Processing] Missing typeName for qualifier:', q);
+              o11y.diag.error('[Bundle Processing] Missing typeName for qualifier:', q);
             }
             return {
               name: q.name,
@@ -364,7 +364,7 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
             };
           }),
           resourceTypes: Array.from(system.resourceTypes.values()).map((rt, index: number) => {
-            console.log('[Bundle Processing] Extracting resource type:', rt);
+            o11y.diag.info('[Bundle Processing] Extracting resource type:', rt);
             // ResourceTypes in bundles might not have a name property
             // Default to 'json' for JsonResourceType
             const typeName = rt.systemTypeName;
@@ -375,7 +375,7 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
           })
         };
 
-        console.log('[Bundle Processing] Extracted configuration for UI:', configForStorage);
+        o11y.diag.info('[Bundle Processing] Extracted configuration for UI:', configForStorage);
 
         // Extract resource IDs from the loaded resource manager
         const resourceIds: string[] = [];
@@ -391,7 +391,7 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
           }
         }
 
-        console.log(`Bundle loaded with ${resourceCount} resources (with candidates):`, resourceIds);
+        o11y.diag.info(`Bundle loaded with ${resourceCount} resources (with candidates):`, resourceIds);
 
         // Create a resolver using the bundle's resource manager
         const resolverResult = Runtime.ResourceResolver.create({
@@ -428,7 +428,7 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
           }
         };
 
-        console.log('[Bundle Processing] Setting final state...', {
+        o11y.diag.info('[Bundle Processing] Setting final state...', {
           resourceCount,
           resourceIds,
           configForStorage,
@@ -446,7 +446,7 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
           bundleMetadata: metadata
         }));
 
-        console.log('[Bundle Processing] Bundle processing completed successfully!');
+        o11y.diag.info('[Bundle Processing] Bundle processing completed successfully!');
       } catch (error) {
         setState((prev) => ({
           ...prev,
