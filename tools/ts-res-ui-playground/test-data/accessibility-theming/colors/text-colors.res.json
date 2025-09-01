@@ -1,0 +1,83 @@
+{
+  "resources": {
+    "text-colors": {
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "primary": "#212529",
+            "secondary": "#6c757d",
+            "accent": "#007bff",
+            "error": "#dc3545",
+            "success": "#28a745",
+            "warning": "#ffc107"
+          },
+          "conditions": {
+            "component": "text",
+            "theme": "light",
+            "contrast": "standard"
+          }
+        },
+        {
+          "json": {
+            "primary": "#ffffff",
+            "secondary": "#adb5bd",
+            "accent": "#66b3ff",
+            "error": "#f56565",
+            "success": "#68d391",
+            "warning": "#fbd38d"
+          },
+          "conditions": {
+            "component": "text",
+            "theme": "dark",
+            "contrast": "standard"
+          }
+        },
+        {
+          "json": {
+            "primary": "#000000",
+            "secondary": "#333333",
+            "accent": "#000000",
+            "error": "#000000",
+            "success": "#000000",
+            "warning": "#000000",
+            "onLight": "#000000",
+            "onDark": "#ffffff"
+          },
+          "conditions": {
+            "component": "text",
+            "contrast": "high"
+          }
+        },
+        {
+          "json": {
+            "primary": "#000000",
+            "secondary": "#000000",
+            "accent": "#000000",
+            "error": "#000000",
+            "success": "#000000",
+            "warning": "#000000"
+          },
+          "conditions": {
+            "component": "text",
+            "contrast": "white"
+          }
+        },
+        {
+          "json": {
+            "primary": "#ffffff",
+            "secondary": "#ffffff",
+            "accent": "#ffffff",
+            "error": "#ffffff",
+            "success": "#ffffff",
+            "warning": "#ffffff"
+          },
+          "conditions": {
+            "component": "text",
+            "contrast": "black"
+          }
+        }
+      ]
+    }
+  }
+}

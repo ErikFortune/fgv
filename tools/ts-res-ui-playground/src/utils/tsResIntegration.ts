@@ -199,8 +199,12 @@ export function createTsResSystemFromConfig(
   systemConfig?: Config.Model.ISystemConfiguration
 ): Result<TsResSystem> {
   const configToUse = systemConfig ?? DEFAULT_SYSTEM_CONFIGURATION;
+  console.log('=== CREATE TSRES SYSTEM FROM CONFIG ===');
+  console.log('Using config:', configToUse.name || 'Unnamed config');
+  console.log('Qualifier types in config:', configToUse.qualifierTypes?.length || 0);
 
   return Config.SystemConfiguration.create(configToUse).onSuccess((systemConfiguration) => {
+    console.log('SystemConfiguration created successfully');
     try {
       // Set up resource manager
       const resourceManager = Resources.ResourceManagerBuilder.create({
@@ -301,6 +305,9 @@ export function processImportedFiles(
   files: ImportedFile[],
   systemConfigOrSystem?: Config.Model.ISystemConfiguration | TsResSystem
 ): Result<ProcessedResources> {
+  // DEBUG: Use alerts temporarily since console might be disabled
+  alert(`processImportedFiles called with ${files.length} files: ${files.map((f) => f.name).join(', ')}`);
+
   if (files.length === 0) {
     return fail('No files provided for processing');
   }
@@ -314,26 +321,40 @@ export function processImportedFiles(
       : createTsResSystemFromConfig(systemConfigOrSystem as Config.Model.ISystemConfiguration);
 
   return systemResult.onSuccess((tsResSystem) => {
+    console.log('System created successfully');
+    console.log('Qualifier types count:', tsResSystem.qualifierTypes.size);
+    console.log('Qualifiers count:', tsResSystem.qualifiers.size);
+
     // Convert ImportedFile[] to IInMemoryFile[] format
     const inMemoryFiles = files.map((file) => ({
       path: file.path,
       contents: file.content
     }));
 
+    console.log(
+      'InMemory files created:',
+      inMemoryFiles.map((f) => ({ path: f.path, contentLength: f.contents.length }))
+    );
+
     return FileTree.inMemory(inMemoryFiles)
       .onSuccess((fileTree) => {
+        console.log('FileTree created successfully');
         return Import.ImportManager.create({
           fileTree,
           resources: tsResSystem.resourceManager
         });
       })
       .onSuccess<ProcessedResources>((importManager) => {
+        console.log('ImportManager created successfully');
         // Import each file using its filesystem path
         for (const file of files) {
+          console.log(`Attempting to import file: ${file.path}`);
           const importResult = importManager.importFromFileSystem(file.path);
           if (importResult.isFailure()) {
+            console.log(`FAILED to import file ${file.path}:`, importResult.message);
             return fail(`Failed to import file ${file.path}: ${importResult.message}`);
           }
+          console.log(`Successfully imported file: ${file.path}`);
         }
         // Update the system with the new ImportManager
         const updatedSystem = {

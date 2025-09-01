@@ -1,0 +1,93 @@
+{
+  "resources": {
+    "button-colors": {
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "background": "#007bff",
+            "foreground": "#ffffff",
+            "border": "#0056b3",
+            "hover": {
+              "background": "#0056b3",
+              "foreground": "#ffffff",
+              "border": "#004085"
+            },
+            "disabled": {
+              "background": "#6c757d",
+              "foreground": "#ffffff",
+              "border": "#5a6268"
+            }
+          },
+          "conditions": {
+            "component": "button",
+            "contrast": "standard"
+          }
+        },
+        {
+          "json": {
+            "background": "#000000",
+            "foreground": "#ffffff",
+            "border": "#ffffff",
+            "hover": {
+              "background": "#333333",
+              "foreground": "#ffffff",
+              "border": "#ffffff"
+            },
+            "disabled": {
+              "background": "#666666",
+              "foreground": "#cccccc",
+              "border": "#999999"
+            }
+          },
+          "conditions": {
+            "component": "button",
+            "contrast": "high"
+          }
+        },
+        {
+          "json": {
+            "background": "#ffffff",
+            "foreground": "#000000",
+            "border": "#000000",
+            "hover": {
+              "background": "#f8f9fa",
+              "foreground": "#000000",
+              "border": "#000000"
+            },
+            "disabled": {
+              "background": "#e9ecef",
+              "foreground": "#6c757d",
+              "border": "#adb5bd"
+            }
+          },
+          "conditions": {
+            "component": "button",
+            "contrast": "white"
+          }
+        },
+        {
+          "json": {
+            "background": "#000000",
+            "foreground": "#ffffff",
+            "border": "#ffffff",
+            "hover": {
+              "background": "#1a1a1a",
+              "foreground": "#ffffff",
+              "border": "#ffffff"
+            },
+            "disabled": {
+              "background": "#333333",
+              "foreground": "#999999",
+              "border": "#666666"
+            }
+          },
+          "conditions": {
+            "component": "button",
+            "contrast": "black"
+          }
+        }
+      ]
+    }
+  }
+}

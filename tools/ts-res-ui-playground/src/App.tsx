@@ -40,6 +40,7 @@ import {
   multiGridConfigurations,
   demonstrationGridConfig
 } from './utils/gridConfigurations';
+import { contrastQualifierTypeFactory } from './factories';
 
 // Separate component to handle initialization logic
 interface AppContentProps {
@@ -275,9 +276,18 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
           <ImportView
             onMessage={actions.addMessage}
             onImport={(data) => {
+              // Use message system instead of console since logging might be disabled
               if (Array.isArray(data)) {
+                actions.addMessage(
+                  'info',
+                  `onImport called with ${data.length} files: ${data.map((f) => f.name).join(', ')}`
+                );
                 actions.importFiles(data);
               } else {
+                actions.addMessage(
+                  'info',
+                  `onImport called with directory: ${data.name} containing ${data.files?.length || 0} files`
+                );
                 actions.importDirectory(data);
               }
             }}
@@ -910,9 +920,18 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
           <ImportView
             onMessage={actions.addMessage}
             onImport={(data) => {
+              // Use message system instead of console since logging might be disabled
               if (Array.isArray(data)) {
+                actions.addMessage(
+                  'info',
+                  `onImport called with ${data.length} files: ${data.map((f) => f.name).join(', ')}`
+                );
                 actions.importFiles(data);
               } else {
+                actions.addMessage(
+                  'info',
+                  `onImport called with directory: ${data.name} containing ${data.files?.length || 0} files`
+                );
                 actions.importDirectory(data);
               }
             }}
@@ -945,9 +964,8 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
 };
 
 const App: React.FC = () => {
-  // For demonstration, we'll use undefined factories (no custom types)
-  // Custom factories can be added by extending QualifierTypeFactory or ResourceTypeFactory
-  const demoQualifierTypeFactory = undefined;
+  // Custom qualifier type factory to support "contrast" qualifier type for accessibility theming
+  const demoQualifierTypeFactory = contrastQualifierTypeFactory;
   const demoResourceTypeFactory = undefined;
 
   return (

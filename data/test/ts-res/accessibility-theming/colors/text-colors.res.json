@@ -1,0 +1,91 @@
+{
+  "resourceType": "color",
+  "id": "text-colors",
+  "description": "Text colors optimized for different contrast requirements",
+  "candidates": [
+    {
+      "id": "text-standard-light",
+      "description": "Standard text colors for light theme",
+      "conditions": [
+        { "qualifier": "component", "value": "text" },
+        { "qualifier": "theme", "value": "light" },
+        { "qualifier": "contrast", "value": "standard" }
+      ],
+      "value": {
+        "primary": "#212529",
+        "secondary": "#6c757d",
+        "accent": "#007bff",
+        "error": "#dc3545",
+        "success": "#28a745",
+        "warning": "#ffc107"
+      }
+    },
+    {
+      "id": "text-standard-dark",
+      "description": "Standard text colors for dark theme",
+      "conditions": [
+        { "qualifier": "component", "value": "text" },
+        { "qualifier": "theme", "value": "dark" },
+        { "qualifier": "contrast", "value": "standard" }
+      ],
+      "value": {
+        "primary": "#ffffff",
+        "secondary": "#adb5bd",
+        "accent": "#66b3ff",
+        "error": "#f56565",
+        "success": "#68d391",
+        "warning": "#fbd38d"
+      }
+    },
+    {
+      "id": "text-high-contrast",
+      "description": "High contrast text colors - pure black/white for maximum accessibility",
+      "conditions": [
+        { "qualifier": "component", "value": "text" },
+        { "qualifier": "contrast", "value": "high" }
+      ],
+      "value": {
+        "primary": "#000000",
+        "secondary": "#333333",
+        "accent": "#000000",
+        "error": "#000000",
+        "success": "#000000",
+        "warning": "#000000",
+        "onLight": "#000000",
+        "onDark": "#ffffff"
+      }
+    },
+    {
+      "id": "text-white-contrast",
+      "description": "White high-contrast theme text colors",
+      "conditions": [
+        { "qualifier": "component", "value": "text" },
+        { "qualifier": "contrast", "value": "white" }
+      ],
+      "value": {
+        "primary": "#000000",
+        "secondary": "#000000",
+        "accent": "#000000",
+        "error": "#000000",
+        "success": "#000000",
+        "warning": "#000000"
+      }
+    },
+    {
+      "id": "text-black-contrast",
+      "description": "Black high-contrast theme text colors",
+      "conditions": [
+        { "qualifier": "component", "value": "text" },
+        { "qualifier": "contrast", "value": "black" }
+      ],
+      "value": {
+        "primary": "#ffffff",
+        "secondary": "#ffffff",
+        "accent": "#ffffff",
+        "error": "#ffffff",
+        "success": "#ffffff",
+        "warning": "#ffffff"
+      }
+    }
+  ]
+}

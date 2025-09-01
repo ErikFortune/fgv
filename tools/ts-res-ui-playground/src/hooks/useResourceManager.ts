@@ -135,6 +135,7 @@ export const useResourceManager = (): UseResourceManagerReturn => {
   const processFiles = useCallback(
     async (files: ImportedFile[]) => {
       console.log('=== STARTING FILES PROCESSING ===');
+      console.log('useResourceManager.processFiles called');
       console.log('Files count:', files.length);
       console.log(
         'Files:',
