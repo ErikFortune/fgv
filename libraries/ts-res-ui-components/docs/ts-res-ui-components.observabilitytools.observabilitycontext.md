@@ -87,6 +87,7 @@ Logging.ILogger
 
 </td><td>
 
+Diagnostic logger for internal system diagnostics.
 
 
 </td></tr>
@@ -107,6 +108,7 @@ Logging.ILogger
 
 </td><td>
 
+User logger for user-facing messages and feedback.
 
 
 </td></tr>

@@ -34,6 +34,7 @@ import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptions
 import { ResolutionContextOptionsControl } from '../../common/ResolutionContextOptionsControl';
 import { ResolutionResults } from '../../common/ResolutionResults';
 import { NewResourceModal } from './NewResourceModal';
+import { useObservability } from '../../../contexts';
 
 /**
  * ResolutionView component for resource resolution testing and editing.
@@ -105,6 +106,8 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
   showPendingResourcesInList = true,
   className = ''
 }) => {
+  // Get observability context
+  const o11y = useObservability();
   // State for picker options control
   const [currentPickerOptions, setCurrentPickerOptions] = useState<ResourcePickerOptions>(
     pickerOptions || {}
@@ -287,13 +290,13 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
           ? currentContextOptions.hostManagedValues
           : contextOptions?.hostManagedValues
     };
-    console.log('ResolutionView - effectiveContextOptions:', merged);
-    console.log('ResolutionView - contextOptions hostManagedValues:', contextOptions?.hostManagedValues);
-    console.log(
+    o11y.diag.info('ResolutionView - effectiveContextOptions:', merged);
+    o11y.diag.info('ResolutionView - contextOptions hostManagedValues:', contextOptions?.hostManagedValues);
+    o11y.diag.info(
       'ResolutionView - currentContextOptions hostManagedValues:',
       currentContextOptions?.hostManagedValues
     );
-    console.log('ResolutionView - final hostManagedValues:', merged.hostManagedValues);
+    o11y.diag.info('ResolutionView - final hostManagedValues:', merged.hostManagedValues);
     return merged;
   }, [contextOptions, currentContextOptions]);
 

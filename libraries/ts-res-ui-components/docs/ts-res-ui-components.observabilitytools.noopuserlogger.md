@@ -79,6 +79,7 @@ Description
 
 </td><td>
 
+Implements base class \_log method.
 
 
 </td></tr>
@@ -92,6 +93,7 @@ Description
 
 </td><td>
 
+Logs a success message for user feedback.
 
 
 </td></tr>

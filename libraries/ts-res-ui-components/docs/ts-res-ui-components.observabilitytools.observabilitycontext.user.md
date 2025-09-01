@@ -4,6 +4,7 @@
 
 ## ObservabilityTools.ObservabilityContext.user property
 
+User logger for user-facing messages and feedback.
 
 **Signature:**
 

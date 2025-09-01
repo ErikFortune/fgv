@@ -104,11 +104,8 @@ interface ConfigurationViewProps extends ViewBaseProps {
 // @public
 class ConsoleUserLogger extends Logging.LoggerBase implements IUserLogger {
     constructor(logLevel?: Logging.ReporterLogLevel);
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res-ui-components" does not have an export "LoggerBase"
-    //
-    // (undocumented)
     protected _log(message: string, level: MessageLogLevel): Success<string | undefined>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res-ui-components" does not have an export "IUserLogger"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     success(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
@@ -649,11 +646,8 @@ interface MultiGridViewProps extends ViewBaseProps {
 // @public
 class NoOpUserLogger extends Logging.LoggerBase implements IUserLogger {
     constructor(logLevel?: Logging.ReporterLogLevel);
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res-ui-components" does not have an export "LoggerBase"
-    //
-    // (undocumented)
     protected _log(message: string, __level: MessageLogLevel): Success<string | undefined>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res-ui-components" does not have an export "IUserLogger"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     success(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
@@ -662,11 +656,11 @@ class NoOpUserLogger extends Logging.LoggerBase implements IUserLogger {
 // @public
 class ObservabilityContext implements IObservabilityContext {
     constructor(diag: Logging.ILogger, user: IUserLogger);
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res-ui-components" does not have an export "IObservabilityContext"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     readonly diag: Logging.ILogger;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-res-ui-components" does not have an export "IObservabilityContext"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     readonly user: IUserLogger;

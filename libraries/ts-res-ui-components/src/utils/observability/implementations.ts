@@ -37,14 +37,14 @@ export class ConsoleUserLogger extends Logging.LoggerBase implements IUserLogger
   }
 
   /**
-   * {@inheritDoc IUserLogger.success}
+   * {@inheritDoc ObservabilityTools.IUserLogger.success}
    */
   public success(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
     return this.log('info', message, ...parameters);
   }
 
   /**
-   * {@inheritDoc LoggerBase._log}
+   * implements base class _log.
    */
   protected _log(message: string, level: MessageLogLevel): Success<string | undefined> {
     switch (level) {
@@ -79,14 +79,14 @@ export class NoOpUserLogger extends Logging.LoggerBase implements IUserLogger {
   }
 
   /**
-   * {@inheritDoc IUserLogger.success}
+   * {@inheritDoc ObservabilityTools.IUserLogger.success}
    */
   public success(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
     return succeed(undefined);
   }
 
   /**
-   * {@inheritDoc LoggerBase._log}
+   * Implements base class _log method.
    */
   protected _log(message: string, __level: MessageLogLevel): Success<string | undefined> {
     // no-op
@@ -100,12 +100,12 @@ export class NoOpUserLogger extends Logging.LoggerBase implements IUserLogger {
  */
 export class ObservabilityContext implements IObservabilityContext {
   /**
-   * {@inheritDoc IObservabilityContext.diag}
+   * {@inheritDoc ObservabilityTools.IObservabilityContext.diag}
    */
   public readonly diag: Logging.ILogger;
 
   /**
-   * {@inheritDoc IObservabilityContext.user}
+   * {@inheritDoc ObservabilityTools.IObservabilityContext.user}
    */
   public readonly user: IUserLogger;
 

@@ -4,6 +4,7 @@
 
 ## ObservabilityTools.ConsoleUserLogger.\_log() method
 
+implements base class \_log.
 
 **Signature:**
 

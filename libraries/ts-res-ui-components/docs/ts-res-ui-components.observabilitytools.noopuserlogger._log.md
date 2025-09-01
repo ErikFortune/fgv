@@ -4,6 +4,7 @@
 
 ## ObservabilityTools.NoOpUserLogger.\_log() method
 
+Implements base class \_log method.
 
 **Signature:**
 

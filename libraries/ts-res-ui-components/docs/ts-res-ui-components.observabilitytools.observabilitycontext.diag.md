@@ -4,6 +4,7 @@
 
 ## ObservabilityTools.ObservabilityContext.diag property
 
+Diagnostic logger for internal system diagnostics.
 
 **Signature:**
 

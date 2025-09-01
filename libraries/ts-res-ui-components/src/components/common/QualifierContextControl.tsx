@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { ProcessedResources, QualifierControlOptions } from '../../types';
+import { useObservability } from '../../contexts';
 
 /**
  * Props for the QualifierContextControl component.
@@ -155,6 +156,9 @@ export const QualifierContextControl: React.FC<QualifierContextControlProps> = (
   className = '',
   options
 }) => {
+  // Get observability context
+  const o11y = useObservability();
+
   // Extract qualifier type information from system configuration
   const qualifierInfo = useMemo(() => {
     if (!resources?.system?.qualifiers) {
@@ -198,7 +202,7 @@ export const QualifierContextControl: React.FC<QualifierContextControlProps> = (
 
       return { hasEnumeratedValues: false, enumeratedValues: [] };
     } catch (error) {
-      console.warn(`Failed to extract qualifier type info for ${qualifierName}:`, error);
+      o11y.diag.warn(`Failed to extract qualifier type info for ${qualifierName}:`, error);
       return { hasEnumeratedValues: false, enumeratedValues: [] };
     }
   }, [qualifierName, resources?.system?.qualifiers]);
