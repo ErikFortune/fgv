@@ -37,6 +37,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[candidateValues](./ts-res.resources.iresourcecandidatecreateparams.candidatevalues.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[CandidateValueCollector](./ts-res.resources.candidatevaluecollector.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [conditionSets](./ts-res.resources.iresourcecandidatecreateparams.conditionsets.md)
 
 

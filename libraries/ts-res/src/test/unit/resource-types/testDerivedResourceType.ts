@@ -89,6 +89,10 @@ export interface IPartialTestData {
  * 3. Type-specific defaults and error handling
  */
 export class TestDerivedResourceType extends ResourceType<ITestData> {
+  public readonly systemTypeName: ResourceTypeName = Convert.resourceTypeName
+    .convert('test-derived')
+    .orThrow();
+
   private _templateResourceId?: string;
 
   protected constructor(

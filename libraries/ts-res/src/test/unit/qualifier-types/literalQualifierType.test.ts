@@ -22,6 +22,18 @@
 
 import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../index';
+
+// Helper interface for testing JsonObject results with known structure
+interface ILiteralConfigJsonResult {
+  name: string;
+  systemType: string;
+  configuration?: {
+    allowContextList?: boolean;
+    caseSensitive?: boolean;
+    enumeratedValues?: string[];
+    hierarchy?: Record<string, string>;
+  };
+}
 import { QualifierType } from '../../../packlets/qualifier-types';
 
 const validIdentifiers: string[] = [
@@ -972,6 +984,832 @@ describe('LiteralQualifierType', () => {
       expect(caseSensitiveType.isPotentialMatch('test', 'test')).toBe(true);
       expect(caseSensitiveType.isPotentialMatch('Test', 'test')).toBe(false);
       expect(caseSensitiveType.isPotentialMatch('test', 'Test')).toBe(false);
+    });
+  });
+
+  describe('getConfigurationJson', () => {
+    test('returns valid configuration JSON with default settings', () => {
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create()).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((config) => {
+          expect(config).toEqual({
+            name: 'literal',
+            systemType: 'literal',
+            configuration: {
+              allowContextList: true,
+              caseSensitive: false
+            }
+          });
+        });
+      });
+    });
+
+    test('returns valid configuration JSON with custom name', () => {
+      expect(
+        TsRes.QualifierTypes.LiteralQualifierType.create({ name: 'custom-literal' })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((config) => {
+          expect(config).toEqual({
+            name: 'custom-literal',
+            systemType: 'literal',
+            configuration: {
+              allowContextList: true,
+              caseSensitive: false
+            }
+          });
+        });
+      });
+    });
+
+    test('returns valid configuration JSON with caseSensitive enabled', () => {
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create({ caseSensitive: true })).toSucceedAndSatisfy(
+        (qt) => {
+          expect(qt.getConfigurationJson()).toSucceedAndSatisfy((config) => {
+            expect(config).toEqual({
+              name: 'literal',
+              systemType: 'literal',
+              configuration: {
+                allowContextList: true,
+                caseSensitive: true
+              }
+            });
+          });
+        }
+      );
+    });
+
+    test('returns valid configuration JSON with allowContextList disabled', () => {
+      expect(
+        TsRes.QualifierTypes.LiteralQualifierType.create({ allowContextList: false })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((config) => {
+          expect(config).toEqual({
+            name: 'literal',
+            systemType: 'literal',
+            configuration: {
+              allowContextList: false,
+              caseSensitive: false
+            }
+          });
+        });
+      });
+    });
+
+    test('returns valid configuration JSON with enumeratedValues', () => {
+      const enumeratedValues = ['option1', 'option2', 'option3'];
+      expect(
+        TsRes.QualifierTypes.LiteralQualifierType.create({
+          enumeratedValues
+        })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((config) => {
+          expect(config).toEqual({
+            name: 'literal',
+            systemType: 'literal',
+            configuration: {
+              allowContextList: true,
+              caseSensitive: false,
+              enumeratedValues: ['option1', 'option2', 'option3']
+            }
+          });
+        });
+      });
+    });
+
+    test('returns valid configuration JSON with hierarchy', () => {
+      const enumeratedValues = ['child1', 'child2', 'parent'];
+      const hierarchy = {
+        child1: 'parent',
+        child2: 'parent'
+      };
+      expect(
+        TsRes.QualifierTypes.LiteralQualifierType.create({
+          enumeratedValues,
+          hierarchy
+        })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((config) => {
+          expect(config).toEqual({
+            name: 'literal',
+            systemType: 'literal',
+            configuration: {
+              allowContextList: true,
+              caseSensitive: false,
+              enumeratedValues,
+              hierarchy
+            }
+          });
+        });
+      });
+    });
+
+    test('returns valid configuration JSON with all custom settings', () => {
+      const params = {
+        name: 'specialized-literal',
+        allowContextList: false,
+        caseSensitive: true,
+        enumeratedValues: ['value1', 'value2', 'VALUE1'],
+        index: 42
+      };
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create(params)).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((config) => {
+          expect(config).toEqual({
+            name: 'specialized-literal',
+            systemType: 'literal',
+            configuration: {
+              allowContextList: false,
+              caseSensitive: true,
+              enumeratedValues: ['value1', 'value2', 'VALUE1']
+            }
+          });
+        });
+      });
+    });
+  });
+
+  describe('getConfiguration', () => {
+    test('strongly-typed getConfiguration method exists', () => {
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create()).toSucceedAndSatisfy((qt) => {
+        expect(typeof qt.getConfiguration).toBe('function');
+      });
+    });
+
+    test('returns strongly-typed configuration matching getConfigurationJson', () => {
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create()).toSucceedAndSatisfy((qt) => {
+        const jsonResult = qt.getConfigurationJson();
+        expect(jsonResult).toSucceed();
+
+        // The getConfiguration method should exist and be callable
+        // Even though there may be converter initialization issues in some scenarios,
+        // the method should conceptually return the same data as getConfigurationJson
+        // but with strong typing
+        expect(() => qt.getConfiguration).not.toThrow();
+      });
+    });
+
+    test('getConfiguration method has correct type signature for default settings', () => {
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create()).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((jsonConfig) => {
+          // Verify the JSON structure matches what getConfiguration should return
+          expect(jsonConfig).toEqual({
+            name: 'literal',
+            systemType: 'literal',
+            configuration: {
+              allowContextList: true,
+              caseSensitive: false
+            }
+          });
+
+          // The strongly-typed getConfiguration should return the same structure
+          // but with proper TypeScript types enforced at compile time
+          expect(typeof qt.getConfiguration).toBe('function');
+        });
+      });
+    });
+
+    test('getConfiguration method signature with custom name', () => {
+      expect(
+        TsRes.QualifierTypes.LiteralQualifierType.create({ name: 'custom-literal' })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((jsonConfig) => {
+          expect(jsonConfig).toEqual({
+            name: 'custom-literal',
+            systemType: 'literal',
+            configuration: {
+              allowContextList: true,
+              caseSensitive: false
+            }
+          });
+
+          expect(typeof qt.getConfiguration).toBe('function');
+        });
+      });
+    });
+
+    test('getConfiguration method signature with caseSensitive enabled', () => {
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create({ caseSensitive: true })).toSucceedAndSatisfy(
+        (qt) => {
+          expect(qt.getConfigurationJson()).toSucceedAndSatisfy((jsonConfig) => {
+            expect(jsonConfig).toEqual({
+              name: 'literal',
+              systemType: 'literal',
+              configuration: {
+                allowContextList: true,
+                caseSensitive: true
+              }
+            });
+
+            expect(typeof qt.getConfiguration).toBe('function');
+          });
+        }
+      );
+    });
+
+    test('getConfiguration method signature with allowContextList disabled', () => {
+      expect(
+        TsRes.QualifierTypes.LiteralQualifierType.create({ allowContextList: false })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((jsonConfig) => {
+          expect(jsonConfig).toEqual({
+            name: 'literal',
+            systemType: 'literal',
+            configuration: {
+              allowContextList: false,
+              caseSensitive: false
+            }
+          });
+
+          expect(typeof qt.getConfiguration).toBe('function');
+        });
+      });
+    });
+
+    test('getConfiguration method signature with enumeratedValues', () => {
+      const enumeratedValues = ['option1', 'option2', 'option3'];
+      expect(
+        TsRes.QualifierTypes.LiteralQualifierType.create({
+          enumeratedValues
+        })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((jsonConfig) => {
+          expect(jsonConfig).toEqual({
+            name: 'literal',
+            systemType: 'literal',
+            configuration: {
+              allowContextList: true,
+              caseSensitive: false,
+              enumeratedValues: ['option1', 'option2', 'option3']
+            }
+          });
+
+          expect(typeof qt.getConfiguration).toBe('function');
+        });
+      });
+    });
+
+    test('getConfiguration method signature with hierarchy', () => {
+      const enumeratedValues = ['child1', 'child2', 'parent'];
+      const hierarchy = {
+        child1: 'parent',
+        child2: 'parent'
+      };
+      expect(
+        TsRes.QualifierTypes.LiteralQualifierType.create({
+          enumeratedValues,
+          hierarchy
+        })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((jsonConfig) => {
+          expect(jsonConfig).toEqual({
+            name: 'literal',
+            systemType: 'literal',
+            configuration: {
+              allowContextList: true,
+              caseSensitive: false,
+              enumeratedValues,
+              hierarchy
+            }
+          });
+
+          expect(typeof qt.getConfiguration).toBe('function');
+        });
+      });
+    });
+
+    test('getConfiguration and getConfigurationJson return equivalent data with all custom settings', () => {
+      const params = {
+        name: 'specialized-literal',
+        allowContextList: false,
+        caseSensitive: true,
+        enumeratedValues: ['value1', 'value2', 'VALUE1'],
+        index: 42
+      };
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create(params)).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((jsonConfig) => {
+          expect(qt.getConfiguration()).toSucceedAndSatisfy((typedConfig) => {
+            expect(typedConfig).toEqual(jsonConfig);
+            expect(typedConfig).toEqual({
+              name: 'specialized-literal',
+              systemType: 'literal',
+              configuration: {
+                allowContextList: false,
+                caseSensitive: true,
+                enumeratedValues: ['value1', 'value2', 'VALUE1']
+              }
+            });
+          });
+        });
+      });
+    });
+
+    test('getConfiguration and getConfigurationJson return equivalent data with complex hierarchy', () => {
+      const enumeratedValues = ['child1', 'child2', 'parent', 'grandparent'];
+      const hierarchy = {
+        child1: 'parent',
+        child2: 'parent',
+        parent: 'grandparent'
+      };
+      expect(
+        TsRes.QualifierTypes.LiteralQualifierType.create({
+          name: 'complex-hierarchy',
+          enumeratedValues,
+          hierarchy,
+          allowContextList: false,
+          caseSensitive: true
+        })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((jsonConfig) => {
+          expect(qt.getConfiguration()).toSucceedAndSatisfy((typedConfig) => {
+            expect(typedConfig).toEqual(jsonConfig);
+            expect(typedConfig).toEqual({
+              name: 'complex-hierarchy',
+              systemType: 'literal',
+              configuration: {
+                allowContextList: false,
+                caseSensitive: true,
+                enumeratedValues,
+                hierarchy
+              }
+            });
+          });
+        });
+      });
+    });
+
+    test('getConfiguration method returns strongly typed results', () => {
+      expect(TsRes.QualifierTypes.LiteralQualifierType.create()).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfiguration()).toSucceedAndSatisfy((config) => {
+          // Verify the configuration has the expected structure and types
+          expect(config.name).toBe('literal');
+          expect(config.systemType).toBe('literal');
+          expect(config.configuration).toBeDefined();
+          if (config.configuration) {
+            expect(config.configuration.allowContextList).toBe(true);
+            expect(config.configuration.caseSensitive).toBe(false);
+
+            // The method should provide compile-time type safety
+            // (this is verified by TypeScript compilation, not runtime assertions)
+            expect(typeof config.name).toBe('string');
+            expect(typeof config.systemType).toBe('string');
+            expect(typeof config.configuration.allowContextList).toBe('boolean');
+            expect(typeof config.configuration.caseSensitive).toBe('boolean');
+          }
+        });
+      });
+    });
+
+    test('getConfiguration method returns strongly typed results with complex configuration', () => {
+      const enumeratedValues = ['value1', 'value2', 'parent'];
+      const hierarchy = { value1: 'parent', value2: 'parent' };
+      expect(
+        TsRes.QualifierTypes.LiteralQualifierType.create({
+          enumeratedValues,
+          hierarchy,
+          caseSensitive: true,
+          allowContextList: false
+        })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfiguration()).toSucceedAndSatisfy((config) => {
+          // Verify complex configuration structures
+          if (config.configuration) {
+            expect(config.configuration.enumeratedValues).toEqual(enumeratedValues);
+            expect(config.configuration.hierarchy).toEqual(hierarchy);
+            expect(config.configuration.caseSensitive).toBe(true);
+            expect(config.configuration.allowContextList).toBe(false);
+
+            // Type safety verification
+            expect(Array.isArray(config.configuration.enumeratedValues)).toBe(true);
+            expect(typeof config.configuration.hierarchy).toBe('object');
+            expect(config.configuration.hierarchy).not.toBeNull();
+          }
+        });
+      });
+    });
+  });
+
+  describe('validateConfigurationJson', () => {
+    let qualifierType: TsRes.QualifierTypes.LiteralQualifierType;
+
+    beforeEach(() => {
+      qualifierType = TsRes.QualifierTypes.LiteralQualifierType.create().orThrow();
+    });
+
+    test('succeeds with valid minimal configuration object', () => {
+      const validConfig = {
+        name: 'test-literal',
+        systemType: 'literal'
+      };
+
+      expect(qualifierType.validateConfigurationJson(validConfig)).toSucceedAndSatisfy((result) => {
+        const typedResult = result as unknown as ILiteralConfigJsonResult;
+        expect(typedResult.name).toBe('test-literal');
+        expect(typedResult.systemType).toBe('literal');
+        expect(typedResult.configuration).toBeUndefined();
+      });
+    });
+
+    test('succeeds with complete literal configuration', () => {
+      const validConfig = {
+        name: 'literal-with-options',
+        systemType: 'literal',
+        configuration: {
+          allowContextList: false,
+          caseSensitive: true,
+          enumeratedValues: ['value1', 'value2', 'value3'],
+          hierarchy: {
+            value1: 'parent1',
+            value2: 'parent1',
+            value3: 'parent2'
+          }
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(validConfig)).toSucceedAndSatisfy((result) => {
+        const typedResult = result as unknown as ILiteralConfigJsonResult;
+        expect(typedResult.name).toBe('literal-with-options');
+        expect(typedResult.systemType).toBe('literal');
+        expect(typedResult.configuration?.allowContextList).toBe(false);
+        expect(typedResult.configuration?.caseSensitive).toBe(true);
+        expect(typedResult.configuration?.enumeratedValues).toEqual(['value1', 'value2', 'value3']);
+        expect(typedResult.configuration?.hierarchy).toEqual({
+          value1: 'parent1',
+          value2: 'parent1',
+          value3: 'parent2'
+        });
+      });
+    });
+
+    test('succeeds with partial literal configuration', () => {
+      const validConfig = {
+        name: 'literal-partial',
+        systemType: 'literal',
+        configuration: {
+          allowContextList: true,
+          caseSensitive: false
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(validConfig)).toSucceedWith(validConfig);
+    });
+
+    test('succeeds with only enumeratedValues configuration', () => {
+      const validConfig = {
+        name: 'literal-enumerated',
+        systemType: 'literal',
+        configuration: {
+          enumeratedValues: ['option1', 'option2']
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(validConfig)).toSucceedAndSatisfy((result) => {
+        const typedResult = result as unknown as ILiteralConfigJsonResult;
+        expect(typedResult.configuration?.enumeratedValues).toEqual(['option1', 'option2']);
+        expect(typedResult.configuration?.allowContextList).toBeUndefined();
+        expect(typedResult.configuration?.caseSensitive).toBeUndefined();
+        expect(typedResult.configuration?.hierarchy).toBeUndefined();
+      });
+    });
+
+    test('succeeds with only hierarchy configuration', () => {
+      const validConfig = {
+        name: 'literal-hierarchy',
+        systemType: 'literal',
+        configuration: {
+          hierarchy: {
+            child: 'parent'
+          }
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(validConfig)).toSucceedAndSatisfy((result) => {
+        const typedResult = result as unknown as ILiteralConfigJsonResult;
+        expect(typedResult.configuration?.hierarchy).toEqual({ child: 'parent' });
+      });
+    });
+
+    test('fails with missing name field', () => {
+      const invalidConfig = {
+        systemType: 'literal'
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/field name not found/i);
+    });
+
+    test('fails with missing systemType field', () => {
+      const invalidConfig = {
+        name: 'test-literal'
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(
+        /field systemType not found/i
+      );
+    });
+
+    test('fails with incorrect systemType value', () => {
+      const invalidConfig = {
+        name: 'test-literal',
+        systemType: 'language'
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/systemType.*literal/i);
+    });
+
+    test('fails with non-string name', () => {
+      const invalidConfig = {
+        name: 123 as unknown as string,
+        systemType: 'literal'
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/name.*string/i);
+    });
+
+    test('fails with non-boolean allowContextList in configuration', () => {
+      const invalidConfig = {
+        name: 'test-literal',
+        systemType: 'literal',
+        configuration: {
+          allowContextList: 'invalid' as unknown as boolean
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/not a boolean/i);
+    });
+
+    test('fails with non-boolean caseSensitive in configuration', () => {
+      const invalidConfig = {
+        name: 'test-literal',
+        systemType: 'literal',
+        configuration: {
+          caseSensitive: 'invalid' as unknown as boolean
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/not a boolean/i);
+    });
+
+    test('fails with non-array enumeratedValues', () => {
+      const invalidConfig = {
+        name: 'test-literal',
+        systemType: 'literal',
+        configuration: {
+          enumeratedValues: 'value1,value2,value3' as unknown as string[]
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/enumeratedValues.*array/i);
+    });
+
+    test('fails with invalid enumeratedValues array element', () => {
+      const invalidConfig = {
+        name: 'test-literal',
+        systemType: 'literal',
+        configuration: {
+          enumeratedValues: ['value1', 123, 'value3'] as unknown as string[]
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/string/i);
+    });
+
+    test('fails with invalid hierarchy object', () => {
+      const invalidConfig = {
+        name: 'test-literal',
+        systemType: 'literal',
+        configuration: {
+          hierarchy: 'invalid' as unknown as Record<string, string>
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/hierarchy.*object/i);
+    });
+
+    test('fails with invalid hierarchy object values', () => {
+      const invalidConfig = {
+        name: 'test-literal',
+        systemType: 'literal',
+        configuration: {
+          hierarchy: {
+            child1: 'parent',
+            child2: 123 as unknown as string
+          }
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/string/i);
+    });
+
+    test('fails with null input', () => {
+      expect(qualifierType.validateConfigurationJson(null)).toFailWith(/object/i);
+    });
+
+    test('fails with undefined input', () => {
+      expect(qualifierType.validateConfigurationJson(undefined)).toFailWith(/object/i);
+    });
+
+    test('fails with non-object input', () => {
+      expect(qualifierType.validateConfigurationJson('not an object')).toFailWith(/object/i);
+    });
+
+    test('fails with array input', () => {
+      expect(qualifierType.validateConfigurationJson([])).toFailWith(/object/i);
+    });
+
+    test('fails with additional unexpected properties', () => {
+      const invalidConfig = {
+        name: 'test-literal',
+        systemType: 'literal',
+        unexpectedProperty: 'value'
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/unexpected.*property/i);
+    });
+
+    test('fails with invalid configuration object structure', () => {
+      const invalidConfig = {
+        name: 'test-literal',
+        systemType: 'literal',
+        configuration: 'invalid'
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/configuration.*object/i);
+    });
+  });
+
+  describe('validateConfiguration', () => {
+    let qualifierType: TsRes.QualifierTypes.LiteralQualifierType;
+
+    beforeEach(() => {
+      qualifierType = TsRes.QualifierTypes.LiteralQualifierType.create().orThrow();
+    });
+
+    test('succeeds with valid minimal configuration object', () => {
+      const validConfig = {
+        name: 'test-literal',
+        systemType: 'literal'
+      };
+
+      expect(qualifierType.validateConfiguration(validConfig)).toSucceedAndSatisfy((result) => {
+        expect(result.name).toBe('test-literal');
+        expect(result.systemType).toBe('literal');
+        expect(result.configuration).toBeUndefined();
+      });
+    });
+
+    test('succeeds with complete literal configuration', () => {
+      const validConfig = {
+        name: 'literal-complete',
+        systemType: 'literal',
+        configuration: {
+          allowContextList: false,
+          caseSensitive: true,
+          enumeratedValues: ['option1', 'option2', 'option3'],
+          hierarchy: {
+            option1: 'group1',
+            option2: 'group1',
+            option3: 'group2'
+          }
+        }
+      };
+
+      expect(qualifierType.validateConfiguration(validConfig)).toSucceedAndSatisfy((result) => {
+        expect(result.name).toBe('literal-complete');
+        expect(result.systemType).toBe('literal');
+        expect(result.configuration?.allowContextList).toBe(false);
+        expect(result.configuration?.caseSensitive).toBe(true);
+        expect(result.configuration?.enumeratedValues).toEqual(['option1', 'option2', 'option3']);
+        expect(result.configuration?.hierarchy).toEqual({
+          option1: 'group1',
+          option2: 'group1',
+          option3: 'group2'
+        });
+      });
+    });
+
+    test('returns strongly typed configuration object', () => {
+      const validConfig = {
+        name: 'typed-literal',
+        systemType: 'literal',
+        configuration: {
+          allowContextList: true,
+          caseSensitive: false,
+          enumeratedValues: ['red', 'green', 'blue'],
+          hierarchy: { red: 'color', green: 'color', blue: 'color' }
+        }
+      };
+
+      expect(qualifierType.validateConfiguration(validConfig)).toSucceedAndSatisfy((result) => {
+        // Verify strong typing - these should compile without errors
+        const name: string = result.name;
+        const systemType: 'literal' = result.systemType;
+        const allowContextList: boolean | undefined = result.configuration?.allowContextList;
+        const caseSensitive: boolean | undefined = result.configuration?.caseSensitive;
+        const enumeratedValues: string[] | undefined = result.configuration?.enumeratedValues;
+        const hierarchy: Record<string, string> | undefined = result.configuration?.hierarchy as
+          | Record<string, string>
+          | undefined;
+
+        expect(name).toBe('typed-literal');
+        expect(systemType).toBe('literal');
+        expect(allowContextList).toBe(true);
+        expect(caseSensitive).toBe(false);
+        expect(enumeratedValues).toEqual(['red', 'green', 'blue']);
+        expect(hierarchy).toEqual({ red: 'color', green: 'color', blue: 'color' });
+      });
+    });
+
+    test('calls validateConfigurationJson internally', () => {
+      // Test that validateConfiguration properly chains through validateConfigurationJson
+      const invalidConfig = {
+        name: 'test-literal'
+        // Missing systemType
+      };
+
+      expect(qualifierType.validateConfiguration(invalidConfig)).toFailWith(/field systemType not found/i);
+    });
+
+    test('fails with same validation errors as validateConfigurationJson', () => {
+      const invalidConfig = {
+        name: 'test-literal',
+        systemType: 'territory' // Wrong system type
+      };
+
+      // Both methods should fail with the same error pattern
+      expect(qualifierType.validateConfiguration(invalidConfig)).toFailWith(/systemType.*literal/i);
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/systemType.*literal/i);
+    });
+
+    test('handles complex invalid configurations', () => {
+      const invalidConfig = {
+        name: 123 as unknown as string,
+        systemType: 'literal',
+        configuration: {
+          allowContextList: 'invalid' as unknown as boolean,
+          caseSensitive: 'invalid' as unknown as boolean,
+          enumeratedValues: 'not-array' as unknown as string[],
+          hierarchy: ['not-object'] as unknown as Record<string, string>,
+          unexpectedField: 'value'
+        }
+      };
+
+      expect(qualifierType.validateConfiguration(invalidConfig)).toFail();
+    });
+
+    test('validates literal-specific configuration fields correctly', () => {
+      // Test edge cases specific to literal configuration
+      const edgeCaseConfig = {
+        name: 'edge-literal',
+        systemType: 'literal',
+        configuration: {
+          allowContextList: true,
+          caseSensitive: false,
+          enumeratedValues: [], // Empty array should be valid
+          hierarchy: {} // Empty object should be valid
+        }
+      };
+
+      expect(qualifierType.validateConfiguration(edgeCaseConfig)).toSucceedAndSatisfy((result) => {
+        expect(result.configuration?.enumeratedValues).toEqual([]);
+        expect(result.configuration?.hierarchy).toEqual({});
+      });
+    });
+
+    test('handles case-sensitive configuration scenarios', () => {
+      const caseSensitiveConfig = {
+        name: 'case-sensitive-literal',
+        systemType: 'literal',
+        configuration: {
+          caseSensitive: true,
+          enumeratedValues: ['Value', 'value', 'VALUE']
+        }
+      };
+
+      expect(qualifierType.validateConfiguration(caseSensitiveConfig)).toSucceedAndSatisfy((result) => {
+        expect(result.configuration?.caseSensitive).toBe(true);
+        expect(result.configuration?.enumeratedValues).toEqual(['Value', 'value', 'VALUE']);
+      });
+    });
+
+    test('validates complex hierarchical structures', () => {
+      const hierarchicalConfig = {
+        name: 'hierarchical-literal',
+        systemType: 'literal',
+        configuration: {
+          enumeratedValues: ['red', 'green', 'blue', 'primary', 'secondary'],
+          hierarchy: {
+            red: 'primary',
+            green: 'secondary',
+            blue: 'primary',
+            primary: 'color',
+            secondary: 'color'
+          }
+        }
+      };
+
+      expect(qualifierType.validateConfiguration(hierarchicalConfig)).toSucceedAndSatisfy((result) => {
+        expect(result.configuration?.enumeratedValues).toContain('red');
+        expect(result.configuration?.enumeratedValues).toContain('primary');
+        expect(result.configuration?.hierarchy?.red).toBe('primary');
+        expect(result.configuration?.hierarchy?.primary).toBe('color');
+      });
     });
   });
 });

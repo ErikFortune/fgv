@@ -74,6 +74,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[candidateValue](./ts-res.resources.resourcecandidate.candidatevalue.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[CandidateValue](./ts-res.resources.candidatevalue.md)
+
+
+</td><td>
+
+The candidate value that contains the JSON representation of the instance data.
+
+
+</td></tr>
+<tr><td>
+
 [completeness](./ts-res.resources.resourcecandidate.completeness.md)
 
 

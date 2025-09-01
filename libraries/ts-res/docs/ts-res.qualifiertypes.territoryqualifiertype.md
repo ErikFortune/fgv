@@ -135,6 +135,27 @@ _(Optional)_ Optional [hierarchy](./ts-res.qualifiertypes.literalvaluehierarchy.
 
 
 </td></tr>
+<tr><td>
+
+[systemTypeName](./ts-res.qualifiertypes.territoryqualifiertype.systemtypename.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[QualifierTypeName](./ts-res.qualifiertypename.md)
+
+
+</td><td>
+
+Name of the underlying system type.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods
@@ -205,6 +226,34 @@ Creates a new [TerritoryQualifierType](./ts-res.qualifiertypes.territoryqualifie
 </td></tr>
 <tr><td>
 
+[getConfiguration()](./ts-res.qualifiertypes.territoryqualifiertype.getconfiguration.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the configuration for this qualifier type.
+
+
+</td></tr>
+<tr><td>
+
+[getConfigurationJson()](./ts-res.qualifiertypes.territoryqualifiertype.getconfigurationjson.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the configuration for this qualifier type.
+
+
+</td></tr>
+<tr><td>
+
 [isValidConditionValue(value)](./ts-res.qualifiertypes.territoryqualifiertype.isvalidconditionvalue.md)
 
 
@@ -246,6 +295,34 @@ Determines whether a value is a valid condition value for a territory qualifier.
 </td><td>
 
 Converts a string value to a territory condition value.
+
+
+</td></tr>
+<tr><td>
+
+[validateConfiguration(from)](./ts-res.qualifiertypes.territoryqualifiertype.validateconfiguration.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Validates a [strongly typed configuration object](./ts-res.qualifiertypes.config.isystemterritoryqualifiertypeconfig.md) for this qualifier type.
+
+
+</td></tr>
+<tr><td>
+
+[validateConfigurationJson(from)](./ts-res.qualifiertypes.territoryqualifiertype.validateconfigurationjson.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Validates configuration JSON data for this qualifier type.
 
 
 </td></tr>

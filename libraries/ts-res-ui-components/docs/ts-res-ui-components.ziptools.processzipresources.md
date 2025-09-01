@@ -9,7 +9,7 @@ Helper function to process resources from ZIP data using ts-res-ui-components in
 **Signature:**
 
 ```typescript
-export declare function processZipResources(files: ImportedFile[], directory: ImportedDirectory | undefined, config?: Config.Model.ISystemConfiguration): Promise<Result<ProcessedResources>>;
+export declare function processZipResources(files: ImportedFile[], directory: ImportedDirectory | undefined, config?: Config.Model.ISystemConfiguration, o11y?: ObservabilityTools.IObservabilityContext): Promise<Result<ProcessedResources>>;
 ```
 
 ## Parameters
@@ -66,6 +66,22 @@ config
 </td><td>
 
 Config.Model.ISystemConfiguration
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+o11y
+
+
+</td><td>
+
+[ObservabilityTools.IObservabilityContext](./ts-res-ui-components.observabilitytools.iobservabilitycontext.md)
 
 
 </td><td>

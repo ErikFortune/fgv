@@ -288,17 +288,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[LiteralValueHierarchyDecl](./ts-res.qualifiertypes.literalvaluehierarchydecl.md)
-
-
-</td><td>
-
-Declares a hierarchy of literal values. The keys are the names of the values, and the values are the names of their parents.
-
-
-</td></tr>
-<tr><td>
-
 [ReadOnlyQualifierTypeCollector](./ts-res.qualifiertypes.readonlyqualifiertypecollector.md)
 
 

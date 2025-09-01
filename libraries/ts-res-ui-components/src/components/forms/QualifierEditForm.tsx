@@ -12,7 +12,7 @@ export interface QualifierEditFormProps {
   /** Existing qualifier to edit (undefined for creating new qualifier) */
   qualifier?: Qualifiers.IQualifierDecl;
   /** Available qualifier types for selection */
-  qualifierTypes: QualifierTypes.Config.ISystemQualifierTypeConfig[];
+  qualifierTypes: QualifierTypes.Config.IAnyQualifierTypeConfig[];
   /** Callback fired when qualifier is saved */
   onSave: (qualifier: Qualifiers.IQualifierDecl) => void;
   /** Callback fired when editing is cancelled */

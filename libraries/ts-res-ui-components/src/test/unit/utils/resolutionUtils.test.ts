@@ -82,7 +82,8 @@ describe('resolutionUtils', () => {
           }
         ],
         conditionSets: [{ conditions: [0 as unknown as any] }],
-        decisions: [{ conditionSets: [0 as unknown as any] }]
+        decisions: [{ conditionSets: [0 as unknown as any] }],
+        candidateValues: []
       },
       resolver: {} as any,
       resourceCount: 2,

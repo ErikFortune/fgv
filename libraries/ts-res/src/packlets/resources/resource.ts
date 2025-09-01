@@ -191,9 +191,9 @@ export class Resource implements IResource {
   ): ResourceJson.Compiled.ICompiledResource {
     const candidates: ResourceJson.Compiled.ICompiledCandidate[] = this._getMatchingCandidates(options).map(
       (c) => ({
-        json: c.json,
         isPartial: c.isPartial,
-        mergeMethod: c.mergeMethod
+        mergeMethod: c.mergeMethod,
+        valueIndex: c.candidateValue.index!
       })
     );
 

@@ -8,6 +8,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { ResourcePickerTreeProps, PendingResource } from './types';
 import { Runtime } from '@fgv/ts-res';
+import { useObservability } from '../../../contexts';
 
 /**
  * Virtual tree node that can represent both real and pending resources
@@ -132,6 +133,8 @@ export const ResourcePickerTree = <T = unknown,>({
   className = '',
   emptyMessage = 'No resources available'
 }: ResourcePickerTreeProps<T>) => {
+  // Get observability context
+  const o11y = useObservability();
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   // Build the virtual tree structure from resources and pending resources
@@ -144,7 +147,7 @@ export const ResourcePickerTree = <T = unknown,>({
     const resourceManager = resources.system.resourceManager;
     const treeResult = resourceManager.getBuiltResourceTree();
     if (treeResult.isFailure()) {
-      console.error('ResourcePickerTree: Failed to build resource tree:', treeResult.message);
+      o11y.diag.error('ResourcePickerTree: Failed to build resource tree:', treeResult.message);
       return null;
     }
 
@@ -153,7 +156,7 @@ export const ResourcePickerTree = <T = unknown,>({
       const virtualTree = createVirtualTree(treeResult.value, pendingResources);
       return virtualTree;
     } catch (error) {
-      console.error('ResourcePickerTree: Error in createVirtualTree:', error);
+      o11y.diag.error('ResourcePickerTree: Error in createVirtualTree:', error);
       return null;
     }
   }, [resources, pendingResources]);
@@ -171,7 +174,7 @@ export const ResourcePickerTree = <T = unknown,>({
         return nodes;
       }
     } catch (error) {
-      console.error('ResourcePickerTree: Error in effectiveRootNodes calculation:', error);
+      o11y.diag.error('ResourcePickerTree: Error in effectiveRootNodes calculation:', error);
       return [];
     }
 

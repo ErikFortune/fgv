@@ -33,6 +33,7 @@ describe('ResourceBuilder', () => {
   let otherType: TsRes.ResourceTypes.ResourceType;
   let conditions: TsRes.Conditions.ConditionCollector;
   let conditionSets: TsRes.Conditions.ConditionSetCollector;
+  let candidateValues: TsRes.Resources.CandidateValueCollector;
   let decisions: TsRes.Decisions.AbstractDecisionCollector;
   let someDecls: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl[];
 
@@ -69,6 +70,7 @@ describe('ResourceBuilder', () => {
   beforeEach(() => {
     conditions = TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow();
     conditionSets = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
+    candidateValues = TsRes.Resources.CandidateValueCollector.create().orThrow();
     decisions = TsRes.Decisions.AbstractDecisionCollector.create({ conditionSets }).orThrow();
     someDecls = [
       {
@@ -110,6 +112,7 @@ describe('ResourceBuilder', () => {
         id: 'some.resource.path',
         resourceTypes,
         conditionSets,
+        candidateValues,
         decisions
       });
       expect(builder).toSucceedAndSatisfy((b) => {
@@ -124,6 +127,7 @@ describe('ResourceBuilder', () => {
         id: 'some.resource.path',
         resourceTypes,
         conditionSets,
+        candidateValues,
         typeName: 'json',
         decisions
       });
@@ -139,6 +143,7 @@ describe('ResourceBuilder', () => {
         id: 'some.resource.path',
         resourceTypes,
         conditionSets,
+        candidateValues,
         typeName: 'unknown',
         decisions
       });
@@ -154,6 +159,7 @@ describe('ResourceBuilder', () => {
         id: 'some.resource.path',
         resourceTypes,
         conditionSets,
+        candidateValues,
         decisions
       }).orThrow();
     });
@@ -240,6 +246,7 @@ describe('ResourceBuilder', () => {
         id: 'some.resource.path',
         resourceTypes,
         conditionSets,
+        candidateValues,
         decisions
       }).orThrow();
     });
@@ -271,6 +278,7 @@ describe('ResourceBuilder', () => {
         id: 'some.resource.path',
         resourceTypes,
         conditionSets,
+        candidateValues,
         decisions
       }).orThrow();
     });
@@ -372,6 +380,7 @@ describe('ResourceBuilder', () => {
         id: 'some.resource.path',
         resourceTypes,
         conditionSets,
+        candidateValues,
         decisions
       }).orThrow();
     });

@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<JsonValue>>;
+resolveResource: (resourceId: string, context?: Record<string, string>) => Result<JsonValue>;
 ```

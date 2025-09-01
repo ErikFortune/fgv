@@ -31,6 +31,7 @@ describe('ResourceCandidate', () => {
   let resourceTypes: TsRes.ResourceTypes.ResourceTypeCollector;
   let conditions: TsRes.Conditions.ConditionCollector;
   let conditionSets: TsRes.Conditions.ConditionSetCollector;
+  let candidateValues: TsRes.Resources.CandidateValueCollector;
   let someDecls: TsRes.ResourceJson.Json.ILooseResourceCandidateDecl[];
 
   beforeAll(() => {
@@ -64,6 +65,7 @@ describe('ResourceCandidate', () => {
   beforeEach(() => {
     conditions = TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow();
     conditionSets = TsRes.Conditions.ConditionSetCollector.create({ conditions }).orThrow();
+    candidateValues = TsRes.Resources.CandidateValueCollector.create().orThrow();
     someDecls = [
       {
         id: 'some.resource.path',
@@ -116,6 +118,7 @@ describe('ResourceCandidate', () => {
         TsRes.Resources.ResourceCandidate.create({
           id: 'some.resource.path',
           conditionSets,
+          candidateValues,
           resourceType,
           decl
         })
@@ -145,6 +148,7 @@ describe('ResourceCandidate', () => {
         TsRes.Resources.ResourceCandidate.create({
           id: 'some.resource.path',
           conditionSets,
+          candidateValues,
           decl
         })
       ).toSucceedAndSatisfy((c) => {
@@ -173,6 +177,7 @@ describe('ResourceCandidate', () => {
         TsRes.Resources.ResourceCandidate.create({
           id: decl.id,
           conditionSets,
+          candidateValues,
           decl,
           parentConditions
         })
@@ -194,6 +199,7 @@ describe('ResourceCandidate', () => {
         TsRes.Resources.ResourceCandidate.create({
           id: 'resource ids cannot contain spaces or punctuation!',
           conditionSets,
+          candidateValues,
           decl
         })
       ).toFailWith(/not a valid resource id/i);
@@ -208,6 +214,7 @@ describe('ResourceCandidate', () => {
         TsRes.Resources.ResourceCandidate.create({
           id: decl.id,
           conditionSets,
+          candidateValues,
           decl
         })
       ).toFailWith(/not a valid qualifier name/i);
@@ -227,6 +234,7 @@ describe('ResourceCandidate', () => {
         TsRes.Resources.ResourceCandidate.create({
           id: 'some.resource.path',
           conditionSets,
+          candidateValues,
           resourceType,
           decl
         })
@@ -235,17 +243,18 @@ describe('ResourceCandidate', () => {
 
     test('handles all combinations of isPartial and mergeMethod', () => {
       const decls: TsRes.ResourceJson.Json.IChildResourceCandidateDecl[] = [
-        { json: {}, conditions: {}, isPartial: true, mergeMethod: 'replace' },
-        { json: {}, conditions: {}, isPartial: false, mergeMethod: 'replace' },
-        { json: {}, conditions: {}, isPartial: true, mergeMethod: 'augment' },
-        { json: {}, conditions: {}, isPartial: false, mergeMethod: 'augment' },
-        { json: {}, conditions: {} } // defaults
+        { json: { test: 1 }, conditions: {}, isPartial: true, mergeMethod: 'replace' },
+        { json: { test: 2 }, conditions: {}, isPartial: false, mergeMethod: 'replace' },
+        { json: { test: 3 }, conditions: {}, isPartial: true, mergeMethod: 'augment' },
+        { json: { test: 4 }, conditions: {}, isPartial: false, mergeMethod: 'augment' },
+        { json: { test: 5 }, conditions: {} } // defaults
       ];
       for (const decl of decls) {
         expect(
           TsRes.Resources.ResourceCandidate.create({
             id: 'some.resource.path',
             conditionSets,
+            candidateValues,
             decl
           })
         ).toSucceedAndSatisfy((c) => {
@@ -273,6 +282,7 @@ describe('ResourceCandidate', () => {
         TsRes.Resources.ResourceCandidate.create({
           id: 'some.resource.path',
           conditionSets,
+          candidateValues,
           decl,
           parentConditions: badParent as unknown as ReadonlyArray<TsRes.Conditions.Condition>
         })
@@ -295,6 +305,7 @@ describe('ResourceCandidate', () => {
       const candidate = TsRes.Resources.ResourceCandidate.create({
         id: 'some.resource.path',
         conditionSets,
+        candidateValues,
         resourceType,
         decl
       }).orThrow();
@@ -315,6 +326,7 @@ describe('ResourceCandidate', () => {
       const candidate = TsRes.Resources.ResourceCandidate.create({
         id: 'some.resource.path',
         conditionSets,
+        candidateValues,
         resourceType,
         decl
       }).orThrow();
@@ -335,6 +347,7 @@ describe('ResourceCandidate', () => {
       const candidate = TsRes.Resources.ResourceCandidate.create({
         id: 'some.resource.path',
         conditionSets,
+        candidateValues,
         resourceType,
         decl
       }).orThrow();
@@ -371,6 +384,7 @@ describe('ResourceCandidate', () => {
       const candidate = TsRes.Resources.ResourceCandidate.create({
         id: 'some.resource.path',
         conditionSets,
+        candidateValues,
         resourceType,
         decl
       }).orThrow();
@@ -392,6 +406,7 @@ describe('ResourceCandidate', () => {
       const candidate = TsRes.Resources.ResourceCandidate.create({
         id: 'some.resource.path',
         conditionSets,
+        candidateValues,
         decl
       }).orThrow();
       expect(candidate.toLooseResourceCandidateDecl()).toEqual({
@@ -414,6 +429,7 @@ describe('ResourceCandidate', () => {
       const candidate = TsRes.Resources.ResourceCandidate.create({
         id: 'some.resource.path',
         conditionSets,
+        candidateValues,
         resourceType,
         decl
       }).orThrow();
@@ -438,6 +454,7 @@ describe('ResourceCandidate', () => {
       const candidate = TsRes.Resources.ResourceCandidate.create({
         id: 'some.resource.path',
         conditionSets,
+        candidateValues,
         resourceType,
         decl
       }).orThrow();
@@ -473,6 +490,7 @@ describe('ResourceCandidate', () => {
           return TsRes.Resources.ResourceCandidate.create({
             id: decl.id,
             conditionSets,
+            candidateValues,
             decl,
             resourceType
           });
@@ -493,6 +511,7 @@ describe('ResourceCandidate', () => {
           return TsRes.Resources.ResourceCandidate.create({
             id: decl.id,
             conditionSets,
+            candidateValues,
             decl,
             resourceType
           });
@@ -510,6 +529,7 @@ describe('ResourceCandidate', () => {
           TsRes.Resources.ResourceCandidate.create({
             id: decl.id,
             conditionSets,
+            candidateValues,
             decl
           })
         )
@@ -523,6 +543,7 @@ describe('ResourceCandidate', () => {
           TsRes.Resources.ResourceCandidate.create({
             id: decl.id,
             conditionSets,
+            candidateValues,
             decl
           })
         )
@@ -544,6 +565,7 @@ describe('ResourceCandidate', () => {
           return TsRes.Resources.ResourceCandidate.create({
             id: decl.id,
             conditionSets,
+            candidateValues,
             decl,
             resourceType
           });
@@ -565,6 +587,7 @@ describe('ResourceCandidate', () => {
           return TsRes.Resources.ResourceCandidate.create({
             id: decl.id,
             conditionSets,
+            candidateValues,
             decl,
             resourceType
           });
@@ -588,6 +611,7 @@ describe('ResourceCandidate', () => {
           TsRes.Resources.ResourceCandidate.create({
             id: decl.id,
             conditionSets,
+            candidateValues,
             decl
           })
         )
@@ -620,6 +644,7 @@ describe('ResourceCandidate', () => {
       const candidate = TsRes.Resources.ResourceCandidate.create({
         id: decl.id,
         conditionSets,
+        candidateValues,
         decl
       }).orThrow();
       expect(TsRes.Resources.ResourceCandidate.equal(candidate, candidate)).toBe(true);
@@ -629,11 +654,21 @@ describe('ResourceCandidate', () => {
       const candidate1 = TsRes.Resources.ResourceCandidate.create({
         id: decl.id,
         conditionSets,
+        candidateValues,
         decl
       }).orThrow();
+
+      // Create fresh collectors to avoid hash collision
+      const freshConditions = TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow();
+      const freshConditionSets = TsRes.Conditions.ConditionSetCollector.create({
+        conditions: freshConditions
+      }).orThrow();
+      const freshCandidateValues = TsRes.Resources.CandidateValueCollector.create().orThrow();
+
       const candidate2 = TsRes.Resources.ResourceCandidate.create({
         id: decl.id,
-        conditionSets,
+        conditionSets: freshConditionSets,
+        candidateValues: freshCandidateValues,
         decl
       }).orThrow();
       expect(TsRes.Resources.ResourceCandidate.equal(candidate1, candidate2)).toBe(true);
@@ -643,11 +678,21 @@ describe('ResourceCandidate', () => {
       const candidate1 = TsRes.Resources.ResourceCandidate.create({
         id: decl.id,
         conditionSets,
+        candidateValues,
         decl: { ...decl, json: { this: 'that', other: 'thing' } }
       }).orThrow();
+
+      // Create fresh collectors to avoid hash collision
+      const freshConditions = TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow();
+      const freshConditionSets = TsRes.Conditions.ConditionSetCollector.create({
+        conditions: freshConditions
+      }).orThrow();
+      const freshCandidateValues = TsRes.Resources.CandidateValueCollector.create().orThrow();
+
       const candidate2 = TsRes.Resources.ResourceCandidate.create({
         id: decl.id,
-        conditionSets,
+        conditionSets: freshConditionSets,
+        candidateValues: freshCandidateValues,
         decl: { ...decl, json: { other: 'thing', this: 'that' } }
       }).orThrow();
       expect(TsRes.Resources.ResourceCandidate.equal(candidate1, candidate2)).toBe(true);
@@ -657,11 +702,21 @@ describe('ResourceCandidate', () => {
       const candidate1 = TsRes.Resources.ResourceCandidate.create({
         id: decl.id,
         conditionSets,
+        candidateValues,
         decl
       }).orThrow();
+
+      // Create fresh collectors to avoid hash collision
+      const freshConditions = TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow();
+      const freshConditionSets = TsRes.Conditions.ConditionSetCollector.create({
+        conditions: freshConditions
+      }).orThrow();
+      const freshCandidateValues = TsRes.Resources.CandidateValueCollector.create().orThrow();
+
       const candidate2 = TsRes.Resources.ResourceCandidate.create({
         id: 'other.resource.path',
-        conditionSets,
+        conditionSets: freshConditionSets,
+        candidateValues: freshCandidateValues,
         decl
       }).orThrow();
       expect(TsRes.Resources.ResourceCandidate.equal(candidate1, candidate2)).toBe(false);
@@ -671,11 +726,21 @@ describe('ResourceCandidate', () => {
       const candidate1 = TsRes.Resources.ResourceCandidate.create({
         id: decl.id,
         conditionSets,
+        candidateValues,
         decl
       }).orThrow();
+
+      // Create fresh collectors to avoid hash collision
+      const freshConditions = TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow();
+      const freshConditionSets = TsRes.Conditions.ConditionSetCollector.create({
+        conditions: freshConditions
+      }).orThrow();
+      const freshCandidateValues = TsRes.Resources.CandidateValueCollector.create().orThrow();
+
       const candidate2 = TsRes.Resources.ResourceCandidate.create({
         id: decl.id,
-        conditionSets,
+        conditionSets: freshConditionSets,
+        candidateValues: freshCandidateValues,
         decl: { ...decl, conditions: { homeTerritory: 'CA' } }
       }).orThrow();
       expect(TsRes.Resources.ResourceCandidate.equal(candidate1, candidate2)).toBe(false);
@@ -685,11 +750,21 @@ describe('ResourceCandidate', () => {
       const candidate1 = TsRes.Resources.ResourceCandidate.create({
         id: decl.id,
         conditionSets,
+        candidateValues,
         decl
       }).orThrow();
+
+      // Create fresh collectors to avoid hash collision
+      const freshConditions = TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow();
+      const freshConditionSets = TsRes.Conditions.ConditionSetCollector.create({
+        conditions: freshConditions
+      }).orThrow();
+      const freshCandidateValues = TsRes.Resources.CandidateValueCollector.create().orThrow();
+
       const candidate2 = TsRes.Resources.ResourceCandidate.create({
         id: decl.id,
-        conditionSets,
+        conditionSets: freshConditionSets,
+        candidateValues: freshCandidateValues,
         decl: { ...decl, isPartial: false }
       }).orThrow();
       expect(TsRes.Resources.ResourceCandidate.equal(candidate1, candidate2)).toBe(false);
@@ -699,11 +774,21 @@ describe('ResourceCandidate', () => {
       const candidate1 = TsRes.Resources.ResourceCandidate.create({
         id: decl.id,
         conditionSets,
+        candidateValues,
         decl
       }).orThrow();
+
+      // Create fresh collectors to avoid hash collision
+      const freshConditions = TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow();
+      const freshConditionSets = TsRes.Conditions.ConditionSetCollector.create({
+        conditions: freshConditions
+      }).orThrow();
+      const freshCandidateValues = TsRes.Resources.CandidateValueCollector.create().orThrow();
+
       const candidate2 = TsRes.Resources.ResourceCandidate.create({
         id: decl.id,
-        conditionSets,
+        conditionSets: freshConditionSets,
+        candidateValues: freshCandidateValues,
         decl: { ...decl, mergeMethod: 'augment' }
       }).orThrow();
       expect(TsRes.Resources.ResourceCandidate.equal(candidate1, candidate2)).toBe(false);
@@ -713,11 +798,21 @@ describe('ResourceCandidate', () => {
       const candidate1 = TsRes.Resources.ResourceCandidate.create({
         id: decl.id,
         conditionSets,
+        candidateValues,
         decl
       }).orThrow();
+
+      // Create fresh collectors to avoid hash collision
+      const freshConditions = TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow();
+      const freshConditionSets = TsRes.Conditions.ConditionSetCollector.create({
+        conditions: freshConditions
+      }).orThrow();
+      const freshCandidateValues = TsRes.Resources.CandidateValueCollector.create().orThrow();
+
       const candidate2 = TsRes.Resources.ResourceCandidate.create({
         id: decl.id,
-        conditionSets,
+        conditionSets: freshConditionSets,
+        candidateValues: freshCandidateValues,
         decl: { ...decl, json: { other: 'json' } }
       }).orThrow();
       expect(TsRes.Resources.ResourceCandidate.equal(candidate1, candidate2)).toBe(false);
@@ -732,8 +827,26 @@ describe('ResourceCandidate', () => {
         isPartial: true,
         mergeMethod: 'replace'
       };
-      const c1 = TsRes.Resources.ResourceCandidate.create({ id: 'id', conditionSets, decl }).orThrow();
-      const c2 = TsRes.Resources.ResourceCandidate.create({ id: 'id', conditionSets, decl }).orThrow();
+      const c1 = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets,
+        candidateValues,
+        decl
+      }).orThrow();
+
+      // Create fresh collectors to avoid hash collision
+      const freshConditions = TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow();
+      const freshConditionSets = TsRes.Conditions.ConditionSetCollector.create({
+        conditions: freshConditions
+      }).orThrow();
+      const freshCandidateValues = TsRes.Resources.CandidateValueCollector.create().orThrow();
+
+      const c2 = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets: freshConditionSets,
+        candidateValues: freshCandidateValues,
+        decl
+      }).orThrow();
       expect(TsRes.Resources.ResourceCandidate.equal(c1, c2)).toBe(true);
     });
     test('returns false for different candidates', () => {
@@ -745,8 +858,26 @@ describe('ResourceCandidate', () => {
         json: { a: 2 },
         conditions: { homeTerritory: 'US' }
       };
-      const c1 = TsRes.Resources.ResourceCandidate.create({ id: 'id', conditionSets, decl: decl1 }).orThrow();
-      const c2 = TsRes.Resources.ResourceCandidate.create({ id: 'id', conditionSets, decl: decl2 }).orThrow();
+      const c1 = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets,
+        candidateValues,
+        decl: decl1
+      }).orThrow();
+
+      // Create fresh collectors to avoid hash collision
+      const freshConditions = TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow();
+      const freshConditionSets = TsRes.Conditions.ConditionSetCollector.create({
+        conditions: freshConditions
+      }).orThrow();
+      const freshCandidateValues = TsRes.Resources.CandidateValueCollector.create().orThrow();
+
+      const c2 = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets: freshConditionSets,
+        candidateValues: freshCandidateValues,
+        decl: decl2
+      }).orThrow();
       expect(TsRes.Resources.ResourceCandidate.equal(c1, c2)).toBe(false);
     });
   });
@@ -759,7 +890,12 @@ describe('ResourceCandidate', () => {
         isPartial: true,
         mergeMethod: 'replace'
       };
-      const c = TsRes.Resources.ResourceCandidate.create({ id: 'id', conditionSets, decl }).orThrow();
+      const c = TsRes.Resources.ResourceCandidate.create({
+        id: 'id',
+        conditionSets,
+        candidateValues,
+        decl
+      }).orThrow();
       expect(c.toChildResourceCandidateDecl()).toEqual({
         json: { a: 1 },
         conditions: { homeTerritory: 'US' },
@@ -767,9 +903,17 @@ describe('ResourceCandidate', () => {
         mergeMethod: 'replace'
       });
       // Defaults omitted
+      // Create fresh collectors to avoid hash collision
+      const freshConditions = TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow();
+      const freshConditionSets = TsRes.Conditions.ConditionSetCollector.create({
+        conditions: freshConditions
+      }).orThrow();
+      const freshCandidateValues = TsRes.Resources.CandidateValueCollector.create().orThrow();
+
       const c2 = TsRes.Resources.ResourceCandidate.create({
         id: 'id',
-        conditionSets,
+        conditionSets: freshConditionSets,
+        candidateValues: freshCandidateValues,
         decl: { json: { a: 1 }, conditions: { homeTerritory: 'US' } }
       }).orThrow();
       expect(c2.toChildResourceCandidateDecl()).toEqual({
@@ -788,6 +932,7 @@ describe('ResourceCandidate', () => {
       const c = TsRes.Resources.ResourceCandidate.create({
         id: 'id',
         conditionSets,
+        candidateValues,
         decl,
         resourceType
       }).orThrow();
@@ -800,9 +945,17 @@ describe('ResourceCandidate', () => {
         resourceTypeName: 'json'
       });
       // Defaults omitted
+      // Create fresh collectors to avoid hash collision
+      const freshConditions2 = TsRes.Conditions.ConditionCollector.create({ qualifiers }).orThrow();
+      const freshConditionSets2 = TsRes.Conditions.ConditionSetCollector.create({
+        conditions: freshConditions2
+      }).orThrow();
+      const freshCandidateValues2 = TsRes.Resources.CandidateValueCollector.create().orThrow();
+
       const c2 = TsRes.Resources.ResourceCandidate.create({
         id: 'id',
-        conditionSets,
+        conditionSets: freshConditionSets2,
+        candidateValues: freshCandidateValues2,
         decl: { json: { a: 1 }, conditions: { homeTerritory: 'US' } },
         resourceType
       }).orThrow();
@@ -831,6 +984,7 @@ describe('ResourceCandidate', () => {
       const candidate = TsRes.Resources.ResourceCandidate.create({
         id: 'id',
         conditionSets: localConditionSets,
+        candidateValues,
         resourceType,
         decl
       }).orThrow();
@@ -849,6 +1003,7 @@ describe('ResourceCandidate', () => {
       const candidate = TsRes.Resources.ResourceCandidate.create({
         id: 'id',
         conditionSets: localConditionSets,
+        candidateValues,
         resourceType,
         decl
       }).orThrow();
@@ -867,6 +1022,7 @@ describe('ResourceCandidate', () => {
       const candidate = TsRes.Resources.ResourceCandidate.create({
         id: 'id',
         conditionSets: localConditionSets,
+        candidateValues,
         resourceType,
         decl
       }).orThrow();
@@ -883,6 +1039,7 @@ describe('ResourceCandidate', () => {
       const candidate = TsRes.Resources.ResourceCandidate.create({
         id: 'id',
         conditionSets: localConditionSets,
+        candidateValues,
         resourceType,
         decl
       }).orThrow();
@@ -901,6 +1058,7 @@ describe('ResourceCandidate', () => {
       const candidate = TsRes.Resources.ResourceCandidate.create({
         id: 'id',
         conditionSets: localConditionSets,
+        candidateValues,
         resourceType,
         decl
       }).orThrow();
@@ -925,6 +1083,7 @@ describe('ResourceCandidate', () => {
       const candidate = TsRes.Resources.ResourceCandidate.create({
         id: 'test-candidate',
         conditionSets,
+        candidateValues,
         resourceType: resourceTypes.validating.get('json').orThrow(),
         decl
       }).orThrow();
@@ -941,6 +1100,7 @@ describe('ResourceCandidate', () => {
       const candidate = TsRes.Resources.ResourceCandidate.create({
         id: 'partial-candidate',
         conditionSets,
+        candidateValues,
         resourceType: resourceTypes.validating.get('json').orThrow(),
         decl
       }).orThrow();
@@ -957,6 +1117,7 @@ describe('ResourceCandidate', () => {
       const candidate = TsRes.Resources.ResourceCandidate.create({
         id: 'default-candidate',
         conditionSets,
+        candidateValues,
         resourceType: resourceTypes.validating.get('json').orThrow(),
         decl
       }).orThrow();
@@ -973,6 +1134,7 @@ describe('ResourceCandidate', () => {
       const candidate = TsRes.Resources.ResourceCandidate.create({
         id: 'explicit-full-candidate',
         conditionSets,
+        candidateValues,
         resourceType: resourceTypes.validating.get('json').orThrow(),
         decl
       }).orThrow();
@@ -989,6 +1151,7 @@ describe('ResourceCandidate', () => {
       const candidate = TsRes.Resources.ResourceCandidate.create({
         id: 'explicit-partial-candidate',
         conditionSets,
+        candidateValues,
         resourceType: resourceTypes.validating.get('json').orThrow(),
         decl
       }).orThrow();

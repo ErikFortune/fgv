@@ -4,6 +4,32 @@
 
 ## QualifierTypes.Config.Convert namespace
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[qualifierTypeConfig(config)](./ts-res.qualifiertypes.config.convert.qualifiertypeconfig.md)
+
+
+</td><td>
+
+A `Converter` for [QualifierTypeConfig](./ts-res.qualifiertypes.config.iqualifiertypeconfig.md) objects.
+
+
+</td></tr>
+</tbody></table>
+
 ## Variables
 
 <table><thead><tr><th>
@@ -18,6 +44,28 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[anyQualifierTypeConfig](./ts-res.qualifiertypes.config.convert.anyqualifiertypeconfig.md)
+
+
+</td><td>
+
+A `Converter` for [AnyQualifierTypeConfig](./ts-res.qualifiertypes.config.ianyqualifiertypeconfig.md) objects.
+
+
+</td></tr>
+<tr><td>
+
+[jsonQualifierTypeConfig](./ts-res.qualifiertypes.config.convert.jsonqualifiertypeconfig.md)
+
+
+</td><td>
+
+A `Converter` for [QualifierTypeConfig](./ts-res.qualifiertypes.config.iqualifiertypeconfig.md) objects.
+
+
+</td></tr>
+<tr><td>
 
 [languageQualifierTypeConfig](./ts-res.qualifiertypes.config.convert.languagequalifiertypeconfig.md)
 

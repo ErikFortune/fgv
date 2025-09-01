@@ -57,6 +57,25 @@ _(Optional)_ File types accepted for import
 </td></tr>
 <tr><td>
 
+[importError?](./ts-res-ui-components.ziptools.importviewprops.importerror.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| null
+
+
+</td><td>
+
+_(Optional)_ External error state to override local import status
+
+
+</td></tr>
+<tr><td>
+
 [onBundleImport?](./ts-res-ui-components.ziptools.importviewprops.onbundleimport.md)
 
 

@@ -9,6 +9,8 @@ import { Config } from '@fgv/ts-res';
 import { FileTree } from '@fgv/ts-utils';
 import { Import } from '@fgv/ts-res';
 import { JsonValue } from '@fgv/ts-json-base';
+import { Logging } from '@fgv/ts-utils';
+import { MessageLogLevel } from '@fgv/ts-utils';
 import { Qualifiers } from '@fgv/ts-res';
 import { QualifierTypes } from '@fgv/ts-res';
 import { default as React_2 } from 'react';
@@ -18,6 +20,7 @@ import { Resources } from '@fgv/ts-res';
 import { ResourceTypes } from '@fgv/ts-res';
 import { Result } from '@fgv/ts-utils';
 import { Runtime } from '@fgv/ts-res';
+import { Success } from '@fgv/ts-utils';
 
 // @public
 function analyzeFilteredResources(originalResourceIds: string[], filteredProcessedResources: ProcessedResources, originalProcessedResources: ProcessedResources): FilterResult;
@@ -98,11 +101,29 @@ interface ConfigurationViewProps extends ViewBaseProps {
     onSave?: (config: Config.Model.ISystemConfiguration) => void;
 }
 
+// @public
+class ConsoleUserLogger extends Logging.LoggerBase implements IUserLogger {
+    constructor(logLevel?: Logging.ReporterLogLevel);
+    protected _log(message: string, level: MessageLogLevel): Success<string | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    success(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+}
+
+// Warning: (ae-forgotten-export) The symbol "ObservabilityTools_2" needs to be exported by the entry point index.d.ts
+//
 // @internal (undocumented)
-function convertImportedDirectoryToFileTree(directory: ImportedDirectory): FileTree.FileTree;
+function convertImportedDirectoryToFileTree(directory: ImportedDirectory, o11y?: ObservabilityTools_2.IObservabilityContext): FileTree.FileTree;
+
+// @public
+function createConsoleObservabilityContext(diagLogLevel?: Logging.ReporterLogLevel, userLogLevel?: Logging.ReporterLogLevel): IObservabilityContext;
 
 // @public
 const createFilteredResourceManagerSimple: (originalSystem: ProcessedResources["system"], partialContext: Record<string, string | undefined>, options?: FilterOptions) => Promise<Result<ProcessedResources>>;
+
+// @public
+function createNoOpObservabilityContext(diagLogLevel?: Logging.ReporterLogLevel, userLogLevel?: Logging.ReporterLogLevel): IObservabilityContext;
 
 // @public
 interface CreatePendingResourceParams {
@@ -135,6 +156,9 @@ interface CustomResourceSelector {
 }
 
 // @public
+const DefaultObservabilityContext: IObservabilityContext;
+
+// @public
 const defaultResourceSelector: ResourceSelector;
 
 // @public
@@ -142,6 +166,26 @@ function deriveFullId(rootPath: string, leafId: string): Result<string>;
 
 // @public
 function deriveLeafId(fullResourceId: string): Result<string>;
+
+// @public
+export namespace DownloadUtils {
+    export function createTimestamp(customFormat?: string): string;
+    export function downloadBundle(data: unknown, resourceCount?: number, configName?: string): Result<void>;
+    export function downloadCompiledResources(data: unknown, resourceCount?: number): Result<void>;
+    export function downloadFile(data: unknown, type: string, options?: DownloadOptions): Result<void>;
+    export interface DownloadOptions {
+        baseFilename?: string;
+        extension?: string;
+        filenameTransformer?: (baseFilename: string) => string;
+        includeTimestamp?: boolean;
+        mimeType?: string;
+        timestampFormat?: string;
+    }
+    export function downloadResources(data: unknown, resourceCount?: number, collectionName?: string): Result<void>;
+    export function downloadSourceResources(data: unknown, resourceCount?: number): Result<void>;
+    export function downloadTsResJson(data: unknown, type: string): Result<void>;
+    export function generateFilename(baseFilename: string, type?: string, options?: DownloadOptions): Result<string>;
+}
 
 // Warning: (ae-forgotten-export) The symbol "DropdownCellProps" needs to be exported by the entry point index.d.ts
 //
@@ -539,9 +583,16 @@ export const ImportView: React_2.FC<ImportViewProps>;
 // @public
 interface ImportViewProps extends ViewBaseProps {
     acceptedFileTypes?: string[];
+    importError?: string | null;
     onBundleImport?: (bundle: Bundle.IBundle) => void;
     onImport?: (data: ImportedDirectory | ImportedFile[]) => void;
     onZipImport?: (zipData: ImportedDirectory | ImportedFile[], config?: Config.Model.ISystemConfiguration) => void;
+}
+
+// @public
+interface IObservabilityContext {
+    readonly diag: Logging.ILogger;
+    readonly user: IUserLogger;
 }
 
 // @public
@@ -549,6 +600,11 @@ function isPendingAddition(resourceId: string, pendingResources: Map<string, Res
 
 // @public
 function isZipFile(filename: string): boolean;
+
+// @public
+interface IUserLogger extends Logging.ILogger {
+    success(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+}
 
 export { JsonValue }
 
@@ -589,6 +645,52 @@ interface MultiGridViewProps extends ViewBaseProps {
 }
 
 // @public
+class NoOpUserLogger extends Logging.LoggerBase implements IUserLogger {
+    constructor(logLevel?: Logging.ReporterLogLevel);
+    protected _log(message: string, __level: MessageLogLevel): Success<string | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    success(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+}
+
+// @public
+class ObservabilityContext implements IObservabilityContext {
+    constructor(diag: Logging.ILogger, user: IUserLogger);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly diag: Logging.ILogger;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly user: IUserLogger;
+}
+
+// @public
+export const ObservabilityProvider: React_2.FC<ObservabilityProviderProps>;
+
+// @public
+export interface ObservabilityProviderProps {
+    children: ReactNode;
+    observabilityContext?: ObservabilityTools_2.IObservabilityContext;
+}
+
+declare namespace ObservabilityTools {
+    export {
+        IUserLogger,
+        IObservabilityContext,
+        ConsoleUserLogger,
+        NoOpUserLogger,
+        ObservabilityContext,
+        createConsoleObservabilityContext,
+        createNoOpObservabilityContext,
+        DefaultObservabilityContext,
+        TestObservabilityContext
+    }
+}
+
+// @public
 export interface OrchestratorActions {
     // Warning: (ae-forgotten-export) The symbol "Message" needs to be exported by the entry point index.d.ts
     //
@@ -623,6 +725,12 @@ export interface OrchestratorActions {
     // (undocumented)
     discardResourceEdits: () => void;
     // (undocumented)
+    exportBundle: () => void;
+    // (undocumented)
+    exportCompiled: () => void;
+    // (undocumented)
+    exportSource: () => void;
+    // (undocumented)
     getEditedValue: (resourceId: string) => JsonValue | undefined;
     // (undocumented)
     hasResourceEdit: (resourceId: string) => boolean;
@@ -637,13 +745,15 @@ export interface OrchestratorActions {
     // (undocumented)
     markResourceForDeletion: (resourceId: string) => void;
     // (undocumented)
+    o11y: IObservabilityContext;
+    // (undocumented)
     removePendingResource: (resourceId: string) => void;
     // (undocumented)
     resetFilter: () => void;
     // (undocumented)
     resetResolutionCache: () => void;
     // (undocumented)
-    resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<JsonValue>>;
+    resolveResource: (resourceId: string, context?: Record<string, string>) => Result<JsonValue>;
     // (undocumented)
     saveNewResourceAsPending: () => Result<{
         pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>;
@@ -754,56 +864,20 @@ interface ProcessedResources {
 }
 
 // @internal (undocumented)
-function processImportedDirectory(directory: ImportedDirectory, systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>): Result<{
-    system: {
-        qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
-        qualifiers: Qualifiers.IReadOnlyQualifierCollector;
-        resourceTypes: ResourceTypes.ReadOnlyResourceTypeCollector;
-        resourceManager: Resources.ResourceManagerBuilder;
-        importManager: Import.ImportManager;
-        contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
-    };
-    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
-    resolver: Runtime.ResourceResolver;
-    resourceCount: number;
-    summary: {
-        totalResources: number;
-        resourceIds: string[];
-        errorCount: number;
-        warnings: string[];
-    };
-}>;
+function processImportedDirectory(directory: ImportedDirectory, systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>, o11y?: ObservabilityTools_2.IObservabilityContext): Result<ExtendedProcessedResources>;
 
 // @internal (undocumented)
-function processImportedFiles(files: ImportedFile[], systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>): Result<{
-    system: {
-        qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
-        qualifiers: Qualifiers.IReadOnlyQualifierCollector;
-        resourceTypes: ResourceTypes.ReadOnlyResourceTypeCollector;
-        resourceManager: Resources.ResourceManagerBuilder;
-        importManager: Import.ImportManager;
-        contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
-    };
-    compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
-    resolver: Runtime.ResourceResolver;
-    resourceCount: number;
-    summary: {
-        totalResources: number;
-        resourceIds: string[];
-        errorCount: number;
-        warnings: string[];
-    };
-}>;
+function processImportedFiles(files: ImportedFile[], systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>, o11y?: ObservabilityTools_2.IObservabilityContext): Result<ExtendedProcessedResources>;
 
 // @public
 function processZipLoadResult(zipResult: {
     files: ImportedFile[];
     directory?: ImportedDirectory;
     config?: Config.Model.ISystemConfiguration;
-}, overrideConfig?: Config.Model.ISystemConfiguration): Promise<Result<ProcessedResources>>;
+}, overrideConfig?: Config.Model.ISystemConfiguration, o11y?: ObservabilityTools_2.IObservabilityContext): Promise<Result<ProcessedResources>>;
 
 // @public
-function processZipResources(files: ImportedFile[], directory: ImportedDirectory | undefined, config?: Config.Model.ISystemConfiguration): Promise<Result<ProcessedResources>>;
+function processZipResources(files: ImportedFile[], directory: ImportedDirectory | undefined, config?: Config.Model.ISystemConfiguration, o11y?: ObservabilityTools_2.IObservabilityContext): Promise<Result<ProcessedResources>>;
 
 // Warning: (ae-forgotten-export) The symbol "QualifierContextControlProps" needs to be exported by the entry point index.d.ts
 //
@@ -1237,6 +1311,9 @@ interface SourceViewProps extends ViewBaseProps {
 // @public
 const StringCell: React_2.FC<StringCellProps>;
 
+// @public
+const TestObservabilityContext: IObservabilityContext;
+
 // Warning: (ae-forgotten-export) The symbol "TriStateCellProps" needs to be exported by the entry point index.d.ts
 //
 // @public
@@ -1271,6 +1348,9 @@ function useConfigurationState(initialConfiguration?: Config.Model.ISystemConfig
 //
 // @public
 function useFilterState(initialState?: Partial<FilterState>): UseFilterStateReturn;
+
+// @public
+export const useObservability: () => ObservabilityTools_2.IObservabilityContext;
 
 // Warning: (ae-forgotten-export) The symbol "UseResolutionStateReturn" needs to be exported by the entry point index.d.ts
 //

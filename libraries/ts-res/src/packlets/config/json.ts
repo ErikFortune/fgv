@@ -35,7 +35,7 @@ export interface ISystemConfiguration {
   /** Optional description explaining the purpose and use case of the configuration. */
   description?: string;
   /** Qualifier type configurations that define the available qualifier types in the system. */
-  qualifierTypes: QualifierTypes.Config.ISystemQualifierTypeConfig[];
+  qualifierTypes: QualifierTypes.Config.IAnyQualifierTypeConfig[];
   /** Qualifier declarations that define the available qualifiers in the system. */
   qualifiers: Qualifiers.IQualifierDecl[];
   /** Resource type configurations that define the available resource types in the system. */

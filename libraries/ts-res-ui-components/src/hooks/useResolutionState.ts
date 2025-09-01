@@ -27,6 +27,7 @@ import {
   getAvailableQualifiers,
   hasPendingContextChanges
 } from '../utils/resolutionUtils';
+import { useObservability } from '../contexts';
 import {
   validateEditedResource,
   computeResourceDelta,
@@ -211,6 +212,8 @@ export function useResolutionState(
   onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void,
   onSystemUpdate?: (updatedResources: ProcessedResources) => void
 ): UseResolutionStateReturn {
+  // Get observability context
+  const o11y = useObservability();
   // Get available qualifiers
   const availableQualifiers = useMemo(() => {
     if (!processedResources) return [];
@@ -382,13 +385,13 @@ export function useResolutionState(
       try {
         if (newHostManagedValues !== undefined) {
           // When called with host values, ONLY update host values
-          console.log('Applying host managed values:', newHostManagedValues);
+          o11y.diag.info('Applying host managed values:', newHostManagedValues);
           setHostManagedValues(newHostManagedValues);
           onMessage?.('success', 'Host-managed context values updated');
           return succeed(undefined);
         } else {
           // When called without arguments (from Apply button), apply pending user values
-          console.log('Applying pending user values:', pendingUserValues);
+          o11y.diag.info('Applying pending user values:', pendingUserValues);
           setAppliedUserValues(pendingUserValues);
 
           // Create resolver with the new effective context
@@ -606,9 +609,9 @@ export function useResolutionState(
   React.useEffect(() => {
     if (!processedResources) return;
 
-    console.log('Auto-applying effective context:', effectiveContext);
-    console.log('Host managed values in hook:', hostManagedValues);
-    console.log('Applied user values in hook:', appliedUserValues);
+    o11y.diag.info('Auto-applying effective context:', effectiveContext);
+    o11y.diag.info('Host managed values in hook:', hostManagedValues);
+    o11y.diag.info('Applied user values in hook:', appliedUserValues);
 
     // Create resolver with effective context whenever host values change
     const resolverResult = createResolverWithContext(processedResources, effectiveContext, {
@@ -618,11 +621,11 @@ export function useResolutionState(
 
     if (resolverResult.isSuccess()) {
       setCurrentResolver(resolverResult.value);
-      console.log('Resolver created successfully with context:', effectiveContext);
+      o11y.diag.info('Resolver created successfully with context:', effectiveContext);
 
       // Re-resolve selected resource if any (but skip pending resources)
       if (selectedResourceId && !pendingResources.has(selectedResourceId)) {
-        console.log('Re-resolving resource:', selectedResourceId);
+        o11y.diag.info('Re-resolving resource:', selectedResourceId);
         const resolutionResult = resolveResourceDetailed(
           resolverResult.value,
           selectedResourceId,
@@ -630,17 +633,17 @@ export function useResolutionState(
         );
 
         if (resolutionResult.isSuccess()) {
-          console.log('Resolution successful for resource:', selectedResourceId);
+          o11y.diag.info('Resolution successful for resource:', selectedResourceId);
           setResolutionResult(resolutionResult.value);
         } else {
-          console.error('Resolution failed:', resolutionResult.message);
+          o11y.diag.error('Resolution failed:', resolutionResult.message);
         }
       } else if (selectedResourceId && pendingResources.has(selectedResourceId)) {
         // Keep the existing mock resolution result for pending resources
-        console.log('Skipping resolution for pending resource:', selectedResourceId);
+        o11y.diag.info('Skipping resolution for pending resource:', selectedResourceId);
       }
     } else {
-      console.error('Failed to create resolver with effective context:', resolverResult.message);
+      o11y.diag.error('Failed to create resolver with effective context:', resolverResult.message);
     }
   }, [
     processedResources,
@@ -1340,7 +1343,7 @@ export function useResolutionState(
           onMessage
         );
         if (contextConditionsResult.isFailure()) {
-          console.warn(`Failed to create context conditions: ${contextConditionsResult.message}`);
+          o11y.diag.warn(`Failed to create context conditions: ${contextConditionsResult.message}`);
           return prev; // Return previous state if validation fails
         }
         const contextConditions = contextConditionsResult.value;

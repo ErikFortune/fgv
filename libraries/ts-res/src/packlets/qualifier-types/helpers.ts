@@ -26,7 +26,6 @@ import { QualifierType } from './qualifierType';
 import { LanguageQualifierType } from './languageQualifierType';
 import { TerritoryQualifierType } from './territoryQualifierType';
 import { LiteralQualifierType } from './literalQualifierType';
-import { JsonObject } from '@fgv/ts-json-base';
 
 /**
  * Creates a {@link QualifierTypes.QualifierType | QualifierType} from a configuration object.
@@ -39,7 +38,7 @@ import { JsonObject } from '@fgv/ts-json-base';
  * @public
  */
 export function createQualifierTypeFromConfig(
-  typeConfig: Config.IQualifierTypeConfig<JsonObject>
+  typeConfig: Config.IAnyQualifierTypeConfig
 ): Result<QualifierType> {
   /* c8 ignore next 1 - defense in depth */
   const childConfig = typeConfig.configuration ?? {};

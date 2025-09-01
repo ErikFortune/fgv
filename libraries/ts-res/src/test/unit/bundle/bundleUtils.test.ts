@@ -42,6 +42,7 @@ describe('BundleUtils', () => {
       conditions: [],
       conditionSets: [],
       decisions: [],
+      candidateValues: [],
       resources: []
     }
   };

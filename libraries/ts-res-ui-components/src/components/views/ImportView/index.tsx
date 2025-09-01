@@ -9,6 +9,7 @@ import {
 import { ImportViewProps, ImportedFile, ImportedDirectory, ExtendedProcessedResources } from '../../../types';
 import { Bundle, Config, ZipArchive } from '@fgv/ts-res';
 import { isZipFile } from '../../../utils/zipLoader';
+import { useObservability } from '../../../contexts';
 
 interface FileInputResult {
   files: ImportedFile[];
@@ -69,8 +70,12 @@ export const ImportView: React.FC<ImportViewProps> = ({
   onZipImport,
   acceptedFileTypes = ['.json', '.zip'],
   onMessage,
-  className = ''
+  className = '',
+  importError
 }) => {
+  // Get observability context
+  const o11y = useObservability();
+
   const [isLoading, setIsLoading] = useState(false);
   const [importStatus, setImportStatus] = useState<{
     hasImported: boolean;
@@ -95,7 +100,7 @@ export const ImportView: React.FC<ImportViewProps> = ({
   // Helper function to process ZIP files using zip-archive packlet
   const processZipFile = useCallback(
     async (file: File) => {
-      console.log(`[ImportView] Processing ZIP file: ${file.name}`);
+      o11y.diag.info(`[ImportView] Processing ZIP file: ${file.name}`);
       onMessage?.('info', `Processing ZIP file: ${file.name}`);
 
       const loader = new ZipArchive.ZipArchiveLoader();
@@ -108,7 +113,7 @@ export const ImportView: React.FC<ImportViewProps> = ({
       }
 
       const zipData = loadResult.value;
-      console.log(`[ImportView] ZIP loaded successfully:`, zipData);
+      o11y.diag.info(`[ImportView] ZIP loaded successfully:`, zipData);
 
       // Pass the ZIP data to the appropriate handler
       if (onZipImport) {
@@ -145,7 +150,7 @@ export const ImportView: React.FC<ImportViewProps> = ({
 
           // Check if it's a ZIP file first
           if (isZipFile(file.name)) {
-            console.log(`[ImportView] ✅ ${file.name} detected as ZIP file`);
+            o11y.diag.info(`[ImportView] ✅ ${file.name} detected as ZIP file`);
 
             const zipData = await processZipFile(file);
 
@@ -183,11 +188,11 @@ export const ImportView: React.FC<ImportViewProps> = ({
           try {
             const parsedData = JSON.parse(content);
 
-            console.log(`[ImportView] Checking if ${file.name} is a bundle...`);
+            o11y.diag.info(`[ImportView] Checking if ${file.name} is a bundle...`);
 
             // Use BundleUtils for proper bundle detection
             if (Bundle.BundleUtils.isBundleFile(parsedData)) {
-              console.log(`[ImportView] ✅ ${file.name} detected as bundle file`);
+              o11y.diag.info(`[ImportView] ✅ ${file.name} detected as bundle file`);
               bundleFile = { ...importedFile, bundle: parsedData };
               isCurrentFileBundle = true;
             } else if (Bundle.BundleUtils.isBundleFileName(file.name)) {
@@ -196,10 +201,10 @@ export const ImportView: React.FC<ImportViewProps> = ({
                 `[ImportView] ⚠️ File ${file.name} appears to be a bundle by name but content doesn't match bundle structure`
               );
             } else {
-              console.log(`[ImportView] ❌ ${file.name} is not a bundle file`);
+              o11y.diag.info(`[ImportView] ❌ ${file.name} is not a bundle file`);
             }
           } catch (parseError) {
-            console.log(`[ImportView] ❌ ${file.name} failed JSON parsing:`, parseError);
+            o11y.diag.info(`[ImportView] ❌ ${file.name} failed JSON parsing:`, parseError);
             // Not valid JSON or not a bundle, treat as regular file
           }
 
@@ -211,7 +216,7 @@ export const ImportView: React.FC<ImportViewProps> = ({
 
         // Process results
         if (bundleFile) {
-          console.log(`[ImportView] Processing bundle file: ${bundleFile.name}`, bundleFile.bundle);
+          o11y.diag.info(`[ImportView] Processing bundle file: ${bundleFile.name}`, bundleFile.bundle);
 
           setImportStatus({
             hasImported: true,
@@ -222,10 +227,10 @@ export const ImportView: React.FC<ImportViewProps> = ({
           });
           onMessage?.('info', `Bundle file detected: ${bundleFile.name}`);
           if (onBundleImport && bundleFile.bundle) {
-            console.log(`[ImportView] Calling onBundleImport with bundle data`);
+            o11y.diag.info(`[ImportView] Calling onBundleImport with bundle data`);
             onBundleImport(bundleFile.bundle);
           } else {
-            console.warn(`[ImportView] No bundle import handler or bundle data missing`);
+            o11y.diag.warn(`[ImportView] No bundle import handler or bundle data missing`);
           }
         } else if (importedFiles.length > 0) {
           setImportStatus({
@@ -416,7 +421,7 @@ export const ImportView: React.FC<ImportViewProps> = ({
         const file = await fileHandles[0].getFile();
 
         if (isZipFile(file.name)) {
-          console.log(`[ImportView] Modern API - ✅ ${file.name} detected as ZIP file`);
+          o11y.diag.info(`[ImportView] Modern API - ✅ ${file.name} detected as ZIP file`);
 
           const zipData = await processZipFile(file);
 
@@ -459,11 +464,11 @@ export const ImportView: React.FC<ImportViewProps> = ({
         try {
           const parsedData = JSON.parse(content);
 
-          console.log(`[ImportView] Modern API - Checking if ${file.name} is a bundle...`);
+          o11y.diag.info(`[ImportView] Modern API - Checking if ${file.name} is a bundle...`);
 
           // Use BundleUtils for proper bundle detection
           if (Bundle.BundleUtils.isBundleFile(parsedData)) {
-            console.log(`[ImportView] Modern API - ✅ ${file.name} detected as bundle file`);
+            o11y.diag.info(`[ImportView] Modern API - ✅ ${file.name} detected as bundle file`);
             bundleFile = { ...importedFile, bundle: parsedData };
             isCurrentFileBundle = true;
           } else if (Bundle.BundleUtils.isBundleFileName(file.name)) {
@@ -471,10 +476,10 @@ export const ImportView: React.FC<ImportViewProps> = ({
               `[ImportView] Modern API - ⚠️ File ${file.name} appears to be a bundle by name but content doesn't match bundle structure`
             );
           } else {
-            console.log(`[ImportView] Modern API - ❌ ${file.name} is not a bundle file`);
+            o11y.diag.info(`[ImportView] Modern API - ❌ ${file.name} is not a bundle file`);
           }
         } catch (parseError) {
-          console.log(`[ImportView] Modern API - ❌ ${file.name} failed JSON parsing:`, parseError);
+          o11y.diag.info(`[ImportView] Modern API - ❌ ${file.name} failed JSON parsing:`, parseError);
         }
 
         // Only add to regular files if this specific file is not a bundle
@@ -699,20 +704,20 @@ export const ImportView: React.FC<ImportViewProps> = ({
           </div>
 
           {/* Error Display */}
-          {error && (
+          {(error || importError) && (
             <div className="bg-white rounded-lg shadow-sm border border-red-200 p-6">
               <div className="flex items-start space-x-2">
                 <ExclamationTriangleIcon className="w-5 h-5 text-red-600 mt-0.5" />
                 <div className="text-sm text-red-800">
                   <p className="font-medium">Error</p>
-                  <p>{error}</p>
+                  <p>{importError || error}</p>
                 </div>
               </div>
             </div>
           )}
 
           {/* Success Message */}
-          {importStatus.hasImported && !error && (
+          {importStatus.hasImported && !error && !importError && (
             <div className="bg-white rounded-lg shadow-sm border border-green-200 p-6">
               <div className="flex items-start space-x-2">
                 <CheckCircleIcon className="w-5 h-5 text-green-600 mt-0.5" />

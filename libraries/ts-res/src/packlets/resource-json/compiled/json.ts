@@ -164,9 +164,9 @@ export interface ICompiledAbstractDecision {
  */
 export interface ICompiledCandidate {
   /**
-   * The JSON value of the candidate.
+   * The global index of the JSON value of the candidate.
    */
-  json: JsonValue;
+  valueIndex: Common.CandidateValueIndex;
   /**
    * Indicates if this is a partial resource that needs to be merged.
    */
@@ -232,6 +232,10 @@ export interface ICompiledResourceCollection {
    * Array of all decisions in the collection.
    */
   decisions: ReadonlyArray<ICompiledAbstractDecision>;
+  /**
+   * Array of all candidate values in the collection.
+   */
+  candidateValues: ReadonlyArray<JsonValue>;
   /**
    * Array of all resources in the collection.
    */

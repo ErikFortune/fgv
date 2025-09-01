@@ -94,6 +94,27 @@ Map of [candidates](./ts-res.resources.resourcecandidate.md) for the resource be
 </td></tr>
 <tr><td>
 
+[\_candidateValues](./ts-res.resources.resourcebuilder._candidatevalues.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+[CandidateValueCollector](./ts-res.resources.candidatevaluecollector.md)
+
+
+</td><td>
+
+Collector for candidate values.
+
+
+</td></tr>
+<tr><td>
+
 [\_conditionSets](./ts-res.resources.resourcebuilder._conditionsets.md)
 
 

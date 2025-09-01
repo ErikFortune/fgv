@@ -227,6 +227,44 @@ Display title for the column header
 </td></tr>
 <tr><td>
 
+[triStateLabels?](./ts-res-ui-components.gridtools.gridcolumndefinition.tristatelabels.md)
+
+
+</td><td>
+
+
+</td><td>
+
+{ trueLabel: string; falseLabel: string; undefinedLabel: string; }
+
+
+</td><td>
+
+_(Optional)_ Custom labels for tristate values
+
+
+</td></tr>
+<tr><td>
+
+[triStatePresentation?](./ts-res-ui-components.gridtools.gridcolumndefinition.tristatepresentation.md)
+
+
+</td><td>
+
+
+</td><td>
+
+'checkbox' \| 'dropdown'
+
+
+</td><td>
+
+_(Optional)_ Presentation mode for tristate cells
+
+
+</td></tr>
+<tr><td>
+
 [validation?](./ts-res-ui-components.gridtools.gridcolumndefinition.validation.md)
 
 

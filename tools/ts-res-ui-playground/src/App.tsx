@@ -19,7 +19,8 @@ import {
   ResourceOrchestrator,
   OrchestratorState,
   OrchestratorActions,
-  GridTools
+  GridTools,
+  ObservabilityTools
 } from '@fgv/ts-res-ui-components';
 import NavigationWarningModal from './components/common/NavigationWarningModal';
 import ResourcePickerTool from './components/tools/ResourcePickerTool';
@@ -40,6 +41,13 @@ import {
   multiGridConfigurations,
   demonstrationGridConfig
 } from './utils/gridConfigurations';
+import { createObservableContrastFactory } from './factories';
+import {
+  createPlaygroundObservabilityContext,
+  logImportStage,
+  logConfigurationProcessing,
+  logDiagnosticSummary
+} from './utils/observability';
 
 // Separate component to handle initialization logic
 interface AppContentProps {
@@ -48,6 +56,9 @@ interface AppContentProps {
 
 const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
   const { state, actions } = orchestrator;
+
+  // Use observability context from orchestrator actions
+  const { o11y } = actions;
   const [selectedTool, setSelectedTool] = useState<Tool>('import');
   const navigationWarning = useNavigationWarning();
   const { urlParams, hasUrlParams } = useUrlParams();
@@ -149,9 +160,18 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
               );
 
               if (configResult.isSuccess()) {
+                logConfigurationProcessing(o11y, configResult.value);
                 actions.updateConfiguration(configResult.value);
                 actions.addMessage('success', `Loaded predefined configuration: ${urlParams.config}`);
+                o11y.diag.info(
+                  '[URL_PARAMS] Successfully loaded predefined configuration:',
+                  urlParams.config
+                );
               } else {
+                o11y.diag.error(
+                  '[URL_PARAMS] Failed to load predefined configuration:',
+                  configResult.message
+                );
                 actions.addMessage(
                   'error',
                   `Failed to load predefined configuration '${urlParams.config}': ${configResult.message}`
@@ -274,11 +294,22 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
         return (
           <ImportView
             onMessage={actions.addMessage}
-            onImport={(data) => {
-              if (Array.isArray(data)) {
-                actions.importFiles(data);
-              } else {
-                actions.importDirectory(data);
+            importError={state.error}
+            onImport={async (data) => {
+              logImportStage(o11y, 'start');
+              try {
+                if (Array.isArray(data)) {
+                  logImportStage(o11y, 'resource-load', { fileCount: data.length });
+                  await actions.importFiles(data);
+                  logImportStage(o11y, 'complete', { filesImported: data.length });
+                } else {
+                  logImportStage(o11y, 'resource-load', { type: 'directory' });
+                  await actions.importDirectory(data);
+                  logImportStage(o11y, 'complete', { type: 'directory' });
+                }
+              } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                logImportStage(o11y, 'error', { error: errorMessage });
               }
             }}
             onBundleImport={actions.importBundle}
@@ -309,13 +340,19 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
 
               // Load configuration FIRST, before processing resources
               if (zipData.config) {
+                logImportStage(o11y, 'config-load', { source: 'ZIP archive' });
+                logConfigurationProcessing(o11y, zipData.config);
+
                 // Apply configuration immediately before processing resources
+                logImportStage(o11y, 'config-apply');
                 await actions.applyConfiguration(zipData.config);
                 actions.addMessage('success', 'Configuration loaded and applied from ZIP');
+                o11y.diag.info('[ZIP_IMPORT] Configuration applied successfully');
 
                 // Add a small delay to ensure configuration is applied
                 await new Promise((resolve) => setTimeout(resolve, 100));
               } else {
+                o11y.diag.warn('[ZIP_IMPORT] No configuration found in ZIP - using default configuration');
                 actions.addMessage('warning', 'No configuration found in ZIP - using default configuration');
               }
 
@@ -354,8 +391,23 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 resources={state.resources}
                 pickerOptionsPresentation={pickerPresentation.source}
                 onExport={(data, type) => {
-                  // TODO: Implement export functionality
-                  actions.addMessage('info', `Export ${type} requested`);
+                  switch (type) {
+                    case 'bundle':
+                      actions.exportBundle();
+                      break;
+                    case 'compiled':
+                      actions.exportCompiled();
+                      break;
+                    case 'source':
+                      actions.exportSource();
+                      break;
+                    default:
+                      actions.addMessage(
+                        'warning',
+                        `Unknown export type: ${type}. Using source export as fallback.`
+                      );
+                      actions.exportSource();
+                  }
                 }}
               />
             </div>
@@ -499,8 +551,23 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 useNormalization={true}
                 pickerOptionsPresentation={pickerPresentation.compiled}
                 onExport={(data, type) => {
-                  // TODO: Implement export functionality
-                  actions.addMessage('info', `Export ${type} requested`);
+                  switch (type) {
+                    case 'bundle':
+                      actions.exportBundle();
+                      break;
+                    case 'compiled':
+                      actions.exportCompiled();
+                      break;
+                    case 'source':
+                      actions.exportSource();
+                      break;
+                    default:
+                      actions.addMessage(
+                        'warning',
+                        `Unknown export type: ${type}. Using source export as fallback.`
+                      );
+                      actions.exportSource();
+                  }
                 }}
               />
             </div>
@@ -879,11 +946,22 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
         return (
           <ImportView
             onMessage={actions.addMessage}
-            onImport={(data) => {
-              if (Array.isArray(data)) {
-                actions.importFiles(data);
-              } else {
-                actions.importDirectory(data);
+            importError={state.error}
+            onImport={async (data) => {
+              logImportStage(o11y, 'start');
+              try {
+                if (Array.isArray(data)) {
+                  logImportStage(o11y, 'resource-load', { fileCount: data.length });
+                  await actions.importFiles(data);
+                  logImportStage(o11y, 'complete', { filesImported: data.length });
+                } else {
+                  logImportStage(o11y, 'resource-load', { type: 'directory' });
+                  await actions.importDirectory(data);
+                  logImportStage(o11y, 'complete', { type: 'directory' });
+                }
+              } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                logImportStage(o11y, 'error', { error: errorMessage });
               }
             }}
             onBundleImport={actions.importBundle}
@@ -915,17 +993,28 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
 };
 
 const App: React.FC = () => {
-  // For demonstration, we'll use undefined factories (no custom types)
-  // Custom factories can be added by extending QualifierTypeFactory or ResourceTypeFactory
-  const demoQualifierTypeFactory = undefined;
+  // Create enhanced observability context with diagnostic logging
+  const appO11yContext = createPlaygroundObservabilityContext();
+
+  // Create observable custom factory and wrap in QualifierTypeFactory for proper chaining
+  const observableContrastFactory = createObservableContrastFactory(appO11yContext);
+  const qualifierTypeFactory = new TsRes.Config.QualifierTypeFactory([observableContrastFactory]);
   const demoResourceTypeFactory = undefined;
+
+  // Log initialization
+  appO11yContext.diag.info('[PLAYGROUND] Initializing ts-res-ui-playground with observable factory chain');
 
   return (
     <ResourceOrchestrator
-      qualifierTypeFactory={demoQualifierTypeFactory}
+      qualifierTypeFactory={qualifierTypeFactory}
       resourceTypeFactory={demoResourceTypeFactory}
+      observabilityContext={appO11yContext}
     >
-      {(orchestrator) => <AppContent orchestrator={orchestrator} />}
+      {(orchestrator) => {
+        // Log when orchestrator is ready
+        appO11yContext.diag.info('[PLAYGROUND] ResourceOrchestrator initialized and ready');
+        return <AppContent orchestrator={orchestrator} />;
+      }}
     </ResourceOrchestrator>
   );
 };

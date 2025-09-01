@@ -69,7 +69,8 @@ describe('Bundle Model', () => {
           conditions: [],
           conditionSets: [],
           decisions: [],
-          resources: []
+          resources: [],
+          candidateValues: []
         }
       };
 

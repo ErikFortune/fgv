@@ -161,6 +161,11 @@ export abstract class ResourceType<T = unknown> implements IResourceType<T> {
   }
 
   /**
+   * Name of the underlying system type.
+   */
+  public abstract readonly systemTypeName: ResourceTypeName;
+
+  /**
    * {@inheritdoc ResourceTypes.IResourceType.index}
    */
   public get index(): ResourceTypeIndex | undefined {

@@ -27,8 +27,8 @@ import {
   DetailedResult,
   DetailedSuccess,
   Failure,
-  Logging,
   MessageAggregator,
+  MessageLogLevel,
   Result,
   Success,
   captureResult,
@@ -43,6 +43,7 @@ import {
   succeedsWithDetail,
   useOrInitialize
 } from '../../packlets/base';
+import * as Logging from '../../packlets/logging';
 
 describe('Result module', () => {
   describe('Result type', () => {
@@ -272,6 +273,82 @@ describe('Result module', () => {
         expect(aggregatedErrors.messages).toEqual(['earlier error']);
       });
     });
+
+    describe('report method', () => {
+      test('calls reportSuccess with default quiet level when no options provided', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const success = succeed('test value');
+
+        const result = success.report(reporter);
+
+        expect(result).toBe(success); // should return self for chaining
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', 'test value');
+        expect(reporter.reportFailure).not.toHaveBeenCalled();
+      });
+
+      test('calls reportSuccess with custom success level from options', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const success = succeed(42);
+
+        success.report(reporter, { success: 'info' });
+
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('info', 42);
+        expect(reporter.reportFailure).not.toHaveBeenCalled();
+      });
+
+      test('ignores failure level option and uses success level', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const success = succeed('test');
+
+        success.report(reporter, { success: 'warning', failure: 'error' });
+
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('warning', 'test');
+        expect(reporter.reportFailure).not.toHaveBeenCalled();
+      });
+
+      test('uses default quiet level when success option is undefined', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const success = succeed('test');
+
+        success.report(reporter, { success: undefined, failure: 'error' });
+
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', 'test');
+        expect(reporter.reportFailure).not.toHaveBeenCalled();
+      });
+
+      test('works with all valid MessageLogLevel values', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const success = succeed('test');
+        const levels: Array<'quiet' | 'detail' | 'info' | 'warning' | 'error'> = [
+          'quiet',
+          'detail',
+          'info',
+          'warning',
+          'error'
+        ];
+
+        levels.forEach((level) => {
+          reporter.reportSuccess.mockClear();
+          success.report(reporter, { success: level });
+          expect(reporter.reportSuccess).toHaveBeenCalledWith(level, 'test');
+        });
+      });
+    });
   });
 
   describe('Failure class', () => {
@@ -304,8 +381,7 @@ describe('Result module', () => {
         const errorMessage = 'this is an error message';
         const f = new Failure(errorMessage);
 
-        expect(() => f.orThrow()).toThrowError(errorMessage);
-        expect(() => f.getValueOrThrow()).toThrowError(errorMessage);
+        expect(() => f.orThrow()).toThrow(errorMessage);
       });
 
       test('calls logger if supplied', () => {
@@ -313,7 +389,7 @@ describe('Result module', () => {
         const errorMessage = 'this is an error message';
         const f = new Failure(errorMessage);
 
-        expect(() => f.orThrow(logger)).toThrowError(errorMessage);
+        expect(() => f.orThrow(logger)).toThrow(errorMessage);
         expect(logger.error).toHaveBeenCalledWith(errorMessage);
       });
 
@@ -330,7 +406,7 @@ describe('Result module', () => {
         const errorMessage = 'this is an error message';
         const f = new Failure(errorMessage);
 
-        expect(() => f.getValueOrThrow(logger)).toThrowError(errorMessage);
+        expect(() => f.getValueOrThrow(logger)).toThrow(errorMessage);
         expect(logger.error).toHaveBeenCalledWith(errorMessage);
       });
 
@@ -339,8 +415,8 @@ describe('Result module', () => {
         const errorMessage = 'this is an error message';
         const f = new Failure(errorMessage);
 
-        expect(() => f.orThrow(logger)).toThrowError(errorMessage);
-        expect(logger.messages).toEqual([errorMessage]);
+        expect(() => f.orThrow(logger)).toThrow(errorMessage);
+        expect(logger.logged).toEqual([errorMessage]);
       });
     });
 
@@ -378,6 +454,82 @@ describe('Result module', () => {
           expect(aggregated).toBe(failure); // explicit test for identity
           expect(aggregated).toFailWith('new error');
           expect(aggregatedErrors.messages).toEqual(['earlier error', 'new error']);
+        });
+      });
+    });
+
+    describe('report method', () => {
+      test('calls reportFailure with default error level when no options provided', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const failure = fail('test error');
+
+        const result = failure.report(reporter);
+
+        expect(result).toBe(failure); // should return self for chaining
+        expect(reporter.reportFailure).toHaveBeenCalledWith('error', 'test error');
+        expect(reporter.reportSuccess).not.toHaveBeenCalled();
+      });
+
+      test('calls reportFailure with custom failure level from options', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const failure = fail('custom error');
+
+        failure.report(reporter, { failure: 'warning' });
+
+        expect(reporter.reportFailure).toHaveBeenCalledWith('warning', 'custom error');
+        expect(reporter.reportSuccess).not.toHaveBeenCalled();
+      });
+
+      test('ignores success level option and uses failure level', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const failure = fail('test error');
+
+        failure.report(reporter, { success: 'info', failure: 'detail' });
+
+        expect(reporter.reportFailure).toHaveBeenCalledWith('detail', 'test error');
+        expect(reporter.reportSuccess).not.toHaveBeenCalled();
+      });
+
+      test('uses default error level when failure option is undefined', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const failure = fail('test error');
+
+        failure.report(reporter, { success: 'info', failure: undefined });
+
+        expect(reporter.reportFailure).toHaveBeenCalledWith('error', 'test error');
+        expect(reporter.reportSuccess).not.toHaveBeenCalled();
+      });
+
+      test('works with all valid MessageLogLevel values', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const failure = fail('test error');
+        const levels: Array<'quiet' | 'detail' | 'info' | 'warning' | 'error'> = [
+          'quiet',
+          'detail',
+          'info',
+          'warning',
+          'error'
+        ];
+
+        levels.forEach((level) => {
+          reporter.reportFailure.mockClear();
+          failure.report(reporter, { failure: level });
+          expect(reporter.reportFailure).toHaveBeenCalledWith(level, 'test error');
         });
       });
     });
@@ -520,6 +672,92 @@ describe('Result module', () => {
         );
       });
     });
+
+    describe('report method', () => {
+      test('calls reportSuccess with default quiet level and includes detail when no options provided', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const detailedSuccess = succeedWithDetail('test value', 'test detail');
+
+        const result = detailedSuccess.report(reporter);
+
+        expect(result).toBe(detailedSuccess); // should return self for chaining
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', 'test value', 'test detail');
+        expect(reporter.reportFailure).not.toHaveBeenCalled();
+      });
+
+      test('calls reportSuccess with custom success level from options and includes detail', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const detailedSuccess = succeedWithDetail(42, { key: 'value' });
+
+        detailedSuccess.report(reporter, { success: 'info' });
+
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('info', 42, { key: 'value' });
+        expect(reporter.reportFailure).not.toHaveBeenCalled();
+      });
+
+      test('works with undefined detail', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const detailedSuccess = succeedWithDetail('test value', undefined);
+
+        detailedSuccess.report(reporter, { success: 'warning' });
+
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('warning', 'test value', undefined);
+        expect(reporter.reportFailure).not.toHaveBeenCalled();
+      });
+
+      test('ignores failure level option and uses success level', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const detailedSuccess = succeedWithDetail('test', 'detail');
+
+        detailedSuccess.report(reporter, { success: 'warning', failure: 'error' });
+
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('warning', 'test', 'detail');
+        expect(reporter.reportFailure).not.toHaveBeenCalled();
+      });
+
+      test('works with all valid MessageLogLevel values', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const detailedSuccess = succeedWithDetail('test', 'detail');
+        const levels: Array<'quiet' | 'detail' | 'info' | 'warning' | 'error'> = [
+          'quiet',
+          'detail',
+          'info',
+          'warning',
+          'error'
+        ];
+
+        levels.forEach((level) => {
+          reporter.reportSuccess.mockClear();
+          detailedSuccess.report(reporter, { success: level });
+          expect(reporter.reportSuccess).toHaveBeenCalledWith(level, 'test', 'detail');
+        });
+      });
+    });
+
+    describe('asResult getter', () => {
+      test('returns itself as a Result', () => {
+        const detailedSuccess = succeedWithDetail('test value', 'test detail');
+        const asResult = detailedSuccess.asResult;
+
+        expect(asResult).toBe(detailedSuccess);
+        expect(asResult).toSucceedWith('test value');
+      });
+    });
   });
 
   describe('detailedFailure class', () => {
@@ -579,6 +817,105 @@ describe('Result module', () => {
 
       test('reports failure with the default detail, overriding any original detail, even if success detail is supplied', () => {
         expect(failWithDetail('oops', 10).withDetail('fred', 'wilma')).toFailWithDetail('oops', 'fred');
+      });
+    });
+
+    describe('report method', () => {
+      test('calls reportFailure with default error level and includes detail when no options provided', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const detailedFailure = failWithDetail('test error', 'test detail');
+
+        const result = detailedFailure.report(reporter);
+
+        expect(result).toBe(detailedFailure); // should return self for chaining
+        expect(reporter.reportFailure).toHaveBeenCalledWith('error', 'test error', 'test detail');
+        expect(reporter.reportSuccess).not.toHaveBeenCalled();
+      });
+
+      test('calls reportFailure with custom failure level from options and includes detail', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const detailedFailure = failWithDetail('custom error', { code: 404 });
+
+        detailedFailure.report(reporter, { failure: 'warning' });
+
+        expect(reporter.reportFailure).toHaveBeenCalledWith('warning', 'custom error', { code: 404 });
+        expect(reporter.reportSuccess).not.toHaveBeenCalled();
+      });
+
+      test('works with undefined detail', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const detailedFailure = failWithDetail('test error', undefined);
+
+        detailedFailure.report(reporter, { failure: 'detail' });
+
+        expect(reporter.reportFailure).toHaveBeenCalledWith('detail', 'test error', undefined);
+        expect(reporter.reportSuccess).not.toHaveBeenCalled();
+      });
+
+      test('ignores success level option and uses failure level', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const detailedFailure = failWithDetail('test error', 'error detail');
+
+        detailedFailure.report(reporter, { success: 'info', failure: 'detail' });
+
+        expect(reporter.reportFailure).toHaveBeenCalledWith('detail', 'test error', 'error detail');
+        expect(reporter.reportSuccess).not.toHaveBeenCalled();
+      });
+
+      test('uses default error level when failure option is undefined', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const detailedFailure = failWithDetail('test error', 'detail');
+
+        detailedFailure.report(reporter, { success: 'info', failure: undefined });
+
+        expect(reporter.reportFailure).toHaveBeenCalledWith('error', 'test error', 'detail');
+        expect(reporter.reportSuccess).not.toHaveBeenCalled();
+      });
+
+      test('works with all valid MessageLogLevel values', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const detailedFailure = failWithDetail('test error', 'detail');
+        const levels: Array<'quiet' | 'detail' | 'info' | 'warning' | 'error'> = [
+          'quiet',
+          'detail',
+          'info',
+          'warning',
+          'error'
+        ];
+
+        levels.forEach((level) => {
+          reporter.reportFailure.mockClear();
+          detailedFailure.report(reporter, { failure: level });
+          expect(reporter.reportFailure).toHaveBeenCalledWith(level, 'test error', 'detail');
+        });
+      });
+    });
+
+    describe('asResult getter', () => {
+      test('returns itself as a Result', () => {
+        const detailedFailure = failWithDetail('test error', 'test detail');
+        const asResult = detailedFailure.asResult;
+
+        expect(asResult).toBe(detailedFailure);
+        expect(asResult).toFailWith('test error');
       });
     });
   });
@@ -703,6 +1040,153 @@ describe('Result module', () => {
       if (result.isSuccess()) {
         expect(result.value).toBe('present');
       }
+    });
+  });
+
+  describe('report method integration tests', () => {
+    describe('method chaining', () => {
+      test('Success.report() enables method chaining', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+
+        const result = succeed('test')
+          .report(reporter)
+          .onSuccess(() => succeed('chained'));
+
+        expect(result).toSucceedWith('chained');
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', 'test');
+      });
+
+      test('Failure.report() enables method chaining', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+
+        const result = fail('test error')
+          .report(reporter)
+          .onFailure(() => succeed('recovered'));
+
+        expect(result).toSucceedWith('recovered');
+        expect(reporter.reportFailure).toHaveBeenCalledWith('error', 'test error');
+      });
+
+      test('DetailedSuccess.report() enables method chaining', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+
+        const result = succeedWithDetail('test', 'detail')
+          .report(reporter)
+          .onSuccess((value, detail) => succeedWithDetail(`${value}-${detail}`));
+
+        expect(result).toSucceedWith('test-detail');
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', 'test', 'detail');
+      });
+
+      test('DetailedFailure.report() enables method chaining', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+
+        const result = failWithDetail('test error', 'error detail')
+          .report(reporter)
+          .onFailure((message, detail) => succeedWithDetail(`recovered: ${message} (${detail})`));
+
+        expect(result).toSucceedWith('recovered: test error (error detail)');
+        expect(reporter.reportFailure).toHaveBeenCalledWith('error', 'test error', 'error detail');
+      });
+    });
+
+    describe('type compatibility', () => {
+      test('Success.report() works with typed reporters', () => {
+        interface ITypedReporter<T, TD = unknown> {
+          reportSuccess(level: MessageLogLevel, value: T, detail?: TD): void;
+          reportFailure(level: MessageLogLevel, message: string, detail?: TD): void;
+        }
+
+        const reporter: ITypedReporter<string> = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+
+        succeed('typed value').report(reporter, { success: 'info' });
+
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('info', 'typed value');
+      });
+
+      test('DetailedResult.report() works with typed reporters including detail', () => {
+        interface IDetailedReporter<T, TD> {
+          reportSuccess(level: MessageLogLevel, value: T, detail?: TD): void;
+          reportFailure(level: MessageLogLevel, message: string, detail?: TD): void;
+        }
+
+        const reporter: IDetailedReporter<number, string> = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+
+        succeedWithDetail(42, 'number detail').report(reporter, { success: 'detail' });
+        failWithDetail<number, string>('error', 'error detail').report(reporter, { failure: 'warning' });
+
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('detail', 42, 'number detail');
+        expect(reporter.reportFailure).toHaveBeenCalledWith('warning', 'error', 'error detail');
+      });
+    });
+
+    describe('edge cases and boundary conditions', () => {
+      test('works with empty strings and null/undefined values', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+
+        succeed('').report(reporter);
+        fail('').report(reporter);
+        succeedWithDetail('', null as unknown as string).report(reporter);
+        failWithDetail<string, string>('', undefined).report(reporter);
+
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', '');
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', '', null);
+        expect(reporter.reportFailure).toHaveBeenCalledWith('error', '');
+        expect(reporter.reportFailure).toHaveBeenCalledWith('error', '', undefined);
+      });
+
+      test('works with complex object values and details', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+
+        const complexValue = { data: [1, 2, 3], nested: { prop: 'value' } };
+        const complexDetail = { timestamp: Date.now(), context: { user: 'test' } };
+
+        succeedWithDetail(complexValue, complexDetail).report(reporter, { success: 'info' });
+        failWithDetail<typeof complexValue, typeof complexDetail>('complex error', complexDetail).report(
+          reporter,
+          { failure: 'warning' }
+        );
+
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('info', complexValue, complexDetail);
+        expect(reporter.reportFailure).toHaveBeenCalledWith('warning', 'complex error', complexDetail);
+      });
+
+      test('empty options object uses default levels', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+
+        succeed('test').report(reporter, {});
+        fail('test').report(reporter, {});
+
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', 'test');
+        expect(reporter.reportFailure).toHaveBeenCalledWith('error', 'test');
+      });
     });
   });
 });

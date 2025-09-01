@@ -155,6 +155,20 @@ Description
 </td></tr>
 <tr><td>
 
+[asRecord()](./ts-res.qualifiertypes.literalvaluehierarchy.asrecord.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Converts the hierarchy to a record of parent-child relationships.
+
+
+</td></tr>
+<tr><td>
+
 [create(params)](./ts-res.qualifiertypes.literalvaluehierarchy.create.md)
 
 

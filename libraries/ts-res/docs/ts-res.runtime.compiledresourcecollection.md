@@ -84,6 +84,27 @@ A read-only result map of all built resources, keyed by resource ID. Resources a
 </td></tr>
 <tr><td>
 
+[candidateValues](./ts-res.runtime.compiledresourcecollection.candidatevalues.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;JsonValue&gt;
+
+
+</td><td>
+
+The candidate values in the collection.
+
+
+</td></tr>
+<tr><td>
+
 [conditions](./ts-res.runtime.compiledresourcecollection.conditions.md)
 
 
@@ -193,12 +214,12 @@ The number of resources in this resource manager.
 
 </td><td>
 
-[QualifierCollector](./ts-res.qualifiers.qualifiercollector.md)
+[IReadOnlyQualifierCollector](./ts-res.qualifiers.ireadonlyqualifiercollector.md)
 
 
 </td><td>
 
-A [QualifierCollector](./ts-res.qualifiers.qualifiercollector.md) which contains the [qualifiers](./ts-res.qualifiers.qualifier.md) used in this collection.
+A [ReadOnlyQualifierCollector](./ts-res.qualifiers.ireadonlyqualifiercollector.md) which contains the [qualifiers](./ts-res.qualifiers.qualifier.md) used in this collection.
 
 
 </td></tr>
@@ -214,12 +235,12 @@ A [QualifierCollector](./ts-res.qualifiers.qualifiercollector.md) which contains
 
 </td><td>
 
-[QualifierTypeCollector](./ts-res.qualifiertypes.qualifiertypecollector.md)
+[ReadOnlyQualifierTypeCollector](./ts-res.qualifiertypes.readonlyqualifiertypecollector.md)
 
 
 </td><td>
 
-A [QualifierTypeCollector](./ts-res.qualifiertypes.qualifiertypecollector.md) which contains the [qualifier types](./ts-res.qualifiertypes.qualifiertype.md) used in this collection.
+A [ReadOnlyQualifierTypeCollector](./ts-res.qualifiertypes.readonlyqualifiertypecollector.md) which contains the [qualifier types](./ts-res.qualifiertypes.qualifiertype.md) used in this collection.
 
 
 </td></tr>
@@ -235,7 +256,7 @@ A [QualifierTypeCollector](./ts-res.qualifiertypes.qualifiertypecollector.md) wh
 
 </td><td>
 
-[ResourceTypeCollector](./ts-res.resourcetypes.resourcetypecollector.md)
+[ReadOnlyResourceTypeCollector](./ts-res.resourcetypes.readonlyresourcetypecollector.md)
 
 
 </td><td>

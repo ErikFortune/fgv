@@ -101,6 +101,7 @@ describe('Bundle Convert', () => {
         conditions: [],
         conditionSets: [],
         decisions: [],
+        candidateValues: [],
         resources: []
       }
     };

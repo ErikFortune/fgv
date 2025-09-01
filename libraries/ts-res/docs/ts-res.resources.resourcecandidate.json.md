@@ -9,5 +9,10 @@ The JSON representation of the instance data to be applied.
 **Signature:**
 
 ```typescript
-readonly json: JsonObject;
+get json(): JsonObject;
 ```
+
+## Remarks
+
+This property provides access to the JSON data from the underlying candidate value.
+

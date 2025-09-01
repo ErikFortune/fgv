@@ -181,6 +181,7 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
         return (
           <ImportView
             onMessage={actions.addMessage}
+            importError={state.error}
             onImport={(data) => {
               if (Array.isArray(data)) {
                 actions.importFiles(data);
@@ -248,8 +249,24 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
             selectedResourceId={state.selectedResourceId}
             onResourceSelect={actions.selectResource}
             onExport={(data, type) => {
-              // TODO: Implement export functionality
-              actions.addMessage('info', `Export ${type} requested`);
+              switch (type) {
+                case 'bundle':
+                  actions.exportBundle();
+                  break;
+                case 'compiled':
+                  actions.exportCompiled();
+                  break;
+                case 'source':
+                  actions.exportSource();
+                  break;
+                default:
+                  // For any other type, fall back to the generic export
+                  actions.addMessage(
+                    'warning',
+                    `Unknown export type: ${type}. Using source export as fallback.`
+                  );
+                  actions.exportSource();
+              }
             }}
           />
         );
@@ -283,8 +300,24 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
             filterResult={state.filterResult}
             useNormalization={true}
             onExport={(data, type) => {
-              // TODO: Implement export functionality
-              actions.addMessage('info', `Export ${type} requested`);
+              switch (type) {
+                case 'bundle':
+                  actions.exportBundle();
+                  break;
+                case 'compiled':
+                  actions.exportCompiled();
+                  break;
+                case 'source':
+                  actions.exportSource();
+                  break;
+                default:
+                  // For any other type, fall back to the generic export
+                  actions.addMessage(
+                    'warning',
+                    `Unknown export type: ${type}. Using source export as fallback.`
+                  );
+                  actions.exportSource();
+              }
             }}
           />
         );
@@ -321,7 +354,11 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
               discardPendingResources: actions.discardPendingResources
             }}
             availableQualifiers={
-              state.resources?.compiledCollection.qualifiers?.map((q: any) => q.name) ||
+              state.resources?.compiledCollection.qualifiers
+                ?.map((q) =>
+                  typeof q === 'object' && q && 'name' in q && typeof q.name === 'string' ? q.name : ''
+                )
+                .filter(Boolean) ||
               state.configuration?.qualifiers?.map((q) => q.name) ||
               []
             }
@@ -346,6 +383,7 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
         return (
           <ImportView
             onMessage={actions.addMessage}
+            importError={state.error}
             onImport={(data) => {
               if (Array.isArray(data)) {
                 actions.importFiles(data);

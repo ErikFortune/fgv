@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { CompiledViewProps, ProcessedResources, FilterState, FilterResult } from '../../../types';
 import { ResourceJson, Config, Bundle, Resources } from '@fgv/ts-res';
+import { Hash } from '@fgv/ts-utils';
 import { ResourcePicker } from '../../pickers/ResourcePicker';
 import {
   ResourceSelection,
@@ -148,44 +149,51 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
       // Collectors section - showing from compiled collection
       tree.children!.push({
         id: 'qualifiers',
-        name: `Qualifiers (${activeCompiledCollection.qualifiers?.length || 0})`,
+        name: `Qualifiers (${activeCompiledCollection.qualifiers?.length ?? 0})`,
         type: 'section',
         data: { type: 'qualifiers', items: activeCompiledCollection.qualifiers }
       });
 
       tree.children!.push({
         id: 'qualifier-types',
-        name: `Qualifier Types (${activeCompiledCollection.qualifierTypes?.length || 0})`,
+        name: `Qualifier Types (${activeCompiledCollection.qualifierTypes?.length ?? 0})`,
         type: 'section',
         data: { type: 'qualifier-types', items: activeCompiledCollection.qualifierTypes }
       });
 
       tree.children!.push({
         id: 'resource-types',
-        name: `Resource Types (${activeCompiledCollection.resourceTypes?.length || 0})`,
+        name: `Resource Types (${activeCompiledCollection.resourceTypes?.length ?? 0})`,
         type: 'section',
         data: { type: 'resource-types', items: activeCompiledCollection.resourceTypes }
       });
 
       tree.children!.push({
         id: 'conditions',
-        name: `Conditions (${activeCompiledCollection.conditions?.length || 0})`,
+        name: `Conditions (${activeCompiledCollection.conditions?.length ?? 0})`,
         type: 'section',
         data: { type: 'conditions', items: activeCompiledCollection.conditions }
       });
 
       tree.children!.push({
         id: 'condition-sets',
-        name: `Condition Sets (${activeCompiledCollection.conditionSets?.length || 0})`,
+        name: `Condition Sets (${activeCompiledCollection.conditionSets?.length ?? 0})`,
         type: 'section',
         data: { type: 'condition-sets', items: activeCompiledCollection.conditionSets }
       });
 
       tree.children!.push({
         id: 'decisions',
-        name: `Decisions (${activeCompiledCollection.decisions?.length || 0})`,
+        name: `Decisions (${activeCompiledCollection.decisions?.length ?? 0})`,
         type: 'section',
         data: { type: 'decisions', items: activeCompiledCollection.decisions }
+      });
+
+      tree.children!.push({
+        id: 'candidate-values',
+        name: `Candidate Values (${activeCompiledCollection.candidateValues?.length ?? 0})`,
+        type: 'section',
+        data: { type: 'candidate-values', items: activeCompiledCollection.candidateValues }
       });
     } catch (error) {
       onMessage?.(
@@ -207,14 +215,14 @@ export const CompiledView: React.FC<CompiledViewProps> = ({
 
         // Get compiled resource metadata
         const decision = activeCompiledCollection.decisions?.[resource.decision];
-        const candidateCount = decision?.conditionSets?.length || 0;
+        const candidateCount = decision?.conditionSets?.length ?? 0;
         const resourceType = activeCompiledCollection.resourceTypes?.[resource.type];
 
         annotations[resourceId] = {
           suffix: `${candidateCount} candidate${candidateCount !== 1 ? 's' : ''}`,
           badge: resourceType
             ? {
-                text: resourceType.name || 'unknown',
+                text: resourceType.name ?? 'unknown',
                 variant: 'info'
               }
             : undefined
@@ -712,6 +720,7 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, activeCompiledCollection 
       case 'conditions':
       case 'condition-sets':
       case 'decisions':
+      case 'candidate-values':
         return renderCompiledCollection(type, items);
 
       default:
@@ -794,15 +803,53 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, activeCompiledCollection 
                       )}
                     </div>
 
-                    {/* Candidate JSON Data - The actual resource content */}
-                    {(candidate || typeof candidate === 'object') && (
-                      <div className="bg-gray-50 rounded p-3 mb-3">
-                        <h6 className="text-sm font-semibold text-gray-700 mb-2">Resource Content:</h6>
-                        <pre className="text-sm font-mono text-gray-800 whitespace-pre-wrap overflow-x-auto max-h-48 overflow-y-auto">
-                          {JSON.stringify(candidate, null, 2)}
-                        </pre>
-                      </div>
-                    )}
+                    {/* Candidate Value Index and JSON Data */}
+                    <div className="space-y-3 mb-3">
+                      {/* Show Value Index */}
+                      {candidate.valueIndex !== undefined && (
+                        <div className="bg-blue-50 rounded p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <h6 className="text-sm font-semibold text-blue-700">
+                              Candidate Value Reference:
+                            </h6>
+                            <span className="text-xs font-mono bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                              Index: {candidate.valueIndex}
+                            </span>
+                          </div>
+                          <div className="text-xs text-blue-600">
+                            This candidate references candidateValues[{candidate.valueIndex}] from the
+                            compiled collection
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Show Actual JSON Content */}
+                      {(candidate || typeof candidate === 'object') && (
+                        <div className="bg-gray-50 rounded p-3">
+                          <h6 className="text-sm font-semibold text-gray-700 mb-2">
+                            {candidate.valueIndex !== undefined
+                              ? 'Resolved Resource Content:'
+                              : 'Resource Content:'}
+                          </h6>
+                          <pre className="text-sm font-mono text-gray-800 whitespace-pre-wrap overflow-x-auto max-h-48 overflow-y-auto">
+                            {JSON.stringify(candidate, null, 2)}
+                          </pre>
+                          {candidate.valueIndex !== undefined &&
+                            activeCompiledCollection?.candidateValues && (
+                              <div className="mt-2 pt-2 border-t border-gray-200">
+                                <div className="text-xs text-gray-600 mb-1">From candidateValues array:</div>
+                                <pre className="text-xs font-mono text-gray-700 bg-white p-2 rounded border overflow-x-auto max-h-32 overflow-y-auto">
+                                  {JSON.stringify(
+                                    activeCompiledCollection.candidateValues[candidate.valueIndex],
+                                    null,
+                                    2
+                                  )}
+                                </pre>
+                              </div>
+                            )}
+                        </div>
+                      )}
+                    </div>
 
                     {/* Conditions from the condition set */}
                     {conditionSet && conditionSet.conditions && conditionSet.conditions.length > 0 && (
@@ -886,6 +933,9 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, activeCompiledCollection 
       case 'decisions':
         title = 'Decisions';
         break;
+      case 'candidate-values':
+        title = 'Candidate Values';
+        break;
       default:
         title = collectionType;
     }
@@ -949,6 +999,19 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, activeCompiledCollection 
         }`;
       case 'decisions':
         return `${index}: Decision with ${item?.conditionSets?.length || 0} condition sets`;
+      case 'candidate-values':
+        try {
+          const normalizer = new Hash.Crc32Normalizer();
+          const hashResult = normalizer.computeHash(item);
+          const jsonStr = JSON.stringify(item);
+          if (hashResult.isSuccess()) {
+            return `${index}: ${typeof item}, ${jsonStr.length} chars (CRC32: ${String(hashResult.value)})`;
+          } else {
+            return `${index}: ${typeof item}, ${jsonStr.length} chars`;
+          }
+        } catch (error) {
+          return `${index}: ${typeof item}, size unknown`;
+        }
       default:
         return `${index}: Item ${index}`;
     }
@@ -972,6 +1035,8 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, activeCompiledCollection 
           return `${item?.conditionSets?.length ?? 0} condition set${
             (item?.conditionSets?.length ?? 0) !== 1 ? 's' : ''
           }`;
+        case 'candidate-values':
+          return ''; // All info now in main header
         default:
           return '';
       }
@@ -1109,6 +1174,14 @@ const NodeDetail: React.FC<NodeDetailProps> = ({ node, activeCompiledCollection 
                 </div>
               </div>
             )}
+          </div>
+        );
+      case 'candidate-values':
+        return (
+          <div className="bg-gray-50 rounded p-3">
+            <pre className="text-sm font-mono text-gray-800 whitespace-pre-wrap overflow-x-auto max-h-48 overflow-y-auto">
+              {JSON.stringify(item, null, 2)}
+            </pre>
           </div>
         );
       default:
@@ -1254,14 +1327,7 @@ const CompiledResourceDetail: React.FC<CompiledResourceDetailProps> = ({
                     return (
                       <div key={candidateIdx} className="bg-white rounded-lg border p-4">
                         <div className="mb-3 flex items-center justify-between">
-                          <h4 className="font-semibold text-gray-900">
-                            Candidate {candidateIdx}
-                            {candidate.isPartial && (
-                              <span className="ml-2 bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">
-                                Partial
-                              </span>
-                            )}
-                          </h4>
+                          <h4 className="font-semibold text-gray-900">Candidate {candidateIdx}</h4>
                           {conditionSetIndex !== undefined && (
                             <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
                               ConditionSet: {conditionSetIndex}
@@ -1269,15 +1335,39 @@ const CompiledResourceDetail: React.FC<CompiledResourceDetailProps> = ({
                           )}
                         </div>
 
-                        {/* Candidate JSON Data */}
-                        {(candidate || typeof candidate === 'object') && (
-                          <div className="bg-gray-50 rounded p-3 mb-3">
-                            <h6 className="text-sm font-semibold text-gray-700 mb-2">Resource Content:</h6>
-                            <pre className="text-sm font-mono text-gray-800 whitespace-pre-wrap overflow-x-auto max-h-48 overflow-y-auto">
-                              {JSON.stringify(candidate, null, 2)}
-                            </pre>
+                        {/* Candidate metadata banner */}
+                        {(candidate.isPartial || candidate.mergeMethod) && (
+                          <div className="mb-3 flex items-center gap-2 text-xs">
+                            {candidate.isPartial && (
+                              <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Partial</span>
+                            )}
+                            {candidate.mergeMethod && (
+                              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                Merge: {candidate.mergeMethod}
+                              </span>
+                            )}
                           </div>
                         )}
+
+                        {/* Resource Value */}
+                        <div className="mb-3">
+                          <div className="text-xs text-gray-600 mb-1">
+                            Value
+                            {candidate.valueIndex !== undefined
+                              ? ` (candidateValues[${candidate.valueIndex}])`
+                              : ''}
+                            :
+                          </div>
+                          <pre className="text-xs font-mono text-gray-700 bg-white p-2 rounded border overflow-x-auto max-h-32 overflow-y-auto">
+                            {candidate.valueIndex !== undefined && activeCompiledCollection?.candidateValues
+                              ? JSON.stringify(
+                                  activeCompiledCollection.candidateValues[candidate.valueIndex],
+                                  null,
+                                  2
+                                )
+                              : JSON.stringify(candidate, null, 2)}
+                          </pre>
+                        </div>
 
                         {/* Conditions from the condition set */}
                         {conditionSet && conditionSet.conditions && conditionSet.conditions.length > 0 && (

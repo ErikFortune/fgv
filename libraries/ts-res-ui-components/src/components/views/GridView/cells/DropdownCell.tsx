@@ -3,6 +3,7 @@ import { ChevronDownIcon, ExclamationCircleIcon } from '@heroicons/react/24/outl
 import { JsonValue } from '@fgv/ts-json-base';
 import { GridColumnDefinition, GridDropdownOption } from '../../../../types';
 import { validateCellValue } from '../../../../utils/cellValidation';
+import { useObservability } from '../../../../contexts';
 
 /**
  * Props for the DropdownCell component.
@@ -69,6 +70,9 @@ export const DropdownCell: React.FC<DropdownCellProps> = ({
   onSave,
   onValidationChange
 }) => {
+  // Get observability context
+  const o11y = useObservability();
+
   const [editValue, setEditValue] = useState('');
   const [options, setOptions] = useState<GridDropdownOption[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
@@ -101,7 +105,7 @@ export const DropdownCell: React.FC<DropdownCellProps> = ({
         setLoadingOptions(false);
       })
       .catch((error) => {
-        console.error('Failed to load dropdown options:', error);
+        o11y.diag.error('Failed to load dropdown options:', error);
         setOptions([]);
         setLoadingOptions(false);
       });

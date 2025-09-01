@@ -30,17 +30,7 @@ import {
   QualifierMatchScore,
   Convert as CommonConverters
 } from '../common';
-
-/**
- * Declares a hierarchy of literal values. The keys are the names of the values, and the
- * values are the names of their parents.
- * @remarks
- * The hierarchy is defined as a tree, where each value can have multiple children but
- * only one parent. The root of the tree has no parent. The hierarchy is used to
- * determine the relationship between values when matching conditions and contexts.
- * @public
- */
-export type LiteralValueHierarchyDecl<T extends string> = Partial<Record<T, T>>;
+import { LiteralValueHierarchyDecl } from './config';
 
 /**
  * Describes a single valid literal value including optional parent and child values.
@@ -328,5 +318,16 @@ export class LiteralValueHierarchy<T extends string = string> {
     }
 
     return errors.returnOrReport(succeed(valueMap));
+  }
+
+  /**
+   * Converts the hierarchy to a record of parent-child relationships.
+   * @returns A record of parent-child relationships.
+   */
+  public asRecord(): Record<string, string> {
+    const entries = Array.from(this.values.values())
+      .filter((v) => v.parent !== undefined)
+      .map((v) => [v.name, v.parent!.name]);
+    return Object.fromEntries(entries);
   }
 }
